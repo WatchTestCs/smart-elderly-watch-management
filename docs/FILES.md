@@ -1,0 +1,227 @@
+# 全部原始文件的用途说明
+
+逐项介绍项目中的 221 个文件。每项说明均结合文件职责和所在目录编写；同类图片、历史副本及配置文件也分别标明文件名和位置。大小与 SHA-256 用于核对文件版本。功能描述依据静态源码整理，未运行验证。
+
+| 文件路径 | 用途 | 字节数 | SHA-256 |
+| --- | --- | ---: | --- |
+| `智慧养老手表管理系统/careold/.classpath` | Eclipse Java 工程的 classpath 设置。 | 2017 | `e2bff5431105efbff71a3261292e978930c63d5048411db1b3fe342e9f39c679` |
+| `智慧养老手表管理系统/careold/.gitignore` | 列出此子项目不纳入版本管理的生成文件。 对应 `.gitignore`，位于 `智慧养老手表管理系统/careold` 目录。 | 269 | `82a0bf29e4eaf349d04c000ddd175b8c17867efa8c5a3d4d31c1fa928c389662` |
+| `智慧养老手表管理系统/careold/.project` | Eclipse 工程名称与构建器配置。 | 712 | `96d12dfdd43b92d4ddbb45fdfd15899af1fb4f8d5a175e607fc8236828c69f86` |
+| `智慧养老手表管理系统/careold/mvnw` | Unix Maven Wrapper 启动脚本；压缩包未附 Wrapper 配置目录。 | 9113 | `25e6c062aeb2aef6aeda868b12a456db521cbfde07b737dbafa50c09d5ca1c60` |
+| `智慧养老手表管理系统/careold/mvnw.cmd` | Windows Maven Wrapper 启动脚本；压缩包未附 Wrapper 配置目录。 | 5810 | `6279a22bc039cbd8593f0726f99c82f85dec8c4a23b1041605b5bc92634ddd0d` |
+| `智慧养老手表管理系统/careold/pom.xml` | 声明 Spring Boot 版本、Java 版本、后端依赖与 Maven 打包插件。 | 4760 | `53aebdf2120f393bfab6ded6b68677ef0ed4f27f7d1b8443e6ffadf58ee59f4b` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/CareoldApplication.java` | Spring Boot 服务启动入口。 | 443 | `8e636061ec277695cf97c488b7a8f5f3d67bf816efab497de4282493094ad633` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/common/DateConst.java` | 集中定义日期格式，并提供日期解析、格式化、时间戳和按天/小时生成时间序列的方法。 | 2675 | `e997fe0d9372e06cb430b7cc7355f045733d3fbc4b3e95c02ea0806e3ae7653d` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/common/DefineData.java` | 定义消息中间件请求地址、平台消息字段和 HTTP、MQTT、数据库及图片操作返回码。 | 4991 | `a69fcd987778d99dd9d9332e8bdd8f4b88e0db2656099cc55490fd119f6bc9af` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/common/MD5Util.java` | 封装 MD5 摘要计算工具，供现有代码生成或比较摘要。 | 1188 | `f8d629967b98c6ce449e62940cc932fa07fb923ac150f1649bedc52f32d3a83a` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/common/PhotoUtil.java` | 处理上传图片的文件名与本地保存，供图片接口调用。 | 6246 | `31eb0f39248b05ba8870a0bef505b3dd31fe53e812b7353b3e8f8c8a8d20cf96` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/common/ReturnCodeUtil.java` | 集中定义接口返回对象使用的返回码字段名。 | 647 | `f356807610a99854c93c798bda80f2017de9d4f9fabe393d80a5a7b44e388a96` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/common/SmsUtil.java` | 封装腾讯云短信发送调用；密钥是占位符，配置后才能使用。 | 1834 | `5e5156e7c9de53bcd008146106477c659fed465bf92d7789a0a9dcdf46386c4e` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/config/MyRealm.java` | Shiro Realm：读取系统用户并进行登录认证及权限信息关联。 | 5705 | `ecbfb0739c77908d52fbe31918b3a793cacf838259fde3db9fa9bcb582be94f9` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/config/RestTemplateConfig.java` | 创建并配置 Spring RestTemplate Bean，供后端发起 HTTP 请求。 | 414 | `2c02d3f2c4f2aa253f1bb44702fa16417f112a560c89ce66c917988e7097bcd6` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/config/ShiroConfig.java` | 配置 Shiro 安全管理器、Realm、过滤链和未授权处理。 | 5335 | `146c031339534876b446e87b785ae34ed6a5c957f21b03c1fa6cd0a24b4f3021` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/controller/AlarmProcessController.java` | 接收报警处理请求，关联手表设备、老人及报警状态。 | 960 | `74c444dbaf540cfb2882c8fae5faf713c4c2da57b8bcd8e288e43f8eed446211` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/controller/CustomerController.java` | 提供监护人信息的查询、新增、修改及关联管理接口。 | 4138 | `b21b26b1b16103c259cfafea3f9ffc23111f4051548efa1dba08a6280cb779e6` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/controller/FamilyController.java` | 提供家属账号与老人档案关联、家属资料维护等接口。 | 7059 | `55d7351d60a24544e9a87bc664eb23bdea7fb16a9ed58da369c1c9d1cacce82e` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/controller/ImagesApi.java` | 提供图片上传和按文件名下载接口，图片目录由 local-path 配置。 | 4295 | `281e90697585db1d32470e46d01b551b1b8f494bc8acf4f4944ed129f7225da0` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/controller/LoginController.java` | 处理登录请求并返回认证结果及会话相关信息。 | 4502 | `d3e1e56168f33a45e74708e6de9c721734f433954cc06549a2b75952bed4cde6` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/controller/OldPersonController.java` | 提供老人档案的列表查询、详情读取和资料维护接口。 | 6382 | `e5a9efd5a65bfebddcfb250c18b39ffae3200101c647c30ff6ad124c32340446` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/controller/OldPersonDetailController.java` | 读写老人扩展档案资料的接口。 | 1228 | `4bed637a69767295869f5b673954f4311aa7670de5a44cbc37e5d5a4a77eac3a` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/controller/PicShowController.java` | 提供图片展示记录相关的 Web 接口。 | 1928 | `f10e7013ad25bed626133967ed364eb810826adafda30526cb6d8cf7a5b5f53f` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/controller/PositionController.java` | 查询与维护手表上报的位置记录。 | 1556 | `dae09557e8261e96dc4c65d5262f272dc94fee22b4237ae63461db9129c5ad25` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/controller/RatepreController.java` | 查询和维护手表上报的心率、血压记录。 | 3499 | `5c18eb31ef39535853e4094217fc1c250ad3079ccd173b9594a6693908e9c85a` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/controller/SaidController.java` | 管理公告留言或评论的读取与提交接口。 | 5291 | `645a50f0a61a0af0ad8aebd88979dfe8ba9f5b34f029a1b51161fc53525475e9` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/controller/StepController.java` | 查询与维护手表的步数及睡眠统计记录。 | 3515 | `d1ef6233243998a6e9fa75bad2098df7cf0ef798d19e6c53c775c3fd5b490d24` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/controller/TextController.java` | 提供公告与动态内容的查询、发布及编辑接口。 | 5605 | `a8cbbcd8bff540d210adaf2d61125f31f1ad5435345200887a9352d698b09804` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/controller/UserController.java` | 提供系统用户资料相关接口。 | 1225 | `9310f7c269610e7e6eda15eca260a4e7c8abc84edb60ffe3557d61cae3f04edc` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/controller/WatchInfoController.java` | 提供手表设备资料与绑定信息相关接口。 | 4195 | `fe7bcef647353fc25f2610cfba42325e1f8bf5bf125edec7ec995743c6314228` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/dao/AlarmProcessDao.java` | 报警处理记录的数据访问接口，声明查询与写入方法。 | 192 | `263c8afe0d0112a8ad4e86cf2b94b911d77e1aa7b305ac80f1d57fb5dcb5aeba` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/dao/AlarmProcessJdbcDao.java` | 报警处理记录的数据访问实现，使用 JDBC 执行数据库读写。 | 1144 | `fabde05302c3be41c7a381c40f31e90aaae7c158cb139f67c196c2f242a5877d` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/dao/CrudRepository.java` | 定义通用 JDBC 增删改查操作的基础接口。 | 196 | `450a930528504f66b42d1a135413eeefbc2cd8895a3d7c3eac8df32a5c542353` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/dao/CustomerDao.java` | 监护人的数据访问接口，声明查询与写入方法。 | 336 | `e0129a1cfc8ee207e510e99f1c62f89abdd8c591ace11b1b3c37115c771863c2` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/dao/CustomerJdbcDao.java` | 监护人的数据访问实现，使用 JDBC 执行数据库读写。 | 2486 | `1fdb71bbf9c20f9329daf737c13822288a27637a1f8ea04f56b0ce8c3999f5d7` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/dao/FamilyDao.java` | 家属的数据访问接口，声明查询与写入方法。 | 779 | `6d9a312b913c5fa70aef2976b62ee3212337cd5f82d18feab1f2cb958bf44c78` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/dao/FamilyJdbcDao.java` | 家属的数据访问实现，使用 JDBC 执行数据库读写。 | 6115 | `e6d20ed404819b88183af6b62c07cbe92183c089b0e228ad1cbf4b439def1ee3` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/dao/JdbcCom.java` | 提供 JDBC 操作所需的公共辅助实现。 | 223 | `d6613bea56f1093f33b415125e783fbfcce212f05904478d85085d578c9554e7` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/dao/NiceCountDao.java` | 点赞计数的数据访问接口，声明查询与写入方法。 | 249 | `5bb147941653dfa6ea2721b7e3d6582389f9543784a5381c81814aba8be8b51f` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/dao/NiceCountJdbcDao.java` | 点赞计数的数据访问实现，使用 JDBC 执行数据库读写。 | 1093 | `5a946eef9667a35993c1c635dd2641afb46cf05287fc9420d7c372c4c14b995f` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/dao/OldPersonDao.java` | 老人档案的数据访问接口，声明查询与写入方法。 | 371 | `e9d7431db73f06a9416dd54abf4793ae6d225eeb474e88142f1527fb2d52bd8d` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/dao/OldPersonDetailDao.java` | 老人扩展档案的数据访问接口，声明查询与写入方法。 | 209 | `e768038035497619efd19b9659a233b8849d50f27d7e369f869af8ed2781df76` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/dao/OldPersonDetailJdbcDao.java` | 老人扩展档案的数据访问实现，使用 JDBC 执行数据库读写。 | 1340 | `9446600ddd84b253b07fbdecd1b40e606771ae8c1cc30b2924d358a462c7f213` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/dao/OldPersonJdbcDao.java` | 老人档案的数据访问实现，使用 JDBC 执行数据库读写。 | 2743 | `906056c903e94ee953924c7612d5b36c48b11015f55cd7aab9f3ee4744770926` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/dao/PicDao.java` | 图片的数据访问接口，声明查询与写入方法。 | 216 | `7adc2a62004522a329c2164b0415878006f005856cb08ad18ba99446dec55166` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/dao/PicJdbcDao.java` | 图片的数据访问实现，使用 JDBC 执行数据库读写。 | 1055 | `c3677120f36d56244a7fa9a8548058b890b40b829fbd323a7eac22d4b3104d86` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/dao/PicShowDao.java` | 图片展示关联的数据访问接口，声明查询与写入方法。 | 159 | `c47edb44004a9dc5ed7833e2a61c3c5b2cbeba6231fb0561d6b654d014f7c8cd` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/dao/PicShowJdbcDao.java` | 图片展示关联的数据访问实现，使用 JDBC 执行数据库读写。 | 1018 | `72b2bfed4a7d7ac6af1b6ba8ce98d649719b3137fff4a45701f3a862c1813706` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/dao/PositionDao.java` | 定位记录的数据访问接口，声明查询与写入方法。 | 240 | `c9f5859fc282a1bcc02b4e02fc983ab46d288dbf544f2b3b2032200b54f01566` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/dao/PositionJdbcDao.java` | 定位记录的数据访问实现，使用 JDBC 执行数据库读写。 | 2034 | `2794e7c90c2d0d75e5ce866e2e1c161409da8b315fd75f76f38fa959624dcb59` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/dao/RatepreDao.java` | 心率血压记录的数据访问接口，声明查询与写入方法。 | 422 | `080cfe9878e3d17df3bfcfd325d8de04eb2a3a60fa3d2c466b02c1c25d3ee65f` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/dao/RatepreJdbcDao.java` | 心率血压记录的数据访问实现，使用 JDBC 执行数据库读写。 | 4723 | `5de46a2378c26ee8df2c8294dec418df85a8644198b4a2fb93c7a672d2734a8e` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/dao/SaidDao.java` | 留言评论的数据访问接口，声明查询与写入方法。 | 481 | `9ac7bd6d54a8d1d431e649e14a24257aec976c02b6cd00076e67899f2f983b1d` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/dao/SaidJdbcDao.java` | 留言评论的数据访问实现，使用 JDBC 执行数据库读写。 | 2732 | `62ac2860efeafb686132fb8847374cfc7f8147f0d90605181b40efff87d4febe` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/dao/StepDao.java` | 步数睡眠记录的数据访问接口，声明查询与写入方法。 | 356 | `b02e2650038bc952d2d5e92325ca7617aa3357b4dcb0a167348f2eecba1731c5` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/dao/StepJdbcDao.java` | 步数睡眠记录的数据访问实现，使用 JDBC 执行数据库读写。 | 3814 | `f4c006766bf1274f45d6a679e9c49bb15e396c1fde2fdb92223cdaffc2cdb303` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/dao/TextDao.java` | 公告动态的数据访问接口，声明查询与写入方法。 | 322 | `a80964306570f2368d4fcc463d440f40e73713eb7ab764d93b5137b7a9e44a32` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/dao/TextJdbcDao.java` | 公告动态的数据访问实现，使用 JDBC 执行数据库读写。 | 2122 | `a47e1bed7449062ab7337523c08803dc63202bc8b2dad071f31e85499b17e403` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/dao/UserDao.java` | 用户的数据访问接口，声明查询与写入方法。 | 255 | `5dd535ed8182c8be8c2ae8ddc2abdf86b6af2baa9cf2df48138aab1856f13f4d` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/dao/UserJdbcDao.java` | 用户的数据访问实现，使用 JDBC 执行数据库读写。 | 1633 | `1237b8f71dd950f9eff9f09819a65ddbe3478492f0d08b42b7e8cdbd78765410` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/dao/WatchInfoDao.java` | 手表设备的数据访问接口，声明查询与写入方法。 | 415 | `3df7cceceae14c1c2d91ef836f7e41adf4cc0d4582172ea293a915437f87534d` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/dao/WatchInfoJdbcDao.java` | 手表设备的数据访问实现，使用 JDBC 执行数据库读写。 | 2637 | `88d6b5bef75e316f56293671632dfe500c7c6da6736caf2ebd844658766b82c3` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/domain/AlarmProcess.java` | 报警事件记录的数据对象，保存状态、设备、老人、时间与位置等字段。 | 1179 | `df8da8162a0c41b8c13f05bbd73ac7512bb244df55edd04b3bf9bbe27a914543` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/domain/Customer.java` | 监护人资料的数据对象。 | 1335 | `9305a45a1be0241e28efb34c0c63393c3f600a156372426c94f0415909736d16` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/domain/Family.java` | 家属账号及家属与老人关联关系的数据对象。 | 1717 | `bf8eff80e80fa1f67be1afd8f5a69706cf12d736a34e5ac84fed009d5e4fa50a` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/domain/FamilyDto.java` | FamilyDto 数据传输对象，承载“FamilyDto”相关的请求、查询结果或关联字段。 | 2040 | `ce4a073daa40c8f6d019d067161e758f3dad4489118893f9afb9eaf98859d434` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/domain/FamilyDto2.java` | FamilyDto2 数据传输对象，承载“FamilyDto2”相关的请求、查询结果或关联字段。 | 1565 | `6514c71c8ce07f96daafb584cf768f0f202c44b8681cbe13e223804089a085cb` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/domain/NiceCount.java` | 点赞或计数关系的数据对象。 | 594 | `228fa4ad5c9dddc3738a5124e7c6bf573b01140a84fc7d4eead2365d9bec4c10` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/domain/OldDto2.java` | OldDto2 数据传输对象，承载“OldDto2”相关的请求、查询结果或关联字段。 | 411 | `73f4e53fd320800a90a69d4ec469ffd333272073baf2f0b173e6a9bae7c1774d` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/domain/OldPerson.java` | 老人基础档案的数据对象。 | 2764 | `23b48e5ef48ec4ad36f6b21ffe76e736304a2dc574d9ed3b153262ae02e3cb45` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/domain/OldPersonDetail.java` | 老人扩展档案及健康相关资料的数据对象。 | 4024 | `feb6c0e0e4d0290ce7067f08b431d465c7e447bdb80b8c6580b49dcb73da3c43` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/domain/Pic.java` | 上传图片文件及存储路径的数据对象。 | 387 | `6bde4a6963d22e9cf26cae0a3486635306b657885aefa707d42f12765843a0e6` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/domain/PicShow.java` | 公告或动态中图片展示关联的数据对象。 | 392 | `04d7f8b68346694d050d4d41d7ad785be899102cb703589887fb9e63c6ff0f71` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/domain/PositionDto.java` | PositionDto 数据传输对象，承载“PositionDto”相关的请求、查询结果或关联字段。 | 1156 | `f34df49f04c7ca9a20b2b45c52f98d5c8a5c7018fe493aba0739b89090d2b80e` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/domain/RatepreDto.java` | RatepreDto 数据传输对象，承载“RatepreDto”相关的请求、查询结果或关联字段。 | 1355 | `07ed45a6596d3591d3232c67536d1e7a734574e5ddace72d78a3dba1785f285b` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/domain/Said.java` | 留言评论及回复内容的数据对象。 | 1793 | `872122fd673a3943e8aed957703fd3044a06fbd0d6005def3b3a1a522d8f190a` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/domain/Said2.java` | Said2 数据传输对象，承载“Said2”相关的请求、查询结果或关联字段。 | 2052 | `5e5cc78a836614eb537ef5dc651157a033b8d10125f09a849d2a74f30e3e4d57` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/domain/SaidDto.java` | SaidDto 数据传输对象，承载“SaidDto”相关的请求、查询结果或关联字段。 | 1515 | `2eff56309ce4e58be7a9c261c88dfbdee198a39ae56f0fa18d935b21928db8d4` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/domain/StepDto.java` | StepDto 数据传输对象，承载“StepDto”相关的请求、查询结果或关联字段。 | 1241 | `1c7ca16a92f2b8255d96a48f7e1a14cfcb24a2d7ce6b8f0e91b4c905e1adc90e` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/domain/SysUser.java` | 系统用户、认证字段及角色关联的数据对象。 | 2825 | `d25b66ccac44f187866925cab0bbe01098c289a5f5f2df5e9c8209f7f1c6e8f3` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/domain/Text.java` | 公告或动态内容的数据对象。 | 873 | `3539e2ddb5d62da850e3088742b501b357bbdcc7c8a7cf2d51422abf7d3c21cf` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/domain/Users.java` | 登录用户资料的数据对象。 | 931 | `c5884203809ca51f4b77e5b6c318fedffdb24231ab3f1005bc8ce67145c9c570` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/domain/WatchDto.java` | WatchDto 数据传输对象，承载“WatchDto”相关的请求、查询结果或关联字段。 | 1177 | `2ea42e2c81940d43b2966596a2f1ac8845e4e68338afa03e0e8081dad4dd01d4` |
+| `智慧养老手表管理系统/careold/src/main/java/com/example/careold/domain/WatchInfo.java` | 手表设备标识与老人绑定信息的数据对象。 | 1024 | `9035efb83be33bc0a389c3d6caceb6c3632b8cc7e6588fffbdc87de08ed2f493` |
+| `智慧养老手表管理系统/careold/src/main/resources/application.properties` | 配置后端端口、Solr 地址和本机图片存储目录。 | 173 | `ccf1634a4adaa82dce11c1b8240f1d43eb4967219acd495b3d2ab60b34e6d919` |
+| `智慧养老手表管理系统/careold/src/main/resources/applicationContext.xml` | 声明 MySQL 数据源、JdbcTemplate、HBase 配置及上传大小限制。 | 1258 | `2c64e0a9dc4d66fc4945668f84532c8525b04b22a25b54dd45a8df4c5e8a31c0` |
+| `智慧养老手表管理系统/careold/src/main/resources/hbase-site.xml` | 设置 HBase ZooKeeper 主机和客户端端口。 | 295 | `40e381722e4317afe0b1a7f6c59ba590c64b9e5f4f8f21147c35343d0eea81c7` |
+| `智慧养老手表管理系统/careold/src/test/java/com/example/careold/CareoldApplicationTests.java` | CareoldApplicationTests：后端测试源码，覆盖项目启动或测试辅助逻辑。 | 528 | `c0384e4d972ef3dd9eb41c21ea0986b0d7625ee9cef1eb25d583c01ce74eaebe` |
+| `智慧养老手表管理系统/careold/src/test/java/com/example/careold/test.java` | test：后端测试源码，覆盖项目启动或测试辅助逻辑。 | 2812 | `273f17d09f1a1b6b7da4e8d208a06cd5c195fde5d019fe7c9787b8ed1fa562ff` |
+| `智慧养老手表管理系统/old.sql` | MySQL 表结构与演示记录转储；包含清表语句和项目演示数据。 | 20319 | `7d7153a7309c18a10cb1ea0d83e12e830038aee4775e2dc84d00a01014fa6fc9` |
+| `智慧养老手表管理系统/oldIot/.babelrc` | 配置 ES2015 与 Vue JSX 代码转换插件。 | 230 | `c1c296c49c8508d2a8e3968b8c79f88989b3b00fbe4397e74d04ab01ce85ec66` |
+| `智慧养老手表管理系统/oldIot/.editorconfig` | 统一编辑器的缩进与换行规则。 | 147 | `f000102bd4c1a767896b393391d11934a6c1deba7d610c6d36c6686514d7222a` |
+| `智慧养老手表管理系统/oldIot/.gitignore` | 列出此子项目不纳入版本管理的生成文件。 对应 `.gitignore`，位于 `智慧养老手表管理系统/oldIot` 目录。 | 154 | `e70e1f662e5884717e7e6f1a5c98274df7b2ca6f7afd67d993495dc6b43bd8f2` |
+| `智慧养老手表管理系统/oldIot/.postcssrc.js` | 配置前端 CSS 后处理插件。 | 246 | `703d7433023eaadb2e2a0fd2b1171f06e4ddccc34d99dac6b677505607e2c466` |
+| `智慧养老手表管理系统/oldIot/build/build.js` | 执行生产构建、清理输出目录并生成发布文件。 | 1198 | `4b7582085aa044cf03f9c0fae6146f34745ff28a311c5e5f71fd8743c25e315f` |
+| `智慧养老手表管理系统/oldIot/build/check-versions.js` | 检查 Node.js 与 npm 版本是否满足项目声明。 | 1290 | `98ee282d7c478976e4fd7c80d8896311093468e96f57071269364e03c8a3d0c2` |
+| `智慧养老手表管理系统/oldIot/build/logo.png` | Webpack 开发服务器使用的模板标志图片。 | 6849 | `03d6d6da2545d3b3402855b8e721b779abaa87d113e69d9329ea6ea6325a83ce` |
+| `智慧养老手表管理系统/oldIot/build/utils.js` | 提供构建路径、样式加载器和 CSS 提取等共用设置。 | 2587 | `e15d0b034c569002f71f1fb6108aac7c0b81e1593574dc52319981468fc79277` |
+| `智慧养老手表管理系统/oldIot/build/vue-loader.conf.js` | 设置 .vue 单文件组件的加载与样式处理选项。 | 553 | `0c5810d67d1cab624e2d296da922c143117397b09f06aa0698df4d8b4e5c1793` |
+| `智慧养老手表管理系统/oldIot/build/webpack.base.conf.js` | Webpack 开发与生产构建共用的入口、解析和加载规则。 | 2085 | `340c87e3cd2c7b204196ac7c7daeeb1ad688226f10065f7df6598fc44ebb4be2` |
+| `智慧养老手表管理系统/oldIot/build/webpack.dev.conf.js` | 启动本地热更新开发服务器并加载开发环境插件。 | 3020 | `23d34908af0cd6f868652c91f2efce4406e186254c49153c591ee499fe1e49ed` |
+| `智慧养老手表管理系统/oldIot/build/webpack.prod.conf.js` | 配置压缩、拆包、资源复制及生产构建输出。 | 5055 | `21200a1ab73821621eb5b0c43fc7ae801f999ab8a74e4e8de05a579eda2a236f` |
+| `智慧养老手表管理系统/oldIot/config/dev.env.js` | 定义前端开发环境变量。 | 156 | `75bbe2fc1448887e4ed2dd9e19b0a4ab9bc1be043afc6f7ade793f2ba564581e` |
+| `智慧养老手表管理系统/oldIot/config/index.js` | index：前端运行环境配置。 | 2115 | `b4f224e5c678095bc40d8ac5fa610f5924f5351ae499470bf66089e523d014d0` |
+| `智慧养老手表管理系统/oldIot/config/prod.env.js` | 定义前端生产环境变量。 | 61 | `1b741a7ee79f2015fcc78f47e703bda79d4ea55ad0ade2f2db0ab5f2fb79f907` |
+| `智慧养老手表管理系统/oldIot/index.html` | 前端 HTML 挂载页，加载百度地图脚本；地图 Key 需要自行配置。 | 373 | `8632e7cf736348bbd4621030c90ac3b4e00583c6ef23fb89e74508c1227bec13` |
+| `智慧养老手表管理系统/oldIot/package-lock.json` | 锁定 npm 依赖解析结果，供重复安装使用。 | 403417 | `47221a8e13aee35d9d845da2c5474b95869d740ce67bdc8a9db7ea38749befbe` |
+| `智慧养老手表管理系统/oldIot/package.1.json` | package.json 的历史副本，内容作为独立文件保留。 | 2014 | `48c831e2716224dce59b9aacacb38216487ff3a249e438321664a4406f28b772` |
+| `智慧养老手表管理系统/oldIot/package.json` | 声明 Vue 前端依赖及开发服务器、生产构建命令。 | 2014 | `48c831e2716224dce59b9aacacb38216487ff3a249e438321664a4406f28b772` |
+| `智慧养老手表管理系统/oldIot/README.md` | 随附 Vue/Webpack 项目的基础安装和启动模板说明。 | 463 | `2a71ca535fe92b2ba4a32ca0073104bfada0eede6d93abccf15ddaa6a46e181d` |
+| `智慧养老手表管理系统/oldIot/src/App.vue` | 前端根组件，承载路由视图。 | 316 | `9611e479e1b4b2990070a3e6ff0fac52cd2d12b19e4aa8a23cf3c276c432eda3` |
+| `智慧养老手表管理系统/oldIot/src/assets/css/index.css` | 全局基础样式。 | 109 | `51677ae021575fc94e99388ca9d1fec4179f711db2c4393346d44e79b26a7d72` |
+| `智慧养老手表管理系统/oldIot/src/assets/img/003220yo8f0eoylj7lv8ly.jpg` | 前端图片素材；此文件由页面按需显示。 对应 `003220yo8f0eoylj7lv8ly.jpg`，位于 `智慧养老手表管理系统/oldIot/src/assets/img` 目录。 | 281892 | `36b0104d50177f0393397fa52a018762d2fd55f17215047371aacec31b74bc29` |
+| `智慧养老手表管理系统/oldIot/src/assets/img/1.jpg` | 前端图片素材；此文件由页面按需显示。 对应 `1.jpg`，位于 `智慧养老手表管理系统/oldIot/src/assets/img` 目录。 | 22585 | `818dc628999e3e90fda0137cde6f256bea71bb8fafdc63a53968b4036c2639af` |
+| `智慧养老手表管理系统/oldIot/src/assets/img/10291153_201326800000_2.jpg` | 前端图片素材；此文件由页面按需显示。 对应 `10291153_201326800000_2.jpg`，位于 `智慧养老手表管理系统/oldIot/src/assets/img` 目录。 | 352945 | `6f5df95aaa18f9cb743b31c2e0f2537f4b88425ad6997e356443c1dd249d655b` |
+| `智慧养老手表管理系统/oldIot/src/assets/img/2.jpg` | 前端图片素材；此文件由页面按需显示。 对应 `2.jpg`，位于 `智慧养老手表管理系统/oldIot/src/assets/img` 目录。 | 28140 | `c644a520fda1a67ae10c34f0a94883efbfc8f15d98bb89dffae2d7121f3c614c` |
+| `智慧养老手表管理系统/oldIot/src/assets/img/3.jpg` | 前端图片素材；此文件由页面按需显示。 对应 `3.jpg`，位于 `智慧养老手表管理系统/oldIot/src/assets/img` 目录。 | 34770 | `fcedc7d5c5bafa484215c52708dd67d8eb14024e1dae1c5a3ba6f82873981107` |
+| `智慧养老手表管理系统/oldIot/src/assets/img/3076e752bafeff063c8bb6a8affb72c3.jpeg` | 前端图片素材；此文件由页面按需显示。 对应 `3076e752bafeff063c8bb6a8affb72c3.jpeg`，位于 `智慧养老手表管理系统/oldIot/src/assets/img` 目录。 | 7711 | `a7a1feac6a316e9f17890b8782dd4dfd2ee53de78d3f5bf262a8c8a1ee3582c9` |
+| `智慧养老手表管理系统/oldIot/src/assets/img/4.jpg` | 前端图片素材；此文件由页面按需显示。 对应 `4.jpg`，位于 `智慧养老手表管理系统/oldIot/src/assets/img` 目录。 | 27698 | `1aa9b0fe1a26137f999fa102f3b68c200dd040353f0e38d8278cd7a2b0591288` |
+| `智慧养老手表管理系统/oldIot/src/assets/img/46R58PICtdF_1024.jpg` | 前端图片素材；此文件由页面按需显示。 对应 `46R58PICtdF_1024.jpg`，位于 `智慧养老手表管理系统/oldIot/src/assets/img` 目录。 | 87294 | `6c68ac518e4b316882076a501fcc0590b169c266d10f87100f32334e85a7cf3c` |
+| `智慧养老手表管理系统/oldIot/src/assets/img/5.jpg` | 前端图片素材；此文件由页面按需显示。 对应 `5.jpg`，位于 `智慧养老手表管理系统/oldIot/src/assets/img` 目录。 | 11098 | `abfcd5e6bc9660a8a2aa70b421f2c32f16663f11e67df85d028d6a55f06db430` |
+| `智慧养老手表管理系统/oldIot/src/assets/img/6733828_144038516360_2.jpg` | 前端图片素材；此文件由页面按需显示。 对应 `6733828_144038516360_2.jpg`，位于 `智慧养老手表管理系统/oldIot/src/assets/img` 目录。 | 284915 | `eaf203b59d32aa950a2219e98a65410c064513db55f96961b70d5ee4ded035b4` |
+| `智慧养老手表管理系统/oldIot/src/assets/img/7487939_090818211000_2.jpg` | 前端图片素材；此文件由页面按需显示。 对应 `7487939_090818211000_2.jpg`，位于 `智慧养老手表管理系统/oldIot/src/assets/img` 目录。 | 127422 | `7a009a7e3165ce9931da171aaf19b27d0dbafda174e6aae0a425e59becc1f068` |
+| `智慧养老手表管理系统/oldIot/src/assets/img/92q58PICeSI_1024.jpg` | 前端图片素材；此文件由页面按需显示。 对应 `92q58PICeSI_1024.jpg`，位于 `智慧养老手表管理系统/oldIot/src/assets/img` 目录。 | 70940 | `98981a9d8610e00ebb4a63e4eb83a611f5d590db0135588cb8775d546f84547b` |
+| `智慧养老手表管理系统/oldIot/src/assets/img/a7691515_s.jpg` | 前端图片素材；此文件由页面按需显示。 对应 `a7691515_s.jpg`，位于 `智慧养老手表管理系统/oldIot/src/assets/img` 目录。 | 118297 | `7f139a9734d564618daca1beb2ed1a26d3aba54a5ae650da617e7da8a6f0c714` |
+| `智慧养老手表管理系统/oldIot/src/assets/img/hanxin.jpg` | 前端图片素材；此文件由页面按需显示。 对应 `hanxin.jpg`，位于 `智慧养老手表管理系统/oldIot/src/assets/img` 目录。 | 25786 | `b831b3216cdbf39700e7fa27f72226f82889528dfe9d512105faa89a0825f2ab` |
+| `智慧养老手表管理系统/oldIot/src/assets/img/hua.jpg` | 前端图片素材；此文件由页面按需显示。 对应 `hua.jpg`，位于 `智慧养老手表管理系统/oldIot/src/assets/img` 目录。 | 30285 | `7b1e2a5e1931981c4d2df05d7f954cd2698051313702a73f1b4ebdade289c47b` |
+| `智慧养老手表管理系统/oldIot/src/assets/img/image.jpg` | 前端图片素材；此文件由页面按需显示。 对应 `image.jpg`，位于 `智慧养老手表管理系统/oldIot/src/assets/img` 目录。 | 35726 | `c9eb52c618f726b9e662bfe76fc3c3f610ce9d3eb10c733bca77c9775d43dbee` |
+| `智慧养老手表管理系统/oldIot/src/assets/img/kai.jpg` | 前端图片素材；此文件由页面按需显示。 对应 `kai.jpg`，位于 `智慧养老手表管理系统/oldIot/src/assets/img` 目录。 | 15215 | `390baa1c74df0d56dce2eddcf9469c281ed9669074ffdd9357b38027c8f4a457` |
+| `智慧养老手表管理系统/oldIot/src/assets/img/kl.jpg` | 前端图片素材；此文件由页面按需显示。 对应 `kl.jpg`，位于 `智慧养老手表管理系统/oldIot/src/assets/img` 目录。 | 36477 | `763c1b269397df50d5ba0e7d175a0cfafc84a8caf49c0547131350755269bf9e` |
+| `智慧养老手表管理系统/oldIot/src/assets/img/QQ图片20170101150550.jpg` | 前端图片素材；此文件由页面按需显示。 对应 `QQ图片20170101150550.jpg`，位于 `智慧养老手表管理系统/oldIot/src/assets/img` 目录。 | 19450 | `be4d5b902e12273bec12e4986d32280ad0410b201ffc8529e79461c37e79e207` |
+| `智慧养老手表管理系统/oldIot/src/assets/img/QQ图片20170309105911.jpg` | 前端图片素材；此文件由页面按需显示。 对应 `QQ图片20170309105911.jpg`，位于 `智慧养老手表管理系统/oldIot/src/assets/img` 目录。 | 141168 | `ba93951e7a394e98050e5506c48ec93f55cd9a4f3c3e2e3fe2127f736a22db4b` |
+| `智慧养老手表管理系统/oldIot/src/assets/img/QQ图片20170309105920.jpg` | 前端图片素材；此文件由页面按需显示。 对应 `QQ图片20170309105920.jpg`，位于 `智慧养老手表管理系统/oldIot/src/assets/img` 目录。 | 188453 | `09ab03c980a1fe7a997d30297e01dc6bb74703e32b3720fa8630a036d8e37cc0` |
+| `智慧养老手表管理系统/oldIot/src/assets/img/QQ图片20170309105936.jpg` | 前端图片素材；此文件由页面按需显示。 对应 `QQ图片20170309105936.jpg`，位于 `智慧养老手表管理系统/oldIot/src/assets/img` 目录。 | 167875 | `10a727c0e9fc922d69f7a6a2e5e8fe026939b916945ab9434a2094a551c9d007` |
+| `智慧养老手表管理系统/oldIot/src/assets/img/QQ图片20170309105944.jpg` | 前端图片素材；此文件由页面按需显示。 对应 `QQ图片20170309105944.jpg`，位于 `智慧养老手表管理系统/oldIot/src/assets/img` 目录。 | 156608 | `d129cfd9e413f4d8515b74aa73b2f0b1b6536a8eaddd079e0f9006f7d20a724f` |
+| `智慧养老手表管理系统/oldIot/src/assets/img/QQ图片20170309105954.jpg` | 前端图片素材；此文件由页面按需显示。 对应 `QQ图片20170309105954.jpg`，位于 `智慧养老手表管理系统/oldIot/src/assets/img` 目录。 | 119800 | `89c2810f78036a60cd08275054740278650e867170f6845655269706a80b87a4` |
+| `智慧养老手表管理系统/oldIot/src/assets/img/timg (1).jpg` | 前端图片素材；此文件由页面按需显示。 对应 `timg (1).jpg`，位于 `智慧养老手表管理系统/oldIot/src/assets/img` 目录。 | 71720 | `2ca89037d32a1e7ffe0d3f510023518ae17e18ad5a5c16762d70fd7e1c8fee20` |
+| `智慧养老手表管理系统/oldIot/src/assets/img/timg.jpg` | 前端图片素材；此文件由页面按需显示。 对应 `timg.jpg`，位于 `智慧养老手表管理系统/oldIot/src/assets/img` 目录。 | 30139 | `de95858ab42e24ee4dc67f82cb356e5fc0998f5c21e2ccb8298af69b6681c081` |
+| `智慧养老手表管理系统/oldIot/src/assets/img/u=3300305952,1328708913&fm=26&gp=0.jpg` | 前端图片素材；此文件由页面按需显示。 对应 `u=3300305952,1328708913&fm=26&gp=0.jpg`，位于 `智慧养老手表管理系统/oldIot/src/assets/img` 目录。 | 16621 | `cab72e4d96adbc7dd538ce813ed736d414816e4e26d323ecbbd28ad9825b4881` |
+| `智慧养老手表管理系统/oldIot/src/assets/img/zhaoyun.png` | 前端图片素材；此文件由页面按需显示。 对应 `zhaoyun.png`，位于 `智慧养老手表管理系统/oldIot/src/assets/img` 目录。 | 19378 | `ffc5519ea906e872203eec8d8b0f59b310578f3c1886eba8ecf6d57f95fbd6bf` |
+| `智慧养老手表管理系统/oldIot/src/assets/img/下载 (1).jpg` | 前端图片素材；此文件由页面按需显示。 对应 `下载 (1).jpg`，位于 `智慧养老手表管理系统/oldIot/src/assets/img` 目录。 | 38328 | `7863234a99b3982ca8105c6274a774ed984590d8d35d8dc0f7c463a2d82cfd36` |
+| `智慧养老手表管理系统/oldIot/src/components/FamilySlider.1.vue` | 家属端侧边导航历史副本。 | 1921 | `69f8e26f7e9b32fb9934017d342482e4dc2ea4b6c70741347430dfd9b61c1cc9` |
+| `智慧养老手表管理系统/oldIot/src/components/FamilySlider.vue` | 家属端侧边导航组件，组织家属可访问的功能入口。 | 1972 | `3fe2cc4e61af387df5a55e1afb1c4f10c6defdf43bda80962870609c043c33f8` |
+| `智慧养老手表管理系统/oldIot/src/components/Header.vue` | 前端顶部导航与用户操作区域组件。 | 2876 | `34ca1699535581bc77e44f51dfb2f0e2639107a260263c5ece7a0a79431a9007` |
+| `智慧养老手表管理系统/oldIot/src/components/Slider.1.vue` | 管理端侧边导航的历史副本。 | 2709 | `5abb1dec8c8c62273813c161b23158e821ca8d60196ddc49fd7d041a121e7b2b` |
+| `智慧养老手表管理系统/oldIot/src/components/Slider.vue` | 管理端侧边导航组件，组织后台功能入口。 | 2515 | `9d5ab3f53581c3ab42c2c6c3d6b97a83effb6c0951a39f7e8ac110d2ea443ba1` |
+| `智慧养老手表管理系统/oldIot/src/main.js` | 挂载 Vue 根实例、路由、Vuex、Element UI、Axios 与 ECharts。 | 586 | `fab280959c5d32f6a56e10323e59df7d9d455d054363fd27561706d0ea1ae4c7` |
+| `智慧养老手表管理系统/oldIot/src/router.js` | 前端路由配置。 | 3939 | `16b7525ba1aa39ff47b5e775f7056b7195ff060f0ccbb6a1f35644fe683341cf` |
+| `智慧养老手表管理系统/oldIot/src/router2.js` | 备用路由实现；当前 main.js 未引用此文件。 | 2510 | `8dc6a5c07ed01e7fc9b707322505c3e31300d78c95e1eca156c446f957602de5` |
+| `智慧养老手表管理系统/oldIot/src/store.js` | 创建 Vuex store，集中保存前端共享状态。 | 753 | `8d894b10b5f9bac31de6b6c9d8012a63e757fd9600b85bd761fce26268f78189` |
+| `智慧养老手表管理系统/oldIot/src/views/annex.vue` | 附件管理页 | 3890 | `f84bc513d48f84c32796c8332d74959151f23c06c2a28e3937eaed938579352c` |
+| `智慧养老手表管理系统/oldIot/src/views/customer.vue` | 监护人管理页 | 14004 | `b44bb88fa26c63ebc634e78142a2b91d93cc7b797a72fae3aa9c0215ee681c1f` |
+| `智慧养老手表管理系统/oldIot/src/views/family.vue` | 家属关系管理页 | 13725 | `e3bfef7519ca85b9752db14a7027f1c9aee66e68a0fb117e00321b8d8c93eee2` |
+| `智慧养老手表管理系统/oldIot/src/views/familyHome.vue` | 家属端主框架 | 5832 | `67eba799bfc7c3c3cd10c1a01270e7a641a354d2f457bb1f24e950dbb481961a` |
+| `智慧养老手表管理系统/oldIot/src/views/familyMain.1.vue` | 家属端首页 对应 `familyMain.1.vue`，位于 `智慧养老手表管理系统/oldIot/src/views` 目录。 | 3201 | `4d37a0fba5930efc2fae7431729a36408aec48273addf5182878a1cafc4b48f1` |
+| `智慧养老手表管理系统/oldIot/src/views/familyMain.vue` | 家属端首页 对应 `familyMain.vue`，位于 `智慧养老手表管理系统/oldIot/src/views` 目录。 | 7061 | `70aa94f83d1d95ca1ffec323a368d14e56e7160ba35005b8bd78e435a9fa3e80` |
+| `智慧养老手表管理系统/oldIot/src/views/Home.vue` | 管理端主框架 | 5690 | `0ff4f052061eea79d6840adfa79a8d6cb61d2b657c117220a0fbf83d420a7793` |
+| `智慧养老手表管理系统/oldIot/src/views/Home2.vue` | Home2 前端视图组件。 | 5361 | `74d9444c56d126cfc8119037d8094dc619226e0b5002043df5cabcffb46b349d` |
+| `智慧养老手表管理系统/oldIot/src/views/life.vue` | 生活信息页 | 12036 | `d04c92caabfbacb9af6e2761262181d51946346d4741c0f9b72673bdb2160387` |
+| `智慧养老手表管理系统/oldIot/src/views/Login.1.vue` | 登录页 对应 `Login.1.vue`，位于 `智慧养老手表管理系统/oldIot/src/views` 目录。 | 4097 | `e4fd61cd50f5da77f173e04d4b8aabd0aa142845fb52cacd0f70cc5ecb41939b` |
+| `智慧养老手表管理系统/oldIot/src/views/Login.2.vue` | 登录页 对应 `Login.2.vue`，位于 `智慧养老手表管理系统/oldIot/src/views` 目录。 | 4097 | `e4fd61cd50f5da77f173e04d4b8aabd0aa142845fb52cacd0f70cc5ecb41939b` |
+| `智慧养老手表管理系统/oldIot/src/views/Login.vue` | 登录页 对应 `Login.vue`，位于 `智慧养老手表管理系统/oldIot/src/views` 目录。 | 4215 | `0a987b2731b5a7ee8e903ff8d88647ab36fd175e0c92c3fb49921bd1a8a46a72` |
+| `智慧养老手表管理系统/oldIot/src/views/LoginShiro.vue` | Shiro 登录页 | 3534 | `1ce18b8b1f1a8eb425abc91e6ae2d5d538cac9f3249845d8d2e1099a589e3e76` |
+| `智慧养老手表管理系统/oldIot/src/views/main.vue` | 管理端首页 | 8476 | `7fac6d88977c7730e6b54ac6eb86294c6db76a9e0f0d7ce34e9a96c3205f11f8` |
+| `智慧养老手表管理系统/oldIot/src/views/me.1.vue` | 个人资料页 对应 `me.1.vue`，位于 `智慧养老手表管理系统/oldIot/src/views` 目录。 | 10021 | `8aed4944d260652741c065d997c02171e683847f4c5803fa0d9c4818ea6005b2` |
+| `智慧养老手表管理系统/oldIot/src/views/me.2.vue` | 个人资料页 对应 `me.2.vue`，位于 `智慧养老手表管理系统/oldIot/src/views` 目录。 | 9994 | `d37c5e76aef389bccda421bd8be2d58d7255867e8a63ac161f0b62b00ad89662` |
+| `智慧养老手表管理系统/oldIot/src/views/me.vue` | 个人资料页 对应 `me.vue`，位于 `智慧养老手表管理系统/oldIot/src/views` 目录。 | 11937 | `64bd505f3273389e985911830156611c624a59487af281d9fa0f2601c9979e98` |
+| `智慧养老手表管理系统/oldIot/src/views/person.vue` | 老人档案管理页 | 18814 | `e022884311c2c756f1b3d0913bf44d162d64b4b7536b7dfdaf8acd797bd26657` |
+| `智慧养老手表管理系统/oldIot/src/views/position.vue` | 管理端定位记录页 | 12915 | `128d5c8e37e65871e31743ef10ae63ca08f0004c0f79edf3081a7610d04762dd` |
+| `智慧养老手表管理系统/oldIot/src/views/positionfamily.vue` | 家属端定位记录页 | 12753 | `db5bd01439fb888a60a178928fbff2e3bc74b99b83caa058ae8d361cd80d5f70` |
+| `智慧养老手表管理系统/oldIot/src/views/ratepre.vue` | 管理端心率血压记录页 | 14030 | `260a9e59baec745f52b6c7da58facc97e6ae4c492dce58ce10f6c82b8380ccee` |
+| `智慧养老手表管理系统/oldIot/src/views/rateprefamily.vue` | 家属端心率血压记录页 | 13694 | `a6de1c1b1b3acb6c1247e84cc13678e6e835208ac5db7a251b607344f05c9e32` |
+| `智慧养老手表管理系统/oldIot/src/views/rights.vue` | 权限管理页 | 9418 | `facb8f50407d3642a8e6eff71ba0227908f5954e0b300a80191f2d4f931d2ee1` |
+| `智慧养老手表管理系统/oldIot/src/views/roles.vue` | 角色管理页 | 12307 | `6dc4ecbd80754293b4ddbefae3ad6e4562621f6883e3faa1b501f61cc755456f` |
+| `智慧养老手表管理系统/oldIot/src/views/said.vue` | 留言展示页 | 11691 | `0afac5a7880ed97801cd416ef1e8cea675420c6624a4f2b70ec989c38d198834` |
+| `智慧养老手表管理系统/oldIot/src/views/saidOperation.vue` | 留言管理页 | 12263 | `a7f17725e73c89f2a3efd370244d18976982c099c8de29c1a318841cb67008a1` |
+| `智慧养老手表管理系统/oldIot/src/views/step.vue` | 管理端睡眠步数页 | 11884 | `d07833b19edab89456733562344ba3ab1bce14974a0f1d034389212c7eb22371` |
+| `智慧养老手表管理系统/oldIot/src/views/stepfamily.vue` | 家属端睡眠步数页 | 10022 | `f5b10a0aeedf122fabfcfb30eede0a3d12c8c4e848d9cd7c4c0f934fe06742ed` |
+| `智慧养老手表管理系统/oldIot/src/views/text.vue` | 动态编辑页 | 4935 | `c8073b0c3a7768218474ec0a00d8bfc8bb66a89491c6c2f900c3c6df25ba2c02` |
+| `智慧养老手表管理系统/oldIot/src/views/textMain.vue` | 家属端动态展示页 | 7557 | `85207568b28b1bf3e80bafde5894a8a09bef78cb9f696e32d4c360d1a73f14d3` |
+| `智慧养老手表管理系统/oldIot/src/views/textMainUser.vue` | 管理端动态展示页 | 6856 | `2cf8f1e7688f4d2932485e71ae208eab1b63fd9d8de5152dad95b1178b9da760` |
+| `智慧养老手表管理系统/oldIot/src/views/textOpt.vue` | 动态操作页 | 7527 | `7eead1b5a192f06bdcf2d72ba482f4dd13e07b03425d31b06b322c9d637e4099` |
+| `智慧养老手表管理系统/oldIot/src/views/textTwo.vue` | 动态列表页 | 3743 | `8e953bd52c4fa77e8be6a4d1b1567e98241a4dc3e4c72d1a6b598e3e05a7297d` |
+| `智慧养老手表管理系统/oldIot/src/views/warning.vue` | 报警信息页 | 12221 | `74dd00770eeb9ad882be07f72912a032fa2b396f2edf85680ad4319e57673778` |
+| `智慧养老手表管理系统/oldIot/src/views/watch.vue` | 手表设备管理页 | 12473 | `e02957cc3b195e5b74a8f33f5fea041e111416123766378316c8b0cd7f42f182` |
+| `智慧养老手表管理系统/oldIot/static/.gitkeep` | 占位文件，用于保留空的静态资源目录。 | 0 | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| `智慧养老手表管理系统/oldIot/static/img/003220yo8f0eoylj7lv8ly.jpg` | 项目界面所用的静态图片资源。 对应 `003220yo8f0eoylj7lv8ly.jpg`，位于 `智慧养老手表管理系统/oldIot/static/img` 目录。 | 281892 | `36b0104d50177f0393397fa52a018762d2fd55f17215047371aacec31b74bc29` |
+| `智慧养老手表管理系统/oldIot/static/img/1.jpg` | 项目界面所用的静态图片资源。 对应 `1.jpg`，位于 `智慧养老手表管理系统/oldIot/static/img` 目录。 | 22585 | `818dc628999e3e90fda0137cde6f256bea71bb8fafdc63a53968b4036c2639af` |
+| `智慧养老手表管理系统/oldIot/static/img/10291153_201326800000_2.jpg` | 项目界面所用的静态图片资源。 对应 `10291153_201326800000_2.jpg`，位于 `智慧养老手表管理系统/oldIot/static/img` 目录。 | 352945 | `6f5df95aaa18f9cb743b31c2e0f2537f4b88425ad6997e356443c1dd249d655b` |
+| `智慧养老手表管理系统/oldIot/static/img/2.jpg` | 项目界面所用的静态图片资源。 对应 `2.jpg`，位于 `智慧养老手表管理系统/oldIot/static/img` 目录。 | 28140 | `c644a520fda1a67ae10c34f0a94883efbfc8f15d98bb89dffae2d7121f3c614c` |
+| `智慧养老手表管理系统/oldIot/static/img/3.jpg` | 项目界面所用的静态图片资源。 对应 `3.jpg`，位于 `智慧养老手表管理系统/oldIot/static/img` 目录。 | 34770 | `fcedc7d5c5bafa484215c52708dd67d8eb14024e1dae1c5a3ba6f82873981107` |
+| `智慧养老手表管理系统/oldIot/static/img/3076e752bafeff063c8bb6a8affb72c3.jpeg` | 项目界面所用的静态图片资源。 对应 `3076e752bafeff063c8bb6a8affb72c3.jpeg`，位于 `智慧养老手表管理系统/oldIot/static/img` 目录。 | 7711 | `a7a1feac6a316e9f17890b8782dd4dfd2ee53de78d3f5bf262a8c8a1ee3582c9` |
+| `智慧养老手表管理系统/oldIot/static/img/4.jpg` | 项目界面所用的静态图片资源。 对应 `4.jpg`，位于 `智慧养老手表管理系统/oldIot/static/img` 目录。 | 27698 | `1aa9b0fe1a26137f999fa102f3b68c200dd040353f0e38d8278cd7a2b0591288` |
+| `智慧养老手表管理系统/oldIot/static/img/46R58PICtdF_1024.jpg` | 项目界面所用的静态图片资源。 对应 `46R58PICtdF_1024.jpg`，位于 `智慧养老手表管理系统/oldIot/static/img` 目录。 | 87294 | `6c68ac518e4b316882076a501fcc0590b169c266d10f87100f32334e85a7cf3c` |
+| `智慧养老手表管理系统/oldIot/static/img/5.jpg` | 项目界面所用的静态图片资源。 对应 `5.jpg`，位于 `智慧养老手表管理系统/oldIot/static/img` 目录。 | 11098 | `abfcd5e6bc9660a8a2aa70b421f2c32f16663f11e67df85d028d6a55f06db430` |
+| `智慧养老手表管理系统/oldIot/static/img/6733828_144038516360_2.jpg` | 项目界面所用的静态图片资源。 对应 `6733828_144038516360_2.jpg`，位于 `智慧养老手表管理系统/oldIot/static/img` 目录。 | 284915 | `eaf203b59d32aa950a2219e98a65410c064513db55f96961b70d5ee4ded035b4` |
+| `智慧养老手表管理系统/oldIot/static/img/7487939_090818211000_2.jpg` | 项目界面所用的静态图片资源。 对应 `7487939_090818211000_2.jpg`，位于 `智慧养老手表管理系统/oldIot/static/img` 目录。 | 127422 | `7a009a7e3165ce9931da171aaf19b27d0dbafda174e6aae0a425e59becc1f068` |
+| `智慧养老手表管理系统/oldIot/static/img/92q58PICeSI_1024.jpg` | 项目界面所用的静态图片资源。 对应 `92q58PICeSI_1024.jpg`，位于 `智慧养老手表管理系统/oldIot/static/img` 目录。 | 70940 | `98981a9d8610e00ebb4a63e4eb83a611f5d590db0135588cb8775d546f84547b` |
+| `智慧养老手表管理系统/oldIot/static/img/a7691515_s.jpg` | 项目界面所用的静态图片资源。 对应 `a7691515_s.jpg`，位于 `智慧养老手表管理系统/oldIot/static/img` 目录。 | 118297 | `7f139a9734d564618daca1beb2ed1a26d3aba54a5ae650da617e7da8a6f0c714` |
+| `智慧养老手表管理系统/oldIot/static/img/gou.jpg` | 项目界面所用的静态图片资源。 对应 `gou.jpg`，位于 `智慧养老手表管理系统/oldIot/static/img` 目录。 | 22775 | `dcd5db938e3aef06f77d389dcabbd271613c3e559da18132f2b52abba9617c9e` |
+| `智慧养老手表管理系统/oldIot/static/img/gou2.jpg` | 项目界面所用的静态图片资源。 对应 `gou2.jpg`，位于 `智慧养老手表管理系统/oldIot/static/img` 目录。 | 22775 | `dcd5db938e3aef06f77d389dcabbd271613c3e559da18132f2b52abba9617c9e` |
+| `智慧养老手表管理系统/oldIot/static/img/hanxin.jpg` | 项目界面所用的静态图片资源。 对应 `hanxin.jpg`，位于 `智慧养老手表管理系统/oldIot/static/img` 目录。 | 25786 | `b831b3216cdbf39700e7fa27f72226f82889528dfe9d512105faa89a0825f2ab` |
+| `智慧养老手表管理系统/oldIot/static/img/hua.jpg` | 项目界面所用的静态图片资源。 对应 `hua.jpg`，位于 `智慧养老手表管理系统/oldIot/static/img` 目录。 | 30285 | `7b1e2a5e1931981c4d2df05d7f954cd2698051313702a73f1b4ebdade289c47b` |
+| `智慧养老手表管理系统/oldIot/static/img/huiazang.jpg` | 项目界面所用的静态图片资源。 对应 `huiazang.jpg`，位于 `智慧养老手表管理系统/oldIot/static/img` 目录。 | 119289 | `085d56cb3475fcb6ab69ece3869d62ab976262a855cdbc25d02407fc3d21cf99` |
+| `智慧养老手表管理系统/oldIot/static/img/image.jpg` | 项目界面所用的静态图片资源。 对应 `image.jpg`，位于 `智慧养老手表管理系统/oldIot/static/img` 目录。 | 35726 | `c9eb52c618f726b9e662bfe76fc3c3f610ce9d3eb10c733bca77c9775d43dbee` |
+| `智慧养老手表管理系统/oldIot/static/img/kai.jpg` | 项目界面所用的静态图片资源。 对应 `kai.jpg`，位于 `智慧养老手表管理系统/oldIot/static/img` 目录。 | 15215 | `390baa1c74df0d56dce2eddcf9469c281ed9669074ffdd9357b38027c8f4a457` |
+| `智慧养老手表管理系统/oldIot/static/img/kl.jpg` | 项目界面所用的静态图片资源。 对应 `kl.jpg`，位于 `智慧养老手表管理系统/oldIot/static/img` 目录。 | 36477 | `763c1b269397df50d5ba0e7d175a0cfafc84a8caf49c0547131350755269bf9e` |
+| `智慧养老手表管理系统/oldIot/static/img/QQ图片20170101150550.jpg` | 项目界面所用的静态图片资源。 对应 `QQ图片20170101150550.jpg`，位于 `智慧养老手表管理系统/oldIot/static/img` 目录。 | 19450 | `be4d5b902e12273bec12e4986d32280ad0410b201ffc8529e79461c37e79e207` |
+| `智慧养老手表管理系统/oldIot/static/img/QQ图片20170309105911.jpg` | 项目界面所用的静态图片资源。 对应 `QQ图片20170309105911.jpg`，位于 `智慧养老手表管理系统/oldIot/static/img` 目录。 | 141168 | `ba93951e7a394e98050e5506c48ec93f55cd9a4f3c3e2e3fe2127f736a22db4b` |
+| `智慧养老手表管理系统/oldIot/static/img/QQ图片20170309105920.jpg` | 项目界面所用的静态图片资源。 对应 `QQ图片20170309105920.jpg`，位于 `智慧养老手表管理系统/oldIot/static/img` 目录。 | 188453 | `09ab03c980a1fe7a997d30297e01dc6bb74703e32b3720fa8630a036d8e37cc0` |
+| `智慧养老手表管理系统/oldIot/static/img/QQ图片20170309105936.jpg` | 项目界面所用的静态图片资源。 对应 `QQ图片20170309105936.jpg`，位于 `智慧养老手表管理系统/oldIot/static/img` 目录。 | 167875 | `10a727c0e9fc922d69f7a6a2e5e8fe026939b916945ab9434a2094a551c9d007` |
+| `智慧养老手表管理系统/oldIot/static/img/QQ图片20170309105944.jpg` | 项目界面所用的静态图片资源。 对应 `QQ图片20170309105944.jpg`，位于 `智慧养老手表管理系统/oldIot/static/img` 目录。 | 156608 | `d129cfd9e413f4d8515b74aa73b2f0b1b6536a8eaddd079e0f9006f7d20a724f` |
+| `智慧养老手表管理系统/oldIot/static/img/QQ图片20170309105954.jpg` | 项目界面所用的静态图片资源。 对应 `QQ图片20170309105954.jpg`，位于 `智慧养老手表管理系统/oldIot/static/img` 目录。 | 119800 | `89c2810f78036a60cd08275054740278650e867170f6845655269706a80b87a4` |
+| `智慧养老手表管理系统/oldIot/static/img/timg (1).jpg` | 项目界面所用的静态图片资源。 对应 `timg (1).jpg`，位于 `智慧养老手表管理系统/oldIot/static/img` 目录。 | 71720 | `2ca89037d32a1e7ffe0d3f510023518ae17e18ad5a5c16762d70fd7e1c8fee20` |
+| `智慧养老手表管理系统/oldIot/static/img/timg.jpg` | 项目界面所用的静态图片资源。 对应 `timg.jpg`，位于 `智慧养老手表管理系统/oldIot/static/img` 目录。 | 30139 | `de95858ab42e24ee4dc67f82cb356e5fc0998f5c21e2ccb8298af69b6681c081` |
+| `智慧养老手表管理系统/oldIot/static/img/tree.jpg` | 项目界面所用的静态图片资源。 对应 `tree.jpg`，位于 `智慧养老手表管理系统/oldIot/static/img` 目录。 | 326971 | `0b614a233905f7a3025edc50acb6e10e212512a8dcb3d75f353c2c3074cd7907` |
+| `智慧养老手表管理系统/oldIot/static/img/u=3300305952,1328708913&fm=26&gp=0.jpg` | 项目界面所用的静态图片资源。 对应 `u=3300305952,1328708913&fm=26&gp=0.jpg`，位于 `智慧养老手表管理系统/oldIot/static/img` 目录。 | 16621 | `cab72e4d96adbc7dd538ce813ed736d414816e4e26d323ecbbd28ad9825b4881` |
+| `智慧养老手表管理系统/oldIot/static/img/zhaoyun.png` | 项目界面所用的静态图片资源。 对应 `zhaoyun.png`，位于 `智慧养老手表管理系统/oldIot/static/img` 目录。 | 19378 | `ffc5519ea906e872203eec8d8b0f59b310578f3c1886eba8ecf6d57f95fbd6bf` |
+| `智慧养老手表管理系统/oldIot/static/img/下载 (1).jpg` | 项目界面所用的静态图片资源。 对应 `下载 (1).jpg`，位于 `智慧养老手表管理系统/oldIot/static/img` 目录。 | 38328 | `7863234a99b3982ca8105c6274a774ed984590d8d35d8dc0f7c463a2d82cfd36` |
+| `智慧养老手表管理系统/运行说明.txt` | 原项目运行手册，包含功能概述、环境说明、访问地址和演示账号。 | 715 | `96421c6580ad73a3e22d28bd525002933e70d6a28c7e853b0541f440b8a3c85e` |
