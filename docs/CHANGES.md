@@ -43,7 +43,7 @@
 - `src-manager/Manager.cs` 编译出的 `智慧养老管理系统.exe`：菜单式启动 / 停止系统、初始化数据库、升级数据库（自动执行目录下所有 `*_migration*.sql`）、启动模拟手表、打开手册、查看账号、打开文件夹。
 - 用 Windows 自带的 .NET 编译器即可重新生成：
   `C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe /nologo /optimize+ /codepage:65001 /out:智慧养老管理系统.exe src-manager\Manager.cs`
-- 原来的 8 个 `.bat` 入口已移入 `脚本备份/`，功能都被 EXE 覆盖。
+- 原来的 8 个 `.bat` 入口功能都已被 EXE 覆盖：本地开发副本里它们移到了 `脚本备份/`，本仓库未收录（需要时可在 `archive-2026-10-13` 标签下取回），`脚本备份/` 只保留 4 份历史说明文档。
 
 ## 五、模拟手表
 
