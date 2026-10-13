@@ -2,6 +2,11 @@
 // 编译命令（Windows 自带 .NET Framework 编译器，无需安装任何软件）：
 //   C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe /nologo /optimize+ /codepage:65001 /out:立即同步到GitHub.exe tools\sync\SyncOnce.cs
 // 用法：双击运行，或 命令行执行  立即同步到GitHub.exe --yes（跳过确认）
+//
+// 依赖：git.exe。本机装在 D:\OPENCLAW\Git\cmd\git.exe（系统 PATH 指向该目录），
+//       程序会依次尝试 D:\OPENCLAW\Git、C:\Program Files\Git、(x86)Git、%LOCALAPPDATA%\Programs\Git，最后交给 PATH。
+//       若提示“找不到 git.exe”，用 E:\download\Git-2.53.0.2-64-bit (1).exe 静默重装到 D:\OPENCLAW\Git 即可：
+//       "E:\download\Git-2.53.0.2-64-bit (1).exe" /VERYSILENT /NORESTART /DIR="D:\OPENCLAW\Git"
 
 using System;
 using System.Diagnostics;
@@ -222,6 +227,9 @@ internal static class SyncOnce
     {
         string[] candidates =
         {
+            // 本机 Git 装在 D:\OPENCLAW\Git（系统 PATH 指向这里）；把常用位置都列出来，
+            // 这样即使 PATH 被改坏或 Git 被重装到别的位置，本工具仍能自己找到 git.exe。
+            @"D:\OPENCLAW\Git\cmd\git.exe",
             @"C:\Program Files\Git\cmd\git.exe",
             @"C:\Program Files (x86)\Git\cmd\git.exe",
             Environment.GetEnvironmentVariable("ProgramFiles") == null
