@@ -1,38 +1,90 @@
 # 智慧养老手表管理系统
 
-基于 Spring Boot 和 Vue 2 的养老手表管理项目，包含 Java 后端、管理及家属端页面、MySQL 脚本与静态图片。
+基于 Spring Boot 和 Vue 2 的智慧养老手表管理项目，提供管理端和家属端页面，涉及老人档案、家属关系、手表设备、健康数据、位置、报警、公告与留言。
 
-保留原压缩包内全部 221 个文件及目录名，按文件提供者要求清理作者注释、包作者邮箱、旧服务器地址和指定手机号。未删除文件、重构业务或升级依赖。新增文档放在外层，与工程分开。所有功能说明依据源码和随包资料整理，尚未完成运行或设备联调验证。
+项目按源码整理；下述功能和步骤尚未经过完整部署及真实手表联调验证。
 
-## 目录与介绍
+## 功能模块
 
-| 路径 | 内容 |
-| --- | --- |
-| `智慧养老手表管理系统/careold/` | Java 后端，含控制器、JdbcTemplate 数据访问与领域对象 |
-| `智慧养老手表管理系统/oldIot/` | Vue 前端，含管理端、家属端页面及静态资源 |
-| `智慧养老手表管理系统/old.sql` | MySQL 转储，13 张表与 137 条 INSERT 语句；指定账号已同步替换 |
-| `智慧养老手表管理系统/运行说明.txt` | 运行说明，保持原始 GB18030 编码；指定账号已替换 |
-| [docs/FILES.md](docs/FILES.md) | 每个原文件的名称、用途、大小和 SHA-256 |
-| [docs/SETUP.md](docs/SETUP.md) | 根据源码整理的环境、配置与启动说明 |
-| [docs/PUBLICATION.md](docs/PUBLICATION.md) | 保留范围、敏感内容与验证记录 |
-| [docs/REPOSITORY.md](docs/REPOSITORY.md) | 建议仓库名称、简介和主题 |
+- **管理端**：老人档案、家属和监护人、手表设备、报警、公告动态、留言，以及心率血压、睡眠步数和位置记录。
+- **家属端**：查看关联老人的资料、健康记录、位置和公告动态。
+- **后端**：Java Web 接口、Shiro 登录与权限配置、JDBC 数据访问、图片上传和下载。
 
-## 功能范围
+上述内容根据现有页面、控制器和数据访问代码归纳；并非所有功能都经过运行验证。
 
-源码包含老人档案、家属与监护人、手表设备、心率血压、睡眠步数、位置、报警处理、公告动态、留言评论等相关模块。管理端与家属端使用不同页面及路由；代码存在不等于这些功能均已运行验证。
+## 项目结构
+
+```text
+.
+├── docs/                              项目说明、启动指引和逐文件清单
+├── 智慧养老手表管理系统/
+│   ├── careold/                       Spring Boot 后端
+│   ├── oldIot/                        Vue 前端
+│   ├── old.sql                        MySQL 表结构和随包演示记录
+│   └── 运行说明.txt                   原始运行说明（GB18030 编码）
+└── LICENSE
+```
+
+- [配置与启动](docs/SETUP.md)：环境要求、后端与前端启动步骤。
+- [文件用途清单](docs/FILES.md)：221 个原始文件的独立介绍及 SHA-256。
+- [整理与验证记录](docs/PUBLICATION.md)：源码整理范围和当前验证边界。
 
 ## 技术组成
 
-- 后端：Java 8、Spring Boot 1.5.19.RELEASE、Spring JDBC、Shiro、MySQL Connector/J。pom 还声明了 Solr、HBase/Hadoop 和腾讯云短信 SDK。
-- 前端：Vue 2、Vue Router、Vuex、Element UI、Axios、ECharts、Webpack 3、node-sass 4。
-- 默认开发端口：前端 `8087`，后端 `8795`。
+| 部分 | 技术 |
+| --- | --- |
+| 后端 | Java 8、Spring Boot 1.5.19、Spring JDBC、Apache Shiro |
+| 前端 | Vue 2、Vue Router、Vuex、Element UI、Axios、ECharts、Webpack 3 |
+| 数据与服务 | MySQL；源码另声明 Solr、HBase/Hadoop 和腾讯云短信依赖 |
 
-## 使用前
+前端依赖包含 `node-sass 4` 等较旧工具，在当前 Node.js 环境中的兼容性尚未验证。
 
-参阅 [环境与配置](docs/SETUP.md)。短信密钥和地图 Key 已替换为占位符；数据库密码与其他原始数据按全量保留要求保留，使用前请检查配置和数据。
+## 快速启动
 
-本次完成归档整理、字节一致性和静态格式核对，未安装依赖、运行应用、导入数据库或连接真实手表。源码保留历史文件及旧依赖，不代表可直接用于生产部署。
+### 1. 准备数据库
 
-原始压缩包没有 LICENSE；GitHub 仓库创建时已有 LICENSE，本次保留该文件。清理作者注释不代表重新确认了代码与图片的授权链。
+准备 JDK 8、Maven、Node.js/npm 和 MySQL。`old.sql` 含有 `DROP TABLE IF EXISTS`，会删除数据库中同名表；**请先创建专用测试数据库，不要导入已有数据的数据库。** SQL 还保留了随包演示数据。
 
-短信 AppKey 和地图 Key 已替换为 `YOUR_TENCENT_SMS_APP_KEY` / `YOUR_BAIDU_MAP_AK` 占位符；这两项功能需自行配置后验证。
+在 MySQL 中创建数据库并导入脚本：
+
+```sql
+CREATE DATABASE old CHARACTER SET utf8;
+```
+
+```sh
+cd 智慧养老手表管理系统/careold
+mysql -u root -p old < ../old.sql
+```
+
+### 2. 配置并启动后端
+
+编辑 `智慧养老手表管理系统/careold/src/main/resources/applicationContext.xml`，设置本地 MySQL 地址、账号和密码。编辑 `application.properties`，把 `local-path` 改为存在且可写的本机图片目录。不要将自己的数据库密码或服务密钥提交到公开仓库。
+
+```sh
+cd 智慧养老手表管理系统/careold
+mvn spring-boot:run
+```
+
+后端默认使用 `8795` 端口。
+
+### 3. 配置并启动前端
+
+先在 `智慧养老手表管理系统/oldIot/index.html` 配置自己的百度地图 Key，再启动前端：
+
+```sh
+cd 智慧养老手表管理系统/oldIot
+npm install
+npm run dev
+```
+
+默认访问 `http://localhost:8087/`。开发代理配置在 `oldIot/config/index.js`，默认将接口请求转发至 `http://localhost:8795/`。
+
+## 部署前需要配置
+
+- **MySQL**：项目数据源在 `applicationContext.xml` 中配置。
+- **图片存储**：`application.properties` 中的 `local-path` 必须指向可写目录。
+- **百度地图**：前端地图 Key 需要自行申请和配置。
+- **Solr、HBase、短信和消息中间件**：源码包含相关依赖或地址配置，按实际使用的功能配置对应服务；仅有依赖不代表服务已包含或已经验证。
+- **凭据**：仓库中的短信 Key 和地图 Key 是占位符；数据库连接等遗留设置也应在本机检查并更换。
+
+更多说明见[配置与启动指南](docs/SETUP.md)。目前没有声明构建通过、生产部署就绪或真实手表连接成功。
