@@ -15,6 +15,7 @@ import java.util.Map;
 /**
  * 功能：图片操作工具类
  *
+ * @Author:
  * @create:
  */
 public class PhotoUtil {
@@ -33,6 +34,7 @@ public class PhotoUtil {
         /**
          *
          * 功能描述 ： 保存图片
+         * @author:
          * @create
          * @param filedata 文件数据
          *@return　String 返回图片位置

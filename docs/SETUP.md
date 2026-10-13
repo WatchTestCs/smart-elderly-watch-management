@@ -1,45 +1,73 @@
-# 环境与配置
+# 环境与配置（手动启动方式）
 
-工作目录为 `智慧养老手表管理系统/`。以下来自源码配置和脚本，尚未运行通过。
+日常使用建议直接用 `智慧养老手表管理系统/智慧养老管理系统.exe`（菜单式一键启动）。本文件给出手工方式，以及本机已经验证过的环境参数。
 
-## 后端
+## 一、已验证的环境
 
-1. 准备 JDK 8 和独立 Maven。原包的 `mvnw` / `mvnw.cmd` 缺少 `.mvn/wrapper` 配套文件，不能认为 Wrapper 完整可用。
-2. 在专用本地 MySQL 中创建 `old` 数据库，再导入 `old.sql`。脚本含 `DROP TABLE IF EXISTS`，会删除同名表，且包含原始人员与账号数据；不要导入已有业务数据的数据库。原转储标注 MySQL 5.0.22，pom 使用 Connector/J 8.0.20，实际兼容性待验证。
-3. 检查 `careold/src/main/resources/applicationContext.xml` 的数据库地址、用户名和密码，替换成自己的本地配置，不要向版本库提交新凭据。
-4. 检查 `application.properties` 的图片目录 `local-path`，创建目录并赋予应用写入权限。默认后端端口为 `8795`。
-5. 按功能需要配置 Solr（默认 `http://localhost:8080/solr/test`）、HBase ZooKeeper（默认 `127.0.0.1:2182`）及短信 SDK；依赖声明不表示服务已验证可用。不要使用原包中他人的短信密钥。
-6. 在 `careold/` 执行：
+| 组件 | 本机验证过的版本 / 位置 |
+| --- | --- |
+| 数据库 | MySQL 8.0，服务名 `MySQL2077`，账号 `root` / `123456`，库名 `old`，端口 3306 |
+| JDK | JDK 17（`C:\Program Files\Java\jdk-17`） |
+| 后端 | Spring Boot 1.5.19，端口 8795，配置在 `careold/src/main/resources/applicationContext.xml` |
+| 前端 | Vue 2 + Webpack 3，**Node 10**（项目内 `tools/node-v10.24.1-win-x64`），端口 8087 |
+| Maven | 需自带 Maven 3.9.x（离线可用即可），`careold/mvnw` 缺少 `.mvn/wrapper`，不能直接用 |
 
-```sh
-mvn spring-boot:run
+## 二、数据库
+
+1. 建库 `old`（字符集用默认即可）。
+2. 导入 `old.sql`。脚本含 `DROP TABLE IF EXISTS`，会删除同名表，**不要导入已有业务数据的库**。
+3. 老库升级（曾经导入过更早版本时）：依次执行 `invite_code_migration.sql`、`device_migration.sql`、`alert_handled_migration.sql`、`alert_handled_at_migration.sql`；这些脚本可重复执行，也可以直接用 EXE 的菜单 `[5]`。
+4. 数据库地址、账号、密码在 `careold/src/main/resources/applicationContext.xml` 里改。
+
+> MySQL 8 的 `ONLY_FULL_GROUP_BY` 默认开启会让老 SQL 报错，当前代码里的取数语句已经重写，不再依赖关闭该模式。
+
+## 三、后端
+
+在 `careold/` 下编译打包（示例为本机路径，可按实际调整）：
+
+```powershell
+$env:JAVA_HOME = "C:\Program Files\Java\jdk-17"
+E:\DS\work\tools\apache-maven-3.9.9\bin\mvn.cmd -o -DskipTests package
 ```
 
-## 前端
+启动（JDK 17 跑 Spring Boot 1.5 必须加 `--add-opens`，否则启动即失败）：
 
-在 `oldIot/` 执行：
-
-```sh
-npm install
-npm run dev
+```powershell
+java --add-opens java.base/java.lang=ALL-UNNAMED `
+     --add-opens java.base/java.lang.reflect=ALL-UNNAMED `
+     --add-opens java.base/java.util=ALL-UNNAMED `
+     --add-opens java.base/java.io=ALL-UNNAMED `
+     --add-opens java.base/java.net=ALL-UNNAMED `
+     --add-opens java.base/java.nio=ALL-UNNAMED `
+     --add-opens java.base/sun.nio.ch=ALL-UNNAMED `
+     -jar careold\target\careold-0.0.1-SNAPSHOT.jar
 ```
 
-默认访问 `http://localhost:8087/`。开发代理位于 `oldIot/config/index.js`，接口目标为 `http://localhost:8795/`；地图脚本在 `oldIot/index.html`，需使用自己的地图 Key 与域名配置。
+注意事项：
 
-构建入口为 `npm run build`，输出目录 `oldIot/dist/`。这些步骤未运行验证；node-sass 4 / Webpack 3 等旧工具与现代 Node.js 的兼容性需另行确认，不将 package.json 的最低版本声明当作已验证环境。
+- **打包含义**：正在运行的 jar 会被 JVM 锁住，重新打包会失败并把 jar 写成空壳。打包前先停掉后端进程。
+- JDK 8 环境则无需 `--add-opens`。
 
-## 账号、编码与完整性
+## 四、前端
 
-原包账号说明保留在 `运行说明.txt`，本文不再重复账号与密码；账号能否使用、登录及角色行为均未验证。该 TXT 和 application.properties 含 GB18030 文本，查看时选择相应编码，原文件未转码。
+```sh
+cd oldIot
+npm install --ignore-scripts      # 老依赖的编译脚本在现代 Node 上会失败，跳过
+node node_modules/webpack-dev-server/bin/webpack-dev-server.js --inline --progress --config build/webpack.dev.conf.js
+```
 
-原说明提到 MyBatis 和 Tomcat，但当前 pom 主要声明 Spring Boot / JDBC 依赖；以源码为准，不据此声称存在完整 MyBatis 实现或已验证外置 Tomcat 部署。
+- 必须用 Node 10；高版本 Node 跑 Webpack 3 会报 `ERR_OSSL_EVP_UNSUPPORTED` 之类的错误。
+- 开发代理在 `oldIot/config/index.js`，接口目标 `http://localhost:8795/`。
+- 生产构建入口是 `npm run build`，输出到 `oldIot/dist/`。
+- `index.html` 中的地图脚本需要使用自己的地图 Key。
 
-部署前还需验证数据库与查询是否匹配、外部服务是否完整，并检查权限控制、SQL 参数化、密码存储与文件上传。此归档不是生产验收结果。
+## 五、账号与网络
 
-## 本次清理后的地址与账号
+- 演示账号见 `系统使用手册.md` 第四节（管理员 `15179158704` / `123456`）。
+- 后端默认监听全部网卡（`::8795`），手表 / 手机与电脑在同一 Wi-Fi 时可用电脑局域网 IP 访问；Windows 防火墙需放行 8795（TCP 入站）。
 
-旧图片服务器前缀已统一改为 `/restful/image/download?name=`，使用后端已有图片下载接口；开发时经前端代理访问。需在 `local-path` 下准备相应图片，图片实际存在与响应显示效果未联调验证。
+## 六、仍然属于演示范围的部分
 
-消息中间件地址已改成本地 `http://localhost:8080/mqtt/request`，项目没有提供该中间件，使用时需按实际部署配置。原管理员电话形式账号统一改为演示编号 `10000000001`，数据库中关联引用同步替换，其他账号及原数据保留。
-
-短信 AppKey 和地图 Key 已替换为 `YOUR_TENCENT_SMS_APP_KEY` / `YOUR_BAIDU_MAP_AK` 占位符；这两项功能需自行配置后验证。
+- `applicationContext.xml` 中的数据库密码、短信 AppKey、地图 Key 都是演示值或占位符，公开部署前必须替换为自己的配置，不要提交新凭据。
+- 短信 / 地图 / Solr / HBase 等外部服务只是依赖声明，未做过联调验证。
+- 前端为 Webpack 3 老工具链，仅保证 `npm run dev` / `npm run build` 在本机 Node 10 下可用。

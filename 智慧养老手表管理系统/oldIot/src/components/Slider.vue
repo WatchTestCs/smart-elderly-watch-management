@@ -68,6 +68,10 @@ export default {
 							childtitle: '手表信息'
 						},
 						{
+							index: '/device',
+							childtitle: '设备管理'
+						},
+						{
 							index: '/person',
 							childtitle: '人员信息'
 						},
@@ -97,6 +101,10 @@ export default {
 			{
 			index: '/saidOperation',
 			childtitle: '评论管理'
+			},
+			{
+			index: '/inviteCode',
+			childtitle: '邀请码管理'
 			}
 		]
 		}

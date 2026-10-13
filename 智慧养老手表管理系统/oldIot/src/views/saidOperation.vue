@@ -217,7 +217,7 @@ export default {
           _this.total = response.data.saidDtos.length
 					for(var i=0;i<tableData2.length;i++){
 						console.log(tableData2[i].touPic)
-						tableData2[i].touPic = '/restful/image/download?name='+tableData2[i].touPic
+						tableData2[i].touPic = 'http://47.106.37.197:9110/'+tableData2[i].touPic
 					}
 					_this.saidList=tableData2
       console.log(_this.saidList)

@@ -175,7 +175,7 @@
 			// 	_this.imgList=response.data.pics
 			// 	for(var i=0;i<_this.imgList.length;i++){
 			// 		console.log(_this.imgList[i].url)
-			// 		_this.imgList[i].url = '/restful/image/download?name='+pics[i].picName
+			// 		_this.imgList[i].url = 'http://47.106.37.197:9110/'+pics[i].picName
 			// 	}
 			//
 			//
@@ -203,7 +203,7 @@
 				var tableData2 = response.data.said2s
 				for(var i=0;i<tableData2.length;i++){
 					console.log(tableData2[i].touPic)
-					tableData2[i].touPic = '/restful/image/download?name='+tableData2[i].touPic
+					tableData2[i].touPic = 'http://47.106.37.197:9110/'+tableData2[i].touPic
 				}
 				_this.tableData=tableData2
 				_this.total = response.data.said2s.length

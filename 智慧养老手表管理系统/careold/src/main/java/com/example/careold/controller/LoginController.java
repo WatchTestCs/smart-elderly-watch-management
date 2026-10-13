@@ -63,6 +63,12 @@ public class LoginController {
             if(families.get(i).getFamilyPhone().equals(phone)){
                 if(families.get(i).getFamilyPassword().equals(password)){
                     FamilyDto family=familyDao.findFamilyByPhone(phone);
+                    // 该家属账号没有关联任何老人（例如老人被删除、或账号是历史遗留数据）
+                    // 此时 family 为 null，直接返回提示，避免前端拿到 null 后报错
+                    if(family==null){
+                        result.put(ReturnCodeUtil.returnCode,"该家属账号尚未关联老人，请联系管理员");
+                        return result;
+                    }
                     result.put("family",family);
                     result.put(ReturnCodeUtil.returnCode,ReturnCodeUtil.successCode);
                     return result;

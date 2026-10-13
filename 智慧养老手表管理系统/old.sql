@@ -84,6 +84,31 @@ INSERT INTO `family` VALUES ('kai.jpg', '6', 'asdf', 'asdf', '15263259856', '男
 INSERT INTO `family` VALUES ('kai.jpg', '7', 'asdfdf', 'asdf2', '15263259842', '男', 'asdf', '123456');
 
 -- ----------------------------
+-- Table structure for `invite_code`
+-- 邀请码：管理员生成，家属凭邀请码自助注册
+-- ----------------------------
+DROP TABLE IF EXISTS `invite_code`;
+CREATE TABLE `invite_code` (
+  `id` int(10) NOT NULL auto_increment,
+  `code` varchar(20) NOT NULL COMMENT '邀请码',
+  `old_id` int(10) default NULL COMMENT '绑定的老人ID，注册后自动关联该老人',
+  `create_user` varchar(20) default '管理员' COMMENT '生成人',
+  `create_time` datetime default NULL COMMENT '生成时间',
+  `expire_time` datetime default NULL COMMENT '过期时间，NULL 表示长期有效',
+  `used` tinyint(1) NOT NULL default '0' COMMENT '是否已使用：0-未使用 1-已使用',
+  `used_time` datetime default NULL COMMENT '使用时间',
+  `used_family_id` int(10) default NULL COMMENT '使用该邀请码注册的家属ID',
+  PRIMARY KEY  (`id`),
+  UNIQUE KEY `uk_invite_code_code` (`code`),
+  KEY `idx_invite_code_old` (`old_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+-- Records of invite_code
+-- ----------------------------
+INSERT INTO `invite_code` VALUES ('1', 'DEMO2024', '1', '管理员', '2019-04-01 09:00:00', NULL, '0', NULL, NULL);
+
+-- ----------------------------
 -- Table structure for `nice_count`
 -- ----------------------------
 DROP TABLE IF EXISTS `nice_count`;
@@ -98,7 +123,7 @@ CREATE TABLE `nice_count` (
 -- Records of nice_count
 -- ----------------------------
 INSERT INTO `nice_count` VALUES ('12343342334', '1', '1');
-INSERT INTO `nice_count` VALUES ('10000000001', '1', '2');
+INSERT INTO `nice_count` VALUES ('15179158704', '1', '2');
 INSERT INTO `nice_count` VALUES ('15179158705', '2', '3');
 INSERT INTO `nice_count` VALUES ('15179158705', '1', '8');
 INSERT INTO `nice_count` VALUES ('15179158705', '3', '9');
@@ -293,7 +318,7 @@ CREATE TABLE `said` (
 -- ----------------------------
 -- Records of said
 -- ----------------------------
-INSERT INTO `said` VALUES ('1', '你好', '1', '你也好', '2019-03-24 17:31:19', '2019-03-24 17:31:25', '小刚', '10000000001', 'kai.jpg', '6');
+INSERT INTO `said` VALUES ('1', '你好', '1', '你也好', '2019-03-24 17:31:19', '2019-03-24 17:31:25', '小刚', '15179158704', 'kai.jpg', '6');
 INSERT INTO `said` VALUES ('4', '变身', '1', '钢铁侠', '2019-04-19 14:10:50', '2019-04-19 15:22:41', '小刚2', '15179158705', '2.jpg', '0');
 INSERT INTO `said` VALUES ('5', '写的好', '1', null, '2019-04-19 14:16:12', null, '小刚2', '15179158705', 'kai.jpg', '0');
 INSERT INTO `said` VALUES ('6', '你好', '31', null, '2019-04-26 14:54:42', null, '小刚23', '15179158705', '92q58PICeSI_1024.jpg', '2');
@@ -321,8 +346,7 @@ INSERT INTO `text` VALUES ('31', '我去二', '去玩儿', '2019-04-26 14:53:37'
 
 -- ----------------------------
 -- Table structure for `users`
--- ----------------------------
-DROP TABLE IF EXISTS `users`;
+-- ----------------------------DROP TABLE IF EXISTS `users`;
 CREATE TABLE `users` (
   `user_id` int(10) NOT NULL auto_increment,
   `user_name` varchar(10) default NULL,
@@ -335,7 +359,7 @@ CREATE TABLE `users` (
 -- ----------------------------
 -- Records of users
 -- ----------------------------
-INSERT INTO `users` VALUES ('1', '小刚', '123456', '1', '10000000001');
+INSERT INTO `users` VALUES ('1', '小刚', '123456', '1', '15179158704');
 
 -- ----------------------------
 -- Table structure for `watch_day_info`

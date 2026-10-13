@@ -30,6 +30,16 @@ public class OldPersonJdbcDao implements OldPersonDao {
     }
 
     @Override
+    public OldPerson getOldPersonById(int oldId) {
+        String sql = "select * from oldperson where old_id = ?";
+        List<OldPerson> list = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(OldPerson.class), oldId);
+        if (list.isEmpty()) {
+            return null;
+        }
+        return list.get(0);
+    }
+
+    @Override
     public int addOldPerson(OldPerson oldPerson) {
         String sql="insert into oldperson(name,age,sex,phone,room,illness,warn,food_like,food_hate,drag,customer_id,be_time,bothdate,device_id) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?) ";
         int rows=jdbcTemplate.update(sql,oldPerson.getName(),oldPerson.getAge(),oldPerson.getSex(),oldPerson.getPhone(),oldPerson.getRoom(),oldPerson.getIllness(),oldPerson.getWarn(),oldPerson.getFoodLike(),oldPerson.getFoodHate(),oldPerson.getDrag(),oldPerson.getCustomerId(),oldPerson.getBeTime(),oldPerson.getBothdate(),oldPerson.getDeviceId());
@@ -47,6 +57,13 @@ public class OldPersonJdbcDao implements OldPersonDao {
     public int updateOldPerson2(int oldId, int familyId) {
         String sql="update oldperson set family_id=? where old_id=?";
         int rows=jdbcTemplate.update(sql,familyId,oldId);
+        return rows;
+    }
+
+    @Override
+    public int updateOldPersonDeviceId(int oldId, int deviceId) {
+        String sql="update oldperson set device_id=? where old_id=?";
+        int rows=jdbcTemplate.update(sql,deviceId,oldId);
         return rows;
     }
 

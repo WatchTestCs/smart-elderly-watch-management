@@ -4,12 +4,12 @@ package com.example.careold.controller;
 import com.example.careold.common.DateConst;
 import com.example.careold.common.ReturnCodeUtil;
 import com.example.careold.dao.OldPersonDao;
+import com.example.careold.dao.InviteCodeDao;
 import com.example.careold.dao.PositionDao;
 import com.example.careold.dao.WatchInfoDao;
 import com.example.careold.domain.OldPerson;
 import com.example.careold.domain.PositionDto;
 import com.example.careold.domain.WatchDto;
-import javafx.beans.property.IntegerProperty;
 import org.apache.commons.collections.map.ListOrderedMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -30,6 +30,9 @@ public class OldPersonController {
 
     @Autowired
     WatchInfoDao watchInfoDao;
+
+    @Autowired
+    InviteCodeDao inviteCodeDao;
 
     //对老人的查询
     @ResponseBody
@@ -142,6 +145,8 @@ public class OldPersonController {
     public ListOrderedMap delete(@RequestBody ListOrderedMap param){
         ListOrderedMap result=new ListOrderedMap();
         String oldId=param.get("oldId").toString();
+        // 老人删除后，其名下未使用的邀请码一并作废，避免出现无主邀请码
+        inviteCodeDao.deleteByOldId(Integer.parseInt(oldId));
         int rows=oldPersonDao.deleteOldPerson(Integer.parseInt(oldId));
         if(rows==1){
             result.put(ReturnCodeUtil.returnCode,ReturnCodeUtil.successCode);

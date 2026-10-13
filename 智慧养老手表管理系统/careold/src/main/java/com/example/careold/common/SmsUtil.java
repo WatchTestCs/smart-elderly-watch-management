@@ -15,9 +15,10 @@ public class SmsUtil {
 		        int appid = 1400193017; // 1400开头
 
 		        // 短信应用SDK AppKey
-		        String appkey = "YOUR_TENCENT_SMS_APP_KEY";
+		        String appkey = "8ef2a12a577ed780255da0d71244b180";
 
 		        // 需要发送短信的手机号码                 //自己，康帅，刘俊，王帆，胡涛
+//		        String[] phoneNumbers = {"15179158704", "15979084355","18770645015","15007009771","15079158693","18470312023"};
 
 		        // 短信模板ID，需要在短信应用中申请
 		        // NOTE: 这里的模板ID`7839`只是一个示例，

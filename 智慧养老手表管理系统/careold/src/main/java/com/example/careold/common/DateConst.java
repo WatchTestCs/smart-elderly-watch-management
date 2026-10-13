@@ -16,6 +16,7 @@ import java.util.Date;
  * 	7.获取过去n天时间列表
  * 	8.日期转星期
  *
+ * @author yanghd_bill
  */
 public class DateConst {
 	private DateConst(){}
@@ -47,6 +48,7 @@ public class DateConst {
 
 	/**
 	 * 功能：日期格式转换为字符串
+	 * @author yanghd_bill
 	 * @create 2018/9/21
 	 * @param dateModel
 	 * @return
@@ -55,6 +57,25 @@ public class DateConst {
 		//可以方便地修改日期格式
 		SimpleDateFormat dateFormat = new SimpleDateFormat( dateModel );
 		return dateFormat.format( date );
+	}
+
+	/**
+	 * 功能：字符串按指定格式转换为日期
+	 * @param dateStr 日期字符串
+	 * @param dateModel 日期格式，如 yyyy-MM-dd HH:mm:ss
+	 * @return 解析失败返回 null
+	 */
+	public static Date toDate(String dateStr,String dateModel){
+		if(dateStr==null || dateStr.trim().length()==0){
+			return null;
+		}
+		try {
+			SimpleDateFormat dateFormat = new SimpleDateFormat( dateModel );
+			dateFormat.setLenient(false);
+			return dateFormat.parse( dateStr.trim() );
+		} catch (ParseException e) {
+			return null;
+		}
 	}
 
 	/*

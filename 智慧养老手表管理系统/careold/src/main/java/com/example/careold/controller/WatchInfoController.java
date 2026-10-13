@@ -7,7 +7,6 @@ import com.example.careold.dao.WatchInfoDao;
 import com.example.careold.domain.OldPerson;
 import com.example.careold.domain.WatchDto;
 import com.example.careold.domain.WatchInfo;
-import javafx.beans.property.IntegerProperty;
 import org.apache.commons.collections.map.ListOrderedMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;

@@ -30,6 +30,7 @@ import java.util.Map;
 /**
  * 功能：人员请求接口
  *
+ * @Author: yanghd_bill
  * @create: 2018/11/19 11:03
  */
 @RestController
@@ -44,6 +45,7 @@ public class ImagesApi {
     /**
      * 功能：文件保存接口
      *
+     * @Author: yanghd_bill
      * @create: 2018/12/20 11:03
      */
     @PostMapping("/saveImage")

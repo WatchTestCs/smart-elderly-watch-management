@@ -3,6 +3,7 @@ package com.example.careold.common;
 /**
  * 功能：
  *
+ * @Author: yanghd_bill
  * @create: 2018/11/22 15:47
  */
 public class DefineData {
@@ -16,8 +17,8 @@ public class DefineData {
     /**
      * 消息中间件请求地址
      */
-    public static final String AM_URL = "http://localhost:8080/mqtt/request";
-    //public static final String AM_URL = "http://localhost:8080/mqtt/request";
+    public static final String AM_URL = "http://172.21.10.92:8080/mqtt/request";
+    //public static final String AM_URL = "http://172.21.221.227:8080/mqtt/request";
 
     /**
      * 返回值 消息ID

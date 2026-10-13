@@ -76,12 +76,15 @@
 		    <span v-else style="color: #37B328">正常</span>
 		  </template>
 	  </el-table-column>
-	  <el-table-column prop="lng" label="经度" width="180" align="center"></el-table-column>
-	  <el-table-column prop="lat" label="纬度" width="180" align="center"></el-table-column>
+	  <el-table-column prop="lng" label="经度" width="160" align="center"></el-table-column>
+	  <el-table-column prop="lat" label="纬度" width="160" align="center"></el-table-column>
 	  <el-table-column prop="beTime" label="时间" width="auto" align="center"></el-table-column>
       <el-table-column label="操作" align="center">
       	<template slot-scope="scope">
-      		
+      		<el-button v-if="scope.row.status==1" size="mini" plain type="danger" icon="el-icon-warning"
+      		           @click="showFallReason(scope.row)">摔倒原因与处理</el-button>
+      		<el-button v-if="scope.row.status==1" size="mini" plain type="primary" icon="el-icon-check"
+      		           @click="handleFall(scope.row)">标记已处理</el-button>
       		<el-button size="mini" plain type="success" icon="el-icon-check" @click="showRoleDialog(scope.row)">
       			详细情况
       		</el-button>
@@ -242,6 +245,45 @@ export default {
         .catch(function (error) {
           console.log(error)
         })
+    },
+    // 摔倒原因与处理办法（红点点进来就是这个）
+    showFallReason (row) {
+      this.$alert(
+        '老人：' + row.name + '\n'
+        + '发生时间：' + row.beTime + '\n'
+        + '位置：经度 ' + row.lng + '，纬度 ' + row.lat + '\n\n'
+        + '怎么处理：\n'
+        + '① 立即电话联系老人或家属确认是否受伤；\n'
+        + '② 无人应答时按位置上门查看，必要时拨打 120；\n'
+        + '③ 确认处理后点「标记已处理」，右上角摔倒红点数量会减少。',
+        '摔倒告警 · 原因与处理',
+        { confirmButtonText: '知道了', callback: function () {} }
+      )
+    },
+    // 处置：消除摔倒红点
+    handleFall (row) {
+      var _this = this
+      this.$confirm('确认该摔倒告警已经处理（联系过老人/家属）？处理后会从红点统计里移除。', '提示', {
+        confirmButtonText: '确定已处理',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(function () {
+        axios.post('restful/device/handleAlarm', {'oldId': row.oldId},
+          {
+            headers: {'content-type': 'application/json'},
+            withCredentials: true
+          }).then(function (response) {
+          if (response.data.returnCode === '1111') {
+            _this.$message({type: 'success', message: '已处理，摔倒红点已消除'})
+          } else {
+            _this.$message({type: 'error', message: response.data.message || '处理失败'})
+          }
+          _this.searchposition()
+        }).catch(function (error) {
+          console.log(error)
+          _this.$message({type: 'error', message: '处理失败'})
+        })
+      }).catch(function () {})
     },
     // 添加角色
     addRoles () {

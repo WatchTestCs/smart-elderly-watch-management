@@ -94,6 +94,10 @@ public class ShiroConfig {
 
         // 配置不会被拦截的链接 顺序判断
         filterChainDefinitionMap.put("/userLogin/loginTwo", "anon");
+        // 邀请码注册相关接口：管理员端（list/create/delete/oldPersonList）与注册端（checkCode/join）
+        // 注册端必须匿名可访问，否则家属无法自助注册
+        filterChainDefinitionMap.put("/restful/inviteCode/checkCode", "anon");
+        filterChainDefinitionMap.put("/restful/inviteCode/join", "anon");
 //        filterChainDefinitionMap.put("/family/**", "anon");
         filterChainDefinitionMap.put("/backstage/css/**", "anon");
         filterChainDefinitionMap.put("/backstage/js/**", "anon");

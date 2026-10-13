@@ -40,6 +40,8 @@
             @click="submitForm"
           >登录</el-button>
           <el-button @click="resetForm('loginForm')">重置</el-button>
+          <!-- 家属凭管理员发放的邀请码自助注册 -->
+          <el-button type="text" @click="goRegister">注册账号</el-button>
         </el-form-item>
       </el-form>
     </el-col>
@@ -95,7 +97,18 @@ export default {
       }
     }
   },
+  // 注册成功后返回登录页时自动带出手机号
+  created () {
+    var phone = localStorage.getItem('login_phone')
+    if (phone) {
+      this.loginForm.phone = phone
+      localStorage.removeItem('login_phone')
+    }
+  },
   methods: {
+	  goRegister () {
+	    this.$router.push({ path: '/register' })
+	  },
 	  resetForm(){
 		  this.loginForm.phone=''
 		  this.loginForm.password=''

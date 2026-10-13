@@ -5,8 +5,11 @@ import com.example.careold.domain.FamilyDto;
 import com.example.careold.domain.FamilyDto2;
 import com.example.careold.domain.OldDto2;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
+import java.sql.PreparedStatement;
 import java.util.List;
 
 @Repository
@@ -58,8 +61,10 @@ public class FamilyJdbcDao extends JdbcCom implements FamilyDao {
     @Override
     public FamilyDto findFamilyByPhone(String phone) {
         String sql="SELECT old_id,name,oldperson.family_id,family_name,family_relation,family_phone,family_sex,family_address,family_tou_pic from oldperson inner JOIN family on family.family_id=oldperson.family_id where family_phone=?";
-        FamilyDto familyDto=jdbcTemplate.queryForObject(sql,new BeanPropertyRowMapper<>(FamilyDto.class),phone);
-        return familyDto;
+        // 家属账号存在但没有关联任何老人时，原来的 queryForObject 会抛
+        // EmptyResultDataAccessException 让登录直接 500，这里改成返回 null 由调用方处理
+        List<FamilyDto> list=jdbcTemplate.query(sql,new BeanPropertyRowMapper<>(FamilyDto.class),phone);
+        return list.isEmpty()?null:list.get(0);
     }
 
     @Override
@@ -112,8 +117,35 @@ public class FamilyJdbcDao extends JdbcCom implements FamilyDao {
     }
 
     @Override
-    public int update(Family family) {
-        String sql="UPDATE family SET family_name=?,family_relation=?,family_phone=?,family_sex=?,family_address=? WHERE family_id=?";
+    public Integer saveAndGetId(Family family) {
+        String sql = "insert into family(family_name,family_relation,family_phone,family_sex,family_address,family_password)"
+                + " VALUES(?,?,?,?,?,?)";
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        int rows = jdbcTemplate.update(connection -> {
+            PreparedStatement ps = connection.prepareStatement(sql, new String[]{"family_id"});
+            ps.setString(1, family.getFamilyName());
+            ps.setString(2, family.getFamilyRelation());
+            ps.setString(3, family.getFamilyPhone());
+            ps.setString(4, family.getFamilySex());
+            ps.setString(5, family.getFamilyAddress());
+            ps.setString(6, family.getFamilyPassword());
+            return ps;
+        }, keyHolder);
+        if (rows != 1 || keyHolder.getKey() == null) {
+            return null;
+        }
+        return keyHolder.getKey().intValue();
+    }
+
+    @Override
+    public int countByPhone(String phone) {
+        String sql = "select count(1) from family where family_phone = ?";
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, phone);
+        return count == null ? 0 : count;
+    }
+
+    @Override
+    public int update(Family family) {        String sql="UPDATE family SET family_name=?,family_relation=?,family_phone=?,family_sex=?,family_address=? WHERE family_id=?";
         int rows=jdbcTemplate.update(sql,family.getFamilyName(),family.getFamilyRelation(),family.getFamilyPhone(),family.getFamilySex(),family.getFamilyAddress(),family.getFamilyId());
         return rows;
     }

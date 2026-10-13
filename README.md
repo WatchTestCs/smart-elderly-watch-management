@@ -1,94 +1,70 @@
 # 智慧养老手表管理系统
 
-基于 Spring Boot 和 Vue 2 的智慧养老手表管理项目，提供管理端和家属端页面，涉及老人档案、家属关系、手表设备、健康数据、位置、报警、公告与留言。
+基于 Spring Boot + Vue 2 的智慧养老手表管理系统，带**手表端（设备侧）接口**、**家属邀请码注册**和**异常红点提醒**；Windows 下双击一个 EXE 就能把整套系统跑起来。
 
-项目按源码整理；下述功能和步骤尚未经过完整部署及真实手表联调验证。
+- 管理端：老人档案、家属与监护人、手表设备、报警处理、公告动态、留言、心率血压 / 睡眠步数 / 位置记录
+- 家属端：只看自家老人的资料、健康记录、位置和公告
+- 手表端：真手表或模拟手表上报心率、血压、步数、睡眠、位置和摔倒告警
+- 运营功能：管理员生成邀请码，家属凭码自助注册并自动绑定老人；异常（人员 / 心率 / 血压 / 摔倒）以红点提醒，处理后可标记，同一次异常不再重复提示
 
-## 功能模块
-
-- **管理端**：老人档案、家属和监护人、手表设备、报警、公告动态、留言，以及心率血压、睡眠步数和位置记录。
-- **家属端**：查看关联老人的资料、健康记录、位置和公告动态。
-- **后端**：Java Web 接口、Shiro 登录与权限配置、JDBC 数据访问、图片上传和下载。
-
-上述内容根据现有页面、控制器和数据访问代码归纳；并非所有功能都经过运行验证。
-
-## 项目结构
+## 目录结构
 
 ```text
 .
-├── docs/                              项目说明、启动指引和逐文件清单
-├── 智慧养老手表管理系统/
-│   ├── careold/                       Spring Boot 后端
-│   ├── oldIot/                        Vue 前端
-│   ├── old.sql                        MySQL 表结构和随包演示记录
-│   └── 运行说明.txt                   原始运行说明（GB18030 编码）
+├── 智慧养老手表管理系统/              整套可运行的项目
+│   ├── careold/                      Spring Boot 1.5.19 后端（端口 8795）
+│   ├── oldIot/                       Vue 2 + ElementUI 前端（端口 8087）
+│   ├── watch-sim/                    模拟手表（Node 脚本，没有真机时用它产生实时数据）
+│   ├── src-manager/Manager.cs        管理台 EXE 的源码（C#）
+│   ├── tools/                        内置 Node 10 便携版说明（node.exe 未入库）
+│   ├── 智慧养老管理系统.exe            统一入口：启动 / 停止 / 初始化数据库 / 启动模拟手表 / 看手册
+│   ├── 系统使用手册.md                面向使用者的完整手册（推荐先看这个）
+│   ├── old.sql                       数据库脚本（MySQL，库名 old，含演示数据）
+│   ├── *_migration.sql               老库补表脚本（邀请码表、设备表、告警处理表）
+│   └── 脚本备份/                      旧版入口脚本与分册说明（已被 EXE 取代，留作参考）
+├── docs/                             配置说明、整理与变更记录
 └── LICENSE
 ```
 
-- [配置与启动](docs/SETUP.md)：环境要求、后端与前端启动步骤。
-- [文件用途清单](docs/FILES.md)：221 个原始文件的独立介绍及 SHA-256。
-- [整理与验证记录](docs/PUBLICATION.md)：源码整理范围和当前验证边界。
+## 快速开始（Windows）
 
-## 完整压缩包与 Windows 可执行文件
+需要先装好：**MySQL**（账号 `root`，密码 `123456`）、**JDK**（默认找 `C:\Program Files\Java\jdk-17`）。这两项如果和默认值不同，改 EXE 顶部的配置即可。
 
-完整源码压缩包可从[最新 Release](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/latest)下载。包内除源码外，还包含 `智慧养老管理系统.exe`（约 22 KB）以及前端目录中的通知工具程序、`tools/node-v10.24.1-win-x64/node.exe` 等 Windows 可执行文件。`node.exe` 是随附的 Node.js 运行时；其余 EXE 的具体用途、运行依赖和兼容性尚未逐一验证，因此不能据文件名保证它们是系统安装程序或可独立运行的完整客户端。运行前请先核对来源并使用安全软件扫描。
+```text
+1. 双击 智慧养老手表管理系统/智慧养老管理系统.exe
+2. 第一次使用选 [4] 初始化/导入数据库（会覆盖 old 库里同名表，别指向有数据的库）
+3. 平时选 [1] 启动系统：自动拉起 MySQL + 后端 + 前端，并打开浏览器
+4. 想在没有真手表的情况下看实时数据：选 [6] 启动模拟手表
+5. 用完选 [2] 停止系统
+```
+
+浏览器地址 <http://localhost:8087/>；演示账号见 `<智慧养老管理系统/系统使用手册.md>` 第四节。手机 / 手表与电脑在同一 Wi-Fi 时，可以用电脑的局域网 IP（例如 `http://192.168.x.x:8795`）访问接口。
+
+> **关于数据**：`old.sql` 里有 `DROP TABLE IF EXISTS` 和随包的演示数据，请只导入专用测试库。使用的账号密码、短信 / 地图 Key 都是演示值或占位符，公开部署前必须换成自己的配置。
+>
+> **关于 EXE**：`智慧养老管理系统.exe` 是仓库内附带的构建产物（未做代码签名，个别杀毒软件可能提示）。不放心的可以自己重新编译：`C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe /nologo /optimize+ /codepage:65001 /out:智慧养老管理系统.exe src-manager\Manager.cs`。
 
 ## 技术组成
 
 | 部分 | 技术 |
 | --- | --- |
-| 后端 | Java 8、Spring Boot 1.5.19、Spring JDBC、Apache Shiro |
+| 后端 | Java 8 目标版本、Spring Boot 1.5.19、Spring JDBC（JdbcTemplate）、Apache Shiro 配置 |
 | 前端 | Vue 2、Vue Router、Vuex、Element UI、Axios、ECharts、Webpack 3 |
-| 数据与服务 | MySQL；源码另声明 Solr、HBase/Hadoop 和腾讯云短信依赖 |
+| 数据与服务 | MySQL（库名 `old`）；源码另声明 Solr、HBase、腾讯云短信依赖，按需配置 |
+| 工具 | C# 管理台（`src-manager/Manager.cs`，可用 Windows 自带编译器构建）、Node 10 便携运行时 |
 
-前端依赖包含 `node-sass 4` 等较旧工具，在当前 Node.js 环境中的兼容性尚未验证。
+## 文档
 
-## 快速启动
+- [系统使用手册](智慧养老手表管理系统/系统使用手册.md)：日常使用、账号、邀请码注册、手表接入、局域网演示、常见问题
+- [变更记录](docs/CHANGES.md)：在原始项目之上做了哪些改造
+- [环境与配置](docs/SETUP.md)：不使用 EXE 时，手工启动后端 / 前端的方式
+- [设备侧接口契约](智慧养老手表管理系统/脚本备份/设备侧接口契约.md)：手表端 HTTP 接口说明
+- [整理与验证记录](docs/PUBLICATION.md)：本仓库的整理范围与验证边界
 
-### 1. 准备数据库
+## 当前验证边界
 
-准备 JDK 8、Maven、Node.js/npm 和 MySQL。`old.sql` 含有 `DROP TABLE IF EXISTS`，会删除数据库中同名表；**请先创建专用测试数据库，不要导入已有数据的数据库。** SQL 还保留了随包演示数据。
+后端已在本机（Windows + MySQL 8 + JDK 17）编译打包并做过真实 HTTP 端到端验证：设备登录 / 绑定 / 上报 / SOS、邀请码生成与注册、红点提醒与标记处理均通过。**真机鸿蒙手表的 App 尚未开发**，手表侧目前用 `watch-sim` 模拟；前端为 Webpack 3 老工具链，建议配合内置的 Node 10 使用。
 
-在 MySQL 中创建数据库并导入脚本：
+## 许可
 
-```sql
-CREATE DATABASE old CHARACTER SET utf8;
-```
-
-```sh
-cd 智慧养老手表管理系统/careold
-mysql -u root -p old < ../old.sql
-```
-
-### 2. 配置并启动后端
-
-编辑 `智慧养老手表管理系统/careold/src/main/resources/applicationContext.xml`，设置本地 MySQL 地址、账号和密码。编辑 `application.properties`，把 `local-path` 改为存在且可写的本机图片目录。不要将自己的数据库密码或服务密钥提交到公开仓库。
-
-```sh
-cd 智慧养老手表管理系统/careold
-mvn spring-boot:run
-```
-
-后端默认使用 `8795` 端口。
-
-### 3. 配置并启动前端
-
-先在 `智慧养老手表管理系统/oldIot/index.html` 配置自己的百度地图 Key，再启动前端：
-
-```sh
-cd 智慧养老手表管理系统/oldIot
-npm install
-npm run dev
-```
-
-默认访问 `http://localhost:8087/`。开发代理配置在 `oldIot/config/index.js`，默认将接口请求转发至 `http://localhost:8795/`。
-
-## 部署前需要配置
-
-- **MySQL**：项目数据源在 `applicationContext.xml` 中配置。
-- **图片存储**：`application.properties` 中的 `local-path` 必须指向可写目录。
-- **百度地图**：前端地图 Key 需要自行申请和配置。
-- **Solr、HBase、短信和消息中间件**：源码包含相关依赖或地址配置，按实际使用的功能配置对应服务；仅有依赖不代表服务已包含或已经验证。
-- **凭据**：仓库中的短信 Key 和地图 Key 是占位符；数据库连接等遗留设置也应在本机检查并更换。
-
-更多说明见[配置与启动指南](docs/SETUP.md)。目前没有声明构建通过、生产部署就绪或真实手表连接成功。
+MIT，见 [LICENSE](LICENSE)。原始项目来源与授权说明见 [docs/PUBLICATION.md](docs/PUBLICATION.md)。

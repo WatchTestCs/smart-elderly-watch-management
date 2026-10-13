@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import Login from './views/Login.vue'
+import Register from './views/Register.vue'
 import Home from './views/Home.vue'
 import familyHome from './views/familyHome.vue'
 import main from './views/main.vue'
@@ -27,6 +28,8 @@ import textOpt from './views/textOpt.vue'
 import family from './views/family.vue'
 import me from './views/me.vue'
 import saidOperation from './views/saidOperation.vue'
+import inviteCode from './views/inviteCode.vue'
+import device from './views/device.vue'
 Vue.use(Router)
 
 const router = new Router({
@@ -36,6 +39,10 @@ const router = new Router({
 	  },
     {path: '/login',
       component: Login
+    },
+    // 家属凭邀请码自助注册（无需登录）
+    {path: '/register',
+      component: Register
     },
 	{path: '/familyHome',
 	  component: familyHome,
@@ -149,6 +156,16 @@ const router = new Router({
 				  path: '/saidOperation',
 				  name: '评论管理',
 				  component: saidOperation
+				},
+				{
+				  path: '/inviteCode',
+				  name: '邀请码管理',
+				  component: inviteCode
+				},
+				{
+				  path: '/device',
+				  name: '设备管理',
+				  component: device
 				}
       ]
     }
@@ -157,7 +174,8 @@ const router = new Router({
 
 router.beforeEach((to, from, next) => {
 	console.log('进入')
-  if (to.path === '/login') {
+  // 登录页、注册页无需登录即可访问
+  if (to.path === '/login' || to.path === '/register') {
     // 是登录页面，直接进入到 要访问的登录页面
     return next()
   }

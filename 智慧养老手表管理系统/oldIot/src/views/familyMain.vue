@@ -222,7 +222,7 @@ export default {
 		  _this.imgList = response.data.picShows
 		  console.log(_this.imgList)
 		  for(var i=0;i<_this.imgList.length;i++){
-		  	// _this.imgList[i].url = '/restful/image/download?name='+_this.imgList[i].picName
+		  	// _this.imgList[i].url = 'http://47.106.37.197:9110/'+_this.imgList[i].picName
 			// _this.imgList[i].url = require("@/assets/img/"+_this.imgList[i].picName)
 			_this.imgList[i].url = 'http://localhost:9110/'+_this.imgList[i].picName
 		  	console.log('图片地址')

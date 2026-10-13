@@ -27,4 +27,14 @@ public interface FamilyDao extends CrudRepository<Family,String>{
 
     int updateFamilyPasswordByPhoneForFamily(String password,String phone);
 
+    /**
+     * 新增家属并返回自增主键 family_id（失败返回 null）
+     */
+    Integer saveAndGetId(Family family);
+
+    /**
+     * 统计该手机号是否已存在家属账号
+     */
+    int countByPhone(String phone);
+
 }
