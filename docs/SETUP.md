@@ -71,3 +71,38 @@ node node_modules/webpack-dev-server/bin/webpack-dev-server.js --inline --progre
 - `applicationContext.xml` 中的数据库密码、短信 AppKey、地图 Key 都是演示值或占位符，公开部署前必须替换为自己的配置，不要提交新凭据。
 - 短信 / 地图 / Solr / HBase 等外部服务只是依赖声明，未做过联调验证。
 - 前端为 Webpack 3 老工具链，仅保证 `npm run dev` / `npm run build` 在本机 Node 10 下可用。
+
+## 七、环境自检与「Git 不见了」的恢复（2026-10-13 实测）
+
+体检脚本（复制到 PowerShell 里逐条跑即可）：
+
+```powershell
+git --version                                   # 期望 git version 2.53.0.windows.2
+where.exe git                                   # 期望 D:\OPENCLAW\Git\cmd\git.exe
+& 'C:\Program Files\Java\jdk-17\bin\java.exe' -version
+Get-Service MySQL2077 | Select-Object Status    # 期望 Running
+Test-Path '智慧养老手表管理系统\tools\node-v10.24.1-win-x64\node.exe'   # 期望 True
+```
+
+**症状**：`git` 报「无法将“git”项识别为 cmdlet…」，但 `where.exe git` 能打印出路径、或 PATH 里写着 `D:\OPENCLAW\Git\cmd` 而该目录不存在。原因是 Git 的安装目录被清理掉了（本机实测发生过一次；Git 装在自己的目录里，不在 Program Files）。
+
+**恢复（一条命令，约 30 秒）**：
+
+```powershell
+# 安装包本机已有：E:\download\Git-2.53.0.2-64-bit (1).exe（另有一份在 C:\Users\Administrator\Downloads）
+& 'E:\download\Git-2.53.0.2-64-bit (1).exe' /VERYSILENT /NORESTART /NOCANCEL /SP- /SUPPRESSMSGBOXES /DIR='D:\OPENCLAW\Git'
+```
+
+装到 `D:\OPENCLAW\Git` 是刻意选择：系统 PATH 里已经有这项，装回原位就不用改环境变量，也不需要重启电脑。
+
+**恢复后验证**：
+
+```powershell
+git --version                                   # 2.53.0.windows.2
+git -C 'C:\Users\Administrator\Desktop\智慧养老手表管理系统' fsck --no-progress   # 没有输出即仓库完好
+git -C 'C:\Users\Administrator\Desktop\智慧养老手表管理系统' status --short       # 干净
+& 'C:\Users\Administrator\Desktop\智慧养老手表管理系统\立即同步到GitHub.exe' --yes # 能提交并推送
+```
+
+凭据存在 Windows 凭据管理器里，重装 Git 后不用重新登录；本机 `git config --local credential.helper` 已是 `manager`。
+另外，`立即同步到GitHub.exe` 会依次在 `D:\OPENCLAW\Git`、`C:\Program Files\Git`、`C:\Program Files (x86)\Git`、`%LOCALAPPDATA%\Programs\Git` 里找 `git.exe`，最后才交给 PATH —— 所以即使 PATH 被改坏，同步工具通常仍能用。
