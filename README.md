@@ -65,6 +65,22 @@
 
 后端已在本机（Windows + MySQL 8 + JDK 17）编译打包并做过真实 HTTP 端到端验证：设备登录 / 绑定 / 上报 / SOS、邀请码生成与注册、红点提醒与标记处理均通过。**真机鸿蒙手表的 App 尚未开发**，手表侧目前用 `watch-sim` 模拟；前端为 Webpack 3 老工具链，建议配合内置的 Node 10 使用。
 
+## 把本地改动同步回 GitHub
+
+仓库根目录带一个一键同步工具 **`立即同步到GitHub.exe`**：双击后它会列出本次要上传的文件（已按 `.gitignore` 过滤），按 `y` 确认即提交并推送到 `origin/main`，结果同时写进 `工具日志/同步日志.txt`（该目录不入库）。
+
+- 从别的目录启动也可以：程序会以自身所在目录为准向上找 `.git`，所以双击、快捷方式都能用。
+- 只做普通推送，**不会强推**：若远端有本地没有的提交，它会停下来提示，不会覆盖别人的改动。
+- 推送失败时提交已留在本地，网络恢复后再点一次即可补推。
+- 源码在 [`tools/sync/SyncOnce.cs`](tools/sync/SyncOnce.cs)，重新编译：
+
+  ```bat
+  C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe /nologo /optimize+ /codepage:65001 ^
+    /out:立即同步到GitHub.exe tools\sync\SyncOnce.cs
+  ```
+
+> 注意：该工具同步的是**仓库根目录**（也就是本 README 所在目录），项目本体在其下的 `智慧养老手表管理系统/`。若你在别处另有一份不含 `.git` 的拷贝，改动不会自动进入仓库。
+
 ## 许可
 
 MIT，见 [LICENSE](LICENSE)。原始项目来源与授权说明见 [docs/PUBLICATION.md](docs/PUBLICATION.md)。
