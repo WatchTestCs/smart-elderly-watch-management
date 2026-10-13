@@ -141,6 +141,7 @@ internal static class SyncOnce
         if (pending > 0)
         {
             Console.WriteLine("[2/3] 提交改动 …");
+            // 不带路径参数：避免中文/含引号文件名在 status 输出里被转义后无法匹配
             GitResult add = Git("add -A");
             if (add.Code != 0)
             {
