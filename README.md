@@ -29,6 +29,10 @@
 - [文件用途清单](docs/FILES.md)：221 个原始文件的独立介绍及 SHA-256。
 - [整理与验证记录](docs/PUBLICATION.md)：源码整理范围和当前验证边界。
 
+## 完整压缩包与 Windows 可执行文件
+
+完整源码压缩包可从[最新 Release](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/latest)下载。包内除源码外，还包含 `智慧养老管理系统.exe`（约 22 KB）以及前端目录中的通知工具程序、`tools/node-v10.24.1-win-x64/node.exe` 等 Windows 可执行文件。`node.exe` 是随附的 Node.js 运行时；其余 EXE 的具体用途、运行依赖和兼容性尚未逐一验证，因此不能据文件名保证它们是系统安装程序或可独立运行的完整客户端。运行前请先核对来源并使用安全软件扫描。
+
 ## 技术组成
 
 | 部分 | 技术 |
