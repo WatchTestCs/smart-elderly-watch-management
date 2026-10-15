@@ -1,0 +1,9 @@
+**/node_modules/
+**/target/
+**/dist/
+**/outputs/
+*.mv.db
+*.trace.db
+*.pfx
+*.p12
+*.log
