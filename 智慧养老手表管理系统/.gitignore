@@ -1,0 +1,10 @@
+oldIot/node_modules/
+oldIot/dist/
+careold/target/
+outputs/
+*.mv.db
+*.trace.db
+*.pfx
+*.p12
+*.log
+desktop/build-tools/node_modules/
