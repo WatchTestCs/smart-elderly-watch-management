@@ -1,0 +1,9 @@
+{
+  "name": "suining",
+  "productName": "岁宁",
+  "version": "2.0.0",
+  "description": "岁宁 · 智慧养老与家人照护",
+  "main": "main.cjs",
+  "author": "WatchTestCs",
+  "license": "MIT"
+}
