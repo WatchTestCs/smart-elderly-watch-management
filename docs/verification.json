@@ -1,0 +1,22 @@
+{
+  "date": "2026-10-15",
+  "branch": "preview",
+  "backendTests": 38,
+  "browserChecks": 296,
+  "setupBrowserChecks": 10,
+  "installedApplicationChecks": 53,
+  "upgradeLifecycleChecks": 5,
+  "frontendLockPackagesBefore": 1210,
+  "frontendLockPackagesAfter": 137,
+  "fontFilesUnchanged": 95,
+  "npmAuditKnownVulnerabilities": 0,
+  "signer": "CN=Suining Local Build",
+  "certificateThumbprint": "18DB902F23174625CF7F33A1366ADDB5DF37859F",
+  "signatureCryptographicallyVerified": true,
+  "publiclyTrustedCertificate": false,
+  "actualOperatingSystem": "Windows 11 IoT Enterprise LTSC x64 10.0.26100",
+  "windows10ActuallyTested": false,
+  "realWatchActuallyTested": false,
+  "performanceBenchmarksRun": false,
+  "installationUpgradeUninstallationPassed": true
+}
