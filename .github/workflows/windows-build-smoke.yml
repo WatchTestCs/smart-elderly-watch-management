@@ -71,3 +71,21 @@ jobs:
             }
           }
           Write-Host 'Unsigned application structure verified; no signing certificate used.'
+
+      - name: Compile unsigned NSIS installer
+        shell: pwsh
+        working-directory: 智慧养老手表管理系统
+        run: |
+          $ErrorActionPreference = 'Stop'
+          ./desktop/package.ps1
+          if (-not $?) { throw 'Unsigned NSIS installer compilation failed' }
+          $meta = Get-Content desktop/version.json -Raw | ConvertFrom-Json
+          $installer = "outputs/v$($meta.version)-$($meta.channel)/installer/岁宁-Setup-$($meta.version).exe"
+          if (-not (Test-Path -LiteralPath $installer -PathType Leaf)) {
+            throw "Missing unsigned NSIS installer: $installer"
+          }
+          if ((Get-Item -LiteralPath $installer).Length -le 0) {
+            throw 'Unsigned NSIS installer is empty'
+          }
+          Write-Host "Unsigned installer compiled: $installer (NOT a trusted release)"
+
