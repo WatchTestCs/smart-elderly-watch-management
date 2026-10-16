@@ -1,0 +1,36 @@
+name: Preview CI
+
+on:
+  pull_request:
+    branches: [preview]
+  push:
+    branches: [preview]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: preview-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    name: Frontend
+    uses: ./.github/workflows/reusable-frontend.yml
+
+  backend:
+    name: Backend
+    uses: ./.github/workflows/reusable-backend.yml
+
+  required:
+    name: Preview CI / required
+    if: ${{ always() }}
+    needs: [frontend, backend]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require all core checks
+        shell: bash
+        run: |
+          test "${{ needs.frontend.result }}" = "success"
+          test "${{ needs.backend.result }}" = "success"
