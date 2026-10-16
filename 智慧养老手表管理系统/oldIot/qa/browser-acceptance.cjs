@@ -78,9 +78,25 @@ run(async ({ page, context, base, report, setRole, setSignedIn, setMode }) => {
   check(report, 'Logout calls server and clears local display cache', await page.evaluate(() => !localStorage.getItem('familyPhone')));
   const before = JSON.parse(fs.readFileSync(path.join(__dirname,'font-hashes-before.json')));
   const crypto = require('crypto');
+  // The baseline was captured from Windows working-tree bytes. Git checks out
+  // text licenses/manifests/CSS with platform-specific EOLs, so allow only an
+  // exact LF <-> CRLF transformation, never arbitrary content changes.
+  const checksum = buffer => crypto.createHash('sha256').update(buffer).digest('hex');
   const changedFonts = before.flatMap(item => {
-    const actual = crypto.createHash('sha256').update(fs.readFileSync(path.join(root,item.file))).digest('hex');
-    return actual === item.sha256 ? [] : [{ file: item.file, expected: item.sha256, actual }];
+    const bytes = fs.readFileSync(path.join(root,item.file));
+    const actual = checksum(bytes);
+    if (actual === item.sha256) return [];
+    const textFile = /\.(?:css|json|md|txt)$/i.test(item.file);
+    if (textFile) {
+      const source = bytes.toString('utf8');
+      // Do not normalize files with decoding errors or lone CR bytes.
+      if (Buffer.from(source, 'utf8').equals(bytes) && !/(^|[^\r])\r(?!\n)/.test(source)) {
+        const lf = source.replace(/\r\n/g, '\n');
+        const crlf = lf.replace(/\n/g, '\r\n');
+        if (checksum(Buffer.from(lf)) === item.sha256 || checksum(Buffer.from(crlf)) === item.sha256) return [];
+      }
+    }
+    return [{ file: item.file, expected: item.sha256, actual }];
   });
   check(report, 'All existing font files unchanged', changedFonts.length === 0, { count:before.length, changedFonts });
   check(report, 'No browser JavaScript errors', report.pageErrors.length===0,report.pageErrors);
