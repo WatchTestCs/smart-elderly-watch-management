@@ -1,5 +1,31 @@
 # preview 问题清单核验与修复
 
+## 远程收尾记录（2026-10-16；在原本地验收记录之后补记）
+
+**适用版本**：[`preview-publish-20261015` 草稿 PR #1](https://github.com/WatchTestCs/smart-elderly-watch-management/pull/1)，已复验源码候选 `70b9b07cba895d03714c2f9cc29854addf3830ef`。本段更新此前“尚未推送/尚未运行远程 Actions”的历史状态：当时确实未推送，但当前分支已提交远程并完成下列检查。**没有合并进入 `preview`，也没有更新 Release 或修改 `main`。**
+
+| 证据层 | 当前可证实结果 | 远程记录 |
+| --- | --- | --- |
+| 核心构建与 Maven | Preview CI / required 成功，前端依赖审计与生产构建、后端测试和打包成功 | [Preview CI](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/38925642999) |
+| 后端 Windows 构建 | Windows 上实际运行 Maven：**70 项测试，0 失败，0 错误，0 跳过** | [Windows unsigned build smoke](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/38925643092) |
+| 业务界面回归 | 六组浏览器脚本报告 **295 + 656 + 30 + 7 + 169 + 42 = 1199 项检查，无失败**；桌面端口文件与手表模拟器 **5 项 Node 测试通过** | [Preview checks](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/38925643072) |
+| UI 质量 | UI Quality 验证成功；不代表所有登录后流程均已独立真机测试 | [UI Quality](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/38925643005) |
+| 桌面脚本契约 | Windows Desktop Contract 验证成功 | [Desktop Contract](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/38925642957) |
+| 真实 Windows 未签名构建 | 修复 Node 在 Windows 复制 Electron、JRE 运行时目录时的异常中断；Robocopy 采用受限重试与结果检查。实际完成 ASAR、图标、版本资源、安全 Fuses 和未签名 `Suining.exe` 封装，并经 NSIS/LZMA 编译产出**未签名** `岁宁-Setup-2.0.0.exe`（190,835,271 字节） | [Windows unsigned build smoke](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/38925643092) |
+| 静态安全分析 | Java、JavaScript/TypeScript CodeQL 成功；**Security 总检查未通过**，原因是仓库未启用或未提供 GitHub Dependency Graph，dependency-review-action 不支持该仓库。**这不是漏洞不存在的证明，也不是一次检测到具体依赖漏洞的结论** | [Security](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/38925642988) |
+
+### 必须保持开放的门槛
+
+1. **仓库安全配置**：有管理员权限的维护者需到 [GitHub Security & analysis 设置](https://github.com/WatchTestCs/smart-elderly-watch-management/settings/security_analysis) 启用 Dependency Graph（若产品/仓库支持），再重跑 Security。不得静默移除依赖审查来获得虚假全绿。
+2. **发布签名**：当前仅验收**未签名候选**；没有受信任发布者证书和时间戳证据，正式签名、SmartScreen 信誉及安装/升级/卸载后的用户数据保持均不能宣称通过。独立真实 Windows 安装验收与签名仍是发布门槛。
+3. **实物与环境**：真实手表端到端、真实短信、外网地图可用性、Windows 10、故障恢复与性能基准未完成全套实测。不得用浏览器夹具代替真实服务质量保证。
+4. **合并**：PR 保持草稿；当前 `preview`、`main` 不修改。先确认最新 HEAD 对应门禁、处理 Dependency Graph，完成必要的实际安装及升级验收，再由维护者审核是否合入 `preview`。
+
+**针对问题清单的最终区分**：源代码内可执行修复已随草稿 PR 提交并通过上述相关测试；自动下载更新因可信分发链未建而继续不实现，正式受信任签名和实物验证属于明确的**外部前置条件**，不是已修复项。
+
+---
+
+
 对应用户的 `preview问题清单.md`（基准 bd48420e），核验日期 2026-10-16。本轮在本地 preview 工作区完成；保留此前未提交改动，未推送、发布、运行远程 Actions，也未操作真实用户数据库。旧 Release 不包含这些新改动。
 
 ## 逐项结论

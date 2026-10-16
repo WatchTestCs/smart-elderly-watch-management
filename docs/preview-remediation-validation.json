@@ -1,50 +1,57 @@
 {
-  "title": "preview 2026-10-16 remediation verification status",
-  "scope": "Draft PR #1 only; no preview merge and no published installer",
-  "review_commit": "74f993a00d1aaee498a48ed9a26742d66b99ee06",
-  "interpretation": "The original local counts in PREVIEW_ISSUE_REMEDIATION.md are historical reports, not sufficient release evidence. Links below refer to remote CI runs for the integration candidate.",
-  "confirmed_checks": [
+  "title": "preview 2026-10-16 remediation: remote closure evidence",
+  "branch": "preview-publish-20261015",
+  "pr": "https://github.com/WatchTestCs/smart-elderly-watch-management/pull/1",
+  "verified_code_sha": "70b9b07cba895d03714c2f9cc29854addf3830ef",
+  "scope": "Draft PR only. No preview/main merge, signed release, or installation guarantee.",
+  "remote_verification": [
     {
       "name": "Preview CI / required",
       "result": "success",
-      "url": "https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/38922406166"
+      "url": "https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/38925642999"
     },
     {
       "name": "UI Quality / verify",
       "result": "success",
-      "url": "https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/38922406216"
+      "url": "https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/38925643005"
     },
     {
-      "name": "Desktop Contract / verify",
+      "name": "Desktop Contract",
       "result": "success",
-      "url": "https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/38922406392"
+      "url": "https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/38925642957"
     },
     {
-      "name": "CodeQL Java and JS",
+      "name": "Preview checks: 1199 browser assertions, 5 node tests",
       "result": "success",
-      "url": "https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/38922406224"
+      "url": "https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/38925643072"
+    },
+    {
+      "name": "Windows: 70 Maven tests, unsigned Electron/JRE and NSIS installer",
+      "result": "success",
+      "artifact": "unsigned installer 190835271 bytes; not a release artifact",
+      "url": "https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/38925643092"
+    },
+    {
+      "name": "CodeQL (Java, JavaScript/TypeScript)",
+      "result": "success",
+      "url": "https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/38925642988"
     }
   ],
-  "outstanding": [
-    {
-      "name": "Preview checks (browser QA)",
-      "result": "failed on font hash assertion; diagnostic rerun pending",
-      "url": "https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/38922406507"
-    },
+  "blocked_or_unverified": [
     {
       "name": "Dependency review",
-      "result": "blocked by disabled/unavailable GitHub Dependency Graph; not a confirmed vulnerability finding",
-      "url": "https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/38922406224"
+      "status": "blocked: GitHub Dependency Graph not enabled or available; Security workflow unsuccessful",
+      "owner_action": "Enable Dependency Graph in repository Security & analysis and rerun",
+      "url": "https://github.com/WatchTestCs/smart-elderly-watch-management/settings/security_analysis"
     },
     {
-      "name": "Windows unsigned candidate",
-      "result": "earlier preview branch run failed during desktop packaging; no accepted new Windows installer evidence",
-      "url": "https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/38899889154"
+      "name": "Trusted Windows signing and real installation/upgrades",
+      "status": "not verified; no trusted code-signing certificate, timestamp, install/upgrade evidence"
     },
     {
-      "name": "Real watch, SMS, external map, Windows 10, trusted certificate, and upgrade/rollback",
-      "result": "not independently verified on physical or production systems"
+      "name": "Real watch, SMS, external map, Windows 10, performance and failure recovery",
+      "status": "not fully verified in production conditions"
     }
   ],
-  "retest_note": "The branch has additional commits after review_commit. Always inspect the latest PR head and CI before merging."
+  "claim_limit": "Previous Windows/local test reports are historical; CI links above prove only the tested code SHA and specified assertions. The final documentation-only commit requires renewed checks if strict SHA matching is required."
 }
