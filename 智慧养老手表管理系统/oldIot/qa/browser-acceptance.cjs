@@ -78,7 +78,11 @@ run(async ({ page, context, base, report, setRole, setSignedIn, setMode }) => {
   check(report, 'Logout calls server and clears local display cache', await page.evaluate(() => !localStorage.getItem('familyPhone')));
   const before = JSON.parse(fs.readFileSync(path.join(__dirname,'font-hashes-before.json')));
   const crypto = require('crypto');
-  check(report, 'All existing font files unchanged', before.every(item => crypto.createHash('sha256').update(fs.readFileSync(path.join(root,item.file))).digest('hex') === item.sha256), { count:before.length });
+  const changedFonts = before.flatMap(item => {
+    const actual = crypto.createHash('sha256').update(fs.readFileSync(path.join(root,item.file))).digest('hex');
+    return actual === item.sha256 ? [] : [{ file: item.file, expected: item.sha256, actual }];
+  });
+  check(report, 'All existing font files unchanged', changedFonts.length === 0, { count:before.length, changedFonts });
   check(report, 'No browser JavaScript errors', report.pageErrors.length===0,report.pageErrors);
   check(report, 'No missing static resources', report.missingAssets.length===0,report.missingAssets);
   check(report, 'No unexpected API calls', report.unexpectedApi.length===0,report.unexpectedApi);
