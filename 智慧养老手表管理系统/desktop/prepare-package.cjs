@@ -9,6 +9,25 @@ function stage (name, details = '') {
   process.stdout.write(`[desktop-package] ${name}${suffix}\n`)
 }
 
+function copyVerifiedDirectory (source, destination) {
+  if (process.platform !== 'win32') {
+    fs.cpSync(source, destination, { recursive: true })
+    return
+  }
+  // Robocopy has predictable copy exit codes and bounded retries on Windows.
+  const copy = spawnSync('robocopy', [
+    source, destination, '/E', '/XJ', '/COPY:DAT', '/R:2', '/W:1',
+    '/NJH', '/NJS', '/NDL', '/NFL', '/NP'
+  ], { windowsHide: true, encoding: 'utf8', timeout: 180000 })
+  if (copy.error || copy.status === null || copy.status >= 8) {
+    throw new Error('Verified runtime directory copy failed: ' +
+      JSON.stringify({ source, destination, status: copy.status,
+        signal: copy.signal, error: copy.error?.message,
+        stdout: copy.stdout?.slice(-2000), stderr: copy.stderr?.slice(-2000) }))
+  }
+  stage('verified runtime directory copied', 'robocopy exit ' + copy.status)
+}
+
 async function main () {
   const root = path.resolve(__dirname, '..')
   const metadata = JSON.parse(fs.readFileSync(path.join(__dirname, 'version.json'), 'utf8'))
@@ -32,23 +51,7 @@ async function main () {
   fs.rmSync(target, { recursive: true, force: true })
   fs.mkdirSync(target, { recursive: true })
   stage('copy verified Electron runtime', target)
-  if (process.platform === 'win32') {
-    // Windows CI has intermittently terminated during Node's recursive copy
-    // without producing a JS exception. Robocopy provides bounded retries,
-    // distinct exit codes and diagnostics; 0..7 mean successful copy.
-    const copy = spawnSync('robocopy', [
-      electronSource, target, '/E', '/XJ', '/COPY:DAT', '/R:2', '/W:1',
-      '/NJH', '/NJS', '/NDL', '/NFL', '/NP'
-    ], { windowsHide: true, encoding: 'utf8', timeout: 120000 });
-    if (copy.error || copy.status === null || copy.status >= 8) {
-      throw new Error('Verified Electron runtime copy failed: ' +
-        JSON.stringify({ status: copy.status, signal: copy.signal, error: copy.error?.message,
-          stdout: copy.stdout?.slice(-2500), stderr: copy.stderr?.slice(-2500) }));
-    }
-    stage('verified Electron runtime copied', 'robocopy exit ' + copy.status)
-  } else {
-    fs.cpSync(electronSource, target, { recursive: true })
-  }
+  copyVerifiedDirectory(electronSource, target)
 
   const exe = path.join(target, 'Suining.exe')
   fs.renameSync(path.join(target, 'electron.exe'), exe)
@@ -67,7 +70,7 @@ async function main () {
   const jre = fs.readdirSync(jreRoot).find(name => name.endsWith('-jre'))
   if (!jre) throw new Error('Verified JRE directory not found')
   stage('copy verified Java runtime', jre)
-  fs.cpSync(path.join(jreRoot, jre), path.join(resources, 'runtime'), { recursive: true })
+  copyVerifiedDirectory(path.join(jreRoot, jre), path.join(resources, 'runtime'))
   fs.mkdirSync(path.join(resources, 'server'), { recursive: true })
 
   const backendJar = path.join(root, `careold/target/careold-${version}.jar`)
