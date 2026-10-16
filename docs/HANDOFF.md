@@ -183,7 +183,7 @@ GitHub 上的 `Preview CI / required` 必须通过。
 - 完整第三方渗透测试未完成；
 - UI 自动化目前重点覆盖登录页，业务主流程需要继续扩展；
 - 大型 Vue SFC 和 `commercial.css` 仍需要渐进拆分；
-- 当前桌面构建脚本仍有单次发布痕迹，正在拆分成 build/package/sign/release 阶段。
+- 桌面构建已拆分为 build/package/release 阶段；完整 Windows 打包与安装生命周期仍需在 release candidate 阶段持续验证。
 
 ## 10. Definition of Done
 
