@@ -109,7 +109,7 @@ cd 智慧养老手表管理系统
 ./desktop/build.ps1
 ```
 
-构建脚本执行锁文件安装、生产构建、后端测试、固定运行环境下载与摘要校验，再封装、签名和生成安装包。首次构建需要网络；完整说明见 [构建指南](docs/BUILD.md)。
+桌面流水线已拆分为 build、package 与 release 阶段：普通 build 只生成未签名应用，不隐式创建签名证书；release 阶段再复制到 signed、签名、生成安装器/Portable ZIP 与 SHA-256/manifest 证据。默认输出为版本化目录 `outputs/v2.0.0-preview/`。首次构建需要网络；完整说明见 [构建指南](docs/BUILD.md) 与 [发布流程](docs/RELEASE.md)。
 
 ## 已验证与尚未验证
 
