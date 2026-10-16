@@ -1,0 +1,9 @@
+# Current preview handoff owner. Expand this file when maintainership is shared.
+* @qiyuhuating
+
+# High-risk boundaries are listed explicitly so future ownership can be split
+# without rediscovering them.
+/.github/ @qiyuhuating
+/智慧养老手表管理系统/desktop/ @qiyuhuating
+/智慧养老手表管理系统/careold/src/main/java/com/example/careold/security/ @qiyuhuating
+/docs/decisions/ @qiyuhuating

@@ -1,0 +1,60 @@
+version: 2
+
+# Version-update PRs intentionally target preview while this branch is the
+# engineering handoff branch. GitHub security-update PRs are a separate feature
+# and always target the repository default branch when target-branch is set.
+updates:
+  - package-ecosystem: npm
+    directory: "/智慧养老手表管理系统/oldIot"
+    target-branch: preview
+    schedule:
+      interval: weekly
+      day: wednesday
+      time: "04:00"
+      timezone: "Asia/Singapore"
+    open-pull-requests-limit: 5
+    groups:
+      frontend-minor-patch:
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: npm
+    directory: "/智慧养老手表管理系统/desktop/build-tools"
+    target-branch: preview
+    schedule:
+      interval: weekly
+      day: wednesday
+      time: "04:15"
+      timezone: "Asia/Singapore"
+    open-pull-requests-limit: 3
+    groups:
+      desktop-build-tools:
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: maven
+    directory: "/智慧养老手表管理系统/careold"
+    target-branch: preview
+    schedule:
+      interval: weekly
+      day: wednesday
+      time: "04:30"
+      timezone: "Asia/Singapore"
+    open-pull-requests-limit: 5
+    groups:
+      backend-minor-patch:
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    target-branch: preview
+    schedule:
+      interval: weekly
+      day: wednesday
+      time: "04:45"
+      timezone: "Asia/Singapore"
+    open-pull-requests-limit: 5

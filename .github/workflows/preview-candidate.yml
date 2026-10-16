@@ -1,0 +1,110 @@
+name: Preview Candidate
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unsigned-candidate:
+    name: Build unsigned Windows candidate
+    if: ${{ github.ref == 'refs/heads/preview' }}
+    runs-on: windows-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - name: Checkout preview source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            智慧养老手表管理系统/oldIot/package-lock.json
+            智慧养老手表管理系统/desktop/build-tools/package-lock.json
+
+      - name: Set up Temurin Java
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+          cache-dependency-path: 智慧养老手表管理系统/careold/pom.xml
+
+      - name: Build unsigned desktop application
+        shell: pwsh
+        working-directory: 智慧养老手表管理系统
+        run: |
+          ./desktop/build.ps1
+
+      - name: Package unsigned candidate
+        shell: pwsh
+        run: |
+          $root = Join-Path $env:GITHUB_WORKSPACE '智慧养老手表管理系统'
+          $meta = Get-Content (Join-Path $root 'desktop/version.json') -Raw | ConvertFrom-Json
+          $output = Join-Path $root ("outputs/v{0}-{1}" -f $meta.version,$meta.channel)
+
+          & (Join-Path $root 'desktop/package.ps1') -OutputDir $output
+          if (-not $?) { throw 'Unsigned installer packaging failed' }
+
+          $candidate = Join-Path $output 'candidate'
+          $evidence = Join-Path $output 'evidence'
+          New-Item -ItemType Directory -Force -Path $candidate,$evidence | Out-Null
+
+          $portable = Join-Path $candidate ("Suining-Portable-{0}-unsigned.zip" -f $meta.version)
+          Compress-Archive -Path (Join-Path $output 'unsigned/Suining/*') -DestinationPath $portable -CompressionLevel Optimal -Force
+
+          $builtInstaller = Join-Path $output ("installer/岁宁-Setup-{0}.exe" -f $meta.version)
+          $candidateInstaller = Join-Path $candidate ("Suining-Setup-{0}-unsigned.exe" -f $meta.version)
+          Copy-Item -LiteralPath $builtInstaller -Destination $candidateInstaller -Force
+
+          $checksums = Get-ChildItem -LiteralPath $candidate -File | Sort-Object Name | ForEach-Object {
+            $hash = Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256
+            "{0}  {1}" -f $hash.Hash.ToLowerInvariant(),$_.Name
+          }
+          [IO.File]::WriteAllLines((Join-Path $evidence 'SHA256SUMS-unsigned.txt'),$checksums,[Text.UTF8Encoding]::new($false))
+
+          "SUINING_OUTPUT_DIR=$output" >> $env:GITHUB_ENV
+          "CANDIDATE_DIR=$candidate" >> $env:GITHUB_ENV
+          "EVIDENCE_DIR=$evidence" >> $env:GITHUB_ENV
+          "PORTABLE_PATH=$portable" >> $env:GITHUB_ENV
+
+      - name: Generate SPDX SBOM for packaged application
+        uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
+        with:
+          path: ${{ env.SUINING_OUTPUT_DIR }}/unsigned/Suining
+          format: spdx-json
+          output-file: ${{ env.EVIDENCE_DIR }}/sbom.spdx.json
+          upload-artifact: false
+          upload-release-assets: false
+          dependency-snapshot: false
+
+      - name: Attest candidate build provenance
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: ${{ env.CANDIDATE_DIR }}/*
+
+      - name: Attest portable SBOM
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: ${{ env.PORTABLE_PATH }}
+          sbom-path: ${{ env.EVIDENCE_DIR }}/sbom.spdx.json
+
+      - name: Upload candidate and evidence
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: preview-unsigned-candidate-${{ github.sha }}
+          path: |
+            ${{ env.CANDIDATE_DIR }}
+            ${{ env.EVIDENCE_DIR }}/SHA256SUMS-unsigned.txt
+            ${{ env.EVIDENCE_DIR }}/sbom.spdx.json
+          if-no-files-found: error
+          retention-days: 14
