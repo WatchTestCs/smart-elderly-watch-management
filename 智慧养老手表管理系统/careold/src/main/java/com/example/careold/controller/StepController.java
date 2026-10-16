@@ -2,7 +2,6 @@ package com.example.careold.controller;
 
 import com.example.careold.dao.RatepreDao;
 import com.example.careold.dao.StepDao;
-import com.example.careold.domain.RatepreDto;
 import com.example.careold.domain.StepDto;
 import java.util.LinkedHashMap;
 import org.slf4j.Logger;
@@ -43,8 +42,7 @@ public class StepController {
         String timeFirst=param.get("timeFirst").toString();
         String timeLast=param.get("timeLast").toString();
         LOG.info(name+"----"+timeFirst+"----"+timeLast);
-        List<StepDto> stepDtos=stepDao.getStepSleep(name,timeFirst,timeLast);
-        result.put("stepDtos",stepDtos);
+        stepDao.getStepSleep(name,timeFirst,timeLast,com.example.careold.domain.PageRequest.from(param)).putInto(result,"stepDtos");
         return result;
     }
 

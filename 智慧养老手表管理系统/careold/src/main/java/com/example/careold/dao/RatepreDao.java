@@ -3,11 +3,13 @@ package com.example.careold.dao;
 import com.example.careold.domain.RatepreDto;
 
 import java.util.List;
+import com.example.careold.domain.PageRequest;
+import com.example.careold.domain.PageResult;
 import java.util.Map;
 
 public interface RatepreDao {
 
-    List<RatepreDto> getRatepre(String name,String timeFirst,String timeLast);
+    PageResult<RatepreDto> getRatepre(String name,String timeFirst,String timeLast, PageRequest page);
 
     List<RatepreDto> getRatepreFamily(int old_id, String timeFirst, String timeLast);
 

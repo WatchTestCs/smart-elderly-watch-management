@@ -2,8 +2,8 @@
   <div class="roles">
     
     <div class="sys-research">
-      <el-row class="row-search">
-        <el-col :span="8">
+      <form class="row-search" role="search" @submit.prevent="searchOldPersons">
+        <div class="search-field">
           
           <label class="table-search-label" for="search-person">长者姓名</label>
           <el-input id="search-person"
@@ -13,14 +13,14 @@
             <template #append><el-button aria-label="查询长者姓名"
               
               icon="el-icon-search"
-              @click="searchOldPersons"></el-button></template>
+              native-type="submit"></el-button></template>
           </el-input>
-        </el-col>
-        <el-col :span="4">
+        </div>
+        <div class="toolbar-actions">
           <el-button plain @click="oldDialogVisible = true">添加老人</el-button>
-        </el-col>
+        </div>
 		
-      </el-row>
+      </form>
     </div>
     
     <el-dialog
@@ -61,12 +61,12 @@
 		<el-input v-model="oldForm.drag"></el-input>
 		</el-form-item>
 		<el-form-item label="出生日期" prop="bothdate">
-		<el-col :span="24">
+
 		  <el-date-picker type="date" placeholder="选择日期" value-format="YYYY-MM-DD" v-model="oldForm.bothdate" style="width: 100%;"></el-date-picker>
-		</el-col>
+
 		</el-form-item>
 		<el-form-item label="监护人" prop="customerId">
-			<el-col :span="48">
+
 				<el-select v-model="oldForm.customerId" placeholder="请选择监护人">
 				<el-option v-for="item in options"
       :key="item.customerId"
@@ -74,7 +74,7 @@
       :value="item.customerId">
 			</el-option>
 			</el-select>			
-		</el-col>
+
 		
 		</el-form-item>
 			<el-form-item label="手表编号" prop="deviceId">
@@ -86,8 +86,7 @@
       <el-button type="primary" @click="addOldPersons('addoldFormRef')">确 定</el-button>
     </span></template>
     </el-dialog>
-    
-    
+
     <el-dialog
       title="角色编辑"
       v-model="oldEditDialogVisible"
@@ -127,12 +126,12 @@
         <el-input v-model="oldEditForm.drag"></el-input>
         </el-form-item>
         <el-form-item label="出生日期" prop="bothdate">
-        <el-col :span="24">
+
         	<el-date-picker type="date" placeholder="选择日期" value-format="YYYY-MM-DD" v-model="oldEditForm.bothdate" style="width: 100%;"></el-date-picker>
-        </el-col>
+
         </el-form-item>
         <el-form-item label="监护人" prop="customerId">
-        	<el-col :span="48">
+
         		<el-select v-model="oldEditForm.customerName" placeholder="请选择监护人">
         		<el-option v-for="item in options"
       :key="item.customerId"
@@ -141,7 +140,7 @@
 			</el-option>
         		
         	</el-select>			
-        </el-col>
+
         
         </el-form-item>
 				<el-form-item label="手表编号" prop="deviceId">
@@ -153,13 +152,11 @@
       <el-button type="primary" @click="editOldPerson">确 定</el-button>
     </span></template>
     </el-dialog>
-    
-    
-    <el-table class="adaptive-record-table" :data="personDetailList.slice((currentPage-1)*pageSize,currentPage*pageSize)"
+
+    <el-table class="adaptive-record-table" :data="personDetailList"
     style="width: 100%" border>
     <template #empty><div  class="care-empty-state"><strong>暂无老人档案</strong><span>添加老人或调整搜索条件后，档案会显示在这里。</span></div></template>
-    
-	
+
 	<el-table-column type="expand">
 			  <template #default="prop" >
 				<p>家属姓名:{{prop.row.familyName}}</p><p>家属性别:{{prop.row.familySex}}</p>
@@ -182,8 +179,7 @@
 	  
 		<el-table-column prop="customerName" label="监护人" width="100" align="center"></el-table-column>
 		<el-table-column prop="deviceId" label="手表编号" width="100" align="center"></el-table-column>
-		
-		
+
       <el-table-column label="操作" align="center">
         <template #default="scope" >
           <el-button size="small" plain type="primary" icon="el-icon-edit"
@@ -195,7 +191,7 @@
         </template>
       </el-table-column>
     </el-table>
-    <record-cards :records="personDetailList.slice((currentPage-1)*pageSize,currentPage*pageSize)" :fields='[{"key":"bothdate","label":"出生日期"},{"key":"sex","label":"性别"},{"key":"phone","label":"电话"},{"key":"room","label":"房间"},{"key":"beTime","label":"入院时间"},{"key":"familyName","label":"家属姓名"},{"key":"familyRelation","label":"关系"},{"key":"familyPhone","label":"家属电话"},{"key":"familySex","label":"家属性别"},{"key":"customerName","label":"监护人"},{"key":"deviceId","label":"手表编号"},{"key":"illness","label":"病史"},{"key":"warn","label":"过敏"},{"key":"foodLike","label":"喜好食物"},{"key":"foodHate","label":"忌口食物"},{"key":"drag","label":"常用药物"}]' label="长者档案" title-key="name" key-field="oldId">
+    <record-cards :records="personDetailList" :fields='[{"key":"bothdate","label":"出生日期"},{"key":"sex","label":"性别"},{"key":"phone","label":"电话"},{"key":"room","label":"房间"},{"key":"beTime","label":"入院时间"},{"key":"familyName","label":"家属姓名"},{"key":"familyRelation","label":"关系"},{"key":"familyPhone","label":"家属电话"},{"key":"familySex","label":"家属性别"},{"key":"customerName","label":"监护人"},{"key":"deviceId","label":"手表编号"},{"key":"illness","label":"病史"},{"key":"warn","label":"过敏"},{"key":"foodLike","label":"喜好食物"},{"key":"foodHate","label":"忌口食物"},{"key":"drag","label":"常用药物"}]' label="长者档案" title-key="name" key-field="oldId">
       <template #actions="scope"  ><el-button size="small" plain type="primary" icon="el-icon-edit"
                      @click="handleeditOldPerson(scope.$index, scope.row)">编辑
           </el-button>
@@ -218,7 +214,6 @@
 </template>
 
 <script>
-// 引入
 import axios from 'axios'
 import RecordCards from '@/components/RecordCards.vue'
 
@@ -231,8 +226,6 @@ export default {
 	      return callback(new Error('电话号码不能为空'))
 	    }
 	    setTimeout(() => {
-	      // Number.isInteger是es6验证数字是否为整数的方法,但是我实际用的时候输入的数字总是识别成字符串
-	      // 所以我就在前面加了一个+实现隐式转换
 	  
 	      if (!Number.isInteger(+value)) {
 	        callback(new Error('请输入数字值'))
@@ -255,11 +248,7 @@ export default {
 		sex: '',
 		phone: '',
 		room: '',
-		illness: '',
-		warn: '',
-		foodLike: '',
-		foodHate: '',
-		drag: '',
+
 		beTime: '',
 		customerId: '',
 		illness: '',
@@ -276,11 +265,7 @@ export default {
        sex: '',
        phone: '',
        room: '',
-       illness: '',
-       warn: '',
-       foodLike: '',
-       foodHate: '',
-       drag: '',
+
        beTime: '',
        customerId: '',
 			 customerName: '',
@@ -297,17 +282,7 @@ export default {
       pageSize: 10,
       currentPage: 1,
       personDetailList: [],
-      // 控制分配权限对话框的展示和隐藏
-      
 
-      // 树形控件的数据
-      
-
-      // Tree树形控件，默认使用数据中的 label 属性作为节点名称，使用 children 属性指定该接待你的子节点
-      // 但是，如果我们自己的数据结构与默认的结构不同，可以通过 defaultProps 来修改默认的两个属性
-      
-      // 当前被分配权限的角色id
-      
 	  rules: {
 	  			phone: [
 	  			  { validator: checkPhone, trigger: 'blur'}
@@ -320,13 +295,13 @@ export default {
 		this.addCustomerList()
   },
   methods: {
-    // 查询
-    searchOldPersons () {
+    searchOldPersons (keepPage = false) {
+      if (keepPage !== true) this.currentPage = 1
       var _this = this
       var name = _this.searchText
       
       axios.post('restful/oldPerson/selectDetail',
-        {
+        { page: this.currentPage, pageSize: this.pageSize,
           'name': name === '' ? '' : _this.searchText
         },
         {
@@ -336,15 +311,14 @@ export default {
           withCredentials: true
         }).then(function (response) {
         _this.personDetailList = response.data.oldPersonDetails
-        _this.total = response.data.oldPersonDetails.length
-		console.log(_this.personDetailList)
+        _this.total = response.data.total ?? response.data.oldPersonDetails.length
+
       })
         .catch(function (error) {
           console.log(error)
         })
       
     },
-    // 添加老人
     addOldPersons () {
       var _this = this
 	  var param = _this.oldForm
@@ -356,7 +330,7 @@ export default {
           },
           withCredentials: true
         }).then(function (response) {
-        console.log(response)
+
         if (response.data.returnCode === '1111') {
           _this.oldDialogVisible = false
           _this.searchOldPersons()
@@ -375,12 +349,9 @@ export default {
           console.log(error)
         })
     },
-    // 关闭添加老人对话框
     closeRoleAddDialog () {
-      // 重置表单
       this.$refs.addoldFormRef.resetFields()
     },
-    // 编辑
     editOldPerson () {
 			this.addCustomerList()
       var _this = this
@@ -391,7 +362,7 @@ export default {
           },
           withCredentials: true
         }).then(function (response) {
-        console.log(response)
+
         if (response.data.returnCode === '1111') {
           _this.oldEditDialogVisible = false
           _this.$message({
@@ -430,9 +401,7 @@ export default {
 			    })
 			 
 		},
-    // 删除
     async deleteOldPerson (oldId) {
-      console.log(oldId)
 
       var _this = this
       try {
@@ -441,7 +410,7 @@ export default {
           cancelButtonText: '取消',
           type: 'warning'
         })
-        console.log(oldId)
+
         axios.post('restful/oldPerson/delete', {'oldId': oldId},
           {
             headers: {
@@ -449,7 +418,7 @@ export default {
             },
             withCredentials: true
           }).then(function (response) {
-          console.log(response)
+
           if (response.data.returnCode === '1111') {
             _this.$message({
               type: 'success',
@@ -462,62 +431,25 @@ export default {
             console.log(error)
           })
       } catch (err) {
-        // 取消删除
         this.$message({
           type: 'info',
           message: '已取消删除'
         })
       }
     },
-    // 编辑信息
     handleeditOldPerson (index, row) {
       this.oldEditDialogVisible = true
       this.oldEditForm = Object.assign({}, row) // 解决修改弹出框数据时，表格数据会发生同步改变
-      // console.log(row)
-    },
-    handleSizeChange (val) {
-      console.log(`每页 ${val} 条`)
-      this.pageSize = val
-    },
-    handleCurrentChange (val) {
-      console.log(`当前页: ${val}`)
-      this.currentPage = val
-    },
-    changePage (val) {
-      console.log(`当前页: ${val}`)
-      this.currentPage = val
-    },
-    // 展示分配权限对话框
-    
 
-    // 给角色分配权限
-    
+    },
+    handleSizeChange (val) { this.pageSize = val; this.currentPage = 1; this.searchOldPersons(true)
+    },
+
+    changePage (val) { this.currentPage = val; this.searchOldPersons(true)
+    },
+
+
   }
 }
 
 </script>
-
-<style lang="less" scoped>
-  .sys-research {
-    height: 60px;
-    padding: 20px 20px 0;
-  }
-
-  .level1 {
-    border-bottom: 1px dotted #ccc;
-    padding: 10px 0;
-
-    &:last-child {
-      border: 0;
-    }
-  }
-
-  .level2 {
-    padding: 5px 0;
-  }
-
-  .level3 {
-    margin: 3px;
-  }
-
-</style>

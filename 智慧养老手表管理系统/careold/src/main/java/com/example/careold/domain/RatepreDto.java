@@ -7,8 +7,8 @@ public class RatepreDto {
     private String rateState;
     private String preState;
     private String createTime;
-    private int hr;
-    private int bp;
+    private Integer hr;
+    private Integer bp;
     /** 记录ID（用于异常处置） */
     private Integer recordId;
 
@@ -40,19 +40,19 @@ public class RatepreDto {
         this.preHandled = preHandled;
     }
 
-    public int getHr() {
+    public Integer getHr() {
         return hr;
     }
 
-    public void setHr(int hr) {
+    public void setHr(Integer hr) {
         this.hr = hr;
     }
 
-    public int getBp() {
+    public Integer getBp() {
         return bp;
     }
 
-    public void setBp(int bp) {
+    public void setBp(Integer bp) {
         this.bp = bp;
     }
 

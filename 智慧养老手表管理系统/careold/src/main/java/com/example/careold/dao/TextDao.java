@@ -2,10 +2,11 @@ package com.example.careold.dao;
 
 import com.example.careold.domain.Text;
 
-import java.util.List;
+import com.example.careold.domain.PageRequest;
+import com.example.careold.domain.PageResult;
 
 public interface TextDao {
-    List<Text> selectTextAll(String title);
+    PageResult<Text> selectTextAll(String title, PageRequest page);
 
     Text selectTextDetail(int textId);
 

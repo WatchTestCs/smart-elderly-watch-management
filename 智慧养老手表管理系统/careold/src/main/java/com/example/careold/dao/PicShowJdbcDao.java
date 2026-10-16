@@ -13,21 +13,18 @@ public class PicShowJdbcDao extends JdbcCom implements PicShowDao{
     @Override
     public List<PicShow> findById(String s) {
         String sql="select * from pic_show";
-        List<PicShow> picShows=jdbcTemplate.query(sql,new BeanPropertyRowMapper<>(PicShow.class));
-        return picShows;
+        return jdbcTemplate.query(sql,new BeanPropertyRowMapper<>(PicShow.class));
     }
 
     @Override
     public int save(PicShow picShow) {
         String sql="insert into pic_show(pic_name) values(?)";
-        int rows=jdbcTemplate.update(sql,picShow.getPicName());
-        return rows;
+        return jdbcTemplate.update(sql,picShow.getPicName());
     }
 
     @Override
     public int delete(String s) {
         String sql="delete from pic_show";
-        int rows=jdbcTemplate.update(sql);
-        return rows;
+        return jdbcTemplate.update(sql);
     }
 }

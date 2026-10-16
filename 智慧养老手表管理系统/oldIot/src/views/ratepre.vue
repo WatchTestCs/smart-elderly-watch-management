@@ -1,9 +1,9 @@
 <template>
   <div class="roles">
-    
+
     <div class="sys-research">
-      <el-row class="row-search">
-        <el-col :span="8">
+      <form class="row-search" role="search" @submit.prevent="searchOlds">
+        <div class="search-field">
           
           <label class="table-search-label" for="search-ratepre">长者姓名</label>
           <el-input id="search-ratepre"
@@ -13,58 +13,24 @@
             <template #append><el-button aria-label="查询长者姓名"
               
               icon="el-icon-search"
-              @click="searchOlds"></el-button></template>
+              native-type="submit"></el-button></template>
           </el-input>
-        </el-col>
-        <el-col :span="8">
-        <div class="block">
-        <el-date-picker
-        v-model="value6"
-		value-format="YYYY-MM-DD"
-        type="daterange"
-        range-separator="至"
-        start-placeholder="开始日期"
-        end-placeholder="结束日期"
-				style="display: none;">
-        </el-date-picker>
         </div>
-        </el-col>
+
 		<el-badge :value="this.rateCount" :hidden="this.rateCount === 0" class="item">
 		  <el-button size="small" :type="Number(rateCount) > 0 ? 'danger' : 'default'" plain @click="showAlertByKind('rate')">心率异常</el-button>
 		</el-badge>
-		<el-badge :value="this.preCount" :hidden="this.preCount === 0" class="item" style="margin-left: 20px;">
+		<el-badge :value="this.preCount" :hidden="this.preCount === 0" class="item">
 			<el-button size="small" :type="Number(preCount) > 0 ? 'danger' : 'default'" plain @click="showAlertByKind('pre')">血压异常</el-button>
 		</el-badge>
-		<el-button size="small" plain type="primary" style="margin-left: 20px;" @click="openWorkbench">只看待处理异常</el-button>
-      </el-row>
+		<el-button size="small" plain type="primary" @click="openWorkbench">只看待处理异常</el-button>
+      </form>
     </div>
-    
-    <el-dialog
-      title="角色添加"
-      v-model="roleDialogVisible"
-      @close="closeRoleAddDialog"
-      width="30%">
-      <el-form label-width="80px" :model="roleForm"  ref="addRoleFormRef">
-        <el-form-item label="角色名称" prop="roleName">
-          <el-input v-model="roleForm.roleName"></el-input>
-        </el-form-item>
-        <el-form-item label="角色描述" prop="roleDesc">
-          <el-input v-model="roleForm.roleDesc"></el-input>
-        </el-form-item>
-      </el-form>
-      <template #footer><span  class="dialog-footer">
-      <el-button @click="roleDialogVisible = false">取 消</el-button>
-      <el-button type="primary" @click="addRoles('addRoleFormRef')">确 定</el-button>
-    </span></template>
-    </el-dialog>
-    
-    
-    
-    <el-table class="adaptive-record-table" :data="oldsList.slice((currentPage-1)*pageSize,currentPage*pageSize)"
+
+    <el-table class="adaptive-record-table" :data="oldsList"
     style="width: 100%" border>
     <template #empty><div  class="care-empty-state"><strong>暂无健康记录</strong><span>最新上报的心率与血压数据会显示在这里。</span></div></template>
-    
-      
+
       <el-table-column type="index" width="150" align="center"></el-table-column>
       <el-table-column prop="name" label="姓名" width="180" align="center"></el-table-column>
 			
@@ -98,7 +64,7 @@
         </template>
       </el-table-column>
     </el-table>
-    <record-cards :records="oldsList.slice((currentPage-1)*pageSize,currentPage*pageSize)" :fields='[{"key":"preState","label":"血压状态","state":"health","handled":"preHandled"},{"key":"rateState","label":"心率状态","state":"health","handled":"rateHandled"},{"key":"oldId","label":"长者编号"},{"key":"sex","label":"性别"}]' label="心率与血压记录" title-key="name" key-field="oldId" time-key="createTime">
+    <record-cards :records="oldsList" :fields='[{"key":"preState","label":"血压状态","state":"health","handled":"preHandled"},{"key":"rateState","label":"心率状态","state":"health","handled":"rateHandled"},{"key":"oldId","label":"长者编号"},{"key":"sex","label":"性别"}]' label="心率与血压记录" title-key="name" key-field="oldId" time-key="createTime">
       <template #actions="scope"  ><el-button v-if="scope.row.rateState==1 || scope.row.preState==1"
                      size="small" plain type="danger" icon="el-icon-warning"
                      @click="showAlertRow(scope.row)">查看原因</el-button>
@@ -109,7 +75,7 @@
             查看健康详情
           </el-button></template>
     </record-cards>
-    
+
     <div style="margin-top: 10px;text-align: center">
       <el-pagination
         @size-change="handleSizeChange"
@@ -120,8 +86,7 @@
         :total="total">
       </el-pagination>
     </div>
-    
-    
+
     <el-dialog :title="alertDialog.title" v-model="alertDialog.visible" width="620px">
       <div v-if="alertDialog.loading" style="text-align:center;padding:20px;">正在读取 ...</div>
       <div v-else-if="alertDialog.hasAlert === 0" style="text-align:center;padding:20px;color:#606266;">
@@ -157,7 +122,6 @@
       </span></template>
     </el-dialog>
 
-    
     <el-dialog title="健康记录详情" v-model="isShowRoleDialog" @opened="resizeCharts" @closed="disposeCharts">
       <el-alert v-if="chartError" :title="chartError" type="warning" :closable="false" show-icon></el-alert>
       <div v-loading="chartLoading" class="record-chart-content"><div id="myChart" ref="mychart" class="record-chart"></div><div id="myChartTwo" ref="mychartTwo" class="record-chart"></div></div>
@@ -168,7 +132,6 @@
 </template>
 
 <script>
-// 引入
 import axios from 'axios'
 import RecordCards from '@/components/RecordCards.vue'
 
@@ -180,38 +143,14 @@ export default {
   data () {
     return {
       searchText: '',
-      chartLoading: false, chartError: '', // 角色查询内容
-      roleDialogVisible: false,
-      roleEditDialogVisible: false,
-      roleForm: {
-        roleName: '',
-        roleDesc: ''
-      },
-      roleEditForm: {
-        roleId: '',
-        roleName: '',
-        roleDesc: ''
-      },
-	  value6: '',
-      popoverRole: true,
+      chartLoading: false, chartError: '',
+
       total: 0,
       pageSize: 10,
       currentPage: 1,
       oldsList: [],
-      // 控制分配权限对话框的展示和隐藏
       isShowRoleDialog: false,
 
-      // 树形控件的数据
-      rightsTree: [],
-
-      // Tree树形控件，默认使用数据中的 label 属性作为节点名称，使用 children 属性指定该接待你的子节点
-      // 但是，如果我们自己的数据结构与默认的结构不同，可以通过 defaultProps 来修改默认的两个属性
-      defaultProps: {
-        // children: 'children',
-        label: 'authName'
-      },
-      // 当前被分配权限的角色id
-      roleId: -1,
 			hrs: [],
 			bps: [],
 			createTimes: [],
@@ -241,35 +180,26 @@ export default {
     }
   },
   created () {
-	  // let myChart = this.$echarts.init(document.getElementById('myChart'))
-		console.log('---')
+
     this.searchOlds()
 		this.getCount()
-		console.log('---')
-	// this.drawLine()
+
   },
-  updated() {
-	  // this.drawLine()
-     // this.getAttendanceData();
-  },
-  mounted(){
-    // this.drawLine()
-  },
+
+  beforeUnmount () { this.isShowRoleDialog = false },
   methods: {
-    // 查询
-    searchOlds () {
+    searchOlds (keepPage = false) {
+      if (keepPage !== true) this.currentPage = 1
 			
       var _this = this
       var name = _this.searchText
-			if(this.value6.length==0){
-				console.log('null')
-				this.value6=['','']
-			}
+
       axios.post('restful/ratepre/selectRatepre',
         {
+          page: _this.currentPage, pageSize: _this.pageSize,
           'name': name === '' ? '' : _this.searchText,
-					'timeFirst':_this.value6[0] =='' ? '' : _this.value6[0],
-					'timeLast': _this.value6[1] =='' ? '' : _this.value6[1]
+					'timeFirst':'',
+					'timeLast': ''
         },
         {
           headers: {
@@ -278,7 +208,7 @@ export default {
           withCredentials: true
         }).then(function (response) {
         _this.oldsList = response.data.ratepreDtoList
-        _this.total = response.data.ratepreDtoList.length
+        _this.total = response.data.total ?? response.data.ratepreDtoList.length
       })
         .catch(function (error) {
           console.log(error)
@@ -443,117 +373,32 @@ export default {
 			this.total = list.length
 			this.$message({ type: 'info', message: '已筛选出 ' + list.length + ' 条待处理异常，点「查看原因」了解处理办法' })
 		},
-    // 添加角色
-    addRoles () {
-      var _this = this
-      axios.post('restful/roles/save',
-        {
-          'roleName': _this.roleForm.roleName
-        },
-        {
-          headers: {
-            'content-type': 'application/json'
-          },
-          withCredentials: true
-        }).then(function (response) {
-        console.log(response)
-        if (response.data.returnCode === '1111') {
-          _this.roleDialogVisible = false
-          _this.searchOlds()
-          _this.$message({
-            type: 'success',
-            message: '添加角色成功'
-          })
-        } else {
-          _this.$message({
-            type: 'error',
-            message: '添加角色失败'
-          })
-        }
-      })
-        .catch(function (error) {
-          console.log(error)
-        })
-    },
-    // 关闭添加角色对话框
-    closeRoleAddDialog () {
-      // 重置表单
-      this.$refs.addRoleFormRef.resetFields()
-    },
-    
-    // 删除
-    async deleteRole (roleName) {
-      console.log(roleName)
 
-      var _this = this
-      try {
-        await _this.$confirm('此操作将永久删除该文件, 是否继续?', '提示', {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          type: 'warning'
-        })
-        console.log(roleName)
-        axios.post('restful/roles/delete', {'roleName': roleName},
-          {
-            headers: {
-              'content-type': 'application/json'
-            },
-            withCredentials: true
-          }).then(function (response) {
-          console.log(response)
-          if (response.data.returnCode === '1111') {
-            _this.$message({
-              type: 'success',
-              message: '删除信息成功'
-            })
-          }
-          _this.searchOlds()
-        })
-          .catch(function (error) {
-            console.log(error)
-          })
-      } catch (err) {
-        // 取消删除
-        this.$message({
-          type: 'info',
-          message: '已取消删除'
-        })
-      }
-    },
-    // 编辑信息
-    handleEditRole (index, row) {
-      this.roleEditDialogVisible = true
-      this.roleEditForm = Object.assign({}, row) // 解决修改弹出框数据时，表格数据会发生同步改变
-      // console.log(row)
-    },
     handleSizeChange (val) {
-      console.log(`每页 ${val} 条`)
+
       this.pageSize = val
+      this.currentPage = 1
+      this.searchOlds(true)
     },
-    handleCurrentChange (val) {
-      console.log(`当前页: ${val}`)
-      this.currentPage = val
-    },
+
     changePage (val) {
-      console.log(`当前页: ${val}`)
+
       this.currentPage = val
+      this.searchOlds(true)
     },
-    // 展示分配权限对话框
     showRoleDialog (curOld) {
       this.isShowRoleDialog = true
       this.chartLoading = true
       this.chartError = ''
       this.name = curOld.name || ''
       return axios.post('restful/ratepre/selectRatepreDetail', { oldId: curOld.oldId }, { withCredentials: true }).then(response => {
-        if (!this.isShowRoleDialog || this._isDestroyed) return
+        if (!this.isShowRoleDialog) return
         this.bps = Array.isArray(response.data.bps) ? response.data.bps : []; this.hrs = Array.isArray(response.data.hrs) ? response.data.hrs : []; this.createTimes = Array.isArray(response.data.createTimes) ? response.data.createTimes : []; this.time = response.data.time;
         if (!this.hrs.length && !this.bps.length) { this.chartError = '暂无可展示的健康详情。'; return }
         this.drawLine(); this.drawLineTwo()
       }).catch(() => { this.chartError = '详情暂时无法加载，请关闭后重试。' }).then(() => { this.chartLoading = false })
     },
 
-	
-	//  echarts 
 	drawLine () {
     this.$nextTick(() => {
       if (!this.isShowRoleDialog) return
@@ -570,28 +415,3 @@ export default {
 }
 
 </script>
-
-<style lang="less" scoped>
-  .sys-research {
-    height: 60px;
-    padding: 20px 20px 0;
-  }
-
-  .level1 {
-    border-bottom: 1px dotted #ccc;
-    padding: 10px 0;
-
-    &:last-child {
-      border: 0;
-    }
-  }
-
-  .level2 {
-    padding: 5px 0;
-  }
-
-  .level3 {
-    margin: 3px;
-  }
-
-</style>

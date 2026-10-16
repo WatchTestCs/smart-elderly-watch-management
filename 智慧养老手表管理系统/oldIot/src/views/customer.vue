@@ -2,8 +2,8 @@
   <div class="roles">
     
     <div class="sys-research">
-      <el-row class="row-search">
-        <el-col :span="8">
+      <form class="row-search" role="search" @submit.prevent="searchCustomers">
+        <div class="search-field">
           
           <label class="table-search-label" for="search-customer">监护人姓名</label>
           <el-input id="search-customer"
@@ -13,14 +13,14 @@
             <template #append><el-button aria-label="查询监护人姓名"
               
               icon="el-icon-search"
-              @click="searchCustomers"></el-button></template>
+              native-type="submit"></el-button></template>
           </el-input>
-        </el-col>
-        <el-col :span="4">
+        </div>
+        <div class="toolbar-actions">
           <el-button plain @click="customerDialogVisible = true">添加监护人</el-button>
-        </el-col>
+        </div>
 		
-      </el-row>
+      </form>
     </div>
     
     <el-dialog
@@ -54,8 +54,7 @@
       <el-button type="primary" @click="addRoles('addcustomerFormRef')">确 定</el-button>
     </span></template>
     </el-dialog>
-    
-    
+
     <el-dialog
       title="监护人编辑"
       v-model="oldEditDialogVisible"
@@ -88,13 +87,11 @@
       <el-button type="primary" @click="editRole">确 定</el-button>
     </span></template>
     </el-dialog>
-    
-    
-    <el-table class="adaptive-record-table" :data="customerList.slice((currentPage-1)*pageSize,currentPage*pageSize)"
+
+    <el-table class="adaptive-record-table" :data="customerList"
     style="width: 100%" border>
     <template #empty><div  class="care-empty-state"><strong>暂无监护人信息</strong><span>添加监护人或调整搜索条件后，信息会显示在这里。</span></div></template>
-    
-      
+
       <el-table-column type="index" width="100" align="center"></el-table-column>
       <el-table-column prop="customerName" label="姓名" width="170" align="center"></el-table-column>
       <el-table-column prop="customerAge" label="年龄" width="170" align="center"></el-table-column>
@@ -112,7 +109,7 @@
         </template>
       </el-table-column>
     </el-table>
-    <record-cards :records="customerList.slice((currentPage-1)*pageSize,currentPage*pageSize)" :fields='[{"key":"customerAge","label":"年龄"},{"key":"customerSex","label":"性别"},{"key":"customerPhone","label":"电话"},{"key":"customerAddress","label":"地址"}]' label="监护人资料" title-key="customerName" key-field="customerId">
+    <record-cards :records="customerList" :fields='[{"key":"customerAge","label":"年龄"},{"key":"customerSex","label":"性别"},{"key":"customerPhone","label":"电话"},{"key":"customerAddress","label":"地址"}]' label="监护人资料" title-key="customerName" key-field="customerId">
       <template #actions="scope"  ><el-button size="small" plain type="primary" icon="el-icon-edit"
                      @click="handleEditRole(scope.$index, scope.row)">编辑
           </el-button>
@@ -135,7 +132,6 @@
 </template>
 
 <script>
-// 引入
 import axios from 'axios'
 import RecordCards from '@/components/RecordCards.vue'
 
@@ -148,8 +144,6 @@ export default {
 		    return callback(new Error('电话号码不能为空'))
 		  }
 		  setTimeout(() => {
-		    // Number.isInteger是es6验证数字是否为整数的方法,但是我实际用的时候输入的数字总是识别成字符串
-		    // 所以我就在前面加了一个+实现隐式转换
 		
 		    if (!Number.isInteger(+value)) {
 		      callback(new Error('请输入数字值'))
@@ -204,16 +198,7 @@ export default {
       pageSize: 10,
       currentPage: 1,
       customerList: [],
-      // 控制分配权限对话框的展示和隐藏
-      
-      // 树形控件的数据
-      
 
-      // Tree树形控件，默认使用数据中的 label 属性作为节点名称，使用 children 属性指定该接待你的子节点
-      // 但是，如果我们自己的数据结构与默认的结构不同，可以通过 defaultProps 来修改默认的两个属性
-      
-      // 当前被分配权限的角色id
-      
 			rules: {
 						customerPhone: [
 						  { validator: checkPhone, trigger: 'blur'}
@@ -228,13 +213,13 @@ export default {
     this.searchCustomers()
   },
   methods: {
-    // 查询
-    searchCustomers () {
+    searchCustomers (keepPage = false) {
+      if (keepPage !== true) this.currentPage = 1
 				var _this = this
 				var customerName = _this.searchText
        
        axios.post('restful/customer/select',
-         {
+         { page: this.currentPage, pageSize: this.pageSize,
            'customerName': customerName === '' ? '' : _this.searchText
          },
          {
@@ -244,15 +229,14 @@ export default {
            withCredentials: true
          }).then(function (response) {
          _this.customerList = response.data.customers
-         _this.total = response.data.customers.length
-     console.log(_this.customerList)
+         _this.total = response.data.total ?? response.data.customers.length
+
        })
          .catch(function (error) {
            console.log(error)
          })
       
     },
-    // 添加角色
     addRoles () {
       var _this = this
       axios.post('restful/customer/add',
@@ -263,7 +247,7 @@ export default {
           },
           withCredentials: true
         }).then(function (response) {
-        console.log(response)
+
         if (response.data.returnCode === '1111') {
           _this.customerDialogVisible = false
           _this.searchCustomers()
@@ -282,12 +266,9 @@ export default {
           console.log(error)
         })
     },
-    // 关闭添加角色对话框
     closeRoleAddDialog () {
-      // 重置表单
       this.$refs.addcustomerFormRef.resetFields()
     },
-    // 编辑
     editRole () {
       var _this = this
       axios.post('restful/customer/update', _this.oldEditForm,
@@ -297,7 +278,7 @@ export default {
           },
           withCredentials: true
         }).then(function (response) {
-        console.log(response)
+
         if (response.data.returnCode === '1111') {
           _this.oldEditDialogVisible = false
           _this.$message({
@@ -316,9 +297,7 @@ export default {
           console.log(error)
         })
     },
-    // 删除
     async deleteRole (customerId) {
-      console.log(customerId)
 
       var _this = this
       try {
@@ -327,7 +306,7 @@ export default {
           cancelButtonText: '取消',
           type: 'warning'
         })
-        console.log(customerId)
+
         axios.post('restful/customer/delete', {'customerId': customerId},
           {
             headers: {
@@ -335,7 +314,7 @@ export default {
             },
             withCredentials: true
           }).then(function (response) {
-          console.log(response)
+
           if (response.data.returnCode === '1111') {
             _this.$message({
               type: 'success',
@@ -348,62 +327,25 @@ export default {
             console.log(error)
           })
       } catch (err) {
-        // 取消删除
         this.$message({
           type: 'info',
           message: '已取消删除'
         })
       }
     },
-    // 编辑信息
     handleEditRole (index, row) {
       this.oldEditDialogVisible = true
       this.oldEditForm = Object.assign({}, row) // 解决修改弹出框数据时，表格数据会发生同步改变
-      // console.log(row)
-    },
-    handleSizeChange (val) {
-      console.log(`每页 ${val} 条`)
-      this.pageSize = val
-    },
-    handleCurrentChange (val) {
-      console.log(`当前页: ${val}`)
-      this.currentPage = val
-    },
-    changePage (val) {
-      console.log(`当前页: ${val}`)
-      this.currentPage = val
-    },
-    // 展示分配权限对话框
-    
 
-    // 给角色分配权限
-    
+    },
+    handleSizeChange (val) { this.pageSize = val; this.currentPage = 1; this.searchCustomers(true)
+    },
+
+    changePage (val) { this.currentPage = val; this.searchCustomers(true)
+    },
+
+
   }
 }
 
 </script>
-
-<style lang="less" scoped>
-  .sys-research {
-    height: 60px;
-    padding: 20px 20px 0;
-  }
-
-  .level1 {
-    border-bottom: 1px dotted #ccc;
-    padding: 10px 0;
-
-    &:last-child {
-      border: 0;
-    }
-  }
-
-  .level2 {
-    padding: 5px 0;
-  }
-
-  .level3 {
-    margin: 3px;
-  }
-
-</style>

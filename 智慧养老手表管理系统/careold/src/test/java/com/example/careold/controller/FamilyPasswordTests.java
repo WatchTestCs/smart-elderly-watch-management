@@ -50,7 +50,7 @@ class FamilyPasswordTests {
     void missingOrNonStringFieldsCannotReachDatabase() {
         assertEquals("0000", controller.updatePassword(null).get("returnCode"));
         assertEquals("0000", controller.updatePassword(new LinkedHashMap()).get("returnCode"));
-        LinkedHashMap params = request("old-secret", "new-secret");
+        LinkedHashMap params = request("old-secret", "New-secret12345");
         params.put("oldPassword", 123456);
         assertEquals("0000", controller.updatePassword(params).get("returnCode"));
         verifyNoInteractions(dao);
@@ -61,43 +61,42 @@ class FamilyPasswordTests {
         for (String value : new String[]{"", "short", "123456789012345678901"}) {
             assertEquals("0000", controller.updatePassword(request("old-secret", value)).get("returnCode"));
         }
-        assertEquals("0000", controller.updatePassword(request("", "new-secret")).get("returnCode"));
+        assertEquals("0000", controller.updatePassword(request("", "New-secret12345")).get("returnCode"));
         verifyNoInteractions(dao);
     }
 
     @Test
     void unknownPhoneCannotChangePassword() {
-        assertEquals("0000", controller.updatePassword(request("old-secret", "new-secret")).get("returnCode"));
+        assertEquals("0000", controller.updatePassword(request("old-secret", "New-secret12345")).get("returnCode"));
         verify(dao, never()).updateFamilyPasswordByPhoneForFamily(anyString(), anyString());
     }
 
     @Test
     void incorrectOldPasswordCannotChangeBcryptAccount() {
         account(PasswordUtil.hash("old-secret"));
-        assertEquals("0000", controller.updatePassword(request("wrong-secret", "new-secret")).get("returnCode"));
+        assertEquals("0000", controller.updatePassword(request("wrong-secret", "New-secret12345")).get("returnCode"));
         verify(dao, never()).updateFamilyPasswordByPhoneForFamily(anyString(), anyString());
     }
 
     @Test
     void correctOldPasswordCanChangeBcryptAccount() {
         account(PasswordUtil.hash("old-secret"));
-        when(dao.updateFamilyPasswordByPhoneForFamily("new-secret", "13000000000")).thenReturn(1);
-        assertEquals("1111", controller.updatePassword(request("old-secret", "new-secret")).get("returnCode"));
-        verify(dao).updateFamilyPasswordByPhoneForFamily("new-secret", "13000000000");
+        when(dao.updateFamilyPasswordByPhoneForFamily("New-secret12345", "13000000000")).thenReturn(1);
+        assertEquals("1111", controller.updatePassword(request("old-secret", "New-secret12345")).get("returnCode"));
+        verify(dao).updateFamilyPasswordByPhoneForFamily("New-secret12345", "13000000000");
     }
 
     @Test
-    void legacyPasswordStillRequiresCorrectOldPassword() {
+    void legacyPasswordCannotBeUsedToChangeAnAccount() {
         account("legacy-secret");
-        assertEquals("0000", controller.updatePassword(request("wrong-secret", "new-secret")).get("returnCode"));
-        when(dao.updateFamilyPasswordByPhoneForFamily("new-secret", "13000000000")).thenReturn(1);
-        assertEquals("1111", controller.updatePassword(request("legacy-secret", "new-secret")).get("returnCode"));
-        verify(dao, times(1)).updateFamilyPasswordByPhoneForFamily("new-secret", "13000000000");
+        assertEquals("0000", controller.updatePassword(request("wrong-secret", "New-secret12345")).get("returnCode"));
+        assertEquals("0000", controller.updatePassword(request("legacy-secret", "New-secret12345")).get("returnCode"));
+        verify(dao, never()).updateFamilyPasswordByPhoneForFamily(anyString(), anyString());
     }
 
     @Test
     void databaseNotUpdatedIsNotReportedAsSuccess() {
-        account("old-secret");
-        assertEquals("0000", controller.updatePassword(request("old-secret", "new-secret")).get("returnCode"));
+        account(PasswordUtil.hash("old-secret"));
+        assertEquals("0000", controller.updatePassword(request("old-secret", "New-secret12345")).get("returnCode"));
     }
 }

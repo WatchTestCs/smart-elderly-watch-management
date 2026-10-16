@@ -50,7 +50,7 @@ class RegistrationTransactionTests {
     }
     private LinkedHashMap registration(String phone) {
         LinkedHashMap request = new LinkedHashMap();
-        request.put("code","TESTCODE"); request.put("familyPhone",phone); request.put("familyPassword","good-secret");
+        request.put("code","TESTCODE"); request.put("familyPhone",phone); request.put("familyPassword","Good-secret12345");
         request.put("familyName","测试家属"); request.put("familyRelation","子女"); request.put("familySex","男"); request.put("familyAddress","");
         return request;
     }

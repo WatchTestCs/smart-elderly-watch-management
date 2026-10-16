@@ -2,10 +2,11 @@ package com.example.careold.dao;
 
 import com.example.careold.domain.Customer;
 
-import java.util.List;
+import com.example.careold.domain.PageRequest;
+import com.example.careold.domain.PageResult;
 
 public interface CustomerDao {
-    List<Customer> getCustomer(String customerName);
+    PageResult<Customer> getCustomer(String customerName, PageRequest page);
 
     int addCustomer(Customer customer);
 

@@ -45,6 +45,8 @@ import { loadSession } from '../auth'
 
 export default {
   data () {
+    const registeredPhone = localStorage.getItem('login_phone') || ''
+    localStorage.removeItem('login_phone')
     return {
       heroImage: '/static/img/care-lakeside-artisan.webp',
       submitting: false,
@@ -52,7 +54,7 @@ export default {
       errorMessage: '',
       largeText: localStorage.getItem('large_text') === 'true',
       loginForm: {
-        phone: localStorage.getItem('login_phone') || '',
+        phone: registeredPhone,
         password: ''
       },
       rules: {
@@ -62,13 +64,10 @@ export default {
         ],
         password: [
           { required: true, message: '请输入密码', trigger: 'blur' },
-          { min: 6, max: 20, message: '密码长度为 6–20 位', trigger: 'blur' }
+          { validator: (rule, value, done) => done(new TextEncoder().encode(value || '').length <= 72 ? undefined : new Error('密码不能超过 72 个字节')), trigger: 'blur' }
         ]
       }
     }
-  },
-  created () {
-    localStorage.removeItem('login_phone')
   },
   mounted () {
     this.applyTextSize()
@@ -115,8 +114,8 @@ export default {
 </script>
 
 <style scoped>
-.auth-page { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(430px, .92fr); min-height: 100vh; background: #f8f8f2; }
-.auth-story { position: relative; min-height: 100vh; overflow: hidden; background: #183e33; }
+.auth-page { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(430px, .92fr); height: 100vh; height: 100dvh; overflow: hidden; background: #f8f8f2; }
+.auth-story { position: relative; min-height: 0; overflow: hidden; background: #183e33; }
 .story-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 60% center; }
 .story-shade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(13,36,27,.66), rgba(13,36,27,.54)), linear-gradient(0deg, rgba(13,36,27,.34), transparent 60%); }
 .story-copy { position: absolute; left: 9%; right: 8%; top: 23%; color: #fff; }
@@ -124,31 +123,52 @@ export default {
 .story-copy h1 { margin: 24px 0 20px; font-size: 44px; line-height: 1.5; letter-spacing: .03em; font-weight: 600; }
 .story-copy p { margin: 0; font-size: 18px; line-height: 1.9; color: #fff; }
 .story-caption { position: absolute; left: 9%; bottom: 40px; color: #fff; font-size: 16px; letter-spacing: .1em; }
-.auth-panel { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 44px 48px; }
-.auth-card { position: relative; width: 100%; max-width: 410px; }
+.auth-panel { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: clamp(16px, 4vh, 44px) 48px; }
+.auth-card { position: relative; flex-shrink: 0; width: 100%; max-width: 440px; margin-block: auto; }
 .auth-brand { display: flex; align-items: center; gap: 11px; color: #183e33; font-size: 22px; font-weight: 700; letter-spacing: .04em; }
-.auth-mark { display: block; width: 72px; height: 72px; flex-shrink: 0; object-fit: contain; border-radius: 50%; }
-.auth-eyebrow { margin: 44px 0 10px; color: #53645c; font-size: 16px; letter-spacing: .06em; }
+.auth-mark { display: block; width: 60px; height: 60px; flex-shrink: 0; object-fit: contain; border-radius: 50%; }
+.auth-eyebrow { margin: clamp(14px, 3vh, 32px) 0 8px; color: #53645c; font-size: 16px; letter-spacing: .06em; }
 .auth-card h2 { margin: 0; color: #183e33; font-size: 34px; font-weight: 700; }
-.auth-intro { margin: 12px 0 30px; color: #53645c; font-size: 18px; line-height: 1.7; }
+.auth-intro { margin: 8px 0 22px; color: #53645c; font-size: 18px; line-height: 1.7; }
 .login-form :deep(.el-form-item) { margin-bottom: 26px; }
 .login-form :deep(.el-form-item__label) { color: #33453c; font-size: 17px; line-height: 1.5; padding-bottom: 8px; }
-.login-form :deep(.el-input__inner) { height: 54px; background: #fff; border-color: #81917b; font-size: 18px; }
+.login-form :deep(.el-input__inner) { height: 54px; font-size: 18px; }
 .login-form :deep(.el-input__prefix) { color: #53645c; }
 .login-form :deep(.el-input__suffix) { right: 0; }
 .login-form :deep(.el-input__suffix .el-input__icon) { width: 44px; min-height: 44px; color: #53645c; }
 .password-visibility { width: 48px; height: 48px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: #235442; cursor: pointer; }
 .submit-button { width: 100%; min-height: 54px; margin-top: 6px; border-radius: 9px; letter-spacing: .04em; font-size: 18px; font-weight: 600; }
 .auth-error { margin: -5px 0 12px; color: #a4262c; font-size: 17px; line-height: 1.7; }
-.auth-register { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px; margin-top: 22px; color: #53645c; font-size: 17px; }
+.auth-register { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px; margin-top: 12px; color: #53645c; font-size: 17px; }
 .auth-register :deep(.el-button) { color: #235442; min-height: 48px; font-size: 17px; }
-.auth-footnote { margin: 30px 0 0; color: #53645c; text-align: center; font-size: 16px; }
+.auth-footnote { margin: 16px 0 0; color: #53645c; text-align: center; font-size: 16px; }
 .auth-footnote i { margin-right: 4px; }
-.auth-footer { margin-top: 34px; color: #53645c; font-size: 16px; text-align: center; }
+.auth-footer { margin-top: 18px; color: #53645c; font-size: 16px; text-align: center; }
 .login-text-toggle { position: absolute; top: 0; right: 0; min-width: 64px; min-height: 48px; padding: 8px; border: 1px solid #c7d3c1; border-radius: 8px; color: #235442; font-size: 16px; font-weight: 600; }
 html.large-text .auth-intro, html.large-text .login-form :deep(.el-form-item__label) , html.large-text .auth-register, html.large-text .auth-error { font-size: 20px; }
 html.large-text .auth-card h2 { font-size: 38px; }
 html.large-text .submit-button { min-height: 58px; font-size: 20px; }
 @media (max-width: 1000px) { .auth-page { grid-template-columns: minmax(0, .8fr) minmax(400px, 1.2fr); } .story-copy h1 { font-size: 34px; } .auth-panel { padding: 36px 28px; } }
-@media (max-width: 760px) { .auth-page { display: block; } .auth-story { min-height: 180px; height: 180px; } .story-image { object-position: center 56%; } .story-copy { top: 28px; left: 24px; } .story-kicker, .story-copy p, .story-caption { display: none; } .story-copy h1 { margin: 0; font-size: 28px; line-height: 1.6; } .auth-panel { min-height: 0; padding: 28px 24px 36px; } .auth-eyebrow { margin-top: 28px; } .auth-brand { font-size: 20px; } .auth-footer { margin-top: 26px; } html.large-text .auth-page .story-copy h1 { font-size: 30px; } }
+@media (max-width: 760px) { .auth-page { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 120px) minmax(0, 1fr); } .auth-story { height: auto; } .story-image { object-position: center 56%; } .story-copy { top: 12px; left: 24px; } .story-kicker, .story-copy p, .story-caption { display: none; } .story-copy h1 { margin: 0; font-size: 28px; line-height: 1.6; } .auth-panel { padding: 20px 24px; justify-content: flex-start; } .auth-eyebrow { margin-top: 12px; } .auth-brand { font-size: 20px; } .auth-footer { margin-top: 12px; } html.large-text .auth-page .story-copy h1 { font-size: 30px; } }
+@media (max-height: 860px) {
+  .auth-footnote, .auth-footer { display: none; }
+}
+@media (max-height: 740px) {
+  .auth-panel { padding-block: 16px; justify-content: flex-start; }
+  .auth-mark { width: 48px; height: 48px; }
+  .auth-eyebrow { margin: 12px 0 4px; }
+  .auth-intro { margin: 6px 0 16px; }
+  .auth-register { margin-top: 4px; }
+}
+@media (max-width: 760px) and (max-height: 820px) {
+  .auth-page { grid-template-rows: minmax(0, 1fr); }
+  .auth-story { display: none; }
+}
+@media (max-height: 640px) {
+  .auth-intro { display: none; }
+  .auth-eyebrow { display: none; }
+  .auth-card h2 { margin-top: 12px; }
+  .login-form { margin-top: 12px; }
+  .login-form :deep(.el-form-item) { margin-bottom: 20px; }
+}
 </style>

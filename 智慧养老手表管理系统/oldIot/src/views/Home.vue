@@ -78,7 +78,10 @@ export default {
   },
   mounted () { this.addCurrentTab(this.$route) },
   watch: {
-    '$route' (to) { this.addCurrentTab(to) }
+    '$route' (to) {
+      this.addCurrentTab(to)
+      this.$nextTick(() => { if (this.$refs.workspaceMain) this.$refs.workspaceMain.scrollTop = 0 })
+    }
   }
 }
 </script>
@@ -86,11 +89,11 @@ export default {
 <style scoped>
 .skip-link { position: fixed; top: -80px; left: 16px; z-index: 3000; padding: 14px 20px; border-radius: 8px; background: #fff; color: #183e33; }
 .skip-link:focus { top: 12px; }
-.care-app { min-height: 100vh; min-height: 100dvh; background: var(--care-canvas); }
-.workspace-layout { display: grid; grid-template-columns: 232px minmax(0, 1fr); min-height: calc(100vh - 72px); }
-.workspace-sidebar { min-width: 0; }
-.workspace-main { min-width: 0; padding: 26px 32px 40px; }
-.workspace-tabs { max-width: 1380px; margin: 0 auto 28px; border-bottom: 1px solid #dce4db; padding: 0; }
+.care-app { display: grid; grid-template-rows: auto minmax(0, 1fr); height: 100vh; height: 100dvh; overflow: hidden; background: var(--care-canvas); }
+.workspace-layout { display: grid; grid-template-columns: 232px minmax(0, 1fr); min-height: 0; overflow: hidden; }
+.workspace-sidebar { min-width: 0; min-height: 0; overflow-y: auto; }
+.workspace-main { min-width: 0; min-height: 0; overflow: auto; overscroll-behavior: contain; scroll-padding-block: 20px; padding: clamp(18px, 2vh, 26px) clamp(20px, 2.2vw, 48px) 28px; }
+.workspace-tabs { width: 100%; margin: 0 auto 28px; border-bottom: 1px solid #dce4db; padding: 0; }
 .workspace-tabs :deep(.el-tabs__header) { margin: 0; border: 0; }
 .workspace-tabs :deep(.el-tabs__nav-wrap::after) { display: none; }
 .workspace-tabs :deep(.el-tabs__item) { height: 48px; line-height: 48px; color: var(--care-muted); }
@@ -101,14 +104,15 @@ export default {
 .workspace-content :deep(.admin-record-dialog .el-dialog__header) { padding-right: 76px; }
 .workspace-content :deep(.admin-record-dialog .el-dialog__body) { min-height: 0; overflow-y: auto; }
 .workspace-content :deep(.admin-record-dialog .el-dialog__headerbtn) { top: 8px; right: 12px; display: grid; place-items: center; width: 48px; height: 48px; font-size: 20px; }
-.workspace-content { min-width: 0; max-width: 1380px; margin-right: auto; margin-left: auto; }
+.workspace-content { min-width: 0; width: 100%; margin-right: auto; margin-left: auto; }
 .view-intro { margin: 0 0 20px; }
 .view-breadcrumb { margin: 0 0 10px; color: #53645c; font-size: 13px; }
 .view-breadcrumb i { margin: 0 5px; font-size: 9px; }
 .view-intro h1 { margin: 0; color: #263632; font-size: 28px; line-height: 1.25; font-weight: 500; letter-spacing: -.02em; }
 .view-description { margin: 8px 0 0; color: #64756c; font-size: 14px; line-height: 1.65; }
 @media (max-width: 900px) {
-  .workspace-layout { display: flex; flex-direction: column; min-height: calc(100vh - 64px); }
+  .workspace-layout { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
+  .workspace-sidebar { max-height: 40dvh; }
   .workspace-main { padding: 20px 20px 30px; }
 }
 @media (max-width: 600px) {

@@ -3,7 +3,7 @@ package com.example.careold.domain;
 public class OldPerson {
     private String name;
     private Integer oldId;
-    private int age;
+    private Integer age;
     private String sex;
     private String phone;
     private String room;
@@ -50,11 +50,11 @@ public class OldPerson {
         this.oldId = oldId;
     }
 
-    public int getAge() {
+    public Integer getAge() {
         return age;
     }
 
-    public void setAge(int age) {
+    public void setAge(Integer age) {
         this.age = age;
     }
 

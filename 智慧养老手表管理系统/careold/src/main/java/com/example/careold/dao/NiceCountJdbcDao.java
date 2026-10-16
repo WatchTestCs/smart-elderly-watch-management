@@ -15,21 +15,18 @@ public class NiceCountJdbcDao implements NiceCountDao {
     @Override
     public List<String> getCount(int saidId, String phone) {
         String sql="select phone from nice_count where said_id=? and phone=?";
-        List<String> phoneList=jdbcTemplate.queryForList(sql,String.class,saidId,phone);
-        return phoneList;
+        return jdbcTemplate.queryForList(sql,String.class,saidId,phone);
     }
 
     @Override
     public int deleteCount(int saidId, String phone) {
         String sql="delete from nice_count where said_id=? and phone=?";
-        int row=jdbcTemplate.update(sql,saidId,phone);
-        return row;
+        return jdbcTemplate.update(sql,saidId,phone);
     }
 
     @Override
     public int addCount(int saidId, String phone) {
         String sql="insert into nice_count(said_id,phone) values(?,?)";
-        int row=jdbcTemplate.update(sql,saidId,phone);
-        return row;
+        return jdbcTemplate.update(sql,saidId,phone);
     }
 }

@@ -5,14 +5,13 @@ import com.example.careold.common.DateConst;
 import com.example.careold.common.ReturnCodeUtil;
 import com.example.careold.dao.OldPersonDao;
 import com.example.careold.dao.InviteCodeDao;
-import com.example.careold.dao.PositionDao;
 import com.example.careold.dao.WatchInfoDao;
 import com.example.careold.domain.OldPerson;
-import com.example.careold.domain.PositionDto;
 import com.example.careold.domain.WatchDto;
 import java.util.LinkedHashMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -40,8 +39,7 @@ public class OldPersonController {
     public LinkedHashMap select(@RequestBody LinkedHashMap param){
         LinkedHashMap result=new LinkedHashMap();
         String name=param.get("name").toString();
-        List<OldPerson> oldPeople=oldPersonDao.getOldPerson(name);
-        result.put("oldPeople",oldPeople);
+        oldPersonDao.getOldPersonPage(name,com.example.careold.domain.PageRequest.from(param)).putInto(result,"oldPeople");
         return result;
     }
 
@@ -142,18 +140,22 @@ public class OldPersonController {
 
     @ResponseBody
     @PostMapping("/delete")
+    @Transactional
     public LinkedHashMap delete(@RequestBody LinkedHashMap param){
         LinkedHashMap result=new LinkedHashMap();
         String oldId=param.get("oldId").toString();
         // 老人删除后，其名下未使用的邀请码一并作废，避免出现无主邀请码
+        if (oldPersonDao.getOldPersonById(Integer.parseInt(oldId)) == null) {
+            result.put(ReturnCodeUtil.returnCode,ReturnCodeUtil.falseCode);
+            return result;
+        }
         inviteCodeDao.deleteByOldId(Integer.parseInt(oldId));
         int rows=oldPersonDao.deleteOldPerson(Integer.parseInt(oldId));
         if(rows==1){
             result.put(ReturnCodeUtil.returnCode,ReturnCodeUtil.successCode);
             return result;
         }
-        result.put(ReturnCodeUtil.returnCode,ReturnCodeUtil.falseCode);
-        return result;
+        throw new IllegalStateException("长者删除失败，已撤销邀请码清理");
     }
 
 }

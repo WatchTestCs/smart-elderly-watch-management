@@ -1,8 +1,6 @@
 package com.example.careold.controller;
 
-import com.example.careold.dao.TextDao;
 import com.example.careold.dao.UserDao;
-import com.example.careold.domain.Text;
 import com.example.careold.domain.Users;
 import java.util.LinkedHashMap;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +25,7 @@ public class UserController {
         LinkedHashMap result=new LinkedHashMap();
         String userPhone=param.get("userPhone").toString();
         List<Users> usersByPhone2 = userDao.getUsersByPhone2(userPhone);
-        System.out.println(usersByPhone2.size());
+        usersByPhone2.forEach(user -> user.setPassword(null));
         result.put("usersByPhone2",usersByPhone2);
         return result;
     }

@@ -1,7 +1,7 @@
 <template>
   <div class="device">
     <header class="collection-heading"><div><h1>设备管理</h1><p>查看连接状态、跟进异常，并为家人关联照护设备。</p></div><el-button type="primary" aria-label="登记新设备" icon="el-icon-plus" @click="createDialogVisible = true">登记新设备</el-button></header>
-    <section class="collection-metrics" aria-label="设备摘要"><article><span>登记设备</span><strong>{{ deviceLoadError && !deviceList.length ? '—' : deviceList.length }}</strong><small>当前列表中的设备总数</small></article><article><span>在线设备</span><strong>{{ deviceLoadError && !deviceList.length ? '—' : onlineCount }}</strong><small>以最近一次设备连接状态为准</small></article><article><span>待处理异常</span><strong :class="alertsReady && alertTotals.total ? 'attention-number' : ''">{{ alertsReady ? alertTotals.total : '—' }}</strong><small>{{ alertsReady ? '人工确认与跟进后更新状态' : '异常统计暂未就绪' }}</small></article></section>
+    <section class="collection-metrics" aria-label="设备摘要"><article><span>登记设备</span><strong>{{ deviceLoadError && !deviceList.length ? '—' : deviceTotal }}</strong><small>当前筛选中的设备总数</small></article><article><span>在线设备</span><strong>{{ deviceLoadError && !deviceList.length ? '—' : onlineCount }}</strong><small>以最近一次设备连接状态为准</small></article><article><span>待处理异常</span><strong :class="alertsReady && alertTotals.total ? 'attention-number' : ''">{{ alertsReady ? alertTotals.total : '—' }}</strong><small>{{ alertsReady ? '人工确认与跟进后更新状态' : '异常统计暂未就绪' }}</small></article></section>
     <div v-if="deviceLoadError || alertLoadError" class="collection-feedback" role="alert"><span>{{ deviceLoadError || alertLoadError }}</span><el-button plain :loading="deviceLoading" @click="loadDevices">重新加载设备</el-button></div>
     <section class="device-alert-summary"><div><h2>异常跟进</h2><p v-if="alertsReady">人员 {{ alertTotals.personTotal }} · 心率 {{ alertTotals.rateTotal }} · 血压 {{ alertTotals.preTotal }}</p><p v-else>异常统计暂时无法确认，请重新加载。</p></div><el-button plain :disabled="!alertsReady || alertTotals.total === 0" @click="openWorkbench">查看全部待处理</el-button></section>
     <section class="collection-panel">
@@ -17,6 +17,7 @@
       <el-table-column label="最近上报" width="155"><template #default="scope" ><span class="device-table-time">{{ scope.row.lastTime || '暂无记录' }}</span></template></el-table-column>
       <el-table-column label="操作" width="190" fixed="right"><template #default="scope" ><div class="device-table-actions"><el-button type="primary" plain @click="openBindCodeDialog(scope.row)">绑定码</el-button><el-dropdown trigger="click" @command="handleDeviceCommand($event, scope.row)"><el-button plain aria-label="更多设备操作">更多 <i class="el-icon-arrow-down" aria-hidden="true"></i></el-button><template #dropdown><el-dropdown-menu ><el-dropdown-item command="details">设备详情</el-dropdown-item><el-dropdown-item command="reset">重置密钥</el-dropdown-item><el-dropdown-item command="unbind" :disabled="!scope.row.oldId">解除绑定</el-dropdown-item><el-dropdown-item command="delete" divided>删除设备</el-dropdown-item></el-dropdown-menu></template></el-dropdown></div></template></el-table-column>
     </el-table>
+    <el-pagination :current-page="currentPage" :page-size="pageSize" :total="deviceTotal" layout="total, prev, pager, next" @current-change="changeDevicePage" />
     <div v-if="visibleDevices.length" class="device-mobile-grid"><article v-for="item in visibleDevices" :key="item.deviceId" class="device-record"><header><div><h3>{{ item.alias || '未命名设备' }}</h3><p>{{ item.deviceNo }}</p></div><span class="connection-state" :class="item.online == 1 ? 'is-online' : ''">{{ item.online == 1 ? '在线' : item.online == 0 ? '离线' : '状态未知' }}</span></header><dl><dt>绑定长者</dt><dd>{{ item.oldPersonName || '尚未绑定' }}</dd><dt>设备编号</dt><dd>{{ item.deviceId }}</dd><dt>剩余电量</dt><dd>{{ item.battery == null ? '暂无数据' : item.battery + '%' }}</dd><dt>最后上报</dt><dd>{{ item.lastTime || '暂无记录' }}</dd><dt>位置坐标</dt><dd>{{ item.lastLng == null || item.lastLat == null ? '暂无数据' : item.lastLng + '，' + item.lastLat }}</dd></dl><div class="device-alert-actions"><el-button plain :disabled="!alertsReady" @click="showAlert(item, 'person')">人员 · {{ alertsReady ? alertOf(item.deviceId).personCount : '—' }}</el-button><el-button plain :disabled="!alertsReady" @click="showAlert(item, 'rate')">心率 · {{ alertsReady ? alertOf(item.deviceId).rateCount : '—' }}</el-button><el-button plain :disabled="!alertsReady" @click="showAlert(item, 'pre')">血压 · {{ alertsReady ? alertOf(item.deviceId).preCount : '—' }}</el-button></div><div class="device-record-actions"><el-button type="primary" plain @click="openBindCodeDialog(item)">设备绑定码</el-button><el-button plain @click="resetSecret(item)">重置密钥</el-button><el-button plain :disabled="!item.oldId" @click="unbind(item)">解除绑定</el-button><el-button plain type="danger" @click="deleteDevice(item)">删除设备</el-button></div></article></div>
     <div v-else class="device-mobile-empty collection-empty"><strong>{{ deviceLoading ? '正在加载设备…' : deviceLoadError ? '设备列表暂时无法加载' : deviceList.length ? '没有匹配的设备' : '还没有登记设备' }}</strong><p>{{ deviceQuery || deviceState !== 'all' ? '调整关键词或连接状态，即可查看其他设备。' : '登记第一台手表，让照护信息开始连接。' }}</p></div>
     </section>
@@ -58,7 +59,6 @@
       </span></template>
     </el-dialog>
 
-    
     <el-dialog title="待处理异常" v-model="workbench.visible" width="760px">
       <div class="tip">共 {{ workbench.list.length }} 条未处理异常。点「查看原因」看具体问题和处理办法，处理完点「标记已处理」消除红点。</div>
       <el-table :data="workbench.list" size="small" border style="width:100%;margin-top:8px;">
@@ -82,7 +82,6 @@
       </span></template>
     </el-dialog>
 
-    
     <el-dialog title="登记新设备" v-model="createDialogVisible" width="560px" :close-on-click-modal="!creating" :close-on-press-escape="!creating" :show-close="!creating" @closed="closeCreateDialog">
       <el-form label-width="100px" :model="createForm" ref="createFormRef">
         <el-form-item label="别名">
@@ -113,7 +112,6 @@
       </span></template>
     </el-dialog>
 
-    
     <el-dialog title="设备绑定码" v-model="bindCodeDialogVisible" width="560px">
       <div v-if="currentDevice" class="tip">
         设备：{{ currentDevice.deviceNo }}（{{ currentDevice.alias }}）；
@@ -168,11 +166,12 @@ import axios from 'axios'
 export default {
   data () {
     return {
-      deviceList: [],
+      deviceList: [], deviceTotal: 0, serverOnlineCount: 0, currentPage: 1, pageSize: 20, filterTimer: null, reloadPending: false,
       deviceDetailVisible: false, detailDevice: null,
       deviceQuery: '', deviceState: 'all', deviceLoading: false, deviceLoadError: '', alertLoadError: '', alertsReady: false, creating: false,
       oldPeople: [],
       autoRefresh: true,
+      refreshDisposed: false,
       timer: null,
       createDialogVisible: false,
       bindCodeDialogVisible: false,
@@ -217,22 +216,8 @@ export default {
     }
   },
   computed: {
-    visibleDevices () {
-      var query = this.deviceQuery.trim().toLowerCase()
-      return this.deviceList.filter(item => {
-        var matches = [item.deviceNo, item.alias, item.oldPersonName, item.deviceId].some(value => String(value == null ? '' : value).toLowerCase().indexOf(query) !== -1)
-        return matches && (this.deviceState === 'all' || this.deviceState === 'online' && (item.online === 1 || item.online === '1') || this.deviceState === 'offline' && (item.online === 0 || item.online === '0'))
-      })
-    },
-    onlineCount () {
-      var count = 0
-      this.deviceList.forEach(function (item) {
-        if (item.online === 1) {
-          count++
-        }
-      })
-      return count
-    }
+    visibleDevices () { return this.deviceList },
+    onlineCount () { return this.serverOnlineCount }
   },
   created () {
     this.loadDevices()
@@ -243,13 +228,22 @@ export default {
     this.startTimer()
   },
   beforeUnmount () {
+    this.refreshDisposed = true
+    clearTimeout(this.filterTimer)
     document.removeEventListener('visibilitychange', this.handleVisibilityChange)
     this.stopTimer()
   },
   watch: {
+    deviceQuery () { this.scheduleFilter() },
+    deviceState () { this.scheduleFilter() },
     autoRefresh (enabled) { if (enabled) this.startTimer(); else this.stopTimer() }
   },
   methods: {
+    scheduleFilter () {
+      clearTimeout(this.filterTimer)
+      this.filterTimer = setTimeout(() => { this.currentPage = 1; this.loadDevices() }, 250)
+    },
+    changeDevicePage (page) { this.currentPage = page; this.loadDevices() },
     handleDeviceCommand (command, row) {
       if (command === 'details') { this.detailDevice = row; this.deviceDetailVisible = true }
       else if (command === 'reset') this.resetSecret(row)
@@ -263,14 +257,16 @@ export default {
       })
     },
     loadDevices () {
-      if (this.deviceLoading) return
+      if (this.deviceLoading) { this.reloadPending = true; return }
       this.deviceLoading = true
       this.deviceLoadError = ''
-      var devices = this.post('list').then((response) => {
+      var devices = this.post('list', { page: this.currentPage, pageSize: this.pageSize, query: this.deviceQuery, state: this.deviceState }).then((response) => {
         if (!Array.isArray(response.data.devices)) throw new Error('missing devices')
         this.deviceList = response.data.devices
+        this.deviceTotal = response.data.total ?? this.deviceList.length
+        this.serverOnlineCount = response.data.onlineCount ?? this.deviceList.filter(item => item.online === 1).length
       }).catch(() => { this.deviceLoadError = '设备列表暂时无法更新，请重新加载。' })
-      return Promise.all([devices, this.loadAlertCounts()]).then(() => { this.deviceLoading = false })
+      return Promise.all([devices, this.loadAlertCounts()]).then(() => { this.deviceLoading = false; if (this.reloadPending && !this.refreshDisposed) { this.reloadPending = false; this.loadDevices() } })
     },
     loadAlertCounts () {
       this.alertLoadError = ''
@@ -411,7 +407,7 @@ export default {
     },
     startTimer () {
       this.stopTimer()
-      if (!this.autoRefresh || document.hidden || this._isBeingDestroyed || this._isDestroyed) return
+      if (!this.autoRefresh || document.hidden || this.refreshDisposed) return
       this.timer = setTimeout(() => {
         this.timer = null
         Promise.resolve(this.loadDevices()).then(() => { this.startTimer() })
@@ -580,81 +576,72 @@ export default {
 }
 </script>
 
-<style lang="less" scoped>
-.device {
-  
-  
-  
-  .tip {
-    color: #909399;
-    font-size: 12px;
-    line-height: 24px;
-    padding-top: 6px;
-  }
-  
-  .created {
-    margin-top: 10px;
-    padding: 10px;
-    background: #f5f7fa;
-    border-radius: 6px;
-  }
-  .created-title {
-    font-size: 13px;
-    color: #606266;
-    padding-bottom: 6px;
-  }
-  .created-line {
-    font-size: 14px;
-    line-height: 28px;
-  }
-  .secret {
-    color: #52BAB5;
-    word-break: break-all;
-  }
-  .new-code {
-    padding: 10px;
-    background: #f0f9f8;
-    border-radius: 6px;
-  }
-  
-  
-  
-  .alert-table {
-    width: 100%;
-    margin-top: 12px;
-    border-collapse: collapse;
-    font-size: 13px;
-  }
-  .alert-table th {
-    width: 90px;
-    text-align: left;
-    color: #909399;
-    font-weight: normal;
-    padding: 6px 8px;
-    vertical-align: top;
-    background: #fafafa;
-    border: 1px solid #ebeef5;
-  }
-  .alert-table td {
-    padding: 6px 8px;
-    color: #303133;
-    border: 1px solid #ebeef5;
-    line-height: 20px;
-  }
-  .alert-actions {
-    margin-top: 14px;
-  }
-  .no-alert {
-    text-align: center;
-    padding: 20px;
-    color: #606266;
-  }
-  .code-text {
-    font-size: 26px;
-    letter-spacing: 4px;
-    color: #52BAB5;
-    font-weight: bold;
-    padding: 4px 0;
-  }
+<style scoped>
+.device .tip {
+  color: #909399;
+  font-size: 12px;
+  line-height: 24px;
+  padding-top: 6px;
+}
+.device .created {
+  margin-top: 10px;
+  padding: 10px;
+  background: #f5f7fa;
+  border-radius: 6px;
+}
+.device .created-title {
+  font-size: 13px;
+  color: #606266;
+  padding-bottom: 6px;
+}
+.device .created-line {
+  font-size: 14px;
+  line-height: 28px;
+}
+.device .secret {
+  color: #52BAB5;
+  word-break: break-all;
+}
+.device .new-code {
+  padding: 10px;
+  background: #f0f9f8;
+  border-radius: 6px;
+}
+.device .alert-table {
+  width: 100%;
+  margin-top: 12px;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.device .alert-table th {
+  width: 90px;
+  text-align: left;
+  color: #909399;
+  font-weight: normal;
+  padding: 6px 8px;
+  vertical-align: top;
+  background: #fafafa;
+  border: 1px solid #ebeef5;
+}
+.device .alert-table td {
+  padding: 6px 8px;
+  color: #303133;
+  border: 1px solid #ebeef5;
+  line-height: 20px;
+}
+.device .alert-actions {
+  margin-top: 14px;
+}
+.device .no-alert {
+  text-align: center;
+  padding: 20px;
+  color: #606266;
+}
+.device .code-text {
+  font-size: 26px;
+  letter-spacing: 4px;
+  color: #52BAB5;
+  font-weight: bold;
+  padding: 4px 0;
 }
 </style>

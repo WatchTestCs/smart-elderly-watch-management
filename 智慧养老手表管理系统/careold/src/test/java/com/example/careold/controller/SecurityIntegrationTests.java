@@ -34,7 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest({LoginController.class, FamilyController.class, RatepreController.class, StepController.class,
         PositionController.class, DeviceController.class, ImagesApi.class, InviteCodeController.class,
         SaidController.class, UserController.class})
-@Import({SecurityConfig.class, org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration.class})
+@Import({com.example.careold.service.DeviceService.class, SecurityConfig.class, org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration.class})
 class SecurityIntegrationTests {
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper json;
@@ -46,6 +46,7 @@ class SecurityIntegrationTests {
     @MockBean StepDao stepDao;
     @MockBean PositionDao positionDao;
     @MockBean DeviceJdbcDao deviceDao;
+    @MockBean WatchInfoDao watchInfoDao;
     @MockBean InviteCodeDao inviteCodeDao;
     @MockBean SaidDao saidDao;
     @MockBean NiceCountDao niceCountDao;
@@ -174,7 +175,7 @@ class SecurityIntegrationTests {
     @Test
     void deviceRosterAndAccountResponsesCannotExposeSecrets() throws Exception {
         DeviceDto device = new DeviceDto(); device.setDeviceId(1); device.setSecret("real-device-secret");
-        when(deviceDao.findDevices()).thenReturn(List.of(device));
+        when(deviceDao.findDevices(1,20,"","all")).thenReturn(List.of(device));
         mvc.perform(post("/restful/device/list").with(authentication(admin())).with(csrf()).contentType("application/json").content("{}"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.devices[0].secret").doesNotExist());
         Family family = new Family(); family.setFamilyPassword("secret");
@@ -189,13 +190,37 @@ class SecurityIntegrationTests {
                 .andExpect(status().isOk()).andExpect(jsonPath("$.returnCode").value("0004"));
         verify(deviceDao).findByDeviceNo("WTEST");
     }
+    @Test
+    void plaintextAndMd5UsersCannotLogInButExistingShortBcryptPasswordsStillWork() throws Exception {
+        Users user=new Users(); user.setUserId(2); user.setUserName("管理员");
+        when(userDao.getUsersByPhone2("13100000000")).thenReturn(List.of(user));
+        for (String stored : List.of("123456","e10adc3949ba59abbe56e057f20f883e")) {
+            user.setPassword(stored);
+            mvc.perform(post("/restful/userLogin/login").with(csrf()).contentType("application/json")
+                    .content("{\"phone\":\"13100000000\",\"password\":\"123456\"}"))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.returnCode").value("0000"));
+        }
+        user.setPassword(PasswordUtil.hash("123456"));
+        mvc.perform(post("/restful/userLogin/login").with(csrf()).contentType("application/json")
+                .content("{\"phone\":\"13100000000\",\"password\":\"123456\"}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.returnCode").value("1111"));
+    }
+    @Test
+    void invalidDeviceDtosAndOversizedPagesCannotReachTheDatabase() throws Exception {
+        mvc.perform(post("/restful/device/report").contentType("application/json").content("{\"secret\":\"secret\"}"))
+                .andExpect(status().isBadRequest());
+        mvc.perform(post("/restful/device/list").with(authentication(admin())).with(csrf()).contentType("application/json")
+                .content("{\"page\":1,\"pageSize\":10000}"))
+                .andExpect(status().isBadRequest());
+        verifyNoInteractions(deviceDao);
+    }
 
     @Test
     void publishedDemoSecretsCannotAuthenticateAnyHardwareOperation() throws Exception {
         Device device = new Device(); device.setDeviceId(1); device.setDeviceNo("WTEST"); device.setStatus(1); device.setSecret("demo-secret-1");
         when(deviceDao.findByDeviceNo("WTEST")).thenReturn(device);
         for (String endpoint : List.of("login","bind","heartbeat","report","sos")) {
-            mvc.perform(post("/restful/device/"+endpoint).contentType("application/json").content("{\"deviceNo\":\"WTEST\",\"secret\":\"demo-secret-1\"}"))
+            mvc.perform(post("/restful/device/"+endpoint).contentType("application/json").content("{\"deviceNo\":\"WTEST\",\"secret\":\"demo-secret-1\",\"code\":\"ABC123\"}"))
                     .andExpect(status().isOk()).andExpect(jsonPath("$.returnCode").value("0004"));
         }
         device.setSecret("23456789ABCDEFGHJKLMNPQRSTUVWXYZ");
@@ -234,5 +259,15 @@ class SecurityIntegrationTests {
         mvc.perform(multipart("/restful/image/saveImage").file(new MockMultipartFile("file", "bomb.png", "image/png", bomb))
                 .with(authentication(family())).with(csrf())).andExpect(status().isBadRequest());
         try (var files = java.nio.file.Files.list(uploads)) { assertEquals(0, files.count()); }
+    }
+
+    @Test
+    void legacyNamedUserImageStillDownloadsFromUserDirectory() throws Exception {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        javax.imageio.ImageIO.write(new BufferedImage(3, 3, BufferedImage.TYPE_INT_RGB), "jpg", bytes);
+        java.nio.file.Files.write(uploads.resolve("kai.jpg"), bytes.toByteArray());
+        mvc.perform(get("/restful/image/download").param("name", "kai.jpg").with(authentication(family())))
+                .andExpect(status().isOk()).andExpect(content().contentType("image/jpeg"))
+                .andExpect(content().bytes(bytes.toByteArray()));
     }
 }

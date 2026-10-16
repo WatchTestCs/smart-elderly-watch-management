@@ -10,9 +10,8 @@ public interface SaidDao {
     List<Said2> getSaidWithLikes(int textId, String phone);
 
     boolean lockById(int saidId);
-    List<Said2> getSaid(int textid);
 
-    List<SaidDto> getSaidForAdmin();
+    com.example.careold.domain.PageResult<SaidDto> getSaidForAdmin(com.example.careold.domain.PageRequest page);
 
     int addSaid(Said said);
 
@@ -20,7 +19,6 @@ public interface SaidDao {
 
     int updateSaid(Said said);
 
-    List<String> isSaid(int saidId,String phone);
 
     int updateSaid(String saidId,boolean flag);
 }

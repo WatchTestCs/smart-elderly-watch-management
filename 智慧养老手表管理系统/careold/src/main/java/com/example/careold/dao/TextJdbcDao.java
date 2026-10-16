@@ -6,7 +6,8 @@ import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
+import com.example.careold.domain.PageRequest;
+import com.example.careold.domain.PageResult;
 
 @Repository
 public class TextJdbcDao implements TextDao {
@@ -15,18 +16,11 @@ public class TextJdbcDao implements TextDao {
     JdbcTemplate jdbcTemplate;
 
     @Override
-    public List<Text> selectTextAll(String title) {
-        String sql=null;
-        List<Text> texts=null;
-        if(title!=null && !"".equals(title)){
-            sql="SELECT * FROM text WHERE title like ? ORDER BY time desc";
-            texts=jdbcTemplate.query(sql,new BeanPropertyRowMapper<>(Text.class),"%"+title+"%");
-        }else {
-            sql="SELECT * FROM text ORDER BY time desc";
-            texts=jdbcTemplate.query(sql,new BeanPropertyRowMapper<>(Text.class));
-        }
-        return texts;
+    public PageResult<Text> selectTextAll(String title, PageRequest page) {
+        String value=title==null?"":title;
+        return PagedQuery.query(jdbcTemplate,"SELECT * FROM text WHERE (?='' OR title LIKE ?) ORDER BY time DESC,text_id DESC",Text.class,page,value,"%"+value+"%");
     }
+
 
     @Override
     public Text selectTextDetail(int textId) {
@@ -38,28 +32,24 @@ public class TextJdbcDao implements TextDao {
     @Override
     public int addText(Text text) {
         String sql="INSERT INTO text(title,text_main,TIME,pic_id) VALUES(?,?,?,?)";
-        int rows=jdbcTemplate.update(sql,text.getTitle(),text.getTextMain(),text.getTime(),text.getPicId());
-        return rows;
+        return jdbcTemplate.update(sql,text.getTitle(),text.getTextMain(),text.getTime(),text.getPicId());
     }
 
     @Override
     public int deleteText(int id) {
         String sql="DELETE FROM text WHERE text_id=?";
-        int rows=jdbcTemplate.update(sql,id);
-        return rows;
+        return jdbcTemplate.update(sql,id);
     }
 
     @Override
     public int update(Text text) {
-        String sql="UPDATE text SET title=?,text_main=?,TIME=? WHERE text_id=?";
-        int rows=jdbcTemplate.update(sql,text.getTitle(),text.getTextMain(),text.getTime(),text.getTextId());
-        return rows;
+        String sql="UPDATE text SET title=?,text_main=?,TIME=?,pic_id=? WHERE text_id=?";
+        return jdbcTemplate.update(sql,text.getTitle(),text.getTextMain(),text.getTime(),text.getPicId(),text.getTextId());
     }
 
     @Override
     public int nextPicId() {
         String sql="SELECT NEXT VALUE FOR picture_group";
-        int maxId=jdbcTemplate.queryForObject(sql,int.class);
-        return maxId;
+        return jdbcTemplate.queryForObject(sql,int.class);
     }
 }

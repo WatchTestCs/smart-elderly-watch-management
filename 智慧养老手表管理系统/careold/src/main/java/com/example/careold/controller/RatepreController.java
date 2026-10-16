@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import com.example.careold.security.AccountAccess;
 import com.example.careold.dao.OldPersonDao;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -126,6 +127,7 @@ public class RatepreController {
      */
     @ResponseBody
     @PostMapping("/resolveAlert")
+    @Transactional
     public LinkedHashMap resolveAlert(@RequestBody LinkedHashMap param){
         LinkedHashMap result=new LinkedHashMap();
         String recordId=param.get("recordId")==null?"":param.get("recordId").toString();
@@ -180,8 +182,7 @@ public class RatepreController {
         String timeFirst=param.get("timeFirst").toString();
         String timeLast=param.get("timeLast").toString();
         LOG.info(name+"----"+timeFirst+"----"+timeLast);
-        List<RatepreDto> ratepreDtoList=ratepreDao.getRatepre(name,timeFirst,timeLast);
-        result.put("ratepreDtoList",ratepreDtoList);
+        ratepreDao.getRatepre(name,timeFirst,timeLast,com.example.careold.domain.PageRequest.from(param)).putInto(result,"ratepreDtoList");
         return result;
     }
 

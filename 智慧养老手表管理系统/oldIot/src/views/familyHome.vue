@@ -51,21 +51,20 @@ export default {
 </script>
 
 <style scoped>
-.care-app { min-height: 100vh; min-height: 100dvh; background: var(--care-canvas); }
-.workspace-layout { display: grid; grid-template-columns: 232px minmax(0, 1fr); min-height: calc(100vh - 72px); }
-.workspace-sidebar { min-width: 0; }
-.workspace-main { min-width: 0; padding: 26px 32px 40px; }
-.workspace-content { min-width: 0; max-width: 1380px; margin-right: auto; margin-left: auto; }
+.care-app { display: grid; grid-template-rows: auto minmax(0, 1fr); height: 100vh; height: 100dvh; overflow: hidden; background: var(--care-canvas); }
+.workspace-layout { display: grid; grid-template-columns: 232px minmax(0, 1fr); min-height: 0; overflow: hidden; }
+.workspace-sidebar { min-width: 0; min-height: 0; overflow-y: auto; }
+.workspace-main { min-width: 0; min-height: 0; overflow: auto; overscroll-behavior: contain; scroll-padding-block: 20px; padding: clamp(18px, 2vh, 26px) clamp(20px, 2.2vw, 48px) 28px; }
+.workspace-content { min-width: 0; width: 100%; margin-right: auto; margin-left: auto; }
 .skip-link { position: fixed; top: -100px; left: 18px; padding: 12px 18px; z-index: 3000; border-radius: 6px; background: #183e33; color: #fff; }
 .skip-link:focus { top: 12px; }
-.workspace-main:focus { outline: none; }
+.workspace-main:focus-visible { outline: 2px solid #215c4a; outline-offset: -4px; }
 .view-intro { margin: 0 0 20px; }
 .view-breadcrumb { margin: 0 0 10px; color: #59665f; font-size: 15px; }
 .view-breadcrumb i { margin: 0 5px; font-size: 9px; }
 .view-intro h1 { margin: 0; color: #263632; font-size: 28px; line-height: 1.25; font-weight: 500; letter-spacing: -.02em; }
 .view-description { margin: 8px 0 0; color: #53645c; font-size: 17px; line-height: 1.65; }
 @media (max-width: 900px) {
-  .care-app { display: grid; grid-template-rows: auto minmax(0, 1fr); height: 100vh; height: 100dvh; min-height: 0; overflow: hidden; }
   .workspace-layout { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; min-height: 0; overflow: hidden; }
   .workspace-sidebar { grid-column: 1; grid-row: 2; }
   .workspace-main { grid-column: 1; grid-row: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; scroll-padding-block: 20px; padding: 24px 24px 28px; }

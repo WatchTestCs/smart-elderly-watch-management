@@ -26,7 +26,7 @@
       </el-table-column>
     </el-table>
     <section v-if="stepList.length" class="family-record-cards" aria-label="活动和睡眠记录">
-      <article v-for="(item, index) in stepList" :key="index" class="family-record-card">
+      <article v-for="item in stepList" :key="item.oldId" class="family-record-card">
         <h2>{{ item.name || '活动记录' }}</h2>
         <dl>
           <dt>今日步数</dt><dd>{{ item.step == null ? '暂无数据' : item.step + ' 步' }}</dd>
@@ -168,7 +168,7 @@ export default {
 
 </script>
 
-<style lang="less" scoped>
+<style scoped>
 
   .sleep-chart { width: 100%; max-width: 520px; height: 300px; margin: 0 auto; }
 

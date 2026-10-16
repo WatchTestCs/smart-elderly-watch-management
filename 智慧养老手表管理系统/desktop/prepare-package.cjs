@@ -21,7 +21,7 @@ async function build () {
   fs.rmSync(path.join(resources, 'default_app.asar'), { force: true })
   const staging = path.join(output, 'app-staging')
   fs.mkdirSync(staging, { recursive: true })
-  for (const file of ['package.json', 'main.cjs']) fs.copyFileSync(path.join(__dirname, file), path.join(staging, file))
+  for (const file of ['package.json', 'main.cjs', 'runtime-files.cjs']) fs.copyFileSync(path.join(__dirname, file), path.join(staging, file))
   const jre = fs.readdirSync(path.join(tools, 'jre')).find(name => name.endsWith('-jre'))
   fs.cpSync(path.join(tools, 'jre', jre), path.join(resources, 'runtime'), { recursive: true })
   fs.mkdirSync(path.join(resources, 'server'), { recursive: true })

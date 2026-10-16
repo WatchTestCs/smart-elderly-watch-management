@@ -127,6 +127,8 @@ cd 智慧养老手表管理系统
 
 ## 关于签名
 
+当前本地 preview 源码另有一轮[问题清单核验与修复](docs/PREVIEW_ISSUE_REMEDIATION.md)，包含密码、事务、数据库迁移、分页、地图与 CI；[本轮验收结果](docs/preview-remediation-validation.json)区分本地验证和未执行事项。这些改动尚未发布至上面的安装包。
+
 本轮使用 `CN=Suining Local Build` 自签证书，**并非公开受信任的商业代码签名证书**。Windows 可能仍提示发布者不受信任。安装包不会自动添加系统受信任根，公开 CER 不含私钥。商业公开分发如需受信任发布者，应使用真实代码签名证书重新签署。
 
 发布资产附带 SHA256SUMS.txt，可在 PowerShell 用 `Get-FileHash 文件名 -Algorithm SHA256` 核对下载内容。

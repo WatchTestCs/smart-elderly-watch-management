@@ -18,4 +18,7 @@ $compiler=Join-Path $output 'tools/nsis/nsis-3.12/makensis.exe'
 & $compiler '/V3' '/INPUTCHARSET' 'UTF8' "/DAPPDIR=$appDir" "/DOUTPUT=$installer" "/DUNINSTALL_FILES=$manifest" "/DSIGN_SCRIPT=$PSScriptRoot/sign.ps1" "/DSIGN_SHELL=$((Get-Process -Id $PID).Path)" (Join-Path $PSScriptRoot 'installer.nsi')
 if ($LASTEXITCODE -ne 0) { throw 'Installer compilation failed' }
 & (Join-Path $PSScriptRoot 'sign.ps1') -FilePath $installer
-Get-ChildItem Cert:\CurrentUser\My -CodeSigningCert | Where-Object Subject -eq 'CN=Suining Local Build' | Select-Object -First 1 | Export-Certificate -FilePath (Join-Path $output 'release/Suining-Local-Signing.cer') | Out-Null
+$signer=(Get-AuthenticodeSignature -LiteralPath $installer).SignerCertificate
+if (-not $signer) { throw 'Installer signing certificate is missing.' }
+$certificateName=if ($env:SUINING_SIGNING_THUMBPRINT) { 'Suining-Signing.cer' } else { 'Suining-Local-Signing.cer' }
+Export-Certificate -Cert $signer -FilePath (Join-Path $output ('release/'+$certificateName)) | Out-Null

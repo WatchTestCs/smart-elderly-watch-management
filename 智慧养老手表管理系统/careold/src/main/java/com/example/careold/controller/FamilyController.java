@@ -5,11 +5,11 @@ import com.example.careold.security.AccountAccess;
 import com.example.careold.common.PasswordUtil;
 import com.example.careold.dao.FamilyDao;
 import com.example.careold.dao.OldPersonDao;
-import com.example.careold.dao.UserDao;
 import com.example.careold.domain.*;
 import java.util.LinkedHashMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -32,14 +32,14 @@ public class FamilyController {
     public LinkedHashMap select(@RequestBody LinkedHashMap param){
         LinkedHashMap result=new LinkedHashMap();
         String familyName=param.get("familyName").toString();
-        List<FamilyDto> familyDtos= familyDao.findFamily(familyName);
-        result.put("familyDtos",familyDtos);
+        familyDao.findFamily(familyName,com.example.careold.domain.PageRequest.from(param)).putInto(result,"familyDtos");
         return result;
     }
 
 
     @ResponseBody
     @PostMapping("/add")
+    @Transactional
     public LinkedHashMap add(@RequestBody LinkedHashMap params){
         LinkedHashMap result=new LinkedHashMap();
         String familyName=params.get("familyName").toString();
@@ -57,9 +57,11 @@ public class FamilyController {
         family.setFamilyName(familyName);
         family.setFamilyRelation(familyRelation);
         int row=familyDao.save(family);
-        OldDto2 oldDto2=familyDao.findOldDto2ByPhone(oldPhone);
+        Integer oldId=familyDao.findOldIdByPhone(oldPhone);
         String familyId=familyDao.findFamilyIdByPhone(familyPhone);
-        oldPersonDao.updateOldPerson2(oldDto2.getOldId(),Integer.parseInt(familyId));
+        if (row != 1 || oldPersonDao.updateOldPerson2(oldId,Integer.parseInt(familyId)) != 1) {
+            throw new IllegalStateException("家属关联失败，已撤销本次新增");
+        }
         if(row==1){
             result.put(ReturnCodeUtil.returnCode,ReturnCodeUtil.successCode);
             return result;
@@ -96,6 +98,7 @@ public class FamilyController {
 
     @ResponseBody
     @PostMapping("/deleteFamily")
+    @Transactional
     public LinkedHashMap deleteFamily(@RequestBody LinkedHashMap params){
         LinkedHashMap result=new LinkedHashMap();
         String familyId=params.get("familyId").toString();
@@ -178,8 +181,8 @@ public class FamilyController {
         String oldPassword=(String) params.get("oldPassword");
         String familyPassword=(String) params.get("familyPassword");
         if (familyPhone.trim().isEmpty() || oldPassword.isEmpty()
-                || familyPassword.length() < 6 || familyPassword.length() > 20 || familyPassword.getBytes(java.nio.charset.StandardCharsets.UTF_8).length > 72) {
-            result.put("message", "请填写原密码，新密码长度须为6-20个字符");
+                || !PasswordUtil.validNewPassword(familyPassword)) {
+            result.put("message", "请填写原密码，新密码须为12–20位且包含字母和数字");
             return result;
         }
         Family account=familyDao.findByPhoneForLogin(familyPhone);

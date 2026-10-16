@@ -48,32 +48,32 @@ const router = createRouter({
 	  redirect: '/familyMain',
 	  children: [{
 				  path: '/familyMain',
-				  meta: { title: '家属首页' }, name: 'page-2973',
+				  meta: { title: '家属首页' }, name: 'familyMain',
 				  component: familyMain
 				},
 				{
 					path: '/rateprefamily',
-					meta: { title: '心率血压' }, name: 'page-3062',
+					meta: { title: '心率血压' }, name: 'rateprefamily',
 					component: rateprefamily
 				},
 				{
 					path: '/stepfamily',
-					meta: { title: '睡眠步数' }, name: 'page-3150',
+					meta: { title: '睡眠步数' }, name: 'stepfamily',
 					component: stepfamily
 				},
 				{
 					path: '/positionfamily',
-					meta: { title: '位置信息' }, name: 'page-3239',
+					meta: { title: '位置信息' }, name: 'positionfamily',
 					component: positionfamily
 				},
 				{
 					path: '/me',
-					meta: { title: '个人中心' }, name: 'page-3320',
+					meta: { title: '个人中心' }, name: 'me',
 					component: me
 				},
 				{
 					path: '/textMain',
-					meta: { title: '公告内容' }, name: 'page-3395',
+					meta: { title: '公告内容' }, name: 'textMain',
 					component: textMain
 				}]
 	},
@@ -83,87 +83,87 @@ const router = createRouter({
       children: [
 				{
 				  path: '/main',
-				  meta: { title: '首页' }, name: 'page-3565',
+				  meta: { title: '首页' }, name: 'main',
 				  component: main
 				},
 				{
 					path: '/ratepre',
-					meta: { title: '心率血压' }, name: 'page-3640',
+					meta: { title: '心率血压' }, name: 'ratepre',
 					component: ratepre
 				},
 				{
 					path: '/step',
-					meta: { title: '睡眠步数' }, name: 'page-3716',
+					meta: { title: '睡眠步数' }, name: 'step',
 					component: step
 				},
 				{
 					path: '/position',
-					meta: { title: '位置信息' }, name: 'page-3793',
+					meta: { title: '位置信息' }, name: 'position',
 					component: position
 				},
 				{
 					path: '/life',
-					meta: { title: '生活信息' }, name: 'page-3870',
+					meta: { title: '生活信息' }, name: 'life',
 					component: life
 				},
 				{
 					path: '/watch',
-					meta: { title: '手表信息' }, name: 'page-3944',
+					meta: { title: '手表信息' }, name: 'watch',
 					component: watch
 				},
 				{
 					path: '/person',
-					meta: { title: '人员信息' }, name: 'page-4020',
+					meta: { title: '人员信息' }, name: 'person',
 					component: person
 				},
 				{
 					path: '/customer',
-					meta: { title: '监护人信息' }, name: 'page-4099',
+					meta: { title: '监护人信息' }, name: 'customer',
 					component: customer
 				},
 				{
 					path: '/text',
-					meta: { title: '编辑公告' }, name: 'page-4177',
+					meta: { title: '编辑公告' }, name: 'text',
 					component: text
 				},
 				{
 					path: '/textTwo',
-					meta: { title: '发布公告' }, name: 'page-4253',
+					meta: { title: '发布公告' }, name: 'textTwo',
 					component: textTwo
 				},
 				{
 					path: '/textMainUser',
-					meta: { title: '公告内容' }, name: 'page-4337',
+					meta: { title: '公告内容' }, name: 'textMainUser',
 					component: textMainUser
 				},
 				{
 					path: '/textOpt',
-					meta: { title: '公告管理' }, name: 'page-4421',
+					meta: { title: '公告管理' }, name: 'textOpt',
 					component: textOpt
 				},
 				{
 				  path: '/annex',
-				  meta: { title: '附件管理' }, name: 'page-4500',
+				  meta: { title: '附件管理' }, name: 'annex',
 				  component: annex
 				},
 				{
 				  path: '/family',
-				  meta: { title: '家属管理' }, name: 'page-4579',
+				  meta: { title: '家属管理' }, name: 'family',
 				  component: family
 				},
 				{
 				  path: '/saidOperation',
-				  meta: { title: '评论管理' }, name: 'page-4666',
+				  meta: { title: '评论管理' }, name: 'saidOperation',
 				  component: saidOperation
 				},
 				{
 				  path: '/inviteCode',
-				  meta: { title: '邀请码管理' }, name: 'page-4757',
+				  meta: { title: '邀请码管理' }, name: 'inviteCode',
 				  component: inviteCode
 				},
 				{
 				  path: '/device',
-				  meta: { title: '设备管理' }, name: 'page-4842',
+				  meta: { title: '设备管理' }, name: 'device',
 				  component: device
 				}
       ]

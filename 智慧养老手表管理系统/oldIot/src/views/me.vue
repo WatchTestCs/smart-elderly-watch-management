@@ -141,11 +141,11 @@ export default {
           oldPassword: [{ required: true, message: '请输入原密码', trigger: 'blur' }],
 				    familyPassword: [
 				      { validator: validatePass, trigger: 'blur' },
-							{ min: 6, max: 20, message: '密码长度为6-20个字符', trigger: 'blur' }
+							{ pattern: /^(?=.*[A-Za-z])(?=.*[0-9]).{12,20}$/, message: '请设置 12–20 位含字母和数字的密码', trigger: 'blur' }
 				    ],
 				    familyPassword2: [
 				      { validator: validatePass2, trigger: 'blur' },
-							{ min: 6, max: 20, message: '密码长度为6-20个字符', trigger: 'blur' }
+							{ pattern: /^(?=.*[A-Za-z])(?=.*[0-9]).{12,20}$/, message: '请设置 12–20 位含字母和数字的密码', trigger: 'blur' }
 				    ]
 				  }
 				}

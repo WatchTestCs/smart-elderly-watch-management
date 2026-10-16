@@ -6,13 +6,13 @@ public class Text {
     private String title;
     private String textMain;
     private String time;
-    private int picId;
+    private Integer picId;
 
-    public int getPicId() {
+    public Integer getPicId() {
         return picId;
     }
 
-    public void setPicId(int picId) {
+    public void setPicId(Integer picId) {
         this.picId = picId;
     }
 

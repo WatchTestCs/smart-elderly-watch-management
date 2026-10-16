@@ -4,6 +4,7 @@ const { randomBytes, createHash } = require('node:crypto')
 const fs = require('node:fs')
 const path = require('node:path')
 const http = require('node:http')
+const { appendLog, removeDiscovery } = require('./runtime-files.cjs')
 
 app.setName('岁宁')
 app.setAppUserModelId('org.watchtestcs.suining')
@@ -15,7 +16,7 @@ if (!app.requestSingleInstanceLock()) app.quit()
 else {
   app.on('second-instance', () => { if (window) { if (window.isMinimized()) window.restore(); window.focus() } })
   app.whenReady().then(start).catch(error => {
-    fs.appendFileSync(path.join(app.getPath('userData'), 'startup-error.log'), error.stack + '\n')
+    appendLog(path.join(app.getPath('userData'), 'startup-error.log'), error.stack + '\n')
     if (!process.env.SUINING_QA_HEADLESS) dialog.showErrorBox('岁宁暂时无法启动', '请重新打开软件。如仍未恢复，请保留用户目录中的日志以便排查。')
     app.quit()
   })
@@ -44,15 +45,18 @@ async function start () {
   const bindAddress = process.env.SUINING_BIND_ADDRESS === '0.0.0.0' ? '0.0.0.0' : '127.0.0.1'
   const requestedPort = Number(process.env.SUINING_PORT || '0')
   const port = Number.isInteger(requestedPort) && requestedPort >= 0 && requestedPort <= 65535 ? requestedPort : 0
-  const log = fs.openSync(path.join(data, 'server.log'), 'w')
-  backend = spawn(java, ['-Xms32m', '-Xmx256m', '-XX:+UseG1GC', '-Dfile.encoding=UTF-8', '-jar', jar], {
-    cwd: data, windowsHide: true, stdio: ['ignore', log, log],
+  const logFile = path.join(data, 'server-console.log')
+  backend = spawn(java, ['-Xms32m', '-Xmx256m', '-XX:+UseG1GC', '-XX:+ExitOnOutOfMemoryError', '-Dfile.encoding=UTF-8', '-jar', jar], {
+    cwd: data, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'],
     env: { ...process.env, SUINING_DATA_DIR: data.replaceAll('\\', '/'), SUINING_PORT: String(port), SUINING_BIND_ADDRESS: bindAddress,
       SUINING_READY_FILE: ready, SUINING_DESKTOP_TOKEN: token, SUINING_PARENT_PID: String(process.pid) }
   })
-  fs.closeSync(log)
-  backend.on('error', error => { fs.appendFileSync(path.join(data, 'startup-error.log'), error.stack + '\n') })
-  backend.on('exit', () => {
+  backend.stdout.on('data', chunk => appendLog(logFile, chunk, 5 * 1024 * 1024))
+  backend.stderr.on('data', chunk => appendLog(logFile, chunk, 5 * 1024 * 1024))
+  backend.on('error', error => { appendLog(path.join(data, 'startup-error.log'), error.stack + '\n') })
+  backend.on('exit', (code, signal) => {
+    removeDiscovery(path.join(data, 'runtime', 'server.json'), backend.pid)
+    if (!closing) appendLog(path.join(data, 'startup-error.log'), `Backend exit: code=${code}, signal=${signal}\n`)
     stopped = true
     if (!closing) {
       if (!process.env.SUINING_QA_HEADLESS) dialog.showErrorBox('照护服务已停止', '请重新打开岁宁。您的本机记录会保留。')
@@ -65,7 +69,9 @@ async function start () {
       const address = JSON.parse(fs.readFileSync(ready, 'utf8'))
       if (address.pid !== backend.pid || !Number.isInteger(address.port) || address.port < 1 || address.port > 65535) throw new Error('Invalid server readiness')
       origin = `http://127.0.0.1:${address.port}`
-      fs.unlinkSync(ready)
+      const discovery = path.join(data, 'runtime', 'server.json')
+      fs.writeFileSync(ready, JSON.stringify({ ...address, desktopPid: process.pid }))
+      fs.renameSync(ready, discovery)
       break
     }
     await sleep(100)
@@ -84,10 +90,24 @@ async function start () {
     webPreferences: { nodeIntegration: false, contextIsolation: true, sandbox: true, webSecurity: true, spellcheck: false, devTools: Boolean(process.env.SUINING_QA_HEADLESS), offscreen: Boolean(process.env.SUINING_QA_HEADLESS) }
   })
   window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
+  window.webContents.on('before-input-event', (event, input) => {
+    if (input.type !== 'keyDown' || input.isAutoRepeat) return
+    if (input.key === 'F11') {
+      event.preventDefault()
+      window.setFullScreen(!window.isFullScreen())
+    } else if (input.key === 'Escape' && window.isFullScreen()) {
+      event.preventDefault()
+      window.setFullScreen(false)
+    }
+  })
+  if (process.env.SUINING_QA_HEADLESS) window.on('show', () => window.hide())
   window.webContents.on('will-navigate', (event, url) => { if (new URL(url).origin !== origin) event.preventDefault() })
   window.webContents.on('will-attach-webview', event => event.preventDefault())
   window.webContents.session.on('will-download', event => event.preventDefault())
-  window.once('ready-to-show', () => { if (!process.env.SUINING_QA_HEADLESS) window.show() })
+  window.once('ready-to-show', () => {
+    window.maximize()
+    if (!process.env.SUINING_QA_HEADLESS) window.show()
+  })
   await window.loadURL(origin + '/index.html')
   window.on('closed', () => { window = null })
 }

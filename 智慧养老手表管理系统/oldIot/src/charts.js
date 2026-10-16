@@ -7,12 +7,12 @@ echarts.use([LineChart, BarChart, GridComponent, TooltipComponent, TitleComponen
 
 // Chart instances stay outside Vue's observation graph and are owned by the view.
 export const recordCharts = {
-  beforeCreate () { this._recordCharts = []; this._chartFrame = null; this._chartObserver = null },
+  beforeCreate () { this._chartsUnmounted = false; this._recordCharts = []; this._chartFrame = null; this._chartObserver = null },
   mounted () { window.addEventListener('resize', this.resizeCharts) },
-  beforeUnmount () { window.removeEventListener('resize', this.resizeCharts); this.disposeCharts() },
+  beforeUnmount () { this._chartsUnmounted = true; window.removeEventListener('resize', this.resizeCharts); this.disposeCharts() },
   methods: {
     renderRecordChart (element, options) {
-      if (!element || this._isBeingDestroyed || this._isDestroyed) return
+      if (!element || this._chartsUnmounted) return
       var chart = echarts.getInstanceByDom(element) || echarts.init(element)
       if (this._recordCharts.indexOf(chart) === -1) {
         this._recordCharts.push(chart)
@@ -54,5 +54,3 @@ export const recordCharts = {
     }
   }
 }
-
-export default echarts

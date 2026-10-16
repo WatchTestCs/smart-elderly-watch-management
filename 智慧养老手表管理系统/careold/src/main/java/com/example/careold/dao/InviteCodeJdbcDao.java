@@ -1,6 +1,5 @@
 package com.example.careold.dao;
 
-import com.example.careold.common.DateConst;
 import com.example.careold.domain.InviteCode;
 import com.example.careold.domain.InviteCodeDto;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
@@ -34,20 +33,10 @@ public class InviteCodeJdbcDao extends JdbcCom implements InviteCodeDao {
     }
 
     @Override
-    public List<InviteCodeDto> findInviteCodes(int used) {
-        StringBuilder sql = new StringBuilder();
-        sql.append("select ").append(COLUMNS).append(", o.name as oldPersonName")
-                .append(" from invite_code i")
-                .append(" left join oldperson o on o.old_id = i.old_id");
-        if (used == 0 || used == 1) {
-            sql.append(" where i.used = ?");
-        }
-        sql.append(" order by i.id desc");
-
-        if (used == 0 || used == 1) {
-            return jdbcTemplate.query(sql.toString(), rowMapper(), used);
-        }
-        return jdbcTemplate.query(sql.toString(), rowMapper());
+    public com.example.careold.domain.PageResult<InviteCodeDto> findInviteCodes(String state, com.example.careold.domain.PageRequest page) {
+        String sql="select " + COLUMNS + ",o.name as oldPersonName from invite_code i left join oldperson o on o.old_id=i.old_id"
+                + " where (?='all' or case when i.used=1 then 'used' when i.expire_time is not null and i.expire_time<CURRENT_TIMESTAMP then 'expired' else 'unused' end=?) order by i.id desc";
+        return PagedQuery.query(jdbcTemplate,sql,InviteCodeDto.class,page,state,state);
     }
 
     @Override

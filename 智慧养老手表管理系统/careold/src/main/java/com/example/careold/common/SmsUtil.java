@@ -48,7 +48,7 @@ public class SmsUtil {
             String material = "appkey=" + appKey + "&random=" + nonce + "&time=" + time + "&mobile=" + phone;
             String signature = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(material.getBytes(StandardCharsets.UTF_8)));
             Map<String,Object> body = Map.of("tel",Map.of("nationcode","86","mobile",phone),"type",0,
-                    "msg","你关注的养老院有新的公告动态了，请登录系统查看","sig",signature,"time",time,"extend","","ext","");
+                    "msg","岁宁有新的照护公告，请登录查看详情","sig",signature,"time",time,"extend","","ext","");
             var request = HttpRequest.newBuilder(URI.create("https://yun.tim.qq.com/v5/tlssmssvr/sendsms?sdkappid=" + appId + "&random=" + nonce))
                     .timeout(Duration.ofSeconds(10)).header("Content-Type","application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(json.writeValueAsString(body))).build();

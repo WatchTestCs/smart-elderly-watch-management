@@ -4,7 +4,7 @@
   </div>
 </template>
 
-<style lang="less">
+<style>
 
 html,
 body,
@@ -33,19 +33,17 @@ body {
   --care-muted: #59665f;
   --care-primary: #235442;
   --care-primary-dark: #183e33;
-  --care-soft: #eaf3ef;
   --care-canvas: #f7f8f5;
   --care-surface: #ffffff;
   --care-line: #e5ebe7;
-  --care-radius: 12px;
   --care-shadow: none;
+  --care-control-height: 52px;
+  --care-control-line: #81917b;
   --care-motion-fast: 140ms;
   --care-motion-settle: 200ms;
   --care-ease: cubic-bezier(.2,.7,.3,1);
 }
 
-#app .el-input__inner, #app .el-textarea__inner { border-color: #81917b; }
-#app .el-input__inner:focus, #app .el-textarea__inner:focus { border-color: var(--care-primary); }
 #app .el-button--primary.is-disabled { background: #e2e9dc; border-color: #c7d3c1; color: #59665f; }
 
 button,
@@ -74,55 +72,114 @@ button:not(:disabled):active { transform: translateY(1px); }
   border-color: var(--care-primary-dark);
 }
 
-#app .el-button--text,
-#app .el-button--text:focus {
+#app .el-button.is-link,
+#app .el-button.is-link:focus {
   color: var(--care-primary);
 }
 
-#app .el-button--text:hover {
+#app .el-button.is-link:hover {
   color: var(--care-primary-dark);
 }
 
-#app .el-radio__input.is-checked .el-radio__inner,
-#app .el-checkbox__input.is-checked .el-checkbox__inner,
-#app .el-checkbox__input.is-indeterminate .el-checkbox__inner {
+#app .el-radio__input.is-checked .el-radio__inner {
   background-color: var(--care-primary);
   border-color: var(--care-primary);
 }
 
-#app .el-radio__input.is-checked + .el-radio__label,
-#app .el-checkbox__input.is-checked + .el-checkbox__label {
+#app .el-radio__input.is-checked + .el-radio__label {
   color: var(--care-primary);
 }
 
 #app .el-switch.is-checked .el-switch__core,
-#app .el-pagination.is-background .el-pager li:not(.disabled).active {
+#app .el-pagination.is-background .el-pager li:not(.is-disabled).is-active {
   background-color: var(--care-primary);
   border-color: var(--care-primary);
 }
 
-.el-input__inner,
-.el-textarea__inner {
-  border-color: #81917b;
+/* The wrapper owns the field boundary; native inputs remain unframed. */
+.el-input__inner { height: calc(var(--care-control-height) - 2px); font-size: 16px; }
+#app .el-input__inner,
+#app .el-select__input,
+#app .el-range-input,
+#app .el-input__inner:focus { border: 0; border-radius: 0; box-shadow: none; outline: none; background: transparent; }
+#app .el-input__wrapper,
+#app .el-select__wrapper,
+#app .el-textarea__inner {
+  min-height: var(--care-control-height);
+  border: 1px solid var(--care-control-line);
   border-radius: 8px;
-  font-size: 16px;
+  box-shadow: none;
+  transition: border-color var(--care-motion-fast) var(--care-ease), background-color var(--care-motion-fast) var(--care-ease);
 }
+#app .el-input__wrapper { padding: 0 14px; }
+#app .el-select__wrapper { padding: 8px 14px; font-size: 16px; }
+#app .el-textarea__inner { font-size: 16px; }
+#app .el-input__wrapper:hover,
+#app .el-select__wrapper:hover,
+#app .el-textarea__inner:hover { border-color: var(--care-primary); }
+#app .el-input__wrapper:focus-within,
+#app .el-select__wrapper:focus-within,
+#app .el-select__wrapper.is-focused,
+#app .el-textarea__inner:focus {
+  border-color: var(--care-primary);
+  outline: 2px solid var(--care-primary);
+  outline-offset: -1px;
+}
+#app .el-input.is-disabled .el-input__wrapper,
+#app .el-select__wrapper.is-disabled { border-color: #cbd5c5; outline: none; background: #f1f3ef; }
 
-.el-input__inner { height: 46px; }
+/* A search group has one continuous frame, including its action segment. */
+#app .el-input-group {
+  display: inline-flex;
+  min-height: var(--care-control-height);
+  border: 1px solid var(--care-control-line);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: none;
+  overflow: hidden;
+  transition: border-color var(--care-motion-fast) var(--care-ease);
+}
+#app .el-input-group:hover { border-color: var(--care-primary); }
+#app .el-input-group:focus-within { border-color: var(--care-primary); outline: 2px solid var(--care-primary); outline-offset: -1px; }
+#app .el-input-group .el-input__wrapper,
+#app .el-input-group .el-input__wrapper:focus-within { min-width: 0; min-height: 0; border: 0; border-radius: 0; box-shadow: none; outline: none; }
+#app .el-input-group__append { align-self: stretch; padding: 0; border: 0; border-radius: 0; box-shadow: none; background: transparent; }
+#app .el-input-group .el-input-group__append .el-button {
+  display: inline-flex;
+  align-self: stretch;
+  width: var(--care-control-height);
+  min-width: var(--care-control-height);
+  height: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  outline: none;
+  color: var(--care-primary);
+  background: #f1f4ed;
+}
+#app .el-input-group .el-input-group__append .el-button:not(:disabled):hover { background: #e7eee3; }
+#app .el-input-group .el-input-group__append .el-button:not(:disabled):active { transform: none; background: #dce7d6; }
+#app .el-input-group.is-disabled { border-color: #cbd5c5; background: #f1f3ef; }
+#app .el-input-group .el-input-group__append .el-button:disabled { background: #f1f3ef; color: #69796b; }
+
+#app .el-input-number { height: var(--care-control-height); }
+#app .el-input-number .el-input__wrapper { padding: 0 38px; }
+#app .el-input-number__increase,
+#app .el-input-number__decrease { border: 0; background: transparent; }
+#app .el-input-number__increase:hover,
+#app .el-input-number__decrease:hover { background: #edf3e8; }
+
 .el-button { min-height: 44px; font-size: 15px; }
-.el-button--small,
-.el-button--mini { min-height: 40px; font-size: 14px; }
+.el-button--small { min-height: 40px; font-size: 14px; }
 .el-form-item__label { font-size: 15px; line-height: 1.5; }
 .el-table { font-size: 16px; }
 .el-table th.el-table__cell { font-size: 14px; }
-.el-menu-item, .el-submenu__title { font-size: 16px; }
+.el-menu-item, .el-sub-menu__title { font-size: 16px; }
 .el-tabs__item { font-size: 15px; }
 
-.el-input__inner:focus,
-.el-textarea__inner:focus {
-  border-color: var(--care-primary);
-  box-shadow: 0 0 0 3px rgba(35,84,66,.10);
-}
 
 .el-table {
   color: var(--care-ink);
@@ -143,14 +200,12 @@ button:not(:disabled):active { transform: translateY(1px); }
 
 #app .care-app .el-table th { background: #f6f8f6; color: #53645c; font-weight: 600; }
 #app .care-app .el-input__inner::placeholder { color: #59665f; opacity: 1; }
-#app .care-app .el-input__inner, #app .care-app .el-textarea__inner { border-color: #81917b; }
-#app .care-app .el-input__inner:focus, #app .care-app .el-textarea__inner:focus { border-color: var(--care-primary); }
 html.large-text #app .care-app .el-table,
 html.large-text #app .care-app .el-input__inner,
 html.large-text #app .care-app .el-form-item__label,
 html.large-text #app .care-app .workspace-content p { font-size: 18px; }
 html.large-text #app .care-app .el-menu-item,
-html.large-text #app .care-app .el-submenu__title,
+html.large-text #app .care-app .el-sub-menu__title,
 html.large-text #app .care-app .el-button { font-size: 17px; }
 
 .el-table--border::after,
@@ -169,13 +224,12 @@ html.large-text #app .care-app .el-button { font-size: 17px; }
 
 /* One short, interruptible response to navigation; no looping or scroll effects. */
 .care-view-enter-active { transition: opacity var(--care-motion-settle) var(--care-ease), transform var(--care-motion-settle) var(--care-ease); }
-.care-view-enter { opacity: 0; transform: translateY(5px); }
+.care-view-enter-from { opacity: 0; transform: translateY(5px); }
 .dialog-fade-enter-active { animation: none !important; transition: opacity var(--care-motion-settle) var(--care-ease); }
 .dialog-fade-leave-active { animation: none !important; transition: opacity var(--care-motion-fast) var(--care-ease); }
-.dialog-fade-enter, .dialog-fade-leave-to { opacity: 0; }
+.dialog-fade-enter-from, .dialog-fade-leave-to { opacity: 0; }
 .dialog-fade-enter-active .el-dialog { transition: transform var(--care-motion-settle) var(--care-ease); }
-.dialog-fade-enter .el-dialog { transform: translateY(8px); }
-.el-input__inner, .el-textarea__inner { transition: border-color var(--care-motion-fast) var(--care-ease), box-shadow var(--care-motion-fast) var(--care-ease); }
+.dialog-fade-enter-from .el-dialog { transform: translateY(8px); }
 .el-button.is-loading, .el-button.is-disabled { transform: none; }
 .el-loading-mask { transition: opacity var(--care-motion-fast) var(--care-ease); }
 .el-message { max-width: calc(100vw - 32px); min-width: 0; border-radius: 10px; }
@@ -228,17 +282,12 @@ html.large-text #app .care-app .el-button { font-size: 17px; }
 
 #app .roles .row-search {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 16px 20px;
   margin: 0;
 }
 
-#app .roles .row-search > .el-col {
-  float: none;
-  width: auto;
-  padding: 0;
-}
 
 #app .roles .el-table {
   max-width: 100%;
@@ -264,28 +313,32 @@ html.large-text #app .care-app .el-button { font-size: 17px; }
 }
 
 #app .el-form-item__error { color: #a4262c; font-size: 16px; line-height: 1.5; }
-#app .el-form-item.is-error .el-input__inner, #app .el-form-item.is-error .el-textarea__inner { border-color: #a4262c; }
+#app .el-form-item.is-error .el-input__wrapper, #app .el-form-item.is-error .el-select__wrapper, #app .el-form-item.is-error .el-input-group, #app .el-form-item.is-error .el-textarea__inner { border-color: #a4262c; outline-color: #a4262c; }
+#app .el-form-item.is-error .el-input-group .el-input__wrapper { border: 0; outline: none; }
 #app .el-form-item.is-required:not(.is-no-asterisk) > .el-form-item__label::before { color: #a4262c; }
 .care-family .el-form-item__error, .auth-page .el-form-item__error, .register-page .el-form-item__error { position: static; padding-top: 6px; font-size: 16px; }
 #app .el-radio__inner { width: 18px; height: 18px; border-color: #81917b; }
 #app .el-radio__inner::after { width: 6px; height: 6px; }
 .register-page .el-input__inner::placeholder { color: #59665f; opacity: 1; }
 
+html.large-text { --care-control-height: 60px; }
+html.large-text .care-family { --care-control-height: 64px; }
+
 /* Family portal defaults are intentionally larger for older and low-vision users. */
 .care-family {
+  --care-control-height: 56px;
   font-size: 18px;
 }
 
 .care-family .el-button,
-.care-family .el-button--small,
-.care-family .el-button--mini {
+.care-family .el-button--small {
   min-height: 48px;
   padding-right: 18px;
   padding-left: 18px;
   font-size: 17px;
 }
 
-.care-family .el-button--text {
+.care-family .el-button.is-link {
   min-height: 48px;
   padding: 10px 4px;
 }
@@ -335,13 +388,12 @@ html.large-text #app .care-app .el-button { font-size: 17px; }
 .care-family .el-tag--success { color: #236b3d; background: #edf7f0; border-color: #bad8c2; }
 .care-family .el-tag--danger { color: #a4262c; background: #fff1f0; border-color: #e7b9b6; }
 .care-family .care-empty-state,
-.care-family .map-heading p,
-.care-family .map-unavailable,
+.care-family .position-map-heading p,
+.care-family .position-map-note,
 .care-family .position-empty,
 .care-family .unknown-state { color: #53645c; font-size: 16px; line-height: 1.7; }
-.care-family .map-panel { padding: 24px; }
-.care-family .map-heading h2 { font-size: 21px; }
-.care-family .map-unavailable { min-height: 200px; }
+.care-family .position-map { padding: 24px; }
+.care-family .position-map-heading h2 { font-size: 21px; }
 .care-family .el-dialog { display: flex; flex-direction: column; width: 92vw; max-width: 1000px; max-height: calc(100vh - 48px); margin: 24px auto !important; }
 .care-family .el-dialog__header { flex-shrink: 0; padding-right: 76px; }
 .care-family .el-dialog__body { min-height: 0; overflow-y: auto; }
@@ -374,8 +426,8 @@ html.large-text .auth-page .story-copy p,
 html.large-text .auth-page .auth-intro { font-size: 20px; }
 html.large-text .auth-page .login-form .el-input__inner { height: 58px; font-size: 20px; }
 html.large-text .care-family .care-empty-state,
-html.large-text .care-family .map-heading p,
-html.large-text .care-family .map-unavailable,
+html.large-text .care-family .position-map-heading p,
+html.large-text .care-family .position-map-note,
 html.large-text .care-family .position-empty,
 html.large-text .care-family .unknown-state { font-size: 18px; }
 
@@ -393,15 +445,12 @@ html.large-text .care-family .unknown-state { font-size: 18px; }
   .care-family .family-record-card dd.status-danger { color: #a4262c; }
   .care-family .family-record-card dd.status-normal { color: #236b3d; }
   .care-family .family-record-card .el-button { width: 100%; }
-  .care-family .map-card-note { margin: 0; padding: 12px; border-radius: 8px; background: #f3f6f4; color: #33453c; font-size: 16px; line-height: 1.6; text-align: center; }
-  .care-family .map-panel { padding: 18px 14px; }
-  .care-family #allmap { height: 300px; }
+  .care-family .position-map { padding: 18px 14px; }
 }
 
 html.large-text .care-family .family-record-card h2 { font-size: 21px; }
 html.large-text .care-family .family-record-card dt { font-size: 17px; }
 html.large-text .care-family .family-record-card dd { font-size: 19px; }
-html.large-text .care-family .map-card-note { font-size: 18px; }
 
 html.large-text .care-family .el-table,
 html.large-text .care-family .el-form-item__label { font-size: 18px; }
@@ -433,8 +482,7 @@ html.large-text .care-header { min-height: 80px; height: auto; }
 @media (max-width: 600px) {
   #app .roles { padding: 16px 12px; border-radius: 12px; }
   #app .roles .sys-research { margin-bottom: 14px; }
-  #app .roles .row-search > .el-col { width: 100%; }
-  .el-dialog__header { padding: 16px 18px; }
+    .el-dialog__header { padding: 16px 18px; }
   .el-dialog__body { padding: 18px; }
   .el-dialog__footer { padding: 10px 18px 18px; }
   .el-pagination { white-space: normal; }

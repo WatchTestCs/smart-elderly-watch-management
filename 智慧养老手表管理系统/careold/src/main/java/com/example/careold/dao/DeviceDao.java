@@ -15,7 +15,8 @@ public interface DeviceDao {
     Device findById(Integer deviceId);
 
     /** 设备列表（含绑定老人姓名），只返回启用中的设备 */
-    List<DeviceDto> findDevices();
+    List<DeviceDto> findDevices(int page, int pageSize, String query, String state);
+    java.util.Map<String,Object> deviceTotals(String query, String state);
 
     /** 新增设备，返回自增主键（失败返回 null） */
     Integer save(Device device);
@@ -41,8 +42,6 @@ public interface DeviceDao {
     /** 删除设备 */
     int delete(Integer deviceId);
 
-    /** 该老人是否已有绑定的设备 */
-    int countByOldId(Integer oldId);
 
     /** 新增绑定码，返回自增主键（失败返回 null） */
     Integer saveBindCode(BindCode bindCode);
@@ -68,8 +67,8 @@ public interface DeviceDao {
     /** 更新指定老人最近一条告警的处置状态 */
     int updateLatestAlarmStatus(Integer oldId, String status);
 
-    /** 写入/覆盖某设备某天的睡眠步数（watch_day_info，每天保留一条） */
-    int saveDayInfo(Integer deviceId, int step, int sleep, String sleepState, String day);
+    /** 更新某设备的日记录；缺省项保留原值，每天一条 */
+    int saveDayInfo(Integer deviceId, Integer step, Integer sleep, String sleepState, String day);
 
     // ==================== 异常（红点）查询与处置 ====================
 
@@ -88,6 +87,6 @@ public interface DeviceDao {
     /** 把设备层面的某类异常标记为已处理 */
     int resolveDeviceAlert(Integer deviceId, String kind);
 
-    /** 处置心率/血压异常：未处理标记置1，异常标记归0；recordId 为空表示处置该设备最新的异常记录 */
+    /** 标记健康异常已处理；recordId 为空时处置该设备该类已有异常 */
     int resolveRatepreAlert(Integer deviceId, String kind, Integer recordId);
 }

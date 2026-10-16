@@ -16,6 +16,11 @@ public final class PasswordUtil {
         return ENCODER.encode(password);
     }
 
+    public static boolean validNewPassword(String password) {
+        return password != null && password.matches("(?s)(?=.*[A-Za-z])(?=.*[0-9]).{12,20}")
+                && password.getBytes(java.nio.charset.StandardCharsets.UTF_8).length <= 72;
+    }
+
     public static boolean matches(String password, String storedPassword) {
         if (password == null || storedPassword == null || password.getBytes(java.nio.charset.StandardCharsets.UTF_8).length > 72) {
             return false;
@@ -27,7 +32,7 @@ public final class PasswordUtil {
                 return false;
             }
         }
-        return java.security.MessageDigest.isEqual(password.getBytes(java.nio.charset.StandardCharsets.UTF_8), storedPassword.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        return false;
     }
 
     public static boolean isHashed(String password) {

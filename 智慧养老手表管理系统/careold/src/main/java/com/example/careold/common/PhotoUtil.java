@@ -8,25 +8,13 @@ import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 
-//import java.util.Base64;
 
-/**
- * 功能：图片操作工具类
- *
- * @create:
- */
+
 public class PhotoUtil {
 
     private PhotoUtil(){}
 
     private static final Logger LOG = LoggerFactory.getLogger(PhotoUtil.class);
-        /**
-         *
-         * 功能描述 ： 保存图片
-         * @create
-         * @param filedata 文件数据
-         *@return　String 返回图片位置
-         */
     public static Map<String,String> saveFile(MultipartFile filedata, String path) {
         Map<String,String> result = new HashMap<>();
         result.put(DefineData.ERROR_CODE, DefineData.PHOTO_SAVE_FAILED);

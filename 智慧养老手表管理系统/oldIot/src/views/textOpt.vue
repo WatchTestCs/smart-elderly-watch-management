@@ -4,14 +4,14 @@
       <header class="announcement-toolbar">
         <div><h2>公告动态</h2><p>查看、检索并维护已发布的公告。</p></div>
         <div class="announcement-actions">
-          <div class="announcement-query"><label class="table-search-label" for="manage-notice-search">按标题查找</label><el-input id="manage-notice-search" v-model="searchText" placeholder="搜索公告标题" clearable @clear="searchOlds" @keyup.enter="searchOlds">
-            <template #append><el-button  icon="el-icon-search" aria-label="搜索公告" @click="searchOlds"></el-button></template>
-          </el-input></div>
+          <form class="announcement-query" role="search" @submit.prevent="searchOlds"><label class="table-search-label" for="manage-notice-search">按标题查找</label><el-input id="manage-notice-search" v-model="searchText" placeholder="搜索公告标题" clearable @clear="searchOlds">
+            <template #append><el-button  icon="el-icon-search" aria-label="搜索公告" native-type="submit"></el-button></template>
+          </el-input></form>
           <el-button type="primary" icon="el-icon-plus" @click="addtext">添加公告</el-button>
         </div>
       </header>
       <div v-if="loadError" class="collection-feedback" role="alert">{{ loadError }}<el-button plain @click="searchOlds">重新加载公告</el-button></div>
-      <el-table class="managed-notices-desktop" v-loading="isLoading" :data="tableData.slice((currentPage-1)*pageSize,currentPage*pageSize)" @row-dblclick="getDetail" row-class-name="clickable-row">
+      <el-table class="managed-notices-desktop" v-loading="isLoading" :data="tableData" @row-dblclick="getDetail" row-class-name="clickable-row">
         <template #empty><div  class="care-empty-state"><strong>暂无已发布公告</strong><span>发布后的公告会显示在这里。</span></div></template>
         <el-table-column type="index" label="序号" width="80" align="center"></el-table-column>
         <el-table-column prop="title" label="公告标题" min-width="260" show-overflow-tooltip></el-table-column>
@@ -23,7 +23,7 @@
           </template>
         </el-table-column>
       </el-table>
-      <div class="managed-notices-mobile" v-loading="isLoading"><article v-for="item in tableData.slice((currentPage-1)*pageSize,currentPage*pageSize)" :key="item.textId" class="managed-notice"><h3>{{ item.title || '未命名公告' }}</h3><p>{{ item.time || '暂无发布时间' }}</p><div><el-button plain @click="getDetail(item)">阅读</el-button><el-button type="primary" plain @click="handleEdit(0, item)">编辑</el-button><el-button type="danger" plain :disabled="deletingId !== null" @click="handleDelete(0, item)">删除</el-button></div></article><div v-if="!tableData.length" class="collection-empty"><strong>{{ isLoading ? '正在加载公告…' : loadError ? '公告暂时无法加载' : '暂无匹配的公告' }}</strong><p>您可以调整关键词，或发布一条新的公告。</p></div></div>
+      <div class="managed-notices-mobile" v-loading="isLoading"><article v-for="item in tableData" :key="item.textId" class="managed-notice"><h3>{{ item.title || '未命名公告' }}</h3><p>{{ item.time || '暂无发布时间' }}</p><div><el-button plain @click="getDetail(item)">阅读</el-button><el-button type="primary" plain @click="handleEdit(0, item)">编辑</el-button><el-button type="danger" plain :disabled="deletingId !== null" @click="handleDelete(0, item)">删除</el-button></div></article><div v-if="!tableData.length" class="collection-empty"><strong>{{ isLoading ? '正在加载公告…' : loadError ? '公告暂时无法加载' : '暂无匹配的公告' }}</strong><p>您可以调整关键词，或发布一条新的公告。</p></div></div>
       <div v-if="total > pageSize" class="pagination-wrap">
         <el-pagination @size-change="handleSizeChange" @current-change="changePage" v-model:current-page="currentPage" :page-size="pageSize" layout="total, prev, pager, next" :pager-count="5" :total="total"></el-pagination>
       </div>
@@ -47,8 +47,9 @@
 .announcement-toolbar h2, .upload-heading h2 { margin: 0; font-size: 18px; font-weight: 600; }
 .announcement-toolbar p, .upload-heading p { margin: 6px 0 0; color: #64756c; font-size: 13px; line-height: 1.6; }
 .announcement-query { flex: 1; min-width: 0; }
-.announcement-actions { display: flex; align-items: center; gap: 12px; width: min(100%, 540px); min-width: 0; }
-.announcement-actions .el-input { flex: 1; min-width: 0; }
+.announcement-actions { display: flex; align-items: flex-end; gap: 16px; width: min(100%, 540px); min-width: 0; }
+.announcement-actions .el-input { min-width: 0; }
+.announcement-actions > .el-button { min-height: var(--care-control-height); }
 .announcement-list-panel .el-table { width: 100% !important; }
 .pagination-wrap { display: flex; justify-content: flex-end; padding-top: 18px; }
 .upload-panel { padding-bottom: 18px; }
@@ -62,26 +63,14 @@
 	
 export default {
 	created () {
-		// let myChart = this.$echarts.init(document.getElementById('myChart'))
-		console.log('---')
+
 		this.searchOlds()
-		console.log('---')
-	// this.drawLine()
+
 	},
-	updated() {
-		// this.drawLine()
-		
-		// this.getAttendanceData();
-	},
-	mounted(){
-		// this.drawLine()
-		
-	},
+
 	methods: {
       handleEdit(index, row) {
-				
-        console.log(index, row);
-				 // this.$router.push({path: '/text'})
+
 				var title = row.title
 				var textMain = row.textMain
 				var textId = row.textId
@@ -106,18 +95,9 @@ export default {
           this.fileList2 = []
         }).catch(() => { this.$message.error('展示图片未能保存，选择的图片已保留，请重试') }).then(() => { this.gallerySaving = false })
       },
-	  handleSizeChange (val) {
-	    console.log(`每页 ${val} 条`)
-	    this.pageSize = val
-	  },
-	  handleCurrentChange (val) {
-	    console.log(`当前页: ${val}`)
-	    this.currentPage = val
-	  },
-	  changePage (val) {
-	    console.log(`当前页: ${val}`)
-	    this.currentPage = val
-	  },
+	  handleSizeChange (val) { this.pageSize = val; this.currentPage = 1; this.searchOlds(true) },
+
+	  changePage (val) { this.currentPage = val; this.searchOlds(true) },
       galleryChanged (file, files) { this.fileList2 = files },
       handleRemove (file, files) { this.fileList2 = files },
       handlePreview (file) { this.previewUrl = file.url; this.previewVisible = true },
@@ -132,11 +112,11 @@ export default {
         if (file.size > 8 * 1024 * 1024) { this.$message.error('图片大小不能超过8MB'); return false }
         return true
       },
-	  getDetail(row, column, event){
-	  	console.log(row, column, event)
+	  getDetail(row){
+
 	  	var textId = row.textId
 	  	var picId = row.picId
-	  	console.log('-------------------------------')
+
 	  	this.$router.push({
 	  	path: '/textMainUser',
 	  	query: {
@@ -159,14 +139,14 @@ export default {
 			addtext(){
 				this.$router.push('/textTwo')
 			},
-      searchOlds () {
+      searchOlds (keepPage = false) {
+      if (keepPage !== true) this.currentPage = 1
         this.isLoading = true
         this.loadError = ''
-        this.currentPage = 1
-        return axios.post('restful/text/select', { title: this.searchText }, { withCredentials: true }).then((response) => {
+        return axios.post('restful/text/select', { page: this.currentPage, pageSize: this.pageSize,  title: this.searchText }, { withCredentials: true }).then((response) => {
           if (!Array.isArray(response.data.texts)) throw new Error('missing notices')
           this.tableData = response.data.texts
-          this.total = this.tableData.length
+          this.total = response.data.total ?? this.tableData.length
         }).catch(() => { this.loadError = '公告暂时无法更新，请重试。' }).then(() => { this.isLoading = false })
       }
 
@@ -175,9 +155,8 @@ export default {
     return {
 	  tableData: [],
         isLoading: false, loadError: '', deletingId: null,
-		searchText: '', // 查询内容
+		searchText: '',
 		gallerySaving: false, previewVisible: false, previewUrl: '',
-		// fileList2: [{name: 'food.jpeg', url: 'https://fuss10.elemecdn.com/3/63/4e7f3a15429bfda99bce42a18cdd1jpeg.jpeg?imageMogr2/thumbnail/360x360/format/webp/quality/100'}, {name: 'food2.jpeg', url: 'https://fuss10.elemecdn.com/3/63/4e7f3a15429bfda99bce42a18cdd1jpeg.jpeg?imageMogr2/thumbnail/360x360/format/webp/quality/100'}]
 		fileList2: [],
 		total: 0,
 		pageSize: 10,
