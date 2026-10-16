@@ -10,6 +10,7 @@
 - 核心 CI 通过；
 - UI Quality 通过；
 - Desktop Contract 通过；
+- Security 中 CodeQL 检查通过；
 - 版本源 `desktop/version.json` 已确认。
 
 禁止以工作区未提交文件、未知 commit 或本机临时补丁作为正式发布输入。
@@ -33,7 +34,21 @@ preview commit
 
 每一阶段失败都应停止后续阶段。
 
-## 3. 本地 release candidate
+## 3. GitHub unsigned candidate
+
+`.github/workflows/preview-candidate.yml` 是仅手动触发的 Windows 候选构建。它故意不接触签名私钥，负责：
+
+- 运行真实 `desktop/build.ps1`；
+- 生成未签名安装器与 Portable ZIP；
+- 生成 SHA-256；
+- 使用 Syft/Anchore 生成 SPDX JSON SBOM；
+- 使用 GitHub `actions/attest` 为候选资产建立 SLSA build provenance；
+- 为 Portable 资产建立 SBOM attestation；
+- 上传短期 Actions artifact 供验收。
+
+GitHub 的 artifact attestation 用于证明“哪个 workflow、仓库、commit 和事件生成了该资产”，不是对资产本身安全性的担保。
+
+## 4. 本地 release candidate
 
 ```powershell
 cd 智慧养老手表管理系统
@@ -52,7 +67,7 @@ cd 智慧养老手表管理系统
 outputs/v<version>-<channel>/
 ```
 
-## 4. 必须存在的资产
+## 5. 必须存在的资产
 
 至少包括：
 
@@ -64,7 +79,7 @@ outputs/v<version>-<channel>/
 
 使用本地自签名流程时，还会产生公开证书 `Suining-Local-Signing.cer`；它不含私钥。
 
-## 5. Windows smoke
+## 6. Windows smoke
 
 正式 preview 发布前必须在打包后的真实程序而不是 Vite dev server 上验证：
 
@@ -84,7 +99,7 @@ outputs/v<version>-<channel>/
 - 卸载保留 `%APPDATA%\岁宁`；
 - 快捷方式与卸载注册信息正确。
 
-## 6. 签名边界
+## 7. 签名边界
 
 普通 PR CI 不读任何代码签名私钥。
 
@@ -98,7 +113,7 @@ outputs/v<version>-<channel>/
 - 签名前后的 hash 与 provenance 都要记录；
 - 不允许 fork PR 调用签名步骤。
 
-## 7. 发布证据
+## 8. 发布证据
 
 `release-manifest.json` 至少记录：
 
@@ -111,12 +126,12 @@ outputs/v<version>-<channel>/
 
 GitHub prerelease 最终还应附加：
 
-- SBOM；
-- artifact attestation/provenance；
+- SPDX SBOM；
+- 可由 `gh attestation verify` 核验的 artifact attestation/provenance；
 - CI run 链接；
 - 已验证/未验证能力说明。
 
-## 8. 已知不能省略的限制说明
+## 9. 已知不能省略的限制说明
 
 只要这些事实仍成立，release notes 必须保留：
 
@@ -127,7 +142,7 @@ GitHub prerelease 最终还应附加：
 - 没有完整第三方渗透测试；
 - 自签名不是公众受信任代码签名。
 
-## 9. 发布后
+## 10. 发布后
 
 发布后：
 
@@ -136,3 +151,11 @@ GitHub prerelease 最终还应附加：
 3. 确认 Release 页面没有数据库、私钥、日志、本机绝对路径；
 4. 不为“修一个资产”移动既有 tag；
 5. 若资产错误，发布新的明确版本/预发布序号并说明 supersede 关系。
+
+
+## 11. 供应链自动化边界
+
+- `.github/workflows/security.yml`：在 `preview` push/PR 上运行 CodeQL；PR 还运行 Dependency Review。
+- `.github/dependabot.yml`：版本更新 PR 明确以 `preview` 为目标。
+- GitHub 的 `target-branch` 只改变 Dependabot **version updates**；security update PR 属于独立机制，GitHub 会以默认分支为目标，因此当前不把它描述成 preview 专用能力。
+- `.github/workflows/scorecards.yml`：OpenSSF 官方 Action 已预置，但官方对 push/schedule 要求默认分支。仓库默认分支仍为 `main`，所以 preview 不自动运行 Scorecard；当该 workflow 被有意提升到默认分支后再启用自动触发和公开结果。

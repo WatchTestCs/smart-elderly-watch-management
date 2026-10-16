@@ -13,7 +13,12 @@
 
 ## 当前自动化基线
 
-`preview` 的核心 CI 入口是 `.github/workflows/ci.yml`。
+`preview` 的核心 CI 入口是 `.github/workflows/ci.yml`。此外还有：
+
+- `.github/workflows/ui-quality.yml`：真实 Chrome UI/a11y/视觉基线；
+- `.github/workflows/desktop-contract.yml`：Windows 构建脚本和版本契约；
+- `.github/workflows/security.yml`：CodeQL 与 PR dependency review；
+- `.github/workflows/preview-candidate.yml`：手动 unsigned Windows candidate + SBOM/provenance。
 
 ### 前端
 
@@ -69,6 +74,7 @@ CI 使用 Temurin Java 21，并执行 Maven 完整 `verify` 生命周期。现�
 | 层级 | 用途 | 是否阻断 PR |
 | --- | --- | --- |
 | Static/build | 锁文件安装、编译、生产构建 | 是 |
+| Static security | CodeQL Java + JavaScript/TypeScript | 是 |
 | Backend unit/integration | 权限、数据库、事务、接口语义 | 是 |
 | Frontend unit/component | UI 状态和可复用逻辑 | UI 改动时是 |
 | Accessibility | 键盘、语义、axe 自动检查 | UI 改动时是 |
@@ -102,6 +108,7 @@ CI 失败时不要通过重跑掩盖真实问题。先判断失败属于：
 `preview` 发布至少要求：
 
 - 核心 CI 全绿；
+- Security/CodeQL 全绿；
 - UI 变更通过 UI quality workflow；
 - 后端安全与数据库测试通过；
 - Windows 桌面 smoke test 通过；

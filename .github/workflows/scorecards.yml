@@ -1,24 +1,14 @@
 name: OpenSSF Scorecard
 
+# The official Scorecard Action supports push/schedule only on the repository
+# default branch. This repository's default branch is main, while the current
+# handoff work is intentionally isolated to preview. Keep the official workflow
+# ready here without turning preview pushes red; enable push/schedule when this
+# file is intentionally promoted to the default branch.
 on:
-  push:
-    branches: [preview]
-    paths:
-      - ".github/**"
-      - "智慧养老手表管理系统/oldIot/package.json"
-      - "智慧养老手表管理系统/oldIot/package-lock.json"
-      - "智慧养老手表管理系统/careold/pom.xml"
-      - "智慧养老手表管理系统/desktop/**"
   workflow_dispatch:
 
-# Keep workflow-level permissions read-only. Results are intentionally not
-# published to the public Scorecard API while this workflow lives only on the
-# non-default preview branch.
 permissions: read-all
-
-concurrency:
-  group: scorecard-preview
-  cancel-in-progress: true
 
 jobs:
   analysis:

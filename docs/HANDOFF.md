@@ -21,6 +21,7 @@
 | 理解系统边界 | [ARCHITECTURE.md](ARCHITECTURE.md) |
 | 理解为什么这样设计 | [decisions/](decisions/README.md) |
 | 修改 UI/UX | [UI_UX.md](UI_UX.md) |
+| 安全披露/边界 | [.github/SECURITY.md](../.github/SECURITY.md) |
 | 运行测试 | [TESTING.md](TESTING.md) |
 | 自行构建 | [BUILD.md](BUILD.md) |
 | 看历史验收 | [VALIDATION.md](VALIDATION.md) |
@@ -38,9 +39,14 @@
 
 .github/workflows/
 ├── ci.yml
+├── ui-quality.yml
+├── desktop-contract.yml
+├── security.yml
+├── scorecards.yml
+├── preview-candidate.yml
 ├── reusable-frontend.yml
 ├── reusable-backend.yml
-└── ui-quality.yml
+└── reusable-windows-package.yml
 
 tests/ui/
 └── ui-smoke.mjs
@@ -54,7 +60,10 @@ tests/ui/
 - `src/auth.js`：会话状态；
 - `src/views/`：业务页面；
 - `src/components/`：共享组件；
-- `src/assets/css/commercial.css`：当前集中视觉样式，后续逐步拆分。
+- `src/assets/css/tokens.css`：共享语义 token；
+- `src/assets/css/element-theme.css`：Element Plus 统一适配；
+- `src/assets/css/accessibility.css`：focus/reduced-motion 等跨页面无障碍规则；
+- `src/assets/css/commercial.css`：遗留页面布局与视觉规则，继续渐进变薄。
 
 当前较大的 SFC（如设备、健康、人员相关页面）属于维护热点，但不要直接重写。
 
@@ -96,6 +105,13 @@ mvn -Dnet.bytebuddy.experimental=true -f 智慧养老手表管理系统/careold/
 ```
 
 GitHub 上的 `Preview CI / required` 必须通过。
+
+### 安全与供应链
+
+- `Security`：CodeQL Java + JavaScript/TypeScript；PR 额外执行 dependency review；
+- `Desktop Contract`：Windows 上解析 PowerShell/Node/Python 构建脚本并校验版本源；
+- `Preview Candidate`：手动生成未签名 Windows 候选、SBOM 和 provenance；
+- `OpenSSF Scorecard`：官方 Action 已预置，但自动 push/schedule 只能运行在默认分支，因此 preview 不制造虚假失败；未来有意提升到默认分支后再启用自动运行。
 
 ### UI 基线
 
@@ -182,7 +198,7 @@ GitHub 上的 `Preview CI / required` 必须通过。
 - 完整性能基准未建立；
 - 完整第三方渗透测试未完成；
 - UI 自动化目前重点覆盖登录页，业务主流程需要继续扩展；
-- 大型 Vue SFC 和 `commercial.css` 仍需要渐进拆分；
+- 大型 Vue SFC 仍需要在对应业务页具备回归覆盖后渐进拆分；共享 CSS 已完成第一阶段 tokens / Element theme / accessibility 分层；
 - 桌面构建已拆分为 build/package/release 阶段；完整 Windows 打包与安装生命周期仍需在 release candidate 阶段持续验证。
 
 ## 10. Definition of Done

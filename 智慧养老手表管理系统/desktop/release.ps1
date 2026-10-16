@@ -27,8 +27,8 @@ if (-not (Test-Path (Join-Path $unsigned 'Suining.exe'))) {
 }
 
 Remove-Item -Recurse -Force -ErrorAction SilentlyContinue $signed
-New-Item -ItemType Directory -Force -Path (Split-Path $signed -Parent),$installerDir,$evidenceDir | Out-Null
-Copy-Item -Recurse -Force $unsigned $signed
+New-Item -ItemType Directory -Force -Path $signed,$installerDir,$evidenceDir | Out-Null
+Get-ChildItem -LiteralPath $unsigned -Force | Copy-Item -Destination $signed -Recurse -Force
 
 & (Join-Path $PSScriptRoot 'sign.ps1') -FilePath (Join-Path $signed 'Suining.exe')
 if (-not $?) { throw 'Application signing failed' }
