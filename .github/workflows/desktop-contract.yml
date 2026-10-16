@@ -1,0 +1,31 @@
+name: Desktop Contract
+
+on:
+  pull_request:
+    branches: [preview]
+    paths:
+      - "智慧养老手表管理系统/desktop/**"
+      - "智慧养老手表管理系统/oldIot/package.json"
+      - "智慧养老手表管理系统/careold/pom.xml"
+      - ".github/workflows/desktop-contract.yml"
+      - ".github/workflows/reusable-windows-package.yml"
+  push:
+    branches: [preview]
+    paths:
+      - "智慧养老手表管理系统/desktop/**"
+      - "智慧养老手表管理系统/oldIot/package.json"
+      - "智慧养老手表管理系统/careold/pom.xml"
+      - ".github/workflows/desktop-contract.yml"
+      - ".github/workflows/reusable-windows-package.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-contract-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    uses: ./.github/workflows/reusable-windows-package.yml
