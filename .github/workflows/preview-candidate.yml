@@ -1,6 +1,10 @@
 name: Preview Candidate
 
 on:
+  push:
+    branches: [preview]
+    paths:
+      - ".github/workflows/preview-candidate.yml"
   workflow_dispatch:
 
 permissions:
