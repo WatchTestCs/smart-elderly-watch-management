@@ -2,6 +2,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const crypto = require('node:crypto')
 const { createRequire } = require('node:module')
+const { spawnSync } = require('node:child_process')
 
 function stage (name, details = '') {
   const suffix = details ? ` — ${details}` : ''
@@ -26,10 +27,28 @@ async function main () {
   const RE = requireBuild('resedit')
 
   const target = path.join(output, 'unsigned/Suining')
-  stage('copy verified Electron runtime', target)
+  const electronSource = path.join(tools, 'electron')
+  stage('reset unsigned Electron directory', target)
   fs.rmSync(target, { recursive: true, force: true })
   fs.mkdirSync(target, { recursive: true })
-  fs.cpSync(path.join(tools, 'electron'), target, { recursive: true })
+  stage('copy verified Electron runtime', target)
+  if (process.platform === 'win32') {
+    // Windows CI has intermittently terminated during Node's recursive copy
+    // without producing a JS exception. Robocopy provides bounded retries,
+    // distinct exit codes and diagnostics; 0..7 mean successful copy.
+    const copy = spawnSync('robocopy', [
+      electronSource, target, '/E', '/XJ', '/COPY:DAT', '/R:2', '/W:1',
+      '/NJH', '/NJS', '/NDL', '/NFL', '/NP'
+    ], { windowsHide: true, encoding: 'utf8', timeout: 120000 });
+    if (copy.error || copy.status === null || copy.status >= 8) {
+      throw new Error('Verified Electron runtime copy failed: ' +
+        JSON.stringify({ status: copy.status, signal: copy.signal, error: copy.error?.message,
+          stdout: copy.stdout?.slice(-2500), stderr: copy.stderr?.slice(-2500) }));
+    }
+    stage('verified Electron runtime copied', 'robocopy exit ' + copy.status)
+  } else {
+    fs.cpSync(electronSource, target, { recursive: true })
+  }
 
   const exe = path.join(target, 'Suining.exe')
   fs.renameSync(path.join(target, 'electron.exe'), exe)
