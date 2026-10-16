@@ -56,8 +56,18 @@ jobs:
         shell: bash
         run: |
           CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || true)"
-          test -n "$CHROME"
-          command -v compare
+          if [ -z "$CHROME" ]; then
+            echo "::error::No supported Chrome/Chromium executable found on the runner."
+            exit 1
+          fi
+          echo "Using browser: $CHROME"
+          "$CHROME" --version
+
+          if ! command -v compare >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends imagemagick
+          fi
+          compare -version | head -n 2
           echo "CHROME=$CHROME" >> "$GITHUB_ENV"
 
       - name: Start preview server and Chrome
