@@ -4,7 +4,15 @@ Unicode true
 !include "x64.nsh"
 !include "FileFunc.nsh"
 !include "WinVer.nsh"
-!uninstfinalize '"${SIGN_SHELL}" -NoProfile -ExecutionPolicy Bypass -File "${SIGN_SCRIPT}" -FilePath "%1"' = 0
+
+!ifndef APP_VERSION
+  !define APP_VERSION "2.0.0"
+!endif
+
+!ifdef SIGN_SCRIPT
+  !uninstfinalize '"${SIGN_SHELL}" -NoProfile -ExecutionPolicy Bypass -File "${SIGN_SCRIPT}" -FilePath "%1"' = 0
+!endif
+
 Name "岁宁"
 OutFile "${OUTPUT}"
 InstallDir "$LOCALAPPDATA\Programs\Suining"
@@ -13,10 +21,10 @@ RequestExecutionLevel user
 SetCompressor /SOLID lzma
 SetCompressorDictSize 32
 ManifestDPIAware true
-VIProductVersion "2.0.0.0"
+VIProductVersion "${APP_VERSION}.0"
 VIAddVersionKey /LANG=2052 "ProductName" "岁宁"
 VIAddVersionKey /LANG=2052 "FileDescription" "岁宁安装程序"
-VIAddVersionKey /LANG=2052 "FileVersion" "2.0.0"
+VIAddVersionKey /LANG=2052 "FileVersion" "${APP_VERSION}"
 VIAddVersionKey /LANG=2052 "LegalCopyright" "WatchTestCs"
 Icon "suining.ico"
 UninstallIcon "suining.ico"
@@ -70,7 +78,7 @@ Section "岁宁" SEC_MAIN
   CreateShortcut "$DESKTOP\岁宁.lnk" "$INSTDIR\Suining.exe"
   WriteRegStr HKCU "Software\WatchTestCs\Suining" "InstallDir" "$INSTDIR"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Suining" "DisplayName" "岁宁"
-  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Suining" "DisplayVersion" "2.0.0"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Suining" "DisplayVersion" "${APP_VERSION}"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Suining" "Publisher" "WatchTestCs"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Suining" "DisplayIcon" "$INSTDIR\Suining.exe"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Suining" "UninstallString" `"$INSTDIR\Uninstall.exe"`
