@@ -5,6 +5,7 @@ on:
     branches: [preview]
     paths:
       - ".github/workflows/preview-candidate.yml"
+      - "智慧养老手表管理系统/desktop/**"
   workflow_dispatch:
 
 permissions:
