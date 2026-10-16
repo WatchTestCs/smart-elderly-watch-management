@@ -1,0 +1,73 @@
+name: Windows unsigned build smoke
+
+on:
+  pull_request:
+    branches: [preview]
+    paths:
+      - ".github/workflows/windows-build-smoke.yml"
+      - "智慧养老手表管理系统/desktop/**"
+      - "智慧养老手表管理系统/careold/**"
+      - "智慧养老手表管理系统/oldIot/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-build-smoke-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Windows unsigned desktop build
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            智慧养老手表管理系统/oldIot/package-lock.json
+            智慧养老手表管理系统/desktop/build-tools/package-lock.json
+
+      - name: Set up Java
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+          cache-dependency-path: 智慧养老手表管理系统/careold/pom.xml
+
+      - name: Build unsigned Windows application
+        shell: pwsh
+        working-directory: 智慧养老手表管理系统
+        run: |
+          $ErrorActionPreference = 'Stop'
+          ./desktop/build.ps1
+          if (-not $?) { throw 'Unsigned desktop build failed' }
+
+      - name: Verify unsigned packaging contract
+        shell: pwsh
+        working-directory: 智慧养老手表管理系统
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $meta = Get-Content desktop/version.json -Raw | ConvertFrom-Json
+          $root = "outputs/v$($meta.version)-$($meta.channel)/unsigned/Suining"
+          @(
+            "$root/Suining.exe",
+            "$root/resources/app.asar",
+            "$root/resources/server/suining-server.jar",
+            "$root/resources/runtime/bin/java.exe"
+          ) | ForEach-Object {
+            if (-not (Test-Path -LiteralPath $_ -PathType Leaf)) {
+              throw "Missing unsigned desktop artifact: $_"
+            }
+          }
+          Write-Host 'Unsigned application structure verified; no signing certificate used.'
