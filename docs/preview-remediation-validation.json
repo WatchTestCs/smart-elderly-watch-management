@@ -1,0 +1,50 @@
+{
+  "title": "preview 2026-10-16 remediation verification status",
+  "scope": "Draft PR #1 only; no preview merge and no published installer",
+  "review_commit": "74f993a00d1aaee498a48ed9a26742d66b99ee06",
+  "interpretation": "The original local counts in PREVIEW_ISSUE_REMEDIATION.md are historical reports, not sufficient release evidence. Links below refer to remote CI runs for the integration candidate.",
+  "confirmed_checks": [
+    {
+      "name": "Preview CI / required",
+      "result": "success",
+      "url": "https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/38922406166"
+    },
+    {
+      "name": "UI Quality / verify",
+      "result": "success",
+      "url": "https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/38922406216"
+    },
+    {
+      "name": "Desktop Contract / verify",
+      "result": "success",
+      "url": "https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/38922406392"
+    },
+    {
+      "name": "CodeQL Java and JS",
+      "result": "success",
+      "url": "https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/38922406224"
+    }
+  ],
+  "outstanding": [
+    {
+      "name": "Preview checks (browser QA)",
+      "result": "failed on font hash assertion; diagnostic rerun pending",
+      "url": "https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/38922406507"
+    },
+    {
+      "name": "Dependency review",
+      "result": "blocked by disabled/unavailable GitHub Dependency Graph; not a confirmed vulnerability finding",
+      "url": "https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/38922406224"
+    },
+    {
+      "name": "Windows unsigned candidate",
+      "result": "earlier preview branch run failed during desktop packaging; no accepted new Windows installer evidence",
+      "url": "https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/38899889154"
+    },
+    {
+      "name": "Real watch, SMS, external map, Windows 10, trusted certificate, and upgrade/rollback",
+      "result": "not independently verified on physical or production systems"
+    }
+  ],
+  "retest_note": "The branch has additional commits after review_commit. Always inspect the latest PR head and CI before merging."
+}
