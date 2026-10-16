@@ -5,7 +5,7 @@
 
 这是 **preview 预览分支**：采用 Vue 3、Vite 8、Spring Boot 3.5 和内置 H2 数据库，提供可直接安装的 Windows 桌面软件。首次使用创建自己的管理员账号，不附带默认手机号、默认密码或样例人员数据。
 
-**[下载 Windows 安装程序](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.0-preview.1)** · [逐文件说明](docs/FILES.md) · [使用指南](docs/SETUP.md) · [架构说明](docs/ARCHITECTURE.md) · [验收记录](docs/VALIDATION.md)
+**[下载 Windows 安装程序](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.0-preview.1)** · [项目交接](docs/HANDOFF.md) · [UI/UX 规范](docs/UI_UX.md) · [测试门禁](docs/TESTING.md) · [架构说明](docs/ARCHITECTURE.md) · [使用指南](docs/SETUP.md) · [验收记录](docs/VALIDATION.md)
 
 ## 选择适合你的版本
 
