@@ -1,0 +1,153 @@
+name: UI Quality
+
+on:
+  workflow_call:
+  pull_request:
+    branches: [preview]
+    paths:
+      - "智慧养老手表管理系统/oldIot/**"
+      - "tests/ui/**"
+      - "docs/screenshots/login-desktop.png"
+      - ".github/workflows/ui-quality.yml"
+  push:
+    branches: [preview]
+    paths:
+      - "智慧养老手表管理系统/oldIot/**"
+      - "tests/ui/**"
+      - "docs/screenshots/login-desktop.png"
+      - ".github/workflows/ui-quality.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ui-quality-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: UI Quality / verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: 智慧养老手表管理系统/oldIot
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: 智慧养老手表管理系统/oldIot/package-lock.json
+
+      - name: Install locked frontend dependencies
+        run: npm ci
+
+      - name: Build production frontend
+        run: npm run build
+
+      - name: Verify browser tooling
+        shell: bash
+        run: |
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || true)"
+          if [ -z "$CHROME" ]; then
+            echo "::error::No supported Chrome/Chromium executable found on the runner."
+            exit 1
+          fi
+          echo "Using browser: $CHROME"
+          "$CHROME" --version
+
+          if ! command -v compare >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends imagemagick
+          fi
+          compare -version | head -n 2
+          echo "CHROME=$CHROME" >> "$GITHUB_ENV"
+
+      - name: Start preview server and Chrome
+        shell: bash
+        run: |
+          npm run preview -- --port 4173 --strictPort > /tmp/suining-vite.log 2>&1 &
+          echo $! > /tmp/suining-vite.pid
+          for i in {1..60}; do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null; then break; fi
+            sleep 0.25
+          done
+          curl -fsS http://127.0.0.1:4173/ >/dev/null
+
+          "$CHROME"             --headless=new             --no-sandbox             --disable-gpu             --disable-dev-shm-usage             --force-device-scale-factor=1             --remote-debugging-address=127.0.0.1             --remote-debugging-port=9222             --window-size=1440,1000             about:blank > /tmp/suining-chrome.log 2>&1 &
+          echo $! > /tmp/suining-chrome.pid
+
+          for i in {1..60}; do
+            if curl -fsS http://127.0.0.1:9222/json/version >/dev/null; then break; fi
+            sleep 0.25
+          done
+          curl -fsS http://127.0.0.1:9222/json/version >/dev/null
+
+      - name: Desktop accessibility and visual capture
+        working-directory: .
+        run: >
+          node tests/ui/ui-smoke.mjs
+          http://127.0.0.1:4173/#/login
+          1440 1000
+          tests/ui/artifacts/login-desktop.png
+          normal
+
+      - name: Mobile accessibility and visual capture
+        working-directory: .
+        run: >
+          node tests/ui/ui-smoke.mjs
+          http://127.0.0.1:4173/#/login
+          390 844
+          tests/ui/artifacts/login-mobile.png
+          normal
+
+      - name: Large-text mobile accessibility and visual capture
+        working-directory: .
+        run: >
+          node tests/ui/ui-smoke.mjs
+          http://127.0.0.1:4173/#/login
+          390 844
+          tests/ui/artifacts/login-mobile-large-text.png
+          large-text
+
+      - name: Compare desktop visual baseline
+        working-directory: .
+        shell: bash
+        run: |
+          set +e
+          METRIC="$(compare -metric RMSE docs/screenshots/login-desktop.png tests/ui/artifacts/login-desktop.png null: 2>&1)"
+          STATUS=$?
+          set -e
+
+          echo "ImageMagick status: $STATUS"
+          echo "RMSE: $METRIC"
+          NORMALIZED="$(printf '%s' "$METRIC" | sed -nE 's/.*\(([0-9.]+)\).*/\1/p')"
+          test -n "$NORMALIZED"
+
+          python3 - "$NORMALIZED" <<'PY'
+          import sys
+          value = float(sys.argv[1])
+          limit = 0.08
+          print(f"Normalized visual RMSE: {value:.6f}; limit: {limit:.6f}")
+          if value > limit:
+              raise SystemExit("Visual regression exceeded the coarse baseline threshold")
+          PY
+
+      - name: Upload UI evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: ui-quality-evidence
+          path: |
+            tests/ui/artifacts/
+            /tmp/suining-vite.log
+            /tmp/suining-chrome.log
+          if-no-files-found: warn
+          retention-days: 14

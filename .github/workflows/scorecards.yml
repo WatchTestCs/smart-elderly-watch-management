@@ -1,0 +1,44 @@
+name: OpenSSF Scorecard
+
+# The official Scorecard Action supports push/schedule only on the repository
+# default branch. This repository's default branch is main, while the current
+# handoff work is intentionally isolated to preview. Keep the official workflow
+# ready here without turning preview pushes red; enable push/schedule when this
+# file is intentionally promoted to the default branch.
+on:
+  workflow_dispatch:
+
+permissions: read-all
+
+jobs:
+  analysis:
+    name: Scorecard analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Run Scorecard
+        uses: ossf/scorecard-action@2d1146689b8cda280b9bc96326124645441f03bc # v2.4.4
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          publish_results: false
+
+      - name: Upload SARIF artifact
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: scorecard-sarif
+          path: results.sarif
+          retention-days: 7
+
+      - name: Upload to code scanning
+        uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
+        with:
+          sarif_file: results.sarif

@@ -1,16 +1,21 @@
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
-import hashlib, json, urllib.request, zipfile
+import hashlib, json, os, urllib.request, zipfile
 
 root=Path(__file__).resolve().parent.parent
-tools=root/'outputs/desktop-release-20261015/tools'
+metadata=json.loads((root/'desktop/version.json').read_text(encoding='utf-8'))
+default_output=root/f"outputs/v{metadata['version']}-{metadata['channel']}"
+out=Path(os.environ.get('SUINING_OUTPUT_DIR',default_output)).resolve()
+tools=out/'tools'
 tools.mkdir(parents=True,exist_ok=True)
 lock=json.loads((root/'desktop/runtime-lock.json').read_text(encoding='utf-8'))
+
 def digest(file):
     result=hashlib.sha256()
     with file.open('rb') as f:
         for block in iter(lambda:f.read(1024*1024),b''):result.update(block)
     return result.hexdigest()
+
 def transfer(url,target,start=None,end=None):
     headers={'User-Agent':'Suining-build/2.0'}
     if start is not None:headers['Range']=f'bytes={start}-{end}'
@@ -27,6 +32,7 @@ def transfer(url,target,start=None,end=None):
             return
         except Exception:
             if attempt==3:raise
+
 def install(name,entry):
     archive=tools/(name+'-verified.zip')
     for candidate in [archive,tools/(name+'.zip')]:
@@ -52,4 +58,5 @@ def install(name,entry):
             assert target.is_relative_to(destination.resolve()),'Unsafe archive entry'
         z.extractall(destination)
     print(name,entry['version'],'checksum verified',flush=True)
+
 with ThreadPoolExecutor(max_workers=3) as pool:list(pool.map(lambda item:install(*item),lock.items()))

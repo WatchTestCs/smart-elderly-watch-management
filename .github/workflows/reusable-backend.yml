@@ -1,0 +1,32 @@
+name: Reusable backend verification
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Test and package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Temurin Java
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+          cache-dependency-path: 智慧养老手表管理系统/careold/pom.xml
+
+      - name: Run backend test suite
+        run: >
+          mvn --batch-mode
+          -Dnet.bytebuddy.experimental=true
+          -f "智慧养老手表管理系统/careold/pom.xml"
+          clean verify

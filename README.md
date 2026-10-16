@@ -5,7 +5,7 @@
 
 这是 **preview 预览分支**：采用 Vue 3、Vite 8、Spring Boot 3.5 和内置 H2 数据库，提供可直接安装的 Windows 桌面软件。首次使用创建自己的管理员账号，不附带默认手机号、默认密码或样例人员数据。
 
-**[下载 Windows 安装程序](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.0-preview.1)** · [逐文件说明](docs/FILES.md) · [使用指南](docs/SETUP.md) · [架构说明](docs/ARCHITECTURE.md) · [验收记录](docs/VALIDATION.md)
+**[下载 Windows 安装程序](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.0-preview.1)** · [项目交接](docs/HANDOFF.md) · [UI/UX 规范](docs/UI_UX.md) · [测试门禁](docs/TESTING.md) · [安全策略](.github/SECURITY.md) · [架构说明](docs/ARCHITECTURE.md) · [使用指南](docs/SETUP.md) · [验收记录](docs/VALIDATION.md)
 
 ## 选择适合你的版本
 
@@ -109,7 +109,7 @@ cd 智慧养老手表管理系统
 ./desktop/build.ps1
 ```
 
-构建脚本执行锁文件安装、生产构建、后端测试、固定运行环境下载与摘要校验，再封装、签名和生成安装包。首次构建需要网络；完整说明见 [构建指南](docs/BUILD.md)。
+桌面流水线已拆分为 build、package 与 release 阶段：普通 build 只生成未签名应用，不隐式创建签名证书；release 阶段再复制到 signed、签名、生成安装器/Portable ZIP 与 SHA-256/manifest 证据。默认输出为版本化目录 `outputs/v2.0.0-preview/`。首次构建需要网络；完整说明见 [构建指南](docs/BUILD.md) 与 [发布流程](docs/RELEASE.md)。
 
 ## 已验证与尚未验证
 
@@ -127,8 +127,6 @@ cd 智慧养老手表管理系统
 
 ## 关于签名
 
-当前本地 preview 源码另有一轮[问题清单核验与修复](docs/PREVIEW_ISSUE_REMEDIATION.md)，包含密码、事务、数据库迁移、分页、地图与 CI；[本轮验收结果](docs/preview-remediation-validation.json)区分本地验证和未执行事项。这些改动尚未发布至上面的安装包。
-
 本轮使用 `CN=Suining Local Build` 自签证书，**并非公开受信任的商业代码签名证书**。Windows 可能仍提示发布者不受信任。安装包不会自动添加系统受信任根，公开 CER 不含私钥。商业公开分发如需受信任发布者，应使用真实代码签名证书重新签署。
 
 发布资产附带 SHA256SUMS.txt，可在 PowerShell 用 `Get-FileHash 文件名 -Algorithm SHA256` 核对下载内容。
@@ -142,3 +140,7 @@ cd 智慧养老手表管理系统
 ## 许可与素材
 
 项目采用 [MIT 许可](LICENSE)。第三方组件沿用各自许可；软件附带 Electron/Chromium 许可、Java legal 目录、字体许可与组件清单。历史原包保持在原有 Release，当前预览源码不包含用户数据库、签名私钥、安装包或构建缓存。
+
+## 待合并的 2026-10-16 修复
+
+[待验收修复清单](docs/PREVIEW_ISSUE_REMEDIATION.md)记录了分页、事务、Flyway 数据迁移、地图与桌面签名改造；[本轮验收数据](docs/preview-remediation-validation.json)区分原工作区报告与远程 CI。**这些修改当前处于草稿 PR 审核阶段，尚未作为新的安装版发布，也不代表全部真实设备测试通过。**
