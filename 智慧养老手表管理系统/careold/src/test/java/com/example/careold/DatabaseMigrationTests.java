@@ -133,4 +133,38 @@ class DatabaseMigrationTests {
         }
     }
 
+
+    @Test void validExistingV3FileDbUpgradesToV4WithoutRewritingBindings() throws Exception {
+        try (var source = source("v3-valid")) {
+            var v3 = Flyway.configure().dataSource(source)
+                    .baselineOnMigrate(true).baselineVersion("0").target("3").load();
+            DatabaseMigrations.migrate(v3);
+            var jdbc = new JdbcTemplate(source);
+            jdbc.update("insert into oldperson(old_id,name,device_id) values(9,'受保护的长者',7)");
+            String stored = DeviceSecretCodec.hash("a".repeat(32));
+            jdbc.update("insert into device(device_id,device_no,secret,old_id) values(7,?,?,9)",
+                    "VALID-V3", stored);
+            DatabaseMigrations.migrate(flyway(source));
+            assertEquals(9,jdbc.queryForObject("select old_id from device where device_id=7",Integer.class));
+            assertEquals(7,jdbc.queryForObject("select device_id from oldperson where old_id=9",Integer.class));
+            assertEquals(stored,jdbc.queryForObject("select secret from device where device_id=7",String.class));
+            assertEquals(4,jdbc.queryForObject("select schema_version from app_metadata where id=1",Integer.class));
+            assertThrows(org.springframework.dao.DataIntegrityViolationException.class, () ->
+                    jdbc.update("delete from oldperson where old_id=9"));
+            Path backup;
+            try (var files=Files.list(temporary.resolve("backups"))) {
+                backup=files.findFirst().orElseThrow();
+            }
+            Path restored = temporary.resolve("restore-valid-v3");
+            Files.createDirectories(restored);
+            org.h2.tools.Restore.execute(backup.toString(),restored.toString(),"v3-valid");
+            try (var restoredSource = source("restore-valid-v3/v3-valid")) {
+                var recovered = new JdbcTemplate(restoredSource);
+                assertEquals(3,recovered.queryForObject("select schema_version from app_metadata where id=1",Integer.class));
+                assertEquals(9,recovered.queryForObject("select old_id from device where device_id=7",Integer.class));
+                assertEquals(stored,recovered.queryForObject("select secret from device where device_id=7",String.class));
+            }
+        }
+    }
+
 }
