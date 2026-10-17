@@ -6,7 +6,7 @@ Unicode true
 !include "WinVer.nsh"
 
 !ifndef APP_VERSION
-  !define APP_VERSION "2.0.0"
+  !define APP_VERSION "2.0.1"
 !endif
 
 !ifdef SIGN_SCRIPT

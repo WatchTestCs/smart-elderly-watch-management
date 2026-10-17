@@ -16,7 +16,7 @@
 
 ```json
 {
-  "version": "2.0.0",
+  "version": "2.0.1",
   "channel": "preview"
 }
 ```
@@ -26,7 +26,7 @@
 默认输出：
 
 ```text
-智慧养老手表管理系统/outputs/v2.0.0-preview/
+智慧养老手表管理系统/outputs/v2.0.1-preview/
 ├── tools/                 固定运行时/打包工具缓存
 ├── app-staging/           Electron ASAR staging
 ├── unsigned/
@@ -34,8 +34,8 @@
 ├── signed/
 │   └── Suining/           release 阶段复制并签名后的应用目录
 ├── installer/
-│   ├── 岁宁-Setup-2.0.0.exe
-│   └── 岁宁-Portable-2.0.0.zip
+│   ├── 岁宁-Setup-2.0.1.exe
+│   └── 岁宁-Portable-2.0.1.zip
 └── evidence/
     ├── uninstall-files.nsh
     ├── SHA256SUMS.txt
@@ -192,3 +192,7 @@ QA 依赖只用于验收，不进入最终桌面运行包。
 ### 正式发布签名
 
 本分支的 `desktop/sign.ps1` 支持 `SUINING_SIGNING_THUMBPRINT`、`SUINING_TIMESTAMP_SERVER` 与 `SUINING_REQUIRE_TRUSTED_SIGNATURE=1`。普通 `build.ps1` 仍只执行未签名构建；签名需进入受控 `release.ps1` 阶段。显式选择正式证书失败不可降级成自签后继续发布；正式证书仍需在可访问私钥与受信任环境中实测。
+
+### 2.0.1 GitHub Preview 发布边界
+
+`v2.0.1-preview.1` 的远程 Release 使用未签名资产，文件名明确带 `unsigned`。正式发布流水线先完成 Setup 静默安装、启动安装后的 `Suining.exe`、确认内置 Java 服务就绪与卸载检查，再生成 SHA-256、SBOM、manifest、artifact attestation，最后创建 tag/Release。仓库中的本地自签流程仅用于开发或内部核验，不应描述为 Windows 公开受信任签名。

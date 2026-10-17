@@ -5,7 +5,7 @@
 
 这是 **preview 预览分支**：采用 Vue 3、Vite 8、Spring Boot 3.5 和内置 H2 数据库，提供可直接安装的 Windows 桌面软件。首次使用创建自己的管理员账号，不附带默认手机号、默认密码或样例人员数据。
 
-**[下载 Windows 安装程序](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.0-preview.1)** · [项目交接](docs/HANDOFF.md) · [UI/UX 规范](docs/UI_UX.md) · [测试门禁](docs/TESTING.md) · [安全策略](.github/SECURITY.md) · [架构说明](docs/ARCHITECTURE.md) · [使用指南](docs/SETUP.md) · [验收记录](docs/VALIDATION.md)
+**[下载 Windows 安装程序](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.1-preview.1)** · [项目交接](docs/HANDOFF.md) · [UI/UX 规范](docs/UI_UX.md) · [测试门禁](docs/TESTING.md) · [安全策略](.github/SECURITY.md) · [架构说明](docs/ARCHITECTURE.md) · [使用指南](docs/SETUP.md) · [验收记录](docs/VALIDATION.md)
 
 ## 选择适合你的版本
 
@@ -15,7 +15,7 @@
 | Portable 免安装版 | 完整解压 ZIP，运行文件夹内的 Suining.exe | 无需安装、迁移程序目录 |
 | Source 源码版 | 阅读源码或按构建说明自行打包 | 开发、审查、定制 |
 
-全部文件在 [v2.0.0-preview.1 Releases](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.0-preview.1) 中分别附有用途说明。安装版和免安装版均自带 Chromium、Java 21 与文件数据库，**无需另装 Java、Node.js、MySQL、.NET 或 WebView2**。免安装版需要保留整个解压目录，不能只复制 EXE。
+全部文件在 [v2.0.1-preview.1 Releases](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.1-preview.1) 中分别附有用途说明。安装版和免安装版均自带 Chromium、Java 21 与文件数据库，**无需另装 Java、Node.js、MySQL、.NET 或 WebView2**。免安装版需要保留整个解压目录，不能只复制 EXE。
 
 面向 Windows 10/11 **x64**。本轮实测 Windows 11；Windows 10 尚未实机验证。此版本为预览发布，实际手表接入仍需设备协议联调。
 
@@ -109,7 +109,7 @@ cd 智慧养老手表管理系统
 ./desktop/build.ps1
 ```
 
-桌面流水线已拆分为 build、package 与 release 阶段：普通 build 只生成未签名应用，不隐式创建签名证书；release 阶段再复制到 signed、签名、生成安装器/Portable ZIP 与 SHA-256/manifest 证据。默认输出为版本化目录 `outputs/v2.0.0-preview/`。首次构建需要网络；完整说明见 [构建指南](docs/BUILD.md) 与 [发布流程](docs/RELEASE.md)。
+桌面流水线已拆分为 build、package 与 release 阶段：普通 build 只生成未签名应用，不隐式创建签名证书；release 阶段再复制到 signed、签名、生成安装器/Portable ZIP 与 SHA-256/manifest 证据。默认输出为版本化目录 `outputs/v2.0.1-preview/`。首次构建需要网络；完整说明见 [构建指南](docs/BUILD.md) 与 [发布流程](docs/RELEASE.md)。
 
 ## 已验证与尚未验证
 
@@ -120,7 +120,7 @@ cd 智慧养老手表管理系统
 | 安装后真实程序 | 53 项通过，涵盖设置、建档、模拟上报、权限和重启保留 |
 | 安装生命周期 | 安装、覆盖升级、单实例、退出清理、卸载保留数据通过 |
 | 前端审计 | 本轮 npm audit 为零已知漏洞，仅代表此次审计范围 |
-| 签名 | 应用、安装和卸载程序的加密签名与文件摘要验证通过 |
+| 发布可信度 | 2.0.1 远程资产明确为 unsigned；提供 SHA-256、SPDX SBOM 与 GitHub artifact attestation |
 | 运行环境 | 限制系统工具路径仍可启动，软件资源不依赖外部网页请求 |
 
 没有声称通过 Windows 10 实机验证、真实手表联调、真实短信发送或全产品渗透测试。完整边界与证据摘要见 [验收记录](docs/VALIDATION.md)。
@@ -141,6 +141,6 @@ cd 智慧养老手表管理系统
 
 项目采用 [MIT 许可](LICENSE)。第三方组件沿用各自许可；软件附带 Electron/Chromium 许可、Java legal 目录、字体许可与组件清单。历史原包保持在原有 Release，当前预览源码不包含用户数据库、签名私钥、安装包或构建缓存。
 
-## 待合并的 2026-10-16 修复
+## 2.0.1 已合并修复
 
-[待验收修复清单](docs/PREVIEW_ISSUE_REMEDIATION.md)记录了分页、事务、Flyway 数据迁移、地图与桌面签名改造；[本轮验收数据](docs/preview-remediation-validation.json)区分原工作区报告与远程 CI。**这些修改当前处于草稿 PR 审核阶段，尚未作为新的安装版发布，也不代表全部真实设备测试通过。**
+[修复清单](docs/PREVIEW_ISSUE_REMEDIATION.md)记录了分页、事务、Flyway 数据迁移、地图与桌面发布改造；相关修复已经进入 `preview` 并随 **2.0.1 Preview** 发布。发布流水线实际安装并启动生成的 Setup，确认内置 Java 服务就绪后才创建 tag/Release。真实养老手表、真实短信、Windows 10 独立实机与完整第三方渗透测试仍不在已验证范围内。

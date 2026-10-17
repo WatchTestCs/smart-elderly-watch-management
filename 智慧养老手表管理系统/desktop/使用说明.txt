@@ -1,8 +1,8 @@
-岁宁 2.0.0
+岁宁 2.0.1
 岁月有伴，日常安宁。
 
 安装与打开
-运行“岁宁-Setup-2.0.0.exe”，按提示安装。也可完整解压免安装包，双击 Suining.exe。
+运行“Suining-Setup-2.0.1-win-x64-unsigned.exe”，按提示安装。也可完整解压免安装包，双击 Suining.exe。
 请保留程序文件夹的全部内容，不要只复制其中的 EXE。
 适用于 Windows 10 / 11 的 64 位电脑。已内置浏览器引擎、Java 运行环境和文件数据库，无需安装 Node.js、Java、MySQL 或浏览器插件。
 
@@ -32,8 +32,8 @@ database 保存内置 H2 数据库，images 保存上传图片，server.log 保�
 设备接入仍需正确设备号、随机密钥与实际手表协议；本轮未进行真实手表联调。
 短信通知为可选项，仅配置 TENCENT_SMS_APP_ID 与 TENCENT_SMS_APP_KEY 后尝试发送；离线使用不依赖短信服务。
 
-签名
-本次使用本机生成的代码签名证书，应用、安装程序及卸载程序均签名。
-这是自签名，能检查文件签名和完整性，并不代表获得公开受信任的 CA 证书或 SmartScreen 信誉。
-安装包不会自动把证书加入系统受信任根，也不附带私钥。
+签名与完整性
+2.0.1 GitHub Preview 发布资产未使用公开受信任的 Windows 代码签名证书，安装版与免安装版文件名明确标注 unsigned。
+这不代表获得 Windows 受信任发布者身份或 SmartScreen 信誉。
+发布页同时提供 SHA256SUMS.txt、SBOM、release manifest 与 GitHub artifact attestation，用于核对来源与完整性。
 公开商业分发如需受信任发布者提示，需要使用真实代码签名证书重新签署。
