@@ -216,10 +216,10 @@ class DeviceWriteTransactionTests {
         assertEquals(1,jdbc.selects.size(),jdbc.selects.toString());
     }
     @Test void failedElderDeletionRestoresRemovedInvitations() {
-        jdbc.update("insert into invite_code(code,old_id) values('ROLLBACK',1)");
+        jdbc.update("insert into invite_code(code,old_id) values('ROLLBACK',2)");
         jdbc.execute("create table elder_guard(old_id int references oldperson(old_id))");
-        jdbc.update("insert into elder_guard values(1)");
-        assertThrows(DataIntegrityViolationException.class, () -> elderController.delete(request("oldId",1)));
+        jdbc.update("insert into elder_guard values(2)");
+        assertThrows(DataIntegrityViolationException.class, () -> elderController.delete(request("oldId",2)));
         assertEquals(1,count("invite_code"));
         assertEquals(2,count("oldperson"));
     }
@@ -339,4 +339,19 @@ class DeviceWriteTransactionTests {
         assertEquals("0004", devices.login(request()).get("returnCode"));
         assertEquals("1111", devices.login(request("secret", fresh)).get("returnCode"));
     }
+
+    @Test void activeWatchBlocksElderDeletionWithoutConsumingInvitations() {
+        jdbc.update("insert into invite_code(code,old_id) values('ACTIVE',1)");
+        var blocked = assertThrows(ResponseStatusException.class, () ->
+                elderController.delete(request("oldId",1)));
+        assertEquals(409, blocked.getStatusCode().value());
+        assertEquals(1,count("invite_code"));
+        assertEquals(2,count("oldperson"));
+        assertEquals(1,jdbc.queryForObject("select old_id from device where device_id=1",Integer.class));
+        assertEquals("1111",devices.unbind(request("deviceId",1)).get("returnCode"));
+        assertEquals("1111",elderController.delete(request("oldId",1)).get("returnCode"));
+        assertEquals(0,count("invite_code"));
+        assertEquals(1,count("oldperson"));
+    }
+
 }

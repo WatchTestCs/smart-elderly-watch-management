@@ -4,6 +4,7 @@ package com.example.careold.controller;
 import com.example.careold.common.DateConst;
 import com.example.careold.common.ReturnCodeUtil;
 import com.example.careold.dao.OldPersonDao;
+import com.example.careold.dao.DeviceDao;
 import com.example.careold.dao.InviteCodeDao;
 import com.example.careold.dao.WatchInfoDao;
 import com.example.careold.domain.OldPerson;
@@ -12,6 +13,8 @@ import java.util.LinkedHashMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -32,6 +35,9 @@ public class OldPersonController {
 
     @Autowired
     InviteCodeDao inviteCodeDao;
+
+    @Autowired
+    DeviceDao deviceDao;
 
     //对老人的查询
     @ResponseBody
@@ -148,6 +154,11 @@ public class OldPersonController {
         if (oldPersonDao.getOldPersonById(Integer.parseInt(oldId)) == null) {
             result.put(ReturnCodeUtil.returnCode,ReturnCodeUtil.falseCode);
             return result;
+        }
+        // A live watch association must be explicitly unbound before removing
+        // the elder. Do not rely on an opaque SQL foreign-key error or cascade.
+        if (deviceDao.countByOldId(Integer.parseInt(oldId)) > 0) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "请先解除该长者名下设备绑定");
         }
         inviteCodeDao.deleteByOldId(Integer.parseInt(oldId));
         int rows=oldPersonDao.deleteOldPerson(Integer.parseInt(oldId));
