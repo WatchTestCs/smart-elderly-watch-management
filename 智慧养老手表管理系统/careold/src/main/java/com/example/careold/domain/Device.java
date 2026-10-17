@@ -98,6 +98,7 @@ public class Device {
         this.deviceNo = deviceNo;
     }
 
+    @com.fasterxml.jackson.annotation.JsonIgnore
     public String getSecret() {
         return secret;
     }
