@@ -402,38 +402,34 @@ export default {
 			 
 		},
     async deleteOldPerson (oldId) {
-
-      var _this = this
       try {
-        await _this.$confirm('此操作将永久删除该文件, 是否继续?', '提示', {
+        await this.$confirm('此操作将永久删除该长者信息，是否继续？', '提示', {
           confirmButtonText: '确定',
           cancelButtonText: '取消',
           type: 'warning'
         })
-
-        axios.post('restful/oldPerson/delete', {'oldId': oldId},
-          {
-            headers: {
-              'content-type': 'application/json'
-            },
-            withCredentials: true
-          }).then(function (response) {
-
-          if (response.data.returnCode === '1111') {
-            _this.$message({
-              type: 'success',
-              message: '删除信息成功'
-            })
-          }
-          _this.searchOldPersons()
-        })
-          .catch(function (error) {
-            console.log(error)
-          })
       } catch (err) {
+        this.$message({ type: 'info', message: '已取消删除' })
+        return
+      }
+
+      try {
+        const response = await axios.post('restful/oldPerson/delete', { oldId }, {
+          headers: { 'content-type': 'application/json' },
+          withCredentials: true
+        })
+        if (response.data.returnCode !== '1111') {
+          this.$message({ type: 'error', message: '删除失败，请刷新列表后重试' })
+          return
+        }
+        this.$message({ type: 'success', message: '删除信息成功' })
+        this.searchOldPersons()
+      } catch (error) {
         this.$message({
-          type: 'info',
-          message: '已取消删除'
+          type: 'error',
+          message: error.response?.status === 409
+            ? '请先解除该长者名下设备绑定，再删除长者'
+            : '删除失败，请稍后重试'
         })
       }
     },

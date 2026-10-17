@@ -340,8 +340,13 @@ class DeviceWriteTransactionTests {
         assertEquals("1111", devices.login(request("secret", fresh)).get("returnCode"));
     }
 
-    @Test void activeWatchBlocksElderDeletionWithoutConsumingInvitations() {
+    @Test void activeWatchBlocksElderDeletionWithoutConsumingInvitations() throws Exception {
         jdbc.update("insert into invite_code(code,old_id) values('ACTIVE',1)");
+        var mvc = org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup(elderController)
+                .setControllerAdvice(new ApiExceptionHandler()).build();
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/restful/oldPerson/delete")
+                .contentType("application/json").content("{\"oldId\":1}"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isConflict());
         var blocked = assertThrows(ResponseStatusException.class, () ->
                 elderController.delete(request("oldId",1)));
         assertEquals(409, blocked.getStatusCode().value());
@@ -349,7 +354,10 @@ class DeviceWriteTransactionTests {
         assertEquals(2,count("oldperson"));
         assertEquals(1,jdbc.queryForObject("select old_id from device where device_id=1",Integer.class));
         assertEquals("1111",devices.unbind(request("deviceId",1)).get("returnCode"));
-        assertEquals("1111",elderController.delete(request("oldId",1)).get("returnCode"));
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/restful/oldPerson/delete")
+                .contentType("application/json").content("{\"oldId\":1}"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.returnCode").value("1111"));
         assertEquals(0,count("invite_code"));
         assertEquals(1,count("oldperson"));
     }
