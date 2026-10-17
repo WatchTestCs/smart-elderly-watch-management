@@ -15,7 +15,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class DatabaseMigrations {
     private static final Logger LOG = LoggerFactory.getLogger(DatabaseMigrations.class);
-    private static final int SCHEMA_VERSION = 3;
+    private static final int SCHEMA_VERSION = 4;
 
     @Bean
     FlywayMigrationStrategy guardedMigrations() { return DatabaseMigrations::migrate; }
@@ -35,7 +35,7 @@ public class DatabaseMigrations {
                 }
             }
             for (var migration : information.applied()) {
-                if (migration.getVersion() != null && migration.getVersion().compareTo(MigrationVersion.fromVersion("3")) > 0) {
+                if (migration.getVersion() != null && migration.getVersion().compareTo(MigrationVersion.fromVersion("4")) > 0) {
                     throw new IllegalStateException("数据库迁移版本高于当前软件，拒绝降级打开");
                 }
             }
@@ -51,7 +51,7 @@ public class DatabaseMigrations {
                 if (databasePath != null) {
                     Path backupDir = Path.of(databasePath).getParent().resolve("backups");
                     Files.createDirectories(backupDir);
-                    Path backup = backupDir.resolve("before-v2-" + java.util.UUID.randomUUID() + ".zip");
+                    Path backup = backupDir.resolve("before-v4-" + java.util.UUID.randomUUID() + ".zip");
                     statement.execute("BACKUP TO '" + backup.toString().replace("'", "''") + "'");
                     LOG.info("数据库升级前备份已完成：{}", backup);
                 }

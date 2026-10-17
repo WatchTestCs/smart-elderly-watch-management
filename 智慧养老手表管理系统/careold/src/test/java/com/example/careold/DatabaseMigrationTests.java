@@ -33,8 +33,8 @@ class DatabaseMigrationTests {
             var jdbc = new JdbcTemplate(source);
             jdbc.update("insert into users(user_name,password) values('验收','preserved')");
             DatabaseMigrations.migrate(flyway);
-            assertEquals(3,jdbc.queryForObject("select schema_version from app_metadata where id=1",Integer.class));
-            assertEquals(3,flyway.info().applied().length);
+            assertEquals(4,jdbc.queryForObject("select schema_version from app_metadata where id=1",Integer.class));
+            assertEquals(4,flyway.info().applied().length);
             assertEquals("preserved",jdbc.queryForObject("select password from users",String.class));
         }
     }
@@ -54,7 +54,7 @@ class DatabaseMigrationTests {
             assertNotEquals(oldSecret, stored);
             assertTrue(DeviceSecretCodec.matches(oldSecret, stored));
             assertFalse(DeviceSecretCodec.matches("WRONG-23456789ABCDEFGHJKLMNPQ", stored));
-            assertEquals(3,jdbc.queryForObject("select schema_version from app_metadata where id=1",Integer.class));
+            assertEquals(4,jdbc.queryForObject("select schema_version from app_metadata where id=1",Integer.class));
             DatabaseMigrations.migrate(flyway(source));
             assertEquals(stored,jdbc.queryForObject("select secret from device where device_no='W-OLD'",String.class));
             assertThrows(org.springframework.dao.DataIntegrityViolationException.class, () ->
@@ -84,4 +84,87 @@ class DatabaseMigrationTests {
             assertEquals(1,jdbc.queryForObject("select count(*) from information_schema.tables where table_schema='public'",Integer.class));
         }
     }
+
+    @Test void validBindingIsEnforcedAndDeletionRequiresExplicitUnbind() {
+        try (var source = source("references")) {
+            DatabaseMigrations.migrate(flyway(source));
+            var jdbc = new JdbcTemplate(source);
+            jdbc.update("insert into oldperson(old_id,name) values(1,'保留的长者')");
+            jdbc.update("insert into device(device_id,device_no,secret,old_id) values(1,?,?,1)",
+                    "TEST-REL", DeviceSecretCodec.hash("a".repeat(32)));
+            assertThrows(org.springframework.dao.DataIntegrityViolationException.class, () ->
+                    jdbc.update("insert into device(device_no,secret,old_id) values(?,?,999)",
+                            "ORPHAN",DeviceSecretCodec.hash("b".repeat(32))));
+            assertThrows(org.springframework.dao.DataIntegrityViolationException.class, () ->
+                    jdbc.update("update device set old_id=999 where device_id=1"));
+            assertThrows(org.springframework.dao.DataIntegrityViolationException.class, () ->
+                    jdbc.update("delete from oldperson where old_id=1"));
+            assertEquals(1,jdbc.queryForObject("select old_id from device where device_id=1",Integer.class));
+            jdbc.update("update device set old_id=null where device_id=1");
+            assertEquals(1,jdbc.update("delete from oldperson where old_id=1"));
+            assertEquals(4,jdbc.queryForObject("select schema_version from app_metadata where id=1",Integer.class));
+        }
+    }
+
+    @Test void orphanedLegacyReferenceFailsClosedWithBackupBeforeConstraint() throws Exception {
+        try (var source = source("v3-orphan")) {
+            var oldFlyway = Flyway.configure().dataSource(source)
+                    .baselineOnMigrate(true).baselineVersion("0").target("3").load();
+            DatabaseMigrations.migrate(oldFlyway);
+            var jdbc = new JdbcTemplate(source);
+            jdbc.update("insert into device(device_id,device_no,secret,old_id) values(1,?,?,404)",
+                    "BAD-REF", DeviceSecretCodec.hash("a".repeat(32)));
+            assertThrows(org.flywaydb.core.api.FlywayException.class, () ->
+                    DatabaseMigrations.migrate(flyway(source)));
+            assertEquals(404,jdbc.queryForObject("select old_id from device where device_id=1",Integer.class));
+            assertEquals(3,jdbc.queryForObject("select schema_version from app_metadata where id=1",Integer.class));
+            Path backup;
+            try (var copies=Files.list(temporary.resolve("backups"))) {
+                backup=copies.findFirst().orElseThrow();
+            }
+            Path restored = temporary.resolve("restored-reference");
+            Files.createDirectories(restored);
+            org.h2.tools.Restore.execute(backup.toString(),restored.toString(),"v3-orphan");
+            try(var restoredSource=source("restored-reference/v3-orphan")) {
+                var restoredJdbc = new JdbcTemplate(restoredSource);
+                assertEquals(404,restoredJdbc.queryForObject("select old_id from device where device_id=1",Integer.class));
+                assertEquals(3,restoredJdbc.queryForObject("select schema_version from app_metadata where id=1",Integer.class));
+            }
+        }
+    }
+
+
+    @Test void validExistingV3FileDbUpgradesToV4WithoutRewritingBindings() throws Exception {
+        try (var source = source("v3-valid")) {
+            var v3 = Flyway.configure().dataSource(source)
+                    .baselineOnMigrate(true).baselineVersion("0").target("3").load();
+            DatabaseMigrations.migrate(v3);
+            var jdbc = new JdbcTemplate(source);
+            jdbc.update("insert into oldperson(old_id,name,device_id) values(9,'受保护的长者',7)");
+            String stored = DeviceSecretCodec.hash("a".repeat(32));
+            jdbc.update("insert into device(device_id,device_no,secret,old_id) values(7,?,?,9)",
+                    "VALID-V3", stored);
+            DatabaseMigrations.migrate(flyway(source));
+            assertEquals(9,jdbc.queryForObject("select old_id from device where device_id=7",Integer.class));
+            assertEquals(7,jdbc.queryForObject("select device_id from oldperson where old_id=9",Integer.class));
+            assertEquals(stored,jdbc.queryForObject("select secret from device where device_id=7",String.class));
+            assertEquals(4,jdbc.queryForObject("select schema_version from app_metadata where id=1",Integer.class));
+            assertThrows(org.springframework.dao.DataIntegrityViolationException.class, () ->
+                    jdbc.update("delete from oldperson where old_id=9"));
+            Path backup;
+            try (var files=Files.list(temporary.resolve("backups"))) {
+                backup=files.findFirst().orElseThrow();
+            }
+            Path restored = temporary.resolve("restore-valid-v3");
+            Files.createDirectories(restored);
+            org.h2.tools.Restore.execute(backup.toString(),restored.toString(),"v3-valid");
+            try (var restoredSource = source("restore-valid-v3/v3-valid")) {
+                var recovered = new JdbcTemplate(restoredSource);
+                assertEquals(3,recovered.queryForObject("select schema_version from app_metadata where id=1",Integer.class));
+                assertEquals(9,recovered.queryForObject("select old_id from device where device_id=7",Integer.class));
+                assertEquals(stored,recovered.queryForObject("select secret from device where device_id=7",String.class));
+            }
+        }
+    }
+
 }

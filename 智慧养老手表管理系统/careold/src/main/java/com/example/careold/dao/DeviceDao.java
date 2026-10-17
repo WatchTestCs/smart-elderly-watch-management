@@ -35,6 +35,10 @@ public interface DeviceDao {
 
     /** 写入/更新设备的正常阈值档案（watch_info：心率、血压上下限） */
     int saveWatchProfile(Integer deviceId, Integer hrf, Integer hrl, Integer bpf, Integer bpl, String opTime);
+    /** 当前绑定到指定长者的设备数，防止误删活动关联。 */
+    int countByOldId(Integer oldId);
+
+
 
     /** 解除绑定 */
     int unbind(Integer deviceId);

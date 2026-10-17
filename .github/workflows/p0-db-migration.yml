@@ -2,7 +2,7 @@ name: P0 database upgrade verification
 
 on:
   pull_request:
-    branches: [preview, preview-publish-20261015]
+    branches: [preview, preview-publish-20261015, p0-device-secret-hash]
     paths:
       - ".github/workflows/p0-db-migration.yml"
       - "智慧养老手表管理系统/careold/**"
