@@ -310,4 +310,33 @@ class DeviceWriteTransactionTests {
         assertEquals("1111",profiles.update(request("deviceId",1,"hrf",80,"hrl",60,"bpf",180,"bpl",150)).get("returnCode"));
         assertEquals("1",devices.report(request("hr",90)).get("rateState"));
     }
+
+    @Test void creatingDevicePersistsOnlyDigestAndReturnsClearCredentialOnce() {
+        var created = devices.create(request("alias", "新设备"));
+        assertEquals("1111", created.get("returnCode"));
+        String deviceNo = (String) created.get("deviceNo");
+        String clear = (String) created.get("secret");
+        int id = ((Number) created.get("deviceId")).intValue();
+        String stored = jdbc.queryForObject("select secret from device where device_id=?", String.class, id);
+        assertTrue(com.example.careold.common.DeviceSecretCodec.isHashed(stored));
+        assertNotEquals(clear, stored);
+        assertTrue(com.example.careold.common.DeviceSecretCodec.matches(clear, stored));
+        var credentials = new LinkedHashMap();
+        credentials.put("deviceNo", deviceNo);
+        credentials.put("secret", clear);
+        assertEquals("1111", devices.login(credentials).get("returnCode"));
+        assertFalse(devices.list(request()).toString().contains(clear));
+    }
+
+    @Test void resetDeviceSecretRevokesOldCredentialAndNeverStoresClearText() {
+        assertEquals("1111", devices.login(request()).get("returnCode"));
+        var rotated = devices.resetSecret(request("deviceId", 1));
+        assertEquals("1111", rotated.get("returnCode"));
+        String fresh = (String) rotated.get("secret");
+        String stored = jdbc.queryForObject("select secret from device where device_id=1", String.class);
+        assertTrue(com.example.careold.common.DeviceSecretCodec.isHashed(stored));
+        assertNotEquals(fresh, stored);
+        assertEquals("0004", devices.login(request()).get("returnCode"));
+        assertEquals("1111", devices.login(request("secret", fresh)).get("returnCode"));
+    }
 }
