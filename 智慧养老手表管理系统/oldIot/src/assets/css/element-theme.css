@@ -98,6 +98,10 @@
   padding: 18px 28px;
   background: #fbfcf9;
 }
+/* Dialog forms stack labels above their controls at all breakpoints. */
+#app .care-app .el-dialog .el-form-item {
+  display: block;
+}
 #app .care-app .el-dialog .el-form-item__label {
   float: none;
   display: block;

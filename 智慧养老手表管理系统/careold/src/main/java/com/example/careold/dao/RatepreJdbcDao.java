@@ -7,6 +7,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import com.example.careold.domain.PageRequest;
+import com.example.careold.domain.PageResult;
 import java.util.Map;
 @Repository
 public class RatepreJdbcDao implements RatepreDao{
@@ -14,49 +16,43 @@ public class RatepreJdbcDao implements RatepreDao{
     @Autowired
     JdbcTemplate jdbcTemplate;
 
-    /**
-     * 说明：原来的 SQL 依赖 MySQL 5.x 的宽松 GROUP BY，取不到真正最新的一条记录，
-     * 而且列表里 hr/bp 一直是 0。这里改成「先取每个老人最新一条记录的时间，再回表取该条数据」。
-     */
-    private static final String LATEST_SELECT =
+    /** 每位长者按时间和主键确定最新健康记录。 */
+    private static final String SELECT_FIELDS =
             "SELECT o.name AS name, o.old_id AS oldId, o.sex AS sex, r.rate_state AS rateState,"
             + " r.pre_state AS preState, r.hr AS hr, r.bp AS bp, r.id AS recordId,"
             + " r.rate_handled AS rateHandled, r.pre_handled AS preHandled,"
             + " FORMATDATETIME(r.create_time,'yyyy-MM-dd HH:mm:ss') AS createTime"
-            + " FROM oldperson o"
+            + " FROM oldperson o";
+
+    private static final String LATEST_SELECT = SELECT_FIELDS
             + " INNER JOIN (SELECT *,ROW_NUMBER() OVER(PARTITION BY old_id ORDER BY create_time DESC,id DESC) AS rn FROM ratepre) r"
             + " ON r.old_id=o.old_id AND r.rn=1";
 
     @Override
-    public List<RatepreDto> getRatepre(String name, String timeFirst, String timeLast) {
-        String sql;
-        List<RatepreDto> ratepreDtos=null;
-        boolean noName = (name==null || "".equals(name));
-        boolean noTime = (timeFirst==null || "".equals(timeFirst)) || (timeLast==null || "".equals(timeLast));
-        if(noName && noTime){
-            sql="SELECT * FROM (" + LATEST_SELECT + ") t ORDER BY t.createTime DESC";
-            ratepreDtos=jdbcTemplate.query(sql,new BeanPropertyRowMapper<>(RatepreDto.class));
-        }else if(noName){
-            sql="SELECT * FROM (" + LATEST_SELECT + ") t WHERE t.createTime BETWEEN ? AND ? ORDER BY t.createTime DESC";
-            ratepreDtos=jdbcTemplate.query(sql,new BeanPropertyRowMapper<>(RatepreDto.class),timeFirst,timeLast);
-        }else{
-            sql="SELECT * FROM (" + LATEST_SELECT + ") t WHERE t.name like ? ORDER BY t.createTime DESC";
-            ratepreDtos=jdbcTemplate.query(sql,new BeanPropertyRowMapper<>(RatepreDto.class),"%"+name+"%");
+    public PageResult<RatepreDto> getRatepre(String name, String timeFirst, String timeLast, PageRequest page) {
+        String sql="SELECT * FROM (" + LATEST_SELECT + ") t WHERE 1=1";
+        var values = new java.util.ArrayList<Object>();
+        if (name != null && !name.isBlank()) { sql += " AND t.name LIKE ?"; values.add("%"+name+"%"); }
+        if (timeFirst != null && !timeFirst.isBlank() && timeLast != null && !timeLast.isBlank()) {
+            sql += " AND t.createTime BETWEEN ? AND ?"; values.add(timeFirst); values.add(timeLast);
         }
-        return ratepreDtos;
+        return PagedQuery.query(jdbcTemplate,sql+" ORDER BY t.createTime DESC,t.oldId",RatepreDto.class,page,values.toArray());
     }
 
     @Override
     public List<RatepreDto> getRatepreFamily(int oldId, String timeFirst, String timeLast) {
+        String latest = SELECT_FIELDS
+                + " INNER JOIN (SELECT * FROM ratepre WHERE old_id=? ORDER BY create_time DESC,id DESC LIMIT 1) r"
+                + " ON r.old_id=o.old_id";
         String sql;
-        List<RatepreDto> ratepreDtos=null;
+        List<RatepreDto> ratepreDtos;
         if(timeFirst==null || "".equals(timeFirst) || timeLast==null || "".equals(timeLast)){
-            sql="SELECT * FROM (" + LATEST_SELECT + ") t WHERE t.oldId=? ORDER BY t.createTime DESC";
+            sql="SELECT * FROM (" + latest + ") t ORDER BY t.createTime DESC";
             ratepreDtos=jdbcTemplate.query(sql,new BeanPropertyRowMapper<>(RatepreDto.class),oldId);
         }else{
-            sql="SELECT * FROM (" + LATEST_SELECT + ") t WHERE t.createTime BETWEEN ? AND ? AND t.oldId=?"
+            sql="SELECT * FROM (" + latest + ") t WHERE t.createTime BETWEEN ? AND ?"
                     + " ORDER BY t.createTime DESC";
-            ratepreDtos=jdbcTemplate.query(sql,new BeanPropertyRowMapper<>(RatepreDto.class),timeFirst,timeLast,oldId);
+            ratepreDtos=jdbcTemplate.query(sql,new BeanPropertyRowMapper<>(RatepreDto.class),oldId,timeFirst,timeLast);
         }
         return ratepreDtos;
     }
@@ -66,25 +62,19 @@ public class RatepreJdbcDao implements RatepreDao{
         String sql="SELECT r.hr AS hr, r.bp AS bp, FORMATDATETIME(r.create_time,'yyyy-MM-dd HH:mm:ss') AS createTime"
                 + " FROM (SELECT id, hr, bp, create_time FROM ratepre WHERE old_id=?"
                 + " ORDER BY create_time DESC, id DESC LIMIT 30) r ORDER BY r.create_time ASC, r.id ASC";
-        List<RatepreDto> ratepreDtos=null;
-        ratepreDtos=jdbcTemplate.query(sql,new BeanPropertyRowMapper<>(RatepreDto.class),oldId);
-        return ratepreDtos;
+        return jdbcTemplate.query(sql,new BeanPropertyRowMapper<>(RatepreDto.class),oldId);
     }
 
     @Override
     public List<String> getRateCount() {
         String sql="SELECT device_id deviceId FROM ratepre WHERE rate_state='1' GROUP BY device_id";
-        List<String> deviceids=null;
-        deviceids=jdbcTemplate.queryForList(sql,String.class);
-        return deviceids;
+        return jdbcTemplate.queryForList(sql,String.class);
     }
 
     @Override
     public List<String> getPreCount() {
         String sql="SELECT device_id deviceId FROM ratepre WHERE pre_state='1' GROUP BY device_id";
-        List<String> deviceids=null;
-        deviceids=jdbcTemplate.queryForList(sql,String.class);
-        return deviceids;
+        return jdbcTemplate.queryForList(sql,String.class);
     }
 
     // ==================== 异常（红点）相关 ====================

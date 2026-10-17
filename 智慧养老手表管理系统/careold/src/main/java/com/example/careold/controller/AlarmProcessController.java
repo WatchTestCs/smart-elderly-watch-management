@@ -19,7 +19,6 @@ public class AlarmProcessController {
     @ResponseBody
     @PostMapping("/select")
     public LinkedHashMap select(@RequestBody LinkedHashMap params){
-        System.out.println("进入");
         LinkedHashMap result=new LinkedHashMap();
         String id=(String)params.get("id");
         List<AlarmProcess> alarmProcesses= alarmProcessDao.getAlarmProcess(Integer.parseInt(id));

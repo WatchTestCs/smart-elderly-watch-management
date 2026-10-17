@@ -309,3 +309,9 @@ preview commit
 - UI 自动化目前从登录页核心视觉/a11y 基线起步，后续需扩展到登录后的主要任务流。
 
 这些限制应保留在交接和发布材料中，直到有新证据关闭。
+
+## 17. 待合并实现的专项说明（2026-10-16）
+
+本分支新增 `DeviceService` 与更薄的设备 HTTP 控制器、`PageRequest`/`PageResult` 分页模型、Flyway 版本迁移和带回滚/备份测试的相关入口。其实现与风险边界见 [修复核验](PREVIEW_ISSUE_REMEDIATION.md)、[页面/后端专项](BACKEND_SCREEN_REFINEMENT.md)及 [本轮验证报告](preview-remediation-validation.json)。
+
+在 PR 完成合并且按 `docs/TESTING.md` 通过当前提交的验证前，以上均视为**待复验的实现**，而非已发布能力。H2 迁移要求先备份、仅使用受控的前进版本；设备独立协议、短信尽力发送以及 UI 健康数据的“过期/缺测”语义仍遵守本文件既有不变量。

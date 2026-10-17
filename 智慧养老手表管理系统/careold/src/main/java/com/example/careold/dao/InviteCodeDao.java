@@ -3,16 +3,10 @@ package com.example.careold.dao;
 import com.example.careold.domain.InviteCode;
 import com.example.careold.domain.InviteCodeDto;
 
-import java.util.List;
 
 public interface InviteCodeDao {
 
-    /**
-     * 查询邀请码列表
-     *
-     * @param used 是否已使用：0-未使用 1-已使用；-1 表示不过滤
-     */
-    List<InviteCodeDto> findInviteCodes(int used);
+    com.example.careold.domain.PageResult<InviteCodeDto> findInviteCodes(String state, com.example.careold.domain.PageRequest page);
 
     /** 按邀请码查询（不存在返回 null） */
     InviteCodeDto findByCode(String code);

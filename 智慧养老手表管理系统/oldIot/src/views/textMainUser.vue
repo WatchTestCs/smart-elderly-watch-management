@@ -6,7 +6,7 @@
       <template v-else-if="notice">
         <header><p class="notice-label">平台公告</p><h2>{{ notice.title || '未命名公告' }}</h2><p class="notice-time">发布时间 · {{ notice.time || '暂未提供' }}</p></header>
         <div class="notice-body">{{ notice.textMain || '本公告暂无正文。' }}</div>
-        <section v-if="pictures.length" class="notice-pictures" aria-label="公告图片"><img v-for="(pic, index) in pictures" :key="index" :src="imageUrl(pic.picName)" :alt="'公告附图 ' + (index + 1)"></section>
+        <section v-if="pictures.length" class="notice-pictures" aria-label="公告图片"><img v-for="(pic, index) in pictures" :key="pic.picName" :src="imageUrl(pic.picName)" :alt="'公告附图 ' + (index + 1)"></section>
       </template>
     </article>
     <section class="notice-panel" v-loading="commentsLoading" aria-label="家属留言">

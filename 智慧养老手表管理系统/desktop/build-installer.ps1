@@ -62,13 +62,10 @@ if ($LASTEXITCODE -ne 0) { throw 'Installer compilation failed' }
 
 if ($Sign) {
   & (Join-Path $PSScriptRoot 'sign.ps1') -FilePath $InstallerPath
-  $certificate=Get-ChildItem Cert:\CurrentUser\My -CodeSigningCert |
-    Where-Object Subject -eq 'CN=Suining Local Build' |
-    Sort-Object NotAfter -Descending |
-    Select-Object -First 1
-  if ($certificate) {
-    Export-Certificate -Cert $certificate -FilePath (Join-Path $evidenceDir 'Suining-Local-Signing.cer') | Out-Null
-  }
+  $certificate=(Get-AuthenticodeSignature -LiteralPath $InstallerPath).SignerCertificate
+  if (-not $certificate) { throw 'Installer signing certificate is missing.' }
+  $certificateName=if ($env:SUINING_SIGNING_THUMBPRINT) { 'Suining-Signing.cer' } else { 'Suining-Local-Signing.cer' }
+  Export-Certificate -Cert $certificate -FilePath (Join-Path $evidenceDir $certificateName) | Out-Null
 }
 
 Write-Host "Installer prepared: $InstallerPath"

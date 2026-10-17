@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -38,11 +37,6 @@ public class ImagesApi {
     @GetMapping("/download")
     public ResponseEntity<Resource> download(@RequestParam("name") String filename) throws IOException {
         return image(path, filename);
-    }
-
-    @GetMapping("/downloadTwo")
-    public ResponseEntity<Resource> downloadTwo(HttpServletRequest request, @RequestParam("name") String filename) throws IOException {
-        return image(request.getServletContext().getRealPath("/upload/"), filename);
     }
 
     private ResponseEntity<Resource> image(String base, String name) throws IOException {

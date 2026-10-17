@@ -1,0 +1,78 @@
+# preview 问题清单核验与修复
+
+## 远程收尾记录（2026-10-16；在原本地验收记录之后补记）
+
+**适用版本**：[`preview-publish-20261015` 草稿 PR #1](https://github.com/WatchTestCs/smart-elderly-watch-management/pull/1)，已复验源码候选 `70b9b07cba895d03714c2f9cc29854addf3830ef`。本段更新此前“尚未推送/尚未运行远程 Actions”的历史状态：当时确实未推送，但当前分支已提交远程并完成下列检查。**没有合并进入 `preview`，也没有更新 Release 或修改 `main`。**
+
+| 证据层 | 当前可证实结果 | 远程记录 |
+| --- | --- | --- |
+| 核心构建与 Maven | Preview CI / required 成功，前端依赖审计与生产构建、后端测试和打包成功 | [Preview CI](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/38925642999) |
+| 后端 Windows 构建 | Windows 上实际运行 Maven：**70 项测试，0 失败，0 错误，0 跳过** | [Windows unsigned build smoke](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/38925643092) |
+| 业务界面回归 | 六组浏览器脚本报告 **295 + 656 + 30 + 7 + 169 + 42 = 1199 项检查，无失败**；桌面端口文件与手表模拟器 **5 项 Node 测试通过** | [Preview checks](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/38925643072) |
+| UI 质量 | UI Quality 验证成功；不代表所有登录后流程均已独立真机测试 | [UI Quality](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/38925643005) |
+| 桌面脚本契约 | Windows Desktop Contract 验证成功 | [Desktop Contract](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/38925642957) |
+| 真实 Windows 未签名构建 | 修复 Node 在 Windows 复制 Electron、JRE 运行时目录时的异常中断；Robocopy 采用受限重试与结果检查。实际完成 ASAR、图标、版本资源、安全 Fuses 和未签名 `Suining.exe` 封装，并经 NSIS/LZMA 编译产出**未签名** `岁宁-Setup-2.0.0.exe`（190,835,271 字节） | [Windows unsigned build smoke](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/38925643092) |
+| 静态安全分析 | Java、JavaScript/TypeScript CodeQL 成功；**Security 总检查未通过**，原因是仓库未启用或未提供 GitHub Dependency Graph，dependency-review-action 不支持该仓库。**这不是漏洞不存在的证明，也不是一次检测到具体依赖漏洞的结论** | [Security](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/38925642988) |
+
+### 必须保持开放的门槛
+
+1. **仓库安全配置**：有管理员权限的维护者需到 [GitHub Security & analysis 设置](https://github.com/WatchTestCs/smart-elderly-watch-management/settings/security_analysis) 启用 Dependency Graph（若产品/仓库支持），再重跑 Security。不得静默移除依赖审查来获得虚假全绿。
+2. **发布签名**：当前仅验收**未签名候选**；没有受信任发布者证书和时间戳证据，正式签名、SmartScreen 信誉及安装/升级/卸载后的用户数据保持均不能宣称通过。独立真实 Windows 安装验收与签名仍是发布门槛。
+3. **实物与环境**：真实手表端到端、真实短信、外网地图可用性、Windows 10、故障恢复与性能基准未完成全套实测。不得用浏览器夹具代替真实服务质量保证。
+4. **合并**：PR 保持草稿；当前 `preview`、`main` 不修改。先确认最新 HEAD 对应门禁、处理 Dependency Graph，完成必要的实际安装及升级验收，再由维护者审核是否合入 `preview`。
+
+**针对问题清单的最终区分**：源代码内可执行修复已随草稿 PR 提交并通过上述相关测试；自动下载更新因可信分发链未建而继续不实现，正式受信任签名和实物验证属于明确的**外部前置条件**，不是已修复项。
+
+---
+
+
+对应用户的 `preview问题清单.md`（基准 bd48420e），核验日期 2026-10-16。本轮在本地 preview 工作区完成；保留此前未提交改动，未推送、发布、运行远程 Actions，也未操作真实用户数据库。旧 Release 不包含这些新改动。
+
+## 逐项结论
+
+| 项 | 结论与处理 |
+| --- | --- |
+| 1 明文密码回退 | 已移除。只验证有效 BCrypt；明文、MD5 及直接提交存储摘要均不能登录。移除登录时回写明文迁移的死分支和孤立 DAO 方法。 |
+| 2 多表事务 | report、SOS、绑定、告警处置、邀请码批量创建等已有事务，跳过重做；补齐设备创建/解绑/删除、家属新增/删除、长者删除、双类健康告警处置的事务。真实 H2 约束故障验证回滚，而非只验证注解。 |
+| 3 数据库迁移 | 引入 Flyway，关闭启动 SQL 重放。V1 接管已有结构，V2 将重复日记录的旧行原样归档，再建立唯一索引；升级前备份文件数据库。检查元数据和 Flyway 已应用版本，拒绝降级打开未来数据库。 |
+| 4 DAO 测试与 N+1 | “唯一 DAO 测试”已过时，本地原有真实 H2 回归已存在。保留原 SQL 形状测试，新增 200 台设备真实查询，确认统计只执行一条 SELECT。 |
+| 5 CI | 新增只针对 preview 的工作流，包含前端构建、后端测试、浏览器验收、桌面日志测试。将原本留在 outputs 的浏览器测试整理到独立 qa 工具包，固定依赖，不进入产品运行包。本轮未运行远程 CI。 |
+| 6 日志 | 不以日志密度为验收指标。补迁移备份/完成日志、失败参考编号、后台异常退出记录；接口错误不输出密码、拒绝值或数据库异常正文。服务、控制台、启动错误日志有容量限制和轮转。 |
+| 7 限流与完整性 | 清单推断不成立：一个 Java 进程内的限流适用于直接局域网访问；发布流程的完整性清单位于受 PE 内嵌 ASAR 摘要校验的 app.asar 内，并非与 JAR 并排的可独立修改文件。保留现有实现，补明威胁边界。 |
+| 8 地图 | 两个位置页面改用本地 Leaflet。无需密钥；默认仅展示原始坐标和标记，用户点击后加载 OSM 底图。包含失败提示、零坐标支持、归属标注、键盘缩放、容器尺寸监听和卸载释放。CSP 仅增加明确瓦片图片域，不开放外部脚本。 |
+| 9 H2 方言 | 保留 H2 专用查询。内置 H2 是当前桌面架构的明确选择；MODE=MySQL 不代表完整 MySQL 兼容，也不只影响 DDL。本轮不承诺切换 MySQL/PostgreSQL 无需改造。 |
+| 10 无分页/读时写 | 设备、健康、活动、位置、生活、长者档案、阈值、监护人、家属、公告、邀请码和评论的管理列表使用 SQL LIMIT/OFFSET 与总数；同步管理员与家属公告界面的翻页。默认 20、最大 100 条，拒绝非法页参数。离线扫描移至定时任务，刷新列表不写库。选择下拉框、汇总与七点趋势查询有独立用途，不伪装成表格分页。 |
+| 11 设备架构 | 17 个 HTTP 接口改为薄控制器；设备业务与事务在 DeviceService，写入 SQL 在 DAO；请求使用明确 DTO 与 @Valid。内部仍保留现有业务返回码和部分 Map，未把它宣称为全项目 DTO 重写。 |
+| 12 生产调试输出 | Vite 8 使用实际支持的 Rolldown/Oxc 选项剔除 console 和 debugger。验收直接检查生产 JS。没有使用不适用于本项目版本的 esbuild.drop。 |
+| 13 密码规则 | 原清单把登录与创建混为一谈。登录允许现有 BCrypt 密码并限制为 72 UTF-8 字节；首次创建、邀请码注册、修改新密码统一为 12–20 位且含字母和数字，前后端一致。 |
+| 14 downloadTwo | 确认无调用后移除接口、Servlet 依赖与安全配置中的孤立路径。有效下载接口及路径校验保留。 |
+| 15 模拟器端口 | 桌面原子发布不含令牌的端口/进程记录，退出时仅清理本进程记录。模拟器优先发现本机运行实例，校验端口与进程，显式 --server 仍优先。独立开发保留 8795。 |
+| 16 短信 | 改为岁宁照护公告文案。队列满的拒绝日志原本已有，跳过重复修复；公告提交后才排队，依然是可选、尽力发送的通知。 |
+| 17 列表 key | 指定六处改为邀请码、长者 ID 或附件文件名；附件错误状态也改为按文件名保存，避免重排后串位。 |
+| 18 路由占位名 | 改为页面语义名称，保持原 URL、权限检查与跳转。实际占位路由超过清单所述的 18 个，按现有源码完整替换。 |
+| 19 手机号预填 | 读后删除本来就是注册后的“一次性预填”，不属于丢失登录态。合并为创建表单时消费一次，使意图和执行位置一致。 |
+| 20 主内容焦点 | 替换 outline:none，跳过导航后保留可见焦点边界。 |
+| 21 CSS 内联探测 | 该 :has 内联显示探测此前已移除，跳过。本轮地图替换产生的旧地图选择器同步清理，保留字体。 |
+| 22 更新/启动容错 | 日志轮转、OOM 明确退出、异常退出诊断已完成。**自动下载安装更新未实现**：当前 NSIS 分发没有更新订阅链路，且尚无受信任发布证书。保留手动升级并说明备份、版本与签名校验；不加入缺乏可信校验的自动执行下载包。 |
+| 23 Windows 签名 | 已支持证书指纹选择、代码签名用途/有效期/私钥检查、时间戳和正式模式强制校验。明确选择正式证书失败时不回退自签；安装器导出实际签名者公钥证书。**用户暂无正式证书，故未完成受信任签名实测，也未签出新安装包。** 自签可以分发，但不等于系统公共信任或 SmartScreen 信誉。 |
+
+## 验收
+
+本地后端测试覆盖实际 H2 SQL、分页边界与筛选、事务中后段故障回滚、首次安装、升级重复记录归档、备份恢复、拒绝未来版本、密码校验及权限隔离。新增历史空血压/无附图公告兼容检查；公告图片组由数据库记录决定，忽略客户端伪造的图片组 ID。
+
+浏览器验收使用真实生产构建，业务接口和地图瓦片由本地夹具响应：验证页面、表单、布局、字号、资源释放、地图零坐标/失败/归属与全部表格翻页，不等同于真机手表或真实外网地图可达性验证。CI 文件仅在本地准备，尚未远程运行。字体文件保持原有摘要。
+
+Windows 原生验收使用已下载的 Electron 与随包 Java 21，在独立临时用户目录、隐藏窗口运行，检查首次配置、登录会话、最大化、F11/Esc、主页滚动、退出与无孤立 Java 进程。不修改用户证书根信任或安装新软件。
+
+最终执行数量与结果见同目录的本轮验收结果；不进行性能基准测试。无真实短信、手表、Windows 10 或外网瓦片实测。不能把自签、本地成功或夹具验收描述为第三方公共信任及完整上线认证。
+
+## 运维与安全边界
+
+- 文件数据库第一次升级前，在数据库所在目录的 `backups` 中生成 ZIP。`watch_day_info_archive` 保留重复旧行，当前日记录保留最大 ID。H2 的 DDL 不是完整事务回滚，迁移失败须保留原文件与备份，不能靠反复重启或手工改版本号“修好”。
+- 恢复时先彻底关闭软件，备份现有整个用户目录，再将升级前 ZIP 中的数据库文件恢复到原数据库目录；使用对应版本打开。需要图片时同时恢复用户目录备份。测试实际恢复并读取了升级前的数据。
+- 不自动导入旧 MySQL SQL，也不恢复明文/MD5 登录兼容。存量此类账号应通过受控迁移或管理员重建处理；本项目没有通用找回密码或认证后门。
+- 内存限流在重启时重置，按实际 TCP 来源 IP 计数。代理后的多用户会共享代理 IP；多实例/网关部署需要网关限流策略，不能把它视为分布式防护。
+- ASAR 校验不抵御具有本机文件写权限的人替换整套 EXE。正式签名提供发布者和文件完整性验证，信任用户目录与 Windows 账户仍是桌面安全边界。
+- 地图按 WGS84 解释设备坐标；若真实硬件使用 GCJ-02/BD-09，接入时须明确坐标系并实现转换。离线显示标记和坐标，不含离线城市底图。在线 OSM 服务需要网络、可被限流，无服务等级承诺；保留归属，不批量下载或预取离线瓦片。
+
+实现参考：[Flyway 接管已有数据库](https://documentation.red-gate.com/flyway/reference/configuration/flyway-namespace/flyway-baseline-on-migrate-setting)、[Vite 8 迁移配置](https://vite.dev/guide/migration.html)、[OSM 瓦片使用政策](https://operations.osmfoundation.org/policies/tiles/)、[Playwright CI](https://playwright.dev/docs/ci-intro)。

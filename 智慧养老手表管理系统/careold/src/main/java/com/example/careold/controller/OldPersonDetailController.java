@@ -1,8 +1,6 @@
 package com.example.careold.controller;
 
-import com.example.careold.dao.OldPersonDao;
 import com.example.careold.dao.OldPersonDetailDao;
-import com.example.careold.domain.OldPerson;
 import com.example.careold.domain.OldPersonDetail;
 import java.util.LinkedHashMap;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +10,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import java.util.List;
 
 @Controller
 @RequestMapping("/restful/oldPerson")
@@ -26,8 +23,7 @@ public class OldPersonDetailController {
     public LinkedHashMap select(@RequestBody LinkedHashMap param){
         LinkedHashMap result=new LinkedHashMap();
         String name=param.get("name").toString();
-        List<OldPersonDetail> oldPersonDetails=oldPersonDetailDao.getOldPersonDetail(name);
-        result.put("oldPersonDetails",oldPersonDetails);
+        oldPersonDetailDao.getOldPersonDetail(name,com.example.careold.domain.PageRequest.from(param)).putInto(result,"oldPersonDetails");
         return result;
 
     }

@@ -84,9 +84,6 @@ public class LoginController {
 
         List<Users> users = userDao.getUsersByPhone2(phone);
         if (!users.isEmpty() && PasswordUtil.matches(password, users.get(0).getPassword())) {
-            if (!PasswordUtil.isHashed(users.get(0).getPassword())) {
-                userDao.updatePasswordByPhone(PasswordUtil.hash(password), phone);
-            }
             Users user = users.get(0);
             user.setPassword(null);
             establish(new AccountPrincipal("ADMIN", user.getUserId(), phone, null, user.getUserName()), request, response);
@@ -97,9 +94,6 @@ public class LoginController {
 
         Family familyAccount = familyDao.findByPhoneForLogin(phone);
         if (familyAccount != null && PasswordUtil.matches(password, familyAccount.getFamilyPassword())) {
-            if (!PasswordUtil.isHashed(familyAccount.getFamilyPassword())) {
-                familyDao.updatePasswordHashByPhone(PasswordUtil.hash(password), phone);
-            }
             FamilyDto family = familyDao.findFamilyByPhone(phone);
             if (family == null) {
                 return failure(result, "该家属账号尚未关联老人，请联系管理员");

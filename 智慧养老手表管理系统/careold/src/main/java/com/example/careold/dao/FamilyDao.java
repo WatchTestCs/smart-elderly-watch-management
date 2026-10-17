@@ -3,23 +3,25 @@ package com.example.careold.dao;
 import com.example.careold.domain.Family;
 import com.example.careold.domain.FamilyDto;
 import com.example.careold.domain.FamilyDto2;
-import com.example.careold.domain.OldDto2;
 
 import java.util.List;
+import com.example.careold.domain.PageRequest;
+import com.example.careold.domain.PageResult;
 
 public interface FamilyDao{
+    List<String> notificationPhones();
 
     int save(Family family);
     int update(Family family);
     int delete(String id);
 
-    public List<FamilyDto> findFamily(String s);
+    public PageResult<FamilyDto> findFamily(String familyName, PageRequest page);
 
     FamilyDto findFamilyByPhone(String phone);
 
     Family findByPhoneForLogin(String phone);
 
-    OldDto2 findOldDto2ByPhone(String phone);
+    Integer findOldIdByPhone(String phone);
 
     String findFamilyIdByPhone(String phone);
 
@@ -31,7 +33,6 @@ public interface FamilyDao{
 
     int updateFamilyPasswordByPhoneForFamily(String password,String phone);
 
-    int updatePasswordHashByPhone(String passwordHash, String phone);
 
     /**
      * 新增家属并返回自增主键 family_id（失败返回 null）

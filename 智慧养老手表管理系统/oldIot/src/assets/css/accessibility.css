@@ -35,3 +35,10 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Element Plus input groups expose their own outer focus ring. Avoid a
+   second ring inside the compound search control while preserving keyboard
+   focus visibility on the group. Standalone fields remain unaffected. */
+#app .care-app .el-input-group .el-input__inner:focus-visible {
+  outline: none;
+}

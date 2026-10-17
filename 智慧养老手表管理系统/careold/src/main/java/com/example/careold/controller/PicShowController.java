@@ -1,10 +1,8 @@
 package com.example.careold.controller;
 
 import com.example.careold.common.ReturnCodeUtil;
-import com.example.careold.dao.NiceCountDao;
 import com.example.careold.dao.PicShowDao;
 import com.example.careold.domain.PicShow;
-import com.example.careold.domain.Said2;
 import java.util.LinkedHashMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -52,7 +50,6 @@ public class PicShowController {
     public LinkedHashMap select(@RequestBody LinkedHashMap param){
         LinkedHashMap result=new LinkedHashMap();
         List<PicShow> picShows= picShowDao.findById(null);
-        System.out.println(picShows);
         result.put("picShows",picShows);
         return result;
 

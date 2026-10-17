@@ -7,6 +7,8 @@ import java.util.List;
 public interface OldPersonDao {
     List<OldPerson> getOldPerson(String name);
 
+    com.example.careold.domain.PageResult<OldPerson> getOldPersonPage(String name, com.example.careold.domain.PageRequest page);
+
     /**
      * 按老人ID查询老人信息（不存在返回 null）
      */

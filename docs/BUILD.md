@@ -169,3 +169,26 @@ mvn -f 智慧养老手表管理系统/careold/pom.xml spring-boot:run
 - 用户数据库、原始人员 SQL、私钥、构建缓存和验收数据库不得进入源码包。
 
 发布流程见 [RELEASE.md](RELEASE.md)。
+
+## 待合并修复的附加验证入口
+
+### 版本迁移与数据恢复
+
+后端新增 `careold/src/main/resources/db/migration/` 下的 Flyway V1/V2 及 `DatabaseMigrationTests`。升级既有本机 H2 文件数据库前必须验证离线备份、旧库迁移、重复日记录归档、重复启动和未来版本拒绝；迁移失败禁止清库和盲目修改历史脚本，参见 [问题清单核验](PREVIEW_ISSUE_REMEDIATION.md)。
+
+### 浏览器与脚本测试
+
+```powershell
+cd 智慧养老手表管理系统/oldIot/qa
+npm ci
+npx playwright install chromium
+npm test
+cd ../..
+node --test desktop/runtime-files.test.cjs watch-sim/watch-sim.test.cjs
+```
+
+QA 依赖只用于验收，不进入最终桌面运行包。
+
+### 正式发布签名
+
+本分支的 `desktop/sign.ps1` 支持 `SUINING_SIGNING_THUMBPRINT`、`SUINING_TIMESTAMP_SERVER` 与 `SUINING_REQUIRE_TRUSTED_SIGNATURE=1`。普通 `build.ps1` 仍只执行未签名构建；签名需进入受控 `release.ps1` 阶段。显式选择正式证书失败不可降级成自签后继续发布；正式证书仍需在可访问私钥与受信任环境中实测。

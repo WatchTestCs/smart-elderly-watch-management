@@ -2,10 +2,30 @@ const fs = require('node:fs')
 const path = require('node:path')
 const crypto = require('node:crypto')
 const { createRequire } = require('node:module')
+const { spawnSync } = require('node:child_process')
 
 function stage (name, details = '') {
   const suffix = details ? ` — ${details}` : ''
   process.stdout.write(`[desktop-package] ${name}${suffix}\n`)
+}
+
+function copyVerifiedDirectory (source, destination) {
+  if (process.platform !== 'win32') {
+    fs.cpSync(source, destination, { recursive: true })
+    return
+  }
+  // Robocopy has predictable copy exit codes and bounded retries on Windows.
+  const copy = spawnSync('robocopy', [
+    source, destination, '/E', '/XJ', '/COPY:DAT', '/R:2', '/W:1',
+    '/NJH', '/NJS', '/NDL', '/NFL', '/NP'
+  ], { windowsHide: true, encoding: 'utf8', timeout: 180000 })
+  if (copy.error || copy.status === null || copy.status >= 8) {
+    throw new Error('Verified runtime directory copy failed: ' +
+      JSON.stringify({ source, destination, status: copy.status,
+        signal: copy.signal, error: copy.error?.message,
+        stdout: copy.stdout?.slice(-2000), stderr: copy.stderr?.slice(-2000) }))
+  }
+  stage('verified runtime directory copied', 'robocopy exit ' + copy.status)
 }
 
 async function main () {
@@ -26,10 +46,12 @@ async function main () {
   const RE = requireBuild('resedit')
 
   const target = path.join(output, 'unsigned/Suining')
-  stage('copy verified Electron runtime', target)
+  const electronSource = path.join(tools, 'electron')
+  stage('reset unsigned Electron directory', target)
   fs.rmSync(target, { recursive: true, force: true })
   fs.mkdirSync(target, { recursive: true })
-  fs.cpSync(path.join(tools, 'electron'), target, { recursive: true })
+  stage('copy verified Electron runtime', target)
+  copyVerifiedDirectory(electronSource, target)
 
   const exe = path.join(target, 'Suining.exe')
   fs.renameSync(path.join(target, 'electron.exe'), exe)
@@ -40,7 +62,7 @@ async function main () {
   stage('prepare ASAR staging', staging)
   fs.rmSync(staging, { recursive: true, force: true })
   fs.mkdirSync(staging, { recursive: true })
-  for (const file of ['package.json', 'main.cjs']) {
+  for (const file of ['package.json', 'main.cjs', 'runtime-files.cjs']) {
     fs.copyFileSync(path.join(__dirname, file), path.join(staging, file))
   }
 
@@ -48,7 +70,7 @@ async function main () {
   const jre = fs.readdirSync(jreRoot).find(name => name.endsWith('-jre'))
   if (!jre) throw new Error('Verified JRE directory not found')
   stage('copy verified Java runtime', jre)
-  fs.cpSync(path.join(jreRoot, jre), path.join(resources, 'runtime'), { recursive: true })
+  copyVerifiedDirectory(path.join(jreRoot, jre), path.join(resources, 'runtime'))
   fs.mkdirSync(path.join(resources, 'server'), { recursive: true })
 
   const backendJar = path.join(root, `careold/target/careold-${version}.jar`)

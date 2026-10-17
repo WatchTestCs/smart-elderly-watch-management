@@ -36,8 +36,7 @@ public class SetupController {
         String phone = input.getOrDefault("phone", "").trim();
         String name = input.getOrDefault("name", "").trim();
         String password = input.getOrDefault("password", "");
-        if (!phone.matches("1\\d{10}") || name.isBlank() || name.length() > 10 || password.length() < 12
-                || password.getBytes(StandardCharsets.UTF_8).length > 72 || !password.matches("(?s).*[A-Za-z].*") || !password.matches("(?s).*\\d.*"))
+        if (!phone.matches("1\\d{10}") || name.isBlank() || name.length() > 10 || !com.example.careold.common.PasswordUtil.validNewPassword(password))
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "请检查姓名、手机号和密码");
         jdbc.update("INSERT INTO users(user_name,user_phone,password,role) VALUES(?,?,?,'1')", name, phone, PasswordUtil.hash(password));
         return Map.of("returnCode", "1111");

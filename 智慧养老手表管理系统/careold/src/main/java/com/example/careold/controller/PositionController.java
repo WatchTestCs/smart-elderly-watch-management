@@ -2,9 +2,7 @@ package com.example.careold.controller;
 
 
 import com.example.careold.dao.PositionDao;
-import com.example.careold.dao.SaidDao;
 import com.example.careold.domain.PositionDto;
-import com.example.careold.domain.Said;
 import java.util.LinkedHashMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -32,8 +30,7 @@ public class PositionController {
     public LinkedHashMap select(@RequestBody LinkedHashMap param){
         LinkedHashMap result=new LinkedHashMap();
         String name=param.get("name").toString();
-        List<PositionDto> positionDtos=positionDao.getPosition(name);
-        result.put("positionDtos",positionDtos);
+        positionDao.getPosition(name,com.example.careold.domain.PageRequest.from(param)).putInto(result,"positionDtos");
         return result;
     }
 

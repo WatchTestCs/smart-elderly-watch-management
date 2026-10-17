@@ -2,8 +2,8 @@
   <div class="roles">
     
     <div class="sys-research">
-      <el-row class="row-search">
-        <el-col :span="8">
+      <form class="row-search" role="search" @submit.prevent="searchfamily">
+        <div class="search-field">
           
           <label class="table-search-label" for="search-family">家属姓名</label>
           <el-input id="search-family"
@@ -13,14 +13,14 @@
             <template #append><el-button aria-label="查询家属姓名"
               
               icon="el-icon-search"
-              @click="searchfamily"></el-button></template>
+              native-type="submit"></el-button></template>
           </el-input>
-        </el-col>
-        <el-col :span="4">
+        </div>
+        <div class="toolbar-actions">
           <el-button plain @click="customerDialogVisible = true">添加家属</el-button>
-        </el-col>
+        </div>
 		
-      </el-row>
+      </form>
     </div>
     
     <el-dialog
@@ -56,8 +56,7 @@
       <el-button type="primary" @click="addFamily('addfamilyFormRef')">确 定</el-button>
     </span></template>
     </el-dialog>
-    
-    
+
     <el-dialog
       title="家属编辑"
       v-model="oldEditDialogVisible"
@@ -90,13 +89,11 @@
       <el-button type="primary" @click="editFamily">确 定</el-button>
     </span></template>
     </el-dialog>
-    
-    
-    <el-table class="adaptive-record-table" :data="familyList.slice((currentPage-1)*pageSize,currentPage*pageSize)"
+
+    <el-table class="adaptive-record-table" :data="familyList"
     style="width: 100%" border>
     <template #empty><div  class="care-empty-state"><strong>暂无家属账号</strong><span>添加家属或调整搜索条件后，账号会显示在这里。</span></div></template>
-    
-      
+
       <el-table-column type="index" width="100" align="center"></el-table-column>
 	  <el-table-column prop="name" label="姓名" width="140" align="center"></el-table-column>
 	  <el-table-column prop="oldId" label="老人编号" width="140" align="center"></el-table-column>
@@ -116,7 +113,7 @@
         </template>
       </el-table-column>
     </el-table>
-    <record-cards :records="familyList.slice((currentPage-1)*pageSize,currentPage*pageSize)" :fields='[{"key":"name","label":"姓名"},{"key":"oldId","label":"老人编号"},{"key":"familyRelation","label":"关系"},{"key":"familySex","label":"性别"},{"key":"familyPhone","label":"电话"},{"key":"familyAddress","label":"地址"}]' label="家属账号资料" title-key="familyName" key-field="familyId">
+    <record-cards :records="familyList" :fields='[{"key":"name","label":"姓名"},{"key":"oldId","label":"老人编号"},{"key":"familyRelation","label":"关系"},{"key":"familySex","label":"性别"},{"key":"familyPhone","label":"电话"},{"key":"familyAddress","label":"地址"}]' label="家属账号资料" title-key="familyName" key-field="familyId">
       <template #actions="scope"  ><el-button size="small" plain type="primary" icon="el-icon-edit"
                      @click="handleeditFamily(scope.$index, scope.row)">编辑
           </el-button>
@@ -139,7 +136,6 @@
 </template>
 
 <script>
-// 引入
 import axios from 'axios'
 import RecordCards from '@/components/RecordCards.vue'
 
@@ -152,8 +148,6 @@ export default {
       return callback(new Error('电话号码不能为空'))
     }
     setTimeout(() => {
-      // Number.isInteger是es6验证数字是否为整数的方法,但是我实际用的时候输入的数字总是识别成字符串
-      // 所以我就在前面加了一个+实现隐式转换
 
       if (!Number.isInteger(+value)) {
         callback(new Error('请输入数字值'))
@@ -178,29 +172,13 @@ export default {
 		familyAddress: '',
 		oldPhone: ''
       },
-      familyEditForm: {
-        customerName: '',
-        customerAge: '',
-        customerSex: '',
-        customerPhone: '',
-        customerAddress: '',
-		customerId: ''
-      },
+      familyEditForm: {},
       
       total: 0,
       pageSize: 10,
       currentPage: 1,
       familyList: [],
-      // 控制分配权限对话框的展示和隐藏
-      
-      // 树形控件的数据
-      
 
-      // Tree树形控件，默认使用数据中的 label 属性作为节点名称，使用 children 属性指定该接待你的子节点
-      // 但是，如果我们自己的数据结构与默认的结构不同，可以通过 defaultProps 来修改默认的两个属性
-      
-      // 当前被分配权限的角色id
-      
 	  rules: {
 			familyPhone: [
 			  { validator: checkPhone, trigger: 'blur'}
@@ -215,13 +193,13 @@ export default {
     this.searchfamily()
   },
   methods: {
-    // 查询
-    searchfamily () {
+    searchfamily (keepPage = false) {
+      if (keepPage !== true) this.currentPage = 1
      var _this = this
        var familyName = _this.searchText
        
        axios.post('restful/family/select',
-         {
+         { page: this.currentPage, pageSize: this.pageSize,
            'familyName': familyName === '' ? '' : _this.searchText
          },
          {
@@ -231,15 +209,14 @@ export default {
            withCredentials: true
          }).then(function (response) {
          _this.familyList = response.data.familyDtos
-         _this.total = response.data.familyDtos.length
-     console.log(_this.familyList)
+         _this.total = response.data.total ?? response.data.familyDtos.length
+
        })
          .catch(function (error) {
            console.log(error)
          })
       
     },
-    // 添加角色
     addFamily () {
       var _this = this
       axios.post('restful/family/add',
@@ -250,7 +227,7 @@ export default {
           },
           withCredentials: true
         }).then(function (response) {
-        console.log(response)
+
         if (response.data.returnCode === '1111') {
           _this.customerDialogVisible = false
           _this.searchfamily()
@@ -269,12 +246,9 @@ export default {
           console.log(error)
         })
     },
-    // 关闭添加角色对话框
     closeRoleAddDialog () {
-      // 重置表单
       this.$refs.addfamilyFormRef.resetFields()
     },
-    // 编辑
     editFamily () {
       var _this = this
       axios.post('restful/family/updateFamily', _this.familyEditForm,
@@ -284,7 +258,7 @@ export default {
           },
           withCredentials: true
         }).then(function (response) {
-        console.log(response)
+
         if (response.data.returnCode === '1111') {
           _this.oldEditDialogVisible = false
           _this.$message({
@@ -303,9 +277,7 @@ export default {
           console.log(error)
         })
     },
-    // 删除
     async deleteFamily (familyId) {
-      console.log(familyId)
 
       var _this = this
       try {
@@ -314,7 +286,7 @@ export default {
           cancelButtonText: '取消',
           type: 'warning'
         })
-        console.log(familyId)
+
         axios.post('restful/family/deleteFamily', {'familyId': familyId},
           {
             headers: {
@@ -322,7 +294,7 @@ export default {
             },
             withCredentials: true
           }).then(function (response) {
-          console.log(response)
+
           if (response.data.returnCode === '1111') {
             _this.$message({
               type: 'success',
@@ -335,62 +307,25 @@ export default {
             console.log(error)
           })
       } catch (err) {
-        // 取消删除
         this.$message({
           type: 'info',
           message: '已取消删除'
         })
       }
     },
-    // 编辑信息
     handleeditFamily (index, row) {
       this.oldEditDialogVisible = true
       this.familyEditForm = Object.assign({}, row) // 解决修改弹出框数据时，表格数据会发生同步改变
-      // console.log(row)
-    },
-    handleSizeChange (val) {
-      console.log(`每页 ${val} 条`)
-      this.pageSize = val
-    },
-    handleCurrentChange (val) {
-      console.log(`当前页: ${val}`)
-      this.currentPage = val
-    },
-    changePage (val) {
-      console.log(`当前页: ${val}`)
-      this.currentPage = val
-    },
-    // 展示分配权限对话框
-    
 
-    // 给角色分配权限
-    
+    },
+    handleSizeChange (val) { this.pageSize = val; this.currentPage = 1; this.searchfamily(true)
+    },
+
+    changePage (val) { this.currentPage = val; this.searchfamily(true)
+    },
+
+
   }
 }
 
 </script>
-
-<style lang="less" scoped>
-  .sys-research {
-    height: 60px;
-    padding: 20px 20px 0;
-  }
-
-  .level1 {
-    border-bottom: 1px dotted #ccc;
-    padding: 10px 0;
-
-    &:last-child {
-      border: 0;
-    }
-  }
-
-  .level2 {
-    padding: 5px 0;
-  }
-
-  .level3 {
-    margin: 3px;
-  }
-
-</style>

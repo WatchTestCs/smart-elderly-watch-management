@@ -23,9 +23,9 @@
     <section class="announcement-panel">
       <div class="panel-heading">
         <div><h2>平台公告 <span v-if="!isLoading && !loadError" class="notice-count" :aria-label="'共 ' + total + ' 条公告'">{{ total }}</span></h2><p>面向家属发布的服务与照护信息</p></div>
-        <div class="search-box"><label class="search-label" for="admin-notice-search">按标题查找公告</label><el-input id="admin-notice-search" v-model="searchText" placeholder="搜索公告标题" :disabled="isLoading" clearable @clear="searchOlds" @keyup.enter="searchOlds"><template #append><el-button  icon="el-icon-search" aria-label="搜索公告" :loading="isLoading" @click="searchOlds"></el-button></template></el-input></div>
+        <form class="search-box" role="search" @submit.prevent="searchOlds"><label class="search-label" for="admin-notice-search">按标题查找公告</label><el-input id="admin-notice-search" v-model="searchText" placeholder="搜索公告标题" :disabled="isLoading" clearable @clear="searchOlds"><template #append><el-button  icon="el-icon-search" aria-label="搜索公告" :loading="isLoading" native-type="submit"></el-button></template></el-input></form>
       </div>
-      <el-table class="desktop-announcements" v-loading="isLoading" :data="tableData.slice((currentPage - 1) * pageSize, currentPage * pageSize)" @row-click="getDetail" row-class-name="clickable-row">
+      <el-table class="desktop-announcements" v-loading="isLoading" :data="tableData" @row-click="getDetail" row-class-name="clickable-row">
         <el-table-column type="index" label="序号" width="64" align="center"></el-table-column>
         <el-table-column prop="title" label="公告标题" min-width="220" show-overflow-tooltip>
           <template #default="scope" ><span class="announcement-title">{{ scope.row.title || '未命名公告' }}</span></template>
@@ -36,7 +36,7 @@
       </el-table>
       <div class="mobile-announcements" v-loading="isLoading">
         <div v-if="!tableData.length" class="table-empty" role="status"><img v-if="!loadError && !appliedSearch" src="/static/img/care-announcement-empty.webp" alt="" width="160" height="160"><strong>{{ emptyTitle }}</strong><span>{{ emptyDescription }}</span><el-button v-if="loadError" plain @click="searchOlds">重新加载</el-button><el-button v-else-if="appliedSearch" plain @click="clearSearch">清除搜索条件</el-button></div>
-        <button v-for="notice in tableData.slice((currentPage - 1) * pageSize, currentPage * pageSize)" :key="notice.textId" type="button" class="mobile-notice" :aria-label="'查看详情：' + (notice.title || '未命名公告')" @click="getDetail(notice)"><span><strong>{{ notice.title || '未命名公告' }}</strong><time>{{ notice.time || '暂无发布时间' }}</time></span><i class="el-icon-arrow-right" aria-hidden="true"></i></button>
+        <button v-for="notice in tableData" :key="notice.textId" type="button" class="mobile-notice" :aria-label="'查看详情：' + (notice.title || '未命名公告')" @click="getDetail(notice)"><span><strong>{{ notice.title || '未命名公告' }}</strong><time>{{ notice.time || '暂无发布时间' }}</time></span><i class="el-icon-arrow-right" aria-hidden="true"></i></button>
       </div>
       <div class="pagination-wrap" v-if="total > pageSize"><el-pagination @size-change="handleSizeChange" @current-change="changePage" v-model:current-page="currentPage" :page-size="pageSize" layout="total, sizes, prev, pager, next" :total="total"></el-pagination></div>
     </section>
@@ -65,7 +65,7 @@
 .metric-copy .metric-error { color: #a4262c; font-size: 16px; line-height: 1.7; }
 .metric-copy strong { color: #263632; font-size: 30px; line-height: 1.15; font-weight: 600; }
 .metric-copy small { color: #53645c; font-size: 14px; line-height: 1.5; }
-.overview-card :deep(.el-button--text) { min-height: 48px; flex: 0 0 auto; color: #28776a; font-size: 14px; }
+.overview-card :deep(.el-button.is-link) { min-height: 48px; flex: 0 0 auto; color: #28776a; font-size: 14px; }
 .overview-note { grid-column: 1 / -1; display: flex; gap: 12px; align-items: flex-start; padding: 16px 28px; border-top: 1px solid #e2e9e1; background: #f3f6f1; }
 .note-icon { color: #28776a; font-size: 17px; }
 .overview-note strong { color: #43534b; font-size: 14px; }
@@ -77,9 +77,6 @@
 .search-label { display: block; margin-bottom: 8px; font-size: 14px; color: #53645c; }
 .notice-count { display: inline-block; min-width: 28px; margin-left: 6px; padding: 1px 8px; border-radius: 6px; background: #edf2e6; color: #235442; font-size: 14px; text-align: center; vertical-align: middle; }
 .search-box { width: min(100%, 280px); }
-.search-box :deep(.el-input__inner) { height: 48px; }
-.search-box :deep(.el-input-group__append button) { min-height: 48px; min-width: 48px; color: #235442; }
-.search-box :deep(.el-input-group__append) { background: #f6f8f6; border-color: #dce5df; }
 .announcement-title { color: #33453c; font-weight: 500; }
 .table-empty { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 28px 10px; color: #53645c; }
 .table-empty img { display: block; object-fit: contain; }
@@ -134,21 +131,21 @@ export default {
         this.num = response.data.positionDtos.filter(item => item.status === 1 || item.status === '1').length
       }).catch(() => { this.positionError = '摔倒统计暂时无法加载' }).then(() => { this.positionLoading = false })
     },
-    handleSizeChange (val) { this.pageSize = val; this.currentPage = 1 },
-    changePage (val) { this.currentPage = val },
+    handleSizeChange (val) { this.pageSize = val; this.currentPage = 1; this.searchOlds(true) },
+    changePage (val) { this.currentPage = val; this.searchOlds(true) },
     getDetail (row) { this.$router.push({ path: '/textMainUser', query: { textId: row.textId, picId: row.picId } }) },
     addtext () { this.$router.push('/textTwo') },
     clearSearch () { this.searchText = ''; this.searchOlds() },
-    searchOlds () {
+    searchOlds (keepPage = false) {
+      if (keepPage !== true) this.currentPage = 1
       if (this.isLoading) return
-      this.currentPage = 1
       this.appliedSearch = this.searchText.trim()
       this.isLoading = true
       this.loadError = ''
-      return axios.post('restful/text/select', { title: this.appliedSearch }, { withCredentials: true }).then((response) => {
+      return axios.post('restful/text/select', { page: this.currentPage, pageSize: this.pageSize,  title: this.appliedSearch }, { withCredentials: true }).then((response) => {
         if (!Array.isArray(response.data.texts)) throw new Error('missing notices')
         this.tableData = response.data.texts
-        this.total = this.tableData.length
+        this.total = response.data.total ?? this.tableData.length
       }).catch(() => {
         this.loadError = '请检查服务连接后重试'
         this.tableData = []

@@ -1,56 +1,41 @@
 package com.example.careold.dao;
 
-import com.example.careold.domain.AlarmProcess;
 import com.example.careold.domain.Customer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
+import com.example.careold.domain.PageRequest;
+import com.example.careold.domain.PageResult;
 
 @Repository
 public class CustomerJdbcDao implements CustomerDao{
-    private static final Logger LOG = LoggerFactory.getLogger(CustomerJdbcDao.class);
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
     @Override
-    public List<Customer> getCustomer(String customerName) {
-        String sql=null;
-        List<Customer> customers;
-        if(customerName==null || "".equals(customerName)){
-            sql="SELECT * FROM customer";
-            customers=jdbcTemplate.query(sql,new BeanPropertyRowMapper<>(Customer.class));
-        }else{
-            sql="SELECT * FROM customer WHERE customer_name like ?";
-            customers=jdbcTemplate.query(sql,new BeanPropertyRowMapper<>(Customer.class),"%"+customerName+"%");
-        }
-        return customers;
+    public PageResult<Customer> getCustomer(String customerName, PageRequest page) {
+        String value=customerName==null?"":customerName;
+        return PagedQuery.query(jdbcTemplate,"SELECT * FROM customer WHERE (?='' OR customer_name LIKE ?) ORDER BY customer_id",Customer.class,page,value,"%"+value+"%");
     }
 
     @Override
     public int addCustomer(Customer customer) {
         String sql="insert into customer(customer_name,customer_age,customer_sex,customer_phone,customer_address) values(?,?,?,?,?)";
-        int row=jdbcTemplate.update(sql,customer.getCustomerName(),customer.getCustomerAge(),customer.getCustomerSex(),customer.getCustomerPhone(),customer.getCustomerAddress());
-        return row;
+        return jdbcTemplate.update(sql,customer.getCustomerName(),customer.getCustomerAge(),customer.getCustomerSex(),customer.getCustomerPhone(),customer.getCustomerAddress());
     }
 
     @Override
     public int updateCustomer(Customer customer) {
         String sql="update customer set customer_name=?,customer_age=?,customer_sex=?,customer_phone=?,customer_address=? where customer_id=?";
-        int row=jdbcTemplate.update(sql,customer.getCustomerName(),customer.getCustomerAge(),customer.getCustomerSex(),customer.getCustomerPhone(),customer.getCustomerAddress(),customer.getCustomerId());
-        return row;
+        return jdbcTemplate.update(sql,customer.getCustomerName(),customer.getCustomerAge(),customer.getCustomerSex(),customer.getCustomerPhone(),customer.getCustomerAddress(),customer.getCustomerId());
     }
 
     @Override
     public int deleteCustomer(int customerId) {
         String sql="delete from customer where customer_id=?";
-        int row=jdbcTemplate.update(sql,customerId);
-        return row;
+        return jdbcTemplate.update(sql,customerId);
     }
 
 }

@@ -17,21 +17,18 @@ public class PicJdbcDao implements PicDao{
     @Override
     public List<Pic> getPic(int picId) {
         String sql="SELECT * FROM pic WHERE pic_id=?";
-        List<Pic> pics=jdbcTemplate.query(sql,new BeanPropertyRowMapper<>(Pic.class),picId);
-        return pics;
+        return jdbcTemplate.query(sql,new BeanPropertyRowMapper<>(Pic.class),picId);
     }
 
     @Override
     public int addPic(Pic pic) {
         String sql="INSERT INTO pic(pic_id,pic_name) VALUES(?,?)";
-        int rows=jdbcTemplate.update(sql,pic.getPicId(),pic.getPicName());
-        return rows;
+        return jdbcTemplate.update(sql,pic.getPicId(),pic.getPicName());
     }
 
     @Override
     public int deletePic(int picId) {
         String sql="DELETE FROM pic WHERE pic_id=?";
-        int rows=jdbcTemplate.update(sql,picId);
-        return rows;
+        return jdbcTemplate.update(sql,picId);
     }
 }

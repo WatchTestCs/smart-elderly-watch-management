@@ -1,13 +1,11 @@
 package com.example.careold.controller;
 
 import com.example.careold.common.DateConst;
-import com.example.careold.common.DefineData;
 import com.example.careold.common.ReturnCodeUtil;
 import com.example.careold.common.SmsUtil;
 import com.example.careold.dao.FamilyDao;
 import com.example.careold.dao.PicDao;
 import com.example.careold.dao.TextDao;
-import com.example.careold.domain.FamilyDto;
 import com.example.careold.domain.Pic;
 import com.example.careold.domain.Text;
 import java.util.LinkedHashMap;
@@ -43,8 +41,7 @@ public class TextController {
     public LinkedHashMap selectText(@RequestBody LinkedHashMap param){
         LinkedHashMap result=new LinkedHashMap();
         String title=param.get("title").toString();
-        List<Text> texts = textDao.selectTextAll(title);
-        result.put("texts",texts);
+        textDao.selectTextAll(title,com.example.careold.domain.PageRequest.from(param)).putInto(result,"texts");
         return result;
     }
 
@@ -54,7 +51,7 @@ public class TextController {
         LinkedHashMap result=new LinkedHashMap();
         String textId=param.get("textId").toString();
         Text text=textDao.selectTextDetail(Integer.parseInt(textId));
-        List<Pic> pics=picDao.getPic(text.getPicId());
+        List<Pic> pics=text.getPicId()==null?List.of():picDao.getPic(text.getPicId());
         result.put("text",text);
         result.put("pics",pics);
         return result;
@@ -84,12 +81,7 @@ public class TextController {
         text.setPicId(picId);
         int rows=textDao.addText(text);
         if(rows==1){
-            List<FamilyDto> familyDtos=familyDao.findFamily(null);
-            for(int i=0;i<familyDtos.size();i++){
-                smsUtil.sendMessage(familyDtos.get(i).getFamilyPhone());
-            }
-            List<Text> texts = textDao.selectTextAll(null);
-            result.put("texts",texts);
+            for (String phone : familyDao.notificationPhones()) smsUtil.sendMessage(phone);
             result.put(ReturnCodeUtil.returnCode,ReturnCodeUtil.successCode);
             return result;
         }
@@ -103,12 +95,10 @@ public class TextController {
     public LinkedHashMap deleteText(@RequestBody LinkedHashMap param){
         LinkedHashMap result=new LinkedHashMap();
         String textId=param.get("textId").toString();
-        String picId=param.get("picId").toString();
+        Text existing=textDao.selectTextDetail(Integer.parseInt(textId));
         int rows=textDao.deleteText(Integer.parseInt(textId));
-        picDao.deletePic(Integer.parseInt(picId));
+        if (existing.getPicId()!=null) picDao.deletePic(existing.getPicId());
         if(rows==1){
-            List<Text> texts = textDao.selectTextAll(null);
-            result.put("texts",texts);
             result.put(ReturnCodeUtil.returnCode,ReturnCodeUtil.successCode);
             return result;
         }
@@ -125,12 +115,13 @@ public class TextController {
         String textMain=param.get("textMain").toString();
         String time= DateConst.dateToString(new Date(),DateConst.DATE_MODEL_1);
         String textId=param.get("textId").toString();
-        String picId=param.get("picId").toString();
+        Text existing=textDao.selectTextDetail(Integer.parseInt(textId));
+        int picId=existing.getPicId()==null?textDao.nextPicId():existing.getPicId();
         List fileList=(List)param.get("fileListName");
-        picDao.deletePic(Integer.parseInt(picId));
+        if (existing.getPicId()!=null) picDao.deletePic(picId);
         Pic pic1=new Pic();
         for(int i=0;i<fileList.size();i++){
-            pic1.setPicId(Integer.parseInt(picId));
+            pic1.setPicId(picId);
             pic1.setPicName(fileList.get(i).toString());
             picDao.addPic(pic1);
         }
@@ -139,10 +130,9 @@ public class TextController {
         text.setTextMain(textMain);
         text.setTime(time);
         text.setTextId(Integer.parseInt(textId));
+        text.setPicId(picId);
         int rows=textDao.update(text);
         if(rows==1){
-            List<Text> texts = textDao.selectTextAll(null);
-            result.put("texts",texts);
             result.put(ReturnCodeUtil.returnCode,ReturnCodeUtil.successCode);
             return result;
         }

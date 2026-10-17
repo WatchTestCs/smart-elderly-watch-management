@@ -2,8 +2,8 @@
   <div class="roles">
     
     <div class="sys-research">
-      <el-row class="row-search">
-        <el-col :span="8">
+      <form class="row-search" role="search" @submit.prevent="searchWatchs">
+        <div class="search-field">
           
           <label class="table-search-label" for="search-watch">长者姓名</label>
           <el-input id="search-watch"
@@ -13,13 +13,13 @@
             <template #append><el-button aria-label="查询长者姓名"
               
               icon="el-icon-search"
-              @click="searchWatchs"></el-button></template>
+              native-type="submit"></el-button></template>
           </el-input>
-        </el-col>
-        <el-col :span="4">
+        </div>
+        <div class="toolbar-actions">
           <el-button plain @click="watchDialogVisible = true">添加手表</el-button>
-        </el-col>
-      </el-row>
+        </div>
+      </form>
     </div>
     
     <el-dialog
@@ -50,8 +50,7 @@
       <el-button type="primary" @click="addWatchs('addwatchFormRef')">确 定</el-button>
     </span></template>
     </el-dialog>
-    
-    
+
     <el-dialog
       title="设备编辑"
       v-model="watchEditDialogVisible"
@@ -79,13 +78,11 @@
       <el-button type="primary" @click="editWatch">确 定</el-button>
     </span></template>
     </el-dialog>
-    
-    
-    <el-table class="adaptive-record-table" :data="watchsList.slice((currentPage-1)*pageSize,currentPage*pageSize)"
+
+    <el-table class="adaptive-record-table" :data="watchsList"
     style="width: 100%" border>
     <template #empty><div  class="care-empty-state"><strong>暂无监测阈值档案</strong><span>添加手表或调整搜索条件后，档案会显示在这里。</span></div></template>
-    
-      
+
       <el-table-column prop="deviceId" label="手表ID" width="100" align="center"></el-table-column>
       <el-table-column prop="name" label="佩戴老人" width="160" align="center"></el-table-column>
       <el-table-column prop="bpf" label="血压高值" width="160" align="center"></el-table-column>
@@ -105,7 +102,7 @@
         </template>
       </el-table-column>
     </el-table>
-    <record-cards :records="watchsList.slice((currentPage-1)*pageSize,currentPage*pageSize)" :fields='[{"key":"deviceId","label":"手表ID"},{"key":"bpf","label":"血压高值"},{"key":"bpl","label":"血压低值"},{"key":"hrf","label":"心率高值"},{"key":"hrl","label":"心率低值"}]' label="监测阈值档案" title-key="name" key-field="deviceId" time-key="opTime">
+    <record-cards :records="watchsList" :fields='[{"key":"deviceId","label":"手表ID"},{"key":"bpf","label":"血压高值"},{"key":"bpl","label":"血压低值"},{"key":"hrf","label":"心率高值"},{"key":"hrl","label":"心率低值"}]' label="监测阈值档案" title-key="name" key-field="deviceId" time-key="opTime">
       <template #actions="scope"  ><el-button size="small" plain type="primary" icon="el-icon-edit"
                      @click="handleEditwatch(scope.$index, scope.row)">编辑
           </el-button>
@@ -128,7 +125,6 @@
 </template>
 
 <script>
-// 引入
 import axios from 'axios'
 import RecordCards from '@/components/RecordCards.vue'
 
@@ -158,30 +154,20 @@ export default {
       pageSize: 10,
       currentPage: 1,
       watchsList: [],
-      // 控制分配权限对话框的展示和隐藏
-      
 
-      // 树形控件的数据
-      
-
-      // Tree树形控件，默认使用数据中的 label 属性作为节点名称，使用 children 属性指定该接待你的子节点
-      // 但是，如果我们自己的数据结构与默认的结构不同，可以通过 defaultProps 来修改默认的两个属性
-      
-      // 当前被分配权限的角色id
-      
     }
   },
   created () {
     this.searchWatchs()
   },
   methods: {
-    // 查询
-    searchWatchs () {
+    searchWatchs (keepPage = false) {
+      if (keepPage !== true) this.currentPage = 1
       var _this = this
         var oldName = _this.searchText
         
         axios.post('restful/watchInfo/select',
-          {
+          { page: this.currentPage, pageSize: this.pageSize,
             'oldName': oldName === '' ? '' : _this.searchText
           },
           {
@@ -191,15 +177,14 @@ export default {
             withCredentials: true
           }).then(function (response) {
           _this.watchsList = response.data.watchDtos
-          _this.total = response.data.watchDtos.length
-      console.log(_this.watchsList)
+          _this.total = response.data.total ?? response.data.watchDtos.length
+
         })
           .catch(function (error) {
             console.log(error)
           })
       
     },
-    // 添加角色
     addWatchs () {
       var _this = this
       axios.post('restful/watchInfo/add',
@@ -210,7 +195,7 @@ export default {
           },
           withCredentials: true
         }).then(function (response) {
-        console.log(response)
+
         if (response.data.returnCode === '1111') {
           _this.watchDialogVisible = false
           _this.searchWatchs()
@@ -229,12 +214,9 @@ export default {
           console.log(error)
         })
     },
-    // 关闭添加角色对话框
     closeRoleAddDialog () {
-      // 重置表单
       this.$refs.addwatchFormRef.resetFields()
     },
-    // 编辑
     editWatch () {
       var _this = this
       axios.post('restful/watchInfo/update', _this.watchEditForm,
@@ -244,7 +226,7 @@ export default {
           },
           withCredentials: true
         }).then(function (response) {
-        console.log(response)
+
         if (response.data.returnCode === '1111') {
           _this.watchEditDialogVisible = false
           _this.$message({
@@ -263,9 +245,7 @@ export default {
           console.log(error)
         })
     },
-    // 删除
     async deleteRole (deviceId) {
-      console.log(deviceId)
 
       var _this = this
       try {
@@ -274,7 +254,7 @@ export default {
           cancelButtonText: '取消',
           type: 'warning'
         })
-        console.log(deviceId)
+
         axios.post('restful/watchInfo/delete', {'deviceId': deviceId},
           {
             headers: {
@@ -282,7 +262,7 @@ export default {
             },
             withCredentials: true
           }).then(function (response) {
-          console.log(response)
+
           if (response.data.returnCode === '1111') {
             _this.$message({
               type: 'success',
@@ -295,62 +275,25 @@ export default {
             console.log(error)
           })
       } catch (err) {
-        // 取消删除
         this.$message({
           type: 'info',
           message: '已取消删除'
         })
       }
     },
-    // 编辑信息
     handleEditwatch (index, row) {
       this.watchEditDialogVisible = true
       this.watchEditForm = Object.assign({}, row) // 解决修改弹出框数据时，表格数据会发生同步改变
-      // console.log(row)
-    },
-    handleSizeChange (val) {
-      console.log(`每页 ${val} 条`)
-      this.pageSize = val
-    },
-    handleCurrentChange (val) {
-      console.log(`当前页: ${val}`)
-      this.currentPage = val
-    },
-    changePage (val) {
-      console.log(`当前页: ${val}`)
-      this.currentPage = val
-    },
-    // 展示分配权限对话框
-    
 
-    // 给角色分配权限
-    
+    },
+    handleSizeChange (val) { this.pageSize = val; this.currentPage = 1; this.searchWatchs(true)
+    },
+
+    changePage (val) { this.currentPage = val; this.searchWatchs(true)
+    },
+
+
   }
 }
 
 </script>
-
-<style lang="less" scoped>
-  .sys-research {
-    height: 60px;
-    padding: 20px 20px 0;
-  }
-
-  .level1 {
-    border-bottom: 1px dotted #ccc;
-    padding: 10px 0;
-
-    &:last-child {
-      border: 0;
-    }
-  }
-
-  .level2 {
-    padding: 5px 0;
-  }
-
-  .level3 {
-    margin: 3px;
-  }
-
-</style>

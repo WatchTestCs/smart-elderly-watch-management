@@ -37,9 +37,9 @@ class EmbeddedDatabaseTests {
         mvc.perform(post("/restful/setup").with(csrf()).header("X-Suining-Desktop","acceptance-only-desktop-token").contentType("application/json").content(input)).andExpect(status().isOk());
         mvc.perform(post("/restful/setup").with(csrf()).header("X-Suining-Desktop","acceptance-only-desktop-token").contentType("application/json").content(input)).andExpect(status().isConflict());
         assertTrue(PasswordUtil.matches("Acceptance12345",jdbc.queryForObject("select password from users",String.class)));
-        assertEquals(0, positions.getPosition(null).size());
-        assertEquals(0, rates.getRatepre(null,null,null).size());
-        assertEquals(0, steps.getStepSleep(null,null,null).size());
+        assertEquals(0, positions.getPosition(null,new com.example.careold.domain.PageRequest(1,20)).items().size());
+        assertEquals(0, rates.getRatepre(null,null,null,new com.example.careold.domain.PageRequest(1,20)).items().size());
+        assertEquals(0, steps.getStepSleep(null,null,null,new com.example.careold.domain.PageRequest(1,20)).items().size());
         assertTrue(notices.nextPicId() < notices.nextPicId());
         jdbc.update("insert into oldperson(old_id,name,sex,be_time,device_id) values(1,'测试长辈','男',CURRENT_DATE,1)");
         jdbc.update("insert into device(device_id,device_no,secret,old_id,status,create_time) values(1,'ACCEPTANCE','12345678901234567890123456789012',1,1,CURRENT_TIMESTAMP)");
@@ -63,5 +63,18 @@ class EmbeddedDatabaseTests {
                 .content("{\"title\":\"内置数据库公告验收\",\"textMain\":\"本机记录\",\"fileListName\":[\"accepted.jpg\"]}"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.returnCode").value("1111"));
         assertEquals(1,jdbc.queryForObject("select count(*) from pic",Integer.class));
+        jdbc.update("insert into text(text_id,title,text_main) values(999,'无附图的历史公告','验收')");
+        mvc.perform(post("/restful/text/selectDetail").session(session).with(csrf()).contentType("application/json").content("{\"textId\":999}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.pics").isEmpty());
+        mvc.perform(post("/restful/text/update").session(session).with(csrf()).contentType("application/json")
+                .content("{\"textId\":999,\"title\":\"更新历史公告\",\"textMain\":\"验收\",\"fileListName\":[\"new.png\"],\"picId\":-123}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.returnCode").value("1111"));
+        int group=jdbc.queryForObject("select pic_id from text where text_id=999",Integer.class);
+        assertTrue(group>0);
+        assertEquals("new.png",jdbc.queryForObject("select pic_name from pic where pic_id=?",String.class,group));
+        mvc.perform(post("/restful/text/delete").session(session).with(csrf()).contentType("application/json")
+                .content("{\"textId\":999,\"picId\":-123}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.returnCode").value("1111"));
+        assertEquals(0,jdbc.queryForObject("select count(*) from pic where pic_id=?",Integer.class,group));
     }
 }

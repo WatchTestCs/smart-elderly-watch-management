@@ -16,7 +16,6 @@ public class DateConst {
 	
 	public static final String DATE_MODEL_8 = "yyyyMMddHHmmss";
 	public static String dateToString(Date date,String dateModel){
-		//可以方便地修改日期格式
 		SimpleDateFormat dateFormat = new SimpleDateFormat( dateModel );
 		return dateFormat.format( date );
 	}

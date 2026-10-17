@@ -50,8 +50,7 @@ public class SaidController {
     @PostMapping("/selectByUser")
     public LinkedHashMap selectByUser(@RequestBody LinkedHashMap param){
         LinkedHashMap result=new LinkedHashMap();
-        List<SaidDto> saidDtos=saidDao.getSaidForAdmin();
-        result.put("saidDtos",saidDtos);
+        saidDao.getSaidForAdmin(com.example.careold.domain.PageRequest.from(param)).putInto(result,"saidDtos");
         return result;
 
     }

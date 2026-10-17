@@ -161,3 +161,17 @@ html.large-text #app .care-app .device-record-actions .el-button, html.large-tex
 }
 
 @media (max-width: 900px) { #app .care-app .adaptive-record-table { display: none; } }
+
+/* Scoped additive rules from 2026-10-16 screen-fit changes; preserve preview tokens. */
+#app .care-app .roles .search-field { flex: 0 1 380px; min-width: 240px; max-width: 100%; }
+#app .care-app .roles .toolbar-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+#app .care-app .roles .row-search > .el-badge,
+#app .care-app .roles .row-search > .el-button,
+#app .care-app .roles .toolbar-actions .el-button { margin-left: 0; }
+#app .care-app .roles .toolbar-actions .el-button { min-height: var(--care-control-height); }
+#app .care-app .roles .row-search > .el-badge { display: inline-flex; }
+#app .care-app .el-dialog__footer .dialog-footer { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 12px; }
+#app .care-app .el-dialog__footer .dialog-footer .el-button { margin: 0; }
+@media(max-width:600px) {
+  #app .care-app .roles .search-field { flex-basis: 100%; min-width: 0; width: 100%; }
+}

@@ -75,17 +75,19 @@ public class InviteCodeController {
         LinkedHashMap result = new LinkedHashMap();
         String state = paramValue(param, "state", "all").toLowerCase();
 
-        List<InviteCodeDto> all = inviteCodeDao.findInviteCodes(-1);
+        if (!java.util.Set.of("all","unused","used","expired").contains(state))
+            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST,"邀请状态不正确");
+        var page = inviteCodeDao.findInviteCodes(state,com.example.careold.domain.PageRequest.from(param));
         List<LinkedHashMap> rows = new ArrayList<>();
         Date now = new Date();
-        for (InviteCodeDto dto : all) {
+        for (InviteCodeDto dto : page.items()) {
             String status = statusOf(dto, now);
-            if (!matchState(state, status)) {
-                continue;
-            }
             rows.add(toView(dto, status, now));
         }
         result.put("inviteCodes", rows);
+        result.put("total",page.total());
+        result.put("page",page.page());
+        result.put("pageSize",page.pageSize());
         result.put(ReturnCodeUtil.returnCode, ReturnCodeUtil.successCode);
         return result;
     }
@@ -95,6 +97,7 @@ public class InviteCodeController {
      * 入参：oldId（必填）、expireDays（可选，为空表示长期有效）
      */
     @ResponseBody
+    @Transactional
     @PostMapping("/create")
     public LinkedHashMap create(@RequestBody LinkedHashMap param) {
         LinkedHashMap result = new LinkedHashMap();
@@ -105,7 +108,9 @@ public class InviteCodeController {
             result.put("message", "请选择邀请码绑定的老人");
             return result;
         }
-        int oldId = Integer.parseInt(oldIdStr);
+        int oldId;
+        try { oldId = Integer.parseInt(oldIdStr); }
+        catch (NumberFormatException error) { throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "老人编号超出允许范围"); }
         OldPerson oldPerson = oldPersonDao.getOldPersonById(oldId);
         if (oldPerson == null) {
             result.put(ReturnCodeUtil.returnCode, ReturnCodeUtil.falseCode);
@@ -170,9 +175,7 @@ public class InviteCodeController {
             Integer id = inviteCodeDao.save(inviteCode);
             if (id == null) {
                 logger.error("生成邀请码失败，oldId={}", oldId);
-                result.put(ReturnCodeUtil.returnCode, ReturnCodeUtil.falseCode);
-                result.put("message", "生成邀请码失败，请稍后重试");
-                return result;
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "生成邀请码失败，请稍后重试");
             }
             codes.add(inviteCode.getCode());
         }
@@ -295,8 +298,8 @@ public class InviteCodeController {
         if (!PHONE_PATTERN.matcher(familyPhone).matches()) {
             return fail(result, "请输入正确的11位手机号");
         }
-        if (familyPassword.length() < 6 || familyPassword.length() > 20 || familyPassword.getBytes(java.nio.charset.StandardCharsets.UTF_8).length > 72) {
-            return fail(result, "密码长度需为6-20个字符");
+        if (!com.example.careold.common.PasswordUtil.validNewPassword(familyPassword)) {
+            return fail(result, "密码须为12–20位且包含字母和数字");
         }
         if (familyRelation.length() > 10) {
             return fail(result, "与老人关系长度不能超过10个字符");
@@ -402,15 +405,6 @@ public class InviteCodeController {
         }
     }
 
-    private boolean matchState(String state, String status) {
-        if (state == null || state.length() == 0 || "all".equals(state)) {
-            return true;
-        }
-        if ("unused".equals(state) || "used".equals(state) || "expired".equals(state)) {
-            return state.equals(status);
-        }
-        return true;
-    }
 
     private LinkedHashMap toView(InviteCodeDto dto, String status, Date now) {
         LinkedHashMap row = new LinkedHashMap();

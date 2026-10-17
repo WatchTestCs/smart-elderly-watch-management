@@ -140,3 +140,7 @@ cd 智慧养老手表管理系统
 ## 许可与素材
 
 项目采用 [MIT 许可](LICENSE)。第三方组件沿用各自许可；软件附带 Electron/Chromium 许可、Java legal 目录、字体许可与组件清单。历史原包保持在原有 Release，当前预览源码不包含用户数据库、签名私钥、安装包或构建缓存。
+
+## 待合并的 2026-10-16 修复
+
+[待验收修复清单](docs/PREVIEW_ISSUE_REMEDIATION.md)记录了分页、事务、Flyway 数据迁移、地图与桌面签名改造；[本轮验收数据](docs/preview-remediation-validation.json)区分原工作区报告与远程 CI。**这些修改当前处于草稿 PR 审核阶段，尚未作为新的安装版发布，也不代表全部真实设备测试通过。**

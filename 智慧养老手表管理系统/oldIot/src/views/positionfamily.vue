@@ -20,14 +20,14 @@
       <el-table-column label="查看" width="170" align="center">
       	<template #default="scope" >
 
-        <el-button v-if="mapAvailable" size="small" plain type="success" @click="showLocation(scope.row)">
+        <el-button size="small" plain type="success" @click="showLocation(scope.row)">
           地图查看
-        </el-button><span v-else class="unknown-state">地图暂不可用</span>
+        </el-button>
       	</template>
       </el-table-column>
     </el-table>
     <section v-if="positionList.length" class="family-record-cards" aria-label="位置和安全记录">
-      <article v-for="(item, index) in positionList" :key="index" class="family-record-card">
+      <article v-for="item in positionList" :key="item.oldId" class="family-record-card">
         <h2>{{ item.name || '位置记录' }}</h2>
         <dl>
           <dt>安全状态</dt>
@@ -35,17 +35,11 @@
           <dt>记录时间</dt><dd>{{ item.beTime || '暂无时间信息' }}</dd>
           <dt>位置坐标</dt><dd>{{ item.lng }}, {{ item.lat }}</dd>
         </dl>
-        <el-button v-if="mapAvailable" type="primary" @click="showLocation(item)">在地图中查看位置</el-button>
-        <p v-else class="map-card-note">地图暂不可用；上方仍可查看位置坐标。</p>
+        <el-button type="primary" @click="showLocation(item)">在地图中查看位置</el-button>
       </article>
     </section>
     <div v-else-if="!isLoading" class="family-record-empty">{{ loadError || '暂时没有位置和安全记录。' }}</div>
-
-	<section class="map-panel">
-    <div class="map-heading"><div><h2>位置地图</h2><p>地图可用时，选择记录中的“地图查看”定位对应坐标。</p></div></div>
-    <div v-if="mapAvailable" id="allmap"></div>
-    <div v-else class="map-unavailable"><i class="el-icon-location-outline"></i><strong>地图服务尚未配置</strong><span>上方仍显示手表最近上传的时间和位置坐标；如需地图，请联系平台管理员配置地图服务。</span></div>
-	</section>
+    <position-map :selection="selectedLocation" />
   </div>
 
 </template>
@@ -53,8 +47,10 @@
 <script>
 
 import axios from 'axios'
+import PositionMap from '@/components/PositionMap.vue'
 
 export default {
+  components: { PositionMap },
   data () {
     return {
       oldId: '',
@@ -62,22 +58,13 @@ export default {
       positionList: [],
       isLoading: false,
       loadError: '',
-      mapAvailable: false,
-      mapInstance: null,
-
-			lng: '',
-			lat: ''
+      selectedLocation: null,
     }
   },
   created () {
 
 		this.oldId=localStorage.getItem('oldIdfamily')
     this.searchposition()
-
-  },
-
-  mounted(){
-	  this.ready()
 
   },
   methods: {
@@ -109,40 +96,8 @@ export default {
           _this.isLoading = false
         })
     },
-
-	ready(){
-		this.mapAvailable = typeof window.BMap !== 'undefined'
-	},
-	theLocation(){
-		var BMap = window.BMap
-		var longitude = Number(this.lng)
-		var latitude = Number(this.lat)
-		if (!this.mapAvailable || !BMap || !isFinite(longitude) || !isFinite(latitude) || longitude === 0 || latitude === 0) {
-			this.$message({ type: 'warning', message: '当前记录没有可用坐标或地图服务未就绪' })
-			return
-		}
-		var map = this.mapInstance
-		if (!map) {
-			map = new BMap.Map('allmap')
-			this.mapInstance = map
-			map.enableScrollWheelZoom(true)
-		}
-		map.centerAndZoom(new BMap.Point(longitude, latitude), 16)
-		map.clearOverlays()
-		var new_point = new BMap.Point(longitude, latitude)
-		var marker = new BMap.Marker(new_point)
-		map.addOverlay(marker)
-		map.panTo(new_point)
-	},
-
     showLocation (curRole) {
-
-			var _this=this
-
-      _this.lng=curRole.lng
-			_this.lat=curRole.lat
-
-			this.theLocation()
+      this.selectedLocation = { ...curRole }
     },
 
     }
@@ -150,17 +105,7 @@ export default {
 
 </script>
 
-<style lang="less" scoped>
-  .map-panel { margin-top: 24px; padding: 24px; background: #fff; border: 1px solid #e7ecef; border-radius: 12px; }
-  .map-heading { margin-bottom: 16px; }
-  .map-heading h2 { margin: 0; font-size: 18px; color: #243746; }
-  .map-heading p { margin: 8px 0 0; color: #53645c; font-size: 16px; line-height: 1.7; }
-  .map-unavailable { min-height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: #53645c; text-align: center; font-size: 16px; line-height: 1.7; }
-  .map-unavailable i { font-size: 28px; color: #91a4ad; }
-  .map-unavailable strong { color: #344955; }
-  .map-unavailable span { max-width: 520px; line-height: 1.6; }
+<style scoped>
   .position-empty, .unknown-state { color: #53645c; font-size: 16px; }
-
-  #allmap { height: 420px; width: 100%; border-radius: 8px; }
 
 </style>

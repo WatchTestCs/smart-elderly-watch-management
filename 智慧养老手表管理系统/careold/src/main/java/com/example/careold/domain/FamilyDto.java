@@ -7,7 +7,6 @@ public class FamilyDto {
     private String familyPhone;
     private String familySex;
     private String familyAddress;
-    private String familyPassword;
     private String name;
     private Integer oldId;
     private String familyTouPic;
@@ -66,15 +65,6 @@ public class FamilyDto {
 
     public void setFamilyAddress(String familyAddress) {
         this.familyAddress = familyAddress;
-    }
-
-    @com.fasterxml.jackson.annotation.JsonIgnore
-    public String getFamilyPassword() {
-        return familyPassword;
-    }
-
-    public void setFamilyPassword(String familyPassword) {
-        this.familyPassword = familyPassword;
     }
 
     public String getName() {

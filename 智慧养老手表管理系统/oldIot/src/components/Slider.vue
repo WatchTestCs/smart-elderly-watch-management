@@ -45,14 +45,14 @@ export default {
 .sidebar-label { padding: 24px 22px 12px; color: #c3d5c7; font-size: 13px; font-weight: 600; letter-spacing: .1em; }
 .care-menu { border-right: 0; padding: 0 10px; background: transparent; }
 .care-menu :deep(.el-menu) { background: transparent; }
-.care-menu .el-menu-item, .care-menu :deep(.el-submenu__title) { height: 48px; line-height: 48px; margin: 3px 0; border-radius: 8px; color: #e0ebe0; font-size: 15px; }
-.care-menu .el-menu-item i, .care-menu :deep(.el-submenu__title i) { color: #c3d5c7; font-size: 17px; }
-.care-menu .el-menu-item:hover, .care-menu :deep(.el-submenu__title:hover) { background: #2b5143; color: #fff; }
+.care-menu .el-menu-item, .care-menu :deep(.el-sub-menu__title) { height: 48px; line-height: 48px; margin: 3px 0; border-radius: 8px; color: #e0ebe0; font-size: 15px; }
+.care-menu .el-menu-item i, .care-menu :deep(.el-sub-menu__title i) { color: #c3d5c7; font-size: 17px; }
+.care-menu .el-menu-item:hover, .care-menu :deep(.el-sub-menu__title:hover) { background: #2b5143; color: #fff; }
 .care-menu .el-menu-item.is-active { background: #e9efdf; color: #183e33; font-weight: 600; }
 .care-menu .el-menu-item.is-active i { color: #183e33; }
-.care-menu .el-menu-item:focus-visible, .care-menu :deep(.el-submenu__title:focus-visible) { outline: 3px solid #e9efdf; outline-offset: -3px; }
+.care-menu .el-menu-item:focus-visible, .care-menu :deep(.el-sub-menu__title:focus-visible) { outline: 3px solid #e9efdf; outline-offset: -3px; }
 .care-menu :deep(.el-menu-item-group__title) { display: none; }
-.care-menu :deep(.el-submenu .el-menu-item) { min-width: 0; padding-left: 48px !important; }
+.care-menu :deep(.el-sub-menu .el-menu-item) { min-width: 0; padding-left: 48px !important; }
 .sidebar-note { display: flex; gap: 8px; align-items: flex-start; margin: 28px 16px 20px; padding: 12px; border: 1px solid #587365; border-radius: 9px; color: #d7e3d8; font-size: 13px; line-height: 1.65; }
 .note-dot { width: 7px; height: 7px; margin-top: 6px; flex: 0 0 7px; border-radius: 50%; background: #c1d899; }
 @media (max-width: 900px) {

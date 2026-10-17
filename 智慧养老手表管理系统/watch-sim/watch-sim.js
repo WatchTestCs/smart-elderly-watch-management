@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * 模拟手表端（阶段2）
+ * 模拟手表端
  *
  * 作用：在没有真机的情况下，按真实手表的方式调用设备侧接口，
  *      让网页上的心率血压、睡眠步数、位置、摔倒告警数据真正“动起来”。
@@ -27,7 +27,7 @@ const CONFIG_FILE = path.join(__dirname, 'watch-sim.config.json');
 const HELP = [
   '模拟手表端 —— 参数说明',
   '',
-  '  --server <url>       后端地址，默认读配置文件（如 http://192.168.1.5:8795）',
+  '  --server <url>       后端地址；未指定时优先发现正在运行的本机岁宁',
   '  --deviceNo <编号>    设备号（默认 WATCH0001）',
   '  --secret <密钥>      设备密钥（或设置 WATCH_DEVICE_SECRET）',
   '  --interval <秒>      上报间隔，默认 3 秒',
@@ -127,10 +127,6 @@ function nowText() {
     + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
 }
 
-function dayText() {
-  const d = new Date();
-  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
-}
 
 function randomInt(min, max) {
   return min + Math.floor(Math.random() * (max - min + 1));
@@ -230,6 +226,21 @@ async function main() {
 
   const config = loadConfig();
   if (args.server) { config.server = String(args.server); }
+  else if (config.server === 'http://127.0.0.1:8795') {
+    const data = process.env.SUINING_USER_DATA || path.join(process.env.APPDATA || '', '岁宁');
+    const discovery = path.join(data, 'runtime', 'server.json');
+    if (fs.existsSync(discovery)) {
+      let address;
+      try {
+        if (fs.statSync(discovery).size > 1024) throw new Error('端口记录格式异常');
+        address = JSON.parse(fs.readFileSync(discovery, 'utf8'));
+        if (!Number.isInteger(address.port) || address.port < 1 || address.port > 65535 || !Number.isInteger(address.pid) || address.pid < 1 || !Number.isInteger(address.desktopPid) || address.desktopPid < 1) throw new Error('端口记录格式异常');
+        process.kill(address.pid, 0);
+        process.kill(address.desktopPid, 0);
+      } catch (error) { throw new Error('岁宁端口记录已失效，请先启动桌面软件或使用 --server 指定地址'); }
+      config.server = 'http://127.0.0.1:' + address.port;
+    }
+  }
   if (args.deviceNo) { config.deviceNo = String(args.deviceNo).toUpperCase(); }
   if (args.secret) { config.secret = String(args.secret); }
   if (args.interval) { config.intervalSeconds = Math.max(1, parseInt(args.interval, 10) || 3); }

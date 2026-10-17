@@ -61,11 +61,27 @@ public class DeviceJdbcDao extends JdbcCom implements DeviceDao {
     }
 
     @Override
-    public List<DeviceDto> findDevices() {
+    public List<DeviceDto> findDevices(int page, int pageSize, String query, String state) {
         String sql = "select " + DEVICE_COLUMNS + ", o.name as oldPersonName, o.phone as oldPersonPhone"
                 + " from device d left join oldperson o on o.old_id = d.old_id"
-                + " order by d.device_id";
-        return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(DeviceDto.class));
+                + DEVICE_FILTER + " order by d.device_id limit ? offset ?";
+        return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(DeviceDto.class), query, query, query, state, state, pageSize, (page-1)*pageSize);
+    }
+
+    private static final String ONLINE = "d.last_time >= DATEADD('SECOND', -60, CURRENT_TIMESTAMP)";
+    private static final String DEVICE_FILTER = " where (?='' or LOWER(d.device_no) like ? or LOWER(COALESCE(d.alias,'') || ' ' || COALESCE(o.name,'')) like ?)"
+            + " and (?='all' or CASE WHEN " + ONLINE + " THEN 'online' ELSE 'offline' END=?)";
+
+    @Override
+    public java.util.Map<String,Object> deviceTotals(String query, String state) {
+        return jdbcTemplate.queryForMap("select count(*) as total, COALESCE(SUM(CASE WHEN " + ONLINE
+                + " THEN 1 ELSE 0 END),0) as onlineCount from device d left join oldperson o on o.old_id=d.old_id"
+                + DEVICE_FILTER, query, query, query, state, state);
+    }
+
+    public void insertRatepre(Integer deviceId, Integer oldId, String rateState, String preState, String beTime, int hr, int bp) {
+        jdbcTemplate.update("insert into ratepre(device_id,old_id,rate_state,pre_state,create_time,hr,bp) values(?,?,?,?,?,?,?)",
+                deviceId, oldId, rateState, preState, beTime, hr, bp);
     }
 
     @Override
@@ -111,8 +127,8 @@ public class DeviceJdbcDao extends JdbcCom implements DeviceDao {
     @Override
     public int touch(Integer deviceId, Integer battery, String appVersion, String lastTime) {
         String sql = "update device set last_time = ?, battery = coalesce(?, battery),"
-                + " app_version = coalesce(?, app_version) where device_id = ?";
-        return jdbcTemplate.update(sql, lastTime, battery, appVersion, deviceId);
+                + " app_version = coalesce(?, app_version), last_online_at = ? where device_id = ?";
+        return jdbcTemplate.update(sql, lastTime, battery, appVersion, lastTime, deviceId);
     }
 
     @Override
@@ -137,21 +153,19 @@ public class DeviceJdbcDao extends JdbcCom implements DeviceDao {
 
     @Override
     public int unbind(Integer deviceId) {
+        jdbcTemplate.update("update oldperson set device_id=null where device_id=?",deviceId);
         return jdbcTemplate.update("update device set old_id = null, family_id = null, bind_time = null,"
                 + " last_lng = null, last_lat = null where device_id = ?", deviceId);
     }
 
     @Override
     public int delete(Integer deviceId) {
+        jdbcTemplate.update("update oldperson set device_id=null where device_id=?",deviceId);
+        jdbcTemplate.update("delete from watch_info where device_id=?",deviceId);
         return jdbcTemplate.update("delete from device where device_id = ?", deviceId);
     }
 
-    @Override
-    public int countByOldId(Integer oldId) {
-        Integer count = jdbcTemplate.queryForObject(
-                "select count(1) from device where old_id = ?", Integer.class, oldId);
-        return count == null ? 0 : count;
-    }
+
 
     // ==================== 绑定码 ====================
 
@@ -230,12 +244,13 @@ public class DeviceJdbcDao extends JdbcCom implements DeviceDao {
     }
 
     @Override
-    public int saveDayInfo(Integer deviceId, int step, int sleep, String sleepState, String day) {
+    public int saveDayInfo(Integer deviceId, Integer step, Integer sleep, String sleepState, String day) {
         // The embedded schema guarantees one row per device and day; update atomically.
         String sql = "insert into watch_day_info(device_id, sleep, step, sleep_sate, create_time)"
-                + " values(?,?,?,?,?) on duplicate key update sleep = values(sleep), step = values(step),"
-                + " sleep_sate = values(sleep_sate)";
-        return jdbcTemplate.update(sql, deviceId, sleep, step, sleepState, day);
+                + " values(?,coalesce(?,0),coalesce(?,0),coalesce(?,'0'),?)"
+                + " on duplicate key update sleep = coalesce(?,sleep), step = coalesce(?,step),"
+                + " sleep_sate = coalesce(?,sleep_sate)";
+        return jdbcTemplate.update(sql, deviceId, sleep, step, sleepState, day, sleep, step, sleepState);
     }
 
 
@@ -354,9 +369,10 @@ public class DeviceJdbcDao extends JdbcCom implements DeviceDao {
 
         // 关键点：只有 create_time 晚于"上次处理时间"的异常才算新的未处理异常，
         // 否则手表每几秒上报一次的旧异常会让红点永远消不掉。
-        String sql = "select id, device_id as deviceId, old_id as oldId, hr, bp,"
+        String sql = "select r.id, r.device_id as deviceId, old_id as oldId, hr, bp,"
                 + " FORMATDATETIME(create_time,'yyyy-MM-dd HH:mm:ss') as createTime"
-                + " from ratepre where device_id = ? and " + stateColumn + " = '1'"
+                + " ,w.hrf,w.hrl,w.bpf,w.bpl from ratepre r left join watch_info w on w.device_id=r.device_id"
+                + " where r.device_id = ? and " + stateColumn + " = '1'"
                 + " and (" + handledAtColumn + " is null or create_time > " + handledAtColumn + ")"
                 + " order by create_time desc, id desc limit 1";
         List<java.util.Map<String, Object>> rows = jdbcTemplate.queryForList(sql, deviceId);
@@ -365,18 +381,24 @@ public class DeviceJdbcDao extends JdbcCom implements DeviceDao {
         }
         java.util.Map<String, Object> data = rows.get(0);
         int value = toInt(data.get(valueColumn));
+        int low = isRate ? HR_LOW : BP_LOW, high = isRate ? HR_HIGH : BP_HIGH;
+        Object first = data.get(isRate ? "hrf" : "bpf"), last = data.get(isRate ? "hrl" : "bpl");
+        if (first != null && last != null) {
+            low = Math.min(toInt(first), toInt(last));
+            high = Math.max(toInt(first), toInt(last));
+        }
 
         java.util.Map<String, Object> row = new java.util.LinkedHashMap<String, Object>();
         row.put("kind", kind);
         row.put("kindText", isRate ? "心率不合格" : "血压不合格");
-        row.put("reason", isRate
-                ? (value > HR_HIGH ? "心率偏高" : "心率偏低")
-                : (value > BP_HIGH ? "血压偏高" : "血压偏低"));
+        row.put("reason", value >= low && value <= high ? (isRate ? "历史心率异常" : "历史血压异常") : isRate
+                ? (value > high ? "心率偏高" : "心率偏低")
+                : (value > high ? "血压偏高" : "血压偏低"));
         row.put("detail", isRate
-                ? "正常范围 " + HR_LOW + "-" + HR_HIGH + " 次/分，本次测量 " + value + " 次/分。"
-                : "正常范围 " + BP_LOW + "-" + BP_HIGH + " mmHg，本次测量 " + value + " mmHg。");
+                ? "当前档案范围 " + low + "-" + high + " 次/分，本次测量 " + value + " 次/分。"
+                : "当前档案范围 " + low + "-" + high + " mmHg，本次测量 " + value + " mmHg。");
         row.put("value", value);
-        row.put("threshold", isRate ? (HR_LOW + "-" + HR_HIGH) : (BP_LOW + "-" + BP_HIGH));
+        row.put("threshold", low + "-" + high);
         row.put("occurTime", data.get("createTime"));
         row.put("recordId", data.get("id"));
         row.put("deviceId", deviceId);
@@ -430,30 +452,21 @@ public class DeviceJdbcDao extends JdbcCom implements DeviceDao {
     }
 
     /**
-     * 设备被确认在线（心跳/上报接口调用）：记下确认时间，供"掉线识别"使用。
-     * 这样判断完全是数据库里的确定性比较，不依赖内存状态。
-     */
-    public void markOnline(Integer deviceId) {
-        jdbcTemplate.update("update device set last_online_at = NOW() where device_id = ?", deviceId);
-    }
-
-    /**
      * 扫描所有设备，识别"离线"，见方法说明
-     * 如果设备最后在线时间晚于最后上报时间（说明是恢复在线之后又掉线了），
+     * 在线标记与最后上报时间在同一次更新中写入，比较时须包含两者相等的情况。
      * 就把掉线次数 +1、清除"已确认"标记（人员不合格红点重新出现），并把最后在线时间清空，
      * 保证同一次掉线只计一次（否则每次刷新页面都会重复计数）。
      */
+    @org.springframework.scheduling.annotation.Scheduled(fixedDelay=30000, initialDelay=30000)
     public void scanOfflineDevices() {
         jdbcTemplate.update("update device set boot_seq = boot_seq + 1, person_handled = 0,"
                 + " last_online_at = null"
                 + " where status = 1 and last_online_at is not null and last_time is not null"
-                + " and last_online_at > last_time"
+                + " and last_online_at >= last_time"
                 + " and last_time < DATEADD('SECOND', -" + OFFLINE_SECONDS + ", CURRENT_TIMESTAMP)");
     }
 
-    private void logState(Integer deviceId, String message) {
-        org.slf4j.LoggerFactory.getLogger(DeviceJdbcDao.class).debug("[设备状态] deviceId={} {}", deviceId, message);
-    }
+
 
     @Override
     public int resolveRatepreAlert(Integer deviceId, String kind, Integer recordId) {

@@ -18,8 +18,10 @@ public class PasswordUtilTests {
     }
 
     @Test
-    public void legacyPasswordCanBeVerifiedBeforeItIsRehashed() {
-        assertTrue(PasswordUtil.matches("legacy-password", "legacy-password"));
+    public void plaintextAndLegacyDigestsCannotAuthenticate() {
+        assertFalse(PasswordUtil.matches("legacy-password", "legacy-password"));
+        assertFalse(PasswordUtil.matches("123456", "e10adc3949ba59abbe56e057f20f883e"));
+        assertFalse(PasswordUtil.matches("e10adc3949ba59abbe56e057f20f883e", "e10adc3949ba59abbe56e057f20f883e"));
         assertFalse(PasswordUtil.isHashed("legacy-password"));
         assertFalse(PasswordUtil.matches("incorrect-password", "legacy-password"));
     }

@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import java.util.List;
 
 @Controller
 @RequestMapping("/restful/customer")
@@ -25,8 +24,7 @@ public class CustomerController {
     public LinkedHashMap select(@RequestBody LinkedHashMap params){
         LinkedHashMap result=new LinkedHashMap();
         String customerName=params.get("customerName").toString();
-        List<Customer> customers=customerDao.getCustomer(customerName);
-        result.put("customers",customers);
+        customerDao.getCustomer(customerName,com.example.careold.domain.PageRequest.from(params)).putInto(result,"customers");
         return result;
     }
 

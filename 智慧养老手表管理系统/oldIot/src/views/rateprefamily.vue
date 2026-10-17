@@ -29,7 +29,7 @@
       </el-table-column>
     </el-table>
     <section v-if="oldsList.length" class="family-record-cards" aria-label="心率与血压记录">
-      <article v-for="(item, index) in oldsList" :key="index" class="family-record-card">
+      <article v-for="item in oldsList" :key="item.oldId" class="family-record-card">
         <h2>{{ item.name || '健康记录' }}</h2>
         <dl>
           <dt>血压状态</dt><dd :class="stateClass(item.preState)">{{ stateLabel(item.preState) }}{{ item.preState == 1 ? '，请查看详情' : '' }}</dd>

@@ -14,7 +14,7 @@
       <div class="panel-heading"><div><h2 id="announcement-heading">平台公告</h2><p>服务信息与照护提醒</p></div><el-button link :loading="isLoading" @click="searchOlds">刷新公告 <i class="el-icon-refresh" aria-hidden="true"></i></el-button></div>
       <div v-loading="isLoading" class="announcement-content">
         <ul v-if="tableData.length" class="announcement-list">
-          <li v-for="(item, index) in tableData.slice((currentPage - 1) * pageSize, currentPage * pageSize)" :key="item.textId || index">
+          <li v-for="(item, index) in tableData" :key="item.textId || index">
             <span class="announcement-icon" aria-hidden="true"><i class="el-icon-document"></i></span><div class="announcement-copy"><h3>{{ item.title || '未命名公告' }}</h3><p>{{ item.time || '发布时间未提供' }}</p></div><el-button link :aria-label="'阅读公告：' + (item.title || '未命名公告')" @click="getDetail(item)">阅读公告 <i class="el-icon-arrow-right" aria-hidden="true"></i></el-button>
           </li>
         </ul>
@@ -73,6 +73,20 @@
 .pagination-wrap { display: flex; justify-content: flex-end; padding-top: 18px; overflow-x: auto; }
 .data-caption { display: flex; align-items: flex-start; gap: 8px; max-width: 65em; margin: 26px 2px 0; color: #53645c; font-size: 16px; line-height: 1.8; }
 .data-caption i { margin-top: 6px; flex-shrink: 0; }
+@media (min-width: 1200px) and (max-height: 900px) {
+  .welcome-card { gap: 32px; margin: 0 0 24px; }
+  .welcome-copy { padding: 0; }
+  .eyebrow { margin-bottom: 10px; }
+  .welcome-card h1 { font-size: 34px; line-height: 1.35; }
+  .welcome-description { margin: 10px 0 16px; line-height: 1.7; }
+  .welcome-scene { height: clamp(220px, 30dvh, 270px); }
+  .announcement-panel { padding: 18px 24px; }
+  .announcement-list li { padding: 14px 0; }
+  .records-heading { padding: 14px 0 8px; }
+  .info-tile { padding-block: 12px; }
+  .tile-copy p { margin-top: 4px; line-height: 1.6; }
+  .data-caption { margin-top: 16px; }
+}
 @media (max-width: 1180px) { .welcome-card { gap: 28px; } .welcome-card h1 { font-size: 36px; } .welcome-scene { height: 320px; } .family-daily-grid { grid-template-columns: 1fr; gap: 28px; } }
 @media (max-width: 700px) { .welcome-card { grid-template-columns: 1fr; gap: 8px; margin: 0 0 28px; } .welcome-copy { padding: 4px 0 20px; } .welcome-card h1 { font-size: 32px; } .welcome-scene { height: 164px; border-radius: 16px 16px 48px 16px; } .welcome-scene img { object-position: 50% 60%; } .welcome-description { margin: 14px 0 22px; } .family-daily-grid { gap: 24px; } .announcement-panel { padding: 20px 18px; } .announcement-list li { display: grid; grid-template-columns: 28px minmax(0,1fr); align-items: start; gap: 10px; } .announcement-list :deep(.el-button) { grid-column: 2; justify-self: start; margin-left: 0; } .panel-heading { align-items: flex-start; } .announcement-copy h3 { font-size: 18px; } .desktop-break { display: none; } }
 html.large-text .care-family .welcome-card h1 { font-size: 48px; }
@@ -95,16 +109,12 @@ export default {
 	},
 	methods: {
 
-	  handleSizeChange (val) {
-
-	    this.pageSize = val
-	  },
-
 	  changePage (val) {
 
 	    this.currentPage = val
+        this.searchOlds(true)
 	  },
-	  getDetail(row, column, event){
+	  getDetail(row){
 
 		  var textId = row.textId
 		  var picId = row.picId
@@ -118,12 +128,15 @@ export default {
 		  })
 	  },
 
-			searchOlds(){
+			searchOlds(keepPage = false){
+        if (keepPage !== true) this.currentPage = 1
 				var _this=this
 				_this.isLoading = true
 				_this.loadError = ''
 
 				var params = {
+
+          page: this.currentPage, pageSize: this.pageSize,
 					'title': _this.searchText
 				}
 
@@ -136,7 +149,7 @@ export default {
 				}).then(function (response) {
 
 				_this.tableData = response.data && response.data.texts ? response.data.texts : []
-				_this.total = _this.tableData.length
+				_this.total = response.data.total ?? _this.tableData.length
 				})
 				.catch(function (error) {
 

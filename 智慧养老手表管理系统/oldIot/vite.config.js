@@ -6,5 +6,5 @@ export default defineConfig({
   plugins: [vue()],
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   server: { proxy: { '/restful': 'http://127.0.0.1:8795' } },
-  build: { target: 'chrome120', sourcemap: false, cssCodeSplit: true }
+  build: { target: 'chrome120', sourcemap: false, cssCodeSplit: true, rolldownOptions: { output: { minify: { compress: { dropConsole: true, dropDebugger: true } } } } }
 })

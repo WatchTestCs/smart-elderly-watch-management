@@ -103,7 +103,6 @@ export default {
       largeText: localStorage.getItem('large_text') === 'true',
       codeMessage: '',
       codeOk: false,
-      oldPersonName: '',
       registerForm: {
         code: '',
         familyName: '',
@@ -164,7 +163,6 @@ export default {
         var data = response.data
         if (data.returnCode === '1111') {
           _this.codeOk = true
-          _this.oldPersonName = data.oldPersonName
           if (data.remainDays === -1) {
             _this.codeMessage = '邀请码有效，绑定老人：' + data.oldPersonName + '（长期有效）'
           } else {
@@ -172,7 +170,6 @@ export default {
           }
         } else {
           _this.codeOk = false
-          _this.oldPersonName = ''
           _this.codeMessage = data.message ? data.message : '邀请码无效'
         }
       }).catch(function (error) {
@@ -258,7 +255,6 @@ export default {
 .register-brand-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .register-text-toggle { min-width: 64px; min-height: 48px; padding: 8px; border: 1px solid #c7d3c1; border-radius: 8px; color: #235442; font-size: 16px; font-weight: 600; }
 .password-visibility { width: 48px; height: 48px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: #235442; cursor: pointer; }
-.register-form :deep(.el-input-group__append) { color: #235442; background: #eef3e8; border-color: #81917b; }
 .register-form :deep(.el-input__suffix) { right: 0; }
 .register-title { padding-bottom: 24px; }
 .register-brand { display: flex; align-items: center; gap: 12px; color: #183e33; font-size: 23px; font-weight: 700; }
@@ -268,7 +264,7 @@ export default {
 .register-form :deep(.el-form-item) { min-width: 0; margin-bottom: 24px; }
 .register-form :deep(.el-form-item:first-child) , .register-form :deep(.el-form-item:nth-last-child(2)) , .register-form :deep(.el-form-item:last-child) { grid-column: 1 / -1; }
 .register-form :deep(.el-form-item__label) { color: #43534b; font-size: 17px; line-height: 1.5; padding-bottom: 8px; }
-.register-form :deep(.el-input__inner) { height: 50px; font-size: 18px; border-color: #81917b; }
+.register-form :deep(.el-input__inner) { height: 50px; font-size: 18px; }
 .register-form :deep(.el-button) { min-height: 48px; font-size: 17px; }
 .register-form :deep(.el-radio__label) { font-size: 18px; }
 .register-form :deep(.el-radio) { display: inline-flex; align-items: center; min-height: 48px; margin-right: 18px; }

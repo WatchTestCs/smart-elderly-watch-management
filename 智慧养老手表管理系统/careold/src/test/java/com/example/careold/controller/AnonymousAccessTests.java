@@ -16,10 +16,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 
 @WebMvcTest(DeviceController.class)
-@Import({SecurityConfig.class, org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration.class})
+@Import({com.example.careold.service.DeviceService.class, SecurityConfig.class, org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration.class})
 class AnonymousAccessTests {
     @Autowired MockMvc mvc;
     @MockBean DeviceJdbcDao deviceDao;
+    @MockBean com.example.careold.dao.WatchInfoDao watchInfoDao;
     @MockBean OldPersonDao oldPersonDao;
     @MockBean JdbcTemplate jdbcTemplate;
 

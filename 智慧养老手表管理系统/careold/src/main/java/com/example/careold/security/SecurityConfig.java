@@ -47,7 +47,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/restful/desktop/exit", "/restful/setup", "/restful/userLogin/login", "/restful/inviteCode/checkCode", "/restful/inviteCode/join").permitAll()
                         .requestMatchers(HttpMethod.POST, HARDWARE).permitAll()
                         .requestMatchers(HttpMethod.POST, SHARED).hasAnyRole("ADMIN", "FAMILY")
-                        .requestMatchers(HttpMethod.GET, "/restful/image/download", "/restful/image/downloadTwo").hasAnyRole("ADMIN", "FAMILY")
+                        .requestMatchers(HttpMethod.GET, "/restful/image/download").hasAnyRole("ADMIN", "FAMILY")
                         .requestMatchers("/restful/**").hasRole("ADMIN")
                         .requestMatchers("/", "/index.html", "/assets/**", "/static/**", "/favicon.ico", "/error").permitAll()
                         .anyRequest().denyAll())
@@ -57,8 +57,8 @@ public class SecurityConfig {
                                 error instanceof org.springframework.security.web.csrf.CsrfException ? "CSRF_REJECTED" : "ACCESS_DENIED",
                                 "请求未获授权，请刷新页面后重试")))
                 .headers(headers -> headers
-                        .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"))
-                        .referrerPolicy(policy -> policy.policy(org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.SAME_ORIGIN)))
+                        .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://tile.openstreetmap.org; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"))
+                        .referrerPolicy(policy -> policy.policy(org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)))
                 .requestCache(cache -> cache.disable())
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
