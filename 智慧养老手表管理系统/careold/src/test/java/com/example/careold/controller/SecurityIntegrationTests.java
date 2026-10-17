@@ -1,6 +1,7 @@
 package com.example.careold.controller;
 
 import com.example.careold.common.PasswordUtil;
+import com.example.careold.common.DeviceSecretCodec;
 import com.example.careold.dao.*;
 import com.example.careold.domain.*;
 import com.example.careold.security.*;
@@ -223,7 +224,7 @@ class SecurityIntegrationTests {
             mvc.perform(post("/restful/device/"+endpoint).contentType("application/json").content("{\"deviceNo\":\"WTEST\",\"secret\":\"demo-secret-1\",\"code\":\"ABC123\"}"))
                     .andExpect(status().isOk()).andExpect(jsonPath("$.returnCode").value("0004"));
         }
-        device.setSecret("23456789ABCDEFGHJKLMNPQRSTUVWXYZ");
+        device.setSecret(DeviceSecretCodec.hash("23456789ABCDEFGHJKLMNPQRSTUVWXYZ"));
         mvc.perform(post("/restful/device/login").contentType("application/json").content("{\"deviceNo\":\"WTEST\",\"secret\":\"23456789ABCDEFGHJKLMNPQRSTUVWXYZ\"}"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.returnCode").value("1111"));
     }

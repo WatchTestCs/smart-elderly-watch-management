@@ -15,7 +15,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class DatabaseMigrations {
     private static final Logger LOG = LoggerFactory.getLogger(DatabaseMigrations.class);
-    private static final int SCHEMA_VERSION = 2;
+    private static final int SCHEMA_VERSION = 3;
 
     @Bean
     FlywayMigrationStrategy guardedMigrations() { return DatabaseMigrations::migrate; }
@@ -35,7 +35,7 @@ public class DatabaseMigrations {
                 }
             }
             for (var migration : information.applied()) {
-                if (migration.getVersion() != null && migration.getVersion().compareTo(MigrationVersion.fromVersion("2")) > 0) {
+                if (migration.getVersion() != null && migration.getVersion().compareTo(MigrationVersion.fromVersion("3")) > 0) {
                     throw new IllegalStateException("数据库迁移版本高于当前软件，拒绝降级打开");
                 }
             }

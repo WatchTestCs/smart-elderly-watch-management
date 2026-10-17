@@ -1,6 +1,7 @@
 package com.example.careold;
 
 import com.example.careold.config.DatabaseMigrations;
+import com.example.careold.common.DeviceSecretCodec;
 import com.zaxxer.hikari.HikariDataSource;
 import java.nio.file.Path;
 import java.nio.file.Files;
@@ -32,8 +33,8 @@ class DatabaseMigrationTests {
             var jdbc = new JdbcTemplate(source);
             jdbc.update("insert into users(user_name,password) values('验收','preserved')");
             DatabaseMigrations.migrate(flyway);
-            assertEquals(2,jdbc.queryForObject("select schema_version from app_metadata where id=1",Integer.class));
-            assertEquals(2,flyway.info().applied().length);
+            assertEquals(3,jdbc.queryForObject("select schema_version from app_metadata where id=1",Integer.class));
+            assertEquals(3,flyway.info().applied().length);
             assertEquals("preserved",jdbc.queryForObject("select password from users",String.class));
         }
     }
@@ -42,10 +43,20 @@ class DatabaseMigrationTests {
             new ResourceDatabasePopulator(new ClassPathResource("db/migration/V1__initial_schema.sql")).execute(source);
             var jdbc = new JdbcTemplate(source);
             jdbc.update("insert into watch_day_info(device_id,step,create_time) values(1,100,'2026-01-01'),(1,200,'2026-01-01'),(2,300,'2026-01-01')");
+            String oldSecret = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
+            jdbc.update("insert into device(device_no,secret,alias) values(?,?,?)","W-OLD",oldSecret,"测试设备");
             DatabaseMigrations.migrate(flyway(source));
             assertEquals(2,jdbc.queryForObject("select count(*) from watch_day_info",Integer.class));
             assertEquals(100,jdbc.queryForObject("select step from watch_day_info_archive",Integer.class));
             assertEquals(200,jdbc.queryForObject("select step from watch_day_info where device_id=1",Integer.class));
+            String stored = jdbc.queryForObject("select secret from device where device_no='W-OLD'",String.class);
+            assertTrue(DeviceSecretCodec.isHashed(stored));
+            assertNotEquals(oldSecret, stored);
+            assertTrue(DeviceSecretCodec.matches(oldSecret, stored));
+            assertFalse(DeviceSecretCodec.matches("WRONG-23456789ABCDEFGHJKLMNPQ", stored));
+            assertEquals(3,jdbc.queryForObject("select schema_version from app_metadata where id=1",Integer.class));
+            DatabaseMigrations.migrate(flyway(source));
+            assertEquals(stored,jdbc.queryForObject("select secret from device where device_no='W-OLD'",String.class));
             assertThrows(org.springframework.dao.DataIntegrityViolationException.class, () ->
                     jdbc.update("insert into watch_day_info(device_id,create_time) values(1,'2026-01-01')"));
             Path backup;
@@ -56,6 +67,8 @@ class DatabaseMigrationTests {
             try (var restoredSource = source("restored/legacy")) {
                 var restoredJdbc = new JdbcTemplate(restoredSource);
                 assertEquals(3,restoredJdbc.queryForObject("select count(*) from watch_day_info",Integer.class));
+                assertEquals("23456789ABCDEFGHJKLMNPQRSTUVWXYZ",
+                        restoredJdbc.queryForObject("select secret from device where device_no='W-OLD'",String.class));
                 assertEquals(1,restoredJdbc.queryForObject("select schema_version from app_metadata",Integer.class));
             }
         }

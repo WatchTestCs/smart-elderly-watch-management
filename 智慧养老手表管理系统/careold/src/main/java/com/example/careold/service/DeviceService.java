@@ -2,6 +2,7 @@ package com.example.careold.service;
 
 import com.example.careold.common.DateConst;
 import com.example.careold.common.ReturnCodeUtil;
+import com.example.careold.common.DeviceSecretCodec;
 import com.example.careold.dao.DeviceDao;
 import com.example.careold.dao.DeviceJdbcDao;
 import com.example.careold.dao.WatchInfoDao;
@@ -79,7 +80,7 @@ public class DeviceService {
         String secret = paramValue(param, "secret", "");
 
         Device device = deviceDao.findByDeviceNo(deviceNo);
-        if (device == null || !validSecret(secret, device.getSecret())) {
+        if (device == null || !DeviceSecretCodec.matches(secret, device.getSecret())) {
             result.put(ReturnCodeUtil.returnCode, AUTH_FAIL);
             result.put("message", "设备号或密钥不正确");
             return result;
@@ -464,7 +465,8 @@ public class DeviceService {
 
         Device device = new Device();
         device.setDeviceNo(deviceJdbcDao.generateDeviceNo());
-        device.setSecret(deviceJdbcDao.generateSecret());
+        String clearSecret = deviceJdbcDao.generateSecret();
+        device.setSecret(DeviceSecretCodec.hash(clearSecret));
         device.setAlias(paramValue(param, "alias", "新手表"));
         device.setModel(paramValue(param, "model", "HarmonyOS-Wear"));
         device.setOldId(oldId);
@@ -484,12 +486,12 @@ public class DeviceService {
 
         result.put("deviceId", deviceId);
         result.put("deviceNo", device.getDeviceNo());
-        result.put("secret", device.getSecret());
+        result.put("secret", clearSecret);
         result.put(ReturnCodeUtil.returnCode, ReturnCodeUtil.successCode);
         return result;
     }
 
-    /** 重置设备密钥（示例代码里会明文返回，正式环境应改为让设备重新绑定） */
+    /** 重置后旧密钥立即失效；新密钥仅返回当前经过管理员鉴权的响应。 */
     public LinkedHashMap resetSecret(LinkedHashMap param) {
         LinkedHashMap result = new LinkedHashMap();
         String deviceIdStr = paramValue(param, "deviceId", "");
@@ -501,7 +503,9 @@ public class DeviceService {
             return fail(result, ReturnCodeUtil.falseCode, "设备不存在");
         }
         String secret = deviceJdbcDao.generateSecret();
-        deviceDao.updateSecret(deviceId, secret);
+        if (deviceDao.updateSecret(deviceId, DeviceSecretCodec.hash(secret)) != 1) {
+            return fail(result, ReturnCodeUtil.falseCode, "密钥更新失败，请重试");
+        }
         result.put("secret", secret);
         result.put(ReturnCodeUtil.returnCode, ReturnCodeUtil.successCode);
         return result;
@@ -745,16 +749,11 @@ public class DeviceService {
     // ==================== 内部方法 ====================
 
     /** 设备鉴权：失败时把错误写进 result 并返回 null */
-    private static boolean validSecret(String supplied, String stored) {
-        return stored != null && stored.length() >= 24 && supplied != null && !supplied.isEmpty() && supplied.length() <= 128
-                && java.security.MessageDigest.isEqual(supplied.getBytes(java.nio.charset.StandardCharsets.UTF_8), stored.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-    }
-
     private Device authDevice(LinkedHashMap param, LinkedHashMap result) {
         String deviceNo = paramValue(param, "deviceNo", "").toUpperCase();
         String secret = paramValue(param, "secret", "");
         Device device = deviceDao.findByDeviceNo(deviceNo);
-        if (device == null || !validSecret(secret, device.getSecret())) {
+        if (device == null || !DeviceSecretCodec.matches(secret, device.getSecret())) {
             fail(result, AUTH_FAIL, "设备号或密钥不正确");
             return null;
         }
