@@ -81,7 +81,7 @@ class DeviceWriteTransactionTests {
         jdbc.execute("drop all objects");
         com.example.careold.config.DatabaseMigrations.migrate(org.flywaydb.core.Flyway.configure().dataSource(source).load());
         jdbc.update("insert into oldperson(old_id,name,device_id) values(1,'测试长者',1),(2,'另一长者',2)");
-        jdbc.update("insert into device(device_id,device_no,secret,old_id,status,battery,app_version) values(1,'TEST-01',?,1,1,50,'1.0')", "a".repeat(32));
+        jdbc.update("insert into device(device_id,device_no,secret,old_id,status,battery,app_version) values(1,'TEST-01',?,1,1,50,'1.0')", com.example.careold.common.DeviceSecretCodec.hash("a".repeat(32)));
         jdbc.deviceUpdates = 0;
     }
     private LinkedHashMap request(Object... fields) {
@@ -210,7 +210,7 @@ class DeviceWriteTransactionTests {
         assertEquals(2,jdbc.queryForObject("select device_id from oldperson where old_id=2",Integer.class));
     }
     @Test void actualH2AlertCountsDoNotQueryEachElder() {
-        for (int id=2;id<=200;id++) jdbc.update("insert into device(device_id,device_no,secret,old_id,status) values(?,?,?,1,1)",id,"COUNT-"+id,"b".repeat(32));
+        for (int id=2;id<=200;id++) jdbc.update("insert into device(device_id,device_no,secret,old_id,status) values(?,?,?,1,1)",id,"COUNT-"+id,com.example.careold.common.DeviceSecretCodec.hash("b".repeat(32)));
         jdbc.selects.clear();
         assertEquals(200,deviceDao.countPendingAlerts().size());
         assertEquals(1,jdbc.selects.size(),jdbc.selects.toString());
@@ -251,7 +251,7 @@ class DeviceWriteTransactionTests {
         assertEquals(0,jdbc.queryForObject("select rate_handled from ratepre where id=1",Integer.class));
     }
     @Test void devicePaginationFiltersBeforeLimitingAndDoesNotWrite() {
-        for (int id=2;id<=25;id++) jdbc.update("insert into device(device_id,device_no,secret,alias,status) values(?,?,?,'分页设备',1)",id,"PAGE-"+id,"b".repeat(32));
+        for (int id=2;id<=25;id++) jdbc.update("insert into device(device_id,device_no,secret,alias,status) values(?,?,?,'分页设备',1)",id,"PAGE-"+id,com.example.careold.common.DeviceSecretCodec.hash("b".repeat(32)));
         jdbc.update("update device set last_time='2000-01-01',last_online_at='2000-01-01' where device_id=1");
         int before=jdbc.deviceUpdates;
         var first=devices.list(request("page",1,"pageSize",10,"query","PAGE-","state","offline"));
