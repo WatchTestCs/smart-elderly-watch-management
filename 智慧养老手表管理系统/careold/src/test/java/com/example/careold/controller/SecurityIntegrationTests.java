@@ -183,6 +183,8 @@ class SecurityIntegrationTests {
         Users user = new Users(); user.setPassword("secret");
         assertFalse(json.writeValueAsString(family).contains("secret"));
         assertFalse(json.writeValueAsString(user).contains("secret"));
+        assertFalse(json.writeValueAsString(device).contains("real-device-secret"));
+        assertFalse(json.writeValueAsString(device).contains("\"secret\""));
     }
 
     @Test
