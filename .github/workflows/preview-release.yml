@@ -1,0 +1,134 @@
+name: Preview Release
+
+on:
+  push:
+    branches: [preview]
+    paths:
+      - "智慧养老手表管理系统/desktop/version.json"
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+concurrency:
+  group: preview-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build, install-smoke, and publish Preview
+    runs-on: windows-latest
+    timeout-minutes: 75
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            智慧养老手表管理系统/oldIot/package-lock.json
+            智慧养老手表管理系统/desktop/build-tools/package-lock.json
+      - name: Set up Java
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+          cache-dependency-path: 智慧养老手表管理系统/careold/pom.xml
+      - name: Validate version and release target
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference='Stop'
+          $root=Join-Path $env:GITHUB_WORKSPACE '智慧养老手表管理系统'
+          $meta=Get-Content (Join-Path $root 'desktop/version.json') -Raw|ConvertFrom-Json
+          $desktop=Get-Content (Join-Path $root 'desktop/package.json') -Raw|ConvertFrom-Json
+          $front=Get-Content (Join-Path $root 'oldIot/package.json') -Raw|ConvertFrom-Json
+          $lock=Get-Content (Join-Path $root 'oldIot/package-lock.json') -Raw|ConvertFrom-Json
+          [xml]$pom=Get-Content (Join-Path $root 'careold/pom.xml') -Raw
+          foreach($x in @($desktop.version,$front.version,$lock.version,$pom.project.version)){if([string]$x -ne [string]$meta.version){throw "Version mismatch: $x != $($meta.version)"}}
+          $tag="v$($meta.version)-preview.1"
+          gh release view $tag --repo $env:GITHUB_REPOSITORY *> $null
+          if($LASTEXITCODE -eq 0){throw "Release $tag already exists"}
+          $global:LASTEXITCODE=0
+          "SUINING_VERSION=$($meta.version)" >> $env:GITHUB_ENV
+          "SUINING_TAG=$tag" >> $env:GITHUB_ENV
+      - name: Build unsigned application
+        shell: pwsh
+        working-directory: 智慧养老手表管理系统
+        run: ./desktop/build.ps1
+      - name: Package assets
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $root=Join-Path $env:GITHUB_WORKSPACE '智慧养老手表管理系统'
+          $meta=Get-Content (Join-Path $root 'desktop/version.json') -Raw|ConvertFrom-Json
+          $out=Join-Path $root ("outputs/v{0}-{1}" -f $meta.version,$meta.channel)
+          & (Join-Path $root 'desktop/package.ps1') -OutputDir $out
+          $rel=Join-Path $out 'release'; New-Item -ItemType Directory -Force $rel|Out-Null
+          $setup=Join-Path $rel ("Suining-Setup-{0}-win-x64-unsigned.exe" -f $meta.version)
+          Copy-Item (Join-Path $out ("installer/岁宁-Setup-{0}.exe" -f $meta.version)) $setup -Force
+          $portable=Join-Path $rel ("Suining-Portable-{0}-win-x64-unsigned.zip" -f $meta.version)
+          Compress-Archive -Path (Join-Path $out 'unsigned/Suining/*') -DestinationPath $portable -CompressionLevel Optimal -Force
+          $notes=Join-Path $rel 'Release-Notes-zh-CN.md'; Copy-Item (Join-Path $env:GITHUB_WORKSPACE ("docs/releases/{0}.md" -f $meta.version)) $notes -Force
+          Add-Content $notes ([Environment]::NewLine+"Source commit: "+$env:GITHUB_SHA)
+          "SUINING_OUTPUT_DIR=$out" >> $env:GITHUB_ENV; "RELEASE_DIR=$rel" >> $env:GITHUB_ENV; "SETUP_PATH=$setup" >> $env:GITHUB_ENV; "PORTABLE_PATH=$portable" >> $env:GITHUB_ENV; "NOTES_PATH=$notes" >> $env:GITHUB_ENV
+      - name: Install and launch packaged Setup
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $installRoot=Join-Path $env:RUNNER_TEMP 'suining-release-install'; $userData=Join-Path $env:RUNNER_TEMP 'suining-release-userdata'
+          Remove-Item -Recurse -Force -ErrorAction SilentlyContinue $installRoot,$userData
+          $p=Start-Process $env:SETUP_PATH -ArgumentList @('/S',("/D={0}" -f $installRoot)) -Wait -PassThru; if($p.ExitCode -ne 0){throw "Installer exit $($p.ExitCode)"}
+          $exe=Join-Path $installRoot 'Suining.exe'; $un=Join-Path $installRoot 'Uninstall.exe'; if(!(Test-Path $exe)){throw 'Installed executable missing'}
+          $env:SUINING_QA_HEADLESS='1'; $env:SUINING_USER_DATA=$userData; $app=Start-Process $exe -PassThru
+          $disc=Join-Path $userData 'runtime/server.json'; $info=$null
+          for($i=0;$i -lt 120;$i++){if($app.HasExited){throw 'Installed app exited before readiness'}; if(Test-Path $disc){try{$c=Get-Content $disc -Raw|ConvertFrom-Json;if([int]$c.pid -gt 0 -and [int]$c.port -gt 0){$info=$c;break}}catch{}};Start-Sleep 1}
+          if(!$info){throw 'Installed app did not become ready'}; if(!(Get-Process -Id ([int]$info.pid) -ErrorAction SilentlyContinue)){throw 'Bundled Java backend not alive'}
+          & taskkill /PID $app.Id /T /F | Out-Null; Start-Sleep 2
+          $u=Start-Process $un -ArgumentList '/S' -Wait -PassThru; if($u.ExitCode -ne 0){throw "Uninstaller exit $($u.ExitCode)"}; if(Test-Path $exe){throw 'Executable remained after uninstall'}
+      - name: Generate SPDX SBOM
+        uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c
+        with:
+          path: ${{ env.SUINING_OUTPUT_DIR }}/unsigned/Suining
+          format: spdx-json
+          output-file: ${{ env.RELEASE_DIR }}/sbom.spdx.json
+          upload-artifact: false
+          upload-release-assets: false
+          dependency-snapshot: false
+      - name: Generate checksums and manifest
+        shell: pwsh
+        run: |
+          $files=@($env:SETUP_PATH,$env:PORTABLE_PATH)
+          $sum=$files|%{$h=Get-FileHash $_ -Algorithm SHA256;"{0}  {1}" -f $h.Hash.ToLowerInvariant(),(Split-Path $_ -Leaf)}
+          [IO.File]::WriteAllLines((Join-Path $env:RELEASE_DIR 'SHA256SUMS.txt'),$sum,[Text.UTF8Encoding]::new($false))
+          $m=[ordered]@{product='岁宁';version=$env:SUINING_VERSION;channel='preview';signing='unsigned-no-publicly-trusted-certificate';commit=$env:GITHUB_SHA;workflowRun="$env:GITHUB_SERVER_URL/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID";artifacts=$files|%{$h=Get-FileHash $_ -Algorithm SHA256;[ordered]@{file=(Split-Path $_ -Leaf);sha256=$h.Hash.ToLowerInvariant();size=(Get-Item $_).Length}}}
+          $m|ConvertTo-Json -Depth 6|Set-Content (Join-Path $env:RELEASE_DIR 'release-manifest.json') -Encoding utf8
+      - name: Attest binaries
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6
+        with:
+          subject-path: |
+            ${{ env.SETUP_PATH }}
+            ${{ env.PORTABLE_PATH }}
+      - name: Upload evidence
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: suining-${{ env.SUINING_VERSION }}-release-evidence-${{ github.sha }}
+          path: ${{ env.RELEASE_DIR }}
+          if-no-files-found: error
+          retention-days: 30
+      - name: Publish only after acceptance
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $assets=@($env:SETUP_PATH,$env:PORTABLE_PATH,(Join-Path $env:RELEASE_DIR 'SHA256SUMS.txt'),(Join-Path $env:RELEASE_DIR 'release-manifest.json'),(Join-Path $env:RELEASE_DIR 'sbom.spdx.json'),$env:NOTES_PATH)
+          gh release create $env:SUINING_TAG @assets --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --title "岁宁 $env:SUINING_VERSION · Windows 预览版" --notes-file $env:NOTES_PATH --prerelease
+          if($LASTEXITCODE -ne 0){throw 'Release creation failed'}
+          $ref=gh api "repos/$env:GITHUB_REPOSITORY/git/ref/tags/$env:SUINING_TAG" --jq '.object.sha'; if([string]$ref.Trim() -ne [string]$env:GITHUB_SHA){throw "Tag points to $ref instead of $env:GITHUB_SHA"}

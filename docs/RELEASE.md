@@ -159,3 +159,10 @@ GitHub prerelease 最终还应附加：
 - `.github/dependabot.yml`：版本更新 PR 明确以 `preview` 为目标。
 - GitHub 的 `target-branch` 只改变 Dependabot **version updates**；security update PR 属于独立机制，GitHub 会以默认分支为目标，因此当前不把它描述成 preview 专用能力。
 - `.github/workflows/scorecards.yml`：OpenSSF 官方 Action 已预置，但官方对 push/schedule 要求默认分支。仓库默认分支仍为 `main`，所以 preview 不自动运行 Scorecard；当该 workflow 被有意提升到默认分支后再启用自动触发和公开结果。
+
+## 12. 版本号、发布触发与签名状态
+
+- 当前 Preview 版本为 **2.0.1**。后续同一 2.0 系列更新只递增补丁号：**2.0.2、2.0.3……**；不得回退或复用已发布版本号。
+- `desktop/version.json` 是规范版本源；`desktop/package.json`、前端 `package.json/package-lock.json` 与后端 `pom.xml` 必须同步。
+- Preview 标签使用 `v<version>-preview.1`。发布流水线必须先完成真实构建、安装、启动与卸载 smoke，再创建 tag/Release；不得在验收前预建或移动 tag。
+- 当前没有公开受信任的 Windows 代码签名证书。远程 Release 资产明确标记为 **unsigned**；本地自签名不得描述为 Windows 受信任发布者或具有 SmartScreen 信誉。
