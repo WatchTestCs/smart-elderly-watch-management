@@ -50,7 +50,7 @@ jobs:
           $meta=Get-Content (Join-Path $root 'desktop/version.json') -Raw|ConvertFrom-Json
           $desktop=Get-Content (Join-Path $root 'desktop/package.json') -Raw|ConvertFrom-Json
           $front=Get-Content (Join-Path $root 'oldIot/package.json') -Raw|ConvertFrom-Json
-          $lock=Get-Content (Join-Path $root 'oldIot/package-lock.json') -Raw|ConvertFrom-Json
+          $lock=Get-Content (Join-Path $root 'oldIot/package-lock.json') -Raw|ConvertFrom-Json -AsHashtable
           [xml]$pom=Get-Content (Join-Path $root 'careold/pom.xml') -Raw
           foreach($x in @($desktop.version,$front.version,$lock.version,$pom.project.version)){if([string]$x -ne [string]$meta.version){throw "Version mismatch: $x != $($meta.version)"}}
           $tag="v$($meta.version)-preview.1"
