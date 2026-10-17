@@ -150,8 +150,14 @@ public class DeviceJdbcDao extends JdbcCom implements DeviceDao {
         }
         return rows;
     }
-
     @Override
+    public int countByOldId(Integer oldId) {
+        Integer count = jdbcTemplate.queryForObject(
+                "select count(*) from device where old_id=?", Integer.class, oldId);
+        return count == null ? 0 : count;
+    }
+
+@Override
     public int unbind(Integer deviceId) {
         jdbcTemplate.update("update oldperson set device_id=null where device_id=?",deviceId);
         return jdbcTemplate.update("update device set old_id = null, family_id = null, bind_time = null,"
