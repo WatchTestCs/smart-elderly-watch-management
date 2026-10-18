@@ -78,15 +78,6 @@ func (s *Store) Get(id string) *Session {
 	return sess
 }
 
-// Rotate 轮换会话 id 与 CSRF token（防 session fixation），老会话失效。
-func (s *Store) Rotate(old *Session) *Session {
-	neu := s.Create(old.Principal)
-	s.mu.Lock()
-	delete(s.sessions, old.ID)
-	s.mu.Unlock()
-	return neu
-}
-
 // Destroy 销毁会话（登出）。
 func (s *Store) Destroy(id string) {
 	s.mu.Lock()
