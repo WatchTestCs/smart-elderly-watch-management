@@ -316,10 +316,11 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	now := time.Now()
-	if _, err := tx.Exec(ctx,
+	var alarmID int64
+	if err := tx.QueryRow(ctx,
 		`INSERT INTO alarm_precess(status, old_id, device_id, be_time, lng, lat)
-		 VALUES('1',$1,$2,$3,$4,$5)`,
-		*d.OldID, d.ID, now, nullableCoordinate(lng), nullableCoordinate(lat)); err != nil {
+		 VALUES('1',$1,$2,$3,$4,$5) RETURNING id`,
+		*d.OldID, d.ID, now, nullableCoordinate(lng), nullableCoordinate(lat)).Scan(&alarmID); err != nil {
 		rollback()
 		response.Error500(w, ref())
 		return
@@ -339,9 +340,31 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 		response.Error500(w, ref())
 		return
 	}
+	var incidentID int64
+	if err := tx.QueryRow(ctx,
+		`INSERT INTO care_incident(source_alarm_id, old_id, device_id)
+		 VALUES($1,$2,$3) RETURNING id`,
+		alarmID, *d.OldID, d.ID).Scan(&incidentID); err != nil {
+		rollback()
+		response.Error500(w, ref())
+		return
+	}
+	if _, err := tx.Exec(ctx,
+		`INSERT INTO care_incident_event(incident_id, actor, action, note)
+		 VALUES($1,'device','received','SOS 已持久化，尚无通知送达或人工接单确认')`,
+		incidentID); err != nil {
+		rollback()
+		response.Error500(w, ref())
+		return
+	}
 	if err := tx.Commit(ctx); err != nil {
 		response.Error500(w, ref())
 		return
 	}
-	response.OK(w, map[string]any{"message": "已通知家属"})
+	response.OK(w, map[string]any{
+		"message": "求助已接收，等待通知和人员接单",
+		"incidentId": incidentID,
+		"incidentState": "received",
+		"notificationState": "not_sent",
+	})
 }
