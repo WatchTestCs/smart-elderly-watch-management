@@ -1,13 +1,14 @@
 package handlers
 
 import (
+	"careold-go/internal/response"
 	"context"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
-	"github.com/jackc/pgx/v5/pgconn"
-	"careold-go/internal/response"
 )
 
 // POST /restful/device/handleAlarm —— 处置某老人最近一条告警（ADMIN）。
