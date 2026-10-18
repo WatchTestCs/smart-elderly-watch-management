@@ -355,4 +355,3 @@
 | [family.logic.js](../智慧养老手表管理系统/oldIot/src/views/family.logic.js) | Vue Options API 业务逻辑模块：family.logic。 |
 | [person.logic.js](../智慧养老手表管理系统/oldIot/src/views/person.logic.js) | Vue Options API 业务逻辑模块：person.logic。 |
 | [ratepre.logic.js](../智慧养老手表管理系统/oldIot/src/views/ratepre.logic.js) | Vue Options API 业务逻辑模块：ratepre.logic。 |
-| [REFACTOR_2.0.2.md](../docs/REFACTOR_2.0.2.md) | 2.0.2 源码拆分边界和验收指引。 |
