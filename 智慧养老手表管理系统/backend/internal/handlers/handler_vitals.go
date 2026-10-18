@@ -8,12 +8,12 @@ import (
 	"careold-go/internal/response"
 	"careold-go/internal/session"
 	"encoding/json"
+	"github.com/jackc/pgx/v5"
 	"io"
 	"math"
 	"net/http"
 	"strconv"
 	"strings"
-	"github.com/jackc/pgx/v5"
 )
 
 func (h *Handler) routeVitals(mux *http.ServeMux) {
