@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"regexp"
 	"careold-go/internal/response"
 	"github.com/jackc/pgx/v5"
 	"net/http"
@@ -302,6 +303,41 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 		hwFail(w, "0005", "设备还未绑定老人")
 		return
 	}
+	// A device should reuse a stable requestId when retrying the same SOS on
+	// weak networks; each new press must use a new ID.
+	requestID, _ := vstr(m, "requestId")
+	if requestID != "" {
+		if len(requestID) > 64 || !sosRequestIDOK(requestID) {
+			rollback()
+			writeValidation400(w)
+			return
+		}
+		if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtextextended($1,0))`,
+			"care-sos:"+deviceNo+":"+requestID); err != nil {
+			rollback()
+			response.Error500(w, ref())
+			return
+		}
+		var priorID int64
+		var priorState, priorNotification string
+		err := tx.QueryRow(ctx, `SELECT i.id,i.state,
+			COALESCE((SELECT min(n.status) FROM care_notification_outbox n
+			WHERE n.incident_id=i.id),'no_recipient')
+			FROM care_incident i WHERE i.device_id=$1 AND i.request_id=$2`,
+			d.ID, requestID).Scan(&priorID,&priorState,&priorNotification)
+		if err == nil {
+			rollback()
+			response.OK(w, map[string]any{"message":"求助已接收（重复请求未再次入库）",
+				"incidentId":priorID,"incidentState":priorState,
+				"notificationState":priorNotification,"duplicate":true})
+			return
+		}
+		if err != pgx.ErrNoRows {
+			rollback()
+			response.Error500(w, ref())
+			return
+		}
+	}
 	lng, _ := vstr(m, "lng")
 	lat, _ := vstr(m, "lat")
 	if lng == "" && d.LastLng != nil {
@@ -341,10 +377,12 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var incidentID int64
+	var requestValue any
+	if requestID != "" { requestValue = requestID }
 	if err := tx.QueryRow(ctx,
-		`INSERT INTO care_incident(source_alarm_id, old_id, device_id)
-		 VALUES($1,$2,$3) RETURNING id`,
-		alarmID, *d.OldID, d.ID).Scan(&incidentID); err != nil {
+		`INSERT INTO care_incident(source_alarm_id, old_id, device_id, request_id)
+		 VALUES($1,$2,$3,$4) RETURNING id`,
+		alarmID, *d.OldID, d.ID, requestValue).Scan(&incidentID); err != nil {
 		rollback()
 		response.Error500(w, ref())
 		return
@@ -385,3 +423,7 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 		"notificationState": notificationState,
 	})
 }
+
+var sosRequestIDPattern = regexp.MustCompile(`^[A-Za-z0-9_.:-]{1,64}$`)
+
+func sosRequestIDOK(id string) bool { return sosRequestIDPattern.MatchString(id) }
