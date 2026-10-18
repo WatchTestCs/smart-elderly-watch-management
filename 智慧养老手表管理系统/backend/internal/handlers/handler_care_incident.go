@@ -118,12 +118,17 @@ func (h *Handler) careTransition(w http.ResponseWriter, r *http.Request) {
 	}
 	defer tx.Rollback(ctx)
 	var before string
-	if err := tx.QueryRow(ctx, "SELECT state FROM care_incident WHERE id=$1 FOR UPDATE", id).Scan(&before); err != nil {
+	var resolver *string
+	if err := tx.QueryRow(ctx, "SELECT state,resolved_by FROM care_incident WHERE id=$1 FOR UPDATE", id).Scan(&before, &resolver); err != nil {
 		if err == pgx.ErrNoRows {
 			response.Fail(w, "事件不存在")
 			return
 		}
 		response.Error500(w, ref())
+		return
+	}
+	if action == "verify" && resolver != nil && *resolver == actor {
+		response.JSON(w, http.StatusForbidden, map[string]any{"returnCode":"0000","message":"处置人与复核人必须不同"})
 		return
 	}
 	next := allowed[before][action]
