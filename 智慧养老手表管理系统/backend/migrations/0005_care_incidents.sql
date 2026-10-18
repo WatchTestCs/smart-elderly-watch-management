@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS care_incident (
   device_id integer NOT NULL,
   kind varchar(32) NOT NULL DEFAULT 'sos',
   state varchar(32) NOT NULL DEFAULT 'received'
-    CHECK (state IN ('received','notifying','notified','acknowledged','in_progress','resolved','verified','escalated')),
+    CHECK (state IN ('received','notifying','notified','acknowledged','in_progress','resolved','verified','escalated','review_overdue')),
   severity varchar(16) NOT NULL DEFAULT 'critical',
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
