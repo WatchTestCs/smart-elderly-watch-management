@@ -14,4 +14,6 @@ onMounted(() => { stopMonitoring = monitorDatabase(router) })
 onBeforeUnmount(() => stopMonitoring?.())
 </script>
 
-<style src="./styles/app-global.css"></style>
+<style src="./styles/app-foundation.css"></style>
+<style src="./styles/app-components.css"></style>
+<style src="./styles/app-family-responsive.css"></style>
