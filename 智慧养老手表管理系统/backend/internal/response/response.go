@@ -34,16 +34,6 @@ func Fail(w http.ResponseWriter, message string) {
 	JSON(w, http.StatusOK, map[string]any{"returnCode": CodeFail, "message": message})
 }
 
-// FailWith 写业务失败包络并附带额外字段。
-func FailWith(w http.ResponseWriter, message string, extra map[string]any) {
-	if extra == nil {
-		extra = map[string]any{}
-	}
-	extra["returnCode"] = CodeFail
-	extra["message"] = message
-	JSON(w, http.StatusOK, extra)
-}
-
 // Error500 映射 DataAccessException/IllegalStateException：500 + reference UUID。
 func Error500(w http.ResponseWriter, reference string) {
 	JSON(w, http.StatusInternalServerError, map[string]any{
