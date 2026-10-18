@@ -158,7 +158,7 @@ func (d *dispatcher) escalate(ctx context.Context) error {
 	defer tx.Rollback(ctx)
 	rows, err := tx.Query(ctx, `
 		SELECT id FROM care_incident WHERE due_at<=now()
-		  AND state IN ('received','notifying','notified','acknowledged','in_progress')
+		  AND state IN ('received','notifying','notified','acknowledged','in_progress','resolved')
 		ORDER BY due_at,id FOR UPDATE SKIP LOCKED LIMIT 20`)
 	if err != nil {
 		return err
@@ -179,7 +179,8 @@ func (d *dispatcher) escalate(ctx context.Context) error {
 	rows.Close()
 	for _, id := range ids {
 		if _, err := tx.Exec(ctx, `UPDATE care_incident
-			SET state='escalated',updated_at=now(),due_at=now()+interval '10 minutes'
+			SET state=CASE WHEN state='resolved' THEN 'review_overdue' ELSE 'escalated' END,
+      updated_at=now(),due_at=now()+interval '10 minutes'
 			WHERE id=$1`, id); err != nil {
 			return err
 		}
