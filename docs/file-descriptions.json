@@ -133,7 +133,6 @@
   "智慧养老手表管理系统/oldIot/index.html": "网页入口：中文标题、图标、本地字体预加载、挂载点与 Vite 模块入口。（智慧养老手表管理系统/oldIot/index.html）。",
   "智慧养老手表管理系统/oldIot/package-lock.json": "锁定当前前端安装树及摘要，移除仅供 Less 使用的可选依赖，保留其余版本。（智慧养老手表管理系统/oldIot/package-lock.json）。",
   "智慧养老手表管理系统/oldIot/package.json": "精简后的前端依赖与 Vite 命令，使用普通 CSS，不再声明 Less 预处理器。（智慧养老手表管理系统/oldIot/package.json）。",
-  "智慧养老手表管理系统/oldIot/public/static/.gitkeep": "保留静态资源根目录的占位文件，不包含用户上传内容。（智慧养老手表管理系统/oldIot/public/static/.gitkeep）。",
   "智慧养老手表管理系统/oldIot/public/static/brand/suining-apple-touch-180.png": "移动设备添加到主屏幕使用的 180 像素图标。（智慧养老手表管理系统/oldIot/public/static/brand/suining-apple-touch-180.png）。",
   "智慧养老手表管理系统/oldIot/public/static/brand/suining-favicon-32.png": "浏览器标签页使用的 32 像素品牌图标。（智慧养老手表管理系统/oldIot/public/static/brand/suining-favicon-32.png）。",
   "智慧养老手表管理系统/oldIot/public/static/brand/suining-logo-192.webp": "高像素密度页眉和 README 展示使用的 192 像素 Logo。（智慧养老手表管理系统/oldIot/public/static/brand/suining-logo-192.webp）。",
