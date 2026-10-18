@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS care_notification_outbox (
   status varchar(20) NOT NULL DEFAULT 'pending'
     CHECK (status IN ('pending','sending','sent','delivered','failed')),
   attempts integer NOT NULL DEFAULT 0,
+  last_attempt_at timestamptz,
   retry_at timestamptz NOT NULL DEFAULT now(),
   sent_at timestamptz,
   delivered_at timestamptz,
