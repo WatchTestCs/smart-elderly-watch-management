@@ -15,14 +15,26 @@
           <small>责任人：{{ task.acknowledgedBy || '尚未接单' }} · 通知状态：{{ deliveryLabel(task.notificationState) }}</small>
         </div>
         <div class="care-task-actions">
+          <el-button plain @click="viewHistory(task)">处置记录</el-button>
           <el-button v-if="['received','notifying','notified','escalated'].includes(task.state)" type="primary" @click="begin(task,'acknowledge')">接单</el-button>
           <el-button v-if="task.state==='acknowledged'" type="primary" @click="begin(task,'start')">开始处置</el-button>
           <el-button v-if="task.state==='in_progress'" type="primary" @click="begin(task,'resolve')">登记处置</el-button>
           <el-button v-if="['resolved','review_overdue'].includes(task.state)" type="primary" @click="begin(task,'verify')">复核关闭</el-button>
-          <el-button v-if="task.state==='resolved'" plain @click="begin(task,'reopen')">重新开启</el-button>
+          <el-button v-if="['resolved','review_overdue'].includes(task.state)" plain @click="begin(task,'reopen')">重新开启</el-button>
         </div>
       </article>
     </div>
+    <el-dialog v-model="history.visible" title="照护事件履历" width="min(600px, 94vw)" append-to-body>
+      <p v-if="history.loading">正在读取记录…</p>
+      <p v-if="history.error" role="alert">{{ history.error }}</p>
+      <ol v-if="!history.loading && !history.error" class="care-history">
+        <li v-for="(event, index) in history.events" :key="index">
+          <strong>{{ event.action }}</strong> · {{ localTime(event.createdAt) }}
+          <small>操作者：{{ event.actor }}</small>
+          <p>{{ event.note || '无补充说明' }}</p>
+        </li>
+      </ol>
+    </el-dialog>
     <el-dialog v-model="dialog.visible" :title="actionLabels[dialog.action] || '记录照护措施'" width="min(500px, 94vw)" append-to-body>
       <label for="care-action-note">处置或交班记录</label>
       <el-input id="care-action-note" v-model="dialog.note" type="textarea" :rows="4" maxlength="2000" show-word-limit placeholder="说明现场情况、处理措施及后续跟进" />
@@ -42,6 +54,7 @@ const error = ref('')
 const loading = ref(false)
 const saving = ref(false)
 const dialog = ref({visible:false,id:null,action:'',note:''})
+const history = ref({visible:false,loading:false,error:'',events:[]})
 const active = computed(() => tasks.value.filter(t => t.state !== 'verified'))
 const actionLabels = {acknowledge:'确认接单',start:'开始处置',resolve:'登记处置措施',verify:'复核关闭',reopen:'重新开启'}
 const deliveryLabel = state => ({pending:"待发送",sending:"发送中",failed:"发送失败待重试",sent:"渠道已接收",delivered:"已确认送达",no_recipient:"未找到通知对象"})[state] || "未确认"
@@ -61,6 +74,18 @@ async function load () {
   } catch (_) {
     error.value = '照护任务暂时无法加载，请检查后端连接和登录状态。'
   } finally { loading.value = false }
+}
+async function viewHistory (task) {
+  history.value = {visible:true,loading:true,error:'',events:[]}
+  try {
+    const {data} = await axios.post('restful/care/events', {id:String(task.id)}, {withCredentials:true})
+    if (!Array.isArray(data.events)) throw new Error('invalid history')
+    history.value.events = data.events
+  } catch (_) {
+    history.value.error = '审计记录暂时无法加载'
+  } finally {
+    history.value.loading = false
+  }
 }
 function begin (task, action) {
   dialog.value = {visible:true,id:task.id,action,note:''}
@@ -100,6 +125,10 @@ onBeforeUnmount(() => clearInterval(timer))
 .care-task-main span,.care-task-main small{color:#53645c}
 .care-task-actions{display:flex;gap:8px;flex-wrap:wrap}
 .care-error{color:#a4262c}
+.care-history{list-style:decimal;padding-left:24px}
+.care-history li{padding:10px 0;border-bottom:1px solid #e5ebe7}
+.care-history small{display:block;color:#64756c}
+.care-history p{margin:4px 0;color:#263632}
 .care-empty{color:#53645c}
 @media(max-width:700px){.care-inbox-heading,.care-task{align-items:stretch;flex-direction:column}}
 </style>
