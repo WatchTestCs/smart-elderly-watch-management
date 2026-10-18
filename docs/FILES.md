@@ -312,3 +312,45 @@
 | [智慧养老手表管理系统/watch-sim/watch-sim.config.json](../智慧养老手表管理系统/watch-sim/watch-sim.config.json) | 模拟手表的服务地址与设备凭据配置模板，使用前填入实际设备密钥。（智慧养老手表管理系统/watch-sim/watch-sim.config.json）。 |
 | [智慧养老手表管理系统/watch-sim/watch-sim.js](../智慧养老手表管理系统/watch-sim/watch-sim.js) | 模拟手表登录、心跳与数据上报的 Node 联调入口；不代表真实硬件验证。（智慧养老手表管理系统/watch-sim/watch-sim.js）。 |
 | [智慧养老手表管理系统/watch-sim/watch-sim.test.cjs](../智慧养老手表管理系统/watch-sim/watch-sim.test.cjs) | 项目文件 智慧养老手表管理系统/watch-sim/watch-sim.test.cjs 的实现与配置（智慧养老手表管理系统/watch-sim/watch-sim.test.cjs）。 |
+
+## 2.0.2 重构新增模块
+
+本段记录按职责新增的文件；详情见 [重构指引](REFACTOR_2.0.2.md)。
+
+| 文件 | 职责 |
+| --- | --- |
+| [REFACTOR_2.0.2.md](../docs/REFACTOR_2.0.2.md) | 2.0.2 源码拆分边界和验收指引。 |
+| [handler_alarm_process.go](../智慧养老手表管理系统/backend/internal/handlers/handler_alarm_process.go) | Go 后端按职责拆分的 alarm process 模块。 |
+| [handler_device_admin.go](../智慧养老手表管理系统/backend/internal/handlers/handler_device_admin.go) | Go 后端按职责拆分的 device admin 模块。 |
+| [handler_device_alert_actions.go](../智慧养老手表管理系统/backend/internal/handlers/handler_device_alert_actions.go) | Go 后端按职责拆分的 device alert actions 模块。 |
+| [handler_device_alerts.go](../智慧养老手表管理系统/backend/internal/handlers/handler_device_alerts.go) | Go 后端按职责拆分的 device alerts 模块。 |
+| [handler_device_inventory.go](../智慧养老手表管理系统/backend/internal/handlers/handler_device_inventory.go) | Go 后端按职责拆分的 device inventory 模块。 |
+| [handler_device_parse.go](../智慧养老手表管理系统/backend/internal/handlers/handler_device_parse.go) | Go 后端按职责拆分的 device parse 模块。 |
+| [handler_device_protocol.go](../智慧养老手表管理系统/backend/internal/handlers/handler_device_protocol.go) | Go 后端按职责拆分的 device protocol 模块。 |
+| [handler_device_repository.go](../智慧养老手表管理系统/backend/internal/handlers/handler_device_repository.go) | Go 后端按职责拆分的 device repository 模块。 |
+| [handler_device_telemetry.go](../智慧养老手表管理系统/backend/internal/handlers/handler_device_telemetry.go) | Go 后端按职责拆分的 device telemetry 模块。 |
+| [handler_family_invite_join.go](../智慧养老手表管理系统/backend/internal/handlers/handler_family_invite_join.go) | Go 后端按职责拆分的 family invite join 模块。 |
+| [handler_family_invites.go](../智慧养老手表管理系统/backend/internal/handlers/handler_family_invites.go) | Go 后端按职责拆分的 family invites 模块。 |
+| [handler_old_person.go](../智慧养老手表管理系统/backend/internal/handlers/handler_old_person.go) | Go 后端按职责拆分的 old person 模块。 |
+| [handler_position.go](../智慧养老手表管理系统/backend/internal/handlers/handler_position.go) | Go 后端按职责拆分的 position 模块。 |
+| [handler_social_images.go](../智慧养老手表管理系统/backend/internal/handlers/handler_social_images.go) | Go 后端按职责拆分的 social images 模块。 |
+| [handler_social_pictures.go](../智慧养老手表管理系统/backend/internal/handlers/handler_social_pictures.go) | Go 后端按职责拆分的 social pictures 模块。 |
+| [handler_social_sms.go](../智慧养老手表管理系统/backend/internal/handlers/handler_social_sms.go) | Go 后端按职责拆分的 social sms 模块。 |
+| [handler_social_text.go](../智慧养老手表管理系统/backend/internal/handlers/handler_social_text.go) | Go 后端按职责拆分的 social text 模块。 |
+| [handler_vitals_measurements.go](../智慧养老手表管理系统/backend/internal/handlers/handler_vitals_measurements.go) | Go 后端按职责拆分的 vitals measurements 模块。 |
+| [handler_vitals_ratepre.go](../智慧养老手表管理系统/backend/internal/handlers/handler_vitals_ratepre.go) | Go 后端按职责拆分的 vitals ratepre 模块。 |
+| [handler_vitals_steps.go](../智慧养老手表管理系统/backend/internal/handlers/handler_vitals_steps.go) | Go 后端按职责拆分的 vitals steps 模块。 |
+| [handler_watch_info.go](../智慧养老手表管理系统/backend/internal/handlers/handler_watch_info.go) | Go 后端按职责拆分的 watch info 模块。 |
+| [app-components.css](../智慧养老手表管理系统/oldIot/src/styles/app-components.css) | 前端样式分层：app-components。 |
+| [app-family-responsive.css](../智慧养老手表管理系统/oldIot/src/styles/app-family-responsive.css) | 前端样式分层：app-family-responsive。 |
+| [app-foundation.css](../智慧养老手表管理系统/oldIot/src/styles/app-foundation.css) | 前端样式分层：app-foundation。 |
+| [customer.logic.js](../智慧养老手表管理系统/oldIot/src/views/customer.logic.js) | Vue Options API 业务逻辑模块：customer.logic。 |
+| [device.admin-methods.js](../智慧养老手表管理系统/oldIot/src/views/device.admin-methods.js) | Vue Options API 业务逻辑模块：device.admin-methods。 |
+| [device.alert-methods.js](../智慧养老手表管理系统/oldIot/src/views/device.alert-methods.js) | Vue Options API 业务逻辑模块：device.alert-methods。 |
+| [device.list-methods.js](../智慧养老手表管理系统/oldIot/src/views/device.list-methods.js) | Vue Options API 业务逻辑模块：device.list-methods。 |
+| [device.logic.js](../智慧养老手表管理系统/oldIot/src/views/device.logic.js) | Vue Options API 业务逻辑模块：device.logic。 |
+| [device.refresh-methods.js](../智慧养老手表管理系统/oldIot/src/views/device.refresh-methods.js) | Vue Options API 业务逻辑模块：device.refresh-methods。 |
+| [device.styles.css](../智慧养老手表管理系统/oldIot/src/views/device.styles.css) | 前端样式分层：device.styles。 |
+| [family.logic.js](../智慧养老手表管理系统/oldIot/src/views/family.logic.js) | Vue Options API 业务逻辑模块：family.logic。 |
+| [person.logic.js](../智慧养老手表管理系统/oldIot/src/views/person.logic.js) | Vue Options API 业务逻辑模块：person.logic。 |
+| [ratepre.logic.js](../智慧养老手表管理系统/oldIot/src/views/ratepre.logic.js) | Vue Options API 业务逻辑模块：ratepre.logic。 |
