@@ -117,7 +117,7 @@ func TestIntegrationMigrationsAndBindingConstraint(t *testing.T) {
 		}
 	}
 	var count int
-	if err := pool.QueryRow(ctx, "SELECT count(*) FROM schema_migrations").Scan(&count); err != nil || count != 4 {
+	if err := pool.QueryRow(ctx, "SELECT count(*) FROM schema_migrations").Scan(&count); err != nil || count != 5 {
 		t.Fatalf("migrations=%d err=%v", count, err)
 	}
 	_, err := pool.Exec(ctx, "INSERT INTO device(device_no,secret,old_id) VALUES('orphan','unused',999)")
