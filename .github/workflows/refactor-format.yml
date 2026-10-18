@@ -1,0 +1,30 @@
+name: Temporary refactor formatter
+on:
+  push:
+    branches: [refactor/2.0.2-split-remaining-go]
+    paths: [.github/workflows/refactor-format.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  format:
+    if: github.repository == 'WatchTestCs/smart-elderly-watch-management' && github.ref == 'refs/heads/refactor/2.0.2-split-remaining-go'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Format Go
+        run: |
+          gofmt -w '智慧养老手表管理系统/backend/internal/handlers/'*.go
+          git diff --check
+          git status --short
+      - name: Commit formatting only
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- '智慧养老手表管理系统/backend/internal/handlers/'
+          if ! git diff --cached --quiet; then
+            git commit -m "style(go): gofmt extracted handler modules"
+            git push
+          fi
