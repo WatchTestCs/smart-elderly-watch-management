@@ -9,16 +9,16 @@
     <div v-if="active.length" class="care-task-list">
       <article v-for="task in active" :key="task.id" class="care-task" :class="{ overdue: isOverdue(task) }">
         <div class="care-task-main">
-          <strong>求助 #{{ task.id }} · 长者编号 {{ task.oldId }}</strong>
+          <strong>求助 #{{ task.id }} · {{ task.oldPersonName || '长者编号 ' + task.oldId }}</strong>
           <span>设备 {{ task.deviceId }} · {{ stateLabel(task.state) }}</span>
           <small>接收于 {{ localTime(task.createdAt) }} · {{ isOverdue(task) ? '已超出当前处理期限' : '处理期限：' + localTime(task.dueAt) }}</small>
-          <small>责任人：{{ task.acknowledgedBy || '尚未接单' }}</small>
+          <small>责任人：{{ task.acknowledgedBy || '尚未接单' }} · 通知状态：{{ deliveryLabel(task.notificationState) }}</small>
         </div>
         <div class="care-task-actions">
           <el-button v-if="['received','notifying','notified','escalated'].includes(task.state)" type="primary" @click="begin(task,'acknowledge')">接单</el-button>
           <el-button v-if="task.state==='acknowledged'" type="primary" @click="begin(task,'start')">开始处置</el-button>
           <el-button v-if="task.state==='in_progress'" type="primary" @click="begin(task,'resolve')">登记处置</el-button>
-          <el-button v-if="task.state==='resolved'" type="primary" @click="begin(task,'verify')">复核关闭</el-button>
+          <el-button v-if="['resolved','review_overdue'].includes(task.state)" type="primary" @click="begin(task,'verify')">复核关闭</el-button>
           <el-button v-if="task.state==='resolved'" plain @click="begin(task,'reopen')">重新开启</el-button>
         </div>
       </article>
@@ -44,7 +44,8 @@ const saving = ref(false)
 const dialog = ref({visible:false,id:null,action:'',note:''})
 const active = computed(() => tasks.value.filter(t => t.state !== 'verified'))
 const actionLabels = {acknowledge:'确认接单',start:'开始处置',resolve:'登记处置措施',verify:'复核关闭',reopen:'重新开启'}
-const stateLabel = state => ({received:'等待通知与接单',notifying:'通知中',notified:'通知已送达',acknowledged:'已接单',in_progress:'处理中',resolved:'待复核',escalated:'超时升级'})[state] || state
+const deliveryLabel = state => ({pending:"待发送",sending:"发送中",failed:"发送失败待重试",sent:"渠道已接收",delivered:"已确认送达",no_recipient:"未找到通知对象"})[state] || "未确认"
+const stateLabel = state => ({received:'等待通知与接单',notifying:'通知中',notified:'通知已送达',acknowledged:'已接单',in_progress:'处理中',resolved:'待复核',escalated:'超时升级',review_overdue:'复核超时'})[state] || state
 const localTime = value => value ? new Date(value).toLocaleString('zh-CN') : '未知'
 const isOverdue = task => Boolean(task.dueAt && Date.now() > new Date(task.dueAt).getTime())
 
