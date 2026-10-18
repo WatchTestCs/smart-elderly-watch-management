@@ -7,8 +7,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/jackc/pgx/v5"
 	"fmt"
+	"github.com/jackc/pgx/v5"
 	"log"
 	"net/http"
 	"net/url"
@@ -22,11 +22,11 @@ import (
 )
 
 type dispatcher struct {
-	db          *pgxpool.Pool
-	webhookURL  string
-	webhookToken string
+	db              *pgxpool.Pool
+	webhookURL      string
+	webhookToken    string
 	escalationPhone string
-	httpClient *http.Client
+	httpClient      *http.Client
 }
 
 var phonePattern = regexp.MustCompile(`^1[0-9]{10}$`)
@@ -42,7 +42,9 @@ func Run(ctx context.Context, db *pgxpool.Pool) {
 		endpoint = ""
 	}
 	escalation := strings.TrimSpace(os.Getenv("CARE_ESCALATION_PHONE"))
-	if !phonePattern.MatchString(escalation) { escalation = "" }
+	if !phonePattern.MatchString(escalation) {
+		escalation = ""
+	}
 	d := &dispatcher{db: db, webhookURL: endpoint, webhookToken: token,
 		escalationPhone: escalation, httpClient: &http.Client{Timeout: 12 * time.Second}}
 	ticker := time.NewTicker(5 * time.Second)
@@ -57,17 +59,18 @@ func Run(ctx context.Context, db *pgxpool.Pool) {
 			}
 		}
 		select {
-		case <-ctx.Done(): return
+		case <-ctx.Done():
+			return
 		case <-ticker.C:
 		}
 	}
 }
 
 type delivery struct {
-	id int64
+	id         int64
 	incidentID int64
-	recipient string
-	channel string
+	recipient  string
+	channel    string
 }
 
 func (d *dispatcher) dispatchOne(ctx context.Context) error {
@@ -88,76 +91,107 @@ func (d *dispatcher) dispatchOne(ctx context.Context) error {
 	`).Scan(&job.id, &job.incidentID, &job.recipient, &job.channel)
 	if err != nil {
 		// No row is normal; connection and SQL errors are not.
-		if errors.Is(err, pgx.ErrNoRows) { return nil }
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil
+		}
 		return err
 	}
 	payload, err := json.Marshal(map[string]any{
-		"type":"care.sos","incidentId":job.incidentID,
-		"notificationId":job.id,"channel":job.channel,"recipient":job.recipient,
+		"type": "care.sos", "incidentId": job.incidentID,
+		"notificationId": job.id, "channel": job.channel, "recipient": job.recipient,
 	})
 	if err == nil {
-		req, reqErr := http.NewRequestWithContext(ctx,http.MethodPost,d.webhookURL,bytes.NewReader(payload))
-		if reqErr != nil { err = reqErr } else {
-			req.Header.Set("Authorization","Bearer "+d.webhookToken)
-			req.Header.Set("Idempotency-Key","care-outbox-"+strconv.FormatInt(job.id,10))
-			req.Header.Set("Content-Type","application/json")
+		req, reqErr := http.NewRequestWithContext(ctx, http.MethodPost, d.webhookURL, bytes.NewReader(payload))
+		if reqErr != nil {
+			err = reqErr
+		} else {
+			req.Header.Set("Authorization", "Bearer "+d.webhookToken)
+			req.Header.Set("Idempotency-Key", "care-outbox-"+strconv.FormatInt(job.id, 10))
+			req.Header.Set("Content-Type", "application/json")
 			resp, callErr := d.httpClient.Do(req)
-			if callErr != nil {err=callErr} else {
+			if callErr != nil {
+				err = callErr
+			} else {
 				resp.Body.Close()
 				if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-					err = fmt.Errorf("gateway HTTP %d",resp.StatusCode)
+					err = fmt.Errorf("gateway HTTP %d", resp.StatusCode)
 				}
 			}
 		}
 	}
 	if err == nil {
-		_, updateErr := d.db.Exec(ctx,`
+		_, updateErr := d.db.Exec(ctx, `
 			UPDATE care_notification_outbox
 			SET status='sent', sent_at=now(),last_error=NULL
-			WHERE id=$1 AND status='sending'`,job.id)
+			WHERE id=$1 AND status='sending'`, job.id)
 		// "sent" only means the gateway accepted the request.
 		return updateErr
 	}
-	wait := time.Duration(30 * (1 << min(6, 5))) * time.Second
+	wait := time.Duration(30*(1<<min(6, 5))) * time.Second
 	// Exponential backoff is capped; attempts are persisted across restarts.
 	var attempts int
-	if scanErr := d.db.QueryRow(ctx,"SELECT attempts FROM care_notification_outbox WHERE id=$1",job.id).Scan(&attempts);scanErr==nil {
-		wait = time.Duration(30 * (1 << min(max(attempts-1,0),6))) * time.Second
+	if scanErr := d.db.QueryRow(ctx, "SELECT attempts FROM care_notification_outbox WHERE id=$1", job.id).Scan(&attempts); scanErr == nil {
+		wait = time.Duration(30*(1<<min(max(attempts-1, 0), 6))) * time.Second
 	}
-	_, updateErr := d.db.Exec(ctx,`
+	_, updateErr := d.db.Exec(ctx, `
 		UPDATE care_notification_outbox
 		SET status='failed', last_error=$2, retry_at=now()+$3::interval
-		WHERE id=$1 AND status='sending'`,job.id,truncate(err.Error(),400),fmt.Sprintf("%d seconds",int(wait.Seconds())))
-	if updateErr != nil { return updateErr }
+		WHERE id=$1 AND status='sending'`, job.id, truncate(err.Error(), 400), fmt.Sprintf("%d seconds", int(wait.Seconds())))
+	if updateErr != nil {
+		return updateErr
+	}
 	return nil
 }
 
-func truncate(s string,maxBytes int) string {
-	if len(s)<=maxBytes{return s}
+func truncate(s string, maxBytes int) string {
+	if len(s) <= maxBytes {
+		return s
+	}
 	return s[:maxBytes]
 }
 
 func (d *dispatcher) escalate(ctx context.Context) error {
-	tx,err:=d.db.Begin(ctx);if err!=nil{return err}
+	tx, err := d.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
 	defer tx.Rollback(ctx)
-	rows,err:=tx.Query(ctx,`
+	rows, err := tx.Query(ctx, `
 		SELECT id FROM care_incident WHERE due_at<=now()
 		  AND state IN ('received','notifying','notified','acknowledged','in_progress')
 		ORDER BY due_at,id FOR UPDATE SKIP LOCKED LIMIT 20`)
-	if err!=nil{return err}
+	if err != nil {
+		return err
+	}
 	var ids []int64
-	for rows.Next(){var id int64;if err:=rows.Scan(&id);err!=nil{rows.Close();return err};ids=append(ids,id)}
-	if err:=rows.Err();err!=nil{rows.Close();return err}
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			rows.Close()
+			return err
+		}
+		ids = append(ids, id)
+	}
+	if err := rows.Err(); err != nil {
+		rows.Close()
+		return err
+	}
 	rows.Close()
-	for _,id:=range ids{
-		if _,err:=tx.Exec(ctx,`UPDATE care_incident
+	for _, id := range ids {
+		if _, err := tx.Exec(ctx, `UPDATE care_incident
 			SET state='escalated',updated_at=now(),due_at=now()+interval '10 minutes'
-			WHERE id=$1`,id);err!=nil{return err}
-		if _,err:=tx.Exec(ctx,`INSERT INTO care_incident_event(incident_id,actor,action,note)
-			VALUES($1,'system','escalate','超时无人完成对应照护阶段；需要立即跟进')`,id);err!=nil{return err}
-		if d.escalationPhone!="" {
-			if _,err:=tx.Exec(ctx,`INSERT INTO care_notification_outbox(incident_id,channel,recipient)
-				VALUES($1,'sms',$2) ON CONFLICT DO NOTHING`,id,d.escalationPhone);err!=nil{return err}
+			WHERE id=$1`, id); err != nil {
+			return err
+		}
+		if _, err := tx.Exec(ctx, `INSERT INTO care_incident_event(incident_id,actor,action,note)
+			VALUES($1,'system','escalate','超时无人完成对应照护阶段；需要立即跟进')`, id); err != nil {
+			return err
+		}
+		if d.escalationPhone != "" {
+			if _, err := tx.Exec(ctx, `INSERT INTO care_notification_outbox(incident_id,channel,recipient)
+				VALUES($1,'sms',$2) ON CONFLICT DO NOTHING`, id, d.escalationPhone); err != nil {
+				return err
+			}
 		}
 	}
 	return tx.Commit(ctx)

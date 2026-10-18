@@ -14,7 +14,7 @@ import (
 func (h *Handler) routeCare(mux *http.ServeMux) {
 	mux.HandleFunc("POST /restful/care/incidents", h.careIncidents)
 	mux.HandleFunc("POST /restful/care/transition", h.careTransition)
- mux.HandleFunc("POST /restful/care/receipt", h.careReceipt)
+	mux.HandleFunc("POST /restful/care/receipt", h.careReceipt)
 }
 
 func careAdmin(w http.ResponseWriter, r *http.Request) (string, bool) {
