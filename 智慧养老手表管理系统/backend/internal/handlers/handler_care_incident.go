@@ -128,7 +128,7 @@ func (h *Handler) careTransition(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if action == "verify" && resolver != nil && *resolver == actor {
-		response.JSON(w, http.StatusForbidden, map[string]any{"returnCode":"0000","message":"处置人与复核人必须不同"})
+		response.JSON(w, http.StatusForbidden, map[string]any{"returnCode": "0000", "message": "处置人与复核人必须不同"})
 		return
 	}
 	next := allowed[before][action]

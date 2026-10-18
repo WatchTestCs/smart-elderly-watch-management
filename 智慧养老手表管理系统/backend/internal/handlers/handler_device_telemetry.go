@@ -1,10 +1,10 @@
 package handlers
 
 import (
-	"regexp"
 	"careold-go/internal/response"
 	"github.com/jackc/pgx/v5"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -324,12 +324,12 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 			COALESCE((SELECT min(n.status) FROM care_notification_outbox n
 			WHERE n.incident_id=i.id),'no_recipient')
 			FROM care_incident i WHERE i.device_id=$1 AND i.request_id=$2`,
-			d.ID, requestID).Scan(&priorID,&priorState,&priorNotification)
+			d.ID, requestID).Scan(&priorID, &priorState, &priorNotification)
 		if err == nil {
 			rollback()
-			response.OK(w, map[string]any{"message":"求助已接收（重复请求未再次入库）",
-				"incidentId":priorID,"incidentState":priorState,
-				"notificationState":priorNotification,"duplicate":true})
+			response.OK(w, map[string]any{"message": "求助已接收（重复请求未再次入库）",
+				"incidentId": priorID, "incidentState": priorState,
+				"notificationState": priorNotification, "duplicate": true})
 			return
 		}
 		if err != pgx.ErrNoRows {
@@ -378,7 +378,9 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 	}
 	var incidentID int64
 	var requestValue any
-	if requestID != "" { requestValue = requestID }
+	if requestID != "" {
+		requestValue = requestID
+	}
 	if err := tx.QueryRow(ctx,
 		`INSERT INTO care_incident(source_alarm_id, old_id, device_id, request_id)
 		 VALUES($1,$2,$3,$4) RETURNING id`,
