@@ -1,0 +1,29 @@
+name: Temporary 2.0.5 Go fmt verification
+on:
+  push:
+    branches: [feature/2.0.5-care-operations]
+    paths:
+      - '.github/workflows/format-205.yml'
+permissions:
+  contents: write
+jobs:
+  format:
+    if: github.ref == 'refs/heads/feature/2.0.5-care-operations' && github.repository == 'WatchTestCs/smart-elderly-watch-management'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Go format and commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          gofmt -w '智慧养老手表管理系统/backend/internal/handlers/'*.go '智慧养老手表管理系统/backend/internal/care/'*.go '智慧养老手表管理系统/backend/cmd/server/'*.go
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- '智慧养老手表管理系统/backend/'
+          if ! git diff --cached --quiet; then
+            git commit -m "style(go): format 2.0.5 operations and tests"
+            git push
+          fi
