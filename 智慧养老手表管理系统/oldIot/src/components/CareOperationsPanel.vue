@@ -1,5 +1,5 @@
 <template>
-  <section class="care-operations" aria-labelledby="care-operations-title">
+  <section v-if="!forbidden" class="care-operations" aria-labelledby="care-operations-title">
     <header class="care-operations-head">
       <div><h3 id="care-operations-title">值守与服务诊断</h3><p>以下为服务端任务统计，不代表人员到岗或通知送达。</p></div>
       <el-button plain :loading="loading" @click="refresh">检查服务</el-button>
@@ -38,6 +38,7 @@ const diagnostics=ref(null)
 const staff=ref([])
 const accesses=ref([])
 const authorized=ref(false)
+const forbidden=ref(false)
 const showAudit=ref(false)
 const loading=ref(false)
 const error=ref('')
@@ -48,12 +49,13 @@ async function refresh(){
     const {data}=await post('diagnostics')
     diagnostics.value=data
     authorized.value=true
+    forbidden.value=false
     error.value=''
     await loadStaff()
   }catch(e){
     authorized.value=false
     diagnostics.value=null
-    if(e?.response?.status===403){error.value='当前岗位无服务诊断权限。'}
+    if(e?.response?.status===403){forbidden.value=true;error.value=''}
     else{error.value='服务诊断不可用，请检查后端和数据库。'}
   }finally{loading.value=false}
 }
