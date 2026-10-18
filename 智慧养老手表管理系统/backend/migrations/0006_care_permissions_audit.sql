@@ -30,3 +30,10 @@ CREATE INDEX IF NOT EXISTS idx_care_sensitive_access_time
   ON care_sensitive_access_audit(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_care_sensitive_access_actor
   ON care_sensitive_access_audit(actor_id,created_at DESC);
+
+-- The worker updates this heartbeat after each polling cycle.
+CREATE TABLE IF NOT EXISTS care_worker_heartbeat (
+  singleton boolean PRIMARY KEY DEFAULT true CHECK (singleton),
+  last_seen_at timestamptz NOT NULL,
+  started_at timestamptz NOT NULL
+);
