@@ -371,3 +371,19 @@
 | [handler_care_receipt.go](../智慧养老手表管理系统/backend/internal/handlers/handler_care_receipt.go) | 独立签名验证的送达回执处理 API。 |
 | [0005_care_incidents.sql](../智慧养老手表管理系统/backend/migrations/0005_care_incidents.sql) | 照护事件、事件审计和持久化通知 outbox 的数据库迁移。 |
 | [CareInbox.vue](../智慧养老手表管理系统/oldIot/src/components/CareInbox.vue) | 后台首页待处理 SOS 事件的任务优先组件。 |
+
+## 2.0.5 新增文件
+
+| 文件 | 作用 |
+| --- | --- |
+| [CARE_2.0.5_GATES.md](../docs/CARE_2.0.5_GATES.md) | 2.0.5 可靠性、岗位权限、隐私与真实交付验收门槛。 |
+| [2.0.5.md](../docs/releases/2.0.5.md) | 2.0.5 源码版发布说明及安全边界。 |
+| [check-care-health.sh](../deploy/check-care-health.sh) | 独立服务 HTTP 和数据库就绪只读探测。 |
+| [0006_care_permissions_audit.sql](../智慧养老手表管理系统/backend/migrations/0006_care_permissions_audit.sql) | 岗位授权、敏感数据访问审计及通知工作进程心跳数据库迁移。 |
+| [privacy.go](../智慧养老手表管理系统/backend/cmd/server/privacy.go) | 在认证与敏感数据处理之间执行失败关闭的访问审计中间件。 |
+| [handler_care_operations.go](../智慧养老手表管理系统/backend/internal/handlers/handler_care_operations.go) | 主管服务诊断、照护岗位授权校验与任务读取审计。 |
+| [handler_care_staff.go](../智慧养老手表管理系统/backend/internal/handlers/handler_care_staff.go) | 主管配置岗位、读取敏感访问审计及管理人员列表。 |
+| [care_operations_test.go](../智慧养老手表管理系统/backend/internal/handlers/care_operations_test.go) | 岗位权限、敏感审计及服务心跳集成测试。 |
+| [care_receipt_race_test.go](../智慧养老手表管理系统/backend/internal/handlers/care_receipt_race_test.go) | 网关在发送中立即送达时的竞态回归测试。 |
+| [CareOperationsPanel.vue](../智慧养老手表管理系统/oldIot/src/components/CareOperationsPanel.vue) | 工作台值守进程健康、通知异常、岗位分配及审计面板。 |
+| [publish-205-source.yml](../.github/workflows/publish-205-source.yml) | 合并到 preview 后验证并发布 2.0.5 源码归档与校验文件。 |
