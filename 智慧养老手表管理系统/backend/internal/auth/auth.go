@@ -32,6 +32,7 @@ var hardwarePaths = map[string]bool{
 	"POST /restful/device/heartbeat": true,
 	"POST /restful/device/report":    true,
 	"POST /restful/device/sos":       true,
+	"POST /restful/care/receipt":     true,
 }
 
 // SHARED：ADMIN 或 FAMILY 任一角色。

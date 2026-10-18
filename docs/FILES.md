@@ -354,3 +354,20 @@
 | [family.logic.js](../智慧养老手表管理系统/oldIot/src/views/family.logic.js) | Vue Options API 业务逻辑模块：family.logic。 |
 | [person.logic.js](../智慧养老手表管理系统/oldIot/src/views/person.logic.js) | Vue Options API 业务逻辑模块：person.logic。 |
 | [ratepre.logic.js](../智慧养老手表管理系统/oldIot/src/views/ratepre.logic.js) | Vue Options API 业务逻辑模块：ratepre.logic。 |
+
+## 2.0.4 照护闭环新增文件
+
+| 路径 | 用途 |
+| --- | --- |
+| [publish-204-source.yml](../.github/workflows/publish-204-source.yml) | 2.0.4 源码 ZIP 与 SHA-256 自动发布工作流。 |
+| [suining-care.service](../deploy/suining-care.service) | Go 照护服务 systemd 常驻运行及进程重启配置。 |
+| [CARE_2.0.4_GATES.md](../docs/CARE_2.0.4_GATES.md) | 2.0.4 照护闭环范围、尚未实测的安全交付门槛。 |
+| [CARE_SERVICE_DEPLOYMENT.md](../docs/CARE_SERVICE_DEPLOYMENT.md) | 告警网关、送达回执、升级流程、独立后端部署和备份指引。 |
+| [2.0.4.md](../docs/releases/2.0.4.md) | 2.0.4 源码预览版发行说明。 |
+| [worker.go](../智慧养老手表管理系统/backend/internal/care/worker.go) | 持久化通知 outbox、带幂等键的发送及超时升级后台作业。 |
+| [worker_test.go](../智慧养老手表管理系统/backend/internal/care/worker_test.go) | PostgreSQL 工作者重试、送达状态及升级集成测试。 |
+| [care_integration_test.go](../智慧养老手表管理系统/backend/internal/handlers/care_integration_test.go) | SOS 去重、权限、审计、送达回执与流程集成测试。 |
+| [handler_care_incident.go](../智慧养老手表管理系统/backend/internal/handlers/handler_care_incident.go) | 管理员照护任务、接单、处置、复核及事件履历 API。 |
+| [handler_care_receipt.go](../智慧养老手表管理系统/backend/internal/handlers/handler_care_receipt.go) | 独立签名验证的送达回执处理 API。 |
+| [0005_care_incidents.sql](../智慧养老手表管理系统/backend/migrations/0005_care_incidents.sql) | 照护事件、事件审计和持久化通知 outbox 的数据库迁移。 |
+| [CareInbox.vue](../智慧养老手表管理系统/oldIot/src/components/CareInbox.vue) | 后台首页待处理 SOS 事件的任务优先组件。 |

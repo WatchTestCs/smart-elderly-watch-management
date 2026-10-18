@@ -4,6 +4,7 @@
       <div><h1>运营总览</h1><p class="page-subtitle">查看设备异常与平台公告，及时跟进照护事项。</p></div>
       <el-button type="primary" icon="el-icon-plus" @click="addtext">发布公告</el-button>
     </div>
+    <care-inbox />
     <section class="overview-grid" aria-label="设备告警摘要">
       <article class="overview-card alert-card" v-loading="countLoading" :aria-busy="String(countLoading)">
         <div class="metric-icon amber"><i class="el-icon-warning"></i></div>
@@ -88,6 +89,7 @@
 </style>
 <script>
 import axios from 'axios'
+import CareInbox from '@/components/CareInbox.vue'
 
 export default {
   data () {

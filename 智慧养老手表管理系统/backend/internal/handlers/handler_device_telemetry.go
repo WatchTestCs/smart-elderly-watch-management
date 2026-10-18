@@ -4,6 +4,7 @@ import (
 	"careold-go/internal/response"
 	"github.com/jackc/pgx/v5"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -302,6 +303,41 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 		hwFail(w, "0005", "设备还未绑定老人")
 		return
 	}
+	// A device should reuse a stable requestId when retrying the same SOS on
+	// weak networks; each new press must use a new ID.
+	requestID, _ := vstr(m, "requestId")
+	if requestID != "" {
+		if len(requestID) > 64 || !sosRequestIDOK(requestID) {
+			rollback()
+			writeValidation400(w)
+			return
+		}
+		if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtextextended($1,0))`,
+			"care-sos:"+deviceNo+":"+requestID); err != nil {
+			rollback()
+			response.Error500(w, ref())
+			return
+		}
+		var priorID int64
+		var priorState, priorNotification string
+		err := tx.QueryRow(ctx, `SELECT i.id,i.state,
+			COALESCE((SELECT min(n.status) FROM care_notification_outbox n
+			WHERE n.incident_id=i.id),'no_recipient')
+			FROM care_incident i WHERE i.device_id=$1 AND i.request_id=$2`,
+			d.ID, requestID).Scan(&priorID, &priorState, &priorNotification)
+		if err == nil {
+			rollback()
+			response.OK(w, map[string]any{"message": "求助已接收（重复请求未再次入库）",
+				"incidentId": priorID, "incidentState": priorState,
+				"notificationState": priorNotification, "duplicate": true})
+			return
+		}
+		if err != pgx.ErrNoRows {
+			rollback()
+			response.Error500(w, ref())
+			return
+		}
+	}
 	lng, _ := vstr(m, "lng")
 	lat, _ := vstr(m, "lat")
 	if lng == "" && d.LastLng != nil {
@@ -316,10 +352,11 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	now := time.Now()
-	if _, err := tx.Exec(ctx,
+	var alarmID int64
+	if err := tx.QueryRow(ctx,
 		`INSERT INTO alarm_precess(status, old_id, device_id, be_time, lng, lat)
-		 VALUES('1',$1,$2,$3,$4,$5)`,
-		*d.OldID, d.ID, now, nullableCoordinate(lng), nullableCoordinate(lat)); err != nil {
+		 VALUES('1',$1,$2,$3,$4,$5) RETURNING id`,
+		*d.OldID, d.ID, now, nullableCoordinate(lng), nullableCoordinate(lat)).Scan(&alarmID); err != nil {
 		rollback()
 		response.Error500(w, ref())
 		return
@@ -339,9 +376,56 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 		response.Error500(w, ref())
 		return
 	}
+	var incidentID int64
+	var requestValue any
+	if requestID != "" {
+		requestValue = requestID
+	}
+	if err := tx.QueryRow(ctx,
+		`INSERT INTO care_incident(source_alarm_id, old_id, device_id, request_id)
+		 VALUES($1,$2,$3,$4) RETURNING id`,
+		alarmID, *d.OldID, d.ID, requestValue).Scan(&incidentID); err != nil {
+		rollback()
+		response.Error500(w, ref())
+		return
+	}
+	if _, err := tx.Exec(ctx,
+		`INSERT INTO care_incident_event(incident_id, actor, action, note)
+		 VALUES($1,'device','received','SOS 已持久化，尚无通知送达或人工接单确认')`,
+		incidentID); err != nil {
+		rollback()
+		response.Error500(w, ref())
+		return
+	}
+	// Persist possible family SMS attempts in the same transaction as the SOS.
+	// This creates a pending task, NOT a claim of dispatch or delivery.
+	queued, err := tx.Exec(ctx,
+		`INSERT INTO care_notification_outbox(incident_id, channel, recipient)
+		 SELECT $1, 'sms', f.family_phone
+		 FROM oldperson o JOIN family f ON f.family_id=o.family_id
+		 WHERE o.old_id=$2 AND f.family_phone ~ '^1[0-9]{10}$'
+		 ON CONFLICT DO NOTHING`, incidentID, *d.OldID)
+	if err != nil {
+		rollback()
+		response.Error500(w, ref())
+		return
+	}
+	notificationState := "no_recipient"
+	if queued.RowsAffected() > 0 {
+		notificationState = "pending"
+	}
 	if err := tx.Commit(ctx); err != nil {
 		response.Error500(w, ref())
 		return
 	}
-	response.OK(w, map[string]any{"message": "已通知家属"})
+	response.OK(w, map[string]any{
+		"message":           "求助已接收，等待通知和人员接单",
+		"incidentId":        incidentID,
+		"incidentState":     "received",
+		"notificationState": notificationState,
+	})
 }
+
+var sosRequestIDPattern = regexp.MustCompile(`^[A-Za-z0-9_.:-]{1,64}$`)
+
+func sosRequestIDOK(id string) bool { return sosRequestIDPattern.MatchString(id) }

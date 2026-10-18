@@ -26,6 +26,7 @@ var exemptPaths = []string{
 	"/restful/device/heartbeat",
 	"/restful/device/report",
 	"/restful/device/sos",
+	"/restful/care/receipt",
 	"/restful/desktop/exit",
 }
 
