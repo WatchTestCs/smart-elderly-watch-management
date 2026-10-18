@@ -3,9 +3,9 @@ package handlers
 import (
 	"careold-go/internal/response"
 	"context"
+	"github.com/jackc/pgx/v5"
 	"net/http"
 	"strings"
-	"github.com/jackc/pgx/v5"
 )
 
 type dbQuerier interface {
