@@ -4,7 +4,6 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -57,29 +56,6 @@ func int64Val(m map[string]any, key string) (int64, bool) {
 		return n, true
 	}
 	return 0, false
-}
-
-// page 解析分页参数；非整数直接 400（复刻 Java 行为）。
-func page(w http.ResponseWriter, r *http.Request) (int, int, bool) {
-	p, ps := 1, 20
-	if s := r.URL.Query().Get("page"); s != "" {
-		n, err := strconv.Atoi(s)
-		if err != nil {
-			response.JSON(w, http.StatusBadRequest, map[string]any{"returnCode": "0000", "message": "分页参数必须为整数"})
-			return 0, 0, false
-		}
-		p = n
-	}
-	if s := r.URL.Query().Get("pageSize"); s != "" {
-		n, err := strconv.Atoi(s)
-		if err != nil {
-			response.JSON(w, http.StatusBadRequest, map[string]any{"returnCode": "0000", "message": "分页参数必须为整数"})
-			return 0, 0, false
-		}
-		ps = n
-	}
-	// 也兼容 JSON body 里的分页
-	return p, ps, true
 }
 
 // bodyPage 从 body map 取分页（默认 1/20）。
