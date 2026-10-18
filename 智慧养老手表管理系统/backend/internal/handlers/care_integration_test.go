@@ -100,3 +100,21 @@ func TestCareReceiptRequiresTrustedGatewaySignature(t *testing.T) {
  var state string
  if err:=pool.QueryRow(context.Background(),"SELECT state FROM care_incident").Scan(&state);err!=nil||state!="notified"{t.Fatalf("delivery state=%s err=%v",state,err)}
 }
+
+func TestCareSOSRequestIDPreventsDuplicateAlerts(t *testing.T) {
+ pool:=testDatabase(t)
+ seedDevice(t,pool)
+ h:=testHandler(pool)
+ payload:=map[string]any{"deviceNo":"WATCH001","secret":testSecret,"requestId":"press-123"}
+ first:=api(t,h.deviceSos,payload)
+ repeated:=api(t,h.deviceSos,payload)
+ if first["incidentId"]!=repeated["incidentId"]||repeated["duplicate"]!=true{
+  t.Fatalf("same press was duplicated: %+v %+v",first,repeated)
+ }
+ var count int
+ if err:=pool.QueryRow(context.Background(),"SELECT count(*) FROM alarm_precess").Scan(&count);err!=nil||count!=1{
+  t.Fatalf("duplicate alert inserted count=%d err=%v",count,err)
+ }
+ fresh:=api(t,h.deviceSos,map[string]any{"deviceNo":"WATCH001","secret":testSecret,"requestId":"press-124"})
+ if fresh["incidentId"]==first["incidentId"] {t.Fatal("new SOS press incorrectly deduplicated")}
+}
