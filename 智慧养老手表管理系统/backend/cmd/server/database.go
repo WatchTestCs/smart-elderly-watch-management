@@ -77,7 +77,7 @@ func watchDatabase(ctx context.Context, cfg config.Config, sessions *session.Sto
 				mux := http.NewServeMux()
 				handlers.New(pool, sessions, cfg).Routes(mux)
 				go care.Run(ctx, pool)
-				api = ratelimit.New().Middleware(csrf.Middleware(sessions, auth.Middleware(sessions, mux)))
+				api = ratelimit.New().Middleware(csrf.Middleware(sessions, auth.Middleware(sessions, sensitiveCareAudit(pool, mux))))
 			}
 		}
 		if err == nil {
