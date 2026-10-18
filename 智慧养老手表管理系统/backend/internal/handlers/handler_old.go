@@ -5,6 +5,7 @@ package handlers
 // 细节以 go-rewrite-spec/group-b.md 为准。
 
 import (
+	"careold-go/internal/response"
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
@@ -12,6 +13,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"io"
 	"log"
 	"math"
@@ -22,8 +25,6 @@ import (
 	"sync"
 	"time"
 	"unicode/utf8"
-	"github.com/jackc/pgx/v5/pgconn"
-	"careold-go/internal/response"
 )
 
 var oldScanOnce sync.Once
