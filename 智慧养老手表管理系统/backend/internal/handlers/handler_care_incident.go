@@ -16,6 +16,7 @@ func (h *Handler) routeCare(mux *http.ServeMux) {
 	mux.HandleFunc("POST /restful/care/transition", h.careTransition)
 	mux.HandleFunc("POST /restful/care/events", h.careEvents)
 	mux.HandleFunc("POST /restful/care/receipt", h.careReceipt)
+	mux.HandleFunc("POST /restful/care/diagnostics", h.careDiagnostics)
 }
 
 func careAdmin(w http.ResponseWriter, r *http.Request) (string, bool) {
@@ -31,7 +32,8 @@ func careAdmin(w http.ResponseWriter, r *http.Request) (string, bool) {
 }
 
 func (h *Handler) careIncidents(w http.ResponseWriter, r *http.Request) {
-	if _, ok := careAdmin(w, r); !ok {
+	actor, ok := careAdmin(w, r)
+	if !ok || !h.auditCareAccess(w, r, actor, "incident_list", nil) {
 		return
 	}
 	m, ok := optBody(w, r)
@@ -108,6 +110,9 @@ func (h *Handler) careTransition(w http.ResponseWriter, r *http.Request) {
 	}
 	id, _ := strconv.ParseInt(idStr, 10, 64)
 	action := str(m, "action")
+	if !h.authorizeCareAction(w, r, actor, action) {
+		return
+	}
 	note := strings.TrimSpace(str(m, "note"))
 	if len(note) > 2000 {
 		write400(w, "记录不可超过2000字符")
@@ -199,6 +204,10 @@ func (h *Handler) careEvents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id, _ := strconv.ParseInt(idStr, 10, 64)
+	actor, ok := careAdmin(w, r)
+	if !ok || !h.auditCareAccess(w, r, actor, "incident_events", &id) {
+		return
+	}
 	rows, err := h.DB.Query(r.Context(),
 		`SELECT actor,action,note,created_at FROM care_incident_event
       WHERE incident_id=$1 ORDER BY id ASC LIMIT 100`, id)
