@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"github.com/jackc/pgx/v5"
 )
 
 func (h *Handler) routeVitals(mux *http.ServeMux) {
