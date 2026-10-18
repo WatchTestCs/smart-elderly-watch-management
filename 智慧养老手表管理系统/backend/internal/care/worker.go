@@ -6,6 +6,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
+	"github.com/jackc/pgx/v5"
 	"fmt"
 	"log"
 	"net/http"
@@ -86,7 +88,7 @@ func (d *dispatcher) dispatchOne(ctx context.Context) error {
 	`).Scan(&job.id, &job.incidentID, &job.recipient, &job.channel)
 	if err != nil {
 		// No row is normal; connection and SQL errors are not.
-		if strings.Contains(err.Error(),"no rows in result set") { return nil }
+		if errors.Is(err, pgx.ErrNoRows) { return nil }
 		return err
 	}
 	payload, err := json.Marshal(map[string]any{
