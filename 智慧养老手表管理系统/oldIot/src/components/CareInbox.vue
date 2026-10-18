@@ -14,6 +14,7 @@
           <span>设备 {{ task.deviceId }} · {{ stateLabel(task.state) }}</span>
           <small>接收于 {{ localTime(task.createdAt) }} · {{ isOverdue(task) ? '已超出当前处理期限' : '处理期限：' + localTime(task.dueAt) }}</small>
           <small>责任人：{{ task.acknowledgedBy || '尚未接单' }} · 通知状态：{{ deliveryLabel(task.notificationState) }}</small>
+          <small class="care-next-step">下一步：{{ nextStep(task) }}</small>
         </div>
         <div class="care-task-actions">
           <el-button plain @click="viewHistory(task)">处置记录</el-button>
@@ -63,6 +64,7 @@ const deliveryLabel = state => ({pending:"待发送",sending:"发送中",failed:
 const stateLabel = state => ({received:'等待通知与接单',notifying:'通知中',notified:'通知已送达',acknowledged:'已接单',in_progress:'处理中',resolved:'待复核',escalated:'超时升级',review_overdue:'复核超时'})[state] || state
 const localTime = value => value ? new Date(value).toLocaleString('zh-CN') : '未知'
 const isOverdue = task => Boolean(task.dueAt && Date.now() > new Date(task.dueAt).getTime())
+const nextStep = task => ({received:'值班人员立即接单并核实长者状况',notifying:'值班人员立即接单，不等待渠道回执',notified:'照护人员接单并到场核实',acknowledged:'开始现场处置并记录措施',in_progress:'完成现场处置并登记结果',resolved:'由另一名主管独立复核',escalated:'升级联系值班主管，优先接单',review_overdue:'主管立即复核或重新开启'})[task.state] || '核对任务状态'
 
 let timer
 async function load () {
@@ -124,6 +126,7 @@ onBeforeUnmount(() => clearInterval(timer))
 .care-task.overdue{border-left:4px solid #a4262c}
 .care-task-main{display:grid;gap:4px;min-width:0}
 .care-task-main strong{color:#263632}
+.care-next-step{font-weight:600;color:#235442!important}
 .care-task-main span,.care-task-main small{color:#53645c}
 .care-task-actions{display:flex;gap:8px;flex-wrap:wrap}
 .care-error{color:#a4262c}
