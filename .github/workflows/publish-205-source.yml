@@ -36,7 +36,9 @@ jobs:
           git archive --format=zip --prefix=suining-2.0.5-source/ --output=Suining-2.0.5-source.zip HEAD
           sha256sum Suining-2.0.5-source.zip > SHA256SUMS.txt
           unzip -tqq Suining-2.0.5-source.zip
-          unzip -Z1 Suining-2.0.5-source.zip | grep -q 'suining-2.0.5-source/docs/CARE_2.0.5_GATES.md'
+          unzip -Z1 Suining-2.0.5-source.zip > archive-entries.txt
+          grep -Fxq 'suining-2.0.5-source/docs/CARE_2.0.5_GATES.md' archive-entries.txt
+          rm archive-entries.txt
       - name: Publish 2.0.5 preview release
         shell: bash
         env:
