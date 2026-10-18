@@ -5,6 +5,8 @@
       <el-button plain :loading="loading" @click="refresh">检查服务</el-button>
     </header>
     <p v-if="error" class="care-error" role="alert">{{ error }}</p>
+    <p v-if="diagnostics && !diagnostics.workerHealthy" role="alert" class="care-worker-critical">告警服务进程心跳异常或尚未启动：不能保证通知和超时升级正在执行，必须立即检查常驻服务。</p>
+    <p v-if="diagnostics && diagnostics.workerHealthy" role="status">告警服务进程最近一次心跳正常。此状态不代表消息已经送达。</p>
     <div v-if="diagnostics" class="care-operation-metrics">
       <span>待发送通知 <strong>{{ diagnostics.pendingNotifications }}</strong></span>
       <span>发送失败 <strong>{{ diagnostics.failedNotifications }}</strong></span>
@@ -76,6 +78,7 @@ async function ifAudit(){
 onMounted(refresh)
 </script>
 <style scoped>
+.care-worker-critical{padding:12px;background:#fff5ec;border-left:3px solid #b94d29;color:#8e3619;font-weight:600}
 .care-operations{margin:16px 0;padding:18px;border:1px solid var(--care-border,#dce4da);border-radius:12px;background:#fff}
 .care-operations-head{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
 .care-operations-head h3,.care-operations-head h4{margin:0;color:var(--care-heading,#235442)}
