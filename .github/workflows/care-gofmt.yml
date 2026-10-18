@@ -1,0 +1,21 @@
+name: Care one-shot gofmt
+on:
+  push:
+    branches: [feature/2.0.4-care-incident-foundation]
+    paths: [.github/workflows/care-gofmt.yml]
+permissions:
+  contents: write
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - run: |
+          gofmt -w '智慧养老手表管理系统/backend/internal/care/'*.go '智慧养老手表管理系统/backend/internal/handlers/handler_care_'*.go '智慧养老手表管理系统/backend/internal/handlers/handler_device_telemetry.go' '智慧养老手表管理系统/backend/cmd/server/database.go' '智慧养老手表管理系统/backend/internal/auth/auth.go' '智慧养老手表管理系统/backend/internal/csrf/csrf.go'
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- '智慧养老手表管理系统/backend/'
+          if ! git diff --cached --quiet; then git commit -m "style(care): gofmt 2.0.4 modules"; git push; fi
