@@ -14,6 +14,7 @@ import (
 func (h *Handler) routeCare(mux *http.ServeMux) {
 	mux.HandleFunc("POST /restful/care/incidents", h.careIncidents)
 	mux.HandleFunc("POST /restful/care/transition", h.careTransition)
+	mux.HandleFunc("POST /restful/care/events", h.careEvents)
 	mux.HandleFunc("POST /restful/care/receipt", h.careReceipt)
 }
 
@@ -42,10 +43,19 @@ func (h *Handler) careIncidents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	rows, err := h.DB.Query(r.Context(),
-		`SELECT id,old_id,device_id,kind,state,severity,created_at,due_at,acknowledged_by,
-          acknowledged_at,resolved_by,resolved_at,verified_by,verified_at
-     FROM care_incident ORDER BY
-       CASE WHEN state='verified' THEN 1 ELSE 0 END, due_at ASC, id DESC
+		`SELECT i.id,i.old_id,i.device_id,i.kind,i.state,i.severity,i.created_at,i.due_at,
+          i.acknowledged_by,i.acknowledged_at,i.resolved_by,i.resolved_at,i.verified_by,i.verified_at,
+          o.name,
+          (SELECT CASE
+            WHEN bool_or(n.status='delivered') THEN 'delivered'
+            WHEN bool_or(n.status='failed') THEN 'failed'
+            WHEN bool_or(n.status='sending') THEN 'sending'
+            WHEN bool_or(n.status='pending') THEN 'pending'
+            WHEN bool_or(n.status='sent') THEN 'sent'
+            ELSE 'no_recipient' END
+           FROM care_notification_outbox n WHERE n.incident_id=i.id)
+     FROM care_incident i LEFT JOIN oldperson o ON o.old_id=i.old_id ORDER BY
+       CASE WHEN i.state='verified' THEN 1 ELSE 0 END, i.due_at ASC, i.id DESC
      LIMIT $1 OFFSET $2`, ps, (page-1)*ps)
 	if err != nil {
 		response.Error500(w, ref())
@@ -57,16 +67,18 @@ func (h *Handler) careIncidents(w http.ResponseWriter, r *http.Request) {
 		var id, oldID, deviceID int64
 		var kind, state, severity string
 		var created, due time.Time
-		var assigned, resolved, verified *string
+		var assigned, resolved, verified, oldName *string
+		var deliveryStatus string
 		var ackAt, resAt, verAt *time.Time
 		if err := rows.Scan(&id, &oldID, &deviceID, &kind, &state, &severity, &created, &due,
-			&assigned, &ackAt, &resolved, &resAt, &verified, &verAt); err != nil {
+			&assigned, &ackAt, &resolved, &resAt, &verified, &verAt, &oldName, &deliveryStatus); err != nil {
 			response.Error500(w, ref())
 			return
 		}
 		items = append(items, map[string]any{
 			"id": id, "oldId": oldID, "deviceId": deviceID, "kind": kind, "state": state,
 			"severity": severity, "createdAt": created, "dueAt": due,
+			"oldPersonName": oldName,"notificationState": deliveryStatus,
 			"acknowledgedBy": assigned, "acknowledgedAt": ackAt,
 			"resolvedBy": resolved, "resolvedAt": resAt, "verifiedBy": verified, "verifiedAt": verAt,
 		})
@@ -106,6 +118,7 @@ func (h *Handler) careTransition(w http.ResponseWriter, r *http.Request) {
 		"notifying":    {"acknowledge": "acknowledged", "escalate": "escalated"},
 		"notified":     {"acknowledge": "acknowledged", "escalate": "escalated"},
 		"escalated":    {"acknowledge": "acknowledged"},
+		"review_overdue": {"verify": "verified", "reopen": "in_progress"},
 		"acknowledged": {"start": "in_progress", "escalate": "escalated"},
 		"in_progress":  {"resolve": "resolved", "escalate": "escalated"},
 		"resolved":     {"verify": "verified", "reopen": "in_progress"},
@@ -142,6 +155,12 @@ func (h *Handler) careTransition(w http.ResponseWriter, r *http.Request) {
 	}
 	if _, err := tx.Exec(ctx, `UPDATE care_incident SET
     state=$2,updated_at=now(),
+    due_at=CASE
+      WHEN $3='acknowledge' THEN now()+interval '10 minutes'
+      WHEN $3='start' THEN now()+interval '30 minutes'
+      WHEN $3='resolve' THEN now()+interval '30 minutes'
+      WHEN $3='reopen' THEN now()+interval '10 minutes'
+      ELSE due_at END,
     acknowledged_by=CASE WHEN $3='acknowledge' THEN $4 ELSE acknowledged_by END,
     acknowledged_at=CASE WHEN $3='acknowledge' THEN now() ELSE acknowledged_at END,
     resolved_by=CASE WHEN $3='resolve' THEN $4 ELSE resolved_by END,
@@ -164,4 +183,27 @@ func (h *Handler) careTransition(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	response.OK(w, map[string]any{"id": id, "state": next})
+}
+
+func (h *Handler) careEvents(w http.ResponseWriter,r *http.Request) {
+ if _,ok:=careAdmin(w,r);!ok{return}
+ m,ok:=bodyMap(w,r);if !ok{return}
+ idStr,present:=vstr(m,"id")
+ if !present || !validID(idStr){writeValidation400(w);return}
+ id,_:=strconv.ParseInt(idStr,10,64)
+ rows,err:=h.DB.Query(r.Context(),
+   `SELECT actor,action,note,created_at FROM care_incident_event
+      WHERE incident_id=$1 ORDER BY id ASC LIMIT 100`,id)
+ if err!=nil {response.Error500(w,ref());return}
+ defer rows.Close()
+ events:=[]map[string]any{}
+ for rows.Next(){
+   var actor,action string
+   var note *string
+   var created time.Time
+   if err:=rows.Scan(&actor,&action,&note,&created);err!=nil{response.Error500(w,ref());return}
+   events=append(events,map[string]any{"actor":actor,"action":action,"note":note,"createdAt":created})
+ }
+ if err:=rows.Err();err!=nil{response.Error500(w,ref());return}
+ response.OK(w,map[string]any{"events":events})
 }
