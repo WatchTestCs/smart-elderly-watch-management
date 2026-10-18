@@ -2,7 +2,9 @@ name: Temporary gofmt for refactor
 on:
   push:
     branches: [refactor/2.0.2-final-go-modules]
-    paths: [.github/workflows/refactor-format.yml]
+    paths:
+      - '.github/workflows/refactor-format.yml'
+      - '智慧养老手表管理系统/backend/internal/handlers/**'
 permissions:
   contents: write
 jobs:
