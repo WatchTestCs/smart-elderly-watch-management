@@ -71,16 +71,3 @@ func ValidNewPassword(pw string) bool {
 func ValidPhone(phone string) bool {
 	return phoneRe.MatchString(phone)
 }
-
-// IsNumeric 复刻 ReturnCodeUtil.isNumeric：空串返回 true。
-func IsNumeric(s string) bool {
-	if s == "" {
-		return true
-	}
-	for _, c := range s {
-		if c < '0' || c > '9' {
-			return false
-		}
-	}
-	return true
-}
