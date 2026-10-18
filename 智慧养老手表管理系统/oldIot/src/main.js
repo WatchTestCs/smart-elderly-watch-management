@@ -1,5 +1,6 @@
 import { createApp } from 'vue'
 import App from './App.vue'
+import { installDesktopKeys } from './desktop'
 import router from './router'
 import store from './store'
 import installElement from './element'
@@ -21,3 +22,4 @@ installElement(app)
 installHttpSecurity(router, app)
 app.use(router)
 app.mount('#app')
+installDesktopKeys()

@@ -1,0 +1,45 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "岁宁",
+  "version": "2.0.2",
+  "identifier": "org.watchtestcs.suining",
+  "build": {
+    "frontendDist": "bootstrap"
+  },
+  "app": {
+    "windows": [],
+    "security": {
+      "capabilities": [
+        "desktop"
+      ]
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": [
+      "nsis"
+    ],
+    "icon": [
+      "suining.ico"
+    ],
+    "externalBin": [
+      "binaries/suining-server"
+    ],
+    "shortDescription": "岁宁 · 独立数据库照护桌面软件",
+    "category": "HealthcareAndFitness",
+    "windows": {
+      "webviewInstallMode": {
+        "type": "offlineInstaller",
+        "silent": true
+      },
+      "nsis": {
+        "languages": [
+          "SimpChinese"
+        ],
+        "displayLanguageSelector": false,
+        "installMode": "currentUser"
+      }
+    },
+    "useLocalToolsDir": true
+  }
+}

@@ -5,5 +5,5 @@
 # without rediscovering them.
 /.github/ @qiyuhuating
 /智慧养老手表管理系统/desktop/ @qiyuhuating
-/智慧养老手表管理系统/careold/src/main/java/com/example/careold/security/ @qiyuhuating
+/智慧养老手表管理系统/backend/internal/auth/ @qiyuhuating
 /docs/decisions/ @qiyuhuating

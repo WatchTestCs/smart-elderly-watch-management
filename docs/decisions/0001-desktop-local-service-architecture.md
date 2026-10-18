@@ -1,6 +1,6 @@
 # ADR-0001：Electron + 本机 Spring 服务
 
-- Status: Accepted
+- Status: Superseded by [ADR-0006](0006-tauri-go-postgres.md)
 - Date: 2026-10-16
 
 ## Context

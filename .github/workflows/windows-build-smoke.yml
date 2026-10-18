@@ -1,91 +1,32 @@
-name: Windows unsigned build smoke
-
+name: Tauri Windows build
 on:
-  pull_request:
-    branches: [preview]
-    paths:
-      - ".github/workflows/windows-build-smoke.yml"
-      - "智慧养老手表管理系统/desktop/**"
-      - "智慧养老手表管理系统/careold/**"
-      - "智慧养老手表管理系统/oldIot/**"
   workflow_dispatch:
-
 permissions:
   contents: read
-
-concurrency:
-  group: windows-build-smoke-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
-
 jobs:
   build:
-    name: Windows unsigned desktop build
+    if: github.ref == 'refs/heads/preview'
     runs-on: windows-latest
     timeout-minutes: 60
     steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-
-      - name: Set up Node.js
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
         with:
-          node-version: "22"
-          cache: npm
-          cache-dependency-path: |
-            智慧养老手表管理系统/oldIot/package-lock.json
-            智慧养老手表管理系统/desktop/build-tools/package-lock.json
-
-      - name: Set up Java
-        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+          node-version: '24'
+      - uses: actions/setup-go@v6
         with:
-          distribution: temurin
-          java-version: "21"
-          cache: maven
-          cache-dependency-path: 智慧养老手表管理系统/careold/pom.xml
-
-      - name: Build unsigned Windows application
+          go-version: '1.27.2'
+          cache-dependency-path: 智慧养老手表管理系统/backend/go.sum
+      - name: Prepare Rust
         shell: pwsh
-        working-directory: 智慧养老手表管理系统
-        run: |
-          $ErrorActionPreference = 'Stop'
-          ./desktop/build.ps1
-          if (-not $?) { throw 'Unsigned desktop build failed' }
-
-      - name: Verify unsigned packaging contract
+        run: rustup toolchain install stable --profile minimal --no-self-update
+      - name: Build actual Windows installer
         shell: pwsh
-        working-directory: 智慧养老手表管理系统
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $meta = Get-Content desktop/version.json -Raw | ConvertFrom-Json
-          $root = "outputs/v$($meta.version)-$($meta.channel)/unsigned/Suining"
-          @(
-            "$root/Suining.exe",
-            "$root/resources/app.asar",
-            "$root/resources/server/suining-server.jar",
-            "$root/resources/runtime/bin/java.exe"
-          ) | ForEach-Object {
-            if (-not (Test-Path -LiteralPath $_ -PathType Leaf)) {
-              throw "Missing unsigned desktop artifact: $_"
-            }
-          }
-          Write-Host 'Unsigned application structure verified; no signing certificate used.'
-
-      - name: Compile unsigned NSIS installer
-        shell: pwsh
-        working-directory: 智慧养老手表管理系统
-        run: |
-          $ErrorActionPreference = 'Stop'
-          ./desktop/package.ps1
-          if (-not $?) { throw 'Unsigned NSIS installer compilation failed' }
-          $meta = Get-Content desktop/version.json -Raw | ConvertFrom-Json
-          $installer = "outputs/v$($meta.version)-$($meta.channel)/installer/岁宁-Setup-$($meta.version).exe"
-          if (-not (Test-Path -LiteralPath $installer -PathType Leaf)) {
-            throw "Missing unsigned NSIS installer: $installer"
-          }
-          if ((Get-Item -LiteralPath $installer).Length -le 0) {
-            throw 'Unsigned NSIS installer is empty'
-          }
-          Write-Host "Unsigned installer compiled: $installer (NOT a trusted release)"
-
+        run: ./智慧养老手表管理系统/desktop/build.ps1
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: tauri-windows-installer
+          path: 智慧养老手表管理系统/outputs/*/*.exe
+          if-no-files-found: error

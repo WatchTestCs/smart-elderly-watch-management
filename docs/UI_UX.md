@@ -75,10 +75,10 @@
 
 | 模式 | Viewport | 用途 |
 | --- | ---: | --- |
-| Admin desktop | 1440×1000（现有登录截图）/ 1360×900（Electron 默认） | 主桌面 |
+| Admin desktop | 1440×1000（现有登录截图）/ 1360×900（Tauri / WebView2 默认） | 主桌面 |
 | Compact desktop | 1024×768 | 小屏笔记本 |
 | Family mobile | 390×844 | 家属窄屏 |
-| Minimum window | 360×560 | Electron 最小窗口 |
+| Minimum window | 360×560 | Tauri / WebView2 最小窗口 |
 | Large text desktop | 1360×900 | 大字桌面 |
 | Large text mobile | 390×844 | 大字窄屏 |
 
@@ -278,6 +278,6 @@ commercial.css
 7. 健康详情；
 8. 邀请码和公告；
 9. destructive flows；
-10. Electron 安装态真实窗口。
+10. Tauri / WebView2 安装态真实窗口。
 
 每新增一条主流程，优先使用固定 fixture，避免测试依赖真实短信、真实设备或公网服务。

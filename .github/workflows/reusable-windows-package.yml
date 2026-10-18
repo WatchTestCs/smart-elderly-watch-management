@@ -1,75 +1,23 @@
-name: Reusable Windows desktop contract
-
+name: Reusable Tauri contract
 on:
   workflow_call:
-
 permissions:
   contents: read
-
 jobs:
   verify:
-    name: Desktop contract / verify
     runs-on: windows-latest
-    timeout-minutes: 10
     steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-
-      - name: Validate canonical version
+      - name: Validate all product versions
+        shell: pwsh
+        run: ./智慧养老手表管理系统/desktop/validate-version.ps1
+      - name: Parse active PowerShell scripts
         shell: pwsh
         run: |
-          $meta = Get-Content '智慧养老手表管理系统/desktop/version.json' -Raw | ConvertFrom-Json
-          $frontend = Get-Content '智慧养老手表管理系统/oldIot/package.json' -Raw | ConvertFrom-Json
-          [xml]$pom = Get-Content '智慧养老手表管理系统/careold/pom.xml' -Raw
-
-          if ([string]$frontend.version -ne [string]$meta.version) {
-            throw "Frontend version $($frontend.version) != desktop version $($meta.version)"
-          }
-          if ([string]$pom.project.version -ne [string]$meta.version) {
-            throw "Backend version $($pom.project.version) != desktop version $($meta.version)"
-          }
-          if ([string]::IsNullOrWhiteSpace([string]$meta.channel)) {
-            throw 'Release channel is empty'
-          }
-
-      - name: Parse PowerShell scripts
-        shell: pwsh
-        run: |
-          $failed = $false
-          Get-ChildItem '智慧养老手表管理系统/desktop' -Filter '*.ps1' -File | ForEach-Object {
-            $tokens = $null
-            $errors = $null
-            [void][System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$tokens, [ref]$errors)
-            if ($errors.Count -gt 0) {
-              $failed = $true
-              Write-Error "$($_.Name): $($errors | ForEach-Object Message | Out-String)"
-            }
-          }
-          if ($failed) { throw 'PowerShell parser errors found' }
-
-      - name: Parse Node desktop scripts
-        shell: pwsh
-        run: |
-          node --check '智慧养老手表管理系统/desktop/main.cjs'
-          if ($LASTEXITCODE -ne 0) { throw 'main.cjs syntax check failed' }
-          node --check '智慧养老手表管理系统/desktop/prepare-package.cjs'
-          if ($LASTEXITCODE -ne 0) { throw 'prepare-package.cjs syntax check failed' }
-
-      - name: Parse Python desktop scripts
-        shell: pwsh
-        run: |
-          python -m py_compile '智慧养老手表管理系统/desktop/download-runtimes.py' '智慧养老手表管理系统/desktop/prepare-notices.py'
-          if ($LASTEXITCODE -ne 0) { throw 'Python syntax check failed' }
-
-      - name: Reject dated output paths
-        shell: pwsh
-        run: |
-          $matches = Get-ChildItem '智慧养老手表管理系统/desktop' -File -Recurse |
-            Where-Object { $_.Extension -in '.ps1','.py','.cjs','.nsi','.json' } |
-            Select-String -Pattern 'desktop-release-20\d{6}'
-          if ($matches) {
-            $matches | ForEach-Object { Write-Host "$($_.Path):$($_.LineNumber): $($_.Line)" }
-            throw 'Dated desktop output path remains in active build scripts'
+          Get-ChildItem '智慧养老手表管理系统/desktop' -Filter '*.ps1' | ForEach-Object {
+            $tokens=$null; $errors=$null
+            [void][System.Management.Automation.Language.Parser]::ParseFile($_.FullName,[ref]$tokens,[ref]$errors)
+            if($errors.Count){throw ($errors|Out-String)}
           }

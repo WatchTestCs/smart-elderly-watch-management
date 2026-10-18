@@ -1,28 +1,11 @@
-# 岁宁桌面源码工程
+# 岁宁 2.0.2 源码工程
 
-本目录包含当前 Windows 预览版的服务、界面、桌面封装与设备联调工具。
+`desktop` 为 Tauri 2 / Rust 桌面壳，`backend` 为 Go / PostgreSQL 服务，`oldIot` 为 Vue 3 / Vite 界面，`watch-sim` 为手表模拟器。
 
-- [图文首页与软件下载](../README.md)
-- [使用与数据备份](../docs/SETUP.md)
-- [架构与优化说明](../docs/ARCHITECTURE.md)
-- [完整构建指南](../docs/BUILD.md)
-- [逐文件介绍](../docs/FILES.md)
-- [已执行验收与边界](../docs/VALIDATION.md)
+Windows 构建：`./desktop/build.ps1`；本机自签构建可使用 `./desktop/build.ps1 -SelfSign`。输出在 `outputs/v2.0.2-preview`，默认产出含 WebView2 离线安装器的 NSIS Setup EXE。
 
-## 目录
+构建需要 Windows C++ Build Tools / SDK、Rust stable、Go 1.27+、Node.js（范围见前端 package.json）与 PowerShell 7。完整步骤见 [BUILD](../docs/BUILD.md)。最终用户无需这些开发工具。
 
-careold 为 Spring Boot 3.5 / JDBC / H2 业务服务；oldIot 为 Vue 3 / Element Plus / Vite 8 界面；desktop 负责 Electron、随包 Java、完整性校验、安装和签名；watch-sim 提供模拟手表请求。
+业务数据库独立部署。未配置或未启动数据库也能打开软件，连通后自动继续；离线时不能读取或写入真实业务记录。部署变量为 `SUINING_DATABASE_URL`，直接启动 Go 服务时使用 `DATABASE_URL`。
 
-## 本目录构建
-
-开发机器准备 Node.js 22.12+、Java 17+（推荐 Java 21）、Maven 3.9、Python 3 与 PowerShell 7，然后执行：
-
-```powershell
-./desktop/build.ps1
-```
-
-本地输出位于 outputs/desktop-release-20261015/release；GitHub 预览包通过仓库 Releases 分发，不把 EXE、构建缓存或用户数据库提交到源码树。
-
-最终用户无需开发工具。首次打开软件创建自己的管理员账号，没有默认手机号和密码。数据默认位于 %APPDATA%\岁宁，升级和卸载保留；旧 MySQL 不自动迁入。
-
-应用与安装/卸载程序为本机自签，不具备公开 CA 信任，不自动修改系统根信任。只提交 preview 分支。
+本机图片、日志与运行发现目录沿用 `%APPDATA%\岁宁`。旧 H2 文件不会自动迁移至 PostgreSQL；升级和迁移需先备份。没有默认管理员手机号或密码。

@@ -7,7 +7,7 @@ on:
       - ".github/workflows/**"
       - ".github/dependabot.yml"
       - "智慧养老手表管理系统/oldIot/**"
-      - "智慧养老手表管理系统/careold/**"
+      - "智慧养老手表管理系统/backend/**"
       - "智慧养老手表管理系统/desktop/**"
   pull_request:
     branches: [preview]
@@ -36,13 +36,20 @@ jobs:
         include:
           - language: javascript-typescript
             build-mode: none
-          - language: java-kotlin
-            build-mode: none
+          - language: go
+            build-mode: manual
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+
+      - name: Set up Go
+        if: matrix.language == 'go'
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.27.2'
+          cache-dependency-path: 智慧养老手表管理系统/backend/go.sum
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
@@ -50,6 +57,11 @@ jobs:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
           queries: security-extended
+
+      - name: Build Go for analysis
+        if: matrix.language == 'go'
+        working-directory: 智慧养老手表管理系统/backend
+        run: go build ./...
 
       - name: Analyze
         uses: github/codeql-action/analyze@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3

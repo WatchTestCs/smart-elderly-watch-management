@@ -8,7 +8,7 @@
     <section class="setup-panel">
       <span class="setup-kicker">初次相见 · 岁宁</span>
       <h2>开启照护日常</h2>
-      <p class="setup-intro">创建这台电脑的管理员账号。记录保存在本机，关闭软件后依然保留。</p>
+      <p class="setup-intro">创建管理员账号。业务记录保存在独立数据库中，关闭软件不会清除记录。</p>
       <el-form ref="form" :model="account" label-position="top" :rules="rules" @submit.prevent="submit">
         <el-form-item label="怎么称呼您" prop="name"><el-input v-model="account.name" maxlength="10" autocomplete="name" /></el-form-item>
         <el-form-item label="登录手机号" prop="phone"><el-input v-model="account.phone" maxlength="11" inputmode="tel" autocomplete="username" /></el-form-item>
@@ -25,6 +25,7 @@
 <script>
 import axios from 'axios'
 import { loadSession } from '../auth'
+import { createAdministrator } from '../desktop'
 export default {
   data () {
     return {
@@ -42,13 +43,17 @@ export default {
       this.busy = true
       this.error = ''
       try {
-        await axios.post('/restful/setup', this.account)
+        await createAdministrator({ ...this.account })
         await axios.post('/restful/userLogin/login', { phone: this.account.phone, password: this.account.password })
         this.account.password = ''
         const account = await loadSession(true)
         if (!account) throw new Error('Session missing')
         this.$router.replace('/main')
       } catch (e) {
+        if (e.response?.data?.code === 'DATABASE_UNAVAILABLE') {
+          this.$router.replace('/connection')
+          return
+        }
         this.error = e.response?.status === 409 ? '管理员已创建，请返回登录页面。' : '暂时无法创建，请检查填写的信息后重试。'
       } finally { this.busy = false }
     }

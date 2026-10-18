@@ -11,7 +11,7 @@ function clearProfile () { profileKeys.forEach(key => localStorage.removeItem(ke
 export function loadSession (refresh) {
   if (!refresh && loaded) return Promise.resolve(authState.account)
   if (pending) return pending
-  pending = axios.get('/restful/userLogin/session', { skipSession: true }).then(response => {
+  pending = axios.get('/restful/userLogin/session', { skipSession: true, timeout: 5000 }).then(response => {
     const data = response.data
     if (!data || !data.csrfToken) throw new Error('Session response missing')
     authState.setupRequired = Boolean(data.setupRequired)
@@ -56,6 +56,10 @@ export function installHttpSecurity (router, app) {
     })
   })
   axios.interceptors.response.use(response => response, error => {
+    if (error.response?.data?.code === 'DATABASE_UNAVAILABLE') {
+      loaded = false
+      if (router.currentRoute.value.matched.length && router.currentRoute.value.path !== '/connection') router.replace('/connection')
+    }
     if (error.response && error.response.status === 401) {
       loaded = false
       authState.account = null

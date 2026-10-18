@@ -1,3 +1,5 @@
+> 历史阶段记录；2.0.2 已迁移至 Tauri / Go / 独立 PostgreSQL。当前构建与验收以 BUILD、ARCHITECTURE 和 VALIDATION 为准。以下路径与结果仅描述记录时的版本。
+
 # preview 问题清单核验与修复
 
 ## 远程收尾记录（2026-10-16；在原本地验收记录之后补记）

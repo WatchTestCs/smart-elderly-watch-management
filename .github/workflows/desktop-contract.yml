@@ -6,7 +6,7 @@ on:
     paths:
       - "智慧养老手表管理系统/desktop/**"
       - "智慧养老手表管理系统/oldIot/package.json"
-      - "智慧养老手表管理系统/careold/pom.xml"
+      - "智慧养老手表管理系统/backend/VERSION"
       - ".github/workflows/desktop-contract.yml"
       - ".github/workflows/reusable-windows-package.yml"
   push:
@@ -14,7 +14,7 @@ on:
     paths:
       - "智慧养老手表管理系统/desktop/**"
       - "智慧养老手表管理系统/oldIot/package.json"
-      - "智慧养老手表管理系统/careold/pom.xml"
+      - "智慧养老手表管理系统/backend/VERSION"
       - ".github/workflows/desktop-contract.yml"
       - ".github/workflows/reusable-windows-package.yml"
   workflow_dispatch:

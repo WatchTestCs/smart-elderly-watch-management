@@ -1,6 +1,6 @@
 # ADR-0002：H2 文件数据库与用户数据目录
 
-- Status: Accepted
+- Status: Superseded by [ADR-0006](0006-tauri-go-postgres.md)
 - Date: 2026-10-16
 
 ## Context

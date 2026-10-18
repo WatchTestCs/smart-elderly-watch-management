@@ -1,57 +1,61 @@
 {
-  "title": "preview 2026-10-16 remediation: remote closure evidence",
-  "branch": "preview-publish-20261015",
-  "pr": "https://github.com/WatchTestCs/smart-elderly-watch-management/pull/1",
-  "verified_code_sha": "70b9b07cba895d03714c2f9cc29854addf3830ef",
-  "scope": "Draft PR only. No preview/main merge, signed release, or installation guarantee.",
-  "remote_verification": [
-    {
-      "name": "Preview CI / required",
-      "result": "success",
-      "url": "https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/38925642999"
-    },
-    {
-      "name": "UI Quality / verify",
-      "result": "success",
-      "url": "https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/38925643005"
-    },
-    {
-      "name": "Desktop Contract",
-      "result": "success",
-      "url": "https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/38925642957"
-    },
-    {
-      "name": "Preview checks: 1199 browser assertions, 5 node tests",
-      "result": "success",
-      "url": "https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/38925643072"
-    },
-    {
-      "name": "Windows: 70 Maven tests, unsigned Electron/JRE and NSIS installer",
-      "result": "success",
-      "artifact": "unsigned installer 190835271 bytes; not a release artifact",
-      "url": "https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/38925643092"
-    },
-    {
-      "name": "CodeQL (Java, JavaScript/TypeScript)",
-      "result": "success",
-      "url": "https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/38925642988"
-    }
-  ],
-  "blocked_or_unverified": [
-    {
-      "name": "Dependency review",
-      "status": "blocked: GitHub Dependency Graph not enabled or available; Security workflow unsuccessful",
-      "owner_action": "Enable Dependency Graph in repository Security & analysis and rerun",
-      "url": "https://github.com/WatchTestCs/smart-elderly-watch-management/settings/security_analysis"
-    },
-    {
-      "name": "Trusted Windows signing and real installation/upgrades",
-      "status": "not verified; no trusted code-signing certificate, timestamp, install/upgrade evidence"
-    },
-    {
-      "name": "Real watch, SMS, external map, Windows 10, performance and failure recovery",
-      "status": "not fully verified in production conditions"
-    }
-  ],
-  "claim_limit": "Previous Windows/local test reports are historical; CI links above prove only the tested code SHA and specified assertions. The final documentation-only commit requires renewed checks if strict SHA matching is required."
+  "historical": true,
+  "currentEvidence": "docs/VALIDATION.md",
+  "previousReport": {
+    "title": "preview 2026-10-16 remediation: remote closure evidence",
+    "branch": "preview-publish-20261015",
+    "pr": "https://github.com/WatchTestCs/smart-elderly-watch-management/pull/1",
+    "verified_code_sha": "70b9b07cba895d03714c2f9cc29854addf3830ef",
+    "scope": "Draft PR only. No preview/main merge, signed release, or installation guarantee.",
+    "remote_verification": [
+      {
+        "name": "Preview CI / required",
+        "result": "success",
+        "url": "https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/38925642999"
+      },
+      {
+        "name": "UI Quality / verify",
+        "result": "success",
+        "url": "https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/38925643005"
+      },
+      {
+        "name": "Desktop Contract",
+        "result": "success",
+        "url": "https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/38925642957"
+      },
+      {
+        "name": "Preview checks: 1199 browser assertions, 5 node tests",
+        "result": "success",
+        "url": "https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/38925643072"
+      },
+      {
+        "name": "Windows: 70 Maven tests, unsigned Electron/JRE and NSIS installer",
+        "result": "success",
+        "artifact": "unsigned installer 190835271 bytes; not a release artifact",
+        "url": "https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/38925643092"
+      },
+      {
+        "name": "CodeQL (Java, JavaScript/TypeScript)",
+        "result": "success",
+        "url": "https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/38925642988"
+      }
+    ],
+    "blocked_or_unverified": [
+      {
+        "name": "Dependency review",
+        "status": "blocked: GitHub Dependency Graph not enabled or available; Security workflow unsuccessful",
+        "owner_action": "Enable Dependency Graph in repository Security & analysis and rerun",
+        "url": "https://github.com/WatchTestCs/smart-elderly-watch-management/settings/security_analysis"
+      },
+      {
+        "name": "Trusted Windows signing and real installation/upgrades",
+        "status": "not verified; no trusted code-signing certificate, timestamp, install/upgrade evidence"
+      },
+      {
+        "name": "Real watch, SMS, external map, Windows 10, performance and failure recovery",
+        "status": "not fully verified in production conditions"
+      }
+    ],
+    "claim_limit": "Previous Windows/local test reports are historical; CI links above prove only the tested code SHA and specified assertions. The final documentation-only commit requires renewed checks if strict SHA matching is required."
+  }
 }

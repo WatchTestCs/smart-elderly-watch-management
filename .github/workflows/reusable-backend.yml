@@ -8,25 +8,37 @@ permissions:
 
 jobs:
   verify:
-    name: Test and package
+    name: Test, build and vet
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: careold
+          POSTGRES_PASSWORD: careold
+          POSTGRES_DB: careold_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U careold -d careold_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - name: Set up Temurin Java
-        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+      - name: Set up Go
+        uses: actions/setup-go@v6
         with:
-          distribution: temurin
-          java-version: "21"
-          cache: maven
-          cache-dependency-path: 智慧养老手表管理系统/careold/pom.xml
+          go-version: "1.27.2"
+          cache-dependency-path: 智慧养老手表管理系统/backend/go.sum
 
-      - name: Run backend test suite
-        run: >
-          mvn --batch-mode
-          -Dnet.bytebuddy.experimental=true
-          -f "智慧养老手表管理系统/careold/pom.xml"
-          clean verify
+      - name: Run backend tests, build and vet
+        working-directory: 智慧养老手表管理系统/backend
+        env:
+          TEST_DATABASE_URL: postgres://careold:careold@localhost:5432/careold_test?sslmode=disable
+        run: |
+          go test -race -count=1 -timeout 120s ./...
+          go build ./...
+          go vet ./...
+          test -z "$(gofmt -l ./cmd ./internal ./migrations)"

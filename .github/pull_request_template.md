@@ -24,7 +24,7 @@
 
 - [ ] Not applicable.
 - [ ] User data under `%APPDATA%\岁宁` is preserved unless the user explicitly requests deletion.
-- [ ] Electron Renderer still has no Node.js access and external navigation remains denied by default.
+- [ ] Tauri capabilities remain restricted, desktop tokens stay outside page JavaScript, and external navigation remains denied.
 - [ ] Authentication / authorization / CSRF effects are covered by tests.
 - [ ] Build/sign/release boundaries remain separated.
 

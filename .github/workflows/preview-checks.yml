@@ -1,53 +1,22 @@
-name: Preview checks
+name: Additional preview UI checks
 on:
-  push:
-    branches: [preview]
-  pull_request:
-    branches: [preview]
   workflow_dispatch:
 permissions:
   contents: read
-concurrency:
-  group: preview-checks-${{ github.ref }}
-  cancel-in-progress: true
 jobs:
   verify:
-    if: github.ref == 'refs/heads/preview' || github.base_ref == 'preview'
+    if: github.ref == 'refs/heads/preview'
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: 智慧养老手表管理系统
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
         with:
           node-version: '24'
-          cache: npm
-          cache-dependency-path: |
-            智慧养老手表管理系统/oldIot/package-lock.json
-            智慧养老手表管理系统/oldIot/qa/package-lock.json
-      - uses: actions/setup-java@v6
-        with:
-          distribution: temurin
-          java-version: '21'
-          cache: maven
-      - run: npm ci
+      - run: npm ci && npm run build
         working-directory: 智慧养老手表管理系统/oldIot
-      - run: npm run build
-        working-directory: 智慧养老手表管理系统/oldIot
-      - run: mvn -B -f careold/pom.xml clean verify
-      - run: npm ci
+      - run: npm ci && npx playwright install --with-deps chromium && npm test
         working-directory: 智慧养老手表管理系统/oldIot/qa
-      - run: npx playwright install --with-deps chromium
-        working-directory: 智慧养老手表管理系统/oldIot/qa
-      - run: npm test
-        working-directory: 智慧养老手表管理系统/oldIot/qa
-      - run: node --test desktop/runtime-files.test.cjs watch-sim/watch-sim.test.cjs
-      - uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: preview-failure-evidence
-          path: |
-            智慧养老手表管理系统/oldIot/qa/artifacts
-            智慧养老手表管理系统/careold/target/surefire-reports
-          retention-days: 7
+      - run: node --test watch-sim/watch-sim.test.cjs
+        working-directory: 智慧养老手表管理系统

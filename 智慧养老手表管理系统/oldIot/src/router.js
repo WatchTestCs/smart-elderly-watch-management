@@ -32,6 +32,7 @@ const device = () => import('./views/device.vue')
 const router = createRouter({
   history: createWebHashHistory(),
   routes: [
+    { path: '/connection', component: () => import('./views/Connection.vue') },
     { path: '/setup', component: () => import('./views/Setup.vue') },
 	  {path: '/',
 	    redirect: '/login'
@@ -172,6 +173,7 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
+  if (to.path === '/connection') return next()
   const publicPage = to.path === '/login' || to.path === '/register'
   loadSession().then(account => {
     if (authState.setupRequired) return next(to.path === '/setup' ? undefined : '/setup')
@@ -181,7 +183,9 @@ router.beforeEach((to, from, next) => {
     const familyPage = to.matched.some(route => route.path === '/familyHome')
     if ((account.role === 'FAMILY') !== familyPage) return next(account.role === 'FAMILY' ? '/familyMain' : '/main')
     next()
-  }).catch(() => { next(publicPage ? undefined : '/login') })
+  }).catch(error => {
+    next(error.response?.data?.code === 'DATABASE_UNAVAILABLE' ? '/connection' : (publicPage ? undefined : '/login'))
+  })
 })
 
 export default router

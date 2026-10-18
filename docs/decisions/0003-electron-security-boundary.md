@@ -1,6 +1,6 @@
 # ADR-0003：Electron Renderer/Main 安全边界
 
-- Status: Accepted
+- Status: Superseded by [ADR-0006](0006-tauri-go-postgres.md)
 - Date: 2026-10-16
 
 ## Context

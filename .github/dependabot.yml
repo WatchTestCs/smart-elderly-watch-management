@@ -20,7 +20,7 @@ updates:
           - patch
 
   - package-ecosystem: npm
-    directory: "/智慧养老手表管理系统/desktop/build-tools"
+    directory: "/智慧养老手表管理系统/desktop"
     target-branch: preview
     schedule:
       interval: weekly
@@ -34,8 +34,8 @@ updates:
           - minor
           - patch
 
-  - package-ecosystem: maven
-    directory: "/智慧养老手表管理系统/careold"
+  - package-ecosystem: gomod
+    directory: "/智慧养老手表管理系统/backend"
     target-branch: preview
     schedule:
       interval: weekly
@@ -57,4 +57,11 @@ updates:
       day: wednesday
       time: "04:45"
       timezone: "Asia/Singapore"
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: cargo
+    directory: "/智慧养老手表管理系统/desktop"
+    target-branch: preview
+    schedule:
+      interval: weekly
     open-pull-requests-limit: 5
