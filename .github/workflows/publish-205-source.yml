@@ -1,0 +1,54 @@
+name: Publish 2.0.5 source ZIP
+on:
+  push:
+    branches: [preview]
+    paths:
+      - 'docs/releases/2.0.5.md'
+permissions:
+  contents: write
+jobs:
+  publish-source:
+    if: github.repository == 'WatchTestCs/smart-elderly-watch-management'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout release source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Validate source and package ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(tr -d '\r\n' < '智慧养老手表管理系统/backend/VERSION')" = '2.0.5'
+          python3 - <<'PY'
+          import json
+          root='智慧养老手表管理系统/'
+          for path in ['desktop/version.json','desktop/tauri.conf.json','desktop/package.json','oldIot/package.json','oldIot/package-lock.json']:
+              j=json.load(open(root+path,encoding='utf-8'))
+              assert j['version']=='2.0.5',path
+          lock=json.load(open(root+'oldIot/package-lock.json',encoding='utf-8'))
+          assert lock['packages']['']['version']=='2.0.5'
+          PY
+          test -f '智慧养老手表管理系统/backend/migrations/0006_care_permissions_audit.sql'
+          test -f '智慧养老手表管理系统/backend/cmd/server/privacy.go'
+          test -f '智慧养老手表管理系统/oldIot/src/components/CareOperationsPanel.vue'
+          git archive --format=zip --prefix=suining-2.0.5-source/ --output=Suining-2.0.5-source.zip HEAD
+          sha256sum Suining-2.0.5-source.zip > SHA256SUMS.txt
+          unzip -tqq Suining-2.0.5-source.zip
+          unzip -Z1 Suining-2.0.5-source.zip | grep -q 'suining-2.0.5-source/docs/CARE_2.0.5_GATES.md'
+      - name: Publish 2.0.5 preview release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view v2.0.5 >/dev/null 2>&1; then
+            echo "Existing 2.0.5 release will not be overwritten" >&2
+            exit 1
+          fi
+          gh release create v2.0.5 Suining-2.0.5-source.zip SHA256SUMS.txt \
+            --target "$GITHUB_SHA" \
+            --title '岁宁 2.0.5 · 值守可靠性与权限治理（源码）' \
+            --notes-file docs/releases/2.0.5.md \
+            --prerelease
