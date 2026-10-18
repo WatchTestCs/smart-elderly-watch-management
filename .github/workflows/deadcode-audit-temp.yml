@@ -1,0 +1,20 @@
+name: Temporary dead-code reachability audit
+on:
+  push:
+    branches: [cleanup/2.0.5-deadcode-audit]
+    paths: ['.github/workflows/deadcode-audit-temp.yml']
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: '智慧养老手表管理系统/backend/go.mod'
+      - name: Analyze unreachable Go functions
+        working-directory: '智慧养老手表管理系统/backend'
+        run: |
+          go run golang.org/x/tools/cmd/deadcode@v0.36.0 -test ./... | tee /tmp/deadcode-report.txt
+          echo "=== END GO DEADCODE REPORT ==="
