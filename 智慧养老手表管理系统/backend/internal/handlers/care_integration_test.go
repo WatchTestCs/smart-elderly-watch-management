@@ -29,7 +29,7 @@ func TestCareSOSOutboxAuditAndState(t *testing.T) {
 	if out["returnCode"] != "1111" || out["notificationState"] != "pending" || out["incidentState"] != "received" {
 		t.Fatalf("SOS falsely acknowledged: %+v", out)
 	}
-	var id, linkedAlarm, queued int64
+	var id, linkedAlarm int64
 	var state, notification string
 	if err := pool.QueryRow(context.Background(), `
   SELECT i.id,i.source_alarm_id,i.state,o.status
