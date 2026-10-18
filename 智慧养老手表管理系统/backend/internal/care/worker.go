@@ -47,9 +47,14 @@ func Run(ctx context.Context, db *pgxpool.Pool) {
 	}
 	d := &dispatcher{db: db, webhookURL: endpoint, webhookToken: token,
 		escalationPhone: escalation, httpClient: &http.Client{Timeout: 12 * time.Second}}
+	startedAt := time.Now()
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
 	for {
+		if _, err := db.Exec(ctx, `INSERT INTO care_worker_heartbeat(singleton,last_seen_at,started_at)
+            VALUES(true,now(),$1) ON CONFLICT(singleton) DO UPDATE SET last_seen_at=now(),started_at=$1`, startedAt); err != nil && ctx.Err() == nil {
+			log.Printf("care: heartbeat update failed: %v", err)
+		}
 		if err := d.escalate(ctx); err != nil && ctx.Err() == nil {
 			log.Printf("care: escalation check failed: %v", err)
 		}
