@@ -1,0 +1,25 @@
+[Unit]
+Description=Suining care API and incident dispatcher
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=suining
+Group=suining
+WorkingDirectory=/var/lib/suining
+EnvironmentFile=/etc/suining/suining.env
+ExecStart=/opt/suining/bin/suining-server
+Restart=always
+RestartSec=5s
+TimeoutStopSec=20s
+StateDirectory=suining
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/suining
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target
