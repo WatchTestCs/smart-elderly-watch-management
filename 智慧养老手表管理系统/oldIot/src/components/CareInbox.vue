@@ -4,6 +4,7 @@
       <div><h2 id="care-inbox-title">需要接手的照护任务</h2><p>求助已接收不等于通知送达；只有人工接单及复核才会结束任务。</p></div>
       <el-button plain :loading="loading" @click="load">刷新任务</el-button>
     </div>
+    <CareOperationsPanel />
     <p v-if="error" role="alert" class="care-error">{{ error }}</p>
     <p v-else-if="!loading && !active.length" class="care-empty">当前没有查询到待处理任务。请继续检查设备与服务状态。</p>
     <div v-if="active.length" class="care-task-list">
@@ -48,6 +49,7 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import axios from 'axios'
+import CareOperationsPanel from './CareOperationsPanel.vue'
 
 const tasks = ref([])
 const error = ref('')
