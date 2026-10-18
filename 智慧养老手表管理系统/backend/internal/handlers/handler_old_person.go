@@ -1,12 +1,13 @@
 package handlers
 
 import (
+	"careold-go/internal/response"
 	"errors"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"net/http"
 	"strconv"
 	"time"
-	"github.com/jackc/pgx/v5/pgconn"
-	"careold-go/internal/response"
 )
 
 // ---------------------------------------------------------------------------
