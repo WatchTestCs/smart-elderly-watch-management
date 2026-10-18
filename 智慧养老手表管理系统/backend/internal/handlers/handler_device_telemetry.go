@@ -357,6 +357,23 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 		response.Error500(w, ref())
 		return
 	}
+	// Persist possible family SMS attempts in the same transaction as the SOS.
+	// This creates a pending task, NOT a claim of dispatch or delivery.
+	queued, err := tx.Exec(ctx,
+		`INSERT INTO care_notification_outbox(incident_id, channel, recipient)
+		 SELECT $1, 'sms', f.family_phone
+		 FROM oldperson o JOIN family f ON f.family_id=o.family_id
+		 WHERE o.old_id=$2 AND f.family_phone ~ '^1[0-9]{10}$'
+		 ON CONFLICT DO NOTHING`, incidentID, *d.OldID)
+	if err != nil {
+		rollback()
+		response.Error500(w, ref())
+		return
+	}
+	notificationState := "no_recipient"
+	if queued.RowsAffected() > 0 {
+		notificationState = "pending"
+	}
 	if err := tx.Commit(ctx); err != nil {
 		response.Error500(w, ref())
 		return
@@ -365,6 +382,6 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 		"message":           "求助已接收，等待通知和人员接单",
 		"incidentId":        incidentID,
 		"incidentState":     "received",
-		"notificationState": "not_sent",
+		"notificationState": notificationState,
 	})
 }
