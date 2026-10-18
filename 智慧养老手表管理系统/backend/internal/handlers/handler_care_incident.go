@@ -78,7 +78,7 @@ func (h *Handler) careIncidents(w http.ResponseWriter, r *http.Request) {
 		items = append(items, map[string]any{
 			"id": id, "oldId": oldID, "deviceId": deviceID, "kind": kind, "state": state,
 			"severity": severity, "createdAt": created, "dueAt": due,
-			"oldPersonName": oldName,"notificationState": deliveryStatus,
+			"oldPersonName": oldName, "notificationState": deliveryStatus,
 			"acknowledgedBy": assigned, "acknowledgedAt": ackAt,
 			"resolvedBy": resolved, "resolvedAt": resAt, "verifiedBy": verified, "verifiedAt": verAt,
 		})
@@ -114,14 +114,14 @@ func (h *Handler) careTransition(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	allowed := map[string]map[string]string{
-		"received":     {"acknowledge": "acknowledged", "escalate": "escalated"},
-		"notifying":    {"acknowledge": "acknowledged", "escalate": "escalated"},
-		"notified":     {"acknowledge": "acknowledged", "escalate": "escalated"},
-		"escalated":    {"acknowledge": "acknowledged"},
+		"received":       {"acknowledge": "acknowledged", "escalate": "escalated"},
+		"notifying":      {"acknowledge": "acknowledged", "escalate": "escalated"},
+		"notified":       {"acknowledge": "acknowledged", "escalate": "escalated"},
+		"escalated":      {"acknowledge": "acknowledged"},
 		"review_overdue": {"verify": "verified", "reopen": "in_progress"},
-		"acknowledged": {"start": "in_progress", "escalate": "escalated"},
-		"in_progress":  {"resolve": "resolved", "escalate": "escalated"},
-		"resolved":     {"verify": "verified", "reopen": "in_progress"},
+		"acknowledged":   {"start": "in_progress", "escalate": "escalated"},
+		"in_progress":    {"resolve": "resolved", "escalate": "escalated"},
+		"resolved":       {"verify": "verified", "reopen": "in_progress"},
 	}
 	ctx := r.Context()
 	tx, err := h.DB.Begin(ctx)
@@ -185,25 +185,42 @@ func (h *Handler) careTransition(w http.ResponseWriter, r *http.Request) {
 	response.OK(w, map[string]any{"id": id, "state": next})
 }
 
-func (h *Handler) careEvents(w http.ResponseWriter,r *http.Request) {
- if _,ok:=careAdmin(w,r);!ok{return}
- m,ok:=bodyMap(w,r);if !ok{return}
- idStr,present:=vstr(m,"id")
- if !present || !validID(idStr){writeValidation400(w);return}
- id,_:=strconv.ParseInt(idStr,10,64)
- rows,err:=h.DB.Query(r.Context(),
-   `SELECT actor,action,note,created_at FROM care_incident_event
-      WHERE incident_id=$1 ORDER BY id ASC LIMIT 100`,id)
- if err!=nil {response.Error500(w,ref());return}
- defer rows.Close()
- events:=[]map[string]any{}
- for rows.Next(){
-   var actor,action string
-   var note *string
-   var created time.Time
-   if err:=rows.Scan(&actor,&action,&note,&created);err!=nil{response.Error500(w,ref());return}
-   events=append(events,map[string]any{"actor":actor,"action":action,"note":note,"createdAt":created})
- }
- if err:=rows.Err();err!=nil{response.Error500(w,ref());return}
- response.OK(w,map[string]any{"events":events})
+func (h *Handler) careEvents(w http.ResponseWriter, r *http.Request) {
+	if _, ok := careAdmin(w, r); !ok {
+		return
+	}
+	m, ok := bodyMap(w, r)
+	if !ok {
+		return
+	}
+	idStr, present := vstr(m, "id")
+	if !present || !validID(idStr) {
+		writeValidation400(w)
+		return
+	}
+	id, _ := strconv.ParseInt(idStr, 10, 64)
+	rows, err := h.DB.Query(r.Context(),
+		`SELECT actor,action,note,created_at FROM care_incident_event
+      WHERE incident_id=$1 ORDER BY id ASC LIMIT 100`, id)
+	if err != nil {
+		response.Error500(w, ref())
+		return
+	}
+	defer rows.Close()
+	events := []map[string]any{}
+	for rows.Next() {
+		var actor, action string
+		var note *string
+		var created time.Time
+		if err := rows.Scan(&actor, &action, &note, &created); err != nil {
+			response.Error500(w, ref())
+			return
+		}
+		events = append(events, map[string]any{"actor": actor, "action": action, "note": note, "createdAt": created})
+	}
+	if err := rows.Err(); err != nil {
+		response.Error500(w, ref())
+		return
+	}
+	response.OK(w, map[string]any{"events": events})
 }
