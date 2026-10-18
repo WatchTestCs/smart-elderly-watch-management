@@ -2,13 +2,17 @@
 
 # 岁宁 · 智慧养老管理
 
+**简体中文** | [English](README.en.md)
+
+[![License: MIT](https://img.shields.io/badge/license-MIT-235442)](LICENSE) [![Preview: 2.0.2](https://img.shields.io/badge/preview-2.0.2-9b7a40)](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.2-preview.1)
+
 **岁月有伴，日常安宁。**
 
 岁宁面向照护机构与家属，将长者档案、手表设备、健康与活动记录、位置告警和服务公告放在同一工作空间。机构可以集中维护照护信息，家属可以查看关联家人的日常记录。
 
 当前主线为 **Tauri 2 / Rust + Go + Vue 3 / Vite + 独立 PostgreSQL**。Windows 以本地桌面软件交付，数据库由部署方独立管理：没有数据库也能打开界面，相关业务功能就地提示不可用，网络与数据库恢复后自动重连。
 
-[下载 2.0.2](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.2-preview.1) · [快速开始](#开始使用) · [架构](architecture.md) · [开发构建](docs/BUILD.md) · [Linux 说明](docs/LINUX.md) · [验收与限制](docs/DATABASE_AVAILABILITY.md)
+[下载 2.0.2](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.2-preview.1) · [快速开始](#开始使用) · [架构](architecture.md) · [开发构建](docs/BUILD.md) · [Linux 说明](docs/LINUX.md) · [验收与限制](docs/DATABASE_AVAILABILITY.md) · [更新日志](CHANGELOG.md) · [参与贡献](CONTRIBUTING.md)
 
 > 当前源码与文档维护在 **preview**。历史版本的 Java、Electron 与 H2 说明不能作为本版构建依据；发布源码包对应 Release 固定提交，可能与持续更新的 preview 文档不同。
 
@@ -116,6 +120,14 @@ Go 编译嵌入 Vue 生产资源与 SQL 迁移，不要求最终用户自行运�
 - 已记录的 Windows 验收包括真实数据库断开/恢复、初始化、登录、退出、安装与卸载。浏览器模拟 API 检查不等于后端验收，本次文档更新没有重复执行这些测试。
 - 未验证所有 Windows 版本、干净系统缺失 WebView2 时的实际补装、真实手表与短信、生产数据迁移及 Linux GUI 运行；没有性能基准或“零漏洞”保证。
 
+## 参与贡献与问题反馈
+
+欢迎文档、翻译、可访问性改进和具体缺陷修复。请先阅读 [贡献指南](CONTRIBUTING.md)，以 `preview` 为 PR 目标，说明修改后的行为和实际验证结果。中英文反馈均可。
+
+普通问题可使用 [支持文档中的反馈模板](docs/SUPPORT.md) 提交 [Issues](https://github.com/WatchTestCs/smart-elderly-watch-management/issues)；安全漏洞请遵循 [安全策略](.github/SECURITY.md) 私下报告。不要公开真实人员数据、数据库或密钥。支持为尽力协作，不承诺固定响应时限。
+
+仓库已有 PR 模板、CODEOWNERS、依赖更新和自动化检查配置；这些配置及版本徽章不等于已通过独立审计或所有 CI 当前成功。本轮不变更默认分支或自动表单设置。
+
 ## 文档导航
 
 | 阅读目的 | 入口 |
@@ -127,6 +139,7 @@ Go 编译嵌入 Vue 生产资源与 SQL 迁移，不要求最终用户自行运�
 | Linux 附件 | [Linux 使用说明](docs/LINUX.md) |
 | 备份、回退和签名 | [运行手册](docs/runbooks/backup-restore.md) · [回退](docs/runbooks/rollback.md) · [签名](docs/runbooks/signing.md) |
 | 历史决定与文件职责 | [ADR](docs/decisions/README.md) · [逐文件索引](docs/FILES.md) |
+| 贡献、反馈与版本历史 | [贡献指南](CONTRIBUTING.md) · [支持说明](docs/SUPPORT.md) · [更新日志](CHANGELOG.md) |
 | 仓库 About 文案 | [简介与标签建议](docs/ABOUT.md) |
 
 只在 `preview` 分支维护和提交本轮工作；发布操作按每次明确授权执行。最新 2.0.2 的补充附件与持续更新的文档分开追踪，不因文档更新重打二进制或移动发布标签。
