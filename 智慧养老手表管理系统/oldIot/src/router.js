@@ -32,7 +32,7 @@ const device = () => import('./views/device.vue')
 const router = createRouter({
   history: createWebHashHistory(),
   routes: [
-    { path: '/connection', component: () => import('./views/Connection.vue') },
+    { path: '/connection', redirect: '/login' },
     { path: '/setup', component: () => import('./views/Setup.vue') },
 	  {path: '/',
 	    redirect: '/login'
@@ -173,7 +173,6 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-  if (to.path === '/connection') return next()
   const publicPage = to.path === '/login' || to.path === '/register'
   loadSession().then(account => {
     if (authState.setupRequired) return next(to.path === '/setup' ? undefined : '/setup')
@@ -184,7 +183,12 @@ router.beforeEach((to, from, next) => {
     if ((account.role === 'FAMILY') !== familyPage) return next(account.role === 'FAMILY' ? '/familyMain' : '/main')
     next()
   }).catch(error => {
-    next(error.response?.data?.code === 'DATABASE_UNAVAILABLE' ? '/connection' : (publicPage ? undefined : '/login'))
+    if (error.response?.data?.code === 'DATABASE_UNAVAILABLE' && authState.account) {
+      const familyPage = to.matched.some(route => route.path === '/familyHome')
+      if (!publicPage && to.path !== '/setup' && (authState.account.role === 'FAMILY') !== familyPage) return next(authState.account.role === 'FAMILY' ? '/familyMain' : '/main')
+      return next(to.path === '/setup' ? '/login' : undefined)
+    }
+    next(publicPage || (to.path === '/setup' && error.response?.data?.code === 'DATABASE_UNAVAILABLE') ? undefined : '/login')
   })
 })
 

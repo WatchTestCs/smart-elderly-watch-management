@@ -13,6 +13,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"careold-go/internal/auth"
+	"careold-go/internal/csrf"
 	"careold-go/internal/response"
 	"careold-go/internal/session"
 )
@@ -28,6 +29,13 @@ func (h *Handler) routeAuth(mux *http.ServeMux) {
 // MountDesktopExit allows closing the desktop even before the database is ready.
 func (h *Handler) MountDesktopExit(mux *http.ServeMux) {
 	mux.HandleFunc("POST /restful/desktop/exit", h.desktopExit)
+}
+
+// MountLocalLogout keeps session cleanup available without a database.
+func (h *Handler) MountLocalLogout(mux *http.ServeMux) {
+	local := http.NewServeMux()
+	local.HandleFunc("POST /restful/userLogin/logout", h.logout)
+	mux.Handle("POST /restful/userLogin/logout", csrf.Middleware(h.Sessions, auth.Middleware(h.Sessions, local)))
 }
 
 // sessionInfo 复刻 GET /restful/userLogin/session：公开；无会话则建匿名会话。

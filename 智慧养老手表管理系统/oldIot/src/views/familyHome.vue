@@ -6,6 +6,7 @@
       <family-slider class="workspace-sidebar"></family-slider>
       <main ref="workspaceMain" id="care-main" class="workspace-main" tabindex="-1">
         <section class="workspace-content">
+          <database-notice />
           <header v-if="showPageIntro" class="view-intro">
             <p class="view-breadcrumb">家属空间 <i class="el-icon-arrow-right"></i> {{ $route.meta.title }}</p>
             <h1>{{ $route.meta.title }}</h1>

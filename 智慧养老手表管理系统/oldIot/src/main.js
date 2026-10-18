@@ -1,5 +1,6 @@
 import { createApp } from 'vue'
 import App from './App.vue'
+import DatabaseNotice from './components/DatabaseNotice.vue'
 import { installDesktopKeys } from './desktop'
 import router from './router'
 import store from './store'
@@ -16,6 +17,7 @@ import '@/assets/css/accessibility.css'
 import '@/assets/css/commercial.css'
 
 const app = createApp(App)
+app.component('database-notice', DatabaseNotice)
 app.config.globalProperties.$axios = axios
 app.config.globalProperties.$store = store
 installElement(app)

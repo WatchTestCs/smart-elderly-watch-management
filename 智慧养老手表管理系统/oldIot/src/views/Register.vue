@@ -12,6 +12,7 @@
           <div class="register-sub">创建家属账号 · 需要管理员发放的邀请码</div>
         </div>
 
+        <database-notice />
         <el-form
           label-position="top"
           :model="registerForm"

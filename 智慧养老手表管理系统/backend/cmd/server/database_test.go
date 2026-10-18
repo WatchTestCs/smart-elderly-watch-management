@@ -5,9 +5,11 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"careold-go/internal/config"
 	"careold-go/internal/handlers"
+	"careold-go/internal/session"
 )
 
 func TestDatabaseUnavailableDoesNotBlockApplication(t *testing.T) {
@@ -49,5 +51,32 @@ func TestDatabaseUnavailableDoesNotBlockApplication(t *testing.T) {
 	app.ServeHTTP(w, httptest.NewRequest("POST", "/restful/test", nil))
 	if w.Code != 503 || calls != 1 {
 		t.Fatal("unavailable database accepted a business operation")
+	}
+}
+
+func TestLogoutDoesNotRequireDatabase(t *testing.T) {
+	store := session.NewStore(12 * time.Hour)
+	account := store.Create(session.Principal{Role: "ADMIN", ID: 1})
+	local := http.NewServeMux()
+	handlers.New(nil, store, config.Config{}).MountLocalLogout(local)
+	app := (&databaseService{}).middleware(local)
+	request := httptest.NewRequest("POST", "/restful/userLogin/logout", nil)
+	request.AddCookie(&http.Cookie{Name: session.CookieName, Value: account.ID})
+	request.Header.Set("X-CSRF-TOKEN", account.CSRFToken)
+	result := httptest.NewRecorder()
+	rejected := httptest.NewRecorder()
+	missingCSRF := request.Clone(request.Context())
+	missingCSRF.Header = request.Header.Clone()
+	missingCSRF.Header.Del("X-CSRF-TOKEN")
+	app.ServeHTTP(rejected, missingCSRF)
+	if rejected.Code != http.StatusForbidden || store.FromRequest(request) == nil {
+		t.Fatal("offline logout weakened CSRF enforcement")
+	}
+	app.ServeHTTP(result, request)
+	if result.Code != http.StatusOK || !strings.Contains(result.Body.String(), "1111") {
+		t.Fatalf("offline logout: HTTP %d %s", result.Code, result.Body.String())
+	}
+	if store.FromRequest(request) != nil {
+		t.Fatal("logout retained the authenticated server session")
 	}
 }

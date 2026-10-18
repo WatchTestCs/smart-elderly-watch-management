@@ -33,7 +33,7 @@ func (s *databaseService) middleware(local http.Handler) http.Handler {
 			return
 		}
 		if !strings.HasPrefix(r.URL.Path, "/restful/") ||
-			(r.URL.Path == "/restful/desktop/exit" && r.Method == http.MethodPost) {
+			((r.URL.Path == "/restful/desktop/exit" || r.URL.Path == "/restful/userLogin/logout") && r.Method == http.MethodPost) {
 			local.ServeHTTP(w, r)
 			return
 		}

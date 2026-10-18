@@ -29,6 +29,7 @@ module.exports = async function (run) {
   if(/\/(create|add|update|delete)$/.test(endpoint))writes.push({endpoint,data:route.request().postDataJSON()});
   const unknown=mode==='unknown';
   const fixtures={
+   'restful/service/status':{databaseReady:true},
    'restful/userLogin/session':{authenticated:signedIn,account:signedIn?{role,id:1,phone:'13000000000',oldId:role==='FAMILY'?1:null,displayName:role==='FAMILY'?'小明':'管理员'}:{},csrfToken:'mock-csrf-token',csrfHeader:'X-CSRF-TOKEN'},
    'restful/userLogin/logout':{returnCode:'1111'},
    'restful/family/updateTouPic':{returnCode:'1111'},
@@ -74,7 +75,7 @@ module.exports = async function (run) {
   };
   if(!(endpoint in fixtures)){report.unexpectedApi.push(endpoint);await route.fulfill({status:404,body:'{}'});return;}
   if(mode==='loading')await new Promise(resolve=>setTimeout(resolve,700));
-  if(mode==='error' && !endpoint.includes('userLogin')){await route.fulfill({status:503,contentType:'application/json',body:'{}'});return;}
+  if(mode==='error' && !endpoint.includes('userLogin') && endpoint!=='restful/service/status'){await route.fulfill({status:503,contentType:'application/json',body:'{}'});return;}
   if(endpoint==='restful/said/insert' && mode!=='comment-failure'){const data=route.request().postDataJSON();comments.push({saidId:1,personName:data.personName,said:data.said,niceCount:0,good:0});}
   if(endpoint==='restful/said/goodCount' && comments[0]){comments[0].good=comments[0].good?0:1;comments[0].niceCount=comments[0].good;}
   if (endpoint==='restful/userLogin/logout') signedIn=false;

@@ -58,6 +58,6 @@ go vet ./...
 
 HTTP 监听、桌面就绪文件、前端资源与退出接口不等待数据库。连接和迁移在后台执行；连接失败、配置错误或迁移失败不会终止界面。每次连接探测限时 5 秒，成功连接后的迁移独立限时 2 分钟，失败后后台重试。
 
-GET /restful/service/status 返回 databaseReady，不返回连接串或数据库错误详情；数据库未准备好时，业务 API 返回 HTTP 503、DATABASE_UNAVAILABLE 与 Retry-After。前端展示连接状态页，恢复后重新检查会话并继续。失败的写入不会被自动重放。
+GET /restful/service/status 返回 databaseReady，不返回连接串或数据库错误详情；数据库未准备好时，业务 API 返回 HTTP 503、DATABASE_UNAVAILABLE 与 Retry-After。前端保留当前界面并就地提示，恢复后重新检查会话；用户登录失效时仍需重新认证。退出会话由数据库无关的本地端点处理，继续校验会话和 CSRF。失败的写入不会被自动重放。
 
 GET /healthz 仅表示本地进程存活，不表示数据库就绪。数据库和本地软件仍独立部署，不提供离线假数据或未连接时的本地业务写入。

@@ -4,6 +4,16 @@
   </div>
 </template>
 
+<script setup>
+import { onMounted, onBeforeUnmount } from 'vue'
+import { useRouter } from 'vue-router'
+import { monitorDatabase } from './auth'
+const router = useRouter()
+let stopMonitoring
+onMounted(() => { stopMonitoring = monitorDatabase(router) })
+onBeforeUnmount(() => stopMonitoring?.())
+</script>
+
 <style>
 
 html,

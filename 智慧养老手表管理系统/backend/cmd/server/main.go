@@ -27,7 +27,9 @@ func main() {
 	service := &databaseService{}
 	mux := http.NewServeMux()
 	handlers.MountWeb(mux)
-	handlers.New(nil, sessions, cfg).MountDesktopExit(mux)
+	localHandlers := handlers.New(nil, sessions, cfg)
+	localHandlers.MountDesktopExit(mux)
+	localHandlers.MountLocalLogout(mux)
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusOK) })
 	srv := &http.Server{Handler: service.middleware(mux)}
 

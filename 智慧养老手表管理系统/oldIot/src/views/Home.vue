@@ -11,6 +11,7 @@
           </el-tabs>
         </div>
         <section class="workspace-content">
+          <database-notice />
           <header v-if="showPageIntro" class="view-intro">
             <p class="view-breadcrumb">工作台 <i class="el-icon-arrow-right"></i> {{ $route.meta.title }}</p>
             <h1>{{ $route.meta.title }}</h1>

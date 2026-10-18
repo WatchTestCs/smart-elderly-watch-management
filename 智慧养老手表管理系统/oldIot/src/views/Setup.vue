@@ -8,7 +8,7 @@
     <section class="setup-panel">
       <span class="setup-kicker">初次相见 · 岁宁</span>
       <h2>开启照护日常</h2>
-      <p class="setup-intro">创建管理员账号。业务记录保存在独立数据库中，关闭软件不会清除记录。</p>
+      <database-notice><p class="setup-intro">创建管理员账号。业务记录保存在独立数据库中，关闭软件不会清除记录。</p></database-notice>
       <el-form ref="form" :model="account" label-position="top" :rules="rules" @submit.prevent="submit">
         <el-form-item label="怎么称呼您" prop="name"><el-input v-model="account.name" maxlength="10" autocomplete="name" /></el-form-item>
         <el-form-item label="登录手机号" prop="phone"><el-input v-model="account.phone" maxlength="11" inputmode="tel" autocomplete="username" /></el-form-item>
@@ -51,7 +51,7 @@ export default {
         this.$router.replace('/main')
       } catch (e) {
         if (e.response?.data?.code === 'DATABASE_UNAVAILABLE') {
-          this.$router.replace('/connection')
+          this.error = '创建账号需要连接数据库，正在自动连接。恢复后请重试，填写内容已保留。'
           return
         }
         this.error = e.response?.status === 409 ? '管理员已创建，请返回登录页面。' : '暂时无法创建，请检查填写的信息后重试。'

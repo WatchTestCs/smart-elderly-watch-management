@@ -1,121 +1,86 @@
 {
-  "version": "2.0.2",
-  "releaseTag": "v2.0.2-preview.1",
   "date": "2026-10-18",
-  "platform": "Windows-11-10.0.26100-SP0",
-  "stack": {
-    "desktop": "Tauri 2 / Rust",
-    "backend": "Go",
-    "database": "independent PostgreSQL",
-    "frontend": "Vue 3 / Vite"
-  },
-  "nativeInstalledApplication": true,
-  "checks": {
+  "scope": "replacement of existing 2.0.2 release; prior Windows checks reused, no repeated full tests",
+  "native": {
     "tauri_opens_without_database_or_dsn": true,
     "tauri_and_sidecar_close_while_offline": true,
     "offline_api_explicit_503": true,
     "database_recovery_same_tauri_process": true,
     "direct_setup_without_native_token_denied": true,
-    "native_setup_outage_returns_connection_screen": true,
+    "native_setup_outage_preserves_form": true,
     "failed_native_write_not_replayed": true,
     "native_ipc_initialization_and_browser_login": true,
     "native_fullscreen_shortcuts": true,
+    "authenticated_offline_navigation_and_draft_preserved": true,
+    "logout_does_not_require_database": true,
     "normal_close_stops_go_sidecar": true,
-    "no_page_exceptions": true,
-    "installer_install": {
-      "installerExit": 0,
-      "installedVersion": "2.0.2",
-      "installPath": "isolated local acceptance directory",
-      "mainAndSidecarPresent": true
-    },
-    "installer_uninstall": {
-      "uninstallExit": 0,
-      "applicationRemoved": true,
-      "userDataPreserved": true,
-      "testRegistryEntryRemoved": true,
-      "note": "Waited for asynchronous NSIS worker to finish"
-    }
+    "no_page_exceptions": true
   },
   "pageExceptions": [],
-  "expectedConsoleErrors": {
-    "count": 2,
-    "reason": "deliberately unavailable database returned HTTP 503"
-  },
+  "browserSuites": [
+    {
+      "suite": "browser-acceptance",
+      "checks": 297
+    },
+    {
+      "suite": "controls-acceptance",
+      "checks": 656
+    },
+    {
+      "suite": "database-availability",
+      "checks": 13
+    },
+    {
+      "suite": "elder-delete",
+      "checks": 8
+    },
+    {
+      "suite": "forms-acceptance",
+      "checks": 30
+    },
+    {
+      "suite": "issues-acceptance",
+      "checks": 42
+    },
+    {
+      "suite": "lifecycle-acceptance",
+      "checks": 7
+    },
+    {
+      "suite": "screen-acceptance",
+      "checks": 169
+    },
+    {
+      "suite": "setup-browser-acceptance",
+      "checks": 10
+    }
+  ],
+  "browserChecks": 1232,
+  "databaseRegression": "Windows Go tests with real PostgreSQL and offline logout CSRF regression passed",
+  "consoleResponsesDuringDeliberateDisconnect": "503 plus in-flight SQL 500 responses observed; no uncaught page exceptions",
   "installer": {
-    "file": "Suining-Setup-2.0.2-win-x64.exe",
-    "bytes": 247151560,
-    "sha256": "4f10e45d1fd6b746d95284a11d46bc43d25727b49ccc480763d65862a9696a75",
-    "webview2": "offline installer embedded; host already had WebView2"
-  },
-  "signing": {
-    "type": "self-signed Authenticode",
-    "subject": "CN=Suining Local Build",
-    "publiclyTrusted": false,
-    "timestamped": false,
-    "verification": "Untrusted root certificate; no root installed"
+    "installExit": 0,
+    "nativeChecks": {
+      "installedNativeAppOpens": true,
+      "databaseNotRequired": true,
+      "normalCloseStopsSidecar": true,
+      "pageErrors": []
+    },
+    "uninstallExit": 0,
+    "userDataPreserved": true,
+    "installerBytes": 30216912,
+    "installerSHA256": "0845db089b4f65bae42093d5069ee33b65aa99a6457b0b0e73d76cbeee3ca235",
+    "missingRuntimeEndToEnd": "Not executed: host already has WebView2; did not uninstall shared runtime"
   },
   "limitations": [
-    "No clean Windows VM without WebView2",
-    "No trusted CA signing certificate",
-    "No production H2-to-PostgreSQL migration",
-    "No real wearable or SMS validation",
-    "No performance benchmarks",
-    "No manual GitHub Actions execution",
-    "No in-place upgrade from old Electron/H2 installation",
-    "No GitHub build provenance attestation"
+    "No clean-host missing-WebView2 download installation test",
+    "No production database endpoint supplied; auto-connect targets configured DSN",
+    "Self-signed, not publicly trusted"
   ],
-  "additionalChecks": {
-    "goRace": "Linux/WSL Go 1.24.0 with real isolated PostgreSQL; all packages passed",
-    "cargoTest": "Windows MSVC cargo test --locked passed compilation; 0 Rust unit cases, functional behavior covered by installed-app checks",
-    "cargoFmt": "cargo fmt -- --check passed",
-    "fontIntegrity": "88 font files byte-for-byte identical to baseline preview",
-    "configuration": "14 YAML files, active PowerShell syntax, product version and JSON parsing passed",
-    "browserQA": {
-      "environment": "Chromium production frontend; mocked API, not backend proof",
-      "suites": [
-        {
-          "suite": "browser-acceptance",
-          "checks": 297,
-          "failed": 0
-        },
-        {
-          "suite": "controls-acceptance",
-          "checks": 656,
-          "failed": 0
-        },
-        {
-          "suite": "elder-delete",
-          "checks": 8,
-          "failed": 0
-        },
-        {
-          "suite": "forms-acceptance",
-          "checks": 30,
-          "failed": 0
-        },
-        {
-          "suite": "issues-acceptance",
-          "checks": 42,
-          "failed": 0
-        },
-        {
-          "suite": "lifecycle-acceptance",
-          "checks": 7,
-          "failed": 0
-        },
-        {
-          "suite": "screen-acceptance",
-          "checks": 169,
-          "failed": 0
-        },
-        {
-          "suite": "setup-browser-acceptance",
-          "checks": 10,
-          "failed": 0
-        }
-      ],
-      "total": 1219,
-      "failed": 0
-    }
+  "goRace": "Linux/WSL Go 1.24.0 with isolated real PostgreSQL: go test -race -count=1 -timeout 120s ./... passed",
+  "linux": {
+    "software": "user-provided unchanged tar.gz; ELF x86-64; not runtime-tested",
+    "dbManager": "user-provided DEB; Package field corrected, data payload unchanged; metadata parsed; not installed",
+    "sourceRelationship": "not claimed to match current Windows source or migrations"
   }
 }

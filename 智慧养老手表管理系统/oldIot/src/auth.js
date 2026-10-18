@@ -1,7 +1,7 @@
 import { reactive } from 'vue'
 import axios from 'axios'
 
-export const authState = reactive({ account: null, csrfToken: '', csrfHeader: 'X-CSRF-TOKEN', setupRequired: false })
+export const authState = reactive({ account: null, csrfToken: '', csrfHeader: 'X-CSRF-TOKEN', setupRequired: false, databaseReady: null })
 let loaded = false
 let pending = null
 const profileKeys = ['token', 'user_name', 'oldIdfamily', 'familyPhone', 'familyTouPic']
@@ -33,7 +33,7 @@ export function loadSession (refresh) {
 }
 
 export function endSession () {
-  return axios.post('/restful/userLogin/logout', {}).then(() => {
+  return axios.post('/restful/userLogin/logout', {}, { skipSession: true, headers: { [authState.csrfHeader]: authState.csrfToken } }).then(() => {
     loaded = false
     authState.account = null
     authState.csrfToken = ''
@@ -58,7 +58,8 @@ export function installHttpSecurity (router, app) {
   axios.interceptors.response.use(response => response, error => {
     if (error.response?.data?.code === 'DATABASE_UNAVAILABLE') {
       loaded = false
-      if (router.currentRoute.value.matched.length && router.currentRoute.value.path !== '/connection') router.replace('/connection')
+      authState.databaseReady = false
+      if (!error.config?.skipSession) app.config.globalProperties.$message.warning({ message: '此功能需要连接数据库，正在自动连接。恢复后请重试。', grouping: true })
     }
     if (error.response && error.response.status === 401) {
       loaded = false
@@ -75,4 +76,41 @@ export function installHttpSecurity (router, app) {
     }
     return Promise.reject(error)
   })
+}
+
+
+// One background probe across all pages; reconnecting never repeats business requests.
+export function monitorDatabase (router) {
+  let active = true
+  let checking = false
+  let timer
+  async function check () {
+    if (!active || checking) return
+    clearTimeout(timer)
+    checking = true
+    const previous = authState.databaseReady
+    try {
+      const { data } = await axios.get('/restful/service/status', { skipSession: true, timeout: 5000 })
+      if (!active) return
+      if (typeof data.databaseReady !== 'boolean') throw new Error('Invalid database status')
+      authState.databaseReady = data.databaseReady
+      if (!data.databaseReady) loaded = false
+      if (data.databaseReady && previous === false) {
+        const account = await loadSession(true)
+        if (!active) return
+        const route = router.currentRoute.value.path
+        if (authState.setupRequired && route === '/login') await router.replace('/setup')
+        else if (account && route === '/login') await router.replace(account.role === 'FAMILY' ? '/familyMain' : '/main')
+        else if (!account && !['/login', '/register', '/setup'].includes(route)) await router.replace('/login')
+      }
+    } catch (_) {
+      if (active) { authState.databaseReady = false; loaded = false }
+    } finally {
+      checking = false
+      if (active) timer = setTimeout(check, 3000)
+    }
+  }
+  window.addEventListener('online', check)
+  check()
+  return () => { active = false; clearTimeout(timer); window.removeEventListener('online', check) }
 }

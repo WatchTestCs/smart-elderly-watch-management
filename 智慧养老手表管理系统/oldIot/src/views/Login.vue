@@ -16,7 +16,7 @@
         <div class="auth-brand"><img class="auth-mark" src="/static/brand/suining-logo-96.webp" srcset="/static/brand/suining-logo-96.webp 96w, /static/brand/suining-logo-192.webp 192w" sizes="72px" width="72" height="72" alt="" aria-hidden="true" decoding="async"><span>岁宁</span></div>
         <p class="auth-eyebrow">智慧养老管理平台</p>
         <h2>欢迎回来</h2>
-        <p class="auth-intro">登录后查看设备状态与家人近况</p>
+        <database-notice><p class="auth-intro">登录后查看设备状态与家人近况</p></database-notice>
         <el-form label-position="top" ref="loginForm" :model="loginForm" :rules="rules" class="login-form" @submit.prevent="submitForm">
           <el-form-item label="手机号" prop="phone" for="login-phone">
             <el-input id="login-phone" aria-label="手机号" v-model="loginForm.phone" placeholder="请输入登录手机号" autocomplete="username" inputmode="tel" maxlength="11" clearable>
@@ -102,8 +102,8 @@ export default {
           }
           _this.errorMessage = data.message || '手机号或密码不正确，请重试'
 
-        }).catch(function () {
-          _this.errorMessage = '暂时无法登录，请刷新页面或稍后重试'
+        }).catch(function (error) {
+          _this.errorMessage = error.response?.data?.code === 'DATABASE_UNAVAILABLE' ? '登录需要连接数据库，正在自动连接，请恢复后重试。' : '暂时无法登录，请稍后重试'
         }).then(function () {
           _this.submitting = false
         })
