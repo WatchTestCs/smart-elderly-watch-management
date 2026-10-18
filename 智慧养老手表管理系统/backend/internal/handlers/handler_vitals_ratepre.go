@@ -260,6 +260,3 @@ func (h *Handler) ratepreResolveAlert(w http.ResponseWriter, r *http.Request) {
 	}
 	response.JSON(w, http.StatusOK, map[string]any{"message": "已处置，红点已消除", "returnCode": code})
 }
-
-// POST /restful/ratepre/selectRatepre —— 按姓名+时间范围分页查询。
-func (h *Handler) ratepreSelect(w http.ResponseWriter, r *http.Request) {
