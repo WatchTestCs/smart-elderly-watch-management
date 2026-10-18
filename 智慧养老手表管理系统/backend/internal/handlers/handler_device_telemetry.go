@@ -362,9 +362,9 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	response.OK(w, map[string]any{
-		"message": "求助已接收，等待通知和人员接单",
-		"incidentId": incidentID,
-		"incidentState": "received",
+		"message":           "求助已接收，等待通知和人员接单",
+		"incidentId":        incidentID,
+		"incidentState":     "received",
 		"notificationState": "not_sent",
 	})
 }
