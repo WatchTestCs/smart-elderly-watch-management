@@ -1,0 +1,46 @@
+name: Publish 2.0.3 source ZIP
+on:
+  push:
+    branches: [preview]
+    paths:
+      - 'docs/releases/2.0.3.md'
+
+permissions:
+  contents: write
+
+jobs:
+  publish-source:
+    if: github.repository == 'WatchTestCs/smart-elderly-watch-management'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact source revision
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Verify release metadata and create reproducible source archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(tr -d '\r\n' < '智慧养老手表管理系统/backend/VERSION')" = '2.0.3'
+          grep -q '"version": "2.0.3"' '智慧养老手表管理系统/desktop/version.json'
+          git archive --format=zip --prefix=suining-2.0.3-source/ --output=Suining-2.0.3-source.zip HEAD
+          sha256sum Suining-2.0.3-source.zip > SHA256SUMS.txt
+          unzip -tqq Suining-2.0.3-source.zip
+          unzip -Z1 Suining-2.0.3-source.zip | grep -q 'suining-2.0.3-source/docs/REFACTOR_2.0.2.md'
+          unzip -Z1 Suining-2.0.3-source.zip | grep -q 'suining-2.0.3-source/docs/releases/2.0.3.md'
+      - name: Publish source-only GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view v2.0.3 >/dev/null 2>&1; then
+            echo 'v2.0.3 release exists; refusing to overwrite it'
+            exit 1
+          fi
+          gh release create v2.0.3 Suining-2.0.3-source.zip SHA256SUMS.txt \
+            --target "$GITHUB_SHA" \
+            --title '岁宁 2.0.3 · 源码结构拆分' \
+            --notes-file docs/releases/2.0.3.md \
+            --prerelease
