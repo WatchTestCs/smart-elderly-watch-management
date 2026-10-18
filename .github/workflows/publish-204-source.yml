@@ -1,0 +1,47 @@
+name: Publish 2.0.4 source ZIP
+on:
+  push:
+    branches: [preview]
+    paths:
+      - 'docs/releases/2.0.4.md'
+
+permissions:
+  contents: write
+jobs:
+  publish-source:
+    if: github.repository == 'WatchTestCs/smart-elderly-watch-management'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact source revision
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Validate source and build ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(tr -d '\r\n' < '智慧养老手表管理系统/backend/VERSION')" = '2.0.4'
+          grep -q '"version": "2.0.4"' '智慧养老手表管理系统/desktop/version.json'
+          test -f '智慧养老手表管理系统/backend/migrations/0005_care_incidents.sql'
+          test -f '智慧养老手表管理系统/backend/internal/care/worker.go'
+          test -f '智慧养老手表管理系统/oldIot/src/components/CareInbox.vue'
+          git archive --format=zip --prefix=suining-2.0.4-source/ --output=Suining-2.0.4-source.zip HEAD
+          sha256sum Suining-2.0.4-source.zip > SHA256SUMS.txt
+          unzip -tqq Suining-2.0.4-source.zip
+          unzip -Z1 Suining-2.0.4-source.zip | grep -q 'suining-2.0.4-source/docs/releases/2.0.4.md'
+      - name: Publish preview source Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view v2.0.4 >/dev/null 2>&1; then
+            echo 'v2.0.4 exists; refusing to overwrite it'
+            exit 1
+          fi
+          gh release create v2.0.4 Suining-2.0.4-source.zip SHA256SUMS.txt \
+            --target "$GITHUB_SHA" \
+            --title '岁宁 2.0.4 · 求助照护闭环（源码预览）' \
+            --notes-file docs/releases/2.0.4.md \
+            --prerelease
