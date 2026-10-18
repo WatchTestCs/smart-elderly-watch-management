@@ -61,11 +61,18 @@ func (h *Handler) careDiagnostics(w http.ResponseWriter,r *http.Request) {
           (SELECT min(created_at) FROM care_notification_outbox WHERE status IN ('pending','failed'))
     `).Scan(&pending,&failed,&stale,&overdue,&oldest)
     if err != nil { response.Error500(w,ref()); return }
+    var workerSeen, workerStarted *time.Time
+    if err := h.DB.QueryRow(r.Context(),
+        "SELECT last_seen_at,started_at FROM care_worker_heartbeat WHERE singleton=true").Scan(&workerSeen,&workerStarted);err != nil && err != pgx.ErrNoRows {
+        response.Error500(w,ref());return
+    }
+    workerHealthy := workerSeen != nil && time.Since(*workerSeen) < 30*time.Second
     w.Header().Set("Cache-Control","no-store")
     response.OK(w,map[string]any{
         "pendingNotifications":pending,"failedNotifications":failed,
         "staleSending":stale,"overdueIncidents":overdue,
         "oldestOutstandingAt":oldest,
+        "workerHealthy":workerHealthy,"workerLastSeenAt":workerSeen,"workerStartedAt":workerStarted,
         "note":"数据库统计不是网关送达或值班到岗证明",
     })
 }
