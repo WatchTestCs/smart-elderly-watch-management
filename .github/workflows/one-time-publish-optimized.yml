@@ -1,0 +1,74 @@
+name: One-time publish optimized source
+on:
+  push:
+    branches: [preview]
+    paths:
+      - '.github/workflows/one-time-publish-optimized.yml'
+permissions:
+  contents: write
+jobs:
+  publish:
+    if: github.repository == 'WatchTestCs/smart-elderly-watch-management'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout CI-verified source revision
+        uses: actions/checkout@v4
+        with:
+          ref: '6aa62a607de1e569116029b97a1623fff419d9b2'
+          fetch-depth: 1
+      - name: Assemble full source archive and checksum
+        shell: bash
+        run: |
+          set -euo pipefail
+          git archive --format=zip --prefix="Suining-2.0.5-optimized.1-source/" HEAD --output="Suining-2.0.5-optimized.1-source.zip"
+          python3 - <<'PY'
+          import zipfile
+          import sys
+          name = "Suining-2.0.5-optimized.1-source.zip"
+          with zipfile.ZipFile(name) as z:
+              files = [x for x in z.namelist() if not x.endswith("/")]
+              fonts = [f for f in files if f.lower().endswith((".ttf", ".otf", ".woff", ".woff2"))]
+              bad = z.testzip()
+          print(f"Archive contents: {len(files)} files, {len(fonts)} original font files")
+          if bad or len(fonts) != 88:
+              sys.exit("Source archive verification failed: " + str(bad))
+          PY
+          sha256sum "Suining-2.0.5-optimized.1-source.zip" > SHA256SUMS.txt
+          test -s SHA256SUMS.txt
+      - name: Create prerelease with downloadable assets
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          cat > RELEASE_NOTES.md <<'NOTES'
+          # 岁宁 2.0.5 · 架构优化版 1（完整源码，含字体）
+          
+          本预发布版本基于 `preview` 分支的已验证提交 `6aa62a607de1e569116029b97a1623fff419d9b2`，保留全部原有字体及相关资源。
+          
+          ## 主要改进
+          - 将设备离线巡检并入可取消的照护后台 Worker，减少任务生命周期与路由层的耦合。
+          - 为 SOS 通知任务增加执行批次状态校验，防止过期执行者覆盖新任务状态。
+          - 限制 HTTP 超时及请求体大小、强化分页参数校验和数据库请求取消机制。
+          - 移除默认写死的数据库连接信息，默认服务监听收紧到本机回环地址。
+          - 增加回归测试及架构说明文档。
+          
+          ## 下载与验证
+          - `Suining-2.0.5-optimized.1-source.zip`：完整源码快照（含全部 88 个原始字体文件）
+          - `SHA256SUMS.txt`：源码 ZIP 的 SHA-256 完整性校验值
+          - GitHub 自动提供同一标签的 Source code (zip / tar.gz) 归档
+          
+          ## 验证结果
+          - 2026-10-19：目标提交的 Preview CI 通过（含前端构建及后端测试、构建与 vet）。
+          - 2026-10-19：Security 检查通过。
+          - 此版本为预发布（Pre-release），真实设备与生产环境部署仍需联调验收。
+          
+          该版本仅发布源码，不包含 Windows 安装程序。
+          NOTES
+          gh release create v2.0.5-optimized.1 \
+            "Suining-2.0.5-optimized.1-source.zip" SHA256SUMS.txt \
+            --repo "${{ github.repository }}" \
+            --target "6aa62a607de1e569116029b97a1623fff419d9b2" \
+            --title "岁宁 2.0.5 · 架构优化版 1（完整源码，含字体）" \
+            --notes-file RELEASE_NOTES.md \
+            --prerelease
