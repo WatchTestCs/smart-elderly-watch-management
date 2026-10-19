@@ -12,6 +12,23 @@ Suining brings resident profiles, wearable devices, health and activity records,
 
 [Source and historical downloads](docs/DOWNLOADS.md) · [2.0.6 release and upgrade notes](docs/releases/2.0.6.md) · [Architecture](#architecture) · [Getting started](#getting-started) · [Dual-database guide](docs/DUAL_DATABASES.md) · [Source project](智慧养老手表管理系统/README.md) · [Changelog](CHANGELOG.md)
 
+## Repository map
+
+| Path | Purpose |
+| --- | --- |
+| [.github/](.github/) | Security reporting, dependency updates, pull-request templates and automation workflows. |
+| [deploy/](deploy/) | MySQL/PostgreSQL deployment templates and standalone-service probes; no application container is defined. |
+| [docs/](docs/) | Setup, architecture, migrations, care operations, historical releases and the [file-by-file index](docs/FILES.md). |
+| [tests/ui/](tests/ui/) | Dependency-free browser accessibility smoke check. |
+| [智慧养老手表管理系统/](智慧养老手表管理系统/README.md) | Buildable desktop project containing Tauri, the Go backend, Vue frontend and watch simulator. |
+| [.gitignore](.gitignore) | Excludes dependency caches, databases, build output and private keys. |
+| [CHANGELOG.md](CHANGELOG.md) | Versioned feature, fix and compatibility history. |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution workflow, branch and verification conventions. |
+| [LICENSE](LICENSE) | Repository MIT license and copyright notice. |
+| [README.en.md](README.en.md) | English project overview and technical/download entry points. |
+| [README.md](README.md) | Chinese project homepage and current source entry point. |
+| [architecture.md](architecture.md) | Root-level overview of system components and data flow. |
+
 ## 2.0.6 and delivery status
 
 Local Windows x64 Setup, portable and source packages have been built. This delivery has not been published to GitHub Releases. Their names are `Suining-Setup-2.0.6-win-x64.exe`, `Suining-Portable-2.0.6-win-x64.zip` and `Suining-Source-2.0.6.zip`; verify them against the delivered `SHA256SUMS.txt`.

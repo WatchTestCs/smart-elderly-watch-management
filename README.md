@@ -12,6 +12,23 @@
 
 [源码与历史附件](docs/DOWNLOADS.md) · [2.0.6 改进与升级](docs/releases/2.0.6.md) · [系统架构](#系统架构) · [开始使用](#开始使用) · [双库部署与迁移](docs/DUAL_DATABASES.md) · [源码工程](智慧养老手表管理系统/README.md) · [更新日志](CHANGELOG.md)
 
+## 仓库目录与根文件
+
+| 路径 | 用途 |
+| --- | --- |
+| [.github/](.github/) | 漏洞披露、依赖更新、PR 模板和自动检查工作流。 |
+| [deploy/](deploy/) | MySQL／PG 部署模板与独立服务运维探测脚本；不包含应用容器。 |
+| [docs/](docs/) | 使用、架构、迁移、照护运维、历史版本与[逐文件职责索引](docs/FILES.md)。 |
+| [tests/ui/](tests/ui/) | 无外部依赖的浏览器可访问性冒烟检查。 |
+| [智慧养老手表管理系统/](智慧养老手表管理系统/README.md) | 可构建的桌面工程：Tauri、Go 后端、Vue 前端和手表模拟器。 |
+| [.gitignore](.gitignore) | 排除依赖缓存、数据库、构建产物与私钥。 |
+| [CHANGELOG.md](CHANGELOG.md) | 按版本记录功能变化、修复与兼容性。 |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | 贡献流程、分支和验证约定。 |
+| [LICENSE](LICENSE) | 仓库 MIT 许可和版权声明。 |
+| [README.en.md](README.en.md) | 英文项目介绍、技术栈、下载和部署入口。 |
+| [README.md](README.md) | 中文项目首页与当前源码入口。 |
+| [architecture.md](architecture.md) | 根目录的系统组件和数据流概览。 |
+
 ## 2.0.6 与交付状态
 
 2.0.6 已完成本地 Windows x64 安装版、免安装版和源码包构建；本次交付未发布到 GitHub Releases。文件名分别为 `Suining-Setup-2.0.6-win-x64.exe`、`Suining-Portable-2.0.6-win-x64.zip` 和 `Suining-Source-2.0.6.zip`，以随交付的 `SHA256SUMS.txt` 核验。
