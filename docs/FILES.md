@@ -1,419 +1,421 @@
-# 2.0.6 preview 文件职责索引
+# 2.0.6 preview �ļ�ְ������
 
-本索引逐项对应当前 preview 提交中的受版本控制文件。GitHub 文件列表显示最近提交说明，并非文件自带简介；这里提供稳定、逐文件且互不重复的职责说明。构建缓存、用户数据和 Release 安装包不属于源码清单。
+�����������Ӧ��ǰ preview �ύ�е��ܰ汾�����ļ���GitHub �ļ��б���ʾ����ύ˵���������ļ��Դ���飻�����ṩ�ȶ������ļ��һ����ظ���ְ��˵�����������桢�û����ݺ� Release ��װ��������Դ���嵥��
 
-| 文件 | 职责 |
+| �ļ� | ְ�� |
 | --- | --- |
-| [.github/CODEOWNERS](../.github/CODEOWNERS) | 指定仓库代码审查负责人和受保护路径 |
-| [.github/SECURITY.md](../.github/SECURITY.md) | 说明私下报告漏洞的渠道、范围与披露流程 |
-| [.github/dependabot.yml](../.github/dependabot.yml) | 配置 GitHub Actions 与 npm 依赖更新的自动提案 |
-| [.github/pull_request_template.md](../.github/pull_request_template.md) | 提供变更目的、验证证据和风险边界的拉取请求模板 |
-| [.github/workflows/ci.yml](../.github/workflows/ci.yml) | GitHub 工作流 Preview CI 的触发条件与执行步骤（.github/workflows/ci.yml） |
-| [.github/workflows/desktop-contract.yml](../.github/workflows/desktop-contract.yml) | GitHub 工作流 Desktop Contract 的触发条件与执行步骤（.github/workflows/desktop-contract.yml） |
-| [.github/workflows/p0-db-migration.yml](../.github/workflows/p0-db-migration.yml) | 在 CI 中验证 PostgreSQL 历史迁移顺序与结构 |
-| [.github/workflows/preview-candidate.yml](../.github/workflows/preview-candidate.yml) | GitHub 工作流 Tauri preview candidate 的触发条件与执行步骤（.github/workflows/preview-candidate.yml） |
-| [.github/workflows/preview-checks.yml](../.github/workflows/preview-checks.yml) | GitHub 工作流 Additional preview UI checks 的触发条件与执行步骤（.github/workflows/preview-checks.yml） |
-| [.github/workflows/preview-release.yml](../.github/workflows/preview-release.yml) | GitHub 工作流 Preview release preparation 的触发条件与执行步骤（.github/workflows/preview-release.yml） |
-| [.github/workflows/publish-203-source.yml](../.github/workflows/publish-203-source.yml) | GitHub Actions 工作流 publish-203-source：自动化触发条件与执行步骤 |
-| [.github/workflows/publish-204-source.yml](../.github/workflows/publish-204-source.yml) | 2.0.4 源码 ZIP 与 SHA-256 自动发布工作流 |
-| [.github/workflows/publish-205-cleanup-source.yml](../.github/workflows/publish-205-cleanup-source.yml) | GitHub Actions 工作流 publish-205-cleanup-source：自动化触发条件与执行步骤 |
-| [.github/workflows/publish-205-source.yml](../.github/workflows/publish-205-source.yml) | 合并到 preview 后验证并发布 2.0.5 源码归档与校验文件 |
-| [.github/workflows/reusable-backend.yml](../.github/workflows/reusable-backend.yml) | GitHub 工作流 Reusable backend verification 的触发条件与执行步骤（.github/workflows/reusable-backend.yml） |
-| [.github/workflows/reusable-frontend.yml](../.github/workflows/reusable-frontend.yml) | GitHub 工作流 Reusable frontend verification 的触发条件与执行步骤（.github/workflows/reusable-frontend.yml） |
-| [.github/workflows/reusable-windows-package.yml](../.github/workflows/reusable-windows-package.yml) | GitHub 工作流 Reusable Tauri contract 的触发条件与执行步骤（.github/workflows/reusable-windows-package.yml） |
-| [.github/workflows/scorecards.yml](../.github/workflows/scorecards.yml) | GitHub 工作流 OpenSSF Scorecard 的触发条件与执行步骤（.github/workflows/scorecards.yml） |
-| [.github/workflows/security.yml](../.github/workflows/security.yml) | GitHub 工作流 Security 的触发条件与执行步骤（.github/workflows/security.yml） |
-| [.github/workflows/ui-quality.yml](../.github/workflows/ui-quality.yml) | GitHub 工作流 UI Quality 的触发条件与执行步骤（.github/workflows/ui-quality.yml） |
-| [.github/workflows/windows-build-smoke.yml](../.github/workflows/windows-build-smoke.yml) | GitHub 工作流 Tauri Windows build 的触发条件与执行步骤（.github/workflows/windows-build-smoke.yml） |
-| [.gitignore](../.gitignore) | 排除本地依赖、构建产物、数据库文件和密钥等非源码内容 |
-| [CHANGELOG.md](../CHANGELOG.md) | 按版本记录用户可见的功能变化、修复和兼容性说明 |
-| [CONTRIBUTING.md](../CONTRIBUTING.md) | 中英文贡献指南：分支范围、修改规范、验证要求和安全披露方式 |
-| [LICENSE](../LICENSE) | 仓库 MIT 许可正文及 WatchTestCs 版权声明 |
+| [.github/CODEOWNERS](../.github/CODEOWNERS) | ָ���ֿ������鸺���˺��ܱ���·�� |
+| [.github/README.md](../.github/README.md) | ���ܰ�ȫ���ԡ��������¡�PR ģ�����Զ���������Ŀ¼�� |
+| [.github/SECURITY.md](../.github/SECURITY.md) | ˵��˽�±���©������������Χ����¶���� |
+| [.github/dependabot.yml](../.github/dependabot.yml) | ���� GitHub Actions �� npm �������µ��Զ��᰸ |
+| [.github/pull_request_template.md](../.github/pull_request_template.md) | �ṩ���Ŀ�ġ���֤֤�ݺͷ��ձ߽����ȡ����ģ�� |
+| [.github/workflows/ci.yml](../.github/workflows/ci.yml) | GitHub ������ Preview CI �Ĵ���������ִ�в��裨.github/workflows/ci.yml�� |
+| [.github/workflows/desktop-contract.yml](../.github/workflows/desktop-contract.yml) | GitHub ������ Desktop Contract �Ĵ���������ִ�в��裨.github/workflows/desktop-contract.yml�� |
+| [.github/workflows/p0-db-migration.yml](../.github/workflows/p0-db-migration.yml) | �� CI ����֤ PostgreSQL ��ʷǨ��˳����ṹ |
+| [.github/workflows/preview-candidate.yml](../.github/workflows/preview-candidate.yml) | GitHub ������ Tauri preview candidate �Ĵ���������ִ�в��裨.github/workflows/preview-candidate.yml�� |
+| [.github/workflows/preview-checks.yml](../.github/workflows/preview-checks.yml) | GitHub ������ Additional preview UI checks �Ĵ���������ִ�в��裨.github/workflows/preview-checks.yml�� |
+| [.github/workflows/preview-release.yml](../.github/workflows/preview-release.yml) | GitHub ������ Preview release preparation �Ĵ���������ִ�в��裨.github/workflows/preview-release.yml�� |
+| [.github/workflows/publish-203-source.yml](../.github/workflows/publish-203-source.yml) | GitHub Actions ������ publish-203-source���Զ�������������ִ�в��� |
+| [.github/workflows/publish-204-source.yml](../.github/workflows/publish-204-source.yml) | 2.0.4 Դ�� ZIP �� SHA-256 �Զ����������� |
+| [.github/workflows/publish-205-cleanup-source.yml](../.github/workflows/publish-205-cleanup-source.yml) | GitHub Actions ������ publish-205-cleanup-source���Զ�������������ִ�в��� |
+| [.github/workflows/publish-205-source.yml](../.github/workflows/publish-205-source.yml) | �ϲ��� preview ����֤������ 2.0.5 Դ��鵵��У���ļ� |
+| [.github/workflows/reusable-backend.yml](../.github/workflows/reusable-backend.yml) | GitHub ������ Reusable backend verification �Ĵ���������ִ�в��裨.github/workflows/reusable-backend.yml�� |
+| [.github/workflows/reusable-frontend.yml](../.github/workflows/reusable-frontend.yml) | GitHub ������ Reusable frontend verification �Ĵ���������ִ�в��裨.github/workflows/reusable-frontend.yml�� |
+| [.github/workflows/reusable-windows-package.yml](../.github/workflows/reusable-windows-package.yml) | GitHub ������ Reusable Tauri contract �Ĵ���������ִ�в��裨.github/workflows/reusable-windows-package.yml�� |
+| [.github/workflows/scorecards.yml](../.github/workflows/scorecards.yml) | GitHub ������ OpenSSF Scorecard �Ĵ���������ִ�в��裨.github/workflows/scorecards.yml�� |
+| [.github/workflows/security.yml](../.github/workflows/security.yml) | GitHub ������ Security �Ĵ���������ִ�в��裨.github/workflows/security.yml�� |
+| [.github/workflows/ui-quality.yml](../.github/workflows/ui-quality.yml) | GitHub ������ UI Quality �Ĵ���������ִ�в��裨.github/workflows/ui-quality.yml�� |
+| [.github/workflows/windows-build-smoke.yml](../.github/workflows/windows-build-smoke.yml) | GitHub ������ Tauri Windows build �Ĵ���������ִ�в��裨.github/workflows/windows-build-smoke.yml�� |
+| [.gitignore](../.gitignore) | �ų���������������������ݿ��ļ�����Կ�ȷ�Դ������ |
+| [CHANGELOG.md](../CHANGELOG.md) | ���汾��¼�û��ɼ��Ĺ��ܱ仯���޸��ͼ�����˵�� |
+| [CONTRIBUTING.md](../CONTRIBUTING.md) | ��Ӣ�Ĺ���ָ�ϣ���֧��Χ���޸Ĺ淶����֤Ҫ��Ͱ�ȫ��¶��ʽ |
+| [LICENSE](../LICENSE) | �ֿ� MIT �������ļ� WatchTestCs ��Ȩ���� |
 | [README.en.md](../README.en.md) | English project overview: current preview architecture, capabilities, setup, downloads, and delivery limits |
-| [README.md](../README.md) | 中文项目首页：当前 2.0.6 preview 功能、技术架构、部署选择、源码入口和历史附件边界 |
-| [architecture.md](../architecture.md) | 根目录架构概览：客户端、Go 服务、MySQL 主库、PG 分析库与数据流 |
-| [deploy/check-care-health.sh](../deploy/check-care-health.sh) | 独立服务 HTTP 和数据库就绪只读探测 |
-| [deploy/dual-db.compose.yml](../deploy/dual-db.compose.yml) | 提供独立 MySQL 与 PostgreSQL 数据服务、持久卷、回环端口和健康检查，不启动应用服务 |
-| [deploy/dual-db.env.example](../deploy/dual-db.env.example) | 双库环境变量示例，不含可直接使用的默认密码 |
-| [deploy/suining-care.service](../deploy/suining-care.service) | Go 照护服务 systemd 常驻运行及进程重启配置 |
-| [docs/ABOUT.md](../docs/ABOUT.md) | 可用于项目介绍的中英文 About 文案，说明产品用途、当前技术栈与交付范围 |
-| [docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md) | 说明 Tauri、Go、Vue 与双库之间的进程边界、请求流程和故障行为 |
-| [docs/ARCHITECTURE_OPTIMIZATION.md](../docs/ARCHITECTURE_OPTIMIZATION.md) | ARCHITECTURE OPTIMIZATION：记录对应模块的使用、架构或维护说明 |
-| [docs/ARCHITECTURE_REPAIR_2026-10-19.md](../docs/ARCHITECTURE_REPAIR_2026-10-19.md) | 本轮整体逻辑缺陷、修复边界、复现与本地验证说明 |
-| [docs/BACKEND_SCREEN_REFINEMENT.md](../docs/BACKEND_SCREEN_REFINEMENT.md) | 2026-10-16 后台屏幕布局优化记录；属于历史验收材料，当前行为以 2.0.6 源码和首页说明为准。 |
-| [docs/BUILD.md](../docs/BUILD.md) | Windows 桌面源码的依赖、版本检查、构建步骤和产物位置 |
-| [docs/CARE_2.0.4_GATES.md](../docs/CARE_2.0.4_GATES.md) | 2.0.4 照护闭环范围、尚未实测的安全交付门槛 |
-| [docs/CARE_2.0.5_GATES.md](../docs/CARE_2.0.5_GATES.md) | 2.0.5 可靠性、岗位权限、隐私与真实交付验收门槛 |
-| [docs/CARE_SERVICE_DEPLOYMENT.md](../docs/CARE_SERVICE_DEPLOYMENT.md) | 告警网关、送达回执、升级流程、独立后端部署和备份指引 |
-| [docs/CONTROL_REFINEMENT.md](../docs/CONTROL_REFINEMENT.md) | 历史控件边界与工具栏验收记录；当前界面契约见 docs/UI_UX.md。 |
-| [docs/DATABASE_AVAILABILITY.md](../docs/DATABASE_AVAILABILITY.md) | DATABASE AVAILABILITY：记录对应模块的使用、架构或维护说明 |
-| [docs/DEAD_CODE_AUDIT.md](../docs/DEAD_CODE_AUDIT.md) | 历史死代码审查记录；只说明当时审查范围，不代表当前代码已再次扫描。 |
-| [docs/DOWNLOADS.md](../docs/DOWNLOADS.md) | 当前 preview 源码与历史 Release 附件的版本、用途、校验和兼容性索引 |
-| [docs/DUAL_DATABASES.md](../docs/DUAL_DATABASES.md) | MySQL 主库与 PostgreSQL 分析库的配置、迁移、离线导入和故障恢复说明 |
-| [docs/FILES.md](../docs/FILES.md) | 按仓库当前 preview 树逐项列出文件与目录用途的完整索引 |
-| [docs/HANDOFF.md](../docs/HANDOFF.md) | HANDOFF：记录对应模块的使用、架构或维护说明 |
-| [docs/INTEGRATION_2.0.6.md](../docs/INTEGRATION_2.0.6.md) | 记录 2.0.6 双库与健康采样整合范围、执行验证及尚未验收事项 |
-| [docs/LINUX.md](../docs/LINUX.md) | LINUX：记录对应模块的使用、架构或维护说明 |
-| [docs/P0_DEVICE_SECRET_STORAGE.md](../docs/P0_DEVICE_SECRET_STORAGE.md) | P0 DEVICE SECRET STORAGE：记录对应模块的使用、架构或维护说明 |
-| [docs/P0_RELATIONAL_INTEGRITY.md](../docs/P0_RELATIONAL_INTEGRITY.md) | P0 RELATIONAL INTEGRITY：记录对应模块的使用、架构或维护说明 |
-| [docs/PREVIEW_ISSUE_REMEDIATION.md](../docs/PREVIEW_ISSUE_REMEDIATION.md) | 历史 preview 问题核对记录；当前修复与整合证据见 2.0.6 发布及整合说明。 |
-| [docs/PUBLICATION.md](../docs/PUBLICATION.md) | PUBLICATION：记录对应模块的使用、架构或维护说明 |
-| [docs/REFACTOR_2.0.2.md](../docs/REFACTOR_2.0.2.md) | 2.0.2 源码拆分与当时验收边界的历史记录。 |
-| [docs/RELEASE.md](../docs/RELEASE.md) | RELEASE：记录对应模块的使用、架构或维护说明 |
-| [docs/SETUP.md](../docs/SETUP.md) | SETUP：记录对应模块的使用、架构或维护说明 |
-| [docs/SUPPORT.md](../docs/SUPPORT.md) | 中英文问题反馈入口、复现模板、日志采集建议与隐私边界 |
-| [docs/TESTING.md](../docs/TESTING.md) | TESTING：记录对应模块的使用、架构或维护说明 |
-| [docs/UI_UX.md](../docs/UI_UX.md) | UI UX：记录对应模块的使用、架构或维护说明 |
-| [docs/VALIDATION.md](../docs/VALIDATION.md) | VALIDATION：记录对应模块的使用、架构或维护说明 |
-| [docs/decisions/0001-desktop-local-service-architecture.md](../docs/decisions/0001-desktop-local-service-architecture.md) | 早期 Electron 与 Spring 桌面方案的历史架构决定，已被当前 Tauri、Go 和 Vue 架构取代。 |
-| [docs/decisions/0002-local-h2-data-storage.md](../docs/decisions/0002-local-h2-data-storage.md) | 早期 H2 本地数据库方案的历史决定；当前业务数据由独立 MySQL 保存。 |
-| [docs/decisions/0003-electron-security-boundary.md](../docs/decisions/0003-electron-security-boundary.md) | 早期 Electron 渲染进程安全边界决定；当前原生边界以 Tauri 能力配置和源码为准。 |
-| [docs/decisions/0004-ui-design-system.md](../docs/decisions/0004-ui-design-system.md) | 面向照护场景的历史 UI 设计原则与审查决定。 |
-| [docs/decisions/0005-preview-release-model.md](../docs/decisions/0005-preview-release-model.md) | preview 分支和预发布交付模式的历史决策记录。 |
-| [docs/decisions/0006-tauri-go-postgres.md](../docs/decisions/0006-tauri-go-postgres.md) | Tauri 与 Go 桌面服务架构的决策记录；数据库主从分工以当前 MySQL/PG 说明为准。 |
-| [docs/decisions/README.md](../docs/decisions/README.md) | README：记录对应模块的使用、架构或维护说明 |
-| [docs/file-descriptions.json](../docs/file-descriptions.json) | 当前版本逐文件中文职责索引，供工具与发布校验使用（docs/file-descriptions.json） |
-| [docs/preview-remediation-validation.json](../docs/preview-remediation-validation.json) | preview-remediation-validation.json：为 docs 提供构建、依赖或运行配置 |
-| [docs/releases/2.0.1.md](../docs/releases/2.0.1.md) | 2.0.1 Preview 历史发行说明，记录当时的功能范围和附件。 |
-| [docs/releases/2.0.2.md](../docs/releases/2.0.2.md) | 2.0.2 历史 Windows 与 Linux 附件发行说明，不代表当前 preview 源码版本。 |
-| [docs/releases/2.0.3.md](../docs/releases/2.0.3.md) | 2.0.3：记录对应模块的使用、架构或维护说明 |
-| [docs/releases/2.0.4.md](../docs/releases/2.0.4.md) | 2.0.4 源码预览版发行说明 |
-| [docs/releases/2.0.5-cleanup.1.md](../docs/releases/2.0.5-cleanup.1.md) | 2.0.5 cleanup.1：记录对应模块的使用、架构或维护说明 |
-| [docs/releases/2.0.5.md](../docs/releases/2.0.5.md) | 2.0.5 源码版发布说明及安全边界 |
-| [docs/releases/2.0.6.md](../docs/releases/2.0.6.md) | 汇总 UI、照护闭环、双库改进、升级步骤和验收边界 |
-| [docs/runbooks/backup-restore.md](../docs/runbooks/backup-restore.md) | backup restore：记录对应模块的使用、架构或维护说明 |
-| [docs/runbooks/release.md](../docs/runbooks/release.md) | release：记录对应模块的使用、架构或维护说明 |
-| [docs/runbooks/rollback.md](../docs/runbooks/rollback.md) | rollback：记录对应模块的使用、架构或维护说明 |
-| [docs/runbooks/signing.md](../docs/runbooks/signing.md) | signing：记录对应模块的使用、架构或维护说明 |
-| [docs/screenshots/family-mobile.png](../docs/screenshots/family-mobile.png) | 打包软件家属窄屏实拍：照护入口、公告与不遮挡内容的底部导航。（docs/screenshots/family-mobile.png） |
-| [docs/screenshots/family-screen-fit-20261016.png](../docs/screenshots/family-screen-fit-20261016.png) | 1366×768 家属照护首页截图，展示更紧凑的首屏布局、公告与常用记录。（docs/screenshots/family-screen-fit-20261016.png） |
-| [docs/screenshots/invite-code-desktop.png](../docs/screenshots/invite-code-desktop.png) | 打包软件邀请码管理实拍：管理员检索与管理家属注册邀请码。（docs/screenshots/invite-code-desktop.png） |
-| [docs/screenshots/login-desktop.png](../docs/screenshots/login-desktop.png) | 桌面登录实拍：山水背景、原选定 Logo 与手机号密码表单。（docs/screenshots/login-desktop.png） |
-| [docs/screenshots/login-screen-fit-20261016.png](../docs/screenshots/login-screen-fit-20261016.png) | 1366×768 登录页生产构建截图，展示一屏布局、湖岸画面与完整登录操作。（docs/screenshots/login-screen-fit-20261016.png） |
-| [docs/screenshots/login-short-screen-20261016.png](../docs/screenshots/login-short-screen-20261016.png) | 360×560 短屏登录真实截图，展示收起辅助文案后完整可达的表单与注册入口。（docs/screenshots/login-short-screen-20261016.png） |
-| [docs/screenshots/overview-desktop.png](../docs/screenshots/overview-desktop.png) | 管理员总览实拍：测试数据下的异常类别、告警和平台公告。（docs/screenshots/overview-desktop.png） |
-| [docs/screenshots/setup-desktop.png](../docs/screenshots/setup-desktop.png) | 打包软件首次设置实拍：创建本机管理员，展示无默认账号的启动流程。（docs/screenshots/setup-desktop.png） |
-| [docs/screenshots/tauri-2.0.2-main.png](../docs/screenshots/tauri-2.0.2-main.png) | 2.0.2 实际安装后的 Tauri WebView 截图：真实登录后的管理员运营总览，使用临时测试库（docs/screenshots/tauri-2.0.2-main.png） |
-| [docs/screenshots/tauri-2.0.2-offline.png](../docs/screenshots/tauri-2.0.2-offline.png) | 2.0.2 实际安装后的 Tauri WebView 截图：数据库离线连接状态（docs/screenshots/tauri-2.0.2-offline.png） |
-| [docs/verification.json](../docs/verification.json) | 此次预览版的测试数量、系统环境、签名状态和审计边界摘要。（docs/verification.json） |
-| [docs/verification/2.0.6-integration.json](../docs/verification/2.0.6-integration.json) | 2.0.6-integration.json：为 docs/verification 提供构建、依赖或运行配置 |
-| [tests/ui/ui-smoke.mjs](../tests/ui/ui-smoke.mjs) | 无需浏览器自动化依赖的 UI 可访问性冒烟检查脚本。 |
-| [智慧养老手表管理系统/.gitignore](../智慧养老手表管理系统/.gitignore) | 桌面工程的生成目录、数据库、日志和私钥排除配置。（智慧养老手表管理系统/.gitignore） |
-| [智慧养老手表管理系统/LICENSE](../智慧养老手表管理系统/LICENSE) | 桌面源码工程副本的 MIT 许可，方便独立源码包保留授权。（智慧养老手表管理系统/LICENSE） |
-| [智慧养老手表管理系统/README.md](../智慧养老手表管理系统/README.md) | 桌面源码工程导航：Go 后端、Vue 前端、Tauri 容器、数据目录和开发命令 |
-| [智慧养老手表管理系统/backend/README.md](../智慧养老手表管理系统/backend/README.md) | Go 服务配置、MySQL 主库、可选 PostgreSQL 分析库、迁移、测试与运行说明。 |
-| [智慧养老手表管理系统/backend/VERSION](../智慧养老手表管理系统/backend/VERSION) | Go 后端对应的产品版本（智慧养老手表管理系统/backend/VERSION） |
-| [智慧养老手表管理系统/backend/cmd/analytics-backfill/main.go](../智慧养老手表管理系统/backend/cmd/analytics-backfill/main.go) | 显式 --apply 生成 PG 投影重建事件的入口 |
-| [智慧养老手表管理系统/backend/cmd/migrate/main.go](../智慧养老手表管理系统/backend/cmd/migrate/main.go) | Go migrate 模块：实现 main 相关服务逻辑 |
-| [智慧养老手表管理系统/backend/cmd/server/database.go](../智慧养老手表管理系统/backend/cmd/server/database.go) | Go server 模块：实现 database 相关服务逻辑 |
-| [智慧养老手表管理系统/backend/cmd/server/database_test.go](../智慧养老手表管理系统/backend/cmd/server/database_test.go) | database_test 自动化回归或验收脚本：检查对应模块的行为边界 |
-| [智慧养老手表管理系统/backend/cmd/server/desktop.go](../智慧养老手表管理系统/backend/cmd/server/desktop.go) | Go server 模块：实现 desktop 相关服务逻辑 |
-| [智慧养老手表管理系统/backend/cmd/server/main.go](../智慧养老手表管理系统/backend/cmd/server/main.go) | Go server 模块：实现 main 相关服务逻辑 |
-| [智慧养老手表管理系统/backend/cmd/server/parentwatch_unix.go](../智慧养老手表管理系统/backend/cmd/server/parentwatch_unix.go) | Go server 模块：实现 parentwatch unix 相关服务逻辑 |
-| [智慧养老手表管理系统/backend/cmd/server/parentwatch_windows.go](../智慧养老手表管理系统/backend/cmd/server/parentwatch_windows.go) | Go server 模块：实现 parentwatch windows 相关服务逻辑 |
-| [智慧养老手表管理系统/backend/cmd/server/privacy.go](../智慧养老手表管理系统/backend/cmd/server/privacy.go) | 在认证与敏感数据处理之间执行失败关闭的访问审计中间件 |
-| [智慧养老手表管理系统/backend/cmd/server/regression_test.go](../智慧养老手表管理系统/backend/cmd/server/regression_test.go) | 已审查问题的数据库契约、安全与竞争回归（智慧养老手表管理系统/backend/cmd/server/regression_test.go） |
-| [智慧养老手表管理系统/backend/cmd/transfer-postgres/main.go](../智慧养老手表管理系统/backend/cmd/transfer-postgres/main.go) | 默认只预检、显式 --apply 提交旧库导入的命令入口 |
-| [智慧养老手表管理系统/backend/docs/health-data.md](../智慧养老手表管理系统/backend/docs/health-data.md) | health data：记录对应模块的使用、架构或维护说明 |
-| [智慧养老手表管理系统/backend/go.mod](../智慧养老手表管理系统/backend/go.mod) | Go 后端直接与间接模块依赖及语言最低版本（智慧养老手表管理系统/backend/go.mod） |
-| [智慧养老手表管理系统/backend/go.sum](../智慧养老手表管理系统/backend/go.sum) | Go 模块内容与版本校验摘要（智慧养老手表管理系统/backend/go.sum） |
-| [智慧养老手表管理系统/backend/internal/analytics/backfill.go](../智慧养老手表管理系统/backend/internal/analytics/backfill.go) | 在业务行共享锁下分批生成分析快照事件 |
-| [智慧养老手表管理系统/backend/internal/analytics/sync.go](../智慧养老手表管理系统/backend/internal/analytics/sync.go) | 从 MySQL 持久化 outbox 幂等同步分析投影至 PostgreSQL |
-| [智慧养老手表管理系统/backend/internal/analytics/sync_test.go](../智慧养老手表管理系统/backend/internal/analytics/sync_test.go) | 双库同步集成测试：验证 PG 故障、队列保留、恢复重放、删除墓碑和回填。 |
-| [智慧养老手表管理系统/backend/internal/auth/auth.go](../智慧养老手表管理系统/backend/internal/auth/auth.go) | 角色授权、公开路径边界与密码验证（智慧养老手表管理系统/backend/internal/auth/auth.go） |
-| [智慧养老手表管理系统/backend/internal/auth/password.go](../智慧养老手表管理系统/backend/internal/auth/password.go) | Go auth 模块：实现 password 相关服务逻辑 |
-| [智慧养老手表管理系统/backend/internal/auth/regression_test.go](../智慧养老手表管理系统/backend/internal/auth/regression_test.go) | 已审查问题的数据库契约、安全与竞争回归（智慧养老手表管理系统/backend/internal/auth/regression_test.go） |
-| [智慧养老手表管理系统/backend/internal/care/worker.go](../智慧养老手表管理系统/backend/internal/care/worker.go) | 持久化通知 outbox、带幂等键的发送及超时升级后台作业 |
-| [智慧养老手表管理系统/backend/internal/care/worker_test.go](../智慧养老手表管理系统/backend/internal/care/worker_test.go) | 照护通知工作进程测试：覆盖幂等发送、失败重试、送达状态和超时升级；测试可使用 MySQL 或旧 PostgreSQL 配置。 |
-| [智慧养老手表管理系统/backend/internal/config/config.go](../智慧养老手表管理系统/backend/internal/config/config.go) | 服务地址、会话、图片目录与数据库环境变量配置（智慧养老手表管理系统/backend/internal/config/config.go） |
-| [智慧养老手表管理系统/backend/internal/config/config_test.go](../智慧养老手表管理系统/backend/internal/config/config_test.go) | config_test 自动化回归或验收脚本：检查对应模块的行为边界 |
-| [智慧养老手表管理系统/backend/internal/csrf/csrf.go](../智慧养老手表管理系统/backend/internal/csrf/csrf.go) | 会话 CSRF 校验与设备/原生令牌接口豁免（智慧养老手表管理系统/backend/internal/csrf/csrf.go） |
-| [智慧养老手表管理系统/backend/internal/db/database.go](../智慧养老手表管理系统/backend/internal/db/database.go) | Go 数据库抽象：MySQL 事务、占位符适配和旧 PG 测试兼容入口 |
-| [智慧养老手表管理系统/backend/internal/db/database_test.go](../智慧养老手表管理系统/backend/internal/db/database_test.go) | MySQL SQL 适配测试：覆盖占位符转换、重复参数和字面值边界。 |
-| [智慧养老手表管理系统/backend/internal/db/db.go](../智慧养老手表管理系统/backend/internal/db/db.go) | 旧 PostgreSQL 数据库连接池、迁移和事务封装；当前核心业务库由 MySQL database.go 管理。 |
-| [智慧养老手表管理系统/backend/internal/db/db_test.go](../智慧养老手表管理系统/backend/internal/db/db_test.go) | db_test 自动化回归或验收脚本：检查对应模块的行为边界 |
-| [智慧养老手表管理系统/backend/internal/db/dbtest/mysql.go](../智慧养老手表管理系统/backend/internal/db/dbtest/mysql.go) | 测试专用随机 MySQL 数据库的创建、迁移与清理 |
-| [智慧养老手表管理系统/backend/internal/db/mysql_migrations.go](../智慧养老手表管理系统/backend/internal/db/mysql_migrations.go) | 连接级迁移锁、校验和与可恢复 DDL 执行 |
-| [智慧养老手表管理系统/backend/internal/db/transfer.go](../智慧养老手表管理系统/backend/internal/db/transfer.go) | 只读读取旧 PostgreSQL 业务数据，并在事务中导入空 MySQL 主库 |
-| [智慧养老手表管理系统/backend/internal/db/transfer_integration_test.go](../智慧养老手表管理系统/backend/internal/db/transfer_integration_test.go) | 旧 PostgreSQL 到空 MySQL 导入测试：验证预检、中文与 NULL 保留、拒绝覆盖和事务回滚。 |
-| [智慧养老手表管理系统/backend/internal/handlers/architecture_integration_test.go](../智慧养老手表管理系统/backend/internal/handlers/architecture_integration_test.go) | MySQL 建档、字段映射、设备归属、缺测、照护分页和独立复核的架构回归测试。 |
-| [智慧养老手表管理系统/backend/internal/handlers/care_integration_test.go](../智慧养老手表管理系统/backend/internal/handlers/care_integration_test.go) | SOS 去重、权限、审计、送达回执与流程集成测试 |
-| [智慧养老手表管理系统/backend/internal/handlers/care_operations_test.go](../智慧养老手表管理系统/backend/internal/handlers/care_operations_test.go) | 岗位权限、敏感审计及服务心跳集成测试 |
-| [智慧养老手表管理系统/backend/internal/handlers/care_receipt_race_test.go](../智慧养老手表管理系统/backend/internal/handlers/care_receipt_race_test.go) | 网关在发送中立即送达时的竞态回归测试 |
-| [智慧养老手表管理系统/backend/internal/handlers/handler_alarm_process.go](../智慧养老手表管理系统/backend/internal/handlers/handler_alarm_process.go) | Go 后端按职责拆分的 alarm process 模块 |
-| [智慧养老手表管理系统/backend/internal/handlers/handler_auth.go](../智慧养老手表管理系统/backend/internal/handlers/handler_auth.go) | 管理员初始化、会话登录、退出及账号安全接口（智慧养老手表管理系统/backend/internal/handlers/handler_auth.go） |
-| [智慧养老手表管理系统/backend/internal/handlers/handler_care_incident.go](../智慧养老手表管理系统/backend/internal/handlers/handler_care_incident.go) | 管理员照护任务、接单、处置、复核及事件履历 API |
-| [智慧养老手表管理系统/backend/internal/handlers/handler_care_operations.go](../智慧养老手表管理系统/backend/internal/handlers/handler_care_operations.go) | 主管服务诊断、照护岗位授权校验与任务读取审计 |
-| [智慧养老手表管理系统/backend/internal/handlers/handler_care_receipt.go](../智慧养老手表管理系统/backend/internal/handlers/handler_care_receipt.go) | 独立签名验证的送达回执处理 API |
-| [智慧养老手表管理系统/backend/internal/handlers/handler_care_staff.go](../智慧养老手表管理系统/backend/internal/handlers/handler_care_staff.go) | 主管配置岗位、读取敏感访问审计及管理人员列表 |
-| [智慧养老手表管理系统/backend/internal/handlers/handler_device_admin.go](../智慧养老手表管理系统/backend/internal/handlers/handler_device_admin.go) | Go 后端按职责拆分的 device admin 模块 |
-| [智慧养老手表管理系统/backend/internal/handlers/handler_device_alert_actions.go](../智慧养老手表管理系统/backend/internal/handlers/handler_device_alert_actions.go) | Go 后端按职责拆分的 device alert actions 模块 |
-| [智慧养老手表管理系统/backend/internal/handlers/handler_device_alerts.go](../智慧养老手表管理系统/backend/internal/handlers/handler_device_alerts.go) | Go 后端按职责拆分的 device alerts 模块 |
-| [智慧养老手表管理系统/backend/internal/handlers/handler_device_inventory.go](../智慧养老手表管理系统/backend/internal/handlers/handler_device_inventory.go) | Go 后端按职责拆分的 device inventory 模块 |
-| [智慧养老手表管理系统/backend/internal/handlers/handler_device_parse.go](../智慧养老手表管理系统/backend/internal/handlers/handler_device_parse.go) | Go 后端按职责拆分的 device parse 模块 |
-| [智慧养老手表管理系统/backend/internal/handlers/handler_device_protocol.go](../智慧养老手表管理系统/backend/internal/handlers/handler_device_protocol.go) | Go 后端按职责拆分的 device protocol 模块 |
-| [智慧养老手表管理系统/backend/internal/handlers/handler_device_repository.go](../智慧养老手表管理系统/backend/internal/handlers/handler_device_repository.go) | Go 后端按职责拆分的 device repository 模块 |
-| [智慧养老手表管理系统/backend/internal/handlers/handler_device_telemetry.go](../智慧养老手表管理系统/backend/internal/handlers/handler_device_telemetry.go) | Go 后端按职责拆分的 device telemetry 模块 |
-| [智慧养老手表管理系统/backend/internal/handlers/handler_family.go](../智慧养老手表管理系统/backend/internal/handlers/handler_family.go) | 家属账号、邀请码领取与长者关联管理（智慧养老手表管理系统/backend/internal/handlers/handler_family.go） |
-| [智慧养老手表管理系统/backend/internal/handlers/handler_family_invite_join.go](../智慧养老手表管理系统/backend/internal/handlers/handler_family_invite_join.go) | Go 后端按职责拆分的 family invite join 模块 |
-| [智慧养老手表管理系统/backend/internal/handlers/handler_family_invites.go](../智慧养老手表管理系统/backend/internal/handlers/handler_family_invites.go) | Go 后端按职责拆分的 family invites 模块 |
-| [智慧养老手表管理系统/backend/internal/handlers/handler_health.go](../智慧养老手表管理系统/backend/internal/handlers/handler_health.go) | 健康采样批量写入、按长者查询和增量变更接口 |
-| [智慧养老手表管理系统/backend/internal/handlers/handler_old.go](../智慧养老手表管理系统/backend/internal/handlers/handler_old.go) | 长者档案、关联检查和删除约束（智慧养老手表管理系统/backend/internal/handlers/handler_old.go） |
-| [智慧养老手表管理系统/backend/internal/handlers/handler_old_person.go](../智慧养老手表管理系统/backend/internal/handlers/handler_old_person.go) | Go 后端按职责拆分的 old person 模块 |
-| [智慧养老手表管理系统/backend/internal/handlers/handler_position.go](../智慧养老手表管理系统/backend/internal/handlers/handler_position.go) | Go 后端按职责拆分的 position 模块 |
-| [智慧养老手表管理系统/backend/internal/handlers/handler_social.go](../智慧养老手表管理系统/backend/internal/handlers/handler_social.go) | 平台公告、生活记录与互动接口（智慧养老手表管理系统/backend/internal/handlers/handler_social.go） |
-| [智慧养老手表管理系统/backend/internal/handlers/handler_social_images.go](../智慧养老手表管理系统/backend/internal/handlers/handler_social_images.go) | Go 后端按职责拆分的 social images 模块 |
-| [智慧养老手表管理系统/backend/internal/handlers/handler_social_pictures.go](../智慧养老手表管理系统/backend/internal/handlers/handler_social_pictures.go) | Go 后端按职责拆分的 social pictures 模块 |
-| [智慧养老手表管理系统/backend/internal/handlers/handler_social_sms.go](../智慧养老手表管理系统/backend/internal/handlers/handler_social_sms.go) | Go 后端按职责拆分的 social sms 模块 |
-| [智慧养老手表管理系统/backend/internal/handlers/handler_social_text.go](../智慧养老手表管理系统/backend/internal/handlers/handler_social_text.go) | Go 后端按职责拆分的 social text 模块 |
-| [智慧养老手表管理系统/backend/internal/handlers/handler_statistics.go](../智慧养老手表管理系统/backend/internal/handlers/handler_statistics.go) | 读取 MySQL 主库并提供总览、健康和照护统计接口。 |
-| [智慧养老手表管理系统/backend/internal/handlers/handler_user.go](../智慧养老手表管理系统/backend/internal/handlers/handler_user.go) | 用户档案与角色权限管理接口（智慧养老手表管理系统/backend/internal/handlers/handler_user.go） |
-| [智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go](../智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go) | 健康数据、设备上报、位置与求助接口（智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go） |
-| [智慧养老手表管理系统/backend/internal/handlers/handler_vitals_measurements.go](../智慧养老手表管理系统/backend/internal/handlers/handler_vitals_measurements.go) | Go 后端按职责拆分的 vitals measurements 模块 |
-| [智慧养老手表管理系统/backend/internal/handlers/handler_vitals_ratepre.go](../智慧养老手表管理系统/backend/internal/handlers/handler_vitals_ratepre.go) | Go 后端按职责拆分的 vitals ratepre 模块 |
-| [智慧养老手表管理系统/backend/internal/handlers/handler_vitals_steps.go](../智慧养老手表管理系统/backend/internal/handlers/handler_vitals_steps.go) | Go 后端按职责拆分的 vitals steps 模块 |
-| [智慧养老手表管理系统/backend/internal/handlers/handler_watch_info.go](../智慧养老手表管理系统/backend/internal/handlers/handler_watch_info.go) | Go 后端按职责拆分的 watch info 模块 |
-| [智慧养老手表管理系统/backend/internal/handlers/handlers.go](../智慧养老手表管理系统/backend/internal/handlers/handlers.go) | 业务路由注册、共享处理器与依赖装配（智慧养老手表管理系统/backend/internal/handlers/handlers.go） |
-| [智慧养老手表管理系统/backend/internal/handlers/health_integration_test.go](../智慧养老手表管理系统/backend/internal/handlers/health_integration_test.go) | health_integration_test 自动化回归或验收脚本：检查对应模块的行为边界 |
-| [智慧养老手表管理系统/backend/internal/handlers/integration_test.go](../智慧养老手表管理系统/backend/internal/handlers/integration_test.go) | 后端业务集成测试：隔离测试数据库中的鉴权、事务与接口回归；可用 MySQL 或旧 PostgreSQL 测试配置。 |
-| [智慧养老手表管理系统/backend/internal/handlers/regression_test.go](../智慧养老手表管理系统/backend/internal/handlers/regression_test.go) | 已审查问题的数据库契约、安全与竞争回归（智慧养老手表管理系统/backend/internal/handlers/regression_test.go） |
-| [智慧养老手表管理系统/backend/internal/handlers/request_limits_test.go](../智慧养老手表管理系统/backend/internal/handlers/request_limits_test.go) | request_limits_test 自动化回归或验收脚本：检查对应模块的行为边界 |
-| [智慧养老手表管理系统/backend/internal/handlers/util.go](../智慧养老手表管理系统/backend/internal/handlers/util.go) | 业务请求解析、参数验证与处理器共享辅助函数（智慧养老手表管理系统/backend/internal/handlers/util.go） |
-| [智慧养老手表管理系统/backend/internal/handlers/web.go](../智慧养老手表管理系统/backend/internal/handlers/web.go) | 内嵌 Vue 静态资源挂载及浏览器安全响应头（智慧养老手表管理系统/backend/internal/handlers/web.go） |
-| [智慧养老手表管理系统/backend/internal/handlers/web/.gitignore](../智慧养老手表管理系统/backend/internal/handlers/web/.gitignore) | 防止生成的 Vue 构建内容被误认为手工维护的嵌入资源。 |
-| [智慧养老手表管理系统/backend/internal/handlers/web/.gitkeep](../智慧养老手表管理系统/backend/internal/handlers/web/.gitkeep) | 仅保留内嵌前端目录，桌面构建时填入真实 Vue 产物（智慧养老手表管理系统/backend/internal/handlers/web/.gitkeep） |
-| [智慧养老手表管理系统/backend/internal/health/sample.go](../智慧养老手表管理系统/backend/internal/health/sample.go) | Go health 模块：实现 sample 相关服务逻辑 |
-| [智慧养老手表管理系统/backend/internal/health/sample_test.go](../智慧养老手表管理系统/backend/internal/health/sample_test.go) | sample_test 自动化回归或验收脚本：检查对应模块的行为边界 |
-| [智慧养老手表管理系统/backend/internal/health/statistics.go](../智慧养老手表管理系统/backend/internal/health/statistics.go) | Go health 模块：实现 statistics 相关服务逻辑 |
-| [智慧养老手表管理系统/backend/internal/health/statistics_test.go](../智慧养老手表管理系统/backend/internal/health/statistics_test.go) | statistics_test 自动化回归或验收脚本：检查对应模块的行为边界 |
-| [智慧养老手表管理系统/backend/internal/health/store.go](../智慧养老手表管理系统/backend/internal/health/store.go) | 在 MySQL 事务中保存健康采样、修订游标并检查设备绑定版本 |
-| [智慧养老手表管理系统/backend/internal/health/validation_test.go](../智慧养老手表管理系统/backend/internal/health/validation_test.go) | validation_test 自动化回归或验收脚本：检查对应模块的行为边界 |
-| [智慧养老手表管理系统/backend/internal/ratelimit/ratelimit.go](../智慧养老手表管理系统/backend/internal/ratelimit/ratelimit.go) | 公开接口的请求限流与窗口清理（智慧养老手表管理系统/backend/internal/ratelimit/ratelimit.go） |
-| [智慧养老手表管理系统/backend/internal/response/response.go](../智慧养老手表管理系统/backend/internal/response/response.go) | JSON 响应包络与通用错误输出（智慧养老手表管理系统/backend/internal/response/response.go） |
-| [智慧养老手表管理系统/backend/internal/session/session.go](../智慧养老手表管理系统/backend/internal/session/session.go) | 内存会话、过期清理与 Cookie 生命周期（智慧养老手表管理系统/backend/internal/session/session.go） |
-| [智慧养老手表管理系统/backend/migrations/0001_init.sql](../智慧养老手表管理系统/backend/migrations/0001_init.sql) | 旧 PostgreSQL 业务库的初始表结构；仅供历史数据读取与迁移，不由当前 MySQL 主库应用。 |
-| [智慧养老手表管理系统/backend/migrations/0002_daily_uniqueness.sql](../智慧养老手表管理系统/backend/migrations/0002_daily_uniqueness.sql) | 旧 PostgreSQL 业务库每日记录唯一性约束迁移，供兼容导入使用。 |
-| [智慧养老手表管理系统/backend/migrations/0003_alarm_process.sql](../智慧养老手表管理系统/backend/migrations/0003_alarm_process.sql) | 旧 PostgreSQL 告警处理状态字段与索引迁移，供历史数据库兼容使用。 |
-| [智慧养老手表管理系统/backend/migrations/0004_device_oldperson_fk.sql](../智慧养老手表管理系统/backend/migrations/0004_device_oldperson_fk.sql) | 旧 PostgreSQL 设备与长者归属外键迁移，供历史数据库兼容使用。 |
-| [智慧养老手表管理系统/backend/migrations/0005_care_incidents.sql](../智慧养老手表管理系统/backend/migrations/0005_care_incidents.sql) | 照护事件、事件审计和持久化通知 outbox 的数据库迁移 |
-| [智慧养老手表管理系统/backend/migrations/0006_care_permissions_audit.sql](../智慧养老手表管理系统/backend/migrations/0006_care_permissions_audit.sql) | 岗位授权、敏感数据访问审计及通知工作进程心跳数据库迁移 |
-| [智慧养老手表管理系统/backend/migrations/0007_health_samples.sql](../智慧养老手表管理系统/backend/migrations/0007_health_samples.sql) | 旧 PostgreSQL 数据库的健康采样表、修订时钟与增量变更游标迁移。 |
-| [智慧养老手表管理系统/backend/migrations/0008_health_query_columns.sql](../智慧养老手表管理系统/backend/migrations/0008_health_query_columns.sql) | 为旧 PostgreSQL 健康采样补充可移植的类型化统计查询字段。 |
-| [智慧养老手表管理系统/backend/migrations/analytics/0001_projection.sql](../智慧养老手表管理系统/backend/migrations/analytics/0001_projection.sql) | PG 投影表、健康日统计与照护状态汇总视图 |
-| [智慧养老手表管理系统/backend/migrations/embed.go](../智慧养老手表管理系统/backend/migrations/embed.go) | 将迁移 SQL 编译为不依赖工作目录的嵌入文件系统（智慧养老手表管理系统/backend/migrations/embed.go） |
-| [智慧养老手表管理系统/backend/migrations/mysql/0001_core.sql](../智慧养老手表管理系统/backend/migrations/mysql/0001_core.sql) | MySQL 业务结构、InnoDB、字符集与完整性约束 |
-| [智慧养老手表管理系统/backend/migrations/mysql/0002_analytics.sql](../智慧养老手表管理系统/backend/migrations/mysql/0002_analytics.sql) | 来源标识、持久化 outbox 及五类实体的增改删触发器 |
-| [智慧养老手表管理系统/backend/migrations/mysql/0003_health_samples.sql](../智慧养老手表管理系统/backend/migrations/mysql/0003_health_samples.sql) | MySQL迁移脚本：定义版本化的数据表、索引、约束或触发器 |
-| [智慧养老手表管理系统/desktop/.gitignore](../智慧养老手表管理系统/desktop/.gitignore) | 桌面 .gitignore 配置与资源（智慧养老手表管理系统/desktop/.gitignore） |
-| [智慧养老手表管理系统/desktop/Cargo.lock](../智慧养老手表管理系统/desktop/Cargo.lock) | Tauri/Rust 精确依赖版本及来源校验锁定（智慧养老手表管理系统/desktop/Cargo.lock） |
-| [智慧养老手表管理系统/desktop/Cargo.toml](../智慧养老手表管理系统/desktop/Cargo.toml) | Rust 桌面工程依赖、发布优化与岁宁产品版本（智慧养老手表管理系统/desktop/Cargo.toml） |
-| [智慧养老手表管理系统/desktop/bootstrap/index.html](../智慧养老手表管理系统/desktop/bootstrap/index.html) | 桌面 bootstrap\index.html 配置与资源（智慧养老手表管理系统/desktop/bootstrap/index.html） |
-| [智慧养老手表管理系统/desktop/build.ps1](../智慧养老手表管理系统/desktop/build.ps1) | 前端嵌入、Go 回归、原生编译及 NSIS 安装包构建（智慧养老手表管理系统/desktop/build.ps1） |
-| [智慧养老手表管理系统/desktop/build.rs](../智慧养老手表管理系统/desktop/build.rs) | Tauri 编译入口与后端哈希变更跟踪（智慧养老手表管理系统/desktop/build.rs） |
-| [智慧养老手表管理系统/desktop/capabilities/desktop.json](../智慧养老手表管理系统/desktop/capabilities/desktop.json) | 仅主窗口及本机页面可用的最小 Tauri 权限集合（智慧养老手表管理系统/desktop/capabilities/desktop.json） |
-| [智慧养老手表管理系统/desktop/package-lock.json](../智慧养老手表管理系统/desktop/package-lock.json) | 桌面 package-lock.json 配置与资源（智慧养老手表管理系统/desktop/package-lock.json） |
-| [智慧养老手表管理系统/desktop/package.json](../智慧养老手表管理系统/desktop/package.json) | 原生应用名称、版本、主进程入口和项目许可元数据。（智慧养老手表管理系统/desktop/package.json） |
-| [智慧养老手表管理系统/desktop/permissions/setup.toml](../智慧养老手表管理系统/desktop/permissions/setup.toml) | 仅授权管理员初始化命令的 Tauri 自定义权限（智慧养老手表管理系统/desktop/permissions/setup.toml） |
-| [智慧养老手表管理系统/desktop/sign.ps1](../智慧养老手表管理系统/desktop/sign.ps1) | 正式证书或本机自签名 Authenticode 签署与状态记录（智慧养老手表管理系统/desktop/sign.ps1） |
-| [智慧养老手表管理系统/desktop/src/main.rs](../智慧养老手表管理系统/desktop/src/main.rs) | 原生窗口、sidecar 完整性与生命周期及安全初始化命令（智慧养老手表管理系统/desktop/src/main.rs） |
-| [智慧养老手表管理系统/desktop/suining.ico](../智慧养老手表管理系统/desktop/suining.ico) | 由用户选定山水 Logo 转换的多尺寸 Windows 程序和安装器图标。（智慧养老手表管理系统/desktop/suining.ico） |
-| [智慧养老手表管理系统/desktop/tauri.conf.json](../智慧养老手表管理系统/desktop/tauri.conf.json) | Tauri 产品信息、sidecar、按需下载与静默安装 WebView2 及 NSIS 设置（智慧养老手表管理系统/desktop/tauri.conf.json） |
-| [智慧养老手表管理系统/desktop/validate-version.ps1](../智慧养老手表管理系统/desktop/validate-version.ps1) | 核对前端、后端、Cargo 与 Tauri 的产品版本一致性（智慧养老手表管理系统/desktop/validate-version.ps1） |
-| [智慧养老手表管理系统/desktop/version.json](../智慧养老手表管理系统/desktop/version.json) | 桌面 version.json 配置与资源（智慧养老手表管理系统/desktop/version.json） |
-| [智慧养老手表管理系统/desktop/使用说明.txt](../智慧养老手表管理系统/desktop/使用说明.txt) | 随软件提供的中文操作指南，涵盖窗口全屏快捷键、首次账号、数据备份、设备联网和签名边界。（智慧养老手表管理系统/desktop/使用说明.txt） |
-| [智慧养老手表管理系统/oldIot/README.md](../智慧养老手表管理系统/oldIot/README.md) | 前端开发命令、目录和本地素材使用说明。（智慧养老手表管理系统/oldIot/README.md） |
-| [智慧养老手表管理系统/oldIot/index.html](../智慧养老手表管理系统/oldIot/index.html) | 网页入口：中文标题、图标、本地字体预加载、挂载点与 Vite 模块入口。（智慧养老手表管理系统/oldIot/index.html） |
-| [智慧养老手表管理系统/oldIot/package-lock.json](../智慧养老手表管理系统/oldIot/package-lock.json) | 锁定当前前端安装树及摘要，移除仅供 Less 使用的可选依赖，保留其余版本。（智慧养老手表管理系统/oldIot/package-lock.json） |
-| [智慧养老手表管理系统/oldIot/package.json](../智慧养老手表管理系统/oldIot/package.json) | 精简后的前端依赖与 Vite 命令，使用普通 CSS，不再声明 Less 预处理器。（智慧养老手表管理系统/oldIot/package.json） |
-| [智慧养老手表管理系统/oldIot/public/static/brand/suining-apple-touch-180.png](../智慧养老手表管理系统/oldIot/public/static/brand/suining-apple-touch-180.png) | 移动设备添加到主屏幕使用的 180 像素图标。（智慧养老手表管理系统/oldIot/public/static/brand/suining-apple-touch-180.png） |
-| [智慧养老手表管理系统/oldIot/public/static/brand/suining-favicon-32.png](../智慧养老手表管理系统/oldIot/public/static/brand/suining-favicon-32.png) | 浏览器标签页使用的 32 像素品牌图标。（智慧养老手表管理系统/oldIot/public/static/brand/suining-favicon-32.png） |
-| [智慧养老手表管理系统/oldIot/public/static/brand/suining-logo-192.webp](../智慧养老手表管理系统/oldIot/public/static/brand/suining-logo-192.webp) | 高像素密度页眉和 README 展示使用的 192 像素 Logo。（智慧养老手表管理系统/oldIot/public/static/brand/suining-logo-192.webp） |
-| [智慧养老手表管理系统/oldIot/public/static/brand/suining-logo-512.webp](../智慧养老手表管理系统/oldIot/public/static/brand/suining-logo-512.webp) | 首次设置等较大展示使用的 512 像素 Logo。（智慧养老手表管理系统/oldIot/public/static/brand/suining-logo-512.webp） |
-| [智慧养老手表管理系统/oldIot/public/static/brand/suining-logo-96.webp](../智慧养老手表管理系统/oldIot/public/static/brand/suining-logo-96.webp) | 页眉与较小展示使用的 96 像素山水 Logo。（智慧养老手表管理系统/oldIot/public/static/brand/suining-logo-96.webp） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/care-welcome-serif-OFL.txt](../智慧养老手表管理系统/oldIot/public/static/fonts/care-welcome-serif-OFL.txt) | care-welcome-serif-OFL.txt 字体配套说明，记录原字体来源、子集或许可要求。（智慧养老手表管理系统/oldIot/public/static/fonts/care-welcome-serif-OFL.txt） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/font-notices.md](../智慧养老手表管理系统/oldIot/public/static/fonts/font-notices.md) | font-notices.md 字体配套说明，记录原字体来源、子集或许可要求。（智慧养老手表管理系统/oldIot/public/static/fonts/font-notices.md） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-LICENSE.txt](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-LICENSE.txt) | source-han-serif-LICENSE.txt 字体配套说明，记录原字体来源、子集或许可要求。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-LICENSE.txt） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-000.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-000.woff2) | 中文衬线字体分片 000，覆盖 U+2E80-2E99,U+2E9B-2EF3,U+2F00-2FD5,U+2FF0-2FFB,U+3003-300B,U+300E-303F,U+3041-3096,U+3099-30B2…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-000.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-001.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-001.woff2) | 中文衬线字体分片 001，覆盖 U+30B3-30FF,U+3105-312F,U+3131-318E,U+3190-31BB,U+31C0-31E3,U+31F0-321E,U+3220-32CA…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-001.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-002.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-002.woff2) | 中文衬线字体分片 002，覆盖 U+32CB-332B,U+332D-34CB…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-002.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-003.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-003.woff2) | 中文衬线字体分片 003，覆盖 U+34CC-36CB…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-003.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-004.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-004.woff2) | 中文衬线字体分片 004，覆盖 U+36CC-38CB…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-004.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-005.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-005.woff2) | 中文衬线字体分片 005，覆盖 U+38CC-3ACB…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-005.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-006.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-006.woff2) | 中文衬线字体分片 006，覆盖 U+3ACC-3CCB…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-006.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-007.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-007.woff2) | 中文衬线字体分片 007，覆盖 U+3CCC-3ECB…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-007.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-008.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-008.woff2) | 中文衬线字体分片 008，覆盖 U+3ECC-40CB…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-008.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-009.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-009.woff2) | 中文衬线字体分片 009，覆盖 U+40CC-42CB…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-009.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-010.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-010.woff2) | 中文衬线字体分片 010，覆盖 U+42CC-44CB…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-010.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-011.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-011.woff2) | 中文衬线字体分片 011，覆盖 U+44CC-46CB…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-011.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-012.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-012.woff2) | 中文衬线字体分片 012，覆盖 U+46CC-48CB…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-012.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-013.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-013.woff2) | 中文衬线字体分片 013，覆盖 U+48CC-4ACB…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-013.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-014.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-014.woff2) | 中文衬线字体分片 014，覆盖 U+4ACC-4CCB…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-014.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-015.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-015.woff2) | 中文衬线字体分片 015，覆盖 U+4CCC-4DBF,U+4E01-4E09,U+4E0C,U+4E0F-4E12,U+4E14-4E21,U+4E23,U+4E25-4E29,U+4E2B-4E2C,U+4E2E-4E…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-015.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-016.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-016.woff2) | 中文衬线字体分片 016，覆盖 U+4F31-4F33,U+4F35-4F37,U+4F39-4F45,U+4F47-4F4C,U+4F4F-4F52,U+4F54-4F58,U+4F5A-4F5B,U+4F5D-4F5F…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-016.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-017.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-017.woff2) | 中文衬线字体分片 017，覆盖 U+514E-5164,U+5166-5167,U+5169-516B,U+516D-5170,U+5172,U+5174-5175,U+5178-517A,U+517C-5184,U+51…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-017.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-018.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-018.woff2) | 中文衬线字体分片 018，覆盖 U+537A-5385,U+5387-538A,U+538C-539E,U+53A0-53BA,U+53BC-53C9,U+53CB-53CC,U+53CE-53D0,U+53D2-53D5…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-018.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-019.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-019.woff2) | 中文衬线字体分片 019，覆盖 U+559E-56DD,U+56DF,U+56E1-56F3,U+56F5-56FD,U+56FF-5727,U+5729-572F,U+5731-573F,U+5741-574F,U+57…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-019.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-020.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-020.woff2) | 中文衬线字体分片 020，覆盖 U+57A7-57F9,U+57FB-586A,U+586C-5903,U+5905-5906,U+5908-590C,U+590E-5919,U+591B-5926,U+5928,U+59…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-020.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-021.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-021.woff2) | 中文衬线字体分片 021，覆盖 U+59B5-59CA,U+59CC-59D2,U+59D4-5B4F,U+5B51-5B56,U+5B59-5B87,U+5B8A-5B8B,U+5B8D-5B99,U+5B9B-5B9D…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-021.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-022.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-022.woff2) | 中文衬线字体分片 022，覆盖 U+5BC1-5BC5,U+5BC7-5BDE,U+5BE0-5BF8,U+5BFA-5BFB,U+5BFD-5C05,U+5C07-5C0E,U+5C10,U+5C12-5C19,U+5C…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-022.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-023.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-023.woff2) | 中文衬线字体分片 023，覆盖 U+5DCD-5DE4,U+5DE7-5DF0,U+5DF3-5E02,U+5E04-5E25,U+5E27-5E37,U+5E39-5E72,U+5E75,U+5E77-5E8E,U+5E…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-023.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-024.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-024.woff2) | 中文衬线字体分片 024，覆盖 U+5FED-5FFF,U+6002-600D,U+600F-6026,U+6028-603A,U+603C-606E,U+6070-6088,U+608A-60A7,U+60A9-60C4…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-024.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-025.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-025.woff2) | 中文衬线字体分片 025，覆盖 U+61F9-620F,U+6212-6215,U+6217-6233,U+6235-6236,U+6238-623E,U+6241-624A,U+624C-6252,U+6254-627D…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-025.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-026.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-026.woff2) | 中文衬线字体分片 026，覆盖 U+6416-641B,U+641D-6453,U+6455-6457,U+6459-64CC,U+64CE-652E,U+6530-6535,U+6537-6538,U+653A-653D…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-026.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-027.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-027.woff2) | 中文衬线字体分片 027，覆盖 U+662C-662E,U+6630-663D,U+663F-6667,U+6669-666F,U+6671-6679,U+667B-6681,U+6683-66F1,U+66F3,U+66…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-027.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-028.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-028.woff2) | 中文衬线字体分片 028，覆盖 U+684C-6862,U+6864-68BF,U+68C1-6959,U+695B-6A20,U+6A22-6A4F…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-028.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-029.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-029.woff2) | 中文衬线字体分片 029，覆盖 U+6A50-6B20,U+6B23-6B62,U+6B66-6BCE,U+6BD0-6BDA,U+6BDC-6C13,U+6C15-6C33,U+6C35-6C37,U+6C39-6C59…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-029.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-030.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-030.woff2) | 中文衬线字体分片 030，覆盖 U+6C5A-6CA0,U+6CA2-6CD4,U+6CD6-6CE7,U+6CE9-6D00,U+6D02-6D11,U+6D13-6D3A,U+6D3C-6D40,U+6D42-6D4A…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-030.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-031.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-031.woff2) | 中文衬线字体分片 031，覆盖 U+6E67-6E8F,U+6E91-6ED0,U+6ED2-6FBF,U+6FC1-7069…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-031.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-032.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-032.woff2) | 中文衬线字体分片 032，覆盖 U+706A-70B8,U+70BA-7135,U+7137-7166,U+7168-7230,U+7232-7236,U+7238-7246,U+7249-7268,U+726A-7271…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-032.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-033.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-033.woff2) | 中文衬线字体分片 033，覆盖 U+7272-7274,U+7276-72B5,U+72B7-72EB,U+72ED-7386,U+7388-73AE,U+73B1-7405,U+7407-7478…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-033.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-034.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-034.woff2) | 中文衬线字体分片 034，覆盖 U+7479-751E,U+7520-7527,U+7529-7530,U+7532-7534,U+7536,U+7538-7558,U+755A-75C4,U+75C6-767A,U+76…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-034.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-035.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-035.woff2) | 中文衬线字体分片 035，覆盖 U+7681-7683,U+7685-76D0,U+76D2-76ED,U+76EF-76F3,U+76F5-76F7,U+76F9-770A,U+770C-771F,U+7721-7760…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-035.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-036.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-036.woff2) | 中文衬线字体分片 036，覆盖 U+788E-7939,U+793B-79BA,U+79BC-79D1,U+79D3-79EF,U+79F1-79FA,U+79FC-7A0C,U+7A0E-7A79,U+7A7B-7A94…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-036.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-037.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-037.woff2) | 中文衬线字体分片 037，覆盖 U+7A95-7A96,U+7A98-7ACA,U+7ACC-7ADF,U+7AE1-7AEE,U+7AF0-7B25,U+7B27-7B2B,U+7B2D-7B53,U+7B55-7B5A…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-037.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-038.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-038.woff2) | 中文衬线字体分片 038，覆盖 U+7CA0-7CC9,U+7CCB-7CFA,U+7CFC-7D21,U+7D23-7EA1,U+7EA3…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-038.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-039.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-039.woff2) | 中文衬线字体分片 039，覆盖 U+7EA4-7EAB,U+7EAD-7EB4,U+7EB6-7EB9,U+7EBB-7EBE,U+7EC0-7EC5,U+7EC7,U+7EC9-7ECE,U+7ED0,U+7ED2,U+…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-039.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-040.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-040.woff2) | 中文衬线字体分片 040，覆盖 U+80C0-80FC,U+80FE-81E9,U+81EB-81F2,U+81F5-8229,U+822B,U+822D-8271,U+8273-8281,U+8283-82C7…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-040.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-041.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-041.woff2) | 中文衬线字体分片 041，覆盖 U+82C8-8302,U+8304-836E,U+8370-83B6,U+83B8-8424,U+8426-84CB…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-041.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-042.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-042.woff2) | 中文衬线字体分片 042，覆盖 U+84CC-85CE,U+85D0-86CC…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-042.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-043.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-043.woff2) | 中文衬线字体分片 043，覆盖 U+86CD-883F,U+8841-884B,U+884D-8864,U+8866-8867,U+8869-886A,U+886D-889B,U+889D-88AA,U+88AC-88D4…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-043.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-044.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-044.woff2) | 中文衬线字体分片 044，覆盖 U+88D5-88E3,U+88E5-8980,U+8982-89C1,U+89C3-89C7,U+89C9-89D1,U+89D3-89E2,U+89E4-89FF,U+8A01-8ADB…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-044.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-045.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-045.woff2) | 中文衬线字体分片 045，覆盖 U+8ADC-8B65,U+8B67-8BA0,U+8BA2-8BA3,U+8BA5-8BA8,U+8BAA-8BAF,U+8BB1-8BB9,U+8BBB-8BBD,U+8BC0,U+8B…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-045.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-046.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-046.woff2) | 中文衬线字体分片 046，覆盖 U+8CF3-8D24,U+8D27-8D38,U+8D3A-8D43,U+8D45-8D5D,U+8D5F-8D76,U+8D78-8D84,U+8D86-8DDE,U+8DE0-8DEE…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-046.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-047.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-047.woff2) | 中文衬线字体分片 047，覆盖 U+8EFF-8F6B,U+8F6D-8F73,U+8F75-8F7C,U+8F7E-8F90,U+8F92,U+8F94-8FC6,U+8FC8-8FCD,U+8FCF,U+8FD2-8F…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-047.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-048.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-048.woff2) | 中文衬线字体分片 048，覆盖 U+9117-914C,U+914E-9191,U+9193-91CB,U+91CE,U+91D0-931B…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-048.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-049.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-049.woff2) | 中文衬线字体分片 049，覆盖 U+931C-949E,U+94A0-94A4,U+94A6-94FF,U+9501-951E…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-049.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-050.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-050.woff2) | 中文衬线字体分片 050，覆盖 U+951F-952D,U+952F-957E,U+9580-95E7,U+95E9-95EC,U+95EF-95F3,U+95F5-9604,U+9606-9607,U+9609-9643…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-050.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-051.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-051.woff2) | 中文衬线字体分片 051，覆盖 U+9733-9758,U+975A-9761,U+9763-978A,U+978C-9874,U+9877-9878,U+987A,U+987C-9883,U+9885-9897,U+98…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-051.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-052.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-052.woff2) | 中文衬线字体分片 052，覆盖 U+993E-9995,U+9997-9A8B,U+9A8D-9AD7,U+9AD9-9B40…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-052.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-053.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-053.woff2) | 中文衬线字体分片 053，覆盖 U+9B41-9D40…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-053.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-054.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-054.woff2) | 中文衬线字体分片 054，覆盖 U+9D41-9ED7,U+9ED9-9F41…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-054.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-055.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-055.woff2) | 中文衬线字体分片 055，覆盖 U+9F42-9F83,U+9F85-9FFF,U+A960-A97C,U+AC00-AD25…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-055.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-056.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-056.woff2) | 中文衬线字体分片 056，覆盖 U+AD26-AF25…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-056.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-057.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-057.woff2) | 中文衬线字体分片 057，覆盖 U+AF26-B125…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-057.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-058.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-058.woff2) | 中文衬线字体分片 058，覆盖 U+B126-B325…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-058.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-059.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-059.woff2) | 中文衬线字体分片 059，覆盖 U+B326-B525…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-059.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-060.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-060.woff2) | 中文衬线字体分片 060，覆盖 U+B526-B725…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-060.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-061.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-061.woff2) | 中文衬线字体分片 061，覆盖 U+B726-B925…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-061.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-062.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-062.woff2) | 中文衬线字体分片 062，覆盖 U+B926-BB25…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-062.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-063.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-063.woff2) | 中文衬线字体分片 063，覆盖 U+BB26-BD25…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-063.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-064.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-064.woff2) | 中文衬线字体分片 064，覆盖 U+BD26-BF25…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-064.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-065.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-065.woff2) | 中文衬线字体分片 065，覆盖 U+BF26-C125…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-065.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-066.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-066.woff2) | 中文衬线字体分片 066，覆盖 U+C126-C325…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-066.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-067.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-067.woff2) | 中文衬线字体分片 067，覆盖 U+C326-C525…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-067.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-068.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-068.woff2) | 中文衬线字体分片 068，覆盖 U+C526-C725…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-068.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-069.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-069.woff2) | 中文衬线字体分片 069，覆盖 U+C726-C925…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-069.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-070.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-070.woff2) | 中文衬线字体分片 070，覆盖 U+C926-CB25…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-070.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-071.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-071.woff2) | 中文衬线字体分片 071，覆盖 U+CB26-CD25…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-071.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-072.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-072.woff2) | 中文衬线字体分片 072，覆盖 U+CD26-CF25…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-072.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-073.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-073.woff2) | 中文衬线字体分片 073，覆盖 U+CF26-D125…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-073.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-074.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-074.woff2) | 中文衬线字体分片 074，覆盖 U+D126-D325…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-074.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-075.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-075.woff2) | 中文衬线字体分片 075，覆盖 U+D326-D525…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-075.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-076.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-076.woff2) | 中文衬线字体分片 076，覆盖 U+D526-D725…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-076.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-077.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-077.woff2) | 中文衬线字体分片 077，覆盖 U+D726-D7A3,U+D7B0-D7C6,U+D7CB-D7FB,U+F900-FA39…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-077.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-078.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-078.woff2) | 中文衬线字体分片 078，覆盖 U+FA3A-FA6D,U+FB00-FB04,U+FE10-FE19,U+FE30-FE52,U+FE54-FE66,U+FE68-FE6B,U+FF02-FF07,U+FF0A-FF0B…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-078.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-079.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-079.woff2) | 中文衬线字体分片 079，覆盖 U+1F202,U+1F210-1F23B,U+1F240-1F248,U+1F250-1F251,U+2000B,U+20021,U+2003E,U+20046,U+2004E,U+200…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-079.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-080.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-080.woff2) | 中文衬线字体分片 080，覆盖 U+21922,U+21927,U+2193B,U+21944,U+21958,U+2196A,U+2197C,U+21980,U+21983,U+21988,U+21996,U+219C3…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-080.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-081.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-081.woff2) | 中文衬线字体分片 081，覆盖 U+243F8,U+24404,U+24435-24436,U+2445A-2445B,U+24473,U+24487-24488,U+244B9,U+244BC,U+244CE,U+244…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-081.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-082.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-082.woff2) | 中文衬线字体分片 082，覆盖 U+26DAE,U+26DDC,U+26DEA-26DEB,U+26DF0,U+26E00,U+26E05,U+26E07,U+26E12,U+26E40,U+26E42-26E45,U+2…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-082.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-083.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-083.woff2) | 中文衬线字体分片 083，覆盖 U+29EE9,U+29EF8,U+29F23,U+29F30,U+29F7E,U+29F83,U+29F8C,U+29FB7,U+29FCE,U+29FD7,U+29FDE,U+2A014…；按所需字符加载。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/characters-083.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/manifest.json](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/manifest.json) | manifest.json 字体配套说明，记录原字体来源、子集或许可要求。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/manifest.json） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/ui-common.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/ui-common.woff2) | 中文界面常用字符字体分片，作为首屏预加载资源。（智慧养老手表管理系统/oldIot/public/static/fonts/source-han-serif-sc/ui-common.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-serif-4-italic.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-serif-4-italic.woff2) | source-serif-4-italic.woff2 字体配套说明，记录原字体来源、子集或许可要求。（智慧养老手表管理系统/oldIot/public/static/fonts/source-serif-4-italic.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-serif-4.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-serif-4.woff2) | Source Serif 4 英文与数字的本地可变字体，避免依赖外部字体网络。（智慧养老手表管理系统/oldIot/public/static/fonts/source-serif-4.woff2） |
-| [智慧养老手表管理系统/oldIot/public/static/fonts/source-serif-LICENSE.md](../智慧养老手表管理系统/oldIot/public/static/fonts/source-serif-LICENSE.md) | source-serif-LICENSE.md 字体配套说明，记录原字体来源、子集或许可要求。（智慧养老手表管理系统/oldIot/public/static/fonts/source-serif-LICENSE.md） |
-| [智慧养老手表管理系统/oldIot/public/static/icons/LICENSE.txt](../智慧养老手表管理系统/oldIot/public/static/icons/LICENSE.txt) | 保留图标字体对应的 Element UI 开源许可。（智慧养老手表管理系统/oldIot/public/static/icons/LICENSE.txt） |
-| [智慧养老手表管理系统/oldIot/public/static/icons/element-icons.woff](../智慧养老手表管理系统/oldIot/public/static/icons/element-icons.woff) | 保留旧界面图标字形的本地 WOFF 资源，框架已切换 Element Plus。（智慧养老手表管理系统/oldIot/public/static/icons/element-icons.woff） |
-| [智慧养老手表管理系统/oldIot/public/static/img/care-announcement-empty.webp](../智慧养老手表管理系统/oldIot/public/static/img/care-announcement-empty.webp) | 公告列表无记录时的温和空状态插图。（智慧养老手表管理系统/oldIot/public/static/img/care-announcement-empty.webp） |
-| [智慧养老手表管理系统/oldIot/public/static/img/care-botanical.webp](../智慧养老手表管理系统/oldIot/public/static/img/care-botanical.webp) | 现有样式引用的植物装饰素材。（智慧养老手表管理系统/oldIot/public/static/img/care-botanical.webp） |
-| [智慧养老手表管理系统/oldIot/public/static/img/care-courtyard.webp](../智慧养老手表管理系统/oldIot/public/static/img/care-courtyard.webp) | 照护页面使用的庭院风景插画。（智慧养老手表管理系统/oldIot/public/static/img/care-courtyard.webp） |
-| [智慧养老手表管理系统/oldIot/public/static/img/care-lakeside-artisan-640.webp](../智慧养老手表管理系统/oldIot/public/static/img/care-lakeside-artisan-640.webp) | 湖畔风景的窄屏 srcset 版本，避免手机下载过大图片。（智慧养老手表管理系统/oldIot/public/static/img/care-lakeside-artisan-640.webp） |
-| [智慧养老手表管理系统/oldIot/public/static/img/care-lakeside-artisan.webp](../智慧养老手表管理系统/oldIot/public/static/img/care-lakeside-artisan.webp) | 登录与家属页使用的本地湖畔风景主图。（智慧养老手表管理系统/oldIot/public/static/img/care-lakeside-artisan.webp） |
-| [智慧养老手表管理系统/oldIot/public/static/img/care-river-morning.webp](../智慧养老手表管理系统/oldIot/public/static/img/care-river-morning.webp) | 现有页面样式引用的河岸晨景素材。（智慧养老手表管理系统/oldIot/public/static/img/care-river-morning.webp） |
-| [智慧养老手表管理系统/oldIot/qa/.gitignore](../智慧养老手表管理系统/oldIot/qa/.gitignore) | 排除浏览器验收产生的临时运行文件，同时保留明确纳入版本控制的证据。 |
-| [智慧养老手表管理系统/oldIot/qa/architecture-acceptance.cjs](../智慧养老手表管理系统/oldIot/qa/architecture-acceptance.cjs) | 模拟 API 浏览器验收：岗位、失败保留输入、分页、心跳、窄屏与全部监护人选项 |
-| [智慧养老手表管理系统/oldIot/qa/browser-acceptance.cjs](../智慧养老手表管理系统/oldIot/qa/browser-acceptance.cjs) | browser-acceptance 自动化回归或验收脚本：检查对应模块的行为边界 |
-| [智慧养老手表管理系统/oldIot/qa/browser-harness.cjs](../智慧养老手表管理系统/oldIot/qa/browser-harness.cjs) | browser-harness.cjs：仓库中的项目源码或运行资源文件 |
-| [智慧养老手表管理系统/oldIot/qa/controls-acceptance.cjs](../智慧养老手表管理系统/oldIot/qa/controls-acceptance.cjs) | controls-acceptance 自动化回归或验收脚本：检查对应模块的行为边界 |
-| [智慧养老手表管理系统/oldIot/qa/database-availability-acceptance.cjs](../智慧养老手表管理系统/oldIot/qa/database-availability-acceptance.cjs) | 非阻断离线、自动恢复、权限边界与输入保留的浏览器回归（智慧养老手表管理系统/oldIot/qa/database-availability-acceptance.cjs） |
-| [智慧养老手表管理系统/oldIot/qa/elder-delete-acceptance.cjs](../智慧养老手表管理系统/oldIot/qa/elder-delete-acceptance.cjs) | elder-delete-acceptance 自动化回归或验收脚本：检查对应模块的行为边界 |
-| [智慧养老手表管理系统/oldIot/qa/font-hashes-before.json](../智慧养老手表管理系统/oldIot/qa/font-hashes-before.json) | font-hashes-before.json：为 智慧养老手表管理系统/oldIot/qa 提供构建、依赖或运行配置 |
-| [智慧养老手表管理系统/oldIot/qa/forms-acceptance.cjs](../智慧养老手表管理系统/oldIot/qa/forms-acceptance.cjs) | forms-acceptance 自动化回归或验收脚本：检查对应模块的行为边界 |
-| [智慧养老手表管理系统/oldIot/qa/issues-acceptance.cjs](../智慧养老手表管理系统/oldIot/qa/issues-acceptance.cjs) | issues-acceptance 自动化回归或验收脚本：检查对应模块的行为边界 |
-| [智慧养老手表管理系统/oldIot/qa/lifecycle-acceptance.cjs](../智慧养老手表管理系统/oldIot/qa/lifecycle-acceptance.cjs) | lifecycle-acceptance 自动化回归或验收脚本：检查对应模块的行为边界 |
-| [智慧养老手表管理系统/oldIot/qa/package-lock.json](../智慧养老手表管理系统/oldIot/qa/package-lock.json) | package-lock.json：为 智慧养老手表管理系统/oldIot/qa 提供构建、依赖或运行配置 |
-| [智慧养老手表管理系统/oldIot/qa/package.json](../智慧养老手表管理系统/oldIot/qa/package.json) | package.json：为 智慧养老手表管理系统/oldIot/qa 提供构建、依赖或运行配置 |
-| [智慧养老手表管理系统/oldIot/qa/real-backend-acceptance.cjs](../智慧养老手表管理系统/oldIot/qa/real-backend-acceptance.cjs) | 生产界面、真实 Go 服务和隔离 PostgreSQL 的建档到独立复核完整链路验收 |
-| [智慧养老手表管理系统/oldIot/qa/run.cjs](../智慧养老手表管理系统/oldIot/qa/run.cjs) | run.cjs：仓库中的项目源码或运行资源文件 |
-| [智慧养老手表管理系统/oldIot/qa/screen-acceptance.cjs](../智慧养老手表管理系统/oldIot/qa/screen-acceptance.cjs) | screen-acceptance 自动化回归或验收脚本：检查对应模块的行为边界 |
-| [智慧养老手表管理系统/oldIot/qa/setup-browser-acceptance.cjs](../智慧养老手表管理系统/oldIot/qa/setup-browser-acceptance.cjs) | setup-browser-acceptance 自动化回归或验收脚本：检查对应模块的行为边界 |
-| [智慧养老手表管理系统/oldIot/qa/ui-refinement-acceptance.cjs](../智慧养老手表管理系统/oldIot/qa/ui-refinement-acceptance.cjs) | 导航分组、五页加载与重试、老人窄屏完整资料、总览统计分页及宽屏栅格的模拟 API 浏览器验收 |
-| [智慧养老手表管理系统/oldIot/src/App.vue](../智慧养老手表管理系统/oldIot/src/App.vue) | Vue 根容器与统一控件边界，集中处理焦点、错误、禁用、大字和减少动画设置。（智慧养老手表管理系统/oldIot/src/App.vue） |
-| [智慧养老手表管理系统/oldIot/src/assets/css/accessibility.css](../智慧养老手表管理系统/oldIot/src/assets/css/accessibility.css) | 前端样式表：定义 accessibility 的布局与视觉规则 |
-| [智慧养老手表管理系统/oldIot/src/assets/css/commercial.css](../智慧养老手表管理系统/oldIot/src/assets/css/commercial.css) | 工作台与集合页面布局，规范查询工具栏对齐、弹窗字段结构和底部操作间距。（智慧养老手表管理系统/oldIot/src/assets/css/commercial.css） |
-| [智慧养老手表管理系统/oldIot/src/assets/css/element-theme.css](../智慧养老手表管理系统/oldIot/src/assets/css/element-theme.css) | 前端样式表：定义 element theme 的布局与视觉规则 |
-| [智慧养老手表管理系统/oldIot/src/assets/css/fonts.css](../智慧养老手表管理系统/oldIot/src/assets/css/fonts.css) | 声明本地英文/数字与中文衬线字体、预加载和 Unicode 分片。（智慧养老手表管理系统/oldIot/src/assets/css/fonts.css） |
-| [智慧养老手表管理系统/oldIot/src/assets/css/icons.css](../智慧养老手表管理系统/oldIot/src/assets/css/icons.css) | 保留实际引用的兼容图标字形映射与图标字体加载规则。（智慧养老手表管理系统/oldIot/src/assets/css/icons.css） |
-| [智慧养老手表管理系统/oldIot/src/assets/css/index.css](../智慧养老手表管理系统/oldIot/src/assets/css/index.css) | 全局页面高度、边距和基础布局规则。（智慧养老手表管理系统/oldIot/src/assets/css/index.css） |
-| [智慧养老手表管理系统/oldIot/src/assets/css/tokens.css](../智慧养老手表管理系统/oldIot/src/assets/css/tokens.css) | 前端样式表：定义 tokens 的布局与视觉规则 |
-| [智慧养老手表管理系统/oldIot/src/auth.js](../智慧养老手表管理系统/oldIot/src/auth.js) | 同源会话与 CSRF 令牌管理、上传请求头和登录失效处理。（智慧养老手表管理系统/oldIot/src/auth.js） |
-| [智慧养老手表管理系统/oldIot/src/charts.js](../智慧养老手表管理系统/oldIot/src/charts.js) | 按需图表模块与视图所属实例管理，负责响应式重绘、释放及卸载保护。（智慧养老手表管理系统/oldIot/src/charts.js） |
-| [智慧养老手表管理系统/oldIot/src/components/CareInbox.vue](../智慧养老手表管理系统/oldIot/src/components/CareInbox.vue) | 后台首页待处理 SOS 事件的任务优先组件 |
-| [智慧养老手表管理系统/oldIot/src/components/CareOperationsPanel.vue](../智慧养老手表管理系统/oldIot/src/components/CareOperationsPanel.vue) | 工作台值守进程健康、通知异常、岗位分配及审计面板 |
-| [智慧养老手表管理系统/oldIot/src/components/DatabaseNotice.vue](../智慧养老手表管理系统/oldIot/src/components/DatabaseNotice.vue) | 数据库不可用时的就地提醒，保持当前页面可操作（智慧养老手表管理系统/oldIot/src/components/DatabaseNotice.vue） |
-| [智慧养老手表管理系统/oldIot/src/components/FamilySlider.vue](../智慧养老手表管理系统/oldIot/src/components/FamilySlider.vue) | 家属健康、活动、位置和个人空间的响应式导航。（智慧养老手表管理系统/oldIot/src/components/FamilySlider.vue） |
-| [智慧养老手表管理系统/oldIot/src/components/Header.vue](../智慧养老手表管理系统/oldIot/src/components/Header.vue) | 公共品牌栏、用户显示、大字开关与服务端退出。（智慧养老手表管理系统/oldIot/src/components/Header.vue） |
-| [智慧养老手表管理系统/oldIot/src/components/NoticeEditor.vue](../智慧养老手表管理系统/oldIot/src/components/NoticeEditor.vue) | 公告标题、正文、图片上传与保存状态的共用编辑器。（智慧养老手表管理系统/oldIot/src/components/NoticeEditor.vue） |
-| [智慧养老手表管理系统/oldIot/src/components/PositionMap.vue](../智慧养老手表管理系统/oldIot/src/components/PositionMap.vue) | Vue 界面组件：负责 PositionMap 相关页面或交互 |
-| [智慧养老手表管理系统/oldIot/src/components/RecordCards.vue](../智慧养老手表管理系统/oldIot/src/components/RecordCards.vue) | 窄屏记录卡片的字段、状态和操作槽位。（智慧养老手表管理系统/oldIot/src/components/RecordCards.vue） |
-| [智慧养老手表管理系统/oldIot/src/components/Slider.vue](../智慧养老手表管理系统/oldIot/src/components/Slider.vue) | 管理端工作空间与档案、设备、公告菜单。（智慧养老手表管理系统/oldIot/src/components/Slider.vue） |
-| [智慧养老手表管理系统/oldIot/src/desktop.js](../智慧养老手表管理系统/oldIot/src/desktop.js) | 前端原生初始化桥接及 F11/Escape 全屏交互（智慧养老手表管理系统/oldIot/src/desktop.js） |
-| [智慧养老手表管理系统/oldIot/src/element.js](../智慧养老手表管理系统/oldIot/src/element.js) | 按实际模板注册 Element Plus、中文配置和 8 个字符串图标，移除旧栅格注册。（智慧养老手表管理系统/oldIot/src/element.js） |
-| [智慧养老手表管理系统/oldIot/src/main.js](../智慧养老手表管理系统/oldIot/src/main.js) | 创建 Vue 3 应用并安装路由、页面状态、UI 组件及请求安全处理。（智慧养老手表管理系统/oldIot/src/main.js） |
-| [智慧养老手表管理系统/oldIot/src/router.js](../智慧养老手表管理系统/oldIot/src/router.js) | 懒加载管理/家属路由，处理首次设置、登录和角色导航守卫。（智慧养老手表管理系统/oldIot/src/router.js） |
-| [智慧养老手表管理系统/oldIot/src/store.js](../智慧养老手表管理系统/oldIot/src/store.js) | Vue reactive 的页签状态，替代旧 Vuex 的标签增删与激活。（智慧养老手表管理系统/oldIot/src/store.js） |
-| [智慧养老手表管理系统/oldIot/src/styles/app-components.css](../智慧养老手表管理系统/oldIot/src/styles/app-components.css) | 前端样式分层：app-components |
-| [智慧养老手表管理系统/oldIot/src/styles/app-family-responsive.css](../智慧养老手表管理系统/oldIot/src/styles/app-family-responsive.css) | 前端样式分层：app-family-responsive |
-| [智慧养老手表管理系统/oldIot/src/styles/app-foundation.css](../智慧养老手表管理系统/oldIot/src/styles/app-foundation.css) | 前端样式分层：app-foundation |
-| [智慧养老手表管理系统/oldIot/src/views/Home.vue](../智慧养老手表管理系统/oldIot/src/views/Home.vue) | 管理员工作区容器，使用完整可用宽高，提供独立内容滚动、侧栏与可关闭业务标签。（智慧养老手表管理系统/oldIot/src/views/Home.vue） |
-| [智慧养老手表管理系统/oldIot/src/views/Login.vue](../智慧养老手表管理系统/oldIot/src/views/Login.vue) | 自适应一屏的登录界面，短屏收起辅助文案，保留大字模式、表单校验与密码显隐。（智慧养老手表管理系统/oldIot/src/views/Login.vue） |
-| [智慧养老手表管理系统/oldIot/src/views/Register.vue](../智慧养老手表管理系统/oldIot/src/views/Register.vue) | 家属凭邀请码创建关联账号。（智慧养老手表管理系统/oldIot/src/views/Register.vue） |
-| [智慧养老手表管理系统/oldIot/src/views/Setup.vue](../智慧养老手表管理系统/oldIot/src/views/Setup.vue) | 首次启动创建本机管理员，不提供默认密码。（智慧养老手表管理系统/oldIot/src/views/Setup.vue） |
-| [智慧养老手表管理系统/oldIot/src/views/annex.vue](../智慧养老手表管理系统/oldIot/src/views/annex.vue) | 公告展示图片和附件记录维护。（智慧养老手表管理系统/oldIot/src/views/annex.vue） |
-| [智慧养老手表管理系统/oldIot/src/views/customer.logic.js](../智慧养老手表管理系统/oldIot/src/views/customer.logic.js) | Vue Options API 业务逻辑模块：customer.logic |
-| [智慧养老手表管理系统/oldIot/src/views/customer.vue](../智慧养老手表管理系统/oldIot/src/views/customer.vue) | 监护人联系资料的录入与维护。（智慧养老手表管理系统/oldIot/src/views/customer.vue） |
-| [智慧养老手表管理系统/oldIot/src/views/device.admin-methods.js](../智慧养老手表管理系统/oldIot/src/views/device.admin-methods.js) | Vue Options API 业务逻辑模块：device.admin-methods |
-| [智慧养老手表管理系统/oldIot/src/views/device.alert-methods.js](../智慧养老手表管理系统/oldIot/src/views/device.alert-methods.js) | Vue Options API 业务逻辑模块：device.alert-methods |
-| [智慧养老手表管理系统/oldIot/src/views/device.list-methods.js](../智慧养老手表管理系统/oldIot/src/views/device.list-methods.js) | Vue Options API 业务逻辑模块：device.list-methods |
-| [智慧养老手表管理系统/oldIot/src/views/device.logic.js](../智慧养老手表管理系统/oldIot/src/views/device.logic.js) | Vue Options API 业务逻辑模块：device.logic |
-| [智慧养老手表管理系统/oldIot/src/views/device.refresh-methods.js](../智慧养老手表管理系统/oldIot/src/views/device.refresh-methods.js) | Vue Options API 业务逻辑模块：device.refresh-methods |
-| [智慧养老手表管理系统/oldIot/src/views/device.styles.css](../智慧养老手表管理系统/oldIot/src/views/device.styles.css) | 前端样式分层：device.styles |
-| [智慧养老手表管理系统/oldIot/src/views/device.vue](../智慧养老手表管理系统/oldIot/src/views/device.vue) | 设备查询、注册、绑定、告警处置与可见页面轮询，离开页面即停止刷新。（智慧养老手表管理系统/oldIot/src/views/device.vue） |
-| [智慧养老手表管理系统/oldIot/src/views/family.logic.js](../智慧养老手表管理系统/oldIot/src/views/family.logic.js) | Vue Options API 业务逻辑模块：family.logic |
-| [智慧养老手表管理系统/oldIot/src/views/family.vue](../智慧养老手表管理系统/oldIot/src/views/family.vue) | 家属账号与老人关联管理，编辑时回填家属字段并提交对应模型。（智慧养老手表管理系统/oldIot/src/views/family.vue） |
-| [智慧养老手表管理系统/oldIot/src/views/familyHome.vue](../智慧养老手表管理系统/oldIot/src/views/familyHome.vue) | 家属页面外壳，宽屏侧栏与移动端底栏独立占位，内容滚动和路由切换复位互不遮挡。（智慧养老手表管理系统/oldIot/src/views/familyHome.vue） |
-| [智慧养老手表管理系统/oldIot/src/views/familyMain.vue](../智慧养老手表管理系统/oldIot/src/views/familyMain.vue) | 家属照护首页；按桌面高度调整欢迎区域和公告留白，完整保留健康、活动与位置入口。（智慧养老手表管理系统/oldIot/src/views/familyMain.vue） |
-| [智慧养老手表管理系统/oldIot/src/views/inviteCode.vue](../智慧养老手表管理系统/oldIot/src/views/inviteCode.vue) | 生成、查询和作废家属注册邀请码。（智慧养老手表管理系统/oldIot/src/views/inviteCode.vue） |
-| [智慧养老手表管理系统/oldIot/src/views/life.vue](../智慧养老手表管理系统/oldIot/src/views/life.vue) | 生活资料查询与档案阅读，原生搜索表单适配窄屏和大字模式。（智慧养老手表管理系统/oldIot/src/views/life.vue） |
-| [智慧养老手表管理系统/oldIot/src/views/main.vue](../智慧养老手表管理系统/oldIot/src/views/main.vue) | 运营总览、异常摘要与公告检索，公告搜索使用单层边界和原生键盘提交。（智慧养老手表管理系统/oldIot/src/views/main.vue） |
-| [智慧养老手表管理系统/oldIot/src/views/me.vue](../智慧养老手表管理系统/oldIot/src/views/me.vue) | 当前家属资料、头像与密码维护。（智慧养老手表管理系统/oldIot/src/views/me.vue） |
-| [智慧养老手表管理系统/oldIot/src/views/person.logic.js](../智慧养老手表管理系统/oldIot/src/views/person.logic.js) | Vue Options API 业务逻辑模块：person.logic |
-| [智慧养老手表管理系统/oldIot/src/views/person.vue](../智慧养老手表管理系统/oldIot/src/views/person.vue) | 老人档案的新增、编辑、查询与监护关联。（智慧养老手表管理系统/oldIot/src/views/person.vue） |
-| [智慧养老手表管理系统/oldIot/src/views/position.vue](../智慧养老手表管理系统/oldIot/src/views/position.vue) | 管理员位置查询、地图与摔倒告警，姓名输入及相邻操作按底边对齐。（智慧养老手表管理系统/oldIot/src/views/position.vue） |
-| [智慧养老手表管理系统/oldIot/src/views/positionfamily.vue](../智慧养老手表管理系统/oldIot/src/views/positionfamily.vue) | 家属查看关联长辈最近坐标与位置状态。（智慧养老手表管理系统/oldIot/src/views/positionfamily.vue） |
-| [智慧养老手表管理系统/oldIot/src/views/ratepre.logic.js](../智慧养老手表管理系统/oldIot/src/views/ratepre.logic.js) | Vue Options API 业务逻辑模块：ratepre.logic |
-| [智慧养老手表管理系统/oldIot/src/views/ratepre.vue](../智慧养老手表管理系统/oldIot/src/views/ratepre.vue) | 健康记录查询、异常筛选与处置，工具栏自然换行并支持键盘提交。（智慧养老手表管理系统/oldIot/src/views/ratepre.vue） |
-| [智慧养老手表管理系统/oldIot/src/views/rateprefamily.vue](../智慧养老手表管理系统/oldIot/src/views/rateprefamily.vue) | 家属查看关联长辈的心率与血压趋势。（智慧养老手表管理系统/oldIot/src/views/rateprefamily.vue） |
-| [智慧养老手表管理系统/oldIot/src/views/saidOperation.vue](../智慧养老手表管理系统/oldIot/src/views/saidOperation.vue) | 管理员查看、回复与删除公告评论。（智慧养老手表管理系统/oldIot/src/views/saidOperation.vue） |
-| [智慧养老手表管理系统/oldIot/src/views/step.vue](../智慧养老手表管理系统/oldIot/src/views/step.vue) | 睡眠与步数查询、异常状态和图表详情，查询输入与操作共用单层外框。（智慧养老手表管理系统/oldIot/src/views/step.vue） |
-| [智慧养老手表管理系统/oldIot/src/views/stepfamily.vue](../智慧养老手表管理系统/oldIot/src/views/stepfamily.vue) | 家属查看关联长辈的睡眠与步数。（智慧养老手表管理系统/oldIot/src/views/stepfamily.vue） |
-| [智慧养老手表管理系统/oldIot/src/views/text.vue](../智慧养老手表管理系统/oldIot/src/views/text.vue) | 编辑已有公告的表单容器。（智慧养老手表管理系统/oldIot/src/views/text.vue） |
-| [智慧养老手表管理系统/oldIot/src/views/textMain.vue](../智慧养老手表管理系统/oldIot/src/views/textMain.vue) | 家属阅读公告内容及互动。（智慧养老手表管理系统/oldIot/src/views/textMain.vue） |
-| [智慧养老手表管理系统/oldIot/src/views/textMainUser.vue](../智慧养老手表管理系统/oldIot/src/views/textMainUser.vue) | 管理员阅读公告详情和留言。（智慧养老手表管理系统/oldIot/src/views/textMainUser.vue） |
-| [智慧养老手表管理系统/oldIot/src/views/textOpt.vue](../智慧养老手表管理系统/oldIot/src/views/textOpt.vue) | 公告列表、编辑删除与展示图片维护，查询及发布操作统一底边和间距。（智慧养老手表管理系统/oldIot/src/views/textOpt.vue） |
-| [智慧养老手表管理系统/oldIot/src/views/textTwo.vue](../智慧养老手表管理系统/oldIot/src/views/textTwo.vue) | 发布新公告的表单容器。（智慧养老手表管理系统/oldIot/src/views/textTwo.vue） |
-| [智慧养老手表管理系统/oldIot/src/views/watch.vue](../智慧养老手表管理系统/oldIot/src/views/watch.vue) | 监测阈值档案的登记和维护。（智慧养老手表管理系统/oldIot/src/views/watch.vue） |
-| [智慧养老手表管理系统/oldIot/vite.config.js](../智慧养老手表管理系统/oldIot/vite.config.js) | Vite 8 的 Vue 插件、源码别名、开发接口代理与生产构建配置。（智慧养老手表管理系统/oldIot/vite.config.js） |
-| [智慧养老手表管理系统/watch-sim/watch-sim.config.json](../智慧养老手表管理系统/watch-sim/watch-sim.config.json) | 模拟手表的服务地址与设备凭据配置模板，使用前填入实际设备密钥。（智慧养老手表管理系统/watch-sim/watch-sim.config.json） |
-| [智慧养老手表管理系统/watch-sim/watch-sim.js](../智慧养老手表管理系统/watch-sim/watch-sim.js) | 模拟手表登录、心跳与数据上报的 Node 联调入口；不代表真实硬件验证。（智慧养老手表管理系统/watch-sim/watch-sim.js） |
-| [智慧养老手表管理系统/watch-sim/watch-sim.test.cjs](../智慧养老手表管理系统/watch-sim/watch-sim.test.cjs) | 手表模拟器接口协议和请求行为的自动化测试，不代替真实硬件联调。 |
+| [README.md](../README.md) | ������Ŀ��ҳ����ǰ 2.0.6 preview ���ܡ������ܹ�������ѡ��Դ����ں���ʷ�����߽� |
+| [architecture.md](../architecture.md) | ��Ŀ¼�ܹ��������ͻ��ˡ�Go ����MySQL ���⡢PG �������������� |
+| [deploy/README.md](../deploy/README.md) | ˵��˫�ⲿ��ģ��Ͷ����ջ�������ά�ļ�����;��������ڡ� |
+| [deploy/check-care-health.sh](../deploy/check-care-health.sh) | �������� HTTP �����ݿ����ֻ��̽�� |
+| [deploy/dual-db.compose.yml](../deploy/dual-db.compose.yml) | �ṩ���� MySQL �� PostgreSQL ���ݷ��񡢳־þ����ػ��˿ںͽ�����飬������Ӧ�÷��� |
+| [deploy/dual-db.env.example](../deploy/dual-db.env.example) | ˫�⻷������ʾ����������ֱ��ʹ�õ�Ĭ������ |
+| [deploy/suining-care.service](../deploy/suining-care.service) | Go �ջ����� systemd ��פ���м������������� |
+| [docs/ABOUT.md](../docs/ABOUT.md) | ��������Ŀ���ܵ���Ӣ�� About �İ���˵����Ʒ��;����ǰ����ջ�뽻����Χ |
+| [docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md) | ˵�� Tauri��Go��Vue ��˫��֮��Ľ��̱߽硢�������̺͹�����Ϊ |
+| [docs/ARCHITECTURE_OPTIMIZATION.md](../docs/ARCHITECTURE_OPTIMIZATION.md) | ARCHITECTURE OPTIMIZATION����¼��Ӧģ���ʹ�á��ܹ���ά��˵�� |
+| [docs/ARCHITECTURE_REPAIR_2026-10-19.md](../docs/ARCHITECTURE_REPAIR_2026-10-19.md) | ���������߼�ȱ�ݡ��޸��߽硢�����뱾����֤˵�� |
+| [docs/BACKEND_SCREEN_REFINEMENT.md](../docs/BACKEND_SCREEN_REFINEMENT.md) | 2026-10-16 ��̨��Ļ�����Ż���¼��������ʷ���ղ��ϣ���ǰ��Ϊ�� 2.0.6 Դ�����ҳ˵��Ϊ׼�� |
+| [docs/BUILD.md](../docs/BUILD.md) | Windows ����Դ����������汾��顢��������Ͳ���λ�� |
+| [docs/CARE_2.0.4_GATES.md](../docs/CARE_2.0.4_GATES.md) | 2.0.4 �ջ��ջ���Χ����δʵ��İ�ȫ�����ż� |
+| [docs/CARE_2.0.5_GATES.md](../docs/CARE_2.0.5_GATES.md) | 2.0.5 �ɿ��ԡ���λȨ�ޡ���˽����ʵ���������ż� |
+| [docs/CARE_SERVICE_DEPLOYMENT.md](../docs/CARE_SERVICE_DEPLOYMENT.md) | �澯���ء��ʹ��ִ���������̡�������˲���ͱ���ָ�� |
+| [docs/CONTROL_REFINEMENT.md](../docs/CONTROL_REFINEMENT.md) | ��ʷ�ؼ��߽��빤�������ռ�¼����ǰ������Լ�� docs/UI_UX.md�� |
+| [docs/DATABASE_AVAILABILITY.md](../docs/DATABASE_AVAILABILITY.md) | DATABASE AVAILABILITY����¼��Ӧģ���ʹ�á��ܹ���ά��˵�� |
+| [docs/DEAD_CODE_AUDIT.md](../docs/DEAD_CODE_AUDIT.md) | ��ʷ����������¼��ֻ˵����ʱ��鷶Χ����������ǰ�������ٴ�ɨ�衣 |
+| [docs/DOWNLOADS.md](../docs/DOWNLOADS.md) | ��ǰ preview Դ������ʷ Release �����İ汾����;��У��ͼ��������� |
+| [docs/DUAL_DATABASES.md](../docs/DUAL_DATABASES.md) | MySQL ������ PostgreSQL ����������á�Ǩ�ơ����ߵ���͹��ϻָ�˵�� |
+| [docs/FILES.md](../docs/FILES.md) | ���ֿ⵱ǰ preview �������г��ļ���Ŀ¼��;���������� |
+| [docs/HANDOFF.md](../docs/HANDOFF.md) | HANDOFF����¼��Ӧģ���ʹ�á��ܹ���ά��˵�� |
+| [docs/INTEGRATION_2.0.6.md](../docs/INTEGRATION_2.0.6.md) | ��¼ 2.0.6 ˫���뽡���������Ϸ�Χ��ִ����֤����δ�������� |
+| [docs/LINUX.md](../docs/LINUX.md) | LINUX����¼��Ӧģ���ʹ�á��ܹ���ά��˵�� |
+| [docs/P0_DEVICE_SECRET_STORAGE.md](../docs/P0_DEVICE_SECRET_STORAGE.md) | P0 DEVICE SECRET STORAGE����¼��Ӧģ���ʹ�á��ܹ���ά��˵�� |
+| [docs/P0_RELATIONAL_INTEGRITY.md](../docs/P0_RELATIONAL_INTEGRITY.md) | P0 RELATIONAL INTEGRITY����¼��Ӧģ���ʹ�á��ܹ���ά��˵�� |
+| [docs/PREVIEW_ISSUE_REMEDIATION.md](../docs/PREVIEW_ISSUE_REMEDIATION.md) | ��ʷ preview ����˶Լ�¼����ǰ�޸�������֤�ݼ� 2.0.6 ����������˵���� |
+| [docs/PUBLICATION.md](../docs/PUBLICATION.md) | PUBLICATION����¼��Ӧģ���ʹ�á��ܹ���ά��˵�� |
+| [docs/REFACTOR_2.0.2.md](../docs/REFACTOR_2.0.2.md) | 2.0.2 Դ�����뵱ʱ���ձ߽����ʷ��¼�� |
+| [docs/RELEASE.md](../docs/RELEASE.md) | RELEASE����¼��Ӧģ���ʹ�á��ܹ���ά��˵�� |
+| [docs/SETUP.md](../docs/SETUP.md) | SETUP����¼��Ӧģ���ʹ�á��ܹ���ά��˵�� |
+| [docs/SUPPORT.md](../docs/SUPPORT.md) | ��Ӣ�����ⷴ����ڡ�����ģ�塢��־�ɼ���������˽�߽� |
+| [docs/TESTING.md](../docs/TESTING.md) | TESTING����¼��Ӧģ���ʹ�á��ܹ���ά��˵�� |
+| [docs/UI_UX.md](../docs/UI_UX.md) | UI UX����¼��Ӧģ���ʹ�á��ܹ���ά��˵�� |
+| [docs/VALIDATION.md](../docs/VALIDATION.md) | VALIDATION����¼��Ӧģ���ʹ�á��ܹ���ά��˵�� |
+| [docs/decisions/0001-desktop-local-service-architecture.md](../docs/decisions/0001-desktop-local-service-architecture.md) | ���� Electron �� Spring ���淽������ʷ�ܹ��������ѱ���ǰ Tauri��Go �� Vue �ܹ�ȡ���� |
+| [docs/decisions/0002-local-h2-data-storage.md](../docs/decisions/0002-local-h2-data-storage.md) | ���� H2 �������ݿⷽ������ʷ��������ǰҵ�������ɶ��� MySQL ���档 |
+| [docs/decisions/0003-electron-security-boundary.md](../docs/decisions/0003-electron-security-boundary.md) | ���� Electron ��Ⱦ���̰�ȫ�߽��������ǰԭ���߽��� Tauri �������ú�Դ��Ϊ׼�� |
+| [docs/decisions/0004-ui-design-system.md](../docs/decisions/0004-ui-design-system.md) | �����ջ���������ʷ UI ���ԭ������������ |
+| [docs/decisions/0005-preview-release-model.md](../docs/decisions/0005-preview-release-model.md) | preview ��֧��Ԥ��������ģʽ����ʷ���߼�¼�� |
+| [docs/decisions/0006-tauri-go-postgres.md](../docs/decisions/0006-tauri-go-postgres.md) | Tauri �� Go �������ܹ��ľ��߼�¼�����ݿ����ӷֹ��Ե�ǰ MySQL/PG ˵��Ϊ׼�� |
+| [docs/decisions/README.md](../docs/decisions/README.md) | README����¼��Ӧģ���ʹ�á��ܹ���ά��˵�� |
+| [docs/file-descriptions.json](../docs/file-descriptions.json) | ��ǰ�汾���ļ�����ְ���������������뷢��У��ʹ�ã�docs/file-descriptions.json�� |
+| [docs/preview-remediation-validation.json](../docs/preview-remediation-validation.json) | preview-remediation-validation.json��Ϊ docs �ṩ�������������������� |
+| [docs/releases/2.0.1.md](../docs/releases/2.0.1.md) | 2.0.1 Preview ��ʷ����˵������¼��ʱ�Ĺ��ܷ�Χ�͸����� |
+| [docs/releases/2.0.2.md](../docs/releases/2.0.2.md) | 2.0.2 ��ʷ Windows �� Linux ��������˵������������ǰ preview Դ��汾�� |
+| [docs/releases/2.0.3.md](../docs/releases/2.0.3.md) | 2.0.3����¼��Ӧģ���ʹ�á��ܹ���ά��˵�� |
+| [docs/releases/2.0.4.md](../docs/releases/2.0.4.md) | 2.0.4 Դ��Ԥ���淢��˵�� |
+| [docs/releases/2.0.5-cleanup.1.md](../docs/releases/2.0.5-cleanup.1.md) | 2.0.5 cleanup.1����¼��Ӧģ���ʹ�á��ܹ���ά��˵�� |
+| [docs/releases/2.0.5.md](../docs/releases/2.0.5.md) | 2.0.5 Դ��淢��˵������ȫ�߽� |
+| [docs/releases/2.0.6.md](../docs/releases/2.0.6.md) | ���� UI���ջ��ջ���˫��Ľ���������������ձ߽� |
+| [docs/runbooks/backup-restore.md](../docs/runbooks/backup-restore.md) | backup restore����¼��Ӧģ���ʹ�á��ܹ���ά��˵�� |
+| [docs/runbooks/release.md](../docs/runbooks/release.md) | release����¼��Ӧģ���ʹ�á��ܹ���ά��˵�� |
+| [docs/runbooks/rollback.md](../docs/runbooks/rollback.md) | rollback����¼��Ӧģ���ʹ�á��ܹ���ά��˵�� |
+| [docs/runbooks/signing.md](../docs/runbooks/signing.md) | signing����¼��Ӧģ���ʹ�á��ܹ���ά��˵�� |
+| [docs/screenshots/family-mobile.png](../docs/screenshots/family-mobile.png) | �����������խ��ʵ�ģ��ջ���ڡ������벻�ڵ����ݵĵײ���������docs/screenshots/family-mobile.png�� |
+| [docs/screenshots/family-screen-fit-20261016.png](../docs/screenshots/family-screen-fit-20261016.png) | 1366��768 �����ջ���ҳ��ͼ��չʾ�����յ��������֡������볣�ü�¼����docs/screenshots/family-screen-fit-20261016.png�� |
+| [docs/screenshots/invite-code-desktop.png](../docs/screenshots/invite-code-desktop.png) | ����������������ʵ�ģ�����Ա�������������ע�������롣��docs/screenshots/invite-code-desktop.png�� |
+| [docs/screenshots/login-desktop.png](../docs/screenshots/login-desktop.png) | �����¼ʵ�ģ�ɽˮ������ԭѡ�� Logo ���ֻ��������������docs/screenshots/login-desktop.png�� |
+| [docs/screenshots/login-screen-fit-20261016.png](../docs/screenshots/login-screen-fit-20261016.png) | 1366��768 ��¼ҳ����������ͼ��չʾһ�����֡�����������������¼��������docs/screenshots/login-screen-fit-20261016.png�� |
+| [docs/screenshots/login-short-screen-20261016.png](../docs/screenshots/login-short-screen-20261016.png) | 360��560 ������¼��ʵ��ͼ��չʾ�������İ��������ɴ�ı�����ע����ڡ���docs/screenshots/login-short-screen-20261016.png�� |
+| [docs/screenshots/overview-desktop.png](../docs/screenshots/overview-desktop.png) | ����Ա����ʵ�ģ����������µ��쳣��𡢸澯��ƽ̨���档��docs/screenshots/overview-desktop.png�� |
+| [docs/screenshots/setup-desktop.png](../docs/screenshots/setup-desktop.png) | ��������״�����ʵ�ģ�������������Ա��չʾ��Ĭ���˺ŵ��������̡���docs/screenshots/setup-desktop.png�� |
+| [docs/screenshots/tauri-2.0.2-main.png](../docs/screenshots/tauri-2.0.2-main.png) | 2.0.2 ʵ�ʰ�װ��� Tauri WebView ��ͼ����ʵ��¼��Ĺ���Ա��Ӫ������ʹ����ʱ���Կ⣨docs/screenshots/tauri-2.0.2-main.png�� |
+| [docs/screenshots/tauri-2.0.2-offline.png](../docs/screenshots/tauri-2.0.2-offline.png) | 2.0.2 ʵ�ʰ�װ��� Tauri WebView ��ͼ�����ݿ���������״̬��docs/screenshots/tauri-2.0.2-offline.png�� |
+| [docs/verification.json](../docs/verification.json) | �˴�Ԥ����Ĳ���������ϵͳ������ǩ��״̬����Ʊ߽�ժҪ����docs/verification.json�� |
+| [docs/verification/2.0.6-integration.json](../docs/verification/2.0.6-integration.json) | 2.0.6-integration.json��Ϊ docs/verification �ṩ�������������������� |
+| [tests/ui/ui-smoke.mjs](../tests/ui/ui-smoke.mjs) | ����������Զ��������� UI �ɷ�����ð�̼��ű��� |
+| [�ǻ������ֱ�����ϵͳ/.gitignore](../�ǻ������ֱ�����ϵͳ/.gitignore) | ���湤�̵�����Ŀ¼�����ݿ⡢��־��˽Կ�ų����á����ǻ������ֱ�����ϵͳ/.gitignore�� |
+| [�ǻ������ֱ�����ϵͳ/LICENSE](../�ǻ������ֱ�����ϵͳ/LICENSE) | ����Դ�빤�̸����� MIT ���ɣ��������Դ���������Ȩ�����ǻ������ֱ�����ϵͳ/LICENSE�� |
+| [�ǻ������ֱ�����ϵͳ/README.md](../�ǻ������ֱ�����ϵͳ/README.md) | ����Դ�빤�̵�����Go ��ˡ�Vue ǰ�ˡ�Tauri ����������Ŀ¼�Ϳ������� |
+| [�ǻ������ֱ�����ϵͳ/backend/README.md](../�ǻ������ֱ�����ϵͳ/backend/README.md) | Go �������á�MySQL ���⡢��ѡ PostgreSQL �����⡢Ǩ�ơ�����������˵���� |
+| [�ǻ������ֱ�����ϵͳ/backend/VERSION](../�ǻ������ֱ�����ϵͳ/backend/VERSION) | Go ��˶�Ӧ�Ĳ�Ʒ�汾���ǻ������ֱ�����ϵͳ/backend/VERSION�� |
+| [�ǻ������ֱ�����ϵͳ/backend/cmd/analytics-backfill/main.go](../�ǻ������ֱ�����ϵͳ/backend/cmd/analytics-backfill/main.go) | ��ʽ --apply ���� PG ͶӰ�ؽ��¼������ |
+| [�ǻ������ֱ�����ϵͳ/backend/cmd/migrate/main.go](../�ǻ������ֱ�����ϵͳ/backend/cmd/migrate/main.go) | Go migrate ģ�飺ʵ�� main ��ط����߼� |
+| [�ǻ������ֱ�����ϵͳ/backend/cmd/server/database.go](../�ǻ������ֱ�����ϵͳ/backend/cmd/server/database.go) | Go server ģ�飺ʵ�� database ��ط����߼� |
+| [�ǻ������ֱ�����ϵͳ/backend/cmd/server/database_test.go](../�ǻ������ֱ�����ϵͳ/backend/cmd/server/database_test.go) | database_test �Զ����ع�����սű�������Ӧģ�����Ϊ�߽� |
+| [�ǻ������ֱ�����ϵͳ/backend/cmd/server/desktop.go](../�ǻ������ֱ�����ϵͳ/backend/cmd/server/desktop.go) | Go server ģ�飺ʵ�� desktop ��ط����߼� |
+| [�ǻ������ֱ�����ϵͳ/backend/cmd/server/main.go](../�ǻ������ֱ�����ϵͳ/backend/cmd/server/main.go) | Go server ģ�飺ʵ�� main ��ط����߼� |
+| [�ǻ������ֱ�����ϵͳ/backend/cmd/server/parentwatch_unix.go](../�ǻ������ֱ�����ϵͳ/backend/cmd/server/parentwatch_unix.go) | Go server ģ�飺ʵ�� parentwatch unix ��ط����߼� |
+| [�ǻ������ֱ�����ϵͳ/backend/cmd/server/parentwatch_windows.go](../�ǻ������ֱ�����ϵͳ/backend/cmd/server/parentwatch_windows.go) | Go server ģ�飺ʵ�� parentwatch windows ��ط����߼� |
+| [�ǻ������ֱ�����ϵͳ/backend/cmd/server/privacy.go](../�ǻ������ֱ�����ϵͳ/backend/cmd/server/privacy.go) | ����֤���������ݴ���֮��ִ��ʧ�ܹرյķ�������м�� |
+| [�ǻ������ֱ�����ϵͳ/backend/cmd/server/regression_test.go](../�ǻ������ֱ�����ϵͳ/backend/cmd/server/regression_test.go) | �������������ݿ���Լ����ȫ�뾺���ع飨�ǻ������ֱ�����ϵͳ/backend/cmd/server/regression_test.go�� |
+| [�ǻ������ֱ�����ϵͳ/backend/cmd/transfer-postgres/main.go](../�ǻ������ֱ�����ϵͳ/backend/cmd/transfer-postgres/main.go) | Ĭ��ֻԤ�졢��ʽ --apply �ύ�ɿ⵼���������� |
+| [�ǻ������ֱ�����ϵͳ/backend/docs/health-data.md](../�ǻ������ֱ�����ϵͳ/backend/docs/health-data.md) | health data����¼��Ӧģ���ʹ�á��ܹ���ά��˵�� |
+| [�ǻ������ֱ�����ϵͳ/backend/go.mod](../�ǻ������ֱ�����ϵͳ/backend/go.mod) | Go ���ֱ������ģ��������������Ͱ汾���ǻ������ֱ�����ϵͳ/backend/go.mod�� |
+| [�ǻ������ֱ�����ϵͳ/backend/go.sum](../�ǻ������ֱ�����ϵͳ/backend/go.sum) | Go ģ��������汾У��ժҪ���ǻ������ֱ�����ϵͳ/backend/go.sum�� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/analytics/backfill.go](../�ǻ������ֱ�����ϵͳ/backend/internal/analytics/backfill.go) | ��ҵ���й������·������ɷ��������¼� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/analytics/sync.go](../�ǻ������ֱ�����ϵͳ/backend/internal/analytics/sync.go) | �� MySQL �־û� outbox �ݵ�ͬ������ͶӰ�� PostgreSQL |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/analytics/sync_test.go](../�ǻ������ֱ�����ϵͳ/backend/internal/analytics/sync_test.go) | ˫��ͬ�����ɲ��ԣ���֤ PG ���ϡ����б������ָ��طš�ɾ��Ĺ���ͻ�� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/auth/auth.go](../�ǻ������ֱ�����ϵͳ/backend/internal/auth/auth.go) | ��ɫ��Ȩ������·���߽���������֤���ǻ������ֱ�����ϵͳ/backend/internal/auth/auth.go�� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/auth/password.go](../�ǻ������ֱ�����ϵͳ/backend/internal/auth/password.go) | Go auth ģ�飺ʵ�� password ��ط����߼� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/auth/regression_test.go](../�ǻ������ֱ�����ϵͳ/backend/internal/auth/regression_test.go) | �������������ݿ���Լ����ȫ�뾺���ع飨�ǻ������ֱ�����ϵͳ/backend/internal/auth/regression_test.go�� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/care/worker.go](../�ǻ������ֱ�����ϵͳ/backend/internal/care/worker.go) | �־û�֪ͨ outbox�����ݵȼ��ķ��ͼ���ʱ������̨��ҵ |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/care/worker_test.go](../�ǻ������ֱ�����ϵͳ/backend/internal/care/worker_test.go) | �ջ�֪ͨ�������̲��ԣ������ݵȷ��͡�ʧ�����ԡ��ʹ�״̬�ͳ�ʱ���������Կ�ʹ�� MySQL ��� PostgreSQL ���á� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/config/config.go](../�ǻ������ֱ�����ϵͳ/backend/internal/config/config.go) | �����ַ���Ự��ͼƬĿ¼�����ݿ⻷���������ã��ǻ������ֱ�����ϵͳ/backend/internal/config/config.go�� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/config/config_test.go](../�ǻ������ֱ�����ϵͳ/backend/internal/config/config_test.go) | config_test �Զ����ع�����սű�������Ӧģ�����Ϊ�߽� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/csrf/csrf.go](../�ǻ������ֱ�����ϵͳ/backend/internal/csrf/csrf.go) | �Ự CSRF У�����豸/ԭ�����ƽӿڻ��⣨�ǻ������ֱ�����ϵͳ/backend/internal/csrf/csrf.go�� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/db/database.go](../�ǻ������ֱ�����ϵͳ/backend/internal/db/database.go) | Go ���ݿ����MySQL ����ռλ������;� PG ���Լ������ |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/db/database_test.go](../�ǻ������ֱ�����ϵͳ/backend/internal/db/database_test.go) | MySQL SQL ������ԣ�����ռλ��ת�����ظ�����������ֵ�߽硣 |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/db/db.go](../�ǻ������ֱ�����ϵͳ/backend/internal/db/db.go) | �� PostgreSQL ���ݿ����ӳء�Ǩ�ƺ������װ����ǰ����ҵ����� MySQL database.go ������ |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/db/db_test.go](../�ǻ������ֱ�����ϵͳ/backend/internal/db/db_test.go) | db_test �Զ����ع�����սű�������Ӧģ�����Ϊ�߽� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/db/dbtest/mysql.go](../�ǻ������ֱ�����ϵͳ/backend/internal/db/dbtest/mysql.go) | ����ר����� MySQL ���ݿ�Ĵ�����Ǩ�������� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/db/mysql_migrations.go](../�ǻ������ֱ�����ϵͳ/backend/internal/db/mysql_migrations.go) | ���Ӽ�Ǩ������У�����ɻָ� DDL ִ�� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/db/transfer.go](../�ǻ������ֱ�����ϵͳ/backend/internal/db/transfer.go) | ֻ����ȡ�� PostgreSQL ҵ�����ݣ����������е���� MySQL ���� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/db/transfer_integration_test.go](../�ǻ������ֱ�����ϵͳ/backend/internal/db/transfer_integration_test.go) | �� PostgreSQL ���� MySQL ������ԣ���֤Ԥ�졢������ NULL �������ܾ����Ǻ�����ع��� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/handlers/architecture_integration_test.go](../�ǻ������ֱ�����ϵͳ/backend/internal/handlers/architecture_integration_test.go) | MySQL �������ֶ�ӳ�䡢�豸������ȱ�⡢�ջ���ҳ�Ͷ������˵ļܹ��ع���ԡ� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/handlers/care_integration_test.go](../�ǻ������ֱ�����ϵͳ/backend/internal/handlers/care_integration_test.go) | SOS ȥ�ء�Ȩ�ޡ���ơ��ʹ��ִ�����̼��ɲ��� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/handlers/care_operations_test.go](../�ǻ������ֱ�����ϵͳ/backend/internal/handlers/care_operations_test.go) | ��λȨ�ޡ�������Ƽ������������ɲ��� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/handlers/care_receipt_race_test.go](../�ǻ������ֱ�����ϵͳ/backend/internal/handlers/care_receipt_race_test.go) | �����ڷ����������ʹ�ʱ�ľ�̬�ع���� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_alarm_process.go](../�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_alarm_process.go) | Go ��˰�ְ���ֵ� alarm process ģ�� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_auth.go](../�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_auth.go) | ����Ա��ʼ�����Ự��¼���˳����˺Ű�ȫ�ӿڣ��ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_auth.go�� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_care_incident.go](../�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_care_incident.go) | ����Ա�ջ����񡢽ӵ������á����˼��¼����� API |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_care_operations.go](../�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_care_operations.go) | ���ܷ�����ϡ��ջ���λ��ȨУ���������ȡ��� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_care_receipt.go](../�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_care_receipt.go) | ����ǩ����֤���ʹ��ִ���� API |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_care_staff.go](../�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_care_staff.go) | �������ø�λ����ȡ���з�����Ƽ�������Ա�б� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_device_admin.go](../�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_device_admin.go) | Go ��˰�ְ���ֵ� device admin ģ�� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_device_alert_actions.go](../�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_device_alert_actions.go) | Go ��˰�ְ���ֵ� device alert actions ģ�� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_device_alerts.go](../�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_device_alerts.go) | Go ��˰�ְ���ֵ� device alerts ģ�� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_device_inventory.go](../�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_device_inventory.go) | Go ��˰�ְ���ֵ� device inventory ģ�� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_device_parse.go](../�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_device_parse.go) | Go ��˰�ְ���ֵ� device parse ģ�� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_device_protocol.go](../�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_device_protocol.go) | Go ��˰�ְ���ֵ� device protocol ģ�� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_device_repository.go](../�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_device_repository.go) | Go ��˰�ְ���ֵ� device repository ģ�� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_device_telemetry.go](../�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_device_telemetry.go) | Go ��˰�ְ���ֵ� device telemetry ģ�� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_family.go](../�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_family.go) | �����˺š���������ȡ�볤�߹����������ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_family.go�� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_family_invite_join.go](../�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_family_invite_join.go) | Go ��˰�ְ���ֵ� family invite join ģ�� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_family_invites.go](../�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_family_invites.go) | Go ��˰�ְ���ֵ� family invites ģ�� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_health.go](../�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_health.go) | ������������д�롢�����߲�ѯ����������ӿ� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_old.go](../�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_old.go) | ���ߵ�������������ɾ��Լ�����ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_old.go�� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_old_person.go](../�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_old_person.go) | Go ��˰�ְ���ֵ� old person ģ�� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_position.go](../�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_position.go) | Go ��˰�ְ���ֵ� position ģ�� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_social.go](../�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_social.go) | ƽ̨���桢�����¼�뻥���ӿڣ��ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_social.go�� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_social_images.go](../�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_social_images.go) | Go ��˰�ְ���ֵ� social images ģ�� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_social_pictures.go](../�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_social_pictures.go) | Go ��˰�ְ���ֵ� social pictures ģ�� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_social_sms.go](../�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_social_sms.go) | Go ��˰�ְ���ֵ� social sms ģ�� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_social_text.go](../�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_social_text.go) | Go ��˰�ְ���ֵ� social text ģ�� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_statistics.go](../�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_statistics.go) | ��ȡ MySQL ���Ⲣ�ṩ�������������ջ�ͳ�ƽӿڡ� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_user.go](../�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_user.go) | �û��������ɫȨ�޹����ӿڣ��ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_user.go�� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_vitals.go](../�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_vitals.go) | �������ݡ��豸�ϱ���λ���������ӿڣ��ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_vitals.go�� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_vitals_measurements.go](../�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_vitals_measurements.go) | Go ��˰�ְ���ֵ� vitals measurements ģ�� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_vitals_ratepre.go](../�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_vitals_ratepre.go) | Go ��˰�ְ���ֵ� vitals ratepre ģ�� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_vitals_steps.go](../�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_vitals_steps.go) | Go ��˰�ְ���ֵ� vitals steps ģ�� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_watch_info.go](../�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handler_watch_info.go) | Go ��˰�ְ���ֵ� watch info ģ�� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handlers.go](../�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handlers.go) | ҵ��·��ע�ᡢ����������������װ�䣨�ǻ������ֱ�����ϵͳ/backend/internal/handlers/handlers.go�� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/handlers/health_integration_test.go](../�ǻ������ֱ�����ϵͳ/backend/internal/handlers/health_integration_test.go) | health_integration_test �Զ����ع�����սű�������Ӧģ�����Ϊ�߽� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/handlers/integration_test.go](../�ǻ������ֱ�����ϵͳ/backend/internal/handlers/integration_test.go) | ���ҵ�񼯳ɲ��ԣ�����������ݿ��еļ�Ȩ��������ӿڻع飻���� MySQL ��� PostgreSQL �������á� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/handlers/regression_test.go](../�ǻ������ֱ�����ϵͳ/backend/internal/handlers/regression_test.go) | �������������ݿ���Լ����ȫ�뾺���ع飨�ǻ������ֱ�����ϵͳ/backend/internal/handlers/regression_test.go�� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/handlers/request_limits_test.go](../�ǻ������ֱ�����ϵͳ/backend/internal/handlers/request_limits_test.go) | request_limits_test �Զ����ع�����սű�������Ӧģ�����Ϊ�߽� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/handlers/util.go](../�ǻ������ֱ�����ϵͳ/backend/internal/handlers/util.go) | ҵ�����������������֤�봦�������������������ǻ������ֱ�����ϵͳ/backend/internal/handlers/util.go�� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/handlers/web.go](../�ǻ������ֱ�����ϵͳ/backend/internal/handlers/web.go) | ��Ƕ Vue ��̬��Դ���ؼ��������ȫ��Ӧͷ���ǻ������ֱ�����ϵͳ/backend/internal/handlers/web.go�� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/handlers/web/.gitignore](../�ǻ������ֱ�����ϵͳ/backend/internal/handlers/web/.gitignore) | ��ֹ���ɵ� Vue �������ݱ�����Ϊ�ֹ�ά����Ƕ����Դ�� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/handlers/web/.gitkeep](../�ǻ������ֱ�����ϵͳ/backend/internal/handlers/web/.gitkeep) | ��������Ƕǰ��Ŀ¼�����湹��ʱ������ʵ Vue ����ǻ������ֱ�����ϵͳ/backend/internal/handlers/web/.gitkeep�� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/health/sample.go](../�ǻ������ֱ�����ϵͳ/backend/internal/health/sample.go) | Go health ģ�飺ʵ�� sample ��ط����߼� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/health/sample_test.go](../�ǻ������ֱ�����ϵͳ/backend/internal/health/sample_test.go) | sample_test �Զ����ع�����սű�������Ӧģ�����Ϊ�߽� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/health/statistics.go](../�ǻ������ֱ�����ϵͳ/backend/internal/health/statistics.go) | Go health ģ�飺ʵ�� statistics ��ط����߼� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/health/statistics_test.go](../�ǻ������ֱ�����ϵͳ/backend/internal/health/statistics_test.go) | statistics_test �Զ����ع�����սű�������Ӧģ�����Ϊ�߽� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/health/store.go](../�ǻ������ֱ�����ϵͳ/backend/internal/health/store.go) | �� MySQL �����б��潡���������޶��α겢����豸�󶨰汾 |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/health/validation_test.go](../�ǻ������ֱ�����ϵͳ/backend/internal/health/validation_test.go) | validation_test �Զ����ع�����սű�������Ӧģ�����Ϊ�߽� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/ratelimit/ratelimit.go](../�ǻ������ֱ�����ϵͳ/backend/internal/ratelimit/ratelimit.go) | �����ӿڵ����������봰���������ǻ������ֱ�����ϵͳ/backend/internal/ratelimit/ratelimit.go�� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/response/response.go](../�ǻ������ֱ�����ϵͳ/backend/internal/response/response.go) | JSON ��Ӧ������ͨ�ô���������ǻ������ֱ�����ϵͳ/backend/internal/response/response.go�� |
+| [�ǻ������ֱ�����ϵͳ/backend/internal/session/session.go](../�ǻ������ֱ�����ϵͳ/backend/internal/session/session.go) | �ڴ�Ự������������ Cookie �������ڣ��ǻ������ֱ�����ϵͳ/backend/internal/session/session.go�� |
+| [�ǻ������ֱ�����ϵͳ/backend/migrations/0001_init.sql](../�ǻ������ֱ�����ϵͳ/backend/migrations/0001_init.sql) | �� PostgreSQL ҵ���ĳ�ʼ���ṹ��������ʷ���ݶ�ȡ��Ǩ�ƣ����ɵ�ǰ MySQL ����Ӧ�á� |
+| [�ǻ������ֱ�����ϵͳ/backend/migrations/0002_daily_uniqueness.sql](../�ǻ������ֱ�����ϵͳ/backend/migrations/0002_daily_uniqueness.sql) | �� PostgreSQL ҵ���ÿ�ռ�¼Ψһ��Լ��Ǩ�ƣ������ݵ���ʹ�á� |
+| [�ǻ������ֱ�����ϵͳ/backend/migrations/0003_alarm_process.sql](../�ǻ������ֱ�����ϵͳ/backend/migrations/0003_alarm_process.sql) | �� PostgreSQL �澯����״̬�ֶ�������Ǩ�ƣ�����ʷ���ݿ����ʹ�á� |
+| [�ǻ������ֱ�����ϵͳ/backend/migrations/0004_device_oldperson_fk.sql](../�ǻ������ֱ�����ϵͳ/backend/migrations/0004_device_oldperson_fk.sql) | �� PostgreSQL �豸�볤�߹������Ǩ�ƣ�����ʷ���ݿ����ʹ�á� |
+| [�ǻ������ֱ�����ϵͳ/backend/migrations/0005_care_incidents.sql](../�ǻ������ֱ�����ϵͳ/backend/migrations/0005_care_incidents.sql) | �ջ��¼����¼���ƺͳ־û�֪ͨ outbox �����ݿ�Ǩ�� |
+| [�ǻ������ֱ�����ϵͳ/backend/migrations/0006_care_permissions_audit.sql](../�ǻ������ֱ�����ϵͳ/backend/migrations/0006_care_permissions_audit.sql) | ��λ��Ȩ���������ݷ�����Ƽ�֪ͨ���������������ݿ�Ǩ�� |
+| [�ǻ������ֱ�����ϵͳ/backend/migrations/0007_health_samples.sql](../�ǻ������ֱ�����ϵͳ/backend/migrations/0007_health_samples.sql) | �� PostgreSQL ���ݿ�Ľ������������޶�ʱ������������α�Ǩ�ơ� |
+| [�ǻ������ֱ�����ϵͳ/backend/migrations/0008_health_query_columns.sql](../�ǻ������ֱ�����ϵͳ/backend/migrations/0008_health_query_columns.sql) | Ϊ�� PostgreSQL ���������������ֲ�����ͻ�ͳ�Ʋ�ѯ�ֶΡ� |
+| [�ǻ������ֱ�����ϵͳ/backend/migrations/analytics/0001_projection.sql](../�ǻ������ֱ�����ϵͳ/backend/migrations/analytics/0001_projection.sql) | PG ͶӰ����������ͳ�����ջ�״̬������ͼ |
+| [�ǻ������ֱ�����ϵͳ/backend/migrations/embed.go](../�ǻ������ֱ�����ϵͳ/backend/migrations/embed.go) | ��Ǩ�� SQL ����Ϊ����������Ŀ¼��Ƕ���ļ�ϵͳ���ǻ������ֱ�����ϵͳ/backend/migrations/embed.go�� |
+| [�ǻ������ֱ�����ϵͳ/backend/migrations/mysql/0001_core.sql](../�ǻ������ֱ�����ϵͳ/backend/migrations/mysql/0001_core.sql) | MySQL ҵ��ṹ��InnoDB���ַ�����������Լ�� |
+| [�ǻ������ֱ�����ϵͳ/backend/migrations/mysql/0002_analytics.sql](../�ǻ������ֱ�����ϵͳ/backend/migrations/mysql/0002_analytics.sql) | ��Դ��ʶ���־û� outbox ������ʵ�������ɾ������ |
+| [�ǻ������ֱ�����ϵͳ/backend/migrations/mysql/0003_health_samples.sql](../�ǻ������ֱ�����ϵͳ/backend/migrations/mysql/0003_health_samples.sql) | MySQLǨ�ƽű�������汾�������ݱ���������Լ���򴥷��� |
+| [�ǻ������ֱ�����ϵͳ/desktop/.gitignore](../�ǻ������ֱ�����ϵͳ/desktop/.gitignore) | ���� .gitignore ��������Դ���ǻ������ֱ�����ϵͳ/desktop/.gitignore�� |
+| [�ǻ������ֱ�����ϵͳ/desktop/Cargo.lock](../�ǻ������ֱ�����ϵͳ/desktop/Cargo.lock) | Tauri/Rust ��ȷ�����汾����ԴУ���������ǻ������ֱ�����ϵͳ/desktop/Cargo.lock�� |
+| [�ǻ������ֱ�����ϵͳ/desktop/Cargo.toml](../�ǻ������ֱ�����ϵͳ/desktop/Cargo.toml) | Rust ���湤�������������Ż���������Ʒ�汾���ǻ������ֱ�����ϵͳ/desktop/Cargo.toml�� |
+| [�ǻ������ֱ�����ϵͳ/desktop/bootstrap/index.html](../�ǻ������ֱ�����ϵͳ/desktop/bootstrap/index.html) | ���� bootstrap\index.html ��������Դ���ǻ������ֱ�����ϵͳ/desktop/bootstrap/index.html�� |
+| [�ǻ������ֱ�����ϵͳ/desktop/build.ps1](../�ǻ������ֱ�����ϵͳ/desktop/build.ps1) | ǰ��Ƕ�롢Go �ع顢ԭ�����뼰 NSIS ��װ���������ǻ������ֱ�����ϵͳ/desktop/build.ps1�� |
+| [�ǻ������ֱ�����ϵͳ/desktop/build.rs](../�ǻ������ֱ�����ϵͳ/desktop/build.rs) | Tauri ����������˹�ϣ������٣��ǻ������ֱ�����ϵͳ/desktop/build.rs�� |
+| [�ǻ������ֱ�����ϵͳ/desktop/capabilities/desktop.json](../�ǻ������ֱ�����ϵͳ/desktop/capabilities/desktop.json) | �������ڼ�����ҳ����õ���С Tauri Ȩ�޼��ϣ��ǻ������ֱ�����ϵͳ/desktop/capabilities/desktop.json�� |
+| [�ǻ������ֱ�����ϵͳ/desktop/package-lock.json](../�ǻ������ֱ�����ϵͳ/desktop/package-lock.json) | ���� package-lock.json ��������Դ���ǻ������ֱ�����ϵͳ/desktop/package-lock.json�� |
+| [�ǻ������ֱ�����ϵͳ/desktop/package.json](../�ǻ������ֱ�����ϵͳ/desktop/package.json) | ԭ��Ӧ�����ơ��汾����������ں���Ŀ����Ԫ���ݡ����ǻ������ֱ�����ϵͳ/desktop/package.json�� |
+| [�ǻ������ֱ�����ϵͳ/desktop/permissions/setup.toml](../�ǻ������ֱ�����ϵͳ/desktop/permissions/setup.toml) | ����Ȩ����Ա��ʼ������� Tauri �Զ���Ȩ�ޣ��ǻ������ֱ�����ϵͳ/desktop/permissions/setup.toml�� |
+| [�ǻ������ֱ�����ϵͳ/desktop/sign.ps1](../�ǻ������ֱ�����ϵͳ/desktop/sign.ps1) | ��ʽ֤��򱾻���ǩ�� Authenticode ǩ����״̬��¼���ǻ������ֱ�����ϵͳ/desktop/sign.ps1�� |
+| [�ǻ������ֱ�����ϵͳ/desktop/src/main.rs](../�ǻ������ֱ�����ϵͳ/desktop/src/main.rs) | ԭ�����ڡ�sidecar ���������������ڼ���ȫ��ʼ������ǻ������ֱ�����ϵͳ/desktop/src/main.rs�� |
+| [�ǻ������ֱ�����ϵͳ/desktop/suining.ico](../�ǻ������ֱ�����ϵͳ/desktop/suining.ico) | ���û�ѡ��ɽˮ Logo ת���Ķ�ߴ� Windows ����Ͱ�װ��ͼ�ꡣ���ǻ������ֱ�����ϵͳ/desktop/suining.ico�� |
+| [�ǻ������ֱ�����ϵͳ/desktop/tauri.conf.json](../�ǻ������ֱ�����ϵͳ/desktop/tauri.conf.json) | Tauri ��Ʒ��Ϣ��sidecar�����������뾲Ĭ��װ WebView2 �� NSIS ���ã��ǻ������ֱ�����ϵͳ/desktop/tauri.conf.json�� |
+| [�ǻ������ֱ�����ϵͳ/desktop/validate-version.ps1](../�ǻ������ֱ�����ϵͳ/desktop/validate-version.ps1) | �˶�ǰ�ˡ���ˡ�Cargo �� Tauri �Ĳ�Ʒ�汾һ���ԣ��ǻ������ֱ�����ϵͳ/desktop/validate-version.ps1�� |
+| [�ǻ������ֱ�����ϵͳ/desktop/version.json](../�ǻ������ֱ�����ϵͳ/desktop/version.json) | ���� version.json ��������Դ���ǻ������ֱ�����ϵͳ/desktop/version.json�� |
+| [�ǻ������ֱ�����ϵͳ/desktop/ʹ��˵��.txt](../�ǻ������ֱ�����ϵͳ/desktop/ʹ��˵��.txt) | �������ṩ�����Ĳ���ָ�ϣ����Ǵ���ȫ����ݼ����״��˺š����ݱ��ݡ��豸������ǩ���߽硣���ǻ������ֱ�����ϵͳ/desktop/ʹ��˵��.txt�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/README.md](../�ǻ������ֱ�����ϵͳ/oldIot/README.md) | ǰ�˿������Ŀ¼�ͱ����ز�ʹ��˵�������ǻ������ֱ�����ϵͳ/oldIot/README.md�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/index.html](../�ǻ������ֱ�����ϵͳ/oldIot/index.html) | ��ҳ��ڣ����ı��⡢ͼ�ꡢ��������Ԥ���ء����ص��� Vite ģ����ڡ����ǻ������ֱ�����ϵͳ/oldIot/index.html�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/package-lock.json](../�ǻ������ֱ�����ϵͳ/oldIot/package-lock.json) | ������ǰǰ�˰�װ����ժҪ���Ƴ����� Less ʹ�õĿ�ѡ��������������汾�����ǻ������ֱ�����ϵͳ/oldIot/package-lock.json�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/package.json](../�ǻ������ֱ�����ϵͳ/oldIot/package.json) | ������ǰ�������� Vite ���ʹ����ͨ CSS���������� Less Ԥ�����������ǻ������ֱ�����ϵͳ/oldIot/package.json�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/brand/suining-apple-touch-180.png](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/brand/suining-apple-touch-180.png) | �ƶ��豸���ӵ�����Ļʹ�õ� 180 ����ͼ�ꡣ���ǻ������ֱ�����ϵͳ/oldIot/public/static/brand/suining-apple-touch-180.png�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/brand/suining-favicon-32.png](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/brand/suining-favicon-32.png) | �������ǩҳʹ�õ� 32 ����Ʒ��ͼ�ꡣ���ǻ������ֱ�����ϵͳ/oldIot/public/static/brand/suining-favicon-32.png�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/brand/suining-logo-192.webp](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/brand/suining-logo-192.webp) | �������ܶ�ҳü�� README չʾʹ�õ� 192 ���� Logo�����ǻ������ֱ�����ϵͳ/oldIot/public/static/brand/suining-logo-192.webp�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/brand/suining-logo-512.webp](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/brand/suining-logo-512.webp) | �״����õȽϴ�չʾʹ�õ� 512 ���� Logo�����ǻ������ֱ�����ϵͳ/oldIot/public/static/brand/suining-logo-512.webp�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/brand/suining-logo-96.webp](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/brand/suining-logo-96.webp) | ҳü���Сչʾʹ�õ� 96 ����ɽˮ Logo�����ǻ������ֱ�����ϵͳ/oldIot/public/static/brand/suining-logo-96.webp�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/care-welcome-serif-OFL.txt](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/care-welcome-serif-OFL.txt) | care-welcome-serif-OFL.txt ��������˵������¼ԭ������Դ���Ӽ�������Ҫ�󡣣��ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/care-welcome-serif-OFL.txt�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/font-notices.md](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/font-notices.md) | font-notices.md ��������˵������¼ԭ������Դ���Ӽ�������Ҫ�󡣣��ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/font-notices.md�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-LICENSE.txt](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-LICENSE.txt) | source-han-serif-LICENSE.txt ��������˵������¼ԭ������Դ���Ӽ�������Ҫ�󡣣��ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-LICENSE.txt�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-000.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-000.woff2) | ���ĳ��������Ƭ 000������ U+2E80-2E99,U+2E9B-2EF3,U+2F00-2FD5,U+2FF0-2FFB,U+3003-300B,U+300E-303F,U+3041-3096,U+3099-30B2�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-000.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-001.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-001.woff2) | ���ĳ��������Ƭ 001������ U+30B3-30FF,U+3105-312F,U+3131-318E,U+3190-31BB,U+31C0-31E3,U+31F0-321E,U+3220-32CA�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-001.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-002.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-002.woff2) | ���ĳ��������Ƭ 002������ U+32CB-332B,U+332D-34CB�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-002.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-003.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-003.woff2) | ���ĳ��������Ƭ 003������ U+34CC-36CB�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-003.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-004.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-004.woff2) | ���ĳ��������Ƭ 004������ U+36CC-38CB�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-004.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-005.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-005.woff2) | ���ĳ��������Ƭ 005������ U+38CC-3ACB�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-005.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-006.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-006.woff2) | ���ĳ��������Ƭ 006������ U+3ACC-3CCB�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-006.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-007.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-007.woff2) | ���ĳ��������Ƭ 007������ U+3CCC-3ECB�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-007.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-008.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-008.woff2) | ���ĳ��������Ƭ 008������ U+3ECC-40CB�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-008.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-009.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-009.woff2) | ���ĳ��������Ƭ 009������ U+40CC-42CB�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-009.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-010.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-010.woff2) | ���ĳ��������Ƭ 010������ U+42CC-44CB�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-010.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-011.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-011.woff2) | ���ĳ��������Ƭ 011������ U+44CC-46CB�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-011.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-012.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-012.woff2) | ���ĳ��������Ƭ 012������ U+46CC-48CB�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-012.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-013.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-013.woff2) | ���ĳ��������Ƭ 013������ U+48CC-4ACB�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-013.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-014.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-014.woff2) | ���ĳ��������Ƭ 014������ U+4ACC-4CCB�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-014.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-015.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-015.woff2) | ���ĳ��������Ƭ 015������ U+4CCC-4DBF,U+4E01-4E09,U+4E0C,U+4E0F-4E12,U+4E14-4E21,U+4E23,U+4E25-4E29,U+4E2B-4E2C,U+4E2E-4E�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-015.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-016.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-016.woff2) | ���ĳ��������Ƭ 016������ U+4F31-4F33,U+4F35-4F37,U+4F39-4F45,U+4F47-4F4C,U+4F4F-4F52,U+4F54-4F58,U+4F5A-4F5B,U+4F5D-4F5F�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-016.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-017.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-017.woff2) | ���ĳ��������Ƭ 017������ U+514E-5164,U+5166-5167,U+5169-516B,U+516D-5170,U+5172,U+5174-5175,U+5178-517A,U+517C-5184,U+51�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-017.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-018.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-018.woff2) | ���ĳ��������Ƭ 018������ U+537A-5385,U+5387-538A,U+538C-539E,U+53A0-53BA,U+53BC-53C9,U+53CB-53CC,U+53CE-53D0,U+53D2-53D5�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-018.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-019.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-019.woff2) | ���ĳ��������Ƭ 019������ U+559E-56DD,U+56DF,U+56E1-56F3,U+56F5-56FD,U+56FF-5727,U+5729-572F,U+5731-573F,U+5741-574F,U+57�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-019.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-020.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-020.woff2) | ���ĳ��������Ƭ 020������ U+57A7-57F9,U+57FB-586A,U+586C-5903,U+5905-5906,U+5908-590C,U+590E-5919,U+591B-5926,U+5928,U+59�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-020.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-021.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-021.woff2) | ���ĳ��������Ƭ 021������ U+59B5-59CA,U+59CC-59D2,U+59D4-5B4F,U+5B51-5B56,U+5B59-5B87,U+5B8A-5B8B,U+5B8D-5B99,U+5B9B-5B9D�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-021.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-022.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-022.woff2) | ���ĳ��������Ƭ 022������ U+5BC1-5BC5,U+5BC7-5BDE,U+5BE0-5BF8,U+5BFA-5BFB,U+5BFD-5C05,U+5C07-5C0E,U+5C10,U+5C12-5C19,U+5C�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-022.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-023.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-023.woff2) | ���ĳ��������Ƭ 023������ U+5DCD-5DE4,U+5DE7-5DF0,U+5DF3-5E02,U+5E04-5E25,U+5E27-5E37,U+5E39-5E72,U+5E75,U+5E77-5E8E,U+5E�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-023.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-024.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-024.woff2) | ���ĳ��������Ƭ 024������ U+5FED-5FFF,U+6002-600D,U+600F-6026,U+6028-603A,U+603C-606E,U+6070-6088,U+608A-60A7,U+60A9-60C4�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-024.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-025.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-025.woff2) | ���ĳ��������Ƭ 025������ U+61F9-620F,U+6212-6215,U+6217-6233,U+6235-6236,U+6238-623E,U+6241-624A,U+624C-6252,U+6254-627D�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-025.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-026.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-026.woff2) | ���ĳ��������Ƭ 026������ U+6416-641B,U+641D-6453,U+6455-6457,U+6459-64CC,U+64CE-652E,U+6530-6535,U+6537-6538,U+653A-653D�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-026.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-027.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-027.woff2) | ���ĳ��������Ƭ 027������ U+662C-662E,U+6630-663D,U+663F-6667,U+6669-666F,U+6671-6679,U+667B-6681,U+6683-66F1,U+66F3,U+66�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-027.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-028.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-028.woff2) | ���ĳ��������Ƭ 028������ U+684C-6862,U+6864-68BF,U+68C1-6959,U+695B-6A20,U+6A22-6A4F�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-028.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-029.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-029.woff2) | ���ĳ��������Ƭ 029������ U+6A50-6B20,U+6B23-6B62,U+6B66-6BCE,U+6BD0-6BDA,U+6BDC-6C13,U+6C15-6C33,U+6C35-6C37,U+6C39-6C59�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-029.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-030.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-030.woff2) | ���ĳ��������Ƭ 030������ U+6C5A-6CA0,U+6CA2-6CD4,U+6CD6-6CE7,U+6CE9-6D00,U+6D02-6D11,U+6D13-6D3A,U+6D3C-6D40,U+6D42-6D4A�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-030.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-031.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-031.woff2) | ���ĳ��������Ƭ 031������ U+6E67-6E8F,U+6E91-6ED0,U+6ED2-6FBF,U+6FC1-7069�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-031.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-032.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-032.woff2) | ���ĳ��������Ƭ 032������ U+706A-70B8,U+70BA-7135,U+7137-7166,U+7168-7230,U+7232-7236,U+7238-7246,U+7249-7268,U+726A-7271�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-032.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-033.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-033.woff2) | ���ĳ��������Ƭ 033������ U+7272-7274,U+7276-72B5,U+72B7-72EB,U+72ED-7386,U+7388-73AE,U+73B1-7405,U+7407-7478�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-033.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-034.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-034.woff2) | ���ĳ��������Ƭ 034������ U+7479-751E,U+7520-7527,U+7529-7530,U+7532-7534,U+7536,U+7538-7558,U+755A-75C4,U+75C6-767A,U+76�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-034.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-035.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-035.woff2) | ���ĳ��������Ƭ 035������ U+7681-7683,U+7685-76D0,U+76D2-76ED,U+76EF-76F3,U+76F5-76F7,U+76F9-770A,U+770C-771F,U+7721-7760�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-035.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-036.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-036.woff2) | ���ĳ��������Ƭ 036������ U+788E-7939,U+793B-79BA,U+79BC-79D1,U+79D3-79EF,U+79F1-79FA,U+79FC-7A0C,U+7A0E-7A79,U+7A7B-7A94�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-036.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-037.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-037.woff2) | ���ĳ��������Ƭ 037������ U+7A95-7A96,U+7A98-7ACA,U+7ACC-7ADF,U+7AE1-7AEE,U+7AF0-7B25,U+7B27-7B2B,U+7B2D-7B53,U+7B55-7B5A�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-037.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-038.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-038.woff2) | ���ĳ��������Ƭ 038������ U+7CA0-7CC9,U+7CCB-7CFA,U+7CFC-7D21,U+7D23-7EA1,U+7EA3�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-038.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-039.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-039.woff2) | ���ĳ��������Ƭ 039������ U+7EA4-7EAB,U+7EAD-7EB4,U+7EB6-7EB9,U+7EBB-7EBE,U+7EC0-7EC5,U+7EC7,U+7EC9-7ECE,U+7ED0,U+7ED2,U+�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-039.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-040.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-040.woff2) | ���ĳ��������Ƭ 040������ U+80C0-80FC,U+80FE-81E9,U+81EB-81F2,U+81F5-8229,U+822B,U+822D-8271,U+8273-8281,U+8283-82C7�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-040.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-041.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-041.woff2) | ���ĳ��������Ƭ 041������ U+82C8-8302,U+8304-836E,U+8370-83B6,U+83B8-8424,U+8426-84CB�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-041.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-042.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-042.woff2) | ���ĳ��������Ƭ 042������ U+84CC-85CE,U+85D0-86CC�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-042.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-043.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-043.woff2) | ���ĳ��������Ƭ 043������ U+86CD-883F,U+8841-884B,U+884D-8864,U+8866-8867,U+8869-886A,U+886D-889B,U+889D-88AA,U+88AC-88D4�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-043.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-044.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-044.woff2) | ���ĳ��������Ƭ 044������ U+88D5-88E3,U+88E5-8980,U+8982-89C1,U+89C3-89C7,U+89C9-89D1,U+89D3-89E2,U+89E4-89FF,U+8A01-8ADB�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-044.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-045.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-045.woff2) | ���ĳ��������Ƭ 045������ U+8ADC-8B65,U+8B67-8BA0,U+8BA2-8BA3,U+8BA5-8BA8,U+8BAA-8BAF,U+8BB1-8BB9,U+8BBB-8BBD,U+8BC0,U+8B�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-045.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-046.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-046.woff2) | ���ĳ��������Ƭ 046������ U+8CF3-8D24,U+8D27-8D38,U+8D3A-8D43,U+8D45-8D5D,U+8D5F-8D76,U+8D78-8D84,U+8D86-8DDE,U+8DE0-8DEE�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-046.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-047.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-047.woff2) | ���ĳ��������Ƭ 047������ U+8EFF-8F6B,U+8F6D-8F73,U+8F75-8F7C,U+8F7E-8F90,U+8F92,U+8F94-8FC6,U+8FC8-8FCD,U+8FCF,U+8FD2-8F�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-047.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-048.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-048.woff2) | ���ĳ��������Ƭ 048������ U+9117-914C,U+914E-9191,U+9193-91CB,U+91CE,U+91D0-931B�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-048.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-049.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-049.woff2) | ���ĳ��������Ƭ 049������ U+931C-949E,U+94A0-94A4,U+94A6-94FF,U+9501-951E�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-049.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-050.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-050.woff2) | ���ĳ��������Ƭ 050������ U+951F-952D,U+952F-957E,U+9580-95E7,U+95E9-95EC,U+95EF-95F3,U+95F5-9604,U+9606-9607,U+9609-9643�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-050.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-051.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-051.woff2) | ���ĳ��������Ƭ 051������ U+9733-9758,U+975A-9761,U+9763-978A,U+978C-9874,U+9877-9878,U+987A,U+987C-9883,U+9885-9897,U+98�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-051.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-052.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-052.woff2) | ���ĳ��������Ƭ 052������ U+993E-9995,U+9997-9A8B,U+9A8D-9AD7,U+9AD9-9B40�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-052.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-053.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-053.woff2) | ���ĳ��������Ƭ 053������ U+9B41-9D40�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-053.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-054.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-054.woff2) | ���ĳ��������Ƭ 054������ U+9D41-9ED7,U+9ED9-9F41�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-054.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-055.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-055.woff2) | ���ĳ��������Ƭ 055������ U+9F42-9F83,U+9F85-9FFF,U+A960-A97C,U+AC00-AD25�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-055.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-056.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-056.woff2) | ���ĳ��������Ƭ 056������ U+AD26-AF25�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-056.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-057.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-057.woff2) | ���ĳ��������Ƭ 057������ U+AF26-B125�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-057.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-058.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-058.woff2) | ���ĳ��������Ƭ 058������ U+B126-B325�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-058.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-059.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-059.woff2) | ���ĳ��������Ƭ 059������ U+B326-B525�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-059.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-060.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-060.woff2) | ���ĳ��������Ƭ 060������ U+B526-B725�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-060.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-061.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-061.woff2) | ���ĳ��������Ƭ 061������ U+B726-B925�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-061.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-062.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-062.woff2) | ���ĳ��������Ƭ 062������ U+B926-BB25�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-062.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-063.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-063.woff2) | ���ĳ��������Ƭ 063������ U+BB26-BD25�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-063.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-064.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-064.woff2) | ���ĳ��������Ƭ 064������ U+BD26-BF25�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-064.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-065.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-065.woff2) | ���ĳ��������Ƭ 065������ U+BF26-C125�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-065.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-066.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-066.woff2) | ���ĳ��������Ƭ 066������ U+C126-C325�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-066.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-067.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-067.woff2) | ���ĳ��������Ƭ 067������ U+C326-C525�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-067.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-068.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-068.woff2) | ���ĳ��������Ƭ 068������ U+C526-C725�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-068.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-069.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-069.woff2) | ���ĳ��������Ƭ 069������ U+C726-C925�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-069.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-070.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-070.woff2) | ���ĳ��������Ƭ 070������ U+C926-CB25�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-070.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-071.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-071.woff2) | ���ĳ��������Ƭ 071������ U+CB26-CD25�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-071.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-072.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-072.woff2) | ���ĳ��������Ƭ 072������ U+CD26-CF25�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-072.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-073.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-073.woff2) | ���ĳ��������Ƭ 073������ U+CF26-D125�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-073.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-074.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-074.woff2) | ���ĳ��������Ƭ 074������ U+D126-D325�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-074.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-075.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-075.woff2) | ���ĳ��������Ƭ 075������ U+D326-D525�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-075.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-076.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-076.woff2) | ���ĳ��������Ƭ 076������ U+D526-D725�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-076.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-077.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-077.woff2) | ���ĳ��������Ƭ 077������ U+D726-D7A3,U+D7B0-D7C6,U+D7CB-D7FB,U+F900-FA39�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-077.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-078.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-078.woff2) | ���ĳ��������Ƭ 078������ U+FA3A-FA6D,U+FB00-FB04,U+FE10-FE19,U+FE30-FE52,U+FE54-FE66,U+FE68-FE6B,U+FF02-FF07,U+FF0A-FF0B�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-078.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-079.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-079.woff2) | ���ĳ��������Ƭ 079������ U+1F202,U+1F210-1F23B,U+1F240-1F248,U+1F250-1F251,U+2000B,U+20021,U+2003E,U+20046,U+2004E,U+200�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-079.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-080.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-080.woff2) | ���ĳ��������Ƭ 080������ U+21922,U+21927,U+2193B,U+21944,U+21958,U+2196A,U+2197C,U+21980,U+21983,U+21988,U+21996,U+219C3�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-080.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-081.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-081.woff2) | ���ĳ��������Ƭ 081������ U+243F8,U+24404,U+24435-24436,U+2445A-2445B,U+24473,U+24487-24488,U+244B9,U+244BC,U+244CE,U+244�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-081.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-082.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-082.woff2) | ���ĳ��������Ƭ 082������ U+26DAE,U+26DDC,U+26DEA-26DEB,U+26DF0,U+26E00,U+26E05,U+26E07,U+26E12,U+26E40,U+26E42-26E45,U+2�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-082.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-083.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-083.woff2) | ���ĳ��������Ƭ 083������ U+29EE9,U+29EF8,U+29F23,U+29F30,U+29F7E,U+29F83,U+29F8C,U+29FB7,U+29FCE,U+29FD7,U+29FDE,U+2A014�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-083.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/manifest.json](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/manifest.json) | manifest.json ��������˵������¼ԭ������Դ���Ӽ�������Ҫ�󡣣��ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/manifest.json�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/ui-common.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/ui-common.woff2) | ���Ľ��泣���ַ������Ƭ����Ϊ����Ԥ������Դ�����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/ui-common.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-serif-4-italic.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-serif-4-italic.woff2) | source-serif-4-italic.woff2 ��������˵������¼ԭ������Դ���Ӽ�������Ҫ�󡣣��ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-serif-4-italic.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-serif-4.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-serif-4.woff2) | Source Serif 4 Ӣ�������ֵı��ؿɱ����壬���������ⲿ�������硣���ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-serif-4.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-serif-LICENSE.md](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-serif-LICENSE.md) | source-serif-LICENSE.md ��������˵������¼ԭ������Դ���Ӽ�������Ҫ�󡣣��ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-serif-LICENSE.md�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/icons/LICENSE.txt](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/icons/LICENSE.txt) | ����ͼ�������Ӧ�� Element UI ��Դ���ɡ����ǻ������ֱ�����ϵͳ/oldIot/public/static/icons/LICENSE.txt�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/icons/element-icons.woff](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/icons/element-icons.woff) | �����ɽ���ͼ�����εı��� WOFF ��Դ��������л� Element Plus�����ǻ������ֱ�����ϵͳ/oldIot/public/static/icons/element-icons.woff�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/img/care-announcement-empty.webp](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/img/care-announcement-empty.webp) | �����б��޼�¼ʱ���ºͿ�״̬��ͼ�����ǻ������ֱ�����ϵͳ/oldIot/public/static/img/care-announcement-empty.webp�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/img/care-botanical.webp](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/img/care-botanical.webp) | ������ʽ���õ�ֲ��װ���زġ����ǻ������ֱ�����ϵͳ/oldIot/public/static/img/care-botanical.webp�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/img/care-courtyard.webp](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/img/care-courtyard.webp) | �ջ�ҳ��ʹ�õ�ͥԺ�羰�廭�����ǻ������ֱ�����ϵͳ/oldIot/public/static/img/care-courtyard.webp�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/img/care-lakeside-artisan-640.webp](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/img/care-lakeside-artisan-640.webp) | ���Ϸ羰��խ�� srcset �汾�������ֻ����ع���ͼƬ�����ǻ������ֱ�����ϵͳ/oldIot/public/static/img/care-lakeside-artisan-640.webp�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/img/care-lakeside-artisan.webp](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/img/care-lakeside-artisan.webp) | ��¼�����ҳʹ�õı��غ��Ϸ羰��ͼ�����ǻ������ֱ�����ϵͳ/oldIot/public/static/img/care-lakeside-artisan.webp�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/img/care-river-morning.webp](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/img/care-river-morning.webp) | ����ҳ����ʽ���õĺӰ������زġ����ǻ������ֱ�����ϵͳ/oldIot/public/static/img/care-river-morning.webp�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/qa/.gitignore](../�ǻ������ֱ�����ϵͳ/oldIot/qa/.gitignore) | �ų���������ղ�������ʱ�����ļ���ͬʱ������ȷ����汾���Ƶ�֤�ݡ� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/qa/architecture-acceptance.cjs](../�ǻ������ֱ�����ϵͳ/oldIot/qa/architecture-acceptance.cjs) | ģ�� API ��������գ���λ��ʧ�ܱ������롢��ҳ��������խ����ȫ���໤��ѡ�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/qa/browser-acceptance.cjs](../�ǻ������ֱ�����ϵͳ/oldIot/qa/browser-acceptance.cjs) | browser-acceptance �Զ����ع�����սű�������Ӧģ�����Ϊ�߽� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/qa/browser-harness.cjs](../�ǻ������ֱ�����ϵͳ/oldIot/qa/browser-harness.cjs) | browser-harness.cjs���ֿ��е���ĿԴ���������Դ�ļ� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/qa/controls-acceptance.cjs](../�ǻ������ֱ�����ϵͳ/oldIot/qa/controls-acceptance.cjs) | controls-acceptance �Զ����ع�����սű�������Ӧģ�����Ϊ�߽� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/qa/database-availability-acceptance.cjs](../�ǻ������ֱ�����ϵͳ/oldIot/qa/database-availability-acceptance.cjs) | ��������ߡ��Զ��ָ���Ȩ�ޱ߽������뱣����������ع飨�ǻ������ֱ�����ϵͳ/oldIot/qa/database-availability-acceptance.cjs�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/qa/elder-delete-acceptance.cjs](../�ǻ������ֱ�����ϵͳ/oldIot/qa/elder-delete-acceptance.cjs) | elder-delete-acceptance �Զ����ع�����սű�������Ӧģ�����Ϊ�߽� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/qa/font-hashes-before.json](../�ǻ������ֱ�����ϵͳ/oldIot/qa/font-hashes-before.json) | font-hashes-before.json��Ϊ �ǻ������ֱ�����ϵͳ/oldIot/qa �ṩ�������������������� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/qa/forms-acceptance.cjs](../�ǻ������ֱ�����ϵͳ/oldIot/qa/forms-acceptance.cjs) | forms-acceptance �Զ����ع�����սű�������Ӧģ�����Ϊ�߽� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/qa/issues-acceptance.cjs](../�ǻ������ֱ�����ϵͳ/oldIot/qa/issues-acceptance.cjs) | issues-acceptance �Զ����ع�����սű�������Ӧģ�����Ϊ�߽� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/qa/lifecycle-acceptance.cjs](../�ǻ������ֱ�����ϵͳ/oldIot/qa/lifecycle-acceptance.cjs) | lifecycle-acceptance �Զ����ع�����սű�������Ӧģ�����Ϊ�߽� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/qa/package-lock.json](../�ǻ������ֱ�����ϵͳ/oldIot/qa/package-lock.json) | package-lock.json��Ϊ �ǻ������ֱ�����ϵͳ/oldIot/qa �ṩ�������������������� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/qa/package.json](../�ǻ������ֱ�����ϵͳ/oldIot/qa/package.json) | package.json��Ϊ �ǻ������ֱ�����ϵͳ/oldIot/qa �ṩ�������������������� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/qa/real-backend-acceptance.cjs](../�ǻ������ֱ�����ϵͳ/oldIot/qa/real-backend-acceptance.cjs) | �������桢��ʵ Go ����͸��� PostgreSQL �Ľ�������������������·���� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/qa/run.cjs](../�ǻ������ֱ�����ϵͳ/oldIot/qa/run.cjs) | run.cjs���ֿ��е���ĿԴ���������Դ�ļ� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/qa/screen-acceptance.cjs](../�ǻ������ֱ�����ϵͳ/oldIot/qa/screen-acceptance.cjs) | screen-acceptance �Զ����ع�����սű�������Ӧģ�����Ϊ�߽� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/qa/setup-browser-acceptance.cjs](../�ǻ������ֱ�����ϵͳ/oldIot/qa/setup-browser-acceptance.cjs) | setup-browser-acceptance �Զ����ع�����սű�������Ӧģ�����Ϊ�߽� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/qa/ui-refinement-acceptance.cjs](../�ǻ������ֱ�����ϵͳ/oldIot/qa/ui-refinement-acceptance.cjs) | �������顢��ҳ���������ԡ�����խ���������ϡ�����ͳ�Ʒ�ҳ������դ���ģ�� API ��������� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/App.vue](../�ǻ������ֱ�����ϵͳ/oldIot/src/App.vue) | Vue ��������ͳһ�ؼ��߽磬���д������㡢���󡢽��á����ֺͼ��ٶ������á����ǻ������ֱ�����ϵͳ/oldIot/src/App.vue�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/assets/css/accessibility.css](../�ǻ������ֱ�����ϵͳ/oldIot/src/assets/css/accessibility.css) | ǰ����ʽ�������� accessibility �Ĳ������Ӿ����� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/assets/css/commercial.css](../�ǻ������ֱ�����ϵͳ/oldIot/src/assets/css/commercial.css) | ����̨�뼯��ҳ�沼�֣��淶��ѯ���������롢�����ֶνṹ�͵ײ�������ࡣ���ǻ������ֱ�����ϵͳ/oldIot/src/assets/css/commercial.css�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/assets/css/element-theme.css](../�ǻ������ֱ�����ϵͳ/oldIot/src/assets/css/element-theme.css) | ǰ����ʽ�������� element theme �Ĳ������Ӿ����� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/assets/css/fonts.css](../�ǻ������ֱ�����ϵͳ/oldIot/src/assets/css/fonts.css) | ��������Ӣ��/���������ĳ������塢Ԥ���غ� Unicode ��Ƭ�����ǻ������ֱ�����ϵͳ/oldIot/src/assets/css/fonts.css�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/assets/css/icons.css](../�ǻ������ֱ�����ϵͳ/oldIot/src/assets/css/icons.css) | ����ʵ�����õļ���ͼ������ӳ����ͼ��������ع��򡣣��ǻ������ֱ�����ϵͳ/oldIot/src/assets/css/icons.css�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/assets/css/index.css](../�ǻ������ֱ�����ϵͳ/oldIot/src/assets/css/index.css) | ȫ��ҳ��߶ȡ��߾�ͻ������ֹ��򡣣��ǻ������ֱ�����ϵͳ/oldIot/src/assets/css/index.css�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/assets/css/tokens.css](../�ǻ������ֱ�����ϵͳ/oldIot/src/assets/css/tokens.css) | ǰ����ʽ�������� tokens �Ĳ������Ӿ����� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/auth.js](../�ǻ������ֱ�����ϵͳ/oldIot/src/auth.js) | ͬԴ�Ự�� CSRF ���ƹ������ϴ�����ͷ�͵�¼ʧЧ���������ǻ������ֱ�����ϵͳ/oldIot/src/auth.js�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/charts.js](../�ǻ������ֱ�����ϵͳ/oldIot/src/charts.js) | ����ͼ��ģ������ͼ����ʵ��������������Ӧʽ�ػ桢�ͷż�ж�ر��������ǻ������ֱ�����ϵͳ/oldIot/src/charts.js�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/components/CareInbox.vue](../�ǻ������ֱ�����ϵͳ/oldIot/src/components/CareInbox.vue) | ��̨��ҳ������ SOS �¼�������������� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/components/CareOperationsPanel.vue](../�ǻ������ֱ�����ϵͳ/oldIot/src/components/CareOperationsPanel.vue) | ����ֵ̨�ؽ��̽�����֪ͨ�쳣����λ���估������ |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/components/DatabaseNotice.vue](../�ǻ������ֱ�����ϵͳ/oldIot/src/components/DatabaseNotice.vue) | ���ݿⲻ����ʱ�ľ͵����ѣ����ֵ�ǰҳ��ɲ������ǻ������ֱ�����ϵͳ/oldIot/src/components/DatabaseNotice.vue�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/components/FamilySlider.vue](../�ǻ������ֱ�����ϵͳ/oldIot/src/components/FamilySlider.vue) | �������������λ�ú͸��˿ռ����Ӧʽ���������ǻ������ֱ�����ϵͳ/oldIot/src/components/FamilySlider.vue�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/components/Header.vue](../�ǻ������ֱ�����ϵͳ/oldIot/src/components/Header.vue) | ����Ʒ�������û���ʾ�����ֿ����������˳������ǻ������ֱ�����ϵͳ/oldIot/src/components/Header.vue�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/components/NoticeEditor.vue](../�ǻ������ֱ�����ϵͳ/oldIot/src/components/NoticeEditor.vue) | ������⡢���ġ�ͼƬ�ϴ��뱣��״̬�Ĺ��ñ༭�������ǻ������ֱ�����ϵͳ/oldIot/src/components/NoticeEditor.vue�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/components/PositionMap.vue](../�ǻ������ֱ�����ϵͳ/oldIot/src/components/PositionMap.vue) | Vue ������������� PositionMap ���ҳ��򽻻� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/components/RecordCards.vue](../�ǻ������ֱ�����ϵͳ/oldIot/src/components/RecordCards.vue) | խ����¼��Ƭ���ֶΡ�״̬�Ͳ�����λ�����ǻ������ֱ�����ϵͳ/oldIot/src/components/RecordCards.vue�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/components/Slider.vue](../�ǻ������ֱ�����ϵͳ/oldIot/src/components/Slider.vue) | �����˹����ռ��뵵�����豸������˵������ǻ������ֱ�����ϵͳ/oldIot/src/components/Slider.vue�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/desktop.js](../�ǻ������ֱ�����ϵͳ/oldIot/src/desktop.js) | ǰ��ԭ����ʼ���ŽӼ� F11/Escape ȫ���������ǻ������ֱ�����ϵͳ/oldIot/src/desktop.js�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/element.js](../�ǻ������ֱ�����ϵͳ/oldIot/src/element.js) | ��ʵ��ģ��ע�� Element Plus���������ú� 8 ���ַ���ͼ�꣬�Ƴ���դ��ע�ᡣ���ǻ������ֱ�����ϵͳ/oldIot/src/element.js�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/main.js](../�ǻ������ֱ�����ϵͳ/oldIot/src/main.js) | ���� Vue 3 Ӧ�ò���װ·�ɡ�ҳ��״̬��UI ���������ȫ���������ǻ������ֱ�����ϵͳ/oldIot/src/main.js�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/router.js](../�ǻ������ֱ�����ϵͳ/oldIot/src/router.js) | �����ع���/����·�ɣ������״����á���¼�ͽ�ɫ�������������ǻ������ֱ�����ϵͳ/oldIot/src/router.js�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/store.js](../�ǻ������ֱ�����ϵͳ/oldIot/src/store.js) | Vue reactive ��ҳǩ״̬������� Vuex �ı�ǩ��ɾ�뼤����ǻ������ֱ�����ϵͳ/oldIot/src/store.js�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/styles/app-components.css](../�ǻ������ֱ�����ϵͳ/oldIot/src/styles/app-components.css) | ǰ����ʽ�ֲ㣺app-components |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/styles/app-family-responsive.css](../�ǻ������ֱ�����ϵͳ/oldIot/src/styles/app-family-responsive.css) | ǰ����ʽ�ֲ㣺app-family-responsive |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/styles/app-foundation.css](../�ǻ������ֱ�����ϵͳ/oldIot/src/styles/app-foundation.css) | ǰ����ʽ�ֲ㣺app-foundation |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/views/Home.vue](../�ǻ������ֱ�����ϵͳ/oldIot/src/views/Home.vue) | ����Ա������������ʹ���������ÿ��ߣ��ṩ�������ݹ�����������ɹر�ҵ���ǩ�����ǻ������ֱ�����ϵͳ/oldIot/src/views/Home.vue�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/views/Login.vue](../�ǻ������ֱ�����ϵͳ/oldIot/src/views/Login.vue) | ����Ӧһ���ĵ�¼���棬�����������İ�����������ģʽ������У�����������������ǻ������ֱ�����ϵͳ/oldIot/src/views/Login.vue�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/views/Register.vue](../�ǻ������ֱ�����ϵͳ/oldIot/src/views/Register.vue) | ����ƾ�����봴�������˺š����ǻ������ֱ�����ϵͳ/oldIot/src/views/Register.vue�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/views/Setup.vue](../�ǻ������ֱ�����ϵͳ/oldIot/src/views/Setup.vue) | �״�����������������Ա�����ṩĬ�����롣���ǻ������ֱ�����ϵͳ/oldIot/src/views/Setup.vue�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/views/annex.vue](../�ǻ������ֱ�����ϵͳ/oldIot/src/views/annex.vue) | ����չʾͼƬ�͸�����¼ά�������ǻ������ֱ�����ϵͳ/oldIot/src/views/annex.vue�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/views/customer.logic.js](../�ǻ������ֱ�����ϵͳ/oldIot/src/views/customer.logic.js) | Vue Options API ҵ���߼�ģ�飺customer.logic |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/views/customer.vue](../�ǻ������ֱ�����ϵͳ/oldIot/src/views/customer.vue) | �໤����ϵ���ϵ�¼����ά�������ǻ������ֱ�����ϵͳ/oldIot/src/views/customer.vue�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/views/device.admin-methods.js](../�ǻ������ֱ�����ϵͳ/oldIot/src/views/device.admin-methods.js) | Vue Options API ҵ���߼�ģ�飺device.admin-methods |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/views/device.alert-methods.js](../�ǻ������ֱ�����ϵͳ/oldIot/src/views/device.alert-methods.js) | Vue Options API ҵ���߼�ģ�飺device.alert-methods |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/views/device.list-methods.js](../�ǻ������ֱ�����ϵͳ/oldIot/src/views/device.list-methods.js) | Vue Options API ҵ���߼�ģ�飺device.list-methods |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/views/device.logic.js](../�ǻ������ֱ�����ϵͳ/oldIot/src/views/device.logic.js) | Vue Options API ҵ���߼�ģ�飺device.logic |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/views/device.refresh-methods.js](../�ǻ������ֱ�����ϵͳ/oldIot/src/views/device.refresh-methods.js) | Vue Options API ҵ���߼�ģ�飺device.refresh-methods |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/views/device.styles.css](../�ǻ������ֱ�����ϵͳ/oldIot/src/views/device.styles.css) | ǰ����ʽ�ֲ㣺device.styles |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/views/device.vue](../�ǻ������ֱ�����ϵͳ/oldIot/src/views/device.vue) | �豸��ѯ��ע�ᡢ�󶨡��澯������ɼ�ҳ����ѯ���뿪ҳ�漴ֹͣˢ�¡����ǻ������ֱ�����ϵͳ/oldIot/src/views/device.vue�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/views/family.logic.js](../�ǻ������ֱ�����ϵͳ/oldIot/src/views/family.logic.js) | Vue Options API ҵ���߼�ģ�飺family.logic |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/views/family.vue](../�ǻ������ֱ�����ϵͳ/oldIot/src/views/family.vue) | �����˺������˹����������༭ʱ��������ֶβ��ύ��Ӧģ�͡����ǻ������ֱ�����ϵͳ/oldIot/src/views/family.vue�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/views/familyHome.vue](../�ǻ������ֱ�����ϵͳ/oldIot/src/views/familyHome.vue) | ����ҳ����ǣ������������ƶ��˵�������ռλ�����ݹ�����·���л���λ�����ڵ������ǻ������ֱ�����ϵͳ/oldIot/src/views/familyHome.vue�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/views/familyMain.vue](../�ǻ������ֱ�����ϵͳ/oldIot/src/views/familyMain.vue) | �����ջ���ҳ��������߶ȵ�����ӭ����͹������ף������������������λ����ڡ����ǻ������ֱ�����ϵͳ/oldIot/src/views/familyMain.vue�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/views/inviteCode.vue](../�ǻ������ֱ�����ϵͳ/oldIot/src/views/inviteCode.vue) | ���ɡ���ѯ�����ϼ���ע�������롣���ǻ������ֱ�����ϵͳ/oldIot/src/views/inviteCode.vue�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/views/life.vue](../�ǻ������ֱ�����ϵͳ/oldIot/src/views/life.vue) | �������ϲ�ѯ�뵵���Ķ���ԭ��������������խ���ʹ���ģʽ�����ǻ������ֱ�����ϵͳ/oldIot/src/views/life.vue�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/views/main.vue](../�ǻ������ֱ�����ϵͳ/oldIot/src/views/main.vue) | ��Ӫ�������쳣ժҪ�빫���������������ʹ�õ���߽��ԭ�������ύ�����ǻ������ֱ�����ϵͳ/oldIot/src/views/main.vue�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/views/me.vue](../�ǻ������ֱ�����ϵͳ/oldIot/src/views/me.vue) | ��ǰ�������ϡ�ͷ��������ά�������ǻ������ֱ�����ϵͳ/oldIot/src/views/me.vue�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/views/person.logic.js](../�ǻ������ֱ�����ϵͳ/oldIot/src/views/person.logic.js) | Vue Options API ҵ���߼�ģ�飺person.logic |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/views/person.vue](../�ǻ������ֱ�����ϵͳ/oldIot/src/views/person.vue) | ���˵������������༭����ѯ��໤���������ǻ������ֱ�����ϵͳ/oldIot/src/views/person.vue�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/views/position.vue](../�ǻ������ֱ�����ϵͳ/oldIot/src/views/position.vue) | ����Աλ�ò�ѯ����ͼ��ˤ���澯���������뼰���ڲ������ױ߶��롣���ǻ������ֱ�����ϵͳ/oldIot/src/views/position.vue�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/views/positionfamily.vue](../�ǻ������ֱ�����ϵͳ/oldIot/src/views/positionfamily.vue) | �����鿴�����������������λ��״̬�����ǻ������ֱ�����ϵͳ/oldIot/src/views/positionfamily.vue�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/views/ratepre.logic.js](../�ǻ������ֱ�����ϵͳ/oldIot/src/views/ratepre.logic.js) | Vue Options API ҵ���߼�ģ�飺ratepre.logic |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/views/ratepre.vue](../�ǻ������ֱ�����ϵͳ/oldIot/src/views/ratepre.vue) | ������¼��ѯ���쳣ɸѡ�봦�ã���������Ȼ���в�֧�ּ����ύ�����ǻ������ֱ�����ϵͳ/oldIot/src/views/ratepre.vue�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/views/rateprefamily.vue](../�ǻ������ֱ�����ϵͳ/oldIot/src/views/rateprefamily.vue) | �����鿴����������������Ѫѹ���ơ����ǻ������ֱ�����ϵͳ/oldIot/src/views/rateprefamily.vue�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/views/saidOperation.vue](../�ǻ������ֱ�����ϵͳ/oldIot/src/views/saidOperation.vue) | ����Ա�鿴���ظ���ɾ���������ۡ����ǻ������ֱ�����ϵͳ/oldIot/src/views/saidOperation.vue�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/views/step.vue](../�ǻ������ֱ�����ϵͳ/oldIot/src/views/step.vue) | ˯���벽����ѯ���쳣״̬��ͼ�����飬��ѯ������������õ�����򡣣��ǻ������ֱ�����ϵͳ/oldIot/src/views/step.vue�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/views/stepfamily.vue](../�ǻ������ֱ�����ϵͳ/oldIot/src/views/stepfamily.vue) | �����鿴����������˯���벽�������ǻ������ֱ�����ϵͳ/oldIot/src/views/stepfamily.vue�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/views/text.vue](../�ǻ������ֱ�����ϵͳ/oldIot/src/views/text.vue) | �༭���й���ı������������ǻ������ֱ�����ϵͳ/oldIot/src/views/text.vue�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/views/textMain.vue](../�ǻ������ֱ�����ϵͳ/oldIot/src/views/textMain.vue) | �����Ķ��������ݼ����������ǻ������ֱ�����ϵͳ/oldIot/src/views/textMain.vue�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/views/textMainUser.vue](../�ǻ������ֱ�����ϵͳ/oldIot/src/views/textMainUser.vue) | ����Ա�Ķ�������������ԡ����ǻ������ֱ�����ϵͳ/oldIot/src/views/textMainUser.vue�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/views/textOpt.vue](../�ǻ������ֱ�����ϵͳ/oldIot/src/views/textOpt.vue) | �����б����༭ɾ����չʾͼƬά������ѯ����������ͳһ�ױߺͼ�ࡣ���ǻ������ֱ�����ϵͳ/oldIot/src/views/textOpt.vue�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/views/textTwo.vue](../�ǻ������ֱ�����ϵͳ/oldIot/src/views/textTwo.vue) | �����¹���ı������������ǻ������ֱ�����ϵͳ/oldIot/src/views/textTwo.vue�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/src/views/watch.vue](../�ǻ������ֱ�����ϵͳ/oldIot/src/views/watch.vue) | �����ֵ�����ĵǼǺ�ά�������ǻ������ֱ�����ϵͳ/oldIot/src/views/watch.vue�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/vite.config.js](../�ǻ������ֱ�����ϵͳ/oldIot/vite.config.js) | Vite 8 �� Vue �����Դ������������ӿڴ����������������á����ǻ������ֱ�����ϵͳ/oldIot/vite.config.js�� |
+| [�ǻ������ֱ�����ϵͳ/watch-sim/watch-sim.config.json](../�ǻ������ֱ�����ϵͳ/watch-sim/watch-sim.config.json) | ģ���ֱ��ķ����ַ���豸ƾ������ģ�壬ʹ��ǰ����ʵ���豸��Կ�����ǻ������ֱ�����ϵͳ/watch-sim/watch-sim.config.json�� |
+| [�ǻ������ֱ�����ϵͳ/watch-sim/watch-sim.js](../�ǻ������ֱ�����ϵͳ/watch-sim/watch-sim.js) | ģ���ֱ���¼�������������ϱ��� Node ������ڣ���������ʵӲ����֤�����ǻ������ֱ�����ϵͳ/watch-sim/watch-sim.js�� |
+| [�ǻ������ֱ�����ϵͳ/watch-sim/watch-sim.test.cjs](../�ǻ������ֱ�����ϵͳ/watch-sim/watch-sim.test.cjs) | �ֱ�ģ�����ӿ�Э���������Ϊ���Զ������ԣ���������ʵӲ�������� |
