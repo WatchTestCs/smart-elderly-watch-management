@@ -75,19 +75,20 @@ type oldDevice struct {
 	RateHandled   int
 	PreHandled    int
 	BootSeq       int
+	HealthEpoch   int64
 	HandledSeq    int
 }
 
 const oldDeviceCols = `device_id, device_no, secret, alias, model, app_version, battery,
 	old_id, family_id, status, bind_time, last_time, last_lng, last_lat, create_time,
-	person_handled, rate_handled, pre_handled, boot_seq, handled_seq`
+	person_handled, rate_handled, pre_handled, boot_seq, handled_seq, health_epoch`
 
 func scanOldDevice(row pgx.Row) (*oldDevice, error) {
 	var d oldDevice
 	if err := row.Scan(&d.ID, &d.No, &d.Secret, &d.Alias, &d.Model, &d.AppVersion,
 		&d.Battery, &d.OldID, &d.FamilyID, &d.Status, &d.BindTime, &d.LastTime,
 		&d.LastLng, &d.LastLat, &d.CreateTime, &d.PersonHandled, &d.RateHandled,
-		&d.PreHandled, &d.BootSeq, &d.HandledSeq); err != nil {
+		&d.PreHandled, &d.BootSeq, &d.HandledSeq, &d.HealthEpoch); err != nil {
 		return nil, err
 	}
 	return &d, nil

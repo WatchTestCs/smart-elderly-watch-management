@@ -27,16 +27,19 @@ var publicPaths = map[string]bool{
 
 // 硬件路径：公开且免 CSRF。
 var hardwarePaths = map[string]bool{
-	"POST /restful/device/login":     true,
-	"POST /restful/device/bind":      true,
-	"POST /restful/device/heartbeat": true,
-	"POST /restful/device/report":    true,
-	"POST /restful/device/sos":       true,
-	"POST /restful/care/receipt":     true,
+	"POST /restful/device/healthBatch": true,
+	"POST /restful/device/login":       true,
+	"POST /restful/device/bind":        true,
+	"POST /restful/device/heartbeat":   true,
+	"POST /restful/device/report":      true,
+	"POST /restful/device/sos":         true,
+	"POST /restful/care/receipt":       true,
 }
 
 // SHARED：ADMIN 或 FAMILY 任一角色。
 var sharedPaths = map[string]bool{
+	"POST /restful/health/changes":              true,
+	"POST /restful/health/statistics":           true,
 	"POST /restful/userLogin/logout":            true,
 	"POST /restful/family/selectTwo":            true,
 	"POST /restful/family/updateTwo":            true,

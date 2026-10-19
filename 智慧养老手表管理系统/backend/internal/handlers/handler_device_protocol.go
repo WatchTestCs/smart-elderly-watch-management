@@ -59,7 +59,7 @@ func (h *Handler) deviceLogin(w http.ResponseWriter, r *http.Request) {
 	bound := 0
 	fields := map[string]any{
 		"deviceId": d.ID, "deviceNo": d.No, "alias": d.Alias,
-		"bound": bound, "oldId": d.OldID,
+		"bound": bound, "oldId": d.OldID, "bindingVersion": d.HealthEpoch,
 	}
 	if d.OldID != nil {
 		bound = 1
@@ -299,7 +299,7 @@ func (h *Handler) deviceHeartbeat(w http.ResponseWriter, r *http.Request) {
 		bound = 1
 	}
 	response.OK(w, map[string]any{
-		"serverTime": now.Format(tsLayout), "bound": bound, "oldId": d.OldID,
+		"serverTime": now.Format(tsLayout), "bound": bound, "oldId": d.OldID, "bindingVersion": d.HealthEpoch,
 		"reportInterval": 5, "pendingAlarm": 0,
 	})
 }

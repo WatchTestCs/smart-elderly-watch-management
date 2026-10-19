@@ -29,5 +29,6 @@ func (h *Handler) Routes(mux *http.ServeMux) {
 	h.routeOld(mux)    // 老人/设备/位置/告警处置
 	h.routeVitals(mux) // 心率血压/步数睡眠
 	h.routeSocial(mux) // 说说/文章/图片展示/图片接口
-	h.routeCare(mux)   // 照护事件队列、接单及审核状态
+	h.routeHealth(mux)
+	h.routeCare(mux) // 照护事件队列、接单及审核状态
 }
