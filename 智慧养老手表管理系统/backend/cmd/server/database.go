@@ -53,7 +53,12 @@ func (s *databaseService) middleware(local http.Handler) http.Handler {
 
 func watchDatabase(ctx context.Context, cfg config.Config, sessions *session.Store, service *databaseService) {
 	var pool *pgxpool.Pool
+	var workerDone <-chan struct{}
 	defer func() {
+		// Drain the care worker before closing its shared connection pool.
+		if workerDone != nil {
+			<-workerDone
+		}
 		if pool != nil {
 			pool.Close()
 		}
@@ -76,7 +81,12 @@ func watchDatabase(ctx context.Context, cfg config.Config, sessions *session.Sto
 			if err == nil {
 				mux := http.NewServeMux()
 				handlers.New(pool, sessions, cfg).Routes(mux)
-				go care.Run(ctx, pool)
+				done := make(chan struct{})
+				workerDone = done
+				go func() {
+					defer close(done)
+					care.Run(ctx, pool)
+				}()
 				api = ratelimit.New().Middleware(csrf.Middleware(sessions, auth.Middleware(sessions, sensitiveCareAudit(pool, mux))))
 			}
 		}

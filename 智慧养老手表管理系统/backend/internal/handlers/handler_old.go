@@ -8,13 +8,9 @@ import (
 	"context"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
-	"log"
 	"net/http"
-	"sync"
 	"time"
 )
-
-var oldScanOnce sync.Once
 
 // routeOld 注册 Group B 全部路由。
 func (h *Handler) routeOld(mux *http.ServeMux) {
@@ -52,28 +48,6 @@ func (h *Handler) routeOld(mux *http.ServeMux) {
 
 	mux.HandleFunc("POST /restful/alarmProcess/select", h.alarmProcessSelect)
 
-	oldScanOnce.Do(func() {
-		go h.offlineScanLoop()
-	})
-}
-
-// offlineScanLoop 离线预警扫描：复刻 @Scheduled(fixedDelay=30000, initialDelay=30000)。
-// 每 30 秒执行等价 SQL：找出"曾经在线但已超 120 秒无心跳"的设备，boot_seq+1、
-// 清除人工确认标记（person_handled=0，使红点重新出现）、清空 last_online_at。
-// last_online_at >= last_time 保证同一次掉线只计一次。
-func (h *Handler) offlineScanLoop() {
-	time.Sleep(30 * time.Second)
-	for {
-		if _, err := h.DB.Exec(context.Background(),
-			`UPDATE device SET boot_seq = boot_seq + 1, person_handled = 0, last_online_at = NULL
-			 WHERE status = 1 AND last_online_at IS NOT NULL AND last_time IS NOT NULL
-			   AND last_online_at >= last_time
-			   AND last_time < now() - interval '120 seconds'`); err != nil {
-			// 定时任务绝不能抛异常中断调度；记录后等待下次触发。
-			log.Printf("careold-go: 离线扫描失败，将在下次调度重试: %v", err)
-		}
-		time.Sleep(30 * time.Second)
-	}
 }
 
 // ---------------------------------------------------------------------------

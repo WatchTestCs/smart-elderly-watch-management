@@ -16,6 +16,8 @@
 
 > 当前源码与文档维护在 **preview**。历史版本的 Java、Electron 与 H2 说明不能作为本版构建依据；发布源码包对应 Release 固定提交，可能与持续更新的 preview 文档不同。
 
+**本地架构优化补丁：**[底层逻辑优化与架构改进说明](docs/ARCHITECTURE_OPTIMIZATION.md)（含变更边界和本地验证限制）
+
 ## 能做什么
 
 | 场景 | 当前功能 |

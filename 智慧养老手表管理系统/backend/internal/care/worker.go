@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/jackc/pgx/v5"
 	"log"
 	"net/http"
 	"net/url"
@@ -18,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -50,25 +50,52 @@ func Run(ctx context.Context, db *pgxpool.Pool) {
 	startedAt := time.Now()
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
+	// The offline scan is a service-owned job, not a route registration side effect.
+	offlineTicker := time.NewTicker(30 * time.Second)
+	defer offlineTicker.Stop()
 	for {
-		if _, err := db.Exec(ctx, `INSERT INTO care_worker_heartbeat(singleton,last_seen_at,started_at)
-            VALUES(true,now(),$1) ON CONFLICT(singleton) DO UPDATE SET last_seen_at=now(),started_at=$1`, startedAt); err != nil && ctx.Err() == nil {
+		if ctx.Err() != nil {
+			return
+		}
+		// A broken connection cannot stall worker lifecycle indefinitely.
+		cycleCtx, cancelCycle := context.WithTimeout(ctx, 25*time.Second)
+		if _, err := db.Exec(cycleCtx, `INSERT INTO care_worker_heartbeat(singleton,last_seen_at,started_at)
+            VALUES(true,now(),$1) ON CONFLICT(singleton) DO UPDATE SET last_seen_at=now(),started_at=$1`, startedAt); err != nil && cycleCtx.Err() == nil {
 			log.Printf("care: heartbeat update failed: %v", err)
 		}
-		if err := d.escalate(ctx); err != nil && ctx.Err() == nil {
+		if err := d.escalate(cycleCtx); err != nil && cycleCtx.Err() == nil {
 			log.Printf("care: escalation check failed: %v", err)
 		}
 		if endpoint != "" {
-			if err := d.dispatchOne(ctx); err != nil && ctx.Err() == nil {
+			if err := d.dispatchOne(cycleCtx); err != nil && cycleCtx.Err() == nil {
 				log.Printf("care: notification dispatch check failed: %v", err)
 			}
 		}
+		cancelCycle()
 		select {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
+		case <-offlineTicker.C:
+			scanCtx, cancelScan := context.WithTimeout(ctx, 10*time.Second)
+			if err := scanOffline(scanCtx, db); err != nil && scanCtx.Err() == nil {
+				log.Printf("care: offline device scan failed: %v", err)
+			}
+			cancelScan()
 		}
 	}
+}
+
+// scanOffline is triggered every 30 seconds after the worker starts. It shares
+// the lifecycle and cancellation of the database worker and does not survive a
+// server shutdown or capture a stale Handler/Pool instance.
+func scanOffline(ctx context.Context, pool *pgxpool.Pool) error {
+	_, err := pool.Exec(ctx, `UPDATE device SET
+		boot_seq=boot_seq+1, person_handled=0, last_online_at=NULL
+		WHERE status=1 AND last_online_at IS NOT NULL AND last_time IS NOT NULL
+		AND last_online_at >= last_time
+		AND last_time < now() - interval '120 seconds'`)
+	return err
 }
 
 type delivery struct {
@@ -76,6 +103,7 @@ type delivery struct {
 	incidentID int64
 	recipient  string
 	channel    string
+	attempts   int
 }
 
 func (d *dispatcher) dispatchOne(ctx context.Context) error {
@@ -92,8 +120,8 @@ func (d *dispatcher) dispatchOne(ctx context.Context) error {
 		UPDATE care_notification_outbox n SET status='sending',
 		    attempts=n.attempts+1, last_attempt_at=now()
 		FROM picked WHERE n.id=picked.id
-		RETURNING n.id,n.incident_id,n.recipient,n.channel
-	`).Scan(&job.id, &job.incidentID, &job.recipient, &job.channel)
+		RETURNING n.id,n.incident_id,n.recipient,n.channel,n.attempts
+	`).Scan(&job.id, &job.incidentID, &job.recipient, &job.channel, &job.attempts)
 	if err != nil {
 		// No row is normal; connection and SQL errors are not.
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -128,24 +156,26 @@ func (d *dispatcher) dispatchOne(ctx context.Context) error {
 		_, updateErr := d.db.Exec(ctx, `
 			UPDATE care_notification_outbox
 			SET status='sent', sent_at=now(),last_error=NULL
-			WHERE id=$1 AND status='sending'`, job.id)
+			WHERE id=$1 AND status='sending' AND attempts=$2`, job.id, job.attempts)
+		// A newer claim or an authenticated receipt must never be overwritten.
 		// "sent" only means the gateway accepted the request.
 		return updateErr
 	}
-	wait := time.Duration(30*(1<<min(6, 5))) * time.Second
-	// Exponential backoff is capped; attempts are persisted across restarts.
-	var attempts int
-	if scanErr := d.db.QueryRow(ctx, "SELECT attempts FROM care_notification_outbox WHERE id=$1", job.id).Scan(&attempts); scanErr == nil {
-		wait = time.Duration(30*(1<<min(max(attempts-1, 0), 6))) * time.Second
-	}
+	wait := retryDelay(job.attempts)
 	_, updateErr := d.db.Exec(ctx, `
 		UPDATE care_notification_outbox
 		SET status='failed', last_error=$2, retry_at=now()+$3::interval
-		WHERE id=$1 AND status='sending'`, job.id, truncate(err.Error(), 400), fmt.Sprintf("%d seconds", int(wait.Seconds())))
+		WHERE id=$1 AND status='sending' AND attempts=$4`, job.id, truncate(err.Error(), 400), fmt.Sprintf("%d seconds", int(wait.Seconds())), job.attempts)
 	if updateErr != nil {
 		return updateErr
 	}
 	return nil
+}
+
+// retryDelay is based on the atomic claim's persisted attempt counter.
+// The delay grows from 30 seconds to at most 32 minutes.
+func retryDelay(attempts int) time.Duration {
+	return time.Duration(30*(1<<min(max(attempts-1, 0), 6))) * time.Second
 }
 
 func truncate(s string, maxBytes int) string {

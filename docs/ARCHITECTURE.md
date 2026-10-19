@@ -110,7 +110,7 @@ SQL 迁移按文件顺序执行，使用事务级 advisory lock 串行协调，�
 | --- | --- | --- |
 | `SUINING_DATABASE_URL` | Windows 桌面启动 | Rust 读取后传给 Go；配置修改需重启软件 |
 | `DATABASE_URL` | 直接 Go 启动 | PostgreSQL DSN，部署时显式配置，不依赖开发默认值 |
-| `ADDR` | 直接 Go 启动 | 非桌面模式默认 `:8080`；需自行限制监听和网络边界 |
+| `ADDR` | 直接 Go 启动 | 非桌面模式默认 `127.0.0.1:8080`，跨机器访问需明确配置监听和网络边界 |
 | `SUINING_PORT` / `SUINING_BIND_ADDRESS` | 桌面协议 | 桌面默认回环，端口 0 表示动态分配 |
 | `SUINING_USER_DATA` | Rust 桌面 | 覆盖本地数据目录；默认沿用 `%APPDATA%\岁宁` |
 | `IMAGE_DIR` | Go | 覆盖图片目录，否则桌面使用本地数据目录下 images |

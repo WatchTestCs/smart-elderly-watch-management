@@ -2,7 +2,6 @@
 package handlers
 
 import (
-	"context"
 	"crypto/subtle"
 	"net/http"
 	"os"
@@ -40,7 +39,7 @@ func (h *Handler) MountLocalLogout(mux *http.ServeMux) {
 
 // sessionInfo 复刻 GET /restful/userLogin/session：公开；无会话则建匿名会话。
 func (h *Handler) sessionInfo(w http.ResponseWriter, r *http.Request) {
-	ctx := context.Background()
+	ctx := r.Context()
 	var count int64
 	if err := h.DB.QueryRow(ctx, "SELECT COUNT(*) FROM users").Scan(&count); err != nil {
 		response.Error500(w, ref())
@@ -83,7 +82,7 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx := context.Background()
+	ctx := r.Context()
 
 	// 1. users 表（管理员）
 	var (
@@ -195,7 +194,7 @@ func (h *Handler) setup(w http.ResponseWriter, r *http.Request) {
 	name := str(m, "name")
 	password := str(m, "password")
 
-	ctx := context.Background()
+	ctx := r.Context()
 	tx, err := h.DB.Begin(ctx)
 	if err != nil {
 		response.Error500(w, ref())

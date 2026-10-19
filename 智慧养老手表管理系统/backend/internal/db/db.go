@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
+	"strings"
 
 	"careold-go/migrations"
 	"github.com/jackc/pgx/v5"
@@ -13,6 +14,9 @@ import (
 
 // Open 建连接池。
 func Open(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {
+	if strings.TrimSpace(databaseURL) == "" {
+		return nil, fmt.Errorf("DATABASE_URL is required; refusing implicit PostgreSQL defaults")
+	}
 	cfg, err := pgxpool.ParseConfig(databaseURL)
 	if err != nil {
 		return nil, fmt.Errorf("parse database url: %w", err)

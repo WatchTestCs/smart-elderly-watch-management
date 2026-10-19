@@ -31,7 +31,13 @@ func main() {
 	localHandlers.MountDesktopExit(mux)
 	localHandlers.MountLocalLogout(mux)
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusOK) })
-	srv := &http.Server{Handler: service.middleware(mux)}
+	srv := &http.Server{
+		Handler:           service.middleware(mux),
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       20 * time.Second,
+		WriteTimeout:      35 * time.Second,
+		IdleTimeout:       60 * time.Second,
+	}
 
 	ln, err := net.Listen("tcp", cfg.Addr)
 	if err != nil {

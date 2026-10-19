@@ -3,7 +3,6 @@ package handlers
 import (
 	"careold-go/internal/response"
 	"encoding/json"
-	"io"
 	"math"
 	"net/http"
 	"regexp"
@@ -192,13 +191,7 @@ func parseReportTimeStrict(s string) (time.Time, bool) {
 // bodyMapOrEmpty 解析 body；空 body 视为 {}（device/list 可省略 body）。
 func bodyMapOrEmpty(w http.ResponseWriter, r *http.Request) (map[string]any, bool) {
 	var m map[string]any
-	if err := json.NewDecoder(r.Body).Decode(&m); err != nil {
-		if err == io.EOF {
-			return map[string]any{}, true
-		}
-		response.JSON(w, http.StatusBadRequest, map[string]any{
-			"returnCode": "0000", "message": "请求参数格式错误",
-		})
+	if !decodeBody(w, r, &m, true) {
 		return nil, false
 	}
 	if m == nil {

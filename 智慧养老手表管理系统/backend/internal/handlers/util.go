@@ -3,6 +3,8 @@ package handlers
 
 import (
 	"encoding/json"
+	"io"
+	"math"
 	"net/http"
 	"strconv"
 
@@ -12,15 +14,31 @@ import (
 	"careold-go/internal/response"
 )
 
+// decodeBody accepts exactly one JSON document with a bounded body.
+// Optional endpoints may submit an empty request body for backwards compatibility.
+func decodeBody(w http.ResponseWriter, r *http.Request, v any, optional bool) bool {
+	body := http.MaxBytesReader(w, r.Body, 1<<20)
+	defer body.Close()
+	decoder := json.NewDecoder(body)
+	err := decoder.Decode(v)
+	if optional && err == io.EOF {
+		return true
+	}
+	if err == nil {
+		var extra any
+		if secondErr := decoder.Decode(&extra); secondErr == io.EOF {
+			return true
+		}
+	}
+	response.JSON(w, http.StatusBadRequest, map[string]any{
+		"returnCode": "0000", "message": "请求参数格式错误",
+	})
+	return false
+}
+
 // decode 解析 JSON body；失败返回 false 并已写 400。
 func decode(w http.ResponseWriter, r *http.Request, v any) bool {
-	if err := json.NewDecoder(r.Body).Decode(v); err != nil {
-		response.JSON(w, http.StatusBadRequest, map[string]any{
-			"returnCode": "0000", "message": "请求参数格式错误",
-		})
-		return false
-	}
-	return true
+	return decodeBody(w, r, v, false)
 }
 
 // bodyMap 解析为 map（兼容字段宽松的接口）。
@@ -49,6 +67,9 @@ func int64Val(m map[string]any, key string) (int64, bool) {
 	}
 	switch n := v.(type) {
 	case float64:
+		if math.IsNaN(n) || math.IsInf(n, 0) || n != math.Trunc(n) || n < math.MinInt64 || n >= 9223372036854775808 {
+			return 0, false
+		}
 		return int64(n), true
 	case string:
 		i, err := strconv.ParseInt(n, 10, 64)
@@ -62,10 +83,10 @@ func int64Val(m map[string]any, key string) (int64, bool) {
 // bodyPage 从 body map 取分页（默认 1/20）。
 func bodyPage(m map[string]any) (int, int) {
 	p, ps := 1, 20
-	if v, ok := int64Val(m, "page"); ok && v > 0 {
+	if v, ok := int64Val(m, "page"); ok && v > 0 && v <= 100000 {
 		p = int(v)
 	}
-	if v, ok := int64Val(m, "pageSize"); ok && v > 0 {
+	if v, ok := int64Val(m, "pageSize"); ok && v > 0 && v <= 100 {
 		ps = int(v)
 	}
 	return p, ps

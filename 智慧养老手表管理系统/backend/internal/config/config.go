@@ -8,7 +8,7 @@ import (
 )
 
 type Config struct {
-	Addr         string        // 监听地址，默认 :8080
+	Addr         string        // 默认只监听回环地址，远程部署必须显式配置
 	DatabaseURL  string        // PostgreSQL 连接串
 	SessionTTL   time.Duration // 登录 session 有效期，默认 12h
 	ImageDir     string        // 图片上传落盘目录，默认 ./data/images
@@ -28,8 +28,8 @@ func Load() Config {
 		ttlHours = 12
 	}
 	return Config{
-		Addr:         getenv("ADDR", ":8080"),
-		DatabaseURL:  getenv("DATABASE_URL", "postgres://careold:careold@localhost:5432/careold?sslmode=disable"),
+		Addr:         getenv("ADDR", "127.0.0.1:8080"),
+		DatabaseURL:  getenv("DATABASE_URL", ""),
 		SessionTTL:   time.Duration(ttlHours) * time.Hour,
 		ImageDir:     getenv("IMAGE_DIR", "./data/images"),
 		DesktopToken: getenv("DESKTOP_TOKEN", getenv("SUINING_DESKTOP_TOKEN", "")),
