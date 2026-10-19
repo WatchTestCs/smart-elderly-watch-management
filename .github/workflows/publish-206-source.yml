@@ -1,0 +1,105 @@
+name: Publish 2.0.6 source preview
+on:
+  push:
+    branches: [preview]
+    paths:
+      - '.github/workflows/publish-206-source.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  publish-source:
+    if: github.repository == 'WatchTestCs/smart-elderly-watch-management'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the exact preview commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Validate version and generate source package
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(tr -d '\r\n' < '智慧养老手表管理系统/backend/VERSION')" = "2.0.6"
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          root = Path("智慧养老手表管理系统")
+          paths = [
+              root / "desktop/version.json",
+              root / "desktop/tauri.conf.json",
+              root / "desktop/package.json",
+              root / "oldIot/package.json",
+              root / "oldIot/package-lock.json",
+          ]
+          for path in paths:
+              data = json.loads(path.read_text(encoding="utf-8"))
+              assert data["version"] == "2.0.6", str(path)
+          assert (root / "backend/migrations/mysql/0003_health_samples.sql").exists() or any((root / "backend").rglob("0003_health_samples.sql")), "Missing MySQL health migration"
+          assert Path("docs/INTEGRATION_2.0.6.md").exists()
+          assert Path("docs/releases/2.0.6.md").exists()
+          PY
+          git archive --format=zip --prefix=Suining-2.0.6-source/ --output=Suining-Source-2.0.6-preview.zip HEAD
+          unzip -tqq Suining-Source-2.0.6-preview.zip
+          sha256sum Suining-Source-2.0.6-preview.zip > SHA256SUMS.txt
+      - name: Create Chinese release notes
+        shell: bash
+        run: |
+          cat > Release-Notes-zh-CN.md <<'NOTES'
+          # 岁宁 2.0.6 · UI、照护闭环和双库整合（源码预览）
+
+          本次从仓库 **preview 分支的发布提交**生成完整源码 ZIP，提供 SHA-256 校验值。本 Release **仅包含源码，不包含 Windows 安装程序、免安装桌面版、数据库或签名文件**。这是预览版，不代表生产环境已验收。
+
+          ## 主要更新
+
+          - **管理界面：**统一菜单和术语，当前路由分组折叠导航；老人档案在窄屏采用卡片，多个管理页面补全加载、出错提示和重试。
+          - **档案与设备：**允许先建老人档案再绑定手表；绑定、解绑事务维护设备归属和主设备引用，保护人工配置的阈值；修正饮食、用药字段错位，缺测值不再伪装为 0 或正常。
+          - **SOS 照护闭环：**接单、处置、记录措施及另一位主管独立复核；支持任务和事件履历分页，关闭时只清理对应告警，并刷新总览统计。
+          - **双数据库：**MySQL 作为核心业务主库，PostgreSQL 承担异步分析投影。提供积压与恢复诊断、双库 Compose 模板、旧 PostgreSQL 数据离线迁移和分析回填工具。
+          - **健康采样整合：**保留批量采样、修订与增量游标、绑定版本、家属隔离及统计接口，并适配 MySQL；兼容旧 PG 0006／0007／0008 导入结构。
+          - **版本与工程：**统一前端、Go、Tauri、Cargo 元数据为 2.0.6，改善隔离构建目录的包定位。
+
+          ## 升级注意事项
+
+          1. **先备份数据库和图片。** 当前业务数据库使用 MySQL；分析库使用 PostgreSQL，数据库服务需独立部署。
+          2. Go 配置改为 `MYSQL_DSN` 与 `PG_ANALYTICS_URL`；桌面配置改为 `SUINING_MYSQL_DSN` 与 `SUINING_PG_ANALYTICS_URL`。旧数据库连接串不能代替业务主库配置。
+          3. 从旧 PostgreSQL 迁移不是自动完成的。先停止应用写入，对空的 MySQL 目标库执行 `go run ./cmd/transfer-postgres` 预检查，再按文档决定是否使用 `--apply`；图片另行迁移。
+          4. 历史误绑定、资料错位及缺测 0 值不会批量自动修正；新增健康采样尚未自动替换旧图表、日报、告警入口，也不会自动复制到 PG 分析投影。
+
+          ## 验证和适用范围
+
+          整合记录记载：在隔离的 MySQL 8.0.46 / PostgreSQL 16.4 下通过 Go 测试、竞争检测和静态检查；前端构建以及 11 组模拟 API 浏览器验收共 1386 项检查通过。这些是此前源码整合阶段的记录，**不代表本 Release 工作流重新运行了完整业务测试**。
+
+          尚未针对整合后的源码重新构建或实测原生 Tauri 安装程序，也未验收真实手表、短信网关、生产数据迁移或长期负载。先前本地 2.0.6 安装包属于整合前产物，本次不附带。
+
+          详细文档：[2.0.6 更新说明](https://github.com/WatchTestCs/smart-elderly-watch-management/blob/preview/docs/releases/2.0.6.md) · [整合及验证记录](https://github.com/WatchTestCs/smart-elderly-watch-management/blob/preview/docs/INTEGRATION_2.0.6.md) · [双库迁移指南](https://github.com/WatchTestCs/smart-elderly-watch-management/blob/preview/docs/DUAL_DATABASES.md)
+
+          ## 附件
+
+          - `Suining-Source-2.0.6-preview.zip`：由发布标签指向的 Git 提交自动导出的源码，**不是聊天中上传文件的逐字节副本**。
+          - `SHA256SUMS.txt`：上述源码包的 SHA-256 校验值。
+          - `Release-Notes-zh-CN.md`：本说明。
+          NOTES
+      - name: Publish GitHub prerelease without overwriting existing tags
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view v2.0.6 >/dev/null 2>&1; then
+            echo 'Release v2.0.6 already exists; refusing to overwrite it.' >&2
+            exit 1
+          fi
+          if git show-ref --verify --quiet refs/tags/v2.0.6; then
+            echo 'Tag v2.0.6 already exists; refusing to overwrite it.' >&2
+            exit 1
+          fi
+          gh release create v2.0.6 \
+            Suining-Source-2.0.6-preview.zip \
+            SHA256SUMS.txt \
+            Release-Notes-zh-CN.md \
+            --target "$GITHUB_SHA" \
+            --title '岁宁 2.0.6 · UI、照护闭环和双库整合（源码预览）' \
+            --notes-file Release-Notes-zh-CN.md \
+            --prerelease
