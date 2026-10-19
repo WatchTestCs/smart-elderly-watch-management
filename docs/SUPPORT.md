@@ -10,14 +10,16 @@ Use [GitHub Issues](https://github.com/WatchTestCs/smart-elderly-watch-managemen
 
 | Symptom | Check first |
 | --- | --- |
-| Database warning / 数据库未连接 | Confirm PostgreSQL is running and the configured address is reachable. Internet access alone does not identify a database. |
+| Database warning / 数据库未连接 | For 2.0.6 confirm MySQL readiness, the configured DSN and completed migrations. PG failures delay analytics. For historical binaries follow their own version-specific configuration. |
 | Cannot create or use an account / 无法初始化或登录 | There is no default password. First-admin setup requires the native desktop flow and a ready database. |
 | Portable app will not start / 免安装无法启动 | Extract the whole ZIP, keep both EXEs together, and confirm WebView2 is available; Setup can install the missing shared runtime. |
-| Old records are missing / 升级后没有旧记录 | H2 is not converted automatically. Preserve old files and confirm the PostgreSQL migration plan; do not delete your only backup. |
+| Old records are missing / 升级后没有旧记录 | Back up first. Legacy PG data requires explicit offline import into an empty MySQL target; images are copied separately. H2 is not converted automatically. |
 | Linux differs from Windows / Linux 行为不一致 | Record the exact attachment name. Supplied Linux binaries are not established as builds of current Windows source. |
-| Unknown publisher / 未知发布者 | Current Windows packages use local self-signing, not a publicly trusted CA. |
+| Unknown publisher / 未知发布者 | Signing depends on the exact artifact: historical 2.0.2 uses local self-signing; earlier local 2.0.6 builds were unsigned. Neither provides public CA trust. |
 
 When sharing logs, include only a minimal redacted excerpt. Review screenshots for names, phone numbers, locations, and health information before posting them. Log collection is optional when it would reveal sensitive information.
+
+Current source, historical Setup and Linux attachments are listed separately in the [artifact index](DOWNLOADS.md). New health uploads returning a binding conflict must retain the binding version from acquisition time; do not relabel old records. Notification delivery is separate from care verification.
 
 ## Bug report template / 缺陷报告模板
 

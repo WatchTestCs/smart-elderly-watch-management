@@ -10,7 +10,7 @@
 
 Suining brings resident profiles, wearable devices, health and activity records, location alerts, care tasks and announcements into one workspace for care organizations and families. Version 2.0.6 uses **Tauri 2 / Rust, Vue 3 / Vite, Go, a MySQL transactional primary and PostgreSQL analytics**. Database services are independently deployed. The application interface is primarily Chinese.
 
-[2.0.6 release and upgrade notes](docs/releases/2.0.6.md) · [Architecture](#architecture) · [Getting started](#getting-started) · [Dual-database guide](docs/DUAL_DATABASES.md) · [Source project](智慧养老手表管理系统/README.md) · [Changelog](CHANGELOG.md)
+[Source and historical downloads](docs/DOWNLOADS.md) · [2.0.6 release and upgrade notes](docs/releases/2.0.6.md) · [Architecture](#architecture) · [Getting started](#getting-started) · [Dual-database guide](docs/DUAL_DATABASES.md) · [Source project](智慧养老手表管理系统/README.md) · [Changelog](CHANGELOG.md)
 
 ## 2.0.6 and delivery status
 
@@ -22,7 +22,18 @@ Local Windows x64 Setup, portable and source packages have been built. This deli
 - **Health sampling:** retain batch samples, revisions, binding isolation, incremental changes and single-source statistics with MySQL persistence. Existing UI and legacy reporting remain separate; see the [API guide](智慧养老手表管理系统/backend/docs/health-data.md).
 - **Dual databases:** MySQL owns all core transactions; PostgreSQL receives asynchronous analytics projections. Offline legacy-PG import and analytics backfill tools are included.
 
-The [historical 2.0.2 release](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.2-preview.1) remains available; its packages do not contain the 2.0.6 dual-database implementation. Historical Linux attachments have unconfirmed source and migration compatibility; see [Linux notes](docs/LINUX.md).
+### Source and package selection
+
+As of 2026-10-19, `preview` contains **2.0.6 integrated dual-database source**. The newest public source attachment is **2.0.5-optimized.1**; the newest public Windows Setup/portable attachments remain **2.0.2**. Check both the version and distribution type before applying configuration.
+
+| Need | Download | Scope |
+| --- | --- | --- |
+| Current 2.0.6 source | [preview ZIP](https://github.com/WatchTestCs/smart-elderly-watch-management/archive/refs/heads/preview.zip) · [pinned integration code](https://github.com/WatchTestCs/smart-elderly-watch-management/archive/3a889f3aa24986720418d8ceba890754c07cdcd0.zip) | MySQL primary + PG analytics; requires building. The branch archive changes with commits |
+| Latest historical source attachment | [2.0.5 optimized source](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.5-optimized.1) | Legacy PG-only source, without this dual-database/health integration |
+| Historical Windows software | [2.0.2 Setup and portable](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.2-preview.1) | Legacy PG-only application, not 2.0.6 |
+| Historical Linux packages | [Linux notes](docs/LINUX.md) | Separate historical artifacts with unconfirmed compatibility |
+
+See the [download and historical-artifact index](docs/DOWNLOADS.md) for exact files and checksum references. A GitHub-generated source ZIP is neither an NSIS installer nor an independently validated release package.
 
 ## Features
 
@@ -37,6 +48,24 @@ The [historical 2.0.2 release](https://github.com/WatchTestCs/smart-elderly-watc
 | Desktop interface | Large text, keyboard access, fullscreen and responsive layouts |
 
 Supervisor, caregiver and auditor restrictions apply to care tasks; existing permissions elsewhere in administration remain unchanged. Family accounts access linked residents. Missing recent reports do not imply normal health or device status. Maps use Leaflet and OpenStreetMap tiles and require the relevant network service.
+
+## From registration to completed care
+
+1. **Prepare the organization:** deploy MySQL, configure notifications and an always-on service, and create the first administrator. Existing administrators without an assigned care duty retain supervisor treatment.
+2. **Create relationships:** register the resident and guardian, then register and bind a watch. Families register using invitation codes; editing a profile does not rebind devices.
+3. **Receive records:** devices authenticate with their own secrets. The new health API separates records by resident, device and binding version and supports revisions and retries. Legacy uploads and charts keep their existing paths.
+4. **Respond:** authorized staff acknowledge an SOS, start care and record actions. A sent or delivered notification does not establish that care has occurred.
+5. **Verify independently:** another supervisor verifies the work, closing the task and its associated alert. Unrelated newer alerts remain; task and event history are paginated.
+6. **Monitor:** review primary readiness, notification backlog, overdue tasks and analytics synchronization. Business views and the new health-statistics API still read MySQL.
+
+| Identity / care duty | Scope |
+| --- | --- |
+| Supervisor | Care actions, duty assignment, diagnostics and verification; cannot verify their own resolution |
+| Caregiver | Acknowledge, start and resolve care tasks; cannot perform supervisor verification |
+| Auditor | Read care tasks and history; cannot change task state |
+| Family | Access linked residents; cannot accept or close institutional care tasks |
+
+Care duties currently constrain the care module only. Existing permissions for other administration features remain unchanged; assigning a duty does not create granular authorization across profiles, devices and announcements.
 
 ## Technology stack
 
@@ -108,7 +137,7 @@ See [implementation architecture](docs/ARCHITECTURE.md) and [dual-database opera
 
 ## Getting started
 
-1. Install the 2.0.6 Setup package, or extract the complete portable ZIP and run `suining.exe` beside `suining-server.exe`. End users do not need Go, Rust or Node.js. Setup downloads WebView2 if missing; portable use requires an existing runtime.
+1. Build the Windows application from the current 2.0.6 source; historical public binaries do not include this integration. Install the resulting Setup, or extract its corresponding complete portable ZIP and run `suining.exe` beside `suining-server.exe`. End users do not need Go, Rust or Node.js. Setup downloads WebView2 if missing; portable use requires an existing runtime.
 2. Deploy a separate MySQL business database and enable PG analytics when needed. Database servers are not bundled. The [Compose template](deploy/dual-db.compose.yml) and [environment template](deploy/dual-db.env.example) expose loopback-only database ports; start the application separately.
 3. Configure the desktop environment, then launch it. Replace the placeholder passwords privately. This example is for controlled local connections; remote connections require verified TLS.
 
@@ -122,6 +151,16 @@ $env:SUINING_PG_ANALYTICS_URL='postgres://suining_analytics:REPLACE_PASSWORD@127
 5. Create a resident, then register and bind a watch. The default desktop loopback endpoint is not an internet watch gateway. Device access requires controlled networking or a separately deployed Go service. Continuous care requires an always-on backend, notification gateway and human response procedures; see [care deployment](docs/CARE_SERVICE_DEPLOYMENT.md).
 
 Direct Go execution uses `MYSQL_DSN` and `PG_ANALYTICS_URL`, with `ADDR=127.0.0.1:8080` by default. Desktop execution forwards the `SUINING_` variables above. Restart after configuration changes. The business service does not fall back to the old `DATABASE_URL` / `SUINING_DATABASE_URL` configuration.
+
+### Deployment choices
+
+| Mode | Use | Additional requirements |
+| --- | --- | --- |
+| Windows desktop + separate databases | Local management; Rust owns the local Go lifecycle | WebView2, MySQL and PG when analytics is needed |
+| Standalone always-on Go service | Continuous device uploads, notifications and care operations | Process supervision, network boundaries, TLS, notification gateway, database and image backups |
+| Separate Vite and Go development | UI/API development | Node.js, Go and dedicated development databases; native setup is still required initially |
+
+The desktop is not a general-purpose client for an arbitrary remote Go service. Changing a database address does not configure a device gateway or continuous care. Closing the desktop stops its local Go child process.
 
 ### Upgrading a legacy PostgreSQL business database
 
@@ -166,10 +205,25 @@ These actual Tauri screenshots are from 2.0.2 with temporary data, not 2.0.6 acc
 
 Version-specific evidence and upgrade limits are described in the [2.0.6 notes](docs/releases/2.0.6.md). This integration preserves the remote health sampling, change-cursor and statistics interfaces on MySQL. See the [integration report](docs/INTEGRATION_2.0.6.md) for executed checks. Previously built local installers do not include this integration; rebuild from the current source.
 
+## Troubleshooting
+
+| Symptom | Check first |
+| --- | --- |
+| UI opens but login/save fails | MySQL connectivity, database name in the DSN and completed migrations; internet access does not imply database readiness |
+| PG is offline but saves succeed | Expected behavior; monitor analytics backlog and disk usage instead of changing the business primary |
+| Old records are missing after upgrade | Confirm offline PG-to-MySQL import and separate image copying; preserve the only backup |
+| Upload fails with a binding-version conflict | Use the binding version from acquisition time; do not relabel old cached samples as belonging to a new resident |
+| Notification sent but task remains open | Sending, receipt, acknowledgment, care and independent verification are separate states |
+| Portable application will not start | Full extraction, both EXEs, WebView2 and the exact package version |
+| Source says 2.0.6 but downloaded software says 2.0.2 | Source and historical binaries are distinct; use the [artifact index](docs/DOWNLOADS.md) |
+
+Include version/commit, exact filename, OS, database readiness and redacted reproduction steps when reporting a problem. See [Support](docs/SUPPORT.md).
+
 ## Documentation and contributions
 
 | Purpose | References |
 | --- | --- |
+| Source and historical packages | [Artifact index](docs/DOWNLOADS.md) · [About text](docs/ABOUT.md) |
 | Configuration and migration | [Dual databases](docs/DUAL_DATABASES.md) · [Setup](docs/SETUP.md) |
 | Architecture and care | [Overview](architecture.md) · [Implementation](docs/ARCHITECTURE.md) · [Care deployment](docs/CARE_SERVICE_DEPLOYMENT.md) |
 | Development and verification | [Project](智慧养老手表管理系统/README.md) · [Frontend](智慧养老手表管理系统/oldIot/README.md) · [Backend](智慧养老手表管理系统/backend/README.md) · [Testing](docs/TESTING.md) |

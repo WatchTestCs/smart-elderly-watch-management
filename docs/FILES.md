@@ -432,3 +432,5 @@
 - `智慧养老手表管理系统/backend/migrations/0008_health_query_columns.sql`：为旧 PG 健康采样增加可移植统计查询字段，保留原 0007。
 - `智慧养老手表管理系统/backend/internal/health/store.go`：事务内保存采样与修订事件，处理版本去重和冲突。
 - `智慧养老手表管理系统/backend/docs/health-data.md`：健康采样接口、首次采纳背景与 2.0.6 兼容边界。
+
+- `docs/DOWNLOADS.md`：当前源码与九组历史 Release 的附件选择、兼容性、校验与升级入口。
