@@ -92,15 +92,15 @@ jobs:
           if ! grep -Fq "新增：不含字体精简版" RELEASE_NOTES.md; then
             cat >> RELEASE_NOTES.md <<'NOTES'
 
-            ## 新增：不含字体精简版（可选下载）
-            
-            - **完整版（推荐）**：`Suining-2.0.5-optimized.1-source.zip`，包含全部原始字体资源，原有下载保持不变。
-            - **不含字体版**：`Suining-2.0.5-optimized.1-no-fonts-source.zip`，基于相同的已验证提交 `6aa62a607de1e569116029b97a1623fff419d9b2` 打包，精确排除 88 个 `.woff2` / `.woff` / `.ttf` / `.otf` 字体文件，不删除业务源代码、CSS 字体引用、字体许可说明或字体清单。
-            - **不含字体说明**：`NO_FONTS_README_zh-CN.md`（也包含在精简 ZIP 中）。
-            - **精简包校验**：`SHA256SUMS-no-fonts.txt`；完整版校验仍为已有的 `SHA256SUMS.txt`。
-            
-            **注意：不含字体版仅用于精简源码分发。** 若运行时仍引用这些本地字体文件，可能出现字体加载失败或文字样式、排版差异；需要完整显示效果、发布部署及正式验收时，请下载完整版，或按同一相对路径从完整版补回原始字体。GitHub 自动生成的 Source code（zip/tar.gz）属于含字体的完整代码归档，并非不含字体版。
-            NOTES
+          ## 新增：不含字体精简版（可选下载）
+          
+          - **完整版（推荐）**：`Suining-2.0.5-optimized.1-source.zip`，包含全部原始字体资源，原有下载保持不变。
+          - **不含字体版**：`Suining-2.0.5-optimized.1-no-fonts-source.zip`，基于相同的已验证提交 `6aa62a607de1e569116029b97a1623fff419d9b2` 打包，精确排除 88 个 `.woff2` / `.woff` / `.ttf` / `.otf` 字体文件，不删除业务源代码、CSS 字体引用、字体许可说明或字体清单。
+          - **不含字体说明**：`NO_FONTS_README_zh-CN.md`（也包含在精简 ZIP 中）。
+          - **精简包校验**：`SHA256SUMS-no-fonts.txt`；完整版校验仍为已有的 `SHA256SUMS.txt`。
+          
+          **注意：不含字体版仅用于精简源码分发。** 若运行时仍引用这些本地字体文件，可能出现字体加载失败或文字样式、排版差异；需要完整显示效果、发布部署及正式验收时，请下载完整版，或按同一相对路径从完整版补回原始字体。GitHub 自动生成的 Source code（zip/tar.gz）属于含字体的完整代码归档，并非不含字体版。
+          NOTES
             gh release edit 'v2.0.5-optimized.1' --repo "${{ github.repository }}" --notes-file RELEASE_NOTES.md
           fi
           gh release view 'v2.0.5-optimized.1' --repo "${{ github.repository }}" --json assets --jq '.assets[].name'
