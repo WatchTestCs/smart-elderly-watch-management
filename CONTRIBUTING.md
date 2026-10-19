@@ -1,18 +1,20 @@
-# Contributing / 参与贡献
+# Contributing / ���빱��
 
-[中文项目介绍](README.md) · [English overview](README.en.md) · [Support / 问题反馈](docs/SUPPORT.md)
+This guide defines how to propose focused changes and verify them. For repository file purposes, see [docs/FILES.md](docs/FILES.md). / ���ļ�˵������ύ�۽������������֤���ֿ����ļ���;�� [�ļ�����](docs/FILES.md)��
+
+[������Ŀ����](README.md) �� [English overview](README.en.md) �� [Support / ���ⷴ��](docs/SUPPORT.md)
 
 Contributions can improve documentation, translations, accessibility, reproducible bug reports, or focused code fixes. Chinese and English are both welcome. Please communicate respectfully and discuss the behavior being changed rather than the person making the change.
 
-欢迎改进文档、翻译、可访问性和具体缺陷。请保持改动聚焦，使用可复现证据，并尊重参与者。
+��ӭ�Ľ��ĵ������롢�ɷ����Ժ;���ȱ�ݡ��뱣�ָĶ��۽���ʹ�ÿɸ���֤�ݣ������ز����ߡ�
 
-## Target preview / 目标分支
+## Target preview / Ŀ���֧
 
 Base contributions on `preview` and select `preview` as the pull request base. Do not target `main` or modify release tags as part of an ordinary change. A documentation PR is not authorization to publish binaries or run release workflows.
 
-本项目当前维护入口是 `preview`。提交前核对 PR 目标；普通文档或修复不应移动发布标签、上传替代包或修改仓库设置。
+����Ŀ��ǰά������� `preview`���ύǰ�˶� PR Ŀ�ꣻ��ͨ�ĵ����޸���Ӧ�ƶ�������ǩ���ϴ���������޸Ĳֿ����á�
 
-## Before changing code / 开始前
+## Before changing code / ��ʼǰ
 
 1. Read the [architecture overview](architecture.md), the affected implementation, and related [ADRs](docs/decisions/README.md).
 2. Check existing issues and use the [reporting templates](docs/SUPPORT.md). Discuss substantial changes to deployment, database ownership, or trust boundaries before implementing them.
@@ -20,7 +22,7 @@ Base contributions on `preview` and select `preview` as the pull request base. D
 
 Preserve the product constraints: independently deployed MySQL primary and asynchronous PostgreSQL analytics; UI startup without a database; no global connection wall; no automatic replay of failed business writes; no credentials or desktop token in page code. Do not describe user-supplied Linux binaries as verified builds of the Windows source.
 
-## Validation proportional to the change / 按改动选择验证
+## Validation proportional to the change / ���Ķ�ѡ����֤
 
 | Change | Appropriate evidence |
 | --- | --- |
@@ -31,9 +33,9 @@ Preserve the product constraints: independently deployed MySQL primary and async
 
 Follow [BUILD](docs/BUILD.md) and [TESTING](docs/TESTING.md). Never run automated tests against production data. Tests that skip because `TEST_MYSQL_DSN` or `TEST_DATABASE_URL` is unset are not proof of the corresponding database integration. Record what ran, what failed, what was skipped, and what remains unverified; do not repeat unrelated full suites for a small documentation change.
 
-验证应与改动风险匹配。模拟 API 的浏览器检查不能代替真实数据库或原生窗口验收；未运行的测试不能填写为通过。
+��֤Ӧ��Ķ�����ƥ�䡣ģ�� API ���������鲻�ܴ�����ʵ���ݿ��ԭ���������գ�δ���еĲ��Բ�����дΪͨ����
 
-## Pull request checklist / 提交说明
+## Pull request checklist / �ύ˵��
 
 - Describe the observable problem and resulting behavior.
 - Link a reproduction or issue where relevant; explain scope and tradeoffs.
@@ -42,9 +44,9 @@ Follow [BUILD](docs/BUILD.md) and [TESTING](docs/TESTING.md). Never run automate
 - Update file descriptions when adding or removing tracked files. Use the existing PR template where available, and report unavailable checks honestly.
 - Keep databases, health records, tokens, connection strings, signing keys, build caches, and release binaries out of Git.
 
-请写清问题、修改后的行为、验证与限制。不要提交真实照护数据，也不要为了让检查通过而清空设备归属或删除遗留数据。
+��д�����⡢�޸ĺ����Ϊ����֤�����ơ���Ҫ�ύ��ʵ�ջ����ݣ�Ҳ��ҪΪ���ü��ͨ��������豸������ɾ���������ݡ�
 
-## Security and licensing / 安全与许可
+## Security and licensing / ��ȫ������
 
 Use the [private security reporting guidance](.github/SECURITY.md) for exploitable vulnerabilities; do not post the exploit or sensitive data in a public issue. Do not invent a public contact address or response-time guarantee.
 
