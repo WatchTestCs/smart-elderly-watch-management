@@ -5,7 +5,6 @@
 | �ļ� | ְ�� |
 | --- | --- |
 | [.github/CODEOWNERS](../.github/CODEOWNERS) | ָ���ֿ������鸺���˺��ܱ���·�� |
-| [.github/README.md](../.github/README.md) | ���ܰ�ȫ���ԡ��������¡�PR ģ�����Զ���������Ŀ¼�� |
 | [.github/SECURITY.md](../.github/SECURITY.md) | ˵��˽�±���©������������Χ����¶���� |
 | [.github/dependabot.yml](../.github/dependabot.yml) | ���� GitHub Actions �� npm �������µ��Զ��᰸ |
 | [.github/pull_request_template.md](../.github/pull_request_template.md) | �ṩ���Ŀ�ġ���֤֤�ݺͷ��ձ߽����ȡ����ģ�� |
@@ -33,7 +32,6 @@
 | [README.en.md](../README.en.md) | English project overview: current preview architecture, capabilities, setup, downloads, and delivery limits |
 | [README.md](../README.md) | ������Ŀ��ҳ����ǰ 2.0.6 preview ���ܡ������ܹ�������ѡ��Դ����ں���ʷ�����߽� |
 | [architecture.md](../architecture.md) | ��Ŀ¼�ܹ��������ͻ��ˡ�Go ����MySQL ���⡢PG �������������� |
-| [deploy/README.md](../deploy/README.md) | ˵��˫�ⲿ��ģ��Ͷ����ջ�������ά�ļ�����;��������ڡ� |
 | [deploy/check-care-health.sh](../deploy/check-care-health.sh) | �������� HTTP �����ݿ����ֻ��̽�� |
 | [deploy/dual-db.compose.yml](../deploy/dual-db.compose.yml) | �ṩ���� MySQL �� PostgreSQL ���ݷ��񡢳־þ����ػ��˿ںͽ�����飬������Ӧ�÷��� |
 | [deploy/dual-db.env.example](../deploy/dual-db.env.example) | ˫�⻷������ʾ����������ֱ��ʹ�õ�Ĭ������ |
@@ -263,7 +261,7 @@
 | [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-025.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-025.woff2) | ���ĳ��������Ƭ 025������ U+61F9-620F,U+6212-6215,U+6217-6233,U+6235-6236,U+6238-623E,U+6241-624A,U+624C-6252,U+6254-627D�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-025.woff2�� |
 | [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-026.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-026.woff2) | ���ĳ��������Ƭ 026������ U+6416-641B,U+641D-6453,U+6455-6457,U+6459-64CC,U+64CE-652E,U+6530-6535,U+6537-6538,U+653A-653D�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-026.woff2�� |
 | [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-027.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-027.woff2) | ���ĳ��������Ƭ 027������ U+662C-662E,U+6630-663D,U+663F-6667,U+6669-666F,U+6671-6679,U+667B-6681,U+6683-66F1,U+66F3,U+66�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-027.woff2�� |
-| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-028.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-028.woff2) | ���ĳ��������Ƭ 028������ U+684C-6862,U+6864-68BF,U+68C1-6959,U+695B-6A20,U+6A22-6A4F�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-028.woff2�� |
+| [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-028.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-028.woff2) | ���ĳ��������Ƭ 028������ U+684C-6862,U+6864-68BF,U+68C1-6959,U+695B-6A20,U+6A22-6A4F�����������ַ����ء������������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-028.woff2�� |
 | [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-029.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-029.woff2) | ���ĳ��������Ƭ 029������ U+6A50-6B20,U+6B23-6B62,U+6B66-6BCE,U+6BD0-6BDA,U+6BDC-6C13,U+6C15-6C33,U+6C35-6C37,U+6C39-6C59�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-029.woff2�� |
 | [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-030.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-030.woff2) | ���ĳ��������Ƭ 030������ U+6C5A-6CA0,U+6CA2-6CD4,U+6CD6-6CE7,U+6CE9-6D00,U+6D02-6D11,U+6D13-6D3A,U+6D3C-6D40,U+6D42-6D4A�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-030.woff2�� |
 | [�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-031.woff2](../�ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-031.woff2) | ���ĳ��������Ƭ 031������ U+6E67-6E8F,U+6E91-6ED0,U+6ED2-6FBF,U+6FC1-7069�����������ַ����ء����ǻ������ֱ�����ϵͳ/oldIot/public/static/fonts/source-han-serif-sc/characters-031.woff2�� |

@@ -1,6 +1,5 @@
 {
   ".github/CODEOWNERS": "ָ���ֿ������鸺���˺��ܱ���·��",
-  ".github/README.md": "���ܰ�ȫ���ԡ��������¡�PR ģ�����Զ���������Ŀ¼��",
   ".github/SECURITY.md": "˵��˽�±���©������������Χ����¶����",
   ".github/dependabot.yml": "���� GitHub Actions �� npm �������µ��Զ��᰸",
   ".github/pull_request_template.md": "�ṩ���Ŀ�ġ���֤֤�ݺͷ��ձ߽����ȡ����ģ��",
@@ -28,7 +27,6 @@
   "README.en.md": "English project overview: current preview architecture, capabilities, setup, downloads, and delivery limits",
   "README.md": "������Ŀ��ҳ����ǰ 2.0.6 preview ���ܡ������ܹ�������ѡ��Դ����ں���ʷ�����߽�",
   "architecture.md": "��Ŀ¼�ܹ��������ͻ��ˡ�Go ����MySQL ���⡢PG ��������������",
-  "deploy/README.md": "˵��˫�ⲿ��ģ��Ͷ����ջ�������ά�ļ�����;��������ڡ�",
   "deploy/check-care-health.sh": "�������� HTTP �����ݿ����ֻ��̽��",
   "deploy/dual-db.compose.yml": "�ṩ���� MySQL �� PostgreSQL ���ݷ��񡢳־þ����ػ��˿ںͽ�����飬������Ӧ�÷���",
   "deploy/dual-db.env.example": "˫�⻷������ʾ����������ֱ��ʹ�õ�Ĭ������",
@@ -412,6 +410,6 @@
   "�ǻ������ֱ�����ϵͳ/oldIot/src/views/watch.vue": "�����ֵ�����ĵǼǺ�ά�������ǻ������ֱ�����ϵͳ/oldIot/src/views/watch.vue��",
   "�ǻ������ֱ�����ϵͳ/oldIot/vite.config.js": "Vite 8 �� Vue �����Դ������������ӿڴ����������������á����ǻ������ֱ�����ϵͳ/oldIot/vite.config.js��",
   "�ǻ������ֱ�����ϵͳ/watch-sim/watch-sim.config.json": "ģ���ֱ��ķ����ַ���豸ƾ������ģ�壬ʹ��ǰ����ʵ���豸��Կ�����ǻ������ֱ�����ϵͳ/watch-sim/watch-sim.config.json��",
-  "�ǻ������ֱ�����ϵͳ/watch-sim/watch-sim.js": "ģ���ֱ���¼�������������ϱ��� Node ������ڣ���������ʵӲ����֤�������������ֱ�����ϵͳ/watch-sim/watch-sim.js��",
+  "�ǻ������ֱ�����ϵͳ/watch-sim/watch-sim.js": "ģ���ֱ���¼�������������ϱ��� Node ������ڣ���������ʵӲ����֤�����ǻ������ֱ�����ϵͳ/watch-sim/watch-sim.js��",
   "�ǻ������ֱ�����ϵͳ/watch-sim/watch-sim.test.cjs": "�ֱ�ģ�����ӿ�Э���������Ϊ���Զ������ԣ���������ʵӲ��������"
 }
