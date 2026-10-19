@@ -1,65 +1,67 @@
-# 岁宁 2.0.6 · 源码工程
+# ���� 2.0.6 �� Դ�빤��
 
-本工程由 **Tauri 2 / Rust 桌面壳、Go 业务服务、Vue 3 / Vite 界面和手表模拟器**组成。MySQL 是唯一业务主库，PostgreSQL 保存异步分析投影；数据库由部署方独立管理。
+���ļ�������Դ�빤����ڣ�˵����Ŀ¼ְ�𡢹������̺ͱ������б߽硣
 
-[产品与整体架构](../README.md) · [2.0.6 改进](../docs/releases/2.0.6.md) · [双库配置与迁移](../docs/DUAL_DATABASES.md) · [实现协议](../docs/ARCHITECTURE.md)
+�������� **Tauri 2 / Rust ����ǡ�Go ҵ�����Vue 3 / Vite ������ֱ�ģ����**��ɡ�MySQL ��Ψһҵ�����⣬PostgreSQL �����첽����ͶӰ�����ݿ��ɲ��𷽶���������
 
-## 工程职责
+[��Ʒ������ܹ�](../README.md) �� [2.0.6 �Ľ�](../docs/releases/2.0.6.md) �� [˫��������Ǩ��](../docs/DUAL_DATABASES.md) �� [ʵ��Э��](../docs/ARCHITECTURE.md)
 
-| 目录 | 职责 | 主要入口 |
+## ����ְ��
+
+| Ŀ¼ | ְ�� | ��Ҫ��� |
 | --- | --- | --- |
-| `desktop` | 原生窗口、单实例、受限初始化、Go 哈希校验与生命周期 | `src/main.rs`、`capabilities`、`build.ps1` |
-| `backend` | 业务 API、设备接入、会话、照护与分析作业 | `cmd/server`、`internal/handlers`、`internal/care`、`internal/analytics` |
-| `backend/migrations` | MySQL 业务与旧 PG 迁移、PG 分析 schema | 内嵌 SQL 与版本校验 |
-| `oldIot` | Vue 路由、管理与家属页面、字体、地图、QA | `src`、`vite.config.js`、`qa` |
-| `watch-sim` | 手表接口与运行端口发现模拟 | 工具及测试文件 |
+| `desktop` | ԭ�����ڡ���ʵ�������޳�ʼ����Go ��ϣУ������������ | `src/main.rs`��`capabilities`��`build.ps1` |
+| `backend` | ҵ�� API���豸���롢�Ự���ջ��������ҵ | `cmd/server`��`internal/handlers`��`internal/care`��`internal/analytics` |
+| `backend/migrations` | MySQL ҵ����� PG Ǩ�ơ�PG ���� schema | ��Ƕ SQL ��汾У�� |
+| `oldIot` | Vue ·�ɡ����������ҳ�桢���塢��ͼ��QA | `src`��`vite.config.js`��`qa` |
+| `watch-sim` | �ֱ��ӿ������ж˿ڷ���ģ�� | ���߼������ļ� |
 
-Rust 启动 Go，Vue 从 Go 获取内嵌生产资源并调用同源 API；首次初始化走受限原生 IPC。Go 所有业务读写都使用 MySQL，分析作业将已提交 outbox 事件写入 PG，失败时保留队列。`oldIot` 和模块名 `careold-go` 是历史命名，当前不需要 Java、Electron、H2 或旧 Webpack 工具链。
+Rust ���� Go��Vue �� Go ��ȡ��Ƕ������Դ������ͬԴ API���״γ�ʼ��������ԭ�� IPC��Go ����ҵ���д��ʹ�� MySQL��������ҵ�����ύ outbox �¼�д�� PG��ʧ��ʱ�������С�`oldIot` ��ģ���� `careold-go` ����ʷ��������ǰ����Ҫ Java��Electron��H2 ��� Webpack ��������
 
-## Windows 完整构建
+## Windows ��������
 
-准备 PowerShell 7、Node.js（`^20.19.0 || >=22.12.0`）、Go、Rust、C++ Build Tools 和 Windows SDK。Go 模块声明最低 1.24.0，本地 2.0.6 构建使用 Go 1.27.2；Rust 包声明最低 1.85。版本以锁文件和模块声明为准。
+׼�� PowerShell 7��Node.js��`^20.19.0 || >=22.12.0`����Go��Rust��C++ Build Tools �� Windows SDK��Go ģ��������� 1.24.0������ 2.0.6 ����ʹ�� Go 1.27.2��Rust ��������� 1.85���汾�����ļ���ģ������Ϊ׼��
 
 ```powershell
 ./desktop/validate-version.ps1
 ./desktop/build.ps1
-# 可选本机自签，不是公开受信任证书
+# ��ѡ������ǩ�����ǹ���������֤��
 ./desktop/build.ps1 -SelfSign
 ```
 
-构建顺序：锁定依赖安装 → Vue 生产构建 → 复制 Go 内嵌资源 → Go 测试、静态检查、编译 → sidecar 哈希 → Tauri 编译 → NSIS Setup。脚本支持 `CARGO_TARGET_DIR`；安装包位于工程目录 `outputs/v2.0.6-preview/Suining-Setup-2.0.6-win-x64.exe`。版本校验覆盖前端、桌面、Cargo、Go 版本文件及锁文件中的产品版本。
+����˳������������װ �� Vue �������� �� ���� Go ��Ƕ��Դ �� Go ���ԡ���̬��顢���� �� sidecar ��ϣ �� Tauri ���� �� NSIS Setup���ű�֧�� `CARGO_TARGET_DIR`����װ��λ�ڹ���Ŀ¼ `outputs/v2.0.6-preview/Suining-Setup-2.0.6-win-x64.exe`���汾У�鸲��ǰ�ˡ����桢Cargo��Go �汾�ļ������ļ��еĲ�Ʒ�汾��
 
-默认不签名。免安装 ZIP、源码 ZIP、说明与摘要是单独整理步骤，`build.ps1` 不会自动生成全部交付附件。Setup 缺失 WebView2 时联网补装；免安装版需已有 WebView2，并保留同目录的两个 EXE。
+Ĭ�ϲ�ǩ�����ⰲװ ZIP��Դ�� ZIP��˵����ժҪ�ǵ����������裬`build.ps1` �����Զ�����ȫ������������Setup ȱʧ WebView2 ʱ������װ���ⰲװ�������� WebView2��������ͬĿ¼������ EXE��
 
-## 前后端开发
+## ǰ��˿���
 
-在一个终端进入 `backend`，配置开发库并启动服务：
+��һ���ն˽��� `backend`�����ÿ����Ⲣ��������
 
 ```powershell
-$env:MYSQL_DSN='suining:替换密码@tcp(127.0.0.1:13306)/suining'
-$env:PG_ANALYTICS_URL='postgres://suining_analytics:替换密码@127.0.0.1:15432/suining_analytics?sslmode=disable'
+$env:MYSQL_DSN='suining:�滻����@tcp(127.0.0.1:13306)/suining'
+$env:PG_ANALYTICS_URL='postgres://suining_analytics:�滻����@127.0.0.1:15432/suining_analytics?sslmode=disable'
 $env:ADDR='127.0.0.1:8795'
 go run ./cmd/server
 ```
 
-另一个终端进入 `oldIot`：
+��һ���ն˽��� `oldIot`��
 
 ```powershell
 npm ci
 npm run dev
 ```
 
-Vite 将 `/restful` 代理到 `127.0.0.1:8795`。纯 API 模式可直接开发；完整桌面构建必须先嵌入前端。纯浏览器开发不能通过 Tauri 初始化管理员，使用原生桌面完成首次初始化，不应放开 HTTP 初始化鉴权。
+Vite �� `/restful` ������ `127.0.0.1:8795`���� API ģʽ��ֱ�ӿ������������湹��������Ƕ��ǰ�ˡ����������������ͨ�� Tauri ��ʼ������Ա��ʹ��ԭ����������״γ�ʼ������Ӧ�ſ� HTTP ��ʼ����Ȩ��
 
-以上无 TLS 连接只适用于受控本机环境，远程连接需验证证书。PG 可暂不配置，核心业务仍可使用，但分析事件会积压，需监控容量。桌面使用 `SUINING_MYSQL_DSN` / `SUINING_PG_ANALYTICS_URL`，配置修改后重启；旧 `SUINING_DATABASE_URL` 不再作为主库回退。
+������ TLS ����ֻ�������ܿر���������Զ����������֤֤�顣PG ���ݲ����ã�����ҵ���Կ�ʹ�ã��������¼����ѹ����������������ʹ�� `SUINING_MYSQL_DSN` / `SUINING_PG_ANALYTICS_URL`�������޸ĺ��������� `SUINING_DATABASE_URL` ������Ϊ������ˡ�
 
-## 测试、数据与迁移
+## ���ԡ�������Ǩ��
 
-- [后端 README](backend/README.md)：Go 测试、专用 MySQL / PG 集成环境、离线导入与分析回填。
-- [前端 README](oldIot/README.md)：生产构建、Playwright QA、会话与响应式页面。
-- [双库指南](../docs/DUAL_DATABASES.md)：Compose、权限、事件重试、旧 PG 到空 MySQL 的迁移。安装不会自动迁移数据库；图片另行复制，旧 Java/H2 不直接支持。
-- [照护部署](../docs/CARE_SERVICE_DEPLOYMENT.md)：长期值守、通知网关、送达回执与人工响应。桌面关闭后本地 Go 随之退出，不能替代常驻值守服务。
+- [��� README](backend/README.md)��Go ���ԡ�ר�� MySQL / PG ���ɻ��������ߵ�����������
+- [ǰ�� README](oldIot/README.md)������������Playwright QA���Ự����Ӧʽҳ�档
+- [˫��ָ��](../docs/DUAL_DATABASES.md)��Compose��Ȩ�ޡ��¼����ԡ��� PG ���� MySQL ��Ǩ�ơ���װ�����Զ�Ǩ�����ݿ⣻ͼƬ���и��ƣ��� Java/H2 ��ֱ��֧�֡�
+- [�ջ�����](../docs/CARE_SERVICE_DEPLOYMENT.md)������ֵ�ء�֪ͨ���ء��ʹ��ִ���˹���Ӧ������رպ󱾵� Go ��֮�˳������������פֵ�ط���
 
-MySQL 不可用时界面仍能打开，业务 API 提示不可用；恢复后检查会话，不重放失败业务写入。PG 不可用只延迟分析。默认 Windows 图片、日志与运行信息位于 `%APPDATA%\岁宁`，会话在 Go 内存，业务库和图片分别备份。
+MySQL ������ʱ�������ܴ򿪣�ҵ�� API ��ʾ�����ã��ָ�����Ự�����ط�ʧ��ҵ��д�롣PG ������ֻ�ӳٷ�����Ĭ�� Windows ͼƬ����־��������Ϣλ�� `%APPDATA%\����`���Ự�� Go �ڴ棬ҵ����ͼƬ�ֱ𱸷ݡ�
 
-本地 2.0.6 已构建并完成版本、摘要与内置服务检查，未执行安装器或原生桌面窗口验收。历史 Linux 附件不能证明本工程已完成 Linux 原生构建。仅更新 `preview`；此次整合保留并适配远程健康采样，见 [整合记录](../docs/INTEGRATION_2.0.6.md)。先前安装包未包含该整合，本次不发布 Release。
+���� 2.0.6 �ѹ�������ɰ汾��ժҪ�����÷����飬δִ�а�װ����ԭ�����洰�����ա���ʷ Linux ��������֤������������� Linux ԭ�������������� `preview`���˴����ϱ���������Զ�̽����������� [���ϼ�¼](../docs/INTEGRATION_2.0.6.md)����ǰ��װ��δ���������ϣ����β����� Release��
