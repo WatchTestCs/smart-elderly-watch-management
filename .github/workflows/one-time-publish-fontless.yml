@@ -1,0 +1,106 @@
+name: One-time publish fontless source
+on:
+  push:
+    branches: [preview]
+    paths:
+      - '.github/workflows/one-time-publish-fontless.yml'
+permissions:
+  contents: write
+jobs:
+  publish:
+    if: github.repository == 'WatchTestCs/smart-elderly-watch-management'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout verified release commit
+        uses: actions/checkout@v4
+        with:
+          ref: '6aa62a607de1e569116029b97a1623fff419d9b2'
+          fetch-depth: 1
+      - name: Build and verify fontless archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          git archive --format=zip --prefix="Suining-2.0.5-optimized.1-no-fonts-source/" HEAD --output="full-source-temp.zip"
+          cat > NO_FONTS_README_zh-CN.md <<'DOC'
+          # 岁宁 2.0.5 架构优化版 1 —— 不含字体源码包说明
+          
+          版本：v2.0.5-optimized.1
+          对应源码提交：6aa62a607de1e569116029b97a1623fff419d9b2
+          包名：Suining-2.0.5-optimized.1-no-fonts-source.zip
+          
+          ## 与完整源码包的区别
+          
+          本包是在相同源码提交的完整项目快照基础上生成，且仅省略 **88 个字体二进制文件**：
+          - 扩展名：`.ttf`、`.otf`、`.woff`、`.woff2`
+          - 实际移除文件的完整清单见本包根目录 `OMITTED_FONT_FILES.txt`。
+          
+          业务源码、项目配置、脚本、样式文件、字体声明引用、字体清单及原有许可文件均保留。此精简版**没有**用其他字体替代原字体，也没有自动删除指向它们的路径。
+          
+          ## 使用限制
+          
+          本包适用于源码查阅、开发和体积受限的分发。程序启动、前端构建或运行时若依赖已移除的本地字体资源，可能出现字体资源缺失、字体回退、文字形态和页面布局变化。因此无法保证与含字体完整版相同的视觉效果。正式部署、界面验收及希望字体完全一致的场景请使用完整版。
+          
+          ## 如何恢复
+          
+          在同一个 GitHub Release `v2.0.5-optimized.1` 页面下载完整的 `Suining-2.0.5-optimized.1-source.zip`。按照 `OMITTED_FONT_FILES.txt` 列出的原始相对路径，将对应的 88 个字体文件复制回本包的相同目录即可。不要覆盖其他项目文件。
+          
+          ## 校验
+          
+          精简源码包的 SHA-256 见 Release 附件 `SHA256SUMS-no-fonts.txt`。完整版的校验文件 `SHA256SUMS.txt` 保持原样；两个版本相互独立。
+          DOC
+          python3 - <<'PY'
+          import hashlib
+          from pathlib import Path
+          import zipfile
+
+          prefix = "Suining-2.0.5-optimized.1-no-fonts-source/"
+          source = Path("full-source-temp.zip")
+          out = Path("Suining-2.0.5-optimized.1-no-fonts-source.zip")
+          excluded = []
+          font_ext = (".ttf", ".otf", ".woff", ".woff2")
+          with zipfile.ZipFile(source) as original, zipfile.ZipFile(out, "w", compression=zipfile.ZIP_DEFLATED, allowZip64=True) as slim:
+              for entry in original.infolist():
+                  if not entry.is_dir() and entry.filename.lower().endswith(font_ext):
+                      excluded.append(entry.filename)
+                      continue
+                  slim.writestr(entry, original.read(entry))
+              if len(excluded) != 88:
+                  raise SystemExit(f"Expected 88 font binaries, found {len(excluded)}; refusing to publish")
+              slim.write("NO_FONTS_README_zh-CN.md", prefix+"NO_FONTS_README_zh-CN.md")
+              slim.writestr(prefix+"OMITTED_FONT_FILES.txt", "# Excluded 88 font binary paths, relative to ZIP archive root\n"+"\n".join(sorted(excluded))+"\n")
+          with zipfile.ZipFile(out) as result:
+              members = result.namelist()
+              if result.testzip():
+                  raise SystemExit("Corrupt ZIP")
+              if any(path.lower().endswith(font_ext) for path in members):
+                  raise SystemExit("Font binaries unexpectedly present in fontless ZIP")
+              if prefix+"OMITTED_FONT_FILES.txt" not in members or prefix+"NO_FONTS_README_zh-CN.md" not in members:
+                  raise SystemExit("Fontless documentation missing")
+              print(f"Verified fontless archive: {len(members)} files, {len(excluded)} font binaries excluded, {out.stat().st_size} bytes")
+          digest=hashlib.sha256(out.read_bytes()).hexdigest()
+          Path("SHA256SUMS-no-fonts.txt").write_text(f"{digest}  {out.name}\n")
+          source.unlink()
+          PY
+      - name: Upload fontless assets and update release description
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release upload 'v2.0.5-optimized.1' 'Suining-2.0.5-optimized.1-no-fonts-source.zip' 'SHA256SUMS-no-fonts.txt' 'NO_FONTS_README_zh-CN.md' --repo "${{ github.repository }}" --clobber
+          gh release view 'v2.0.5-optimized.1' --repo "${{ github.repository }}" --json body --jq .body > RELEASE_NOTES.md
+          if ! grep -Fq "新增：不含字体精简版" RELEASE_NOTES.md; then
+            cat >> RELEASE_NOTES.md <<'NOTES'
+
+            ## 新增：不含字体精简版（可选下载）
+            
+            - **完整版（推荐）**：`Suining-2.0.5-optimized.1-source.zip`，包含全部原始字体资源，原有下载保持不变。
+            - **不含字体版**：`Suining-2.0.5-optimized.1-no-fonts-source.zip`，基于相同的已验证提交 `6aa62a607de1e569116029b97a1623fff419d9b2` 打包，精确排除 88 个 `.woff2` / `.woff` / `.ttf` / `.otf` 字体文件，不删除业务源代码、CSS 字体引用、字体许可说明或字体清单。
+            - **不含字体说明**：`NO_FONTS_README_zh-CN.md`（也包含在精简 ZIP 中）。
+            - **精简包校验**：`SHA256SUMS-no-fonts.txt`；完整版校验仍为已有的 `SHA256SUMS.txt`。
+            
+            **注意：不含字体版仅用于精简源码分发。** 若运行时仍引用这些本地字体文件，可能出现字体加载失败或文字样式、排版差异；需要完整显示效果、发布部署及正式验收时，请下载完整版，或按同一相对路径从完整版补回原始字体。GitHub 自动生成的 Source code（zip/tar.gz）属于含字体的完整代码归档，并非不含字体版。
+            NOTES
+            gh release edit 'v2.0.5-optimized.1' --repo "${{ github.repository }}" --notes-file RELEASE_NOTES.md
+          fi
+          gh release view 'v2.0.5-optimized.1' --repo "${{ github.repository }}" --json assets --jq '.assets[].name'
