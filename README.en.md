@@ -1,8 +1,8 @@
-<p align="center"><img src="�ǻ������ֱ�����ϵͳ/oldIot/public/static/brand/suining-logo-192.webp" width="88" height="88" alt="Suining logo"></p>
+<p align="center"><img src="智慧养老手表管理系统/oldIot/public/static/brand/suining-logo-192.webp" width="88" height="88" alt="Suining logo"></p>
 
-# Suining �� Elder Care Management
+# Suining · Elder Care Management
 
-[��������](README.md) | **English**
+[简体中文](README.md) | **English**
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-235442)](LICENSE) [![Preview: 2.0.6](https://img.shields.io/badge/preview-2.0.6-9b7a40)](docs/releases/2.0.6.md)
 
@@ -10,11 +10,9 @@
 
 Suining brings resident profiles, wearable devices, health and activity records, location alerts, care tasks and announcements into one workspace for care organizations and families. Version 2.0.6 uses **Tauri 2 / Rust, Vue 3 / Vite, Go, a MySQL transactional primary and PostgreSQL analytics**. Database services are independently deployed. The application interface is primarily Chinese.
 
-[Source and historical downloads](docs/DOWNLOADS.md) �� [2.0.6 release and upgrade notes](docs/releases/2.0.6.md) �� [Architecture](#architecture) �� [Getting started](#getting-started) �� [Dual-database guide](docs/DUAL_DATABASES.md) �� [Source project](�ǻ������ֱ�����ϵͳ/README.md) �� [Changelog](CHANGELOG.md)
+[Source and historical downloads](docs/DOWNLOADS.md) · [2.0.6 release and upgrade notes](docs/releases/2.0.6.md) · [Architecture](#architecture) · [Getting started](#getting-started) · [Dual-database guide](docs/DUAL_DATABASES.md) · [Source project](智慧养老手表管理系统/README.md) · [Changelog](CHANGELOG.md)
 
 ## Repository map
-
-This section is the root-level navigation; see [docs/FILES.md](docs/FILES.md) for the complete file-by-file index.
 
 | Path | Purpose |
 | --- | --- |
@@ -22,7 +20,7 @@ This section is the root-level navigation; see [docs/FILES.md](docs/FILES.md) fo
 | [deploy/](deploy/) | MySQL/PostgreSQL deployment templates and standalone-service probes; no application container is defined. |
 | [docs/](docs/) | Setup, architecture, migrations, care operations, historical releases and the [file-by-file index](docs/FILES.md). |
 | [tests/ui/](tests/ui/) | Dependency-free browser accessibility smoke check. |
-| [�ǻ������ֱ�����ϵͳ/](�ǻ������ֱ�����ϵͳ/README.md) | Buildable desktop project containing Tauri, the Go backend, Vue frontend and watch simulator. |
+| [智慧养老手表管理系统/](智慧养老手表管理系统/README.md) | Buildable desktop project containing Tauri, the Go backend, Vue frontend and watch simulator. |
 | [.gitignore](.gitignore) | Excludes dependency caches, databases, build output and private keys. |
 | [CHANGELOG.md](CHANGELOG.md) | Versioned feature, fix and compatibility history. |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution workflow, branch and verification conventions. |
@@ -38,7 +36,7 @@ Local Windows x64 Setup, portable and source packages have been built. This deli
 - **Interface:** route-aware navigation expansion, consistent terminology, narrow-screen resident cards, loading and retry states on five management pages, and improved wide-screen layout and statistics descriptions.
 - **Profiles and devices:** create residents before binding watches; profile editing preserves device ownership; retain custom thresholds, correct daily-information fields and preserve NULL for missing measurements.
 - **Care workflow:** acknowledge SOS, record care actions and obtain independent verification from another supervisor; paginate tasks and history, clear the associated alert and refresh statistics.
-- **Health sampling:** retain batch samples, revisions, binding isolation, incremental changes and single-source statistics with MySQL persistence. Existing UI and legacy reporting remain separate; see the [API guide](�ǻ������ֱ�����ϵͳ/backend/docs/health-data.md).
+- **Health sampling:** retain batch samples, revisions, binding isolation, incremental changes and single-source statistics with MySQL persistence. Existing UI and legacy reporting remain separate; see the [API guide](智慧养老手表管理系统/backend/docs/health-data.md).
 - **Dual databases:** MySQL owns all core transactions; PostgreSQL receives asynchronous analytics projections. Offline legacy-PG import and analytics backfill tools are included.
 
 ### Source and package selection
@@ -47,7 +45,7 @@ As of 2026-10-19, `preview` contains **2.0.6 integrated dual-database source**. 
 
 | Need | Download | Scope |
 | --- | --- | --- |
-| Current 2.0.6 source | [preview ZIP](https://github.com/WatchTestCs/smart-elderly-watch-management/archive/refs/heads/preview.zip) �� [pinned integration code](https://github.com/WatchTestCs/smart-elderly-watch-management/archive/3a889f3aa24986720418d8ceba890754c07cdcd0.zip) | MySQL primary + PG analytics; requires building. The branch archive changes with commits |
+| Current 2.0.6 source | [preview ZIP](https://github.com/WatchTestCs/smart-elderly-watch-management/archive/refs/heads/preview.zip) · [pinned integration code](https://github.com/WatchTestCs/smart-elderly-watch-management/archive/3a889f3aa24986720418d8ceba890754c07cdcd0.zip) | MySQL primary + PG analytics; requires building. The branch archive changes with commits |
 | Latest historical source attachment | [2.0.5 optimized source](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.5-optimized.1) | Legacy PG-only source, without this dual-database/health integration |
 | Historical Windows software | [2.0.2 Setup and portable](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.2-preview.1) | Legacy PG-only application, not 2.0.6 |
 | Historical Linux packages | [Linux notes](docs/LINUX.md) | Separate historical artifacts with unconfirmed compatibility |
@@ -183,18 +181,18 @@ The desktop is not a general-purpose client for an arbitrary remote Go service. 
 
 ### Upgrading a legacy PostgreSQL business database
 
-Back up the database and images, stop writes from both application versions and prepare a migrated, empty MySQL target. In `backend`, set `LEGACY_POSTGRES_URL` and `MYSQL_DSN`; run `go run ./cmd/transfer-postgres` for preflight, then `go run ./cmd/transfer-postgres --apply`. The source is read-only, nonempty targets are rejected, and failed imports roll back target business rows and analytics events together. Table creation is a separate stage; copy images separately. The tool supports PG 0001�C0006 and preserves the health samples, revision cursor and binding epochs from 0007/0008, not Java/H2 or automatic historical-data repair.
+Back up the database and images, stop writes from both application versions and prepare a migrated, empty MySQL target. In `backend`, set `LEGACY_POSTGRES_URL` and `MYSQL_DSN`; run `go run ./cmd/transfer-postgres` for preflight, then `go run ./cmd/transfer-postgres --apply`. The source is read-only, nonempty targets are rejected, and failed imports roll back target business rows and analytics events together. Table creation is a separate stage; copy images separately. The tool supports PG 0001–0006 and preserves the health samples, revision cursor and binding epochs from 0007/0008, not Java/H2 or automatic historical-data repair.
 
 To rebuild lost PG analytics, prepare a new analytics database, change configuration and run `go run ./cmd/analytics-backfill --apply`. Installing the application does not migrate an old business database. Follow the [migration guide](docs/DUAL_DATABASES.md) before switching.
 
 ## Source and builds
 
 ```text
-�ǻ������ֱ�����ϵͳ/
-������ desktop/      Tauri / Rust, capabilities, version checks and Windows build
-������ backend/      Go API, care/analytics workers, embedded SQL and migration tools
-������ oldIot/       Vue 3 / Vite, views, local fonts and browser QA
-������ watch-sim/    Watch API and runtime-discovery simulator
+智慧养老手表管理系统/
+├── desktop/      Tauri / Rust, capabilities, version checks and Windows build
+├── backend/      Go API, care/analytics workers, embedded SQL and migration tools
+├── oldIot/       Vue 3 / Vite, views, local fonts and browser QA
+└── watch-sim/    Watch API and runtime-discovery simulator
 deploy/          MySQL / PG Compose and environment templates
 docs/            Configuration, architecture, verification, releases and operations
 ```
@@ -202,12 +200,12 @@ docs/            Configuration, architecture, verification, releases and operati
 Windows builds require PowerShell 7, Node.js (`^20.19.0 || >=22.12.0`), Go, Rust and MSVC / Windows SDK. The Go module declares a 1.24.0 minimum; the local 2.0.6 build used Go 1.27.2. The Rust package declares a 1.85 minimum. From the source project:
 
 ```powershell
-cd �ǻ������ֱ�����ϵͳ
+cd 智慧养老手表管理系统
 ./desktop/validate-version.ps1
 ./desktop/build.ps1
 ```
 
-The pipeline builds **Vue assets �� Go embedded assets, tests and binary �� sidecar SHA-256 �� Tauri application �� NSIS Setup**. It supports `CARGO_TARGET_DIR`; Setup output is under the project��s `outputs/v2.0.6-preview`. Default builds are unsigned; optional `-SelfSign` provides local self-signing only. Portable/source ZIPs and delivery notes are separate preparation steps. See the [project README](�ǻ������ֱ�����ϵͳ/README.md) and [backend README](�ǻ������ֱ�����ϵͳ/backend/README.md) for development and real-database test requirements.
+The pipeline builds **Vue assets → Go embedded assets, tests and binary → sidecar SHA-256 → Tauri application → NSIS Setup**. It supports `CARGO_TARGET_DIR`; Setup output is under the project’s `outputs/v2.0.6-preview`. Default builds are unsigned; optional `-SelfSign` provides local self-signing only. Portable/source ZIPs and delivery notes are separate preparation steps. See the [project README](智慧养老手表管理系统/README.md) and [backend README](智慧养老手表管理系统/backend/README.md) for development and real-database test requirements.
 
 ## Screenshots and verification
 
@@ -242,12 +240,12 @@ Include version/commit, exact filename, OS, database readiness and redacted repr
 
 | Purpose | References |
 | --- | --- |
-| Source and historical packages | [Artifact index](docs/DOWNLOADS.md) �� [About text](docs/ABOUT.md) |
-| Configuration and migration | [Dual databases](docs/DUAL_DATABASES.md) �� [Setup](docs/SETUP.md) |
-| Architecture and care | [Overview](architecture.md) �� [Implementation](docs/ARCHITECTURE.md) �� [Care deployment](docs/CARE_SERVICE_DEPLOYMENT.md) |
-| Development and verification | [Project](�ǻ������ֱ�����ϵͳ/README.md) �� [Frontend](�ǻ������ֱ�����ϵͳ/oldIot/README.md) �� [Backend](�ǻ������ֱ�����ϵͳ/backend/README.md) �� [Testing](docs/TESTING.md) |
-| Operations and file responsibilities | [Backup/restore](docs/runbooks/backup-restore.md) �� [File index](docs/FILES.md) |
-| Community and history | [Contributing](CONTRIBUTING.md) �� [Support](docs/SUPPORT.md) �� [Changelog](CHANGELOG.md) �� [Historical decisions](docs/decisions/README.md) |
+| Source and historical packages | [Artifact index](docs/DOWNLOADS.md) · [About text](docs/ABOUT.md) |
+| Configuration and migration | [Dual databases](docs/DUAL_DATABASES.md) · [Setup](docs/SETUP.md) |
+| Architecture and care | [Overview](architecture.md) · [Implementation](docs/ARCHITECTURE.md) · [Care deployment](docs/CARE_SERVICE_DEPLOYMENT.md) |
+| Development and verification | [Project](智慧养老手表管理系统/README.md) · [Frontend](智慧养老手表管理系统/oldIot/README.md) · [Backend](智慧养老手表管理系统/backend/README.md) · [Testing](docs/TESTING.md) |
+| Operations and file responsibilities | [Backup/restore](docs/runbooks/backup-restore.md) · [File index](docs/FILES.md) |
+| Community and history | [Contributing](CONTRIBUTING.md) · [Support](docs/SUPPORT.md) · [Changelog](CHANGELOG.md) · [Historical decisions](docs/decisions/README.md) |
 
 Work is restricted to `preview`; this source integration does not modify `main`, move existing tags or publish artifacts. Historical ADRs and verification documents retain their version context. Use this README, the 2.0.6 notes and the dual-database guide for current configuration.
 
