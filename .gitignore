@@ -1,3 +1,4 @@
+# Repository-wide exclusions: local dependencies, generated output, databases and credentials.
 **/node_modules/
 **/target/
 **/dist/
