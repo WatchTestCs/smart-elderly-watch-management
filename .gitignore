@@ -7,3 +7,6 @@
 *.pfx
 *.p12
 *.log
+
+# Private dual-database deployment credentials
+deploy/dual-db.env

@@ -3,10 +3,12 @@ package config
 import "testing"
 
 func TestSafeDefaults(t *testing.T) {
-	t.Setenv("DATABASE_URL", "")
+	t.Setenv("MYSQL_DSN", "")
+	t.Setenv("PG_ANALYTICS_URL", "")
+	t.Setenv("DATABASE_URL", "postgres://legacy.invalid/ignored")
 	t.Setenv("ADDR", "")
 	cfg := Load()
-	if cfg.DatabaseURL != "" {
+	if cfg.MySQLDSN != "" || cfg.PGAnalyticsURL != "" {
 		t.Fatal("default credentials must never be embedded in the service")
 	}
 	if cfg.Addr != "127.0.0.1:8080" {
@@ -15,10 +17,11 @@ func TestSafeDefaults(t *testing.T) {
 }
 
 func TestExplicitDeploymentConfiguration(t *testing.T) {
-	t.Setenv("DATABASE_URL", "postgres://example.local/care?sslmode=require")
+	t.Setenv("MYSQL_DSN", "suining@tcp(mysql.local:3306)/suining?tls=true")
+	t.Setenv("PG_ANALYTICS_URL", "postgres://example.local/analytics?sslmode=require")
 	t.Setenv("ADDR", "0.0.0.0:9090")
 	cfg := Load()
-	if cfg.DatabaseURL != "postgres://example.local/care?sslmode=require" || cfg.Addr != "0.0.0.0:9090" {
-		t.Fatalf("explicit deployment configuration ignored: %+v", cfg)
+	if cfg.MySQLDSN != "suining@tcp(mysql.local:3306)/suining?tls=true" || cfg.PGAnalyticsURL != "postgres://example.local/analytics?sslmode=require" || cfg.Addr != "0.0.0.0:9090" {
+		t.Fatal("explicit dual-database deployment configuration ignored")
 	}
 }

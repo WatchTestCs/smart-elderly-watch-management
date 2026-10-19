@@ -2,9 +2,9 @@
 package handlers
 
 import (
+	"careold-go/internal/analytics"
+	dbstore "careold-go/internal/db"
 	"net/http"
-
-	"github.com/jackc/pgx/v5/pgxpool"
 
 	"careold-go/internal/config"
 	"careold-go/internal/session"
@@ -12,12 +12,13 @@ import (
 
 // Handler 聚合依赖，各组 endpoint 实现在 handler_*.go 中。
 type Handler struct {
-	DB       *pgxpool.Pool
-	Sessions *session.Store
-	Cfg      config.Config
+	DB        *dbstore.Database
+	Analytics *analytics.State
+	Sessions  *session.Store
+	Cfg       config.Config
 }
 
-func New(pool *pgxpool.Pool, sessions *session.Store, cfg config.Config) *Handler {
+func New(pool *dbstore.Database, sessions *session.Store, cfg config.Config) *Handler {
 	return &Handler{DB: pool, Sessions: sessions, Cfg: cfg}
 }
 

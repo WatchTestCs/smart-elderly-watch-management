@@ -1,5 +1,5 @@
 <template>
-  <div class="roles">
+  <div class="roles" v-loading="isLoading" element-loading-text="正在加载老人档案…" :aria-busy="String(isLoading)">
     
     <div class="sys-research">
       <form class="row-search" role="search" @submit.prevent="searchOldPersons">
@@ -67,19 +67,18 @@
 		</el-form-item>
 		<el-form-item label="监护人" prop="customerId">
 
-				<el-select v-model="oldForm.customerId" placeholder="请选择监护人">
+				<el-select class="guardian-select" v-model="oldForm.customerId" placeholder="请选择监护人" :loading="customerLoading" :aria-busy="String(customerLoading)">
 				<el-option v-for="item in options"
       :key="item.customerId"
       :label="item.customerName"
       :value="item.customerId">
 			</el-option>
-			</el-select>			
+			</el-select>
+          <p v-if="customerError" role="alert">{{ customerError }} <el-button plain :loading="customerLoading" @click="addCustomerList">重新加载监护人</el-button></p>			
 
 		
 		</el-form-item>
-			<el-form-item label="手表编号" prop="deviceId">
-			<el-input v-model="oldForm.deviceId"></el-input>
-			</el-form-item>
+        <p>建档后可在设备管理中关联手表。</p>
       </el-form>
       <template #footer><span  class="dialog-footer">
       <el-button @click="oldDialogVisible = false">取 消</el-button>
@@ -132,19 +131,21 @@
         </el-form-item>
         <el-form-item label="监护人" prop="customerId">
 
-        		<el-select v-model="oldEditForm.customerName" placeholder="请选择监护人">
+        		<el-select class="guardian-select" v-model="oldEditForm.customerId" placeholder="请选择监护人" :loading="customerLoading" :aria-busy="String(customerLoading)">
         		<el-option v-for="item in options"
       :key="item.customerId"
       :label="item.customerName"
       :value="item.customerId">
 			</el-option>
         		
-        	</el-select>			
+        	</el-select>
+          <p v-if="customerError" role="alert">{{ customerError }} <el-button plain :loading="customerLoading" @click="addCustomerList">重新加载监护人</el-button></p>			
 
         
         </el-form-item>
 				<el-form-item label="手表编号" prop="deviceId">
-				<el-input v-model="oldEditForm.deviceId"></el-input>
+					<el-input :model-value="oldEditForm.deviceId || '尚未关联'" readonly></el-input>
+					<span>设备关联请在设备管理中修改。</span>
 				</el-form-item>
       </el-form>
       <template #footer><span  class="dialog-footer">
@@ -153,7 +154,8 @@
     </span></template>
     </el-dialog>
 
-    <el-table class="adaptive-record-table" :data="personDetailList"
+    <div v-if="loadError" class="collection-feedback" role="alert"><span>{{ loadError }}</span><el-button plain :loading="isLoading" @click="searchOldPersons(true)">重新加载</el-button></div>
+    <el-table v-if="!loadError" class="adaptive-record-table" :data="personDetailList"
     style="width: 100%" border>
     <template #empty><div  class="care-empty-state"><strong>暂无老人档案</strong><span>添加老人或调整搜索条件后，档案会显示在这里。</span></div></template>
 
@@ -180,7 +182,7 @@
 		<el-table-column prop="customerName" label="监护人" width="100" align="center"></el-table-column>
 		<el-table-column prop="deviceId" label="手表编号" width="100" align="center"></el-table-column>
 
-      <el-table-column label="操作" align="center">
+      <el-table-column label="操作" width="200" align="center" fixed="right">
         <template #default="scope" >
           <el-button size="small" plain type="primary" icon="el-icon-edit"
                      @click="handleeditOldPerson(scope.$index, scope.row)">编辑
@@ -191,7 +193,7 @@
         </template>
       </el-table-column>
     </el-table>
-    <record-cards :records="personDetailList" :fields='[{"key":"bothdate","label":"出生日期"},{"key":"sex","label":"性别"},{"key":"phone","label":"电话"},{"key":"room","label":"房间"},{"key":"beTime","label":"入院时间"},{"key":"familyName","label":"家属姓名"},{"key":"familyRelation","label":"关系"},{"key":"familyPhone","label":"家属电话"},{"key":"familySex","label":"家属性别"},{"key":"customerName","label":"监护人"},{"key":"deviceId","label":"手表编号"},{"key":"illness","label":"病史"},{"key":"warn","label":"过敏"},{"key":"foodLike","label":"喜好食物"},{"key":"foodHate","label":"忌口食物"},{"key":"drag","label":"常用药物"}]' label="长者档案" title-key="name" key-field="oldId">
+    <record-cards v-if="!loadError" :records="personDetailList" :fields='[{"key":"bothdate","label":"出生日期"},{"key":"sex","label":"性别"},{"key":"phone","label":"电话"},{"key":"room","label":"房间"},{"key":"beTime","label":"入院时间"},{"key":"familyName","label":"家属姓名"},{"key":"familyRelation","label":"关系"},{"key":"familyPhone","label":"家属电话"},{"key":"familyAddress","label":"家属地址"},{"key":"familySex","label":"家属性别"},{"key":"customerName","label":"监护人"},{"key":"deviceId","label":"手表编号"},{"key":"illness","label":"病史"},{"key":"warn","label":"过敏"},{"key":"foodLike","label":"喜好食物"},{"key":"foodHate","label":"忌口食物"},{"key":"drag","label":"常用药物"}]' label="老人档案" empty-title="暂无老人档案" title-key="name" key-field="oldId">
       <template #actions="scope"  ><el-button size="small" plain type="primary" icon="el-icon-edit"
                      @click="handleeditOldPerson(scope.$index, scope.row)">编辑
           </el-button>
@@ -199,7 +201,7 @@
           </el-button></template>
     </record-cards>
     
-    <div style="margin-top: 10px;text-align: center">
+    <div v-if="!loadError" style="margin-top: 10px;text-align: center">
       <el-pagination
         @size-change="handleSizeChange"
         @current-change="changePage"

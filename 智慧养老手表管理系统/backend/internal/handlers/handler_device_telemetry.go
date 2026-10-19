@@ -173,19 +173,25 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	rateState, preState := "0", "0"
-	if hrv > 0 && (hrv < hrLow || hrv > hrHigh) {
-		rateState = "1"
+	var rateState, preState any
+	if hr != nil {
+		rateState = "0"
+		if hrv < hrLow || hrv > hrHigh {
+			rateState = "1"
+		}
 	}
-	if bpv > 0 && (bpv < bpLow || bpv > bpHigh) {
-		preState = "1"
+	if bp != nil {
+		preState = "0"
+		if bpv < bpLow || bpv > bpHigh {
+			preState = "1"
+		}
 	}
 
 	if hrv > 0 || bpv > 0 {
 		if _, err := tx.Exec(ctx,
 			`INSERT INTO ratepre(device_id,old_id,rate_state,pre_state,create_time,hr,bp)
 			 VALUES($1,$2,$3,$4,$5,$6,$7)`,
-			d.ID, oldID, rateState, preState, beTime, hrv, bpv); err != nil {
+			d.ID, oldID, rateState, preState, beTime, hr, bp); err != nil {
 			rollback()
 			response.Error500(w, ref())
 			return
@@ -204,7 +210,7 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 		}
 		if _, err := tx.Exec(ctx,
 			`INSERT INTO watch_day_info(device_id, sleep, step, sleep_sate, create_time)
-			 VALUES($1, COALESCE($2,0), COALESCE($3,0), COALESCE($4,'0'), $5)
+			 VALUES($1, $2, $3, $4, $5)
 			 ON CONFLICT (device_id, create_time) DO UPDATE SET
 				sleep = COALESCE($2, watch_day_info.sleep),
 				step = COALESCE($3, watch_day_info.step),
@@ -312,8 +318,7 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 			writeValidation400(w)
 			return
 		}
-		if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtextextended($1,0))`,
-			"care-sos:"+deviceNo+":"+requestID); err != nil {
+		if _, err := tx.Exec(ctx, `SELECT old_id FROM oldperson WHERE old_id=$1 FOR UPDATE`, *d.OldID); err != nil {
 			rollback()
 			response.Error500(w, ref())
 			return

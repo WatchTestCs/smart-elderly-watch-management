@@ -1,10 +1,13 @@
 package main
 
 import (
+	"careold-go/internal/analytics"
+	dbstore "careold-go/internal/db"
 	"context"
 	"log"
 	"net/http"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -17,12 +20,12 @@ import (
 	"careold-go/internal/ratelimit"
 	"careold-go/internal/response"
 	"careold-go/internal/session"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // Only fully migrated database handlers are published to HTTP requests.
 type databaseService struct {
-	api atomic.Pointer[http.Handler]
+	api       atomic.Pointer[http.Handler]
+	analytics analytics.State
 }
 
 func (s *databaseService) middleware(local http.Handler) http.Handler {
@@ -30,7 +33,7 @@ func (s *databaseService) middleware(local http.Handler) http.Handler {
 		api := s.api.Load()
 		if r.URL.Path == "/restful/service/status" && r.Method == http.MethodGet {
 			w.Header().Set("Cache-Control", "no-store")
-			response.JSON(w, http.StatusOK, map[string]any{"databaseReady": api != nil})
+			response.JSON(w, http.StatusOK, map[string]any{"databaseReady": api != nil, "primaryEngine": "mysql", "analytics": map[string]bool{"configured": s.analytics.Snapshot().Configured, "ready": s.analytics.Snapshot().Ready}})
 			return
 		}
 		if !strings.HasPrefix(r.URL.Path, "/restful/") ||
@@ -52,7 +55,7 @@ func (s *databaseService) middleware(local http.Handler) http.Handler {
 }
 
 func watchDatabase(ctx context.Context, cfg config.Config, sessions *session.Store, service *databaseService) {
-	var pool *pgxpool.Pool
+	var pool *dbstore.Database
 	var workerDone <-chan struct{}
 	defer func() {
 		// Drain the care worker before closing its shared connection pool.
@@ -69,23 +72,29 @@ func watchDatabase(ctx context.Context, cfg config.Config, sessions *session.Sto
 		attempt, cancel := context.WithTimeout(ctx, 5*time.Second)
 		var err error
 		if pool == nil {
-			pool, err = db.Open(attempt, cfg.DatabaseURL)
+			pool, err = db.OpenMySQL(attempt, cfg.MySQLDSN)
 		} else {
 			err = pool.Ping(attempt)
 		}
 		cancel()
 		if err == nil && api == nil {
 			migration, cancelMigration := context.WithTimeout(ctx, 2*time.Minute)
-			err = db.Migrate(migration, pool)
+			err = db.MigrateMySQL(migration, pool)
 			cancelMigration()
 			if err == nil {
 				mux := http.NewServeMux()
-				handlers.New(pool, sessions, cfg).Routes(mux)
+				h := handlers.New(pool, sessions, cfg)
+				h.Analytics = &service.analytics
+				h.Routes(mux)
 				done := make(chan struct{})
 				workerDone = done
 				go func() {
 					defer close(done)
-					care.Run(ctx, pool)
+					var jobs sync.WaitGroup
+					jobs.Add(2)
+					go func() { defer jobs.Done(); care.Run(ctx, pool) }()
+					go func() { defer jobs.Done(); analytics.Run(ctx, pool, cfg.PGAnalyticsURL, &service.analytics) }()
+					jobs.Wait()
 				}()
 				api = ratelimit.New().Middleware(csrf.Middleware(sessions, auth.Middleware(sessions, sensitiveCareAudit(pool, mux))))
 			}

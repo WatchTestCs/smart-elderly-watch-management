@@ -1,6 +1,11 @@
 param([switch]$SelfSign)
 $ErrorActionPreference='Stop'
 $project=Split-Path $PSScriptRoot -Parent
+$cargoTarget=Join-Path $PSScriptRoot 'target'
+if($env:CARGO_TARGET_DIR){
+ $cargoTarget=if([IO.Path]::IsPathRooted($env:CARGO_TARGET_DIR)){$env:CARGO_TARGET_DIR}else{Join-Path $PSScriptRoot $env:CARGO_TARGET_DIR}
+ $cargoTarget=[IO.Path]::GetFullPath($cargoTarget)
+}
 & (Join-Path $PSScriptRoot 'validate-version.ps1')
 $meta=Get-Content (Join-Path $PSScriptRoot 'version.json') -Raw|ConvertFrom-Json
 $out=Join-Path $project ("outputs/v{0}-{1}" -f $meta.version,$meta.channel)
@@ -34,7 +39,7 @@ try {
  if($LASTEXITCODE -ne 0){throw 'Tauri tooling installation failed'}
  node (Join-Path $PSScriptRoot 'node_modules/@tauri-apps/cli/tauri.js') build --no-bundle --ci -- --locked
  if($LASTEXITCODE -ne 0){throw 'Tauri native build failed'}
- if($SelfSign){& (Join-Path $PSScriptRoot 'sign.ps1') -FilePath (Join-Path $PSScriptRoot 'target/release/suining.exe') | Set-Content (Join-Path $out 'application-signature.json')}
+ if($SelfSign){& (Join-Path $PSScriptRoot 'sign.ps1') -FilePath (Join-Path $cargoTarget 'release/suining.exe') | Set-Content (Join-Path $out 'application-signature.json')}
  $previousTemp=$env:TEMP
  $previousTmp=$env:TMP
  $bundleTemp=Join-Path $out 'bundle-temp'
@@ -49,7 +54,7 @@ try {
   $env:TMP=$previousTmp
  }
 } finally { Pop-Location }
-$setup=Get-ChildItem (Join-Path $PSScriptRoot 'target/release/bundle/nsis') -Filter '*-setup.exe'|Sort-Object LastWriteTime -Descending|Select-Object -First 1
+$setup=Get-ChildItem (Join-Path $cargoTarget 'release/bundle/nsis') -Filter '*-setup.exe'|Sort-Object LastWriteTime -Descending|Select-Object -First 1
 if(!$setup){throw 'NSIS installer missing'}
 $destination=Join-Path $out ("Suining-Setup-{0}-win-x64.exe" -f $meta.version)
 Copy-Item -LiteralPath $setup.FullName -Destination $destination -Force

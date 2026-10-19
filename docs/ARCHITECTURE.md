@@ -1,16 +1,18 @@
-# 实现架构 · Tauri / Go / Vue / PostgreSQL
+# 实现架构 · Tauri / Go / Vue / MySQL / PostgreSQL
 
 本文与当前 `preview` 源码对应，解释实际进程、协议、数据和构建路径。产品入口见 [README](../README.md)，整体关系见 [architecture.md](../architecture.md)，取代旧桌面设计的决定见 [ADR-0006](decisions/0006-tauri-go-postgres.md)。
+
+当前本地补丁采用 **MySQL 业务主库 + PG 异步分析库**。下述进程和鉴权边界保留，旧 PG 单库迁移描述属于兼容历史；当前双库职责、配置及恢复流程以 [DUAL_DATABASES](DUAL_DATABASES.md) 为准。
 
 ## 组件职责
 
 | 组件 | 实现 | 负责 | 不负责 |
 | --- | --- | --- | --- |
 | 原生桌面 | Tauri 2 / Rust / WebView2 | 单实例、窗口、Go 文件校验、启动退出、受限初始化 IPC | SQL 业务、在网页中暴露令牌 |
-| 页面 | Vue 3 / Vue Router / Element Plus | 管理与家属工作区、表单、图表、路由、就地连接提醒 | 直接连接 PostgreSQL、离线伪造记录 |
-| 本地服务 | Go 标准库 HTTP | 业务 API、设备鉴权、会话、CSRF、图片处理与静态资源 | 安装或托管 PostgreSQL |
-| 数据访问 | pgx 连接池 / SQL 事务 | 连接、查询、约束、迁移和失败回滚 | 将 H2 文件自动转换成 PostgreSQL |
-| 外部数据库 | 独立 PostgreSQL | 业务记录及数据库持久化 | 保存 Windows 上的本机图片与诊断日志 |
+| 页面 | Vue 3 / Vue Router / Element Plus | 管理与家属工作区、表单、图表、路由、就地连接提醒 | 直接连接数据库、离线伪造记录 |
+| 本地服务 | Go 标准库 HTTP | 业务 API、设备鉴权、会话、CSRF、图片处理与静态资源 | 安装或托管数据库 |
+| 数据访问 | MySQL database/sql + PG pgx / SQL 事务 | 连接、查询、约束、迁移和失败回滚 | 将 H2 文件自动转换成 PostgreSQL |
+| 外部数据库 | MySQL 主库 + PG 分析库 | 主库业务事务、分析投影及数据库持久化 | 保存 Windows 上的本机图片与诊断日志 |
 
 前端当前使用 Vite 8，图表为 ECharts，地图为 Leaflet / OpenStreetMap。Go 模块名称仍为 `careold-go`，前端目录仍为 `oldIot`；名称兼容不等于仍采用 Java、Vue 2 或旧构建链。
 
@@ -21,7 +23,7 @@ sequenceDiagram
   participant R as Rust 主进程
   participant G as Go 服务
   participant V as Vue 界面
-  participant P as PostgreSQL
+  participant P as MySQL 主库
   R->>R: 校验 sidecar SHA-256，生成随机令牌
   R->>G: 启动子进程，传入端口、目录和父 PID
   G-->>R: 就绪文件：PID 与动态端口
@@ -42,7 +44,7 @@ sequenceDiagram
 
 - Rust 在启动前验证 Go 程序的 SHA-256；校验值由构建时生成并编入原生程序。
 - Rust 为每次启动生成随机令牌，使用进程环境传给 Go，不交给 Vue 状态或本地存储。
-- Go 的 HTTP 监听与静态资源不等待 PostgreSQL；Rust 校验就绪文件 PID 和端口后才打开窗口。
+- Go 的 HTTP 监听与静态资源不等待业务数据库；Rust 校验就绪文件 PID 和端口后才打开窗口。
 - Go 默认桌面监听为回环地址与动态端口。Rust 限制网页导航的实际 origin，不允许切换到任意外站。
 - 正常关闭时先请求认证退出接口，等待后必要时终止子进程；Go 还定期检查父进程，防止遗留服务。
 
@@ -64,17 +66,19 @@ Tauri 能力配置限定主窗口、本机页面和必要命令；原生命令�
 
 业务按领域组织在 `handler_auth`、`handler_user`、`handler_family`、`handler_old`、`handler_vitals` 与 `handler_social`，分别处理账号、人员、家庭关联、长者/设备/告警、健康日常和公告互动。当前以处理器和共享依赖组织，不宣称存在未实现的微服务或独立领域服务层。
 
+照护任务由 `handler_care_incident`、岗位与诊断处理器及 `internal/care` 后台作业协作。总览注册 `CareInbox`，读取带总数、岗位和操作者 ID 的分页任务；接单、处置与复核通过事务写入状态及事件履历，独立复核同时更新关联告警。设备归属只通过设备登记、绑定、解绑入口修改，普通档案编辑保留现有归属。具体缺陷及本轮修复见 [2026-10-19 修复报告](ARCHITECTURE_REPAIR_2026-10-19.md)。
+
 ### 会话与离线退出
 
 会话使用 `JSESSIONID` Cookie 和 Go 内存存储；登录换会话标识以防固定会话。进程重启不会恢复原来的内存会话。
 
-退出登录由本地会话端点处理，不查询 PostgreSQL，仍检查会话和 CSRF。这样数据库断开时用户仍可退出，也不会通过放开鉴权来换取离线可用性。
+退出登录由本地会话端点处理，不查询业务数据库，仍检查会话和 CSRF。这样数据库断开时用户仍可退出，也不会通过放开鉴权来换取离线可用性。
 
 ## 数据库连接与故障恢复
 
 实现入口：[cmd/server/database.go](../智慧养老手表管理系统/backend/cmd/server/database.go)、[前端 auth.js](../智慧养老手表管理系统/oldIot/src/auth.js)。
 
-Go 的连接任务在后台运行。一次连接或 Ping 探测最长 5 秒，成功后的迁移有独立 2 分钟期限；一轮结束后间隔 3 秒继续检查。连接与迁移全部成功后才通过原子指针发布业务处理器，检测到连接失败时撤下它。
+Go 的主库连接任务在后台运行；PG 分析同步独立重试，不决定业务 API 是否就绪。一次连接或 Ping 探测最长 5 秒，成功后的迁移有独立 2 分钟期限；一轮结束后间隔 3 秒继续检查。连接与迁移全部成功后才通过原子指针发布业务处理器，检测到连接失败时撤下它。
 
 | 接口或状态 | 含义 |
 | --- | --- |
@@ -93,23 +97,25 @@ Go 的连接任务在后台运行。一次连接或 Ping 探测最长 5 秒，�
 
 | 内容 | 保存位置 | 运维含义 |
 | --- | --- | --- |
-| 账号、档案、设备、健康、公告等业务数据 | 独立 PostgreSQL | 使用数据库备份策略，部署方负责权限与可用性 |
+| 账号、档案、设备、健康、公告等业务数据 | 独立 MySQL | 使用数据库备份策略，部署方负责权限与可用性 |
 | 上传图片 | 默认 `%APPDATA%\岁宁\images` | 文件目录需与业务引用一起备份 |
 | 服务诊断 | 默认 `%APPDATA%\岁宁\server-console.log` | 诊断用途，不作为业务数据源 |
 | 运行发现文件 | 默认用户目录下 `runtime` | 运行期文件，不含桌面令牌 |
 | 会话与 CSRF | Go 进程内存 | 重启需要重新建立会话 |
 | Vue 产物与迁移 SQL | 编入 Go 二进制 | 无需依赖启动工作目录；不代表数据库内嵌 |
 
-SQL 迁移按文件顺序执行，使用事务级 advisory lock 串行协调，并以 `schema_migrations` 记录已应用版本。设备到长者的外键会阻止孤儿关系；已有非法引用导致迁移失败时，不应靠删数据或清空归属绕过。
+MySQL 迁移按文件执行，通过连接级锁及 `schema_migrations` 校验和协调；旧 PG 与分析迁移使用事务级 advisory lock。设备到长者的外键会阻止孤儿关系；已有非法引用导致迁移失败时，不应靠删数据或清空归属绕过。
 
 家属关联采用事务锁和条件更新以避免覆盖绑定；图片处理在完整解码前限制尺寸和像素，落盘文件名不直接使用用户路径。以上为源码已有边界，不是本轮新增安全审计或所有风险已消除的声明。
 
 ## 运行配置
 
+当前应用服务使用 `MYSQL_DSN` 与 `PG_ANALYTICS_URL`；桌面分别通过 `SUINING_MYSQL_DSN`、`SUINING_PG_ANALYTICS_URL` 传入。下面的 `DATABASE_URL` 仅供旧 PG 迁移工具使用，不会让当前应用切换回 PG 主库。完整示例见 [双库配置](DUAL_DATABASES.md)。
+
 | 配置 | 使用方 | 说明 |
 | --- | --- | --- |
-| `SUINING_DATABASE_URL` | Windows 桌面启动 | Rust 读取后传给 Go；配置修改需重启软件 |
-| `DATABASE_URL` | 直接 Go 启动 | PostgreSQL DSN，部署时显式配置，不依赖开发默认值 |
+| `SUINING_MYSQL_DSN` / `SUINING_PG_ANALYTICS_URL` | Windows 桌面启动 | Rust 转交双库配置，修改后重启 |
+| `MYSQL_DSN` / `PG_ANALYTICS_URL` | 直接 Go 启动 | 主库 DSN 和分析 URL，无默认凭据 |
 | `ADDR` | 直接 Go 启动 | 非桌面模式默认 `127.0.0.1:8080`，跨机器访问需明确配置监听和网络边界 |
 | `SUINING_PORT` / `SUINING_BIND_ADDRESS` | 桌面协议 | 桌面默认回环，端口 0 表示动态分配 |
 | `SUINING_USER_DATA` | Rust 桌面 | 覆盖本地数据目录；默认沿用 `%APPDATA%\岁宁` |
@@ -141,4 +147,4 @@ Windows 的完整交付实现与本轮验证不等于 Linux 的原生跨平台�
 
 ADR-0001/0002/0003 记录旧 Electron、Spring 和 H2，已由 ADR-0006 取代。原始源码、旧 Release、旧数据库及验收历史不因迁移而被删除或伪造。
 
-本次只更新介绍与架构文档，执行源码一致性和本地链接检查，没有重新运行完整功能、构建或远程 CI，也不移动发布标签。当前 Windows 包的既有验收、Linux 附件限制及签名状态分别见 [verification.json](verification.json)、[数据库验收](DATABASE_AVAILABILITY.md)、[Linux 说明](LINUX.md) 和 [签名手册](runbooks/signing.md)。
+该架构文档初次整理时只更新介绍与文档，执行源码一致性和本地链接检查；2026-10-19 的本地源码修复另行执行了 Go 测试、竞争检测、Vue 构建和浏览器验收，证据与限制见 [本轮报告](ARCHITECTURE_REPAIR_2026-10-19.md)。没有重新发布安装包、运行远程 CI 或移动发布标签。当前 Windows 包的既有验收、Linux 附件限制及签名状态分别见 [verification.json](verification.json)、[数据库验收](DATABASE_AVAILABILITY.md)、[Linux 说明](LINUX.md) 和 [签名手册](runbooks/signing.md)。

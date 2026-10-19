@@ -1,5 +1,5 @@
 <template>
-  <div class="roles">
+  <div class="roles" v-loading="isLoading" element-loading-text="正在加载监护人信息…" :aria-busy="String(isLoading)">
     
     <div class="sys-research">
       <form class="row-search" role="search" @submit.prevent="searchCustomers">
@@ -88,7 +88,8 @@
     </span></template>
     </el-dialog>
 
-    <el-table class="adaptive-record-table" :data="customerList"
+    <div v-if="loadError" class="collection-feedback" role="alert"><span>{{ loadError }}</span><el-button plain :loading="isLoading" @click="searchCustomers(true)">重新加载</el-button></div>
+    <el-table v-if="!loadError" class="adaptive-record-table" :data="customerList"
     style="width: 100%" border>
     <template #empty><div  class="care-empty-state"><strong>暂无监护人信息</strong><span>添加监护人或调整搜索条件后，信息会显示在这里。</span></div></template>
 
@@ -109,7 +110,7 @@
         </template>
       </el-table-column>
     </el-table>
-    <record-cards :records="customerList" :fields='[{"key":"customerAge","label":"年龄"},{"key":"customerSex","label":"性别"},{"key":"customerPhone","label":"电话"},{"key":"customerAddress","label":"地址"}]' label="监护人资料" title-key="customerName" key-field="customerId">
+    <record-cards v-if="!loadError" :records="customerList" :fields='[{"key":"customerAge","label":"年龄"},{"key":"customerSex","label":"性别"},{"key":"customerPhone","label":"电话"},{"key":"customerAddress","label":"地址"}]' label="监护人资料" title-key="customerName" key-field="customerId">
       <template #actions="scope"  ><el-button size="small" plain type="primary" icon="el-icon-edit"
                      @click="handleEditRole(scope.$index, scope.row)">编辑
           </el-button>
@@ -117,7 +118,7 @@
           </el-button></template>
     </record-cards>
     
-    <div style="margin-top: 10px;text-align: center">
+    <div v-if="!loadError" style="margin-top: 10px;text-align: center">
       <el-pagination
         @size-change="handleSizeChange"
         @current-change="changePage"

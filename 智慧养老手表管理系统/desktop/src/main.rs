@@ -155,8 +155,13 @@ fn start_backend(app: &tauri::App) -> Result<Backend, Box<dyn std::error::Error>
         .env("SUINING_DESKTOP_TOKEN", &token)
         .env_remove("DESKTOP_TOKEN")
         .env("SUINING_PORT", "0");
-    if let Ok(url) = std::env::var("SUINING_DATABASE_URL") {
-        command.env("DATABASE_URL", url);
+    for (desktop_key, server_key) in [
+        ("SUINING_MYSQL_DSN", "MYSQL_DSN"),
+        ("SUINING_PG_ANALYTICS_URL", "PG_ANALYTICS_URL"),
+    ] {
+        if let Ok(value) = std::env::var(desktop_key) {
+            command.env(server_key, value);
+        }
     }
     #[cfg(windows)]
     command.creation_flags(0x08000000);

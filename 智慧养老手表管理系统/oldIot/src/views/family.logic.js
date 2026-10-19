@@ -36,6 +36,8 @@ export default {
       },
       familyEditForm: {},
       
+      isLoading: false,
+      loadError: '',
       total: 0,
       pageSize: 10,
       currentPage: 1,
@@ -56,11 +58,14 @@ export default {
   },
   methods: {
     searchfamily (keepPage = false) {
+      if (this.isLoading) return
+      this.isLoading = true
+      this.loadError = ''
       if (keepPage !== true) this.currentPage = 1
      var _this = this
        var familyName = _this.searchText
        
-       axios.post('restful/family/select',
+       return axios.post('restful/family/select',
          { page: this.currentPage, pageSize: this.pageSize,
            'familyName': familyName === '' ? '' : _this.searchText
          },
@@ -70,13 +75,16 @@ export default {
            },
            withCredentials: true
          }).then(function (response) {
+         if (!Array.isArray(response.data.familyDtos)) throw new Error('invalid records')
          _this.familyList = response.data.familyDtos
          _this.total = response.data.total ?? response.data.familyDtos.length
 
        })
-         .catch(function (error) {
-           console.log(error)
-         })
+         .catch(function () {
+           _this.loadError = '家属账号暂时无法加载，请检查服务连接后重试。'
+           _this.familyList = []
+           _this.total = 0
+         }).finally(function () { _this.isLoading = false })
       
     },
     addFamily () {

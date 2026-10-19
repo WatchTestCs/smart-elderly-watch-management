@@ -84,22 +84,22 @@ const router = createRouter({
       children: [
 				{
 				  path: '/main',
-				  meta: { title: '首页' }, name: 'main',
+				  meta: { title: '运营总览' }, name: 'main',
 				  component: main
 				},
 				{
 					path: '/ratepre',
-					meta: { title: '心率血压' }, name: 'ratepre',
+					meta: { title: '心率与血压' }, name: 'ratepre',
 					component: ratepre
 				},
 				{
 					path: '/step',
-					meta: { title: '睡眠步数' }, name: 'step',
+					meta: { title: '睡眠与步数' }, name: 'step',
 					component: step
 				},
 				{
 					path: '/position',
-					meta: { title: '位置信息' }, name: 'position',
+					meta: { title: '位置与告警' }, name: 'position',
 					component: position
 				},
 				{
@@ -109,12 +109,12 @@ const router = createRouter({
 				},
 				{
 					path: '/watch',
-					meta: { title: '手表信息' }, name: 'watch',
+					meta: { title: '监测阈值档案' }, name: 'watch',
 					component: watch
 				},
 				{
 					path: '/person',
-					meta: { title: '人员信息' }, name: 'person',
+					meta: { title: '老人档案' }, name: 'person',
 					component: person
 				},
 				{
@@ -149,7 +149,7 @@ const router = createRouter({
 				},
 				{
 				  path: '/family',
-				  meta: { title: '家属管理' }, name: 'family',
+				  meta: { title: '家属账号' }, name: 'family',
 				  component: family
 				},
 				{
@@ -159,7 +159,7 @@ const router = createRouter({
 				},
 				{
 				  path: '/inviteCode',
-				  meta: { title: '邀请码管理' }, name: 'inviteCode',
+				  meta: { title: '家属注册邀请码' }, name: 'inviteCode',
 				  component: inviteCode
 				},
 				{

@@ -2,10 +2,12 @@
 
 此部署方式使 Go 后端与桌面 GUI 的退出独立。**单实例并不等于真正高可用**：硬件接入、短信运营商、数据库、网络、供电和现场救援均需要另行保障。
 
+当前本地双库配置、旧库迁移与 PG 故障边界见 [DUAL_DATABASES](DUAL_DATABASES.md)。
+
 ## 运行模式
 
 - 在 Linux 服务器持续运行 `backend/cmd/server` 编译的 Go 程序，Windows 桌面端只作为客户端使用，不启动/终止这个服务端进程。
-- PostgreSQL 需持久化、定期备份并演练恢复；所有数据库迁移在启动前由服务执行，首次升级前必须备份。
+- MySQL 主库与 PG 分析库需分别持久化，业务备份以 MySQL 为准；所有数据库迁移在启动前由服务执行，首次升级前必须备份。
 - `/healthz` 仅表示 HTTP 服务可连接；`GET /restful/service/status` 的 `databaseReady` 字段用于 DB 就绪诊断。注意 Web 和通知网关可用性要另行监控，不能把 HTTP 200 当作 SOS 可被救援的证明。
 
 ## systemd 部署示例
@@ -26,7 +28,8 @@ sudo systemctl status suining-care
 
 ```env
 ADDR=127.0.0.1:8080
-DATABASE_URL=postgres://suining:REPLACE@127.0.0.1:5432/suining?sslmode=require
+MYSQL_DSN=suining:REPLACE@tcp(127.0.0.1:3306)/suining?tls=true
+PG_ANALYTICS_URL=postgres://suining_analytics:REPLACE@127.0.0.1:5432/suining_analytics?sslmode=require
 IMAGE_DIR=/var/lib/suining/images
 CARE_NOTIFY_WEBHOOK_URL=https://your-trusted-gateway.example/api/notify
 CARE_NOTIFY_WEBHOOK_TOKEN=REPLACE_WITH_SECRET

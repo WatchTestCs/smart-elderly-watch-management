@@ -5,8 +5,9 @@ package handlers
 // 细节以 go-rewrite-spec/group-b.md 为准。
 
 import (
+	dbstore "careold-go/internal/db"
 	"context"
-	"github.com/jackc/pgx/v5"
+
 	"github.com/jackc/pgx/v5/pgconn"
 	"net/http"
 )
@@ -53,11 +54,11 @@ func (h *Handler) routeOld(mux *http.ServeMux) {
 // 通用小工具（本组内复用；不与 util.go / 其它 handler_*.go 的同名函数冲突）
 // ---------------------------------------------------------------------------
 
-// oldQuerier 抽象 *pgxpool.Pool 与 pgx.Tx 的查询接口。
+// oldQuerier 抽象 *dbstore.Database 与 pgx.Tx 的查询接口。
 type oldQuerier interface {
 	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
-	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
-	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+	Query(ctx context.Context, sql string, args ...any) (dbstore.Rows, error)
+	QueryRow(ctx context.Context, sql string, args ...any) dbstore.Row
 }
 
 // write400 参数校验失败 → HTTP 400 + 0000。

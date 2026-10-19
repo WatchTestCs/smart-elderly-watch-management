@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	dbstore "careold-go/internal/db"
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
@@ -83,7 +84,7 @@ const oldDeviceCols = `device_id, device_no, secret, alias, model, app_version, 
 	old_id, family_id, status, bind_time, last_time, last_lng, last_lat, create_time,
 	person_handled, rate_handled, pre_handled, boot_seq, handled_seq, health_epoch`
 
-func scanOldDevice(row pgx.Row) (*oldDevice, error) {
+func scanOldDevice(row dbstore.Row) (*oldDevice, error) {
 	var d oldDevice
 	if err := row.Scan(&d.ID, &d.No, &d.Secret, &d.Alias, &d.Model, &d.AppVersion,
 		&d.Battery, &d.OldID, &d.FamilyID, &d.Status, &d.BindTime, &d.LastTime,
@@ -150,19 +151,12 @@ func touchDevice(ctx context.Context, q oldQuerier, deviceID int64, battery *int
 	return err
 }
 
-// saveWatchProfileUpsert upsert 手表阈值档案行（默认阈值用）。
+// saveWatchProfileUpsert fills a missing default profile without replacing a
+// caregiver's customized thresholds during device registration or binding.
 func saveWatchProfileUpsert(ctx context.Context, q oldQuerier, deviceID int64, hrf, hrl, bpf, bpl int, opTime time.Time) (int64, error) {
 	ct, err := q.Exec(ctx,
-		`UPDATE watch_info SET hrf=$1, hrl=$2, bpf=$3, bpl=$4, op_time=$5 WHERE device_id=$6`,
-		hrf, hrl, bpf, bpl, opTime, deviceID)
-	if err != nil {
-		return 0, err
-	}
-	if ct.RowsAffected() > 0 {
-		return ct.RowsAffected(), nil
-	}
-	ct, err = q.Exec(ctx,
-		`INSERT INTO watch_info(device_id, op_time, bpf, bpl, hrf, hrl) VALUES($1,$2,$3,$4,$5,$6)`,
+		`INSERT INTO watch_info(device_id, op_time, bpf, bpl, hrf, hrl) VALUES($1,$2,$3,$4,$5,$6)
+		 ON CONFLICT(device_id) DO NOTHING`,
 		deviceID, opTime, bpf, bpl, hrf, hrl)
 	if err != nil {
 		return 0, err

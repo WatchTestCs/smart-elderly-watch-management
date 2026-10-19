@@ -1,15 +1,16 @@
 package handlers
 
 import (
+	dbstore "careold-go/internal/db"
 	"careold-go/internal/response"
 	"context"
-	"github.com/jackc/pgx/v5"
+
 	"net/http"
 	"strings"
 )
 
 type dbQuerier interface {
-	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+	Query(ctx context.Context, sql string, args ...any) (dbstore.Rows, error)
 }
 
 // notificationPhones 有老人绑定的家属手机号（去重）。

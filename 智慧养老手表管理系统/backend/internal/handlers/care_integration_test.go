@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+
 	"context"
 	"crypto/hmac"
 	"crypto/sha256"
@@ -99,7 +100,8 @@ func TestCareReceiptRequiresTrustedGatewaySignature(t *testing.T) {
 	h := testHandler(pool)
 	api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret})
 	var id int64
-	if err := pool.QueryRow(context.Background(), "UPDATE care_notification_outbox SET status='sent' RETURNING id").Scan(&id); err != nil {
+	mustExec(t, pool, "UPDATE care_notification_outbox SET status='sent'")
+	if err := pool.QueryRow(context.Background(), "SELECT id FROM care_notification_outbox").Scan(&id); err != nil {
 		t.Fatal(err)
 	}
 	t.Setenv("CARE_RECEIPT_SECRET", "test-receipt-secret-longer-than-32-characters")

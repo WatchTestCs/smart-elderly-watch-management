@@ -96,6 +96,7 @@ func (h *Handler) watchInfoSelect(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		list = append(list, map[string]any{
+			"deviceId": deviceID, "opTime": dateOrNil(opTime),
 			"device_id": deviceID, "op_time": dateOrNil(opTime),
 			"hrf": hrf, "bpf": bpf, "hrl": hrl, "bpl": bpl, "name": name,
 		})

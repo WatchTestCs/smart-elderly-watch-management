@@ -21,7 +21,8 @@ func TestCareImmediateSignedReceiptDuringSending(t *testing.T) {
 	h := testHandler(pool)
 	api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret})
 	var id int64
-	if err := pool.QueryRow(t.Context(), "UPDATE care_notification_outbox SET status='sending' RETURNING id").Scan(&id); err != nil {
+	mustExec(t, pool, "UPDATE care_notification_outbox SET status='sending'")
+	if err := pool.QueryRow(t.Context(), "SELECT id FROM care_notification_outbox").Scan(&id); err != nil {
 		t.Fatal(err)
 	}
 	secret := "test-receipt-secret-at-least-32-characters"

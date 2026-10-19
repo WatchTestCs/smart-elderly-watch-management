@@ -60,6 +60,8 @@ export default {
 				customerId: ''
       },
       
+      isLoading: false,
+      loadError: '',
       total: 0,
       pageSize: 10,
       currentPage: 1,
@@ -80,11 +82,14 @@ export default {
   },
   methods: {
     searchCustomers (keepPage = false) {
+      if (this.isLoading) return
+      this.isLoading = true
+      this.loadError = ''
       if (keepPage !== true) this.currentPage = 1
 				var _this = this
 				var customerName = _this.searchText
        
-       axios.post('restful/customer/select',
+       return axios.post('restful/customer/select',
          { page: this.currentPage, pageSize: this.pageSize,
            'customerName': customerName === '' ? '' : _this.searchText
          },
@@ -94,13 +99,16 @@ export default {
            },
            withCredentials: true
          }).then(function (response) {
+         if (!Array.isArray(response.data.customers)) throw new Error('invalid records')
          _this.customerList = response.data.customers
          _this.total = response.data.total ?? response.data.customers.length
 
        })
-         .catch(function (error) {
-           console.log(error)
-         })
+         .catch(function () {
+           _this.loadError = '监护人信息暂时无法加载，请检查服务连接后重试。'
+           _this.customerList = []
+           _this.total = 0
+         }).finally(function () { _this.isLoading = false })
       
     },
     addRoles () {

@@ -46,12 +46,11 @@ func (h *Handler) healthStatistics(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	rows, err := h.DB.Query(r.Context(), `SELECT payload FROM health_sample
-	 WHERE old_id=$1 AND payload->>'source'=$2 AND payload->>'sourceDevice'=$3
-	 AND payload->>'metric'=$4 AND payload->>'semantics'=$5
-	 AND NOT COALESCE((payload->>'deleted')::boolean,false)
-	 AND (payload->>'start')::timestamptz<$7
-	 AND ((payload->>'start')::timestamptz>=$6 OR ($5='interval' AND (payload->>'end')::timestamptz>$6))
-	 ORDER BY revision LIMIT 10001`, oldID, req.Source, req.SourceDevice, req.Metric, req.Semantics, req.From, req.To)
+	 WHERE old_id=$1 AND source=$2 AND source_device=$3
+	 AND metric=$4 AND semantics=$5 AND NOT deleted
+	 AND sample_start<$7
+	 AND (sample_start>=$6 OR ($5='interval' AND sample_end>$6))
+	 ORDER BY revision LIMIT 10001`, oldID, req.Source, req.SourceDevice, req.Metric, req.Semantics, req.From.UnixMicro(), req.To.UnixMicro())
 	if err != nil {
 		response.Error500(w, ref())
 		return

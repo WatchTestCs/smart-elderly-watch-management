@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	dbstore "careold-go/internal/db"
 	"careold-go/internal/response"
 	"context"
 	"github.com/jackc/pgx/v5"
@@ -66,7 +67,7 @@ const personCols = `d.device_id, d.device_no, d.alias, d.old_id, d.last_time, d.
 const personFrom = `FROM device d LEFT JOIN oldperson o ON o.old_id = d.old_id
 	LEFT JOIN watch_info w ON w.device_id = d.device_id`
 
-func scanPersonRow(row pgx.Row, extra ...any) (*personRow, error) {
+func scanPersonRow(row dbstore.Row, extra ...any) (*personRow, error) {
 	var pr personRow
 	dest := []any{&pr.deviceID, &pr.deviceNo, &pr.alias, &pr.oldID, &pr.lastTime,
 		&pr.battery, &pr.bootSeq, &pr.handledSeq, &pr.createTime, &pr.oldName,

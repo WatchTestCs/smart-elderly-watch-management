@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	dbstore "careold-go/internal/db"
 	"careold-go/internal/response"
 	"context"
 	"github.com/jackc/pgx/v5"
@@ -90,7 +91,7 @@ type bindCodeRow struct {
 	UsedDevID  *int64
 }
 
-func scanBindCode(row pgx.Row) (*bindCodeRow, error) {
+func scanBindCode(row dbstore.Row) (*bindCodeRow, error) {
 	var b bindCodeRow
 	if err := row.Scan(&b.ID, &b.Code, &b.OldID, &b.FamilyID, &b.CreateUser,
 		&b.ExpireTime, &b.Used, &b.UsedTime, &b.UsedDevID); err != nil {
@@ -189,6 +190,19 @@ func (h *Handler) deviceBind(w http.ResponseWriter, r *http.Request) {
 		} else {
 			response.Error500(w, ref())
 		}
+		return
+	}
+	// Lock the elder before the device, matching unbind/delete lock order.
+	// Changing owners requires an explicit unbind so the old primary reference
+	// cannot be left pointing at a device that now reports for someone else.
+	if err := tx.QueryRow(ctx, `SELECT old_id FROM device WHERE device_id=$1 FOR UPDATE`, d.ID).Scan(&d.OldID); err != nil {
+		rollback()
+		response.Error500(w, ref())
+		return
+	}
+	if d.OldID != nil && *d.OldID != *bc.OldID {
+		rollback()
+		conflict409(w, "设备已绑定其他长者，请先在设备管理解除绑定")
 		return
 	}
 	now := time.Now()

@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 
+	"careold-go/internal/db"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -30,7 +31,7 @@ type Record struct {
 func Digest(b []byte) string { h := sha256.Sum256(b); return hex.EncodeToString(h[:]) }
 
 // Save participates in the caller's transaction; ownership is part of identity.
-func Save(ctx context.Context, tx pgx.Tx, o Owner, s Sample) (int64, bool, error) {
+func Save(ctx context.Context, tx *db.Transaction, o Owner, s Sample) (int64, bool, error) {
 	s, err := s.Normalize()
 	if err != nil {
 		return 0, false, err
@@ -66,11 +67,12 @@ func Save(ctx context.Context, tx pgx.Tx, o Owner, s Sample) (int64, bool, error
 	} else if !errors.Is(err, pgx.ErrNoRows) {
 		return 0, false, err
 	}
-	if err = tx.QueryRow(ctx, `UPDATE health_clock SET revision=revision+1 WHERE id=1 RETURNING revision`).Scan(&revision); err != nil {
+	revision++
+	if _, err = tx.Exec(ctx, `UPDATE health_clock SET revision=$1 WHERE id=1`, revision); err != nil {
 		return 0, false, err
 	}
-	_, err = tx.Exec(ctx, `INSERT INTO health_sample(sample_id,old_id,device_id,epoch,version,revision,payload) VALUES($1,$2,$3,$4,$5,$6,$7)
-	 ON CONFLICT(sample_id) DO UPDATE SET version=EXCLUDED.version,revision=EXCLUDED.revision,payload=EXCLUDED.payload`, id, o.OldID, o.DeviceID, o.Epoch, s.Version, revision, b)
+	_, err = tx.Exec(ctx, `INSERT INTO health_sample(sample_id,old_id,device_id,epoch,version,revision,payload,source,source_device,metric,semantics,sample_start,sample_end,deleted) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+	 ON CONFLICT(sample_id) DO UPDATE SET version=EXCLUDED.version,revision=EXCLUDED.revision,payload=EXCLUDED.payload,source=EXCLUDED.source,source_device=EXCLUDED.source_device,metric=EXCLUDED.metric,semantics=EXCLUDED.semantics,sample_start=EXCLUDED.sample_start,sample_end=EXCLUDED.sample_end,deleted=EXCLUDED.deleted`, id, o.OldID, o.DeviceID, o.Epoch, s.Version, revision, b, s.Source, s.SourceDevice, s.Metric, s.Semantics, s.Start.UnixMicro(), s.End.UnixMicro(), s.Deleted)
 	if err != nil {
 		return 0, false, err
 	}

@@ -114,14 +114,14 @@ func (h *Handler) deviceCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if oldID != nil {
-		ct, err := tx.Exec(ctx, `UPDATE oldperson SET device_id=$1 WHERE old_id=$2`, deviceID, *oldID)
+		ct, err := tx.Exec(ctx, `UPDATE oldperson SET device_id=COALESCE(device_id,$1) WHERE old_id=$2`, deviceID, *oldID)
 		if err != nil || ct.RowsAffected() != 1 {
 			rollback()
 			response.Error500(w, ref())
 			return
 		}
 		today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local)
-		if n, err := saveWatchProfileUpsert(ctx, tx, deviceID, 110, 55, 140, 90, today); err != nil || n != 1 {
+		if _, err := saveWatchProfileUpsert(ctx, tx, deviceID, 110, 55, 140, 90, today); err != nil {
 			rollback()
 			response.Error500(w, ref())
 			return
@@ -200,7 +200,7 @@ func (h *Handler) deviceUnbind(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	rollback := func() { _ = tx.Rollback(ctx) }
-	if _, err := tx.Exec(ctx, `UPDATE oldperson SET device_id=NULL WHERE device_id=$1`, deviceID); err != nil {
+	if _, err := tx.Exec(ctx, `UPDATE oldperson SET device_id=(SELECT min(d.device_id) FROM device d WHERE d.old_id=oldperson.old_id AND d.device_id<>$1) WHERE device_id=$1`, deviceID); err != nil {
 		rollback()
 		response.Error500(w, ref())
 		return
@@ -244,7 +244,7 @@ func (h *Handler) deviceDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	rollback := func() { _ = tx.Rollback(ctx) }
-	if _, err := tx.Exec(ctx, `UPDATE oldperson SET device_id=NULL WHERE device_id=$1`, deviceID); err != nil {
+	if _, err := tx.Exec(ctx, `UPDATE oldperson SET device_id=(SELECT min(d.device_id) FROM device d WHERE d.old_id=oldperson.old_id AND d.device_id<>$1) WHERE device_id=$1`, deviceID); err != nil {
 		rollback()
 		response.Error500(w, ref())
 		return

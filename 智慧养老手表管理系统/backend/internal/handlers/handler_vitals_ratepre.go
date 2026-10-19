@@ -1,8 +1,9 @@
 package handlers
 
 import (
+	dbstore "careold-go/internal/db"
 	"careold-go/internal/response"
-	"github.com/jackc/pgx/v5"
+
 	"net/http"
 	"strconv"
 	"strings"
@@ -35,7 +36,7 @@ const ratepreLatestSelect = `SELECT o.name AS name, o.old_id AS oldId, o.sex AS 
 	` INNER JOIN (SELECT *, ROW_NUMBER() OVER (PARTITION BY old_id ORDER BY create_time DESC, id DESC) AS rn FROM ratepre) r` +
 	` ON r.old_id=o.old_id AND r.rn=1`
 
-func scanRatepreDTO(rows pgx.Rows) (ratepreDTO, error) {
+func scanRatepreDTO(rows dbstore.Rows) (ratepreDTO, error) {
 	var d ratepreDTO
 	err := rows.Scan(&d.Name, &d.OldID, &d.Sex, &d.RateState, &d.PreState, &d.Hr, &d.Bp, &d.RecordID, &d.RateHandled, &d.PreHandled, &d.CreateTime)
 	return d, err

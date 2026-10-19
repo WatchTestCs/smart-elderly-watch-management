@@ -25,7 +25,7 @@
           </el-form-item>
           <el-form-item label="密码" prop="password" for="login-password">
             <el-input id="login-password" aria-label="密码" v-model="loginForm.password" :type="showPassword ? 'text' : 'password'" placeholder="请输入密码" autocomplete="current-password" @keyup.enter="submitForm">
-              <template #prefix><i  class="el-input__icon el-icon-setting" aria-hidden="true"></i></template><template #suffix><button  type="button" class="password-visibility" :aria-label="showPassword ? '隐藏密码' : '显示密码'" :aria-pressed="String(showPassword)" @click="showPassword = !showPassword"><i class="el-icon-view" aria-hidden="true"></i></button></template>
+              <template #prefix><svg class="el-input__icon password-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 4v3"/></svg></template><template #suffix><button  type="button" class="password-visibility" :aria-label="showPassword ? '隐藏密码' : '显示密码'" :aria-pressed="String(showPassword)" @click="showPassword = !showPassword"><i class="el-icon-view" aria-hidden="true"></i></button></template>
             </el-input>
           </el-form-item>
           <p v-if="errorMessage" class="auth-error" role="alert">{{ errorMessage }}</p>
@@ -137,6 +137,7 @@ export default {
 .login-form :deep(.el-input__suffix) { right: 0; }
 .login-form :deep(.el-input__suffix .el-input__icon) { width: 44px; min-height: 44px; color: #53645c; }
 .password-visibility { width: 48px; height: 48px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: #235442; cursor: pointer; }
+.password-lock { width: 16px; height: 16px; flex-shrink: 0; }
 .submit-button { width: 100%; min-height: 54px; margin-top: 6px; border-radius: 9px; letter-spacing: .04em; font-size: 18px; font-weight: 600; }
 .auth-error { margin: -5px 0 12px; color: #a4262c; font-size: 17px; line-height: 1.7; }
 .auth-register { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px; margin-top: 12px; color: #53645c; font-size: 17px; }

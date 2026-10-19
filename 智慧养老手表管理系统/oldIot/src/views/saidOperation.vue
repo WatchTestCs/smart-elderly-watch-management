@@ -1,5 +1,5 @@
 <template>
-  <div class="roles">
+  <div class="roles" v-loading="isLoading" element-loading-text="正在加载评论…" :aria-busy="String(isLoading)">
 
     <el-dialog
       title="评论回复"
@@ -22,7 +22,8 @@
     </span></template>
     </el-dialog>
 
-    <el-table class="adaptive-record-table" :data="saidList"
+    <div v-if="loadError" class="collection-feedback" role="alert"><span>{{ loadError }}</span><el-button plain :loading="isLoading" @click="searchSaid(true)">重新加载</el-button></div>
+    <el-table v-if="!loadError" class="adaptive-record-table" :data="saidList"
     style="width: 100%" >
     <template #empty><div  class="care-empty-state"><strong>暂无评论</strong><span>收到的评论和回复会显示在这里。</span></div></template>
 
@@ -45,7 +46,7 @@
         </template>
       </el-table-column>
     </el-table>
-    <record-cards :records="saidList" :fields='[{"key":"saidId","label":"作者"},{"key":"said","label":"评论"},{"key":"back","label":"回复"},{"key":"backTime","label":"回复时间"},{"key":"title","label":"文章标题"}]' label="公告评论" title-key="personName" key-field="saidId" time-key="saidTime">
+    <record-cards v-if="!loadError" :records="saidList" :fields='[{"key":"saidId","label":"作者"},{"key":"said","label":"评论"},{"key":"back","label":"回复"},{"key":"backTime","label":"回复时间"},{"key":"title","label":"文章标题"}]' label="公告评论" title-key="personName" key-field="saidId" time-key="saidTime">
       <template #actions="scope"  ><el-button v-if="scope.row.back==null" size="small" plain type="primary" icon="el-icon-edit"
                      @click="handleeditSaid(scope.$index, scope.row)">回复
           </el-button>
@@ -53,7 +54,7 @@
           </el-button></template>
     </record-cards>
     
-    <div style="margin-top: 10px;text-align: center">
+    <div v-if="!loadError" style="margin-top: 10px;text-align: center">
       <el-pagination
         @size-change="handleSizeChange"
         @current-change="changePage"
@@ -84,6 +85,8 @@ export default {
         back: ''
       },
       
+      isLoading: false,
+      loadError: '',
       total: 0,
       pageSize: 10,
       currentPage: 1,
@@ -96,10 +99,13 @@ export default {
   },
   methods: {
     searchSaid (keepPage = false) {
+      if (this.isLoading) return
+      this.isLoading = true
+      this.loadError = ''
       if (keepPage !== true) this.currentPage = 1
       var _this = this
         
-        axios.post('restful/said/selectByUser',
+        return axios.post('restful/said/selectByUser',
           { page: this.currentPage, pageSize: this.pageSize,
           },
           {
@@ -108,6 +114,7 @@ export default {
             },
             withCredentials: true
           }).then(function (response) {
+          if (!Array.isArray(response.data.saidDtos)) throw new Error('invalid records')
           var tableData2 = response.data.saidDtos
           _this.total = response.data.total ?? response.data.saidDtos.length
 					for(var i=0;i<tableData2.length;i++){
@@ -117,9 +124,11 @@ export default {
 					_this.saidList=tableData2
 
         })
-          .catch(function (error) {
-            console.log(error)
-          })
+          .catch(function () {
+            _this.loadError = '评论暂时无法加载，请检查服务连接后重试。'
+            _this.saidList = []
+            _this.total = 0
+          }).finally(function () { _this.isLoading = false })
       
     },
     

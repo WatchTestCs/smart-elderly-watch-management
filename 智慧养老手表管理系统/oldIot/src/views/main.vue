@@ -4,16 +4,17 @@
       <div><h1>运营总览</h1><p class="page-subtitle">查看设备异常与平台公告，及时跟进照护事项。</p></div>
       <el-button type="primary" icon="el-icon-plus" @click="addtext">发布公告</el-button>
     </div>
-    <care-inbox />
+    <care-inbox @verified="searchposition" />
+    <div class="dashboard-panels">
     <section class="overview-grid" aria-label="设备告警摘要">
       <article class="overview-card alert-card" v-loading="countLoading" :aria-busy="String(countLoading)">
         <div class="metric-icon amber"><i class="el-icon-warning"></i></div>
-        <div class="metric-copy"><span>设备异常类别计数</span><strong v-if="!countError">{{ allCount == null ? '—' : allCount }}</strong><strong v-else class="metric-error" role="status">{{ countError }}</strong><small>同一设备可能对应多类异常</small></div>
+        <div class="metric-copy"><span>设备异常类别计数</span><strong v-if="!countError">{{ allCount == null ? '—' : allCount }}</strong><strong v-else class="metric-error" role="status">{{ countError }}</strong><small v-if="categoryCounts">心率 {{ categoryCounts.rate }} · 血压 {{ categoryCounts.pressure }} · 睡眠 {{ categoryCounts.sleep }}</small><small>同一设备可能对应多类异常</small></div>
         <el-button v-if="countError" link @click="getCount">重新加载设备统计</el-button><el-button v-else link @click="$router.push('/device')">查看设备 <i class="el-icon-arrow-right"></i></el-button>
       </article>
       <article class="overview-card fall-card" v-loading="positionLoading" :aria-busy="String(positionLoading)">
         <div class="metric-icon rose"><i class="el-icon-warning"></i></div>
-        <div class="metric-copy"><span>摔倒告警</span><strong v-if="!positionError">{{ num == null ? '—' : num }}</strong><strong v-else class="metric-error" role="status">{{ positionError }}</strong><small>根据最近上报的位置记录统计</small></div>
+        <div class="metric-copy"><span>摔倒告警</span><strong v-if="!positionError">{{ num == null ? '—' : num }}</strong><strong v-else class="metric-error" role="status">{{ positionError }}</strong><small v-if="positionTotal != null">{{ positionTotal ? num + ' / ' + positionTotal + ' 位长者有摔倒告警' : '暂无长者位置记录' }}</small><small>根据最近上报的位置记录统计</small></div>
         <el-button v-if="positionError" link @click="searchposition">重新加载摔倒统计</el-button><el-button v-else link @click="$router.push('/position')">查看位置 <i class="el-icon-arrow-right"></i></el-button>
       </article>
       <article class="overview-note">
@@ -41,6 +42,7 @@
       </div>
       <div class="pagination-wrap" v-if="total > pageSize"><el-pagination @size-change="handleSizeChange" @current-change="changePage" v-model:current-page="currentPage" :page-size="pageSize" layout="total, sizes, prev, pager, next" :total="total"></el-pagination></div>
     </section>
+    </div>
   </div>
 </template>
 <style scoped>
@@ -84,6 +86,12 @@
 .table-empty strong { color: #263632; font-size: 17px; line-height: 1.6; }
 .table-empty span { max-width: 420px; font-size: 15px; line-height: 1.8; white-space: normal; }
 .pagination-wrap { display: flex; justify-content: flex-end; padding-top: 18px; }
+@media (min-width: 1800px) {
+  .dashboard-panels { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 24px; align-items: start; }
+  .overview-grid { grid-template-columns: 1fr; margin-bottom: 0; }
+  .alert-card { border-right: 0; border-bottom: 1px solid #e2e9e1; }
+  .announcement-panel { min-width: 0; }
+}
 @media (min-width: 901px) and (max-width: 1180px) { .overview-grid { grid-template-columns: 1fr; } .alert-card { border-right: 0; border-bottom: 1px solid #e2e9e1; } }
 @media (max-width: 760px) { .overview-card { padding: 22px 18px; } .alert-card { border-right: 0; border-bottom: 1px solid #e2e9e1; } .overview-note { padding: 18px; } .desktop-announcements { display: none; } .mobile-announcements { display: block; } .page-heading { align-items: flex-start; flex-direction: column; } .page-heading h1 { font-size: 25px; } .overview-grid { grid-template-columns: 1fr; } .overview-note { grid-column: auto; } .panel-heading { align-items: flex-start; flex-direction: column; } .search-box { width: 100%; } .announcement-panel { padding: 18px 14px; } .pagination-wrap { justify-content: center; overflow-x: auto; } }
 </style>
@@ -92,11 +100,12 @@ import axios from 'axios'
 import CareInbox from '@/components/CareInbox.vue'
 
 export default {
+  components: { CareInbox },
   data () {
     return {
       tableData: [], searchText: '', appliedSearch: '', total: 0,
       isLoading: false, loadError: '', pageSize: 10, currentPage: 1,
-      allCount: null, num: null, countLoading: false, positionLoading: false,
+      allCount: null, categoryCounts: null, num: null, positionTotal: null, countLoading: false, positionLoading: false,
       countError: '', positionError: ''
     }
   },
@@ -117,21 +126,42 @@ export default {
       this.countLoading = true
       this.countError = ''
       this.allCount = null
-      return axios.post('restful/step/getAllCount', {}, { withCredentials: true }).then((response) => {
-        var value = response.data.allCount
-        if ((typeof value !== 'number' && typeof value !== 'string') || String(value).trim() === '' || !Number.isInteger(Number(value)) || Number(value) < 0) throw new Error('missing count')
-        this.allCount = Number(value)
+      this.categoryCounts = null
+      return Promise.all([
+        axios.post('restful/ratepre/selectRatepreCount', {}, { withCredentials: true }),
+        axios.post('restful/step/selectStepCount', {}, { withCredentials: true })
+      ]).then(([vitals, steps]) => {
+        var rates = vitals.data.rates, pressures = vitals.data.pres, sleeps = steps.data.deviceIdList
+        if (![rates, pressures, sleeps].every(Array.isArray)) throw new Error('missing counts')
+        this.categoryCounts = { rate: rates.length, pressure: pressures.length, sleep: sleeps.length }
+        this.allCount = rates.length + pressures.length + sleeps.length
       }).catch(() => { this.countError = '设备统计暂时无法加载' }).then(() => { this.countLoading = false })
     },
-    searchposition () {
+    async searchposition () {
       if (this.positionLoading) return
       this.positionLoading = true
       this.positionError = ''
       this.num = null
-      return axios.post('restful/position/select', { name: '' }, { withCredentials: true }).then((response) => {
-        if (!Array.isArray(response.data.positionDtos)) throw new Error('missing positions')
-        this.num = response.data.positionDtos.filter(item => item.status === 1 || item.status === '1').length
-      }).catch(() => { this.positionError = '摔倒统计暂时无法加载' }).then(() => { this.positionLoading = false })
+      this.positionTotal = null
+      try {
+        var page = 1, loaded = 0, total = 0, falls = 0
+        do {
+          var response = await axios.post('restful/position/select', { name: '', page, pageSize: 100 }, { withCredentials: true })
+          var positions = response.data.positionDtos
+          if (!Array.isArray(positions)) throw new Error('missing positions')
+          total = response.data.total ?? positions.length
+          if (!Number.isInteger(total) || total < 0 || (!positions.length && loaded < total)) throw new Error('incomplete positions')
+          falls += positions.filter(item => item.status === 1 || item.status === '1').length
+          loaded += positions.length
+          page += 1
+        } while (loaded < total)
+        this.num = falls
+        this.positionTotal = total
+      } catch (_) {
+        this.positionError = '摔倒统计暂时无法加载'
+      } finally {
+        this.positionLoading = false
+      }
     },
     handleSizeChange (val) { this.pageSize = val; this.currentPage = 1; this.searchOlds(true) },
     changePage (val) { this.currentPage = val; this.searchOlds(true) },

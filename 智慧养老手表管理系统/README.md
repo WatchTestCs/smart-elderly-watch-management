@@ -1,56 +1,65 @@
-# 岁宁 2.0.2 · 源码工程
+# 岁宁 2.0.6 · 源码工程
 
-本目录包含当前 Windows 桌面主线的四部分：Tauri / Rust 桌面壳、Go 业务服务、Vue 3 / Vite 界面和手表接口模拟器。业务数据使用独立 PostgreSQL，不由安装器创建或托管。
+本工程由 **Tauri 2 / Rust 桌面壳、Go 业务服务、Vue 3 / Vite 界面和手表模拟器**组成。MySQL 是唯一业务主库，PostgreSQL 保存异步分析投影；数据库由部署方独立管理。
 
-[项目介绍与下载](../README.md) · [架构](../architecture.md) · [构建](../docs/BUILD.md) · [使用与连接配置](../docs/SETUP.md)
+[产品与整体架构](../README.md) · [2.0.6 改进](../docs/releases/2.0.6.md) · [双库配置与迁移](../docs/DUAL_DATABASES.md) · [实现协议](../docs/ARCHITECTURE.md)
 
-## 工程分工
+## 工程职责
 
-| 目录 | 内容 | 开发入口 |
+| 目录 | 职责 | 主要入口 |
 | --- | --- | --- |
-| `desktop` | Tauri、窗口、原生命令、sidecar 校验与 Windows 构建 | `src/main.rs`、`tauri.conf.json`、`build.ps1` |
-| `backend` | Go HTTP、业务、会话、PostgreSQL、SQL 迁移 | `cmd/server`、`internal`、`migrations` |
-| `oldIot` | Vue 页面、组件、字体、地图与前端 QA | `src`、`vite.config.js`、`qa` |
-| `watch-sim` | 手表接口模拟与运行端口发现 | 模拟工具与测试文件 |
+| `desktop` | 原生窗口、单实例、受限初始化、Go 哈希校验与生命周期 | `src/main.rs`、`capabilities`、`build.ps1` |
+| `backend` | 业务 API、设备接入、会话、照护与分析作业 | `cmd/server`、`internal/handlers`、`internal/care`、`internal/analytics` |
+| `backend/migrations` | MySQL 业务与旧 PG 迁移、PG 分析 schema | 内嵌 SQL 与版本校验 |
+| `oldIot` | Vue 路由、管理与家属页面、字体、地图、QA | `src`、`vite.config.js`、`qa` |
+| `watch-sim` | 手表接口与运行端口发现模拟 | 工具及测试文件 |
 
-`oldIot` 和模块名 `careold-go` 为历史命名；当前不需要 Maven、JDK、Electron 或旧 Webpack/node-sass 工具链。
+Rust 启动 Go，Vue 从 Go 获取内嵌生产资源并调用同源 API；首次初始化走受限原生 IPC。Go 所有业务读写都使用 MySQL，分析作业将已提交 outbox 事件写入 PG，失败时保留队列。`oldIot` 和模块名 `careold-go` 是历史命名，当前不需要 Java、Electron、H2 或旧 Webpack 工具链。
 
-## 构建 Windows 安装包
+## Windows 完整构建
 
-准备 Windows x64、C++ Build Tools / Windows SDK、Rust stable、Go、Node.js 与 PowerShell 7。当前 CI 使用 Go 1.27.2；Go 模块最低声明为 1.24.0。前端 Node 支持范围以 `oldIot/package.json` 为准，构建指南建议 Node 22.12+。
-
-在本目录执行：
+准备 PowerShell 7、Node.js（`^20.19.0 || >=22.12.0`）、Go、Rust、C++ Build Tools 和 Windows SDK。Go 模块声明最低 1.24.0，本地 2.0.6 构建使用 Go 1.27.2；Rust 包声明最低 1.85。版本以锁文件和模块声明为准。
 
 ```powershell
+./desktop/validate-version.ps1
 ./desktop/build.ps1
-# 可选本机自签名；不是公开受信任签名
+# 可选本机自签，不是公开受信任证书
 ./desktop/build.ps1 -SelfSign
 ```
 
-脚本安装锁定依赖、构建 Vue、嵌入 Go 静态资源、执行 Go 测试与编译、生成 sidecar 哈希，再编译 Tauri 和生成 NSIS Setup。产物位于 `outputs/v2.0.2-preview`。缺少 WebView2 时，Setup 联网下载微软引导程序并静默补装共享运行时。
+构建顺序：锁定依赖安装 → Vue 生产构建 → 复制 Go 内嵌资源 → Go 测试、静态检查、编译 → sidecar 哈希 → Tauri 编译 → NSIS Setup。脚本支持 `CARGO_TARGET_DIR`；安装包位于工程目录 `outputs/v2.0.6-preview/Suining-Setup-2.0.6-win-x64.exe`。版本校验覆盖前端、桌面、Cargo、Go 版本文件及锁文件中的产品版本。
 
-`desktop/version.json` 为产品版本入口；`validate-version.ps1` 核对各模块产品版本。源码 ZIP 和免安装 ZIP 是发布整理步骤，已有附件见 Release，不把这些步骤误称为 build.ps1 的自动输出。详细工具和环境说明见 [BUILD](../docs/BUILD.md)。
+默认不签名。免安装 ZIP、源码 ZIP、说明与摘要是单独整理步骤，`build.ps1` 不会自动生成全部交付附件。Setup 缺失 WebView2 时联网补装；免安装版需已有 WebView2，并保留同目录的两个 EXE。
 
-## 前后端分别开发
+## 前后端开发
 
-前端：进入 `oldIot`，执行 `npm ci`、`npm run dev`。开发代理将 `/restful` 转发到本机 8795 端口。
+在一个终端进入 `backend`，配置开发库并启动服务：
 
-后端：进入 `backend`，先配置独立开发数据库；直接启动 Go 时使用 `DATABASE_URL`，并设置 `ADDR=127.0.0.1:8795` 与前端代理对应，再运行 `go run ./cmd/server`。不要使用生产库做回归测试。
+```powershell
+$env:MYSQL_DSN='suining:替换密码@tcp(127.0.0.1:13306)/suining'
+$env:PG_ANALYTICS_URL='postgres://suining_analytics:替换密码@127.0.0.1:15432/suining_analytics?sslmode=disable'
+$env:ADDR='127.0.0.1:8795'
+go run ./cmd/server
+```
 
-纯浏览器开发不具备 Tauri 原生管理员初始化令牌；首次初始化需要原生桌面链路，不能通过放开 HTTP 初始化权限来绕过。生产桌面会加载 Go 内嵌的真实前端，不依赖 Vite 开发服务器。
+另一个终端进入 `oldIot`：
 
-## 连接与本地数据
+```powershell
+npm ci
+npm run dev
+```
 
-桌面读取 `SUINING_DATABASE_URL`，传给 Go；连接串由部署方提供，不在源码中保存生产账号。修改配置后重启软件。自动重连只针对已经配置的数据库，不会自行寻找服务器或猜测凭据。
+Vite 将 `/restful` 代理到 `127.0.0.1:8795`。纯 API 模式可直接开发；完整桌面构建必须先嵌入前端。纯浏览器开发不能通过 Tauri 初始化管理员，使用原生桌面完成首次初始化，不应放开 HTTP 初始化鉴权。
 
-未连接数据库仍可打开界面。已登录后断线保留页面与输入，数据库相关操作就地提醒；退出登录、字号与窗口操作不依赖数据库。恢复后重新检查会话，不重放失败操作。
+以上无 TLS 连接只适用于受控本机环境，远程连接需验证证书。PG 可暂不配置，核心业务仍可使用，但分析事件会积压，需监控容量。桌面使用 `SUINING_MYSQL_DSN` / `SUINING_PG_ANALYTICS_URL`，配置修改后重启；旧 `SUINING_DATABASE_URL` 不再作为主库回退。
 
-Windows 默认图片、日志及运行信息目录为 `%APPDATA%\岁宁`；业务数据库独立保存，会话位于 Go 内存。旧 H2 文件不会自动转换成 PostgreSQL，保留旧资料不代表已经完成迁移。首次空库创建管理员，没有默认通用账号。
+## 测试、数据与迁移
 
-## 测试与发布范围
+- [后端 README](backend/README.md)：Go 测试、专用 MySQL / PG 集成环境、离线导入与分析回填。
+- [前端 README](oldIot/README.md)：生产构建、Playwright QA、会话与响应式页面。
+- [双库指南](../docs/DUAL_DATABASES.md)：Compose、权限、事件重试、旧 PG 到空 MySQL 的迁移。安装不会自动迁移数据库；图片另行复制，旧 Java/H2 不直接支持。
+- [照护部署](../docs/CARE_SERVICE_DEPLOYMENT.md)：长期值守、通知网关、送达回执与人工响应。桌面关闭后本地 Go 随之退出，不能替代常驻值守服务。
 
-[测试指南](../docs/TESTING.md) 区分 Go/真实 PostgreSQL、模拟 API 浏览器检查和原生桌面验收。未配置 `TEST_DATABASE_URL` 时数据库测试会跳过，不能称为集成通过。UI 模拟器与手表接口模拟不等于真实硬件联调。
+MySQL 不可用时界面仍能打开，业务 API 提示不可用；恢复后检查会话，不重放失败业务写入。PG 不可用只延迟分析。默认 Windows 图片、日志与运行信息位于 `%APPDATA%\岁宁`，会话在 Go 内存，业务库和图片分别备份。
 
-Release 中 Linux 软件与数据库工具是用户提供的附件，不代表本目录的 Tauri 源码已在 Linux 完成编译和运行验证。见 [Linux 说明](../docs/LINUX.md)。
-
-只在 `preview` 提交，本次文档更新不更改二进制、版本号、既有标签或仓库全局 About。
+本地 2.0.6 已构建并完成版本、摘要与内置服务检查，未执行安装器或原生桌面窗口验收。历史 Linux 附件不能证明本工程已完成 Linux 原生构建。仅更新 `preview`；此次整合保留并适配远程健康采样，见 [整合记录](../docs/INTEGRATION_2.0.6.md)。先前安装包未包含该整合，本次不发布 Release。

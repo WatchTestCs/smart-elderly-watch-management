@@ -1,4 +1,4 @@
-// Package db 封装 PostgreSQL 连接池与内嵌 SQL 迁移。
+// Package db 提供 MySQL 主库、SQL 适配与旧 PG 迁移工具。
 package db
 
 import (

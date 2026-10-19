@@ -59,12 +59,15 @@ func (h *Handler) careReceipt(w http.ResponseWriter, r *http.Request) {
 	}
 	defer tx.Rollback(ctx)
 	var incidentID int64
-	err = tx.QueryRow(ctx, `UPDATE care_notification_outbox
-   SET status='delivered',delivered_at=now()
-   WHERE id=$1 AND status IN ('sending','sent') RETURNING incident_id`, item.NotificationID).Scan(&incidentID)
+	err = tx.QueryRow(ctx, `SELECT incident_id FROM care_notification_outbox
+   WHERE id=$1 AND status IN ('sending','sent') FOR UPDATE`, item.NotificationID).Scan(&incidentID)
 	if err != nil {
 		// A duplicate or receipt for an unattempted task cannot change an incident.
 		response.JSON(w, http.StatusConflict, map[string]any{"returnCode": "0000", "message": "回执状态不符合预期或已处理"})
+		return
+	}
+	if _, err = tx.Exec(ctx, `UPDATE care_notification_outbox SET status='delivered',delivered_at=now() WHERE id=$1`, item.NotificationID); err != nil {
+		response.Error500(w, ref())
 		return
 	}
 	if _, err = tx.Exec(ctx, `UPDATE care_incident SET state='notified',updated_at=now()

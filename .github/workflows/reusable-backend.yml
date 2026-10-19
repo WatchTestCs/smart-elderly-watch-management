@@ -11,6 +11,16 @@ jobs:
     name: Test, build and vet
     runs-on: ubuntu-latest
     services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: ci_root_only
+          MYSQL_ROOT_HOST: "%"
+          MYSQL_DATABASE: suining_test
+        ports: ["3306:3306"]
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -u root -pci_root_only --silent"
+          --health-interval 5s --health-timeout 5s --health-retries 20
       postgres:
         image: postgres:16
         env:
@@ -36,9 +46,10 @@ jobs:
       - name: Run backend tests, build and vet
         working-directory: 智慧养老手表管理系统/backend
         env:
+          TEST_MYSQL_DSN: root:ci_root_only@tcp(localhost:3306)/suining_test
           TEST_DATABASE_URL: postgres://careold:careold@localhost:5432/careold_test?sslmode=disable
         run: |
-          go test -race -count=1 -timeout 120s ./...
+          go test -race -count=1 -timeout 240s ./...
           go build ./...
           go vet ./...
           test -z "$(gofmt -l ./cmd ./internal ./migrations)"

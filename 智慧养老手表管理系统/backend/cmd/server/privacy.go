@@ -1,18 +1,18 @@
 package main
 
 import (
+	dbstore "careold-go/internal/db"
 	"net/http"
 	"strings"
 
 	"careold-go/internal/response"
 	"careold-go/internal/session"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // Audit authenticated requests to endpoints that expose personal, health,
 // location or device information. No request bodies, phone numbers, location
 // coordinates, bearer tokens or query strings are stored.
-func sensitiveCareAudit(pool *pgxpool.Pool, next http.Handler) http.Handler {
+func sensitiveCareAudit(pool *dbstore.Database, next http.Handler) http.Handler {
 	prefixes := []string{
 		"/restful/oldPerson/", "/restful/family/", "/restful/position/",
 		"/restful/ratepre/", "/restful/step/", "/restful/device/",

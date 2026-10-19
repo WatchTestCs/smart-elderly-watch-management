@@ -1,8 +1,9 @@
 package handlers
 
 import (
+	dbstore "careold-go/internal/db"
 	"careold-go/internal/response"
-	"github.com/jackc/pgx/v5"
+
 	"net/http"
 	"time"
 )
@@ -24,7 +25,7 @@ func (h *Handler) alarmProcessSelect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := r.Context()
-	var rows pgx.Rows
+	var rows dbstore.Rows
 	var err error
 	if id == 0 {
 		rows, err = h.DB.Query(ctx,

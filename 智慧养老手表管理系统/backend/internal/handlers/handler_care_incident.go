@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 // Care incident endpoints are ADMIN-only: a family session cannot accept or close a care task.
@@ -47,6 +48,23 @@ func (h *Handler) careIncidents(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	state := str(m, "state")
+	if state == "" {
+		state = "active"
+	}
+	if state != "active" && state != "verified" {
+		write400(w, "任务范围应为 active 或 verified")
+		return
+	}
+	duty, ok := h.careDuty(w, r, actor)
+	if !ok {
+		return
+	}
+	var total int64
+	if err := h.DB.QueryRow(r.Context(), `SELECT count(*) FROM care_incident WHERE (state='verified')=$1`, state == "verified").Scan(&total); err != nil {
+		response.Error500(w, ref())
+		return
+	}
 	rows, err := h.DB.Query(r.Context(),
 		`SELECT i.id,i.old_id,i.device_id,i.kind,i.state,i.severity,i.created_at,i.due_at,
           i.acknowledged_by,i.acknowledged_at,i.resolved_by,i.resolved_at,i.verified_by,i.verified_at,
@@ -59,9 +77,9 @@ func (h *Handler) careIncidents(w http.ResponseWriter, r *http.Request) {
             WHEN bool_or(n.status='sent') THEN 'sent'
             ELSE 'no_recipient' END
            FROM care_notification_outbox n WHERE n.incident_id=i.id)
-     FROM care_incident i LEFT JOIN oldperson o ON o.old_id=i.old_id ORDER BY
-       CASE WHEN i.state='verified' THEN 1 ELSE 0 END, i.due_at ASC, i.id DESC
-     LIMIT $1 OFFSET $2`, ps, (page-1)*ps)
+     FROM care_incident i LEFT JOIN oldperson o ON o.old_id=i.old_id
+     WHERE (i.state='verified')=$1 ORDER BY i.due_at ASC, i.id DESC
+     LIMIT $2 OFFSET $3`, state == "verified", ps, (page-1)*ps)
 	if err != nil {
 		response.Error500(w, ref())
 		return
@@ -92,7 +110,7 @@ func (h *Handler) careIncidents(w http.ResponseWriter, r *http.Request) {
 		response.Error500(w, ref())
 		return
 	}
-	response.OK(w, map[string]any{"items": items, "page": page, "pageSize": ps})
+	response.OK(w, map[string]any{"items": items, "total": total, "page": page, "pageSize": ps, "duty": duty, "actorId": auth.Principal(r).ID})
 }
 
 // Transitions are serialized with SELECT ... FOR UPDATE. A transition records its
@@ -117,7 +135,7 @@ func (h *Handler) careTransition(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	note := strings.TrimSpace(str(m, "note"))
-	if len(note) > 2000 {
+	if utf8.RuneCountInString(note) > 2000 {
 		write400(w, "记录不可超过2000字符")
 		return
 	}
@@ -180,6 +198,13 @@ func (h *Handler) careTransition(w http.ResponseWriter, r *http.Request) {
 		response.Error500(w, ref())
 		return
 	}
+	if action == "verify" {
+		if _, err := tx.Exec(ctx, `UPDATE alarm_precess SET status='0'
+			WHERE id=(SELECT source_alarm_id FROM care_incident WHERE id=$1)`, id); err != nil {
+			response.Error500(w, ref())
+			return
+		}
+	}
 	if _, err := tx.Exec(ctx,
 		"INSERT INTO care_incident_event(incident_id,actor,action,note) VALUES($1,$2,$3,$4)",
 		id, actor, action, note); err != nil {
@@ -211,9 +236,18 @@ func (h *Handler) careEvents(w http.ResponseWriter, r *http.Request) {
 	if !ok || !h.auditCareAccess(w, r, actor, "incident_events", &id) {
 		return
 	}
+	page, ps, ok := strictPage(w, m)
+	if !ok {
+		return
+	}
+	var total int64
+	if err := h.DB.QueryRow(r.Context(), `SELECT count(*) FROM care_incident_event WHERE incident_id=$1`, id).Scan(&total); err != nil {
+		response.Error500(w, ref())
+		return
+	}
 	rows, err := h.DB.Query(r.Context(),
 		`SELECT actor,action,note,created_at FROM care_incident_event
-      WHERE incident_id=$1 ORDER BY id ASC LIMIT 100`, id)
+      WHERE incident_id=$1 ORDER BY id ASC LIMIT $2 OFFSET $3`, id, ps, (page-1)*ps)
 	if err != nil {
 		response.Error500(w, ref())
 		return
@@ -234,5 +268,5 @@ func (h *Handler) careEvents(w http.ResponseWriter, r *http.Request) {
 		response.Error500(w, ref())
 		return
 	}
-	response.OK(w, map[string]any{"events": events})
+	response.OK(w, map[string]any{"events": events, "total": total, "page": page, "pageSize": ps})
 }

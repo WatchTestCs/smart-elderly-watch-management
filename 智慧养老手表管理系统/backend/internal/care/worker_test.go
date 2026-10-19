@@ -1,6 +1,8 @@
 package care
 
 import (
+	dbstore "careold-go/internal/db"
+	"careold-go/internal/db/dbtest"
 	"context"
 	"fmt"
 	"net/http"
@@ -12,11 +14,15 @@ import (
 	"time"
 
 	"careold-go/internal/db"
+
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func testCareDB(t *testing.T) *pgxpool.Pool {
+func testCareDB(t *testing.T) *dbstore.Database {
+	if os.Getenv("TEST_MYSQL_DSN") != "" {
+		return seedCareDB(t, dbtest.MySQL(t))
+	}
 	t.Helper()
 	dsn := os.Getenv("TEST_DATABASE_URL")
 	if dsn == "" {
@@ -45,6 +51,11 @@ func testCareDB(t *testing.T) *pgxpool.Pool {
 	if err := db.Migrate(ctx, pool); err != nil {
 		t.Fatal(err)
 	}
+	return seedCareDB(t, dbstore.Postgres(pool))
+}
+
+func seedCareDB(t *testing.T, pool *dbstore.Database) *dbstore.Database {
+	ctx := context.Background()
 	for _, sql := range []string{
 		"INSERT INTO oldperson(old_id,name) VALUES(1,'长者')",
 		"INSERT INTO device(device_id,device_no,secret,old_id) VALUES(1,'TEST001','unused',1)",

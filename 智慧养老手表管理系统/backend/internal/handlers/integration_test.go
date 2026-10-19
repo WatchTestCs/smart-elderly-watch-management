@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	dbstore "careold-go/internal/db"
+	"careold-go/internal/db/dbtest"
 	"context"
 	"encoding/json"
-	"errors"
+
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -17,14 +19,18 @@ import (
 	"careold-go/internal/config"
 	"careold-go/internal/csrf"
 	"careold-go/internal/db"
+
 	"careold-go/internal/session"
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgconn"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // Each test uses a separate temporary schema in a dedicated test database.
-func testDatabase(t *testing.T) *pgxpool.Pool {
+func testDatabase(t *testing.T) *dbstore.Database {
+	if os.Getenv("TEST_MYSQL_DSN") != "" {
+		return dbtest.MySQL(t)
+	}
 	t.Helper()
 	dsn := os.Getenv("TEST_DATABASE_URL")
 	if dsn == "" {
@@ -61,7 +67,7 @@ func testDatabase(t *testing.T) *pgxpool.Pool {
 	if err = db.Migrate(ctx, pool); err != nil {
 		t.Fatal(err)
 	}
-	return pool
+	return dbstore.Postgres(pool)
 }
 
 func api(t *testing.T, handler http.HandlerFunc, body any) map[string]any {
@@ -88,11 +94,11 @@ func callAPI(handler http.HandlerFunc, body any) *httptest.ResponseRecorder {
 	return response
 }
 
-func testHandler(pool *pgxpool.Pool) *Handler {
+func testHandler(pool *dbstore.Database) *Handler {
 	return New(pool, session.NewStore(time.Hour), config.Config{})
 }
 
-func mustExec(t *testing.T, pool *pgxpool.Pool, sql string, args ...any) {
+func mustExec(t *testing.T, pool *dbstore.Database, sql string, args ...any) {
 	t.Helper()
 	if _, err := pool.Exec(context.Background(), sql, args...); err != nil {
 		t.Fatal(err)
@@ -107,7 +113,7 @@ func TestIntegrationMigrationsAndBindingConstraint(t *testing.T) {
 	errs := make(chan error, 2)
 	for range 2 {
 		wg.Add(1)
-		go func() { defer wg.Done(); errs <- db.Migrate(ctx, pool) }()
+		go func() { defer wg.Done(); errs <- migrateTestDB(ctx, pool) }()
 	}
 	wg.Wait()
 	close(errs)
@@ -117,12 +123,12 @@ func TestIntegrationMigrationsAndBindingConstraint(t *testing.T) {
 		}
 	}
 	var count int
-	if err := pool.QueryRow(ctx, "SELECT count(*) FROM schema_migrations").Scan(&count); err != nil || count != 7 {
+	if err := pool.QueryRow(ctx, "SELECT count(*) FROM schema_migrations").Scan(&count); err != nil || count != expectedMigrations(pool) {
 		t.Fatalf("migrations=%d err=%v", count, err)
 	}
 	_, err := pool.Exec(ctx, "INSERT INTO device(device_no,secret,old_id) VALUES('orphan','unused',999)")
-	var pgErr *pgconn.PgError
-	if !errors.As(err, &pgErr) || pgErr.Code != "23503" {
+
+	if !db.IsForeignKey(err) {
 		t.Fatalf("orphan was not rejected: %v", err)
 	}
 	mustExec(t, pool, "INSERT INTO oldperson(old_id,name) VALUES(1,'长者')")
@@ -172,7 +178,7 @@ func TestIntegrationEditPreservesFamily(t *testing.T) {
 	pool := testDatabase(t)
 	h := testHandler(pool)
 	mustExec(t, pool, "INSERT INTO oldperson(old_id,name,family_id) VALUES(1,'长者',7)")
-	out := api(t, h.oldPersonUpdate, map[string]any{"oldId": 1, "deviceId": 1, "name": "新姓名", "bothdate": "1950-01-01", "sex": "女", "phone": "13800000000", "room": "101", "illness": "", "warn": "", "foodLike": "", "foodHate": "", "drag": "", "customerName": "1"})
+	out := api(t, h.oldPersonUpdate, map[string]any{"oldId": 1, "name": "新姓名", "bothdate": "1950-01-01", "sex": "女", "phone": "13800000000", "room": "101", "illness": "", "warn": "", "foodLike": "", "foodHate": "", "drag": "", "customerName": "1"})
 	if out["returnCode"] != "1111" {
 		t.Fatal(out)
 	}
@@ -184,7 +190,7 @@ func TestIntegrationEditPreservesFamily(t *testing.T) {
 
 const testSecret = "test-device-secret-1234567890"
 
-func seedDevice(t *testing.T, pool *pgxpool.Pool) {
+func seedDevice(t *testing.T, pool *dbstore.Database) {
 	t.Helper()
 	hash, err := secretHash(testSecret)
 	if err != nil {
@@ -252,7 +258,7 @@ func TestIntegrationDistinctInvitesCannotOverwriteFamily(t *testing.T) {
 	deadline := time.Now().Add(10 * time.Second)
 	for {
 		var waiting int
-		if err = pool.QueryRow(ctx, "SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock' AND query LIKE '%oldperson%' AND pid<>pg_backend_pid()").Scan(&waiting); err != nil {
+		if err = pool.QueryRow(ctx, lockWaitQuery(pool, false)).Scan(&waiting); err != nil {
 			t.Fatal(err)
 		}
 		if waiting >= 2 {
@@ -337,7 +343,7 @@ func TestIntegrationBindDeleteRace(t *testing.T) {
 	deadline := time.Now().Add(10 * time.Second)
 	for {
 		var waiting int
-		if err = pool.QueryRow(ctx, "SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock' AND query LIKE 'DELETE FROM oldperson%' AND pid<>pg_backend_pid()").Scan(&waiting); err != nil {
+		if err = pool.QueryRow(ctx, lockWaitQuery(pool, true)).Scan(&waiting); err != nil {
 			t.Fatal(err)
 		}
 		if waiting > 0 {
@@ -395,4 +401,28 @@ func TestNativeSetupRequiresDesktopToken(t *testing.T) {
 	if response.Code != 403 || !strings.Contains(response.Body.String(), "CSRF_REJECTED") {
 		t.Fatal("ordinary browser writes lost CSRF protection")
 	}
+}
+
+func migrateTestDB(ctx context.Context, pool *db.Database) error {
+	if pool.IsMySQL() {
+		return db.MigrateMySQL(ctx, pool)
+	}
+	return db.Migrate(ctx, pool.LegacyPostgres())
+}
+func expectedMigrations(pool *db.Database) int {
+	if pool.IsMySQL() {
+		return 3
+	}
+	return 8
+}
+
+func lockWaitQuery(pool *dbstore.Database, deleting bool) string {
+	if pool.IsMySQL() {
+		return "SELECT count(*) FROM performance_schema.data_lock_waits w JOIN performance_schema.data_locks l ON l.ENGINE_LOCK_ID=w.REQUESTING_ENGINE_LOCK_ID AND l.ENGINE=w.ENGINE WHERE l.OBJECT_SCHEMA=DATABASE() AND l.OBJECT_NAME='oldperson'"
+	}
+	pattern := "%oldperson%"
+	if deleting {
+		pattern = "DELETE FROM oldperson%"
+	}
+	return "SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock' AND query LIKE '" + pattern + "' AND pid<>pg_backend_pid()"
 }

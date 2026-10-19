@@ -5,10 +5,11 @@ package handlers
 import (
 	"bytes"
 	"careold-go/internal/auth"
+	dbstore "careold-go/internal/db"
 	"careold-go/internal/response"
 	"careold-go/internal/session"
 	"encoding/json"
-	"github.com/jackc/pgx/v5"
+
 	"io"
 	"math"
 	"net/http"
@@ -269,7 +270,7 @@ func pageArgs(args []any, page, pageSize int) (string, []any) {
 }
 
 // rowsOK 检查 rows.Err()，有错写 500。
-func rowsOK(w http.ResponseWriter, rows pgx.Rows) bool {
+func rowsOK(w http.ResponseWriter, rows dbstore.Rows) bool {
 	if err := rows.Err(); err != nil {
 		rows.Close()
 		response.Error500(w, ref())

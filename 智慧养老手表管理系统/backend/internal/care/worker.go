@@ -4,6 +4,7 @@ package care
 
 import (
 	"bytes"
+	dbstore "careold-go/internal/db"
 	"context"
 	"encoding/json"
 	"errors"
@@ -18,11 +19,10 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type dispatcher struct {
-	db              *pgxpool.Pool
+	db              *dbstore.Database
 	webhookURL      string
 	webhookToken    string
 	escalationPhone string
@@ -31,13 +31,19 @@ type dispatcher struct {
 
 var phonePattern = regexp.MustCompile(`^1[0-9]{10}$`)
 
+// NotificationConfigured reports the same configuration gate used by Run,
+// without disclosing the gateway URL or token to the browser.
+func NotificationConfigured() bool {
+	parsed, err := url.Parse(strings.TrimSpace(os.Getenv("CARE_NOTIFY_WEBHOOK_URL")))
+	return err == nil && parsed.Scheme == "https" && parsed.Host != "" && strings.TrimSpace(os.Getenv("CARE_NOTIFY_WEBHOOK_TOKEN")) != ""
+}
+
 // Run starts only after migrations succeed. A stale "sending" job can be claimed
 // again after a crash; the receiver must honor Idempotency-Key.
-func Run(ctx context.Context, db *pgxpool.Pool) {
+func Run(ctx context.Context, db *dbstore.Database) {
 	endpoint := strings.TrimSpace(os.Getenv("CARE_NOTIFY_WEBHOOK_URL"))
 	token := strings.TrimSpace(os.Getenv("CARE_NOTIFY_WEBHOOK_TOKEN"))
-	parsed, err := url.Parse(endpoint)
-	if err != nil || parsed.Scheme != "https" || parsed.Host == "" || token == "" {
+	if !NotificationConfigured() {
 		log.Print("care: notification gateway not configured (HTTPS URL + token required); delivery tasks remain pending")
 		endpoint = ""
 	}
@@ -89,7 +95,7 @@ func Run(ctx context.Context, db *pgxpool.Pool) {
 // scanOffline is triggered every 30 seconds after the worker starts. It shares
 // the lifecycle and cancellation of the database worker and does not survive a
 // server shutdown or capture a stale Handler/Pool instance.
-func scanOffline(ctx context.Context, pool *pgxpool.Pool) error {
+func scanOffline(ctx context.Context, pool *dbstore.Database) error {
 	_, err := pool.Exec(ctx, `UPDATE device SET
 		boot_seq=boot_seq+1, person_handled=0, last_online_at=NULL
 		WHERE status=1 AND last_online_at IS NOT NULL AND last_time IS NOT NULL
@@ -109,24 +115,29 @@ type delivery struct {
 func (d *dispatcher) dispatchOne(ctx context.Context) error {
 	// Atomic database claim; SKIP LOCKED supports multiple service replicas.
 	var job delivery
-	err := d.db.QueryRow(ctx, `
-		WITH picked AS (
-			SELECT id FROM care_notification_outbox
-			WHERE (status IN ('pending','failed') AND retry_at <= now())
-			   OR (status='sending' AND last_attempt_at < now() - interval '2 minutes')
-			ORDER BY retry_at, id
-			FOR UPDATE SKIP LOCKED LIMIT 1
-		)
-		UPDATE care_notification_outbox n SET status='sending',
-		    attempts=n.attempts+1, last_attempt_at=now()
-		FROM picked WHERE n.id=picked.id
-		RETURNING n.id,n.incident_id,n.recipient,n.channel,n.attempts
-	`).Scan(&job.id, &job.incidentID, &job.recipient, &job.channel, &job.attempts)
+	tx, err := d.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+	err = tx.QueryRow(ctx, `SELECT id,incident_id,recipient,channel,attempts
+        FROM care_notification_outbox
+        WHERE (status IN ('pending','failed') AND retry_at <= now())
+           OR (status='sending' AND last_attempt_at < now() - interval '2 minutes')
+        ORDER BY retry_at,id LIMIT 1 FOR UPDATE SKIP LOCKED`).Scan(&job.id, &job.incidentID, &job.recipient, &job.channel, &job.attempts)
 	if err != nil {
 		// No row is normal; connection and SQL errors are not.
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil
 		}
+		return err
+	}
+	job.attempts++
+	if _, err := tx.Exec(ctx, `UPDATE care_notification_outbox SET status='sending',
+        attempts=$2,last_attempt_at=now() WHERE id=$1`, job.id, job.attempts); err != nil {
+		return err
+	}
+	if err := tx.Commit(ctx); err != nil {
 		return err
 	}
 	payload, err := json.Marshal(map[string]any{
@@ -164,8 +175,8 @@ func (d *dispatcher) dispatchOne(ctx context.Context) error {
 	wait := retryDelay(job.attempts)
 	_, updateErr := d.db.Exec(ctx, `
 		UPDATE care_notification_outbox
-		SET status='failed', last_error=$2, retry_at=now()+$3::interval
-		WHERE id=$1 AND status='sending' AND attempts=$4`, job.id, truncate(err.Error(), 400), fmt.Sprintf("%d seconds", int(wait.Seconds())), job.attempts)
+		SET status='failed', last_error=$2, retry_at=now()+($3 * interval '1 second')
+		WHERE id=$1 AND status='sending' AND attempts=$4`, job.id, truncate(err.Error(), 400), int(wait.Seconds()), job.attempts)
 	if updateErr != nil {
 		return updateErr
 	}

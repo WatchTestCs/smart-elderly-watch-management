@@ -1,11 +1,25 @@
-岁宁 2.0.2 · Windows x64
+岁宁 2.0.6 · Windows x64
 
-运行 Suining-Setup-2.0.2-win-x64.exe 安装软件。轻量安装包检测并使用系统 WebView2；缺失时需联网，自动下载微软引导程序并静默补装。WebView2 是 Windows 共享组件，不放在岁宁安装目录中；卸载岁宁不删除该共享组件。缺少组件且无法联网时不能完成安装。
+安装版：运行 Suining-Setup-2.0.6-win-x64.exe。检测并复用系统 WebView2，仅缺失时联网静默补装；免安装版需要系统已有 WebView2。WebView2 为共享组件，不随岁宁卸载。
 
-数据库与软件分离。未启动 PostgreSQL 或未设置连接串时仍可打开软件，界面正常显示，只有数据库相关功能提示不可用，并在后台自动重试已配置的连接地址。已登录时保留页面和输入，退出登录、字体切换与窗口操作仍可用；失败写入不会自动重放。需要实际业务功能时，由部署方配置独立 PostgreSQL，并设置 SUINING_DATABASE_URL 后重新启动软件。
+免安装版：完整解压后运行 suining.exe，保留同目录 suining-server.exe。不要只复制其中一个 EXE。
 
-没有默认手机号或密码。数据库准备好后，首次打开创建管理员。旧 H2 数据不会自动转换为 PostgreSQL，升级前请备份旧数据并确认迁移方案。
+数据库：MySQL 为核心业务主库，PostgreSQL 为异步分析库，均由部署方独立管理。安装包不包含数据库服务。PG 暂不可用时核心业务继续，分析事件恢复后补齐；MySQL 不可用时保留界面并提示业务暂不可用，不自动重放失败写入。
 
-用户数据目录沿用 %APPDATA%\岁宁（图片、日志和运行发现文件），数据库内容由独立数据库部署方备份。卸载不会替您删除这些用户数据。
+配置：桌面读取 SUINING_MYSQL_DSN 和 SUINING_PG_ANALYTICS_URL。MySQL 使用 go-sql-driver/mysql 原生 DSN；PG 使用 PostgreSQL URL。配置修改后重新启动。旧 SUINING_DATABASE_URL 不再作为业务主库回退。
 
-自签名仅用于完整性标识，不代表公开受信任证书；不会自动安装根证书。
+本机测试连接示例（私下替换账号与密码）：
+$env:SUINING_MYSQL_DSN='suining:替换密码@tcp(127.0.0.1:13306)/suining'
+$env:SUINING_PG_ANALYTICS_URL='postgres://suining_analytics:替换密码@127.0.0.1:15432/suining_analytics?sslmode=disable'
+& '.\suining.exe'
+跨机器连接需配置验证证书的 TLS。实际凭据不要写入公开源码、截图或日志。
+
+账号：没有默认手机号或通用密码。空库首次初始化时创建管理员，导入旧数据后沿用原账号。
+
+升级：先备份旧数据库和图片。停止两端应用写入，通过源码包 backend/cmd/transfer-postgres 工具预检查，再以 --apply 导入空 MySQL；不会因安装软件自动迁移。图片单独复制。完整步骤见源码包 docs/DUAL_DATABASES.md。
+
+照护：先建档，再登记和绑定设备。接单、处置与独立复核分开；只有另一名主管复核后关闭。通知送达不等于人员到场。长期值守仍需独立后台服务及人工流程。
+
+本地目录：%APPDATA%\岁宁 保存图片、日志和运行信息；数据库内容独立备份。卸载不会删除这些资料。
+
+本地交付不附公开受信任签名，请核对随包 SHA256SUMS.txt。真实硬件、短信网关、生产迁移及长期值守未在本轮验收。

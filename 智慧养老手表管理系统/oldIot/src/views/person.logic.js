@@ -39,8 +39,7 @@ export default {
 		warn: '',
 		foodLike: '',
 		foodHate: '',
-		drag: '',
-		deviceId: ''
+		drag: ''
       },
       oldEditForm: {
        		name: '',
@@ -61,7 +60,11 @@ export default {
 			 deviceId: ''
       },
 			options:[],
+      customerLoading: false,
+      customerError: '',
       
+      isLoading: false,
+      loadError: '',
       total: 0,
       pageSize: 10,
       currentPage: 1,
@@ -80,11 +83,14 @@ export default {
   },
   methods: {
     searchOldPersons (keepPage = false) {
+      if (this.isLoading) return
+      this.isLoading = true
+      this.loadError = ''
       if (keepPage !== true) this.currentPage = 1
       var _this = this
       var name = _this.searchText
       
-      axios.post('restful/oldPerson/selectDetail',
+      return axios.post('restful/oldPerson/selectDetail',
         { page: this.currentPage, pageSize: this.pageSize,
           'name': name === '' ? '' : _this.searchText
         },
@@ -94,13 +100,16 @@ export default {
           },
           withCredentials: true
         }).then(function (response) {
+        if (!Array.isArray(response.data.oldPersonDetails)) throw new Error('invalid records')
         _this.personDetailList = response.data.oldPersonDetails
         _this.total = response.data.total ?? response.data.oldPersonDetails.length
 
       })
-        .catch(function (error) {
-          console.log(error)
-        })
+        .catch(function () {
+          _this.loadError = '老人档案暂时无法加载，请检查服务连接后重试。'
+          _this.personDetailList = []
+          _this.total = 0
+        }).finally(function () { _this.isLoading = false })
       
     },
     addOldPersons () {
@@ -157,7 +166,7 @@ export default {
         } else {
           _this.$message({
             type: 'error',
-            message: '编辑老人信息失败，手表ID重复或没有手表设备'
+            message: '编辑老人信息失败，请检查填写内容后重试'
           })
         }
       })
@@ -165,26 +174,27 @@ export default {
           console.log(error)
         })
     },
-		addCustomerList(){
-			var _this = this
-			  
-			  axios.post('restful/customer/select',
-			    {
-			      'customerName': ""
-			    },
-			    {
-			      headers: {
-			        'content-type': 'application/json'
-			      },
-			      withCredentials: true
-			    }).then(function (response) {
-			    _this.options = response.data.customers
-			  })
-			    .catch(function (error) {
-			      console.log(error)
-			    })
-			 
-		},
+    async addCustomerList () {
+      if (this.customerLoading) return
+      this.customerLoading = true
+      this.customerError = ''
+      try {
+        var options = [], page = 1, total = 0
+        do {
+          var response = await axios.post('restful/customer/select', { customerName: '', page, pageSize: 100 }, { withCredentials: true })
+          var items = response.data.customers
+          if (!Array.isArray(items)) throw new Error('invalid guardians')
+          total = response.data.total ?? items.length
+          if (!Number.isInteger(total) || total < 0 || (!items.length && options.length < total)) throw new Error('incomplete guardians')
+          options.push(...items)
+          page += 1
+        } while (options.length < total)
+        this.options = options
+      } catch (_) {
+        this.options = []
+        this.customerError = '监护人选项暂时无法加载，请重试。'
+      } finally { this.customerLoading = false }
+    },
     async deleteOldPerson (oldId) {
       try {
         await this.$confirm('此操作将永久删除该长者信息，是否继续？', '提示', {

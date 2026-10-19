@@ -30,6 +30,9 @@ module.exports = async function (run) {
   const unknown=mode==='unknown';
   const fixtures={
    'restful/service/status':{databaseReady:true},
+   'restful/care/incidents':{items:[],total:0,page:1,pageSize:20,duty:'supervisor',actorId:1},
+   'restful/care/diagnostics':{workerHealthy:true,notificationConfigured:false,receiptConfigured:false,pendingNotifications:0,failedNotifications:0,staleSending:0,overdueIncidents:0},
+   'restful/care/staff':{staff:[]},
    'restful/userLogin/session':{authenticated:signedIn,account:signedIn?{role,id:1,phone:'13000000000',oldId:role==='FAMILY'?1:null,displayName:role==='FAMILY'?'小明':'管理员'}:{},csrfToken:'mock-csrf-token',csrfHeader:'X-CSRF-TOKEN'},
    'restful/userLogin/logout':{returnCode:'1111'},
    'restful/family/updateTouPic':{returnCode:'1111'},

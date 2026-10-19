@@ -1,5 +1,5 @@
 <template>
-  <div class="roles">
+  <div class="roles" v-loading="isLoading" element-loading-text="正在加载家属账号…" :aria-busy="String(isLoading)">
     
     <div class="sys-research">
       <form class="row-search" role="search" @submit.prevent="searchfamily">
@@ -90,7 +90,8 @@
     </span></template>
     </el-dialog>
 
-    <el-table class="adaptive-record-table" :data="familyList"
+    <div v-if="loadError" class="collection-feedback" role="alert"><span>{{ loadError }}</span><el-button plain :loading="isLoading" @click="searchfamily(true)">重新加载</el-button></div>
+    <el-table v-if="!loadError" class="adaptive-record-table" :data="familyList"
     style="width: 100%" border>
     <template #empty><div  class="care-empty-state"><strong>暂无家属账号</strong><span>添加家属或调整搜索条件后，账号会显示在这里。</span></div></template>
 
@@ -113,7 +114,7 @@
         </template>
       </el-table-column>
     </el-table>
-    <record-cards :records="familyList" :fields='[{"key":"name","label":"姓名"},{"key":"oldId","label":"老人编号"},{"key":"familyRelation","label":"关系"},{"key":"familySex","label":"性别"},{"key":"familyPhone","label":"电话"},{"key":"familyAddress","label":"地址"}]' label="家属账号资料" title-key="familyName" key-field="familyId">
+    <record-cards v-if="!loadError" :records="familyList" :fields='[{"key":"name","label":"姓名"},{"key":"oldId","label":"老人编号"},{"key":"familyRelation","label":"关系"},{"key":"familySex","label":"性别"},{"key":"familyPhone","label":"电话"},{"key":"familyAddress","label":"地址"}]' label="家属账号资料" title-key="familyName" key-field="familyId">
       <template #actions="scope"  ><el-button size="small" plain type="primary" icon="el-icon-edit"
                      @click="handleeditFamily(scope.$index, scope.row)">编辑
           </el-button>
@@ -121,7 +122,7 @@
           </el-button></template>
     </record-cards>
     
-    <div style="margin-top: 10px;text-align: center">
+    <div v-if="!loadError" style="margin-top: 10px;text-align: center">
       <el-pagination
         @size-change="handleSizeChange"
         @current-change="changePage"

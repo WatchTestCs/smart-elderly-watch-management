@@ -2,7 +2,7 @@
   <aside class="care-sidebar" aria-label="管理端导航">
     <button class="navigation-toggle" type="button" :aria-expanded="expanded ? 'true' : 'false'" aria-controls="admin-navigation" @click="expanded = !expanded"><span><i class="el-icon-menu" aria-hidden="true"></i> 功能导航</span><span>{{ expanded ? '收起' : '展开' }} <i :class="expanded ? 'el-icon-arrow-up' : 'el-icon-arrow-down'" aria-hidden="true"></i></span></button>
     <div class="sidebar-label">工作空间</div>
-    <el-menu :default-active="$route.path" :default-openeds="['health', 'records', 'service']" id="admin-navigation" :class="['care-menu', { 'is-expanded': expanded }]" router>
+    <el-menu :key="$route.path" :default-active="$route.path" :default-openeds="openedGroups" unique-opened id="admin-navigation" :class="['care-menu', { 'is-expanded': expanded }]" router>
       <el-menu-item index="/main"><i class="el-icon-menu" aria-hidden="true"></i><template #title><span >运营总览</span></template></el-menu-item>
       <el-menu-item index="/device"><i class="el-icon-time" aria-hidden="true"></i><template #title><span >设备管理</span></template></el-menu-item>
       <el-sub-menu index="health">
@@ -35,6 +35,16 @@
 export default {
   name: 'Slider',
   data () { return { expanded: false } },
+  computed: {
+    openedGroups () {
+      var groups = {
+        health: ['/ratepre', '/step', '/position', '/life'],
+        records: ['/person', '/customer', '/watch', '/family', '/inviteCode'],
+        service: ['/textTwo', '/textOpt', '/saidOperation', '/text', '/textMainUser', '/annex']
+      }
+      return Object.keys(groups).filter(group => groups[group].includes(this.$route.path))
+    }
+  },
   watch: { '$route' () { this.expanded = false } }
 }
 </script>

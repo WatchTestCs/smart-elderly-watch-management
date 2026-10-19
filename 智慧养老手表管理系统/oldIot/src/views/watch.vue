@@ -1,5 +1,5 @@
 <template>
-  <div class="roles">
+  <div class="roles" v-loading="isLoading" element-loading-text="正在加载监测阈值档案…" :aria-busy="String(isLoading)">
     
     <div class="sys-research">
       <form class="row-search" role="search" @submit.prevent="searchWatchs">
@@ -79,7 +79,8 @@
     </span></template>
     </el-dialog>
 
-    <el-table class="adaptive-record-table" :data="watchsList"
+    <div v-if="loadError" class="collection-feedback" role="alert"><span>{{ loadError }}</span><el-button plain :loading="isLoading" @click="searchWatchs(true)">重新加载</el-button></div>
+    <el-table v-if="!loadError" class="adaptive-record-table" :data="watchsList"
     style="width: 100%" border>
     <template #empty><div  class="care-empty-state"><strong>暂无监测阈值档案</strong><span>添加手表或调整搜索条件后，档案会显示在这里。</span></div></template>
 
@@ -102,7 +103,7 @@
         </template>
       </el-table-column>
     </el-table>
-    <record-cards :records="watchsList" :fields='[{"key":"deviceId","label":"手表ID"},{"key":"bpf","label":"血压高值"},{"key":"bpl","label":"血压低值"},{"key":"hrf","label":"心率高值"},{"key":"hrl","label":"心率低值"}]' label="监测阈值档案" title-key="name" key-field="deviceId" time-key="opTime">
+    <record-cards v-if="!loadError" :records="watchsList" :fields='[{"key":"deviceId","label":"手表ID"},{"key":"bpf","label":"血压高值"},{"key":"bpl","label":"血压低值"},{"key":"hrf","label":"心率高值"},{"key":"hrl","label":"心率低值"}]' label="监测阈值档案" title-key="name" key-field="deviceId" time-key="opTime">
       <template #actions="scope"  ><el-button size="small" plain type="primary" icon="el-icon-edit"
                      @click="handleEditwatch(scope.$index, scope.row)">编辑
           </el-button>
@@ -110,7 +111,7 @@
           </el-button></template>
     </record-cards>
     
-    <div style="margin-top: 10px;text-align: center">
+    <div v-if="!loadError" style="margin-top: 10px;text-align: center">
       <el-pagination
         @size-change="handleSizeChange"
         @current-change="changePage"
@@ -150,6 +151,8 @@ export default {
         hrl: ''
       },
       
+      isLoading: false,
+      loadError: '',
       total: 0,
       pageSize: 10,
       currentPage: 1,
@@ -162,11 +165,14 @@ export default {
   },
   methods: {
     searchWatchs (keepPage = false) {
+      if (this.isLoading) return
+      this.isLoading = true
+      this.loadError = ''
       if (keepPage !== true) this.currentPage = 1
       var _this = this
         var oldName = _this.searchText
         
-        axios.post('restful/watchInfo/select',
+        return axios.post('restful/watchInfo/select',
           { page: this.currentPage, pageSize: this.pageSize,
             'oldName': oldName === '' ? '' : _this.searchText
           },
@@ -176,13 +182,16 @@ export default {
             },
             withCredentials: true
           }).then(function (response) {
+          if (!Array.isArray(response.data.watchDtos)) throw new Error('invalid records')
           _this.watchsList = response.data.watchDtos
           _this.total = response.data.total ?? response.data.watchDtos.length
 
         })
-          .catch(function (error) {
-            console.log(error)
-          })
+          .catch(function () {
+            _this.loadError = '监测阈值档案暂时无法加载，请检查服务连接后重试。'
+            _this.watchsList = []
+            _this.total = 0
+          }).finally(function () { _this.isLoading = false })
       
     },
     addWatchs () {

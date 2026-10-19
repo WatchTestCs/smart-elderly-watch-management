@@ -2,8 +2,9 @@ package handlers
 
 import (
 	"careold-go/internal/auth"
+	dbstore "careold-go/internal/db"
 	"careold-go/internal/response"
-	"github.com/jackc/pgx/v5"
+
 	"net/http"
 	"strconv"
 	"time"
@@ -24,7 +25,7 @@ const posLatest = `SELECT o.name, o.old_id, o.sex, l.lng, l.lat,
 		ROW_NUMBER() OVER (PARTITION BY old_id ORDER BY be_time DESC, id DESC) AS rn FROM alarm_precess) a
 		ON a.old_id = o.old_id AND a.rn = 1`
 
-func scanPositionRow(row pgx.Row) (map[string]any, error) {
+func scanPositionRow(row dbstore.Row) (map[string]any, error) {
 	var name, sex, lng, lat, status *string
 	var oldID int64
 	var beTime *time.Time

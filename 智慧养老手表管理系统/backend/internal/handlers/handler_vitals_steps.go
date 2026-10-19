@@ -1,8 +1,9 @@
 package handlers
 
 import (
+	dbstore "careold-go/internal/db"
 	"careold-go/internal/response"
-	"github.com/jackc/pgx/v5"
+
 	"net/http"
 	"strconv"
 	"strings"
@@ -30,7 +31,7 @@ const stepLatestSelect = `SELECT o.name AS name, o.old_id AS oldId, o.sex AS sex
 	` INNER JOIN (SELECT *, ROW_NUMBER() OVER (PARTITION BY device_id ORDER BY create_time DESC, id DESC) AS rn FROM watch_day_info) w` +
 	` ON w.device_id=o.device_id AND w.rn=1`
 
-func scanStepDTO(rows pgx.Rows) (stepDTO, error) {
+func scanStepDTO(rows dbstore.Rows) (stepDTO, error) {
 	var d stepDTO
 	err := rows.Scan(&d.Name, &d.OldID, &d.Sex, &d.Step, &d.Sleep, &d.SleepSate, &d.CreateTime)
 	return d, err

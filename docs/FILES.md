@@ -258,6 +258,7 @@
 | [智慧养老手表管理系统/oldIot/qa/run.cjs](../智慧养老手表管理系统/oldIot/qa/run.cjs) | 项目文件 智慧养老手表管理系统/oldIot/qa/run.cjs 的实现与配置（智慧养老手表管理系统/oldIot/qa/run.cjs）。 |
 | [智慧养老手表管理系统/oldIot/qa/screen-acceptance.cjs](../智慧养老手表管理系统/oldIot/qa/screen-acceptance.cjs) | 项目文件 智慧养老手表管理系统/oldIot/qa/screen-acceptance.cjs 的实现与配置（智慧养老手表管理系统/oldIot/qa/screen-acceptance.cjs）。 |
 | [智慧养老手表管理系统/oldIot/qa/setup-browser-acceptance.cjs](../智慧养老手表管理系统/oldIot/qa/setup-browser-acceptance.cjs) | 项目文件 智慧养老手表管理系统/oldIot/qa/setup-browser-acceptance.cjs 的实现与配置（智慧养老手表管理系统/oldIot/qa/setup-browser-acceptance.cjs）。 |
+| [智慧养老手表管理系统/oldIot/qa/ui-refinement-acceptance.cjs](../智慧养老手表管理系统/oldIot/qa/ui-refinement-acceptance.cjs) | 导航分组、五页加载与重试、老人窄屏完整资料、总览统计分页及宽屏栅格的模拟 API 浏览器验收。 |
 | [智慧养老手表管理系统/oldIot/src/App.vue](../智慧养老手表管理系统/oldIot/src/App.vue) | Vue 根容器与统一控件边界，集中处理焦点、错误、禁用、大字和减少动画设置。（智慧养老手表管理系统/oldIot/src/App.vue）。 |
 | [智慧养老手表管理系统/oldIot/src/assets/css/accessibility.css](../智慧养老手表管理系统/oldIot/src/assets/css/accessibility.css) | 项目文件 智慧养老手表管理系统/oldIot/src/assets/css/accessibility.css 的实现与配置（智慧养老手表管理系统/oldIot/src/assets/css/accessibility.css）。 |
 | [智慧养老手表管理系统/oldIot/src/assets/css/commercial.css](../智慧养老手表管理系统/oldIot/src/assets/css/commercial.css) | 工作台与集合页面布局，规范查询工具栏对齐、弹窗字段结构和底部操作间距。（智慧养老手表管理系统/oldIot/src/assets/css/commercial.css）。 |
@@ -387,3 +388,47 @@
 | [care_receipt_race_test.go](../智慧养老手表管理系统/backend/internal/handlers/care_receipt_race_test.go) | 网关在发送中立即送达时的竞态回归测试。 |
 | [CareOperationsPanel.vue](../智慧养老手表管理系统/oldIot/src/components/CareOperationsPanel.vue) | 工作台值守进程健康、通知异常、岗位分配及审计面板。 |
 | [publish-205-source.yml](../.github/workflows/publish-205-source.yml) | 合并到 preview 后验证并发布 2.0.5 源码归档与校验文件。 |
+
+## 2026-10-19 照护与数据闭环补足
+
+| 文件 | 作用 |
+| --- | --- |
+| [ARCHITECTURE_REPAIR_2026-10-19.md](ARCHITECTURE_REPAIR_2026-10-19.md) | 本轮整体逻辑缺陷、修复边界、复现与本地验证说明。 |
+| [architecture_integration_test.go](../智慧养老手表管理系统/backend/internal/handlers/architecture_integration_test.go) | 真实 PostgreSQL 上的建档、字段映射、设备归属、缺测、照护分页与独立复核回归。 |
+| [architecture-acceptance.cjs](../智慧养老手表管理系统/oldIot/qa/architecture-acceptance.cjs) | 模拟 API 浏览器验收：岗位、失败保留输入、分页、心跳、窄屏与全部监护人选项。 |
+| [real-backend-acceptance.cjs](../智慧养老手表管理系统/oldIot/qa/real-backend-acceptance.cjs) | 生产界面、真实 Go 服务和隔离 PostgreSQL 的建档到独立复核完整链路验收。 |
+
+## 2026-10-19 双库补丁
+
+| 文件 | 用途 |
+| --- | --- |
+| [DUAL_DATABASES.md](DUAL_DATABASES.md) | MySQL 主库、PG 分析库的配置、导入、回填与验证边界。 |
+| [dual-db.compose.yml](../deploy/dual-db.compose.yml) | 仅提供两个数据库服务的独立持久卷、回环端口与健康检查。 |
+| [dual-db.env.example](../deploy/dual-db.env.example) | 私有部署环境变量模板，不含默认密码。 |
+| [database.go](../智慧养老手表管理系统/backend/internal/db/database.go) | MySQL 主库连接、参数绑定、SQL 适配及兼容 PG 测试接口。 |
+| [database_test.go](../智慧养老手表管理系统/backend/internal/db/database_test.go) | 重复参数、字面值及 SQL 方言回归。 |
+| [mysql_migrations.go](../智慧养老手表管理系统/backend/internal/db/mysql_migrations.go) | 连接级迁移锁、校验和与可恢复 DDL 执行。 |
+| [transfer.go](../智慧养老手表管理系统/backend/internal/db/transfer.go) | 只读 PG 快照到空 MySQL 的离线事务导入。 |
+| [transfer_integration_test.go](../智慧养老手表管理系统/backend/internal/db/transfer_integration_test.go) | 导入预检、中文与 NULL 保留、拒绝覆盖、失败整笔回滚验证。 |
+| [dbtest/mysql.go](../智慧养老手表管理系统/backend/internal/db/dbtest/mysql.go) | 测试专用随机 MySQL 数据库的创建、迁移与清理。 |
+| [analytics/sync.go](../智慧养老手表管理系统/backend/internal/analytics/sync.go) | 独立 PG 重连、幂等投影、删除墓碑与主库确认。 |
+| [analytics/sync_test.go](../智慧养老手表管理系统/backend/internal/analytics/sync_test.go) | 真实双库的回滚、失败保留、恢复、重放、删除与回填测试。 |
+| [analytics/backfill.go](../智慧养老手表管理系统/backend/internal/analytics/backfill.go) | 在业务行共享锁下分批生成分析快照事件。 |
+| [transfer-postgres/main.go](../智慧养老手表管理系统/backend/cmd/transfer-postgres/main.go) | 默认只预检、显式 --apply 提交旧库导入的命令入口。 |
+| [analytics-backfill/main.go](../智慧养老手表管理系统/backend/cmd/analytics-backfill/main.go) | 显式 --apply 生成 PG 投影重建事件的入口。 |
+| [mysql/0001_core.sql](../智慧养老手表管理系统/backend/migrations/mysql/0001_core.sql) | MySQL 业务结构、InnoDB、字符集与完整性约束。 |
+| [mysql/0002_analytics.sql](../智慧养老手表管理系统/backend/migrations/mysql/0002_analytics.sql) | 来源标识、持久化 outbox 及五类实体的增改删触发器。 |
+| [analytics/0001_projection.sql](../智慧养老手表管理系统/backend/migrations/analytics/0001_projection.sql) | PG 投影表、健康日统计与照护状态汇总视图。 |
+
+## 2.0.6 本地交付
+
+| 文件 | 用途 |
+| --- | --- |
+| [releases/2.0.6.md](releases/2.0.6.md) | 汇总 UI、照护闭环、双库改进、升级步骤和验收边界。 |
+
+- `docs/INTEGRATION_2.0.6.md`：preview 健康采样与双库整合、执行验证及交付边界。
+- `docs/verification/2.0.6-integration.json`：本次实际执行的整合验证摘要及未验收范围。
+- `智慧养老手表管理系统/backend/migrations/mysql/0003_health_samples.sql`：MySQL 健康采样、变更游标、修订时钟与设备绑定版本触发器。
+- `智慧养老手表管理系统/backend/migrations/0008_health_query_columns.sql`：为旧 PG 健康采样增加可移植统计查询字段，保留原 0007。
+- `智慧养老手表管理系统/backend/internal/health/store.go`：事务内保存采样与修订事件，处理版本去重和冲突。
+- `智慧养老手表管理系统/backend/docs/health-data.md`：健康采样接口、首次采纳背景与 2.0.6 兼容边界。

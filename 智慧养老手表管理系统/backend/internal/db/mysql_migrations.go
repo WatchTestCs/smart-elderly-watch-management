@@ -1,0 +1,77 @@
+package db
+
+import (
+	"context"
+	"crypto/sha256"
+	"database/sql"
+	"errors"
+	"fmt"
+	"strings"
+
+	"careold-go/migrations"
+	"github.com/go-sql-driver/mysql"
+)
+
+// MySQL DDL commits implicitly. Each statement is restartable; a checksum is
+// recorded only after all statements finish, under a connection-scoped lock.
+func MigrateMySQL(ctx context.Context, database *Database) error {
+	conn, err := database.myPool.Conn(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+	var locked int
+	if err = conn.QueryRowContext(ctx, "SELECT GET_LOCK(CONCAT('suining-migrate:',DATABASE()),30)").Scan(&locked); err != nil || locked != 1 {
+		return errors.New("MySQL migration lock unavailable")
+	}
+	defer conn.ExecContext(context.Background(), "SELECT RELEASE_LOCK(CONCAT('suining-migrate:',DATABASE()))")
+	var known, tables int
+	if err = conn.QueryRowContext(ctx, "SELECT count(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='schema_migrations'").Scan(&known); err != nil {
+		return err
+	}
+	if known == 0 {
+		if err = conn.QueryRowContext(ctx, "SELECT count(*) FROM information_schema.tables WHERE table_schema=DATABASE()").Scan(&tables); err != nil {
+			return err
+		}
+		if tables != 0 {
+			return errors.New("refusing to initialize a nonempty unrecognized MySQL database")
+		}
+	}
+	if _, err = conn.ExecContext(ctx, "CREATE TABLE IF NOT EXISTS schema_migrations(name varchar(191) PRIMARY KEY,checksum char(64) NOT NULL,applied_at datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)) ENGINE=InnoDB"); err != nil {
+		return err
+	}
+	for _, name := range []string{"mysql/0001_core.sql", "mysql/0002_analytics.sql", "mysql/0003_health_samples.sql"} {
+		data, err := migrations.Files.ReadFile(name)
+		if err != nil {
+			return err
+		}
+		sum := fmt.Sprintf("%x", sha256.Sum256(data))
+		var applied string
+		err = conn.QueryRowContext(ctx, "SELECT checksum FROM schema_migrations WHERE name=?", name).Scan(&applied)
+		if err == nil {
+			if applied != sum {
+				return fmt.Errorf("migration checksum changed: %s", name)
+			}
+			continue
+		}
+		if !errors.Is(err, sql.ErrNoRows) {
+			return err
+		}
+		// Trigger statements use a single SET body, so no compound delimiters.
+		for _, statement := range strings.Split(string(data), ";") {
+			if strings.TrimSpace(statement) == "" {
+				continue
+			}
+			if _, err = conn.ExecContext(ctx, statement); err != nil {
+				var myErr *mysql.MySQLError
+				if !errors.As(err, &myErr) || (myErr.Number != 1060 && myErr.Number != 1061 && myErr.Number != 1826 && myErr.Number != 1359) {
+					return fmt.Errorf("MySQL migration %s: %w", name, err)
+				}
+			}
+		}
+		if _, err = conn.ExecContext(ctx, "INSERT INTO schema_migrations(name,checksum) VALUES(?,?)", name, sum); err != nil {
+			return err
+		}
+	}
+	return nil
+}

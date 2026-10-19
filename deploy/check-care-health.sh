@@ -9,4 +9,4 @@ fi
 curl --fail --silent --show-error --max-time 5 "$BASE_URL/healthz" >/dev/null
 curl --fail --silent --show-error --max-time 5 "$BASE_URL/restful/service/status" \
   | python3 -c 'import json,sys; obj=json.load(sys.stdin); sys.exit(0 if obj.get("databaseReady") is True else 1)'
-echo "HTTP ready and PostgreSQL connected; verify worker heartbeat, outbox and staffing separately"
+echo "HTTP ready and MySQL primary connected; verify PG analytics, worker heartbeat, outbox and staffing separately"

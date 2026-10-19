@@ -1,10 +1,11 @@
 package handlers
 
 import (
+	dbstore "careold-go/internal/db"
 	"careold-go/internal/response"
-	"errors"
+
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
+
 	"net/http"
 	"strconv"
 	"time"
@@ -17,14 +18,14 @@ import (
 const oldPersonCols = `old_id, name, age, sex, phone, room, illness, warn, food_like,
 	food_hate, drag, family_id, customer_id, be_time, bothdate, device_id`
 
-func scanOldPersonRow(row pgx.Row) (map[string]any, error) {
+func scanOldPersonRow(row dbstore.Row) (map[string]any, error) {
 	var id int64
 	var name, sex, phone, room, illness, warn, drag, foodLike, foodHate *string
 	var age *int
 	var familyID, customerID, deviceID *int64
 	var beTime, bothdate *time.Time
 	if err := row.Scan(&id, &name, &age, &sex, &phone, &room, &illness, &warn,
-		&drag, &foodLike, &foodHate, &familyID, &customerID, &beTime, &bothdate, &deviceID); err != nil {
+		&foodLike, &foodHate, &drag, &familyID, &customerID, &beTime, &bothdate, &deviceID); err != nil {
 		return nil, err
 	}
 	return map[string]any{
@@ -88,7 +89,7 @@ func (h *Handler) oldPersonAdd(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	required := []string{"deviceId", "name", "bothdate", "sex", "phone", "room",
+	required := []string{"name", "bothdate", "sex", "phone", "room",
 		"illness", "warn", "foodLike", "foodHate", "drag", "customerId"}
 	vals := make(map[string]string, len(required))
 	for _, k := range required {
@@ -99,13 +100,12 @@ func (h *Handler) oldPersonAdd(w http.ResponseWriter, r *http.Request) {
 		}
 		vals[k] = s
 	}
-	deviceID, err := strconv.ParseInt(vals["deviceId"], 10, 64)
-	if err != nil {
-		write400(w, "请求参数不完整")
+	if deviceID, _ := vstr(m, "deviceId"); deviceID != "" {
+		write400(w, "请先建立长者档案，再通过设备管理关联设备")
 		return
 	}
 	customerID, err := strconv.ParseInt(vals["customerId"], 10, 64)
-	if err != nil {
+	if err != nil || customerID <= 0 {
 		write400(w, "请求参数不完整")
 		return
 	}
@@ -119,25 +119,15 @@ func (h *Handler) oldPersonAdd(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := r.Context()
-	// 必须先登记手表信息：watch_info 须恰好有一行该 deviceId 的档案。
-	var watchCount int64
-	if err := h.DB.QueryRow(ctx, `SELECT COUNT(*) FROM watch_info WHERE device_id=$1`, deviceID).Scan(&watchCount); err != nil {
-		response.Error500(w, ref())
-		return
-	}
-	if watchCount != 1 {
-		failCodeOnly(w)
-		return
-	}
 	now := time.Now()
 	age := now.Year() - birthYear
 	ct, err := h.DB.Exec(ctx,
 		`INSERT INTO oldperson(name,age,sex,phone,room,illness,warn,food_like,food_hate,drag,
-		 customer_id,be_time,bothdate,device_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
+		 customer_id,be_time,bothdate) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
 		vals["name"], age, vals["sex"], vals["phone"], vals["room"], vals["illness"],
 		vals["warn"], vals["foodLike"], vals["foodHate"], vals["drag"], customerID,
 		time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local),
-		vals["bothdate"], deviceID)
+		vals["bothdate"])
 	if err != nil {
 		response.Error500(w, ref())
 		return
@@ -155,8 +145,8 @@ func (h *Handler) oldPersonUpdate(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	required := []string{"oldId", "deviceId", "name", "bothdate", "sex", "phone",
-		"room", "illness", "warn", "foodLike", "foodHate", "drag", "customerName"}
+	required := []string{"oldId", "name", "bothdate", "sex", "phone",
+		"room", "illness", "warn", "foodLike", "foodHate", "drag"}
 	vals := make(map[string]string, len(required)+1)
 	for _, k := range required {
 		s, present := vstr(m, k)
@@ -166,28 +156,18 @@ func (h *Handler) oldPersonUpdate(w http.ResponseWriter, r *http.Request) {
 		}
 		vals[k] = s
 	}
-	// 怪癖：优先取 customerName，若它不是纯数字则改取 customerId。
-	custStr := vals["customerName"]
-	if !validID(custStr) {
-		s, present := vstr(m, "customerId")
-		if !present {
-			write400(w, "请求参数不完整")
-			return
-		}
-		custStr = s
+	// Prefer the identifier; retain numeric customerName for existing clients.
+	custStr, present := vstr(m, "customerId")
+	if !present {
+		custStr, _ = vstr(m, "customerName")
 	}
 	oldID, err := strconv.ParseInt(vals["oldId"], 10, 64)
 	if err != nil {
 		write400(w, "请求参数不完整")
 		return
 	}
-	deviceID, err := strconv.ParseInt(vals["deviceId"], 10, 64)
-	if err != nil {
-		write400(w, "请求参数不完整")
-		return
-	}
 	customerID, err := strconv.ParseInt(custStr, 10, 64)
-	if err != nil {
+	if err != nil || customerID <= 0 {
 		write400(w, "请求参数不完整")
 		return
 	}
@@ -201,14 +181,41 @@ func (h *Handler) oldPersonUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	age := time.Now().Year() - birthYear
-	ct, err := h.DB.Exec(r.Context(),
+	ctx := r.Context()
+	tx, err := h.DB.Begin(ctx)
+	if err != nil {
+		response.Error500(w, ref())
+		return
+	}
+	defer tx.Rollback(ctx)
+	var currentDevice *int64
+	if err := tx.QueryRow(ctx, `SELECT device_id FROM oldperson WHERE old_id=$1 FOR UPDATE`, oldID).Scan(&currentDevice); err != nil {
+		if err == pgx.ErrNoRows {
+			response.Fail(w, "长者档案不存在")
+		} else {
+			response.Error500(w, ref())
+		}
+		return
+	}
+	if raw, present := vstr(m, "deviceId"); present && raw != "" {
+		deviceID, err := strconv.ParseInt(raw, 10, 64)
+		if err != nil || currentDevice == nil || *currentDevice != deviceID {
+			conflict409(w, "设备关联已变化，请通过设备管理绑定或解绑")
+			return
+		}
+	}
+	ct, err := tx.Exec(ctx,
 		`UPDATE oldperson SET name=$1,age=$2,sex=$3,phone=$4,room=$5,illness=$6,warn=$7,
-		 food_like=$8,food_hate=$9,drag=$10,customer_id=$11,bothdate=$12,device_id=$13
-		 WHERE old_id=$14`,
+		 food_like=$8,food_hate=$9,drag=$10,customer_id=$11,bothdate=$12
+		 WHERE old_id=$13`,
 		vals["name"], age, vals["sex"], vals["phone"], vals["room"], vals["illness"],
 		vals["warn"], vals["foodLike"], vals["foodHate"], vals["drag"], customerID,
-		vals["bothdate"], deviceID, oldID)
+		vals["bothdate"], oldID)
 	if err != nil {
+		response.Error500(w, ref())
+		return
+	}
+	if err := tx.Commit(ctx); err != nil {
 		response.Error500(w, ref())
 		return
 	}
@@ -269,8 +276,7 @@ func (h *Handler) oldPersonDelete(w http.ResponseWriter, r *http.Request) {
 	ct, err := tx.Exec(ctx, `DELETE FROM oldperson WHERE old_id=$1`, oldID)
 	if err != nil {
 		rollback()
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) && pgErr.Code == "23503" {
+		if dbstore.IsForeignKey(err) {
 			conflict409(w, "请先解除该长者名下设备绑定")
 			return
 		}
@@ -336,7 +342,7 @@ func (h *Handler) oldPersonSelectDetail(w http.ResponseWriter, r *http.Request) 
 		var beTime, bothdate *time.Time
 		var familyName, familyRelation, familyPhone, familySex, familyAddress, customerName *string
 		if err := rows.Scan(&id, &name, &age, &sex, &phone, &room, &illness, &warn,
-			&drag, &foodLike, &foodHate, &familyID, &customerID, &beTime, &bothdate, &deviceID,
+			&foodLike, &foodHate, &drag, &familyID, &customerID, &beTime, &bothdate, &deviceID,
 			&familyName, &familyRelation, &familyPhone, &familySex, &familyAddress, &customerName); err != nil {
 			response.Error500(w, ref())
 			return

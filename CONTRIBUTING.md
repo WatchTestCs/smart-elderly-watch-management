@@ -18,7 +18,7 @@ Base contributions on `preview` and select `preview` as the pull request base. D
 2. Check existing issues and use the [reporting templates](docs/SUPPORT.md). Discuss substantial changes to deployment, database ownership, or trust boundaries before implementing them.
 3. Keep unrelated refactors, dependency upgrades, formatting, and generated files out of the change.
 
-Preserve the product constraints: independent PostgreSQL; UI startup without a database; no global connection wall; no automatic replay of failed writes; no credentials or desktop token in page code. Do not describe user-supplied Linux binaries as verified builds of the Windows source.
+Preserve the product constraints: independently deployed MySQL primary and asynchronous PostgreSQL analytics; UI startup without a database; no global connection wall; no automatic replay of failed business writes; no credentials or desktop token in page code. Do not describe user-supplied Linux binaries as verified builds of the Windows source.
 
 ## Validation proportional to the change / 按改动选择验证
 
@@ -26,10 +26,10 @@ Preserve the product constraints: independent PostgreSQL; UI startup without a d
 | --- | --- |
 | Documentation or translation | Valid local links, accurate commands and version/platform descriptions; no full runtime suite needed |
 | Frontend behavior | Production build and relevant browser checks, including error/empty states and narrow layouts |
-| Backend behavior | Relevant Go tests and static checks; database behavior uses an isolated real PostgreSQL database |
+| Backend behavior | Relevant Go tests and static checks; transactional behavior uses isolated real MySQL, with PostgreSQL for analytics and legacy compatibility |
 | Native lifecycle or packaging | Relevant native launch, close, or installer checks; compilation alone is insufficient |
 
-Follow [BUILD](docs/BUILD.md) and [TESTING](docs/TESTING.md). Never run automated tests against production data. Tests that skip because `TEST_DATABASE_URL` is unset are not proof of database integration. Record what ran, what failed, what was skipped, and what remains unverified; do not repeat unrelated full suites for a small documentation change.
+Follow [BUILD](docs/BUILD.md) and [TESTING](docs/TESTING.md). Never run automated tests against production data. Tests that skip because `TEST_MYSQL_DSN` or `TEST_DATABASE_URL` is unset are not proof of the corresponding database integration. Record what ran, what failed, what was skipped, and what remains unverified; do not repeat unrelated full suites for a small documentation change.
 
 验证应与改动风险匹配。模拟 API 的浏览器检查不能代替真实数据库或原生窗口验收；未运行的测试不能填写为通过。
 

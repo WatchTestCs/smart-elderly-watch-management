@@ -1,0 +1,61 @@
+{
+  "date": "2026-10-19",
+  "version": "2.0.6",
+  "targetBranch": "preview",
+  "remoteBase": "447ca70a2e5d2fba2dd82ad1e3d949031c0b3820",
+  "databases": {
+    "mysql": "8.0.46 task-owned instance",
+    "postgresql": "16.4 task-owned instance"
+  },
+  "go": {
+    "version": "1.27.2",
+    "realDualDatabaseAllTests": "passed",
+    "allPackagesRace": "passed",
+    "vet": "passed",
+    "build": "passed",
+    "gofmt": "passed"
+  },
+  "legacyTransfer": {
+    "PG0006": "passed",
+    "PG0007": "passed",
+    "PG0008": "passed",
+    "checks": [
+      "preflight read-only",
+      "preserve IDs Chinese and NULL",
+      "preserve samples binding epochs and clock",
+      "refuse nonempty target",
+      "atomic rollback"
+    ]
+  },
+  "legacyPostgresHealthIntegrationTests": 5,
+  "browserMockSuites": {
+    "architecture-acceptance": 23,
+    "browser-acceptance": 305,
+    "controls-acceptance": 656,
+    "database-availability": 13,
+    "elder-delete": 8,
+    "forms-acceptance": 30,
+    "issues-acceptance": 42,
+    "lifecycle-acceptance": 7,
+    "screen-acceptance": 169,
+    "setup-browser-acceptance": 10,
+    "ui-refinement": 123
+  },
+  "browserMockChecks": 1386,
+  "frontendBuild": "passed; existing >500kB chunk warning",
+  "watchSimulatorTests": 3,
+  "productVersionCheck": "passed 2.0.6",
+  "preservedRemoteHealthFiles": true,
+  "releaseBinariesCommitted": false,
+  "notExecuted": [
+    "native Tauri rebuild or runtime",
+    "installer execution",
+    "real watch or SMS gateway",
+    "production migration",
+    "long duration load",
+    "MySQL 8.4 containers",
+    "remote TLS",
+    "new full PG-outage browser run"
+  ],
+  "remoteCI": "not checked; local checks do not establish Actions success"
+}

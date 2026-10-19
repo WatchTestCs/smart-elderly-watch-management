@@ -5,8 +5,16 @@
       <el-button plain :loading="loading" @click="refresh">检查服务</el-button>
     </header>
     <p v-if="error" class="care-error" role="alert">{{ error }}</p>
+    <p v-if="diagnostics?.primaryEngine === 'mysql'">核心业务主库：MySQL。</p>
+    <p v-if="diagnostics?.analytics" :role="diagnostics.analytics.ready ? 'status' : 'alert'" :class="{'care-worker-critical': !diagnostics.analytics.ready}">
+      {{ !diagnostics.analytics.configured ? 'PG 分析库未配置，分析事件保留在主库等待同步。' : diagnostics.analytics.ready ? 'PG 分析库可用。' : 'PG 分析库暂不可用，核心业务仍使用 MySQL，分析事件等待重试。' }}
+      待同步：{{ diagnostics.analytics.pending == null ? '暂不可读' : diagnostics.analytics.pending }}。
+      <span v-if="diagnostics.analytics.lastSyncedAt">最近同步：{{ new Date(diagnostics.analytics.lastSyncedAt).toLocaleString('zh-CN') }}。</span>
+    </p>
     <p v-if="diagnostics && !diagnostics.workerHealthy" role="alert" class="care-worker-critical">告警服务进程心跳异常或尚未启动：不能保证通知和超时升级正在执行，必须立即检查常驻服务。</p>
     <p v-if="diagnostics && diagnostics.workerHealthy" role="status">告警服务进程最近一次心跳正常。此状态不代表消息已经送达。</p>
+    <p v-if="diagnostics && diagnostics.notificationConfigured === false" role="alert" class="care-worker-critical">通知渠道尚未配置，任务通知无法发出。请联系主管配置通知网关，并按线下流程联系照护人员。</p>
+    <p v-if="diagnostics && diagnostics.receiptConfigured === false" role="alert" class="care-worker-critical">送达回执校验尚未配置，当前无法确认渠道已送达。</p>
     <div v-if="diagnostics" class="care-operation-metrics">
       <span>待发送通知 <strong>{{ diagnostics.pendingNotifications }}</strong></span>
       <span>发送失败 <strong>{{ diagnostics.failedNotifications }}</strong></span>
@@ -34,7 +42,7 @@
   </section>
 </template>
 <script setup>
-import {ref,onMounted} from 'vue'
+import {ref,onMounted,onBeforeUnmount} from 'vue'
 import axios from 'axios'
 const diagnostics=ref(null)
 const staff=ref([])
@@ -46,6 +54,7 @@ const loading=ref(false)
 const error=ref('')
 const post=(url,body={})=>axios.post('restful/care/'+url,body,{withCredentials:true})
 async function refresh(){
+  if(loading.value)return
   loading.value=true
   try{
     const {data}=await post('diagnostics')
@@ -63,7 +72,7 @@ async function refresh(){
 }
 async function loadStaff(){
   try{const {data}=await post('staff');staff.value=data.staff||[]}
-  catch(_){error.value='人员权限列表无法加载。'}
+  catch(_){staff.value=[];error.value='人员权限列表无法加载。'}
 }
 async function assign(person,duty){
   if(person.duty===duty)return
@@ -75,7 +84,9 @@ async function ifAudit(){
   try{const {data}=await post('accessAudit');accesses.value=data.accesses||[]}
   catch(_){error.value='审计记录暂不可用。'}
 }
-onMounted(refresh)
+let timer
+onMounted(()=>{refresh();timer=setInterval(()=>{if(!document.hidden)refresh()},15000)})
+onBeforeUnmount(()=>clearInterval(timer))
 </script>
 <style scoped>
 .care-worker-critical{padding:12px;background:#fff5ec;border-left:3px solid #b94d29;color:#8e3619;font-weight:600}
