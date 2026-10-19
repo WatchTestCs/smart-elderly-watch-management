@@ -1,26 +1,26 @@
-# Changelog / 更新日志
+# Changelog / ������־
 
-This is a concise user-facing history, not a complete commit log. Release notes and artifact manifests retain version-specific validation details. / 本文件记录主要变化，完整验收与附件来源以相应 Release 为准。
+This file is the user-facing version history, not a commit log. Release notes and artifact manifests contain validation details; the complete file-purpose index is in [docs/FILES.md](docs/FILES.md). / ���ļ���¼����ʹ���ߵİ汾�仯�����ļ���;�� [�ļ�����](docs/FILES.md)�������븽����Դ����Ӧ Release��
 
-## 2.0.6 — UI、照护闭环与双库整合
+## 2.0.6 �� UI���ջ��ջ���˫������
 
-[改进与升级说明](docs/releases/2.0.6.md)
+[�Ľ�������˵��](docs/releases/2.0.6.md)
 
-- 统一导航与标题，按当前路由折叠菜单，补齐窄屏卡片、加载与失败重试，优化总览宽屏布局。
-- 修正建档/设备绑定依赖、归属一致性、阈值保留、饮食药物字段错位及缺测虚假正常。
-- 打通 SOS 接单、处置、独立复核、关联告警关闭、总览刷新和分页履历。
-- MySQL 承担业务事务，PG 接收可靠异步分析；附双库部署、旧库导入及投影回填工具。
-- 保留远程健康采样、绑定版本、增量游标与统计，适配 MySQL；离线导入兼容 PG 0006／0007／0008。验证与安装包边界见 [整合记录](docs/INTEGRATION_2.0.6.md)。
-- 统一应用、后端、前端及锁文件产品版本为 2.0.6。本文记录本地交付，未创建远程 Release 或移动标签。
+- ͳһ��������⣬����ǰ·���۵��˵�������խ����Ƭ��������ʧ�����ԣ��Ż������������֡�
+- ��������/�豸������������һ���ԡ���ֵ��������ʳҩ���ֶδ�λ��ȱ�����������
+- ��ͨ SOS �ӵ������á��������ˡ������澯�رա�����ˢ�ºͷ�ҳ������
+- MySQL �е�ҵ������PG ���տɿ��첽��������˫�ⲿ�𡢾ɿ⵼�뼰ͶӰ����ߡ�
+- ����Զ�̽����������󶨰汾�������α���ͳ�ƣ����� MySQL�����ߵ������ PG 0006��0007��0008����֤�밲װ���߽�� [���ϼ�¼](docs/INTEGRATION_2.0.6.md)��
+- ͳһӦ�á���ˡ�ǰ�˼����ļ���Ʒ�汾Ϊ 2.0.6�����ļ�¼���ؽ�����δ����Զ�� Release ���ƶ���ǩ��
 
-## Unreleased — documentation on preview
+## Unreleased �� documentation on preview
 
 - Add an English README with language navigation and the same platform, database, and signing boundaries as the Chinese overview.
 - Add contribution guidance, copyable issue/feature templates, support notes, and release-history navigation.
 - Use static license and preview-version badges; do not imply successful CI, audit certification, or a support SLA.
 - Documentation-only: no binary rebuild, new application version, or movement of existing release tags.
 
-## 2.0.2 — Tauri / Go and independent PostgreSQL
+## 2.0.2 �� Tauri / Go and independent PostgreSQL
 
 [Release: v2.0.2-preview.1](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.2-preview.1)
 
@@ -31,18 +31,18 @@ This is a concise user-facing history, not a complete commit log. Release notes 
 - Add Windows portable and exact-commit source ZIPs. Add user-supplied Linux application and database-manager attachments with explicit provenance and runtime-validation limits.
 - Legacy H2 data is not converted automatically. Windows binaries are locally self-signed, without public CA trust.
 
-## 2.0.1 — historical Windows preview
+## 2.0.1 �� historical Windows preview
 
-[Release: v2.0.1-preview.1](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.1-preview.1) · [Archived notes](docs/releases/2.0.1.md)
+[Release: v2.0.1-preview.1](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.1-preview.1) �� [Archived notes](docs/releases/2.0.1.md)
 
 - Strengthen device-secret storage, relational integrity, deletion handling, and regression coverage.
 - This release belongs to the earlier Java desktop architecture; its build and validation claims must not be reused as evidence for the current Tauri / Go implementation.
 
-## 2.0.0 — historical Windows preview and later Linux attachment
+## 2.0.0 �� historical Windows preview and later Linux attachment
 
 [Release: v2.0.0-preview.1](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.0-preview.1)
 
 - Historical Windows delivery used Electron, Java, and H2, with the Vue 3 / Vite frontend.
 - A user-provided Linux desktop DEB was later attached unchanged. Maintainer familiarity is limited; it may contain bugs, errors, or compatibility issues and has not undergone installation or runtime validation.
 
-Older implementation descriptions are preserved as history and are not current setup instructions. / 旧架构仅作历史，不作为当前部署依据。
+Older implementation descriptions are preserved as history and are not current setup instructions. / �ɼܹ�������ʷ������Ϊ��ǰ�������ݡ�
