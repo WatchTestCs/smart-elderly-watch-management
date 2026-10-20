@@ -179,6 +179,23 @@ func (h *Handler) careTransition(w http.ResponseWriter, r *http.Request) {
 		write400(w, "处置、复核和重新开启必须填写原因")
 		return
 	}
+	verdict := str(m, "verdict")
+	if action == "verify" && h.DB.IsMySQL() {
+		// Older clients submit no verdict: retain their explicit verification as
+		// confirmed. Never invent conclusions for historical verified incidents.
+		if verdict == "" {
+			verdict = "confirmed"
+		}
+		if !reviewVerdict(verdict) {
+			write400(w, "复核结论须为 confirmed 或 false_alarm")
+			return
+		}
+		if _, err := tx.Exec(ctx, `INSERT INTO alert_review(entity,record_id,kind,verdict,reason,actor_id)
+ SELECT 'care',id,kind,$2,$3,$4 FROM care_incident WHERE id=$1`, id, verdict, note, auth.Principal(r).ID); err != nil {
+			response.Error500(w, ref())
+			return
+		}
+	}
 	if _, err := tx.Exec(ctx, `UPDATE care_incident SET
     state=$2,updated_at=now(),
     due_at=CASE

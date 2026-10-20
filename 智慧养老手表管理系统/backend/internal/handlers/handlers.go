@@ -32,4 +32,5 @@ func (h *Handler) Routes(mux *http.ServeMux) {
 	h.routeSocial(mux) // 说说/文章/图片展示/图片接口
 	h.routeHealth(mux)
 	h.routeCare(mux) // 照护事件队列、接单及审核状态
+	h.routeCapabilities(mux)
 }

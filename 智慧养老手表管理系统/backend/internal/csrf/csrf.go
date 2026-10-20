@@ -20,6 +20,9 @@ const HeaderName = "X-CSRF-TOKEN"
 // 使用设备鉴权或桌面令牌的路径不依赖浏览器 CSRF。
 // Setup is protected by the native bootstrap token, not browser session cookies.
 var exemptPaths = []string{
+	"/restful/device/commandPull",
+	"/restful/device/commandAck",
+	"/restful/device/fencePoint",
 	"/restful/setup",
 	"/restful/device/login",
 	"/restful/device/bind",

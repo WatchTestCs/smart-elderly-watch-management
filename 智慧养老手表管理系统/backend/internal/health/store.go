@@ -81,5 +81,12 @@ func Save(ctx context.Context, tx *db.Transaction, o Owner, s Sample) (int64, bo
 	if err != nil {
 		return 0, false, fmt.Errorf("save health change: %w", err)
 	}
+	if tx.IsMySQL() {
+		// Invalidate all cached days for this owner, including the OLD date of a
+		// corrected/deleted interval. Coarse invalidation favours correctness.
+		if _, err = tx.Exec(ctx, "UPDATE metric_daily SET dirty=true WHERE old_id=$1", o.OldID); err != nil {
+			return 0, false, err
+		}
+	}
 	return revision, false, nil
 }

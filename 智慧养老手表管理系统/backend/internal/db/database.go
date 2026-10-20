@@ -90,8 +90,9 @@ func OpenMySQL(ctx context.Context, dsn string) (*Database, error) {
 	}
 	return &Database{executor: executor{my: pool}, myPool: pool}, nil
 }
-func (d *Database) IsMySQL() bool { return d.myPool != nil }
-func (d *Database) SQL() *sql.DB  { return d.myPool }
+func (d *Database) IsMySQL() bool    { return d.myPool != nil }
+func (t *Transaction) IsMySQL() bool { return t.myTx != nil }
+func (d *Database) SQL() *sql.DB     { return d.myPool }
 func (d *Database) Close() {
 	if d.myPool != nil {
 		d.myPool.Close()

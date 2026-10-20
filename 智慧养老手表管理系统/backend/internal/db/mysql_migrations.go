@@ -40,7 +40,7 @@ func MigrateMySQL(ctx context.Context, database *Database) error {
 	if _, err = conn.ExecContext(ctx, "CREATE TABLE IF NOT EXISTS schema_migrations(name varchar(191) PRIMARY KEY,checksum char(64) NOT NULL,applied_at datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)) ENGINE=InnoDB"); err != nil {
 		return err
 	}
-	for _, name := range []string{"mysql/0001_core.sql", "mysql/0002_analytics.sql", "mysql/0003_health_samples.sql"} {
+	for _, name := range []string{"mysql/0001_core.sql", "mysql/0002_analytics.sql", "mysql/0003_health_samples.sql", "mysql/0004_device_capabilities.sql"} {
 		data, err := migrations.Files.ReadFile(name)
 		if err != nil {
 			return err

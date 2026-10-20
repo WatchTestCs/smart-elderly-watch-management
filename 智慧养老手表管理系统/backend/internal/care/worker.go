@@ -110,6 +110,7 @@ type delivery struct {
 	recipient  string
 	channel    string
 	attempts   int
+	kind       string
 }
 
 func (d *dispatcher) dispatchOne(ctx context.Context) error {
@@ -133,6 +134,9 @@ func (d *dispatcher) dispatchOne(ctx context.Context) error {
 		return err
 	}
 	job.attempts++
+	if err := tx.QueryRow(ctx, "SELECT kind FROM care_incident WHERE id=$1", job.incidentID).Scan(&job.kind); err != nil {
+		return err
+	}
 	if _, err := tx.Exec(ctx, `UPDATE care_notification_outbox SET status='sending',
         attempts=$2,last_attempt_at=now() WHERE id=$1`, job.id, job.attempts); err != nil {
 		return err
@@ -141,7 +145,7 @@ func (d *dispatcher) dispatchOne(ctx context.Context) error {
 		return err
 	}
 	payload, err := json.Marshal(map[string]any{
-		"type": "care.sos", "incidentId": job.incidentID,
+		"type": "care." + job.kind, "incidentId": job.incidentID,
 		"notificationId": job.id, "channel": job.channel, "recipient": job.recipient,
 	})
 	if err == nil {

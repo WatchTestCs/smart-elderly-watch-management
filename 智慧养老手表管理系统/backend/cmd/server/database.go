@@ -91,7 +91,8 @@ func watchDatabase(ctx context.Context, cfg config.Config, sessions *session.Sto
 				go func() {
 					defer close(done)
 					var jobs sync.WaitGroup
-					jobs.Add(2)
+					jobs.Add(3)
+					go func() { defer jobs.Done(); h.RunCapabilities(ctx) }()
 					go func() { defer jobs.Done(); care.Run(ctx, pool) }()
 					go func() { defer jobs.Done(); analytics.Run(ctx, pool, cfg.PGAnalyticsURL, &service.analytics) }()
 					jobs.Wait()
