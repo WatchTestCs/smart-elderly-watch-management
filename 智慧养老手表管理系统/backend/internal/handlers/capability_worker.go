@@ -6,10 +6,22 @@ import (
 	"time"
 
 	"careold-go/internal/health"
+	"careold-go/internal/observability"
 )
 
 // CapabilityTick performs no external I/O and is safe with concurrent instances.
 func (h *Handler) CapabilityTick(ctx context.Context) error {
+	var carePending, messagesPending, rulesActive int64
+	if h.DB.IsMySQL() {
+		if err := h.DB.QueryRow(ctx, `SELECT (SELECT count(*) FROM care_notification_outbox WHERE status IN ('pending','failed','sending') AND exhausted=false),
+ (SELECT count(*) FROM message_outbox WHERE status IN ('pending','failed','sending')),(SELECT count(*) FROM rule_state WHERE active=true)`).Scan(&carePending, &messagesPending, &rulesActive); err != nil {
+			return err
+		}
+		observability.Default.Set(`suining_outbox_backlog{queue="care"}`, float64(carePending))
+		observability.Default.Set(`suining_outbox_backlog{queue="message"}`, float64(messagesPending))
+		observability.Default.Set("suining_rules_active", float64(rulesActive))
+		observability.Default.Set("suining_capability_heartbeat_timestamp_seconds", float64(time.Now().Unix()))
+	}
 	// Binding changes invalidate pending commands; expiration never means success.
 	_, err := h.DB.Exec(ctx, `UPDATE device_command SET status='cancelled' WHERE status IN ('pending','sent') AND NOT EXISTS
  (SELECT 1 FROM device d WHERE d.device_id=device_command.device_id AND d.old_id=device_command.old_id AND d.health_epoch=device_command.epoch AND d.status<>0)`)

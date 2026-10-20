@@ -4,6 +4,7 @@ package main
 import (
 	"context"
 	"log"
+	"log/slog"
 	"net"
 	"net/http"
 	"os"
@@ -12,12 +13,15 @@ import (
 	"syscall"
 	"time"
 
+	"careold-go/internal/apidoc"
 	"careold-go/internal/config"
 	"careold-go/internal/handlers"
+	"careold-go/internal/observability"
 	"careold-go/internal/session"
 )
 
 func main() {
+	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
 	cfg := config.Load()
 	addr, imageDir, readyFile, parentPid := applyDesktopEnv(cfg.Addr, cfg.ImageDir)
 	cfg.Addr, cfg.ImageDir = addr, imageDir
@@ -32,7 +36,7 @@ func main() {
 	localHandlers.MountLocalLogout(mux)
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusOK) })
 	srv := &http.Server{
-		Handler:           service.middleware(mux),
+		Handler:           apidoc.Rewrite(observability.Default.HTTP(service.middleware(mux))),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       20 * time.Second,
 		WriteTimeout:      35 * time.Second,

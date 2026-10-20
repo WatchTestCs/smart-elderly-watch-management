@@ -41,6 +41,8 @@ var hardwarePaths = map[string]bool{
 
 // SHARED：ADMIN 或 FAMILY 任一角色。
 var sharedPaths = map[string]bool{
+	"POST /restful/security/factor":             true,
+	"POST /restful/notification/list":           true,
 	"POST /restful/health/daily":                true,
 	"POST /restful/health/changes":              true,
 	"POST /restful/health/statistics":           true,

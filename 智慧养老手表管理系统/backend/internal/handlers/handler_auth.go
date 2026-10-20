@@ -49,6 +49,10 @@ func (h *Handler) sessionInfo(w http.ResponseWriter, r *http.Request) {
 	sess := h.Sessions.FromRequest(r)
 	if sess == nil {
 		sess = h.Sessions.Create(session.Principal{})
+		if sess == nil {
+			response.JSON(w, 503, map[string]any{"message": "会话存储不可用"})
+			return
+		}
 		session.SetCookie(w, sess.ID)
 	}
 	authenticated := sess.Principal.Role == auth.RoleAdmin || sess.Principal.Role == auth.RoleFamily
@@ -85,6 +89,9 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	// 1. users 表（管理员）
+	if !h.loginAllowed(w, r, phone) {
+		return
+	}
 	var (
 		uid    int64
 		uName  pgtype.Text
@@ -100,9 +107,14 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err == nil && auth.Matches(password, uPass.String) {
-		h.renewSession(w, r, session.Principal{
+		if !h.factorLogin(w, r, m, auth.RoleAdmin, uid, phone) {
+			return
+		}
+		if !h.renewSession(w, r, session.Principal{
 			Role: auth.RoleAdmin, ID: uid, Phone: uPhone.String, DisplayName: uName.String,
-		})
+		}) {
+			return
+		}
 		response.OK(w, map[string]any{
 			"users1": map[string]any{
 				"userId": uid, "userName": uName.String, "userPhone": uPhone.String,
@@ -141,10 +153,15 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 			response.Fail(w, "该家属账号尚未关联老人，请联系管理员")
 			return
 		}
-		h.renewSession(w, r, session.Principal{
+		if !h.factorLogin(w, r, m, auth.RoleFamily, fid, phone) {
+			return
+		}
+		if !h.renewSession(w, r, session.Principal{
 			Role: auth.RoleFamily, ID: fid, Phone: fPhone.String,
 			OldID: oldID.Int64, DisplayName: fName.String,
-		})
+		}) {
+			return
+		}
 		response.OK(w, map[string]any{
 			"family": map[string]any{
 				"oldId": oldID.Int64, "name": oldName.String,
@@ -156,16 +173,34 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if h.loginAudit(r, phone, "", 0, "invalid_credentials") != nil {
+		response.Error500(w, ref())
+		return
+	}
 	response.Fail(w, "手机号或密码不正确")
 }
 
 // renewSession 登录建会话：销毁请求 cookie 带来的旧会话（防 session fixation），建新会话并写 cookie。
-func (h *Handler) renewSession(w http.ResponseWriter, r *http.Request, p session.Principal) {
+func (h *Handler) renewSession(w http.ResponseWriter, r *http.Request, p session.Principal) bool {
+	p.FactorGeneration, _ = r.Context().Value(factorGenerationKey{}).(string)
 	if c, err := r.Cookie(session.CookieName); err == nil && c.Value != "" {
-		h.Sessions.Destroy(c.Value)
+		if !h.Sessions.Destroy(c.Value) {
+			response.JSON(w, 503, map[string]any{"message": "会话存储不可用"})
+			return false
+		}
 	}
 	sess := h.Sessions.Create(p)
+	if sess == nil {
+		response.JSON(w, 503, map[string]any{"message": "会话存储不可用"})
+		return false
+	}
+	if h.DB != nil && h.loginAudit(r, p.Phone, p.Role, p.ID, "success") != nil {
+		h.Sessions.Destroy(sess.ID)
+		response.Error500(w, ref())
+		return false
+	}
 	session.SetCookie(w, sess.ID)
+	return true
 }
 
 // logout 复刻 POST /restful/userLogin/logout：需登录（中间件鉴权），销毁会话并清 cookie。
@@ -175,7 +210,10 @@ func (h *Handler) logout(w http.ResponseWriter, r *http.Request) {
 		sess = h.Sessions.FromRequest(r)
 	}
 	if sess != nil {
-		h.Sessions.Destroy(sess.ID)
+		if !h.Sessions.Destroy(sess.ID) {
+			response.JSON(w, 503, map[string]any{"message": "会话撤销未完成"})
+			return
+		}
 	}
 	session.ClearCookie(w)
 	response.OK(w, nil)

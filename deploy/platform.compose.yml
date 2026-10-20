@@ -1,0 +1,79 @@
+name: suining-platform
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Run scripts/start-platform.py first}
+      MYSQL_DATABASE: suining
+      MYSQL_USER: suining
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?}
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_bin", "--log-bin-trust-function-creators=1"]
+    volumes: ["mysql:/var/lib/mysql"]
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 4s
+      retries: 30
+    restart: unless-stopped
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: suining_analytics
+      POSTGRES_USER: suining_analytics
+      POSTGRES_PASSWORD: ${PG_PASSWORD:?}
+    volumes: ["postgres:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U suining_analytics -d suining_analytics"]
+      interval: 5s
+      timeout: 4s
+      retries: 20
+    restart: unless-stopped
+  app:
+    build: {context: "..", dockerfile: Dockerfile}
+    environment:
+      MYSQL_DSN: suining:${MYSQL_PASSWORD}@tcp(mysql:3306)/suining
+      PG_ANALYTICS_URL: postgres://suining_analytics:${PG_PASSWORD}@postgres:5432/suining_analytics?sslmode=disable
+      SESSION_BACKEND: database
+      DATA_ENCRYPTION_KEY_FILE: /run/secrets/data_key
+      METRICS_TOKEN_FILE: /run/secrets/metrics_token
+      DESKTOP_TOKEN_FILE: /run/secrets/bootstrap_token
+      NOTIFY_WEBHOOK_URL: ${NOTIFY_WEBHOOK_URL:-}
+      NOTIFY_WEBHOOK_TOKEN: ${NOTIFY_WEBHOOK_TOKEN:-}
+      CARE_NOTIFY_WEBHOOK_URL: ${CARE_NOTIFY_WEBHOOK_URL:-}
+      CARE_NOTIFY_WEBHOOK_TOKEN: ${CARE_NOTIFY_WEBHOOK_TOKEN:-}
+      CARE_RECEIPT_SECRET: ${CARE_RECEIPT_SECRET:?}
+    secrets: [data_key, metrics_token, bootstrap_token]
+    volumes: ["images:/data/images"]
+    expose: ["8080"]
+    depends_on:
+      mysql: {condition: service_healthy}
+      postgres: {condition: service_healthy}
+    read_only: true
+    tmpfs: ["/tmp"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+  gateway:
+    image: nginx:stable-bookworm
+    volumes: ["./platform.nginx.conf:/etc/nginx/conf.d/default.conf:ro"]
+    ports: ["127.0.0.1:${APP_PORT:-8080}:8080"]
+    depends_on:
+      app: {condition: service_healthy}
+    restart: unless-stopped
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    volumes: ["./prometheus.yml:/etc/prometheus/prometheus.yml:ro", "prometheus:/prometheus"]
+    secrets: [metrics_token]
+    ports: ["127.0.0.1:${PROMETHEUS_PORT:-9090}:9090"]
+    depends_on:
+      app: {condition: service_healthy}
+    restart: unless-stopped
+secrets:
+  data_key: {file: ./secrets/data-key}
+  metrics_token: {file: ./secrets/metrics-token}
+  bootstrap_token: {file: ./secrets/bootstrap-token}
+volumes:
+  mysql:
+  postgres:
+  images:
+  prometheus:

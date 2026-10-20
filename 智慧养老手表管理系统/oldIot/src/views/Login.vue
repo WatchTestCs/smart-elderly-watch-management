@@ -28,6 +28,7 @@
               <template #prefix><svg class="el-input__icon password-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 4v3"/></svg></template><template #suffix><button  type="button" class="password-visibility" :aria-label="showPassword ? '隐藏密码' : '显示密码'" :aria-pressed="String(showPassword)" @click="showPassword = !showPassword"><i class="el-icon-view" aria-hidden="true"></i></button></template>
             </el-input>
           </el-form-item>
+          <el-form-item v-if="mfaRequired" label="动态验证码或恢复码"><el-input v-model="loginForm.otp" aria-label="动态验证码" autocomplete="one-time-code" inputmode="numeric" maxlength="6" placeholder="6 位动态验证码" /><el-input v-model="loginForm.recoveryCode" aria-label="一次性恢复码" autocomplete="off" placeholder="无法使用验证器时填写恢复码" /></el-form-item>
           <p v-if="errorMessage" class="auth-error" role="alert">{{ errorMessage }}</p>
           <el-button type="primary" class="submit-button" :loading="submitting" @click="submitForm">登录</el-button>
         </el-form>
@@ -51,11 +52,12 @@ export default {
       heroImage: '/static/img/care-lakeside-artisan.webp',
       submitting: false,
       showPassword: false,
+      mfaRequired: false,
       errorMessage: '',
       largeText: localStorage.getItem('large_text') === 'true',
       loginForm: {
         phone: registeredPhone,
-        password: ''
+        password: '', otp: '', recoveryCode: ''
       },
       rules: {
         phone: [
@@ -103,6 +105,7 @@ export default {
           _this.errorMessage = data.message || '手机号或密码不正确，请重试'
 
         }).catch(function (error) {
+          if (error.response?.data?.code === 'MFA_REQUIRED') { _this.mfaRequired = true; _this.errorMessage = error.response.data.message; return }
           _this.errorMessage = error.response?.data?.code === 'DATABASE_UNAVAILABLE' ? '登录需要连接数据库，正在自动连接，请恢复后重试。' : '暂时无法登录，请稍后重试'
         }).then(function () {
           _this.submitting = false

@@ -11,15 +11,21 @@ import (
 	"sync/atomic"
 	"time"
 
+	"careold-go/internal/apidoc"
 	"careold-go/internal/auth"
 	"careold-go/internal/care"
 	"careold-go/internal/config"
 	"careold-go/internal/csrf"
 	"careold-go/internal/db"
 	"careold-go/internal/handlers"
+	"careold-go/internal/notify"
+	"careold-go/internal/observability"
 	"careold-go/internal/ratelimit"
 	"careold-go/internal/response"
+	"careold-go/internal/rules"
+	"careold-go/internal/securestore"
 	"careold-go/internal/session"
+	"crypto/subtle"
 )
 
 // Only fully migrated database handlers are published to HTTP requests.
@@ -30,6 +36,20 @@ type databaseService struct {
 
 func (s *databaseService) middleware(local http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/openapi.json" && r.Method == "GET" {
+			apidoc.ServeHTTP(w, r)
+			return
+		}
+		if r.URL.Path == "/metrics" && r.Method == "GET" {
+			token := config.Secret("METRICS_TOKEN")
+			if len(token) < 24 || subtle.ConstantTimeCompare([]byte(r.Header.Get("Authorization")), []byte("Bearer "+token)) != 1 {
+				response.JSON(w, 401, map[string]any{"message": "指标端点需要授权"})
+				return
+			}
+			observability.Default.Set("suining_database_ready", boolNumber(s.api.Load() != nil))
+			observability.Default.ServeHTTP(w, r)
+			return
+		}
 		api := s.api.Load()
 		if r.URL.Path == "/restful/service/status" && r.Method == http.MethodGet {
 			w.Header().Set("Cache-Control", "no-store")
@@ -55,6 +75,10 @@ func (s *databaseService) middleware(local http.Handler) http.Handler {
 }
 
 func watchDatabase(ctx context.Context, cfg config.Config, sessions *session.Store, service *databaseService) {
+	if cfg.SessionBackend != "" && cfg.SessionBackend != "database" && cfg.SessionBackend != "memory" {
+		log.Print("unsupported SESSION_BACKEND; database API remains unavailable")
+		return
+	}
 	var pool *dbstore.Database
 	var workerDone <-chan struct{}
 	defer func() {
@@ -82,16 +106,28 @@ func watchDatabase(ctx context.Context, cfg config.Config, sessions *session.Sto
 			err = db.MigrateMySQL(migration, pool)
 			cancelMigration()
 			if err == nil {
+				if cfg.SessionBackend == "database" {
+					var box *securestore.Box
+					box, err = securestore.New(cfg.DataKey)
+					if err != nil {
+						log.Print("database sessions require DATA_ENCRYPTION_KEY")
+						return
+					}
+					sessions.UseDatabase(pool.SQL(), box)
+				}
 				mux := http.NewServeMux()
 				h := handlers.New(pool, sessions, cfg)
 				h.Analytics = &service.analytics
 				h.Routes(mux)
+				observability.Default.SetRouteResolver(func(r *http.Request) string { _, pattern := mux.Handler(r); return pattern })
 				done := make(chan struct{})
 				workerDone = done
 				go func() {
 					defer close(done)
 					var jobs sync.WaitGroup
-					jobs.Add(3)
+					jobs.Add(5)
+					go func() { defer jobs.Done(); rules.Run(ctx, pool, h.Box) }()
+					go func() { defer jobs.Done(); notify.Run(ctx, pool, h.Box) }()
 					go func() { defer jobs.Done(); h.RunCapabilities(ctx) }()
 					go func() { defer jobs.Done(); care.Run(ctx, pool) }()
 					go func() { defer jobs.Done(); analytics.Run(ctx, pool, cfg.PGAnalyticsURL, &service.analytics) }()
@@ -119,4 +155,10 @@ func watchDatabase(ctx context.Context, cfg config.Config, sessions *session.Sto
 		case <-timer.C:
 		}
 	}
+}
+func boolNumber(value bool) float64 {
+	if value {
+		return 1
+	}
+	return 0
 }

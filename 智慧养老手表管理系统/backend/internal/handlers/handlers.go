@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"careold-go/internal/config"
+	"careold-go/internal/securestore"
 	"careold-go/internal/session"
 )
 
@@ -16,10 +17,12 @@ type Handler struct {
 	Analytics *analytics.State
 	Sessions  *session.Store
 	Cfg       config.Config
+	Box       *securestore.Box
 }
 
 func New(pool *dbstore.Database, sessions *session.Store, cfg config.Config) *Handler {
-	return &Handler{DB: pool, Sessions: sessions, Cfg: cfg}
+	box, _ := securestore.New(cfg.DataKey)
+	return &Handler{DB: pool, Sessions: sessions, Cfg: cfg, Box: box}
 }
 
 // Routes 注册全部路由。各组在自己的文件中通过 h.route 注册。
@@ -33,4 +36,8 @@ func (h *Handler) Routes(mux *http.ServeMux) {
 	h.routeHealth(mux)
 	h.routeCare(mux) // 照护事件队列、接单及审核状态
 	h.routeCapabilities(mux)
+	mux.HandleFunc("POST /restful/security/factor", h.securityFactor)
+	mux.HandleFunc("POST /restful/security/loginAudit", h.securityLoginAudit)
+	mux.HandleFunc("POST /restful/notification/list", h.notifications)
+	mux.HandleFunc("POST /restful/rules/policy", h.rulePolicy)
 }

@@ -2,6 +2,7 @@
   <div class="profile-page">
     <el-alert v-if="profileLoadError" :title="profileLoadError" type="error" :closable="false" show-icon></el-alert>
     <el-button v-if="profileLoadError" link @click="searchFamily">重新加载资料</el-button>
+    <SecurityPanel />
     <section v-loading="isProfileLoading" class="profile-card" aria-label="个人资料">
       <div class="profile-summary">
         <div class="profile-avatar"><img v-if="imageUrl" :src="imageUrl" alt="当前账号头像" @error="imageUrl = ''"><span v-else>{{ (famiyList.familyName || personName || '家').slice(0, 1) }}</span></div>
@@ -86,8 +87,10 @@ html.large-text .care-family .profile-identity span, html.large-text .care-famil
 <script>
 
 	import axios from 'axios'
+import SecurityPanel from '../components/SecurityPanel.vue'
 
 export default {
+  components: { SecurityPanel },
 	data() {
 
       var validatePass = (rule, value, callback) => {

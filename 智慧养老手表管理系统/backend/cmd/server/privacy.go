@@ -18,6 +18,8 @@ func sensitiveCareAudit(pool *dbstore.Database, next http.Handler) http.Handler 
 		"/restful/ratepre/", "/restful/step/", "/restful/device/",
 		"/restful/watchInfo/", "/restful/image/download",
 		"/restful/fence/", "/restful/alert/", "/restful/health/daily",
+		"/restful/security/",
+		"/restful/notification/",
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		audit := false

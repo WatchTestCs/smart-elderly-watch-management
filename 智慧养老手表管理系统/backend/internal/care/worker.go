@@ -18,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	"careold-go/internal/observability"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -121,10 +122,14 @@ func (d *dispatcher) dispatchOne(ctx context.Context) error {
 		return err
 	}
 	defer tx.Rollback(ctx)
+	exhaustionFilter := ""
+	if d.db.IsMySQL() {
+		exhaustionFilter = "exhausted=false AND "
+	}
 	err = tx.QueryRow(ctx, `SELECT id,incident_id,recipient,channel,attempts
         FROM care_notification_outbox
-        WHERE (status IN ('pending','failed') AND retry_at <= now())
-           OR (status='sending' AND last_attempt_at < now() - interval '2 minutes')
+		WHERE `+exhaustionFilter+`((status IN ('pending','failed') AND retry_at <= now())
+           OR (status='sending' AND last_attempt_at < now() - interval '2 minutes'))
         ORDER BY retry_at,id LIMIT 1 FOR UPDATE SKIP LOCKED`).Scan(&job.id, &job.incidentID, &job.recipient, &job.channel, &job.attempts)
 	if err != nil {
 		// No row is normal; connection and SQL errors are not.
@@ -134,6 +139,7 @@ func (d *dispatcher) dispatchOne(ctx context.Context) error {
 		return err
 	}
 	job.attempts++
+	observability.Default.Add(`suining_notification_attempts_total{queue="care"}`, 1)
 	if err := tx.QueryRow(ctx, "SELECT kind FROM care_incident WHERE id=$1", job.incidentID).Scan(&job.kind); err != nil {
 		return err
 	}
@@ -177,14 +183,29 @@ func (d *dispatcher) dispatchOne(ctx context.Context) error {
 		return updateErr
 	}
 	wait := retryDelay(job.attempts)
-	_, updateErr := d.db.Exec(ctx, `
+	finish, beginErr := d.db.Begin(ctx)
+	if beginErr != nil {
+		return beginErr
+	}
+	defer finish.Rollback(ctx)
+	exhaustionUpdate := ""
+	if d.db.IsMySQL() {
+		exhaustionUpdate = ",exhausted=($4>=5)"
+	}
+	changed, updateErr := finish.Exec(ctx, `
 		UPDATE care_notification_outbox
-		SET status='failed', last_error=$2, retry_at=now()+($3 * interval '1 second')
+		SET status='failed', last_error=$2, retry_at=now()+($3 * interval '1 second')`+exhaustionUpdate+`
 		WHERE id=$1 AND status='sending' AND attempts=$4`, job.id, truncate(err.Error(), 400), int(wait.Seconds()), job.attempts)
 	if updateErr != nil {
 		return updateErr
 	}
-	return nil
+	if changed.RowsAffected() > 0 && job.attempts >= 5 && job.channel == "sms" {
+		_, err = finish.Exec(ctx, `INSERT INTO care_notification_outbox(incident_id,channel,recipient) VALUES($1,'voice',$2) ON CONFLICT DO NOTHING`, job.incidentID, job.recipient)
+		if err != nil {
+			return err
+		}
+	}
+	return finish.Commit(ctx)
 }
 
 // retryDelay is based on the atomic claim's persisted attempt counter.

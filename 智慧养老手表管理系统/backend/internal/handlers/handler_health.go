@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"time"
 
 	"careold-go/internal/health"
 	"careold-go/internal/response"
@@ -105,6 +106,10 @@ func (h *Handler) healthBatch(w http.ResponseWriter, r *http.Request) {
 		if dup {
 			duplicates++
 		}
+	}
+	if err = touchDevice(ctx, tx, d.ID, nil, nil, time.Now()); err != nil {
+		response.Error500(w, ref())
+		return
 	}
 	if err = tx.Commit(ctx); err != nil {
 		response.Error500(w, ref())

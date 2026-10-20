@@ -40,10 +40,12 @@
       </ol>
     </div>
   </section>
+  <SecurityPanel />
 </template>
 <script setup>
 import {ref,onMounted,onBeforeUnmount} from 'vue'
 import axios from 'axios'
+import SecurityPanel from './SecurityPanel.vue'
 const diagnostics=ref(null)
 const staff=ref([])
 const accesses=ref([])

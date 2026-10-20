@@ -57,17 +57,20 @@ func TestCapabilitiesRollbackAndReapply(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	b, err := os.ReadFile(filepath.Join("..", "..", "migrations", "rollback", "mysql_0004_device_capabilities.sql"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, statement := range strings.Split(string(b), ";") {
-		if strings.TrimSpace(statement) != "" {
-			if _, err = pool.SQL().Exec(statement); err != nil {
-				t.Fatal(err)
+	for _, name := range []string{"mysql_0005_platform.sql", "mysql_0004_device_capabilities.sql"} {
+		b, err := os.ReadFile(filepath.Join("..", "..", "migrations", "rollback", name))
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, statement := range strings.Split(string(b), ";") {
+			if strings.TrimSpace(statement) != "" {
+				if _, err = pool.SQL().Exec(statement); err != nil {
+					t.Fatal(name, err)
+				}
 			}
 		}
 	}
+
 	var count int
 	if err = pool.QueryRow(ctx, "SELECT count(*) FROM schema_migrations").Scan(&count); err != nil || count != 3 {
 		t.Fatal(count, err)

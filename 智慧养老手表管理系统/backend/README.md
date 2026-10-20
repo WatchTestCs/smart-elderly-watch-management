@@ -31,6 +31,7 @@ SQL 适配覆盖本应用使用的语法，不是任意 PostgreSQL SQL 的通用
 $env:MYSQL_DSN='suining:替换密码@tcp(127.0.0.1:13306)/suining'
 $env:PG_ANALYTICS_URL='postgres://suining_analytics:替换密码@127.0.0.1:15432/suining_analytics?sslmode=disable'
 $env:ADDR='127.0.0.1:8795'
+$env:DATA_ENCRYPTION_KEY_FILE='替换为已备份的持久化密钥文件路径'
 go run ./cmd/server
 ```
 
@@ -41,9 +42,14 @@ go run ./cmd/server
 | `ADDR` | 直接启动默认 `127.0.0.1:8080`；前端开发代理使用 8795 |
 | `IMAGE_DIR` | 直接启动默认 `./data/images` |
 | `SESSION_TTL_HOURS` | 会话期限，默认 12 小时 |
+| `SESSION_BACKEND` | 默认 database；memory 仅限显式选择的单实例开发 |
+| `DATA_ENCRYPTION_KEY` / `DATA_ENCRYPTION_KEY_FILE` | 必须提供 base64 编码的 32 字节随机密钥；所有实例共享，不得每次启动更换 |
+| `METRICS_TOKEN` / `METRICS_TOKEN_FILE` | `/metrics` Bearer 凭据，至少 24 字符 |
 | `DESKTOP_TOKEN` | 初始化与桌面退出的随机令牌，不交给网页 |
 
 桌面由 Rust 将 `SUINING_MYSQL_DSN` / `SUINING_PG_ANALYTICS_URL` 转交给 Go，并传入回环动态端口、本地目录、随机令牌和父 PID。旧 `DATABASE_URL` / `SUINING_DATABASE_URL` 不作为业务主库配置。示例只用于受控本机；远程连接使用验证证书的 TLS，不提交真实凭据。
+
+桌面启动前也需在父进程环境中设置 `DATA_ENCRYPTION_KEY_FILE`，由后端继承；未配置时数据库 API 不开放。仓库根目录的 `python scripts/start-platform.py --validate` 可一次生成开发部署密钥；不要提交生成的 secrets。升级、历史备注回填、DDL 回滚与具体加密范围见 [平台改造说明](../../docs/PLATFORM_UPGRADE_2.0.6.md)。
 
 前端 `npm run build` 的结果复制到 `internal/handlers/web` 后由 Go 编译内嵌。源码归档只保留占位资源；纯 API 开发可以直接运行，桌面发布需执行 [完整构建](../README.md#windows-完整构建)。
 

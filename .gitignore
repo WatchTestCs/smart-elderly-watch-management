@@ -11,3 +11,6 @@
 
 # Private dual-database deployment credentials
 deploy/dual-db.env
+deploy/platform.env
+deploy/secrets/
+__pycache__/

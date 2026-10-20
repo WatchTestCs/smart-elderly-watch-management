@@ -68,6 +68,11 @@ func (h *Handler) alertReview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var id int64
+	req.Reason, err = h.sealNote(req.Reason)
+	if err != nil {
+		response.Error500(w, ref())
+		return
+	}
 	err = tx.QueryRow(ctx, "INSERT INTO alert_review(entity,record_id,kind,verdict,reason,actor_id) VALUES('ratepre',$1,$2,$3,$4,$5) RETURNING id", req.RecordID, req.Kind, req.Verdict, req.Reason, actor).Scan(&id)
 	if err == nil {
 		err = tx.Commit(ctx)
@@ -108,6 +113,11 @@ func (h *Handler) alertReviews(w http.ResponseWriter, r *http.Request) {
 		var kind, verdict, reason string
 		var at time.Time
 		if rows.Scan(&id, &kind, &verdict, &reason, &actor, &at) != nil {
+			response.Error500(w, ref())
+			return
+		}
+		reason, err = h.openNote(reason)
+		if err != nil {
 			response.Error500(w, ref())
 			return
 		}

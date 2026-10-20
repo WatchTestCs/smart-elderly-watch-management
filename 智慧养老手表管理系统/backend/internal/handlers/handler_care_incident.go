@@ -179,6 +179,11 @@ func (h *Handler) careTransition(w http.ResponseWriter, r *http.Request) {
 		write400(w, "处置、复核和重新开启必须填写原因")
 		return
 	}
+	note, err = h.sealNote(note)
+	if err != nil {
+		response.Error500(w, ref())
+		return
+	}
 	verdict := str(m, "verdict")
 	if action == "verify" && h.DB.IsMySQL() {
 		// Older clients submit no verdict: retain their explicit verification as
@@ -278,6 +283,14 @@ func (h *Handler) careEvents(w http.ResponseWriter, r *http.Request) {
 		if err := rows.Scan(&actor, &action, &note, &created); err != nil {
 			response.Error500(w, ref())
 			return
+		}
+		if note != nil {
+			plain, err := h.openNote(*note)
+			if err != nil {
+				response.Error500(w, ref())
+				return
+			}
+			note = &plain
 		}
 		events = append(events, map[string]any{"actor": actor, "action": action, "note": note, "createdAt": created})
 	}

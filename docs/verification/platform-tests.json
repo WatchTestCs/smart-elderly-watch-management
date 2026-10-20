@@ -1,0 +1,23 @@
+{
+  "go_tests": {
+    "skip": 4,
+    "pass": 116
+  },
+  "skipped": [
+    "careold-go/internal/analytics:TestDualDatabaseRecoveryAndReplay",
+    "careold-go/internal/db:TestLegacyTransferIsCheckedAndAtomic/PG0006",
+    "careold-go/internal/db:TestLegacyTransferIsCheckedAndAtomic/PG0007",
+    "careold-go/internal/db:TestLegacyTransferIsCheckedAndAtomic/PG0008"
+  ],
+  "frontend": {
+    "files": 3,
+    "tests": 7,
+    "typecheck": "incremental subset",
+    "build": "exit 0"
+  },
+  "docker": {
+    "compose_config": "exit 0",
+    "build_and_up": "not executed: engine unavailable"
+  },
+  "race": "not executed"
+}

@@ -10,6 +10,7 @@ import (
 	"unicode/utf8"
 
 	"careold-go/internal/fence"
+	"careold-go/internal/notify"
 	"careold-go/internal/response"
 	"github.com/jackc/pgx/v5"
 )
@@ -272,6 +273,9 @@ func (h *Handler) fencePoint(w http.ResponseWriter, r *http.Request) {
 			if err == nil {
 				_, err = tx.Exec(ctx, "UPDATE fence_event SET incident_id=$2 WHERE id=$1", eventID, id)
 			}
+			if err == nil {
+				err = notify.CareInbox(ctx, tx, h.Box, *d.OldID, id)
+			}
 			if err != nil {
 				response.Error500(w, ref())
 				return
@@ -279,6 +283,10 @@ func (h *Handler) fencePoint(w http.ResponseWriter, r *http.Request) {
 			incidentID = &id
 		}
 		events = append(events, map[string]any{"id": eventID, "fenceId": f.ID, "direction": direction, "incidentId": incidentID})
+	}
+	if err = touchDevice(ctx, tx, d.ID, nil, nil, time.Now()); err != nil {
+		response.Error500(w, ref())
+		return
 	}
 	if err = tx.Commit(ctx); err != nil {
 		response.Error500(w, ref())

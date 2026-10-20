@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"careold-go/internal/notify"
 	"careold-go/internal/response"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -168,14 +170,11 @@ func (h *Handler) textAdd(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	ct, err := tx.Exec(r.Context(), "INSERT INTO text(title,text_main,time,pic_id) VALUES($1,$2,$3,$4)",
-		title, textMain, time.Now(), picID)
+	var textID int64
+	err = tx.QueryRow(r.Context(), "INSERT INTO text(title,text_main,time,pic_id) VALUES($1,$2,$3,$4) RETURNING text_id",
+		title, textMain, time.Now(), picID).Scan(&textID)
 	if err != nil {
 		response.Error500(w, ref())
-		return
-	}
-	if ct.RowsAffected() != 1 {
-		writeCode(w, false)
 		return
 	}
 	phones, err := h.notificationPhones(r, tx)
@@ -183,14 +182,17 @@ func (h *Handler) textAdd(w http.ResponseWriter, r *http.Request) {
 		response.Error500(w, ref())
 		return
 	}
+	for _, target := range phones {
+		if err := notify.Enqueue(r.Context(), tx, h.Box, "announcement", strconv.FormatInt(textID, 10), target.FamilyID, target.Phone); err != nil {
+			response.Error500(w, ref())
+			return
+		}
+	}
 	if err := tx.Commit(r.Context()); err != nil {
 		response.Error500(w, ref())
 		return
 	}
-	// 事务提交后才发送，避免回滚后误发、避免持 DB 锁做网络 IO。
-	for _, phone := range phones {
-		smsEnqueue(phone)
-	}
+	// The announcement and durable outbox commit together; network I/O is worker-owned.
 	writeCode(w, true)
 }
 

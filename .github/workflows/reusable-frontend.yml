@@ -22,12 +22,17 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: "22"
+          node-version: "24"
           cache: npm
           cache-dependency-path: 智慧养老手表管理系统/oldIot/package-lock.json
 
       - name: Install locked dependencies
         run: npm ci
+
+      - name: Unit tests and incremental TypeScript checks
+        run: |
+          npm test
+          npm run typecheck
 
       - name: Build production frontend
         run: npm run build

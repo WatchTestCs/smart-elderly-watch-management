@@ -14,17 +14,22 @@ type dbQuerier interface {
 }
 
 // notificationPhones 有老人绑定的家属手机号（去重）。
-func (h *Handler) notificationPhones(r *http.Request, q dbQuerier) ([]string, error) {
+type notificationTarget struct {
+	FamilyID int64
+	Phone    string
+}
+
+func (h *Handler) notificationPhones(r *http.Request, q dbQuerier) ([]notificationTarget, error) {
 	rows, err := q.Query(r.Context(),
-		"SELECT DISTINCT f.family_phone FROM family f INNER JOIN oldperson o ON o.family_id=f.family_id WHERE f.family_phone IS NOT NULL")
+		"SELECT DISTINCT f.family_id,f.family_phone FROM family f INNER JOIN oldperson o ON o.family_id=f.family_id WHERE f.family_phone IS NOT NULL")
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var out []string
+	var out []notificationTarget
 	for rows.Next() {
-		var s string
-		if err := rows.Scan(&s); err != nil {
+		var s notificationTarget
+		if err := rows.Scan(&s.FamilyID, &s.Phone); err != nil {
 			return nil, err
 		}
 		out = append(out, s)

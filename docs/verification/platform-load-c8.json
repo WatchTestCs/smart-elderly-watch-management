@@ -1,0 +1,19 @@
+{
+  "run_id": "8c951314482d42b2a2617ef61ce360cf",
+  "scenario": "authenticated_health_ingest_one_sample_per_request",
+  "concurrency": 8,
+  "elapsed_seconds": 30.015,
+  "requests": 11458,
+  "errors": 0,
+  "http_statuses": {
+    "200": 11458
+  },
+  "requests_per_second": 381.74,
+  "latency_ms": {
+    "p50": 17.195,
+    "p95": 35.724,
+    "p99": 92.145,
+    "max": 805.541
+  },
+  "verified_database_rows": 11458
+}

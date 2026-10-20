@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"careold-go/internal/notify"
 	"careold-go/internal/response"
 	"github.com/jackc/pgx/v5"
 	"net/http"
@@ -416,6 +417,11 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	notificationState := "no_recipient"
+	if err := notify.CareInbox(ctx, tx, h.Box, *d.OldID, incidentID); err != nil {
+		rollback()
+		response.Error500(w, ref())
+		return
+	}
 	if queued.RowsAffected() > 0 {
 		notificationState = "pending"
 	}

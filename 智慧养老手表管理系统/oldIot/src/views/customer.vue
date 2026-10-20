@@ -1,8 +1,8 @@
 <template>
-  <div class="roles" v-loading="isLoading" element-loading-text="正在加载监护人信息…" :aria-busy="String(isLoading)">
+  <div class="roles" v-loading="isLoading" element-loading-text="正在加载监护人信息…" :aria-busy="isLoading">
     
     <div class="sys-research">
-      <form class="row-search" role="search" @submit.prevent="searchCustomers">
+      <form class="row-search" role="search" @submit.prevent="searchCustomers()">
         <div class="search-field">
           
           <label class="table-search-label" for="search-customer">监护人姓名</label>
@@ -51,7 +51,7 @@
       </el-form>
       <template #footer><span  class="dialog-footer">
       <el-button @click="customerDialogVisible = false">取 消</el-button>
-      <el-button type="primary" @click="addRoles('addcustomerFormRef')">确 定</el-button>
+      <el-button type="primary" @click="addRoles()" :loading="saving">确 定</el-button>
     </span></template>
     </el-dialog>
 
@@ -59,7 +59,7 @@
       title="监护人编辑"
       v-model="oldEditDialogVisible"
       width="30%">
-      <el-form label-width="80px" :rules="rules" :model="oldEditForm">
+      <el-form ref="editCustomerFormRef" label-width="80px" :rules="rules" :model="oldEditForm">
         <el-form-item label="姓名" prop="customerName">
         <el-input v-model="oldEditForm.customerName"></el-input>
         </el-form-item>
@@ -84,10 +84,11 @@
       </el-form>
       <template #footer><span  class="dialog-footer">
       <el-button @click="oldEditDialogVisible = false">取 消</el-button>
-      <el-button type="primary" @click="editRole">确 定</el-button>
+      <el-button type="primary" @click="editRole()" :loading="saving">确 定</el-button>
     </span></template>
     </el-dialog>
 
+    <el-alert v-if="mutationError" :title="mutationError" type="error" :closable="false" show-icon />
     <div v-if="loadError" class="collection-feedback" role="alert"><span>{{ loadError }}</span><el-button plain :loading="isLoading" @click="searchCustomers(true)">重新加载</el-button></div>
     <el-table v-if="!loadError" class="adaptive-record-table" :data="customerList"
     style="width: 100%" border>
@@ -132,4 +133,32 @@
 
 </template>
 
-<script src="./customer.logic.js"></script>
+<script setup lang="ts">
+import { onMounted, ref } from 'vue'
+import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
+import RecordCards from '@/components/RecordCards.vue'
+import { api } from '../api/client'
+import { useCustomers, validAge, validPhone } from '../composables/useCustomers'
+const state = useCustomers(api)
+const { searchText, customerDialogVisible, oldEditDialogVisible, customerForm, oldEditForm, isLoading, saving, loadError, mutationError, total, pageSize, currentPage, customerList, searchCustomers, handleEditRole, closeRoleAddDialog, handleSizeChange, changePage } = state
+const addcustomerFormRef = ref<FormInstance>()
+const editCustomerFormRef = ref<FormInstance>()
+const rules = {
+ customerPhone: [{ validator: (_rule: unknown, value: unknown, done: (err?: Error) => void) => done(validPhone(value) ? undefined : new Error('请输入有效的 11 位手机号')), trigger: 'blur' }],
+ customerAge: [{ validator: (_rule: unknown, value: unknown, done: (err?: Error) => void) => done(validAge(value) ? undefined : new Error('请输入 0–150 岁的整数年龄')), trigger: 'blur' }]
+}
+async function addRoles() {
+ if (!await addcustomerFormRef.value?.validate().catch(() => false)) return
+ if (await state.save()) ElMessage.success('添加监护人成功')
+}
+async function editRole() {
+ if (!await editCustomerFormRef.value?.validate().catch(() => false)) return
+ if (await state.save(true)) ElMessage.success('编辑监护人信息成功')
+}
+async function deleteRole(id: number | string | undefined) {
+ if (id === undefined) return
+ try { await ElMessageBox.confirm('确认删除该监护人？', '删除监护人', { type: 'warning' }) } catch { return }
+ if (await state.remove(id)) ElMessage.success('删除监护人成功')
+}
+onMounted(() => searchCustomers())
+</script>
