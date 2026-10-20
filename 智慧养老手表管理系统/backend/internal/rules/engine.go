@@ -15,6 +15,8 @@ import (
 	"log/slog"
 )
 
+const latestSampleSQL = `SELECT sample_id,revision,payload FROM health_sample WHERE old_id=$1 AND device_id=$2 AND epoch=$3 AND metric=$4 AND NOT deleted AND sample_start>=$5 AND sample_start<=$6 ORDER BY sample_start DESC,revision DESC LIMIT 1`
+
 type Engine struct {
 	DB    *db.Database
 	Box   *securestore.Box
@@ -117,7 +119,7 @@ func (e *Engine) Device(ctx context.Context, id int64, now time.Time) error {
 		var sampleID string
 		var revision int64
 		var b []byte
-		err = tx.QueryRow(ctx, "SELECT sample_id,revision,payload FROM health_sample WHERE old_id=$1 AND device_id=$2 AND epoch=$3 AND metric=$4 AND NOT deleted AND sample_start>=$5 AND sample_start<=$6 ORDER BY sample_start DESC,revision DESC LIMIT 1", oldID, id, epoch, metric, now.Add(-window).UnixMicro(), now.UnixMicro()).Scan(&sampleID, &revision, &b)
+		err = tx.QueryRow(ctx, latestSampleSQL, oldID, id, epoch, metric, now.Add(-window).UnixMicro(), now.UnixMicro()).Scan(&sampleID, &revision, &b)
 		if err == pgx.ErrNoRows {
 			continue
 		}

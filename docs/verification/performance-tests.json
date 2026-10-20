@@ -1,0 +1,24 @@
+{
+  "baseline_commit": "df606ec9000b6c8bfdbfd8932f3017331f78e00d",
+  "go_tests": {
+    "pass": 121,
+    "skip": 4
+  },
+  "skips": [
+    "careold-go/internal/analytics:TestDualDatabaseRecoveryAndReplay",
+    "careold-go/internal/db:TestLegacyTransferIsCheckedAndAtomic/PG0006",
+    "careold-go/internal/db:TestLegacyTransferIsCheckedAndAtomic/PG0007",
+    "careold-go/internal/db:TestLegacyTransferIsCheckedAndAtomic/PG0008"
+  ],
+  "build": "exit 0",
+  "vet": "exit 0",
+  "openapi_generation_check": "exit 0",
+  "race": "attempted: requires cgo; not executed",
+  "in_app_burst": [
+    "drain_test.go:43: delivered 120 ready in-app notifications in 750.8383ms"
+  ],
+  "known_limits": [
+    "local MySQL 8.0.46; binlog disabled in both variants",
+    "no production/device/notification provider capacity claim"
+  ]
+}

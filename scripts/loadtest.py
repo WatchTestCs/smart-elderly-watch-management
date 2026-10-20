@@ -20,10 +20,13 @@ p.add_argument("--url", default="http://127.0.0.1:8080")
 p.add_argument("--seconds", type=float, default=20)
 p.add_argument("--concurrency", type=int, default=8)
 p.add_argument("--binding-version", type=int, default=1)
+p.add_argument("--batch-size", type=int, default=1)
 p.add_argument("--output", type=Path)
 a = p.parse_args()
 if not 0 < a.seconds <= 3600 or not 0 < a.concurrency <= 256:
     p.error("seconds must be 0..3600 and concurrency 1..256")
+if not 1 <= a.batch_size <= 200:
+    p.error("batch-size must be 1..200")
 u = urllib.parse.urlsplit(a.url)
 if u.scheme not in ("http", "https") or u.username or u.password or u.query or u.fragment:
     p.error("Use an HTTP(S) base URL without credentials/query/fragment")
@@ -43,16 +46,17 @@ def worker(index):
         iteration += 1
         now = datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z")
         body = json.dumps({"deviceNo": device, "secret": secret, "bindingVersion": a.binding_version,
-            "samples": [{"recordId": f"load-{run}-{index}-{iteration}", "source": "loadtest",
+            "samples": [{"recordId": f"load-{run}-{index}-{iteration}-{sample}", "source": "loadtest",
             "sourceDevice": device, "metric": "heart_rate", "unit": "count/min", "value": 72,
-            "start": now, "end": now, "version": 1}]})
+            "start": now, "end": now, "version": 1} for sample in range(a.batch_size)]})
         at = time.perf_counter()
         try:
             connection.request("POST", u.path.rstrip("/") + "/restful/device/healthBatch", body, {"Content-Type": "application/json"})
             response = connection.getresponse()
             payload = json.loads(response.read())
             statuses[str(response.status)] = statuses.get(str(response.status), 0) + 1
-            if response.status != 200 or payload.get("returnCode") != "1111":
+            if (response.status != 200 or payload.get("returnCode") != "1111"
+                    or payload.get("accepted") != a.batch_size or payload.get("duplicates") != 0):
                 errors += 1
         except Exception:
             errors += 1
@@ -77,10 +81,12 @@ def percentile(p):
     return round(latencies[max(0, math.ceil(len(latencies)*p)-1)], 3) if latencies else None
 
 
-result = {"run_id": run, "scenario": "authenticated_health_ingest_one_sample_per_request",
+result = {"run_id": run, "scenario": "authenticated_health_ingest",
+    "samples_per_request": a.batch_size,
     "concurrency": a.concurrency, "elapsed_seconds": round(elapsed, 3), "requests": len(latencies),
     "errors": sum(e for _, e, _ in results), "http_statuses": statuses,
     "requests_per_second": round(len(latencies)/elapsed, 2),
+    "accepted_samples_per_second": round((len(latencies)-sum(e for _, e, _ in results))*a.batch_size/elapsed, 2),
     "latency_ms": {"p50": percentile(.50), "p95": percentile(.95), "p99": percentile(.99), "max": percentile(1)}}
 encoded = json.dumps(result, indent=2) + "\n"
 print(encoded, end="")

@@ -74,8 +74,20 @@ func Run(ctx context.Context, db *dbstore.Database) {
 			log.Printf("care: escalation check failed: %v", err)
 		}
 		if endpoint != "" {
-			if err := d.dispatchOne(cycleCtx); err != nil && cycleCtx.Err() == nil {
-				log.Printf("care: notification dispatch check failed: %v", err)
+			for range 32 {
+				if deadline, ok := cycleCtx.Deadline(); ok && time.Until(deadline) <= d.httpClient.Timeout+2*time.Second {
+					break
+				}
+				processed, err := d.dispatchNext(cycleCtx)
+				if err != nil {
+					if cycleCtx.Err() == nil {
+						log.Print("care: notification dispatch failed; retrying")
+					}
+					break
+				}
+				if !processed {
+					break
+				}
 			}
 		}
 		cancelCycle()
@@ -115,11 +127,16 @@ type delivery struct {
 }
 
 func (d *dispatcher) dispatchOne(ctx context.Context) error {
+	_, err := d.dispatchNext(ctx)
+	return err
+}
+
+func (d *dispatcher) dispatchNext(ctx context.Context) (bool, error) {
 	// Atomic database claim; SKIP LOCKED supports multiple service replicas.
 	var job delivery
 	tx, err := d.db.Begin(ctx)
 	if err != nil {
-		return err
+		return true, err
 	}
 	defer tx.Rollback(ctx)
 	exhaustionFilter := ""
@@ -134,21 +151,21 @@ func (d *dispatcher) dispatchOne(ctx context.Context) error {
 	if err != nil {
 		// No row is normal; connection and SQL errors are not.
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil
+			return false, nil
 		}
-		return err
+		return true, err
 	}
 	job.attempts++
 	observability.Default.Add(`suining_notification_attempts_total{queue="care"}`, 1)
 	if err := tx.QueryRow(ctx, "SELECT kind FROM care_incident WHERE id=$1", job.incidentID).Scan(&job.kind); err != nil {
-		return err
+		return true, err
 	}
 	if _, err := tx.Exec(ctx, `UPDATE care_notification_outbox SET status='sending',
         attempts=$2,last_attempt_at=now() WHERE id=$1`, job.id, job.attempts); err != nil {
-		return err
+		return true, err
 	}
 	if err := tx.Commit(ctx); err != nil {
-		return err
+		return true, err
 	}
 	payload, err := json.Marshal(map[string]any{
 		"type": "care." + job.kind, "incidentId": job.incidentID,
@@ -180,12 +197,12 @@ func (d *dispatcher) dispatchOne(ctx context.Context) error {
 			WHERE id=$1 AND status='sending' AND attempts=$2`, job.id, job.attempts)
 		// A newer claim or an authenticated receipt must never be overwritten.
 		// "sent" only means the gateway accepted the request.
-		return updateErr
+		return true, updateErr
 	}
 	wait := retryDelay(job.attempts)
 	finish, beginErr := d.db.Begin(ctx)
 	if beginErr != nil {
-		return beginErr
+		return true, beginErr
 	}
 	defer finish.Rollback(ctx)
 	exhaustionUpdate := ""
@@ -197,15 +214,15 @@ func (d *dispatcher) dispatchOne(ctx context.Context) error {
 		SET status='failed', last_error=$2, retry_at=now()+($3 * interval '1 second')`+exhaustionUpdate+`
 		WHERE id=$1 AND status='sending' AND attempts=$4`, job.id, truncate(err.Error(), 400), int(wait.Seconds()), job.attempts)
 	if updateErr != nil {
-		return updateErr
+		return true, updateErr
 	}
 	if changed.RowsAffected() > 0 && job.attempts >= 5 && job.channel == "sms" {
 		_, err = finish.Exec(ctx, `INSERT INTO care_notification_outbox(incident_id,channel,recipient) VALUES($1,'voice',$2) ON CONFLICT DO NOTHING`, job.incidentID, job.recipient)
 		if err != nil {
-			return err
+			return true, err
 		}
 	}
-	return finish.Commit(ctx)
+	return true, finish.Commit(ctx)
 }
 
 // retryDelay is based on the atomic claim's persisted attempt counter.

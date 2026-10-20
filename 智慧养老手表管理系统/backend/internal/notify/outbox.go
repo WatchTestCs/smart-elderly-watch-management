@@ -68,9 +68,14 @@ type Worker struct {
 
 // Tick uses a persisted lease token: an expired worker cannot overwrite a new claim.
 func (d *Worker) Tick(ctx context.Context) error {
+	_, err := d.tick(ctx)
+	return err
+}
+
+func (d *Worker) tick(ctx context.Context) (bool, error) {
 	tx, err := d.DB.Begin(ctx)
 	if err != nil {
-		return err
+		return true, err
 	}
 	defer tx.Rollback(ctx)
 	var id, family int64
@@ -80,24 +85,31 @@ func (d *Worker) Tick(ctx context.Context) error {
  WHERE (status IN ('pending','failed') AND retry_at<=now()) OR (status='sending' AND last_attempt_at<$1)
  ORDER BY retry_at,id LIMIT 1 FOR UPDATE SKIP LOCKED`, time.Now().Add(-time.Minute)).Scan(&id, &family, &topic, &key, &channel, &recipient, &attempts)
 	if err == pgx.ErrNoRows {
-		return nil
+		return false, nil
 	}
 	if err != nil {
-		return err
+		return true, err
+	}
+	// Leave the task pending when this cycle cannot fit the configured network
+	// timeout plus a database completion write. In-app delivery needs no network.
+	if channel != "in_app" && d.Client != nil && d.Client.Timeout > 0 {
+		if deadline, ok := ctx.Deadline(); ok && time.Until(deadline) <= d.Client.Timeout+time.Second {
+			return false, nil
+		}
 	}
 	token := uuid.NewString()
 	attempts++
 	observability.Default.Add(`suining_notification_attempts_total{queue="message"}`, 1)
 	_, err = tx.Exec(ctx, "UPDATE message_outbox SET status='sending',attempts=$2,lease_token=$3,last_attempt_at=now() WHERE id=$1", id, attempts, token)
 	if err != nil {
-		return err
+		return true, err
 	}
 	if err = tx.Commit(ctx); err != nil {
-		return err
+		return true, err
 	}
 	if channel == "in_app" {
 		_, err = d.DB.Exec(ctx, "UPDATE message_outbox SET status='delivered',delivered_at=now() WHERE id=$1 AND lease_token=$2 AND status='sending'", id, token)
-		return err
+		return true, err
 	}
 	if strings.HasPrefix(recipient, securestore.Prefix) {
 		recipient, err = d.Box.Open(recipient, "notification-recipient")
@@ -107,7 +119,7 @@ func (d *Worker) Tick(ctx context.Context) error {
 	}
 	if err == nil {
 		_, err = d.DB.Exec(ctx, "UPDATE message_outbox SET status='sent',last_error=NULL WHERE id=$1 AND lease_token=$2 AND status='sending'", id, token)
-		return err
+		return true, err
 	}
 	// Do not persist provider response bodies, URLs or credentials in diagnostics.
 	state := "failed"
@@ -116,20 +128,20 @@ func (d *Worker) Tick(ctx context.Context) error {
 	}
 	finish, e := d.DB.Begin(ctx)
 	if e != nil {
-		return e
+		return true, e
 	}
 	defer finish.Rollback(ctx)
 	ct, e := finish.Exec(ctx, "UPDATE message_outbox SET status=$3,last_error='provider_not_accepted',retry_at=$4 WHERE id=$1 AND lease_token=$2 AND status='sending'", id, token, state, time.Now().Add(time.Duration(30*(1<<min(attempts-1, 6)))*time.Second))
 	if e != nil {
-		return e
+		return true, e
 	}
 	if ct.RowsAffected() > 0 && state == "exhausted" && channel == "sms" {
 		_, e = finish.Exec(ctx, `INSERT INTO message_outbox(topic,source_key,family_id,channel,recipient) SELECT src.topic,src.source_key,src.family_id,'voice',src.recipient FROM message_outbox AS src WHERE src.id=$1 ON DUPLICATE KEY UPDATE message_outbox.id=message_outbox.id`, id)
 		if e != nil {
-			return e
+			return true, e
 		}
 	}
-	return finish.Commit(ctx)
+	return true, finish.Commit(ctx)
 }
 func (d *Worker) deliver(ctx context.Context, id int64, topic, key, channel, phone string) error {
 	if channel == "sms" && os.Getenv("TENCENT_SMS_APPID") != "" {
@@ -165,8 +177,18 @@ func Run(ctx context.Context, pool *db.Database, box *securestore.Box) {
 	defer ticker.Stop()
 	for {
 		cycle, cancel := context.WithTimeout(ctx, 15*time.Second)
-		if err := d.Tick(cycle); err != nil && cycle.Err() == nil {
-			slog.Warn("message_outbox_cycle_failed")
+		// Drain a bounded ready burst; the timer is idle polling, not a per-job delay.
+		for range 128 {
+			processed, err := d.tick(cycle)
+			if err != nil {
+				if cycle.Err() == nil {
+					slog.Warn("message_outbox_cycle_failed")
+				}
+				break
+			}
+			if !processed {
+				break
+			}
 		}
 		cancel()
 		select {

@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-sql-driver/mysql"
@@ -239,11 +240,55 @@ var excludedColumn = regexp.MustCompile(`(?i)excluded\.([a-z_]+)`)
 var lockLimit = regexp.MustCompile(`(?i)FOR UPDATE SKIP LOCKED\s+LIMIT\s+(\d+)`)
 var textTable = regexp.MustCompile("(?i)\\b(FROM|JOIN|UPDATE|INTO)\\s+text\\b")
 var dateFormat = regexp.MustCompile(`(?i)TO_CHAR\(([a-z_.]+),'(YYYY-MM-DD(?: HH24:MI:SS(?:\.MS)?)?)'\)`)
+var boolOr = regexp.MustCompile(`(?i)bool_or\(`)
 var varcharCast = regexp.MustCompile(`(?i)\bAS varchar\b`)
 
 // This covers the application's SQL vocabulary, not arbitrary PostgreSQL SQL.
 // Keep parameters bound (including repeated/out-of-order $n) and never interpolate values.
+type queryPlan struct {
+	sql       string
+	positions []int
+}
+
+// Cache only SQL structure, never argument values. The FIFO bound prevents
+// dynamically shaped legacy searches from growing process memory indefinitely.
+var queryPlans = struct {
+	sync.RWMutex
+	plans map[string]queryPlan
+	keys  [512]string
+	next  int
+}{plans: make(map[string]queryPlan)}
+
 func mysqlQuery(query string, args []any) (string, []any, error) {
+	queryPlans.RLock()
+	plan, found := queryPlans.plans[query]
+	queryPlans.RUnlock()
+	if !found {
+		var err error
+		plan, err = compileMySQLQuery(query)
+		if err != nil {
+			return "", nil, err
+		}
+		queryPlans.Lock()
+		if _, exists := queryPlans.plans[query]; !exists {
+			delete(queryPlans.plans, queryPlans.keys[queryPlans.next])
+			queryPlans.keys[queryPlans.next] = query
+			queryPlans.next = (queryPlans.next + 1) % len(queryPlans.keys)
+			queryPlans.plans[query] = plan
+		}
+		queryPlans.Unlock()
+	}
+	bound := make([]any, len(plan.positions))
+	for i, position := range plan.positions {
+		if position >= len(args) {
+			return "", nil, errors.New("SQL parameter out of range")
+		}
+		bound[i] = args[position]
+	}
+	return plan.sql, bound, nil
+}
+
+func compileMySQLQuery(query string) (queryPlan, error) {
 	query = dateFormat.ReplaceAllStringFunc(query, func(s string) string {
 		m := dateFormat.FindStringSubmatch(s)
 		format := "%Y-%m-%d"
@@ -263,7 +308,7 @@ func mysqlQuery(query string, args []any) (string, []any, error) {
 		return "INTERVAL " + m[1] + " " + strings.TrimSuffix(strings.ToUpper(m[2]), "S")
 	})
 	query = strings.ReplaceAll(query, "now()+($3 * INTERVAL 1 SECOND)", "TIMESTAMPADD(SECOND,$3,now())")
-	query = regexp.MustCompile(`(?i)bool_or\(`).ReplaceAllString(query, "max(")
+	query = boolOr.ReplaceAllString(query, "max(")
 	query = strings.ReplaceAll(query, " ~ ", " REGEXP ")
 	query = lockLimit.ReplaceAllString(query, "LIMIT $1 FOR UPDATE SKIP LOCKED")
 	query = conflictUpdate.ReplaceAllString(query, "ON DUPLICATE KEY UPDATE")
@@ -278,7 +323,7 @@ func mysqlQuery(query string, args []any) (string, []any, error) {
 	query = textTable.ReplaceAllString(query, "$1 `text`")
 	query = strings.ReplaceAll(query, "now()", "CURRENT_TIMESTAMP(6)")
 	var out strings.Builder
-	var bound []any
+	var positions []int
 	for i := 0; i < len(query); {
 		if query[i] == '\'' || query[i] == '"' || query[i] == '`' {
 			quote := query[i]
@@ -310,18 +355,18 @@ func mysqlQuery(query string, args []any) (string, []any, error) {
 				j++
 			}
 			n, err := strconv.Atoi(query[i+1 : j])
-			if err != nil || n < 1 || n > len(args) {
-				return "", nil, errors.New("SQL parameter out of range")
+			if err != nil || n < 1 {
+				return queryPlan{}, errors.New("SQL parameter out of range")
 			}
 			out.WriteByte('?')
-			bound = append(bound, args[n-1])
+			positions = append(positions, n-1)
 			i = j
 			continue
 		}
 		out.WriteByte(query[i])
 		i++
 	}
-	return out.String(), bound, nil
+	return queryPlan{sql: out.String(), positions: positions}, nil
 }
 
 func (d *Database) LegacyPostgres() *pgxpool.Pool { return d.pgPool }

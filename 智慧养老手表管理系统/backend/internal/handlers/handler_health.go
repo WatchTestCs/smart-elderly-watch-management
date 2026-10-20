@@ -88,24 +88,14 @@ func (h *Handler) healthBatch(w http.ResponseWriter, r *http.Request) {
 		conflict409(w, "绑定已变化，请重新登录；旧绑定数据不能归入新老人")
 		return
 	}
-	var cursor int64
-	duplicates := 0
-	for _, s := range req.Samples {
-		v, dup, e := health.Save(ctx, tx, health.Owner{OldID: *d.OldID, DeviceID: &d.ID, Epoch: d.HealthEpoch}, s)
-		if e != nil {
-			if errors.Is(e, health.ErrConflict) {
-				conflict409(w, e.Error())
-			} else {
-				response.Error500(w, ref())
-			}
-			return
+	cursor, duplicates, err := health.SaveBatch(ctx, tx, health.Owner{OldID: *d.OldID, DeviceID: &d.ID, Epoch: d.HealthEpoch}, req.Samples)
+	if err != nil {
+		if errors.Is(err, health.ErrConflict) {
+			conflict409(w, err.Error())
+		} else {
+			response.Error500(w, ref())
 		}
-		if v > cursor {
-			cursor = v
-		}
-		if dup {
-			duplicates++
-		}
+		return
 	}
 	if err = touchDevice(ctx, tx, d.ID, nil, nil, time.Now()); err != nil {
 		response.Error500(w, ref())
