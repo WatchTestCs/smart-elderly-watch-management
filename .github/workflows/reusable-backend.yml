@@ -59,4 +59,8 @@ jobs:
           go test -race -count=1 -timeout 600s ./...
           go build ./...
           go vet ./...
-          test -z "$(gofmt -l ./cmd ./internal ./migrations)"
+          unformatted="$(gofmt -l ./cmd ./internal ./migrations)"
+          if [ -n "$unformatted" ]; then
+            printf 'Go files requiring gofmt:\n%s\n' "$unformatted"
+            exit 1
+          fi
