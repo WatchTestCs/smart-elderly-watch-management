@@ -14,15 +14,15 @@
 
 ## 当前源码与适用范围
 
-> **源码预览不等于正式发布。** 仓库当前产品版本仍为 **2.0.6**；`preview` 持续包含该版本之后的 Go 后端修复、测试和部署改进。历史公开的 Windows 安装包不包含这些改动，不能将源码提交、CI 成功或离线基准视为新版 Windows 安装验收。
+> **源码预览不等于可安装软件或生产验收。** 产品版本仍为 **2.0.6**；[v2.0.6 Release](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.6) 已发布**源码 ZIP**，但没有该版本的 Windows 安装包。`preview` 又包含发布后的 Go 后端修复与测试，不能用 Release 标签、CI 成功或离线微基准代替真实桌面安装及生产验收。
 
 | 关心的问题 | 当前结论 | 从哪里核对 |
 | --- | --- | --- |
 | 获取最新开发源码 | 使用 `preview` 分支；分支 ZIP 会随提交变化 | [浏览源码](https://github.com/WatchTestCs/smart-elderly-watch-management/tree/preview) · [下载源码 ZIP](https://github.com/WatchTestCs/smart-elderly-watch-management/archive/refs/heads/preview.zip) |
-| 对外版本与安装包 | 产品版本 **2.0.6 Preview**；已发布附件与当前源码不一定匹配 | [下载与版本对应关系](docs/DOWNLOADS.md) |
-| Go 版本 | `backend/go.mod` 声明 **Go 1.23+**；CI 覆盖 Go 1.23.2 与 1.27.2 | [go.mod](智慧养老手表管理系统/backend/go.mod) · [Preview CI](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/workflows/ci.yml) |
+| 对外版本与安装包 | **v2.0.6 已发布源码附件（无 Windows 安装包）**；当前可下载的 Windows 安装/免安装仍为 **2.0.2**；最新 `preview` 源码不等于发布标签 | [v2.0.6 源码 Release](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.6) · [下载与版本对应关系](docs/DOWNLOADS.md) |
+| Go 版本 | `backend/go.mod` 声明 **Go 1.23+**；CI 覆盖 Go 1.23.2 与 1.27.2 | [go.mod](智慧养老手表管理系统/backend/go.mod) · [最新已核实 CI 运行](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/39634129082) |
 | 核心数据库 | MySQL 是业务唯一主库，PostgreSQL 是可重建的异步分析投影 | [双库指南](docs/DUAL_DATABASES.md) |
-| 真实长时间负载 | 一轮 20 分钟隔离 MySQL 测试执行到结束，但 **出现 HTTP 500 和规则错误，整体失败** | [运行记录与证据边界](#近期后端验证与性能证据) |
+| 真实长时间负载 | **两轮**隔离 MySQL 20 分钟测试均完成规定的负载时间，但均因 HTTP 500、规则错误判定失败 | [运行记录与证据边界](#近期后端验证与性能证据) |
 | 生产与安全边界 | 非医疗器械认证、未经过真实设备和完整通知网关端到端验收；不能以系统状态替代人工应急响应 | [照护部署](docs/CARE_SERVICE_DEPLOYMENT.md) · [测试说明](docs/TESTING.md) |
 
 **阅读顺序：**初次使用看 [开始使用](#开始使用)，维护后端看 [后端说明](智慧养老手表管理系统/backend/README.md)，部署值守看 [照护部署](docs/CARE_SERVICE_DEPLOYMENT.md)，审查性能先看 [证据说明](docs/performance/2026-10-21-go123/README.md)。
@@ -44,9 +44,11 @@
 | [README.md](README.md) | 中文项目首页与当前源码入口。 |
 | [architecture.md](architecture.md) | 根目录的系统组件和数据流概览。 |
 
-## 产品 2.0.6 与历史交付状态
+## 2.0.6 源码 Release 与本地交付
 
-2.0.6 已完成本地 Windows x64 安装版、免安装版和源码包构建；本次交付未发布到 GitHub Releases。文件名分别为 `Suining-Setup-2.0.6-win-x64.exe`、`Suining-Portable-2.0.6-win-x64.zip` 和 `Suining-Source-2.0.6.zip`，以随交付的 `SHA256SUMS.txt` 核验。
+**已公开：**[v2.0.6 源码预览 Release](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.6) 提供 `Suining-Source-2.0.6-preview.zip`、`SHA256SUMS.txt` 和中文发布说明，**不包含 Windows 安装程序或免安装桌面版**。这是发布标签对应的源码快照，不包含此后 `preview` 分支新增的全部 Go 1.23 适配与压测修复。
+
+**本地历史交付（未公开成该版本的 Windows Release）：**此前曾构建 `Suining-Setup-2.0.6-win-x64.exe`、`Suining-Portable-2.0.6-win-x64.zip` 及 `Suining-Source-2.0.6.zip`。这些本地文件的 SHA-256 清单仅在**对应交付实际附带**时才适用，不能与 GitHub v2.0.6 的源码附件混用。未执行该版本原生安装窗口验收。
 
 - **界面补齐：**导航仅展开当前分组，统一术语，长者档案窄屏卡片化，五个管理页面补齐加载与失败重试，调整宽屏栅格和统计口径。
 - **资料与设备：**先建档再绑定手表，档案编辑不改写设备归属，保留自定义阈值，修正生活资料字段，缺测指标保留 NULL。
@@ -56,13 +58,14 @@
 
 ### 获取源码与选择附件
 
-根据 [2026-10-19 附件索引](docs/DOWNLOADS.md)，当时最新公开源码附件为 **2.0.5-optimized.1**，Windows 安装／免安装附件为 **2.0.2**；`preview` 目前继续在 **2.0.6 产品版本**上迭代源码。附件索引具有核对日期，不应推断今天没有更新的 Release；始终以 GitHub Releases 的实际文件与说明为准。
+截至 **2026-10-22** 核对，最新公开源码附件来自 **v2.0.6**，而公开 Windows 安装/免安装附件仍停留在 **2.0.2**。下载时须核对**发布标签、文件名与交付类型**；最新开发源码优先查看 `preview` 分支，而不是把旧安装包配置成新双库版本。
 
 | 需要什么 | 下载入口 | 使用范围 |
 | --- | --- | --- |
-| 当前 2.0.6 源码 | [preview 源码 ZIP](https://github.com/WatchTestCs/smart-elderly-watch-management/archive/refs/heads/preview.zip) · [整合代码固定提交](https://github.com/WatchTestCs/smart-elderly-watch-management/archive/3a889f3aa24986720418d8ceba890754c07cdcd0.zip) | MySQL 主库＋PG 分析；自行构建，分支 ZIP 随提交变化 |
-| 最近公开的旧版源码 | [2.0.5 架构优化版](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.5-optimized.1) | PG 单库历史源码，不含本次双库与健康采样整合 |
-| 历史 Windows 软件 | [2.0.2 安装与免安装](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.2-preview.1) | 旧 PG 单库程序，不是 2.0.6 |
+| 最新 `preview` 开发源码 | [分支源码 ZIP](https://github.com/WatchTestCs/smart-elderly-watch-management/archive/refs/heads/preview.zip) | 含持续开发更新；需自行构建，下载内容随分支提交变化 |
+| 已发布 2.0.6 源码快照 | [v2.0.6 Release](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.6) · [源码 ZIP](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/download/v2.0.6/Suining-Source-2.0.6-preview.zip) · [SHA-256](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/download/v2.0.6/SHA256SUMS.txt) | 固定发布版源代码；非 Windows 可执行软件，不包含后续 `preview` 提交 |
+| 历史 2.0.5 源码 | [2.0.5 架构优化版](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.5-optimized.1) | PG 单库历史源码，不含新的双库与健康采样整合 |
+| 最新公开 Windows 软件 | [2.0.2 安装与免安装](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.2-preview.1) | 旧 PG 单库程序，**不是 2.0.6**；不能使用新 MySQL 配置 |
 | 历史 Linux 附件 | [Linux 软件与数据库工具说明](docs/LINUX.md) | 独立历史附件，未证明与当前源码兼容 |
 
 所有历史版本、具体文件、校验入口与兼容性见 [下载与历史附件索引](docs/DOWNLOADS.md)。GitHub 自动生成的源码 ZIP 不等于 NSIS 安装器，也不等于经过本地打包验证的 Release 附件。
@@ -169,7 +172,7 @@ MySQL 触发器在业务事务内写入分析事件；Go 同步作业写入 PG �
 
 ## 开始使用
 
-1. 先从当前源码构建匹配的 2.0.6 Windows 程序，历史公开安装包不包含本次整合。安装构建所得的 Setup，或完整解压相应免安装包后运行 `suining.exe`，保留同目录 `suining-server.exe`。最终用户无需安装 Go、Rust 或 Node.js。Setup 在缺少 WebView2 时联网补装，免安装版需要系统已有 WebView2。
+1. 如果需要 2.0.6 及 `preview` 更新后的 Windows 程序，应从相应源码自行构建；公开 v2.0.6 Release **只提供源码 ZIP**，历史公开 2.0.2 安装包不包含本次整合。安装构建所得的 Setup，或完整解压相应免安装包后运行 `suining.exe`，保留同目录 `suining-server.exe`。最终用户无需安装 Go、Rust 或 Node.js。Setup 在缺少 WebView2 时联网补装，免安装版需要系统已有 WebView2。
 2. 部署独立 MySQL 业务库，按需启用 PG 分析库。安装包不包含数据库服务。可参考 [双库 Compose 模板](deploy/dual-db.compose.yml) 与 [环境模板](deploy/dual-db.env.example)；模板仅映射回环端口，应用需另行启动。
 3. 配置桌面环境变量后启动软件。以下仅为受控本机示例，密码需私下替换；跨机器连接需验证 TLS。
 
@@ -285,7 +288,7 @@ go test -race -count=1 -timeout 600s ./...
 以上为历史 2.0.2 实际 Tauri 截图，使用临时数据，未作为 2.0.6 界面验收图。当前界面保留山水标志、Source Serif 4 与思源宋体，支持大字、`F11` 全屏及 `Escape` 退出。
 
 - 双库开发阶段：独立 MySQL 8.0.46 / PostgreSQL 16.4 上的 Go 全套竞争检测、11 组模拟 API 浏览器验收，以及 PG 停机时 15 项真实业务检查；恢复后核对队列归零与分析视图。
-- 2.0.6 打包阶段：前端构建、Go 测试与静态检查、Tauri / NSIS 构建、应用和安装包版本、压缩包及 SHA-256 校验、新内置服务启动检查通过；打包阶段未重跑真实双库集成。
+- 2.0.6 本地打包阶段：前端构建、Go 测试与静态检查、Tauri / NSIS 构建、应用和安装包版本、压缩包及 SHA-256 校验、新内置服务启动检查通过；打包阶段未重跑真实双库集成。**公开 v2.0.6 Release 仅上传发布快照源码及校验附件**。
 - 本地 2.0.6 安装包与免安装版未签名，未实际执行安装器或验收原生桌面窗口。历史安装验收不代表新版已经安装验收。
 - 当前 Go CI 已在 **MySQL 8.4** 测试容器中执行数据库集成测试；单实例 20 分钟合成负载也有真实运行日志，但结果失败，不能据此宣称长稳态通过。**真实手表、短信网关、生产迁移、远程 TLS、真实网络故障与长期生产可用性**仍未完成端到端验收。旧 2.0.6 桌面安装验收边界不因此改变。
 

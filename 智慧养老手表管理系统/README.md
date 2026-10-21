@@ -60,6 +60,6 @@ Vite 将 `/restful` 代理到 `127.0.0.1:8795`。纯 API 模式可直接开发�
 - [双库指南](../docs/DUAL_DATABASES.md)：Compose、权限、事件重试、旧 PG 到空 MySQL 的迁移。安装不会自动迁移数据库；图片另行复制，旧 Java/H2 不直接支持。
 - [照护部署](../docs/CARE_SERVICE_DEPLOYMENT.md)：长期值守、通知网关、送达回执与人工响应。桌面关闭后本地 Go 随之退出，不能替代常驻值守服务。
 
-MySQL 不可用时界面仍能打开，业务 API 提示不可用；恢复后检查会话，不重放失败业务写入。PG 不可用只延迟分析。默认 Windows 图片、日志与运行信息位于 `%APPDATA%\岁宁`，会话在 Go 内存，业务库和图片分别备份。
+MySQL 不可用时界面仍能打开，业务 API 提示不可用；恢复后检查会话，不重放失败业务写入。PG 不可用只延迟分析。默认 Windows 图片、日志与运行信息位于 `%APPDATA%\岁宁`，会话默认在数据库中管理（明确设置 `SESSION_BACKEND=memory` 才使用单实例内存会话），业务库和图片分别备份。
 
-本地 2.0.6 已构建并完成版本、摘要与内置服务检查，未执行安装器或原生桌面窗口验收。历史 Linux 附件不能证明本工程已完成 Linux 原生构建。仅更新 `preview`；此次整合保留并适配远程健康采样，见 [整合记录](../docs/INTEGRATION_2.0.6.md)。先前安装包未包含该整合，本次不发布 Release。
+本地 2.0.6 已构建并完成版本、摘要与内置服务检查，未执行安装器或原生桌面窗口验收。历史 Linux 附件不能证明本工程已完成 Linux 原生构建。仅更新 `preview`；此次整合保留并适配远程健康采样，见 [整合记录](../docs/INTEGRATION_2.0.6.md)。先前 Windows 安装包未包含该整合；[v2.0.6](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.6) 已发布仅含源码、校验文件和说明的 Release，**并未公开新的 Windows 安装包**。

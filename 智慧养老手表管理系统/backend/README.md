@@ -2,7 +2,7 @@
 
 Go 服务负责业务 API、设备接入、会话、图片、内嵌前端、照护与通知作业，以及分析同步。**MySQL 是唯一业务主库，PostgreSQL 是异步分析库**；Windows 由 Tauri 管理 Go 生命周期，也可独立部署服务用于受控设备接入和长期值守。
 
-[整体架构](../../README.md#系统架构) · [双库部署与迁移](../../docs/DUAL_DATABASES.md) · [照护部署](../../docs/CARE_SERVICE_DEPLOYMENT.md)
+[整体架构](../../README.md#系统架构) · [双库部署与迁移](../../docs/DUAL_DATABASES.md) · [照护部署](../../docs/CARE_SERVICE_DEPLOYMENT.md) · [源码 Release 与开发分支区别](../../docs/DOWNLOADS.md)
 
 ## 技术与模块
 
