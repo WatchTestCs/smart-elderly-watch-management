@@ -1,0 +1,55 @@
+name: Preview MySQL 20-minute endurance
+on:
+  push:
+    branches: [preview]
+    paths:
+      - .github/workflows/mysql-endurance.yml
+      - 智慧养老手表管理系统/backend/internal/handlers/mysql_endurance_test.go
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: mysql-endurance-preview
+  cancel-in-progress: false
+jobs:
+  mysql-endurance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: ci_root_only
+          MYSQL_ROOT_HOST: "%"
+          MYSQL_DATABASE: suining_test
+        ports: ["3306:3306"]
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -u root -pci_root_only --silent"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.23.2"
+          cache-dependency-path: 智慧养老手表管理系统/backend/go.sum
+      - name: Prepare output
+        run: mkdir -p /tmp/suining-soak
+      - name: Run 20-minute MySQL health/rules test
+        working-directory: 智慧养老手表管理系统/backend
+        env:
+          TEST_MYSQL_DSN: root:ci_root_only@tcp(127.0.0.1:3306)/suining_test
+          SOAK_MYSQL: "1"
+          SOAK_DURATION: 20m
+          SOAK_OUTPUT_PATH: /tmp/suining-soak/mysql-soak.json
+        run: |
+          go test -count=1 -run '^TestMySQLTwentyMinuteSoak$' -timeout 26m -v ./internal/handlers | tee /tmp/suining-soak/mysql-soak-go.log
+      - name: Save complete and interrupted logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mysql-20min-soak
+          path: /tmp/suining-soak/*
+          retention-days: 30
+          if-no-files-found: warn
