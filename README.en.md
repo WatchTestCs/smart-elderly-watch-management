@@ -12,12 +12,20 @@ Suining brings resident profiles, wearable devices, health and activity records,
 
 [Source and historical downloads](docs/DOWNLOADS.md) · [2.0.6 release and upgrade notes](docs/releases/2.0.6.md) · [Architecture](#architecture) · [Getting started](#getting-started) · [Dual-database guide](docs/DUAL_DATABASES.md) · [Source project](智慧养老手表管理系统/README.md) · [Changelog](CHANGELOG.md)
 
+## Current source status and evidence
+
+**Product version 2.0.6 is not a new published binary release.** The `preview` branch has continued to evolve its Go backend since that product build. The module now targets **Go 1.23+**; the [Preview CI run](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/39623700602) passed its Go 1.23.2 / 1.27.2 backend verification using disposable MySQL and PostgreSQL services. The published 2.0.2 Windows binaries and older source archives are **not** builds of the current `preview` branch.
+
+**Important 20-minute MySQL finding:** A real disposable-MySQL test ran for its planned duration, but **failed**: 1,987 HTTP requests, 1,959 acknowledged, 28 HTTP 500, zero HTTP 503, and 19 rule errors. All 391,800 acknowledged synthetic samples matched the rows counted in the two relevant tables. This supports those specific persistence checks, **not** an overall reliability or throughput claim. An initial workflow also masked `go test` failures behind `tee` without `pipefail`; see the [run and raw artifact](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/39622692722), the [invalid first-attempt example](docs/performance/2026-10-21-go123/FIRST_20MIN_INCORRECT_DEMONSTRATION.md), and the [performance evidence index](docs/performance/2026-10-21-go123/README.md).
+
+For local development, [platform.compose.yml](deploy/platform.compose.yml) includes the Go app, Nginx, MySQL, PostgreSQL and Prometheus. `python3 scripts/start-platform.py --validate` **creates missing local secrets/configuration files even in validation mode**; normal invocation also builds/starts Docker Compose. Do not run the generated environment on production or commit secrets. The Chinese [getting-started guide](README.md#开始使用) describes the boundaries.
+
 ## Repository map
 
 | Path | Purpose |
 | --- | --- |
 | [.github/](.github/) | Security reporting, dependency updates, pull-request templates and automation workflows. |
-| [deploy/](deploy/) | MySQL/PostgreSQL deployment templates and standalone-service probes; no application container is defined. |
+| [deploy/](deploy/) | Database templates and a [complete Compose stack](deploy/platform.compose.yml) with Go app, Nginx gateway and Prometheus, plus operations configuration. |
 | [docs/](docs/) | Setup, architecture, migrations, care operations, historical releases and the [file-by-file index](docs/FILES.md). |
 | [tests/ui/](tests/ui/) | Dependency-free browser accessibility smoke check. |
 | [智慧养老手表管理系统/](智慧养老手表管理系统/README.md) | Buildable desktop project containing Tauri, the Go backend, Vue frontend and watch simulator. |
@@ -128,7 +136,7 @@ flowchart LR
 
 By default, Windows runs Go as a child process on a dynamic loopback port. Go serves assets and status before connecting to MySQL and applying embedded migrations. Rust validates the readiness PID and port before loading the local page. Rust manages child-process shutdown; Go also monitors its parent.
 
-Vue calls Go over HTTP and never connects directly to either database. Initial administrator setup uses restricted Tauri IPC; Rust adds a desktop token that is not exposed to the page. Ordinary writes enforce sessions, roles and CSRF; device reporting has separate authentication. Sessions live in Go memory and do not survive service restarts.
+Vue calls Go over HTTP and never connects directly to either database. Initial administrator setup uses restricted Tauri IPC; Rust adds a desktop token that is not exposed to the page. Ordinary writes enforce sessions, roles and CSRF; device reporting has separate authentication. Sessions default to `SESSION_BACKEND=database`; `memory` is an explicit single-instance development option. Restart and cross-instance session behavior require deployment-specific verification.
 
 ### Database ownership and failure behavior
 
@@ -197,7 +205,7 @@ deploy/          MySQL / PG Compose and environment templates
 docs/            Configuration, architecture, verification, releases and operations
 ```
 
-Windows builds require PowerShell 7, Node.js (`^20.19.0 || >=22.12.0`), Go, Rust and MSVC / Windows SDK. The Go module declares a 1.24.0 minimum; the local 2.0.6 build used Go 1.27.2. The Rust package declares a 1.85 minimum. From the source project:
+Windows builds require PowerShell 7, Node.js (`^20.19.0 || >=22.12.0`), Go, Rust and MSVC / Windows SDK. The current Go module declares a **1.23.0 minimum** and backend CI covers Go 1.23.2 and 1.27.2; the earlier local 2.0.6 build used Go 1.27.2. The Rust package declares a 1.85 minimum. From the source project:
 
 ```powershell
 cd 智慧养老手表管理系统
@@ -218,7 +226,7 @@ These actual Tauri screenshots are from 2.0.2 with temporary data, not 2.0.6 acc
 - Dual-database development: Go tests with the race detector on isolated MySQL 8.0.46 / PostgreSQL 16.4; 11 mocked-API browser suites; 15 real core-workflow checks with PG stopped; recovery checks for zero backlog and matching analytics views.
 - 2.0.6 packaging: frontend build, Go tests/vet, Tauri/NSIS build, application/installer versions, archive integrity, SHA-256 and new sidecar startup checks passed. Real dual-database integration was not rerun during packaging.
 - The local 2.0.6 installer and portable application are unsigned. The installer was not executed and the native desktop window was not acceptance-tested. Historical installation results do not validate this version.
-- Real watches, SMS gateways, production migration, remote TLS, long-duration load and MySQL 8.4 containers were not tested. Compose received static validation only. Mock browser and protocol checks cannot replace real backend or hardware integration.
+- MySQL 8.4 integration tests now run in backend CI. A real isolated 20-minute synthetic MySQL run also completed **with HTTP 500 and rule evaluation errors and therefore failed**. Real watches, external notification delivery, production migration, remote TLS and long-term production availability remain unverified. Mock browser and protocol checks cannot replace hardware integration.
 
 Version-specific evidence and upgrade limits are described in the [2.0.6 notes](docs/releases/2.0.6.md). This integration preserves the remote health sampling, change-cursor and statistics interfaces on MySQL. See the [integration report](docs/INTEGRATION_2.0.6.md) for executed checks. Previously built local installers do not include this integration; rebuild from the current source.
 

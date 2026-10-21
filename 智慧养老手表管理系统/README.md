@@ -2,7 +2,7 @@
 
 本工程由 **Tauri 2 / Rust 桌面壳、Go 业务服务、Vue 3 / Vite 界面和手表模拟器**组成。MySQL 是唯一业务主库，PostgreSQL 保存异步分析投影；数据库由部署方独立管理。
 
-[产品与整体架构](../README.md) · [2.0.6 改进](../docs/releases/2.0.6.md) · [双库配置与迁移](../docs/DUAL_DATABASES.md) · [实现协议](../docs/ARCHITECTURE.md)
+[产品与整体架构](../README.md) · [2.0.6 改进](../docs/releases/2.0.6.md) · [双库配置与迁移](../docs/DUAL_DATABASES.md) · [实现协议](../docs/ARCHITECTURE.md) · [性能与数据库验收](../docs/performance/2026-10-21-go123/README.md)
 
 ## 工程职责
 
@@ -18,7 +18,7 @@ Rust 启动 Go，Vue 从 Go 获取内嵌生产资源并调用同源 API；首次
 
 ## Windows 完整构建
 
-准备 PowerShell 7、Node.js（`^20.19.0 || >=22.12.0`）、Go、Rust、C++ Build Tools 和 Windows SDK。Go 模块声明最低 1.24.0，本地 2.0.6 构建使用 Go 1.27.2；Rust 包声明最低 1.85。版本以锁文件和模块声明为准。
+准备 PowerShell 7、Node.js（`^20.19.0 || >=22.12.0`）、Go、Rust、C++ Build Tools 和 Windows SDK。Go 模块现在声明最低 1.23.0，CI 检查 Go 1.23.2 和 1.27.2；先前 2.0.6 本地构建使用 Go 1.27.2。Rust 包声明最低 1.85。版本以锁文件和模块声明为准。
 
 ```powershell
 ./desktop/validate-version.ps1

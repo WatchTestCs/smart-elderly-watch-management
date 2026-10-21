@@ -4,20 +4,35 @@
 
 **简体中文** | [English](README.en.md)
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-235442)](LICENSE) [![Preview: 2.0.6](https://img.shields.io/badge/preview-2.0.6-9b7a40)](docs/releases/2.0.6.md)
+[![License: MIT](https://img.shields.io/badge/license-MIT-235442)](LICENSE) [![Preview: 2.0.6](https://img.shields.io/badge/preview-2.0.6-9b7a40)](docs/releases/2.0.6.md) [![Go: 1.23+](https://img.shields.io/badge/Go-1.23%2B-00ADD8)](智慧养老手表管理系统/backend/go.mod)
 
 **岁月有伴，日常安宁。**
 
 岁宁面向照护机构与家属，提供长者档案、手表设备、健康与活动记录、位置告警、照护任务和公告互动。当前 2.0.6 采用 **Tauri 2 / Rust 桌面 + Vue 3 / Vite 界面 + Go 业务服务 + MySQL 主库 + PostgreSQL 分析库**，数据库由部署方独立管理。
 
-[源码与历史附件](docs/DOWNLOADS.md) · [2.0.6 改进与升级](docs/releases/2.0.6.md) · [系统架构](#系统架构) · [开始使用](#开始使用) · [双库部署与迁移](docs/DUAL_DATABASES.md) · [源码工程](智慧养老手表管理系统/README.md) · [更新日志](CHANGELOG.md)
+[快速开始](#开始使用) · [功能与照护流程](#主要功能) · [系统架构](#系统架构) · [源码与构建](#源码与构建) · [测试与性能证据](#近期后端验证与性能证据) · [下载与历史附件](docs/DOWNLOADS.md) · [双库部署与迁移](docs/DUAL_DATABASES.md)
+
+## 当前源码与适用范围
+
+> **源码预览不等于正式发布。** 仓库当前产品版本仍为 **2.0.6**；`preview` 持续包含该版本之后的 Go 后端修复、测试和部署改进。历史公开的 Windows 安装包不包含这些改动，不能将源码提交、CI 成功或离线基准视为新版 Windows 安装验收。
+
+| 关心的问题 | 当前结论 | 从哪里核对 |
+| --- | --- | --- |
+| 获取最新开发源码 | 使用 `preview` 分支；分支 ZIP 会随提交变化 | [浏览源码](https://github.com/WatchTestCs/smart-elderly-watch-management/tree/preview) · [下载源码 ZIP](https://github.com/WatchTestCs/smart-elderly-watch-management/archive/refs/heads/preview.zip) |
+| 对外版本与安装包 | 产品版本 **2.0.6 Preview**；已发布附件与当前源码不一定匹配 | [下载与版本对应关系](docs/DOWNLOADS.md) |
+| Go 版本 | `backend/go.mod` 声明 **Go 1.23+**；CI 覆盖 Go 1.23.2 与 1.27.2 | [go.mod](智慧养老手表管理系统/backend/go.mod) · [Preview CI](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/workflows/preview.yml) |
+| 核心数据库 | MySQL 是业务唯一主库，PostgreSQL 是可重建的异步分析投影 | [双库指南](docs/DUAL_DATABASES.md) |
+| 真实长时间负载 | 一轮 20 分钟隔离 MySQL 测试执行到结束，但 **出现 HTTP 500 和规则错误，整体失败** | [运行记录与证据边界](#近期后端验证与性能证据) |
+| 生产与安全边界 | 非医疗器械认证、未经过真实设备和完整通知网关端到端验收；不能以系统状态替代人工应急响应 | [照护部署](docs/CARE_SERVICE_DEPLOYMENT.md) · [测试说明](docs/TESTING.md) |
+
+**阅读顺序：**初次使用看 [开始使用](#开始使用)，维护后端看 [后端说明](智慧养老手表管理系统/backend/README.md)，部署值守看 [照护部署](docs/CARE_SERVICE_DEPLOYMENT.md)，审查性能先看 [证据说明](docs/performance/2026-10-21-go123/README.md)。
 
 ## 仓库目录与根文件
 
 | 路径 | 用途 |
 | --- | --- |
 | [.github/](.github/) | 漏洞披露、依赖更新、PR 模板和自动检查工作流。 |
-| [deploy/](deploy/) | MySQL／PG 部署模板与独立服务运维探测脚本；不包含应用容器。 |
+| [deploy/](deploy/) | 双库部署模板、[完整平台 Compose](deploy/platform.compose.yml)（Go 应用、Nginx、Prometheus）及运维配置。 |
 | [docs/](docs/) | 使用、架构、迁移、照护运维、历史版本与[逐文件职责索引](docs/FILES.md)。 |
 | [tests/ui/](tests/ui/) | 无外部依赖的浏览器可访问性冒烟检查。 |
 | [智慧养老手表管理系统/](智慧养老手表管理系统/README.md) | 可构建的桌面工程：Tauri、Go 后端、Vue 前端和手表模拟器。 |
@@ -29,7 +44,7 @@
 | [README.md](README.md) | 中文项目首页与当前源码入口。 |
 | [architecture.md](architecture.md) | 根目录的系统组件和数据流概览。 |
 
-## 2.0.6 与交付状态
+## 产品 2.0.6 与历史交付状态
 
 2.0.6 已完成本地 Windows x64 安装版、免安装版和源码包构建；本次交付未发布到 GitHub Releases。文件名分别为 `Suining-Setup-2.0.6-win-x64.exe`、`Suining-Portable-2.0.6-win-x64.zip` 和 `Suining-Source-2.0.6.zip`，以随交付的 `SHA256SUMS.txt` 核验。
 
@@ -41,7 +56,7 @@
 
 ### 获取源码与选择附件
 
-截至 2026-10-19，当前 `preview` 为 **2.0.6 双库整合源码**，最新公开源码附件为 **2.0.5-optimized.1**，最新公开 Windows 安装／免安装附件仍为 **2.0.2**。版本号和交付类型需要同时核对，不能把旧安装包套用当前数据库配置。
+根据 [2026-10-19 附件索引](docs/DOWNLOADS.md)，当时最新公开源码附件为 **2.0.5-optimized.1**，Windows 安装／免安装附件为 **2.0.2**；`preview` 目前继续在 **2.0.6 产品版本**上迭代源码。附件索引具有核对日期，不应推断今天没有更新的 Release；始终以 GitHub Releases 的实际文件与说明为准。
 
 | 需要什么 | 下载入口 | 使用范围 |
 | --- | --- | --- |
@@ -128,7 +143,7 @@ flowchart LR
 
 Windows 默认将 Go 作为本地子进程启动，监听回环动态端口。Go 先提供页面与状态，再后台连接 MySQL 并执行内嵌迁移；Rust 核验就绪文件的 PID 和端口后加载本机页面。关闭窗口时管理 Go 退出，Go 同时监测父进程。
 
-Vue 通过 HTTP 使用 Go API，不直接连接数据库。首次管理员初始化通过受限 Tauri IPC，由 Rust 附加桌面令牌；网页不持有该令牌或数据库连接串。普通业务写入使用会话、角色和 CSRF 校验，设备接口使用独立设备鉴权。会话保存在 Go 内存，服务重启后需重新登录。
+Vue 通过 HTTP 使用 Go API，不直接连接数据库。首次管理员初始化通过受限 Tauri IPC，由 Rust 附加桌面令牌；网页不持有该令牌或数据库连接串。普通业务写入使用会话、角色和 CSRF 校验，设备接口使用独立设备鉴权。会话后端默认配置为 `SESSION_BACKEND=database`；仅在明确指定的单实例开发场景才使用 `memory`。重启、跨实例登录状态与故障恢复需按部署模式分别验收。
 
 ### 双库数据流与故障行为
 
@@ -169,6 +184,22 @@ $env:SUINING_PG_ANALYTICS_URL='postgres://suining_analytics:替换密码@127.0.0
 
 直接运行 Go 时使用 `MYSQL_DSN`、`PG_ANALYTICS_URL`，默认 `ADDR=127.0.0.1:8080`；桌面使用上述 `SUINING_` 变量并传给 Go。配置修改后重启。当前业务服务不读取旧 `DATABASE_URL` / `SUINING_DATABASE_URL` 作为主库回退。
 
+### 一键启动隔离的本地平台（用于开发和验证）
+
+仓库除历史 [双库模板](deploy/dual-db.compose.yml) 外，还包含 [platform.compose.yml](deploy/platform.compose.yml)：MySQL 8.4、PostgreSQL 16、Go 应用、Nginx 网关与 Prometheus。需要安装 Docker Compose、Python 3，并确保相应镜像可获取。以下命令在**开发机器**的仓库根目录执行：
+
+```sh
+# 生成尚不存在的本地测试密钥，并校验完整平台 Compose
+python3 scripts/start-platform.py --validate
+
+# 在已有 Docker Compose 环境下构建并启动平台
+python3 scripts/start-platform.py
+```
+
+启动脚本会在 `deploy/secrets/`、`deploy/platform.env` 创建本地敏感配置（已有文件不会自动覆盖），**即使带 `--validate` 也会创建缺失的文件**，运行前应了解这一副作用。默认网关和指标页面仅映射到主机回环地址；外部设备接入仍需单独配置可信反向代理、TLS 与网络访问控制。此命令不能替代备份、实际通知网关、照护值班制度或生产部署验收。
+
+开发配置和最小权限要求见 [平台迁移说明](docs/PLATFORM_UPGRADE_2.0.6.md) 和 [后端 README](智慧养老手表管理系统/backend/README.md)。不应把自动生成的密钥、明文环境文件或真实健康记录提交到 Git。
+
 ### 选择部署方式
 
 | 方式 | 适用情况 | 必须另外准备 |
@@ -197,7 +228,7 @@ deploy/          MySQL / PG Compose 与环境变量模板
 docs/            配置、架构、验收、版本、备份与运维文档
 ```
 
-Windows 构建需要 PowerShell 7、Node.js（`^20.19.0 || >=22.12.0`）、Go、Rust 和 MSVC / Windows SDK。Go 模块声明最低 1.24.0，2.0.6 本地构建使用 Go 1.27.2；Rust 包声明最低 1.85。从工程目录执行：
+Windows 构建需要 PowerShell 7、Node.js（`^20.19.0 || >=22.12.0`）、Go、Rust 和 MSVC / Windows SDK。**当前 Go 模块最低版本为 1.23.0**，已有 CI 验证 Go 1.23.2 与 1.27.2；先前 2.0.6 本地构建使用 Go 1.27.2。Rust 包声明最低 1.85。从工程目录执行：
 
 ```powershell
 cd 智慧养老手表管理系统
@@ -206,6 +237,42 @@ cd 智慧养老手表管理系统
 ```
 
 构建顺序为 **Vue 生产资源 → Go 内嵌资源、测试与编译 → sidecar SHA-256 → Tauri 原生程序 → NSIS 安装包**。脚本支持 `CARGO_TARGET_DIR`，产物在工程目录 `outputs/v2.0.6-preview`。默认构建不签名；可选 `-SelfSign` 仅用于本机自签，不能提供公开受信任签名。免安装 ZIP、源码 ZIP 和交付说明属于单独整理步骤。开发代理、真实数据库测试要求见 [工程 README](智慧养老手表管理系统/README.md) 和 [后端 README](智慧养老手表管理系统/backend/README.md)。
+
+## 近期后端验证与性能证据
+
+本节记录 **`preview` 源码在 2026-10-21 取得的可核实证据**，与历史 2.0.6 Windows 安装交付分开。这里的指标来自不同运行、环境和负载，**不可相加或直接用于生产 SLA**。
+
+| 证据 | 运行环境与结果 | 可证明与不能证明的事 |
+| --- | --- | --- |
+| Go 双版本后端 CI | [Preview CI 历史通过运行](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/39623700602)，Go **1.23.2 / 1.27.2**，包含 MySQL 8.4 与 PG 16 测试服务 | 可以证明该提交在所配置 CI 用例下通过；不能证明所有生产场景无错 |
+| 规则、健康与 SQL 适配微基准 | Go 1.23.2，4 CPU 配额的隔离计算测试；流式活动聚合在 1000 条样本的部分场景下优于历史实现 | 只证明特定 CPU-only 路径的相对表现，**不是 HTTP+MySQL 吞吐** |
+| 第一版原定 20 分钟测试 | 旧会话在约第 14–16 分钟出现 500/503 并中止；原始逐分钟记录缺失 | **错误演示**，不可视为完成 20 分钟 |
+| 新增隔离 MySQL 20 分钟复测 | [Actions 原始运行](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/39622692722)，Go 1.23.2 + MySQL 8.4，合成健康数据并发写入与规则扫描；**最终失败** | 已取得真实应用层与数据库证据；**未通过长时间稳定性验收** |
+
+### 20 分钟 MySQL 复测：失败也必须保留
+
+该运行日志记录 **1,987 次请求、1,959 次业务确认、28 次 HTTP 500、0 次 HTTP 503、19 次规则评估错误**；已确认 **391,800** 条合成健康数据写入，与 `health_sample` 和 `health_change` 的最终行数相等。错误集中出现在测试后段；**记录完整性不等于整个服务稳定性**。这是隔离的单进程 `httptest` + 真实 MySQL 负载，不覆盖多应用节点、真实设备、外部通知和生产网络。
+
+**重要的 CI 陷阱：**最初的耐久工作流把 `go test` 通过管道传给 `tee`，未启用 `pipefail`，因此即便 `go test` 实际失败，Actions 步骤也可能显示绿色。看测试原始日志与数据库核对结果，不能只看工作流结论。
+
+- [本次耐久运行原始日志与 Artifact](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/39622692722)（可从运行页面下载 JSON、测试日志）。
+- [第一版测试错误演示](docs/performance/2026-10-21-go123/FIRST_20MIN_INCORRECT_DEMONSTRATION.md) 与 [机器可读证据状态](docs/performance/2026-10-21-go123/first_20min_incorrect_evidence.json)。
+- [CPU/GC 性能目录](docs/performance/2026-10-21-go123/README.md) 与 [数据库 500/503 排查](docs/MYSQL_503_500_CONTINUATION_20261021.md)。
+
+### 开发者最小验证
+
+在 `智慧养老手表管理系统/backend` 下，先准备 Go 1.23+ 与**专用测试库**：
+
+```sh
+go test -count=1 ./...
+go vet ./...
+# 实例必须与生产隔离；MySQL 用例会创建和删除随机测试数据库
+TEST_MYSQL_DSN='专用测试 MySQL DSN' \
+TEST_DATABASE_URL='专用测试 PostgreSQL URL' \
+go test -race -count=1 -timeout 600s ./...
+```
+
+缺少相应 DSN 时，部分数据库集成用例会跳过；`go test` 返回成功不代表这些被跳过的用例经过验证。**20 分钟耐久测试采用显式 opt-in**，见 [工作流](.github/workflows/mysql-endurance.yml) 与 [中止/复测说明](docs/performance/2026-10-21-go123/INTERRUPTED-MYSQL-SOAK.md)，绝不能在生产库上运行。
 
 ## 界面与验证
 
@@ -218,7 +285,7 @@ cd 智慧养老手表管理系统
 - 双库开发阶段：独立 MySQL 8.0.46 / PostgreSQL 16.4 上的 Go 全套竞争检测、11 组模拟 API 浏览器验收，以及 PG 停机时 15 项真实业务检查；恢复后核对队列归零与分析视图。
 - 2.0.6 打包阶段：前端构建、Go 测试与静态检查、Tauri / NSIS 构建、应用和安装包版本、压缩包及 SHA-256 校验、新内置服务启动检查通过；打包阶段未重跑真实双库集成。
 - 本地 2.0.6 安装包与免安装版未签名，未实际执行安装器或验收原生桌面窗口。历史安装验收不代表新版已经安装验收。
-- 未验证真实手表、短信网关、生产迁移、远程 TLS、长期负载或 MySQL 8.4 容器运行。Compose 已做静态校验，不能视为容器实测。浏览器模拟与协议模拟也不能替代真实业务或硬件联调。
+- 当前 Go CI 已在 **MySQL 8.4** 测试容器中执行数据库集成测试；单实例 20 分钟合成负载也有真实运行日志，但结果失败，不能据此宣称长稳态通过。**真实手表、短信网关、生产迁移、远程 TLS、真实网络故障与长期生产可用性**仍未完成端到端验收。旧 2.0.6 桌面安装验收边界不因此改变。
 
 版本验证和升级边界集中记录在 [2.0.6 改进说明](docs/releases/2.0.6.md)。本次整合保留远程健康采样、增量游标与统计接口，并适配 MySQL；测试证据见 [整合记录](docs/INTEGRATION_2.0.6.md)。此前本地安装包不包含此次健康采样整合，应从当前源码重建。
 
@@ -231,6 +298,7 @@ cd 智慧养老手表管理系统
 | 升级后看不到旧资料 | 当前 MySQL 与旧 PG 是否完成离线导入，图片是否另行复制；不要直接覆盖唯一备份 |
 | 设备上报返回绑定版本冲突 | 核对采集时的绑定版本；不能把旧缓存换成新版本后归给新长者 |
 | 已发送通知，任务仍未关闭 | 发送、送达、接单、处置和独立复核是不同状态 |
+| HTTP 500/503 或数据库状态异常 | 查看 [500/503 排查记录](docs/MYSQL_503_500_CONTINUATION_20261021.md)、业务池等待与 SQL 慢查询；单个 503 不等于整库宕机，且健康探测与业务成功需分开监控 |
 | 免安装版不能启动 | 是否完整解压、两个 EXE 是否同目录、WebView2 是否存在；先确认附件真实版本 |
 | 源码写着 2.0.6，下载程序却是 2.0.2 | 分支源码与历史二进制分开交付，按 [附件索引](docs/DOWNLOADS.md) 选择 |
 
@@ -243,7 +311,7 @@ cd 智慧养老手表管理系统
 | 源码下载与历史附件 | [附件索引](docs/DOWNLOADS.md) · [About 文案](docs/ABOUT.md) |
 | 当前配置、双库与迁移 | [双库指南](docs/DUAL_DATABASES.md) · [使用说明](docs/SETUP.md) |
 | 架构与照护闭环 | [架构总览](architecture.md) · [实现协议](docs/ARCHITECTURE.md) · [照护部署](docs/CARE_SERVICE_DEPLOYMENT.md) |
-| 开发与验证 | [工程说明](智慧养老手表管理系统/README.md) · [前端](智慧养老手表管理系统/oldIot/README.md) · [后端](智慧养老手表管理系统/backend/README.md) · [测试分层](docs/TESTING.md) |
+| 开发与验证 | [工程说明](智慧养老手表管理系统/README.md) · [前端](智慧养老手表管理系统/oldIot/README.md) · [后端](智慧养老手表管理系统/backend/README.md) · [测试分层](docs/TESTING.md) · [性能证据](docs/performance/2026-10-21-go123/README.md) |
 | 备份与文件职责 | [备份恢复](docs/runbooks/backup-restore.md) · [逐文件索引](docs/FILES.md) |
 | 贡献、支持与历史 | [贡献指南](CONTRIBUTING.md) · [支持说明](docs/SUPPORT.md) · [更新日志](CHANGELOG.md) · [历史决定](docs/decisions/README.md) |
 

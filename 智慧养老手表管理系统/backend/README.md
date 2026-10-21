@@ -6,13 +6,13 @@ Go 服务负责业务 API、设备接入、会话、图片、内嵌前端、照�
 
 ## 技术与模块
 
-Go 模块名为 `careold-go`，声明最低 Go 1.24.0，本地 2.0.6 使用 Go 1.27.2 构建。HTTP 使用标准库 `net/http`，主库存取使用 `database/sql` 与 `go-sql-driver/mysql`，PG 投影及旧库工具使用 `pgx/v5`。当前没有独立消息中间件或分布式事务协调器。
+Go 模块名为 `careold-go`，声明最低 **Go 1.23.0**，后续 CI 已分别验证 Go 1.23.2 与 1.27.2；先前本地 2.0.6 使用 Go 1.27.2 构建。HTTP 使用标准库 `net/http`，主库存取使用 `database/sql` 与 `go-sql-driver/mysql`，PG 投影及旧库工具使用 `pgx/v5`。当前没有独立消息中间件或分布式事务协调器。
 
 | 位置 | 职责 |
 | --- | --- |
 | `cmd/server` | HTTP、后台连接恢复、迁移发布、桌面就绪与父进程监测 |
 | `internal/handlers` | 账号、人员、设备、健康、公告、照护与诊断 API；图片与静态资源 |
-| `internal/auth` / `session` / `csrf` / `ratelimit` | 角色、BCrypt、内存会话、CSRF 与限流 |
+| `internal/auth` / `session` / `csrf` / `ratelimit` | 角色、BCrypt、会话（默认数据库后端，可选单实例内存模式）、CSRF 与限流 |
 | `internal/care` | 通知投递、超时升级与照护后台作业 |
 | `internal/db` | MySQL 连接与 SQL 适配、事务、迁移、旧 PG 兼容 |
 | `internal/analytics` | PG schema、outbox 同步、事件去重、墓碑与回填 |
@@ -89,10 +89,19 @@ go test -race -count=1 -timeout 240s ./...
 
 MySQL 测试创建、清理随机测试数据库，需要相应权限；PG 测试使用隔离 schema。缺少对应变量时集成测试会跳过，不能称为集成通过。浏览器模拟 API 无法替代真实数据库测试。已有开发阶段的双库、迁移和故障恢复结果见 [2.0.6 说明](../../docs/releases/2.0.6.md)，此次健康采样整合的运行验证另见 [整合记录](../../docs/INTEGRATION_2.0.6.md)。
 
+## 2026-10-21 后端性能与风险复核
+
+- [Go 1.23 / 1.27 双版本 CI 验证](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/39623700602)：使用独立的 MySQL 8.4、PG 16 CI 服务执行后端测试，结果通过。
+- [20 分钟真实 MySQL 合成负载](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/39622692722)：**实际失败**；1,987 次请求、28 次 HTTP 500、19 次规则错误，391,800 条 ACK 样本及两张持久化表行数一致。不要仅凭工作流绿色状态判断通过；旧脚本漏用了 `pipefail`。
+- [原定 20 分钟但中止的错误演示](../../docs/performance/2026-10-21-go123/FIRST_20MIN_INCORRECT_DEMONSTRATION.md)：历史截图无完整原始证据，不能算作已完成长压测。
+- [微基准和证据索引](../../docs/performance/2026-10-21-go123/README.md)、[连接池与 SQL 排查](../../docs/MYSQL_503_500_CONTINUATION_20261021.md)：区分模拟负载、数据库集成、完整 HTTP 路径和生产指标。
+
+不能把单实例 `httptest` + MySQL、独立 CPU 微基准或模拟通知网关结果推广成真实机构 SLA。生产上线仍需实际设备、可靠通知回执、人员接单、故障恢复与权限隐私验收。
+
 ## 故障与安全边界
 
 - HTTP、静态页面和桌面就绪不等待数据库；MySQL 迁移成功后才发布业务 API，失败后后台重试。
 - `GET /healthz` 只代表进程存活；`GET /restful/service/status` 返回主库就绪及分析配置、连接状态，不暴露连接串。MySQL 未就绪时业务 API 返回 `503 DATABASE_UNAVAILABLE`；探测前正在执行的 SQL 也可能先失败。
 - MySQL 恢复后检查会话；失败业务写入不自动重放。分析队列只重试已经提交的分析事件。
-- 首位管理员必须经桌面令牌初始化，无默认账号；普通写接口校验会话、角色和 CSRF，设备接口单独鉴权。会话在内存中，重启失效。
+- 首位管理员必须经桌面令牌初始化，无默认账号；普通写接口校验会话、角色和 CSRF，设备接口单独鉴权。会话默认存于数据库；显式启用 `SESSION_BACKEND=memory` 时才采用单实例内存会话。
 - 桌面本地服务随窗口退出。长期值守需常驻部署、通知网关和人工流程；图片需与 MySQL 分别备份。
