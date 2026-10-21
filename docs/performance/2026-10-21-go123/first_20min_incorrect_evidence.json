@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "classification": "INVALID_HISTORICAL_EXAMPLE_NOT_A_PERFORMANCE_RESULT",
+  "purpose": "Display an incorrect first-attempt 20-minute MySQL test to avoid repeating mistakes",
+  "original_attempt": {
+    "identified_by": "first historical Go backend MySQL/HTTP 20-minute attempt on 2026-10-20 or 2026-10-21",
+    "planned_duration_seconds": 1200,
+    "actual_duration_seconds": null,
+    "full_twenty_minutes_completed": false,
+    "full_duration_verification": "not established; historical notes describe interruption",
+    "approximate_progress": {
+      "elapsed_approx": "14 minutes 30 seconds",
+      "acknowledged_batches_reported_approx": 8322,
+      "provenance": "old conversation screenshot report only",
+      "independently_verified": false
+    },
+    "error_observations": {
+      "http_500": "reported around minute 16; exact count and timeline unavailable",
+      "http_503": "mentioned during historical investigation; exact count and timeline unavailable"
+    },
+    "measured_p99_ms": null,
+    "persisted_unique_samples_verified": null,
+    "persisted_change_rows_verified": null,
+    "raw_request_logs_available_in_repository": false,
+    "raw_original_database_counts_available_in_repository": false,
+    "underlying_run_id": null
+  },
+  "caution": [
+    "This file is a retrospective evidence index, not the original stress-test output",
+    "Do not label as completed 20-minute benchmark",
+    "Do not extrapolate throughput or invent the missing 4-6 minutes",
+    "Do not mix separate 15-second four-instance trials with this run",
+    "No proven single SQL root cause without matching raw logs"
+  ],
+  "original_log_missing": true,
+  "new_independent_test_run_url": "https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/39622692722"
+}
