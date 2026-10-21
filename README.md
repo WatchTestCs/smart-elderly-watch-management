@@ -253,9 +253,11 @@ cd 智慧养老手表管理系统
 
 该运行日志记录 **1,987 次请求、1,959 次业务确认、28 次 HTTP 500、0 次 HTTP 503、19 次规则评估错误**；已确认 **391,800** 条合成健康数据写入，与 `health_sample` 和 `health_change` 的最终行数相等。错误集中出现在测试后段；**记录完整性不等于整个服务稳定性**。这是隔离的单进程 `httptest` + 真实 MySQL 负载，不覆盖多应用节点、真实设备、外部通知和生产网络。
 
-**重要的 CI 陷阱：**最初的耐久工作流把 `go test` 通过管道传给 `tee`，未启用 `pipefail`，因此即便 `go test` 实际失败，Actions 步骤也可能显示绿色。看测试原始日志与数据库核对结果，不能只看工作流结论。
+**重要的 CI 陷阱：**最初的耐久工作流把 `go test` 通过管道传给 `tee`，未启用 `pipefail`，因此即便 `go test` 实际失败，Actions 步骤也可能显示绿色。随后已启用 `pipefail`；看测试原始日志与数据库核对结果，不能只看工作流结论。
 
-- [本次耐久运行原始日志与 Artifact](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/39622692722)（可从运行页面下载 JSON、测试日志）。
+**第二轮独立复测也未通过：**[修复退出码后的运行 #39629502257](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/39629502257) 正确标记为失败，原始日志记录 **44 次请求错误、19 次规则评估错误**；**387,200** 条已确认样本与两张持久化表的最终行数吻合。第 20 分钟检查点累计出现 40 次 HTTP 500、0 次 HTTP 503；检查点之后仍有错误，不能仅凭检查点代替最终状态码分布。两轮数据不可简单比较为性能提升或回退。
+
+- [第一轮耐久运行原始日志与 Artifact](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/39622692722) 和 [第二轮失败运行与 Artifact](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/39629502257)。
 - [第一版测试错误演示](docs/performance/2026-10-21-go123/FIRST_20MIN_INCORRECT_DEMONSTRATION.md) 与 [机器可读证据状态](docs/performance/2026-10-21-go123/first_20min_incorrect_evidence.json)。
 - [CPU/GC 性能目录](docs/performance/2026-10-21-go123/README.md) 与 [数据库 500/503 排查](docs/MYSQL_503_500_CONTINUATION_20261021.md)。
 

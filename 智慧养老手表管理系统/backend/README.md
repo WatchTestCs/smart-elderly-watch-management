@@ -93,6 +93,7 @@ MySQL 测试创建、清理随机测试数据库，需要相应权限；PG 测�
 
 - [Go 1.23 / 1.27 双版本 CI 验证](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/39623700602)：使用独立的 MySQL 8.4、PG 16 CI 服务执行后端测试，结果通过。
 - [20 分钟真实 MySQL 合成负载](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/39622692722)：**实际失败**；1,987 次请求、28 次 HTTP 500、19 次规则错误，391,800 条 ACK 样本及两张持久化表行数一致。不要仅凭工作流绿色状态判断通过；旧脚本漏用了 `pipefail`。
+- [第二轮 MySQL 耐久复测](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/39629502257)：修正 `pipefail` 后 CI **正确失败**；记录 44 次请求错误、19 次规则错误，387,200 条 ACK 样本与两张数据库表的行数一致。尚未满足 20 分钟零错误验收。
 - [原定 20 分钟但中止的错误演示](../../docs/performance/2026-10-21-go123/FIRST_20MIN_INCORRECT_DEMONSTRATION.md)：历史截图无完整原始证据，不能算作已完成长压测。
 - [微基准和证据索引](../../docs/performance/2026-10-21-go123/README.md)、[连接池与 SQL 排查](../../docs/MYSQL_503_500_CONTINUATION_20261021.md)：区分模拟负载、数据库集成、完整 HTTP 路径和生产指标。
 
