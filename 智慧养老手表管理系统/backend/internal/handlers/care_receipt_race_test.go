@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
@@ -20,9 +21,11 @@ func TestCareImmediateSignedReceiptDuringSending(t *testing.T) {
 	mustExec(t, pool, "UPDATE oldperson SET family_id=1 WHERE old_id=1")
 	h := testHandler(pool)
 	api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret})
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 	var id int64
 	mustExec(t, pool, "UPDATE care_notification_outbox SET status='sending'")
-	if err := pool.QueryRow(t.Context(), "SELECT id FROM care_notification_outbox").Scan(&id); err != nil {
+	if err := pool.QueryRow(ctx, "SELECT id FROM care_notification_outbox").Scan(&id); err != nil {
 		t.Fatal(err)
 	}
 	secret := "test-receipt-secret-at-least-32-characters"
@@ -41,7 +44,7 @@ func TestCareImmediateSignedReceiptDuringSending(t *testing.T) {
 		t.Fatalf("immediate signed receipt: %d %s", rec.Code, rec.Body.String())
 	}
 	var state string
-	if err := pool.QueryRow(t.Context(), "SELECT status FROM care_notification_outbox WHERE id=$1", id).Scan(&state); err != nil || state != "delivered" {
+	if err := pool.QueryRow(ctx, "SELECT status FROM care_notification_outbox WHERE id=$1", id).Scan(&state); err != nil || state != "delivered" {
 		t.Fatalf("delivery lost: %s, %v", state, err)
 	}
 }
