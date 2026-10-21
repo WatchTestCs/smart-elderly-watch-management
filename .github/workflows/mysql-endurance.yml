@@ -45,16 +45,7 @@ jobs:
           SOAK_OUTPUT_PATH: /tmp/suining-soak/mysql-soak.json
         run: |
           set -o pipefail
-          go test -count=1 -run '^TestMySQLTwentyMinuteSoak
-      - name: Save complete and interrupted logs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: mysql-20min-soak
-          path: /tmp/suining-soak/*
-          retention-days: 30
-          if-no-files-found: warn
- -timeout 26m -v ./internal/handlers | tee /tmp/suining-soak/mysql-soak-go.log
+          go test -count=1 -run '^TestMySQLTwentyMinuteSoak$' -timeout 26m -v ./internal/handlers | tee /tmp/suining-soak/mysql-soak-go.log
       - name: Save complete and interrupted logs
         if: always()
         uses: actions/upload-artifact@v4

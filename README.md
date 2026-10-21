@@ -20,7 +20,7 @@
 | --- | --- | --- |
 | 获取最新开发源码 | 使用 `preview` 分支；分支 ZIP 会随提交变化 | [浏览源码](https://github.com/WatchTestCs/smart-elderly-watch-management/tree/preview) · [下载源码 ZIP](https://github.com/WatchTestCs/smart-elderly-watch-management/archive/refs/heads/preview.zip) |
 | 对外版本与安装包 | 产品版本 **2.0.6 Preview**；已发布附件与当前源码不一定匹配 | [下载与版本对应关系](docs/DOWNLOADS.md) |
-| Go 版本 | `backend/go.mod` 声明 **Go 1.23+**；CI 覆盖 Go 1.23.2 与 1.27.2 | [go.mod](智慧养老手表管理系统/backend/go.mod) · [Preview CI](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/workflows/preview.yml) |
+| Go 版本 | `backend/go.mod` 声明 **Go 1.23+**；CI 覆盖 Go 1.23.2 与 1.27.2 | [go.mod](智慧养老手表管理系统/backend/go.mod) · [Preview CI](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/workflows/ci.yml) |
 | 核心数据库 | MySQL 是业务唯一主库，PostgreSQL 是可重建的异步分析投影 | [双库指南](docs/DUAL_DATABASES.md) |
 | 真实长时间负载 | 一轮 20 分钟隔离 MySQL 测试执行到结束，但 **出现 HTTP 500 和规则错误，整体失败** | [运行记录与证据边界](#近期后端验证与性能证据) |
 | 生产与安全边界 | 非医疗器械认证、未经过真实设备和完整通知网关端到端验收；不能以系统状态替代人工应急响应 | [照护部署](docs/CARE_SERVICE_DEPLOYMENT.md) · [测试说明](docs/TESTING.md) |
