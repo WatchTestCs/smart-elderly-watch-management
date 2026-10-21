@@ -62,5 +62,6 @@ jobs:
           unformatted="$(gofmt -l ./cmd ./internal ./migrations)"
           if [ -n "$unformatted" ]; then
             printf 'Go files requiring gofmt:\n%s\n' "$unformatted"
+            gofmt -d ./cmd ./internal ./migrations
             exit 1
           fi
