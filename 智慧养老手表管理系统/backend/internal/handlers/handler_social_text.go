@@ -184,7 +184,7 @@ func (h *Handler) textAdd(w http.ResponseWriter, r *http.Request) {
 	}
 	messages := make([]notify.Message, 0, len(phones))
 	for _, target := range phones {
-		messages = append(messages, notify.Message{Topic:"announcement",Key:strconv.FormatInt(textID,10),FamilyID:target.FamilyID,Phone:target.Phone})
+		messages = append(messages, notify.Message{Topic: "announcement", Key: strconv.FormatInt(textID, 10), FamilyID: target.FamilyID, Phone: target.Phone})
 	}
 	if err := notify.EnqueueBatch(r.Context(), tx, h.Box, messages); err != nil {
 		response.Error500(w, ref())
