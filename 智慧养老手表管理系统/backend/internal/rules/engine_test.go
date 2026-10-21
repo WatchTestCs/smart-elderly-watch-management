@@ -5,6 +5,7 @@ import (
 	"careold-go/internal/db/dbtest"
 	"careold-go/internal/health"
 	"context"
+	"encoding/json"
 	"fmt"
 	"sync"
 	"testing"
@@ -134,6 +135,91 @@ func TestNightActivityMonotonicAndIntervals(t *testing.T) {
 			var count int
 			if err := p.QueryRow(context.Background(), "SELECT count(*) FROM care_incident WHERE kind='rule_night_activity'").Scan(&count); err != nil || count != 1 {
 				t.Fatal(count, err)
+			}
+		})
+	}
+}
+
+func TestTickPagesAndRetriesBeforeFailedDevice(t *testing.T) {
+	p, now := seed(t)
+	ctx := context.Background()
+	for id := 2; id <= 102; id++ {
+		if _, err := p.Exec(ctx, "INSERT INTO device(device_id,device_no,secret,old_id,last_time,bind_time) VALUES($1,$2,'unused',1,$3,$3)", id, fmt.Sprintf("RULE%03d", id), now); err != nil {
+			t.Fatal(err)
+		}
+	}
+	policy := Default()
+	policy.Enabled = false
+	payload, err := json.Marshal(policy)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = p.Exec(ctx, "INSERT INTO rule_policy(device_id,revision,payload,updated_by) SELECT device_id,1,$1,1 FROM device", payload); err != nil {
+		t.Fatal(err)
+	}
+	e := Engine{DB: p}
+	for _, after := range []int64{100, 102, 0} {
+		if err = e.Tick(ctx); err != nil || e.After != after {
+			t.Fatalf("after=%d want=%d err=%v", e.After, after, err)
+		}
+	}
+	policy.Consecutive = 0
+	invalid, err := json.Marshal(policy)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = p.Exec(ctx, "UPDATE rule_policy SET payload=$1 WHERE device_id=50", invalid); err != nil {
+		t.Fatal(err)
+	}
+	live, err := json.Marshal(Default())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = p.Exec(ctx, "UPDATE rule_policy SET payload=$1 WHERE device_id=75", live); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = p.Exec(ctx, "UPDATE device SET last_time=$1 WHERE device_id=75", time.Now().UTC().Add(-time.Hour)); err != nil {
+		t.Fatal(err)
+	}
+	if err = e.Tick(ctx); err == nil || e.After != 49 {
+		t.Fatalf("failed device skipped: after=%d err=%v", e.After, err)
+	}
+	if _, err = p.Exec(ctx, "UPDATE rule_policy SET payload=$1 WHERE device_id=50", payload); err != nil {
+		t.Fatal(err)
+	}
+	if err = e.Tick(ctx); err != nil || e.After != 102 {
+		t.Fatalf("retry after=%d err=%v", e.After, err)
+	}
+	var count int
+	if err = p.QueryRow(ctx, "SELECT count(*) FROM rule_state").Scan(&count); err != nil || count != 1 {
+		t.Fatal("disabled policies created state", count, err)
+	}
+	if err = p.QueryRow(ctx, "SELECT count(*) FROM care_incident WHERE device_id=75 AND kind='rule_no_report'").Scan(&count); err != nil || count != 1 {
+		t.Fatal("retry duplicated successful device incident", count, err)
+	}
+}
+
+func TestNightIncidentUpgradeRemainsIdempotent(t *testing.T) {
+	for _, kind := range []string{"sos", "fence_exit"} {
+		t.Run(kind, func(t *testing.T) {
+			p, now := seed(t)
+			ctx := context.Background()
+			if _, err := p.Exec(ctx, "INSERT INTO care_incident(old_id,device_id,kind,severity,created_at) VALUES(1,1,$1,'high',$2)", kind, now); err != nil {
+				t.Fatal(err)
+			}
+			e := Engine{DB: p}
+			for range 2 {
+				if err := e.Device(ctx, 1, now); err != nil {
+					t.Fatal(err)
+				}
+			}
+			var count int
+			var severity string
+			if err := p.QueryRow(ctx, "SELECT count(*),max(severity) FROM care_incident").Scan(&count, &severity); err != nil || count != 1 || severity != "critical" {
+				t.Fatal(count, severity, err)
+			}
+			if err := p.QueryRow(ctx, "SELECT count(*) FROM care_incident_event WHERE action='night_rule'").Scan(&count); err != nil || count != 1 {
+				t.Fatal("duplicate upgrade", count, err)
 			}
 		})
 	}

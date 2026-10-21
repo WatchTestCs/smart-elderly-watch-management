@@ -54,6 +54,11 @@ func Run(ctx context.Context, db *dbstore.Database) {
 	}
 	d := &dispatcher{db: db, webhookURL: endpoint, webhookToken: token,
 		escalationPhone: escalation, httpClient: &http.Client{Timeout: 12 * time.Second}}
+	if endpoint != "" {
+		done := make(chan struct{})
+		go func() { defer close(done); d.runDispatchers(ctx, deliveryConcurrency()) }()
+		defer func() { <-done }()
+	}
 	startedAt := time.Now()
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
@@ -73,23 +78,7 @@ func Run(ctx context.Context, db *dbstore.Database) {
 		if err := d.escalate(cycleCtx); err != nil && cycleCtx.Err() == nil {
 			log.Printf("care: escalation check failed: %v", err)
 		}
-		if endpoint != "" {
-			for range 32 {
-				if deadline, ok := cycleCtx.Deadline(); ok && time.Until(deadline) <= d.httpClient.Timeout+2*time.Second {
-					break
-				}
-				processed, err := d.dispatchNext(cycleCtx)
-				if err != nil {
-					if cycleCtx.Err() == nil {
-						log.Print("care: notification dispatch failed; retrying")
-					}
-					break
-				}
-				if !processed {
-					break
-				}
-			}
-		}
+
 		cancelCycle()
 		select {
 		case <-ctx.Done():

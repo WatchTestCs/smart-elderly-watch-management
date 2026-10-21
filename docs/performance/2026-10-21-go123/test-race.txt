@@ -1,0 +1,90 @@
+=== RUN   TestNormalizationPreservesMeaning
+--- PASS: TestNormalizationPreservesMeaning (0.00s)
+=== RUN   TestSleepUnionAndConflictingStages
+--- PASS: TestSleepUnionAndConflictingStages (0.00s)
+=== RUN   TestStepsDoNotMixCumulativeOrOverlappingIntervals
+--- PASS: TestStepsDoNotMixCumulativeOrOverlappingIntervals (0.00s)
+=== RUN   TestInstantAndDeletedIntervalBounds
+--- PASS: TestInstantAndDeletedIntervalBounds (0.00s)
+PASS
+ok  	careold-go/internal/health	1.035s
+=== RUN   TestActivityWindowMatchesHistoricalSemantics
+=== RUN   TestActivityWindowMatchesHistoricalSemantics/daily_total/valid
+=== RUN   TestActivityWindowMatchesHistoricalSemantics/daily_total/reset
+=== RUN   TestActivityWindowMatchesHistoricalSemantics/daily_total/mixed
+=== RUN   TestActivityWindowMatchesHistoricalSemantics/daily_total/overlap
+=== RUN   TestActivityWindowMatchesHistoricalSemantics/daily_total/start_boundary
+=== RUN   TestActivityWindowMatchesHistoricalSemantics/daily_total/end_boundary
+=== RUN   TestActivityWindowMatchesHistoricalSemantics/daily_total/missing
+=== RUN   TestActivityWindowMatchesHistoricalSemantics/daily_total/legacy
+=== RUN   TestActivityWindowMatchesHistoricalSemantics/daily_total/daytime
+=== RUN   TestActivityWindowMatchesHistoricalSemantics/daily_total/empty
+=== RUN   TestActivityWindowMatchesHistoricalSemantics/daily_total/single
+=== RUN   TestActivityWindowMatchesHistoricalSemantics/daily_total/overflow
+=== RUN   TestActivityWindowMatchesHistoricalSemantics/daily_total/deleted
+=== RUN   TestActivityWindowMatchesHistoricalSemantics/daily_total/all_deleted
+=== RUN   TestActivityWindowMatchesHistoricalSemantics/daily_total/source_change
+=== RUN   TestActivityWindowMatchesHistoricalSemantics/daily_total/device_change
+=== RUN   TestActivityWindowMatchesHistoricalSemantics/daily_total/metric_change
+=== RUN   TestActivityWindowMatchesHistoricalSemantics/interval/valid
+=== RUN   TestActivityWindowMatchesHistoricalSemantics/interval/reset
+=== RUN   TestActivityWindowMatchesHistoricalSemantics/interval/mixed
+=== RUN   TestActivityWindowMatchesHistoricalSemantics/interval/overlap
+=== RUN   TestActivityWindowMatchesHistoricalSemantics/interval/start_boundary
+=== RUN   TestActivityWindowMatchesHistoricalSemantics/interval/end_boundary
+=== RUN   TestActivityWindowMatchesHistoricalSemantics/interval/missing
+=== RUN   TestActivityWindowMatchesHistoricalSemantics/interval/legacy
+=== RUN   TestActivityWindowMatchesHistoricalSemantics/interval/daytime
+=== RUN   TestActivityWindowMatchesHistoricalSemantics/interval/empty
+=== RUN   TestActivityWindowMatchesHistoricalSemantics/interval/single
+=== RUN   TestActivityWindowMatchesHistoricalSemantics/interval/overflow
+=== RUN   TestActivityWindowMatchesHistoricalSemantics/interval/deleted
+=== RUN   TestActivityWindowMatchesHistoricalSemantics/interval/all_deleted
+=== RUN   TestActivityWindowMatchesHistoricalSemantics/interval/source_change
+=== RUN   TestActivityWindowMatchesHistoricalSemantics/interval/device_change
+=== RUN   TestActivityWindowMatchesHistoricalSemantics/interval/metric_change
+--- PASS: TestActivityWindowMatchesHistoricalSemantics (0.02s)
+    --- PASS: TestActivityWindowMatchesHistoricalSemantics/daily_total/valid (0.00s)
+    --- PASS: TestActivityWindowMatchesHistoricalSemantics/daily_total/reset (0.00s)
+    --- PASS: TestActivityWindowMatchesHistoricalSemantics/daily_total/mixed (0.00s)
+    --- PASS: TestActivityWindowMatchesHistoricalSemantics/daily_total/overlap (0.00s)
+    --- PASS: TestActivityWindowMatchesHistoricalSemantics/daily_total/start_boundary (0.00s)
+    --- PASS: TestActivityWindowMatchesHistoricalSemantics/daily_total/end_boundary (0.00s)
+    --- PASS: TestActivityWindowMatchesHistoricalSemantics/daily_total/missing (0.00s)
+    --- PASS: TestActivityWindowMatchesHistoricalSemantics/daily_total/legacy (0.00s)
+    --- PASS: TestActivityWindowMatchesHistoricalSemantics/daily_total/daytime (0.00s)
+    --- PASS: TestActivityWindowMatchesHistoricalSemantics/daily_total/empty (0.00s)
+    --- PASS: TestActivityWindowMatchesHistoricalSemantics/daily_total/single (0.00s)
+    --- PASS: TestActivityWindowMatchesHistoricalSemantics/daily_total/overflow (0.01s)
+    --- PASS: TestActivityWindowMatchesHistoricalSemantics/daily_total/deleted (0.00s)
+    --- PASS: TestActivityWindowMatchesHistoricalSemantics/daily_total/all_deleted (0.00s)
+    --- PASS: TestActivityWindowMatchesHistoricalSemantics/daily_total/source_change (0.00s)
+    --- PASS: TestActivityWindowMatchesHistoricalSemantics/daily_total/device_change (0.00s)
+    --- PASS: TestActivityWindowMatchesHistoricalSemantics/daily_total/metric_change (0.00s)
+    --- PASS: TestActivityWindowMatchesHistoricalSemantics/interval/valid (0.00s)
+    --- PASS: TestActivityWindowMatchesHistoricalSemantics/interval/reset (0.00s)
+    --- PASS: TestActivityWindowMatchesHistoricalSemantics/interval/mixed (0.00s)
+    --- PASS: TestActivityWindowMatchesHistoricalSemantics/interval/overlap (0.00s)
+    --- PASS: TestActivityWindowMatchesHistoricalSemantics/interval/start_boundary (0.00s)
+    --- PASS: TestActivityWindowMatchesHistoricalSemantics/interval/end_boundary (0.00s)
+    --- PASS: TestActivityWindowMatchesHistoricalSemantics/interval/missing (0.00s)
+    --- PASS: TestActivityWindowMatchesHistoricalSemantics/interval/legacy (0.00s)
+    --- PASS: TestActivityWindowMatchesHistoricalSemantics/interval/daytime (0.00s)
+    --- PASS: TestActivityWindowMatchesHistoricalSemantics/interval/empty (0.00s)
+    --- PASS: TestActivityWindowMatchesHistoricalSemantics/interval/single (0.00s)
+    --- PASS: TestActivityWindowMatchesHistoricalSemantics/interval/overflow (0.00s)
+    --- PASS: TestActivityWindowMatchesHistoricalSemantics/interval/deleted (0.00s)
+    --- PASS: TestActivityWindowMatchesHistoricalSemantics/interval/all_deleted (0.00s)
+    --- PASS: TestActivityWindowMatchesHistoricalSemantics/interval/source_change (0.00s)
+    --- PASS: TestActivityWindowMatchesHistoricalSemantics/interval/device_change (0.00s)
+    --- PASS: TestActivityWindowMatchesHistoricalSemantics/interval/metric_change (0.00s)
+=== RUN   TestNightBaselineAndMissingData
+--- PASS: TestNightBaselineAndMissingData (0.00s)
+=== RUN   TestNightBoundariesAndDST
+--- PASS: TestNightBoundariesAndDST (0.00s)
+=== RUN   TestEvaluateThresholdAndFreshnessBoundaries
+--- PASS: TestEvaluateThresholdAndFreshnessBoundaries (0.00s)
+=== RUN   TestDeviceWorkers
+--- PASS: TestDeviceWorkers (0.00s)
+PASS
+ok  	careold-go/internal/rules	1.048s

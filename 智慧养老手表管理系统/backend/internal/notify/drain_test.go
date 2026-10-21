@@ -26,6 +26,11 @@ func TestWorkerDrainsReadyBacklogWithoutOneSecondPerMessage(t *testing.T) {
 	if err = tx.Commit(ctx); err != nil {
 		t.Fatal(err)
 	}
+	// Current enqueue commits local inbox entries as available immediately;
+	// construct the legacy backlog that still requires the compatibility worker.
+	if _, err = p.Exec(ctx, "UPDATE message_outbox SET status='pending',delivered_at=NULL"); err != nil {
+		t.Fatal(err)
+	}
 	worker, cancel := context.WithTimeout(ctx, 10*time.Second)
 	started := time.Now()
 	defer cancel()

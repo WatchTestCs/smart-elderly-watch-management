@@ -80,8 +80,11 @@ func TestBatchVersionsHistoryAndConflictRollback(t *testing.T) {
 	if err = tx.Rollback(ctx); err != nil {
 		t.Fatal(err)
 	}
-	if err = p.QueryRow(ctx, "SELECT revision FROM health_clock WHERE id=1").Scan(&clock); err != nil || clock != 2 {
+	if err = p.QueryRow(ctx, "SELECT revision FROM health_owner_clock WHERE old_id=1").Scan(&clock); err != nil || clock != 2 {
 		t.Fatal(clock, err)
+	}
+	if err = p.QueryRow(ctx, "SELECT revision FROM health_clock WHERE id=1").Scan(&clock); err != nil || clock != ownerRevisionRange {
+		t.Fatal("global reserved high-water mark", clock, err)
 	}
 	if err = p.QueryRow(ctx, "SELECT count(*) FROM health_sample").Scan(&count); err != nil || count != 1 {
 		t.Fatal("partial batch persisted", count, err)

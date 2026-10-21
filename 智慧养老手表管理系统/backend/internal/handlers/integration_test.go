@@ -411,7 +411,7 @@ func migrateTestDB(ctx context.Context, pool *db.Database) error {
 }
 func expectedMigrations(pool *db.Database) int {
 	if pool.IsMySQL() {
-		return 6
+		return 7
 	}
 	return 8
 }

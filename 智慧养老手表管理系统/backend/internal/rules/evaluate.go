@@ -4,6 +4,8 @@ package rules
 import (
 	"fmt"
 	"math"
+	"strconv"
+	"sync"
 	"time"
 	_ "time/tzdata"
 )
@@ -35,13 +37,13 @@ func (p Policy) Validate() error {
 	if p.HRLow <= 0 || p.HRHigh <= p.HRLow || p.BPLow <= 0 || p.BPHigh <= p.BPLow || p.BatteryLow < 0 || p.BatteryLow > 100 || p.OfflineSeconds < 60 || p.OfflineSeconds > 86400 || p.Consecutive < 1 || p.Consecutive > 20 || p.NightBegin < 0 || p.NightBegin >= 86400 || p.NightEnd < 0 || p.NightEnd >= 86400 || p.NightBegin == p.NightEnd || p.NightSteps <= 0 || p.ActivityMinutes < 1 || p.ActivityMinutes > 120 || p.BaselineDays < 1 || p.BaselineDays > 30 || p.BaselineMinimum < 5 || p.BaselineMinimum > 100000 || p.BaselinePercent <= 0 || p.BaselineSigma <= 0 {
 		return fmt.Errorf("规则阈值、窗口或连续次数无效")
 	}
-	if _, err := time.LoadLocation(p.Timezone); err != nil || p.Timezone == "" || p.Timezone == "Local" {
+	if _, err := ruleLocation(p.Timezone); err != nil || p.Timezone == "" || p.Timezone == "Local" {
 		return fmt.Errorf("须明确规则时区")
 	}
 	return nil
 }
 func (p Policy) Night(at time.Time) bool {
-	loc, err := time.LoadLocation(p.Timezone)
+	loc, err := ruleLocation(p.Timezone)
 	if err != nil {
 		return false
 	}
@@ -51,6 +53,39 @@ func (p Policy) Night(at time.Time) bool {
 		return s >= p.NightBegin && s < p.NightEnd
 	}
 	return s >= p.NightBegin || s < p.NightEnd
+}
+
+// Locations are immutable. Bound the cache so policy timezone strings cannot
+// grow process memory; failed lookups are never retained.
+var locations = struct {
+	sync.RWMutex
+	values map[string]*time.Location
+	keys   [64]string
+	next   int
+}{values: make(map[string]*time.Location)}
+
+func ruleLocation(name string) (*time.Location, error) {
+	locations.RLock()
+	loc := locations.values[name]
+	locations.RUnlock()
+	if loc != nil {
+		return loc, nil
+	}
+	loc, err := time.LoadLocation(name)
+	if err != nil {
+		return nil, err
+	}
+	locations.Lock()
+	if cached := locations.values[name]; cached != nil {
+		loc = cached
+	} else {
+		delete(locations.values, locations.keys[locations.next])
+		locations.values[name] = loc
+		locations.keys[locations.next] = name
+		locations.next = (locations.next + 1) % len(locations.keys)
+	}
+	locations.Unlock()
+	return loc, nil
 }
 
 type Value struct {
@@ -83,7 +118,28 @@ func Evaluate(p Policy, in Input) []Candidate {
 	if night {
 		severity = "critical"
 	}
-	out := []Candidate{}
+	capacity := 0
+	for _, item := range []struct {
+		kind  string
+		value *Value
+	}{{"heart_rate", in.Heart}, {"blood_pressure", in.Blood}} {
+		if item.value != nil {
+			capacity++
+			if base := in.Baselines[item.kind]; base.Count >= p.BaselineMinimum && base.Mean > 0 {
+				capacity++
+			}
+		}
+	}
+	if in.Battery != nil {
+		capacity++
+	}
+	if !in.LastReport.IsZero() {
+		capacity++
+	}
+	if in.Activity != nil && night {
+		capacity++
+	}
+	out := make([]Candidate, 0, capacity)
 	for _, m := range []struct {
 		kind      string
 		v         *Value
@@ -104,7 +160,8 @@ func Evaluate(p Policy, in Input) []Candidate {
 		out = append(out, Candidate{"battery", in.Battery.Key, "normal", in.Battery.Value < p.BatteryLow, 1, map[string]any{"value": in.Battery.Value, "threshold": p.BatteryLow}})
 	}
 	if !in.LastReport.IsZero() {
-		out = append(out, Candidate{"no_report", fmt.Sprint(in.LastReport.UnixMicro(), ":", in.Now.UTC().Truncate(time.Minute).Unix()), severity, in.Now.Sub(in.LastReport) > time.Duration(p.OfflineSeconds)*time.Second, 1, map[string]any{"lastReport": in.LastReport, "thresholdSeconds": p.OfflineSeconds}})
+		key := strconv.FormatInt(in.LastReport.UnixMicro(), 10) + ":" + strconv.FormatInt(in.Now.UTC().Truncate(time.Minute).Unix(), 10)
+		out = append(out, Candidate{"no_report", key, severity, in.Now.Sub(in.LastReport) > time.Duration(p.OfflineSeconds)*time.Second, 1, map[string]any{"lastReport": in.LastReport, "thresholdSeconds": p.OfflineSeconds}})
 	}
 	if in.Activity != nil && night && p.Night(in.Activity.At) {
 		out = append(out, Candidate{"night_activity", in.Activity.Key, "high", in.Activity.Value >= p.NightSteps, 1, map[string]any{"steps": in.Activity.Value, "threshold": p.NightSteps, "windowMinutes": p.ActivityMinutes, "source": in.Activity.Source, "sourceDevice": in.Activity.Device}})

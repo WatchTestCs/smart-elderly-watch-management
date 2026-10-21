@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"careold-go/internal/db"
@@ -24,24 +25,68 @@ func Enqueue(ctx context.Context, tx *db.Transaction, box *securestore.Box, topi
 	return EnqueueChannels(ctx, tx, box, topic, key, familyID, phone, []string{"sms", "in_app"})
 }
 func EnqueueChannels(ctx context.Context, tx *db.Transaction, box *securestore.Box, topic, key string, familyID int64, phone string, channels []string) error {
+	return EnqueueBatch(ctx, tx, box, []Message{{Topic: topic, Key: key, FamilyID: familyID, Phone: phone, Channels: channels}})
+}
+
+// Message is one recipient's durable notification. A nil Channels uses sms and in_app.
+type Message struct {
+	Topic, Key string
+	FamilyID   int64
+	Phone      string
+	Channels   []string
+}
+
+// EnqueueBatch shares the caller's transaction; success still requires its commit.
+// Statements are bounded, but no messages are discarded when the input is larger.
+func EnqueueBatch(ctx context.Context, tx *db.Transaction, box *securestore.Box, messages []Message) error {
 	if !tx.IsMySQL() {
 		return nil
 	}
-	recipient := phone
-	var err error
-	if box != nil {
-		recipient, err = box.Seal(phone, "notification-recipient")
-		if err != nil {
-			return err
+	var values strings.Builder
+	args := make([]any, 0, min(len(messages), 256)*10)
+	flush := func() error {
+		if len(args) == 0 {
+			return nil
+		}
+		_, err := tx.Exec(ctx, `INSERT INTO message_outbox(topic,source_key,family_id,channel,recipient,status,delivered_at) VALUES `+values.String()+` ON CONFLICT(topic,source_key,family_id,channel) DO NOTHING`, args...)
+		values.Reset()
+		args = args[:0]
+		return err
+	}
+	for _, message := range messages {
+		recipient := message.Phone
+		if box != nil {
+			var err error
+			recipient, err = box.Seal(recipient, "notification-recipient")
+			if err != nil {
+				return err
+			}
+		}
+		channels := message.Channels
+		if channels == nil {
+			channels = []string{"sms", "in_app"}
+		}
+		for _, channel := range channels {
+			if len(args) > 0 {
+				values.WriteByte(',')
+			}
+			n := len(args)
+			// The inbox entry becomes available with the parent's commit. This
+			// records local availability only; it makes no claim about reading.
+			state, delivered := "'pending'", "NULL"
+			if channel == "in_app" {
+				state, delivered = "'delivered'", "now()"
+			}
+			fmt.Fprintf(&values, "($%d,$%d,$%d,$%d,$%d,%s,%s)", n+1, n+2, n+3, n+4, n+5, state, delivered)
+			args = append(args, message.Topic, message.Key, message.FamilyID, channel, recipient)
+			if len(args) == 512*5 {
+				if err := flush(); err != nil {
+					return err
+				}
+			}
 		}
 	}
-	for _, channel := range channels {
-		_, err = tx.Exec(ctx, `INSERT INTO message_outbox(topic,source_key,family_id,channel,recipient) VALUES($1,$2,$3,$4,$5) ON CONFLICT(topic,source_key,family_id,channel) DO NOTHING`, topic, key, familyID, channel, recipient)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	return flush()
 }
 func CareInbox(ctx context.Context, tx *db.Transaction, box *securestore.Box, oldID, incidentID int64) error {
 	if !tx.IsMySQL() {
@@ -63,6 +108,7 @@ type Worker struct {
 	DB         *db.Database
 	Box        *securestore.Box
 	URL, Token string
+	BulkURL    string
 	Client     *http.Client
 }
 
@@ -73,75 +119,210 @@ func (d *Worker) Tick(ctx context.Context) error {
 }
 
 func (d *Worker) tick(ctx context.Context) (bool, error) {
+	n, err := d.Drain(ctx, 1)
+	return n > 0, err
+}
+
+type messageJob struct {
+	id, family                     int64
+	topic, key, channel, recipient string
+	attempts                       int
+}
+
+// Drain claims a bounded batch across replicas using SKIP LOCKED. External
+// requests start together so a batch never queues work beyond its lease.
+func (d *Worker) Drain(ctx context.Context, limit int) (int, error) {
+	if limit < 1 {
+		return 0, nil
+	}
+	limit = min(limit, 512)
 	tx, err := d.DB.Begin(ctx)
 	if err != nil {
-		return true, err
+		return 0, err
 	}
 	defer tx.Rollback(ctx)
-	var id, family int64
-	var topic, key, channel, recipient string
-	var attempts int
-	err = tx.QueryRow(ctx, `SELECT id,family_id,topic,source_key,channel,recipient,attempts FROM message_outbox
- WHERE (status IN ('pending','failed') AND retry_at<=now()) OR (status='sending' AND last_attempt_at<$1)
- ORDER BY retry_at,id LIMIT 1 FOR UPDATE SKIP LOCKED`, time.Now().Add(-time.Minute)).Scan(&id, &family, &topic, &key, &channel, &recipient, &attempts)
-	if err == pgx.ErrNoRows {
-		return false, nil
-	}
-	if err != nil {
-		return true, err
-	}
-	// Leave the task pending when this cycle cannot fit the configured network
-	// timeout plus a database completion write. In-app delivery needs no network.
-	if channel != "in_app" && d.Client != nil && d.Client.Timeout > 0 {
-		if deadline, ok := ctx.Deadline(); ok && time.Until(deadline) <= d.Client.Timeout+time.Second {
-			return false, nil
+	condition := ""
+	if deadline, ok := ctx.Deadline(); ok {
+		timeout := 30 * time.Second
+		if d.Client != nil && d.Client.Timeout > 0 {
+			timeout = min(timeout, d.Client.Timeout)
 		}
+		if time.Until(deadline) <= timeout+time.Second {
+			condition = " AND channel='in_app'"
+		}
+	}
+	externalLimit := 32
+	useBulk := d.bulkEnabled()
+	if useBulk {
+		externalLimit = 512
+	}
+	firstLimit := min(limit, externalLimit)
+	if condition != "" {
+		firstLimit = limit
+	}
+	var local, external []messageJob
+	read := func(query string, args ...any) error {
+		rows, err := tx.Query(ctx, query, args...)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var job messageJob
+			if err = rows.Scan(&job.id, &job.family, &job.topic, &job.key, &job.channel, &job.recipient, &job.attempts); err != nil {
+				return err
+			}
+			job.attempts++
+			if job.channel == "in_app" {
+				local = append(local, job)
+			} else {
+				external = append(external, job)
+			}
+		}
+		return rows.Err()
+	}
+	selectJobs := func(capacity int, onlyLocal bool, exclude []messageJob) error {
+		before := len(local) + len(external)
+		// Each status is an equality range with its own ordered index scan.
+		// A single OR predicate requires a full scan/filesort on real MySQL.
+		// Reclaimed leases and due retries run before fresh pending traffic.
+		for _, phase := range []struct {
+			status, column string
+			cutoff         time.Time
+		}{{"sending", "last_attempt_at", time.Now().Add(-time.Minute)}, {"failed", "retry_at", time.Now()}, {"pending", "retry_at", time.Now()}} {
+			remaining := capacity - (len(local) + len(external) - before)
+			if remaining == 0 {
+				break
+			}
+			filter := condition
+			if onlyLocal && filter == "" {
+				filter = " AND channel='in_app'"
+			}
+			args := []any{phase.cutoff, remaining}
+			if len(exclude) > 0 {
+				var ids string
+				ids, args = messageIDs(exclude, args)
+				filter += " AND id NOT IN (" + ids + ")"
+			}
+			query := `SELECT id,family_id,topic,source_key,channel,recipient,attempts FROM message_outbox WHERE status='` + phase.status + `' AND ` + phase.column + `<=$1` + filter + ` ORDER BY ` + phase.column + `,id LIMIT $2 FOR UPDATE SKIP LOCKED`
+			if err := read(query, args...); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	err = selectJobs(firstLimit, false, nil)
+	// Fill a local-only batch without locking hundreds of external jobs that
+	// cannot start before their lease expires. Typical external-only batches
+	// require just the first bounded query.
+	if err == nil && condition == "" && len(local) > 0 && len(local)+len(external) < limit {
+		err = selectJobs(limit-len(local)-len(external), true, local)
+	}
+	if err != nil || len(local)+len(external) == 0 {
+		return 0, err
 	}
 	token := uuid.NewString()
-	attempts++
-	observability.Default.Add(`suining_notification_attempts_total{queue="message"}`, 1)
-	_, err = tx.Exec(ctx, "UPDATE message_outbox SET status='sending',attempts=$2,lease_token=$3,last_attempt_at=now() WHERE id=$1", id, attempts, token)
-	if err != nil {
-		return true, err
-	}
-	if err = tx.Commit(ctx); err != nil {
-		return true, err
-	}
-	if channel == "in_app" {
-		_, err = d.DB.Exec(ctx, "UPDATE message_outbox SET status='delivered',delivered_at=now() WHERE id=$1 AND lease_token=$2 AND status='sending'", id, token)
-		return true, err
-	}
-	if strings.HasPrefix(recipient, securestore.Prefix) {
-		recipient, err = d.Box.Open(recipient, "notification-recipient")
-	}
-	if err == nil {
-		err = d.deliver(ctx, id, topic, key, channel, recipient)
-	}
-	if err == nil {
-		_, err = d.DB.Exec(ctx, "UPDATE message_outbox SET status='sent',last_error=NULL WHERE id=$1 AND lease_token=$2 AND status='sending'", id, token)
-		return true, err
-	}
-	// Do not persist provider response bodies, URLs or credentials in diagnostics.
-	state := "failed"
-	if attempts >= 5 {
-		state = "exhausted"
-	}
-	finish, e := d.DB.Begin(ctx)
-	if e != nil {
-		return true, e
-	}
-	defer finish.Rollback(ctx)
-	ct, e := finish.Exec(ctx, "UPDATE message_outbox SET status=$3,last_error='provider_not_accepted',retry_at=$4 WHERE id=$1 AND lease_token=$2 AND status='sending'", id, token, state, time.Now().Add(time.Duration(30*(1<<min(attempts-1, 6)))*time.Second))
-	if e != nil {
-		return true, e
-	}
-	if ct.RowsAffected() > 0 && state == "exhausted" && channel == "sms" {
-		_, e = finish.Exec(ctx, `INSERT INTO message_outbox(topic,source_key,family_id,channel,recipient) SELECT src.topic,src.source_key,src.family_id,'voice',src.recipient FROM message_outbox AS src WHERE src.id=$1 ON DUPLICATE KEY UPDATE message_outbox.id=message_outbox.id`, id)
-		if e != nil {
-			return true, e
+	for _, group := range []struct {
+		jobs  []messageJob
+		state string
+	}{{local, "delivered"}, {external, "sending"}} {
+		if len(group.jobs) == 0 {
+			continue
+		}
+		ids, args := messageIDs(group.jobs, []any{token})
+		query := "UPDATE message_outbox SET status='" + group.state + "',attempts=attempts+1,lease_token=$1,last_attempt_at=now()"
+		if group.state == "delivered" {
+			query += ",delivered_at=now(),last_error=NULL"
+		}
+		if _, err = tx.Exec(ctx, query+" WHERE id IN ("+ids+")", args...); err != nil {
+			return 0, err
 		}
 	}
-	return true, finish.Commit(ctx)
+	if err = tx.Commit(ctx); err != nil {
+		return 0, err
+	}
+	processed := len(local) + len(external)
+	observability.Default.Add(`suining_notification_attempts_total{queue="message"}`, float64(processed))
+	if len(external) == 0 {
+		return processed, nil
+	}
+	var results []error
+	if useBulk {
+		results = d.deliverBulk(ctx, external)
+	} else {
+		results = make([]error, len(external))
+		var workers sync.WaitGroup
+		for i, job := range external {
+			workers.Add(1)
+			go func(i int, job messageJob) {
+				defer workers.Done()
+				call, cancel := context.WithTimeout(ctx, 30*time.Second)
+				defer cancel()
+				phone := job.recipient
+				if strings.HasPrefix(phone, securestore.Prefix) {
+					phone, results[i] = d.Box.Open(phone, "notification-recipient")
+				}
+				if results[i] == nil {
+					results[i] = d.deliver(call, job.id, job.topic, job.key, job.channel, phone)
+				}
+			}(i, job)
+		}
+		workers.Wait()
+	}
+	// The finish transaction retains every result's lease CAS. Fallback inserts
+	// select only rows updated by this lease, never another worker's result.
+	finish, err := d.DB.Begin(ctx)
+	if err != nil {
+		return processed, err
+	}
+	defer finish.Rollback(ctx)
+	groups := make(map[int][]messageJob)
+	for i, job := range external {
+		bucket := 0
+		if results[i] != nil {
+			bucket = min(job.attempts, 7)
+		}
+		groups[bucket] = append(groups[bucket], job)
+	}
+	// Consistent group order reduces lock inversions with receipt transactions.
+	for attempts := 0; attempts <= 7; attempts++ {
+		jobs := groups[attempts]
+		if len(jobs) == 0 {
+			continue
+		}
+		ids, args := messageIDs(jobs, []any{token})
+		set := "status='sent',last_error=NULL"
+		if attempts > 0 {
+			state := "failed"
+			if attempts >= 5 {
+				state = "exhausted"
+			}
+			set = "status='" + state + "',last_error='provider_not_accepted',retry_at=$" + fmt.Sprint(len(args)+1)
+			args = append(args, time.Now().Add(time.Duration(30*(1<<min(attempts-1, 6)))*time.Second))
+		}
+		if _, err = finish.Exec(ctx, "UPDATE message_outbox SET "+set+" WHERE lease_token=$1 AND status='sending' AND id IN ("+ids+")", args...); err != nil {
+			return processed, err
+		}
+		if attempts >= 5 {
+			// Use only token+IDs; the retry timestamp argument is not needed here.
+			if _, err = finish.Exec(ctx, `INSERT INTO message_outbox(topic,source_key,family_id,channel,recipient) SELECT src.topic,src.source_key,src.family_id,'voice',src.recipient FROM message_outbox AS src WHERE src.lease_token=$1 AND src.status='exhausted' AND src.channel='sms' AND src.id IN (`+ids+`) ON DUPLICATE KEY UPDATE message_outbox.id=message_outbox.id`, args[:len(args)-1]...); err != nil {
+				return processed, err
+			}
+		}
+	}
+	return processed, finish.Commit(ctx)
+}
+
+func messageIDs(jobs []messageJob, args []any) (string, []any) {
+	var ids strings.Builder
+	for i, job := range jobs {
+		if i > 0 {
+			ids.WriteByte(',')
+		}
+		fmt.Fprintf(&ids, "$%d", len(args)+1)
+		args = append(args, job.id)
+	}
+	return ids.String(), args
 }
 func (d *Worker) deliver(ctx context.Context, id int64, topic, key, channel, phone string) error {
 	if channel == "sms" && os.Getenv("TENCENT_SMS_APPID") != "" {
@@ -172,21 +353,26 @@ func (d *Worker) deliver(ctx context.Context, id int64, topic, key, channel, pho
 	return nil
 }
 func Run(ctx context.Context, pool *db.Database, box *securestore.Box) {
-	d := Worker{DB: pool, Box: box, URL: os.Getenv("NOTIFY_WEBHOOK_URL"), Token: os.Getenv("NOTIFY_WEBHOOK_TOKEN"), Client: &http.Client{Timeout: 10 * time.Second}}
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.MaxIdleConns = 32
+	transport.MaxIdleConnsPerHost = 32
+	transport.MaxConnsPerHost = 32
+	defer transport.CloseIdleConnections()
+	d := Worker{DB: pool, Box: box, URL: os.Getenv("NOTIFY_WEBHOOK_URL"), BulkURL: os.Getenv("NOTIFY_BULK_WEBHOOK_URL"), Token: os.Getenv("NOTIFY_WEBHOOK_TOKEN"), Client: &http.Client{Timeout: 10 * time.Second, Transport: transport}}
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 	for {
-		cycle, cancel := context.WithTimeout(ctx, 15*time.Second)
+		cycle, cancel := context.WithTimeout(ctx, 45*time.Second)
 		// Drain a bounded ready burst; the timer is idle polling, not a per-job delay.
-		for range 128 {
-			processed, err := d.tick(cycle)
+		for cycle.Err() == nil {
+			processed, err := d.Drain(cycle, 512)
 			if err != nil {
 				if cycle.Err() == nil {
 					slog.Warn("message_outbox_cycle_failed")
 				}
 				break
 			}
-			if !processed {
+			if processed == 0 {
 				break
 			}
 		}

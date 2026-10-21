@@ -8,8 +8,12 @@ permissions:
 
 jobs:
   verify:
-    name: Test, build and vet
+    name: Test, build and vet (Go ${{ matrix.go-version }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        go-version: ["1.23.2", "1.27.2"]
     services:
       mysql:
         image: mysql:8.4
@@ -40,7 +44,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
-          go-version: "1.27.2"
+          go-version: ${{ matrix.go-version }}
           cache-dependency-path: 智慧养老手表管理系统/backend/go.sum
 
       - name: Check generated OpenAPI contract

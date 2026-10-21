@@ -59,7 +59,7 @@ func (k DailyKey) Bounds() (time.Time, time.Time, error) {
 	return from, from.AddDate(0, 0, 1), nil
 }
 
-// RefreshDaily is serialized with Save's revision clock, so a completed result
+// RefreshDaily is serialized with Save's owner clock, so a completed result
 // cannot overwrite a concurrent invalidation. Error results are explicit, never 0.
 func RefreshDaily(ctx context.Context, pool *db.Database, id string) error {
 	tx, err := pool.Begin(ctx)
@@ -67,8 +67,16 @@ func RefreshDaily(ctx context.Context, pool *db.Database, id string) error {
 		return err
 	}
 	defer tx.Rollback(ctx)
-	var revision int64
-	if err = tx.QueryRow(ctx, "SELECT revision FROM health_clock WHERE id=1 FOR UPDATE").Scan(&revision); err != nil {
+	// Read the immutable owner before taking its clock lock. Keep the same lock
+	// order as sample invalidation: owner clock, then daily cache row.
+	var oldID int64
+	if err = tx.QueryRow(ctx, "SELECT old_id FROM metric_daily WHERE cache_key=$1", id).Scan(&oldID); err == pgx.ErrNoRows {
+		return nil
+	} else if err != nil {
+		return err
+	}
+	revision, err := LockOwner(ctx, tx, oldID)
+	if err != nil {
 		return err
 	}
 	var k DailyKey

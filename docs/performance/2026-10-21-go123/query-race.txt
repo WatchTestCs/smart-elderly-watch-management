@@ -1,0 +1,302 @@
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.05s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.04s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.04s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.04s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.04s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.04s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.04s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.05s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.05s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.04s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.05s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.05s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.04s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.04s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.04s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.05s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.04s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.04s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.05s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.04s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.05s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.04s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.04s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.05s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.04s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.04s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.04s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.04s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.04s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.04s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.05s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.04s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.05s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.05s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.04s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.05s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.05s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.05s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.05s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.05s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.05s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.05s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.05s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.05s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.05s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.04s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.04s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.05s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.04s)
+=== RUN   TestMySQLBoundParameters
+--- PASS: TestMySQLBoundParameters (0.00s)
+=== RUN   TestMySQLDialect
+--- PASS: TestMySQLDialect (0.00s)
+=== RUN   TestCachedQueriesNeverRetainArguments
+--- PASS: TestCachedQueriesNeverRetainArguments (0.05s)
+PASS
+ok  	careold-go/internal/db	3.365s

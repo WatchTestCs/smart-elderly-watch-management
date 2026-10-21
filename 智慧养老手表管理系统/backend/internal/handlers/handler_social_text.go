@@ -182,11 +182,13 @@ func (h *Handler) textAdd(w http.ResponseWriter, r *http.Request) {
 		response.Error500(w, ref())
 		return
 	}
+	messages := make([]notify.Message, 0, len(phones))
 	for _, target := range phones {
-		if err := notify.Enqueue(r.Context(), tx, h.Box, "announcement", strconv.FormatInt(textID, 10), target.FamilyID, target.Phone); err != nil {
-			response.Error500(w, ref())
-			return
-		}
+		messages = append(messages, notify.Message{Topic:"announcement",Key:strconv.FormatInt(textID,10),FamilyID:target.FamilyID,Phone:target.Phone})
+	}
+	if err := notify.EnqueueBatch(r.Context(), tx, h.Box, messages); err != nil {
+		response.Error500(w, ref())
+		return
 	}
 	if err := tx.Commit(r.Context()); err != nil {
 		response.Error500(w, ref())

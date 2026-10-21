@@ -31,6 +31,7 @@ import (
 // Only fully migrated database handlers are published to HTTP requests.
 type databaseService struct {
 	api       atomic.Pointer[http.Handler]
+	currentDB atomic.Pointer[dbstore.Database]
 	analytics analytics.State
 }
 
@@ -47,6 +48,17 @@ func (s *databaseService) middleware(local http.Handler) http.Handler {
 				return
 			}
 			observability.Default.Set("suining_database_ready", boolNumber(s.api.Load() != nil))
+			if pool := s.currentDB.Load(); pool != nil && pool.IsMySQL() {
+				stats := pool.SQL().Stats()
+				observability.Default.Set("suining_mysql_pool_open_connections", float64(stats.OpenConnections))
+				observability.Default.Set("suining_mysql_pool_in_use", float64(stats.InUse))
+				observability.Default.Set("suining_mysql_pool_idle", float64(stats.Idle))
+				observability.Default.Set("suining_mysql_pool_max_open_connections", float64(stats.MaxOpenConnections))
+				observability.Default.Set("suining_mysql_pool_wait_total", float64(stats.WaitCount))
+				observability.Default.Set("suining_mysql_pool_wait_seconds_total", stats.WaitDuration.Seconds())
+				observability.Default.Set("suining_mysql_pool_max_idle_closed_total", float64(stats.MaxIdleClosed))
+				observability.Default.Set("suining_mysql_pool_max_lifetime_closed_total", float64(stats.MaxLifetimeClosed))
+			}
 			observability.Default.ServeHTTP(w, r)
 			return
 		}
@@ -86,6 +98,7 @@ func watchDatabase(ctx context.Context, cfg config.Config, sessions *session.Sto
 		if workerDone != nil {
 			<-workerDone
 		}
+		service.currentDB.Store(nil)
 		if pool != nil {
 			pool.Close()
 		}
@@ -137,11 +150,15 @@ func watchDatabase(ctx context.Context, cfg config.Config, sessions *session.Sto
 			}
 		}
 		if err == nil {
+			service.currentDB.Store(pool)
+			observability.Default.Set("suining_mysql_health_probe_ok", 1)
 			if service.api.Load() == nil {
 				log.Print("database ready")
 			}
 			service.api.Store(&api)
 		} else {
+			observability.Default.Set("suining_mysql_health_probe_ok", 0)
+			observability.Default.Add("suining_mysql_health_probe_failures_total", 1)
 			if service.api.Swap(nil) != nil || firstAttempt {
 				log.Print("database unavailable; reconnecting in background")
 			}

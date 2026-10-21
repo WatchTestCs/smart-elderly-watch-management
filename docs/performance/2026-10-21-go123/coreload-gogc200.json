@@ -1,0 +1,23 @@
+{
+  "batch_max_us": 16507,
+  "batch_p50_us": 968,
+  "batch_p95_us": 1621,
+  "batch_p99_us": 2549,
+  "batch_size": 200,
+  "batches": 39180,
+  "candidate_checksum": 54852000,
+  "duration_seconds": 10,
+  "errors": 0,
+  "final_heap_alloc_bytes": 4776144,
+  "gc_pause_total_ns": 828932457,
+  "go": "go1.23.2",
+  "gogc": "200",
+  "gomaxprocs": 4,
+  "kind": "cpu-only batch",
+  "max_rss_kib": 34096,
+  "num_gc": 5386,
+  "operations": 7836000,
+  "operations_per_second": 783600,
+  "peak_heap_alloc_sample_bytes": 21298544,
+  "total_alloc_bytes": 31301867720
+}

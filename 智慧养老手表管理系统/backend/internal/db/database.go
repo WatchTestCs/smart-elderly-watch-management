@@ -43,6 +43,9 @@ type Database struct {
 	executor
 	pgPool *pgxpool.Pool
 	myPool *sql.DB
+	// healthPool keeps one reserved connection for liveness probes.
+	// A saturated application pool must not make a healthy DB appear offline.
+	healthPool *sql.DB
 }
 type Transaction struct {
 	executor
@@ -78,7 +81,8 @@ func OpenMySQL(ctx context.Context, dsn string) (*Database, error) {
 	cfg.Params["time_zone"] = "'+00:00'"
 	// Preserve the existing parameterized concatenation expressions.
 	cfg.Params["sql_mode"] = "'STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION,PIPES_AS_CONCAT'"
-	pool, err := sql.Open("mysql", cfg.FormatDSN())
+	formattedDSN := cfg.FormatDSN()
+	pool, err := sql.Open("mysql", formattedDSN)
 	if err != nil {
 		return nil, errors.New("open MySQL failed")
 	}
@@ -89,13 +93,33 @@ func OpenMySQL(ctx context.Context, dsn string) (*Database, error) {
 		pool.Close()
 		return nil, errors.New("MySQL unavailable")
 	}
-	return &Database{executor: executor{my: pool}, myPool: pool}, nil
+	// A separate one-connection pool is used ONLY for the periodic liveness
+	// probe. Probing the shared pool during a burst previously timed out while
+	// all 20 connections were in use, withdrawing the entire API with HTTP 503.
+	// Do not use the reserved connection for rule or request queries.
+	healthPool, err := sql.Open("mysql", formattedDSN)
+	if err != nil {
+		pool.Close()
+		return nil, errors.New("open MySQL health pool failed")
+	}
+	healthPool.SetMaxOpenConns(1)
+	healthPool.SetMaxIdleConns(1)
+	healthPool.SetConnMaxLifetime(5 * time.Minute)
+	if err = healthPool.PingContext(ctx); err != nil {
+		healthPool.Close()
+		pool.Close()
+		return nil, errors.New("MySQL health probe unavailable")
+	}
+	return &Database{executor: executor{my: pool}, myPool: pool, healthPool: healthPool}, nil
 }
 func (d *Database) IsMySQL() bool    { return d.myPool != nil }
 func (t *Transaction) IsMySQL() bool { return t.myTx != nil }
 func (d *Database) SQL() *sql.DB     { return d.myPool }
 func (d *Database) Close() {
 	if d.myPool != nil {
+		if d.healthPool != nil {
+			d.healthPool.Close()
+		}
 		d.myPool.Close()
 	} else {
 		d.pgPool.Close()
@@ -103,6 +127,9 @@ func (d *Database) Close() {
 }
 func (d *Database) Ping(ctx context.Context) error {
 	if d.myPool != nil {
+		if d.healthPool != nil {
+			return d.healthPool.PingContext(ctx)
+		}
 		return d.myPool.PingContext(ctx)
 	}
 	return d.pgPool.Ping(ctx)

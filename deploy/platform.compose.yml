@@ -38,9 +38,12 @@ services:
       METRICS_TOKEN_FILE: /run/secrets/metrics_token
       DESKTOP_TOKEN_FILE: /run/secrets/bootstrap_token
       NOTIFY_WEBHOOK_URL: ${NOTIFY_WEBHOOK_URL:-}
+      NOTIFY_BULK_WEBHOOK_URL: ${NOTIFY_BULK_WEBHOOK_URL:-}
       NOTIFY_WEBHOOK_TOKEN: ${NOTIFY_WEBHOOK_TOKEN:-}
       CARE_NOTIFY_WEBHOOK_URL: ${CARE_NOTIFY_WEBHOOK_URL:-}
       CARE_NOTIFY_WEBHOOK_TOKEN: ${CARE_NOTIFY_WEBHOOK_TOKEN:-}
+      CARE_NOTIFY_CONCURRENCY: ${CARE_NOTIFY_CONCURRENCY:-8}
+      RULE_DEVICE_WORKERS: ${RULE_DEVICE_WORKERS:-8}
       CARE_RECEIPT_SECRET: ${CARE_RECEIPT_SECRET:?}
     secrets: [data_key, metrics_token, bootstrap_token]
     volumes: ["images:/data/images"]

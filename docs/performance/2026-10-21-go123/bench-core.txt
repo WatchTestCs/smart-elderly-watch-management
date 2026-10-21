@@ -1,0 +1,36 @@
+goos: linux
+goarch: amd64
+pkg: careold-go/internal/rules
+cpu: AMD EPYC 9V74 80-Core Processor
+BenchmarkActivityWindow/daily_total/100/reference-4         	    8607	     37057 ns/op	   66032 B/op	     108 allocs/op
+BenchmarkActivityWindow/daily_total/100/reference-4         	   19279	     21608 ns/op	   66032 B/op	     108 allocs/op
+BenchmarkActivityWindow/daily_total/100/reference-4         	   16660	     20457 ns/op	   66032 B/op	     108 allocs/op
+BenchmarkActivityWindow/daily_total/100/stream-4            	   86860	      4564 ns/op	       0 B/op	       0 allocs/op
+BenchmarkActivityWindow/daily_total/100/stream-4            	   75397	      4939 ns/op	       0 B/op	       0 allocs/op
+BenchmarkActivityWindow/daily_total/100/stream-4            	   71044	      5049 ns/op	       0 B/op	       0 allocs/op
+BenchmarkActivityWindow/interval/100/reference-4            	    6421	     59671 ns/op	  131600 B/op	     122 allocs/op
+BenchmarkActivityWindow/interval/100/reference-4            	    9381	     39375 ns/op	  131600 B/op	     122 allocs/op
+BenchmarkActivityWindow/interval/100/reference-4            	    8610	     37317 ns/op	  131600 B/op	     122 allocs/op
+BenchmarkActivityWindow/interval/100/stream-4               	   63204	      5756 ns/op	       0 B/op	       0 allocs/op
+BenchmarkActivityWindow/interval/100/stream-4               	   72262	      5277 ns/op	       0 B/op	       0 allocs/op
+BenchmarkActivityWindow/interval/100/stream-4               	   66422	      5404 ns/op	       0 B/op	       0 allocs/op
+BenchmarkActivityWindow/daily_total/1000/reference-4        	    1312	    258189 ns/op	  802324 B/op	    1012 allocs/op
+BenchmarkActivityWindow/daily_total/1000/reference-4        	    1293	    268212 ns/op	  802325 B/op	    1012 allocs/op
+BenchmarkActivityWindow/daily_total/1000/reference-4        	    1418	    232854 ns/op	  802324 B/op	    1012 allocs/op
+BenchmarkActivityWindow/daily_total/1000/stream-4           	    8122	     44757 ns/op	       0 B/op	       0 allocs/op
+BenchmarkActivityWindow/daily_total/1000/stream-4           	    8138	     44673 ns/op	       0 B/op	       0 allocs/op
+BenchmarkActivityWindow/daily_total/1000/stream-4           	    7699	     43648 ns/op	       0 B/op	       0 allocs/op
+BenchmarkActivityWindow/interval/1000/reference-4           	     474	    677827 ns/op	 1596985 B/op	    1030 allocs/op
+BenchmarkActivityWindow/interval/1000/reference-4           	     507	    713664 ns/op	 1596985 B/op	    1030 allocs/op
+BenchmarkActivityWindow/interval/1000/reference-4           	     682	    519469 ns/op	 1596984 B/op	    1030 allocs/op
+BenchmarkActivityWindow/interval/1000/stream-4              	    7621	     52635 ns/op	       0 B/op	       0 allocs/op
+BenchmarkActivityWindow/interval/1000/stream-4              	    7311	     49952 ns/op	       0 B/op	       0 allocs/op
+BenchmarkActivityWindow/interval/1000/stream-4              	    6352	     54659 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvaluate-4                                         	  122497	      3210 ns/op	    3986 B/op	      54 allocs/op
+BenchmarkEvaluate-4                                         	  107505	      3323 ns/op	    3986 B/op	      54 allocs/op
+BenchmarkEvaluate-4                                         	  114556	      3204 ns/op	    3986 B/op	      54 allocs/op
+BenchmarkNight-4                                            	16885215	        22.75 ns/op	       0 B/op	       0 allocs/op
+BenchmarkNight-4                                            	16386566	        22.50 ns/op	       0 B/op	       0 allocs/op
+BenchmarkNight-4                                            	15395336	        21.45 ns/op	       0 B/op	       0 allocs/op
+PASS
+ok  	careold-go/internal/rules	14.525s

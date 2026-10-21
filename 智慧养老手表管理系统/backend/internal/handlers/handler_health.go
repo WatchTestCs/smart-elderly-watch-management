@@ -118,7 +118,7 @@ func (h *Handler) healthChanges(w http.ResponseWriter, r *http.Request) {
 	if !decodeHealth(w, r, &req) {
 		return
 	}
-	if req.After < 0 || req.Limit < 0 || req.Limit > 200 {
+	if req.After < 0 || req.After > health.MaxRevision || req.Limit < 0 || req.Limit > 200 {
 		write400(w, "游标或分页参数无效")
 		return
 	}
@@ -146,6 +146,10 @@ func (h *Handler) healthChanges(w http.ResponseWriter, r *http.Request) {
 		var rev int64
 		var b []byte
 		if err = rows.Scan(&rev, &b); err != nil {
+			response.Error500(w, ref())
+			return
+		}
+		if rev < 0 || rev > health.MaxRevision {
 			response.Error500(w, ref())
 			return
 		}

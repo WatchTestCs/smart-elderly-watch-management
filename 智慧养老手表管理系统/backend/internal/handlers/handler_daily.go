@@ -43,8 +43,7 @@ func (h *Handler) healthDaily(w http.ResponseWriter, r *http.Request) {
 	}
 	defer tx.Rollback(ctx)
 	// Use the same lock order as sample invalidation and the refresh worker.
-	var revision int64
-	if err = tx.QueryRow(ctx, "SELECT revision FROM health_clock WHERE id=1 FOR UPDATE").Scan(&revision); err != nil {
+	if _, err = health.LockOwner(ctx, tx, oldID); err != nil {
 		response.Error500(w, ref())
 		return
 	}

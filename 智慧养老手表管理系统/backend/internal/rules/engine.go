@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
+	"sync"
 	"time"
 
 	"careold-go/internal/db"
@@ -21,6 +23,9 @@ type Engine struct {
 	DB    *db.Database
 	Box   *securestore.Box
 	After int64
+	// Workers is configurable to keep rule transactions from monopolizing the
+	// shared SQL pool during health ingest bursts; 0 preserves the old 8-worker default.
+	Workers int
 }
 
 func (e *Engine) Tick(ctx context.Context) error {
@@ -46,9 +51,32 @@ func (e *Engine) Tick(ctx context.Context) error {
 		e.After = 0
 		return nil
 	}
-	for _, id := range ids {
-		if err = e.Device(ctx, id, time.Now().UTC()); err != nil {
-			return err
+	// Each device retains its own transaction and row lock. Bound concurrency to
+	// leave connections for ingestion and notification delivery.
+	errors := make([]error, len(ids))
+	jobs := make(chan int, len(ids))
+	for i := range ids {
+		jobs <- i
+	}
+	close(jobs)
+	var workers sync.WaitGroup
+	limit := e.Workers
+	if limit < 1 || limit > 8 {
+		limit = 8
+	}
+	for range min(limit, len(ids)) {
+		workers.Add(1)
+		go func() {
+			defer workers.Done()
+			for i := range jobs {
+				errors[i] = e.Device(ctx, ids[i], time.Now().UTC())
+			}
+		}()
+	}
+	workers.Wait()
+	for i, id := range ids {
+		if errors[i] != nil {
+			return errors[i]
 		}
 		e.After = id
 	}
@@ -185,10 +213,7 @@ func (e *Engine) Device(ctx context.Context, id int64, now time.Time) error {
 		if err != nil {
 			return err
 		}
-		samples := []health.Sample{}
-		reset := false
-		var previous *float64
-		var semantics string
+		var window activityWindow
 		for rows.Next() {
 			var b []byte
 			var sample health.Sample
@@ -198,19 +223,7 @@ func (e *Engine) Device(ctx context.Context, id int64, now time.Time) error {
 			if err = json.Unmarshal(b, &sample); err != nil {
 				break
 			}
-			if sample.Value == nil || !p.Night(sample.Start) || sample.TimeBasis == "legacy-unzoned" {
-				continue
-			}
-			if semantics != "" && semantics != sample.Semantics {
-				reset = true
-			}
-			semantics = sample.Semantics
-			if sample.Semantics == "daily_total" && previous != nil && *sample.Value < *previous {
-				reset = true
-			}
-			value := *sample.Value
-			previous = &value
-			samples = append(samples, sample)
+			window.add(p, sample, start, now)
 		}
 		if err == nil {
 			err = rows.Err()
@@ -219,21 +232,10 @@ func (e *Engine) Device(ctx context.Context, id int64, now time.Time) error {
 		if err != nil {
 			return err
 		}
-		if reset || len(samples) == 0 || len(samples) > 1000 {
+		if value, ok := window.value(); !ok {
 			in.Activity = nil
-		} else if semantics == "daily_total" {
-			if len(samples) < 2 {
-				in.Activity = nil
-			} else {
-				v.Value = *samples[len(samples)-1].Value - *samples[0].Value
-			}
 		} else {
-			stats, e := health.Aggregate(samples, start, now)
-			if e != nil || stats.Total == nil {
-				in.Activity = nil
-			} else {
-				v.Value = *stats.Total
-			}
+			v.Value = value
 		}
 	}
 
@@ -345,15 +347,21 @@ func (e *Engine) persist(ctx context.Context, tx *db.Transaction, device, old, e
 	return err
 }
 func Run(ctx context.Context, pool *db.Database, box *securestore.Box) {
-	e := Engine{DB: pool, Box: box}
+	e := Engine{DB: pool, Box: box, Workers: deviceWorkers(os.Getenv("RULE_DEVICE_WORKERS"))}
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
 	for {
 		cycle, cancel := context.WithTimeout(ctx, 20*time.Second)
-		if err := e.Tick(cycle); err != nil && cycle.Err() == nil {
+		err := e.Tick(cycle)
+		if err != nil && cycle.Err() == nil {
 			slog.Warn("rule_engine_cycle_failed")
 		}
 		cancel()
+		// Drain the remaining pages immediately; waiting between every 100
+		// devices otherwise caps a healthy deployment at 20 evaluations/second.
+		if err == nil && e.After != 0 && ctx.Err() == nil {
+			continue
+		}
 		select {
 		case <-ctx.Done():
 			return
