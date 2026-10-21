@@ -1,15 +1,21 @@
-# 2.0.6 preview 文件职责索引
+# preview 分支文件职责索引
 
-本索引逐项对应当前 preview 提交中的受版本控制文件。GitHub 文件列表显示最近提交说明，并非文件自带简介；这里提供稳定、逐文件且互不重复的职责说明。构建缓存、用户数据和 Release 安装包不属于源码清单。
+本索引覆盖当前仓库的 **522 个受版本控制文件**（核对日期：2026-10-22）。已有人工说明予以保留；新增条目根据模块与文件名概括职责，**以对应源码和测试为准**，不能代替实际功能验收。
+
+增删源码时请同步维护本文件与 [文件职责数据](file-descriptions.json)；构建缓存、真实业务数据、密钥及 Release 二进制不在表内。
+
+[项目 README](../README.md) · [系统架构](../architecture.md) · [性能证据](performance/2026-10-21-go123/README.md)
 
 | 文件 | 职责 |
 | --- | --- |
+| [.dockerignore](../.dockerignore) | 项目配置、源文件或测试资料： |
 | [.github/CODEOWNERS](../.github/CODEOWNERS) | 指定仓库代码审查负责人和受保护路径 |
-| [.github/SECURITY.md](../.github/SECURITY.md) | 说明私下报告漏洞的渠道、范围与披露流程 |
 | [.github/dependabot.yml](../.github/dependabot.yml) | 配置 GitHub Actions 与 npm 依赖更新的自动提案 |
 | [.github/pull_request_template.md](../.github/pull_request_template.md) | 提供变更目的、验证证据和风险边界的拉取请求模板 |
+| [.github/SECURITY.md](../.github/SECURITY.md) | 说明私下报告漏洞的渠道、范围与披露流程 |
 | [.github/workflows/ci.yml](../.github/workflows/ci.yml) | GitHub 工作流 Preview CI 的触发条件与执行步骤（.github/workflows/ci.yml） |
 | [.github/workflows/desktop-contract.yml](../.github/workflows/desktop-contract.yml) | GitHub 工作流 Desktop Contract 的触发条件与执行步骤（.github/workflows/desktop-contract.yml） |
+| [.github/workflows/mysql-endurance.yml](../.github/workflows/mysql-endurance.yml) | 专用 MySQL 8.4 的 20 分钟耐久测试及原始日志归档 |
 | [.github/workflows/p0-db-migration.yml](../.github/workflows/p0-db-migration.yml) | 在 CI 中验证 PostgreSQL 历史迁移顺序与结构 |
 | [.github/workflows/preview-candidate.yml](../.github/workflows/preview-candidate.yml) | GitHub 工作流 Tauri preview candidate 的触发条件与执行步骤（.github/workflows/preview-candidate.yml） |
 | [.github/workflows/preview-checks.yml](../.github/workflows/preview-checks.yml) | GitHub 工作流 Additional preview UI checks 的触发条件与执行步骤（.github/workflows/preview-checks.yml） |
@@ -18,6 +24,7 @@
 | [.github/workflows/publish-204-source.yml](../.github/workflows/publish-204-source.yml) | 2.0.4 源码 ZIP 与 SHA-256 自动发布工作流 |
 | [.github/workflows/publish-205-cleanup-source.yml](../.github/workflows/publish-205-cleanup-source.yml) | GitHub Actions 工作流 publish-205-cleanup-source：自动化触发条件与执行步骤 |
 | [.github/workflows/publish-205-source.yml](../.github/workflows/publish-205-source.yml) | 合并到 preview 后验证并发布 2.0.5 源码归档与校验文件 |
+| [.github/workflows/publish-206-source.yml](../.github/workflows/publish-206-source.yml) | GitHub Actions 自动检查或发布工作流：publish／206／source |
 | [.github/workflows/reusable-backend.yml](../.github/workflows/reusable-backend.yml) | GitHub 工作流 Reusable backend verification 的触发条件与执行步骤（.github/workflows/reusable-backend.yml） |
 | [.github/workflows/reusable-frontend.yml](../.github/workflows/reusable-frontend.yml) | GitHub 工作流 Reusable frontend verification 的触发条件与执行步骤（.github/workflows/reusable-frontend.yml） |
 | [.github/workflows/reusable-windows-package.yml](../.github/workflows/reusable-windows-package.yml) | GitHub 工作流 Reusable Tauri contract 的触发条件与执行步骤（.github/workflows/reusable-windows-package.yml） |
@@ -26,20 +33,21 @@
 | [.github/workflows/ui-quality.yml](../.github/workflows/ui-quality.yml) | GitHub 工作流 UI Quality 的触发条件与执行步骤（.github/workflows/ui-quality.yml） |
 | [.github/workflows/windows-build-smoke.yml](../.github/workflows/windows-build-smoke.yml) | GitHub 工作流 Tauri Windows build 的触发条件与执行步骤（.github/workflows/windows-build-smoke.yml） |
 | [.gitignore](../.gitignore) | 排除本地依赖、构建产物、数据库文件和密钥等非源码内容 |
+| [architecture.md](../architecture.md) | 根目录架构概览：客户端、Go 服务、MySQL 主库、PG 分析库与数据流 |
 | [CHANGELOG.md](../CHANGELOG.md) | 按版本记录用户可见的功能变化、修复和兼容性说明 |
 | [CONTRIBUTING.md](../CONTRIBUTING.md) | 中英文贡献指南：分支范围、修改规范、验证要求和安全披露方式 |
-| [LICENSE](../LICENSE) | 仓库 MIT 许可正文及 WatchTestCs 版权声明 |
-| [README.en.md](../README.en.md) | English project overview: current preview architecture, capabilities, setup, downloads, and delivery limits |
-| [README.md](../README.md) | 中文项目首页：当前 2.0.6 preview 功能、技术架构、部署选择、源码入口和历史附件边界 |
-| [architecture.md](../architecture.md) | 根目录架构概览：客户端、Go 服务、MySQL 主库、PG 分析库与数据流 |
 | [deploy/check-care-health.sh](../deploy/check-care-health.sh) | 独立服务 HTTP 和数据库就绪只读探测 |
 | [deploy/dual-db.compose.yml](../deploy/dual-db.compose.yml) | 提供独立 MySQL 与 PostgreSQL 数据服务、持久卷、回环端口和健康检查，不启动应用服务 |
 | [deploy/dual-db.env.example](../deploy/dual-db.env.example) | 双库环境变量示例，不含可直接使用的默认密码 |
+| [deploy/platform.compose.yml](../deploy/platform.compose.yml) | 编排 Go、MySQL、PostgreSQL、Nginx、Prometheus 平台服务 |
+| [deploy/platform.nginx.conf](../deploy/platform.nginx.conf) | Nginx 应用网关和反向代理配置 |
+| [deploy/prometheus.yml](../deploy/prometheus.yml) | Prometheus 指标采集配置 |
 | [deploy/suining-care.service](../deploy/suining-care.service) | Go 照护服务 systemd 常驻运行及进程重启配置 |
+| [Dockerfile](../Dockerfile) | Go 业务服务的容器构建说明 |
 | [docs/ABOUT.md](../docs/ABOUT.md) | 可用于项目介绍的中英文 About 文案，说明产品用途、当前技术栈与交付范围 |
-| [docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md) | 说明 Tauri、Go、Vue 与双库之间的进程边界、请求流程和故障行为 |
 | [docs/ARCHITECTURE_OPTIMIZATION.md](../docs/ARCHITECTURE_OPTIMIZATION.md) | ARCHITECTURE OPTIMIZATION：记录对应模块的使用、架构或维护说明 |
 | [docs/ARCHITECTURE_REPAIR_2026-10-19.md](../docs/ARCHITECTURE_REPAIR_2026-10-19.md) | 本轮整体逻辑缺陷、修复边界、复现与本地验证说明 |
+| [docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md) | 说明 Tauri、Go、Vue 与双库之间的进程边界、请求流程和故障行为 |
 | [docs/BACKEND_SCREEN_REFINEMENT.md](../docs/BACKEND_SCREEN_REFINEMENT.md) | 2026-10-16 后台屏幕布局优化记录；属于历史验收材料，当前行为以 2.0.6 源码和首页说明为准。 |
 | [docs/BUILD.md](../docs/BUILD.md) | Windows 桌面源码的依赖、版本检查、构建步骤和产物位置 |
 | [docs/CARE_2.0.4_GATES.md](../docs/CARE_2.0.4_GATES.md) | 2.0.4 照护闭环范围、尚未实测的安全交付门槛 |
@@ -48,23 +56,6 @@
 | [docs/CONTROL_REFINEMENT.md](../docs/CONTROL_REFINEMENT.md) | 历史控件边界与工具栏验收记录；当前界面契约见 docs/UI_UX.md。 |
 | [docs/DATABASE_AVAILABILITY.md](../docs/DATABASE_AVAILABILITY.md) | DATABASE AVAILABILITY：记录对应模块的使用、架构或维护说明 |
 | [docs/DEAD_CODE_AUDIT.md](../docs/DEAD_CODE_AUDIT.md) | 历史死代码审查记录；只说明当时审查范围，不代表当前代码已再次扫描。 |
-| [docs/DOWNLOADS.md](../docs/DOWNLOADS.md) | 当前 preview 源码与历史 Release 附件的版本、用途、校验和兼容性索引 |
-| [docs/DUAL_DATABASES.md](../docs/DUAL_DATABASES.md) | MySQL 主库与 PostgreSQL 分析库的配置、迁移、离线导入和故障恢复说明 |
-| [docs/FILES.md](../docs/FILES.md) | 按仓库当前 preview 树逐项列出文件与目录用途的完整索引 |
-| [docs/HANDOFF.md](../docs/HANDOFF.md) | HANDOFF：记录对应模块的使用、架构或维护说明 |
-| [docs/INTEGRATION_2.0.6.md](../docs/INTEGRATION_2.0.6.md) | 记录 2.0.6 双库与健康采样整合范围、执行验证及尚未验收事项 |
-| [docs/LINUX.md](../docs/LINUX.md) | LINUX：记录对应模块的使用、架构或维护说明 |
-| [docs/P0_DEVICE_SECRET_STORAGE.md](../docs/P0_DEVICE_SECRET_STORAGE.md) | P0 DEVICE SECRET STORAGE：记录对应模块的使用、架构或维护说明 |
-| [docs/P0_RELATIONAL_INTEGRITY.md](../docs/P0_RELATIONAL_INTEGRITY.md) | P0 RELATIONAL INTEGRITY：记录对应模块的使用、架构或维护说明 |
-| [docs/PREVIEW_ISSUE_REMEDIATION.md](../docs/PREVIEW_ISSUE_REMEDIATION.md) | 历史 preview 问题核对记录；当前修复与整合证据见 2.0.6 发布及整合说明。 |
-| [docs/PUBLICATION.md](../docs/PUBLICATION.md) | PUBLICATION：记录对应模块的使用、架构或维护说明 |
-| [docs/REFACTOR_2.0.2.md](../docs/REFACTOR_2.0.2.md) | 2.0.2 源码拆分与当时验收边界的历史记录。 |
-| [docs/RELEASE.md](../docs/RELEASE.md) | RELEASE：记录对应模块的使用、架构或维护说明 |
-| [docs/SETUP.md](../docs/SETUP.md) | SETUP：记录对应模块的使用、架构或维护说明 |
-| [docs/SUPPORT.md](../docs/SUPPORT.md) | 中英文问题反馈入口、复现模板、日志采集建议与隐私边界 |
-| [docs/TESTING.md](../docs/TESTING.md) | TESTING：记录对应模块的使用、架构或维护说明 |
-| [docs/UI_UX.md](../docs/UI_UX.md) | UI UX：记录对应模块的使用、架构或维护说明 |
-| [docs/VALIDATION.md](../docs/VALIDATION.md) | VALIDATION：记录对应模块的使用、架构或维护说明 |
 | [docs/decisions/0001-desktop-local-service-architecture.md](../docs/decisions/0001-desktop-local-service-architecture.md) | 早期 Electron 与 Spring 桌面方案的历史架构决定，已被当前 Tauri、Go 和 Vue 架构取代。 |
 | [docs/decisions/0002-local-h2-data-storage.md](../docs/decisions/0002-local-h2-data-storage.md) | 早期 H2 本地数据库方案的历史决定；当前业务数据由独立 MySQL 保存。 |
 | [docs/decisions/0003-electron-security-boundary.md](../docs/decisions/0003-electron-security-boundary.md) | 早期 Electron 渲染进程安全边界决定；当前原生边界以 Tauri 能力配置和源码为准。 |
@@ -72,8 +63,38 @@
 | [docs/decisions/0005-preview-release-model.md](../docs/decisions/0005-preview-release-model.md) | preview 分支和预发布交付模式的历史决策记录。 |
 | [docs/decisions/0006-tauri-go-postgres.md](../docs/decisions/0006-tauri-go-postgres.md) | Tauri 与 Go 桌面服务架构的决策记录；数据库主从分工以当前 MySQL/PG 说明为准。 |
 | [docs/decisions/README.md](../docs/decisions/README.md) | README：记录对应模块的使用、架构或维护说明 |
+| [docs/DEVICE_CAPABILITIES_2.0.6.md](../docs/DEVICE_CAPABILITIES_2.0.6.md) | 项目功能、设计或验证文档：DEVICE／CAPABILITIES／2.0.6 |
+| [docs/DEVICE_CAPABILITIES_VALIDATION_2.0.6.md](../docs/DEVICE_CAPABILITIES_VALIDATION_2.0.6.md) | 项目功能、设计或验证文档：DEVICE／CAPABILITIES／VALIDATION／2.0.6 |
+| [docs/DOWNLOADS.md](../docs/DOWNLOADS.md) | 当前 preview 源码与历史 Release 附件的版本、用途、校验和兼容性索引 |
+| [docs/DUAL_DATABASES.md](../docs/DUAL_DATABASES.md) | MySQL 主库与 PostgreSQL 分析库的配置、迁移、离线导入和故障恢复说明 |
 | [docs/file-descriptions.json](../docs/file-descriptions.json) | 当前版本逐文件中文职责索引，供工具与发布校验使用（docs/file-descriptions.json） |
+| [docs/FILES.md](../docs/FILES.md) | 按仓库当前 preview 树逐项列出文件与目录用途的完整索引 |
+| [docs/HANDOFF.md](../docs/HANDOFF.md) | HANDOFF：记录对应模块的使用、架构或维护说明 |
+| [docs/INTEGRATION_2.0.6.md](../docs/INTEGRATION_2.0.6.md) | 记录 2.0.6 双库与健康采样整合范围、执行验证及尚未验收事项 |
+| [docs/LINUX.md](../docs/LINUX.md) | LINUX：记录对应模块的使用、架构或维护说明 |
+| [docs/MYSQL_503_500_CONTINUATION_20261021.md](../docs/MYSQL_503_500_CONTINUATION_20261021.md) | 数据库探测与 500/503 故障调查和验收边界 |
+| [docs/P0_DEVICE_SECRET_STORAGE.md](../docs/P0_DEVICE_SECRET_STORAGE.md) | P0 DEVICE SECRET STORAGE：记录对应模块的使用、架构或维护说明 |
+| [docs/P0_RELATIONAL_INTEGRITY.md](../docs/P0_RELATIONAL_INTEGRITY.md) | P0 RELATIONAL INTEGRITY：记录对应模块的使用、架构或维护说明 |
+| [docs/PERFORMANCE_2.0.6.md](../docs/PERFORMANCE_2.0.6.md) | 项目功能、设计或验证文档：PERFORMANCE／2.0.6 |
+| [docs/performance/2026-10-21-go123/bench-core.txt](../docs/performance/2026-10-21-go123/bench-core.txt) | Go 1.23 CPU 或竞态检测原始日志：bench-core.txt |
+| [docs/performance/2026-10-21-go123/coreload-gogc100-repeat.json](../docs/performance/2026-10-21-go123/coreload-gogc100-repeat.json) | Go 1.23 CPU/GC 隔离负载原始数据；不是数据库吞吐 |
+| [docs/performance/2026-10-21-go123/coreload-gogc100.json](../docs/performance/2026-10-21-go123/coreload-gogc100.json) | Go 1.23 CPU/GC 隔离负载原始数据；不是数据库吞吐 |
+| [docs/performance/2026-10-21-go123/coreload-gogc200-repeat.json](../docs/performance/2026-10-21-go123/coreload-gogc200-repeat.json) | Go 1.23 CPU/GC 隔离负载原始数据；不是数据库吞吐 |
+| [docs/performance/2026-10-21-go123/coreload-gogc200.json](../docs/performance/2026-10-21-go123/coreload-gogc200.json) | Go 1.23 CPU/GC 隔离负载原始数据；不是数据库吞吐 |
+| [docs/performance/2026-10-21-go123/coreload-race.json](../docs/performance/2026-10-21-go123/coreload-race.json) | Go 1.23 CPU/GC 隔离负载原始数据；不是数据库吞吐 |
+| [docs/performance/2026-10-21-go123/expanded-report.md](../docs/performance/2026-10-21-go123/expanded-report.md) | 项目功能、设计或验证文档：expanded／report |
+| [docs/performance/2026-10-21-go123/FIRST_20MIN_INCORRECT_DEMONSTRATION.md](../docs/performance/2026-10-21-go123/FIRST_20MIN_INCORRECT_DEMONSTRATION.md) | 首次中止长压测错误演示，不构成有效性能基准 |
+| [docs/performance/2026-10-21-go123/first_20min_incorrect_evidence.json](../docs/performance/2026-10-21-go123/first_20min_incorrect_evidence.json) | 历史中止压测中未经验证信息的结构化说明 |
+| [docs/performance/2026-10-21-go123/INTERRUPTED-MYSQL-SOAK.md](../docs/performance/2026-10-21-go123/INTERRUPTED-MYSQL-SOAK.md) | 中止测试与独立耐久复测的证据说明 |
+| [docs/performance/2026-10-21-go123/query-race.txt](../docs/performance/2026-10-21-go123/query-race.txt) | Go 1.23 CPU 或竞态检测原始日志：query-race.txt |
+| [docs/performance/2026-10-21-go123/README.md](../docs/performance/2026-10-21-go123/README.md) | Go 1.23 性能证据导航和测试边界 |
+| [docs/performance/2026-10-21-go123/test-race.txt](../docs/performance/2026-10-21-go123/test-race.txt) | Go 1.23 CPU 或竞态检测原始日志：test-race.txt |
+| [docs/PLATFORM_UPGRADE_2.0.6.md](../docs/PLATFORM_UPGRADE_2.0.6.md) | 2.0.6 平台升级、安全和数据库会话说明 |
+| [docs/PREVIEW_ISSUE_REMEDIATION.md](../docs/PREVIEW_ISSUE_REMEDIATION.md) | 历史 preview 问题核对记录；当前修复与整合证据见 2.0.6 发布及整合说明。 |
 | [docs/preview-remediation-validation.json](../docs/preview-remediation-validation.json) | preview-remediation-validation.json：为 docs 提供构建、依赖或运行配置 |
+| [docs/PUBLICATION.md](../docs/PUBLICATION.md) | PUBLICATION：记录对应模块的使用、架构或维护说明 |
+| [docs/REFACTOR_2.0.2.md](../docs/REFACTOR_2.0.2.md) | 2.0.2 源码拆分与当时验收边界的历史记录。 |
+| [docs/RELEASE.md](../docs/RELEASE.md) | RELEASE：记录对应模块的使用、架构或维护说明 |
 | [docs/releases/2.0.1.md](../docs/releases/2.0.1.md) | 2.0.1 Preview 历史发行说明，记录当时的功能范围和附件。 |
 | [docs/releases/2.0.2.md](../docs/releases/2.0.2.md) | 2.0.2 历史 Windows 与 Linux 附件发行说明，不代表当前 preview 源码版本。 |
 | [docs/releases/2.0.3.md](../docs/releases/2.0.3.md) | 2.0.3：记录对应模块的使用、架构或维护说明 |
@@ -95,20 +116,40 @@
 | [docs/screenshots/setup-desktop.png](../docs/screenshots/setup-desktop.png) | 打包软件首次设置实拍：创建本机管理员，展示无默认账号的启动流程。（docs/screenshots/setup-desktop.png） |
 | [docs/screenshots/tauri-2.0.2-main.png](../docs/screenshots/tauri-2.0.2-main.png) | 2.0.2 实际安装后的 Tauri WebView 截图：真实登录后的管理员运营总览，使用临时测试库（docs/screenshots/tauri-2.0.2-main.png） |
 | [docs/screenshots/tauri-2.0.2-offline.png](../docs/screenshots/tauri-2.0.2-offline.png) | 2.0.2 实际安装后的 Tauri WebView 截图：数据库离线连接状态（docs/screenshots/tauri-2.0.2-offline.png） |
+| [docs/SETUP.md](../docs/SETUP.md) | SETUP：记录对应模块的使用、架构或维护说明 |
+| [docs/SUPPORT.md](../docs/SUPPORT.md) | 中英文问题反馈入口、复现模板、日志采集建议与隐私边界 |
+| [docs/TESTING.md](../docs/TESTING.md) | TESTING：记录对应模块的使用、架构或维护说明 |
+| [docs/UI_UX.md](../docs/UI_UX.md) | UI UX：记录对应模块的使用、架构或维护说明 |
+| [docs/VALIDATION.md](../docs/VALIDATION.md) | VALIDATION：记录对应模块的使用、架构或维护说明 |
 | [docs/verification.json](../docs/verification.json) | 此次预览版的测试数量、系统环境、签名状态和审计边界摘要。（docs/verification.json） |
 | [docs/verification/2.0.6-integration.json](../docs/verification/2.0.6-integration.json) | 2.0.6-integration.json：为 docs/verification 提供构建、依赖或运行配置 |
+| [docs/verification/performance-2.0.6.json](../docs/verification/performance-2.0.6.json) | 对应测试与性能实验的结构化验证数据：performance-2.0.6.json |
+| [docs/verification/performance-tests.json](../docs/verification/performance-tests.json) | 对应测试与性能实验的结构化验证数据：performance-tests.json |
+| [docs/verification/platform-2.0.6.md](../docs/verification/platform-2.0.6.md) | 对应测试与性能实验的结构化验证数据：platform-2.0.6.md |
+| [docs/verification/platform-load-c1.json](../docs/verification/platform-load-c1.json) | 对应测试与性能实验的结构化验证数据：platform-load-c1.json |
+| [docs/verification/platform-load-c8.json](../docs/verification/platform-load-c8.json) | 对应测试与性能实验的结构化验证数据：platform-load-c8.json |
+| [docs/verification/platform-tests.json](../docs/verification/platform-tests.json) | 对应测试与性能实验的结构化验证数据：platform-tests.json |
+| [LICENSE](../LICENSE) | 仓库 MIT 许可正文及 WatchTestCs 版权声明 |
+| [README.en.md](../README.en.md) | English project overview: current preview architecture, capabilities, setup, downloads, and delivery limits |
+| [README.md](../README.md) | 中文项目首页：当前 2.0.6 preview 功能、技术架构、部署选择、源码入口和历史附件边界 |
+| [scripts/bootstrap-admin.py](../scripts/bootstrap-admin.py) | 开发、测试、迁移或运维辅助脚本：bootstrap／admin |
+| [scripts/cluster-loadtest.py](../scripts/cluster-loadtest.py) | 多实例 HTTP 合成负载与性能统计工具 |
+| [scripts/generate-openapi.py](../scripts/generate-openapi.py) | 开发、测试、迁移或运维辅助脚本：generate／openapi |
+| [scripts/loadtest.py](../scripts/loadtest.py) | 开发、测试、迁移或运维辅助脚本：loadtest |
+| [scripts/start-platform.py](../scripts/start-platform.py) | 生成缺失的本地密钥、验证并启动 Compose 平台 |
 | [tests/ui/ui-smoke.mjs](../tests/ui/ui-smoke.mjs) | 无需浏览器自动化依赖的 UI 可访问性冒烟检查脚本。 |
 | [智慧养老手表管理系统/.gitignore](../智慧养老手表管理系统/.gitignore) | 桌面工程的生成目录、数据库、日志和私钥排除配置。（智慧养老手表管理系统/.gitignore） |
-| [智慧养老手表管理系统/LICENSE](../智慧养老手表管理系统/LICENSE) | 桌面源码工程副本的 MIT 许可，方便独立源码包保留授权。（智慧养老手表管理系统/LICENSE） |
-| [智慧养老手表管理系统/README.md](../智慧养老手表管理系统/README.md) | 桌面源码工程导航：Go 后端、Vue 前端、Tauri 容器、数据目录和开发命令 |
-| [智慧养老手表管理系统/backend/README.md](../智慧养老手表管理系统/backend/README.md) | Go 服务配置、MySQL 主库、可选 PostgreSQL 分析库、迁移、测试与运行说明。 |
-| [智慧养老手表管理系统/backend/VERSION](../智慧养老手表管理系统/backend/VERSION) | Go 后端对应的产品版本（智慧养老手表管理系统/backend/VERSION） |
 | [智慧养老手表管理系统/backend/cmd/analytics-backfill/main.go](../智慧养老手表管理系统/backend/cmd/analytics-backfill/main.go) | 显式 --apply 生成 PG 投影重建事件的入口 |
+| [智慧养老手表管理系统/backend/cmd/healthcheck/main.go](../智慧养老手表管理系统/backend/cmd/healthcheck/main.go) | Go 后端命令行程序：main |
 | [智慧养老手表管理系统/backend/cmd/migrate/main.go](../智慧养老手表管理系统/backend/cmd/migrate/main.go) | Go migrate 模块：实现 main 相关服务逻辑 |
-| [智慧养老手表管理系统/backend/cmd/server/database.go](../智慧养老手表管理系统/backend/cmd/server/database.go) | Go server 模块：实现 database 相关服务逻辑 |
+| [智慧养老手表管理系统/backend/cmd/mock-gateway/main.go](../智慧养老手表管理系统/backend/cmd/mock-gateway/main.go) | Go 后端命令行程序：main |
+| [智慧养老手表管理系统/backend/cmd/protect-notes/main.go](../智慧养老手表管理系统/backend/cmd/protect-notes/main.go) | Go 后端命令行程序：main |
+| [智慧养老手表管理系统/backend/cmd/server/capabilities_privacy_test.go](../智慧养老手表管理系统/backend/cmd/server/capabilities_privacy_test.go) | 验证后端 capabilities／privacy／test 的行为、边界或回归 |
 | [智慧养老手表管理系统/backend/cmd/server/database_test.go](../智慧养老手表管理系统/backend/cmd/server/database_test.go) | database_test 自动化回归或验收脚本：检查对应模块的行为边界 |
+| [智慧养老手表管理系统/backend/cmd/server/database.go](../智慧养老手表管理系统/backend/cmd/server/database.go) | Go server 模块：实现 database 相关服务逻辑 |
 | [智慧养老手表管理系统/backend/cmd/server/desktop.go](../智慧养老手表管理系统/backend/cmd/server/desktop.go) | Go server 模块：实现 desktop 相关服务逻辑 |
 | [智慧养老手表管理系统/backend/cmd/server/main.go](../智慧养老手表管理系统/backend/cmd/server/main.go) | Go server 模块：实现 main 相关服务逻辑 |
+| [智慧养老手表管理系统/backend/cmd/server/metrics_test.go](../智慧养老手表管理系统/backend/cmd/server/metrics_test.go) | 验证后端 metrics／test 的行为、边界或回归 |
 | [智慧养老手表管理系统/backend/cmd/server/parentwatch_unix.go](../智慧养老手表管理系统/backend/cmd/server/parentwatch_unix.go) | Go server 模块：实现 parentwatch unix 相关服务逻辑 |
 | [智慧养老手表管理系统/backend/cmd/server/parentwatch_windows.go](../智慧养老手表管理系统/backend/cmd/server/parentwatch_windows.go) | Go server 模块：实现 parentwatch windows 相关服务逻辑 |
 | [智慧养老手表管理系统/backend/cmd/server/privacy.go](../智慧养老手表管理系统/backend/cmd/server/privacy.go) | 在认证与敏感数据处理之间执行失败关闭的访问审计中间件 |
@@ -118,34 +159,54 @@
 | [智慧养老手表管理系统/backend/go.mod](../智慧养老手表管理系统/backend/go.mod) | Go 后端直接与间接模块依赖及语言最低版本（智慧养老手表管理系统/backend/go.mod） |
 | [智慧养老手表管理系统/backend/go.sum](../智慧养老手表管理系统/backend/go.sum) | Go 模块内容与版本校验摘要（智慧养老手表管理系统/backend/go.sum） |
 | [智慧养老手表管理系统/backend/internal/analytics/backfill.go](../智慧养老手表管理系统/backend/internal/analytics/backfill.go) | 在业务行共享锁下分批生成分析快照事件 |
-| [智慧养老手表管理系统/backend/internal/analytics/sync.go](../智慧养老手表管理系统/backend/internal/analytics/sync.go) | 从 MySQL 持久化 outbox 幂等同步分析投影至 PostgreSQL |
 | [智慧养老手表管理系统/backend/internal/analytics/sync_test.go](../智慧养老手表管理系统/backend/internal/analytics/sync_test.go) | 双库同步集成测试：验证 PG 故障、队列保留、恢复重放、删除墓碑和回填。 |
+| [智慧养老手表管理系统/backend/internal/analytics/sync.go](../智慧养老手表管理系统/backend/internal/analytics/sync.go) | 从 MySQL 持久化 outbox 幂等同步分析投影至 PostgreSQL |
+| [智慧养老手表管理系统/backend/internal/apidoc/aliases.json](../智慧养老手表管理系统/backend/internal/apidoc/aliases.json) | Go 后端模块：aliases |
+| [智慧养老手表管理系统/backend/internal/apidoc/api_test.go](../智慧养老手表管理系统/backend/internal/apidoc/api_test.go) | 验证后端 api／test 的行为、边界或回归 |
+| [智慧养老手表管理系统/backend/internal/apidoc/api.go](../智慧养老手表管理系统/backend/internal/apidoc/api.go) | Go 后端模块：api |
+| [智慧养老手表管理系统/backend/internal/apidoc/openapi.json](../智慧养老手表管理系统/backend/internal/apidoc/openapi.json) | Go 后端模块：openapi |
 | [智慧养老手表管理系统/backend/internal/auth/auth.go](../智慧养老手表管理系统/backend/internal/auth/auth.go) | 角色授权、公开路径边界与密码验证（智慧养老手表管理系统/backend/internal/auth/auth.go） |
 | [智慧养老手表管理系统/backend/internal/auth/password.go](../智慧养老手表管理系统/backend/internal/auth/password.go) | Go auth 模块：实现 password 相关服务逻辑 |
 | [智慧养老手表管理系统/backend/internal/auth/regression_test.go](../智慧养老手表管理系统/backend/internal/auth/regression_test.go) | 已审查问题的数据库契约、安全与竞争回归（智慧养老手表管理系统/backend/internal/auth/regression_test.go） |
-| [智慧养老手表管理系统/backend/internal/care/worker.go](../智慧养老手表管理系统/backend/internal/care/worker.go) | 持久化通知 outbox、带幂等键的发送及超时升级后台作业 |
+| [智慧养老手表管理系统/backend/internal/care/fence_notification_test.go](../智慧养老手表管理系统/backend/internal/care/fence_notification_test.go) | 验证后端 fence／notification／test 的行为、边界或回归 |
+| [智慧养老手表管理系统/backend/internal/care/scheduler_test.go](../智慧养老手表管理系统/backend/internal/care/scheduler_test.go) | 验证后端 scheduler／test 的行为、边界或回归 |
+| [智慧养老手表管理系统/backend/internal/care/scheduler.go](../智慧养老手表管理系统/backend/internal/care/scheduler.go) | Go 后端模块：scheduler |
 | [智慧养老手表管理系统/backend/internal/care/worker_test.go](../智慧养老手表管理系统/backend/internal/care/worker_test.go) | 照护通知工作进程测试：覆盖幂等发送、失败重试、送达状态和超时升级；测试可使用 MySQL 或旧 PostgreSQL 配置。 |
-| [智慧养老手表管理系统/backend/internal/config/config.go](../智慧养老手表管理系统/backend/internal/config/config.go) | 服务地址、会话、图片目录与数据库环境变量配置（智慧养老手表管理系统/backend/internal/config/config.go） |
+| [智慧养老手表管理系统/backend/internal/care/worker.go](../智慧养老手表管理系统/backend/internal/care/worker.go) | 持久化通知 outbox、带幂等键的发送及超时升级后台作业 |
+| [智慧养老手表管理系统/backend/internal/commands/commands_test.go](../智慧养老手表管理系统/backend/internal/commands/commands_test.go) | 验证后端 commands／test 的行为、边界或回归 |
+| [智慧养老手表管理系统/backend/internal/commands/commands.go](../智慧养老手表管理系统/backend/internal/commands/commands.go) | Go 后端模块：commands |
 | [智慧养老手表管理系统/backend/internal/config/config_test.go](../智慧养老手表管理系统/backend/internal/config/config_test.go) | config_test 自动化回归或验收脚本：检查对应模块的行为边界 |
+| [智慧养老手表管理系统/backend/internal/config/config.go](../智慧养老手表管理系统/backend/internal/config/config.go) | 服务地址、会话、图片目录与数据库环境变量配置（智慧养老手表管理系统/backend/internal/config/config.go） |
 | [智慧养老手表管理系统/backend/internal/csrf/csrf.go](../智慧养老手表管理系统/backend/internal/csrf/csrf.go) | 会话 CSRF 校验与设备/原生令牌接口豁免（智慧养老手表管理系统/backend/internal/csrf/csrf.go） |
-| [智慧养老手表管理系统/backend/internal/db/database.go](../智慧养老手表管理系统/backend/internal/db/database.go) | Go 数据库抽象：MySQL 事务、占位符适配和旧 PG 测试兼容入口 |
+| [智慧养老手表管理系统/backend/internal/db/capabilities_migration_test.go](../智慧养老手表管理系统/backend/internal/db/capabilities_migration_test.go) | 验证后端 capabilities／migration／test 的行为、边界或回归 |
 | [智慧养老手表管理系统/backend/internal/db/database_test.go](../智慧养老手表管理系统/backend/internal/db/database_test.go) | MySQL SQL 适配测试：覆盖占位符转换、重复参数和字面值边界。 |
-| [智慧养老手表管理系统/backend/internal/db/db.go](../智慧养老手表管理系统/backend/internal/db/db.go) | 旧 PostgreSQL 数据库连接池、迁移和事务封装；当前核心业务库由 MySQL database.go 管理。 |
+| [智慧养老手表管理系统/backend/internal/db/database.go](../智慧养老手表管理系统/backend/internal/db/database.go) | Go 数据库抽象：MySQL 事务、占位符适配和旧 PG 测试兼容入口 |
 | [智慧养老手表管理系统/backend/internal/db/db_test.go](../智慧养老手表管理系统/backend/internal/db/db_test.go) | db_test 自动化回归或验收脚本：检查对应模块的行为边界 |
+| [智慧养老手表管理系统/backend/internal/db/db.go](../智慧养老手表管理系统/backend/internal/db/db.go) | 旧 PostgreSQL 数据库连接池、迁移和事务封装；当前核心业务库由 MySQL database.go 管理。 |
 | [智慧养老手表管理系统/backend/internal/db/dbtest/mysql.go](../智慧养老手表管理系统/backend/internal/db/dbtest/mysql.go) | 测试专用随机 MySQL 数据库的创建、迁移与清理 |
 | [智慧养老手表管理系统/backend/internal/db/mysql_migrations.go](../智慧养老手表管理系统/backend/internal/db/mysql_migrations.go) | 连接级迁移锁、校验和与可恢复 DDL 执行 |
-| [智慧养老手表管理系统/backend/internal/db/transfer.go](../智慧养老手表管理系统/backend/internal/db/transfer.go) | 只读读取旧 PostgreSQL 业务数据，并在事务中导入空 MySQL 主库 |
+| [智慧养老手表管理系统/backend/internal/db/performance_test.go](../智慧养老手表管理系统/backend/internal/db/performance_test.go) | 验证后端 performance／test 的行为、边界或回归 |
+| [智慧养老手表管理系统/backend/internal/db/probe_integration_test.go](../智慧养老手表管理系统/backend/internal/db/probe_integration_test.go) | 业务连接池被占用时独立健康探测的 MySQL 回归测试 |
+| [智慧养老手表管理系统/backend/internal/db/query_plan_test.go](../智慧养老手表管理系统/backend/internal/db/query_plan_test.go) | 验证后端 query／plan／test 的行为、边界或回归 |
 | [智慧养老手表管理系统/backend/internal/db/transfer_integration_test.go](../智慧养老手表管理系统/backend/internal/db/transfer_integration_test.go) | 旧 PostgreSQL 到空 MySQL 导入测试：验证预检、中文与 NULL 保留、拒绝覆盖和事务回滚。 |
+| [智慧养老手表管理系统/backend/internal/db/transfer.go](../智慧养老手表管理系统/backend/internal/db/transfer.go) | 只读读取旧 PostgreSQL 业务数据，并在事务中导入空 MySQL 主库 |
+| [智慧养老手表管理系统/backend/internal/fence/fence_test.go](../智慧养老手表管理系统/backend/internal/fence/fence_test.go) | 验证后端 fence／test 的行为、边界或回归 |
+| [智慧养老手表管理系统/backend/internal/fence/fence.go](../智慧养老手表管理系统/backend/internal/fence/fence.go) | Go 后端模块：fence |
 | [智慧养老手表管理系统/backend/internal/handlers/architecture_integration_test.go](../智慧养老手表管理系统/backend/internal/handlers/architecture_integration_test.go) | MySQL 建档、字段映射、设备归属、缺测、照护分页和独立复核的架构回归测试。 |
+| [智慧养老手表管理系统/backend/internal/handlers/capabilities_integration_test.go](../智慧养老手表管理系统/backend/internal/handlers/capabilities_integration_test.go) | 验证后端 capabilities／integration／test 的行为、边界或回归 |
+| [智慧养老手表管理系统/backend/internal/handlers/capability_worker.go](../智慧养老手表管理系统/backend/internal/handlers/capability_worker.go) | Go HTTP 处理器／后台业务：capability／worker |
 | [智慧养老手表管理系统/backend/internal/handlers/care_integration_test.go](../智慧养老手表管理系统/backend/internal/handlers/care_integration_test.go) | SOS 去重、权限、审计、送达回执与流程集成测试 |
 | [智慧养老手表管理系统/backend/internal/handlers/care_operations_test.go](../智慧养老手表管理系统/backend/internal/handlers/care_operations_test.go) | 岗位权限、敏感审计及服务心跳集成测试 |
 | [智慧养老手表管理系统/backend/internal/handlers/care_receipt_race_test.go](../智慧养老手表管理系统/backend/internal/handlers/care_receipt_race_test.go) | 网关在发送中立即送达时的竞态回归测试 |
 | [智慧养老手表管理系统/backend/internal/handlers/handler_alarm_process.go](../智慧养老手表管理系统/backend/internal/handlers/handler_alarm_process.go) | Go 后端按职责拆分的 alarm process 模块 |
+| [智慧养老手表管理系统/backend/internal/handlers/handler_alert_review.go](../智慧养老手表管理系统/backend/internal/handlers/handler_alert_review.go) | Go HTTP 处理器／后台业务：handler／alert／review |
 | [智慧养老手表管理系统/backend/internal/handlers/handler_auth.go](../智慧养老手表管理系统/backend/internal/handlers/handler_auth.go) | 管理员初始化、会话登录、退出及账号安全接口（智慧养老手表管理系统/backend/internal/handlers/handler_auth.go） |
 | [智慧养老手表管理系统/backend/internal/handlers/handler_care_incident.go](../智慧养老手表管理系统/backend/internal/handlers/handler_care_incident.go) | 管理员照护任务、接单、处置、复核及事件履历 API |
 | [智慧养老手表管理系统/backend/internal/handlers/handler_care_operations.go](../智慧养老手表管理系统/backend/internal/handlers/handler_care_operations.go) | 主管服务诊断、照护岗位授权校验与任务读取审计 |
 | [智慧养老手表管理系统/backend/internal/handlers/handler_care_receipt.go](../智慧养老手表管理系统/backend/internal/handlers/handler_care_receipt.go) | 独立签名验证的送达回执处理 API |
 | [智慧养老手表管理系统/backend/internal/handlers/handler_care_staff.go](../智慧养老手表管理系统/backend/internal/handlers/handler_care_staff.go) | 主管配置岗位、读取敏感访问审计及管理人员列表 |
+| [智慧养老手表管理系统/backend/internal/handlers/handler_commands.go](../智慧养老手表管理系统/backend/internal/handlers/handler_commands.go) | Go HTTP 处理器／后台业务：handler／commands |
+| [智慧养老手表管理系统/backend/internal/handlers/handler_daily.go](../智慧养老手表管理系统/backend/internal/handlers/handler_daily.go) | Go HTTP 处理器／后台业务：handler／daily |
 | [智慧养老手表管理系统/backend/internal/handlers/handler_device_admin.go](../智慧养老手表管理系统/backend/internal/handlers/handler_device_admin.go) | Go 后端按职责拆分的 device admin 模块 |
 | [智慧养老手表管理系统/backend/internal/handlers/handler_device_alert_actions.go](../智慧养老手表管理系统/backend/internal/handlers/handler_device_alert_actions.go) | Go 后端按职责拆分的 device alert actions 模块 |
 | [智慧养老手表管理系统/backend/internal/handlers/handler_device_alerts.go](../智慧养老手表管理系统/backend/internal/handlers/handler_device_alerts.go) | Go 后端按职责拆分的 device alerts 模块 |
@@ -154,42 +215,78 @@
 | [智慧养老手表管理系统/backend/internal/handlers/handler_device_protocol.go](../智慧养老手表管理系统/backend/internal/handlers/handler_device_protocol.go) | Go 后端按职责拆分的 device protocol 模块 |
 | [智慧养老手表管理系统/backend/internal/handlers/handler_device_repository.go](../智慧养老手表管理系统/backend/internal/handlers/handler_device_repository.go) | Go 后端按职责拆分的 device repository 模块 |
 | [智慧养老手表管理系统/backend/internal/handlers/handler_device_telemetry.go](../智慧养老手表管理系统/backend/internal/handlers/handler_device_telemetry.go) | Go 后端按职责拆分的 device telemetry 模块 |
-| [智慧养老手表管理系统/backend/internal/handlers/handler_family.go](../智慧养老手表管理系统/backend/internal/handlers/handler_family.go) | 家属账号、邀请码领取与长者关联管理（智慧养老手表管理系统/backend/internal/handlers/handler_family.go） |
 | [智慧养老手表管理系统/backend/internal/handlers/handler_family_invite_join.go](../智慧养老手表管理系统/backend/internal/handlers/handler_family_invite_join.go) | Go 后端按职责拆分的 family invite join 模块 |
 | [智慧养老手表管理系统/backend/internal/handlers/handler_family_invites.go](../智慧养老手表管理系统/backend/internal/handlers/handler_family_invites.go) | Go 后端按职责拆分的 family invites 模块 |
+| [智慧养老手表管理系统/backend/internal/handlers/handler_family.go](../智慧养老手表管理系统/backend/internal/handlers/handler_family.go) | 家属账号、邀请码领取与长者关联管理（智慧养老手表管理系统/backend/internal/handlers/handler_family.go） |
+| [智慧养老手表管理系统/backend/internal/handlers/handler_fences.go](../智慧养老手表管理系统/backend/internal/handlers/handler_fences.go) | Go HTTP 处理器／后台业务：handler／fences |
 | [智慧养老手表管理系统/backend/internal/handlers/handler_health.go](../智慧养老手表管理系统/backend/internal/handlers/handler_health.go) | 健康采样批量写入、按长者查询和增量变更接口 |
-| [智慧养老手表管理系统/backend/internal/handlers/handler_old.go](../智慧养老手表管理系统/backend/internal/handlers/handler_old.go) | 长者档案、关联检查和删除约束（智慧养老手表管理系统/backend/internal/handlers/handler_old.go） |
+| [智慧养老手表管理系统/backend/internal/handlers/handler_notifications.go](../智慧养老手表管理系统/backend/internal/handlers/handler_notifications.go) | Go HTTP 处理器／后台业务：handler／notifications |
 | [智慧养老手表管理系统/backend/internal/handlers/handler_old_person.go](../智慧养老手表管理系统/backend/internal/handlers/handler_old_person.go) | Go 后端按职责拆分的 old person 模块 |
+| [智慧养老手表管理系统/backend/internal/handlers/handler_old.go](../智慧养老手表管理系统/backend/internal/handlers/handler_old.go) | 长者档案、关联检查和删除约束（智慧养老手表管理系统/backend/internal/handlers/handler_old.go） |
 | [智慧养老手表管理系统/backend/internal/handlers/handler_position.go](../智慧养老手表管理系统/backend/internal/handlers/handler_position.go) | Go 后端按职责拆分的 position 模块 |
-| [智慧养老手表管理系统/backend/internal/handlers/handler_social.go](../智慧养老手表管理系统/backend/internal/handlers/handler_social.go) | 平台公告、生活记录与互动接口（智慧养老手表管理系统/backend/internal/handlers/handler_social.go） |
+| [智慧养老手表管理系统/backend/internal/handlers/handler_rules.go](../智慧养老手表管理系统/backend/internal/handlers/handler_rules.go) | Go HTTP 处理器／后台业务：handler／rules |
+| [智慧养老手表管理系统/backend/internal/handlers/handler_security.go](../智慧养老手表管理系统/backend/internal/handlers/handler_security.go) | Go HTTP 处理器／后台业务：handler／security |
 | [智慧养老手表管理系统/backend/internal/handlers/handler_social_images.go](../智慧养老手表管理系统/backend/internal/handlers/handler_social_images.go) | Go 后端按职责拆分的 social images 模块 |
 | [智慧养老手表管理系统/backend/internal/handlers/handler_social_pictures.go](../智慧养老手表管理系统/backend/internal/handlers/handler_social_pictures.go) | Go 后端按职责拆分的 social pictures 模块 |
-| [智慧养老手表管理系统/backend/internal/handlers/handler_social_sms.go](../智慧养老手表管理系统/backend/internal/handlers/handler_social_sms.go) | Go 后端按职责拆分的 social sms 模块 |
 | [智慧养老手表管理系统/backend/internal/handlers/handler_social_text.go](../智慧养老手表管理系统/backend/internal/handlers/handler_social_text.go) | Go 后端按职责拆分的 social text 模块 |
+| [智慧养老手表管理系统/backend/internal/handlers/handler_social.go](../智慧养老手表管理系统/backend/internal/handlers/handler_social.go) | 平台公告、生活记录与互动接口（智慧养老手表管理系统/backend/internal/handlers/handler_social.go） |
 | [智慧养老手表管理系统/backend/internal/handlers/handler_statistics.go](../智慧养老手表管理系统/backend/internal/handlers/handler_statistics.go) | 读取 MySQL 主库并提供总览、健康和照护统计接口。 |
 | [智慧养老手表管理系统/backend/internal/handlers/handler_user.go](../智慧养老手表管理系统/backend/internal/handlers/handler_user.go) | 用户档案与角色权限管理接口（智慧养老手表管理系统/backend/internal/handlers/handler_user.go） |
-| [智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go](../智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go) | 健康数据、设备上报、位置与求助接口（智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go） |
 | [智慧养老手表管理系统/backend/internal/handlers/handler_vitals_measurements.go](../智慧养老手表管理系统/backend/internal/handlers/handler_vitals_measurements.go) | Go 后端按职责拆分的 vitals measurements 模块 |
 | [智慧养老手表管理系统/backend/internal/handlers/handler_vitals_ratepre.go](../智慧养老手表管理系统/backend/internal/handlers/handler_vitals_ratepre.go) | Go 后端按职责拆分的 vitals ratepre 模块 |
 | [智慧养老手表管理系统/backend/internal/handlers/handler_vitals_steps.go](../智慧养老手表管理系统/backend/internal/handlers/handler_vitals_steps.go) | Go 后端按职责拆分的 vitals steps 模块 |
+| [智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go](../智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go) | 健康数据、设备上报、位置与求助接口（智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go） |
 | [智慧养老手表管理系统/backend/internal/handlers/handler_watch_info.go](../智慧养老手表管理系统/backend/internal/handlers/handler_watch_info.go) | Go 后端按职责拆分的 watch info 模块 |
 | [智慧养老手表管理系统/backend/internal/handlers/handlers.go](../智慧养老手表管理系统/backend/internal/handlers/handlers.go) | 业务路由注册、共享处理器与依赖装配（智慧养老手表管理系统/backend/internal/handlers/handlers.go） |
 | [智慧养老手表管理系统/backend/internal/handlers/health_integration_test.go](../智慧养老手表管理系统/backend/internal/handlers/health_integration_test.go) | health_integration_test 自动化回归或验收脚本：检查对应模块的行为边界 |
 | [智慧养老手表管理系统/backend/internal/handlers/integration_test.go](../智慧养老手表管理系统/backend/internal/handlers/integration_test.go) | 后端业务集成测试：隔离测试数据库中的鉴权、事务与接口回归；可用 MySQL 或旧 PostgreSQL 测试配置。 |
+| [智慧养老手表管理系统/backend/internal/handlers/mysql_endurance_test.go](../智慧养老手表管理系统/backend/internal/handlers/mysql_endurance_test.go) | 真 MySQL 合成健康数据与规则扫描耐久测试 |
+| [智慧养老手表管理系统/backend/internal/handlers/platform_integration_test.go](../智慧养老手表管理系统/backend/internal/handlers/platform_integration_test.go) | 验证后端 platform／integration／test 的行为、边界或回归 |
 | [智慧养老手表管理系统/backend/internal/handlers/regression_test.go](../智慧养老手表管理系统/backend/internal/handlers/regression_test.go) | 已审查问题的数据库契约、安全与竞争回归（智慧养老手表管理系统/backend/internal/handlers/regression_test.go） |
 | [智慧养老手表管理系统/backend/internal/handlers/request_limits_test.go](../智慧养老手表管理系统/backend/internal/handlers/request_limits_test.go) | request_limits_test 自动化回归或验收脚本：检查对应模块的行为边界 |
+| [智慧养老手表管理系统/backend/internal/handlers/sensitive_notes.go](../智慧养老手表管理系统/backend/internal/handlers/sensitive_notes.go) | Go HTTP 处理器／后台业务：sensitive／notes |
 | [智慧养老手表管理系统/backend/internal/handlers/util.go](../智慧养老手表管理系统/backend/internal/handlers/util.go) | 业务请求解析、参数验证与处理器共享辅助函数（智慧养老手表管理系统/backend/internal/handlers/util.go） |
 | [智慧养老手表管理系统/backend/internal/handlers/web.go](../智慧养老手表管理系统/backend/internal/handlers/web.go) | 内嵌 Vue 静态资源挂载及浏览器安全响应头（智慧养老手表管理系统/backend/internal/handlers/web.go） |
 | [智慧养老手表管理系统/backend/internal/handlers/web/.gitignore](../智慧养老手表管理系统/backend/internal/handlers/web/.gitignore) | 防止生成的 Vue 构建内容被误认为手工维护的嵌入资源。 |
 | [智慧养老手表管理系统/backend/internal/handlers/web/.gitkeep](../智慧养老手表管理系统/backend/internal/handlers/web/.gitkeep) | 仅保留内嵌前端目录，桌面构建时填入真实 Vue 产物（智慧养老手表管理系统/backend/internal/handlers/web/.gitkeep） |
-| [智慧养老手表管理系统/backend/internal/health/sample.go](../智慧养老手表管理系统/backend/internal/health/sample.go) | Go health 模块：实现 sample 相关服务逻辑 |
+| [智慧养老手表管理系统/backend/internal/health/batch_test.go](../智慧养老手表管理系统/backend/internal/health/batch_test.go) | 验证后端 batch／test 的行为、边界或回归 |
+| [智慧养老手表管理系统/backend/internal/health/clock_test.go](../智慧养老手表管理系统/backend/internal/health/clock_test.go) | 验证后端 clock／test 的行为、边界或回归 |
+| [智慧养老手表管理系统/backend/internal/health/clock.go](../智慧养老手表管理系统/backend/internal/health/clock.go) | Go 后端模块：clock |
+| [智慧养老手表管理系统/backend/internal/health/daily.go](../智慧养老手表管理系统/backend/internal/health/daily.go) | Go 后端模块：daily |
+| [智慧养老手表管理系统/backend/internal/health/performance_test.go](../智慧养老手表管理系统/backend/internal/health/performance_test.go) | 验证后端 performance／test 的行为、边界或回归 |
 | [智慧养老手表管理系统/backend/internal/health/sample_test.go](../智慧养老手表管理系统/backend/internal/health/sample_test.go) | sample_test 自动化回归或验收脚本：检查对应模块的行为边界 |
-| [智慧养老手表管理系统/backend/internal/health/statistics.go](../智慧养老手表管理系统/backend/internal/health/statistics.go) | Go health 模块：实现 statistics 相关服务逻辑 |
+| [智慧养老手表管理系统/backend/internal/health/sample.go](../智慧养老手表管理系统/backend/internal/health/sample.go) | Go health 模块：实现 sample 相关服务逻辑 |
 | [智慧养老手表管理系统/backend/internal/health/statistics_test.go](../智慧养老手表管理系统/backend/internal/health/statistics_test.go) | statistics_test 自动化回归或验收脚本：检查对应模块的行为边界 |
+| [智慧养老手表管理系统/backend/internal/health/statistics.go](../智慧养老手表管理系统/backend/internal/health/statistics.go) | Go health 模块：实现 statistics 相关服务逻辑 |
 | [智慧养老手表管理系统/backend/internal/health/store.go](../智慧养老手表管理系统/backend/internal/health/store.go) | 在 MySQL 事务中保存健康采样、修订游标并检查设备绑定版本 |
 | [智慧养老手表管理系统/backend/internal/health/validation_test.go](../智慧养老手表管理系统/backend/internal/health/validation_test.go) | validation_test 自动化回归或验收脚本：检查对应模块的行为边界 |
+| [智慧养老手表管理系统/backend/internal/notify/batch_test.go](../智慧养老手表管理系统/backend/internal/notify/batch_test.go) | 验证后端 batch／test 的行为、边界或回归 |
+| [智慧养老手表管理系统/backend/internal/notify/bulk_test.go](../智慧养老手表管理系统/backend/internal/notify/bulk_test.go) | 验证后端 bulk／test 的行为、边界或回归 |
+| [智慧养老手表管理系统/backend/internal/notify/bulk.go](../智慧养老手表管理系统/backend/internal/notify/bulk.go) | Go 后端模块：bulk |
+| [智慧养老手表管理系统/backend/internal/notify/drain_test.go](../智慧养老手表管理系统/backend/internal/notify/drain_test.go) | 验证后端 drain／test 的行为、边界或回归 |
+| [智慧养老手表管理系统/backend/internal/notify/outbox_test.go](../智慧养老手表管理系统/backend/internal/notify/outbox_test.go) | 验证后端 outbox／test 的行为、边界或回归 |
+| [智慧养老手表管理系统/backend/internal/notify/outbox.go](../智慧养老手表管理系统/backend/internal/notify/outbox.go) | 持久化通知出站任务的状态与领取操作 |
+| [智慧养老手表管理系统/backend/internal/notify/tencent.go](../智慧养老手表管理系统/backend/internal/notify/tencent.go) | Go 后端模块：tencent |
+| [智慧养老手表管理系统/backend/internal/notify/throughput_test.go](../智慧养老手表管理系统/backend/internal/notify/throughput_test.go) | 验证后端 throughput／test 的行为、边界或回归 |
+| [智慧养老手表管理系统/backend/internal/observability/metrics_test.go](../智慧养老手表管理系统/backend/internal/observability/metrics_test.go) | 验证后端 metrics／test 的行为、边界或回归 |
+| [智慧养老手表管理系统/backend/internal/observability/metrics.go](../智慧养老手表管理系统/backend/internal/observability/metrics.go) | Go 后端模块：metrics |
 | [智慧养老手表管理系统/backend/internal/ratelimit/ratelimit.go](../智慧养老手表管理系统/backend/internal/ratelimit/ratelimit.go) | 公开接口的请求限流与窗口清理（智慧养老手表管理系统/backend/internal/ratelimit/ratelimit.go） |
 | [智慧养老手表管理系统/backend/internal/response/response.go](../智慧养老手表管理系统/backend/internal/response/response.go) | JSON 响应包络与通用错误输出（智慧养老手表管理系统/backend/internal/response/response.go） |
+| [智慧养老手表管理系统/backend/internal/rules/activity_test.go](../智慧养老手表管理系统/backend/internal/rules/activity_test.go) | 验证后端 activity／test 的行为、边界或回归 |
+| [智慧养老手表管理系统/backend/internal/rules/activity.go](../智慧养老手表管理系统/backend/internal/rules/activity.go) | Go 后端模块：activity |
+| [智慧养老手表管理系统/backend/internal/rules/engine_test.go](../智慧养老手表管理系统/backend/internal/rules/engine_test.go) | 验证后端 engine／test 的行为、边界或回归 |
+| [智慧养老手表管理系统/backend/internal/rules/engine.go](../智慧养老手表管理系统/backend/internal/rules/engine.go) | 规则扫描、设备事务与评估调度实现 |
+| [智慧养老手表管理系统/backend/internal/rules/evaluate_test.go](../智慧养老手表管理系统/backend/internal/rules/evaluate_test.go) | 验证后端 evaluate／test 的行为、边界或回归 |
+| [智慧养老手表管理系统/backend/internal/rules/evaluate.go](../智慧养老手表管理系统/backend/internal/rules/evaluate.go) | Go 后端模块：evaluate |
+| [智慧养老手表管理系统/backend/internal/rules/performance_test.go](../智慧养老手表管理系统/backend/internal/rules/performance_test.go) | 验证后端 performance／test 的行为、边界或回归 |
+| [智慧养老手表管理系统/backend/internal/rules/query_plan_test.go](../智慧养老手表管理系统/backend/internal/rules/query_plan_test.go) | 验证后端 query／plan／test 的行为、边界或回归 |
+| [智慧养老手表管理系统/backend/internal/rules/workers_test.go](../智慧养老手表管理系统/backend/internal/rules/workers_test.go) | 验证后端 workers／test 的行为、边界或回归 |
+| [智慧养老手表管理系统/backend/internal/rules/workers.go](../智慧养老手表管理系统/backend/internal/rules/workers.go) | Go 后端模块：workers |
+| [智慧养老手表管理系统/backend/internal/securestore/box_test.go](../智慧养老手表管理系统/backend/internal/securestore/box_test.go) | 验证后端 box／test 的行为、边界或回归 |
+| [智慧养老手表管理系统/backend/internal/securestore/box.go](../智慧养老手表管理系统/backend/internal/securestore/box.go) | Go 后端模块：box |
+| [智慧养老手表管理系统/backend/internal/securestore/totp_test.go](../智慧养老手表管理系统/backend/internal/securestore/totp_test.go) | 验证后端 totp／test 的行为、边界或回归 |
+| [智慧养老手表管理系统/backend/internal/securestore/totp.go](../智慧养老手表管理系统/backend/internal/securestore/totp.go) | Go 后端模块：totp |
+| [智慧养老手表管理系统/backend/internal/session/database_test.go](../智慧养老手表管理系统/backend/internal/session/database_test.go) | 验证后端 database／test 的行为、边界或回归 |
 | [智慧养老手表管理系统/backend/internal/session/session.go](../智慧养老手表管理系统/backend/internal/session/session.go) | 内存会话、过期清理与 Cookie 生命周期（智慧养老手表管理系统/backend/internal/session/session.go） |
 | [智慧养老手表管理系统/backend/migrations/0001_init.sql](../智慧养老手表管理系统/backend/migrations/0001_init.sql) | 旧 PostgreSQL 业务库的初始表结构；仅供历史数据读取与迁移，不由当前 MySQL 主库应用。 |
 | [智慧养老手表管理系统/backend/migrations/0002_daily_uniqueness.sql](../智慧养老手表管理系统/backend/migrations/0002_daily_uniqueness.sql) | 旧 PostgreSQL 业务库每日记录唯一性约束迁移，供兼容导入使用。 |
@@ -204,13 +301,23 @@
 | [智慧养老手表管理系统/backend/migrations/mysql/0001_core.sql](../智慧养老手表管理系统/backend/migrations/mysql/0001_core.sql) | MySQL 业务结构、InnoDB、字符集与完整性约束 |
 | [智慧养老手表管理系统/backend/migrations/mysql/0002_analytics.sql](../智慧养老手表管理系统/backend/migrations/mysql/0002_analytics.sql) | 来源标识、持久化 outbox 及五类实体的增改删触发器 |
 | [智慧养老手表管理系统/backend/migrations/mysql/0003_health_samples.sql](../智慧养老手表管理系统/backend/migrations/mysql/0003_health_samples.sql) | MySQL迁移脚本：定义版本化的数据表、索引、约束或触发器 |
+| [智慧养老手表管理系统/backend/migrations/mysql/0004_device_capabilities.sql](../智慧养老手表管理系统/backend/migrations/mysql/0004_device_capabilities.sql) | 数据库结构变更、约束或索引迁移：0004／device／capabilities |
+| [智慧养老手表管理系统/backend/migrations/mysql/0005_platform.sql](../智慧养老手表管理系统/backend/migrations/mysql/0005_platform.sql) | 数据库结构变更、约束或索引迁移：0005／platform |
+| [智慧养老手表管理系统/backend/migrations/mysql/0006_health_performance.sql](../智慧养老手表管理系统/backend/migrations/mysql/0006_health_performance.sql) | 数据库结构变更、约束或索引迁移：0006／health／performance |
+| [智慧养老手表管理系统/backend/migrations/mysql/0007_cluster_scheduling.sql](../智慧养老手表管理系统/backend/migrations/mysql/0007_cluster_scheduling.sql) | 数据库结构变更、约束或索引迁移：0007／cluster／scheduling |
+| [智慧养老手表管理系统/backend/migrations/rollback/mysql_0004_device_capabilities.sql](../智慧养老手表管理系统/backend/migrations/rollback/mysql_0004_device_capabilities.sql) | 对应数据库迁移的回滚参考 SQL：mysql／0004／device／capabilities |
+| [智慧养老手表管理系统/backend/migrations/rollback/mysql_0005_platform.sql](../智慧养老手表管理系统/backend/migrations/rollback/mysql_0005_platform.sql) | 对应数据库迁移的回滚参考 SQL：mysql／0005／platform |
+| [智慧养老手表管理系统/backend/migrations/rollback/mysql_0006_health_performance.sql](../智慧养老手表管理系统/backend/migrations/rollback/mysql_0006_health_performance.sql) | 对应数据库迁移的回滚参考 SQL：mysql／0006／health／performance |
+| [智慧养老手表管理系统/backend/migrations/rollback/mysql_0007_cluster_scheduling.sql](../智慧养老手表管理系统/backend/migrations/rollback/mysql_0007_cluster_scheduling.sql) | 对应数据库迁移的回滚参考 SQL：mysql／0007／cluster／scheduling |
+| [智慧养老手表管理系统/backend/README.md](../智慧养老手表管理系统/backend/README.md) | Go 服务配置、MySQL 主库、可选 PostgreSQL 分析库、迁移、测试与运行说明。 |
+| [智慧养老手表管理系统/backend/VERSION](../智慧养老手表管理系统/backend/VERSION) | Go 后端对应的产品版本（智慧养老手表管理系统/backend/VERSION） |
 | [智慧养老手表管理系统/desktop/.gitignore](../智慧养老手表管理系统/desktop/.gitignore) | 桌面 .gitignore 配置与资源（智慧养老手表管理系统/desktop/.gitignore） |
-| [智慧养老手表管理系统/desktop/Cargo.lock](../智慧养老手表管理系统/desktop/Cargo.lock) | Tauri/Rust 精确依赖版本及来源校验锁定（智慧养老手表管理系统/desktop/Cargo.lock） |
-| [智慧养老手表管理系统/desktop/Cargo.toml](../智慧养老手表管理系统/desktop/Cargo.toml) | Rust 桌面工程依赖、发布优化与岁宁产品版本（智慧养老手表管理系统/desktop/Cargo.toml） |
 | [智慧养老手表管理系统/desktop/bootstrap/index.html](../智慧养老手表管理系统/desktop/bootstrap/index.html) | 桌面 bootstrap\index.html 配置与资源（智慧养老手表管理系统/desktop/bootstrap/index.html） |
 | [智慧养老手表管理系统/desktop/build.ps1](../智慧养老手表管理系统/desktop/build.ps1) | 前端嵌入、Go 回归、原生编译及 NSIS 安装包构建（智慧养老手表管理系统/desktop/build.ps1） |
 | [智慧养老手表管理系统/desktop/build.rs](../智慧养老手表管理系统/desktop/build.rs) | Tauri 编译入口与后端哈希变更跟踪（智慧养老手表管理系统/desktop/build.rs） |
 | [智慧养老手表管理系统/desktop/capabilities/desktop.json](../智慧养老手表管理系统/desktop/capabilities/desktop.json) | 仅主窗口及本机页面可用的最小 Tauri 权限集合（智慧养老手表管理系统/desktop/capabilities/desktop.json） |
+| [智慧养老手表管理系统/desktop/Cargo.lock](../智慧养老手表管理系统/desktop/Cargo.lock) | Tauri/Rust 精确依赖版本及来源校验锁定（智慧养老手表管理系统/desktop/Cargo.lock） |
+| [智慧养老手表管理系统/desktop/Cargo.toml](../智慧养老手表管理系统/desktop/Cargo.toml) | Rust 桌面工程依赖、发布优化与岁宁产品版本（智慧养老手表管理系统/desktop/Cargo.toml） |
 | [智慧养老手表管理系统/desktop/package-lock.json](../智慧养老手表管理系统/desktop/package-lock.json) | 桌面 package-lock.json 配置与资源（智慧养老手表管理系统/desktop/package-lock.json） |
 | [智慧养老手表管理系统/desktop/package.json](../智慧养老手表管理系统/desktop/package.json) | 原生应用名称、版本、主进程入口和项目许可元数据。（智慧养老手表管理系统/desktop/package.json） |
 | [智慧养老手表管理系统/desktop/permissions/setup.toml](../智慧养老手表管理系统/desktop/permissions/setup.toml) | 仅授权管理员初始化命令的 Tauri 自定义权限（智慧养老手表管理系统/desktop/permissions/setup.toml） |
@@ -221,7 +328,7 @@
 | [智慧养老手表管理系统/desktop/validate-version.ps1](../智慧养老手表管理系统/desktop/validate-version.ps1) | 核对前端、后端、Cargo 与 Tauri 的产品版本一致性（智慧养老手表管理系统/desktop/validate-version.ps1） |
 | [智慧养老手表管理系统/desktop/version.json](../智慧养老手表管理系统/desktop/version.json) | 桌面 version.json 配置与资源（智慧养老手表管理系统/desktop/version.json） |
 | [智慧养老手表管理系统/desktop/使用说明.txt](../智慧养老手表管理系统/desktop/使用说明.txt) | 随软件提供的中文操作指南，涵盖窗口全屏快捷键、首次账号、数据备份、设备联网和签名边界。（智慧养老手表管理系统/desktop/使用说明.txt） |
-| [智慧养老手表管理系统/oldIot/README.md](../智慧养老手表管理系统/oldIot/README.md) | 前端开发命令、目录和本地素材使用说明。（智慧养老手表管理系统/oldIot/README.md） |
+| [智慧养老手表管理系统/LICENSE](../智慧养老手表管理系统/LICENSE) | 桌面源码工程副本的 MIT 许可，方便独立源码包保留授权。（智慧养老手表管理系统/LICENSE） |
 | [智慧养老手表管理系统/oldIot/index.html](../智慧养老手表管理系统/oldIot/index.html) | 网页入口：中文标题、图标、本地字体预加载、挂载点与 Vite 模块入口。（智慧养老手表管理系统/oldIot/index.html） |
 | [智慧养老手表管理系统/oldIot/package-lock.json](../智慧养老手表管理系统/oldIot/package-lock.json) | 锁定当前前端安装树及摘要，移除仅供 Less 使用的可选依赖，保留其余版本。（智慧养老手表管理系统/oldIot/package-lock.json） |
 | [智慧养老手表管理系统/oldIot/package.json](../智慧养老手表管理系统/oldIot/package.json) | 精简后的前端依赖与 Vite 命令，使用普通 CSS，不再声明 Less 预处理器。（智慧养老手表管理系统/oldIot/package.json） |
@@ -322,8 +429,8 @@
 | [智慧养老手表管理系统/oldIot/public/static/fonts/source-serif-4-italic.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-serif-4-italic.woff2) | source-serif-4-italic.woff2 字体配套说明，记录原字体来源、子集或许可要求。（智慧养老手表管理系统/oldIot/public/static/fonts/source-serif-4-italic.woff2） |
 | [智慧养老手表管理系统/oldIot/public/static/fonts/source-serif-4.woff2](../智慧养老手表管理系统/oldIot/public/static/fonts/source-serif-4.woff2) | Source Serif 4 英文与数字的本地可变字体，避免依赖外部字体网络。（智慧养老手表管理系统/oldIot/public/static/fonts/source-serif-4.woff2） |
 | [智慧养老手表管理系统/oldIot/public/static/fonts/source-serif-LICENSE.md](../智慧养老手表管理系统/oldIot/public/static/fonts/source-serif-LICENSE.md) | source-serif-LICENSE.md 字体配套说明，记录原字体来源、子集或许可要求。（智慧养老手表管理系统/oldIot/public/static/fonts/source-serif-LICENSE.md） |
-| [智慧养老手表管理系统/oldIot/public/static/icons/LICENSE.txt](../智慧养老手表管理系统/oldIot/public/static/icons/LICENSE.txt) | 保留图标字体对应的 Element UI 开源许可。（智慧养老手表管理系统/oldIot/public/static/icons/LICENSE.txt） |
 | [智慧养老手表管理系统/oldIot/public/static/icons/element-icons.woff](../智慧养老手表管理系统/oldIot/public/static/icons/element-icons.woff) | 保留旧界面图标字形的本地 WOFF 资源，框架已切换 Element Plus。（智慧养老手表管理系统/oldIot/public/static/icons/element-icons.woff） |
+| [智慧养老手表管理系统/oldIot/public/static/icons/LICENSE.txt](../智慧养老手表管理系统/oldIot/public/static/icons/LICENSE.txt) | 保留图标字体对应的 Element UI 开源许可。（智慧养老手表管理系统/oldIot/public/static/icons/LICENSE.txt） |
 | [智慧养老手表管理系统/oldIot/public/static/img/care-announcement-empty.webp](../智慧养老手表管理系统/oldIot/public/static/img/care-announcement-empty.webp) | 公告列表无记录时的温和空状态插图。（智慧养老手表管理系统/oldIot/public/static/img/care-announcement-empty.webp） |
 | [智慧养老手表管理系统/oldIot/public/static/img/care-botanical.webp](../智慧养老手表管理系统/oldIot/public/static/img/care-botanical.webp) | 现有样式引用的植物装饰素材。（智慧养老手表管理系统/oldIot/public/static/img/care-botanical.webp） |
 | [智慧养老手表管理系统/oldIot/public/static/img/care-courtyard.webp](../智慧养老手表管理系统/oldIot/public/static/img/care-courtyard.webp) | 照护页面使用的庭院风景插画。（智慧养老手表管理系统/oldIot/public/static/img/care-courtyard.webp） |
@@ -348,6 +455,8 @@
 | [智慧养老手表管理系统/oldIot/qa/screen-acceptance.cjs](../智慧养老手表管理系统/oldIot/qa/screen-acceptance.cjs) | screen-acceptance 自动化回归或验收脚本：检查对应模块的行为边界 |
 | [智慧养老手表管理系统/oldIot/qa/setup-browser-acceptance.cjs](../智慧养老手表管理系统/oldIot/qa/setup-browser-acceptance.cjs) | setup-browser-acceptance 自动化回归或验收脚本：检查对应模块的行为边界 |
 | [智慧养老手表管理系统/oldIot/qa/ui-refinement-acceptance.cjs](../智慧养老手表管理系统/oldIot/qa/ui-refinement-acceptance.cjs) | 导航分组、五页加载与重试、老人窄屏完整资料、总览统计分页及宽屏栅格的模拟 API 浏览器验收 |
+| [智慧养老手表管理系统/oldIot/README.md](../智慧养老手表管理系统/oldIot/README.md) | 前端开发命令、目录和本地素材使用说明。（智慧养老手表管理系统/oldIot/README.md） |
+| [智慧养老手表管理系统/oldIot/src/api/client.ts](../智慧养老手表管理系统/oldIot/src/api/client.ts) | 统一前端 API 调用客户端 |
 | [智慧养老手表管理系统/oldIot/src/App.vue](../智慧养老手表管理系统/oldIot/src/App.vue) | Vue 根容器与统一控件边界，集中处理焦点、错误、禁用、大字和减少动画设置。（智慧养老手表管理系统/oldIot/src/App.vue） |
 | [智慧养老手表管理系统/oldIot/src/assets/css/accessibility.css](../智慧养老手表管理系统/oldIot/src/assets/css/accessibility.css) | 前端样式表：定义 accessibility 的布局与视觉规则 |
 | [智慧养老手表管理系统/oldIot/src/assets/css/commercial.css](../智慧养老手表管理系统/oldIot/src/assets/css/commercial.css) | 工作台与集合页面布局，规范查询工具栏对齐、弹窗字段结构和底部操作间距。（智慧养老手表管理系统/oldIot/src/assets/css/commercial.css） |
@@ -357,6 +466,7 @@
 | [智慧养老手表管理系统/oldIot/src/assets/css/index.css](../智慧养老手表管理系统/oldIot/src/assets/css/index.css) | 全局页面高度、边距和基础布局规则。（智慧养老手表管理系统/oldIot/src/assets/css/index.css） |
 | [智慧养老手表管理系统/oldIot/src/assets/css/tokens.css](../智慧养老手表管理系统/oldIot/src/assets/css/tokens.css) | 前端样式表：定义 tokens 的布局与视觉规则 |
 | [智慧养老手表管理系统/oldIot/src/auth.js](../智慧养老手表管理系统/oldIot/src/auth.js) | 同源会话与 CSRF 令牌管理、上传请求头和登录失效处理。（智慧养老手表管理系统/oldIot/src/auth.js） |
+| [智慧养老手表管理系统/oldIot/src/auth.security.test.ts](../智慧养老手表管理系统/oldIot/src/auth.security.test.ts) | 前端 TypeScript 自动测试：auth.security.test |
 | [智慧养老手表管理系统/oldIot/src/charts.js](../智慧养老手表管理系统/oldIot/src/charts.js) | 按需图表模块与视图所属实例管理，负责响应式重绘、释放及卸载保护。（智慧养老手表管理系统/oldIot/src/charts.js） |
 | [智慧养老手表管理系统/oldIot/src/components/CareInbox.vue](../智慧养老手表管理系统/oldIot/src/components/CareInbox.vue) | 后台首页待处理 SOS 事件的任务优先组件 |
 | [智慧养老手表管理系统/oldIot/src/components/CareOperationsPanel.vue](../智慧养老手表管理系统/oldIot/src/components/CareOperationsPanel.vue) | 工作台值守进程健康、通知异常、岗位分配及审计面板 |
@@ -366,45 +476,45 @@
 | [智慧养老手表管理系统/oldIot/src/components/NoticeEditor.vue](../智慧养老手表管理系统/oldIot/src/components/NoticeEditor.vue) | 公告标题、正文、图片上传与保存状态的共用编辑器。（智慧养老手表管理系统/oldIot/src/components/NoticeEditor.vue） |
 | [智慧养老手表管理系统/oldIot/src/components/PositionMap.vue](../智慧养老手表管理系统/oldIot/src/components/PositionMap.vue) | Vue 界面组件：负责 PositionMap 相关页面或交互 |
 | [智慧养老手表管理系统/oldIot/src/components/RecordCards.vue](../智慧养老手表管理系统/oldIot/src/components/RecordCards.vue) | 窄屏记录卡片的字段、状态和操作槽位。（智慧养老手表管理系统/oldIot/src/components/RecordCards.vue） |
+| [智慧养老手表管理系统/oldIot/src/components/SecurityPanel.test.ts](../智慧养老手表管理系统/oldIot/src/components/SecurityPanel.test.ts) | 前端 TypeScript 自动测试：SecurityPanel.test |
+| [智慧养老手表管理系统/oldIot/src/components/SecurityPanel.vue](../智慧养老手表管理系统/oldIot/src/components/SecurityPanel.vue) | 账户安全设置前端组件 |
 | [智慧养老手表管理系统/oldIot/src/components/Slider.vue](../智慧养老手表管理系统/oldIot/src/components/Slider.vue) | 管理端工作空间与档案、设备、公告菜单。（智慧养老手表管理系统/oldIot/src/components/Slider.vue） |
+| [智慧养老手表管理系统/oldIot/src/composables/useCustomers.test.ts](../智慧养老手表管理系统/oldIot/src/composables/useCustomers.test.ts) | 前端 TypeScript 自动测试：useCustomers.test |
+| [智慧养老手表管理系统/oldIot/src/composables/useCustomers.ts](../智慧养老手表管理系统/oldIot/src/composables/useCustomers.ts) | 前端 TypeScript 实现：useCustomers |
 | [智慧养老手表管理系统/oldIot/src/desktop.js](../智慧养老手表管理系统/oldIot/src/desktop.js) | 前端原生初始化桥接及 F11/Escape 全屏交互（智慧养老手表管理系统/oldIot/src/desktop.js） |
 | [智慧养老手表管理系统/oldIot/src/element.js](../智慧养老手表管理系统/oldIot/src/element.js) | 按实际模板注册 Element Plus、中文配置和 8 个字符串图标，移除旧栅格注册。（智慧养老手表管理系统/oldIot/src/element.js） |
+| [智慧养老手表管理系统/oldIot/src/env.d.ts](../智慧养老手表管理系统/oldIot/src/env.d.ts) | 前端 TypeScript 实现：env.d |
 | [智慧养老手表管理系统/oldIot/src/main.js](../智慧养老手表管理系统/oldIot/src/main.js) | 创建 Vue 3 应用并安装路由、页面状态、UI 组件及请求安全处理。（智慧养老手表管理系统/oldIot/src/main.js） |
 | [智慧养老手表管理系统/oldIot/src/router.js](../智慧养老手表管理系统/oldIot/src/router.js) | 懒加载管理/家属路由，处理首次设置、登录和角色导航守卫。（智慧养老手表管理系统/oldIot/src/router.js） |
 | [智慧养老手表管理系统/oldIot/src/store.js](../智慧养老手表管理系统/oldIot/src/store.js) | Vue reactive 的页签状态，替代旧 Vuex 的标签增删与激活。（智慧养老手表管理系统/oldIot/src/store.js） |
 | [智慧养老手表管理系统/oldIot/src/styles/app-components.css](../智慧养老手表管理系统/oldIot/src/styles/app-components.css) | 前端样式分层：app-components |
 | [智慧养老手表管理系统/oldIot/src/styles/app-family-responsive.css](../智慧养老手表管理系统/oldIot/src/styles/app-family-responsive.css) | 前端样式分层：app-family-responsive |
 | [智慧养老手表管理系统/oldIot/src/styles/app-foundation.css](../智慧养老手表管理系统/oldIot/src/styles/app-foundation.css) | 前端样式分层：app-foundation |
-| [智慧养老手表管理系统/oldIot/src/views/Home.vue](../智慧养老手表管理系统/oldIot/src/views/Home.vue) | 管理员工作区容器，使用完整可用宽高，提供独立内容滚动、侧栏与可关闭业务标签。（智慧养老手表管理系统/oldIot/src/views/Home.vue） |
-| [智慧养老手表管理系统/oldIot/src/views/Login.vue](../智慧养老手表管理系统/oldIot/src/views/Login.vue) | 自适应一屏的登录界面，短屏收起辅助文案，保留大字模式、表单校验与密码显隐。（智慧养老手表管理系统/oldIot/src/views/Login.vue） |
-| [智慧养老手表管理系统/oldIot/src/views/Register.vue](../智慧养老手表管理系统/oldIot/src/views/Register.vue) | 家属凭邀请码创建关联账号。（智慧养老手表管理系统/oldIot/src/views/Register.vue） |
-| [智慧养老手表管理系统/oldIot/src/views/Setup.vue](../智慧养老手表管理系统/oldIot/src/views/Setup.vue) | 首次启动创建本机管理员，不提供默认密码。（智慧养老手表管理系统/oldIot/src/views/Setup.vue） |
 | [智慧养老手表管理系统/oldIot/src/views/annex.vue](../智慧养老手表管理系统/oldIot/src/views/annex.vue) | 公告展示图片和附件记录维护。（智慧养老手表管理系统/oldIot/src/views/annex.vue） |
-| [智慧养老手表管理系统/oldIot/src/views/customer.logic.js](../智慧养老手表管理系统/oldIot/src/views/customer.logic.js) | Vue Options API 业务逻辑模块：customer.logic |
 | [智慧养老手表管理系统/oldIot/src/views/customer.vue](../智慧养老手表管理系统/oldIot/src/views/customer.vue) | 监护人联系资料的录入与维护。（智慧养老手表管理系统/oldIot/src/views/customer.vue） |
 | [智慧养老手表管理系统/oldIot/src/views/device.admin-methods.js](../智慧养老手表管理系统/oldIot/src/views/device.admin-methods.js) | Vue Options API 业务逻辑模块：device.admin-methods |
 | [智慧养老手表管理系统/oldIot/src/views/device.alert-methods.js](../智慧养老手表管理系统/oldIot/src/views/device.alert-methods.js) | Vue Options API 业务逻辑模块：device.alert-methods |
 | [智慧养老手表管理系统/oldIot/src/views/device.list-methods.js](../智慧养老手表管理系统/oldIot/src/views/device.list-methods.js) | Vue Options API 业务逻辑模块：device.list-methods |
-| [智慧养老手表管理系统/oldIot/src/views/device.logic.js](../智慧养老手表管理系统/oldIot/src/views/device.logic.js) | Vue Options API 业务逻辑模块：device.logic |
 | [智慧养老手表管理系统/oldIot/src/views/device.refresh-methods.js](../智慧养老手表管理系统/oldIot/src/views/device.refresh-methods.js) | Vue Options API 业务逻辑模块：device.refresh-methods |
 | [智慧养老手表管理系统/oldIot/src/views/device.styles.css](../智慧养老手表管理系统/oldIot/src/views/device.styles.css) | 前端样式分层：device.styles |
 | [智慧养老手表管理系统/oldIot/src/views/device.vue](../智慧养老手表管理系统/oldIot/src/views/device.vue) | 设备查询、注册、绑定、告警处置与可见页面轮询，离开页面即停止刷新。（智慧养老手表管理系统/oldIot/src/views/device.vue） |
-| [智慧养老手表管理系统/oldIot/src/views/family.logic.js](../智慧养老手表管理系统/oldIot/src/views/family.logic.js) | Vue Options API 业务逻辑模块：family.logic |
 | [智慧养老手表管理系统/oldIot/src/views/family.vue](../智慧养老手表管理系统/oldIot/src/views/family.vue) | 家属账号与老人关联管理，编辑时回填家属字段并提交对应模型。（智慧养老手表管理系统/oldIot/src/views/family.vue） |
 | [智慧养老手表管理系统/oldIot/src/views/familyHome.vue](../智慧养老手表管理系统/oldIot/src/views/familyHome.vue) | 家属页面外壳，宽屏侧栏与移动端底栏独立占位，内容滚动和路由切换复位互不遮挡。（智慧养老手表管理系统/oldIot/src/views/familyHome.vue） |
 | [智慧养老手表管理系统/oldIot/src/views/familyMain.vue](../智慧养老手表管理系统/oldIot/src/views/familyMain.vue) | 家属照护首页；按桌面高度调整欢迎区域和公告留白，完整保留健康、活动与位置入口。（智慧养老手表管理系统/oldIot/src/views/familyMain.vue） |
+| [智慧养老手表管理系统/oldIot/src/views/Home.vue](../智慧养老手表管理系统/oldIot/src/views/Home.vue) | 管理员工作区容器，使用完整可用宽高，提供独立内容滚动、侧栏与可关闭业务标签。（智慧养老手表管理系统/oldIot/src/views/Home.vue） |
 | [智慧养老手表管理系统/oldIot/src/views/inviteCode.vue](../智慧养老手表管理系统/oldIot/src/views/inviteCode.vue) | 生成、查询和作废家属注册邀请码。（智慧养老手表管理系统/oldIot/src/views/inviteCode.vue） |
 | [智慧养老手表管理系统/oldIot/src/views/life.vue](../智慧养老手表管理系统/oldIot/src/views/life.vue) | 生活资料查询与档案阅读，原生搜索表单适配窄屏和大字模式。（智慧养老手表管理系统/oldIot/src/views/life.vue） |
+| [智慧养老手表管理系统/oldIot/src/views/Login.vue](../智慧养老手表管理系统/oldIot/src/views/Login.vue) | 自适应一屏的登录界面，短屏收起辅助文案，保留大字模式、表单校验与密码显隐。（智慧养老手表管理系统/oldIot/src/views/Login.vue） |
 | [智慧养老手表管理系统/oldIot/src/views/main.vue](../智慧养老手表管理系统/oldIot/src/views/main.vue) | 运营总览、异常摘要与公告检索，公告搜索使用单层边界和原生键盘提交。（智慧养老手表管理系统/oldIot/src/views/main.vue） |
 | [智慧养老手表管理系统/oldIot/src/views/me.vue](../智慧养老手表管理系统/oldIot/src/views/me.vue) | 当前家属资料、头像与密码维护。（智慧养老手表管理系统/oldIot/src/views/me.vue） |
-| [智慧养老手表管理系统/oldIot/src/views/person.logic.js](../智慧养老手表管理系统/oldIot/src/views/person.logic.js) | Vue Options API 业务逻辑模块：person.logic |
 | [智慧养老手表管理系统/oldIot/src/views/person.vue](../智慧养老手表管理系统/oldIot/src/views/person.vue) | 老人档案的新增、编辑、查询与监护关联。（智慧养老手表管理系统/oldIot/src/views/person.vue） |
 | [智慧养老手表管理系统/oldIot/src/views/position.vue](../智慧养老手表管理系统/oldIot/src/views/position.vue) | 管理员位置查询、地图与摔倒告警，姓名输入及相邻操作按底边对齐。（智慧养老手表管理系统/oldIot/src/views/position.vue） |
 | [智慧养老手表管理系统/oldIot/src/views/positionfamily.vue](../智慧养老手表管理系统/oldIot/src/views/positionfamily.vue) | 家属查看关联长辈最近坐标与位置状态。（智慧养老手表管理系统/oldIot/src/views/positionfamily.vue） |
-| [智慧养老手表管理系统/oldIot/src/views/ratepre.logic.js](../智慧养老手表管理系统/oldIot/src/views/ratepre.logic.js) | Vue Options API 业务逻辑模块：ratepre.logic |
 | [智慧养老手表管理系统/oldIot/src/views/ratepre.vue](../智慧养老手表管理系统/oldIot/src/views/ratepre.vue) | 健康记录查询、异常筛选与处置，工具栏自然换行并支持键盘提交。（智慧养老手表管理系统/oldIot/src/views/ratepre.vue） |
 | [智慧养老手表管理系统/oldIot/src/views/rateprefamily.vue](../智慧养老手表管理系统/oldIot/src/views/rateprefamily.vue) | 家属查看关联长辈的心率与血压趋势。（智慧养老手表管理系统/oldIot/src/views/rateprefamily.vue） |
+| [智慧养老手表管理系统/oldIot/src/views/Register.vue](../智慧养老手表管理系统/oldIot/src/views/Register.vue) | 家属凭邀请码创建关联账号。（智慧养老手表管理系统/oldIot/src/views/Register.vue） |
 | [智慧养老手表管理系统/oldIot/src/views/saidOperation.vue](../智慧养老手表管理系统/oldIot/src/views/saidOperation.vue) | 管理员查看、回复与删除公告评论。（智慧养老手表管理系统/oldIot/src/views/saidOperation.vue） |
+| [智慧养老手表管理系统/oldIot/src/views/Setup.vue](../智慧养老手表管理系统/oldIot/src/views/Setup.vue) | 首次启动创建本机管理员，不提供默认密码。（智慧养老手表管理系统/oldIot/src/views/Setup.vue） |
 | [智慧养老手表管理系统/oldIot/src/views/step.vue](../智慧养老手表管理系统/oldIot/src/views/step.vue) | 睡眠与步数查询、异常状态和图表详情，查询输入与操作共用单层外框。（智慧养老手表管理系统/oldIot/src/views/step.vue） |
 | [智慧养老手表管理系统/oldIot/src/views/stepfamily.vue](../智慧养老手表管理系统/oldIot/src/views/stepfamily.vue) | 家属查看关联长辈的睡眠与步数。（智慧养老手表管理系统/oldIot/src/views/stepfamily.vue） |
 | [智慧养老手表管理系统/oldIot/src/views/text.vue](../智慧养老手表管理系统/oldIot/src/views/text.vue) | 编辑已有公告的表单容器。（智慧养老手表管理系统/oldIot/src/views/text.vue） |
@@ -413,7 +523,10 @@
 | [智慧养老手表管理系统/oldIot/src/views/textOpt.vue](../智慧养老手表管理系统/oldIot/src/views/textOpt.vue) | 公告列表、编辑删除与展示图片维护，查询及发布操作统一底边和间距。（智慧养老手表管理系统/oldIot/src/views/textOpt.vue） |
 | [智慧养老手表管理系统/oldIot/src/views/textTwo.vue](../智慧养老手表管理系统/oldIot/src/views/textTwo.vue) | 发布新公告的表单容器。（智慧养老手表管理系统/oldIot/src/views/textTwo.vue） |
 | [智慧养老手表管理系统/oldIot/src/views/watch.vue](../智慧养老手表管理系统/oldIot/src/views/watch.vue) | 监测阈值档案的登记和维护。（智慧养老手表管理系统/oldIot/src/views/watch.vue） |
+| [智慧养老手表管理系统/oldIot/tsconfig.json](../智慧养老手表管理系统/oldIot/tsconfig.json) | 项目配置、源文件或测试资料：tsconfig |
 | [智慧养老手表管理系统/oldIot/vite.config.js](../智慧养老手表管理系统/oldIot/vite.config.js) | Vite 8 的 Vue 插件、源码别名、开发接口代理与生产构建配置。（智慧养老手表管理系统/oldIot/vite.config.js） |
+| [智慧养老手表管理系统/oldIot/vitest.config.ts](../智慧养老手表管理系统/oldIot/vitest.config.ts) | 前端 TypeScript 实现：vitest.config |
+| [智慧养老手表管理系统/README.md](../智慧养老手表管理系统/README.md) | 桌面源码工程导航：Go 后端、Vue 前端、Tauri 容器、数据目录和开发命令 |
 | [智慧养老手表管理系统/watch-sim/watch-sim.config.json](../智慧养老手表管理系统/watch-sim/watch-sim.config.json) | 模拟手表的服务地址与设备凭据配置模板，使用前填入实际设备密钥。（智慧养老手表管理系统/watch-sim/watch-sim.config.json） |
 | [智慧养老手表管理系统/watch-sim/watch-sim.js](../智慧养老手表管理系统/watch-sim/watch-sim.js) | 模拟手表登录、心跳与数据上报的 Node 联调入口；不代表真实硬件验证。（智慧养老手表管理系统/watch-sim/watch-sim.js） |
 | [智慧养老手表管理系统/watch-sim/watch-sim.test.cjs](../智慧养老手表管理系统/watch-sim/watch-sim.test.cjs) | 手表模拟器接口协议和请求行为的自动化测试，不代替真实硬件联调。 |
