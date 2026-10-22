@@ -1,8 +1,9 @@
-package db
+package db_test
 
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"sort"
 	"sync"
@@ -66,7 +67,7 @@ func TestMySQLIdleConnectionRetentionAB(t *testing.T) {
 						return
 					}
 					if revision != 0 {
-						failures <- context.Canceled
+						failures <- fmt.Errorf("unexpected health_clock revision %d", revision)
 						return
 					}
 					samples <- time.Since(start)
