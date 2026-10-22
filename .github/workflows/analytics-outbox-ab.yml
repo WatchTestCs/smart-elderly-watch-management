@@ -1,0 +1,69 @@
+name: Transactional analytics Outbox A/B
+
+on:
+  push:
+    branches:
+      - 'bench/analytics-db-ab-*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  measure:
+    name: MySQL producer and PG consumer A/B
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: ci_root_only
+          MYSQL_ROOT_HOST: "%"
+          MYSQL_DATABASE: suining_test
+        ports: ["3306:3306"]
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -u root -pci_root_only --silent"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: careold
+          POSTGRES_PASSWORD: careold
+          POSTGRES_DB: careold_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U careold -d careold_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Go 1.23
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.23.2'
+          cache-dependency-path: 智慧养老手表管理系统/backend/go.sum
+      - name: Run bounded transactional A/B on disposable databases
+        working-directory: 智慧养老手表管理系统/backend
+        shell: bash
+        env:
+          RUN_ANALYTICS_DB_AB: "1"
+          TEST_MYSQL_DSN: root:ci_root_only@tcp(localhost:3306)/suining_test
+          TEST_DATABASE_URL: postgres://careold:careold@localhost:5432/careold_test?sslmode=disable
+        run: |
+          set -euo pipefail
+          go test -run '^TestAnalytics(ProducerAB|ConsumerAB)$' -count=1 -v -timeout 18m ./internal/analytics \
+            | tee "${RUNNER_TEMP}/analytics-outbox-ab.log"
+          grep '^    .*ANALYTICS_DB_AB ' "${RUNNER_TEMP}/analytics-outbox-ab.log" > "${RUNNER_TEMP}/analytics-outbox-ab.jsonl"
+      - name: Archive raw per-trial measurements
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: analytics-outbox-ab
+          path: |
+            ${{ runner.temp }}/analytics-outbox-ab.log
+            ${{ runner.temp }}/analytics-outbox-ab.jsonl
+          if-no-files-found: warn
