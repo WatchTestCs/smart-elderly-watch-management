@@ -1,6 +1,6 @@
 # preview 分支文件职责索引
 
-本索引覆盖当前提交的 **608 个文件**（更新：2026-10-22）。保留既有人工说明；来源附件与历史证据不代表当前版本的全套验收。
+本索引覆盖当前提交的 **602 个文件**（更新：2026-10-22）。保留既有人工说明；来源附件与历史证据不代表当前版本的全套验收。
 
 [项目 README](../README.md) · [文件职责数据](file-descriptions.json) · [历史性能资料](performance/2026-10-20-go123/README.md) · [最新性能报告](performance/2026-10-22-backend-hybrid/README.md)
 
@@ -22,11 +22,6 @@
 | [.github/workflows/preview-candidate.yml](../.github/workflows/preview-candidate.yml) | GitHub 工作流 Tauri preview candidate 的触发条件与执行步骤（.github/workflows/preview-candidate.yml） |
 | [.github/workflows/preview-checks.yml](../.github/workflows/preview-checks.yml) | GitHub 工作流 Additional preview UI checks 的触发条件与执行步骤（.github/workflows/preview-checks.yml） |
 | [.github/workflows/preview-release.yml](../.github/workflows/preview-release.yml) | GitHub 工作流 Preview release preparation 的触发条件与执行步骤（.github/workflows/preview-release.yml） |
-| [.github/workflows/publish-203-source.yml](../.github/workflows/publish-203-source.yml) | GitHub Actions 工作流 publish-203-source：自动化触发条件与执行步骤 |
-| [.github/workflows/publish-204-source.yml](../.github/workflows/publish-204-source.yml) | 2.0.4 源码 ZIP 与 SHA-256 自动发布工作流 |
-| [.github/workflows/publish-205-cleanup-source.yml](../.github/workflows/publish-205-cleanup-source.yml) | GitHub Actions 工作流 publish-205-cleanup-source：自动化触发条件与执行步骤 |
-| [.github/workflows/publish-205-source.yml](../.github/workflows/publish-205-source.yml) | 合并到 preview 后验证并发布 2.0.5 源码归档与校验文件 |
-| [.github/workflows/publish-206-source.yml](../.github/workflows/publish-206-source.yml) | GitHub Actions 自动检查或发布工作流：publish／206／source |
 | [.github/workflows/reusable-backend.yml](../.github/workflows/reusable-backend.yml) | GitHub 工作流 Reusable backend verification 的触发条件与执行步骤（.github/workflows/reusable-backend.yml） |
 | [.github/workflows/reusable-frontend.yml](../.github/workflows/reusable-frontend.yml) | GitHub 工作流 Reusable frontend verification 的触发条件与执行步骤（.github/workflows/reusable-frontend.yml） |
 | [.github/workflows/reusable-windows-package.yml](../.github/workflows/reusable-windows-package.yml) | GitHub 工作流 Reusable Tauri contract 的触发条件与执行步骤（.github/workflows/reusable-windows-package.yml） |
@@ -171,7 +166,6 @@
 | [scripts/fixtures/go123-perf-polish/full_bench_test.go](../scripts/fixtures/go123-perf-polish/full_bench_test.go) | 独立标准库健康模块的样本和身份摘要对照基准。 |
 | [scripts/fixtures/go123-perf-polish/isolation_types_test.go](../scripts/fixtures/go123-perf-polish/isolation_types_test.go) | 独立模块需要的 Owner 类型及摘要适配，不模拟数据库。 |
 | [scripts/generate-openapi.py](../scripts/generate-openapi.py) | 开发、测试、迁移或运维辅助脚本：generate／openapi |
-| [scripts/go123-core-benchmark.py](../scripts/go123-core-benchmark.py) | 复制实际规则核心源码并运行独立 Go 1.23 基准。 |
 | [scripts/go123-deep-hardware.py](../scripts/go123-deep-hardware.py) | 构建隔离健康模块、执行竞态检查并记录持续 CPU 负载。 |
 | [scripts/go123-memory-scheduling.py](../scripts/go123-memory-scheduling.py) | 执行 Go GC、内存软目标和工作线程矩阵。 |
 | [scripts/go123-perf-polish.py](../scripts/go123-perf-polish.py) | 运行独立健康与规则模块的等价测试及分配基准。 |

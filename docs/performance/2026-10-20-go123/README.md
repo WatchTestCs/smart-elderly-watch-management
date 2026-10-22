@@ -8,6 +8,6 @@
 | [DEEP-LOWLEVEL-PERFORMANCE-REPORT.md](DEEP-LOWLEVEL-PERFORMANCE-REPORT.md) | 持续负载、GC、内存峰值与尾延迟实验 |
 | [deep-hardware-raw-results.json](deep-hardware-raw-results.json) | 深层性能实验的原始数据 |
 
-复现脚本仍位于仓库根目录的 `scripts/`：`go123-core-benchmark.py`、`go123-perf-polish.py`、`go123-memory-scheduling.py`、`go123-deep-hardware.py`。调度矩阵及深层实验的默认输出已指向本目录；脚本运行会写入测量结果，历史数据需要保留时请先备份或使用深层实验的 `--output` 指定其他位置。
+复现脚本位于仓库根目录的 `scripts/`：`go123-perf-polish.py`、`go123-memory-scheduling.py`、`go123-deep-hardware.py`。调度矩阵及深层实验的默认输出已指向本目录；脚本运行会写入测量结果，历史数据需要保留时请先备份或使用深层实验的 `--output` 指定其他位置。
 
 [后续性能证据](../2026-10-21-go123/README.md) · [最新双库混合负载报告](../2026-10-22-backend-hybrid/README.md) · [项目首页](../../../README.md)
