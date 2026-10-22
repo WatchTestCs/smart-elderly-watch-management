@@ -57,3 +57,37 @@ tests:
       - eval_time: 6m
         alertname: SuiningBusinessDatabaseUnavailable
         exp_alerts: []
+  - interval: 15s
+    input_series:
+      - series: 'up{job="suining",instance="app:8080"}'
+        values: '1+0x25'
+      - series: 'suining_care_worker_last_heartbeat_unixtime{job="suining",instance="app:8080"}'
+        values: '10+0x25'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: SuiningCareWorkerStale
+        exp_alerts:
+          - exp_labels:
+              job: suining
+              instance: app:8080
+              severity: critical
+            exp_annotations:
+              summary: "SOS dispatcher heartbeat is stale"
+              description: "This checks durable worker progress, not a guarantee of message delivery or responder arrival."
+  - interval: 15s
+    input_series:
+      - series: 'up{job="suining",instance="app:8080"}'
+        values: '1+0x25'
+      - series: 'suining_database_ready{job="suining",instance="app:8080"}'
+        values: '0+0x25'
+    alert_rule_test:
+      - eval_time: 2m
+        alertname: SuiningBusinessDatabaseUnavailable
+        exp_alerts:
+          - exp_labels:
+              job: suining
+              instance: app:8080
+              severity: critical
+            exp_annotations:
+              summary: "Suining MySQL business service unavailable"
+              description: "The business API is not ready; activate the offline care response procedure."
