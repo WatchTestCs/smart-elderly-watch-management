@@ -40,6 +40,7 @@ func TestSaveBatchOnlyInvalidatesCleanDailyCacheRows(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer tx.Rollback(ctx) // Always release locks before database cleanup, even on Fatal.
 	if _, _, err := SaveBatch(ctx, tx, Owner{OldID: 1}, []Sample{sample}); err != nil {
 		t.Fatal(err)
 	}
