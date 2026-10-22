@@ -115,8 +115,8 @@ func TestMySQLRoundTripAB(t *testing.T) {
 			report, _ := json.Marshal(map[string]any{
 				"phase": "write", "mode": mode, "trial": trial,
 				"batch_size": batchSize, "rows": rowsTotal,
-				"rows_per_second": float64(rowsTotal)/elapsed.Seconds(),
-				"elapsed_ms": float64(elapsed.Microseconds())/1000,
+				"rows_per_second":    float64(rowsTotal) / elapsed.Seconds(),
+				"elapsed_ms":         float64(elapsed.Microseconds()) / 1000,
 				"transaction_p50_ms": pick(0.5), "transaction_p95_ms": pick(0.95), "transaction_p99_ms": pick(0.99),
 			})
 			t.Logf("MYSQL_ROUNDTRIP_AB %s", report)
@@ -137,8 +137,8 @@ func TestMySQLRoundTripAB(t *testing.T) {
 		elapsed := time.Since(start)
 		report, _ := json.Marshal(map[string]any{
 			"phase": "lookup", "mode": mode, "trial": trial,
-			"queries": lookups, "queries_per_second": float64(lookups)/elapsed.Seconds(),
-			"elapsed_ms": float64(elapsed.Microseconds())/1000,
+			"queries": lookups, "queries_per_second": float64(lookups) / elapsed.Seconds(),
+			"elapsed_ms": float64(elapsed.Microseconds()) / 1000,
 		})
 		t.Logf("MYSQL_ROUNDTRIP_AB %s", report)
 	}
