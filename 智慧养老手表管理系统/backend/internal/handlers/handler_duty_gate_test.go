@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -43,6 +44,14 @@ func TestAdminDutyGateRestrictsLegacyRoutes(t *testing.T) {
 		check("/restful/health/statistics", http.StatusForbidden)
 		check("/restful/care/transition", http.StatusNoContent)
 		check("/restful/security/factor", http.StatusNoContent)
+	}
+	var deniedAuditCount int
+	if err := pool.QueryRow(
+		context.Background(),
+		"SELECT count(*) FROM care_sensitive_access_audit WHERE actor_id=$1 AND resource='/restful/legacy-admin-denied'",
+		adminID,
+	).Scan(&deniedAuditCount); err != nil || deniedAuditCount != 6 {
+		t.Fatalf("expected one privacy-safe access audit for each denied request, got %d: %v", deniedAuditCount, err)
 	}
 	mustExec(t, pool, "UPDATE care_staff_permission SET duty='supervisor' WHERE admin_id=$1", adminID)
 	check("/restful/customer/delete", http.StatusNoContent)
