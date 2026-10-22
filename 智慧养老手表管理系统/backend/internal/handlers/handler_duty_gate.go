@@ -40,6 +40,19 @@ func (h *Handler) EnforceAdminDuty(next http.Handler) http.Handler {
 			return
 		}
 		if duty != "supervisor" {
+			// The authorization gate runs outside sensitiveCareAudit. Persist
+			// denied access separately, without recording request content, query
+			// arguments, names or unbounded paths. If the audit store is down,
+			// remain fail-closed.
+			if _, err := h.DB.Exec(r.Context(), `INSERT INTO care_sensitive_access_audit
+				(actor_id,actor_role,resource,method) VALUES($1,$2,$3,$4)`,
+				principal.ID, principal.Role, "/restful/legacy-admin-denied", r.Method); err != nil {
+				response.JSON(w, http.StatusServiceUnavailable, map[string]any{
+					"returnCode": "0000", "code": "AUTHZ_AUDIT_UNAVAILABLE",
+					"message": "权限审计不可用，请稍后再试",
+				})
+				return
+			}
 			response.JSON(w, http.StatusForbidden, map[string]any{
 				"returnCode": "0000", "code": "ACCESS_DENIED",
 				"message": "当前岗位无后台管理权限",
