@@ -35,5 +35,5 @@ docker compose --env-file deploy/platform.env -f deploy/platform.compose.yml up 
 
 - `SuiningCareWorkerNeverReported` 和 `SuiningCareWorkerStale` 表示没有可靠的持续任务处理证据，属于 critical。
 - `SuiningOptionalAnalyticsUnavailable`、`SuiningAnalyticsBacklogGrowing` 属于 warning；PG 故障不应使 SOS 持久写入失败，但积压需要限制和监控磁盘。
-- 未配置照护通知网关会触发 warning；用于生产前发现遗漏，不能替代真实网关的签名回执/接单验收。
+- 未配置照护通知网关会触发 warning；已配置网关但缺失长度合规的 `CARE_RECEIPT_SECRET` 会触发 critical，因为发出消息后无法确认送达。两者都不能替代真实网关的签名回执/接单验收。
 - 指标在 scrape 周期和 worker 写入周期之间存在延迟；告警阈值为起点，须按机构容量、实际 p99 和值班要求调整。
