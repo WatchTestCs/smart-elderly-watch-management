@@ -27,6 +27,10 @@ type State struct {
 
 func (s *State) Snapshot() Snapshot { s.mu.RLock(); defer s.mu.RUnlock(); return s.value }
 
+// A full InnoDB COUNT(*) walks the outbox index. Poll it only for status;
+// projection work must never depend on the success of that diagnostic query.
+const pendingSampleInterval = 30 * time.Second
+
 func Run(ctx context.Context, primary *db.Database, url string, state *State) {
 	state.mu.Lock()
 	state.value.Configured = url != ""
@@ -37,12 +41,34 @@ func Run(ctx context.Context, primary *db.Database, url string, state *State) {
 			pg.Close()
 		}
 	}()
+	var pending *int64
+	var nextPendingSample time.Time
+
 	for ctx.Err() == nil {
 		cycle, cancel := context.WithTimeout(ctx, 15*time.Second)
-		var pending int64
-		countErr := primary.SQL().QueryRowContext(cycle, "SELECT count(*) FROM analytics_outbox").Scan(&pending)
+
+		// Status is sampled independently of the data plane. It may be stale
+		// between samples (new producer commits are not counted immediately).
+		// A failed/slow count must not stop delivery to PostgreSQL.
+		if !time.Now().Before(nextPendingSample) {
+			countCtx, stopCount := context.WithTimeout(cycle, 2*time.Second)
+			var counted int64
+			err := primary.SQL().QueryRowContext(countCtx, "SELECT count(*) FROM analytics_outbox").Scan(&counted)
+			stopCount()
+			if err == nil {
+				pending = &counted
+			} else {
+				pending = nil
+			}
+			nextPendingSample = time.Now().Add(pendingSampleInterval)
+		}
+
 		ready := false
-		if url != "" && countErr == nil {
+		// A fully saturated 10-batch drain strongly suggests remaining work.
+		// Resume immediately instead of artificially capping the consumer at
+		// 2,500 events every two seconds. Idle polling remains at 2 seconds.
+		saturated := false
+		if url != "" {
 			if pg == nil {
 				var err error
 				pg, err = pgxpool.New(cycle, url)
@@ -65,13 +91,19 @@ func Run(ctx context.Context, primary *db.Database, url string, state *State) {
 					if copied == 0 {
 						break
 					}
-					pending -= int64(copied)
+					if pending != nil {
+						estimate := max(int64(0), *pending-int64(copied))
+						pending = &estimate
+					}
 					now := time.Now().UTC()
 					state.mu.Lock()
 					state.value.LastSyncedAt = &now
 					state.mu.Unlock()
 					if copied < defaultBatchSize {
 						break
+					}
+					if n == maxBatchesPerTick-1 {
+						saturated = true
 					}
 				}
 				if !ready {
@@ -83,16 +115,16 @@ func Run(ctx context.Context, primary *db.Database, url string, state *State) {
 		state.mu.Lock()
 		state.value.Configured = url != ""
 		state.value.Ready = ready
-		state.value.Pending = nil
-		if countErr == nil {
-			if pending < 0 {
-				pending = 0
-			}
-			state.value.Pending = &pending
-		}
+		state.value.Pending = pending
 		state.mu.Unlock()
 		cancel()
-		timer := time.NewTimer(2 * time.Second)
+
+		delay := 2 * time.Second
+		if saturated {
+			// Yield the scheduler without throttling a proven backlog.
+			delay = 10 * time.Millisecond
+		}
+		timer := time.NewTimer(delay)
 		select {
 		case <-ctx.Done():
 			timer.Stop()
