@@ -1,10 +1,12 @@
 package observability
 
 import (
+	"net/http"
 	"net/http/httptest"
 	"strings"
 	"sync"
 	"testing"
+	"time"
 )
 
 func TestHTTPHistogramLongTailAndCumulativeBuckets(t *testing.T) {
@@ -65,4 +67,60 @@ func BenchmarkRegistryObserveHTTP(b *testing.B) {
 			r.observeHTTP(labels, 0.125)
 		}
 	})
+}
+
+// blockedMetricsWriter simulates a Prometheus client that stopped reading.
+// It blocks on the first metric line, *after* the explanatory header.
+type blockedMetricsWriter struct {
+	header  http.Header
+	writes  int
+	blocked chan struct{}
+	release chan struct{}
+}
+
+func (w *blockedMetricsWriter) Header() http.Header { return w.header }
+func (w *blockedMetricsWriter) WriteHeader(_ int)    {}
+func (w *blockedMetricsWriter) Write(b []byte) (int, error) {
+	w.writes++
+	if w.writes == 2 {
+		close(w.blocked)
+		<-w.release
+	}
+	return len(b), nil
+}
+
+func TestSlowMetricsScraperDoesNotBlockRegistryUpdates(t *testing.T) {
+	r := New()
+	r.Set("suining_care_worker_last_heartbeat_unixtime", 10)
+	w := &blockedMetricsWriter{
+		header: make(http.Header), blocked: make(chan struct{}), release: make(chan struct{}),
+	}
+	defer close(w.release)
+	scraped := make(chan struct{})
+	go func() {
+		defer close(scraped)
+		r.ServeHTTP(w, httptest.NewRequest("GET", "/metrics", nil))
+	}()
+	select {
+	case <-w.blocked:
+	case <-time.After(2 * time.Second):
+		t.Fatal("metrics scrape never reached the blocked writer")
+	}
+	updated := make(chan struct{})
+	go func() {
+		r.Add("suining_care_worker_last_heartbeat_unixtime", 1)
+		close(updated)
+	}()
+	select {
+	case <-updated:
+	case <-time.After(2 * time.Second):
+		t.Fatal("a stalled metrics client held the registry mutex")
+	}
+	// Existing in-flight scrape remains a consistent snapshot.
+	r.mu.Lock()
+	got := r.values["suining_care_worker_last_heartbeat_unixtime"]
+	r.mu.Unlock()
+	if got != 11 {
+		t.Fatalf("registry update was lost: %v", got)
+	}
 }
