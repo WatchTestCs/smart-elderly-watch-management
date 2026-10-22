@@ -122,7 +122,7 @@ func TestAnalyticsConsumerAB(t *testing.T) {
 			"phase": "consumer", "mode": mode, "trial": trial,
 			"records": records, "acknowledged": acknowledged,
 			"projected": projected, "pending": pending,
-			"elapsed_ms": float64(elapsed.Microseconds()) / 1000,
+			"elapsed_ms":      float64(elapsed.Microseconds()) / 1000,
 			"rows_per_second": float64(records) / elapsed.Seconds(),
 		})
 		t.Logf("ANALYTICS_DB_AB %s", out)
