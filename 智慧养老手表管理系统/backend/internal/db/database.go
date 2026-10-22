@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -82,18 +81,6 @@ func OpenMySQL(ctx context.Context, dsn string) (*Database, error) {
 	cfg.Params["time_zone"] = "'+00:00'"
 	// Preserve the existing parameterized concatenation expressions.
 	cfg.Params["sql_mode"] = "'STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION,PIPES_AS_CONCAT'"
-	// go-sql-driver/mysql otherwise PREPAREs, EXECUTEs and CLOSEs every
-	// one-shot parameterized query. UTF8MB4 is enforced above, excluding the
-	// multibyte charsets the driver rejects for safe interpolation.
-	// The explicit opt-out makes a production rollback configuration-only.
-	switch strings.ToLower(strings.TrimSpace(os.Getenv("MYSQL_INTERPOLATE_PARAMS"))) {
-	case "", "1", "true":
-		cfg.InterpolateParams = true
-	case "0", "false":
-		cfg.InterpolateParams = false
-	default:
-		return nil, errors.New("MYSQL_INTERPOLATE_PARAMS must be 0 or 1")
-	}
 	formattedDSN := cfg.FormatDSN()
 	pool, err := sql.Open("mysql", formattedDSN)
 	if err != nil {
