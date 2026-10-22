@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -87,7 +88,16 @@ func OpenMySQL(ctx context.Context, dsn string) (*Database, error) {
 		return nil, errors.New("open MySQL failed")
 	}
 	pool.SetMaxOpenConns(20)
-	pool.SetMaxIdleConns(5)
+	// Bursty device uploads otherwise repeatedly close and reopen 15 of the
+	// 20 available connections. Preserve a warm pool; operators running many
+	// replicas can cap idle connections to fit their MySQL memory/connection
+	// budget without modifying application code.
+	idleLimit, err := mysqlIdleConnectionLimit(os.Getenv("MYSQL_MAX_IDLE_CONNS"))
+	if err != nil {
+		pool.Close()
+		return nil, err
+	}
+	pool.SetMaxIdleConns(idleLimit)
 	pool.SetConnMaxLifetime(5 * time.Minute)
 	if err = pool.PingContext(ctx); err != nil {
 		pool.Close()
@@ -112,6 +122,21 @@ func OpenMySQL(ctx context.Context, dsn string) (*Database, error) {
 	}
 	return &Database{executor: executor{my: pool}, myPool: pool, healthPool: healthPool}, nil
 }
+
+// mysqlIdleConnectionLimit is bounded by the existing 20-connection primary
+// pool; explicit zero is supported for deployments with a strict connection
+// budget. Reject malformed input instead of silently taking a risky default.
+func mysqlIdleConnectionLimit(raw string) (int, error) {
+	if strings.TrimSpace(raw) == "" {
+		return 20, nil
+	}
+	n, err := strconv.Atoi(strings.TrimSpace(raw))
+	if err != nil || n < 0 || n > 20 {
+		return 0, errors.New("MYSQL_MAX_IDLE_CONNS must be an integer from 0 to 20")
+	}
+	return n, nil
+}
+
 func (d *Database) IsMySQL() bool    { return d.myPool != nil }
 func (t *Transaction) IsMySQL() bool { return t.myTx != nil }
 func (d *Database) SQL() *sql.DB     { return d.myPool }

@@ -1,0 +1,57 @@
+name: MySQL idle connection retention A/B
+
+on:
+  push:
+    branches: ['perf/mysql-idle-pool-ab-*']
+    paths:
+      - '.github/workflows/mysql-idle-pool-ab.yml'
+      - '智慧养老手表管理系统/backend/internal/db/database.go'
+      - '智慧养老手表管理系统/backend/internal/db/idle_pool_ab_test.go'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mysql-ab:
+    name: 32-concurrent requests, MySQL 8.4
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: ci_root_only
+          MYSQL_ROOT_HOST: "%"
+          MYSQL_DATABASE: suining_test
+        ports: ["3306:3306"]
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -u root -pci_root_only --silent"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.23.2'
+          cache-dependency-path: 智慧养老手表管理系统/backend/go.sum
+      - name: Run bursty prepared-query pool benchmark
+        working-directory: 智慧养老手表管理系统/backend
+        shell: bash
+        env:
+          RUN_MYSQL_POOL_AB: "1"
+          TEST_MYSQL_DSN: root:ci_root_only@tcp(localhost:3306)/suining_test
+        run: |
+          set -euo pipefail
+          go test -count=1 -run '^TestMySQLIdleConnectionRetentionAB$' -timeout 10m -v ./internal/db | tee "${RUNNER_TEMP}/mysql-idle-pool-ab.log"
+          grep '^    .*MYSQL_IDLE_POOL_AB ' "${RUNNER_TEMP}/mysql-idle-pool-ab.log" > "${RUNNER_TEMP}/mysql-idle-pool-ab.jsonl"
+      - name: Archive exact measurements and test log
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: mysql-idle-pool-ab
+          path: |
+            ${{ runner.temp }}/mysql-idle-pool-ab.log
+            ${{ runner.temp }}/mysql-idle-pool-ab.jsonl
+          if-no-files-found: warn
