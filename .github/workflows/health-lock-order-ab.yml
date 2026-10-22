@@ -1,0 +1,48 @@
+name: Health owner/device lock-order experiment
+
+on:
+  push:
+    branches: ['bench/health-device-owner-lock-order-*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mysql:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: ci_root_only
+          MYSQL_ROOT_HOST: "%"
+          MYSQL_DATABASE: suining_test
+        ports: ["3306:3306"]
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -u root -pci_root_only --silent"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.23.2'
+          cache-dependency-path: 智慧养老手表管理系统/backend/go.sum
+      - name: Exercise real MySQL lock contention and binding races
+        shell: bash
+        working-directory: 智慧养老手表管理系统/backend
+        env:
+          TEST_MYSQL_DSN: root:ci_root_only@tcp(localhost:3306)/suining_test
+        run: |
+          set -euo pipefail
+          go test -count=1 -run '^Test(HealthDeviceLockOrderDuringOwnerClockContention|LateHealthDeviceLockRejectsConcurrentUnbind)$' -timeout 8m -v ./internal/handlers | tee "${RUNNER_TEMP}/health-lock-order-ab.log"
+      - name: Archive log
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: health-lock-order-ab
+          path: ${{ runner.temp }}/health-lock-order-ab.log
+          if-no-files-found: warn
