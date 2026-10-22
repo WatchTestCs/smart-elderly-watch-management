@@ -1,0 +1,16 @@
+{"run_id":39755296645,"batch_size":1,"elapsed_ms":1761.238,"mode":"prepared","phase":"write","rows":1200,"rows_per_second":681.3389036445225,"transaction_p50_ms":0.865,"transaction_p95_ms":1.467,"transaction_p99_ms":14.996,"trial":0}
+{"run_id":39755296645,"batch_size":1,"elapsed_ms":1102.315,"mode":"interpolated","phase":"write","rows":1200,"rows_per_second":1088.6178432861389,"transaction_p50_ms":0.719,"transaction_p95_ms":0.985,"transaction_p99_ms":3.599,"trial":1}
+{"run_id":39755296645,"batch_size":1,"elapsed_ms":1017.187,"mode":"interpolated","phase":"write","rows":1200,"rows_per_second":1179.723015192709,"transaction_p50_ms":0.716,"transaction_p95_ms":0.97,"transaction_p99_ms":2.937,"trial":2}
+{"run_id":39755296645,"batch_size":1,"elapsed_ms":1483.698,"mode":"prepared","phase":"write","rows":1200,"rows_per_second":808.7896340392776,"transaction_p50_ms":0.849,"transaction_p95_ms":1.174,"transaction_p99_ms":9.885,"trial":3}
+{"run_id":39755296645,"batch_size":100,"elapsed_ms":317.309,"mode":"prepared","phase":"write","rows":6000,"rows_per_second":18908.990932098855,"transaction_p50_ms":3.221,"transaction_p95_ms":8.947,"transaction_p99_ms":33.455,"trial":0}
+{"run_id":39755296645,"batch_size":100,"elapsed_ms":384.202,"mode":"interpolated","phase":"write","rows":6000,"rows_per_second":15616.76569426975,"transaction_p50_ms":2.948,"transaction_p95_ms":9.978,"transaction_p99_ms":27.524,"trial":1}
+{"run_id":39755296645,"batch_size":100,"elapsed_ms":244.603,"mode":"interpolated","phase":"write","rows":6000,"rows_per_second":24529.512001670853,"transaction_p50_ms":3.038,"transaction_p95_ms":4.345,"transaction_p99_ms":21.511,"trial":2}
+{"run_id":39755296645,"batch_size":100,"elapsed_ms":369.269,"mode":"prepared","phase":"write","rows":6000,"rows_per_second":16248.29289341752,"transaction_p50_ms":3.227,"transaction_p95_ms":31.506,"transaction_p99_ms":36.12,"trial":3}
+{"run_id":39755296645,"elapsed_ms":751.864,"mode":"prepared","phase":"lookup","queries":3000,"queries_per_second":3990.0823470800738,"trial":0}
+{"run_id":39755296645,"elapsed_ms":383.663,"mode":"interpolated","phase":"lookup","queries":3000,"queries_per_second":7819.352134929051,"trial":1}
+{"run_id":39755296645,"elapsed_ms":382.479,"mode":"interpolated","phase":"lookup","queries":3000,"queries_per_second":7843.566959334988,"trial":2}
+{"run_id":39755296645,"elapsed_ms":734.705,"mode":"prepared","phase":"lookup","queries":3000,"queries_per_second":4083.265976118063,"trial":3}
+{"run_id":39755296645,"count_p50_ms":0.151,"count_p95_ms":0.213,"exists_p50_ms":0.153,"exists_p95_ms":0.224,"phase":"queue_depth","rows":0}
+{"run_id":39755296645,"count_p50_ms":0.597,"count_p95_ms":0.63,"exists_p50_ms":0.213,"exists_p95_ms":0.223,"phase":"queue_depth","rows":10000}
+{"run_id":39755296645,"count_p50_ms":2.555,"count_p95_ms":2.96,"exists_p50_ms":0.555,"exists_p95_ms":0.583,"phase":"queue_depth","rows":100000}
+{"run_id":39755296645,"count_p50_ms":14.327,"count_p95_ms":14.555,"exists_p50_ms":0.766,"exists_p95_ms":0.819,"phase":"queue_depth","rows":500000}
