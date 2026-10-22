@@ -79,7 +79,7 @@ type blockedMetricsWriter struct {
 }
 
 func (w *blockedMetricsWriter) Header() http.Header { return w.header }
-func (w *blockedMetricsWriter) WriteHeader(_ int)    {}
+func (w *blockedMetricsWriter) WriteHeader(_ int)   {}
 func (w *blockedMetricsWriter) Write(b []byte) (int, error) {
 	w.writes++
 	if w.writes == 2 {
