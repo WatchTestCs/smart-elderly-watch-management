@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"os"
@@ -13,6 +14,7 @@ import (
 	"time"
 
 	"careold-go/internal/response"
+	"github.com/jackc/pgx/v5"
 )
 
 // This endpoint only accepts cryptographically authenticated delivery receipts
@@ -59,11 +61,33 @@ func (h *Handler) careReceipt(w http.ResponseWriter, r *http.Request) {
 	}
 	defer tx.Rollback(ctx)
 	var incidentID int64
-	err = tx.QueryRow(ctx, `SELECT incident_id FROM care_notification_outbox
-   WHERE id=$1 AND status IN ('sending','sent') FOR UPDATE`, item.NotificationID).Scan(&incidentID)
+	var status string
+	var attempts int
+	err = tx.QueryRow(ctx, `SELECT incident_id,status,attempts FROM care_notification_outbox
+   WHERE id=$1 FOR UPDATE`, item.NotificationID).Scan(&incidentID, &status, &attempts)
 	if err != nil {
-		// A duplicate or receipt for an unattempted task cannot change an incident.
-		response.JSON(w, http.StatusConflict, map[string]any{"returnCode": "0000", "message": "回执状态不符合预期或已处理"})
+		if errors.Is(err, pgx.ErrNoRows) {
+			response.JSON(w, http.StatusConflict, map[string]any{"returnCode": "0000", "message": "回执状态不符合预期"})
+		} else {
+			response.Error500(w, ref())
+		}
+		return
+	}
+	if status == "delivered" {
+		// A gateway can retry after our commit but before receiving HTTP 200.
+		// Authenticate first, then ACK the durable duplicate without a second event.
+		if err := tx.Commit(ctx); err != nil {
+			response.Error500(w, ref())
+			return
+		}
+		response.OK(w, map[string]any{"notificationId": item.NotificationID, "status": "delivered"})
+		return
+	}
+	// A gateway may deliver after our request timed out and the outbox
+	// became "failed". A signed receipt is authoritative once an attempt was
+	// actually claimed; never accept a still-pending (unattempted) task.
+	if status != "sending" && status != "sent" && !(status == "failed" && attempts > 0) {
+		response.JSON(w, http.StatusConflict, map[string]any{"returnCode": "0000", "message": "回执状态不符合预期"})
 		return
 	}
 	if _, err = tx.Exec(ctx, `UPDATE care_notification_outbox SET status='delivered',delivered_at=now() WHERE id=$1`, item.NotificationID); err != nil {

@@ -4,15 +4,15 @@
     <div class="sidebar-label">工作空间</div>
     <el-menu :key="$route.path" :default-active="$route.path" :default-openeds="openedGroups" unique-opened id="admin-navigation" :class="['care-menu', { 'is-expanded': expanded }]" router>
       <el-menu-item index="/main"><i class="el-icon-menu" aria-hidden="true"></i><template #title><span >运营总览</span></template></el-menu-item>
-      <el-menu-item index="/device"><i class="el-icon-time" aria-hidden="true"></i><template #title><span >设备管理</span></template></el-menu-item>
-      <el-sub-menu index="health">
+      <el-menu-item v-if="!restrictedDuty" index="/device"><i class="el-icon-time" aria-hidden="true"></i><template #title><span >设备管理</span></template></el-menu-item>
+      <el-sub-menu v-if="!restrictedDuty" index="health">
         <template #title ><i class="el-icon-document" aria-hidden="true"></i><span>健康与安全</span></template>
         <el-menu-item index="/ratepre">心率与血压</el-menu-item>
         <el-menu-item index="/step">睡眠与步数</el-menu-item>
         <el-menu-item index="/position">位置与告警</el-menu-item>
         <el-menu-item index="/life">生活信息</el-menu-item>
       </el-sub-menu>
-      <el-sub-menu index="records">
+      <el-sub-menu v-if="!restrictedDuty" index="records">
         <template #title ><i class="el-icon-service" aria-hidden="true"></i><span>档案管理</span></template>
         <el-menu-item index="/person">老人档案</el-menu-item>
         <el-menu-item index="/customer">监护人信息</el-menu-item>
@@ -20,7 +20,7 @@
         <el-menu-item index="/family">家属账号</el-menu-item>
         <el-menu-item index="/inviteCode">家属注册邀请码</el-menu-item>
       </el-sub-menu>
-      <el-sub-menu index="service">
+      <el-sub-menu v-if="!restrictedDuty" index="service">
         <template #title ><i class="el-icon-message" aria-hidden="true"></i><span>公告与互动</span></template>
         <el-menu-item index="/textTwo">发布公告</el-menu-item>
         <el-menu-item index="/textOpt">公告管理</el-menu-item>
@@ -32,10 +32,12 @@
 </template>
 
 <script>
+import { authState } from '@/auth'
 export default {
   name: 'Slider',
   data () { return { expanded: false } },
   computed: {
+    restrictedDuty () { return authState.account?.role === 'ADMIN' && ['caregiver', 'auditor'].includes(authState.account.duty) },
     openedGroups () {
       var groups = {
         health: ['/ratepre', '/step', '/position', '/life'],

@@ -181,6 +181,7 @@ router.beforeEach((to, from, next) => {
     if (!account) return next('/login')
     const familyPage = to.matched.some(route => route.path === '/familyHome')
     if ((account.role === 'FAMILY') !== familyPage) return next(account.role === 'FAMILY' ? '/familyMain' : '/main')
+    if (account.role === 'ADMIN' && ['caregiver', 'auditor'].includes(account.duty) && !['/main', '/home'].includes(to.path)) return next('/main')
     next()
   }).catch(error => {
     if (error.response?.data?.code === 'DATABASE_UNAVAILABLE' && authState.account) {

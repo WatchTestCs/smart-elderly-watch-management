@@ -81,14 +81,32 @@ jobs:
           done
           curl -fsS http://127.0.0.1:4173/ >/dev/null
 
-          "$CHROME"             --headless=new             --no-sandbox             --disable-gpu             --disable-dev-shm-usage             --force-device-scale-factor=1             --remote-debugging-address=127.0.0.1             --remote-debugging-port=9222             --window-size=1440,1000             about:blank > /tmp/suining-chrome.log 2>&1 &
+          # Chrome 136+ requires a non-default profile for remote debugging.
+          CHROME_PROFILE="$(mktemp -d /tmp/suining-ui-chrome.XXXXXX)"
+          "$CHROME" --headless=new --no-sandbox --disable-gpu \
+            --disable-dev-shm-usage --force-device-scale-factor=1 \
+            --user-data-dir="$CHROME_PROFILE" \
+            --remote-debugging-address=127.0.0.1 --remote-debugging-port=9222 \
+            --window-size=1440,1000 about:blank > /tmp/suining-chrome.log 2>&1 &
           echo $! > /tmp/suining-chrome.pid
 
-          for i in {1..60}; do
-            if curl -fsS http://127.0.0.1:9222/json/version >/dev/null; then break; fi
-            sleep 0.25
+          # Headless Chrome on a shared runner can take longer than 15s to
+          # expose CDP even after the process starts. Bound the wait to 60s,
+          # fail early on process exit, and retain useful diagnostics.
+          for i in {1..120}; do
+            if curl --max-time 2 -fsS http://127.0.0.1:9222/json/version >/dev/null 2>&1; then break; fi
+            if ! kill -0 "$(cat /tmp/suining-chrome.pid)" 2>/dev/null; then
+              echo "Chrome exited before CDP was ready" >&2
+              tail -n 80 /tmp/suining-chrome.log >&2
+              exit 1
+            fi
+            sleep 0.5
           done
-          curl -fsS http://127.0.0.1:9222/json/version >/dev/null
+          curl --max-time 3 -fsS http://127.0.0.1:9222/json/version >/dev/null || {
+            echo "Chrome CDP not ready within 60 seconds" >&2
+            tail -n 80 /tmp/suining-chrome.log >&2
+            exit 1
+          }
 
       - name: Desktop accessibility and visual capture
         working-directory: .
