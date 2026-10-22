@@ -4,6 +4,7 @@ on:
     branches: [preview]
     paths:
       - "deploy/**"
+      - "scripts/start-platform.py"
       - ".github/workflows/deploy-contract.yml"
   push:
     branches: [preview]
@@ -40,6 +41,13 @@ jobs:
               raise SystemExit('Prometheus must not be gated on app readiness')
           if 'mysql: {condition: service_healthy}' not in app:
               raise SystemExit('Business app must still require healthy MySQL')
+          startup = Path('scripts/start-platform.py').read_text()
+          critical = '["up", "--build", "-d", "--wait", "mysql", "app", "gateway", "prometheus"]'
+          optional = '["up", "-d", "postgres"]'
+          if critical not in startup or optional not in startup:
+              raise SystemExit('Startup must scope --wait to business and start PG separately')
+          if startup.index(critical) >= startup.index(optional):
+              raise SystemExit('Start business before the optional PG image pull')
           PY
       - name: Validate Prometheus scrape and alert rules
         run: |
