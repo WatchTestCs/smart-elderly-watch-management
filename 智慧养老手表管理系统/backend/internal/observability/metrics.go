@@ -37,6 +37,26 @@ func (r *Registry) Set(name string, value float64) {
 	r.values[name] = value
 	r.mu.Unlock()
 }
+// observeHTTP batches all duration counters under one registry lock rather
+// than reacquiring the same mutex for each histogram bucket. Every finite
+// bucket is emitted, including zeros, to preserve Prometheus histogram shape.
+func (r *Registry) observeHTTP(labels string, seconds float64) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.values["suining_http_requests_total{"+labels+"}"]++
+	r.values["suining_http_duration_seconds_count{"+labels+"}"]++
+	r.values["suining_http_duration_seconds_sum{"+labels+"}"] += seconds
+	for _, upper := range [...]float64{.005, .01, .025, .05, .1, .25, .5, 1, 2.5, 5, 10, 15, 20, 30, 60} {
+		key := `suining_http_duration_seconds_bucket{` + labels + `,le=` + strconv.Quote(strconv.FormatFloat(upper, 'g', -1, 64)) + `}`
+		if seconds <= upper {
+			r.values[key]++
+		} else {
+			r.values[key] += 0
+		}
+	}
+	r.values[`suining_http_duration_seconds_bucket{`+labels+`,le="+Inf"}`]++
+}
+
 func (r *Registry) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
 	fmt.Fprintln(w, "# TYPE suining_http_requests_total counter\n# TYPE suining_http_duration_seconds histogram\n# TYPE suining_http_in_flight gauge")
@@ -106,18 +126,7 @@ func (r *Registry) HTTP(next http.Handler) http.Handler {
 			method = "OTHER"
 		}
 		labels := `route=` + strconv.Quote(route) + `,method=` + strconv.Quote(method) + `,status=` + strconv.Quote(strconv.Itoa(out.status))
-		r.Add("suining_http_requests_total{"+labels+"}", 1)
-		r.Add("suining_http_duration_seconds_count{"+labels+"}", 1)
-		r.Add("suining_http_duration_seconds_sum{"+labels+"}", seconds)
-		for _, upper := range []float64{.005, .01, .025, .05, .1, .25, .5, 1, 2.5, 5, 10} {
-			key := `suining_http_duration_seconds_bucket{` + labels + `,le=` + strconv.Quote(strconv.FormatFloat(upper, 'g', -1, 64)) + `}`
-			if seconds <= upper {
-				r.Add(key, 1)
-			} else {
-				r.Add(key, 0)
-			}
-		}
-		r.Add(`suining_http_duration_seconds_bucket{`+labels+`,le="+Inf"}`, 1)
+		r.observeHTTP(labels, seconds)
 		slog.Info("http_request", "request_id", id, "route", route, "method", method, "status", out.status, "duration_ms", seconds*1000)
 	})
 }
