@@ -3,6 +3,10 @@ name: Health owner/device lock-order experiment
 on:
   push:
     branches: ['bench/health-device-owner-lock-order-*']
+    paths:
+      - '.github/workflows/health-lock-order-ab.yml'
+      - '智慧养老手表管理系统/backend/internal/handlers/handler_health.go'
+      - '智慧养老手表管理系统/backend/internal/handlers/health_lock_order_test.go'
   workflow_dispatch:
 
 permissions:
