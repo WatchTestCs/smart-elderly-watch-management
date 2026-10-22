@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
@@ -13,6 +14,7 @@ import (
 	"time"
 
 	"careold-go/internal/response"
+	"github.com/jackc/pgx/v5"
 )
 
 // This endpoint only accepts cryptographically authenticated delivery receipts
@@ -63,8 +65,11 @@ func (h *Handler) careReceipt(w http.ResponseWriter, r *http.Request) {
 	err = tx.QueryRow(ctx, `SELECT incident_id,status FROM care_notification_outbox
    WHERE id=$1 FOR UPDATE`, item.NotificationID).Scan(&incidentID, &status)
 	if err != nil {
-		// Do not acknowledge receipts for unknown notification IDs or database errors.
-		response.JSON(w, http.StatusConflict, map[string]any{"returnCode": "0000", "message": "回执状态不符合预期"})
+		if errors.Is(err, pgx.ErrNoRows) {
+			response.JSON(w, http.StatusConflict, map[string]any{"returnCode": "0000", "message": "回执状态不符合预期"})
+		} else {
+			response.Error500(w, ref())
+		}
 		return
 	}
 	if status == "delivered" {
