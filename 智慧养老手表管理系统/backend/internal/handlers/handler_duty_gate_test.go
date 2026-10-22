@@ -78,3 +78,29 @@ func TestRestrictedAdminRouteAllowlist(t *testing.T) {
 		t.Fatal("wrong HTTP method bypassed duty gate")
 	}
 }
+
+func TestRestrictedAdminGateFailsClosedWithoutAuditStore(t *testing.T) {
+	pool := testDatabase(t)
+	const id int64 = 987655
+	mustExec(t, pool, "INSERT INTO users(user_id,user_name,role,user_phone) VALUES($1,'AuditFailure','1','13900009875')", id)
+	mustExec(t, pool, "INSERT INTO care_staff_permission(admin_id,duty,assigned_by) VALUES($1,'auditor',$1)", id)
+	// This is an isolated per-test database, never production.
+	mustExec(t, pool, "DROP TABLE care_sensitive_access_audit")
+	sessions := session.NewStore(time.Hour)
+	sess := sessions.Create(session.Principal{Role: auth.RoleAdmin, ID: id})
+	nextCalled := false
+	gate := auth.Middleware(sessions, testHandler(pool).EnforceAdminDuty(http.HandlerFunc(
+		func(w http.ResponseWriter, _ *http.Request) {
+			nextCalled = true
+			w.WriteHeader(http.StatusNoContent)
+		},
+	)))
+	req := httptest.NewRequest(http.MethodPost, "/restful/customer/delete", nil)
+	req.AddCookie(&http.Cookie{Name: session.CookieName, Value: sess.ID})
+	rec := httptest.NewRecorder()
+	gate.ServeHTTP(rec, req)
+	if rec.Code != http.StatusServiceUnavailable || nextCalled {
+		t.Fatalf("missing audit store must fail closed: status=%d nextCalled=%v body=%s",
+			rec.Code, nextCalled, rec.Body.String())
+	}
+}
