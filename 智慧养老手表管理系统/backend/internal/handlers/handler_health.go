@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"os"
 	"time"
 
 	"careold-go/internal/health"
@@ -33,13 +34,15 @@ func decodeHealth(w http.ResponseWriter, r *http.Request, dst any) bool {
 }
 
 func (h *Handler) healthBatch(w http.ResponseWriter, r *http.Request) {
-	// Keep the established device-before-owner lock order on deployed writers.
-	h.healthBatchWithLockOrder(w, r, false)
+	// Owner-first is opt-in only. All old-version writers must be stopped and
+	// drained before enabling it: mixed device->owner and owner->device lock
+	// ordering across replicas can produce InnoDB deadlocks.
+	h.healthBatchWithLockOrder(w, r, os.Getenv("HEALTH_LATE_DEVICE_LOCK") == "1")
 }
 
-// healthBatchWithLockOrder provides an isolated A/B experiment for a possible
-// shorter device-row lock. Production keeps the original order until it is
-// validated against binding races and a coordinated multi-replica cutover.
+// healthBatchWithLockOrder preserves the original write/revision contract but
+// can delay the device-row lock until the final binding/secret revalidation.
+// Never enable owner-first concurrently with an old device-first writer.
 func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Request, lateDeviceLock bool) {
 	var req struct {
 		DeviceNo       string          `json:"deviceNo"`
