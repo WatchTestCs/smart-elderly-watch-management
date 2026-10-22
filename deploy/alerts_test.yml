@@ -1,0 +1,59 @@
+rule_files:
+  - /etc/prometheus/alerts.yml
+evaluation_interval: 15s
+tests:
+  - interval: 15s
+    input_series:
+      - series: 'up{job="suining",instance="app:8080"}'
+        values: '1+0x25'
+      - series: 'suining_care_notification_configured{job="suining",instance="app:8080"}'
+        values: '1+0x25'
+      - series: 'suining_care_receipt_configured{job="suining",instance="app:8080"}'
+        values: '0+0x25'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: SuiningCareReceiptVerificationDisabled
+        exp_alerts:
+          - exp_labels:
+              job: suining
+              instance: app:8080
+              severity: critical
+            exp_annotations:
+              summary: "SOS gateway dispatch enabled but trusted delivery receipts cannot be validated"
+              description: "The gateway may accept messages but the system cannot confirm delivery. Repair the receipt secret and use human fallback."
+  - interval: 15s
+    input_series:
+      - series: 'up{job="suining",instance="app:8080"}'
+        values: '1+0x25'
+      - series: 'suining_care_notification_configured{job="suining",instance="app:8080"}'
+        values: '0+0x25'
+      - series: 'suining_care_receipt_configured{job="suining",instance="app:8080"}'
+        values: '0+0x25'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: SuiningCareReceiptVerificationDisabled
+        exp_alerts: []
+  - interval: 15s
+    input_series:
+      - series: 'up{job="suining",instance="app:8080"}'
+        values: '1+0x35'
+      - series: 'suining_database_ready{job="suining",instance="app:8080"}'
+        values: '1+0x35'
+      - series: 'suining_analytics_configured{job="suining",instance="app:8080"}'
+        values: '1+0x35'
+      - series: 'suining_analytics_ready{job="suining",instance="app:8080"}'
+        values: '0+0x35'
+    alert_rule_test:
+      - eval_time: 6m
+        alertname: SuiningOptionalAnalyticsUnavailable
+        exp_alerts:
+          - exp_labels:
+              job: suining
+              instance: app:8080
+              severity: warning
+            exp_annotations:
+              summary: "Optional PostgreSQL analytics projection unavailable"
+              description: "MySQL remains authoritative. Check the outbox and restore PG synchronization without blocking care operations."
+      - eval_time: 6m
+        alertname: SuiningBusinessDatabaseUnavailable
+        exp_alerts: []
