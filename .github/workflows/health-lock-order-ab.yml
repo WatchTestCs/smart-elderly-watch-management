@@ -42,7 +42,7 @@ jobs:
           TEST_MYSQL_DSN: root:ci_root_only@tcp(localhost:3306)/suining_test
         run: |
           set -euo pipefail
-          go test -count=1 -run '^Test(HealthDeviceLockOrderDuringOwnerClockContention|LateHealthDeviceLockRejectsConcurrentUnbind)$' -timeout 8m -v ./internal/handlers | tee "${RUNNER_TEMP}/health-lock-order-ab.log"
+          go test -count=1 -run '^Test(HealthDeviceLockOrderDuringOwnerClockContention|LateHealthDeviceLockRejectsConcurrentUnbind|LateHealthDeviceLockRejectsConcurrentCredentialChanges)$' -timeout 8m -v ./internal/handlers | tee "${RUNNER_TEMP}/health-lock-order-ab.log"
       - name: Archive log
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
