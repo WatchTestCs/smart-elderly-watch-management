@@ -35,7 +35,7 @@ func SyncBatch(ctx context.Context, primary *db.Database, pg *pgxpool.Pool, size
 
 	rows, err := tx.QueryContext(ctx, `SELECT o.id,s.source_id,o.entity,o.entity_id,o.payload,o.deleted
         FROM analytics_outbox AS o CROSS JOIN analytics_source AS s
-        WHERE s.singleton=1 ORDER BY o.id LIMIT ? FOR UPDATE SKIP LOCKED`, size)
+        WHERE s.singleton=1 ORDER BY o.id LIMIT ? FOR UPDATE OF o SKIP LOCKED`, size)
 	if err != nil {
 		return 0, err
 	}
