@@ -162,7 +162,8 @@ func SaveBatch(ctx context.Context, tx *db.Transaction, o Owner, samples []Sampl
 	}
 	if tx.IsMySQL() {
 		// Invalidate all cached days for this owner, including the OLD date of a
-		// corrected/deleted interval. Skip already-dirty rows to avoid needless\n\t\t// update locks, redo work and cache invalidation churn.
+		// corrected/deleted interval. Skip already-dirty rows to avoid needless
+		// update locks, redo work and cache invalidation churn.
 		if _, err = tx.Exec(ctx, "UPDATE metric_daily SET dirty=true WHERE old_id=$1 AND dirty=false", o.OldID); err != nil {
 			return 0, 0, err
 		}
