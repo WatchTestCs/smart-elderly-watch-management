@@ -67,3 +67,11 @@ groups:
         annotations:
           summary: "SOS notification gateway missing or misconfigured"
           description: "Tasks may remain pending; arrange external gateway configuration and human on-call fallback."
+      - alert: SuiningCareReceiptVerificationDisabled
+        expr: (suining_care_notification_configured == 1) and on(job,instance) (suining_care_receipt_configured == 0)
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "SOS gateway dispatch enabled but trusted delivery receipts cannot be validated"
+          description: "The gateway may accept messages but the system cannot confirm delivery. Repair the receipt secret and use human fallback."
