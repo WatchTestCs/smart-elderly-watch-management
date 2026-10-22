@@ -27,6 +27,13 @@ if not env.exists():
 command = ["docker", "compose", "--env-file", str(env), "-f", str(root / "deploy/platform.compose.yml")]
 subprocess.run(command + ["config", "--quiet"], check=True)
 if "--validate" not in sys.argv:
-    subprocess.run(command + ["up", "--build", "-d", "--wait"], check=True)
+    # PostgreSQL is optional analytics. Attempt it, but never gate the
+    # MySQL-backed care API on its image pull, startup, or health status.
+    analytics = subprocess.run(command + ["up", "-d", "postgres"], check=False)
+    if analytics.returncode:
+        print("可选 PostgreSQL 分析服务未启动；MySQL 业务与照护服务将继续启动。", file=sys.stderr)
+    # An explicit service list keeps --wait scoped to critical services.
+    subprocess.run(command + ["up", "--build", "-d", "--wait", "mysql", "app", "gateway", "prometheus"], check=True)
     print("岁宁：http://127.0.0.1:8080 ；Prometheus：http://127.0.0.1:9090")
     print("首次管理员：python scripts/bootstrap-admin.py；密钥与数据卷必须独立备份。")
+    print("PostgreSQL 分析状态请查看 /restful/service/status，主库由 MySQL 提供。")
