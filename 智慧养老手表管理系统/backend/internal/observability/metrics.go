@@ -61,15 +61,22 @@ func (r *Registry) observeHTTP(labels string, seconds float64) {
 func (r *Registry) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
 	fmt.Fprintln(w, "# TYPE suining_http_requests_total counter\n# TYPE suining_http_duration_seconds histogram\n# TYPE suining_http_in_flight gauge")
+	// Snapshot under lock, then release it before writing to an arbitrary
+	// network client. A slow or disconnected scraper must not block request
+	// completion, counters, or dispatcher heartbeat updates.
 	r.mu.Lock()
-	defer r.mu.Unlock()
+	values := make(map[string]float64, len(r.values))
 	keys := make([]string, 0, len(r.values))
-	for k := range r.values {
+	for k, v := range r.values {
+		values[k] = v
 		keys = append(keys, k)
 	}
+	r.mu.Unlock()
 	sort.Strings(keys)
 	for _, k := range keys {
-		fmt.Fprintf(w, "%s %s\n", k, strconv.FormatFloat(r.values[k], 'g', -1, 64))
+		if _, err := fmt.Fprintf(w, "%s %s\n", k, strconv.FormatFloat(values[k], 'g', -1, 64)); err != nil {
+			return
+		}
 	}
 }
 
