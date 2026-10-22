@@ -48,6 +48,9 @@ jobs:
               raise SystemExit('Startup must scope --wait to business and start PG separately')
           if startup.index(critical) >= startup.index(optional):
               raise SystemExit('Start business before the optional PG image pull')
+          unit = Path('deploy/suining-care.service').read_text()
+          if 'postgresql.service' in unit:
+              raise SystemExit('systemd service must not wait for optional PostgreSQL')
           PY
       - name: Validate Prometheus scrape and alert rules
         run: |
