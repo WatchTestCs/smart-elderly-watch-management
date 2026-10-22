@@ -59,11 +59,26 @@ func (h *Handler) careReceipt(w http.ResponseWriter, r *http.Request) {
 	}
 	defer tx.Rollback(ctx)
 	var incidentID int64
-	err = tx.QueryRow(ctx, `SELECT incident_id FROM care_notification_outbox
-   WHERE id=$1 AND status IN ('sending','sent') FOR UPDATE`, item.NotificationID).Scan(&incidentID)
+	var status string
+	err = tx.QueryRow(ctx, `SELECT incident_id,status FROM care_notification_outbox
+   WHERE id=$1 FOR UPDATE`, item.NotificationID).Scan(&incidentID, &status)
 	if err != nil {
-		// A duplicate or receipt for an unattempted task cannot change an incident.
-		response.JSON(w, http.StatusConflict, map[string]any{"returnCode": "0000", "message": "回执状态不符合预期或已处理"})
+		// Do not acknowledge receipts for unknown notification IDs or database errors.
+		response.JSON(w, http.StatusConflict, map[string]any{"returnCode": "0000", "message": "回执状态不符合预期"})
+		return
+	}
+	if status == "delivered" {
+		// A gateway can retry after our commit but before receiving HTTP 200.
+		// Authenticate first, then ACK the durable duplicate without a second event.
+		if err := tx.Commit(ctx); err != nil {
+			response.Error500(w, ref())
+			return
+		}
+		response.OK(w, map[string]any{"notificationId": item.NotificationID, "status": "delivered"})
+		return
+	}
+	if status != "sending" && status != "sent" {
+		response.JSON(w, http.StatusConflict, map[string]any{"returnCode": "0000", "message": "回执状态不符合预期"})
 		return
 	}
 	if _, err = tx.Exec(ctx, `UPDATE care_notification_outbox SET status='delivered',delivered_at=now() WHERE id=$1`, item.NotificationID); err != nil {
