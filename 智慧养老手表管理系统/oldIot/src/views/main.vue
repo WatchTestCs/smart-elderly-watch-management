@@ -1,11 +1,11 @@
 <template>
   <div class="dashboard">
     <div class="page-heading">
-      <div><h1>运营总览</h1><p class="page-subtitle">查看设备异常与平台公告，及时跟进照护事项。</p></div>
-      <el-button type="primary" icon="el-icon-plus" @click="addtext">发布公告</el-button>
+      <div><h1>{{ isRestricted ? '照护工作台' : '运营总览' }}</h1><p class="page-subtitle">{{ isRestricted ? '按职责接单、处置和复核，不展示无权限的后台统计。' : '查看设备异常与平台公告，及时跟进照护事项。' }}</p></div>
+      <el-button v-if="!isRestricted" type="primary" icon="el-icon-plus" @click="addtext">发布公告</el-button>
     </div>
     <care-inbox @verified="searchposition" />
-    <div class="dashboard-panels">
+    <div v-if="!isRestricted" class="dashboard-panels">
     <section class="overview-grid" aria-label="设备告警摘要">
       <article class="overview-card alert-card" v-loading="countLoading" :aria-busy="String(countLoading)">
         <div class="metric-icon amber"><i class="el-icon-warning"></i></div>
@@ -98,6 +98,7 @@
 <script>
 import axios from 'axios'
 import CareInbox from '@/components/CareInbox.vue'
+import { authState } from '@/auth'
 
 export default {
   components: { CareInbox },
@@ -110,6 +111,7 @@ export default {
     }
   },
   computed: {
+    isRestricted () { return authState.account?.role === 'ADMIN' && ['caregiver', 'auditor'].includes(authState.account.duty) },
     emptyTitle () {
       if (this.loadError) return '公告暂时无法加载'
       return this.appliedSearch ? '没有找到相关公告' : '暂时没有公告'
@@ -119,7 +121,7 @@ export default {
       return this.appliedSearch ? '试试其他标题关键词，或清除搜索条件查看全部公告。' : '发布后的服务信息和照护提醒会显示在这里。'
     }
   },
-  created () { this.searchOlds(); this.getCount(); this.searchposition() },
+  created () { if (!this.isRestricted) { this.searchOlds(); this.getCount(); this.searchposition() } },
   methods: {
     getCount () {
       if (this.countLoading) return
@@ -138,7 +140,7 @@ export default {
       }).catch(() => { this.countError = '设备统计暂时无法加载' }).then(() => { this.countLoading = false })
     },
     async searchposition () {
-      if (this.positionLoading) return
+      if (this.isRestricted || this.positionLoading) return
       this.positionLoading = true
       this.positionError = ''
       this.num = null
