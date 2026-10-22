@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"os"
 	"time"
 
 	"careold-go/internal/health"
@@ -33,6 +34,16 @@ func decodeHealth(w http.ResponseWriter, r *http.Request, dst any) bool {
 }
 
 func (h *Handler) healthBatch(w http.ResponseWriter, r *http.Request) {
+	// Owner-first is opt-in only. All old-version writers must be stopped and
+	// drained before enabling it: mixed device->owner and owner->device lock
+	// ordering across replicas can produce InnoDB deadlocks.
+	h.healthBatchWithLockOrder(w, r, os.Getenv("HEALTH_LATE_DEVICE_LOCK") == "1")
+}
+
+// healthBatchWithLockOrder preserves the original write/revision contract but
+// can delay the device-row lock until the final binding/secret revalidation.
+// Never enable owner-first concurrently with an old device-first writer.
+func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Request, lateDeviceLock bool) {
 	var req struct {
 		DeviceNo       string          `json:"deviceNo"`
 		Secret         string          `json:"secret"`
@@ -74,13 +85,17 @@ func (h *Handler) healthBatch(w http.ResponseWriter, r *http.Request) {
 		hwFail(w, code, msg)
 		return
 	}
-	// Authenticate before locking; hold the device row until commit to exclude rebinds.
-	d, err = scanOldDevice(tx.QueryRow(ctx, `SELECT `+oldDeviceCols+` FROM device WHERE device_id=$1 FOR UPDATE`, d.ID))
-	if err != nil {
-		response.Error500(w, ref())
-		return
+	// In experimental late-lock mode, perform the expensive sample write
+	// under the owner-clock lock before locking the device row. Revalidate the
+	// full device binding under FOR UPDATE before committing anything.
+	if !lateDeviceLock {
+		d, err = scanOldDevice(tx.QueryRow(ctx, `SELECT `+oldDeviceCols+` FROM device WHERE device_id=$1 FOR UPDATE`, d.ID))
+		if err != nil {
+			response.Error500(w, ref())
+			return
+		}
 	}
-	if !secretMatches(req.Secret, d.Secret) || (d.Status != nil && *d.Status == 0) {
+	if !secretMatches(req.Secret, d.Secret) || d.No != req.DeviceNo || (d.Status != nil && *d.Status == 0) {
 		hwFail(w, "0004", "设备号或密钥不正确，或设备已停用")
 		return
 	}
@@ -88,7 +103,9 @@ func (h *Handler) healthBatch(w http.ResponseWriter, r *http.Request) {
 		conflict409(w, "绑定已变化，请重新登录；旧绑定数据不能归入新老人")
 		return
 	}
-	cursor, duplicates, err := health.SaveBatch(ctx, tx, health.Owner{OldID: *d.OldID, DeviceID: &d.ID, Epoch: d.HealthEpoch}, req.Samples)
+	expectedOwner := *d.OldID
+	owner := health.Owner{OldID: expectedOwner, DeviceID: &d.ID, Epoch: d.HealthEpoch}
+	cursor, duplicates, err := health.SaveBatch(ctx, tx, owner, req.Samples)
 	if err != nil {
 		if errors.Is(err, health.ErrConflict) {
 			conflict409(w, err.Error())
@@ -96,6 +113,22 @@ func (h *Handler) healthBatch(w http.ResponseWriter, r *http.Request) {
 			response.Error500(w, ref())
 		}
 		return
+	}
+	if lateDeviceLock {
+		locked, lockErr := scanOldDevice(tx.QueryRow(ctx, `SELECT `+oldDeviceCols+` FROM device WHERE device_id=$1 FOR UPDATE`, d.ID))
+		if lockErr != nil {
+			response.Error500(w, ref())
+			return
+		}
+		d = locked
+		if !secretMatches(req.Secret, d.Secret) || d.No != req.DeviceNo || (d.Status != nil && *d.Status == 0) {
+			hwFail(w, "0004", "设备号或密钥不正确，或设备已停用")
+			return
+		}
+		if d.OldID == nil || *d.OldID != expectedOwner || d.HealthEpoch != req.BindingVersion {
+			conflict409(w, "绑定已变化，请重新登录；旧绑定数据不能归入新老人")
+			return
+		}
 	}
 	if err = touchDevice(ctx, tx, d.ID, nil, nil, time.Now()); err != nil {
 		response.Error500(w, ref())
