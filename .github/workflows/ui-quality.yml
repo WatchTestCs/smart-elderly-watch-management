@@ -81,14 +81,23 @@ jobs:
           done
           curl -fsS http://127.0.0.1:4173/ >/dev/null
 
-          "$CHROME"             --headless=new             --no-sandbox             --disable-gpu             --disable-dev-shm-usage             --force-device-scale-factor=1             --remote-debugging-address=127.0.0.1             --remote-debugging-port=9222             --window-size=1440,1000             about:blank > /tmp/suining-chrome.log 2>&1 &
+          # Chrome 136+ requires a non-default profile for remote debugging.
+          CHROME_PROFILE="$(mktemp -d /tmp/suining-ui-chrome.XXXXXX)"
+          "$CHROME" --headless=new --no-sandbox --disable-gpu \
+            --disable-dev-shm-usage --force-device-scale-factor=1 \
+            --user-data-dir="$CHROME_PROFILE" \
+            --remote-debugging-address=127.0.0.1 --remote-debugging-port=9222 \
+            --window-size=1440,1000 about:blank > /tmp/suining-chrome.log 2>&1 &
           echo $! > /tmp/suining-chrome.pid
 
           for i in {1..60}; do
             if curl -fsS http://127.0.0.1:9222/json/version >/dev/null; then break; fi
             sleep 0.25
           done
-          curl -fsS http://127.0.0.1:9222/json/version >/dev/null
+          curl -fsS http://127.0.0.1:9222/json/version >/dev/null || {
+            tail -n 60 /tmp/suining-chrome.log >&2
+            exit 1
+          }
 
       - name: Desktop accessibility and visual capture
         working-directory: .
