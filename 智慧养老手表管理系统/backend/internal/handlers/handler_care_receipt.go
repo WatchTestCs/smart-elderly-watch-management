@@ -62,8 +62,9 @@ func (h *Handler) careReceipt(w http.ResponseWriter, r *http.Request) {
 	defer tx.Rollback(ctx)
 	var incidentID int64
 	var status string
-	err = tx.QueryRow(ctx, `SELECT incident_id,status FROM care_notification_outbox
-   WHERE id=$1 FOR UPDATE`, item.NotificationID).Scan(&incidentID, &status)
+	var attempts int
+	err = tx.QueryRow(ctx, `SELECT incident_id,status,attempts FROM care_notification_outbox
+   WHERE id=$1 FOR UPDATE`, item.NotificationID).Scan(&incidentID, &status, &attempts)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			response.JSON(w, http.StatusConflict, map[string]any{"returnCode": "0000", "message": "回执状态不符合预期"})
@@ -82,7 +83,10 @@ func (h *Handler) careReceipt(w http.ResponseWriter, r *http.Request) {
 		response.OK(w, map[string]any{"notificationId": item.NotificationID, "status": "delivered"})
 		return
 	}
-	if status != "sending" && status != "sent" {
+	// A gateway may deliver after our request timed out and the outbox
+	// became "failed". A signed receipt is authoritative once an attempt was
+	// actually claimed; never accept a still-pending (unattempted) task.
+	if status != "sending" && status != "sent" && !(status == "failed" && attempts > 0) {
 		response.JSON(w, http.StatusConflict, map[string]any{"returnCode": "0000", "message": "回执状态不符合预期"})
 		return
 	}
