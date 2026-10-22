@@ -588,3 +588,5 @@
 | [智慧养老手表管理系统/watch-sim/watch-sim.config.json](../智慧养老手表管理系统/watch-sim/watch-sim.config.json) | 模拟手表的服务地址与设备凭据配置模板，使用前填入实际设备密钥。（智慧养老手表管理系统/watch-sim/watch-sim.config.json） |
 | [智慧养老手表管理系统/watch-sim/watch-sim.js](../智慧养老手表管理系统/watch-sim/watch-sim.js) | 模拟手表登录、心跳与数据上报的 Node 联调入口；不代表真实硬件验证。（智慧养老手表管理系统/watch-sim/watch-sim.js） |
 | [智慧养老手表管理系统/watch-sim/watch-sim.test.cjs](../智慧养老手表管理系统/watch-sim/watch-sim.test.cjs) | 手表模拟器接口协议和请求行为的自动化测试，不代替真实硬件联调。 |
+| [智慧养老手表管理系统/desktop/package-release.ps1](../智慧养老手表管理系统/desktop/package-release.ps1) | 从同一构建生成安装、免安装、源码和校验清单，并在隔离目录验证安装启动和卸载 |
+| [docs/releases/2.1.0.md](../docs/releases/2.1.0.md) | 说明 2.1.0 完整交付、后端改进、升级步骤、配置及验证限制 |

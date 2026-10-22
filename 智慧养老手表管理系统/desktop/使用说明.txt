@@ -1,6 +1,6 @@
-岁宁 2.0.6 · Windows x64
+岁宁 2.1.0 · Windows x64
 
-安装版：运行 Suining-Setup-2.0.6-win-x64.exe。检测并复用系统 WebView2，仅缺失时联网静默补装；免安装版需要系统已有 WebView2。WebView2 为共享组件，不随岁宁卸载。
+安装版：运行 Suining-Setup-2.1.0-win-x64.exe。检测并复用系统 WebView2，仅缺失时联网静默补装；免安装版需要系统已有 WebView2。WebView2 为共享组件，不随岁宁卸载。
 
 免安装版：完整解压后运行 suining.exe，保留同目录 suining-server.exe。不要只复制其中一个 EXE。
 

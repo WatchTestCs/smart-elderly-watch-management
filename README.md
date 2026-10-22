@@ -4,22 +4,22 @@
 
 **简体中文** | [English](README.en.md)
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-235442)](LICENSE) [![Preview: 2.0.6](https://img.shields.io/badge/preview-2.0.6-9b7a40)](docs/releases/2.0.6.md) [![Go: 1.23+](https://img.shields.io/badge/Go-1.23%2B-00ADD8)](智慧养老手表管理系统/backend/go.mod)
+[![License: MIT](https://img.shields.io/badge/license-MIT-235442)](LICENSE) [![Preview: 2.1.0](https://img.shields.io/badge/preview-2.1.0-9b7a40)](docs/releases/2.1.0.md) [![Go: 1.23+](https://img.shields.io/badge/Go-1.23%2B-00ADD8)](智慧养老手表管理系统/backend/go.mod)
 
 **岁月有伴，日常安宁。**
 
-岁宁面向照护机构与家属，提供长者档案、手表设备、健康与活动记录、位置告警、照护任务和公告互动。当前 2.0.6 采用 **Tauri 2 / Rust 桌面 + Vue 3 / Vite 界面 + Go 业务服务 + MySQL 主库 + PostgreSQL 分析库**，数据库由部署方独立管理。
+岁宁面向照护机构与家属，提供长者档案、手表设备、健康与活动记录、位置告警、照护任务和公告互动。当前 2.1.0 采用 **Tauri 2 / Rust 桌面 + Vue 3 / Vite 界面 + Go 业务服务 + MySQL 主库 + PostgreSQL 分析库**，数据库由部署方独立管理。
 
 [快速开始](#开始使用) · [功能与照护流程](#主要功能) · [系统架构](#系统架构) · [源码与构建](#源码与构建) · [测试与性能证据](#近期后端验证与性能证据) · [下载与历史附件](docs/DOWNLOADS.md) · [双库部署与迁移](docs/DUAL_DATABASES.md)
 
 ## 当前源码与适用范围
 
-> **源码预览不等于可安装软件或生产验收。** 产品版本仍为 **2.0.6**；[v2.0.6 Release](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.6) 已发布**源码 ZIP**，但没有该版本的 Windows 安装包。`preview` 又包含发布后的 Go 后端修复与测试，不能用 Release 标签、CI 成功或离线微基准代替真实桌面安装及生产验收。
+> **2.1.0 完整交付：**[v2.1.0 Release](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.1.0) 提供 Windows x64 安装版、免安装版及完整源码。精确提交、构建与打包检查见随包 `release-manifest.json`；未签名，真实设备和生产环境仍须独立验收。
 
 | 关心的问题 | 当前结论 | 从哪里核对 |
 | --- | --- | --- |
 | 获取最新开发源码 | 使用 `preview` 分支；分支 ZIP 会随提交变化 | [浏览源码](https://github.com/WatchTestCs/smart-elderly-watch-management/tree/preview) · [下载源码 ZIP](https://github.com/WatchTestCs/smart-elderly-watch-management/archive/refs/heads/preview.zip) |
-| 对外版本与安装包 | **v2.0.6 已发布源码附件（无 Windows 安装包）**；当前可下载的 Windows 安装/免安装仍为 **2.0.2**；最新 `preview` 源码不等于发布标签 | [v2.0.6 源码 Release](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.6) · [下载与版本对应关系](docs/DOWNLOADS.md) |
+| 对外版本与安装包 | **2.1.0 安装版、免安装版和源码**，三者对应同一提交 | [v2.1.0 Release](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.1.0) · [下载说明](docs/DOWNLOADS.md) |
 | Go 版本 | `backend/go.mod` 声明 **Go 1.23+**；CI 覆盖 Go 1.23.2 与 1.27.2 | [go.mod](智慧养老手表管理系统/backend/go.mod) · [最新已核实 CI 运行](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/39634129082) |
 | 核心数据库 | MySQL 是业务唯一主库，PostgreSQL 是可重建的异步分析投影 | [双库指南](docs/DUAL_DATABASES.md) |
 | 真实长时间负载 | 历史两轮 CI 耐久测试失败；后续本地修复版完成 20 分钟双库混合压测，9,484 批写入成功，HTTP 500/503 均为 0；当前合并源码未重跑 20 分钟 | [最新结果与源码边界](docs/performance/2026-10-22-backend-hybrid/README.md) · [历史记录](#近期后端验证与性能证据) |
@@ -44,31 +44,15 @@
 | [README.md](README.md) | 中文项目首页与当前源码入口。 |
 | [architecture.md](architecture.md) | 根目录的系统组件和数据流概览。 |
 
-## 2.0.6 源码 Release 与本地交付
+## 2.1.0 安装版、免安装版与源码
 
-**已公开：**[v2.0.6 源码预览 Release](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.6) 提供 `Suining-Source-2.0.6-preview.zip`、`SHA256SUMS.txt` 和中文发布说明，**不包含 Windows 安装程序或免安装桌面版**。这是发布标签对应的源码快照，不包含此后 `preview` 分支新增的全部 Go 1.23 适配与压测修复。
+[v2.1.0 Release](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.1.0) 提供 `Suining-Setup-2.1.0-win-x64.exe`、`Suining-Portable-2.1.0-win-x64.zip`、`Suining-Source-2.1.0.zip`、SHA-256 和来源清单。继承双库、照护和档案整合，纳入后续 Go 修复及 PR #24／#25 的分析排空、日缓存和 MySQL 空闲池优化。[升级与验证边界](docs/releases/2.1.0.md)。
 
-**本地历史交付（未公开成该版本的 Windows Release）：**此前曾构建 `Suining-Setup-2.0.6-win-x64.exe`、`Suining-Portable-2.0.6-win-x64.zip` 及 `Suining-Source-2.0.6.zip`。这些本地文件的 SHA-256 清单仅在**对应交付实际附带**时才适用，不能与 GitHub v2.0.6 的源码附件混用。未执行该版本原生安装窗口验收。
+安装版复用系统 WebView2，仅缺失时联网补装；免安装版需已有运行时，解压后运行 `suining.exe` 并保留同目录 `suining-server.exe`。数据库独立部署，安装不会自动导入旧数据。当前包未签名。
 
-- **界面补齐：**导航仅展开当前分组，统一术语，长者档案窄屏卡片化，五个管理页面补齐加载与失败重试，调整宽屏栅格和统计口径。
-- **资料与设备：**先建档再绑定手表，档案编辑不改写设备归属，保留自定义阈值，修正生活资料字段，缺测指标保留 NULL。
-- **照护闭环：**SOS 接单、处置、另一名主管独立复核；任务和履历分页，关闭关联告警并刷新统计。
-- **健康采样：**保留远程批量采样、版本修订、绑定隔离、增量同步与单来源统计，改用 MySQL 持久化；旧前端和旧上报路径仍保持各自行为，见 [接口说明](智慧养老手表管理系统/backend/docs/health-data.md)。
-- **双库分工：**MySQL 承担全部核心业务，PG 异步接收分析投影；附旧 PG 离线导入和分析回填工具。
+`MYSQL_MAX_IDLE_CONNS` 默认 20，允许 0–20；设为 5 并重启可恢复旧空闲池行为。主应用连接数仍最多 20，健康探测另占 1 个；多实例按数据库资源预算配置。性能收益只对应报告中的查询负载。
 
-### 获取源码与选择附件
-
-截至 **2026-10-22** 核对，最新公开源码附件来自 **v2.0.6**，而公开 Windows 安装/免安装附件仍停留在 **2.0.2**。下载时须核对**发布标签、文件名与交付类型**；最新开发源码优先查看 `preview` 分支，而不是把旧安装包配置成新双库版本。
-
-| 需要什么 | 下载入口 | 使用范围 |
-| --- | --- | --- |
-| 最新 `preview` 开发源码 | [分支源码 ZIP](https://github.com/WatchTestCs/smart-elderly-watch-management/archive/refs/heads/preview.zip) | 含持续开发更新；需自行构建，下载内容随分支提交变化 |
-| 已发布 2.0.6 源码快照 | [v2.0.6 Release](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.6) · [源码 ZIP](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/download/v2.0.6/Suining-Source-2.0.6-preview.zip) · [SHA-256](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/download/v2.0.6/SHA256SUMS.txt) | 固定发布版源代码；非 Windows 可执行软件，不包含后续 `preview` 提交 |
-| 历史 2.0.5 源码 | [2.0.5 架构优化版](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.5-optimized.1) | PG 单库历史源码，不含新的双库与健康采样整合 |
-| 最新公开 Windows 软件 | [2.0.2 安装与免安装](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.2-preview.1) | 旧 PG 单库程序，**不是 2.0.6**；不能使用新 MySQL 配置 |
-| 历史 Linux 附件 | [Linux 软件与数据库工具说明](docs/LINUX.md) | 独立历史附件，未证明与当前源码兼容 |
-
-所有历史版本、具体文件、校验入口与兼容性见 [下载与历史附件索引](docs/DOWNLOADS.md)。GitHub 自动生成的源码 ZIP 不等于 NSIS 安装器，也不等于经过本地打包验证的 Release 附件。
+最新开发源码仍查看 [preview](https://github.com/WatchTestCs/smart-elderly-watch-management/tree/preview)，固定发布版使用 Release 源码包。历史 2.0.6 只有源码，2.0.2 使用旧 PG 单库，2.0.0 使用早期桌面栈；历史 Linux 附件没有重编译为 2.1.0。完整索引见 [下载与历史附件](docs/DOWNLOADS.md)。
 
 ## 主要功能
 
@@ -173,7 +157,7 @@ MySQL 触发器在业务事务内写入分析事件；Go 同步作业写入 PG �
 
 ## 开始使用
 
-1. 如果需要 2.0.6 及 `preview` 更新后的 Windows 程序，应从相应源码自行构建；公开 v2.0.6 Release **只提供源码 ZIP**，历史公开 2.0.2 安装包不包含本次整合。安装构建所得的 Setup，或完整解压相应免安装包后运行 `suining.exe`，保留同目录 `suining-server.exe`。最终用户无需安装 Go、Rust 或 Node.js。Setup 在缺少 WebView2 时联网补装，免安装版需要系统已有 WebView2。
+1. 从 [v2.1.0 Release](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.1.0) 下载安装版或免安装版；完整解压免安装包后运行 `suining.exe`，保留同目录 `suining-server.exe`。最终用户无需 Go、Rust 或 Node.js。Setup 缺少 WebView2 时联网补装；免安装版需要已有 WebView2。
 2. 部署独立 MySQL 业务库，按需启用 PG 分析库。安装包不包含数据库服务。可参考 [双库 Compose 模板](deploy/dual-db.compose.yml) 与 [环境模板](deploy/dual-db.env.example)；模板仅映射回环端口，应用需另行启动。
 3. 配置桌面环境变量后启动软件。以下仅为受控本机示例，密码需私下替换；跨机器连接需验证 TLS。
 
@@ -240,7 +224,7 @@ cd 智慧养老手表管理系统
 ./desktop/build.ps1
 ```
 
-构建顺序为 **Vue 生产资源 → Go 内嵌资源、测试与编译 → sidecar SHA-256 → Tauri 原生程序 → NSIS 安装包**。脚本支持 `CARGO_TARGET_DIR`，产物在工程目录 `outputs/v2.0.6-preview`。默认构建不签名；可选 `-SelfSign` 仅用于本机自签，不能提供公开受信任签名。免安装 ZIP、源码 ZIP 和交付说明属于单独整理步骤。开发代理、真实数据库测试要求见 [工程 README](智慧养老手表管理系统/README.md) 和 [后端 README](智慧养老手表管理系统/backend/README.md)。
+构建顺序为 **Vue 生产资源 → Go 内嵌资源、测试与编译 → sidecar SHA-256 → Tauri 原生程序 → NSIS 安装包**。脚本支持 `CARGO_TARGET_DIR`，产物在工程目录 `outputs/v2.1.0-preview`。默认构建不签名；可选 `-SelfSign` 仅用于本机自签，不能提供公开受信任签名。运行 `desktop/package-release.ps1` 生成免安装 ZIP、源码 ZIP、来源清单并检查安装和启动。开发代理、真实数据库测试要求见 [工程 README](智慧养老手表管理系统/README.md) 和 [后端 README](智慧养老手表管理系统/backend/README.md)。
 
 ## 近期后端验证与性能证据
 
@@ -314,7 +298,7 @@ go test -race -count=1 -timeout 600s ./...
 | 已发送通知，任务仍未关闭 | 发送、送达、接单、处置和独立复核是不同状态 |
 | HTTP 500/503 或数据库状态异常 | 查看 [500/503 排查记录](docs/MYSQL_503_500_CONTINUATION_20261021.md)、业务池等待与 SQL 慢查询；单个 503 不等于整库宕机，且健康探测与业务成功需分开监控 |
 | 免安装版不能启动 | 是否完整解压、两个 EXE 是否同目录、WebView2 是否存在；先确认附件真实版本 |
-| 源码写着 2.0.6，下载程序却是 2.0.2 | 分支源码与历史二进制分开交付，按 [附件索引](docs/DOWNLOADS.md) 选择 |
+| 下载程序与源码版本不一致 | 从同一 2.1.0 Release 获取程序和源码，并核对 SHA-256 |
 
 反馈时提供版本或提交、文件名、系统、数据库就绪状态和脱敏复现步骤即可，详见 [支持说明](docs/SUPPORT.md)。
 
@@ -329,6 +313,6 @@ go test -race -count=1 -timeout 600s ./...
 | 备份与文件职责 | [备份恢复](docs/runbooks/backup-restore.md) · [逐文件索引](docs/FILES.md) |
 | 贡献、支持与历史 | [贡献指南](CONTRIBUTING.md) · [支持说明](docs/SUPPORT.md) · [更新日志](CHANGELOG.md) · [历史决定](docs/decisions/README.md) |
 
-当前工作只更新 `preview`；不修改 `main`、移动旧标签或随文档更新发布附件。历史 ADR 和验收文档保留其版本上下文；当前配置以本 README、2.0.6 说明和双库指南为准。
+2.1.0 从 `preview` 发布；不修改 `main` 或移动旧标签。历史 ADR 和验收文档保留其版本上下文；当前配置以本 README、2.0.6 说明和双库指南为准。
 
 欢迎通过 [Issues](https://github.com/WatchTestCs/smart-elderly-watch-management/issues) 反馈可复现问题，安全问题按 [安全策略](.github/SECURITY.md) 私下报告。请勿公开真实人员数据、数据库连接串或密钥。[MIT License](LICENSE)；字体与第三方组件遵循各自许可。

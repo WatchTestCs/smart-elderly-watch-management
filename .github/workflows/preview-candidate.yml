@@ -25,8 +25,11 @@ jobs:
       - name: Build actual Windows installer
         shell: pwsh
         run: ./智慧养老手表管理系统/desktop/build.ps1
+      - name: Package and verify Setup, portable and source
+        shell: pwsh
+        run: ./智慧养老手表管理系统/desktop/package-release.ps1
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
         with:
-          name: tauri-windows-installer
-          path: 智慧养老手表管理系统/outputs/*/*.exe
+          name: suining-windows-release
+          path: 智慧养老手表管理系统/outputs/*/release/*
           if-no-files-found: error

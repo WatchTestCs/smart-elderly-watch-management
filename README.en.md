@@ -4,17 +4,17 @@
 
 [简体中文](README.md) | **English**
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-235442)](LICENSE) [![Preview: 2.0.6](https://img.shields.io/badge/preview-2.0.6-9b7a40)](docs/releases/2.0.6.md)
+[![License: MIT](https://img.shields.io/badge/license-MIT-235442)](LICENSE) [![Preview: 2.1.0](https://img.shields.io/badge/preview-2.1.0-9b7a40)](docs/releases/2.1.0.md)
 
 **Everyday care, with clarity and calm.**
 
-Suining brings resident profiles, wearable devices, health and activity records, location alerts, care tasks and announcements into one workspace for care organizations and families. Version 2.0.6 uses **Tauri 2 / Rust, Vue 3 / Vite, Go, a MySQL transactional primary and PostgreSQL analytics**. Database services are independently deployed. The application interface is primarily Chinese.
+Suining brings resident profiles, wearable devices, health and activity records, location alerts, care tasks and announcements into one workspace for care organizations and families. Version 2.1.0 uses **Tauri 2 / Rust, Vue 3 / Vite, Go, a MySQL transactional primary and PostgreSQL analytics**. Database services are independently deployed. The application interface is primarily Chinese.
 
 [Source and historical downloads](docs/DOWNLOADS.md) · [2.0.6 release and upgrade notes](docs/releases/2.0.6.md) · [Architecture](#architecture) · [Getting started](#getting-started) · [Dual-database guide](docs/DUAL_DATABASES.md) · [Source project](智慧养老手表管理系统/README.md) · [Changelog](CHANGELOG.md)
 
 ## Current source status and evidence
 
-**A v2.0.6 source-only Release is available, but no v2.0.6 Windows binary has been published.** The `preview` branch has continued to evolve its Go backend since that tagged snapshot. The module now targets **Go 1.23+**; the [Preview CI run](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/39623700602) passed its Go 1.23.2 / 1.27.2 backend verification using disposable MySQL and PostgreSQL services. The published 2.0.2 Windows binaries and older source archives are **not** builds of the current `preview` branch.
+**Version 2.1.0 provides Windows x64 Setup, portable and complete source packages** at the [v2.1.0 Release](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.1.0). The included manifest identifies the exact source commit and packaging checks. Packages are unsigned; real devices and production deployments require separate acceptance. Go CI covers 1.23.2 and 1.27.2 with disposable MySQL and PostgreSQL.
 
 **Important 20-minute MySQL finding:** A real disposable-MySQL test ran for its planned duration, but **failed**: 1,987 HTTP requests, 1,959 acknowledged, 28 HTTP 500, zero HTTP 503, and 19 rule errors. All 391,800 acknowledged synthetic samples matched the rows counted in the two relevant tables. This supports those specific persistence checks, **not** an overall reliability or throughput claim. An initial workflow also masked `go test` failures behind `tee` without `pipefail`; see the [run and raw artifact](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/39622692722), the [invalid first-attempt example](docs/performance/2026-10-21-go123/FIRST_20MIN_INCORRECT_DEMONSTRATION.md), and the [performance evidence index](docs/performance/2026-10-21-go123/README.md).
 
@@ -41,31 +41,15 @@ For local development, [platform.compose.yml](deploy/platform.compose.yml) inclu
 | [README.md](README.md) | Chinese project homepage and current source entry point. |
 | [architecture.md](architecture.md) | Root-level overview of system components and data flow. |
 
-## 2.0.6 source Release and local deliverables
+## 2.1.0 Setup, portable and source
 
-**Published:** [v2.0.6](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.6) contains the **source-only** `Suining-Source-2.0.6-preview.zip`, a `SHA256SUMS.txt` file, and Chinese release notes. It contains **no Windows Setup or portable desktop executable**. The source is a tagged snapshot, not all subsequent `preview` changes.
+The [v2.1.0 Release](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.1.0) provides `Suining-Setup-2.1.0-win-x64.exe`, `Suining-Portable-2.1.0-win-x64.zip`, `Suining-Source-2.1.0.zip`, SHA-256 checksums and a source/check manifest. It combines the dual-database and care integration with subsequent Go fixes and PR #24/#25 analytics-drain, daily-cache and idle-pool improvements. See the [upgrade notes and verification limits](docs/releases/2.1.0.md).
 
-**Earlier local builds:** The Windows Setup, portable package and source archive had been built locally as `Suining-Setup-2.0.6-win-x64.exe`, `Suining-Portable-2.0.6-win-x64.zip` and `Suining-Source-2.0.6.zip`; these are **not** v2.0.6 Release assets. Verify checksums only against the manifest shipped with the corresponding local package. The native installer and window were not acceptance-tested for this version.
+Setup reuses system WebView2 and downloads it only if missing. Portable use requires an existing runtime: extract the complete ZIP and keep `suining.exe` beside `suining-server.exe`. Databases are independently deployed; installation does not migrate old data. Packages are unsigned.
 
-- **Interface:** route-aware navigation expansion, consistent terminology, narrow-screen resident cards, loading and retry states on five management pages, and improved wide-screen layout and statistics descriptions.
-- **Profiles and devices:** create residents before binding watches; profile editing preserves device ownership; retain custom thresholds, correct daily-information fields and preserve NULL for missing measurements.
-- **Care workflow:** acknowledge SOS, record care actions and obtain independent verification from another supervisor; paginate tasks and history, clear the associated alert and refresh statistics.
-- **Health sampling:** retain batch samples, revisions, binding isolation, incremental changes and single-source statistics with MySQL persistence. Existing UI and legacy reporting remain separate; see the [API guide](智慧养老手表管理系统/backend/docs/health-data.md).
-- **Dual databases:** MySQL owns all core transactions; PostgreSQL receives asynchronous analytics projections. Offline legacy-PG import and analytics backfill tools are included.
+`MYSQL_MAX_IDLE_CONNS` defaults to 20 and accepts 0–20; setting 5 and restarting restores previous idle retention. The primary pool still permits at most 20 connections plus one dedicated probe connection. Budget server resources across all replicas. Reported latency gains apply only to the documented query microbenchmark.
 
-### Source and package selection
-
-As checked on **2026-10-22**, the latest public source attachment is **v2.0.6**, while the latest public Windows Setup and portable executables remain **2.0.2**. Check the tag, asset name and distribution type before installing or applying database settings.
-
-| Need | Download | Scope |
-| --- | --- | --- |
-| Current development source | [preview ZIP](https://github.com/WatchTestCs/smart-elderly-watch-management/archive/refs/heads/preview.zip) | Latest branch source; requires building and changes with commits |
-| Published v2.0.6 source snapshot | [v2.0.6 source release](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.6) · [ZIP asset](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/download/v2.0.6/Suining-Source-2.0.6-preview.zip) · [SHA-256](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/download/v2.0.6/SHA256SUMS.txt) | Source only, tagged snapshot; excludes later `preview` updates |
-| Historical 2.0.5 source | [2.0.5 optimized source](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.5-optimized.1) | Legacy PG-only source, without this dual-database/health integration |
-| Latest published Windows binaries | [2.0.2 Setup and portable](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.2-preview.1) | Legacy PG-only app, **not 2.0.6** |
-| Historical Linux packages | [Linux notes](docs/LINUX.md) | Separate historical artifacts with unconfirmed compatibility |
-
-See the [download and historical-artifact index](docs/DOWNLOADS.md) for exact files and checksum references. A GitHub-generated source ZIP is neither an NSIS installer nor an independently validated release package.
+Use [preview](https://github.com/WatchTestCs/smart-elderly-watch-management/tree/preview) for evolving source and the Release ZIP for a fixed version. Historical 2.0.6 is source-only, 2.0.2 uses the older PG primary, and 2.0.0 uses the earlier desktop stack. Historical Linux packages have not been rebuilt as 2.1.0. See the [artifact index](docs/DOWNLOADS.md).
 
 ## Features
 
@@ -170,7 +154,7 @@ See [implementation architecture](docs/ARCHITECTURE.md) and [dual-database opera
 
 ## Getting started
 
-1. Build the Windows application from the matching v2.0.6 or newer `preview` source; the public v2.0.6 Release includes **source files only**, not a Windows executable. Install the resulting Setup, or extract its corresponding complete portable ZIP and run `suining.exe` beside `suining-server.exe`. End users do not need Go, Rust or Node.js. Setup downloads WebView2 if missing; portable use requires an existing runtime.
+1. Download Setup or portable from the [v2.1.0 Release](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.1.0). Extract the complete portable ZIP and run `suining.exe` beside `suining-server.exe`. End users do not need Go, Rust or Node.js. Setup downloads WebView2 if missing; portable use requires an existing runtime.
 2. Deploy a separate MySQL business database and enable PG analytics when needed. Database servers are not bundled. The [Compose template](deploy/dual-db.compose.yml) and [environment template](deploy/dual-db.env.example) expose loopback-only database ports; start the application separately.
 3. Configure the desktop environment, then launch it. Replace the placeholder passwords privately. This example is for controlled local connections; remote connections require verified TLS.
 
@@ -221,7 +205,7 @@ cd 智慧养老手表管理系统
 ./desktop/build.ps1
 ```
 
-The pipeline builds **Vue assets → Go embedded assets, tests and binary → sidecar SHA-256 → Tauri application → NSIS Setup**. It supports `CARGO_TARGET_DIR`; Setup output is under the project’s `outputs/v2.0.6-preview`. Default builds are unsigned; optional `-SelfSign` provides local self-signing only. Portable/source ZIPs and delivery notes are separate preparation steps. See the [project README](智慧养老手表管理系统/README.md) and [backend README](智慧养老手表管理系统/backend/README.md) for development and real-database test requirements.
+The pipeline builds **Vue assets → Go embedded assets, tests and binary → sidecar SHA-256 → Tauri application → NSIS Setup**. It supports `CARGO_TARGET_DIR`; Setup output is under the project’s `outputs/v2.1.0-preview`. Default builds are unsigned; optional `-SelfSign` provides local self-signing only. Run `desktop/package-release.ps1` to prepare portable/source ZIPs and check installation and startup. See the [project README](智慧养老手表管理系统/README.md) and [backend README](智慧养老手表管理系统/backend/README.md) for development and real-database test requirements.
 
 ## Screenshots and verification
 
@@ -248,7 +232,7 @@ Version-specific evidence and upgrade limits are described in the [2.0.6 notes](
 | Upload fails with a binding-version conflict | Use the binding version from acquisition time; do not relabel old cached samples as belonging to a new resident |
 | Notification sent but task remains open | Sending, receipt, acknowledgment, care and independent verification are separate states |
 | Portable application will not start | Full extraction, both EXEs, WebView2 and the exact package version |
-| Source says 2.0.6 but downloaded software says 2.0.2 | Source and historical binaries are distinct; use the [artifact index](docs/DOWNLOADS.md) |
+| Source and program versions differ | Download matching 2.1.0 assets and verify SHA-256 |
 
 Include version/commit, exact filename, OS, database readiness and redacted reproduction steps when reporting a problem. See [Support](docs/SUPPORT.md).
 
@@ -263,6 +247,6 @@ Include version/commit, exact filename, OS, database readiness and redacted repr
 | Operations and file responsibilities | [Backup/restore](docs/runbooks/backup-restore.md) · [File index](docs/FILES.md) |
 | Community and history | [Contributing](CONTRIBUTING.md) · [Support](docs/SUPPORT.md) · [Changelog](CHANGELOG.md) · [Historical decisions](docs/decisions/README.md) |
 
-Work is restricted to `preview`; this source integration does not modify `main`, move existing tags or publish artifacts. Historical ADRs and verification documents retain their version context. Use this README, the 2.0.6 notes and the dual-database guide for current configuration.
+Version 2.1.0 is published from `preview`; `main` and existing tags remain unchanged. Historical ADRs and verification documents retain their version context. Use this README, the 2.0.6 notes and the dual-database guide for current configuration.
 
 Report reproducible problems through [Issues](https://github.com/WatchTestCs/smart-elderly-watch-management/issues); report vulnerabilities privately under the [security policy](.github/SECURITY.md). Do not disclose real personal data, database credentials or keys. [MIT License](LICENSE); fonts and third-party components retain their own licenses.

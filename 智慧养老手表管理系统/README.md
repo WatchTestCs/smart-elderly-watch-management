@@ -1,8 +1,8 @@
-# 岁宁 2.0.6 · 源码工程
+# 岁宁 2.1.0 · 源码工程
 
 本工程由 **Tauri 2 / Rust 桌面壳、Go 业务服务、Vue 3 / Vite 界面和手表模拟器**组成。MySQL 是唯一业务主库，PostgreSQL 保存异步分析投影；数据库由部署方独立管理。
 
-[产品与整体架构](../README.md) · [2.0.6 改进](../docs/releases/2.0.6.md) · [双库配置与迁移](../docs/DUAL_DATABASES.md) · [实现协议](../docs/ARCHITECTURE.md) · [性能与数据库验收](../docs/performance/2026-10-21-go123/README.md)
+[产品与整体架构](../README.md) · [2.1.0 发布](../docs/releases/2.1.0.md) · [双库配置与迁移](../docs/DUAL_DATABASES.md) · [实现协议](../docs/ARCHITECTURE.md) · [性能与数据库验收](../docs/performance/2026-10-21-go123/README.md)
 
 ## 工程职责
 
@@ -27,9 +27,9 @@ Rust 启动 Go，Vue 从 Go 获取内嵌生产资源并调用同源 API；首次
 ./desktop/build.ps1 -SelfSign
 ```
 
-构建顺序：锁定依赖安装 → Vue 生产构建 → 复制 Go 内嵌资源 → Go 测试、静态检查、编译 → sidecar 哈希 → Tauri 编译 → NSIS Setup。脚本支持 `CARGO_TARGET_DIR`；安装包位于工程目录 `outputs/v2.0.6-preview/Suining-Setup-2.0.6-win-x64.exe`。版本校验覆盖前端、桌面、Cargo、Go 版本文件及锁文件中的产品版本。
+构建顺序：锁定依赖安装 → Vue 生产构建 → 复制 Go 内嵌资源 → Go 测试、静态检查、编译 → sidecar 哈希 → Tauri 编译 → NSIS Setup。脚本支持 `CARGO_TARGET_DIR`；安装包位于工程目录 `outputs/v2.1.0-preview/Suining-Setup-2.1.0-win-x64.exe`。版本校验覆盖前端、桌面、Cargo、Go 版本文件及锁文件中的产品版本。
 
-默认不签名。免安装 ZIP、源码 ZIP、说明与摘要是单独整理步骤，`build.ps1` 不会自动生成全部交付附件。Setup 缺失 WebView2 时联网补装；免安装版需已有 WebView2，并保留同目录的两个 EXE。
+默认不签名。构建后运行 `desktop/package-release.ps1` 生成免安装 ZIP、源码、说明与摘要，并检查安装与启动。Setup 缺失 WebView2 时联网补装；免安装版需已有 WebView2，并保留同目录的两个 EXE。
 
 ## 前后端开发
 

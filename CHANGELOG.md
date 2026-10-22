@@ -2,6 +2,15 @@
 
 This is a concise user-facing history, not a complete commit log. Release notes and artifact manifests retain version-specific validation details. / 本文件记录主要变化，完整验收与附件来源以相应 Release 为准。
 
+## 2.1.0 — Windows 完整交付与后端改进
+
+[发布与升级说明](docs/releases/2.1.0.md)
+
+- 同一 preview 提交生成 Windows x64 安装、免安装和完整源码包，产品版本统一为 2.1.0，附 SHA-256 和来源清单。
+- 整合 2.0.6 之后的 Go 1.23 适配与后端修复，以及 PR #24 的持续排空、队列诊断采样和日缓存写入优化。
+- PR #25 默认保留 20 个 MySQL 空闲连接，增加受限配置与回退方式；微基准收益不外推为 HTTP 端到端性能。
+- 打包流程增加隔离目录中的安装、免安装启动及卸载保留资料检查；真实硬件与生产验收边界保留。
+
 ## 2.0.6 — UI、照护闭环与双库整合
 
 [改进与升级说明](docs/releases/2.0.6.md)
