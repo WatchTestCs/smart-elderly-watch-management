@@ -88,12 +88,12 @@ func TestAnalyticsProducerAB(t *testing.T) {
 			out, _ := json.Marshal(map[string]any{
 				"phase": "producer", "mode": mode, "trial": trial,
 				"rows": records, "batch_size": batchSize, "batches": len(delays),
-				"elapsed_ms": float64(elapsed.Microseconds()) / 1000,
-				"rows_per_second": float64(records) / elapsed.Seconds(),
+				"elapsed_ms":         float64(elapsed.Microseconds()) / 1000,
+				"rows_per_second":    float64(records) / elapsed.Seconds(),
 				"transaction_p50_ms": pick(0.50),
 				"transaction_p95_ms": pick(0.95),
 				"transaction_p99_ms": pick(0.99),
-				"outbox_rows": n, "payload_sha256": digest,
+				"outbox_rows":        n, "payload_sha256": digest,
 			})
 			t.Logf("ANALYTICS_DB_AB %s", out)
 		}
