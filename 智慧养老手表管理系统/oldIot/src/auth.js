@@ -76,6 +76,15 @@ export function installHttpSecurity (router, app) {
       // 只刷新令牌，不自动重放可能产生写入的请求。
       loadSession(true).catch(() => {})
     }
+    if (error.response?.status === 403 && error.response.data?.code === 'ACCESS_DENIED' && authState.account?.role === 'ADMIN') {
+      // A supervisor may change a duty while a page is open. Refresh the
+      // session, but never replay the denied mutation automatically.
+      loadSession(true).then(account => {
+        if (account?.role === 'ADMIN' && ['caregiver', 'auditor'].includes(account.duty) && !['/main', '/home'].includes(router.currentRoute.value.path)) {
+          router.replace('/main')
+        }
+      }).catch(() => {})
+    }
     return Promise.reject(error)
   })
 }
