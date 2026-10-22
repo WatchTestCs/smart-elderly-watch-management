@@ -51,9 +51,10 @@ services:
     secrets: [data_key, metrics_token, bootstrap_token]
     volumes: ["images:/data/images"]
     expose: ["8080"]
+    # MySQL is the only business startup dependency. PostgreSQL projection
+    # reconnects asynchronously and must never prevent the API from starting.
     depends_on:
       mysql: {condition: service_healthy}
-      postgres: {condition: service_healthy}
     read_only: true
     tmpfs: ["/tmp"]
     cap_drop: [ALL]
@@ -71,8 +72,7 @@ services:
     volumes: ["./prometheus.yml:/etc/prometheus/prometheus.yml:ro", "prometheus:/prometheus"]
     secrets: [metrics_token]
     ports: ["127.0.0.1:${PROMETHEUS_PORT:-9090}:9090"]
-    depends_on:
-      app: {condition: service_healthy}
+    # Monitoring must start even when the application is unhealthy.
     restart: unless-stopped
 secrets:
   data_key: {file: ./secrets/data-key}
