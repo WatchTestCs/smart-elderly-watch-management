@@ -2,11 +2,11 @@ package analytics
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
 	"encoding/json"
 	"fmt"
 	"os"
-	"reflect"
 	"sort"
 	"strings"
 	"testing"
@@ -39,7 +39,7 @@ func TestAnalyticsProducerAB(t *testing.T) {
 		// ABBA order helps to reveal environment drift, rather than treating
 		// a single first-versus-second measurement as a reliable speedup.
 		order := []string{"trigger", "explicit", "explicit", "trigger"}
-		var expected map[string]any
+		var expectedHash string
 		for trial, mode := range order {
 			for _, table := range []string{"ratepre", "ratepre_direct", "analytics_outbox"} {
 				if _, err := sqlDB.ExecContext(ctx, "TRUNCATE TABLE "+table); err != nil {
@@ -71,18 +71,14 @@ func TestAnalyticsProducerAB(t *testing.T) {
 			if n != records || business != records {
 				t.Fatalf("data parity violation mode=%s: source=%d outbox=%d want=%d", mode, business, n, records)
 			}
-			var payload []byte
-			if err := sqlDB.QueryRowContext(ctx, "SELECT payload FROM analytics_outbox WHERE entity_id=1").Scan(&payload); err != nil {
+			digest, err := fingerprintOutbox(ctx, sqlDB)
+			if err != nil {
 				t.Fatal(err)
 			}
-			var value map[string]any
-			if err := json.Unmarshal(payload, &value); err != nil {
-				t.Fatal(err)
-			}
-			if expected == nil {
-				expected = value
-			} else if !reflect.DeepEqual(expected, value) {
-				t.Fatalf("producer JSON contract changed: mode=%s got=%v expected=%v", mode, value, expected)
+			if expectedHash == "" {
+				expectedHash = digest
+			} else if expectedHash != digest {
+				t.Fatalf("producer JSON content mismatch: mode=%s hash=%s expected=%s", mode, digest, expectedHash)
 			}
 			sort.Slice(delays, func(i, j int) bool { return delays[i] < delays[j] })
 			pick := func(f float64) float64 {
@@ -97,7 +93,7 @@ func TestAnalyticsProducerAB(t *testing.T) {
 				"transaction_p50_ms": pick(0.50),
 				"transaction_p95_ms": pick(0.95),
 				"transaction_p99_ms": pick(0.99),
-				"outbox_rows": n,
+				"outbox_rows": n, "payload_sha256": digest,
 			})
 			t.Logf("ANALYTICS_DB_AB %s", out)
 		}
@@ -138,4 +134,33 @@ func insertProducerBatch(ctx context.Context, sqlDB *sql.DB, mode string, first,
 		}
 	}
 	return tx.Commit()
+}
+
+func fingerprintOutbox(ctx context.Context, sqlDB *sql.DB) (string, error) {
+	rows, err := sqlDB.QueryContext(ctx, "SELECT payload FROM analytics_outbox ORDER BY entity_id")
+	if err != nil {
+		return "", err
+	}
+	defer rows.Close()
+	h := sha256.New()
+	for rows.Next() {
+		var payload []byte
+		if err := rows.Scan(&payload); err != nil {
+			return "", err
+		}
+		var value any
+		if err := json.Unmarshal(payload, &value); err != nil {
+			return "", err
+		}
+		canonical, err := json.Marshal(value)
+		if err != nil {
+			return "", err
+		}
+		_, _ = h.Write(canonical)
+		_, _ = h.Write([]byte{10})
+	}
+	if err := rows.Err(); err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%x", h.Sum(nil)), nil
 }
