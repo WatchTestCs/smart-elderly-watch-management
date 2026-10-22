@@ -33,6 +33,17 @@ type databaseService struct {
 	api       atomic.Pointer[http.Handler]
 	currentDB atomic.Pointer[dbstore.Database]
 	analytics analytics.State
+	// configErr 记录启动阶段的配置错误。它一旦非空，watchDatabase 不再进入
+	// 重连循环，服务状态接口也会把原因暴露出来，避免前端一直显示"正在自动连接"。
+	configErr error
+}
+
+// configErrorText 返回可序列化的配置错误说明（无错误时为空串）。
+func (s *databaseService) configErrorText() string {
+	if s.configErr == nil {
+		return ""
+	}
+	return s.configErr.Error()
 }
 
 func (s *databaseService) middleware(local http.Handler) http.Handler {
@@ -65,7 +76,14 @@ func (s *databaseService) middleware(local http.Handler) http.Handler {
 		api := s.api.Load()
 		if r.URL.Path == "/restful/service/status" && r.Method == http.MethodGet {
 			w.Header().Set("Cache-Control", "no-store")
-			response.JSON(w, http.StatusOK, map[string]any{"databaseReady": api != nil, "primaryEngine": "mysql", "analytics": map[string]bool{"configured": s.analytics.Snapshot().Configured, "ready": s.analytics.Snapshot().Ready}})
+			snapshot := s.analytics.Snapshot()
+			response.JSON(w, http.StatusOK, map[string]any{
+				"databaseReady": api != nil,
+				"primaryEngine": "mysql",
+				// configError 非空表示启动配置有误：重试不会恢复，必须改环境变量后重启。
+				"configError": s.configErrorText(),
+				"analytics":   map[string]bool{"configured": snapshot.Configured, "ready": snapshot.Ready},
+			})
 			return
 		}
 		if !strings.HasPrefix(r.URL.Path, "/restful/") ||
@@ -87,8 +105,14 @@ func (s *databaseService) middleware(local http.Handler) http.Handler {
 }
 
 func watchDatabase(ctx context.Context, cfg config.Config, sessions *session.Store, service *databaseService) {
+	// 启动阶段已校验过配置；这里不再静默退出，而是把原因和后果一起写清楚。
+	// 下面的两个 return 保留为纵深防御，正常路径不会走到。
+	if service.configErr != nil {
+		log.Printf("database API disabled by configuration: %v", service.configErr)
+		return
+	}
 	if cfg.SessionBackend != "" && cfg.SessionBackend != "database" && cfg.SessionBackend != "memory" {
-		log.Print("unsupported SESSION_BACKEND; database API remains unavailable")
+		log.Printf("unsupported SESSION_BACKEND=%q; database API remains unavailable", cfg.SessionBackend)
 		return
 	}
 	var pool *dbstore.Database
@@ -123,7 +147,7 @@ func watchDatabase(ctx context.Context, cfg config.Config, sessions *session.Sto
 					var box *securestore.Box
 					box, err = securestore.New(cfg.DataKey)
 					if err != nil {
-						log.Print("database sessions require DATA_ENCRYPTION_KEY")
+						log.Printf("database sessions require a valid DATA_ENCRYPTION_KEY: %v", err)
 						return
 					}
 					sessions.UseDatabase(pool.SQL(), box)

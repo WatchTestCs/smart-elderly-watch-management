@@ -24,6 +24,12 @@ Suining brings resident profiles, wearable devices, health and activity records,
 
 For local development, [platform.compose.yml](deploy/platform.compose.yml) includes the Go app, Nginx, MySQL, PostgreSQL and Prometheus. `python3 scripts/start-platform.py --validate` **creates missing local secrets/configuration files even in validation mode**; normal invocation also builds/starts Docker Compose. Do not run the generated environment on production or commit secrets. The Chinese [getting-started guide](README.md#开始使用) describes the boundaries.
 
+### Post-2.1.0 preview fixes: configuration diagnostics and SQL translation
+
+Current `preview` adds startup diagnostics after the 2.1.0 release commit. An invalid `SESSION_BACKEND`, or a missing/invalid `DATA_ENCRYPTION_KEY` with the default `database` session mode, keeps the UI available while reporting `configError` in service status. The UI asks the operator to correct configuration and restart instead of claiming that reconnecting will recover it. Database sessions require a base64-encoded 32-byte key. Explicit `SESSION_BACKEND=memory` is for single-instance development without a key.
+
+SQL translation also handles `~` without surrounding spaces and preserves quoted `now()`, `~` and placeholder text. These are subsequent source changes; **existing v2.1.0 assets have not been replaced**.
+
 ## Repository map
 
 | Path | Purpose |

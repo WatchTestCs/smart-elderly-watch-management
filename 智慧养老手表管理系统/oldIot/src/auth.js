@@ -1,7 +1,7 @@
 import { reactive } from 'vue'
 import axios from 'axios'
 
-export const authState = reactive({ account: null, csrfToken: '', csrfHeader: 'X-CSRF-TOKEN', setupRequired: false, databaseReady: null })
+export const authState = reactive({ account: null, csrfToken: '', csrfHeader: 'X-CSRF-TOKEN', setupRequired: false, databaseReady: null, configError: '' })
 let loaded = false
 let pending = null
 const profileKeys = ['token', 'user_name', 'oldIdfamily', 'familyPhone', 'familyTouPic']
@@ -59,7 +59,9 @@ export function installHttpSecurity (router, app) {
     if (error.response?.data?.code === 'DATABASE_UNAVAILABLE') {
       loaded = false
       authState.databaseReady = false
-      if (!error.config?.skipSession) app.config.globalProperties.$message.warning({ message: '此功能需要连接数据库，正在自动连接。恢复后请重试。', grouping: true })
+      if (!error.config?.skipSession) app.config.globalProperties.$message.warning({ message: authState.configError
+        ? '服务端配置有误，依赖数据库的功能不可用，请联系管理员修正后重启。'
+        : '此功能需要连接数据库，正在自动连接。恢复后请重试。', grouping: true })
     }
     if (error.response && error.response.status === 401) {
       loaded = false
@@ -94,6 +96,7 @@ export function monitorDatabase (router) {
       if (!active) return
       if (typeof data.databaseReady !== 'boolean') throw new Error('Invalid database status')
       authState.databaseReady = data.databaseReady
+      authState.configError = typeof data.configError === 'string' ? data.configError : ''
       if (!data.databaseReady) loaded = false
       if (data.databaseReady && previous === false) {
         const account = await loadSession(true)

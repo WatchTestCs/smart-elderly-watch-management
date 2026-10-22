@@ -27,12 +27,19 @@ func main() {
 		slog.Info("runtime_cgroup_tuning", "gomaxprocs", tuning.Parallelism, "go_memory_limit_bytes", tuning.GoMemoryLimit)
 	}
 	cfg := config.Load()
+	// 配置错误不会随等待消失，必须在这里就说清楚；否则 watchDatabase 会在第一轮
+	// 校验后静默退出，而端口、就绪文件、/healthz 都已经成功。
+	cfgErr := cfg.Validate()
+	if cfgErr != nil {
+		log.Printf("CONFIG INVALID: %v", cfgErr)
+		log.Print("业务接口将保持 503；配置错误不会随重试恢复，修正环境变量后需重启进程")
+	}
 	addr, imageDir, readyFile, parentPid := applyDesktopEnv(cfg.Addr, cfg.ImageDir)
 	cfg.Addr, cfg.ImageDir = addr, imageDir
 	ctx := context.Background()
 
 	sessions := session.NewStore(cfg.SessionTTL)
-	service := &databaseService{}
+	service := &databaseService{configErr: cfgErr}
 	mux := http.NewServeMux()
 	handlers.MountWeb(mux)
 	localHandlers := handlers.New(nil, sessions, cfg)

@@ -27,6 +27,12 @@
 
 **阅读顺序：**初次使用看 [开始使用](#开始使用)，维护后端看 [后端说明](智慧养老手表管理系统/backend/README.md)，部署值守看 [照护部署](docs/CARE_SERVICE_DEPLOYMENT.md)，审查性能先看 [最新修复与冷热缓存报告](docs/performance/2026-10-22-backend-hybrid/README.md)，再查 [历史证据](docs/performance/2026-10-21-go123/README.md)。
 
+### preview 后续修复：配置诊断与 SQL 翻译
+
+当前 `preview` 在 2.1.0 发布提交之后增加配置诊断：`SESSION_BACKEND` 无效，或默认 `database` 会话模式缺少有效 `DATA_ENCRYPTION_KEY` 时，界面仍可打开，但状态接口返回 `configError`，页面明确提示修正配置并重启；不再把这种错误描述成正在自动重连。数据库会话需要 base64 编码的 32 字节密钥。只有明确使用 `SESSION_BACKEND=memory` 才适用于无密钥的单实例开发。
+
+SQL 翻译同时修复无空格 `~` 正则匹配，并保留引号内的 `now()`、`~` 和占位符文本。这些是发布后的源码更改，**现有 v2.1.0 附件未替换**。
+
 ## 仓库目录与根文件
 
 | 路径 | 用途 |

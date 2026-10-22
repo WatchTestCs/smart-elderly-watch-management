@@ -582,5 +582,8 @@
   "智慧养老手表管理系统/watch-sim/watch-sim.js": "模拟手表登录、心跳与数据上报的 Node 联调入口；不代表真实硬件验证。（智慧养老手表管理系统/watch-sim/watch-sim.js）",
   "智慧养老手表管理系统/watch-sim/watch-sim.test.cjs": "手表模拟器接口协议和请求行为的自动化测试，不代替真实硬件联调。",
   "智慧养老手表管理系统/desktop/package-release.ps1": "从同一构建生成安装、免安装、源码和校验清单，并在隔离目录验证安装启动和卸载",
-  "docs/releases/2.1.0.md": "说明 2.1.0 完整交付、后端改进、升级步骤、配置及验证限制"
+  "docs/releases/2.1.0.md": "说明 2.1.0 完整交付、后端改进、升级步骤、配置及验证限制",
+  "智慧养老手表管理系统/backend/internal/db/query_translate_test.go": "验证 PostgreSQL 到 MySQL 翻译中的参数、函数、正则、RETURNING 及拒绝边界",
+  "智慧养老手表管理系统/backend/internal/db/query_translate_mysql_test.go": "用隔离真实 MySQL 验证正则间距、重复参数、字面量及 now 函数的翻译结果",
+  "智慧养老手表管理系统/oldIot/src/components/DatabaseNotice.test.ts": "验证配置错误、暂时断线及服务可用状态的页面提示与诊断刷新"
 }

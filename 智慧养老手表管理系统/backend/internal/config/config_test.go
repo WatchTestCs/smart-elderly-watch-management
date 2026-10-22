@@ -1,6 +1,10 @@
 package config
 
-import "testing"
+import (
+	"bytes"
+	"encoding/base64"
+	"testing"
+)
 
 func TestSafeDefaults(t *testing.T) {
 	t.Setenv("MYSQL_DSN", "")
@@ -36,6 +40,39 @@ func TestHealthCacheBudget(t *testing.T) {
 			t.Setenv("HEALTH_HOT_CACHE_MIB", test.value)
 			if got := Load().HealthCacheBytes; got != test.mib<<20 {
 				t.Fatalf("cache budget=%d, want %d MiB", got, test.mib)
+			}
+		})
+	}
+}
+
+// Validate 存在的意义：把"进程起来了但业务接口永久 503"的配置挡在启动阶段。
+// 这些配置错误不会随重试恢复，所以不能只靠 watchDatabase 的 3 秒循环兜底。
+func TestValidateRejectsUnusableConfigurations(t *testing.T) {
+	validKey := base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{7}, 32))
+	for _, test := range []struct {
+		name    string
+		backend string
+		key     string
+		wantErr bool
+	}{
+		{"memory 模式允许无密钥", "memory", "", false},
+		{"空后端按单实例处理", "", "", false},
+		{"database 缺密钥必须报错", "database", "", true},
+		{"database 空白密钥必须报错", "database", "   ", true},
+		{"database 非法 base64 必须报错", "database", "not-base64!!", true},
+		{"database 长度不足必须报错", "database", base64.StdEncoding.EncodeToString([]byte("short")), true},
+		{"database 合法密钥通过", "database", validKey, false},
+		{"未知后端必须报错", "postgres", validKey, true},
+		{"大小写敏感的后端必须报错", "Database", validKey, true},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			cfg := Config{SessionBackend: test.backend, DataKey: test.key}
+			err := cfg.Validate()
+			if test.wantErr && err == nil {
+				t.Fatal("配置未被拒绝，会导致业务接口永久 503 且无提示")
+			}
+			if !test.wantErr && err != nil {
+				t.Fatalf("合法配置被拒绝: %v", err)
 			}
 		})
 	}

@@ -361,7 +361,6 @@ func compileMySQLQuery(query string) (queryPlan, error) {
 	})
 	query = strings.ReplaceAll(query, "now()+($3 * INTERVAL 1 SECOND)", "TIMESTAMPADD(SECOND,$3,now())")
 	query = boolOr.ReplaceAllString(query, "max(")
-	query = strings.ReplaceAll(query, " ~ ", " REGEXP ")
 	query = lockLimit.ReplaceAllString(query, "LIMIT $1 FOR UPDATE SKIP LOCKED")
 	query = conflictUpdate.ReplaceAllString(query, "ON DUPLICATE KEY UPDATE")
 	query = excludedColumn.ReplaceAllString(query, "VALUES($1)")
@@ -373,32 +372,61 @@ func compileMySQLQuery(query string) (queryPlan, error) {
 		query = conflictNothing.ReplaceAllString(query, "ON DUPLICATE KEY UPDATE "+key+"="+key)
 	}
 	query = textTable.ReplaceAllString(query, "$1 `text`")
-	query = strings.ReplaceAll(query, "now()", "CURRENT_TIMESTAMP(6)")
-	var out strings.Builder
+	// REGEXP 与 now() 交给分词器处理：它们必须只在引号之外生效。
+	// 用 ReplaceAll 直接改整串会把字符串字面量里的内容一起改掉。
+	out := make([]byte, 0, len(query)+32)
 	var positions []int
 	for i := 0; i < len(query); {
 		if query[i] == '\'' || query[i] == '"' || query[i] == '`' {
 			quote := query[i]
-			out.WriteByte(quote)
+			out = append(out, quote)
 			i++
 			for i < len(query) {
 				c := query[i]
-				out.WriteByte(c)
+				out = append(out, c)
 				i++
 				if c == '\\' && i < len(query) {
-					out.WriteByte(query[i])
+					out = append(out, query[i])
 					i++
 					continue
 				}
 				if c == quote {
 					if i < len(query) && query[i] == quote {
-						out.WriteByte(query[i])
+						out = append(out, query[i])
 						i++
 						continue
 					}
 					break
 				}
 			}
+			continue
+		}
+		// PostgreSQL 的正则匹配操作符。MySQL 用 REGEXP，间距不敏感；
+		// 唯一的静默错误来源是 x~'...'（无空格）——旧实现只替换 " ~ "，
+		// 这种写法会被 MySQL 当成按位取反，不报错但结果是错的。
+		if query[i] == '~' {
+			if i+1 < len(query) && (query[i+1] == '~' || query[i+1] == '*') {
+				return queryPlan{}, errors.New("不支持的 PostgreSQL 正则操作符（~~ 或 ~*），请改写为 REGEXP")
+			}
+			out = trimRightSpace(out)
+			if len(out) > 0 {
+				out = append(out, ' ')
+			}
+			out = append(out, "REGEXP"...)
+			i++
+			for i < len(query) && query[i] == ' ' {
+				i++
+			}
+			if i < len(query) {
+				out = append(out, ' ')
+			}
+			continue
+		}
+		// now()：只在标识符边界处替换，避免动到 snow() 这类名字；
+		// 同时因为已经进入分词循环，字符串字面量里的 now() 不会被改写。
+		if query[i] == 'n' && strings.HasPrefix(query[i:], "now()") && (i == 0 || !identifierByte(query[i-1])) {
+			out = append(out, "CURRENT_TIMESTAMP(6)"...)
+			i += len("now()")
 			continue
 		}
 		if query[i] == '$' && i+1 < len(query) && query[i+1] >= '0' && query[i+1] <= '9' {
@@ -410,15 +438,29 @@ func compileMySQLQuery(query string) (queryPlan, error) {
 			if err != nil || n < 1 {
 				return queryPlan{}, errors.New("SQL parameter out of range")
 			}
-			out.WriteByte('?')
+			out = append(out, '?')
 			positions = append(positions, n-1)
 			i = j
 			continue
 		}
-		out.WriteByte(query[i])
+		out = append(out, query[i])
 		i++
 	}
-	return queryPlan{sql: out.String(), positions: positions}, nil
+	return queryPlan{sql: string(out), positions: positions}, nil
+}
+
+// trimRightSpace 去掉尾部空格，让 REGEXP 的输出保持单一空格分隔。
+func trimRightSpace(b []byte) []byte {
+	for len(b) > 0 && b[len(b)-1] == ' ' {
+		b = b[:len(b)-1]
+	}
+	return b
+}
+
+// identifierByte 判断 c 是否可以作为标识符的一部分，用于避免替换到
+// snow()、now_timestamp 这类以 now() 结尾/开头的名字里。
+func identifierByte(c byte) bool {
+	return c == '_' || (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
 }
 
 func (d *Database) LegacyPostgres() *pgxpool.Pool { return d.pgPool }

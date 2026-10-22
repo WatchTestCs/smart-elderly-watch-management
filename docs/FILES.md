@@ -1,6 +1,6 @@
 # preview 分支文件职责索引
 
-本索引覆盖当前提交的 **609 个文件**（更新：2026-10-22）。保留既有人工说明；来源附件与历史证据不代表当前版本的全套验收。
+本索引覆盖当前提交的 **612 个文件**（更新：2026-10-22）。保留既有人工说明；来源附件与历史证据不代表当前版本的全套验收。
 
 [项目 README](../README.md) · [文件职责数据](file-descriptions.json) · [最新性能报告](performance/2026-10-22-backend-hybrid/README.md)
 
@@ -590,3 +590,6 @@
 | [智慧养老手表管理系统/watch-sim/watch-sim.test.cjs](../智慧养老手表管理系统/watch-sim/watch-sim.test.cjs) | 手表模拟器接口协议和请求行为的自动化测试，不代替真实硬件联调。 |
 | [智慧养老手表管理系统/desktop/package-release.ps1](../智慧养老手表管理系统/desktop/package-release.ps1) | 从同一构建生成安装、免安装、源码和校验清单，并在隔离目录验证安装启动和卸载 |
 | [docs/releases/2.1.0.md](../docs/releases/2.1.0.md) | 说明 2.1.0 完整交付、后端改进、升级步骤、配置及验证限制 |
+| [智慧养老手表管理系统/backend/internal/db/query_translate_test.go](../智慧养老手表管理系统/backend/internal/db/query_translate_test.go) | 验证 PostgreSQL 到 MySQL 翻译中的参数、函数、正则、RETURNING 及拒绝边界 |
+| [智慧养老手表管理系统/backend/internal/db/query_translate_mysql_test.go](../智慧养老手表管理系统/backend/internal/db/query_translate_mysql_test.go) | 用隔离真实 MySQL 验证正则间距、重复参数、字面量及 now 函数的翻译结果 |
+| [智慧养老手表管理系统/oldIot/src/components/DatabaseNotice.test.ts](../智慧养老手表管理系统/oldIot/src/components/DatabaseNotice.test.ts) | 验证配置错误、暂时断线及服务可用状态的页面提示与诊断刷新 |

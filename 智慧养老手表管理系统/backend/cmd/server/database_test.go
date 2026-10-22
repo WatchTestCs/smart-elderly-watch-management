@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -11,6 +12,53 @@ import (
 	"careold-go/internal/handlers"
 	"careold-go/internal/session"
 )
+
+func TestConfigurationErrorIsVisibleWithoutBlockingApplication(t *testing.T) {
+	cfg := config.Config{SessionBackend: "database", DataKey: "invalid-key-must-not-be-disclosed"}
+	err := cfg.Validate()
+	if err == nil {
+		t.Fatal("invalid database session key accepted")
+	}
+	for _, test := range []struct {
+		name    string
+		service *databaseService
+		want    string
+	}{
+		{"connection outage", &databaseService{}, ""},
+		{"configuration error", &databaseService{configErr: err}, err.Error()},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			local := http.NewServeMux()
+			local.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("application")) })
+			app := test.service.middleware(local)
+			status := httptest.NewRecorder()
+			app.ServeHTTP(status, httptest.NewRequest("GET", "/restful/service/status", nil))
+			var body struct {
+				DatabaseReady bool   `json:"databaseReady"`
+				ConfigError   string `json:"configError"`
+			}
+			if err := json.Unmarshal(status.Body.Bytes(), &body); err != nil {
+				t.Fatal(err)
+			}
+			if status.Code != http.StatusOK || body.DatabaseReady || body.ConfigError != test.want {
+				t.Fatalf("unexpected status: HTTP %d %s", status.Code, status.Body.String())
+			}
+			if strings.Contains(status.Body.String(), cfg.DataKey) {
+				t.Fatal("configuration diagnostic disclosed the key")
+			}
+			page := httptest.NewRecorder()
+			app.ServeHTTP(page, httptest.NewRequest("GET", "/", nil))
+			if page.Code != http.StatusOK || page.Body.String() != "application" {
+				t.Fatal("configuration error blocked the local application")
+			}
+			business := httptest.NewRecorder()
+			app.ServeHTTP(business, httptest.NewRequest("POST", "/restful/device/sos", nil))
+			if business.Code != http.StatusServiceUnavailable || !strings.Contains(business.Body.String(), "DATABASE_UNAVAILABLE") {
+				t.Fatal("unavailable business request did not retain its explicit failure")
+			}
+		})
+	}
+}
 
 func TestDatabaseUnavailableDoesNotBlockApplication(t *testing.T) {
 	service := &databaseService{}
