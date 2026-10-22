@@ -88,11 +88,14 @@ func TestHealthDeviceLockOrderDuringOwnerClockContention(t *testing.T) {
 			release := holdHealthOwnerClock(t, ctx, pool)
 			defer release()
 
+			mode := "0"
+			if tc.late {
+				mode = "1"
+			}
+			t.Setenv("HEALTH_LATE_DEVICE_LOCK", mode)
 			healthResult := make(chan *httptest.ResponseRecorder, 1)
 			go func() {
-				healthResult <- callAPI(func(w http.ResponseWriter, r *http.Request) {
-					h.healthBatchWithLockOrder(w, r, tc.late)
-				}, healthLockOrderBody(tc.name))
+				healthResult <- callAPI(h.healthBatch, healthLockOrderBody(tc.name))
 			}()
 			waitCtx, cancelWait := context.WithTimeout(ctx, 3*time.Second)
 			err := waitHealthClockContention(waitCtx, pool)
@@ -164,6 +167,7 @@ func TestLateHealthDeviceLockRejectsConcurrentUnbind(t *testing.T) {
 	}
 	seedDevice(t, pool)
 	h := testHandler(pool)
+	t.Setenv("HEALTH_LATE_DEVICE_LOCK", "1")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	release := holdHealthOwnerClock(t, ctx, pool)
@@ -171,9 +175,7 @@ func TestLateHealthDeviceLockRejectsConcurrentUnbind(t *testing.T) {
 
 	healthResult := make(chan *httptest.ResponseRecorder, 1)
 	go func() {
-		healthResult <- callAPI(func(w http.ResponseWriter, r *http.Request) {
-			h.healthBatchWithLockOrder(w, r, true)
-		}, healthLockOrderBody("concurrent-unbind"))
+		healthResult <- callAPI(h.healthBatch, healthLockOrderBody("concurrent-unbind"))
 	}()
 	waitCtx, stopWait := context.WithTimeout(ctx, 3*time.Second)
 	err := waitHealthClockContention(waitCtx, pool)
