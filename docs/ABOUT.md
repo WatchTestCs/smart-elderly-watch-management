@@ -1,20 +1,20 @@
 # 岁宁 · About 文案与项目定位
 
-本文件维护 `preview` 的项目简介、主页与 Topics 建议，供 README、发布说明和仓库 About 使用。文案对应 2.0.6 整合源码；修改本文件本身不会自动更改 GitHub 仓库级设置。
+本文件维护 `preview` 的项目简介、主页与 Topics 建议，供 README 和仓库 About 使用。About 用一句话说明服务对象与核心用途；版本、技术栈、安装和验证细节由项目首页及专门文档维护。修改本文件本身不会自动更改 GitHub 仓库级设置。
 
 ## 中文简介
 
-岁宁｜面向照护机构与家属的智慧养老管理软件。Tauri 2 / Rust + Go + Vue 3 / Vite，MySQL 核心业务主库＋PostgreSQL 异步分析；支持长者档案、手表接入、健康采样、SOS 处置与独立复核。
+岁宁｜面向照护机构与家属的开源养老管理平台，连接智能手表、健康记录与照护协作。
 
 ## English description
 
-Suining is an elder-care management application built with Tauri 2/Rust, Go and Vue 3/Vite. MySQL owns core transactions; PostgreSQL provides asynchronous analytics. It supports resident profiles, wearables, health samples and SOS care with independent verification.
+Suining is an open-source elder-care platform for care organizations and families, connecting smart watches, health records and coordinated care.
 
 ## 主页
 
 [preview 项目首页](https://github.com/WatchTestCs/smart-elderly-watch-management/tree/preview)
 
-当前源码和文档在 preview；源码下载、Windows 历史软件与 Linux 附件分别见 [附件索引](DOWNLOADS.md)。主页指向 preview 不意味着改动默认分支。
+当前开发源码和文档在 `preview`；2.1.0 安装版、免安装版、固定源码及历史附件见 [下载索引](DOWNLOADS.md)。主页指向 `preview` 不意味着改动默认分支。
 
 ## Topics
 
@@ -30,11 +30,10 @@ Suining is an elder-care management application built with Tauri 2/Rust, Go and 
 
 | 内容 | 准确表述 |
 | --- | --- |
-| 当前源码 | 2.0.6 preview，MySQL 主库＋PG 分析，含健康采样整合 |
-| 公开源码附件 | 截至 2026-10-19 为 2.0.5-optimized.1；它是旧 PG 单库源码 |
-| 公开 Windows 二进制 | 仍为历史 2.0.2，不包含 2.0.6 双库与健康采样整合 |
-| 本地旧 2.0.6 打包 | 未包含后续健康采样整合，不能代替当前源码的对应构建 |
+| 当前源码 | `preview` 持续维护；MySQL 主库＋PG 异步分析，含发布后的配置诊断和 SQL 翻译修复 |
+| 公开源码附件 | v2.1.0 固定发布快照，与同版 Windows 程序对应，不等于持续更新的分支源码 |
+| 公开 Windows 二进制 | v2.1.0 安装版及免安装版，未签名；实际检查以随包来源清单为准 |
 | Linux 软件与管理工具 | 历史独立附件，未确认与当前源码、迁移和修复一致 |
 | 长期值守 | 需要常驻后台、通知网关与人工响应流程；本地桌面关闭会停止其 Go 子进程 |
 
-当前技术栈不再标注为 Spring Boot、Vue 2、Electron 或内置 H2。已有 Go 与浏览器验收不能表述为真实手表、短信网关、生产迁移或原生安装验收。具体证据见 [2.0.6 整合记录](INTEGRATION_2.0.6.md)。
+About 不写固定版本号或堆叠技术名词，避免简介随发布失效；技术架构见[项目首页](../README.md#系统架构)。已有 Go、浏览器和打包检查不能替代真实手表、短信网关、生产迁移或完整原生窗口交互验收。当前发布证据见 [2.1.0 说明](releases/2.1.0.md)与随包 `release-manifest.json`。
