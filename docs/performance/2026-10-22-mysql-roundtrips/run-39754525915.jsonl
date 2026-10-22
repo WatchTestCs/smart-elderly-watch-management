@@ -1,0 +1,12 @@
+{"run_id":39754525915,"batch_size":1,"elapsed_ms":2121.287,"mode":"prepared","phase":"write","rows":1200,"rows_per_second":565.6942927041525,"transaction_p50_ms":0.912,"transaction_p95_ms":1.716,"transaction_p99_ms":17.448,"trial":0}
+{"run_id":39754525915,"batch_size":1,"elapsed_ms":1530.202,"mode":"interpolated","phase":"write","rows":1200,"rows_per_second":784.2096844426167,"transaction_p50_ms":0.767,"transaction_p95_ms":1.569,"transaction_p99_ms":12.467,"trial":1}
+{"run_id":39754525915,"batch_size":1,"elapsed_ms":1186.33,"mode":"interpolated","phase":"write","rows":1200,"rows_per_second":1011.5222695600689,"transaction_p50_ms":0.749,"transaction_p95_ms":1.128,"transaction_p99_ms":8.901,"trial":2}
+{"run_id":39754525915,"batch_size":1,"elapsed_ms":1314.058,"mode":"prepared","phase":"write","rows":1200,"rows_per_second":913.2015467981307,"transaction_p50_ms":0.882,"transaction_p95_ms":1.249,"transaction_p99_ms":6.255,"trial":3}
+{"run_id":39754525915,"batch_size":100,"elapsed_ms":272.882,"mode":"prepared","phase":"write","rows":6000,"rows_per_second":21987.46885777364,"transaction_p50_ms":3.202,"transaction_p95_ms":5.268,"transaction_p99_ms":8.439,"trial":0}
+{"run_id":39754525915,"batch_size":100,"elapsed_ms":3419.078,"mode":"interpolated","phase":"write","rows":6000,"rows_per_second":1754.8585478060884,"transaction_p50_ms":13.76,"transaction_p95_ms":245.753,"transaction_p99_ms":328.186,"trial":1}
+{"run_id":39754525915,"batch_size":100,"elapsed_ms":294.124,"mode":"interpolated","phase":"write","rows":6000,"rows_per_second":20399.55846787661,"transaction_p50_ms":3.084,"transaction_p95_ms":21.535,"transaction_p99_ms":26.962,"trial":2}
+{"run_id":39754525915,"batch_size":100,"elapsed_ms":487.921,"mode":"prepared","phase":"write","rows":6000,"rows_per_second":12297.052695902026,"transaction_p50_ms":3.208,"transaction_p95_ms":37.958,"transaction_p99_ms":49.188,"trial":3}
+{"run_id":39754525915,"elapsed_ms":784.141,"mode":"prepared","phase":"lookup","queries":3000,"queries_per_second":3825.8381892115026,"trial":0}
+{"run_id":39754525915,"elapsed_ms":389.577,"mode":"interpolated","phase":"lookup","queries":3000,"queries_per_second":7700.64972717612,"trial":1}
+{"run_id":39754525915,"elapsed_ms":392.482,"mode":"interpolated","phase":"lookup","queries":3000,"queries_per_second":7643.655667193072,"trial":2}
+{"run_id":39754525915,"elapsed_ms":765.941,"mode":"prepared","phase":"lookup","queries":3000,"queries_per_second":3916.7501236903163,"trial":3}
