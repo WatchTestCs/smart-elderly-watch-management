@@ -213,3 +213,69 @@ func TestLateHealthDeviceLockRejectsConcurrentUnbind(t *testing.T) {
 		t.Fatalf("health changed after invalidated binding: samples=%d changes=%d", samples, changes)
 	}
 }
+
+func TestLateHealthDeviceLockRejectsConcurrentCredentialChanges(t *testing.T) {
+	for _, tc := range []struct {
+		name, update string
+		rotate       bool
+	}{
+		{"secret_rotation", "UPDATE device SET secret=$1 WHERE device_id=1", true},
+		{"device_disabled", "UPDATE device SET status=0 WHERE device_id=1", false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			pool := testDatabase(t)
+			if !pool.IsMySQL() {
+				t.Skip("MySQL row lock probe only")
+			}
+			seedDevice(t, pool)
+			h := testHandler(pool)
+			t.Setenv("HEALTH_LATE_DEVICE_LOCK", "1")
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			release := holdHealthOwnerClock(t, ctx, pool)
+			defer release()
+			healthResult := make(chan *httptest.ResponseRecorder, 1)
+			go func() { healthResult <- callAPI(h.healthBatch, healthLockOrderBody(tc.name)) }()
+			waitCtx, stopWait := context.WithTimeout(ctx, 3*time.Second)
+			err := waitHealthClockContention(waitCtx, pool)
+			stopWait()
+			if err != nil {
+				release()
+				t.Fatal(err)
+			}
+			var args []any
+			if tc.rotate {
+				hash, err := secretHash("another-test-secret-123456789012")
+				if err != nil {
+					release()
+					t.Fatal(err)
+				}
+				args = append(args, hash)
+			}
+			if _, err := pool.Exec(ctx, tc.update, args...); err != nil {
+				release()
+				t.Fatal(err)
+			}
+			release()
+			select {
+			case response := <-healthResult:
+				if response.Code != 200 || !json.Valid(response.Body.Bytes()) {
+					t.Fatalf("credential-change reply %d %s", response.Code, response.Body.String())
+				}
+				var result map[string]any
+				if err := json.Unmarshal(response.Body.Bytes(), &result); err != nil || result["returnCode"] != "0004" {
+					t.Fatalf("stale device authorization not rejected: %s (%v)", response.Body.String(), err)
+				}
+			case <-ctx.Done():
+				t.Fatal(ctx.Err())
+			}
+			var n int
+			if err := pool.QueryRow(ctx, "SELECT count(*) FROM health_sample").Scan(&n); err != nil || n != 0 {
+				t.Fatalf("unauthorized sample persisted %d %v", n, err)
+			}
+			if err := pool.QueryRow(ctx, "SELECT count(*) FROM health_change").Scan(&n); err != nil || n != 0 {
+				t.Fatalf("unauthorized change persisted %d %v", n, err)
+			}
+		})
+	}
+}
