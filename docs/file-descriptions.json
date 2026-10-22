@@ -27,7 +27,7 @@
   "CONTRIBUTING.md": "中英文贡献指南：分支范围、修改规范、验证要求和安全披露方式",
   "LICENSE": "仓库 MIT 许可正文及 WatchTestCs 版权声明",
   "README.en.md": "English project overview: current preview architecture, capabilities, setup, downloads, and delivery limits",
-  "README.md": "中文项目首页：当前 2.0.6 preview 功能、技术架构、部署选择、源码入口和历史附件边界",
+  "README.md": "中文项目首页：下载、功能、快速开始、架构、构建和验证入口，区分发布版与开发源码",
   "deploy/Dockerfile": "Go 业务服务的容器构建说明",
   "deploy/check-care-health.sh": "独立服务 HTTP 和数据库就绪只读探测",
   "deploy/dual-db.compose.yml": "提供独立 MySQL 与 PostgreSQL 数据服务、持久卷、回环端口和健康检查，不启动应用服务",

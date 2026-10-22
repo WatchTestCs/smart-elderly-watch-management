@@ -1,210 +1,145 @@
-<p align="center"><img src="智慧养老手表管理系统/oldIot/public/static/brand/suining-logo-192.webp" width="88" height="88" alt="Suining logo"></p>
+<p align="center">
+  <img src="智慧养老手表管理系统/oldIot/public/static/brand/suining-logo-192.webp" width="88" height="88" alt="Suining logo">
+</p>
 
-# Suining · Elder Care Management
+<h1 align="center">Suining · Elderly Care Management</h1>
 
-[简体中文](README.md) | **English**
+<p align="center"><strong>Companionship through the years. Peace in everyday life.</strong><br>An open-source watch management platform connecting residents, families and care staff.</p>
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-235442)](LICENSE) [![Preview: 2.1.0](https://img.shields.io/badge/preview-2.1.0-9b7a40)](docs/releases/2.1.0.md)
+<p align="center">
+  <a href="README.md">简体中文</a> · <a href="README.en.md">English</a>
+</p>
 
-**Everyday care, with clarity and calm.**
+[![Preview CI](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/workflows/ci.yml/badge.svg?branch=preview)](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/workflows/ci.yml?query=branch%3Apreview) [![Preview: 2.1.0](https://img.shields.io/badge/preview-2.1.0-9b7a40)](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.1.0) [![Go: 1.23+](https://img.shields.io/badge/Go-1.23%2B-00ADD8)](智慧养老手表管理系统/backend/go.mod) [![License: MIT](https://img.shields.io/badge/license-MIT-235442)](LICENSE)
 
-Suining brings resident profiles, wearable devices, health and activity records, location alerts, care tasks and announcements into one workspace for care organizations and families. Version 2.1.0 uses **Tauri 2 / Rust, Vue 3 / Vite, Go, a MySQL transactional primary and PostgreSQL analytics**. Database services are independently deployed. The application interface is primarily Chinese.
+[Download](#download) · [Features](#features) · [Getting started](#getting-started) · [Architecture](#architecture) · [Source and builds](#source-and-builds) · [Validation and performance](#validation-and-performance) · [Documentation](#documentation)
 
-[Source and historical downloads](docs/DOWNLOADS.md) · [2.0.6 release and upgrade notes](docs/releases/2.0.6.md) · [Architecture](#architecture) · [Getting started](#getting-started) · [Dual-database guide](docs/DUAL_DATABASES.md) · [Source project](智慧养老手表管理系统/README.md) · [Changelog](CHANGELOG.md)
+Suining brings resident records, watch devices, health data, location alerts and care tasks into one workspace for care organizations and families. It uses **Tauri 2 / Rust + Vue 3 / Vite + Go**, with independently deployed **MySQL** for business data and **PostgreSQL** for asynchronous analytics.
 
-## Current source status and evidence
+![Suining administrator workspace: device alerts, location alerts and announcements](docs/screenshots/overview-desktop.png)
 
-**Version 2.1.0 provides Windows x64 Setup, portable and complete source packages** at the [v2.1.0 Release](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.1.0). The included manifest identifies the exact source commit and packaging checks. Packages are unsigned; real devices and production deployments require separate acceptance. Go CI covers 1.23.2 and 1.27.2 with disposable MySQL and PostgreSQL.
+*Existing interface example with test data; this is not a native-window acceptance record for 2.1.0.*
 
-**Important 20-minute MySQL finding:** A real disposable-MySQL test ran for its planned duration, but **failed**: 1,987 HTTP requests, 1,959 acknowledged, 28 HTTP 500, zero HTTP 503, and 19 rule errors. All 391,800 acknowledged synthetic samples matched the rows counted in the two relevant tables. This supports those specific persistence checks, **not** an overall reliability or throughput claim. An initial workflow also masked `go test` failures behind `tee` without `pipefail`; see the [run and raw artifact](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/39622692722), the [invalid first-attempt example](docs/performance/2026-10-21-go123/FIRST_20MIN_INCORRECT_DEMONSTRATION.md), and the [performance evidence index](docs/performance/2026-10-21-go123/README.md).
+## Download
 
-**Follow-up run (with fixed failure propagation):** [MySQL endurance run #39629502257](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/39629502257) correctly concluded **failure**. Its logs record **44 HTTP-request errors, 19 rule-evaluation errors** and **387,200 acknowledged synthetic samples**, matching final `health_sample` and `health_change` row counts. At the 20-minute checkpoint, 40 HTTP 500 and no 503 had been recorded; four more request errors occurred before finalization. These are two separate CI runs, not a before/after performance guarantee.
+**2.1.0 · Windows x64 · Preview channel**
 
-**Later local repair and hybrid-cache results (2026-10-22):** A separate 20-minute mixed MySQL/PostgreSQL run on the old `b6aba05` base plus fixes acknowledged **9,484 batches / 1,896,800 samples**, with **zero HTTP 500/503** and matching durable row counts. Whole-machine CPU averaged **98.41%**, including additional compute workers; write p99 remained about **14.8 seconds**. Analytics still had **833 pending events** after draining. A subsequent repeated-statistics benchmark over 10,000 persisted samples measured **23.252 ms → 0.089078 ms**, about **261×** for cache hits. MySQL's buffer pool was warm; this measures handler processing, not physical cold-disk speed, real HTTP networking or ingestion capacity. These results belong to the earlier tested source; the updated `preview` merge has separate focused checks and **has not rerun the 20-minute test**. See the [full report and source boundaries](docs/performance/2026-10-22-backend-hybrid/README.md).
+| Option | Download | How to use |
+| --- | --- | --- |
+| Installer | [Windows Setup](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/download/v2.1.0/Suining-Setup-2.1.0-win-x64.exe) | Follow the installer; downloads WebView2 if missing |
+| Portable | [Portable ZIP](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/download/v2.1.0/Suining-Portable-2.1.0-win-x64.zip) | Extract everything, run `suining.exe` beside `suining-server.exe`; requires existing WebView2 |
+| Release source | [Source ZIP](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/download/v2.1.0/Suining-Source-2.1.0.zip) | Fixed source snapshot matching the binaries above |
 
-For local development, [platform.compose.yml](deploy/platform.compose.yml) includes the Go app, Nginx, MySQL, PostgreSQL and Prometheus. `python3 scripts/start-platform.py --validate` **creates missing local secrets/configuration files even in validation mode**; normal invocation also builds/starts Docker Compose. Do not run the generated environment on production or commit secrets. The Chinese [getting-started guide](README.md#开始使用) describes the boundaries.
+Integrity and provenance: [SHA-256](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/download/v2.1.0/SHA256SUMS.txt) · [Build manifest](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/download/v2.1.0/release-manifest.json) · [Upgrade notes](docs/releases/2.1.0.md) · [Historical versions](docs/DOWNLOADS.md)
 
-### Post-2.1.0 preview fixes: configuration diagnostics and SQL translation
+Database servers are not bundled. End users do not need Go, Rust or Node.js. The Windows packages are unsigned.
 
-Current `preview` adds startup diagnostics after the 2.1.0 release commit. An invalid `SESSION_BACKEND`, or a missing/invalid `DATA_ENCRYPTION_KEY` with the default `database` session mode, keeps the UI available while reporting `configError` in service status. The UI asks the operator to correct configuration and restart instead of claiming that reconnecting will recover it. Database sessions require a base64-encoded 32-byte key. Explicit `SESSION_BACKEND=memory` is for single-instance development without a key.
-
-SQL translation also handles `~` without surrounding spaces and preserves quoted `now()`, `~` and placeholder text. These are subsequent source changes; **existing v2.1.0 assets have not been replaced**.
-
-## Repository map
-
-| Path | Purpose |
-| --- | --- |
-| [.github/](.github/) | Security reporting, dependency updates, pull-request templates and automation workflows. |
-| [deploy/](deploy/) | Database templates and a [complete Compose stack](deploy/platform.compose.yml) with Go app, Nginx gateway and Prometheus, plus operations configuration and the [Dockerfile](deploy/Dockerfile). |
-| [docs/](docs/) | Setup, the [architecture overview](docs/architecture/overview.md), migrations, care operations, historical releases and the [file-by-file index](docs/FILES.md). |
-| [tests/ui/](tests/ui/) | Dependency-free browser accessibility smoke check. |
-| [智慧养老手表管理系统/](智慧养老手表管理系统/README.md) | Buildable desktop project containing Tauri, the Go backend, Vue frontend and watch simulator. |
-| [.gitignore](.gitignore) | Excludes dependency caches, databases, build output and private keys. |
-| [CHANGELOG.md](CHANGELOG.md) | Versioned feature, fix and compatibility history. |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution workflow, branch and verification conventions. |
-| [LICENSE](LICENSE) | Repository MIT license and copyright notice. |
-| [README.en.md](README.en.md) | English project overview and technical/download entry points. |
-| [README.md](README.md) | Chinese project homepage and current source entry point. |
-
-Historical performance reports and raw data from 2026-10-20 are grouped under [Go 1.23 performance records](docs/performance/2026-10-20-go123/README.md). The root retains project entry points and repository-wide files.
-
-## 2.1.0 Setup, portable and source
-
-The [v2.1.0 Release](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.1.0) provides `Suining-Setup-2.1.0-win-x64.exe`, `Suining-Portable-2.1.0-win-x64.zip`, `Suining-Source-2.1.0.zip`, SHA-256 checksums and a source/check manifest. It combines the dual-database and care integration with subsequent Go fixes and PR #24/#25 analytics-drain, daily-cache and idle-pool improvements. See the [upgrade notes and verification limits](docs/releases/2.1.0.md).
-
-Setup reuses system WebView2 and downloads it only if missing. Portable use requires an existing runtime: extract the complete ZIP and keep `suining.exe` beside `suining-server.exe`. Databases are independently deployed; installation does not migrate old data. Packages are unsigned.
-
-`MYSQL_MAX_IDLE_CONNS` defaults to 20 and accepts 0–20; setting 5 and restarting restores previous idle retention. The primary pool still permits at most 20 connections plus one dedicated probe connection. Budget server resources across all replicas. Reported latency gains apply only to the documented query microbenchmark.
-
-Use [preview](https://github.com/WatchTestCs/smart-elderly-watch-management/tree/preview) for evolving source and the Release ZIP for a fixed version. Historical 2.0.6 is source-only, 2.0.2 uses the older PG primary, and 2.0.0 uses the earlier desktop stack. Historical Linux packages have not been rebuilt as 2.1.0. See the [artifact index](docs/DOWNLOADS.md).
+> [!NOTE]
+> **Release packages and development source are separate.** v2.1.0 assets are fixed at [e3cf064](https://github.com/WatchTestCs/smart-elderly-watch-management/commit/e3cf06411ca99e83a4c982316327548d8d03160a); `preview` continues to change and includes later configuration diagnostics and SQL translation fixes. A branch download is not the release snapshot. Existing Release assets have not been replaced.
 
 ## Features
 
 | Area | Capabilities |
 | --- | --- |
-| Residents and families | Resident, guardian and family profiles; invitation registration and family links |
-| Devices | Registration, binding, unbinding, device authentication, online status and thresholds |
-| Health and activity | Heart rate, single blood-pressure measurements, sleep, steps and daily records |
-| Location and alerts | Latest reported location, abnormal records, SOS and event history |
-| Care coordination | Acknowledgment, care actions, independent verification and service diagnostics |
-| Communication | Announcements, images, comments and administration |
-| Desktop interface | Large text, keyboard access, fullscreen and responsive layouts |
+| Residents and families | Resident, guardian and family records; invitation-based family registration |
+| Watch devices | Registration, binding, authentication, online status and monitoring thresholds |
+| Health and daily life | Heart rate, single-value blood pressure, sleep, steps and daily records |
+| Location and alerts | Last reported location, abnormal records, SOS and event history |
+| Care coordination | Accept tasks, begin care, record actions and obtain independent supervisor verification |
+| Announcements | Publish illustrated announcements and manage comments in administrator and family views |
+| Desktop controls | Large-text mode, keyboard access, `F11` fullscreen and narrow-screen layouts |
 
-Supervisor, caregiver and auditor restrictions apply to care tasks; existing permissions elsewhere in administration remain unchanged. Family accounts access linked residents. Missing recent reports do not imply normal health or device status. Maps use Leaflet and OpenStreetMap tiles and require the relevant network service.
+Typical workflow: **Create records → register and bind a watch → receive reports → create an alert task → provide care → independently verify**.
 
-## From registration to completed care
+Families access only linked residents. Supervisor, caregiver and auditor restrictions currently cover the care module; other administration features retain their existing permissions. Maps use Leaflet and OpenStreetMap tiles and require access to those network services.
 
-1. **Prepare the organization:** deploy MySQL, configure notifications and an always-on service, and create the first administrator. Existing administrators without an assigned care duty retain supervisor treatment.
-2. **Create relationships:** register the resident and guardian, then register and bind a watch. Families register using invitation codes; editing a profile does not rebind devices.
-3. **Receive records:** devices authenticate with their own secrets. The new health API separates records by resident, device and binding version and supports revisions and retries. Legacy uploads and charts keep their existing paths.
-4. **Respond:** authorized staff acknowledge an SOS, start care and record actions. A sent or delivered notification does not establish that care has occurred.
-5. **Verify independently:** another supervisor verifies the work, closing the task and its associated alert. Unrelated newer alerts remain; task and event history are paginated.
-6. **Monitor:** review primary readiness, notification backlog, overdue tasks and analytics synchronization. Business views and the new health-statistics API still read MySQL.
+## Getting started
 
-| Identity / care duty | Scope |
-| --- | --- |
-| Supervisor | Care actions, duty assignment, diagnostics and verification; cannot verify their own resolution |
-| Caregiver | Acknowledge, start and resolve care tasks; cannot perform supervisor verification |
-| Auditor | Read care tasks and history; cannot change task state |
-| Family | Access linked residents; cannot accept or close institutional care tasks |
+### Windows desktop
 
-Care duties currently constrain the care module only. Existing permissions for other administration features remain unchanged; assigning a duty does not create granular authorization across profiles, devices and announcements.
+1. Install Setup or fully extract the portable ZIP.
+2. Prepare a separate MySQL business database; configure PostgreSQL when analytics is needed. The [dual-database Compose template](deploy/dual-db.compose.yml) exposes database ports on loopback by default.
+3. Set connections and the session encryption key in the PowerShell session that launches the application:
 
-## Technology stack
+```powershell
+$env:SUINING_MYSQL_DSN='suining:REPLACE_PASSWORD@tcp(127.0.0.1:13306)/suining'
+$env:SUINING_PG_ANALYTICS_URL='postgres://suining_analytics:REPLACE_PASSWORD@127.0.0.1:15432/suining_analytics?sslmode=disable'
+$env:SESSION_BACKEND='database'
+$env:DATA_ENCRYPTION_KEY='REPLACE_WITH_SAVED_BASE64_OF_32_RANDOM_BYTES'
+& '.\suining.exe'
+```
 
-Exact dependency versions are recorded in the module manifests and lockfiles.
+This example is for controlled local connections; remote connections require verified TLS. PG analytics can be left unconfigured, but monitor the analytics events accumulating in MySQL. Generate and back up `DATA_ENCRYPTION_KEY` at initial deployment, reuse the existing key when upgrading, and do not generate a new one on each launch. See the [backend guide](智慧养老手表管理系统/backend/README.md) for configuration details.
 
-| Layer | Technology | Responsibility |
-| --- | --- | --- |
-| Windows desktop | Tauri 2, Rust, WebView2 | Single instance, windows, restricted native commands and Go child-process verification/lifecycle |
-| Frontend | Vue 3.5, Vue Router 4, Element Plus 2, Vite 8 | Administration and family views, forms, responsive UI and production assets |
-| HTTP and visualization | Axios 1, ECharts 6, Leaflet 1.9 | API access, health charts and maps |
-| Application service | Go, standard-library `net/http`, `database/sql` | Business API, devices, sessions, CSRF, images and background workers |
-| Primary storage | MySQL / InnoDB, `go-sql-driver/mysql` | Business transactions, relational constraints and persistent event queues |
-| Analytics storage | PostgreSQL, `pgx/v5` | Rebuildable projections, daily health and care-state summary views |
-| Delivery | NSIS, npm / Cargo lockfiles, Go modules, SHA-256 | Windows packaging, dependency pinning and integrity checks |
-| Verification | Go tests / race detector, Playwright, watch simulator | Business regression, browser acceptance and protocol simulation |
+4. Once MySQL migrations finish, initialize the first administrator through the desktop. **There is no default phone number or universal password.** Families register with invitation codes.
+5. Create resident records before registering and binding watches. Back up databases and images separately. Local application data defaults to `%APPDATA%\岁宁`.
 
-Handlers and background workers run within one Go service. Java, Spring Boot, Electron, H2, Vue 2 and the old Webpack build chain are not required. `oldIot` and the Go module name `careold-go` are retained historical names.
+Restart after configuration changes. Direct Go execution uses `MYSQL_DSN` / `PG_ANALYTICS_URL`; desktop connections use the `SUINING_` variables above. The old `DATABASE_URL` / `SUINING_DATABASE_URL` variables are not primary-database fallbacks.
+
+### Local development platform
+
+The [complete Compose platform](deploy/platform.compose.yml) includes MySQL 8.4, PostgreSQL 16, Go, Nginx and Prometheus. With Docker Compose and Python 3 installed, run from the repository root:
+
+```sh
+python3 scripts/start-platform.py
+# Once services are ready, create the first administrator interactively
+python3 scripts/bootstrap-admin.py
+```
+
+The default application URL is `http://127.0.0.1:8080`; metrics are at `http://127.0.0.1:9090`. The startup script creates missing files in `deploy/secrets/` and `deploy/platform.env`, preserving existing files. `--validate` also creates missing configuration, but only validates Compose without starting services. Never commit keys or environment files. See the [platform notes](docs/PLATFORM_UPGRADE_2.0.6.md).
+
+### Upgrades and continuous care
+
+- **Migrating a legacy PG business database:** back up databases and images, stop writes, then use `transfer-postgres` to preflight and import into an empty MySQL target. Copy images separately. Installation does not migrate data automatically; Java/H2 is outside the import tool's scope. See the [migration guide](docs/DUAL_DATABASES.md).
+- **Device access and continuous care:** the desktop listens on a loopback dynamic port and stops its local Go service when closed. Continuous reporting needs a separately supervised backend, controlled network entry, notification gateway and human response procedures. See [care deployment](docs/CARE_SERVICE_DEPLOYMENT.md).
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-  subgraph Client["Windows desktop"]
-    R["Tauri / Rust"]
-    V["Vue 3 / WebView2"]
-    R -->|"Create window"| V
-    V -->|"Restricted setup IPC"| R
-  end
-  subgraph Server["Go service process"]
-    G["HTTP API / embedded frontend"]
-    C["Care and notification worker"]
-    A["Analytics worker"]
-  end
-  R -->|"SHA-256 check, start and stop"| G
-  V -->|"Same-origin HTTP / session / CSRF"| G
-  G -->|"Business transactions"| M[("MySQL / InnoDB")]
-  C --> M
-  M -->|"Transactional triggers"| O[("MySQL analytics outbox")]
-  O -->|"Read committed events"| A
-  A -->|"Async projections / idempotent retry"| P[("PostgreSQL analytics")]
+  R["Tauri / Rust"] -->|"Verify, start and stop"| G["Go API and workers"]
+  V["Vue 3 / WebView2"] -->|"Same-origin HTTP"| G
+  V -->|"Restricted setup IPC"| R
+  G -->|"Business transactions"| M[("MySQL primary")]
+  M -->|"Transactional enqueue"| O["Analytics outbox"]
+  O -->|"Go async projection / idempotent retry"| P[("PostgreSQL analytics")]
   G --> F["Local images and logs"]
 ```
 
-By default, Windows runs Go as a child process on a dynamic loopback port. Go serves assets and status before connecting to MySQL and applying embedded migrations. Rust validates the readiness PID and port before loading the local page. Rust manages child-process shutdown; Go also monitors its parent.
-
-Vue calls Go over HTTP and never connects directly to either database. Initial administrator setup uses restricted Tauri IPC; Rust adds a desktop token that is not exposed to the page. Ordinary writes enforce sessions, roles and CSRF; device reporting has separate authentication. Sessions default to `SESSION_BACKEND=database`; `memory` is an explicit single-instance development option. Restart and cross-instance session behavior require deployment-specific verification.
-
-### Database ownership and failure behavior
-
-| Storage | Contents | Consistency and recovery |
-| --- | --- | --- |
-| MySQL primary | Accounts, profiles, devices, raw health reports, locations, alerts, care, audit, announcements, comments, notification and analytics queues | Sole business source of truth; all business API reads and writes use MySQL |
-| Go process hot cache | Serialized repeated-health-statistics results; default 16 MiB, at most 2,048 entries, 30-second TTL | Every hit validates authorization and the committed database revision; eviction or restart rebuilds from MySQL, which retains all raw history |
-| PostgreSQL analytics | Health, activity, location, care-task and event projections; `daily_health` and `care_summary` views | Eventually consistent and rebuildable from MySQL; not a replacement for primary backups |
-| Local files | Images, logs and runtime discovery files | Back up images separately; runtime files are not business storage |
-
-MySQL triggers enqueue analytics events inside the originating transaction. The Go worker acknowledges an event in MySQL only after PG commits, providing at-least-once delivery. Event IDs suppress duplicate and stale updates; deletion tombstones prevent resurrection. Names, phone numbers, passwords, device secrets, care notes and full audit text are excluded from PG, but projected health and location data still require access control.
+MySQL is the sole business data source; PG is a rebuildable analytics projection. Vue never connects directly to databases or holds the desktop initialization token or database credentials.
 
 | Condition | Behavior |
 | --- | --- |
 | MySQL unavailable or migrations incomplete | UI opens; business API returns `503 DATABASE_UNAVAILABLE` |
-| MySQL recovers | Background reconnection and session checks; expired sessions require login |
-| PG unconfigured or unavailable | Core workflows continue; committed analytics events remain in MySQL, requiring queue and disk monitoring |
-| PG recovers | Automatic reconnection and catch-up; no primary database failover |
-| A user write fails | Preserve input and request an explicit retry; failed business requests are not replayed |
+| PG unconfigured or unavailable | Core workflows continue; committed analytics events remain in MySQL and catch up after recovery |
+| A user write fails | Preserve input and request an explicit retry; no automatic replay |
+| Invalid session configuration (current `preview`) | Status reports `configError` and asks for corrected configuration and a restart |
 
-`GET /healthz` indicates HTTP-process liveness only. `GET /restful/service/status` reports primary readiness and analytics configuration/connectivity. Supervisor diagnostics additionally expose backlog and last-sync time. Notification receipts, staff arrival and completed care are separate facts.
-
-See [implementation architecture](docs/ARCHITECTURE.md) and [dual-database operations](docs/DUAL_DATABASES.md) for process protocols, privileges, migration and recovery details.
-
-## Getting started
-
-1. Download Setup or portable from the [v2.1.0 Release](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.1.0). Extract the complete portable ZIP and run `suining.exe` beside `suining-server.exe`. End users do not need Go, Rust or Node.js. Setup downloads WebView2 if missing; portable use requires an existing runtime.
-2. Deploy a separate MySQL business database and enable PG analytics when needed. Database servers are not bundled. The [Compose template](deploy/dual-db.compose.yml) and [environment template](deploy/dual-db.env.example) expose loopback-only database ports; start the application separately.
-3. Configure the desktop environment, then launch it. Replace the placeholder passwords privately. This example is for controlled local connections; remote connections require verified TLS.
-
-```powershell
-$env:SUINING_MYSQL_DSN='suining:REPLACE_PASSWORD@tcp(127.0.0.1:13306)/suining'
-$env:SUINING_PG_ANALYTICS_URL='postgres://suining_analytics:REPLACE_PASSWORD@127.0.0.1:15432/suining_analytics?sslmode=disable'
-& '.\suining.exe'
-```
-
-4. Once MySQL migrations finish, create the first administrator in the empty database. **There is no default phone number or universal password.** Families register with invitation codes.
-5. Create a resident, then register and bind a watch. The default desktop loopback endpoint is not an internet watch gateway. Device access requires controlled networking or a separately deployed Go service. Continuous care requires an always-on backend, notification gateway and human response procedures; see [care deployment](docs/CARE_SERVICE_DEPLOYMENT.md).
-
-Direct Go execution uses `MYSQL_DSN` and `PG_ANALYTICS_URL`, with `ADDR=127.0.0.1:8080` by default. Desktop execution forwards the `SUINING_` variables above. Restart after configuration changes. The business service does not fall back to the old `DATABASE_URL` / `SUINING_DATABASE_URL` configuration.
-
-### Deployment choices
-
-| Mode | Use | Additional requirements |
-| --- | --- | --- |
-| Windows desktop + separate databases | Local management; Rust owns the local Go lifecycle | WebView2, MySQL and PG when analytics is needed |
-| Standalone always-on Go service | Continuous device uploads, notifications and care operations | Process supervision, network boundaries, TLS, notification gateway, database and image backups |
-| Separate Vite and Go development | UI/API development | Node.js, Go and dedicated development databases; native setup is still required initially |
-
-The desktop is not a general-purpose client for an arbitrary remote Go service. Changing a database address does not configure a device gateway or continuous care. Closing the desktop stops its local Go child process.
-
-### Upgrading a legacy PostgreSQL business database
-
-Back up the database and images, stop writes from both application versions and prepare a migrated, empty MySQL target. In `backend`, set `LEGACY_POSTGRES_URL` and `MYSQL_DSN`; run `go run ./cmd/transfer-postgres` for preflight, then `go run ./cmd/transfer-postgres --apply`. The source is read-only, nonempty targets are rejected, and failed imports roll back target business rows and analytics events together. Table creation is a separate stage; copy images separately. The tool supports PG 0001–0006 and preserves the health samples, revision cursor and binding epochs from 0007/0008, not Java/H2 or automatic historical-data repair.
-
-To rebuild lost PG analytics, prepare a new analytics database, change configuration and run `go run ./cmd/analytics-backfill --apply`. Installing the application does not migrate an old business database. Follow the [migration guide](docs/DUAL_DATABASES.md) before switching.
+`/healthz` reports HTTP-process liveness only. `/restful/service/status` reports database readiness and analytics connectivity. See the [overview](docs/architecture/overview.md), [implementation architecture](docs/ARCHITECTURE.md) and [dual-database guide](docs/DUAL_DATABASES.md).
 
 ## Source and builds
 
-```text
-智慧养老手表管理系统/
-├── desktop/      Tauri / Rust, capabilities, version checks and Windows build
-├── backend/      Go API, care/analytics workers, embedded SQL and migration tools
-├── oldIot/       Vue 3 / Vite, views, local fonts and browser QA
-└── watch-sim/    Watch API and runtime-discovery simulator
-deploy/          MySQL / PG Compose and environment templates
-docs/            Configuration, architecture, verification, releases and operations
+Use `preview` for development and the fixed source package above to reproduce a release.
+
+```sh
+git clone --branch preview https://github.com/WatchTestCs/smart-elderly-watch-management.git
+cd smart-elderly-watch-management
 ```
 
-Windows builds require PowerShell 7, Node.js (`^20.19.0 || >=22.12.0`), Go, Rust and MSVC / Windows SDK. The current Go module declares a **1.23.0 minimum** and backend CI covers Go 1.23.2 and 1.27.2; the earlier local 2.0.6 build used Go 1.27.2. The Rust package declares a 1.85 minimum. From the source project:
+```text
+智慧养老手表管理系统/
+├── desktop/     Tauri / Rust, native permissions and Windows packaging
+├── backend/     Go API, migrations, care and analytics workers
+├── oldIot/      Vue 3 / Vite, interface and browser QA
+└── watch-sim/   Watch protocol simulator
+deploy/         Containers, databases and operations configuration
+scripts/        Platform startup, API generation and performance tools
+tests/          UI smoke checks
+docs/           Architecture, deployment, releases and validation
+evidence/       Historical raw test evidence
+```
+
+A complete Windows build requires PowerShell 7, Node.js (`^20.19.0 || >=22.12.0`), Go 1.23+, Rust 1.85+, MSVC and Windows SDK. Module declarations and lockfiles define dependency versions.
 
 ```powershell
 cd 智慧养老手表管理系统
@@ -212,48 +147,50 @@ cd 智慧养老手表管理系统
 ./desktop/build.ps1
 ```
 
-The pipeline builds **Vue assets → Go embedded assets, tests and binary → sidecar SHA-256 → Tauri application → NSIS Setup**. It supports `CARGO_TARGET_DIR`; Setup output is under the project’s `outputs/v2.1.0-preview`. Default builds are unsigned; optional `-SelfSign` provides local self-signing only. Run `desktop/package-release.ps1` to prepare portable/source ZIPs and check installation and startup. See the [project README](智慧养老手表管理系统/README.md) and [backend README](智慧养老手表管理系统/backend/README.md) for development and real-database test requirements.
+Build order: **Vue assets → embedded Go service → sidecar SHA-256 → Tauri → NSIS**. Output is under the project directory at `outputs/v2.1.0-preview`. `desktop/package-release.ps1` prepares portable/source packages and provenance. See the [project guide](智慧养老手表管理系统/README.md) for UI/API development and the [file index](docs/FILES.md) for responsibilities. `oldIot` and `careold-go` retain historical names.
 
-## Screenshots and verification
+## Validation and performance
 
-![Historical 2.0.2 login screen](docs/screenshots/tauri-2.0.2-offline.png)
+| What to check | Evidence and scope |
+| --- | --- |
+| Current branch automation | [Preview CI](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/workflows/ci.yml?query=branch%3Apreview): frontend tests, build and dependency audit; Go 1.23.2 / 1.27.2 tests, race detection, build and static checks with dedicated MySQL 8.4 / PG 16 |
+| 2.1.0 release checks | [Release notes](docs/releases/2.1.0.md) and the attached `release-manifest.json`; use the matching commit and recorded checks |
+| Backend sustained load and cache | [2026-10-22 report](docs/performance/2026-10-22-backend-hybrid/README.md), including pre-merge source, isolated environment, latency and backlog limits |
+| Historical failures and raw data | [Endurance records](docs/performance/2026-10-21-go123/README.md) and [CPU / GC experiments](docs/performance/2026-10-20-go123/README.md); later results do not erase earlier failures |
 
-![Historical 2.0.2 administrator workspace](docs/screenshots/tauri-2.0.2-main.png)
+Two historical 20-minute CI endurance runs failed. A later local repaired-source run completed independently; the current merged source has not rerun that same sustained workload. CPU microbenchmarks, cache hits and persisted-write measurements are different quantities. Exact numbers belong in their individual reports.
 
-These actual Tauri screenshots are from 2.0.2 with temporary data, not 2.0.6 acceptance images. The current interface retains the landscape logo, Source Serif 4 and Source Han Serif, large-text controls, `F11` fullscreen and `Escape` to leave fullscreen.
+Minimum development checks, from `智慧养老手表管理系统/backend`:
 
-- Dual-database development: Go tests with the race detector on isolated MySQL 8.0.46 / PostgreSQL 16.4; 11 mocked-API browser suites; 15 real core-workflow checks with PG stopped; recovery checks for zero backlog and matching analytics views.
-- Historical local 2.0.6 packaging: frontend build, Go tests/vet, Tauri/NSIS build, application/installer versions, archive integrity, SHA-256 and sidecar startup checks passed. Real dual-database integration was not rerun during packaging. The public v2.0.6 Release contains **only source and checksum attachments**.
-- The local 2.0.6 installer and portable application are unsigned. The installer was not executed and the native desktop window was not acceptance-tested. Historical installation results do not validate this version.
-- MySQL 8.4 integration tests now run in backend CI. The two historical 20-minute CI runs failed; the later local repaired-source run and current-merge verification limits are recorded in the [2026-10-22 report](docs/performance/2026-10-22-backend-hybrid/README.md). Real watches, external notification delivery, production migration, remote TLS and long-term production availability remain unverified. Mock browser and protocol checks cannot replace hardware integration.
+```sh
+go test -count=1 ./...
+go vet ./...
+```
 
-Version-specific evidence and upgrade limits are described in the [2.0.6 notes](docs/releases/2.0.6.md). This integration preserves the remote health sampling, change-cursor and statistics interfaces on MySQL. See the [integration report](docs/INTEGRATION_2.0.6.md) for executed checks. Previously built local installers do not include this integration; rebuild from the current source.
+For database integration, configure dedicated `TEST_MYSQL_DSN` and `TEST_DATABASE_URL`, then run `go test -race -count=1 -timeout 600s ./...`. Skipped tests without those variables are not verified. The 20-minute endurance test requires [explicit opt-in](.github/workflows/mysql-endurance.yml). See [testing requirements](docs/TESTING.md); never run automation against production databases.
+
+Real watches, external notification gateways, production migration, remote TLS and long-term production availability still require independent acceptance. Health and location depend on valid reports; missing data does not establish normal status, and delivered notifications do not establish completed care. The project has no medical-device certification and cannot replace human emergency response.
 
 ## Troubleshooting
 
 | Symptom | Check first |
 | --- | --- |
-| UI opens but login/save fails | MySQL connectivity, database name in the DSN and completed migrations; internet access does not imply database readiness |
-| PG is offline but saves succeed | Expected behavior; monitor analytics backlog and disk usage instead of changing the business primary |
-| Old records are missing after upgrade | Confirm offline PG-to-MySQL import and separate image copying; preserve the only backup |
-| Upload fails with a binding-version conflict | Use the binding version from acquisition time; do not relabel old cached samples as belonging to a new resident |
-| Notification sent but task remains open | Sending, receipt, acknowledgment, care and independent verification are separate states |
-| Portable application will not start | Full extraction, both EXEs, WebView2 and the exact package version |
-| Source and program versions differ | Download matching 2.1.0 assets and verify SHA-256 |
+| UI opens, but login or saving fails | MySQL connection, business database name, migration status and `SESSION_BACKEND` / `DATA_ENCRYPTION_KEY` |
+| PG is offline, but writes succeed | Expected behavior; monitor analytics backlog and disk capacity |
+| Records are missing after an upgrade | Offline import and separate image copying; retain original backups |
+| A watch cannot reach the desktop service | The default loopback endpoint is not externally accessible; plan device access separately |
+| Portable application will not start | Full extraction, both EXEs together, existing WebView2, matching asset version and SHA-256 |
 
-Include version/commit, exact filename, OS, database readiness and redacted reproduction steps when reporting a problem. See [Support](docs/SUPPORT.md).
-
-## Documentation and contributions
+## Documentation
 
 | Purpose | References |
 | --- | --- |
-| Source and historical packages | [Artifact index](docs/DOWNLOADS.md) · [About text](docs/ABOUT.md) |
-| Configuration and migration | [Dual databases](docs/DUAL_DATABASES.md) · [Setup](docs/SETUP.md) |
-| Architecture and care | [Overview](docs/architecture/overview.md) · [Implementation](docs/ARCHITECTURE.md) · [Care deployment](docs/CARE_SERVICE_DEPLOYMENT.md) |
-| Development and verification | [Project](智慧养老手表管理系统/README.md) · [Frontend](智慧养老手表管理系统/oldIot/README.md) · [Backend](智慧养老手表管理系统/backend/README.md) · [Testing](docs/TESTING.md) |
-| Operations and file responsibilities | [Backup/restore](docs/runbooks/backup-restore.md) · [File index](docs/FILES.md) |
-| Community and history | [Contributing](CONTRIBUTING.md) · [Support](docs/SUPPORT.md) · [Changelog](CHANGELOG.md) · [Historical decisions](docs/decisions/README.md) |
+| Installation, versions and upgrades | [Downloads](docs/DOWNLOADS.md) · [2.1.0 notes](docs/releases/2.1.0.md) · [Changelog](CHANGELOG.md) |
+| Databases, migration and backups | [Dual databases](docs/DUAL_DATABASES.md) · [Backup and restore](docs/runbooks/backup-restore.md) |
+| Devices and care operations | [Care deployment](docs/CARE_SERVICE_DEPLOYMENT.md) · [Support](docs/SUPPORT.md) |
+| Development and API | [Project](智慧养老手表管理系统/README.md) · [Frontend](智慧养老手表管理系统/oldIot/README.md) · [Backend](智慧养老手表管理系统/backend/README.md) · [Build](docs/BUILD.md) |
+| Architecture and validation | [Overview](docs/architecture/overview.md) · [Historical decisions](docs/decisions/README.md) · [Testing](docs/TESTING.md) · [File index](docs/FILES.md) |
 
-Version 2.1.0 is published from `preview`; `main` and existing tags remain unchanged. Historical ADRs and verification documents retain their version context. Use this README, the 2.0.6 notes and the dual-database guide for current configuration.
+When reporting an [issue](https://github.com/WatchTestCs/smart-elderly-watch-management/issues), include the version or commit, OS and redacted reproduction steps. Base contributions on `preview` and follow the [contribution guide](CONTRIBUTING.md). Report vulnerabilities privately under the [security policy](.github/SECURITY.md); do not publish personal records, connection strings or keys.
 
-Report reproducible problems through [Issues](https://github.com/WatchTestCs/smart-elderly-watch-management/issues); report vulnerabilities privately under the [security policy](.github/SECURITY.md). Do not disclose real personal data, database credentials or keys. [MIT License](LICENSE); fonts and third-party components retain their own licenses.
+[MIT License](LICENSE). Fonts, maps and other third-party components retain their respective licenses.
