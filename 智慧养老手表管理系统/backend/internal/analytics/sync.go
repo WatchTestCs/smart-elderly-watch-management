@@ -38,7 +38,7 @@ func Run(ctx context.Context, primary *db.Database, url string, state *State) {
 		}
 	}()
 	for ctx.Err() == nil {
-		cycle, cancel := context.WithTimeout(ctx, 10*time.Second)
+		cycle, cancel := context.WithTimeout(ctx, 15*time.Second)
 		var pending int64
 		countErr := primary.SQL().QueryRowContext(cycle, "SELECT count(*) FROM analytics_outbox").Scan(&pending)
 		ready := false
@@ -56,20 +56,23 @@ func Run(ctx context.Context, primary *db.Database, url string, state *State) {
 			}
 			if pg != nil {
 				ready = pg.Ping(cycle) == nil
-				for n := 0; ready && n < 50; n++ {
-					copied, err := SyncOne(cycle, primary, pg)
+				for n := 0; ready && n < maxBatchesPerTick; n++ {
+					copied, err := SyncBatch(cycle, primary, pg, defaultBatchSize)
 					if err != nil {
 						ready = false
 						break
 					}
-					if !copied {
+					if copied == 0 {
 						break
 					}
-					pending--
+					pending -= int64(copied)
 					now := time.Now().UTC()
 					state.mu.Lock()
 					state.value.LastSyncedAt = &now
 					state.mu.Unlock()
+					if copied < defaultBatchSize {
+						break
+					}
 				}
 				if !ready {
 					pg.Close()
