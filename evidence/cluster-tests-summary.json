@@ -1,0 +1,18 @@
+{
+  "command": "go test ./... -count=1 -timeout=600s -json",
+  "top_level_tests": {
+    "pass": 115,
+    "skip": 2
+  },
+  "package_failures": [],
+  "skipped": [
+    {
+      "package": "careold-go/internal/analytics",
+      "test": "TestDualDatabaseRecoveryAndReplay"
+    },
+    {
+      "package": "careold-go/internal/notify",
+      "test": "TestNotificationThroughput"
+    }
+  ]
+}

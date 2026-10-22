@@ -25,3 +25,18 @@ func TestExplicitDeploymentConfiguration(t *testing.T) {
 		t.Fatal("explicit dual-database deployment configuration ignored")
 	}
 }
+
+func TestHealthCacheBudget(t *testing.T) {
+	t.Setenv("HEALTH_HOT_CACHE_MIB_FILE", "")
+	for _, test := range []struct {
+		value string
+		mib   int64
+	}{{"", 16}, {"0", 0}, {"1", 1}, {"256", 256}, {"-1", 16}, {"257", 16}, {"invalid", 16}, {"999999999999999999999", 16}} {
+		t.Run(test.value, func(t *testing.T) {
+			t.Setenv("HEALTH_HOT_CACHE_MIB", test.value)
+			if got := Load().HealthCacheBytes; got != test.mib<<20 {
+				t.Fatalf("cache budget=%d, want %d MiB", got, test.mib)
+			}
+		})
+	}
+}

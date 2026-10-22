@@ -1,0 +1,66 @@
+{
+  "formal_completed": true,
+  "post_status_counts": {
+    "200": 9484
+  },
+  "warning_counts": {},
+  "readiness_samples": 1189,
+  "primary_not_ready_samples": 0,
+  "analytics_not_ready_samples": 1184,
+  "all_health_rows_match_ack": true,
+  "formal_projection_ids_accounted": true,
+  "formal_projection_complete": false,
+  "pg_cgroup_peak_mib": 63.0390625,
+  "pg_oom_kills": 0,
+  "full_race_initial": {
+    "counts": {
+      "pass": 206,
+      "fail": 4,
+      "skip": 1
+    },
+    "failed_tests": [
+      "TestCapabilitiesRollbackAndReapply",
+      "TestBatchExternalConcurrencyBoundAndAcceptedStatus",
+      "TestIntegrationMigrationsAndBindingConstraint",
+      "TestIntegrationEditPreservesFamily"
+    ]
+  },
+  "full_race_final": {
+    "counts": {
+      "pass": 207,
+      "fail": 3,
+      "skip": 1
+    },
+    "failed_tests": [
+      "TestCommandQueueReceiptsAndBinding",
+      "TestConcurrentPullAndSafeRedelivery",
+      "TestBatchExternalConcurrencyBoundAndAcceptedStatus"
+    ]
+  },
+  "native_combined_private_peak_gib": 2.0224456787109375,
+  "supplement_cpu_percent": 20.51504579992185,
+  "current_target_race": {
+    "counts": {
+      "pass": 94,
+      "fail": 1
+    },
+    "failed_tests": [
+      "TestTickPagesAndRetriesBeforeFailedDevice"
+    ]
+  },
+  "current_rules_retest": {
+    "counts": {
+      "pass": 59
+    },
+    "failed_tests": []
+  },
+  "current_target_unique_tests_and_subtests_passed": 95,
+  "current_target_failed_names_covered_by_retest": true,
+  "postgres_buffer_hit_rate": 0.999999848117416,
+  "postgres_cpu_percent_host_20_logicals": 8.10234440843044,
+  "patch_verification": {
+    "base_preview": "b6aba05fb3da71c46ef54ff41d3f0074ffe4e7f2",
+    "files": 86,
+    "result": "Every changed/new file applies and matches final source byte-for-byte; no remote changes."
+  }
+}

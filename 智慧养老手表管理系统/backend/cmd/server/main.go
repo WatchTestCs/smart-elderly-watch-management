@@ -17,11 +17,15 @@ import (
 	"careold-go/internal/config"
 	"careold-go/internal/handlers"
 	"careold-go/internal/observability"
+	"careold-go/internal/runtuning"
 	"careold-go/internal/session"
 )
 
 func main() {
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
+	if tuning := runtuning.ApplyOptIn(); tuning.Parallelism > 0 || tuning.GoMemoryLimit > 0 {
+		slog.Info("runtime_cgroup_tuning", "gomaxprocs", tuning.Parallelism, "go_memory_limit_bytes", tuning.GoMemoryLimit)
+	}
 	cfg := config.Load()
 	addr, imageDir, readyFile, parentPid := applyDesktopEnv(cfg.Addr, cfg.ImageDir)
 	cfg.Addr, cfg.ImageDir = addr, imageDir

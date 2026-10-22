@@ -1,0 +1,95 @@
+{
+  "scope": "health ingestion CPU optimization and owner revision range correctness",
+  "date": "2026-10-20",
+  "repository": "D:/Codex存储文件夹/2026-10-18/a-b-c-d-devicetype-19-3/work/upgrade",
+  "cpu": "AMD Ryzen AI 9 H 365 w/ Radeon 880M",
+  "platform": "windows/amd64",
+  "benchmark_parallelism_suffix": 20,
+  "cpu_measurements": {
+    "warning": "CPU-only measurements. These are not database persistence, HTTP ingestion, multi-process cluster or provider delivery throughput.",
+    "command": "go test ./internal/health -run '^$' -bench 'Benchmark(SamplePreparation|BatchPlaceholders)$' -benchmem -count=3",
+    "sample_preparation": {
+      "scope": "one sample normalization, JSON encoding, JSON identity and SHA-256, immutable change event encoding",
+      "before_ns_per_op": [3051, 2884, 3019],
+      "after_ns_per_op": [2168, 1982, 1981],
+      "before_bytes_per_op": 2210,
+      "after_bytes_per_op": 1665,
+      "before_allocations_per_op": 28,
+      "after_allocations_per_op": 26,
+      "change": "reuse sample JSON already encoded before revision lock"
+    },
+    "batch_placeholders": {
+      "scope": "three SQL value lists for a 200-sample batch: identity lookup, 14-column sample rows, 4-column change rows",
+      "before_ns_per_op": [154848, 160749, 166790],
+      "after_ns_per_op": [34498, 34216, 34697],
+      "before_bytes_per_op": 107706,
+      "after_bytes_per_op": 25856,
+      "before_allocations_per_op": 3131,
+      "after_allocations_per_op": 3,
+      "change": "pre-size builder and replace fmt placeholder formatting with strconv"
+    }
+  },
+  "real_mysql_correctness": {
+    "server": "127.0.0.1:23316",
+    "isolation": "disposable dbtest databases, isolated scheduler window",
+    "command": "TEST_MYSQL_DSN=<isolated-admin-DSN> go test ./internal/health ./internal/handlers -run 'TestHealth|TestBatch|TestOwner|TestDaily' -v -count=1",
+    "result": "PASS",
+    "health_package_seconds": 19.499,
+    "handlers_package_seconds": 26.665,
+    "tests": [
+      "TestBatchVersionsHistoryAndConflictRollback",
+      "TestOwnerClockAllowsIndependentCommits",
+      "TestOwnerRangeRollbackAndSafeCursorLimit",
+      "TestOwnerRangeRefillPreservesVersionHistory",
+      "TestDailyRebuildCorrectionsDeletionAndIsolation",
+      "TestHealthVersionsCursorAndIsolation",
+      "TestHealthWriteCursorFollowsCommitOrder",
+      "TestHealthRoutesKeepAuthenticationAndCSRF",
+      "TestHealthBindingEpochAndStatistics",
+      "TestHealthBadSecretDoesNotWaitForClock"
+    ],
+    "verified_behaviors": [
+      "existing-owner write commits independently of an uncommitted different-owner write",
+      "same-owner clock blocks until commit",
+      "uncommitted changes do not appear in owner cursor pages",
+      "every accepted intermediate input version remains in immutable history",
+      "conflicting batches and range reservations roll back",
+      "range refill remains globally unique and owner-monotonic",
+      "safe JSON integer boundary truncates final range and rejects further writes",
+      "regressed global high-water mark is rejected",
+      "daily corrections, deletion, ownership and source isolation remain intact",
+      "authentication, CSRF, binding epochs and statistics remain intact"
+    ]
+  },
+  "non_database_verification": {
+    "result": "PASS",
+    "tests": ["TestChangePayloadMatchesRecordJSON", "TestValueRows"],
+    "checks": ["change JSON bytes match encoding/json including escaped Unicode, time zone, nil device and deleted samples", "gofmt", "git diff --check"]
+  },
+  "concurrent_lazy_initialization": {
+    "command": "TEST_MYSQL_DSN=<isolated-admin-DSN> go test ./internal/health -run '^TestOwnerClockConcurrentFirstUse$' -count=3 -v",
+    "result": "PASS",
+    "runs": 3,
+    "concurrent_transactions_per_run": 8,
+    "per_run_seconds_including_database_fixture": [3.28, 3.26, 3.30],
+    "package_seconds": 10.418,
+    "verified_behaviors": [
+      "eight transactions begin before a barrier releases simultaneous first writes to one absent owner",
+      "all transactions commit with distinct consecutive revisions 1 through 8",
+      "exactly one owner clock and one 65536-revision reservation exist",
+      "all eight sample and change records persist"
+    ],
+    "warning": "Correctness test with database setup and cleanup timing, not a throughput measurement."
+  },
+  "persistence_throughput_after_changes": null,
+  "cluster_throughput_after_changes": null,
+  "throughput_status": "root is responsible for separate real multi-process measurements; no CPU-derived cluster throughput claim is made",
+  "implementation": {
+    "mysql_owner_revision_range": 65536,
+    "max_safe_revision": 9007199254740991,
+    "global_revision_unique_indexes_retained": true,
+    "transactional_ack_retained": true,
+    "postgres_legacy_clock_retained": true,
+    "cutover_requirement": "stop all old-version writers before upgrade or rollback; do not mix old global-clock writers with new owner-range writers"
+  }
+}

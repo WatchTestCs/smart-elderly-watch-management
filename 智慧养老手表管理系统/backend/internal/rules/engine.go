@@ -19,6 +19,12 @@ import (
 
 const latestSampleSQL = `SELECT sample_id,revision,payload FROM health_sample WHERE old_id=$1 AND device_id=$2 AND epoch=$3 AND metric=$4 AND NOT deleted AND sample_start>=$5 AND sample_start<=$6 ORDER BY sample_start DESC,revision DESC LIMIT 1`
 
+const baselineCoverSQL = `SELECT count(*),COALESCE(avg(rule_value),0),COALESCE(stddev_pop(rule_value),0)
+ FROM health_sample FORCE INDEX (idx_health_rule_cover)
+ WHERE old_id=$1 AND device_id=$2 AND metric=$3 AND deleted=false
+ AND source=$4 AND rule_source_device=$5 AND BINARY source=BINARY $4 AND BINARY rule_source_device=BINARY $5
+ AND sample_start>=$6 AND sample_start<$7 AND rule_legacy_unzoned=false`
+
 type Engine struct {
 	DB    *db.Database
 	Box   *securestore.Box
@@ -198,9 +204,16 @@ func (e *Engine) Device(ctx context.Context, id int64, now time.Time) error {
 			continue
 		}
 		var base Baseline
-		err = tx.QueryRow(ctx, `SELECT count(*),COALESCE(avg(CAST(JSON_UNQUOTE(JSON_EXTRACT(payload,'$.value')) AS DOUBLE)),0),COALESCE(stddev_pop(CAST(JSON_UNQUOTE(JSON_EXTRACT(payload,'$.value')) AS DOUBLE)),0)
- FROM health_sample WHERE old_id=$1 AND device_id=$2 AND metric=$3 AND BINARY source=BINARY $4 AND BINARY source_device=BINARY $5 AND NOT deleted
- AND sample_start>=$6 AND sample_start<$7 AND (JSON_UNQUOTE(JSON_EXTRACT(payload,'$.timeBasis')) IS NULL OR JSON_UNQUOTE(JSON_EXTRACT(payload,'$.timeBasis'))<>'legacy-unzoned')`, oldID, id, item.metric, item.v.Source, item.v.Device, now.AddDate(0, 0, -p.BaselineDays).UnixMicro(), now.Add(-15*time.Minute).UnixMicro()).Scan(&base.Count, &base.Mean, &base.Deviation)
+		query := `SELECT count(*),COALESCE(avg(CAST(JSON_UNQUOTE(JSON_EXTRACT(payload,'$.value')) AS DOUBLE)),0),COALESCE(stddev_pop(CAST(JSON_UNQUOTE(JSON_EXTRACT(payload,'$.value')) AS DOUBLE)),0)
+ FROM health_sample WHERE old_id=$1 AND device_id=$2 AND metric=$3 AND deleted=false
+ AND source=$4 AND source_device=$5 AND BINARY source=BINARY $4 AND BINARY source_device=BINARY $5
+ AND sample_start>=$6 AND sample_start<$7 AND (JSON_UNQUOTE(JSON_EXTRACT(payload,'$.timeBasis')) IS NULL OR JSON_UNQUOTE(JSON_EXTRACT(payload,'$.timeBasis'))<>'legacy-unzoned')`
+		if tx.IsMySQL() && len(item.v.Device) <= 64 {
+			// All predicates and values are present in this index. Avoid random
+			// payload reads while holding the device lock as history grows.
+			query = baselineCoverSQL
+		}
+		err = tx.QueryRow(ctx, query, oldID, id, item.metric, item.v.Source, item.v.Device, now.AddDate(0, 0, -p.BaselineDays).UnixMicro(), now.Add(-15*time.Minute).UnixMicro()).Scan(&base.Count, &base.Mean, &base.Deviation)
 		if err != nil {
 			return err
 		}
@@ -239,8 +252,12 @@ func (e *Engine) Device(ctx context.Context, id int64, now time.Time) error {
 		}
 	}
 
-	for _, candidate := range Evaluate(p, in) {
-		if err = e.persist(ctx, tx, id, oldID, epoch, candidate, now); err != nil {
+	var candidateBuffer [7]CompactCandidate
+	// Evidence is consumed by the synchronous Exec before this buffer is reused.
+	// A device owns its buffer: no global pool of private health observations.
+	var evidenceBuffer [512]byte
+	for _, candidate := range EvaluateCompactInto(candidateBuffer[:0], p, in) {
+		if err = e.persist(ctx, tx, id, oldID, epoch, candidate, now, evidenceBuffer[:0]); err != nil {
 			return err
 		}
 	}
@@ -271,7 +288,7 @@ func (e *Engine) Device(ctx context.Context, id int64, now time.Time) error {
 	return tx.Commit(ctx)
 }
 
-func (e *Engine) persist(ctx context.Context, tx *db.Transaction, device, old, epoch int64, c Candidate, now time.Time) error {
+func (e *Engine) persist(ctx context.Context, tx *db.Transaction, device, old, epoch int64, c CompactCandidate, now time.Time, scratch []byte) error {
 	var previous string
 	var streak int
 	var active bool
@@ -294,7 +311,7 @@ func (e *Engine) persist(ctx context.Context, tx *db.Transaction, device, old, e
 			}
 			json.Unmarshal([]byte(plain), &data)
 		}
-		if data["source"] != c.Evidence["source"] {
+		if data["source"] != c.evidence.sourceValue() {
 			streak = 0
 			active = false
 		}
@@ -330,12 +347,10 @@ func (e *Engine) persist(ctx context.Context, tx *db.Transaction, device, old, e
 			return err
 		}
 	}
-	c.Evidence["breach"] = c.Breach
-	c.Evidence["streak"] = streak
-	c.Evidence["required"] = c.Required
-	c.Evidence["ownerId"] = old
-	c.Evidence["at"] = now
-	b, _ := json.Marshal(c.Evidence)
+	b, err := c.appendEvidenceFast(scratch, streak, old, now)
+	if err != nil {
+		return err
+	}
 	if e.Box != nil {
 		sealed, err := e.Box.Seal(string(b), "rule-evidence")
 		if err != nil {

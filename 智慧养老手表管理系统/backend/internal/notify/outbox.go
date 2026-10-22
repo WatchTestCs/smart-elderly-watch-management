@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -352,35 +353,58 @@ func (d *Worker) deliver(ctx context.Context, id int64, topic, key, channel, pho
 	}
 	return nil
 }
+
+// Keep workers below the 20-connection DB pool ceiling. Multiple workers can
+// drain separate SKIP LOCKED batches while slow HTTP requests are in flight.
+// The default preserves the existing single-worker deployment behavior.
+func drainConcurrency() int {
+	n, err := strconv.Atoi(os.Getenv("NOTIFY_DRAIN_CONCURRENCY"))
+	if err != nil || n < 1 || n > 8 {
+		return 1
+	}
+	return n
+}
+
 func Run(ctx context.Context, pool *db.Database, box *securestore.Box) {
 	transport := http.DefaultTransport.(*http.Transport).Clone()
-	transport.MaxIdleConns = 32
-	transport.MaxIdleConnsPerHost = 32
-	transport.MaxConnsPerHost = 32
+	transport.MaxIdleConns = 64
+	transport.MaxIdleConnsPerHost = 64
+	transport.MaxConnsPerHost = 64
 	defer transport.CloseIdleConnections()
 	d := Worker{DB: pool, Box: box, URL: os.Getenv("NOTIFY_WEBHOOK_URL"), BulkURL: os.Getenv("NOTIFY_BULK_WEBHOOK_URL"), Token: os.Getenv("NOTIFY_WEBHOOK_TOKEN"), Client: &http.Client{Timeout: 10 * time.Second, Transport: transport}}
-	ticker := time.NewTicker(time.Second)
-	defer ticker.Stop()
-	for {
-		cycle, cancel := context.WithTimeout(ctx, 45*time.Second)
-		// Drain a bounded ready burst; the timer is idle polling, not a per-job delay.
-		for cycle.Err() == nil {
-			processed, err := d.Drain(cycle, 512)
-			if err != nil {
-				if cycle.Err() == nil {
-					slog.Warn("message_outbox_cycle_failed")
+	var workers sync.WaitGroup
+	for range drainConcurrency() {
+		workers.Add(1)
+		go func() {
+			defer workers.Done()
+			ticker := time.NewTicker(time.Second)
+			defer ticker.Stop()
+			for {
+				if ctx.Err() != nil {
+					return
 				}
-				break
+				cycle, cancel := context.WithTimeout(ctx, 45*time.Second)
+				// Drain a bounded ready burst; the timer is idle polling, not a per-job delay.
+				for cycle.Err() == nil {
+					processed, err := d.Drain(cycle, 512)
+					if err != nil {
+						if cycle.Err() == nil {
+							slog.Warn("message_outbox_cycle_failed")
+						}
+						break
+					}
+					if processed == 0 {
+						break
+					}
+				}
+				cancel()
+				select {
+				case <-ctx.Done():
+					return
+				case <-ticker.C:
+				}
 			}
-			if processed == 0 {
-				break
-			}
-		}
-		cancel()
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
-		}
+		}()
 	}
+	workers.Wait()
 }

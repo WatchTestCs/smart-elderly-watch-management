@@ -1,0 +1,79 @@
+{
+  "config": {
+    "formal_elapsed_at_start_seconds": -0.004494905471801758,
+    "duration_seconds": 1200.0044949054718,
+    "start_unix": 1792644344.0038762,
+    "common_end_unix": 1792645544.008371,
+    "additional_workers": 10,
+    "gomaxprocs_per_process": 5,
+    "memory_soft_per_process": "128MiB",
+    "separate_job_commit_hard_limit_bytes": 536870912,
+    "pids": [
+      17972,
+      10452
+    ],
+    "reason": "Fill CPU idle intervals during I/O waits; original database configuration and HTTP concurrency remain unchanged."
+  },
+  "exit_codes": [
+    0,
+    0
+  ],
+  "results": [
+    {
+      "mode": "baseline",
+      "gc_percent": 100,
+      "gomemlimit_env": "128MiB",
+      "workers": 5,
+      "batch_size": 200,
+      "offered_batches_per_second": 0,
+      "duration_seconds": 1200.0049788,
+      "completed_batches": 11290704,
+      "accepted": 11290704,
+      "dropped": 0,
+      "missed_pacing": 0,
+      "pacing_loss_pct": 0,
+      "pacing_valid": true,
+      "completed_samples_per_second": 1881776.1925105774,
+      "p50_us": 370,
+      "p95_us": 2140,
+      "p99_us": 4580,
+      "service_p99_us": 4580,
+      "allocated_bytes": 1225739402216,
+      "gc_count": 221583,
+      "gc_pause_ms": 108917.5938,
+      "heap_peak_bytes": 47954720,
+      "heap_final_bytes": 5109672,
+      "vm_hwm_bytes": 0,
+      "failed": 0
+    },
+    {
+      "mode": "baseline",
+      "gc_percent": 100,
+      "gomemlimit_env": "128MiB",
+      "workers": 5,
+      "batch_size": 200,
+      "offered_batches_per_second": 0,
+      "duration_seconds": 1200.0054993,
+      "completed_batches": 6842672,
+      "accepted": 6842672,
+      "dropped": 0,
+      "missed_pacing": 0,
+      "pacing_loss_pct": 0,
+      "pacing_valid": true,
+      "completed_samples_per_second": 1140440.106981433,
+      "p50_us": 530,
+      "p95_us": 3730,
+      "p99_us": 7290,
+      "service_p99_us": 7290,
+      "allocated_bytes": 742869717696,
+      "gc_count": 142861,
+      "gc_pause_ms": 183700.004,
+      "heap_peak_bytes": 37958168,
+      "heap_final_bytes": 5672144,
+      "vm_hwm_bytes": 0,
+      "failed": 0
+    }
+  ],
+  "sampled_private_peak_bytes": 168968192,
+  "sampled_working_peak_bytes": 94806016
+}

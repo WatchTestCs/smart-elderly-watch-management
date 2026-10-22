@@ -7,6 +7,14 @@ import (
 	"time"
 )
 
+var preparedBytes []byte
+
+func sampleBenchmarkInput() (Owner, Sample) {
+	at := time.Date(2026, 10, 20, 12, 0, 0, 0, time.UTC)
+	device := int64(123)
+	return Owner{OldID: 456, DeviceID: &device, Epoch: 1}, Sample{RecordID: "sample-123456", Source: "watch", SourceDevice: "WATCH-123456", Metric: "heart_rate", Unit: "count/min", Value: Number(72), Start: at, End: at, Version: 1}
+}
+
 func BenchmarkSamplePreparation(b *testing.B) {
 	at := time.Date(2026, 10, 20, 12, 0, 0, 0, time.UTC)
 	s := Sample{RecordID: "sample-123456", Source: "watch", SourceDevice: "WATCH-123456", Metric: "heart_rate", Unit: "count/min", Value: Number(72), Start: at, End: at, Version: 1}

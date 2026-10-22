@@ -187,6 +187,70 @@ func TestStaleNotificationAttemptCannotOverrideNewClaim(t *testing.T) {
 	}
 }
 
+func TestOfflineDeviceScanSkipsBusyDevice(t *testing.T) {
+	pool := testCareDB(t)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if _, err := pool.Exec(ctx, `UPDATE device SET last_time=now()-interval '5 minutes',last_online_at=now()`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, `INSERT INTO device(device_id,device_no,secret,last_time,last_online_at) VALUES(2,'OFFLINE2','unused',now()-interval '5 minutes',now())`); err != nil {
+		t.Fatal(err)
+	}
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback(ctx)
+	if _, err := tx.Exec(ctx, "UPDATE device SET battery=50 WHERE device_id=1"); err != nil {
+		t.Fatal(err)
+	}
+	scan, stop := context.WithTimeout(ctx, time.Second)
+	defer stop()
+	if err := scanOffline(scan, pool); err != nil {
+		t.Fatalf("offline scan waited behind a device transaction: %v", err)
+	}
+	var first, second int
+	if err := pool.QueryRow(ctx, "SELECT boot_seq FROM device WHERE device_id=1").Scan(&first); err != nil {
+		t.Fatal(err)
+	}
+	if err := pool.QueryRow(ctx, "SELECT boot_seq FROM device WHERE device_id=2").Scan(&second); err != nil || second != first+1 {
+		t.Fatalf("unlocked offline device was not processed: first=%d second=%d err=%v", first, second, err)
+	}
+	if err := tx.Rollback(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if err := scanOffline(ctx, pool); err != nil {
+		t.Fatal(err)
+	}
+	if err := pool.QueryRow(ctx, "SELECT boot_seq FROM device WHERE device_id=1").Scan(&first); err != nil || first != second {
+		t.Fatalf("skipped device was not processed on the next scan: %d %v", first, err)
+	}
+}
+
+func TestOfflineDeviceScanPages(t *testing.T) {
+	pool := testCareDB(t)
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+	for id := 2; id <= 205; id++ {
+		if _, err := pool.Exec(ctx, "INSERT INTO device(device_id,device_no,secret) VALUES($1,$2,'unused')", id, fmt.Sprint("PAGE", id)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := pool.Exec(ctx, "UPDATE device SET last_time=now()-interval '5 minutes',last_online_at=now(),boot_seq=1"); err != nil {
+		t.Fatal(err)
+	}
+	for range 2 {
+		if err := scanOffline(ctx, pool); err != nil {
+			t.Fatal(err)
+		}
+		var count int
+		if err := pool.QueryRow(ctx, "SELECT count(*) FROM device WHERE boot_seq=2 AND last_online_at IS NULL").Scan(&count); err != nil || count != 205 {
+			t.Fatalf("offline pages incomplete or repeated: count=%d err=%v", count, err)
+		}
+	}
+}
+
 func TestOfflineDeviceScanRunsOnceUntilNextOnlineSession(t *testing.T) {
 	pool := testCareDB(t)
 	ctx := context.Background()

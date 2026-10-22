@@ -1,0 +1,180 @@
+{
+  "checks": {
+    "focused": {
+      "command": [
+        "D:\\Codex存储文件夹\\2026-10-13\\github-plugin-github-openai-curated-remote\\work\\tauri-release-20261018\\tools\\go\\bin\\go.exe",
+        "test",
+        "-json",
+        "-count=1",
+        "-timeout=240s",
+        "-p=1",
+        "./internal/config",
+        "./internal/health",
+        "./internal/handlers",
+        "-run",
+        "TestHealth|TestStatisticsCache|TestBatch|TestOwner|TestDaily|TestNormalize|TestSafeDefaults|TestExplicitDeploymentConfiguration"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 49.52672119999988,
+      "mysql_port": 33327,
+      "gomaxprocs": 4,
+      "gomemlimit": "512MiB",
+      "tests_and_subtests": {
+        "pass": 39
+      }
+    },
+    "race-mysql": {
+      "exit_code": 0,
+      "elapsed_seconds": 36.984741801,
+      "command": [
+        "/mnt/d/Codex存储文件夹/2026-10-21/github-plugin-github-openai-curated-remote/work/go/bin/go",
+        "test",
+        "-race",
+        "-json",
+        "-p=1",
+        "-count=1",
+        "-timeout=180s",
+        "./internal/config",
+        "./internal/handlers",
+        "-run",
+        "TestHealthStatisticsHotCache|TestStatisticsCache|TestHealthCacheBudget|TestHealthBindingEpochAndStatistics|TestHealthVersionsCursorAndIsolation"
+      ],
+      "primary_fixture": "MySQL",
+      "tests_and_subtests": {
+        "pass": 28
+      }
+    },
+    "race-postgres": {
+      "exit_code": 0,
+      "elapsed_seconds": 10.891783203000003,
+      "command": [
+        "/mnt/d/Codex存储文件夹/2026-10-21/github-plugin-github-openai-curated-remote/work/go/bin/go",
+        "test",
+        "-race",
+        "-json",
+        "-p=1",
+        "-count=1",
+        "-timeout=180s",
+        "./internal/config",
+        "./internal/handlers",
+        "-run",
+        "TestHealthStatisticsHotCache|TestStatisticsCache|TestHealthCacheBudget|TestHealthBindingEpochAndStatistics|TestHealthVersionsCursorAndIsolation"
+      ],
+      "primary_fixture": "legacy PostgreSQL compatibility, not analytics production routing",
+      "tests_and_subtests": {
+        "pass": 28
+      }
+    },
+    "build": {
+      "command": [
+        "D:\\Codex存储文件夹\\2026-10-13\\github-plugin-github-openai-curated-remote\\work\\tauri-release-20261018\\tools\\go\\bin\\go.exe",
+        "build",
+        "./..."
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 2.550609600000371,
+      "mysql_port": 33327,
+      "gomaxprocs": 4,
+      "gomemlimit": "512MiB"
+    },
+    "vet": {
+      "command": [
+        "D:\\Codex存储文件夹\\2026-10-13\\github-plugin-github-openai-curated-remote\\work\\tauri-release-20261018\\tools\\go\\bin\\go.exe",
+        "vet",
+        "./..."
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.4058734999998705,
+      "mysql_port": 33327,
+      "gomaxprocs": 4,
+      "gomemlimit": "512MiB"
+    },
+    "bench": {
+      "command": [
+        "D:\\Codex存储文件夹\\2026-10-13\\github-plugin-github-openai-curated-remote\\work\\tauri-release-20261018\\tools\\go\\bin\\go.exe",
+        "test",
+        "./internal/handlers",
+        "-run",
+        "^$",
+        "-bench",
+        "^BenchmarkHealthStatisticsHybrid$",
+        "-benchtime=3s",
+        "-benchmem",
+        "-count=3",
+        "-timeout=180s"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 36.8381859000001,
+      "mysql_port": 33327,
+      "gomaxprocs": 4,
+      "gomemlimit": "512MiB"
+    }
+  },
+  "bench_raw": {
+    "disk": [
+      {
+        "ns_per_op": 23347606,
+        "allocated_bytes_per_op": 29940725,
+        "allocations_per_op": 70402
+      },
+      {
+        "ns_per_op": 23389058,
+        "allocated_bytes_per_op": 29941740,
+        "allocations_per_op": 70403
+      },
+      {
+        "ns_per_op": 23019904,
+        "allocated_bytes_per_op": 29940440,
+        "allocations_per_op": 70400
+      }
+    ],
+    "hot": [
+      {
+        "ns_per_op": 89087,
+        "allocated_bytes_per_op": 9832,
+        "allocations_per_op": 80
+      },
+      {
+        "ns_per_op": 88912,
+        "allocated_bytes_per_op": 9850,
+        "allocations_per_op": 80
+      },
+      {
+        "ns_per_op": 89236,
+        "allocated_bytes_per_op": 9831,
+        "allocations_per_op": 80
+      }
+    ]
+  },
+  "bench_means": {
+    "disk": {
+      "ns_per_op": 23252189.333333332,
+      "allocated_bytes_per_op": 29940968.333333332,
+      "allocations_per_op": 70401.66666666667
+    },
+    "hot": {
+      "ns_per_op": 89078.33333333333,
+      "allocated_bytes_per_op": 9837.666666666666,
+      "allocations_per_op": 80
+    }
+  },
+  "query_handler_speedup": 261.03080809025766,
+  "patches": [
+    {
+      "patch": "suining-2.0.6-hybrid-complete.patch",
+      "files": 94,
+      "byte_for_byte_verified": true
+    },
+    {
+      "patch": "suining-2.0.6-hybrid-incremental.patch",
+      "files": 10,
+      "byte_for_byte_verified": true
+    }
+  ],
+  "test_ports_listening_after_cleanup": {
+    "33327": false,
+    "33328": false,
+    "33329": false
+  },
+  "scope": "Targeted cache validation and buffered-MySQL statistics handler benchmark, not full-suite or new durable-ingestion capacity."
+}

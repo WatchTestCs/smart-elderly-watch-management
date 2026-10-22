@@ -13,16 +13,17 @@ import (
 
 // Handler 聚合依赖，各组 endpoint 实现在 handler_*.go 中。
 type Handler struct {
-	DB        *dbstore.Database
-	Analytics *analytics.State
-	Sessions  *session.Store
-	Cfg       config.Config
-	Box       *securestore.Box
+	DB          *dbstore.Database
+	Analytics   *analytics.State
+	Sessions    *session.Store
+	Cfg         config.Config
+	Box         *securestore.Box
+	healthCache *statisticsCache
 }
 
 func New(pool *dbstore.Database, sessions *session.Store, cfg config.Config) *Handler {
 	box, _ := securestore.New(cfg.DataKey)
-	return &Handler{DB: pool, Sessions: sessions, Cfg: cfg, Box: box}
+	return &Handler{DB: pool, Sessions: sessions, Cfg: cfg, Box: box, healthCache: newStatisticsCache(cfg.HealthCacheBytes)}
 }
 
 // Routes 注册全部路由。各组在自己的文件中通过 h.route 注册。

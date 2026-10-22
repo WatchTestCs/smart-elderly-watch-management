@@ -1,0 +1,968 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-20",
+  "scope": "Existing notification agent measurements and correctness evidence only; no database run performed while assembling this file.",
+  "repository": "D:\\Codex存储文件夹\\2026-10-18\\a-b-c-d-devicetype-19-3\\work\\upgrade",
+  "backend": "D:\\Codex存储文件夹\\2026-10-18\\a-b-c-d-devicetype-19-3\\work\\upgrade\\智慧养老手表管理系统\\backend",
+  "final_cluster_acceptance": {
+    "target_rows_per_second": 200000,
+    "measured_by_this_agent": false,
+    "achieved_by_this_evidence": false,
+    "reason": "These runs use one Go test process with eight real goroutine workers sharing one MySQL instance. They are not the requested authenticated HTTP multi-process cluster test. No per-instance result was multiplied."
+  },
+  "measurement_definitions": {
+    "pure_algorithm": "Not measured here; no CPU-only throughput is substituted for durable queue throughput.",
+    "durable_enqueue": "Wall time for 16384 encrypted recipient rows committed via 8 concurrent writers, 512 rows per statement/transaction, then verified by SELECT count.",
+    "legacy_in_app_worker": "Round 1 had pending local inbox rows and real worker completion. Later direct-inbox writes remove that worker stage; later rates must not be compared as worker throughput.",
+    "direct_in_app": "Committed locally queryable inbox availability with attempts=0; not proof of reading.",
+    "real_worker": "Actual MySQL lease claim, gateway request and lease-CAS completion. SMS final status is sent.",
+    "simulated_gateway": "Local plaintext HTTP test server with explicit test-only HTTP allowance, Bearer token and per-notification stable idempotency key. Bulk requires per-ID accepted=true; 2xx alone is insufficient. TLS cost and actual SMS/voice delivery are unmeasured.",
+    "enqueue_plus_drain": "Sequential enqueue duration plus actual drain duration, not only the faster stage; recorded only when printed by the original test."
+  },
+  "topology": {
+    "go_test_processes": 1,
+    "concurrent_enqueue_writers": 8,
+    "concurrent_worker_goroutines": 8,
+    "mysql_endpoint": "127.0.0.1:23316",
+    "database_isolation": "Disposable dbtest databases; exclusive measurement windows coordinated with root.",
+    "rows_per_mode": 16384,
+    "enqueue_statement_max_rows": 512,
+    "default_external_max_jobs_per_drain": 32,
+    "bulk_max_jobs_per_drain": 512,
+    "encryption": "AES-GCM recipient encryption using securestore Box; per-encryption random nonces retained.",
+    "server_settings": "Notification agent did not change MySQL server parameters. Buffer-pool/fsync settings were not independently captured in these runs."
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "implementation": "Bounded batch enqueue/claim/completion; in_app still worker-completed; default external claims up to 32 after reading up to 512. No new lease/channel index yet.",
+      "runs": [
+        "round1-batch-claim"
+      ],
+      "result": "PASS",
+      "limitations": [
+        "Repeatedly reading/locking unused external rows.",
+        "OR selector full-scan/filesort diagnosis captured later."
+      ]
+    },
+    {
+      "round": 2,
+      "implementation": "in_app becomes delivered/local available within parent transaction; optional strict per-ID bulk gateway; default external initial query limit 32. Existing OR predicate retained; schema 0007 lease/channel indexes present.",
+      "runs": [
+        "round2-direct-inbox-bulk"
+      ],
+      "result": "PASS",
+      "limitations": [
+        "EXPLAIN still shows full scan and filesort despite additional indexes."
+      ]
+    },
+    {
+      "round": 3,
+      "implementation": "Bounded status-equality indexed claims in priority order: stale sending, due failed, fresh pending. Default 32 jobs; bulk 512. Production Run receives a bounded 32-connection keep-alive pool.",
+      "runs": [
+        "round3-fairness-red",
+        "round3-selector-partial-failure",
+        "round3-keepalive-retry-pass"
+      ],
+      "result": "Fairness RED reproduced on old selector, new-selector targeted regressions GREEN. First high-rate SMS sample failed; client-adjusted SMS/bulk rerun PASS.",
+      "limitations": [
+        "Latest run is a short 16384-row sample, not a stable long-run cluster result.",
+        "Final client adjustment did not rerun the entire repository suite; broader verification is root-owned."
+      ]
+    }
+  ],
+  "runs": [
+    {
+      "label": "round1-batch-claim",
+      "process_id": "17487",
+      "source_session_jsonl": "C:\\Users\\xiaofeng\\.codex\\sessions\\2026\\10\\20\\rollout-2026-10-20T20-46-30-01a15959-588b-7f13-befe-387c7b5c4545.jsonl",
+      "source_line": 158,
+      "source_ordinal": 157,
+      "completed_utc": "2026-10-20T12:54:29.190Z",
+      "raw_log_path": "D:\\Codex存储文件夹\\2026-10-18\\a-b-c-d-devicetype-19-3\\outputs\\notification-round1-batch-claim.raw.log",
+      "raw_log_sha256": "7d4176e726c26e5605ecc629399ad2f8eee921bd8ffb66e5ea834f59a7741a91",
+      "raw_log_bytes": 1786,
+      "raw_log_origin": "Exact UTF-8 bytes of the original CommandExecution aggregated_output field; not a rerun or reconstructed transcript.",
+      "command": "$env:TEST_MYSQL_DSN='root@tcp(127.0.0.1:23316)/mysql'; $env:NOTIFY_PERF='1'; & 'D:/Codex存储文件夹/2026-10-13/github-plugin-github-openai-curated-remote/work/tauri-release-20261018/tools/go/bin/go.exe' test ./internal/notify -count=1 -v",
+      "exit_code": 0,
+      "command_wall_seconds_including_build": 51.3914591,
+      "go_test_reported_package_seconds": 29.16,
+      "measurements": [
+        {
+          "mode": "in_app",
+          "raw_measurement_line": "actual committed rows=16384 writers=8 enqueue=143.17ms 114437 rows/s; actual workers=8 drain=652.0372ms 25127 rows/s final=delivered simulated_provider_ACKs=0",
+          "rows": 16384,
+          "writers": 8,
+          "enqueue_duration": "143.17ms",
+          "durable_enqueue_rows_per_second": 114437,
+          "workers": 8,
+          "drain_duration": "652.0372ms",
+          "real_worker_rows_per_second": 25127,
+          "final_status": "delivered",
+          "simulated_provider_acks": 0,
+          "scope": "legacy in_app MySQL enqueue plus worker local-availability completion; no reader acknowledgement"
+        },
+        {
+          "mode": "sms",
+          "raw_measurement_line": "actual committed rows=16384 writers=8 enqueue=164.3272ms 99704 rows/s; actual workers=8 drain=8.6560461s 1893 rows/s final=sent simulated_provider_ACKs=16384",
+          "rows": 16384,
+          "writers": 8,
+          "enqueue_duration": "164.3272ms",
+          "durable_enqueue_rows_per_second": 99704,
+          "workers": 8,
+          "drain_duration": "8.6560461s",
+          "real_worker_rows_per_second": 1893,
+          "final_status": "sent",
+          "simulated_provider_acks": 16384,
+          "scope": "real encrypted MySQL enqueue and lease worker; provider HTTP/acceptances simulated"
+        }
+      ]
+    },
+    {
+      "label": "round2-direct-inbox-bulk",
+      "process_id": "68602",
+      "source_session_jsonl": "C:\\Users\\xiaofeng\\.codex\\sessions\\2026\\10\\20\\rollout-2026-10-20T20-46-30-01a15959-588b-7f13-befe-387c7b5c4545.jsonl",
+      "source_line": 343,
+      "source_ordinal": 342,
+      "completed_utc": "2026-10-20T13:04:19.218Z",
+      "raw_log_path": "D:\\Codex存储文件夹\\2026-10-18\\a-b-c-d-devicetype-19-3\\outputs\\notification-round2-direct-inbox-bulk.raw.log",
+      "raw_log_sha256": "8aeaa34057580e7e2c964d5b1c446c6147325d1962363d61b834764998d2ac03",
+      "raw_log_bytes": 7200,
+      "raw_log_origin": "Exact UTF-8 bytes of the original CommandExecution aggregated_output field; not a rerun or reconstructed transcript.",
+      "command": "$env:TEST_MYSQL_DSN='root@tcp(127.0.0.1:23316)/mysql'; $env:NOTIFY_PERF='1'; & 'D:/Codex存储文件夹/2026-10-13/github-plugin-github-openai-curated-remote/work/tauri-release-20261018/tools/go/bin/go.exe' test ./internal/notify -count=1 -v",
+      "exit_code": 0,
+      "command_wall_seconds_including_build": 57.9706196,
+      "go_test_reported_package_seconds": 35.539,
+      "measurements": [
+        {
+          "mode": "in_app",
+          "raw_measurement_line": "actual committed locally available inbox rows=16384 writers=8 enqueue=161.1936ms 101642 rows/s; no worker/network/reader acknowledgement involved",
+          "rows": 16384,
+          "writers": 8,
+          "enqueue_duration": "161.1936ms",
+          "committed_locally_available_rows_per_second": 101642,
+          "scope": "real MySQL transaction commit to locally available in_app inbox",
+          "worker_used": false,
+          "provider_acks": 0,
+          "reader_acknowledgement_measured": false
+        },
+        {
+          "mode": "sms",
+          "raw_measurement_line": "actual committed rows=16384 writers=8 enqueue=169.4847ms 96669 rows/s; actual workers=8 drain=9.1209218s 1796 rows/s final=sent simulated_provider_ACKs=16384 HTTP_requests=16384 enqueue+drain=1764 rows/s",
+          "rows": 16384,
+          "writers": 8,
+          "enqueue_duration": "169.4847ms",
+          "durable_enqueue_rows_per_second": 96669,
+          "workers": 8,
+          "drain_duration": "9.1209218s",
+          "real_worker_rows_per_second": 1796,
+          "final_status": "sent",
+          "simulated_provider_acks": 16384,
+          "http_requests": 16384,
+          "enqueue_plus_drain_rows_per_second": 1764,
+          "scope": "real encrypted MySQL enqueue and lease worker; provider HTTP/acceptances simulated"
+        },
+        {
+          "mode": "bulk_sms",
+          "raw_measurement_line": "actual committed rows=16384 writers=8 enqueue=170.3629ms 96171 rows/s; actual workers=8 drain=573.0737ms 28590 rows/s final=sent simulated_provider_ACKs=16384 HTTP_requests=38 enqueue+drain=22038 rows/s",
+          "rows": 16384,
+          "writers": 8,
+          "enqueue_duration": "170.3629ms",
+          "durable_enqueue_rows_per_second": 96171,
+          "workers": 8,
+          "drain_duration": "573.0737ms",
+          "real_worker_rows_per_second": 28590,
+          "final_status": "sent",
+          "simulated_provider_acks": 16384,
+          "http_requests": 38,
+          "enqueue_plus_drain_rows_per_second": 22038,
+          "scope": "real encrypted MySQL enqueue and lease worker; provider HTTP/acceptances simulated"
+        }
+      ]
+    },
+    {
+      "label": "round3-fairness-red",
+      "process_id": "19170",
+      "source_session_jsonl": "C:\\Users\\xiaofeng\\.codex\\sessions\\2026\\10\\20\\rollout-2026-10-20T20-46-30-01a15959-588b-7f13-befe-387c7b5c4545.jsonl",
+      "source_line": 362,
+      "source_ordinal": 361,
+      "completed_utc": "2026-10-20T13:05:13.931Z",
+      "raw_log_path": "D:\\Codex存储文件夹\\2026-10-18\\a-b-c-d-devicetype-19-3\\outputs\\notification-round3-fairness-red.raw.log",
+      "raw_log_sha256": "315fc37740442ca759e50f9de2bda30c8ba697d825ab47781b84ba8c9356ac80",
+      "raw_log_bytes": 235,
+      "raw_log_origin": "Exact UTF-8 bytes of the original CommandExecution aggregated_output field; not a rerun or reconstructed transcript.",
+      "command": "$env:TEST_MYSQL_DSN='root@tcp(127.0.0.1:23316)/mysql'; & 'D:/Codex存储文件夹/2026-10-13/github-plugin-github-openai-curated-remote/work/tauri-release-20261018/tools/go/bin/gofmt.exe' -w internal/notify/batch_test.go; & 'D:/Codex存储文件夹/2026-10-13/github-plugin-github-openai-curated-remote/work/tauri-release-20261018/tools/go/bin/go.exe' test ./internal/notify -run '^TestStaleAndDueRetry' -count=1 -v",
+      "exit_code": 1,
+      "command_wall_seconds_including_build": 25.0319851,
+      "go_test_reported_package_seconds": 2.539,
+      "measurements": []
+    },
+    {
+      "label": "round3-selector-partial-failure",
+      "process_id": "33047",
+      "source_session_jsonl": "C:\\Users\\xiaofeng\\.codex\\sessions\\2026\\10\\20\\rollout-2026-10-20T20-46-30-01a15959-588b-7f13-befe-387c7b5c4545.jsonl",
+      "source_line": 382,
+      "source_ordinal": 381,
+      "completed_utc": "2026-10-20T13:06:35.580Z",
+      "raw_log_path": "D:\\Codex存储文件夹\\2026-10-18\\a-b-c-d-devicetype-19-3\\outputs\\notification-round3-selector-partial-failure.raw.log",
+      "raw_log_sha256": "ae99af81a570076356f824d87985ae6c16d81091a083830ad03a0be9fa15ebca",
+      "raw_log_bytes": 8290,
+      "raw_log_origin": "Exact UTF-8 bytes of the original CommandExecution aggregated_output field; not a rerun or reconstructed transcript.",
+      "command": "$env:TEST_MYSQL_DSN='root@tcp(127.0.0.1:23316)/mysql'; $env:NOTIFY_PERF='1'; & 'D:/Codex存储文件夹/2026-10-13/github-plugin-github-openai-curated-remote/work/tauri-release-20261018/tools/go/bin/gofmt.exe' -w internal/notify; & 'D:/Codex存储文件夹/2026-10-13/github-plugin-github-openai-curated-remote/work/tauri-release-20261018/tools/go/bin/go.exe' test ./internal/notify -run 'TestStaleAndDueRetry|TestBatchDrain|TestShortCycle|TestBulkStale|TestBulkBound|TestNotificationThroughput' -count=1 -v",
+      "exit_code": 1,
+      "command_wall_seconds_including_build": 41.5452721,
+      "go_test_reported_package_seconds": 19.061,
+      "measurements": [
+        {
+          "mode": "in_app",
+          "raw_measurement_line": "actual committed locally available inbox rows=16384 writers=8 enqueue=172.6356ms 94905 rows/s; no worker/network/reader acknowledgement involved",
+          "rows": 16384,
+          "writers": 8,
+          "enqueue_duration": "172.6356ms",
+          "committed_locally_available_rows_per_second": 94905,
+          "scope": "real MySQL transaction commit to locally available in_app inbox",
+          "worker_used": false,
+          "provider_acks": 0,
+          "reader_acknowledgement_measured": false
+        },
+        {
+          "mode": "bulk_sms",
+          "raw_measurement_line": "actual committed rows=16384 writers=8 enqueue=170.7033ms 95979 rows/s; actual workers=8 drain=385.3361ms 42519 rows/s final=sent simulated_provider_ACKs=16384 HTTP_requests=33 enqueue+drain=29466 rows/s",
+          "rows": 16384,
+          "writers": 8,
+          "enqueue_duration": "170.7033ms",
+          "durable_enqueue_rows_per_second": 95979,
+          "workers": 8,
+          "drain_duration": "385.3361ms",
+          "real_worker_rows_per_second": 42519,
+          "final_status": "sent",
+          "simulated_provider_acks": 16384,
+          "http_requests": 33,
+          "enqueue_plus_drain_rows_per_second": 29466,
+          "scope": "real encrypted MySQL enqueue and lease worker; provider HTTP/acceptances simulated"
+        }
+      ]
+    },
+    {
+      "label": "round3-keepalive-retry-pass",
+      "process_id": "63025",
+      "source_session_jsonl": "C:\\Users\\xiaofeng\\.codex\\sessions\\2026\\10\\20\\rollout-2026-10-20T20-46-30-01a15959-588b-7f13-befe-387c7b5c4545.jsonl",
+      "source_line": 403,
+      "source_ordinal": 402,
+      "completed_utc": "2026-10-20T13:08:08.301Z",
+      "raw_log_path": "D:\\Codex存储文件夹\\2026-10-18\\a-b-c-d-devicetype-19-3\\outputs\\notification-round3-keepalive-retry-pass.raw.log",
+      "raw_log_sha256": "4d2d0640a5015f510cacdb259f78e3be6ce6c5edfe8ea64ddef1eca70758ea6d",
+      "raw_log_bytes": 7523,
+      "raw_log_origin": "Exact UTF-8 bytes of the original CommandExecution aggregated_output field; not a rerun or reconstructed transcript.",
+      "command": "$env:TEST_MYSQL_DSN='root@tcp(127.0.0.1:23316)/mysql'; $env:NOTIFY_PERF='1'; & 'D:/Codex存储文件夹/2026-10-13/github-plugin-github-openai-curated-remote/work/tauri-release-20261018/tools/go/bin/gofmt.exe' -w internal/notify; & 'D:/Codex存储文件夹/2026-10-13/github-plugin-github-openai-curated-remote/work/tauri-release-20261018/tools/go/bin/go.exe' test ./internal/notify -run '^TestNotificationThroughput/sms$' -count=1 -v",
+      "exit_code": 0,
+      "command_wall_seconds_including_build": 29.4239094,
+      "go_test_reported_package_seconds": 6.924,
+      "measurements": [
+        {
+          "mode": "sms",
+          "raw_measurement_line": "actual committed rows=16384 writers=8 enqueue=190.8431ms 85851 rows/s; actual workers=8 drain=1.214208s 13494 rows/s final=sent simulated_provider_ACKs=16384 HTTP_requests=16384 enqueue+drain=11661 rows/s",
+          "rows": 16384,
+          "writers": 8,
+          "enqueue_duration": "190.8431ms",
+          "durable_enqueue_rows_per_second": 85851,
+          "workers": 8,
+          "drain_duration": "1.214208s",
+          "real_worker_rows_per_second": 13494,
+          "final_status": "sent",
+          "simulated_provider_acks": 16384,
+          "http_requests": 16384,
+          "enqueue_plus_drain_rows_per_second": 11661,
+          "scope": "real encrypted MySQL enqueue and lease worker; provider HTTP/acceptances simulated"
+        },
+        {
+          "mode": "bulk_sms",
+          "raw_measurement_line": "actual committed rows=16384 writers=8 enqueue=210.999ms 77650 rows/s; actual workers=8 drain=396.0447ms 41369 rows/s final=sent simulated_provider_ACKs=16384 HTTP_requests=32 enqueue+drain=26990 rows/s",
+          "rows": 16384,
+          "writers": 8,
+          "enqueue_duration": "210.999ms",
+          "durable_enqueue_rows_per_second": 77650,
+          "workers": 8,
+          "drain_duration": "396.0447ms",
+          "real_worker_rows_per_second": 41369,
+          "final_status": "sent",
+          "simulated_provider_acks": 16384,
+          "http_requests": 32,
+          "enqueue_plus_drain_rows_per_second": 26990,
+          "scope": "real encrypted MySQL enqueue and lease worker; provider HTTP/acceptances simulated"
+        }
+      ]
+    }
+  ],
+  "explain_evidence": [
+    {
+      "run": "round2-direct-inbox-bulk",
+      "query": "original_or",
+      "occurrence": 1,
+      "using_filesort": true,
+      "access_type": "ALL",
+      "key": null,
+      "rows_examined_per_scan_estimate": 16250,
+      "used_key_parts": [],
+      "raw_log_path": "D:\\Codex存储文件夹\\2026-10-18\\a-b-c-d-devicetype-19-3\\outputs\\notification-round2-direct-inbox-bulk.raw.log",
+      "plan": {
+        "query_block": {
+          "select_id": 1,
+          "cost_info": {
+            "query_cost": "1625.25"
+          },
+          "ordering_operation": {
+            "using_filesort": true,
+            "table": {
+              "table_name": "message_outbox",
+              "access_type": "ALL",
+              "possible_keys": [
+                "idx_message_claim",
+                "idx_message_lease",
+                "idx_message_channel_ready"
+              ],
+              "rows_examined_per_scan": 16250,
+              "rows_produced_per_join": 8127,
+              "filtered": "50.01",
+              "cost_info": {
+                "read_cost": "812.55",
+                "eval_cost": "812.70",
+                "prefix_cost": "1625.25",
+                "data_read_per_join": "15M"
+              },
+              "used_columns": [
+                "id",
+                "topic",
+                "source_key",
+                "family_id",
+                "channel",
+                "recipient",
+                "status",
+                "attempts",
+                "retry_at",
+                "last_attempt_at"
+              ],
+              "attached_condition": "(((`suining_test_829f13e5`.`message_outbox`.`status` in ('pending','failed')) and (`suining_test_829f13e5`.`message_outbox`.`retry_at` <= <cache>(now(6)))) or ((`suining_test_829f13e5`.`message_outbox`.`status` = 'sending') and (`suining_test_829f13e5`.`message_outbox`.`last_attempt_at` < TIMESTAMP'2026-10-20 13:03:07.137406')))"
+            }
+          }
+        }
+      }
+    },
+    {
+      "run": "round2-direct-inbox-bulk",
+      "query": "original_or",
+      "occurrence": 2,
+      "using_filesort": true,
+      "access_type": "ALL",
+      "key": null,
+      "rows_examined_per_scan_estimate": 16289,
+      "used_key_parts": [],
+      "raw_log_path": "D:\\Codex存储文件夹\\2026-10-18\\a-b-c-d-devicetype-19-3\\outputs\\notification-round2-direct-inbox-bulk.raw.log",
+      "plan": {
+        "query_block": {
+          "select_id": 1,
+          "cost_info": {
+            "query_cost": "1629.15"
+          },
+          "ordering_operation": {
+            "using_filesort": true,
+            "table": {
+              "table_name": "message_outbox",
+              "access_type": "ALL",
+              "possible_keys": [
+                "idx_message_claim",
+                "idx_message_lease",
+                "idx_message_channel_ready"
+              ],
+              "rows_examined_per_scan": 16289,
+              "rows_produced_per_join": 8146,
+              "filtered": "50.01",
+              "cost_info": {
+                "read_cost": "814.55",
+                "eval_cost": "814.60",
+                "prefix_cost": "1629.15",
+                "data_read_per_join": "15M"
+              },
+              "used_columns": [
+                "id",
+                "topic",
+                "source_key",
+                "family_id",
+                "channel",
+                "recipient",
+                "status",
+                "attempts",
+                "retry_at",
+                "last_attempt_at"
+              ],
+              "attached_condition": "(((`suining_test_a146dc43`.`message_outbox`.`status` in ('pending','failed')) and (`suining_test_a146dc43`.`message_outbox`.`retry_at` <= <cache>(now(6)))) or ((`suining_test_a146dc43`.`message_outbox`.`status` = 'sending') and (`suining_test_a146dc43`.`message_outbox`.`last_attempt_at` < TIMESTAMP'2026-10-20 13:03:18.281949')))"
+            }
+          }
+        }
+      }
+    },
+    {
+      "run": "round3-selector-partial-failure",
+      "query": "original_or",
+      "occurrence": 1,
+      "using_filesort": true,
+      "access_type": "ALL",
+      "key": null,
+      "rows_examined_per_scan_estimate": 16291,
+      "used_key_parts": [],
+      "raw_log_path": "D:\\Codex存储文件夹\\2026-10-18\\a-b-c-d-devicetype-19-3\\outputs\\notification-round3-selector-partial-failure.raw.log",
+      "plan": {
+        "query_block": {
+          "select_id": 1,
+          "cost_info": {
+            "query_cost": "1629.35"
+          },
+          "ordering_operation": {
+            "using_filesort": true,
+            "table": {
+              "table_name": "message_outbox",
+              "access_type": "ALL",
+              "possible_keys": [
+                "idx_message_claim",
+                "idx_message_lease",
+                "idx_message_channel_ready"
+              ],
+              "rows_examined_per_scan": 16291,
+              "rows_produced_per_join": 8147,
+              "filtered": "50.01",
+              "cost_info": {
+                "read_cost": "814.65",
+                "eval_cost": "814.70",
+                "prefix_cost": "1629.35",
+                "data_read_per_join": "15M"
+              },
+              "used_columns": [
+                "id",
+                "topic",
+                "source_key",
+                "family_id",
+                "channel",
+                "recipient",
+                "status",
+                "attempts",
+                "retry_at",
+                "last_attempt_at"
+              ],
+              "attached_condition": "(((`suining_test_4ec3544a`.`message_outbox`.`status` in ('pending','failed')) and (`suining_test_4ec3544a`.`message_outbox`.`retry_at` <= <cache>(now(6)))) or ((`suining_test_4ec3544a`.`message_outbox`.`status` = 'sending') and (`suining_test_4ec3544a`.`message_outbox`.`last_attempt_at` < TIMESTAMP'2026-10-20 13:05:30.542377')))"
+            }
+          }
+        }
+      }
+    },
+    {
+      "run": "round3-selector-partial-failure",
+      "query": "original_or",
+      "occurrence": 2,
+      "using_filesort": true,
+      "access_type": "ALL",
+      "key": null,
+      "rows_examined_per_scan_estimate": 16311,
+      "used_key_parts": [],
+      "raw_log_path": "D:\\Codex存储文件夹\\2026-10-18\\a-b-c-d-devicetype-19-3\\outputs\\notification-round3-selector-partial-failure.raw.log",
+      "plan": {
+        "query_block": {
+          "select_id": 1,
+          "cost_info": {
+            "query_cost": "1631.35"
+          },
+          "ordering_operation": {
+            "using_filesort": true,
+            "table": {
+              "table_name": "message_outbox",
+              "access_type": "ALL",
+              "possible_keys": [
+                "idx_message_claim",
+                "idx_message_lease",
+                "idx_message_channel_ready"
+              ],
+              "rows_examined_per_scan": 16311,
+              "rows_produced_per_join": 8157,
+              "filtered": "50.01",
+              "cost_info": {
+                "read_cost": "815.65",
+                "eval_cost": "815.70",
+                "prefix_cost": "1631.35",
+                "data_read_per_join": "15M"
+              },
+              "used_columns": [
+                "id",
+                "topic",
+                "source_key",
+                "family_id",
+                "channel",
+                "recipient",
+                "status",
+                "attempts",
+                "retry_at",
+                "last_attempt_at"
+              ],
+              "attached_condition": "(((`suining_test_f17ab7f5`.`message_outbox`.`status` in ('pending','failed')) and (`suining_test_f17ab7f5`.`message_outbox`.`retry_at` <= <cache>(now(6)))) or ((`suining_test_f17ab7f5`.`message_outbox`.`status` = 'sending') and (`suining_test_f17ab7f5`.`message_outbox`.`last_attempt_at` < TIMESTAMP'2026-10-20 13:05:34.882362')))"
+            }
+          }
+        }
+      }
+    },
+    {
+      "run": "round3-selector-partial-failure",
+      "query": "status_equality_pending",
+      "occurrence": 1,
+      "using_filesort": false,
+      "access_type": "range",
+      "key": "idx_message_claim",
+      "rows_examined_per_scan_estimate": 8145,
+      "used_key_parts": [
+        "status",
+        "retry_at"
+      ],
+      "raw_log_path": "D:\\Codex存储文件夹\\2026-10-18\\a-b-c-d-devicetype-19-3\\outputs\\notification-round3-selector-partial-failure.raw.log",
+      "plan": {
+        "query_block": {
+          "select_id": 1,
+          "cost_info": {
+            "query_cost": "815.25"
+          },
+          "ordering_operation": {
+            "using_filesort": false,
+            "table": {
+              "table_name": "message_outbox",
+              "access_type": "range",
+              "possible_keys": [
+                "idx_message_claim",
+                "idx_message_lease",
+                "idx_message_channel_ready"
+              ],
+              "key": "idx_message_claim",
+              "used_key_parts": [
+                "status",
+                "retry_at"
+              ],
+              "key_length": "74",
+              "rows_examined_per_scan": 8145,
+              "rows_produced_per_join": 2714,
+              "filtered": "100.00",
+              "index_condition": "((`suining_test_4ec3544a`.`message_outbox`.`status` = 'pending') and (`suining_test_4ec3544a`.`message_outbox`.`retry_at` <= TIMESTAMP'2026-10-20 13:06:30.542879'))",
+              "cost_info": {
+                "read_cost": "0.75",
+                "eval_cost": "271.47",
+                "prefix_cost": "815.25",
+                "data_read_per_join": "5M"
+              },
+              "used_columns": [
+                "id",
+                "topic",
+                "source_key",
+                "family_id",
+                "channel",
+                "recipient",
+                "status",
+                "attempts",
+                "retry_at"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "run": "round3-selector-partial-failure",
+      "query": "status_equality_pending",
+      "occurrence": 2,
+      "using_filesort": false,
+      "access_type": "range",
+      "key": "idx_message_claim",
+      "rows_examined_per_scan_estimate": 8155,
+      "used_key_parts": [
+        "status",
+        "retry_at"
+      ],
+      "raw_log_path": "D:\\Codex存储文件夹\\2026-10-18\\a-b-c-d-devicetype-19-3\\outputs\\notification-round3-selector-partial-failure.raw.log",
+      "plan": {
+        "query_block": {
+          "select_id": 1,
+          "cost_info": {
+            "query_cost": "816.25"
+          },
+          "ordering_operation": {
+            "using_filesort": false,
+            "table": {
+              "table_name": "message_outbox",
+              "access_type": "range",
+              "possible_keys": [
+                "idx_message_claim",
+                "idx_message_lease",
+                "idx_message_channel_ready"
+              ],
+              "key": "idx_message_claim",
+              "used_key_parts": [
+                "status",
+                "retry_at"
+              ],
+              "key_length": "74",
+              "rows_examined_per_scan": 8155,
+              "rows_produced_per_join": 2718,
+              "filtered": "100.00",
+              "index_condition": "((`suining_test_f17ab7f5`.`message_outbox`.`status` = 'pending') and (`suining_test_f17ab7f5`.`message_outbox`.`retry_at` <= TIMESTAMP'2026-10-20 13:06:34.883117'))",
+              "cost_info": {
+                "read_cost": "0.75",
+                "eval_cost": "271.81",
+                "prefix_cost": "816.25",
+                "data_read_per_join": "5M"
+              },
+              "used_columns": [
+                "id",
+                "topic",
+                "source_key",
+                "family_id",
+                "channel",
+                "recipient",
+                "status",
+                "attempts",
+                "retry_at"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "run": "round3-keepalive-retry-pass",
+      "query": "original_or",
+      "occurrence": 1,
+      "using_filesort": true,
+      "access_type": "ALL",
+      "key": null,
+      "rows_examined_per_scan_estimate": 16303,
+      "used_key_parts": [],
+      "raw_log_path": "D:\\Codex存储文件夹\\2026-10-18\\a-b-c-d-devicetype-19-3\\outputs\\notification-round3-keepalive-retry-pass.raw.log",
+      "plan": {
+        "query_block": {
+          "select_id": 1,
+          "cost_info": {
+            "query_cost": "1630.55"
+          },
+          "ordering_operation": {
+            "using_filesort": true,
+            "table": {
+              "table_name": "message_outbox",
+              "access_type": "ALL",
+              "possible_keys": [
+                "idx_message_claim",
+                "idx_message_lease",
+                "idx_message_channel_ready"
+              ],
+              "rows_examined_per_scan": 16303,
+              "rows_produced_per_join": 8153,
+              "filtered": "50.01",
+              "cost_info": {
+                "read_cost": "815.25",
+                "eval_cost": "815.30",
+                "prefix_cost": "1630.55",
+                "data_read_per_join": "15M"
+              },
+              "used_columns": [
+                "id",
+                "topic",
+                "source_key",
+                "family_id",
+                "channel",
+                "recipient",
+                "status",
+                "attempts",
+                "retry_at",
+                "last_attempt_at"
+              ],
+              "attached_condition": "(((`suining_test_227bbc41`.`message_outbox`.`status` in ('pending','failed')) and (`suining_test_227bbc41`.`message_outbox`.`retry_at` <= <cache>(now(6)))) or ((`suining_test_227bbc41`.`message_outbox`.`status` = 'sending') and (`suining_test_227bbc41`.`message_outbox`.`last_attempt_at` < TIMESTAMP'2026-10-20 13:07:03.984611')))"
+            }
+          }
+        }
+      }
+    },
+    {
+      "run": "round3-keepalive-retry-pass",
+      "query": "original_or",
+      "occurrence": 2,
+      "using_filesort": true,
+      "access_type": "ALL",
+      "key": null,
+      "rows_examined_per_scan_estimate": 16325,
+      "used_key_parts": [],
+      "raw_log_path": "D:\\Codex存储文件夹\\2026-10-18\\a-b-c-d-devicetype-19-3\\outputs\\notification-round3-keepalive-retry-pass.raw.log",
+      "plan": {
+        "query_block": {
+          "select_id": 1,
+          "cost_info": {
+            "query_cost": "1632.75"
+          },
+          "ordering_operation": {
+            "using_filesort": true,
+            "table": {
+              "table_name": "message_outbox",
+              "access_type": "ALL",
+              "possible_keys": [
+                "idx_message_claim",
+                "idx_message_lease",
+                "idx_message_channel_ready"
+              ],
+              "rows_examined_per_scan": 16325,
+              "rows_produced_per_join": 8164,
+              "filtered": "50.01",
+              "cost_info": {
+                "read_cost": "816.35",
+                "eval_cost": "816.40",
+                "prefix_cost": "1632.75",
+                "data_read_per_join": "15M"
+              },
+              "used_columns": [
+                "id",
+                "topic",
+                "source_key",
+                "family_id",
+                "channel",
+                "recipient",
+                "status",
+                "attempts",
+                "retry_at",
+                "last_attempt_at"
+              ],
+              "attached_condition": "(((`suining_test_dc2a8db4`.`message_outbox`.`status` in ('pending','failed')) and (`suining_test_dc2a8db4`.`message_outbox`.`retry_at` <= <cache>(now(6)))) or ((`suining_test_dc2a8db4`.`message_outbox`.`status` = 'sending') and (`suining_test_dc2a8db4`.`message_outbox`.`last_attempt_at` < TIMESTAMP'2026-10-20 13:07:07.423282')))"
+            }
+          }
+        }
+      }
+    },
+    {
+      "run": "round3-keepalive-retry-pass",
+      "query": "status_equality_pending",
+      "occurrence": 1,
+      "using_filesort": false,
+      "access_type": "range",
+      "key": "idx_message_claim",
+      "rows_examined_per_scan_estimate": 8151,
+      "used_key_parts": [
+        "status",
+        "retry_at"
+      ],
+      "raw_log_path": "D:\\Codex存储文件夹\\2026-10-18\\a-b-c-d-devicetype-19-3\\outputs\\notification-round3-keepalive-retry-pass.raw.log",
+      "plan": {
+        "query_block": {
+          "select_id": 1,
+          "cost_info": {
+            "query_cost": "815.85"
+          },
+          "ordering_operation": {
+            "using_filesort": false,
+            "table": {
+              "table_name": "message_outbox",
+              "access_type": "range",
+              "possible_keys": [
+                "idx_message_claim",
+                "idx_message_lease",
+                "idx_message_channel_ready"
+              ],
+              "key": "idx_message_claim",
+              "used_key_parts": [
+                "status",
+                "retry_at"
+              ],
+              "key_length": "74",
+              "rows_examined_per_scan": 8151,
+              "rows_produced_per_join": 2716,
+              "filtered": "100.00",
+              "index_condition": "((`suining_test_227bbc41`.`message_outbox`.`status` = 'pending') and (`suining_test_227bbc41`.`message_outbox`.`retry_at` <= TIMESTAMP'2026-10-20 13:08:03.985115'))",
+              "cost_info": {
+                "read_cost": "0.75",
+                "eval_cost": "271.67",
+                "prefix_cost": "815.85",
+                "data_read_per_join": "5M"
+              },
+              "used_columns": [
+                "id",
+                "topic",
+                "source_key",
+                "family_id",
+                "channel",
+                "recipient",
+                "status",
+                "attempts",
+                "retry_at"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "run": "round3-keepalive-retry-pass",
+      "query": "status_equality_pending",
+      "occurrence": 2,
+      "using_filesort": false,
+      "access_type": "range",
+      "key": "idx_message_claim",
+      "rows_examined_per_scan_estimate": 8162,
+      "used_key_parts": [
+        "status",
+        "retry_at"
+      ],
+      "raw_log_path": "D:\\Codex存储文件夹\\2026-10-18\\a-b-c-d-devicetype-19-3\\outputs\\notification-round3-keepalive-retry-pass.raw.log",
+      "plan": {
+        "query_block": {
+          "select_id": 1,
+          "cost_info": {
+            "query_cost": "816.95"
+          },
+          "ordering_operation": {
+            "using_filesort": false,
+            "table": {
+              "table_name": "message_outbox",
+              "access_type": "range",
+              "possible_keys": [
+                "idx_message_claim",
+                "idx_message_lease",
+                "idx_message_channel_ready"
+              ],
+              "key": "idx_message_claim",
+              "used_key_parts": [
+                "status",
+                "retry_at"
+              ],
+              "key_length": "74",
+              "rows_examined_per_scan": 8162,
+              "rows_produced_per_join": 2720,
+              "filtered": "100.00",
+              "index_condition": "((`suining_test_dc2a8db4`.`message_outbox`.`status` = 'pending') and (`suining_test_dc2a8db4`.`message_outbox`.`retry_at` <= TIMESTAMP'2026-10-20 13:08:07.423785'))",
+              "cost_info": {
+                "read_cost": "0.75",
+                "eval_cost": "272.04",
+                "prefix_cost": "816.95",
+                "data_read_per_join": "5M"
+              },
+              "used_columns": [
+                "id",
+                "topic",
+                "source_key",
+                "family_id",
+                "channel",
+                "recipient",
+                "status",
+                "attempts",
+                "retry_at"
+              ]
+            }
+          }
+        }
+      }
+    }
+  ],
+  "failure_and_retry_evidence": {
+    "fairness_reproduction": {
+      "run": "round3-fairness-red",
+      "observed_error": "claimed pending before sending",
+      "expected_order": [
+        "stale sending",
+        "due failed",
+        "fresh pending"
+      ],
+      "subsequent_targeted_regression": "PASS in round3-selector-partial-failure"
+    },
+    "partial_sms_trial": {
+      "run": "round3-selector-partial-failure",
+      "intended_rows": 16384,
+      "observed_gateway_acceptances": 16322,
+      "acceptance_shortfall": 62,
+      "exit_code": 1,
+      "publishable_successful_throughput": false,
+      "persisted_status_distribution": "Not captured for this failed trial; do not invent failed/sending/pending row counts.",
+      "client_limits": {
+        "timeout_seconds": 2,
+        "max_idle_connections_per_host": "httptest client transport default (2)",
+        "new_explicit_connection_cap": false
+      },
+      "interpretation": "Faster indexed claims exposed client/network burst limitations. Timeout/pool pressure was the working diagnosis, not an independently isolated causal proof."
+    },
+    "client_adjustment_and_rerun": {
+      "run": "round3-keepalive-retry-pass",
+      "timeout_seconds": 10,
+      "test_transport_max_connections_per_host": 256,
+      "test_transport_max_idle_connections_per_host": 256,
+      "reason_for_256": "8 real workers times the retained per-worker bound of 32; no unbounded concurrency.",
+      "production_run_transport_max_connections_per_host": 32,
+      "production_run_transport_max_idle_connections_per_host": 32,
+      "per_request_context_hard_cap_seconds": 30,
+      "run_cycle_context_seconds": 45,
+      "lease_reclaim_age_seconds": 60,
+      "sms_observed_acknowledgements": 16384,
+      "sms_observed_http_requests": 16384,
+      "sms_final_sent_rows": 16384,
+      "bulk_observed_acknowledgements": 16384,
+      "bulk_observed_http_requests": 32,
+      "bulk_final_sent_rows": 16384,
+      "delivery_receipts_measured": false
+    },
+    "business_retry_safety": "Five unsuccessful attempts exhaust SMS and atomically insert encrypted-recipient voice fallback only for rows still owned by that lease; stale completion cannot overwrite a new sent result or schedule spurious fallback. Existing retries retain exponential backoff and stable message-ID keys."
+  },
+  "correctness_evidence": {
+    "round2_full_notify_package": "PASS, 35.539s Go-reported package time.",
+    "round3_selector_targeted_tests": [
+      "TestBatchDrainLocalJobsBeyondSingleStatement",
+      "TestStaleAndDueRetryAreNotStarvedByFreshPendingJobs",
+      "TestBulkStaleLeaseCannotOverwriteAcceptanceOrCreateFallback",
+      "TestBulkBoundPartialAcceptanceAndFifthFailureFallback",
+      "TestShortCycleLeavesExternalNotificationUnclaimed"
+    ],
+    "round3_targeted_result": "All named correctness tests PASS; the same process failed solely on the separately reported SMS throughput ACK shortfall.",
+    "bulk_protocol_cases": [
+      "all ACKs accepted by ID despite order",
+      "missing item fails",
+      "accepted=false fails",
+      "empty JSON fails every item",
+      "HTTP202 empty body fails every item",
+      "unknown ID rejects entire response",
+      "duplicate ID rejects entire response",
+      "trailing JSON rejects response",
+      "Tencent configured adapter remains preferred"
+    ],
+    "other_verified_behaviors": [
+      "601-recipient batch statement boundaries, transaction rollback, deduplication and encryption",
+      "32 simultaneously in-flight default external requests, remainder unclaimed",
+      "legacy local pending backlog drains in bounded chunks",
+      "512 bulk claim limit with 513 queued rows",
+      "partial bulk acceptance only sets explicitly accepted row sent; 511 fifth failures generate 511 encrypted voice fallbacks",
+      "old bulk lease cannot overwrite new accepted result or generate fallback"
+    ],
+    "not_measured": [
+      "actual SMS/voice provider delivery",
+      "reader read acknowledgement",
+      "authenticated public API cluster throughput",
+      "multi-process scaling",
+      "CPU-only algorithm benchmark",
+      "race detector"
+    ]
+  },
+  "api_and_configuration": {
+    "enqueue": "notify.EnqueueBatch(ctx, tx, box, []notify.Message); caller must commit parent transaction. Nil Channels defaults to sms and in_app.",
+    "drain": "Worker.Drain(ctx, limit); hard maximum 512.",
+    "bulk_worker_field": "Worker.BulkURL",
+    "run_bulk_url_environment": "NOTIFY_BULK_WEBHOOK_URL",
+    "gateway_auth_environment": "NOTIFY_WEBHOOK_TOKEN",
+    "test_http_environment": "NOTIFY_ALLOW_HTTP_TEST=1",
+    "bulk_request": "{notifications:[{type,sourceId,channel,recipient,notificationId,idempotencyKey}]}",
+    "bulk_response": "{results:[{notificationId,accepted:true}]}",
+    "default_behavior": "Empty BulkURL retains per-notification HTTP/Tencent delivery. Configured Tencent SMS adapter takes precedence over optional bulk."
+  },
+  "raw_log_paths": [
+    "D:\\Codex存储文件夹\\2026-10-18\\a-b-c-d-devicetype-19-3\\outputs\\notification-round1-batch-claim.raw.log",
+    "D:\\Codex存储文件夹\\2026-10-18\\a-b-c-d-devicetype-19-3\\outputs\\notification-round2-direct-inbox-bulk.raw.log",
+    "D:\\Codex存储文件夹\\2026-10-18\\a-b-c-d-devicetype-19-3\\outputs\\notification-round3-fairness-red.raw.log",
+    "D:\\Codex存储文件夹\\2026-10-18\\a-b-c-d-devicetype-19-3\\outputs\\notification-round3-selector-partial-failure.raw.log",
+    "D:\\Codex存储文件夹\\2026-10-18\\a-b-c-d-devicetype-19-3\\outputs\\notification-round3-keepalive-retry-pass.raw.log"
+  ],
+  "original_session_log_paths": [
+    "C:\\Users\\xiaofeng\\.codex\\sessions\\2026\\10\\20\\rollout-2026-10-20T20-46-30-01a15959-588b-7f13-befe-387c7b5c4545.jsonl"
+  ],
+  "raw_log_integrity": "Extracted verbatim from original persisted CommandExecution aggregated_output fields; SHA-256 and exact source line/ordinal recorded for each. No test reruns or fabricated log lines."
+}

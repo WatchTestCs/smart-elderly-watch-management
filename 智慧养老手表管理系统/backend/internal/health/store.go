@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
-	"strings"
 
 	"careold-go/internal/db"
 )
@@ -60,12 +59,11 @@ func SaveBatch(ctx context.Context, tx *db.Transaction, o Owner, samples []Sampl
 		if err != nil {
 			return 0, 0, err
 		}
-		b, err := json.Marshal(s)
+		b, err := marshalSampleFast(s)
 		if err != nil {
 			return 0, 0, err
 		}
-		identity, _ := json.Marshal([]any{o.OldID, o.DeviceID, o.Epoch, s.Source, s.SourceDevice, s.RecordID, s.Metric})
-		id := Digest(identity)
+		id := identityDigest(o, s)
 		input = append(input, prepared{id: id, payload: b, sample: s})
 		if !seen[id] {
 			ids = append(ids, id)
@@ -170,27 +168,6 @@ func SaveBatch(ctx context.Context, tx *db.Transaction, o Owner, samples []Sampl
 		}
 	}
 	return cursor, duplicates, nil
-}
-
-func valueRows(rows, columns int) string {
-	var out strings.Builder
-	out.Grow(rows * (columns*6 + 3))
-	var digits [20]byte
-	for i := 0; i < rows; i++ {
-		if i > 0 {
-			out.WriteByte(',')
-		}
-		out.WriteByte('(')
-		for j := 0; j < columns; j++ {
-			if j > 0 {
-				out.WriteByte(',')
-			}
-			out.WriteByte('$')
-			out.Write(strconv.AppendInt(digits[:0], int64(i*columns+j+1), 10))
-		}
-		out.WriteByte(')')
-	}
-	return out.String()
 }
 
 // The sample was already JSON-encoded before taking the revision lock. Reuse

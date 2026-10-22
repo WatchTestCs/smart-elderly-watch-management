@@ -1,0 +1,342 @@
+{
+  "config": {
+    "duration_seconds": 1200,
+    "run_id": "cover20-ec9787cbbd",
+    "start_local": "2026-10-22T12:45:44.008371+08:00",
+    "database": "isolated MySQL 8.0.46 primary",
+    "cpu_workers": 20,
+    "backend_gomaxprocs": 8,
+    "client_gomaxprocs": 4,
+    "http_concurrency": 32,
+    "batch_size": 200,
+    "sql_lookup_concurrency": 4,
+    "sql_aggregate_concurrency": 4,
+    "hot_fixture_rows": 16000,
+    "mysql_buffer_pool_bytes": 536870912,
+    "job_commit_memory_limit_bytes": 3221225472,
+    "stop_if_available_physical_bytes_below": 3221225472,
+    "stop_if_database_directory_bytes_above": 68719476736,
+    "stop_if_disk_free_bytes_below": 34359738368,
+    "normal_priority": true,
+    "pids": {
+      "1808": "mysql-supervisor",
+      "3428": "backend",
+      "6984": "cpu-1",
+      "9428": "cpu-2",
+      "19748": "load-client",
+      "14616": "mysql"
+    },
+    "request_auto_retries": false,
+    "count_scope": "health_sample/health_change old_id BETWEEN 1 AND 32; independent pre/post SQL counts",
+    "schema_retention": "no truncation or purging during run; every acknowledged fresh sample must retain a sample row and change row",
+    "sql_lookup": "See query-plans.json and source",
+    "durability": "innodb_flush_log_at_trx_commit=1; binary log enabled; sync_binlog=1",
+    "postgresql": "PostgreSQL 16 isolated WSL cluster; real production analytics projection",
+    "postgres_shared_buffers_bytes": 134217728,
+    "postgres_work_mem_bytes": 4194304,
+    "postgres_cgroup_memory_max_bytes": 805306368,
+    "postgres_swap_max_bytes": 0,
+    "postgres_lookup_concurrency": 2,
+    "postgres_aggregate_concurrency": 2,
+    "analytics_producer_interval_ms": 333,
+    "mysql_actual_server_pid": 14616,
+    "mysql_supervisor_pid": 1808
+  },
+  "start_local": "2026-10-22T12:45:44.008371+08:00",
+  "end_local": "2026-10-22T13:07:38.905532+08:00",
+  "monitor_elapsed_seconds": 1314.8971762657166,
+  "stop_reason": null,
+  "load_exit_code": 0,
+  "compute_exit_codes": [
+    0,
+    0
+  ],
+  "all_admission_1200s_completed": true,
+  "counts_before": {
+    "health_change": 5558600,
+    "health_sample": 5558600
+  },
+  "counts_after": {
+    "health_change": 7455400,
+    "health_sample": 7455400
+  },
+  "persisted_delta": {
+    "health_change": 1896800,
+    "health_sample": 1896800
+  },
+  "acknowledged_samples": 1896800,
+  "persistence_counts_match_acknowledgements": true,
+  "pg_counts_before": {
+    "projected_ratepre_rows": 1480,
+    "source_id": "776cfbd6-cd40-11f1-951d-26fbc659b696"
+  },
+  "pg_counts_after": {
+    "projected_ratepre_rows": 3861,
+    "source_id": "776cfbd6-cd40-11f1-951d-26fbc659b696"
+  },
+  "pg_projected_rows_delta": 2381,
+  "analytics_pending_after_drain": 1226,
+  "analytics_drain_seconds": 109.42703199386597,
+  "load": {
+    "admission_seconds": 1200,
+    "aggregate_concurrency": 4,
+    "analytics_event_producer": {
+      "attempts": 3596,
+      "error_examples": null,
+      "errors": 0,
+      "latency_all_ms": {
+        "p50": 22.1,
+        "p95": 61.1,
+        "p99": 127.9
+      },
+      "latency_success_ms": {
+        "p50": 22.1,
+        "p95": 61.1,
+        "p99": 127.9
+      },
+      "success": 3596
+    },
+    "automatic_request_retries": false,
+    "batch_size": 200,
+    "elapsed_seconds": 1204.797106,
+    "http_concurrency": 32,
+    "http_write": {
+      "attempts": 9484,
+      "error_examples": null,
+      "errors": 0,
+      "latency_all_ms": {
+        "p50": 3103,
+        "p95": 10317,
+        "p99": 14841
+      },
+      "latency_success_ms": {
+        "p50": 3103,
+        "p95": 10317,
+        "p99": 14841
+      },
+      "success": 9484
+    },
+    "lookup_concurrency": 4,
+    "mysql_hot_lookup": {
+      "attempts": 59837,
+      "error_examples": null,
+      "errors": 0,
+      "latency_all_ms": {
+        "p50": 55.5,
+        "p95": 137.6,
+        "p99": 196.2
+      },
+      "latency_success_ms": {
+        "p50": 55.5,
+        "p95": 137.6,
+        "p99": 196.2
+      },
+      "success": 59837
+    },
+    "mysql_json_aggregate": {
+      "attempts": 59270,
+      "error_examples": null,
+      "errors": 0,
+      "latency_all_ms": {
+        "p50": 54,
+        "p95": 138,
+        "p99": 193.4
+      },
+      "latency_success_ms": {
+        "p50": 54,
+        "p95": 138,
+        "p99": 193.4
+      },
+      "success": 59270
+    },
+    "postgres_hot_lookup": {
+      "attempts": 2863699,
+      "error_examples": null,
+      "errors": 0,
+      "latency_all_ms": {
+        "p50": 0.7,
+        "p95": 2.1,
+        "p99": 3.2
+      },
+      "latency_success_ms": {
+        "p50": 0.7,
+        "p95": 2.1,
+        "p99": 3.2
+      },
+      "success": 2863699
+    },
+    "postgres_json_aggregate": {
+      "attempts": 1156825,
+      "error_examples": null,
+      "errors": 0,
+      "latency_all_ms": {
+        "p50": 1.8,
+        "p95": 5,
+        "p99": 8.8
+      },
+      "latency_success_ms": {
+        "p50": 1.8,
+        "p95": 5,
+        "p99": 8.8
+      },
+      "success": 1156825
+    },
+    "run_id": "cover20-ec9787cbbd"
+  },
+  "compute": [
+    {
+      "mode": "baseline",
+      "gc_percent": 100,
+      "gomemlimit_env": "256MiB",
+      "workers": 10,
+      "batch_size": 200,
+      "offered_batches_per_second": 0,
+      "duration_seconds": 1200.0005261,
+      "completed_batches": 16727667,
+      "accepted": 16727667,
+      "dropped": 0,
+      "missed_pacing": 0,
+      "pacing_loss_pct": 0,
+      "pacing_valid": true,
+      "completed_samples_per_second": 2787943.2777192015,
+      "p50_us": 510,
+      "p95_us": 3120,
+      "p99_us": 8300,
+      "service_p99_us": 8300,
+      "allocated_bytes": 1815995822688,
+      "gc_count": 121816,
+      "gc_pause_ms": 132909.8662,
+      "heap_peak_bytes": 144912672,
+      "heap_final_bytes": 12014312,
+      "vm_hwm_bytes": 0,
+      "failed": 0
+    },
+    {
+      "mode": "baseline",
+      "gc_percent": 100,
+      "gomemlimit_env": "256MiB",
+      "workers": 10,
+      "batch_size": 200,
+      "offered_batches_per_second": 0,
+      "duration_seconds": 1200.0010528,
+      "completed_batches": 14540180,
+      "accepted": 14540180,
+      "dropped": 0,
+      "missed_pacing": 0,
+      "pacing_loss_pct": 0,
+      "pacing_valid": true,
+      "completed_samples_per_second": 2423361.2072377675,
+      "p50_us": 520,
+      "p95_us": 3460,
+      "p99_us": 9230,
+      "service_p99_us": 9230,
+      "allocated_bytes": 1578528958240,
+      "gc_count": 108161,
+      "gc_pause_ms": 122467.2326,
+      "heap_peak_bytes": 134472144,
+      "heap_final_bytes": 15222416,
+      "vm_hwm_bytes": 0,
+      "failed": 0
+    }
+  ],
+  "cpu_time_weighted": {
+    "machine_cpu_percent": 98.40704168399728,
+    "all_test_cpu_percent": 55.039733246372705,
+    "mysql_cpu_percent": 15.724053377156704,
+    "backend_cpu_percent": 0.3034873980477389,
+    "load_client_cpu_percent": 2.2851276455884357,
+    "compute_cpu_percent": 36.72706482557983
+  },
+  "os_memory_peaks": {
+    "mysql-supervisor": {
+      "peak_working": 28696576,
+      "peak_commit": 32837632
+    },
+    "mysql": {
+      "peak_working": 1120448512,
+      "peak_commit": 1399238656
+    },
+    "backend": {
+      "peak_working": 94068736,
+      "peak_commit": 81346560
+    },
+    "cpu-1": {
+      "peak_working": 225734656,
+      "peak_commit": 231448576
+    },
+    "cpu-2": {
+      "peak_working": 196870144,
+      "peak_commit": 238911488
+    },
+    "load-client": {
+      "peak_working": 125140992,
+      "peak_commit": 159178752
+    }
+  },
+  "sampled_memory_peaks": {
+    "total_working_bytes": 1670430720,
+    "total_private_bytes": 2050519040,
+    "mysql_working_bytes": 1147908096,
+    "mysql_private_bytes": 1430028288,
+    "backend_working_bytes": 90406912,
+    "backend_private_bytes": 76603392,
+    "load_client_working_bytes": 82231296,
+    "load_client_private_bytes": 148992000
+  },
+  "minimum_available_physical_bytes": 16838041600,
+  "database_directory_final_bytes": 21093521353,
+  "database_status_delta": {
+    "Innodb_buffer_pool_read_requests": 1143103363,
+    "Innodb_buffer_pool_reads": 3851108,
+    "Innodb_buffer_pool_bytes_data": 16384,
+    "Innodb_buffer_pool_pages_dirty": -161,
+    "Innodb_buffer_pool_pages_total": 0,
+    "Innodb_data_read": -963428352,
+    "Innodb_data_written": 1943742464,
+    "Innodb_os_log_written": 4830769664,
+    "Innodb_log_waits": 0,
+    "Innodb_row_lock_waits": 1268,
+    "Innodb_row_lock_time": 3536629,
+    "Innodb_rows_inserted": 3800790,
+    "Innodb_rows_updated": 21699,
+    "Innodb_rows_read": 397216335,
+    "Threads_connected": 0,
+    "Threads_running": 1,
+    "Questions": 284645,
+    "Com_commit": 14064,
+    "Com_select": 181796,
+    "Created_tmp_tables": 292,
+    "Created_tmp_disk_tables": 0,
+    "Bytes_received": 2166423084,
+    "Bytes_sent": 1140279577,
+    "Uptime": 1323
+  },
+  "innodb_buffer_pool_hit_rate": 0.996631006324841,
+  "process_cpu_seconds": {
+    "mysql-supervisor": 0.0,
+    "backend": 76.296875,
+    "cpu-1": 4410.265625,
+    "cpu-2": 4404.21875,
+    "load-client": 548.484375,
+    "mysql": 3849.15625
+  },
+  "sampling_rows": 1178,
+  "archive_note": {
+    "omitted_histogram_fields": [
+      "analytics_event_producer/histogram_all",
+      "analytics_event_producer/histogram_success",
+      "http_write/histogram_all",
+      "http_write/histogram_success",
+      "mysql_hot_lookup/histogram_all",
+      "mysql_hot_lookup/histogram_success",
+      "mysql_json_aggregate/histogram_all",
+      "mysql_json_aggregate/histogram_success",
+      "postgres_hot_lookup/histogram_all",
+      "postgres_hot_lookup/histogram_success",
+      "postgres_json_aggregate/histogram_all",
+      "postgres_json_aggregate/histogram_success"
+    ],
+    "original_file_sha256": "ea815488ea66c332681779d82e848880bbe842a1156b4311f0d08e4b5f64e251",
+    "scope": "All counters, latency percentiles and CPU/memory summaries retained. Full histogram arrays remain in the original local evidence archive."
+  }
+}

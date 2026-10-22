@@ -1,0 +1,61 @@
+{
+  "created_utc": "2026-10-22T05:34:53.250120+00:00",
+  "preview_archive_base": "b6aba05fb3da71c46ef54ff41d3f0074ffe4e7f2",
+  "local_snapshot_head": "2b667cd7e3183edea6572bbf5f558375ed97558a",
+  "branch": "preview",
+  "prior_complete_patch_sha256": "9a227a4d54162255bde74952c7dfcec9cc61a8fb693d41988841e5ca96b2c188",
+  "current_changes": [
+    {
+      "path": "deploy/platform.compose.yml",
+      "sha256": "72961ccb594a2fca8ffe111d3e70011c36b789c0d49db8a4f8749394b2b386be",
+      "previous_fixed_sha256": "a97bfd9b2f8159cc99f4b2ba3adf63d32c934ef54754384c0b43b03325d23f0e"
+    },
+    {
+      "path": "智慧养老手表管理系统/backend/README.md",
+      "sha256": "be12bcf819225fe1bbe21d18b1dcb656b8077782ba0dbaebac76cd33fde21215",
+      "previous_fixed_sha256": "c7f4d424975f2bed5db83ffb8cc3033d1b8d599eac2f8fa68905efb921cf9bd7"
+    },
+    {
+      "path": "智慧养老手表管理系统/backend/internal/config/config.go",
+      "sha256": "e63b5aec071f5583eadc9d67378905bf902ddf79e690f642aa1f21c1d9f94737",
+      "previous_fixed_sha256": "c10dae550f9c744863f78967ff8302c9aa02db87440c6b251021115efb2257ce"
+    },
+    {
+      "path": "智慧养老手表管理系统/backend/internal/config/config_test.go",
+      "sha256": "a7cf994fc5790569d3201cbb26403cb5407ad1fa2100948ec222f583b703dd17",
+      "previous_fixed_sha256": "5e9d100780f91dbc5b9123b082da3a8886d91a9b3448800578cce208408c3730"
+    },
+    {
+      "path": "智慧养老手表管理系统/backend/internal/handlers/handlers.go",
+      "sha256": "f7a6811f413a5282f299641e63d4659dc10664c63b390daf7411148240424ebb",
+      "previous_fixed_sha256": "1db3deddc1177f6c3e6424e133e6e361db91b4f426196b5f97a6ffed5d2d595b"
+    },
+    {
+      "path": "智慧养老手表管理系统/backend/internal/handlers/handler_statistics.go",
+      "sha256": "bd8a590dcbcb72c76ec68d8cfdaae7c169b8a973d5f6b15f7708a1ef8864e6f4",
+      "previous_fixed_sha256": "c1a7e56b5f57d0a292cf8f5e61e6b3cf9eb15ef37f05f116b16b3899a3654d4a"
+    },
+    {
+      "path": "智慧养老手表管理系统/backend/internal/handlers/statistics_cache.go",
+      "sha256": "ff007fd0ed71491fd0780eda088abf92a50c07a7976cbfc8f52719147ccb7b75",
+      "previous_fixed_sha256": null
+    },
+    {
+      "path": "智慧养老手表管理系统/backend/internal/handlers/statistics_cache_test.go",
+      "sha256": "c0ca4d8dd7680ee03c6c50230fd4b71e6e2d805b4cf4f8f378ae6fb4e977225a",
+      "previous_fixed_sha256": null
+    },
+    {
+      "path": "智慧养老手表管理系统/backend/internal/handlers/statistics_cache_integration_test.go",
+      "sha256": "1c93372bc1cb54d75128dfeb37111e2ed00372799b635dbfeb1fdb9e1c810a75",
+      "previous_fixed_sha256": null
+    },
+    {
+      "path": "智慧养老手表管理系统/backend/internal/handlers/statistics_cache_benchmark_test.go",
+      "sha256": "08bfc2274e31808413724b614b9a7cbc88c658dbcbfa6ef2a125a9639e5c6136",
+      "previous_fixed_sha256": null
+    }
+  ],
+  "complete_overlay_files": 94,
+  "remote_writes_performed": false
+}

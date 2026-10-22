@@ -1,0 +1,12 @@
+goos: windows
+goarch: amd64
+pkg: careold-go/internal/handlers
+cpu: AMD Ryzen AI 9 H 365 w/ Radeon 880M
+BenchmarkHealthStatisticsHybrid/disk-4         	     151	  23347606 ns/op	29940725 B/op	   70402 allocs/op
+BenchmarkHealthStatisticsHybrid/disk-4         	     152	  23389058 ns/op	29941740 B/op	   70403 allocs/op
+BenchmarkHealthStatisticsHybrid/disk-4         	     154	  23019904 ns/op	29940440 B/op	   70400 allocs/op
+BenchmarkHealthStatisticsHybrid/hot-4          	   40938	     89087 ns/op	    9832 B/op	      80 allocs/op
+BenchmarkHealthStatisticsHybrid/hot-4          	   40998	     88912 ns/op	    9850 B/op	      80 allocs/op
+BenchmarkHealthStatisticsHybrid/hot-4          	   40438	     89236 ns/op	    9831 B/op	      80 allocs/op
+PASS
+ok  	careold-go/internal/handlers	35.504s

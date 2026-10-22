@@ -22,10 +22,10 @@
 | 对外版本与安装包 | **v2.0.6 已发布源码附件（无 Windows 安装包）**；当前可下载的 Windows 安装/免安装仍为 **2.0.2**；最新 `preview` 源码不等于发布标签 | [v2.0.6 源码 Release](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.6) · [下载与版本对应关系](docs/DOWNLOADS.md) |
 | Go 版本 | `backend/go.mod` 声明 **Go 1.23+**；CI 覆盖 Go 1.23.2 与 1.27.2 | [go.mod](智慧养老手表管理系统/backend/go.mod) · [最新已核实 CI 运行](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/39634129082) |
 | 核心数据库 | MySQL 是业务唯一主库，PostgreSQL 是可重建的异步分析投影 | [双库指南](docs/DUAL_DATABASES.md) |
-| 真实长时间负载 | **两轮**隔离 MySQL 20 分钟测试均完成规定的负载时间，但均因 HTTP 500、规则错误判定失败 | [运行记录与证据边界](#近期后端验证与性能证据) |
+| 真实长时间负载 | 历史两轮 CI 耐久测试失败；后续本地修复版完成 20 分钟双库混合压测，9,484 批写入成功，HTTP 500/503 均为 0；当前合并源码未重跑 20 分钟 | [最新结果与源码边界](docs/performance/2026-10-22-backend-hybrid/README.md) · [历史记录](#近期后端验证与性能证据) |
 | 生产与安全边界 | 非医疗器械认证、未经过真实设备和完整通知网关端到端验收；不能以系统状态替代人工应急响应 | [照护部署](docs/CARE_SERVICE_DEPLOYMENT.md) · [测试说明](docs/TESTING.md) |
 
-**阅读顺序：**初次使用看 [开始使用](#开始使用)，维护后端看 [后端说明](智慧养老手表管理系统/backend/README.md)，部署值守看 [照护部署](docs/CARE_SERVICE_DEPLOYMENT.md)，审查性能先看 [证据说明](docs/performance/2026-10-21-go123/README.md)。
+**阅读顺序：**初次使用看 [开始使用](#开始使用)，维护后端看 [后端说明](智慧养老手表管理系统/backend/README.md)，部署值守看 [照护部署](docs/CARE_SERVICE_DEPLOYMENT.md)，审查性能先看 [最新修复与冷热缓存报告](docs/performance/2026-10-22-backend-hybrid/README.md)，再查 [历史证据](docs/performance/2026-10-21-go123/README.md)。
 
 ## 仓库目录与根文件
 
@@ -153,6 +153,7 @@ Vue 通过 HTTP 使用 Go API，不直接连接数据库。首次管理员初始
 | 存储 | 保存内容 | 恢复与一致性 |
 | --- | --- | --- |
 | MySQL 主库 | 账号、人员与设备、健康原始记录、轨迹、告警、照护、审计、公告评论、通知及分析 outbox | 唯一业务数据源；业务 API 始终读写 MySQL |
+| Go 进程内热缓存 | 重复健康统计的序列化结果；默认 16 MiB、最多 2,048 项、30 秒 TTL | 每次鉴权并核验数据库修订号；淘汰或重启后从 MySQL 重建，全部原始历史继续持久化 |
 | PostgreSQL 分析库 | 健康、活动、轨迹、照护任务与事件的投影；`daily_health`、`care_summary` 视图 | 最终一致，可由 MySQL 回填重建，不能替代主库备份 |
 | 本地文件 | 图片、日志和运行发现文件 | 图片与数据库分别备份；运行文件不是业务数据源 |
 
@@ -243,7 +244,7 @@ cd 智慧养老手表管理系统
 
 ## 近期后端验证与性能证据
 
-本节记录 **`preview` 源码在 2026-10-21 取得的可核实证据**，与历史 2.0.6 Windows 安装交付分开。这里的指标来自不同运行、环境和负载，**不可相加或直接用于生产 SLA**。
+本节记录 **2026-10-21–22 取得的可核实证据**，与历史 2.0.6 Windows 安装交付分开。这里的指标来自不同源码、环境和负载，**不可相加或直接用于生产 SLA**；当前合并源码的定向验证不等于重新完成长压测。
 
 | 证据 | 运行环境与结果 | 可证明与不能证明的事 |
 | --- | --- | --- |
@@ -251,6 +252,8 @@ cd 智慧养老手表管理系统
 | 规则、健康与 SQL 适配微基准 | Go 1.23.2，4 CPU 配额的隔离计算测试；流式活动聚合在 1000 条样本的部分场景下优于历史实现 | 只证明特定 CPU-only 路径的相对表现，**不是 HTTP+MySQL 吞吐** |
 | 第一版原定 20 分钟测试 | 旧会话在约第 14–16 分钟出现 500/503 并中止；原始逐分钟记录缺失 | **错误演示**，不可视为完成 20 分钟 |
 | 新增隔离 MySQL 20 分钟复测 | [Actions 原始运行](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/39622692722)，Go 1.23.2 + MySQL 8.4，合成健康数据并发写入与规则扫描；**最终失败** | 已取得真实应用层与数据库证据；**未通过长时间稳定性验收** |
+| 后续本地 20 分钟双库混合复测 | [2026-10-22 报告](docs/performance/2026-10-22-backend-hybrid/README.md)，旧 `b6aba05` 基线加修复；9,484 批、1,896,800 条采样，HTTP 500/503 均为 0，整机平均 CPU 98.41% | 仅证明该隔离负载；分析队列仍积压 833 条，整机 CPU 包含额外计算进程，当前合并源码未重跑此压测 |
+| 冷热统计读取基准 | 同一批 10,000 条真实 MySQL 样本，统计处理均值 23.252 ms → 0.089078 ms，约 261 倍 | 仅限相同修订号的重复缓存命中；数据库自身已预热，不是物理冷盘、真实网络或上传容量 |
 
 ### 20 分钟 MySQL 复测：失败也必须保留
 
@@ -263,6 +266,12 @@ cd 智慧养老手表管理系统
 - [第一轮耐久运行原始日志与 Artifact](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/39622692722) 和 [第二轮失败运行与 Artifact](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/39629502257)。
 - [第一版测试错误演示](docs/performance/2026-10-21-go123/FIRST_20MIN_INCORRECT_DEMONSTRATION.md) 与 [机器可读证据状态](docs/performance/2026-10-21-go123/first_20min_incorrect_evidence.json)。
 - [CPU/GC 性能目录](docs/performance/2026-10-21-go123/README.md) 与 [数据库 500/503 排查](docs/MYSQL_503_500_CONTINUATION_20261021.md)。
+
+### 后续本地修复与冷热缓存：单独记录结果
+
+[2026-10-22 完整报告](docs/performance/2026-10-22-backend-hybrid/README.md) 保留上述失败，并记录独立探测连接、离线扫描分页、0008/0009 基线索引后的本地 20 分钟复测。9,484 批成功确认对应两张表各新增 1,896,800 行，约 1,574.4 条采样/秒；写入 p99 仍约 14.8 秒，不能据此承诺生产延迟。PG 直接查询无错误，但排空后的分析审计为已投影 2,763 条、待处理 833 条，并非同步全部完成。
+
+随后增加的有界内存缓存保留 MySQL 全量磁盘历史，每次命中仍核验权限和已提交修订号。约 261 倍的结果只针对重复统计处理，不能换算成上传或样本预处理吞吐。上述长压测及缓存基准均来自旧 `b6aba05` 基线加补丁；与更新后的 `preview` 合并另作定向验证，未重新运行 20 分钟，完整测试集也不能据此声称全绿。
 
 ### 开发者最小验证
 
@@ -290,7 +299,7 @@ go test -race -count=1 -timeout 600s ./...
 - 双库开发阶段：独立 MySQL 8.0.46 / PostgreSQL 16.4 上的 Go 全套竞争检测、11 组模拟 API 浏览器验收，以及 PG 停机时 15 项真实业务检查；恢复后核对队列归零与分析视图。
 - 2.0.6 本地打包阶段：前端构建、Go 测试与静态检查、Tauri / NSIS 构建、应用和安装包版本、压缩包及 SHA-256 校验、新内置服务启动检查通过；打包阶段未重跑真实双库集成。**公开 v2.0.6 Release 仅上传发布快照源码及校验附件**。
 - 本地 2.0.6 安装包与免安装版未签名，未实际执行安装器或验收原生桌面窗口。历史安装验收不代表新版已经安装验收。
-- 当前 Go CI 已在 **MySQL 8.4** 测试容器中执行数据库集成测试；单实例 20 分钟合成负载也有真实运行日志，但结果失败，不能据此宣称长稳态通过。**真实手表、短信网关、生产迁移、远程 TLS、真实网络故障与长期生产可用性**仍未完成端到端验收。旧 2.0.6 桌面安装验收边界不因此改变。
+- 当前 Go CI 已在 **MySQL 8.4** 测试容器中执行数据库集成测试；历史两轮 20 分钟 CI 负载失败，后续本地修复版的成功结果与当前合并源码的验证边界见 [最新报告](docs/performance/2026-10-22-backend-hybrid/README.md)。**真实手表、短信网关、生产迁移、远程 TLS、真实网络故障与长期生产可用性**仍未完成端到端验收。旧 2.0.6 桌面安装验收边界不因此改变。
 
 版本验证和升级边界集中记录在 [2.0.6 改进说明](docs/releases/2.0.6.md)。本次整合保留远程健康采样、增量游标与统计接口，并适配 MySQL；测试证据见 [整合记录](docs/INTEGRATION_2.0.6.md)。此前本地安装包不包含此次健康采样整合，应从当前源码重建。
 
@@ -316,7 +325,7 @@ go test -race -count=1 -timeout 600s ./...
 | 源码下载与历史附件 | [附件索引](docs/DOWNLOADS.md) · [About 文案](docs/ABOUT.md) |
 | 当前配置、双库与迁移 | [双库指南](docs/DUAL_DATABASES.md) · [使用说明](docs/SETUP.md) |
 | 架构与照护闭环 | [架构总览](architecture.md) · [实现协议](docs/ARCHITECTURE.md) · [照护部署](docs/CARE_SERVICE_DEPLOYMENT.md) |
-| 开发与验证 | [工程说明](智慧养老手表管理系统/README.md) · [前端](智慧养老手表管理系统/oldIot/README.md) · [后端](智慧养老手表管理系统/backend/README.md) · [测试分层](docs/TESTING.md) · [性能证据](docs/performance/2026-10-21-go123/README.md) |
+| 开发与验证 | [工程说明](智慧养老手表管理系统/README.md) · [前端](智慧养老手表管理系统/oldIot/README.md) · [后端](智慧养老手表管理系统/backend/README.md) · [测试分层](docs/TESTING.md) · [最新性能证据](docs/performance/2026-10-22-backend-hybrid/README.md) · [历史性能证据](docs/performance/2026-10-21-go123/README.md) |
 | 备份与文件职责 | [备份恢复](docs/runbooks/backup-restore.md) · [逐文件索引](docs/FILES.md) |
 | 贡献、支持与历史 | [贡献指南](CONTRIBUTING.md) · [支持说明](docs/SUPPORT.md) · [更新日志](CHANGELOG.md) · [历史决定](docs/decisions/README.md) |
 

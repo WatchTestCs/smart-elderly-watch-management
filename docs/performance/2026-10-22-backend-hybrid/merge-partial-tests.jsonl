@@ -1,0 +1,239 @@
+{"Time":"2026-10-22T13:47:45.1258369+08:00","Action":"start","Package":"careold-go/cmd/analytics-backfill"}
+{"Time":"2026-10-22T13:47:45.1258369+08:00","Action":"output","Package":"careold-go/cmd/analytics-backfill","Output":"?   \tcareold-go/cmd/analytics-backfill\t[no test files]\n"}
+{"Time":"2026-10-22T13:47:45.1258369+08:00","Action":"skip","Package":"careold-go/cmd/analytics-backfill","Elapsed":0}
+{"Time":"2026-10-22T13:47:45.4698379+08:00","Action":"start","Package":"careold-go/cmd/healthcheck"}
+{"Time":"2026-10-22T13:47:45.4698379+08:00","Action":"output","Package":"careold-go/cmd/healthcheck","Output":"?   \tcareold-go/cmd/healthcheck\t[no test files]\n"}
+{"Time":"2026-10-22T13:47:45.4703636+08:00","Action":"skip","Package":"careold-go/cmd/healthcheck","Elapsed":0.001}
+{"Time":"2026-10-22T13:47:45.5677471+08:00","Action":"start","Package":"careold-go/cmd/migrate"}
+{"Time":"2026-10-22T13:47:45.5677471+08:00","Action":"output","Package":"careold-go/cmd/migrate","Output":"?   \tcareold-go/cmd/migrate\t[no test files]\n"}
+{"Time":"2026-10-22T13:47:45.5677471+08:00","Action":"skip","Package":"careold-go/cmd/migrate","Elapsed":0}
+{"Time":"2026-10-22T13:47:45.6605306+08:00","Action":"start","Package":"careold-go/cmd/mock-gateway"}
+{"Time":"2026-10-22T13:47:45.6605306+08:00","Action":"output","Package":"careold-go/cmd/mock-gateway","Output":"?   \tcareold-go/cmd/mock-gateway\t[no test files]\n"}
+{"Time":"2026-10-22T13:47:45.6605306+08:00","Action":"skip","Package":"careold-go/cmd/mock-gateway","Elapsed":0.001}
+{"Time":"2026-10-22T13:47:45.8171501+08:00","Action":"start","Package":"careold-go/cmd/protect-notes"}
+{"Time":"2026-10-22T13:47:45.8171501+08:00","Action":"output","Package":"careold-go/cmd/protect-notes","Output":"?   \tcareold-go/cmd/protect-notes\t[no test files]\n"}
+{"Time":"2026-10-22T13:47:45.8171501+08:00","Action":"skip","Package":"careold-go/cmd/protect-notes","Elapsed":0}
+{"Time":"2026-10-22T13:47:48.204862+08:00","Action":"start","Package":"careold-go/cmd/server"}
+{"Time":"2026-10-22T13:47:48.5089001+08:00","Action":"run","Package":"careold-go/cmd/server","Test":"TestCapabilityReadsAreAudited"}
+{"Time":"2026-10-22T13:47:48.5089001+08:00","Action":"output","Package":"careold-go/cmd/server","Test":"TestCapabilityReadsAreAudited","Output":"=== RUN   TestCapabilityReadsAreAudited\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:47:52.1973169+08:00","Action":"output","Package":"careold-go/cmd/server","Test":"TestCapabilityReadsAreAudited","Output":"--- PASS: TestCapabilityReadsAreAudited (3.69s)\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:47:52.197801+08:00","Action":"pass","Package":"careold-go/cmd/server","Test":"TestCapabilityReadsAreAudited","Elapsed":3.69}
+{"Time":"2026-10-22T13:47:52.197801+08:00","Action":"run","Package":"careold-go/cmd/server","Test":"TestDatabaseUnavailableDoesNotBlockApplication"}
+{"Time":"2026-10-22T13:47:52.197801+08:00","Action":"output","Package":"careold-go/cmd/server","Test":"TestDatabaseUnavailableDoesNotBlockApplication","Output":"=== RUN   TestDatabaseUnavailableDoesNotBlockApplication\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:47:52.197801+08:00","Action":"run","Package":"careold-go/cmd/server","Test":"TestDatabaseUnavailableDoesNotBlockApplication/GET/"}
+{"Time":"2026-10-22T13:47:52.197801+08:00","Action":"output","Package":"careold-go/cmd/server","Test":"TestDatabaseUnavailableDoesNotBlockApplication/GET/","Output":"=== RUN   TestDatabaseUnavailableDoesNotBlockApplication/GET/\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:47:52.197801+08:00","Action":"output","Package":"careold-go/cmd/server","Test":"TestDatabaseUnavailableDoesNotBlockApplication/GET/","Output":"--- PASS: TestDatabaseUnavailableDoesNotBlockApplication/GET/ (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:47:52.197801+08:00","Action":"pass","Package":"careold-go/cmd/server","Test":"TestDatabaseUnavailableDoesNotBlockApplication/GET/","Elapsed":0}
+{"Time":"2026-10-22T13:47:52.197801+08:00","Action":"run","Package":"careold-go/cmd/server","Test":"TestDatabaseUnavailableDoesNotBlockApplication/GET/restful/service/status"}
+{"Time":"2026-10-22T13:47:52.197801+08:00","Action":"output","Package":"careold-go/cmd/server","Test":"TestDatabaseUnavailableDoesNotBlockApplication/GET/restful/service/status","Output":"=== RUN   TestDatabaseUnavailableDoesNotBlockApplication/GET/restful/service/status\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:47:52.197801+08:00","Action":"output","Package":"careold-go/cmd/server","Test":"TestDatabaseUnavailableDoesNotBlockApplication/GET/restful/service/status","Output":"--- PASS: TestDatabaseUnavailableDoesNotBlockApplication/GET/restful/service/status (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:47:52.197801+08:00","Action":"pass","Package":"careold-go/cmd/server","Test":"TestDatabaseUnavailableDoesNotBlockApplication/GET/restful/service/status","Elapsed":0}
+{"Time":"2026-10-22T13:47:52.197801+08:00","Action":"run","Package":"careold-go/cmd/server","Test":"TestDatabaseUnavailableDoesNotBlockApplication/GET/restful/userLogin/session"}
+{"Time":"2026-10-22T13:47:52.197801+08:00","Action":"output","Package":"careold-go/cmd/server","Test":"TestDatabaseUnavailableDoesNotBlockApplication/GET/restful/userLogin/session","Output":"=== RUN   TestDatabaseUnavailableDoesNotBlockApplication/GET/restful/userLogin/session\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:47:52.197801+08:00","Action":"output","Package":"careold-go/cmd/server","Test":"TestDatabaseUnavailableDoesNotBlockApplication/GET/restful/userLogin/session","Output":"--- PASS: TestDatabaseUnavailableDoesNotBlockApplication/GET/restful/userLogin/session (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:47:52.197801+08:00","Action":"pass","Package":"careold-go/cmd/server","Test":"TestDatabaseUnavailableDoesNotBlockApplication/GET/restful/userLogin/session","Elapsed":0}
+{"Time":"2026-10-22T13:47:52.197801+08:00","Action":"run","Package":"careold-go/cmd/server","Test":"TestDatabaseUnavailableDoesNotBlockApplication/POST/restful/device/sos"}
+{"Time":"2026-10-22T13:47:52.197801+08:00","Action":"output","Package":"careold-go/cmd/server","Test":"TestDatabaseUnavailableDoesNotBlockApplication/POST/restful/device/sos","Output":"=== RUN   TestDatabaseUnavailableDoesNotBlockApplication/POST/restful/device/sos\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:47:52.197801+08:00","Action":"output","Package":"careold-go/cmd/server","Test":"TestDatabaseUnavailableDoesNotBlockApplication/POST/restful/device/sos","Output":"--- PASS: TestDatabaseUnavailableDoesNotBlockApplication/POST/restful/device/sos (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:47:52.197801+08:00","Action":"pass","Package":"careold-go/cmd/server","Test":"TestDatabaseUnavailableDoesNotBlockApplication/POST/restful/device/sos","Elapsed":0}
+{"Time":"2026-10-22T13:47:52.197801+08:00","Action":"run","Package":"careold-go/cmd/server","Test":"TestDatabaseUnavailableDoesNotBlockApplication/POST/restful/desktop/exit"}
+{"Time":"2026-10-22T13:47:52.197801+08:00","Action":"output","Package":"careold-go/cmd/server","Test":"TestDatabaseUnavailableDoesNotBlockApplication/POST/restful/desktop/exit","Output":"=== RUN   TestDatabaseUnavailableDoesNotBlockApplication/POST/restful/desktop/exit\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:47:52.197801+08:00","Action":"output","Package":"careold-go/cmd/server","Test":"TestDatabaseUnavailableDoesNotBlockApplication/POST/restful/desktop/exit","Output":"--- PASS: TestDatabaseUnavailableDoesNotBlockApplication/POST/restful/desktop/exit (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:47:52.197801+08:00","Action":"pass","Package":"careold-go/cmd/server","Test":"TestDatabaseUnavailableDoesNotBlockApplication/POST/restful/desktop/exit","Elapsed":0}
+{"Time":"2026-10-22T13:47:52.197801+08:00","Action":"output","Package":"careold-go/cmd/server","Test":"TestDatabaseUnavailableDoesNotBlockApplication","Output":"--- PASS: TestDatabaseUnavailableDoesNotBlockApplication (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:47:52.197801+08:00","Action":"pass","Package":"careold-go/cmd/server","Test":"TestDatabaseUnavailableDoesNotBlockApplication","Elapsed":0}
+{"Time":"2026-10-22T13:47:52.197801+08:00","Action":"run","Package":"careold-go/cmd/server","Test":"TestLogoutDoesNotRequireDatabase"}
+{"Time":"2026-10-22T13:47:52.197801+08:00","Action":"output","Package":"careold-go/cmd/server","Test":"TestLogoutDoesNotRequireDatabase","Output":"=== RUN   TestLogoutDoesNotRequireDatabase\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:47:52.197801+08:00","Action":"output","Package":"careold-go/cmd/server","Test":"TestLogoutDoesNotRequireDatabase","Output":"--- PASS: TestLogoutDoesNotRequireDatabase (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:47:52.197801+08:00","Action":"pass","Package":"careold-go/cmd/server","Test":"TestLogoutDoesNotRequireDatabase","Elapsed":0}
+{"Time":"2026-10-22T13:47:52.197801+08:00","Action":"run","Package":"careold-go/cmd/server","Test":"TestMetricsRequiresExplicitSecretAndWorksWithoutDatabase"}
+{"Time":"2026-10-22T13:47:52.197801+08:00","Action":"output","Package":"careold-go/cmd/server","Test":"TestMetricsRequiresExplicitSecretAndWorksWithoutDatabase","Output":"=== RUN   TestMetricsRequiresExplicitSecretAndWorksWithoutDatabase\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:47:52.1983189+08:00","Action":"output","Package":"careold-go/cmd/server","Test":"TestMetricsRequiresExplicitSecretAndWorksWithoutDatabase","Output":"--- PASS: TestMetricsRequiresExplicitSecretAndWorksWithoutDatabase (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:47:52.1983189+08:00","Action":"pass","Package":"careold-go/cmd/server","Test":"TestMetricsRequiresExplicitSecretAndWorksWithoutDatabase","Elapsed":0}
+{"Time":"2026-10-22T13:47:52.1983189+08:00","Action":"run","Package":"careold-go/cmd/server","Test":"TestDesktopBootstrapToken"}
+{"Time":"2026-10-22T13:47:52.1983189+08:00","Action":"output","Package":"careold-go/cmd/server","Test":"TestDesktopBootstrapToken","Output":"=== RUN   TestDesktopBootstrapToken\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:47:52.1983189+08:00","Action":"output","Package":"careold-go/cmd/server","Test":"TestDesktopBootstrapToken","Output":"--- PASS: TestDesktopBootstrapToken (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:47:52.1983189+08:00","Action":"pass","Package":"careold-go/cmd/server","Test":"TestDesktopBootstrapToken","Elapsed":0}
+{"Time":"2026-10-22T13:47:52.1983189+08:00","Action":"output","Package":"careold-go/cmd/server","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:47:52.2028416+08:00","Action":"output","Package":"careold-go/cmd/server","Output":"ok  \tcareold-go/cmd/server\t3.997s\n"}
+{"Time":"2026-10-22T13:47:52.2028416+08:00","Action":"pass","Package":"careold-go/cmd/server","Elapsed":3.998}
+{"Time":"2026-10-22T13:47:52.3126985+08:00","Action":"start","Package":"careold-go/cmd/transfer-postgres"}
+{"Time":"2026-10-22T13:47:52.3126985+08:00","Action":"output","Package":"careold-go/cmd/transfer-postgres","Output":"?   \tcareold-go/cmd/transfer-postgres\t[no test files]\n"}
+{"Time":"2026-10-22T13:47:52.3126985+08:00","Action":"skip","Package":"careold-go/cmd/transfer-postgres","Elapsed":0}
+{"Time":"2026-10-22T13:47:53.1249643+08:00","Action":"start","Package":"careold-go/internal/analytics"}
+{"Time":"2026-10-22T13:47:53.7063547+08:00","Action":"run","Package":"careold-go/internal/analytics","Test":"TestDualDatabaseRecoveryAndReplay"}
+{"Time":"2026-10-22T13:47:53.7063547+08:00","Action":"output","Package":"careold-go/internal/analytics","Test":"TestDualDatabaseRecoveryAndReplay","Output":"=== RUN   TestDualDatabaseRecoveryAndReplay\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:47:57.6036251+08:00","Action":"output","Package":"careold-go/internal/analytics","Test":"TestDualDatabaseRecoveryAndReplay","Output":"--- PASS: TestDualDatabaseRecoveryAndReplay (3.90s)\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:47:57.6036251+08:00","Action":"pass","Package":"careold-go/internal/analytics","Test":"TestDualDatabaseRecoveryAndReplay","Elapsed":3.9}
+{"Time":"2026-10-22T13:47:57.6036251+08:00","Action":"output","Package":"careold-go/internal/analytics","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:47:57.608431+08:00","Action":"output","Package":"careold-go/internal/analytics","Output":"ok  \tcareold-go/internal/analytics\t4.483s\n"}
+{"Time":"2026-10-22T13:47:57.608431+08:00","Action":"pass","Package":"careold-go/internal/analytics","Elapsed":4.483}
+{"Time":"2026-10-22T13:47:58.1656455+08:00","Action":"start","Package":"careold-go/internal/apidoc"}
+{"Time":"2026-10-22T13:47:58.6060373+08:00","Action":"run","Package":"careold-go/internal/apidoc","Test":"TestAliasKeepsMethodBodyAndAuthenticationPath"}
+{"Time":"2026-10-22T13:47:58.6060373+08:00","Action":"output","Package":"careold-go/internal/apidoc","Test":"TestAliasKeepsMethodBodyAndAuthenticationPath","Output":"=== RUN   TestAliasKeepsMethodBodyAndAuthenticationPath\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:47:58.6060373+08:00","Action":"output","Package":"careold-go/internal/apidoc","Test":"TestAliasKeepsMethodBodyAndAuthenticationPath","Output":"--- PASS: TestAliasKeepsMethodBodyAndAuthenticationPath (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:47:58.6060373+08:00","Action":"pass","Package":"careold-go/internal/apidoc","Test":"TestAliasKeepsMethodBodyAndAuthenticationPath","Elapsed":0}
+{"Time":"2026-10-22T13:47:58.6060373+08:00","Action":"output","Package":"careold-go/internal/apidoc","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:47:58.6071068+08:00","Action":"output","Package":"careold-go/internal/apidoc","Output":"ok  \tcareold-go/internal/apidoc\t0.441s\n"}
+{"Time":"2026-10-22T13:47:58.6071068+08:00","Action":"pass","Package":"careold-go/internal/apidoc","Elapsed":0.441}
+{"Time":"2026-10-22T13:47:59.125822+08:00","Action":"start","Package":"careold-go/internal/auth"}
+{"Time":"2026-10-22T13:47:59.5402191+08:00","Action":"run","Package":"careold-go/internal/auth","Test":"TestLogoutRoleAccess"}
+{"Time":"2026-10-22T13:47:59.5407393+08:00","Action":"output","Package":"careold-go/internal/auth","Test":"TestLogoutRoleAccess","Output":"=== RUN   TestLogoutRoleAccess\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:47:59.5407393+08:00","Action":"run","Package":"careold-go/internal/auth","Test":"TestLogoutRoleAccess/ADMIN"}
+{"Time":"2026-10-22T13:47:59.5407393+08:00","Action":"output","Package":"careold-go/internal/auth","Test":"TestLogoutRoleAccess/ADMIN","Output":"=== RUN   TestLogoutRoleAccess/ADMIN\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:47:59.5407393+08:00","Action":"output","Package":"careold-go/internal/auth","Test":"TestLogoutRoleAccess/ADMIN","Output":"--- PASS: TestLogoutRoleAccess/ADMIN (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:47:59.5407393+08:00","Action":"pass","Package":"careold-go/internal/auth","Test":"TestLogoutRoleAccess/ADMIN","Elapsed":0}
+{"Time":"2026-10-22T13:47:59.5407393+08:00","Action":"run","Package":"careold-go/internal/auth","Test":"TestLogoutRoleAccess/FAMILY"}
+{"Time":"2026-10-22T13:47:59.5407393+08:00","Action":"output","Package":"careold-go/internal/auth","Test":"TestLogoutRoleAccess/FAMILY","Output":"=== RUN   TestLogoutRoleAccess/FAMILY\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:47:59.5407393+08:00","Action":"output","Package":"careold-go/internal/auth","Test":"TestLogoutRoleAccess/FAMILY","Output":"--- PASS: TestLogoutRoleAccess/FAMILY (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:47:59.5407393+08:00","Action":"pass","Package":"careold-go/internal/auth","Test":"TestLogoutRoleAccess/FAMILY","Elapsed":0}
+{"Time":"2026-10-22T13:47:59.5407393+08:00","Action":"output","Package":"careold-go/internal/auth","Test":"TestLogoutRoleAccess","Output":"--- PASS: TestLogoutRoleAccess (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:47:59.5407393+08:00","Action":"pass","Package":"careold-go/internal/auth","Test":"TestLogoutRoleAccess","Elapsed":0}
+{"Time":"2026-10-22T13:47:59.5407393+08:00","Action":"output","Package":"careold-go/internal/auth","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:47:59.5417908+08:00","Action":"output","Package":"careold-go/internal/auth","Output":"ok  \tcareold-go/internal/auth\t0.416s\n"}
+{"Time":"2026-10-22T13:47:59.5417908+08:00","Action":"pass","Package":"careold-go/internal/auth","Elapsed":0.416}
+{"Time":"2026-10-22T13:48:00.4970666+08:00","Action":"start","Package":"careold-go/internal/care"}
+{"Time":"2026-10-22T13:48:01.32228+08:00","Action":"run","Package":"careold-go/internal/care","Test":"TestFenceNotificationPreservesIncidentKind"}
+{"Time":"2026-10-22T13:48:01.3227906+08:00","Action":"output","Package":"careold-go/internal/care","Test":"TestFenceNotificationPreservesIncidentKind","Output":"=== RUN   TestFenceNotificationPreservesIncidentKind\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:05.0680356+08:00","Action":"output","Package":"careold-go/internal/care","Test":"TestFenceNotificationPreservesIncidentKind","Output":"--- PASS: TestFenceNotificationPreservesIncidentKind (3.75s)\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:05.0680356+08:00","Action":"pass","Package":"careold-go/internal/care","Test":"TestFenceNotificationPreservesIncidentKind","Elapsed":3.75}
+{"Time":"2026-10-22T13:48:05.0680356+08:00","Action":"run","Package":"careold-go/internal/care","Test":"TestDeliveryPoolHasBoundedConcurrencyAndCancels"}
+{"Time":"2026-10-22T13:48:05.0680356+08:00","Action":"output","Package":"careold-go/internal/care","Test":"TestDeliveryPoolHasBoundedConcurrencyAndCancels","Output":"=== RUN   TestDeliveryPoolHasBoundedConcurrencyAndCancels\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:08.7775342+08:00","Action":"output","Package":"careold-go/internal/care","Test":"TestDeliveryPoolHasBoundedConcurrencyAndCancels","Output":"--- PASS: TestDeliveryPoolHasBoundedConcurrencyAndCancels (3.71s)\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:08.7775342+08:00","Action":"pass","Package":"careold-go/internal/care","Test":"TestDeliveryPoolHasBoundedConcurrencyAndCancels","Elapsed":3.71}
+{"Time":"2026-10-22T13:48:08.7775342+08:00","Action":"run","Package":"careold-go/internal/care","Test":"TestDeliveryConcurrencyIsBounded"}
+{"Time":"2026-10-22T13:48:08.7775342+08:00","Action":"output","Package":"careold-go/internal/care","Test":"TestDeliveryConcurrencyIsBounded","Output":"=== RUN   TestDeliveryConcurrencyIsBounded\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:08.7775342+08:00","Action":"output","Package":"careold-go/internal/care","Test":"TestDeliveryConcurrencyIsBounded","Output":"--- PASS: TestDeliveryConcurrencyIsBounded (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:08.7775342+08:00","Action":"pass","Package":"careold-go/internal/care","Test":"TestDeliveryConcurrencyIsBounded","Elapsed":0}
+{"Time":"2026-10-22T13:48:08.7775342+08:00","Action":"run","Package":"careold-go/internal/care","Test":"TestOutboxDispatchIsRecordedButNotFalselyDelivered"}
+{"Time":"2026-10-22T13:48:08.7775342+08:00","Action":"output","Package":"careold-go/internal/care","Test":"TestOutboxDispatchIsRecordedButNotFalselyDelivered","Output":"=== RUN   TestOutboxDispatchIsRecordedButNotFalselyDelivered\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:12.428681+08:00","Action":"output","Package":"careold-go/internal/care","Test":"TestOutboxDispatchIsRecordedButNotFalselyDelivered","Output":"--- PASS: TestOutboxDispatchIsRecordedButNotFalselyDelivered (3.65s)\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:12.428681+08:00","Action":"pass","Package":"careold-go/internal/care","Test":"TestOutboxDispatchIsRecordedButNotFalselyDelivered","Elapsed":3.65}
+{"Time":"2026-10-22T13:48:12.428681+08:00","Action":"run","Package":"careold-go/internal/care","Test":"TestOverdueSOSCreatesEscalationAuditAndFallback"}
+{"Time":"2026-10-22T13:48:12.428681+08:00","Action":"output","Package":"careold-go/internal/care","Test":"TestOverdueSOSCreatesEscalationAuditAndFallback","Output":"=== RUN   TestOverdueSOSCreatesEscalationAuditAndFallback\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:15.9382979+08:00","Action":"output","Package":"careold-go/internal/care","Test":"TestOverdueSOSCreatesEscalationAuditAndFallback","Output":"--- PASS: TestOverdueSOSCreatesEscalationAuditAndFallback (3.51s)\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:15.9398031+08:00","Action":"pass","Package":"careold-go/internal/care","Test":"TestOverdueSOSCreatesEscalationAuditAndFallback","Elapsed":3.51}
+{"Time":"2026-10-22T13:48:15.9398031+08:00","Action":"run","Package":"careold-go/internal/care","Test":"TestStaleNotificationAttemptCannotOverrideNewClaim"}
+{"Time":"2026-10-22T13:48:15.9398031+08:00","Action":"output","Package":"careold-go/internal/care","Test":"TestStaleNotificationAttemptCannotOverrideNewClaim","Output":"=== RUN   TestStaleNotificationAttemptCannotOverrideNewClaim\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:19.7499619+08:00","Action":"output","Package":"careold-go/internal/care","Test":"TestStaleNotificationAttemptCannotOverrideNewClaim","Output":"--- PASS: TestStaleNotificationAttemptCannotOverrideNewClaim (3.81s)\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:19.7499619+08:00","Action":"pass","Package":"careold-go/internal/care","Test":"TestStaleNotificationAttemptCannotOverrideNewClaim","Elapsed":3.81}
+{"Time":"2026-10-22T13:48:19.7499619+08:00","Action":"run","Package":"careold-go/internal/care","Test":"TestOfflineDeviceScanSkipsBusyDevice"}
+{"Time":"2026-10-22T13:48:19.7499619+08:00","Action":"output","Package":"careold-go/internal/care","Test":"TestOfflineDeviceScanSkipsBusyDevice","Output":"=== RUN   TestOfflineDeviceScanSkipsBusyDevice\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:23.6192708+08:00","Action":"output","Package":"careold-go/internal/care","Test":"TestOfflineDeviceScanSkipsBusyDevice","Output":"--- PASS: TestOfflineDeviceScanSkipsBusyDevice (3.87s)\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:23.6192708+08:00","Action":"pass","Package":"careold-go/internal/care","Test":"TestOfflineDeviceScanSkipsBusyDevice","Elapsed":3.87}
+{"Time":"2026-10-22T13:48:23.6192708+08:00","Action":"run","Package":"careold-go/internal/care","Test":"TestOfflineDeviceScanPages"}
+{"Time":"2026-10-22T13:48:23.6192708+08:00","Action":"output","Package":"careold-go/internal/care","Test":"TestOfflineDeviceScanPages","Output":"=== RUN   TestOfflineDeviceScanPages\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:28.5493827+08:00","Action":"output","Package":"careold-go/internal/care","Test":"TestOfflineDeviceScanPages","Output":"--- PASS: TestOfflineDeviceScanPages (4.93s)\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:28.5493827+08:00","Action":"pass","Package":"careold-go/internal/care","Test":"TestOfflineDeviceScanPages","Elapsed":4.93}
+{"Time":"2026-10-22T13:48:28.5493827+08:00","Action":"run","Package":"careold-go/internal/care","Test":"TestOfflineDeviceScanRunsOnceUntilNextOnlineSession"}
+{"Time":"2026-10-22T13:48:28.5493827+08:00","Action":"output","Package":"careold-go/internal/care","Test":"TestOfflineDeviceScanRunsOnceUntilNextOnlineSession","Output":"=== RUN   TestOfflineDeviceScanRunsOnceUntilNextOnlineSession\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:34.3700872+08:00","Action":"output","Package":"careold-go/internal/care","Test":"TestOfflineDeviceScanRunsOnceUntilNextOnlineSession","Output":"--- PASS: TestOfflineDeviceScanRunsOnceUntilNextOnlineSession (5.82s)\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:34.3700872+08:00","Action":"pass","Package":"careold-go/internal/care","Test":"TestOfflineDeviceScanRunsOnceUntilNextOnlineSession","Elapsed":5.82}
+{"Time":"2026-10-22T13:48:34.3700872+08:00","Action":"run","Package":"careold-go/internal/care","Test":"TestRetryDelayIsCapped"}
+{"Time":"2026-10-22T13:48:34.3700872+08:00","Action":"output","Package":"careold-go/internal/care","Test":"TestRetryDelayIsCapped","Output":"=== RUN   TestRetryDelayIsCapped\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:34.3700872+08:00","Action":"output","Package":"careold-go/internal/care","Test":"TestRetryDelayIsCapped","Output":"--- PASS: TestRetryDelayIsCapped (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:34.3700872+08:00","Action":"pass","Package":"careold-go/internal/care","Test":"TestRetryDelayIsCapped","Elapsed":0}
+{"Time":"2026-10-22T13:48:34.3700872+08:00","Action":"output","Package":"careold-go/internal/care","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:34.3749879+08:00","Action":"output","Package":"careold-go/internal/care","Output":"ok  \tcareold-go/internal/care\t33.878s\n"}
+{"Time":"2026-10-22T13:48:34.3749879+08:00","Action":"pass","Package":"careold-go/internal/care","Elapsed":33.878}
+{"Time":"2026-10-22T13:48:34.7618035+08:00","Action":"start","Package":"careold-go/internal/commands"}
+{"Time":"2026-10-22T13:48:35.0430452+08:00","Action":"run","Package":"careold-go/internal/commands","Test":"TestWireTypesAndActions"}
+{"Time":"2026-10-22T13:48:35.0430452+08:00","Action":"output","Package":"careold-go/internal/commands","Test":"TestWireTypesAndActions","Output":"=== RUN   TestWireTypesAndActions\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:35.0430452+08:00","Action":"output","Package":"careold-go/internal/commands","Test":"TestWireTypesAndActions","Output":"--- PASS: TestWireTypesAndActions (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:35.0430452+08:00","Action":"pass","Package":"careold-go/internal/commands","Test":"TestWireTypesAndActions","Elapsed":0}
+{"Time":"2026-10-22T13:48:35.0430452+08:00","Action":"output","Package":"careold-go/internal/commands","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:35.044104+08:00","Action":"output","Package":"careold-go/internal/commands","Output":"ok  \tcareold-go/internal/commands\t0.282s\n"}
+{"Time":"2026-10-22T13:48:35.044104+08:00","Action":"pass","Package":"careold-go/internal/commands","Elapsed":0.282}
+{"Time":"2026-10-22T13:48:35.4137765+08:00","Action":"start","Package":"careold-go/internal/config"}
+{"Time":"2026-10-22T13:48:35.7487962+08:00","Action":"run","Package":"careold-go/internal/config","Test":"TestSafeDefaults"}
+{"Time":"2026-10-22T13:48:35.7487962+08:00","Action":"output","Package":"careold-go/internal/config","Test":"TestSafeDefaults","Output":"=== RUN   TestSafeDefaults\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:35.7487962+08:00","Action":"output","Package":"careold-go/internal/config","Test":"TestSafeDefaults","Output":"--- PASS: TestSafeDefaults (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:35.7487962+08:00","Action":"pass","Package":"careold-go/internal/config","Test":"TestSafeDefaults","Elapsed":0}
+{"Time":"2026-10-22T13:48:35.7487962+08:00","Action":"run","Package":"careold-go/internal/config","Test":"TestExplicitDeploymentConfiguration"}
+{"Time":"2026-10-22T13:48:35.7487962+08:00","Action":"output","Package":"careold-go/internal/config","Test":"TestExplicitDeploymentConfiguration","Output":"=== RUN   TestExplicitDeploymentConfiguration\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:35.7487962+08:00","Action":"output","Package":"careold-go/internal/config","Test":"TestExplicitDeploymentConfiguration","Output":"--- PASS: TestExplicitDeploymentConfiguration (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:35.7487962+08:00","Action":"pass","Package":"careold-go/internal/config","Test":"TestExplicitDeploymentConfiguration","Elapsed":0}
+{"Time":"2026-10-22T13:48:35.7487962+08:00","Action":"run","Package":"careold-go/internal/config","Test":"TestHealthCacheBudget"}
+{"Time":"2026-10-22T13:48:35.7487962+08:00","Action":"output","Package":"careold-go/internal/config","Test":"TestHealthCacheBudget","Output":"=== RUN   TestHealthCacheBudget\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:35.7487962+08:00","Action":"run","Package":"careold-go/internal/config","Test":"TestHealthCacheBudget/#00"}
+{"Time":"2026-10-22T13:48:35.7487962+08:00","Action":"output","Package":"careold-go/internal/config","Test":"TestHealthCacheBudget/#00","Output":"=== RUN   TestHealthCacheBudget/#00\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:35.7487962+08:00","Action":"output","Package":"careold-go/internal/config","Test":"TestHealthCacheBudget/#00","Output":"--- PASS: TestHealthCacheBudget/#00 (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:35.7487962+08:00","Action":"pass","Package":"careold-go/internal/config","Test":"TestHealthCacheBudget/#00","Elapsed":0}
+{"Time":"2026-10-22T13:48:35.7487962+08:00","Action":"run","Package":"careold-go/internal/config","Test":"TestHealthCacheBudget/0"}
+{"Time":"2026-10-22T13:48:35.7487962+08:00","Action":"output","Package":"careold-go/internal/config","Test":"TestHealthCacheBudget/0","Output":"=== RUN   TestHealthCacheBudget/0\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:35.7487962+08:00","Action":"output","Package":"careold-go/internal/config","Test":"TestHealthCacheBudget/0","Output":"--- PASS: TestHealthCacheBudget/0 (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:35.7487962+08:00","Action":"pass","Package":"careold-go/internal/config","Test":"TestHealthCacheBudget/0","Elapsed":0}
+{"Time":"2026-10-22T13:48:35.7487962+08:00","Action":"run","Package":"careold-go/internal/config","Test":"TestHealthCacheBudget/1"}
+{"Time":"2026-10-22T13:48:35.7487962+08:00","Action":"output","Package":"careold-go/internal/config","Test":"TestHealthCacheBudget/1","Output":"=== RUN   TestHealthCacheBudget/1\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:35.7487962+08:00","Action":"output","Package":"careold-go/internal/config","Test":"TestHealthCacheBudget/1","Output":"--- PASS: TestHealthCacheBudget/1 (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:35.7487962+08:00","Action":"pass","Package":"careold-go/internal/config","Test":"TestHealthCacheBudget/1","Elapsed":0}
+{"Time":"2026-10-22T13:48:35.7487962+08:00","Action":"run","Package":"careold-go/internal/config","Test":"TestHealthCacheBudget/256"}
+{"Time":"2026-10-22T13:48:35.7487962+08:00","Action":"output","Package":"careold-go/internal/config","Test":"TestHealthCacheBudget/256","Output":"=== RUN   TestHealthCacheBudget/256\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:35.7487962+08:00","Action":"output","Package":"careold-go/internal/config","Test":"TestHealthCacheBudget/256","Output":"--- PASS: TestHealthCacheBudget/256 (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:35.7487962+08:00","Action":"pass","Package":"careold-go/internal/config","Test":"TestHealthCacheBudget/256","Elapsed":0}
+{"Time":"2026-10-22T13:48:35.7487962+08:00","Action":"run","Package":"careold-go/internal/config","Test":"TestHealthCacheBudget/-1"}
+{"Time":"2026-10-22T13:48:35.7487962+08:00","Action":"output","Package":"careold-go/internal/config","Test":"TestHealthCacheBudget/-1","Output":"=== RUN   TestHealthCacheBudget/-1\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:35.7487962+08:00","Action":"output","Package":"careold-go/internal/config","Test":"TestHealthCacheBudget/-1","Output":"--- PASS: TestHealthCacheBudget/-1 (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:35.7487962+08:00","Action":"pass","Package":"careold-go/internal/config","Test":"TestHealthCacheBudget/-1","Elapsed":0}
+{"Time":"2026-10-22T13:48:35.7487962+08:00","Action":"run","Package":"careold-go/internal/config","Test":"TestHealthCacheBudget/257"}
+{"Time":"2026-10-22T13:48:35.7487962+08:00","Action":"output","Package":"careold-go/internal/config","Test":"TestHealthCacheBudget/257","Output":"=== RUN   TestHealthCacheBudget/257\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:35.7487962+08:00","Action":"output","Package":"careold-go/internal/config","Test":"TestHealthCacheBudget/257","Output":"--- PASS: TestHealthCacheBudget/257 (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:35.7487962+08:00","Action":"pass","Package":"careold-go/internal/config","Test":"TestHealthCacheBudget/257","Elapsed":0}
+{"Time":"2026-10-22T13:48:35.7487962+08:00","Action":"run","Package":"careold-go/internal/config","Test":"TestHealthCacheBudget/invalid"}
+{"Time":"2026-10-22T13:48:35.7487962+08:00","Action":"output","Package":"careold-go/internal/config","Test":"TestHealthCacheBudget/invalid","Output":"=== RUN   TestHealthCacheBudget/invalid\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:35.7487962+08:00","Action":"output","Package":"careold-go/internal/config","Test":"TestHealthCacheBudget/invalid","Output":"--- PASS: TestHealthCacheBudget/invalid (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:35.7487962+08:00","Action":"pass","Package":"careold-go/internal/config","Test":"TestHealthCacheBudget/invalid","Elapsed":0}
+{"Time":"2026-10-22T13:48:35.7487962+08:00","Action":"run","Package":"careold-go/internal/config","Test":"TestHealthCacheBudget/999999999999999999999"}
+{"Time":"2026-10-22T13:48:35.7487962+08:00","Action":"output","Package":"careold-go/internal/config","Test":"TestHealthCacheBudget/999999999999999999999","Output":"=== RUN   TestHealthCacheBudget/999999999999999999999\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:35.7487962+08:00","Action":"output","Package":"careold-go/internal/config","Test":"TestHealthCacheBudget/999999999999999999999","Output":"--- PASS: TestHealthCacheBudget/999999999999999999999 (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:35.7487962+08:00","Action":"pass","Package":"careold-go/internal/config","Test":"TestHealthCacheBudget/999999999999999999999","Elapsed":0}
+{"Time":"2026-10-22T13:48:35.7487962+08:00","Action":"output","Package":"careold-go/internal/config","Test":"TestHealthCacheBudget","Output":"--- PASS: TestHealthCacheBudget (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:35.7487962+08:00","Action":"pass","Package":"careold-go/internal/config","Test":"TestHealthCacheBudget","Elapsed":0}
+{"Time":"2026-10-22T13:48:35.7487962+08:00","Action":"output","Package":"careold-go/internal/config","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:35.749845+08:00","Action":"output","Package":"careold-go/internal/config","Output":"ok  \tcareold-go/internal/config\t0.336s\n"}
+{"Time":"2026-10-22T13:48:35.749845+08:00","Action":"pass","Package":"careold-go/internal/config","Elapsed":0.336}
+{"Time":"2026-10-22T13:48:35.7508751+08:00","Action":"start","Package":"careold-go/internal/csrf"}
+{"Time":"2026-10-22T13:48:35.7508751+08:00","Action":"output","Package":"careold-go/internal/csrf","Output":"?   \tcareold-go/internal/csrf\t[no test files]\n"}
+{"Time":"2026-10-22T13:48:35.7508751+08:00","Action":"skip","Package":"careold-go/internal/csrf","Elapsed":0}
+{"Time":"2026-10-22T13:48:36.5625457+08:00","Action":"start","Package":"careold-go/internal/db"}
+{"Time":"2026-10-22T13:48:37.1121691+08:00","Action":"run","Package":"careold-go/internal/db","Test":"TestCapabilitiesRollbackAndReapply"}
+{"Time":"2026-10-22T13:48:37.1121691+08:00","Action":"output","Package":"careold-go/internal/db","Test":"TestCapabilitiesRollbackAndReapply","Output":"=== RUN   TestCapabilitiesRollbackAndReapply\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:42.2581615+08:00","Action":"output","Package":"careold-go/internal/db","Test":"TestCapabilitiesRollbackAndReapply","Output":"--- PASS: TestCapabilitiesRollbackAndReapply (5.15s)\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:42.2586658+08:00","Action":"pass","Package":"careold-go/internal/db","Test":"TestCapabilitiesRollbackAndReapply","Elapsed":5.15}
+{"Time":"2026-10-22T13:48:42.2586658+08:00","Action":"run","Package":"careold-go/internal/db","Test":"TestMySQLBoundParameters"}
+{"Time":"2026-10-22T13:48:42.2586658+08:00","Action":"output","Package":"careold-go/internal/db","Test":"TestMySQLBoundParameters","Output":"=== RUN   TestMySQLBoundParameters\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:42.2590293+08:00","Action":"output","Package":"careold-go/internal/db","Test":"TestMySQLBoundParameters","Output":"--- PASS: TestMySQLBoundParameters (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:42.2590293+08:00","Action":"pass","Package":"careold-go/internal/db","Test":"TestMySQLBoundParameters","Elapsed":0}
+{"Time":"2026-10-22T13:48:42.2590293+08:00","Action":"run","Package":"careold-go/internal/db","Test":"TestMySQLDialect"}
+{"Time":"2026-10-22T13:48:42.2590293+08:00","Action":"output","Package":"careold-go/internal/db","Test":"TestMySQLDialect","Output":"=== RUN   TestMySQLDialect\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:42.2590293+08:00","Action":"output","Package":"careold-go/internal/db","Test":"TestMySQLDialect","Output":"--- PASS: TestMySQLDialect (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:42.2590293+08:00","Action":"pass","Package":"careold-go/internal/db","Test":"TestMySQLDialect","Elapsed":0}
+{"Time":"2026-10-22T13:48:42.2590293+08:00","Action":"run","Package":"careold-go/internal/db","Test":"TestOpenRejectsMissingDSNWithoutConnecting"}
+{"Time":"2026-10-22T13:48:42.2590293+08:00","Action":"output","Package":"careold-go/internal/db","Test":"TestOpenRejectsMissingDSNWithoutConnecting","Output":"=== RUN   TestOpenRejectsMissingDSNWithoutConnecting\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:42.2590293+08:00","Action":"output","Package":"careold-go/internal/db","Test":"TestOpenRejectsMissingDSNWithoutConnecting","Output":"--- PASS: TestOpenRejectsMissingDSNWithoutConnecting (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:42.2590293+08:00","Action":"pass","Package":"careold-go/internal/db","Test":"TestOpenRejectsMissingDSNWithoutConnecting","Elapsed":0}
+{"Time":"2026-10-22T13:48:42.2590293+08:00","Action":"run","Package":"careold-go/internal/db","Test":"TestCachedQueriesNeverRetainArguments"}
+{"Time":"2026-10-22T13:48:42.2590293+08:00","Action":"output","Package":"careold-go/internal/db","Test":"TestCachedQueriesNeverRetainArguments","Output":"=== RUN   TestCachedQueriesNeverRetainArguments\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:42.2599079+08:00","Action":"output","Package":"careold-go/internal/db","Test":"TestCachedQueriesNeverRetainArguments","Output":"--- PASS: TestCachedQueriesNeverRetainArguments (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:42.2599079+08:00","Action":"pass","Package":"careold-go/internal/db","Test":"TestCachedQueriesNeverRetainArguments","Elapsed":0}
+{"Time":"2026-10-22T13:48:42.2599079+08:00","Action":"run","Package":"careold-go/internal/db","Test":"TestLivenessProbeDoesNotWaitForBusyBusinessPool"}
+{"Time":"2026-10-22T13:48:42.2599079+08:00","Action":"output","Package":"careold-go/internal/db","Test":"TestLivenessProbeDoesNotWaitForBusyBusinessPool","Output":"=== RUN   TestLivenessProbeDoesNotWaitForBusyBusinessPool\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:45.9555856+08:00","Action":"output","Package":"careold-go/internal/db","Test":"TestLivenessProbeDoesNotWaitForBusyBusinessPool","Output":"--- PASS: TestLivenessProbeDoesNotWaitForBusyBusinessPool (3.70s)\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:45.9555856+08:00","Action":"pass","Package":"careold-go/internal/db","Test":"TestLivenessProbeDoesNotWaitForBusyBusinessPool","Elapsed":3.7}
+{"Time":"2026-10-22T13:48:45.9555856+08:00","Action":"run","Package":"careold-go/internal/db","Test":"TestMySQLPingDuringPoolSaturation"}
+{"Time":"2026-10-22T13:48:45.9555856+08:00","Action":"output","Package":"careold-go/internal/db","Test":"TestMySQLPingDuringPoolSaturation","Output":"=== RUN   TestMySQLPingDuringPoolSaturation\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:45.9573216+08:00","Action":"output","Package":"careold-go/internal/db","Test":"TestMySQLPingDuringPoolSaturation","Output":"--- PASS: TestMySQLPingDuringPoolSaturation (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:45.9573216+08:00","Action":"pass","Package":"careold-go/internal/db","Test":"TestMySQLPingDuringPoolSaturation","Elapsed":0}
+{"Time":"2026-10-22T13:48:45.9573216+08:00","Action":"run","Package":"careold-go/internal/db","Test":"TestMySQLPingReportsConnectionLoss"}
+{"Time":"2026-10-22T13:48:45.9573216+08:00","Action":"output","Package":"careold-go/internal/db","Test":"TestMySQLPingReportsConnectionLoss","Output":"=== RUN   TestMySQLPingReportsConnectionLoss\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:45.9766598+08:00","Action":"output","Package":"careold-go/internal/db","Test":"TestMySQLPingReportsConnectionLoss","Output":"[mysql] 2026/10/22 13:48:45 connection.go:706 closing bad idle connection: set tcp 127.0.0.1:61657: use of closed network connection\n"}
+{"Time":"2026-10-22T13:48:45.9766598+08:00","Action":"output","Package":"careold-go/internal/db","Test":"TestMySQLPingReportsConnectionLoss","Output":"[mysql] 2026/10/22 13:48:45 connection.go:189 closing connection:close tcp 127.0.0.1:61657-\u003e127.0.0.1:33327: use of closed network connection\n"}
+{"Time":"2026-10-22T13:48:45.9766598+08:00","Action":"output","Package":"careold-go/internal/db","Test":"TestMySQLPingReportsConnectionLoss","Output":"[mysql] 2026/10/22 13:48:45 packets.go:155 set tcp 127.0.0.1:61657: use of closed network connection\n"}
+{"Time":"2026-10-22T13:48:45.9781922+08:00","Action":"output","Package":"careold-go/internal/db","Test":"TestMySQLPingReportsConnectionLoss","Output":"[mysql] 2026/10/22 13:48:45 connection.go:189 closing connection:close tcp 127.0.0.1:61656-\u003e127.0.0.1:33327: use of closed network connection\n"}
+{"Time":"2026-10-22T13:48:45.9781922+08:00","Action":"output","Package":"careold-go/internal/db","Test":"TestMySQLPingReportsConnectionLoss","Output":"[mysql] 2026/10/22 13:48:45 packets.go:155 set tcp 127.0.0.1:61656: use of closed network connection\n"}
+{"Time":"2026-10-22T13:48:45.9781922+08:00","Action":"output","Package":"careold-go/internal/db","Test":"TestMySQLPingReportsConnectionLoss","Output":"--- PASS: TestMySQLPingReportsConnectionLoss (0.02s)\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:45.9781922+08:00","Action":"pass","Package":"careold-go/internal/db","Test":"TestMySQLPingReportsConnectionLoss","Elapsed":0.02}
+{"Time":"2026-10-22T13:48:45.9781922+08:00","Action":"run","Package":"careold-go/internal/db","Test":"TestLegacyTransferIsCheckedAndAtomic"}
+{"Time":"2026-10-22T13:48:45.9781922+08:00","Action":"output","Package":"careold-go/internal/db","Test":"TestLegacyTransferIsCheckedAndAtomic","Output":"=== RUN   TestLegacyTransferIsCheckedAndAtomic\n","OutputType":"frame"}
+{"Time":"2026-10-22T13:48:45.9781922+08:00","Action":"run","Package":"careold-go/internal/db","Test":"TestLegacyTransferIsCheckedAndAtomic/PG0006"}
+{"Time":"2026-10-22T13:48:45.9781922+08:00","Action":"output","Package":"careold-go/internal/db","Test":"TestLegacyTransferIsCheckedAndAtomic/PG0006","Output":"=== RUN   TestLegacyTransferIsCheckedAndAtomic/PG0006\n","OutputType":"frame"}

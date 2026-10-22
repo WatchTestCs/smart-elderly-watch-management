@@ -1,0 +1,40 @@
+{
+  "run_id": "5a911cfb5ea4",
+  "mode": "health",
+  "application_instances": 4,
+  "client_processes": 4,
+  "concurrency": 32,
+  "started_unix": 1792502195.6328704,
+  "ended_unix": 1792502211.1485076,
+  "elapsed_seconds": 15.516,
+  "requests": 1013,
+  "http_commit_acknowledgements": 1013,
+  "errors": 0,
+  "http_statuses": {
+    "200": 1013
+  },
+  "requests_per_second": 65.29,
+  "latency_ms": {
+    "p50": 438.183,
+    "p95": 1105.166,
+    "p99": 1422.687,
+    "max": 1892.308
+  },
+  "samples_per_request": 200,
+  "acknowledged_samples": 202600,
+  "acknowledged_samples_per_second": 13057.79,
+  "cpu_seconds_including_client_startup": {
+    "mysql": 29.203,
+    "application_0": 1.953,
+    "application_1": 1.938,
+    "application_2": 2.047,
+    "application_3": 2.406
+  },
+  "top_sql_by_cumulative_seconds": "",
+  "verified_sample_rows": 202600,
+  "verified_change_rows": 202600,
+  "binary": "cluster-server.exe",
+  "gomaxprocs_per_application": 3,
+  "mysql_settings": "2147483648\t1\t1\t0\t151",
+  "sessions_shared_across_instances": true
+}

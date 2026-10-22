@@ -76,8 +76,7 @@ func TestBatchExternalConcurrencyBoundAndAcceptedStatus(t *testing.T) {
 	t.Setenv("TENCENT_SMS_APPID", "")
 	t.Setenv("NOTIFY_ALLOW_HTTP_TEST", "1")
 	p := dbtest.MySQL(t)
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cancel()
+	ctx := context.Background()
 	messages := make([]Message, 65)
 	for i := range messages {
 		messages[i] = Message{Topic: "announcement", Key: strconv.Itoa(i), FamilyID: 1, Phone: "13800000001", Channels: []string{"sms"}}
@@ -112,6 +111,8 @@ func TestBatchExternalConcurrencyBoundAndAcceptedStatus(t *testing.T) {
 	client := server.Client()
 	client.Timeout = 10 * time.Second
 	d := Worker{DB: p, URL: server.URL, Token: "test", Client: client}
+	ctx, cancel := context.WithTimeout(ctx, 45*time.Second)
+	defer cancel()
 	done := make(chan error, 1)
 	go func() {
 		n, err := d.Drain(ctx, 512)

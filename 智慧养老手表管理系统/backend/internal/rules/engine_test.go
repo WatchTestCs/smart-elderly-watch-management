@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -41,6 +42,45 @@ func save(t *testing.T, p *db.Database, s health.Sample) {
 		t.Fatal(err)
 	}
 }
+func TestBaselineSourceIndexPreservesExactIdentity(t *testing.T) {
+	for _, prefix := range []int{16, 64} {
+		t.Run(fmt.Sprint(prefix), func(t *testing.T) { testBaselineSourceIdentity(t, prefix) })
+	}
+}
+
+func testBaselineSourceIdentity(t *testing.T, devicePrefix int) {
+	p, now := seed(t)
+	ctx := context.Background()
+	// Index prefixes and case-insensitive legacy collations are only filters;
+	// neither may merge distinct sources into a baseline.
+	if _, err := p.Exec(ctx, "ALTER TABLE health_sample MODIFY source varchar(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL, MODIFY source_device varchar(4096) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL"); err != nil {
+		t.Fatal(err)
+	}
+	source, device := strings.Repeat("s", 64)+"a", strings.Repeat("d", devicePrefix)+"a"
+	for group, identity := range [][2]string{{source, device}, {strings.ToUpper(source), device}, {source, strings.ToUpper(device)}, {source[:64] + "b", device}, {source, device[:len(device)-1] + "b"}} {
+		value := 150.0
+		if group == 0 {
+			value = 70
+		}
+		for i := range 20 {
+			at := now.Add(-time.Duration(i+30) * time.Hour)
+			save(t, p, health.Sample{RecordID: fmt.Sprintf("base-%d-%d", group, i), Source: identity[0], SourceDevice: identity[1], Metric: "heart_rate", Unit: "count/min", Value: health.Number(value), Start: at, End: at, Version: 1})
+		}
+	}
+	e := Engine{DB: p}
+	for i := range 3 {
+		at := now.Add(time.Duration(i) * time.Second)
+		save(t, p, health.Sample{RecordID: fmt.Sprint("current", i), Source: source, SourceDevice: device, Metric: "heart_rate", Unit: "count/min", Value: health.Number(100), Start: at, End: at, Version: 1})
+		if err := e.Device(ctx, 1, at.Add(time.Millisecond)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	var count int
+	if err := p.QueryRow(ctx, "SELECT count(*) FROM care_incident WHERE kind='rule_baseline_heart_rate'").Scan(&count); err != nil || count != 1 {
+		t.Fatalf("source identity changed baseline: incidents=%d err=%v", count, err)
+	}
+}
+
 func TestBaselineStreakUsesDistinctObservationsAndRecovers(t *testing.T) {
 	p, now := seed(t)
 	e := Engine{DB: p}
@@ -76,6 +116,52 @@ func TestBaselineStreakUsesDistinctObservationsAndRecovers(t *testing.T) {
 	p.QueryRow(ctx, "SELECT active FROM rule_state WHERE kind='baseline_heart_rate'").Scan(&active)
 	if active {
 		t.Fatal("corrected healthy observation did not reset rule")
+	}
+}
+
+func TestBaselineCoverUsesIndexWithoutPayloadLookups(t *testing.T) {
+	p, now := seed(t)
+	for i := range 20 {
+		at := now.Add(-time.Duration(i+30) * time.Hour)
+		save(t, p, health.Sample{RecordID: fmt.Sprint(i), Source: "watch", SourceDevice: "RULE001", Metric: "heart_rate", Unit: "count/min", Value: health.Number(70), Start: at, End: at, Version: 1})
+	}
+	args := []any{int64(1), int64(1), "heart_rate", "watch", "RULE001", now.AddDate(0, 0, -7).UnixMicro(), now.Add(-15 * time.Minute).UnixMicro()}
+	var count int
+	var mean, deviation float64
+	if err := p.QueryRow(context.Background(), baselineCoverSQL, args...).Scan(&count, &mean, &deviation); err != nil || count != 20 || mean != 70 || deviation != 0 {
+		t.Fatalf("cover changed baseline: count=%d mean=%g deviation=%g err=%v", count, mean, deviation, err)
+	}
+	var raw string
+	if err := p.QueryRow(context.Background(), "EXPLAIN FORMAT=JSON "+baselineCoverSQL, args...).Scan(&raw); err != nil {
+		t.Fatal(err)
+	}
+	var plan any
+	if err := json.Unmarshal([]byte(raw), &plan); err != nil {
+		t.Fatal(err)
+	}
+	var covered func(any) bool
+	covered = func(value any) bool {
+		switch value := value.(type) {
+		case map[string]any:
+			if value["key"] == "idx_health_rule_cover" && value["using_index"] == true {
+				return true
+			}
+			for _, child := range value {
+				if covered(child) {
+					return true
+				}
+			}
+		case []any:
+			for _, child := range value {
+				if covered(child) {
+					return true
+				}
+			}
+		}
+		return false
+	}
+	if !covered(plan) {
+		t.Fatalf("baseline requires clustered payload reads: %s", raw)
 	}
 }
 func TestNightActivityCounterResetAndConcurrentOfflineDedup(t *testing.T) {
