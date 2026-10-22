@@ -58,3 +58,7 @@ jobs:
             -v "$PWD/deploy:/etc/prometheus:ro" \
             --entrypoint promtool prom/prometheus:v3.5.0 \
             check rules /etc/prometheus/alerts.yml
+          docker run --rm --pull=always \
+            -v "$PWD/deploy:/etc/prometheus:ro" \
+            --entrypoint promtool prom/prometheus:v3.5.0 \
+            test rules /etc/prometheus/alerts_test.yml
