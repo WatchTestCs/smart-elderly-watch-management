@@ -1,11 +1,11 @@
 package handlers
 
 import (
-	"errors"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"os"
