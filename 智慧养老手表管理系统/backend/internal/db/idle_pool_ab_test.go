@@ -101,13 +101,13 @@ func TestMySQLIdleConnectionRetentionAB(t *testing.T) {
 		after := sqlDB.Stats()
 		output, _ := json.Marshal(idlePoolMeasurement{
 			IdleLimit: idleLimit, Trial: trial, Requests: len(latencies),
-			Concurrency: concurrency,
+			Concurrency:      concurrency,
 			AfterWarmupP50MS: percentile(50),
 			AfterWarmupP95MS: percentile(95),
 			AfterWarmupP99MS: percentile(99),
-			MaxIdleClosed: after.MaxIdleClosed - before.MaxIdleClosed,
-			PoolWaitMS: float64((after.WaitDuration-before.WaitDuration).Microseconds()) / 1000,
-			IdleConnections: after.Idle, OpenConnections: after.OpenConnections,
+			MaxIdleClosed:    after.MaxIdleClosed - before.MaxIdleClosed,
+			PoolWaitMS:       float64((after.WaitDuration - before.WaitDuration).Microseconds()) / 1000,
+			IdleConnections:  after.Idle, OpenConnections: after.OpenConnections,
 		})
 		t.Logf("MYSQL_IDLE_POOL_AB %s", output)
 	}
