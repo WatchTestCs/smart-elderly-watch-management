@@ -122,6 +122,7 @@ func OpenMySQL(ctx context.Context, dsn string) (*Database, error) {
 	}
 	return &Database{executor: executor{my: pool}, myPool: pool, healthPool: healthPool}, nil
 }
+
 // mysqlIdleConnectionLimit is bounded by the existing 20-connection primary
 // pool; explicit zero is supported for deployments with a strict connection
 // budget. Reject malformed input instead of silently taking a risky default.
