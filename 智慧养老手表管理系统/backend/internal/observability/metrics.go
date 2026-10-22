@@ -37,6 +37,7 @@ func (r *Registry) Set(name string, value float64) {
 	r.values[name] = value
 	r.mu.Unlock()
 }
+
 // observeHTTP batches all duration counters under one registry lock rather
 // than reacquiring the same mutex for each histogram bucket. Every finite
 // bucket is emitted, including zeros, to preserve Prometheus histogram shape.
