@@ -3,6 +3,10 @@ name: MySQL idle connection retention A/B
 on:
   push:
     branches: ['perf/mysql-idle-pool-ab-*']
+    paths:
+      - '.github/workflows/mysql-idle-pool-ab.yml'
+      - '智慧养老手表管理系统/backend/internal/db/database.go'
+      - '智慧养老手表管理系统/backend/internal/db/idle_pool_ab_test.go'
   workflow_dispatch:
 
 permissions:
