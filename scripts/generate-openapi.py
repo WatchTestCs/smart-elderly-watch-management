@@ -52,7 +52,7 @@ for alias, canonical in aliases.items():
         operation["deprecated"] = False
         operation["tags"] = ["v1"]
         operation["description"] += f" Canonical compatibility target: {canonical}. HTTP method and authorization are unchanged."
-spec = {"openapi": "3.1.0", "info": {"title": "岁宁后端 API", "version": "2.0.6", "description": "Incremental versioned API and legacy route inventory. https://spec.openapis.org/oas/v3.1.0"}, "components": {"securitySchemes": {"sessionCookie": {"type": "apiKey", "in": "cookie", "name": "JSESSIONID"}}}, "paths": dict(sorted(paths.items()))}
+spec = {"openapi": "3.1.0", "info": {"title": "岁宁后端 API", "version": (backend / "VERSION").read_text(encoding="utf-8").strip(), "description": "Incremental versioned API and legacy route inventory. https://spec.openapis.org/oas/v3.1.0"}, "components": {"securitySchemes": {"sessionCookie": {"type": "apiKey", "in": "cookie", "name": "JSESSIONID"}}}, "paths": dict(sorted(paths.items()))}
 data = (json.dumps(spec, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
 target = folder / "openapi.json"
 if "--check" in sys.argv:

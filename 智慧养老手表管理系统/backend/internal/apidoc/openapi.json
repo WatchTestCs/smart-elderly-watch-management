@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "岁宁后端 API",
-    "version": "2.0.6",
+    "version": "2.1.0",
     "description": "Incremental versioned API and legacy route inventory. https://spec.openapis.org/oas/v3.1.0"
   },
   "components": {

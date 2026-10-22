@@ -22,10 +22,10 @@ Current 2.1.0 includes unsigned Windows Setup, portable and full source packages
 | [v2.1.0](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.1.0) | 双库 Windows 安装、免安装及完整源码；见随包来源清单 | 预览 / prerelease |
 | [v2.0.6](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.6) | 历史 2.0.6 双库整合源码 ZIP + SHA-256，无安装包；不含标签发布后的 `preview` 更新 | 源码预览 / prerelease |
 | [v2.0.5-optimized.1](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.5-optimized.1) | 架构优化历史源码；含字体版与无字体版；旧 PG 单库 | 预览 / prerelease |
-| [v2.0.5-cleanup.1](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.5-cleanup.1) | 死代码清理修订源码；旧 PG 单库 | 预览 / prerelease |
+| [v2.0.5-cleanup.1](https://github.com/WatchTestCs/smart-elderly-watch-management/tree/v2.0.5-cleanup.1) | 源码维护历史标签，提交和源码保留；Release 页面与附件按维护策略整理 | Git 标签 / source tag |
 | [v2.0.5](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.5) | 值守可靠性与权限治理源码；旧 PG 单库 | 预览 / prerelease |
 | [v2.0.4](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.4) | 求助照护闭环源码预览；旧 PG 单库 | 预览 / prerelease |
-| [v2.0.3](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.3) | 源码结构拆分历史版本；旧 PG 单库 | 预览 / prerelease |
+| [v2.0.3](https://github.com/WatchTestCs/smart-elderly-watch-management/tree/v2.0.3) | 源码维护历史标签，提交和源码保留；Release 页面与附件按维护策略整理 | Git 标签 / source tag |
 | [v2.0.2-preview.1](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.2-preview.1) | Windows 安装／免安装、源码及 Linux 独立附件 | 预览 / prerelease |
 | [v2.0.1-preview.1](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.1-preview.1) | 早期 Windows 预览二进制，使用当时的运行时与配置 | 预览 / prerelease |
 | [v2.0.0-preview.1](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.0-preview.1) | 早期桌面预览及源码；不套用当前构建与配置 | 预览 / prerelease |

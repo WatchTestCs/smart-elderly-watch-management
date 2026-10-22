@@ -2,6 +2,7 @@ $ErrorActionPreference='Stop'
 $project=Split-Path $PSScriptRoot -Parent
 $version=[string](Get-Content (Join-Path $PSScriptRoot 'version.json') -Raw|ConvertFrom-Json).version
 $values=@(
+ [string](Get-Content (Join-Path $project 'backend/internal/apidoc/openapi.json') -Raw|ConvertFrom-Json).info.version,
  [string](Get-Content (Join-Path $PSScriptRoot 'tauri.conf.json') -Raw|ConvertFrom-Json).version,
  [string](Get-Content (Join-Path $PSScriptRoot 'package.json') -Raw|ConvertFrom-Json).version,
  [string](Get-Content (Join-Path $project 'oldIot/package.json') -Raw|ConvertFrom-Json).version,
