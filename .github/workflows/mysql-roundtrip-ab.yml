@@ -1,0 +1,51 @@
+name: MySQL driver round-trip A/B
+
+on:
+  push:
+    branches: ['perf/mysql-roundtrips-queue-*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  measure:
+    name: MySQL 8.4 driver parameter round trips
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: ci_root_only
+          MYSQL_ROOT_HOST: "%"
+          MYSQL_DATABASE: suining_test
+        ports: ["3306:3306"]
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -u root -pci_root_only --silent"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.23.2'
+          cache-dependency-path: 智慧养老手表管理系统/backend/go.sum
+      - name: Measure real MySQL parameter handling
+        working-directory: 智慧养老手表管理系统/backend
+        env:
+          RUN_MYSQL_ROUNDTRIP_AB: '1'
+          TEST_MYSQL_DSN: root:ci_root_only@tcp(localhost:3306)/suining_test
+        run: |
+          set -euo pipefail
+          go test -count=1 -run '^TestMySQLRoundTripAB$' -v -timeout 12m ./internal/analytics | tee "${RUNNER_TEMP}/mysql-roundtrip-ab.log"
+      - name: Save complete raw output
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: mysql-roundtrip-ab
+          path: ${{ runner.temp }}/mysql-roundtrip-ab.log
+          if-no-files-found: warn
