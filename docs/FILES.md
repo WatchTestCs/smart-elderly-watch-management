@@ -1,8 +1,8 @@
 # preview 分支文件职责索引
 
-本索引覆盖当前提交的 **612 个文件**（更新：2026-10-22）。保留既有人工说明；来源附件与历史证据不代表当前版本的全套验收。
+本索引覆盖当前提交的 **613 个文件**（更新：2026-10-22）。保留既有人工说明；来源附件与历史证据不代表当前版本的全套验收。
 
-[项目 README](../README.md) · [文件职责数据](file-descriptions.json) · [最新性能报告](performance/2026-10-22-backend-hybrid/README.md)
+[项目 README](../README.md) · [文件职责数据](file-descriptions.json) · [历史性能资料](performance/2026-10-20-go123/README.md) · [最新性能报告](performance/2026-10-22-backend-hybrid/README.md)
 
 | 文件 | 职责 |
 | --- | --- |
@@ -11,9 +11,13 @@
 | [.github/SECURITY.md](../.github/SECURITY.md) | 说明私下报告漏洞的渠道、范围与披露流程 |
 | [.github/dependabot.yml](../.github/dependabot.yml) | 配置 GitHub Actions 与 npm 依赖更新的自动提案 |
 | [.github/pull_request_template.md](../.github/pull_request_template.md) | 提供变更目的、验证证据和风险边界的拉取请求模板 |
+| [.github/workflows/analytics-outbox-ab.yml](../.github/workflows/analytics-outbox-ab.yml) | 运行真实双库 Outbox 写入与消费 A/B 实验并归档日志 |
 | [.github/workflows/ci.yml](../.github/workflows/ci.yml) | GitHub 工作流 Preview CI 的触发条件与执行步骤（.github/workflows/ci.yml） |
 | [.github/workflows/desktop-contract.yml](../.github/workflows/desktop-contract.yml) | GitHub 工作流 Desktop Contract 的触发条件与执行步骤（.github/workflows/desktop-contract.yml） |
+| [.github/workflows/health-lock-order-ab.yml](../.github/workflows/health-lock-order-ab.yml) | 运行健康数据设备锁顺序的隔离数据库对照实验 |
 | [.github/workflows/mysql-endurance.yml](../.github/workflows/mysql-endurance.yml) | 专用 MySQL 8.4 的 20 分钟耐久测试及原始日志归档 |
+| [.github/workflows/mysql-idle-pool-ab.yml](../.github/workflows/mysql-idle-pool-ab.yml) | 比较 MySQL 空闲连接保留上限对突发查询延迟的影响 |
+| [.github/workflows/mysql-roundtrip-ab.yml](../.github/workflows/mysql-roundtrip-ab.yml) | 运行 MySQL 参数处理往返及分析队列计数的对照实验 |
 | [.github/workflows/p0-db-migration.yml](../.github/workflows/p0-db-migration.yml) | 在 CI 中验证 PostgreSQL 历史迁移顺序与结构 |
 | [.github/workflows/preview-candidate.yml](../.github/workflows/preview-candidate.yml) | GitHub 工作流 Tauri preview candidate 的触发条件与执行步骤（.github/workflows/preview-candidate.yml） |
 | [.github/workflows/preview-checks.yml](../.github/workflows/preview-checks.yml) | GitHub 工作流 Additional preview UI checks 的触发条件与执行步骤（.github/workflows/preview-checks.yml） |
@@ -33,17 +37,10 @@
 | [.gitignore](../.gitignore) | 排除本地依赖、构建产物、数据库文件和密钥等非源码内容 |
 | [CHANGELOG.md](../CHANGELOG.md) | 按版本记录用户可见的功能变化、修复和兼容性说明 |
 | [CONTRIBUTING.md](../CONTRIBUTING.md) | 中英文贡献指南：分支范围、修改规范、验证要求和安全披露方式 |
-| [DEEP-LOWLEVEL-PERFORMANCE-REPORT.md](../DEEP-LOWLEVEL-PERFORMANCE-REPORT.md) | 附件原始持续 CPU 负载、GC 与内存实验报告；保留来源结论，不代表本轮端到端验收。 |
-| [Dockerfile](../Dockerfile) | Go 业务服务的容器构建说明 |
-| [GO123-PERFORMANCE-REPORT.md](../GO123-PERFORMANCE-REPORT.md) | 附件原始 Go 1.23 核心性能报告与未验证边界。 |
 | [LICENSE](../LICENSE) | 仓库 MIT 许可正文及 WatchTestCs 版权声明 |
-| [PERFORMANCE-MEMORY-20261020.md](../PERFORMANCE-MEMORY-20261020.md) | 附件原始内存和调度取舍记录。 |
-| [PERFORMANCE-POLISH-REPORT.md](../PERFORMANCE-POLISH-REPORT.md) | 附件原始序列化、规则求值和分配优化对照。 |
-| [PERFORMANCE-TOP-20261020.md](../PERFORMANCE-TOP-20261020.md) | 附件原始热点分析及性能目标说明。 |
 | [README.en.md](../README.en.md) | English project overview: current preview architecture, capabilities, setup, downloads, and delivery limits |
 | [README.md](../README.md) | 中文项目首页：当前 2.0.6 preview 功能、技术架构、部署选择、源码入口和历史附件边界 |
-| [architecture.md](../architecture.md) | 根目录架构概览：客户端、Go 服务、MySQL 主库、PG 分析库与数据流 |
-| [deep-hardware-raw-results.json](../deep-hardware-raw-results.json) | 附件提供的低层性能原始数据；不是本机新测结果。 |
+| [deploy/Dockerfile](../deploy/Dockerfile) | Go 业务服务的容器构建说明 |
 | [deploy/check-care-health.sh](../deploy/check-care-health.sh) | 独立服务 HTTP 和数据库就绪只读探测 |
 | [deploy/dual-db.compose.yml](../deploy/dual-db.compose.yml) | 提供独立 MySQL 与 PostgreSQL 数据服务、持久卷、回环端口和健康检查，不启动应用服务 |
 | [deploy/dual-db.env.example](../deploy/dual-db.env.example) | 双库环境变量示例，不含可直接使用的默认密码 |
@@ -85,6 +82,7 @@
 | [docs/TESTING.md](../docs/TESTING.md) | TESTING：记录对应模块的使用、架构或维护说明 |
 | [docs/UI_UX.md](../docs/UI_UX.md) | UI UX：记录对应模块的使用、架构或维护说明 |
 | [docs/VALIDATION.md](../docs/VALIDATION.md) | VALIDATION：记录对应模块的使用、架构或维护说明 |
+| [docs/architecture/overview.md](../docs/architecture/overview.md) | 系统组件、桌面生命周期及 MySQL 主库和 PostgreSQL 分析库的数据流总览 |
 | [docs/decisions/0001-desktop-local-service-architecture.md](../docs/decisions/0001-desktop-local-service-architecture.md) | 早期 Electron 与 Spring 桌面方案的历史架构决定，已被当前 Tauri、Go 和 Vue 架构取代。 |
 | [docs/decisions/0002-local-h2-data-storage.md](../docs/decisions/0002-local-h2-data-storage.md) | 早期 H2 本地数据库方案的历史决定；当前业务数据由独立 MySQL 保存。 |
 | [docs/decisions/0003-electron-security-boundary.md](../docs/decisions/0003-electron-security-boundary.md) | 早期 Electron 渲染进程安全边界决定；当前原生边界以 Tauri 能力配置和源码为准。 |
@@ -93,6 +91,14 @@
 | [docs/decisions/0006-tauri-go-postgres.md](../docs/decisions/0006-tauri-go-postgres.md) | Tauri 与 Go 桌面服务架构的决策记录；数据库主从分工以当前 MySQL/PG 说明为准。 |
 | [docs/decisions/README.md](../docs/decisions/README.md) | README：记录对应模块的使用、架构或维护说明 |
 | [docs/file-descriptions.json](../docs/file-descriptions.json) | 当前版本逐文件中文职责索引，供工具与发布校验使用（docs/file-descriptions.json） |
+| [docs/performance/2026-10-20-go123/DEEP-LOWLEVEL-PERFORMANCE-REPORT.md](../docs/performance/2026-10-20-go123/DEEP-LOWLEVEL-PERFORMANCE-REPORT.md) | 附件原始持续 CPU 负载、GC 与内存实验报告；保留来源结论，不代表本轮端到端验收。 |
+| [docs/performance/2026-10-20-go123/GO123-PERFORMANCE-REPORT.md](../docs/performance/2026-10-20-go123/GO123-PERFORMANCE-REPORT.md) | 附件原始 Go 1.23 核心性能报告与未验证边界。 |
+| [docs/performance/2026-10-20-go123/PERFORMANCE-MEMORY-20261020.md](../docs/performance/2026-10-20-go123/PERFORMANCE-MEMORY-20261020.md) | 附件原始内存和调度取舍记录。 |
+| [docs/performance/2026-10-20-go123/PERFORMANCE-POLISH-REPORT.md](../docs/performance/2026-10-20-go123/PERFORMANCE-POLISH-REPORT.md) | 附件原始序列化、规则求值和分配优化对照。 |
+| [docs/performance/2026-10-20-go123/PERFORMANCE-TOP-20261020.md](../docs/performance/2026-10-20-go123/PERFORMANCE-TOP-20261020.md) | 附件原始热点分析及性能目标说明。 |
+| [docs/performance/2026-10-20-go123/README.md](../docs/performance/2026-10-20-go123/README.md) | 索引 2026-10-20 的 Go 1.23 历史性能报告、原始数据及复现脚本 |
+| [docs/performance/2026-10-20-go123/deep-hardware-raw-results.json](../docs/performance/2026-10-20-go123/deep-hardware-raw-results.json) | 附件提供的低层性能原始数据；不是本机新测结果。 |
+| [docs/performance/2026-10-20-go123/memory-scheduling-matrix.json](../docs/performance/2026-10-20-go123/memory-scheduling-matrix.json) | 附件提供的内存和调度参数矩阵。 |
 | [docs/performance/2026-10-21-go123/FIRST_20MIN_INCORRECT_DEMONSTRATION.md](../docs/performance/2026-10-21-go123/FIRST_20MIN_INCORRECT_DEMONSTRATION.md) | 首次中止长压测错误演示，不构成有效性能基准 |
 | [docs/performance/2026-10-21-go123/INTERRUPTED-MYSQL-SOAK.md](../docs/performance/2026-10-21-go123/INTERRUPTED-MYSQL-SOAK.md) | 中止测试与独立耐久复测的证据说明 |
 | [docs/performance/2026-10-21-go123/README.md](../docs/performance/2026-10-21-go123/README.md) | Go 1.23 性能证据导航和测试边界 |
@@ -106,6 +112,9 @@
 | [docs/performance/2026-10-21-go123/first_20min_incorrect_evidence.json](../docs/performance/2026-10-21-go123/first_20min_incorrect_evidence.json) | 历史中止压测中未经验证信息的结构化说明 |
 | [docs/performance/2026-10-21-go123/query-race.txt](../docs/performance/2026-10-21-go123/query-race.txt) | Go 1.23 CPU 或竞态检测原始日志：query-race.txt |
 | [docs/performance/2026-10-21-go123/test-race.txt](../docs/performance/2026-10-21-go123/test-race.txt) | Go 1.23 CPU 或竞态检测原始日志：test-race.txt |
+| [docs/performance/2026-10-22-analytics-outbox-ab/README.md](../docs/performance/2026-10-22-analytics-outbox-ab/README.md) | 分析 Outbox 生产与消费实验的方法、结果和适用限制 |
+| [docs/performance/2026-10-22-analytics-outbox-ab/results-verified.jsonl](../docs/performance/2026-10-22-analytics-outbox-ab/results-verified.jsonl) | 分析 Outbox 生产与消费实验的原始记录（results-verified.jsonl） |
+| [docs/performance/2026-10-22-analytics-outbox-ab/results.jsonl](../docs/performance/2026-10-22-analytics-outbox-ab/results.jsonl) | 分析 Outbox 生产与消费实验的原始记录（results.jsonl） |
 | [docs/performance/2026-10-22-backend-hybrid/README.md](../docs/performance/2026-10-22-backend-hybrid/README.md) | 本次后端冷热混合缓存、500/503 修复、性能口径和验证状态汇总。 |
 | [docs/performance/2026-10-22-backend-hybrid/api-fix-report.md](../docs/performance/2026-10-22-backend-hybrid/api-fix-report.md) | 合并前20分钟真实双库压测、500/503根因与持久化审计报告。 |
 | [docs/performance/2026-10-22-backend-hybrid/api-fix-verification.json](../docs/performance/2026-10-22-backend-hybrid/api-fix-verification.json) | 正式压测完成状态、错误分布、SQL计数及投影审计结果。 |
@@ -118,6 +127,13 @@
 | [docs/performance/2026-10-22-backend-hybrid/merge-status.json](../docs/performance/2026-10-22-backend-hybrid/merge-status.json) | 远端合并、用户中止测试、静态检查修复及当前源码哈希状态。 |
 | [docs/performance/2026-10-22-backend-hybrid/stress-source-manifest.json](../docs/performance/2026-10-22-backend-hybrid/stress-source-manifest.json) | 20分钟测试源码、构建二进制、硬件及持久性配置哈希清单。 |
 | [docs/performance/2026-10-22-backend-hybrid/stress20-summary.json](../docs/performance/2026-10-22-backend-hybrid/stress20-summary.json) | 合并前20分钟双库混合负载、HTTP、CPU和持久化汇总。 |
+| [docs/performance/2026-10-22-mysql-idle-pool/README.md](../docs/performance/2026-10-22-mysql-idle-pool/README.md) | MySQL 空闲连接池实验的方法、结果和适用限制 |
+| [docs/performance/2026-10-22-mysql-idle-pool/run-39761531896.jsonl](../docs/performance/2026-10-22-mysql-idle-pool/run-39761531896.jsonl) | MySQL 空闲连接池实验的原始记录（run-39761531896.jsonl） |
+| [docs/performance/2026-10-22-mysql-idle-pool/run-39761812620.jsonl](../docs/performance/2026-10-22-mysql-idle-pool/run-39761812620.jsonl) | MySQL 空闲连接池实验的原始记录（run-39761812620.jsonl） |
+| [docs/performance/2026-10-22-mysql-roundtrips/README.md](../docs/performance/2026-10-22-mysql-roundtrips/README.md) | MySQL SQL 往返与队列深度实验的方法、结果和适用限制 |
+| [docs/performance/2026-10-22-mysql-roundtrips/run-39754525915.jsonl](../docs/performance/2026-10-22-mysql-roundtrips/run-39754525915.jsonl) | MySQL SQL 往返与队列深度实验的原始记录（run-39754525915.jsonl） |
+| [docs/performance/2026-10-22-mysql-roundtrips/run-39755296645.jsonl](../docs/performance/2026-10-22-mysql-roundtrips/run-39755296645.jsonl) | MySQL SQL 往返与队列深度实验的原始记录（run-39755296645.jsonl） |
+| [docs/performance/2026-10-22-mysql-roundtrips/run-39755682111.jsonl](../docs/performance/2026-10-22-mysql-roundtrips/run-39755682111.jsonl) | MySQL SQL 往返与队列深度实验的原始记录（run-39755682111.jsonl） |
 | [docs/preview-remediation-validation.json](../docs/preview-remediation-validation.json) | preview-remediation-validation.json：为 docs 提供构建、依赖或运行配置 |
 | [docs/releases/2.0.1.md](../docs/releases/2.0.1.md) | 2.0.1 Preview 历史发行说明，记录当时的功能范围和附件。 |
 | [docs/releases/2.0.2.md](../docs/releases/2.0.2.md) | 2.0.2 历史 Windows 与 Linux 附件发行说明，不代表当前 preview 源码版本。 |
@@ -126,6 +142,7 @@
 | [docs/releases/2.0.5-cleanup.1.md](../docs/releases/2.0.5-cleanup.1.md) | 2.0.5 cleanup.1：记录对应模块的使用、架构或维护说明 |
 | [docs/releases/2.0.5.md](../docs/releases/2.0.5.md) | 2.0.5 源码版发布说明及安全边界 |
 | [docs/releases/2.0.6.md](../docs/releases/2.0.6.md) | 汇总 UI、照护闭环、双库改进、升级步骤和验收边界 |
+| [docs/releases/2.1.0.md](../docs/releases/2.1.0.md) | 说明 2.1.0 完整交付、后端改进、升级步骤、配置及验证限制 |
 | [docs/runbooks/backup-restore.md](../docs/runbooks/backup-restore.md) | backup restore：记录对应模块的使用、架构或维护说明 |
 | [docs/runbooks/release.md](../docs/runbooks/release.md) | release：记录对应模块的使用、架构或维护说明 |
 | [docs/runbooks/rollback.md](../docs/runbooks/rollback.md) | rollback：记录对应模块的使用、架构或维护说明 |
@@ -153,7 +170,6 @@
 | [evidence/cluster-tests-summary.json](../evidence/cluster-tests-summary.json) | 附件提供的集群测试摘要。 |
 | [evidence/health-cluster-evidence.json](../evidence/health-cluster-evidence.json) | 附件提供的健康上报持久化计数证据。 |
 | [evidence/notification-cluster-evidence.json](../evidence/notification-cluster-evidence.json) | 附件提供的通知集群计数证据。 |
-| [memory-scheduling-matrix.json](../memory-scheduling-matrix.json) | 附件提供的内存和调度参数矩阵。 |
 | [scripts/bootstrap-admin.py](../scripts/bootstrap-admin.py) | 开发、测试、迁移或运维辅助脚本：bootstrap／admin |
 | [scripts/cluster-loadtest.py](../scripts/cluster-loadtest.py) | 多实例 HTTP 合成负载与性能统计工具 |
 | [scripts/fixtures/go123-lowlevel/perfload.go](../scripts/fixtures/go123-lowlevel/perfload.go) | 有界到达、排队及 GC 采样的独立 CPU 压测进程。 |
@@ -194,6 +210,13 @@
 | [智慧养老手表管理系统/backend/go.mod](../智慧养老手表管理系统/backend/go.mod) | Go 后端直接与间接模块依赖及语言最低版本（智慧养老手表管理系统/backend/go.mod） |
 | [智慧养老手表管理系统/backend/go.sum](../智慧养老手表管理系统/backend/go.sum) | Go 模块内容与版本校验摘要（智慧养老手表管理系统/backend/go.sum） |
 | [智慧养老手表管理系统/backend/internal/analytics/backfill.go](../智慧养老手表管理系统/backend/internal/analytics/backfill.go) | 在业务行共享锁下分批生成分析快照事件 |
+| [智慧养老手表管理系统/backend/internal/analytics/batch.go](../智慧养老手表管理系统/backend/internal/analytics/batch.go) | 批量投影事务 Outbox 事件，PG 成功后确认 MySQL 并保留幂等重放 |
+| [智慧养老手表管理系统/backend/internal/analytics/batch_test.go](../智慧养老手表管理系统/backend/internal/analytics/batch_test.go) | 验证批量分析投影的事务 Outbox、重放与故障保留行为 |
+| [智慧养老手表管理系统/backend/internal/analytics/consumer_ab_test.go](../智慧养老手表管理系统/backend/internal/analytics/consumer_ab_test.go) | 比较分析 Outbox 消费实现的隔离真实数据库性能 |
+| [智慧养老手表管理系统/backend/internal/analytics/mysql_roundtrip_ab_test.go](../智慧养老手表管理系统/backend/internal/analytics/mysql_roundtrip_ab_test.go) | 比较 MySQL 驱动参数处理的查询及写入往返成本 |
+| [智慧养老手表管理系统/backend/internal/analytics/producer_ab_test.go](../智慧养老手表管理系统/backend/internal/analytics/producer_ab_test.go) | 比较分析 Outbox 生产路径的隔离数据库性能 |
+| [智慧养老手表管理系统/backend/internal/analytics/queue_depth_ab_test.go](../智慧养老手表管理系统/backend/internal/analytics/queue_depth_ab_test.go) | 测量不同 Outbox 积压量下 COUNT 与 EXISTS 查询的成本 |
+| [智慧养老手表管理系统/backend/internal/analytics/runner_backlog_test.go](../智慧养老手表管理系统/backend/internal/analytics/runner_backlog_test.go) | 通过真实 MySQL 事件和独立 PG 投影验证后台积压排空 |
 | [智慧养老手表管理系统/backend/internal/analytics/sync.go](../智慧养老手表管理系统/backend/internal/analytics/sync.go) | 从 MySQL 持久化 outbox 幂等同步分析投影至 PostgreSQL |
 | [智慧养老手表管理系统/backend/internal/analytics/sync_test.go](../智慧养老手表管理系统/backend/internal/analytics/sync_test.go) | 双库同步集成测试：验证 PG 故障、队列保留、恢复重放、删除墓碑和回填。 |
 | [智慧养老手表管理系统/backend/internal/apidoc/aliases.json](../智慧养老手表管理系统/backend/internal/apidoc/aliases.json) | Go 后端模块：aliases |
@@ -219,10 +242,14 @@
 | [智慧养老手表管理系统/backend/internal/db/db.go](../智慧养老手表管理系统/backend/internal/db/db.go) | 旧 PostgreSQL 数据库连接池、迁移和事务封装；当前核心业务库由 MySQL database.go 管理。 |
 | [智慧养老手表管理系统/backend/internal/db/db_test.go](../智慧养老手表管理系统/backend/internal/db/db_test.go) | db_test 自动化回归或验收脚本：检查对应模块的行为边界 |
 | [智慧养老手表管理系统/backend/internal/db/dbtest/mysql.go](../智慧养老手表管理系统/backend/internal/db/dbtest/mysql.go) | 测试专用随机 MySQL 数据库的创建、迁移与清理 |
+| [智慧养老手表管理系统/backend/internal/db/idle_pool_ab_test.go](../智慧养老手表管理系统/backend/internal/db/idle_pool_ab_test.go) | 用突发参数化查询测量 MySQL 空闲连接保留与池等待 |
 | [智慧养老手表管理系统/backend/internal/db/mysql_migrations.go](../智慧养老手表管理系统/backend/internal/db/mysql_migrations.go) | 连接级迁移锁、校验和与可恢复 DDL 执行 |
 | [智慧养老手表管理系统/backend/internal/db/performance_test.go](../智慧养老手表管理系统/backend/internal/db/performance_test.go) | 验证后端 performance／test 的行为、边界或回归 |
+| [智慧养老手表管理系统/backend/internal/db/pool_settings_test.go](../智慧养老手表管理系统/backend/internal/db/pool_settings_test.go) | 验证 MySQL 空闲连接配置的默认值、零值与上下界 |
 | [智慧养老手表管理系统/backend/internal/db/probe_integration_test.go](../智慧养老手表管理系统/backend/internal/db/probe_integration_test.go) | 业务连接池被占用时独立健康探测的 MySQL 回归测试 |
 | [智慧养老手表管理系统/backend/internal/db/query_plan_test.go](../智慧养老手表管理系统/backend/internal/db/query_plan_test.go) | 验证后端 query／plan／test 的行为、边界或回归 |
+| [智慧养老手表管理系统/backend/internal/db/query_translate_mysql_test.go](../智慧养老手表管理系统/backend/internal/db/query_translate_mysql_test.go) | 用隔离真实 MySQL 验证正则间距、重复参数、字面量及 now 函数的翻译结果 |
+| [智慧养老手表管理系统/backend/internal/db/query_translate_test.go](../智慧养老手表管理系统/backend/internal/db/query_translate_test.go) | 验证 PostgreSQL 到 MySQL 翻译中的参数、函数、正则、RETURNING 及拒绝边界 |
 | [智慧养老手表管理系统/backend/internal/db/readiness_integration_test.go](../智慧养老手表管理系统/backend/internal/db/readiness_integration_test.go) | 验证连接池耗尽、真实断线及恢复时的独立 MySQL 探测。 |
 | [智慧养老手表管理系统/backend/internal/db/transfer.go](../智慧养老手表管理系统/backend/internal/db/transfer.go) | 只读读取旧 PostgreSQL 业务数据，并在事务中导入空 MySQL 主库 |
 | [智慧养老手表管理系统/backend/internal/db/transfer_integration_test.go](../智慧养老手表管理系统/backend/internal/db/transfer_integration_test.go) | 旧 PostgreSQL 到空 MySQL 导入测试：验证预检、中文与 NULL 保留、拒绝覆盖和事务回滚。 |
@@ -275,6 +302,7 @@
 | [智慧养老手表管理系统/backend/internal/handlers/handler_watch_info.go](../智慧养老手表管理系统/backend/internal/handlers/handler_watch_info.go) | Go 后端按职责拆分的 watch info 模块 |
 | [智慧养老手表管理系统/backend/internal/handlers/handlers.go](../智慧养老手表管理系统/backend/internal/handlers/handlers.go) | 业务路由注册、共享处理器与依赖装配（智慧养老手表管理系统/backend/internal/handlers/handlers.go） |
 | [智慧养老手表管理系统/backend/internal/handlers/health_integration_test.go](../智慧养老手表管理系统/backend/internal/handlers/health_integration_test.go) | health_integration_test 自动化回归或验收脚本：检查对应模块的行为边界 |
+| [智慧养老手表管理系统/backend/internal/handlers/health_lock_order_test.go](../智慧养老手表管理系统/backend/internal/handlers/health_lock_order_test.go) | 验证设备锁顺序及并发归属、密钥、停用变化下的健康写入回滚 |
 | [智慧养老手表管理系统/backend/internal/handlers/integration_test.go](../智慧养老手表管理系统/backend/internal/handlers/integration_test.go) | 后端业务集成测试：隔离测试数据库中的鉴权、事务与接口回归；可用 MySQL 或旧 PostgreSQL 测试配置。 |
 | [智慧养老手表管理系统/backend/internal/handlers/mysql_endurance_test.go](../智慧养老手表管理系统/backend/internal/handlers/mysql_endurance_test.go) | 真 MySQL 合成健康数据与规则扫描耐久测试 |
 | [智慧养老手表管理系统/backend/internal/handlers/platform_integration_test.go](../智慧养老手表管理系统/backend/internal/handlers/platform_integration_test.go) | 验证后端 platform／integration／test 的行为、边界或回归 |
@@ -295,6 +323,7 @@
 | [智慧养老手表管理系统/backend/internal/health/clock.go](../智慧养老手表管理系统/backend/internal/health/clock.go) | Go 后端模块：clock |
 | [智慧养老手表管理系统/backend/internal/health/clock_test.go](../智慧养老手表管理系统/backend/internal/health/clock_test.go) | 验证后端 clock／test 的行为、边界或回归 |
 | [智慧养老手表管理系统/backend/internal/health/daily.go](../智慧养老手表管理系统/backend/internal/health/daily.go) | Go 后端模块：daily |
+| [智慧养老手表管理系统/backend/internal/health/daily_invalidation_perf_test.go](../智慧养老手表管理系统/backend/internal/health/daily_invalidation_perf_test.go) | 验证日缓存仅失效对应老人及事务回滚不泄露失效状态 |
 | [智慧养老手表管理系统/backend/internal/health/identity.go](../智慧养老手表管理系统/backend/internal/health/identity.go) | 保持原 JSON 身份字节的 SHA-256 快速路径。 |
 | [智慧养老手表管理系统/backend/internal/health/identity_test.go](../智慧养老手表管理系统/backend/internal/health/identity_test.go) | 对照原身份编码并验证 Unicode、转义和长字符串。 |
 | [智慧养老手表管理系统/backend/internal/health/performance_test.go](../智慧养老手表管理系统/backend/internal/health/performance_test.go) | 验证后端 performance／test 的行为、边界或回归 |
@@ -379,6 +408,7 @@
 | [智慧养老手表管理系统/desktop/build.rs](../智慧养老手表管理系统/desktop/build.rs) | Tauri 编译入口与后端哈希变更跟踪（智慧养老手表管理系统/desktop/build.rs） |
 | [智慧养老手表管理系统/desktop/capabilities/desktop.json](../智慧养老手表管理系统/desktop/capabilities/desktop.json) | 仅主窗口及本机页面可用的最小 Tauri 权限集合（智慧养老手表管理系统/desktop/capabilities/desktop.json） |
 | [智慧养老手表管理系统/desktop/package-lock.json](../智慧养老手表管理系统/desktop/package-lock.json) | 桌面 package-lock.json 配置与资源（智慧养老手表管理系统/desktop/package-lock.json） |
+| [智慧养老手表管理系统/desktop/package-release.ps1](../智慧养老手表管理系统/desktop/package-release.ps1) | 从同一构建生成安装、免安装、源码和校验清单，并在隔离目录验证安装启动和卸载 |
 | [智慧养老手表管理系统/desktop/package.json](../智慧养老手表管理系统/desktop/package.json) | 原生应用名称、版本、主进程入口和项目许可元数据。（智慧养老手表管理系统/desktop/package.json） |
 | [智慧养老手表管理系统/desktop/permissions/setup.toml](../智慧养老手表管理系统/desktop/permissions/setup.toml) | 仅授权管理员初始化命令的 Tauri 自定义权限（智慧养老手表管理系统/desktop/permissions/setup.toml） |
 | [智慧养老手表管理系统/desktop/sign.ps1](../智慧养老手表管理系统/desktop/sign.ps1) | 正式证书或本机自签名 Authenticode 签署与状态记录（智慧养老手表管理系统/desktop/sign.ps1） |
@@ -529,6 +559,7 @@
 | [智慧养老手表管理系统/oldIot/src/charts.js](../智慧养老手表管理系统/oldIot/src/charts.js) | 按需图表模块与视图所属实例管理，负责响应式重绘、释放及卸载保护。（智慧养老手表管理系统/oldIot/src/charts.js） |
 | [智慧养老手表管理系统/oldIot/src/components/CareInbox.vue](../智慧养老手表管理系统/oldIot/src/components/CareInbox.vue) | 后台首页待处理 SOS 事件的任务优先组件 |
 | [智慧养老手表管理系统/oldIot/src/components/CareOperationsPanel.vue](../智慧养老手表管理系统/oldIot/src/components/CareOperationsPanel.vue) | 工作台值守进程健康、通知异常、岗位分配及审计面板 |
+| [智慧养老手表管理系统/oldIot/src/components/DatabaseNotice.test.ts](../智慧养老手表管理系统/oldIot/src/components/DatabaseNotice.test.ts) | 验证配置错误、暂时断线及服务可用状态的页面提示与诊断刷新 |
 | [智慧养老手表管理系统/oldIot/src/components/DatabaseNotice.vue](../智慧养老手表管理系统/oldIot/src/components/DatabaseNotice.vue) | 数据库不可用时的就地提醒，保持当前页面可操作（智慧养老手表管理系统/oldIot/src/components/DatabaseNotice.vue） |
 | [智慧养老手表管理系统/oldIot/src/components/FamilySlider.vue](../智慧养老手表管理系统/oldIot/src/components/FamilySlider.vue) | 家属健康、活动、位置和个人空间的响应式导航。（智慧养老手表管理系统/oldIot/src/components/FamilySlider.vue） |
 | [智慧养老手表管理系统/oldIot/src/components/Header.vue](../智慧养老手表管理系统/oldIot/src/components/Header.vue) | 公共品牌栏、用户显示、大字开关与服务端退出。（智慧养老手表管理系统/oldIot/src/components/Header.vue） |
@@ -588,8 +619,3 @@
 | [智慧养老手表管理系统/watch-sim/watch-sim.config.json](../智慧养老手表管理系统/watch-sim/watch-sim.config.json) | 模拟手表的服务地址与设备凭据配置模板，使用前填入实际设备密钥。（智慧养老手表管理系统/watch-sim/watch-sim.config.json） |
 | [智慧养老手表管理系统/watch-sim/watch-sim.js](../智慧养老手表管理系统/watch-sim/watch-sim.js) | 模拟手表登录、心跳与数据上报的 Node 联调入口；不代表真实硬件验证。（智慧养老手表管理系统/watch-sim/watch-sim.js） |
 | [智慧养老手表管理系统/watch-sim/watch-sim.test.cjs](../智慧养老手表管理系统/watch-sim/watch-sim.test.cjs) | 手表模拟器接口协议和请求行为的自动化测试，不代替真实硬件联调。 |
-| [智慧养老手表管理系统/desktop/package-release.ps1](../智慧养老手表管理系统/desktop/package-release.ps1) | 从同一构建生成安装、免安装、源码和校验清单，并在隔离目录验证安装启动和卸载 |
-| [docs/releases/2.1.0.md](../docs/releases/2.1.0.md) | 说明 2.1.0 完整交付、后端改进、升级步骤、配置及验证限制 |
-| [智慧养老手表管理系统/backend/internal/db/query_translate_test.go](../智慧养老手表管理系统/backend/internal/db/query_translate_test.go) | 验证 PostgreSQL 到 MySQL 翻译中的参数、函数、正则、RETURNING 及拒绝边界 |
-| [智慧养老手表管理系统/backend/internal/db/query_translate_mysql_test.go](../智慧养老手表管理系统/backend/internal/db/query_translate_mysql_test.go) | 用隔离真实 MySQL 验证正则间距、重复参数、字面量及 now 函数的翻译结果 |
-| [智慧养老手表管理系统/oldIot/src/components/DatabaseNotice.test.ts](../智慧养老手表管理系统/oldIot/src/components/DatabaseNotice.test.ts) | 验证配置错误、暂时断线及服务可用状态的页面提示与诊断刷新 |

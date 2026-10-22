@@ -51,7 +51,7 @@ def main():
     ap.add_argument('--modes', default='baseline')
     ap.add_argument('--gogc', default='100')
     ap.add_argument('--workers', type=int, default=4)
-    ap.add_argument('--output', default='deep-hardware-results.json')
+    ap.add_argument('--output', default='docs/performance/2026-10-20-go123/deep-hardware-results.json')
     args=ap.parse_args()
     env={**os.environ,'GOPROXY':'off','GOTOOLCHAIN':'local'}
     if 'go1.23.' not in subprocess.check_output(['go','version'],text=True):

@@ -1,6 +1,6 @@
 # 实现架构 · Tauri / Go / Vue / MySQL / PostgreSQL
 
-本文与当前 `preview` 源码对应，解释实际进程、协议、数据和构建路径。产品入口见 [README](../README.md)，整体关系见 [architecture.md](../architecture.md)，取代旧桌面设计的决定见 [ADR-0006](decisions/0006-tauri-go-postgres.md)。
+本文与当前 `preview` 源码对应，解释实际进程、协议、数据和构建路径。产品入口见 [README](../README.md)，整体关系见 [架构总览](architecture/overview.md)，取代旧桌面设计的决定见 [ADR-0006](decisions/0006-tauri-go-postgres.md)。
 
 当前本地补丁采用 **MySQL 业务主库 + PG 异步分析库**。下述进程和鉴权边界保留，旧 PG 单库迁移描述属于兼容历史；当前双库职责、配置及恢复流程以 [DUAL_DATABASES](DUAL_DATABASES.md) 为准。
 

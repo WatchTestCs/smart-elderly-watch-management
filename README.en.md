@@ -35,8 +35,8 @@ SQL translation also handles `~` without surrounding spaces and preserves quoted
 | Path | Purpose |
 | --- | --- |
 | [.github/](.github/) | Security reporting, dependency updates, pull-request templates and automation workflows. |
-| [deploy/](deploy/) | Database templates and a [complete Compose stack](deploy/platform.compose.yml) with Go app, Nginx gateway and Prometheus, plus operations configuration. |
-| [docs/](docs/) | Setup, architecture, migrations, care operations, historical releases and the [file-by-file index](docs/FILES.md). |
+| [deploy/](deploy/) | Database templates and a [complete Compose stack](deploy/platform.compose.yml) with Go app, Nginx gateway and Prometheus, plus operations configuration and the [Dockerfile](deploy/Dockerfile). |
+| [docs/](docs/) | Setup, the [architecture overview](docs/architecture/overview.md), migrations, care operations, historical releases and the [file-by-file index](docs/FILES.md). |
 | [tests/ui/](tests/ui/) | Dependency-free browser accessibility smoke check. |
 | [智慧养老手表管理系统/](智慧养老手表管理系统/README.md) | Buildable desktop project containing Tauri, the Go backend, Vue frontend and watch simulator. |
 | [.gitignore](.gitignore) | Excludes dependency caches, databases, build output and private keys. |
@@ -45,7 +45,8 @@ SQL translation also handles `~` without surrounding spaces and preserves quoted
 | [LICENSE](LICENSE) | Repository MIT license and copyright notice. |
 | [README.en.md](README.en.md) | English project overview and technical/download entry points. |
 | [README.md](README.md) | Chinese project homepage and current source entry point. |
-| [architecture.md](architecture.md) | Root-level overview of system components and data flow. |
+
+Historical performance reports and raw data from 2026-10-20 are grouped under [Go 1.23 performance records](docs/performance/2026-10-20-go123/README.md). The root retains project entry points and repository-wide files.
 
 ## 2.1.0 Setup, portable and source
 
@@ -248,7 +249,7 @@ Include version/commit, exact filename, OS, database readiness and redacted repr
 | --- | --- |
 | Source and historical packages | [Artifact index](docs/DOWNLOADS.md) · [About text](docs/ABOUT.md) |
 | Configuration and migration | [Dual databases](docs/DUAL_DATABASES.md) · [Setup](docs/SETUP.md) |
-| Architecture and care | [Overview](architecture.md) · [Implementation](docs/ARCHITECTURE.md) · [Care deployment](docs/CARE_SERVICE_DEPLOYMENT.md) |
+| Architecture and care | [Overview](docs/architecture/overview.md) · [Implementation](docs/ARCHITECTURE.md) · [Care deployment](docs/CARE_SERVICE_DEPLOYMENT.md) |
 | Development and verification | [Project](智慧养老手表管理系统/README.md) · [Frontend](智慧养老手表管理系统/oldIot/README.md) · [Backend](智慧养老手表管理系统/backend/README.md) · [Testing](docs/TESTING.md) |
 | Operations and file responsibilities | [Backup/restore](docs/runbooks/backup-restore.md) · [File index](docs/FILES.md) |
 | Community and history | [Contributing](CONTRIBUTING.md) · [Support](docs/SUPPORT.md) · [Changelog](CHANGELOG.md) · [Historical decisions](docs/decisions/README.md) |

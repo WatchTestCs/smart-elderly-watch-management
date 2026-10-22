@@ -14,7 +14,7 @@ Base contributions on `preview` and select `preview` as the pull request base. D
 
 ## Before changing code / 开始前
 
-1. Read the [architecture overview](architecture.md), the affected implementation, and related [ADRs](docs/decisions/README.md).
+1. Read the [architecture overview](docs/architecture/overview.md), the affected implementation, and related [ADRs](docs/decisions/README.md).
 2. Check existing issues and use the [reporting templates](docs/SUPPORT.md). Discuss substantial changes to deployment, database ownership, or trust boundaries before implementing them.
 3. Keep unrelated refactors, dependency upgrades, formatting, and generated files out of the change.
 

@@ -29,7 +29,7 @@ services:
       retries: 20
     restart: unless-stopped
   app:
-    build: {context: "..", dockerfile: Dockerfile}
+    build: {context: "..", dockerfile: deploy/Dockerfile}
     environment:
       MYSQL_DSN: suining:${MYSQL_PASSWORD}@tcp(mysql:3306)/suining
       PG_ANALYTICS_URL: postgres://suining_analytics:${PG_PASSWORD}@postgres:5432/suining_analytics?sslmode=disable

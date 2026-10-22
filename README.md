@@ -38,8 +38,8 @@ SQL 翻译同时修复无空格 `~` 正则匹配，并保留引号内的 `now()`
 | 路径 | 用途 |
 | --- | --- |
 | [.github/](.github/) | 漏洞披露、依赖更新、PR 模板和自动检查工作流。 |
-| [deploy/](deploy/) | 双库部署模板、[完整平台 Compose](deploy/platform.compose.yml)（Go 应用、Nginx、Prometheus）及运维配置。 |
-| [docs/](docs/) | 使用、架构、迁移、照护运维、历史版本与[逐文件职责索引](docs/FILES.md)。 |
+| [deploy/](deploy/) | 双库部署模板、[完整平台 Compose](deploy/platform.compose.yml)（Go 应用、Nginx、Prometheus）及运维配置；[Dockerfile](deploy/Dockerfile) 也位于此目录。 |
+| [docs/](docs/) | 使用、[架构总览](docs/architecture/overview.md)、迁移、照护运维、历史版本与[逐文件职责索引](docs/FILES.md)。 |
 | [tests/ui/](tests/ui/) | 无外部依赖的浏览器可访问性冒烟检查。 |
 | [智慧养老手表管理系统/](智慧养老手表管理系统/README.md) | 可构建的桌面工程：Tauri、Go 后端、Vue 前端和手表模拟器。 |
 | [.gitignore](.gitignore) | 排除依赖缓存、数据库、构建产物与私钥。 |
@@ -48,7 +48,8 @@ SQL 翻译同时修复无空格 `~` 正则匹配，并保留引号内的 `now()`
 | [LICENSE](LICENSE) | 仓库 MIT 许可和版权声明。 |
 | [README.en.md](README.en.md) | 英文项目介绍、技术栈、下载和部署入口。 |
 | [README.md](README.md) | 中文项目首页与当前源码入口。 |
-| [architecture.md](architecture.md) | 根目录的系统组件和数据流概览。 |
+
+2026-10-20 的历史性能报告和原始数据统一归档在 [Go 1.23 性能资料](docs/performance/2026-10-20-go123/README.md)，根目录仅保留项目入口与仓库级文件。
 
 ## 2.1.0 安装版、免安装版与源码
 
@@ -314,7 +315,7 @@ go test -race -count=1 -timeout 600s ./...
 | --- | --- |
 | 源码下载与历史附件 | [附件索引](docs/DOWNLOADS.md) · [About 文案](docs/ABOUT.md) |
 | 当前配置、双库与迁移 | [双库指南](docs/DUAL_DATABASES.md) · [使用说明](docs/SETUP.md) |
-| 架构与照护闭环 | [架构总览](architecture.md) · [实现协议](docs/ARCHITECTURE.md) · [照护部署](docs/CARE_SERVICE_DEPLOYMENT.md) |
+| 架构与照护闭环 | [架构总览](docs/architecture/overview.md) · [实现协议](docs/ARCHITECTURE.md) · [照护部署](docs/CARE_SERVICE_DEPLOYMENT.md) |
 | 开发与验证 | [工程说明](智慧养老手表管理系统/README.md) · [前端](智慧养老手表管理系统/oldIot/README.md) · [后端](智慧养老手表管理系统/backend/README.md) · [测试分层](docs/TESTING.md) · [最新性能证据](docs/performance/2026-10-22-backend-hybrid/README.md) · [历史性能证据](docs/performance/2026-10-21-go123/README.md) |
 | 备份与文件职责 | [备份恢复](docs/runbooks/backup-restore.md) · [逐文件索引](docs/FILES.md) |
 | 贡献、支持与历史 | [贡献指南](CONTRIBUTING.md) · [支持说明](docs/SUPPORT.md) · [更新日志](CHANGELOG.md) · [历史决定](docs/decisions/README.md) |

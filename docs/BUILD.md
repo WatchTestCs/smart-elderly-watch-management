@@ -21,3 +21,13 @@ cd 智慧养老手表管理系统
 以下仅为历史 2.0.2 轻量打包验收，不代表 2.0.6：安装包约 28.82 MiB，已实际静默安装、启动已安装的 Tauri 软件、确认无数据库仍可打开、退出结束 Go 服务，卸载保留测试用户资料。生成的 NSIS 配置为 `downloadBootstrapper` 和 `/silent`，嵌入引导程序与离线安装器路径均为空；缺失时使用微软 HTTPS 下载地址，下载或执行失败会中止安装。本机已有 WebView2，未执行干净系统上的缺失补装测试，未卸载系统共享组件。该附件曾按当时授权替换到 2.0.2 Release。2.0.6 本地构建与本次整合源码的边界见 [版本说明](releases/2.0.6.md) 及 [整合记录](INTEGRATION_2.0.6.md)。
 
 2.1.0 的 `package-release.ps1` 在隔离临时目录检查免安装和安装后启动、内嵌页面、父进程终止清理及卸载保留资料；附件保存在 `outputs/v2.1.0-preview/release`。使用有 WebView2 的 Windows 构建环境。该检查不连接生产数据库，也不代表完整可视验收。
+
+## 容器构建入口
+
+Dockerfile 位于 `deploy/Dockerfile`，构建上下文仍是仓库根目录，`.dockerignore` 保留在根目录。从仓库根目录执行：
+
+```sh
+docker build -f deploy/Dockerfile -t suining:preview .
+```
+
+`deploy/platform.compose.yml` 已使用同一 Dockerfile 路径；完整平台配置与密钥准备见项目 README。

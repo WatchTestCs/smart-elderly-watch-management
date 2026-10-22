@@ -79,7 +79,7 @@ go run ./cmd/server
 - 规则证据 JSON 现在按**设备处理调用**复用一个私有 512 B 缓冲区；每次 `tx.Exec` 同步返回后才允许复用，异步消费者不得持有该字节切片。序列化失败或需要兼容编码时仍回退标准库。
 - Linux **cgroup v2** 下可以设置 `SUINING_RUNTIME_AUTOTUNE=1`，在进程启动时读取 `cpu.max` 和 `memory.max`：仅当管理员没有设置 `GOMAXPROCS` 或 `GOMEMLIMIT` 时，分别设置并发 Go P 上限与保留约 30% 余量的 Go 内存**软限制**。默认关闭；Windows/非 cgroup v2 不改变设置。不要把内存软限额当成防 OOM 保证，也不会设置 CPU 亲和性或线程绑核。
 - 容器 CPU 配额会限制可用时间片，Go 1.23 的默认 `GOMAXPROCS` 可能未考虑配额；线程数过高会增加争用和调度开销。用户显式 `GOMAXPROCS=4` 等值始终优先。没有通过性能验证前，不自动修改 `GOGC`、NUMA 亲和性、CPU affinity 或使用 `runtime.LockOSThread`。
-- 可在项目根目录执行 `python3 scripts/go123-memory-scheduling.py`：运行独立、离线、标准库规则／健康代码的正确性检查，并对 GOMAXPROCS=1、2、4、8 与 GOMEMLIMIT=off/128MiB 做对照。输出 `memory-scheduling-matrix.json`。数字**不包含 MySQL/HTTP/通知，不能代表服务端吞吐或延迟 SLA**。
+- 可在项目根目录执行 `python3 scripts/go123-memory-scheduling.py`：运行独立、离线、标准库规则／健康代码的正确性检查，并对 GOMAXPROCS=1、2、4、8 与 GOMEMLIMIT=off/128MiB 做对照。输出 `docs/performance/2026-10-20-go123/memory-scheduling-matrix.json`。数字**不包含 MySQL/HTTP/通知，不能代表服务端吞吐或延迟 SLA**。
 
 ## 事务与分析数据流
 

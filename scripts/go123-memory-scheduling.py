@@ -72,7 +72,7 @@ def run():
                             'ops_per_second': round(1e9 / float(nano)),
                             'bytes_per_op': int(b), 'allocs_per_op': int(allocs),
                         })
-    path = ROOT / 'memory-scheduling-matrix.json'
+    path = ROOT / 'docs/performance/2026-10-20-go123/memory-scheduling-matrix.json'
     path.write_text(json.dumps({'go': version, 'notes': 'offline compute only; ns/op is aggregate inverse throughput, not p99 latency', 'results': results}, indent=2), encoding='utf-8')
     print(f'Wrote {path} ({len(results)} measurements)', flush=True)
 
