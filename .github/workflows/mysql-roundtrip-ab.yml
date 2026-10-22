@@ -41,15 +41,7 @@ jobs:
           TEST_MYSQL_DSN: root:ci_root_only@tcp(localhost:3306)/suining_test
         run: |
           set -euo pipefail
-          go test -count=1 -run '^Test(MySQLRoundTripAB|AnalyticsQueueDepthAB) -v -timeout 12m ./internal/analytics | tee "${RUNNER_TEMP}/mysql-roundtrip-ab.log"
-      - name: Save complete raw output
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: mysql-roundtrip-ab
-          path: ${{ runner.temp }}/mysql-roundtrip-ab.log
-          if-no-files-found: warn
- -v -timeout 12m ./internal/analytics | tee "${RUNNER_TEMP}/mysql-roundtrip-ab.log"
+          go test -count=1 -run '^Test(MySQLRoundTripAB|AnalyticsQueueDepthAB)$' -v -timeout 12m ./internal/analytics | tee "${RUNNER_TEMP}/mysql-roundtrip-ab.log"
       - name: Save complete raw output
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
