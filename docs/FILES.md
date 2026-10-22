@@ -1,6 +1,6 @@
 # preview 分支文件职责索引
 
-本索引覆盖当前提交的 **613 个文件**（更新：2026-10-22）。保留既有人工说明；来源附件与历史证据不代表当前版本的全套验收。
+本索引覆盖当前提交的 **608 个文件**（更新：2026-10-22）。保留既有人工说明；来源附件与历史证据不代表当前版本的全套验收。
 
 [项目 README](../README.md) · [文件职责数据](file-descriptions.json) · [历史性能资料](performance/2026-10-20-go123/README.md) · [最新性能报告](performance/2026-10-22-backend-hybrid/README.md)
 
@@ -92,15 +92,10 @@
 | [docs/decisions/README.md](../docs/decisions/README.md) | README：记录对应模块的使用、架构或维护说明 |
 | [docs/file-descriptions.json](../docs/file-descriptions.json) | 当前版本逐文件中文职责索引，供工具与发布校验使用（docs/file-descriptions.json） |
 | [docs/performance/2026-10-20-go123/DEEP-LOWLEVEL-PERFORMANCE-REPORT.md](../docs/performance/2026-10-20-go123/DEEP-LOWLEVEL-PERFORMANCE-REPORT.md) | 附件原始持续 CPU 负载、GC 与内存实验报告；保留来源结论，不代表本轮端到端验收。 |
-| [docs/performance/2026-10-20-go123/GO123-PERFORMANCE-REPORT.md](../docs/performance/2026-10-20-go123/GO123-PERFORMANCE-REPORT.md) | 附件原始 Go 1.23 核心性能报告与未验证边界。 |
-| [docs/performance/2026-10-20-go123/PERFORMANCE-MEMORY-20261020.md](../docs/performance/2026-10-20-go123/PERFORMANCE-MEMORY-20261020.md) | 附件原始内存和调度取舍记录。 |
-| [docs/performance/2026-10-20-go123/PERFORMANCE-POLISH-REPORT.md](../docs/performance/2026-10-20-go123/PERFORMANCE-POLISH-REPORT.md) | 附件原始序列化、规则求值和分配优化对照。 |
-| [docs/performance/2026-10-20-go123/PERFORMANCE-TOP-20261020.md](../docs/performance/2026-10-20-go123/PERFORMANCE-TOP-20261020.md) | 附件原始热点分析及性能目标说明。 |
 | [docs/performance/2026-10-20-go123/README.md](../docs/performance/2026-10-20-go123/README.md) | 索引 2026-10-20 的 Go 1.23 历史性能报告、原始数据及复现脚本 |
 | [docs/performance/2026-10-20-go123/deep-hardware-raw-results.json](../docs/performance/2026-10-20-go123/deep-hardware-raw-results.json) | 附件提供的低层性能原始数据；不是本机新测结果。 |
 | [docs/performance/2026-10-20-go123/memory-scheduling-matrix.json](../docs/performance/2026-10-20-go123/memory-scheduling-matrix.json) | 附件提供的内存和调度参数矩阵。 |
 | [docs/performance/2026-10-21-go123/FIRST_20MIN_INCORRECT_DEMONSTRATION.md](../docs/performance/2026-10-21-go123/FIRST_20MIN_INCORRECT_DEMONSTRATION.md) | 首次中止长压测错误演示，不构成有效性能基准 |
-| [docs/performance/2026-10-21-go123/INTERRUPTED-MYSQL-SOAK.md](../docs/performance/2026-10-21-go123/INTERRUPTED-MYSQL-SOAK.md) | 中止测试与独立耐久复测的证据说明 |
 | [docs/performance/2026-10-21-go123/README.md](../docs/performance/2026-10-21-go123/README.md) | Go 1.23 性能证据导航和测试边界 |
 | [docs/performance/2026-10-21-go123/bench-core.txt](../docs/performance/2026-10-21-go123/bench-core.txt) | Go 1.23 CPU 或竞态检测原始日志：bench-core.txt |
 | [docs/performance/2026-10-21-go123/coreload-gogc100-repeat.json](../docs/performance/2026-10-21-go123/coreload-gogc100-repeat.json) | Go 1.23 CPU/GC 隔离负载原始数据；不是数据库吞吐 |

@@ -277,7 +277,7 @@ TEST_DATABASE_URL='专用测试 PostgreSQL URL' \
 go test -race -count=1 -timeout 600s ./...
 ```
 
-缺少相应 DSN 时，部分数据库集成用例会跳过；`go test` 返回成功不代表这些被跳过的用例经过验证。**20 分钟耐久测试采用显式 opt-in**，见 [工作流](.github/workflows/mysql-endurance.yml) 与 [中止/复测说明](docs/performance/2026-10-21-go123/INTERRUPTED-MYSQL-SOAK.md)，绝不能在生产库上运行。
+缺少相应 DSN 时，部分数据库集成用例会跳过；`go test` 返回成功不代表这些被跳过的用例经过验证。**20 分钟耐久测试采用显式 opt-in**，见 [工作流](.github/workflows/mysql-endurance.yml) 与 [历史失败与复测记录](docs/performance/2026-10-21-go123/README.md)，绝不能在生产库上运行。
 
 ## 界面与验证
 

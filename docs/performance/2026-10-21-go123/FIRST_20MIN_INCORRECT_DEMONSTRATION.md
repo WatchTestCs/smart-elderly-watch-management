@@ -52,7 +52,7 @@
 
 ## 5. 相关记录
 
-- [中止试验背景与独立复测方法](./INTERRUPTED-MYSQL-SOAK.md)
+- [历史失败与独立复测结果](./README.md)
 - [503/500 源码排查记录](../../MYSQL_503_500_CONTINUATION_20261021.md)
 - [Go 1.23 离线性能数据说明](./README.md)
 - [新的独立 20 分钟 MySQL Actions 测试](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/39622692722)
