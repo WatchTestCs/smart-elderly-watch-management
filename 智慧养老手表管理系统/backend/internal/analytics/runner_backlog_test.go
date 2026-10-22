@@ -2,6 +2,7 @@ package analytics
 
 import (
 	"context"
+	"net/url"
 	"os"
 	"strings"
 	"testing"
@@ -39,6 +40,14 @@ func TestRunnerDrainsSaturatedTransactionalBacklog(t *testing.T) {
 		t.Fatal(err)
 	}
 	cfg.ConnConfig.Database = name
+	// pgxpool.Config.ConnString() retains the original DSN even after editing
+	// ConnConfig.Database. Build the URL explicitly for the temporary database.
+	pgURL, err := url.Parse(dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pgURL.Path = "/" + name
+	pgURL.RawPath = ""
 	pg, err := pgxpool.NewWithConfig(context.Background(), cfg)
 	if err != nil {
 		t.Fatal(err)
@@ -64,7 +73,7 @@ func TestRunnerDrainsSaturatedTransactionalBacklog(t *testing.T) {
 	done := make(chan struct{})
 	start := time.Now()
 	go func() {
-		Run(ctx, primary, cfg.ConnString(), state)
+		Run(ctx, primary, pgURL.String(), state)
 		close(done)
 	}()
 	defer func() {
