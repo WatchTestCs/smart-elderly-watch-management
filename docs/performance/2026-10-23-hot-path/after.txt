@@ -1,0 +1,30 @@
+goos: linux
+goarch: amd64
+pkg: careold-go/internal/db
+cpu: AMD EPYC 9V74 80-Core Processor                
+BenchmarkMySQLQueryBinding/1-4 	36875918	        35.56 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMySQLQueryBinding/1-4 	34873502	        34.80 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMySQLQueryBinding/1-4 	35509326	        33.06 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMySQLQueryBinding/14-4         	34868347	        36.66 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMySQLQueryBinding/14-4         	36286494	        34.15 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMySQLQueryBinding/14-4         	35268278	        34.39 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMySQLQueryBinding/2800-4       	13906292	        76.66 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMySQLQueryBinding/2800-4       	11990666	        89.53 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMySQLQueryBinding/2800-4       	12861421	        89.66 ns/op	       0 B/op	       0 allocs/op
+PASS
+ok  	careold-go/internal/db	12.227s
+goos: linux
+goarch: amd64
+pkg: careold-go/internal/observability
+cpu: AMD EPYC 9V74 80-Core Processor                
+BenchmarkRegistryObserveHTTP-4   	40964088	        33.40 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRegistryObserveHTTP-4   	44914977	        30.27 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRegistryObserveHTTP-4   	41401522	        29.67 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRegistryHTTP-4          	  747350	      1411 ns/op	    1256 B/op	      28 allocs/op
+BenchmarkRegistryHTTP-4          	  922963	      1464 ns/op	    1256 B/op	      28 allocs/op
+BenchmarkRegistryHTTP-4          	  848858	      1394 ns/op	    1256 B/op	      28 allocs/op
+BenchmarkRegistryScrape-4        	    1384	    868086 ns/op	  796104 B/op	    5824 allocs/op
+BenchmarkRegistryScrape-4        	    1470	    845761 ns/op	  796106 B/op	    5824 allocs/op
+BenchmarkRegistryScrape-4        	    1506	    839817 ns/op	  796105 B/op	    5824 allocs/op
+PASS
+ok  	careold-go/internal/observability	11.659s

@@ -1,11 +1,19 @@
 # preview 分支文件职责索引
 
-本索引覆盖当前提交的 **602 个文件**（更新：2026-10-22）。保留既有人工说明；来源附件与历史证据不代表当前版本的全套验收。
+本索引覆盖当前提交的 **611 个文件**（更新：2026-10-23）。保留既有人工说明；来源附件与历史证据不代表当前版本的全套验收。
 
 [项目 README](../README.md) · [文件职责数据](file-descriptions.json) · [历史性能资料](performance/2026-10-20-go123/README.md) · [最新性能报告](performance/2026-10-22-backend-hybrid/README.md)
 
 | 文件 | 职责 |
 | --- | --- |
+| [docs/performance/2026-10-23-hot-path/README.md](../docs/performance/2026-10-23-hot-path/README.md) | 后端架构、SQL 零复制绑定与紧凑 HTTP 指标优化分析、实测及验证边界 |
+| [docs/performance/2026-10-23-hot-path/before.txt](../docs/performance/2026-10-23-hot-path/before.txt) | preview 基线的三轮参数绑定、HTTP 指标、中间件与抓取原始微基准 |
+| [docs/performance/2026-10-23-hot-path/after.txt](../docs/performance/2026-10-23-hot-path/after.txt) | 优化版本相同基准的三轮原始测量结果 |
+| [docs/performance/2026-10-23-hot-path/race-short.txt](../docs/performance/2026-10-23-hot-path/race-short.txt) | 本轮完整后端短模式竞态测试输出，数据库集成用例因无测试连接而跳过 |
+| [智慧养老手表管理系统/backend/internal/db/query_binding_test.go](../智慧养老手表管理系统/backend/internal/db/query_binding_test.go) | SQL 参数绑定边界及并发缓存驱逐的数据隔离回归测试 |
+| [智慧养老手表管理系统/backend/internal/db/query_binding_perf_test.go](../智慧养老手表管理系统/backend/internal/db/query_binding_perf_test.go) | 1、14、2800 参数规模的热 SQL 模板绑定微基准 |
+| [智慧养老手表管理系统/backend/internal/observability/metrics_compact_test.go](../智慧养老手表管理系统/backend/internal/observability/metrics_compact_test.go) | 紧凑指标与原累计算法的边界等价及并发快照回归测试 |
+| [智慧养老手表管理系统/backend/internal/observability/metrics_perf_test.go](../智慧养老手表管理系统/backend/internal/observability/metrics_perf_test.go) | HTTP 指标中间件和 100 组标签抓取的微基准 |
 | [.dockerignore](../.dockerignore) | 项目配置、源文件或测试资料： |
 | [.github/CODEOWNERS](../.github/CODEOWNERS) | 指定仓库代码审查负责人和受保护路径 |
 | [.github/SECURITY.md](../.github/SECURITY.md) | 说明私下报告漏洞的渠道、范围与披露流程 |

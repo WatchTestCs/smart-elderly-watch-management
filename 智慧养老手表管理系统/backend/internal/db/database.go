@@ -300,6 +300,8 @@ var varcharCast = regexp.MustCompile(`(?i)\bAS varchar\b`)
 type queryPlan struct {
 	sql       string
 	positions []int
+	// direct means placeholders are exactly $1,$2,... in occurrence order.
+	direct bool
 }
 
 // Cache only SQL structure, never argument values. The FIFO bound prevents
@@ -329,6 +331,16 @@ func mysqlQuery(query string, args []any) (string, []any, error) {
 			queryPlans.plans[query] = plan
 		}
 		queryPlans.Unlock()
+	}
+	if plan.direct {
+		n := len(plan.positions)
+		if n > len(args) {
+			return "", nil, errors.New("SQL parameter out of range")
+		}
+		// Executors consume these arguments synchronously and never mutate
+		// them. Limit capacity so appending cannot overwrite caller arguments.
+		// No request values are retained in the shared SQL structure cache.
+		return plan.sql, args[:n:n], nil
 	}
 	bound := make([]any, len(plan.positions))
 	for i, position := range plan.positions {
@@ -446,7 +458,14 @@ func compileMySQLQuery(query string) (queryPlan, error) {
 		out = append(out, query[i])
 		i++
 	}
-	return queryPlan{sql: string(out), positions: positions}, nil
+	direct := true
+	for i, position := range positions {
+		if position != i {
+			direct = false
+			break
+		}
+	}
+	return queryPlan{sql: string(out), positions: positions, direct: direct}, nil
 }
 
 // trimRightSpace 去掉尾部空格，让 REGEXP 的输出保持单一空格分隔。
