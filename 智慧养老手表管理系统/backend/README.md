@@ -152,3 +152,5 @@ MySQL 测试创建、清理随机测试数据库，需要相应权限；PG 测�
 - 工具每 100 ms 采样 Go HeapAlloc（可能漏掉更短峰值），并读取 Linux `/proc/self/status` 的 VmHWM 作为进程最大 RSS；`GCCount`、`GCPauseMs` 来自 Go 运行时累计计数，两者均不代表完整 GC CPU 消耗。
 - `GOGC=200` 可减少高分配工作负载的 GC 频率，但会增加活跃堆/驻留内存；**不自动开启**。在有余量的容器中可显式设置 `GOGC=200`，并联合监控 RSS、内存软限额、p99、队列等待、失败与真实消息持久化。小内存部署不能盲目提高 GOGC。
 - 禁止用标准库 CPU 基准声明生产系统 SLA，禁止在高压下静默丢弃健康数据或 SOS；应用层只能显式背压/拒绝并让上游确认重试。
+
+MySQL 业务连接默认每条物理连接缓存最多 64 个预编译语句，减少重复 SQL 解析与大参数转义；20 条连接默认最多 1280 个服务器句柄/副本，须计入服务器语句预算。`MYSQL_STMT_CACHE_SIZE=0` 恢复插值/临时 prepare 路径；可设置 0..128。冷启动与 SQL 形状抖动可能变慢，最终延迟对照见 [PR #30](https://github.com/WatchTestCs/smart-elderly-watch-management/pull/30)。

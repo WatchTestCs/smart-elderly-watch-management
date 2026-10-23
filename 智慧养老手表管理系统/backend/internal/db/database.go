@@ -112,9 +112,19 @@ func OpenMySQL(ctx context.Context, dsn string) (*Database, error) {
 		return nil, err
 	}
 	formattedDSN := cfg.FormatDSN()
-	pool, err := sql.Open("mysql", formattedDSN)
+	cacheLimit, err := mysqlStatementCacheLimit(os.Getenv("MYSQL_STMT_CACHE_SIZE"))
 	if err != nil {
-		return nil, errors.New("open MySQL failed")
+		return nil, err
+	}
+	connector, err := mysql.NewConnector(cfg)
+	if err != nil {
+		return nil, errors.New("open MySQL connector failed")
+	}
+	var pool *sql.DB
+	if cacheLimit == 0 {
+		pool = sql.OpenDB(connector)
+	} else {
+		pool = sql.OpenDB(statementConnector{Connector: connector, capacity: cacheLimit})
 	}
 	pool.SetMaxOpenConns(20)
 	// Bursty device uploads otherwise repeatedly close and reopen 15 of the

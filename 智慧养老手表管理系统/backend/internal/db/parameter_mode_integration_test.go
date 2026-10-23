@@ -100,3 +100,95 @@ func TestMySQLParameterTransportRoundTripsAndFallback(t *testing.T) {
 		pool.Close()
 	}
 }
+
+// Exercise OpenMySQL's actual connector on one physical connection, including
+// transactions. Counts are session-local and cannot be polluted by other tests.
+func TestMySQLConnectionStatementCacheLifecycle(t *testing.T) {
+	t.Setenv("MYSQL_STMT_CACHE_SIZE", "2")
+	primary := dbtest.MySQL(t)
+	ctx := context.Background()
+	conn, err := primary.SQL().Conn(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+	if _, err = conn.ExecContext(ctx, "CREATE TEMPORARY TABLE cache_probe(id INT PRIMARY KEY,j JSON,b BLOB,s TEXT,at DATETIME(6))"); err != nil {
+		t.Fatal(err)
+	}
+	prepares := func() uint64 {
+		var name string
+		var count uint64
+		if err := conn.QueryRowContext(ctx, "SHOW SESSION STATUS LIKE 'Com_stmt_prepare'").Scan(&name, &count); err != nil {
+			t.Fatal(err)
+		}
+		return count
+	}
+	before := prepares()
+	text := "中文 '\\ ? \x00"
+	raw, _ := json.Marshal(map[string]string{"text": text})
+	blob := []byte{0, 255, 128, 92}
+	at := time.Date(2026, 10, 23, 1, 2, 3, 123456000, time.UTC)
+	insert := "INSERT INTO cache_probe VALUES(?,?,?,?,?)"
+	selectRow := "SELECT JSON_UNQUOTE(JSON_EXTRACT(j,'$.text')),b,s,at FROM cache_probe WHERE id=?"
+	for id := 1; id <= 3; id++ {
+		if _, err = conn.ExecContext(ctx, insert, id, json.RawMessage(raw), blob, text, at); err != nil {
+			t.Fatal(err)
+		}
+		var gotText, gotJSON string
+		var gotBlob []byte
+		var gotAt time.Time
+		if err = conn.QueryRowContext(ctx, selectRow, id).Scan(&gotJSON, &gotBlob, &gotText, &gotAt); err != nil {
+			t.Fatal(err)
+		}
+		if gotJSON != text || gotText != text || !bytes.Equal(gotBlob, blob) || !gotAt.Equal(at) {
+			t.Fatal("cached binary transport changed values")
+		}
+	}
+	if after := prepares(); after-before != 2 {
+		t.Fatal("did not reuse both prepared handles", before, after)
+	}
+	tx, err := conn.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = tx.ExecContext(ctx, insert, 99, json.RawMessage(raw), blob, text, at); err != nil {
+		tx.Rollback()
+		t.Fatal(err)
+	}
+	if err = tx.Rollback(); err != nil {
+		t.Fatal(err)
+	}
+	var count int
+	if err = conn.QueryRowContext(ctx, "SELECT count(*) FROM cache_probe WHERE id=99").Scan(&count); err != nil || count != 0 {
+		t.Fatal("statement escaped rollback", count, err)
+	}
+	if prepares()-before != 2 {
+		t.Fatal("transaction failed to share physical-connection handle")
+	}
+	// SET with parameters must flush old parse state, then use driver fallback.
+	if _, err = conn.ExecContext(ctx, "SET SESSION sql_mode=?", "NO_BACKSLASH_ESCAPES"); err != nil {
+		t.Fatal(err)
+	}
+	var returned string
+	if err = conn.QueryRowContext(ctx, "SELECT ?", text).Scan(&returned); err != nil || returned != text {
+		t.Fatal("mode change corrupted parameters", returned, err)
+	}
+	if err = conn.QueryRowContext(ctx, "SELECT ?+1", 1).Scan(&count); err != nil || count != 2 {
+		t.Fatal(count, err)
+	}
+	if err = conn.QueryRowContext(ctx, "SELECT ?+2", 1).Scan(&count); err != nil || count != 3 {
+		t.Fatal(count, err)
+	}
+	after := prepares()
+	if err = conn.QueryRowContext(ctx, "SELECT ?", text).Scan(&returned); err != nil || returned != text || prepares() != after+1 {
+		t.Fatal("bounded FIFO did not evict/reprepare", err)
+	}
+	cancelled, cancel := context.WithCancel(ctx)
+	cancel()
+	if _, err = conn.ExecContext(cancelled, insert, 100, json.RawMessage(raw), blob, text, at); err == nil {
+		t.Fatal("cancelled write executed")
+	}
+	if err = conn.QueryRowContext(ctx, "SELECT count(*) FROM cache_probe WHERE id=100").Scan(&count); err != nil || count != 0 {
+		t.Fatal("cancelled write persisted", count, err)
+	}
+}

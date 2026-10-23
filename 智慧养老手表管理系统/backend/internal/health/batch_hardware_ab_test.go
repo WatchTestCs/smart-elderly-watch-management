@@ -13,7 +13,7 @@ import (
 	"careold-go/internal/db/dbtest"
 )
 
-// This fixture must also compile unchanged at 8a3da7c. It measures the real
+// This fixture must also compile unchanged at e39e14b. It measures the real
 // SaveBatch+commit path, not a copy of the implementation. dbtest always creates
 // and drops an isolated database; never substitute a production connection.
 func TestBatchHardwareAB(t *testing.T) {

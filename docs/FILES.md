@@ -1,11 +1,15 @@
 # preview 分支文件职责索引
 
-本索引覆盖当前提交的 **634 个文件**（更新：2026-10-23）。保留既有人工说明；来源附件与历史证据不代表当前版本的全套验收。
+本索引覆盖当前提交的 **638 个文件**（更新：2026-10-23）。保留既有人工说明；来源附件与历史证据不代表当前版本的全套验收。
 
 [项目 README](../README.md) · [文件职责数据](file-descriptions.json) · [历史性能资料](performance/2026-10-20-go123/README.md) · [最新性能报告](performance/2026-10-22-backend-hybrid/README.md)
 
 | 文件 | 职责 |
 | --- | --- |
+| [智慧养老手表管理系统/backend/internal/db/statement_cache.go](../智慧养老手表管理系统/backend/internal/db/statement_cache.go) | 物理 MySQL 连接的有界预编译语句缓存、会话清理和驱动接口转发 |
+| [智慧养老手表管理系统/backend/internal/db/statement_cache_test.go](../智慧养老手表管理系统/backend/internal/db/statement_cache_test.go) | 语句复用、FIFO 上限、参数数量、取消、错误不重放与会话变更测试 |
+| [智慧养老手表管理系统/backend/internal/handlers/latency_ab_test.go](../智慧养老手表管理系统/backend/internal/handlers/latency_ab_test.go) | 真实 MySQL 的 loopback HTTP 小请求/大批次及并发 p95/p99 对照夹具 |
+| [docs/performance/2026-10-23-latency/README.md](../docs/performance/2026-10-23-latency/README.md) | 连接级语句缓存的延迟目标、维护代价、回退和真实对照方法 |
 | [docs/performance/2026-10-23-transport/README.md](../docs/performance/2026-10-23-transport/README.md) | 驱动参数传输、原生 map 热快照、缓存预算与抖动回退的实现和性能验证说明 |
 | [docs/performance/2026-10-23-transport/cache-after.txt](../docs/performance/2026-10-23-transport/cache-after.txt) | 原生 map 批量发布及不可变计划指针缓存的三轮原始对照，含超容量场景 |
 | [docs/performance/2026-10-23-transport/cache-before.txt](../docs/performance/2026-10-23-transport/cache-before.txt) | 8a3da7c 数组快照在同一基准文件下的三轮缓存原始对照 |
@@ -13,7 +17,7 @@
 | [智慧养老手表管理系统/backend/internal/db/parameter_mode_integration_test.go](../智慧养老手表管理系统/backend/internal/db/parameter_mode_integration_test.go) | 隔离 MySQL 验证 JSON/BLOB/时间/NULL、转义模式、prepare 计数和保守回退 |
 | [智慧养老手表管理系统/backend/internal/db/parameter_mode_test.go](../智慧养老手表管理系统/backend/internal/db/parameter_mode_test.go) | MySQL 参数传输默认值、显式 DSN 开关及 collation 配置校验测试 |
 | [docs/performance/2026-10-23-hardware/mysql-initial.json](../docs/performance/2026-10-23-hardware/mysql-initial.json) | 首次真实 MySQL 六轮 A/B 原始结果，保留候选长尾及吞吐回退，不作为加速证明 |
-| [.github/workflows/backend-hardware-ab.yml](../.github/workflows/backend-hardware-ab.yml) | 同 runner 交替运行 8a3da7c 与当前版本的隔离 MySQL 健康批次对照并归档日志 |
+| [.github/workflows/backend-hardware-ab.yml](../.github/workflows/backend-hardware-ab.yml) | 同 runner 交替对比 e39e14b 的真实 MySQL 事务及四种 HTTP 延迟配置并归档全部日志 |
 | [docs/performance/2026-10-23-hardware/README.md](../docs/performance/2026-10-23-hardware/README.md) | 多核 SQL 缓存与健康批次布局的实现、原始对照、代价、数据库实验及维护约束 |
 | [docs/performance/2026-10-23-hardware/batch-layout.txt](../docs/performance/2026-10-23-hardware/batch-layout.txt) | 原值复制选择算法与 uint8 索引选择算法的五轮原始结果 |
 | [docs/performance/2026-10-23-hardware/cache-after.txt](../docs/performance/2026-10-23-hardware/cache-after.txt) | 64 组 8 路数组快照缓存在相同基准下的三轮原始结果 |

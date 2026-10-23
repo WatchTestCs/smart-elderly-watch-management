@@ -45,9 +45,11 @@ jobs:
         run: |
           set -euo pipefail
           baseline="${RUNNER_TEMP}/hardware-baseline"
-          git worktree add --detach "$baseline" 8a3da7c3795eff02e67beb0af0a87a95c3156704
+          git worktree add --detach "$baseline" e39e14bf8500efbd74548ef012d244eaf8f320b1
           fixture='智慧养老手表管理系统/backend/internal/health/batch_hardware_ab_test.go'
           cp "$fixture" "$baseline/$fixture"
+          http_fixture='智慧养老手表管理系统/backend/internal/handlers/latency_ab_test.go'
+          cp "$http_fixture" "$baseline/$http_fixture"
           candidate="$GITHUB_WORKSPACE/智慧养老手表管理系统/backend"
           reference="$baseline/智慧养老手表管理系统/backend"
           for round in 1 2 3; do
@@ -60,10 +62,26 @@ jobs:
               ) | tee "${RUNNER_TEMP}/hardware-${round}-${variant}.log"
             done
           done
+          for profile in '1 1' '200 1' '1 4' '200 4'; do
+            read -r size workers <<< "$profile"
+            for round in 1 2 3; do
+              if [ "$round" = 2 ]; then variants='candidate baseline'; else variants='baseline candidate'; fi
+              for variant in $variants; do
+                if [ "$variant" = baseline ]; then source_dir="$reference"; else source_dir="$candidate"; fi
+                (
+                  cd "$source_dir"
+                  RUN_HTTP_LATENCY_AB=1 BATCH_AB_SIZE="$size" BATCH_AB_WORKERS="$workers" PERF_AB_VARIANT="$variant" \
+                    go test -count=1 -run '^TestHTTPBatchLatencyAB$' -timeout 3m -v ./internal/handlers
+                ) | tee "${RUNNER_TEMP}/latency-${size}-${workers}-${round}-${variant}.log"
+              done
+            done
+          done
       - name: Archive raw A/B results
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
           name: backend-hardware-ab
-          path: ${{ runner.temp }}/hardware-*.log
+          path: |
+            ${{ runner.temp }}/hardware-*.log
+            ${{ runner.temp }}/latency-*.log
           if-no-files-found: warn
