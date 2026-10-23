@@ -131,7 +131,7 @@ func RefreshDaily(ctx context.Context, pool *db.Database, id string) error {
 		message = computation.Error()
 		b = []byte("null")
 	}
-	_, err = tx.Exec(ctx, "UPDATE metric_daily SET result=$2,error_text=$3,computed_revision=$4,dirty=false,updated_at=now() WHERE cache_key=$1", id, b, message, revision)
+	_, err = tx.Exec(ctx, "UPDATE metric_daily SET result=$2,error_text=$3,computed_revision=$4,dirty=false,updated_at=now() WHERE cache_key=$1", id, json.RawMessage(b), message, revision)
 	if err != nil {
 		return err
 	}

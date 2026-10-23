@@ -119,7 +119,7 @@ func (h *Handler) factorLogin(w http.ResponseWriter, r *http.Request, m map[stri
 			response.JSON(w, 401, map[string]any{"code": "MFA_REQUIRED", "message": "请输入有效的动态验证码或未使用的恢复码"})
 			return false
 		}
-		if _, err = tx.Exec(ctx, "UPDATE auth_factor SET last_counter=$3,recovery_hashes=$4 WHERE role=$1 AND actor_id=$2", role, id, counter, hashes); err != nil {
+		if _, err = tx.Exec(ctx, "UPDATE auth_factor SET last_counter=$3,recovery_hashes=$4 WHERE role=$1 AND actor_id=$2", role, id, counter, json.RawMessage(hashes)); err != nil {
 			response.Error500(w, ref())
 			return false
 		}
@@ -226,7 +226,7 @@ func (h *Handler) securityFactor(w http.ResponseWriter, r *http.Request) {
 				hashes = append(hashes, health.Digest([]byte(code)))
 			}
 			b, _ := json.Marshal(hashes)
-			_, err = tx.Exec(ctx, "UPDATE auth_factor SET enabled=true,last_counter=$3,recovery_hashes=$4 WHERE role=$1 AND actor_id=$2", p.Role, p.ID, counter, b)
+			_, err = tx.Exec(ctx, "UPDATE auth_factor SET enabled=true,last_counter=$3,recovery_hashes=$4 WHERE role=$1 AND actor_id=$2", p.Role, p.ID, counter, json.RawMessage(b))
 			result["recoveryCodes"] = codes
 		}
 		result["reloginRequired"] = true
