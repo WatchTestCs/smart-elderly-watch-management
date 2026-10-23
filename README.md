@@ -117,6 +117,8 @@ MySQL 是唯一业务数据源，PG 是可重建的分析投影。Vue 不直接�
 
 `/healthz` 仅表示 HTTP 进程存活；数据库就绪和分析连接状态由 `/restful/service/status` 报告。详细协议见[架构总览](docs/architecture/overview.md)、[实现架构](docs/ARCHITECTURE.md)与[双库指南](docs/DUAL_DATABASES.md)。
 
+健康采样的跨窗步数分配、累计计数日界与告警容差约定见[健康数据接口](智慧养老手表管理系统/backend/docs/health-data.md#跨窗口步数与夜间累计计数)。
+
 ## 源码与构建
 
 开发从 `preview` 开始，复现发布版使用上方固定源码包。

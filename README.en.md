@@ -117,6 +117,8 @@ MySQL is the sole business data source; PG is a rebuildable analytics projection
 
 `/healthz` reports HTTP-process liveness only. `/restful/service/status` reports database readiness and analytics connectivity. See the [overview](docs/architecture/overview.md), [implementation architecture](docs/ARCHITECTURE.md) and [dual-database guide](docs/DUAL_DATABASES.md).
 
+See the [health data contract](智慧养老手表管理系统/backend/docs/health-data.md#跨窗口步数与夜间累计计数) for conserved integer step allocation, counter-day timezones and baseline alert tolerances.
+
 ## Source and builds
 
 Use `preview` for development and the fixed source package above to reproduce a release.

@@ -163,6 +163,11 @@ func EvaluateCompactInto(dst []CompactCandidate, p Policy, in Input) []CompactCa
 		if base.Count >= p.BaselineMinimum && base.Mean > 0 {
 			delta := math.Abs(v.Value - base.Mean)
 			limit := math.Max(math.Abs(base.Mean)*p.BaselinePercent/100, base.Deviation*p.BaselineSigma)
+			floor := 8.0
+			if m.kind == "blood_pressure" {
+				floor = 12
+			}
+			limit = math.Max(limit, floor)
 			result = append(result, CompactCandidate{m.baselineKind, v.Key, severity, delta > limit, p.Consecutive, evidenceValue{kind: evidenceBaseline, value: v.Value, mean: base.Mean, deviation: base.Deviation, count: base.Count, threshold: limit, days: p.BaselineDays, source: v.Source, device: v.Device, observedAt: v.At}})
 		}
 	}

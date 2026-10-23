@@ -1,11 +1,14 @@
 # preview 分支文件职责索引
 
-本索引覆盖当前提交的 **645 个文件**（更新：2026-10-23）。保留既有人工说明；来源附件与历史证据不代表当前版本的全套验收。
+本索引覆盖当前提交的 **648 个文件**（更新：2026-10-23）。保留既有人工说明；来源附件与历史证据不代表当前版本的全套验收。
 
 [项目 README](../README.md) · [文件职责数据](file-descriptions.json) · [历史性能资料](performance/2026-10-20-go123/README.md) · [最新性能报告](performance/2026-10-22-backend-hybrid/README.md)
 
 | 文件 | 职责 |
 | --- | --- |
+| [智慧养老手表管理系统/backend/internal/fence/algorithm_regression_test.go](../智慧养老手表管理系统/backend/internal/fence/algorithm_regression_test.go) | 围栏新旧射线对照及退化线段距离有限性回归测试 |
+| [智慧养老手表管理系统/backend/internal/health/algorithm_regression_test.go](../智慧养老手表管理系统/backend/internal/health/algorithm_regression_test.go) | 跨窗整数步数守恒、大计数精度、统计输出和原有日累计契约回归测试 |
+| [智慧养老手表管理系统/backend/internal/rules/algorithm_regression_test.go](../智慧养老手表管理系统/backend/internal/rules/algorithm_regression_test.go) | 计数日界时区、午夜归零、同日回退与基线绝对容差边界回归测试 |
 | [智慧养老手表管理系统/backend/internal/handlers/handler_health_device.go](../智慧养老手表管理系统/backend/internal/handlers/handler_health_device.go) | 健康写入的六字段设备投影、共享认证策略及精简时间戳更新 |
 | [docs/performance/2026-10-23-health-device/README.md](../docs/performance/2026-10-23-health-device/README.md) | 健康窄字段与顺序时间戳参数的实现、语义边界及真实延迟验证方法 |
 | [docs/performance/2026-10-23-preparation/results.json](../docs/performance/2026-10-23-preparation/results.json) | 已撤回事务外准备实验的两次全部 72 轮原始数据，含回退及阶段计时 |

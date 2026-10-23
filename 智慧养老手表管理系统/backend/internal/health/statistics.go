@@ -2,6 +2,8 @@ package health
 
 import (
 	"fmt"
+	"math"
+	"math/bits"
 	"sort"
 	"time"
 )
@@ -38,6 +40,40 @@ type Statistics struct {
 	AsleepMinutes           float64            `json:"asleepMinutes,omitempty"`
 	ConflictingSleepMinutes float64            `json:"conflictingSleepMinutes,omitempty"`
 	StageMinutes            map[string]float64 `json:"stageMinutes,omitempty"`
+}
+
+// IntervalSteps allocates an integer step count to [from, to). Rounding the
+// cumulative count at each endpoint makes adjacent windows additive. Counts
+// must fit the exact integer range of the JSON/float64 sampling contract.
+func IntervalSteps(s Sample, from, to time.Time) (float64, error) {
+	if s.Value == nil || !(*s.Value >= 0 && *s.Value <= 9007199254740991) || math.Trunc(*s.Value) != *s.Value {
+		return 0, fmt.Errorf("step count must be an exact nonnegative integer")
+	}
+	duration := s.End.Sub(s.Start)
+	if duration <= 0 || !s.Start.Add(duration).Equal(s.End) || !to.After(from) {
+		return 0, fmt.Errorf("invalid step interval or reporting window")
+	}
+	a, b := from, to
+	if a.Before(s.Start) {
+		a = s.Start
+	}
+	if b.After(s.End) {
+		b = s.End
+	}
+	if !b.After(a) {
+		return 0, nil
+	}
+	allocated := func(at time.Time) uint64 {
+		// A 128-bit product avoids overflow and floating-point rounding near
+		// half steps, including counts close to the exact integer limit.
+		hi, lo := bits.Mul64(uint64(*s.Value), uint64(at.Sub(s.Start)))
+		q, r := bits.Div64(hi, lo, uint64(duration))
+		if r >= uint64(duration)-r {
+			q++
+		}
+		return q
+	}
+	return float64(allocated(b) - allocated(a)), nil
 }
 
 // Aggregate receives one explicit source, device, metric and semantics at a time.
@@ -117,14 +153,30 @@ func Aggregate(samples []Sample, from, to time.Time) (Statistics, error) {
 	}
 	if first.Metric == "steps" && first.Semantics == "interval" {
 		sort.Slice(filtered, func(i, j int) bool { return filtered[i].Start.Before(filtered[j].Start) })
+		total, low, high := 0.0, math.Inf(1), math.Inf(-1)
+		out.Count = 0
 		for i, s := range filtered {
-			if s.Start.Before(from) || s.End.After(to) {
-				return out, fmt.Errorf("step interval crosses requested boundary; cannot prorate counts")
-			}
 			if i > 0 && s.Start.Before(filtered[i-1].End) {
 				return out, fmt.Errorf("overlapping step intervals require source review")
 			}
+			v, err := IntervalSteps(s, from, to)
+			if err != nil {
+				return out, err
+			}
+			if !s.End.After(from) || !s.Start.Before(to) {
+				continue
+			}
+			total += v
+			if total > 9007199254740991 {
+				return out, fmt.Errorf("step total exceeds exact integer range")
+			}
+			low, high = math.Min(low, v), math.Max(high, v)
+			out.Count++
 		}
+		if out.Count > 0 {
+			out.Total, out.Min, out.Max = Number(total), Number(low), Number(high)
+		}
+		return out, nil
 	}
 	total, low, high := 0.0, *filtered[0].Value, *filtered[0].Value
 	for _, s := range filtered {

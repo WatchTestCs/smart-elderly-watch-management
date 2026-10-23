@@ -89,6 +89,10 @@ func BoundaryDistance(p []Point, q Point) float64 {
 		ax, ay := (p[i][0]-q[0])*xscale, (p[i][1]-q[1])*111195
 		bx, by := (p[i+1][0]-q[0])*xscale, (p[i+1][1]-q[1])*111195
 		dx, dy := bx-ax, by-ay
+		if dx*dx+dy*dy < 1e-12 {
+			best = math.Min(best, math.Hypot(ax, ay))
+			continue
+		}
 		t := math.Max(0, math.Min(1, -(ax*dx+ay*dy)/(dx*dx+dy*dy)))
 		best = math.Min(best, math.Hypot(ax+t*dx, ay+t*dy))
 	}

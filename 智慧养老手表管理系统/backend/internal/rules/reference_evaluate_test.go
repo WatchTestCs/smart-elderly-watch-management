@@ -50,6 +50,12 @@ func referenceEvaluate(p Policy, in Input) []Candidate {
 		if base.Count >= p.BaselineMinimum && base.Mean > 0 {
 			delta := math.Abs(m.v.Value - base.Mean)
 			limit := math.Max(math.Abs(base.Mean)*p.BaselinePercent/100, base.Deviation*p.BaselineSigma)
+			// The public contract now includes metric-specific absolute floors.
+			if m.kind == "blood_pressure" && limit < 12 {
+				limit = 12
+			} else if m.kind == "heart_rate" && limit < 8 {
+				limit = 8
+			}
 			out = append(out, Candidate{"baseline_" + m.kind, m.v.Key, severity, delta > limit, p.Consecutive, map[string]any{"value": m.v.Value, "mean": base.Mean, "deviation": base.Deviation, "count": base.Count, "threshold": limit, "days": p.BaselineDays, "source": m.v.Source, "sourceDevice": m.v.Device, "observedAt": m.v.At}})
 		}
 	}
