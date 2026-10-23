@@ -2,6 +2,7 @@ package health
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 	"testing"
 )
@@ -14,7 +15,7 @@ func TestBatchStatementsMatchOriginalAssembly(t *testing.T) {
 			defer wg.Done()
 			for rows := 1; rows <= 200; rows++ {
 				want := [...]string{
-					batchLookupPrefix + fmt.Sprintf("$%d", rows+1) + batchLookupSuffix + valueRows(1, rows),
+					expectedLookupSQL(rows),
 					batchUpsertPrefix + valueRows(rows, 14) + batchUpsertSuffix,
 					batchChangesPrefix + valueRows(rows, 4),
 				}
@@ -44,7 +45,7 @@ func BenchmarkCompleteBatchSQL(b *testing.B) {
 			b.Run("fragments", func(b *testing.B) {
 				b.ReportAllocs()
 				for range b.N {
-					batchSQLSink = batchLookupPrefix + fmt.Sprintf("$%d", rows+1) + batchLookupSuffix + valueRows(1, rows)
+					batchSQLSink = expectedLookupSQL(rows)
 					batchSQLSink = batchUpsertPrefix + valueRows(rows, 14) + batchUpsertSuffix
 					batchSQLSink = batchChangesPrefix + valueRows(rows, 4)
 				}
@@ -59,4 +60,12 @@ func BenchmarkCompleteBatchSQL(b *testing.B) {
 			})
 		})
 	}
+}
+
+func expectedLookupSQL(rows int) string {
+	parameters := make([]string, rows)
+	for i := range parameters {
+		parameters[i] = fmt.Sprintf("$%d", i+2)
+	}
+	return batchLookupPrefix + "$1" + batchLookupSuffix + "(" + strings.Join(parameters, ",") + ")"
 }

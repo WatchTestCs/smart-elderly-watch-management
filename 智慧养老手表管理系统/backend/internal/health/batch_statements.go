@@ -2,6 +2,7 @@ package health
 
 import (
 	"strconv"
+	"strings"
 	"sync/atomic"
 )
 
@@ -30,7 +31,19 @@ var batchStatements [3][201]atomic.Pointer[string]
 func buildBatchSQL(kind batchSQLKind, rows int) string {
 	switch kind {
 	case batchLookup:
-		return batchLookupPrefix + "$" + strconv.Itoa(rows+1) + batchLookupSuffix + buildValueRows(1, rows)
+		var out strings.Builder
+		out.Grow(len(batchLookupPrefix) + len(batchLookupSuffix) + rows*6 + 4)
+		out.WriteString(batchLookupPrefix + "$1" + batchLookupSuffix)
+		out.WriteByte('(')
+		for i := 0; i < rows; i++ {
+			if i > 0 {
+				out.WriteByte(',')
+			}
+			out.WriteByte('$')
+			out.WriteString(strconv.Itoa(i + 2))
+		}
+		out.WriteByte(')')
+		return out.String()
 	case batchUpsert:
 		return batchUpsertPrefix + buildValueRows(rows, 14) + batchUpsertSuffix
 	case batchChanges:

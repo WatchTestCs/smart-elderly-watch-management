@@ -133,7 +133,7 @@ func TestConditionalPreviousPayloadPreservesMixedVersionsAndConflicts(t *testing
 	if _, d, err := save([]Sample{a, b}); err != nil || d != 0 {
 		t.Fatal(d, err)
 	}
-	rows, err := pool.Query(ctx, batchSQL(batchLookup, 2), identityDigest(owner, a), identityDigest(owner, b), int64(10))
+	rows, err := pool.Query(ctx, batchSQL(batchLookup, 2), int64(10), identityDigest(owner, a), identityDigest(owner, b))
 	if err != nil {
 		t.Fatal(err)
 	}

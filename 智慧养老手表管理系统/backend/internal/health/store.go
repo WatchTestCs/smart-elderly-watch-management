@@ -45,7 +45,7 @@ func SaveBatch(ctx context.Context, tx *db.Transaction, o Owner, samples []Sampl
 		return 0, 0, fmt.Errorf("batch must contain 1..200 samples")
 	}
 	input := make([]preparedSample, 0, len(samples))
-	ids := make([]any, 0, len(samples)+1)
+	ids := make([]any, 1, len(samples)+1)
 	minimumVersion := samples[0].Version
 	seen := make(map[string]bool, len(samples))
 	for _, s := range samples {
@@ -73,7 +73,7 @@ func SaveBatch(ctx context.Context, tx *db.Transaction, o Owner, samples []Sampl
 	// any input in this batch. Keep their metadata but avoid serializing and
 	// transferring the JSON under the owner lock. Equal/newer versions retain
 	// payloads, including mixed-version and out-of-order batches.
-	ids = append(ids, minimumVersion)
+	ids[0] = minimumVersion
 	rows, err := tx.Query(ctx, batchSQL(batchLookup, len(ids)-1), ids...)
 	if err != nil {
 		return 0, 0, err
