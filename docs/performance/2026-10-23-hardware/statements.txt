@@ -1,0 +1,24 @@
+goos: linux
+goarch: amd64
+pkg: careold-go/internal/health
+cpu: AMD EPYC 9V74 80-Core Processor                
+BenchmarkCompleteBatchSQL/1/fragments-4         	 1618790	       292.5 ns/op	     768 B/op	       3 allocs/op
+BenchmarkCompleteBatchSQL/1/fragments-4         	 1813509	       280.4 ns/op	     768 B/op	       3 allocs/op
+BenchmarkCompleteBatchSQL/1/fragments-4         	 1721882	       272.1 ns/op	     768 B/op	       3 allocs/op
+BenchmarkCompleteBatchSQL/1/statements-4        	76886750	         6.554 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCompleteBatchSQL/1/statements-4        	83236006	         6.184 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCompleteBatchSQL/1/statements-4        	86418846	         6.048 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCompleteBatchSQL/50/fragments-4        	  417256	      1191 ns/op	    5536 B/op	       3 allocs/op
+BenchmarkCompleteBatchSQL/50/fragments-4        	  333552	      1345 ns/op	    5536 B/op	       3 allocs/op
+BenchmarkCompleteBatchSQL/50/fragments-4        	  393949	      1310 ns/op	    5536 B/op	       3 allocs/op
+BenchmarkCompleteBatchSQL/50/statements-4       	78449125	         6.306 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCompleteBatchSQL/50/statements-4       	64709752	         6.356 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCompleteBatchSQL/50/statements-4       	79973337	         6.023 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCompleteBatchSQL/200/fragments-4       	   82027	      5660 ns/op	   24320 B/op	       3 allocs/op
+BenchmarkCompleteBatchSQL/200/fragments-4       	  109513	      4683 ns/op	   24320 B/op	       3 allocs/op
+BenchmarkCompleteBatchSQL/200/fragments-4       	   96831	      4560 ns/op	   24320 B/op	       3 allocs/op
+BenchmarkCompleteBatchSQL/200/statements-4      	73043851	         5.971 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCompleteBatchSQL/200/statements-4      	83218228	         6.191 ns/op	       0 B/op	       0 allocs/op
+BenchmarkCompleteBatchSQL/200/statements-4      	78175563	         6.759 ns/op	       0 B/op	       0 allocs/op
+PASS
+ok  	careold-go/internal/health	10.515s

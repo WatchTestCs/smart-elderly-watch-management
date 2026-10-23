@@ -1,0 +1,30 @@
+goos: linux
+goarch: amd64
+pkg: careold-go/internal/db
+cpu: AMD EPYC 9V74 80-Core Processor                
+BenchmarkMySQLQueryBinding/1-4 	39416858	        31.08 ns/op	      16 B/op	       1 allocs/op
+BenchmarkMySQLQueryBinding/1-4 	38323074	        31.28 ns/op	      16 B/op	       1 allocs/op
+BenchmarkMySQLQueryBinding/1-4 	39518646	        31.80 ns/op	      16 B/op	       1 allocs/op
+BenchmarkMySQLQueryBinding/14-4         	14903234	        83.75 ns/op	     224 B/op	       1 allocs/op
+BenchmarkMySQLQueryBinding/14-4         	14403411	        87.98 ns/op	     224 B/op	       1 allocs/op
+BenchmarkMySQLQueryBinding/14-4         	15142917	        89.44 ns/op	     224 B/op	       1 allocs/op
+BenchmarkMySQLQueryBinding/2800-4       	   92742	     13754 ns/op	   49152 B/op	       1 allocs/op
+BenchmarkMySQLQueryBinding/2800-4       	   82171	     14557 ns/op	   49152 B/op	       1 allocs/op
+BenchmarkMySQLQueryBinding/2800-4       	   86788	     14224 ns/op	   49152 B/op	       1 allocs/op
+PASS
+ok  	careold-go/internal/db	12.048s
+goos: linux
+goarch: amd64
+pkg: careold-go/internal/observability
+cpu: AMD EPYC 9V74 80-Core Processor                
+BenchmarkRegistryObserveHTTP-4   	  274285	      4818 ns/op	    2672 B/op	      59 allocs/op
+BenchmarkRegistryObserveHTTP-4   	  259762	      4430 ns/op	    2672 B/op	      59 allocs/op
+BenchmarkRegistryObserveHTTP-4   	  236990	      4667 ns/op	    2672 B/op	      59 allocs/op
+BenchmarkRegistryHTTP-4          	  130556	      9434 ns/op	    3602 B/op	      87 allocs/op
+BenchmarkRegistryHTTP-4          	  132667	      8777 ns/op	    3602 B/op	      87 allocs/op
+BenchmarkRegistryHTTP-4          	  131410	      8692 ns/op	    3602 B/op	      87 allocs/op
+BenchmarkRegistryScrape-4        	    1242	   1104260 ns/op	  779719 B/op	    5823 allocs/op
+BenchmarkRegistryScrape-4        	    1048	   1054055 ns/op	  779720 B/op	    5823 allocs/op
+BenchmarkRegistryScrape-4        	    1112	   1103275 ns/op	  779725 B/op	    5823 allocs/op
+PASS
+ok  	careold-go/internal/observability	11.591s

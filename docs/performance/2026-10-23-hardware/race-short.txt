@@ -1,0 +1,28 @@
+?   	careold-go/cmd/analytics-backfill	[no test files]
+?   	careold-go/cmd/healthcheck	[no test files]
+?   	careold-go/cmd/migrate	[no test files]
+?   	careold-go/cmd/mock-gateway	[no test files]
+?   	careold-go/cmd/protect-notes	[no test files]
+?   	careold-go/cmd/transfer-postgres	[no test files]
+?   	careold-go/internal/csrf	[no test files]
+ok  	careold-go/cmd/server	1.032s
+ok  	careold-go/internal/analytics	1.024s
+ok  	careold-go/internal/apidoc	(cached)
+ok  	careold-go/internal/auth	(cached)
+?   	careold-go/internal/db/dbtest	[no test files]
+ok  	careold-go/internal/care	1.018s
+ok  	careold-go/internal/commands	(cached)
+ok  	careold-go/internal/config	(cached)
+ok  	careold-go/internal/db	1.866s
+ok  	careold-go/internal/fence	(cached)
+?   	careold-go/internal/ratelimit	[no test files]
+?   	careold-go/internal/response	[no test files]
+?   	careold-go/migrations	[no test files]
+ok  	careold-go/internal/handlers	3.310s
+ok  	careold-go/internal/health	5.536s
+ok  	careold-go/internal/notify	1.023s
+ok  	careold-go/internal/observability	1.031s
+ok  	careold-go/internal/rules	10.409s
+ok  	careold-go/internal/runtuning	(cached)
+ok  	careold-go/internal/securestore	(cached)
+ok  	careold-go/internal/session	1.011s

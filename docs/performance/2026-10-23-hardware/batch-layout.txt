@@ -1,0 +1,36 @@
+goos: linux
+goarch: amd64
+pkg: careold-go/internal/health
+cpu: AMD EPYC 9V74 80-Core Processor                
+BenchmarkBatchSelectionLayout/unique1/valueCopy-4         	   23833	     25485 ns/op	   66096 B/op	       5 allocs/op
+BenchmarkBatchSelectionLayout/unique1/valueCopy-4         	   22952	     26388 ns/op	   66096 B/op	       5 allocs/op
+BenchmarkBatchSelectionLayout/unique1/valueCopy-4         	   21901	     25131 ns/op	   66096 B/op	       5 allocs/op
+BenchmarkBatchSelectionLayout/unique1/valueCopy-4         	   24490	     33671 ns/op	   66096 B/op	       5 allocs/op
+BenchmarkBatchSelectionLayout/unique1/valueCopy-4         	   24067	     25650 ns/op	   66096 B/op	       5 allocs/op
+BenchmarkBatchSelectionLayout/unique1/indices-4           	   87081	      6782 ns/op	     432 B/op	       4 allocs/op
+BenchmarkBatchSelectionLayout/unique1/indices-4           	   80744	      6607 ns/op	     432 B/op	       4 allocs/op
+BenchmarkBatchSelectionLayout/unique1/indices-4           	   97639	      6567 ns/op	     432 B/op	       4 allocs/op
+BenchmarkBatchSelectionLayout/unique1/indices-4           	   84608	      6559 ns/op	     432 B/op	       4 allocs/op
+BenchmarkBatchSelectionLayout/unique1/indices-4           	   97179	      6448 ns/op	     432 B/op	       4 allocs/op
+BenchmarkBatchSelectionLayout/unique50/valueCopy-4        	   14692	     41485 ns/op	   87684 B/op	      57 allocs/op
+BenchmarkBatchSelectionLayout/unique50/valueCopy-4        	   14305	     41184 ns/op	   87684 B/op	      57 allocs/op
+BenchmarkBatchSelectionLayout/unique50/valueCopy-4        	   14306	     38923 ns/op	   87678 B/op	      57 allocs/op
+BenchmarkBatchSelectionLayout/unique50/valueCopy-4        	   15474	     38424 ns/op	   87684 B/op	      57 allocs/op
+BenchmarkBatchSelectionLayout/unique50/valueCopy-4        	   15752	     40756 ns/op	   87684 B/op	      57 allocs/op
+BenchmarkBatchSelectionLayout/unique50/indices-4          	   29820	     19869 ns/op	    7383 B/op	       7 allocs/op
+BenchmarkBatchSelectionLayout/unique50/indices-4          	   30740	     20551 ns/op	    7376 B/op	       7 allocs/op
+BenchmarkBatchSelectionLayout/unique50/indices-4          	   25117	     21368 ns/op	    7381 B/op	       7 allocs/op
+BenchmarkBatchSelectionLayout/unique50/indices-4          	   28813	     20244 ns/op	    7381 B/op	       7 allocs/op
+BenchmarkBatchSelectionLayout/unique50/indices-4          	   30091	     20173 ns/op	    7379 B/op	       7 allocs/op
+BenchmarkBatchSelectionLayout/unique200/valueCopy-4       	    9720	     58872 ns/op	  152576 B/op	     209 allocs/op
+BenchmarkBatchSelectionLayout/unique200/valueCopy-4       	   10000	     58947 ns/op	  152568 B/op	     209 allocs/op
+BenchmarkBatchSelectionLayout/unique200/valueCopy-4       	   10000	     57038 ns/op	  152575 B/op	     209 allocs/op
+BenchmarkBatchSelectionLayout/unique200/valueCopy-4       	    9380	     58413 ns/op	  152564 B/op	     209 allocs/op
+BenchmarkBatchSelectionLayout/unique200/valueCopy-4       	    9608	     63899 ns/op	  152575 B/op	     209 allocs/op
+BenchmarkBatchSelectionLayout/unique200/indices-4         	   22966	     25328 ns/op	   27212 B/op	      12 allocs/op
+BenchmarkBatchSelectionLayout/unique200/indices-4         	   23406	     25043 ns/op	   27230 B/op	      12 allocs/op
+BenchmarkBatchSelectionLayout/unique200/indices-4         	   22960	     25327 ns/op	   27228 B/op	      12 allocs/op
+BenchmarkBatchSelectionLayout/unique200/indices-4         	   23805	     24988 ns/op	   27217 B/op	      12 allocs/op
+BenchmarkBatchSelectionLayout/unique200/indices-4         	   23457	     24417 ns/op	   27228 B/op	      12 allocs/op
+PASS
+ok  	careold-go/internal/health	24.497s

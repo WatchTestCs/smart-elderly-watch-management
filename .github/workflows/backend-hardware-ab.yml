@@ -1,0 +1,87 @@
+name: Backend hardware A/B
+
+on:
+  push:
+    branches: ['perf/backend-hot-path-20261023']
+    paths:
+      - '.github/workflows/backend-hardware-ab.yml'
+      - '智慧养老手表管理系统/backend/internal/db/**'
+      - '智慧养老手表管理系统/backend/internal/health/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mysql-ab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: ci_root_only
+          MYSQL_ROOT_HOST: '%'
+          MYSQL_DATABASE: suining_test
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -u root -pci_root_only --silent"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.23.2'
+          cache-dependency-path: 智慧养老手表管理系统/backend/go.sum
+      - name: Compare real MySQL batch writes on the same runner
+        shell: bash
+        env:
+          TEST_MYSQL_DSN: root:ci_root_only@tcp(localhost:3306)/suining_test
+          RUN_BATCH_HARDWARE_AB: '1'
+          GOMAXPROCS: '2'
+        run: |
+          set -euo pipefail
+          baseline="${RUNNER_TEMP}/hardware-baseline"
+          git worktree add --detach "$baseline" 60be581e69048c6e9f3be680fcbee3067b8750e8
+          fixture='智慧养老手表管理系统/backend/internal/health/batch_hardware_ab_test.go'
+          cp "$fixture" "$baseline/$fixture"
+          http_fixture='智慧养老手表管理系统/backend/internal/handlers/latency_ab_test.go'
+          cp "$http_fixture" "$baseline/$http_fixture"
+          candidate="$GITHUB_WORKSPACE/智慧养老手表管理系统/backend"
+          reference="$baseline/智慧养老手表管理系统/backend"
+          for round in 1 2 3; do
+            if [ "$round" = 2 ]; then variants='candidate baseline'; else variants='baseline candidate'; fi
+            for variant in $variants; do
+              if [ "$variant" = baseline ]; then source_dir="$reference"; else source_dir="$candidate"; fi
+              (
+                cd "$source_dir"
+                PERF_AB_VARIANT="$variant" go test -count=1 -run '^TestBatchHardwareAB$' -timeout 3m -v ./internal/health
+              ) | tee "${RUNNER_TEMP}/hardware-${round}-${variant}.log"
+            done
+          done
+          for profile in '1 1 0 500' '200 1 0 500' '1 4 0 500' '200 4 0 500' '200 4 1024 200'; do
+            read -r size workers metadata requests <<< "$profile"
+            for round in 1 2 3; do
+              if [ "$round" = 2 ]; then variants='candidate baseline'; else variants='baseline candidate'; fi
+              for variant in $variants; do
+                if [ "$variant" = baseline ]; then source_dir="$reference"; else source_dir="$candidate"; fi
+                (
+                  cd "$source_dir"
+                  RUN_HTTP_LATENCY_AB=1 BATCH_AB_SIZE="$size" BATCH_AB_WORKERS="$workers" BATCH_AB_METADATA_BYTES="$metadata" BATCH_AB_REQUESTS="$requests" PERF_AB_VARIANT="$variant" \
+                    go test -count=1 -run '^TestHTTPBatchLatencyAB$' -timeout 3m -v ./internal/handlers
+                ) | tee "${RUNNER_TEMP}/latency-${size}-${workers}-${metadata}-${round}-${variant}.log"
+              done
+            done
+          done
+      - name: Archive raw A/B results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-hardware-ab
+          path: |
+            ${{ runner.temp }}/hardware-*.log
+            ${{ runner.temp }}/latency-*.log
+          if-no-files-found: warn

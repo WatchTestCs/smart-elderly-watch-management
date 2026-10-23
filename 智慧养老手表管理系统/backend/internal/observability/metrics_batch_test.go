@@ -49,13 +49,16 @@ func TestHTTPHistogramConcurrentUpdates(t *testing.T) {
 		}()
 	}
 	wg.Wait()
-	r.mu.Lock()
-	count := r.values["suining_http_duration_seconds_count{"+labels+"}"]
-	lt15 := r.values[`suining_http_duration_seconds_bucket{`+labels+`,le="15"}`]
-	lt20 := r.values[`suining_http_duration_seconds_bucket{`+labels+`,le="20"}`]
-	r.mu.Unlock()
-	if count != workers*each || lt15 != 0 || lt20 != workers*each {
-		t.Fatalf("concurrent histogram corrupted: count=%v, le15=%v, le20=%v", count, lt15, lt20)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, httptest.NewRequest("GET", "/metrics", nil))
+	for _, line := range []string{
+		"suining_http_duration_seconds_count{" + labels + "} 800\n",
+		`suining_http_duration_seconds_bucket{` + labels + `,le="15"} 0` + "\n",
+		`suining_http_duration_seconds_bucket{` + labels + `,le="20"} 800` + "\n",
+	} {
+		if !strings.Contains(w.Body.String(), line) {
+			t.Fatalf("missing %q", line)
+		}
 	}
 }
 

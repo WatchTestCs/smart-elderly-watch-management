@@ -13,12 +13,15 @@ import (
 )
 
 type Registry struct {
-	mu      sync.Mutex
-	values  map[string]float64
-	resolve func(*http.Request) string
+	mu             sync.Mutex
+	values         map[string]float64
+	httpHistograms map[string]*httpHistogram
+	resolve        func(*http.Request) string
 }
 
-func New() *Registry { return &Registry{values: map[string]float64{}} }
+func New() *Registry {
+	return &Registry{values: map[string]float64{}, httpHistograms: make(map[string]*httpHistogram)}
+}
 
 var Default = New()
 
@@ -38,24 +41,48 @@ func (r *Registry) Set(name string, value float64) {
 	r.mu.Unlock()
 }
 
-// observeHTTP batches all duration counters under one registry lock rather
-// than reacquiring the same mutex for each histogram bucket. Every finite
-// bucket is emitted, including zeros, to preserve Prometheus histogram shape.
+// Keep numeric observations contiguous. Only the first matching bucket is
+// incremented; cumulative Prometheus buckets are reconstructed during scrape.
+// Labels come from the bounded route/method/status resolver, never raw URLs.
+var httpBucketBounds = [...]float64{.005, .01, .025, .05, .1, .25, .5, 1, 2.5, 5, 10, 15, 20, 30, 60}
+
+type httpHistogram struct {
+	buckets [len(httpBucketBounds)]uint64
+	count   uint64
+	sum     float64
+	// Immutable names are built once per label set. Snapshots share only
+	// these names, never mutable counters or private request data.
+	keys *[len(httpBucketBounds) + 4]string
+}
+
+func newHTTPHistogram(labels string) *httpHistogram {
+	keys := new([len(httpBucketBounds) + 4]string)
+	keys[0] = "suining_http_requests_total{" + labels + "}"
+	keys[1] = "suining_http_duration_seconds_count{" + labels + "}"
+	keys[2] = "suining_http_duration_seconds_sum{" + labels + "}"
+	for i, upper := range httpBucketBounds {
+		keys[3+i] = `suining_http_duration_seconds_bucket{` + labels + `,le=` + strconv.Quote(strconv.FormatFloat(upper, 'g', -1, 64)) + `}`
+	}
+	keys[len(keys)-1] = `suining_http_duration_seconds_bucket{` + labels + `,le="+Inf"}`
+	return &httpHistogram{keys: keys}
+}
+
 func (r *Registry) observeHTTP(labels string, seconds float64) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	r.values["suining_http_requests_total{"+labels+"}"]++
-	r.values["suining_http_duration_seconds_count{"+labels+"}"]++
-	r.values["suining_http_duration_seconds_sum{"+labels+"}"] += seconds
-	for _, upper := range [...]float64{.005, .01, .025, .05, .1, .25, .5, 1, 2.5, 5, 10, 15, 20, 30, 60} {
-		key := `suining_http_duration_seconds_bucket{` + labels + `,le=` + strconv.Quote(strconv.FormatFloat(upper, 'g', -1, 64)) + `}`
+	h := r.httpHistograms[labels]
+	if h == nil {
+		h = newHTTPHistogram(labels)
+		r.httpHistograms[labels] = h
+	}
+	h.count++
+	h.sum += seconds
+	for i, upper := range httpBucketBounds {
 		if seconds <= upper {
-			r.values[key]++
-		} else {
-			r.values[key] += 0
+			h.buckets[i]++
+			break
 		}
 	}
-	r.values[`suining_http_duration_seconds_bucket{`+labels+`,le="+Inf"}`]++
 }
 
 func (r *Registry) ServeHTTP(w http.ResponseWriter, req *http.Request) {
@@ -65,13 +92,37 @@ func (r *Registry) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	// network client. A slow or disconnected scraper must not block request
 	// completion, counters, or dispatcher heartbeat updates.
 	r.mu.Lock()
-	values := make(map[string]float64, len(r.values))
-	keys := make([]string, 0, len(r.values))
+	size := len(r.values) + len(r.httpHistograms)*(len(httpBucketBounds)+4)
+	values := make(map[string]float64, size)
+	keys := make([]string, 0, size)
 	for k, v := range r.values {
 		values[k] = v
 		keys = append(keys, k)
 	}
+	// Copy numeric state under lock. Formatting and network writes happen
+	// after unlock so slow scrapers cannot block request completion.
+	histograms := make([]httpHistogram, 0, len(r.httpHistograms))
+	for _, h := range r.httpHistograms {
+		histograms = append(histograms, *h)
+	}
 	r.mu.Unlock()
+	put := func(key string, value float64) {
+		if _, exists := values[key]; !exists {
+			keys = append(keys, key)
+		}
+		values[key] = value
+	}
+	for _, h := range histograms {
+		put(h.keys[0], float64(h.count))
+		put(h.keys[1], float64(h.count))
+		put(h.keys[2], h.sum)
+		var cumulative uint64
+		for i, count := range h.buckets {
+			cumulative += count
+			put(h.keys[3+i], float64(cumulative))
+		}
+		put(h.keys[len(h.keys)-1], float64(h.count))
+	}
 	sort.Strings(keys)
 	for _, k := range keys {
 		if _, err := fmt.Fprintf(w, "%s %s\n", k, strconv.FormatFloat(values[k], 'g', -1, 64)); err != nil {

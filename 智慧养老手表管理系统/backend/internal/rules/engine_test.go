@@ -240,7 +240,7 @@ func TestTickPagesAndRetriesBeforeFailedDevice(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = p.Exec(ctx, "INSERT INTO rule_policy(device_id,revision,payload,updated_by) SELECT device_id,1,$1,1 FROM device", payload); err != nil {
+	if _, err = p.Exec(ctx, "INSERT INTO rule_policy(device_id,revision,payload,updated_by) SELECT device_id,1,$1,1 FROM device", json.RawMessage(payload)); err != nil {
 		t.Fatal(err)
 	}
 	e := Engine{DB: p}
@@ -254,14 +254,14 @@ func TestTickPagesAndRetriesBeforeFailedDevice(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = p.Exec(ctx, "UPDATE rule_policy SET payload=$1 WHERE device_id=50", invalid); err != nil {
+	if _, err = p.Exec(ctx, "UPDATE rule_policy SET payload=$1 WHERE device_id=50", json.RawMessage(invalid)); err != nil {
 		t.Fatal(err)
 	}
 	live, err := json.Marshal(Default())
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = p.Exec(ctx, "UPDATE rule_policy SET payload=$1 WHERE device_id=75", live); err != nil {
+	if _, err = p.Exec(ctx, "UPDATE rule_policy SET payload=$1 WHERE device_id=75", json.RawMessage(live)); err != nil {
 		t.Fatal(err)
 	}
 	if _, err = p.Exec(ctx, "UPDATE device SET last_time=$1 WHERE device_id=75", time.Now().UTC().Add(-time.Hour)); err != nil {
@@ -270,7 +270,7 @@ func TestTickPagesAndRetriesBeforeFailedDevice(t *testing.T) {
 	if err = e.Tick(ctx); err == nil || e.After != 49 {
 		t.Fatalf("failed device skipped: after=%d err=%v", e.After, err)
 	}
-	if _, err = p.Exec(ctx, "UPDATE rule_policy SET payload=$1 WHERE device_id=50", payload); err != nil {
+	if _, err = p.Exec(ctx, "UPDATE rule_policy SET payload=$1 WHERE device_id=50", json.RawMessage(payload)); err != nil {
 		t.Fatal(err)
 	}
 	if err = e.Tick(ctx); err != nil || e.After != 102 {

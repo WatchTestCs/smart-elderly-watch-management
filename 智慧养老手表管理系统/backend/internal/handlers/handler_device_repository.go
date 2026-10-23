@@ -126,13 +126,28 @@ func (h *Handler) hwAuth(ctx context.Context, q oldQuerier, deviceNo, secret, di
 	if err != nil {
 		return nil, "", "", err
 	}
-	if d == nil || !secretMatches(secret, d.Secret) {
+	return checkDeviceAuth(d, secret, disabledMsg)
+}
+
+// Both full and health-only projections use the same credential policy.
+func checkDeviceAuth(d *oldDevice, secret, disabledMsg string) (*oldDevice, string, string, error) {
+	if d == nil {
 		return nil, "0004", "设备号或密钥不正确", nil
 	}
-	if d.Status != nil && *d.Status == 0 {
-		return nil, "0004", disabledMsg, nil
+	code, msg := deviceCredentialFailure(secret, d.Secret, d.Status, disabledMsg)
+	if code != "" {
+		return nil, code, msg, nil
 	}
 	return d, "", "", nil
+}
+func deviceCredentialFailure(supplied, stored string, status *int, disabledMsg string) (string, string) {
+	if !secretMatches(supplied, stored) {
+		return "0004", "设备号或密钥不正确"
+	}
+	if status != nil && *status == 0 {
+		return "0004", disabledMsg
+	}
+	return "", ""
 }
 
 // touchDevice 更新心跳：last_time/last_online_at=now，battery/appVersion 仅在提供时更新。

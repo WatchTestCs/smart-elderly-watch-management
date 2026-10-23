@@ -1,11 +1,54 @@
 # preview 分支文件职责索引
 
-本索引覆盖当前提交的 **602 个文件**（更新：2026-10-22）。保留既有人工说明；来源附件与历史证据不代表当前版本的全套验收。
+本索引覆盖当前提交的 **645 个文件**（更新：2026-10-23）。保留既有人工说明；来源附件与历史证据不代表当前版本的全套验收。
 
 [项目 README](../README.md) · [文件职责数据](file-descriptions.json) · [历史性能资料](performance/2026-10-20-go123/README.md) · [最新性能报告](performance/2026-10-22-backend-hybrid/README.md)
 
 | 文件 | 职责 |
 | --- | --- |
+| [智慧养老手表管理系统/backend/internal/handlers/handler_health_device.go](../智慧养老手表管理系统/backend/internal/handlers/handler_health_device.go) | 健康写入的六字段设备投影、共享认证策略及精简时间戳更新 |
+| [docs/performance/2026-10-23-health-device/README.md](../docs/performance/2026-10-23-health-device/README.md) | 健康窄字段与顺序时间戳参数的实现、语义边界及真实延迟验证方法 |
+| [docs/performance/2026-10-23-preparation/results.json](../docs/performance/2026-10-23-preparation/results.json) | 已撤回事务外准备实验的两次全部 72 轮原始数据，含回退及阶段计时 |
+| [docs/performance/2026-10-23-preparation/README.md](../docs/performance/2026-10-23-preparation/README.md) | 已撤回的事务外准备实验、维护代价、两次对照与撤回原因 |
+| [docs/performance/2026-10-23-preparation/previous-pr30.md](../docs/performance/2026-10-23-preparation/previous-pr30.md) | 60be581 时 PR #30 完整实验快照，保留提交尖峰与所有回退 |
+| [docs/performance/2026-10-23-extreme/README.md](../docs/performance/2026-10-23-extreme/README.md) | 条件读取旧 JSON、参数数组复用、语义证明及事务阶段与大 JSON 延迟对照方法 |
+| [docs/performance/2026-10-23-extreme/previous-pr30.md](../docs/performance/2026-10-23-extreme/previous-pr30.md) | 93d609b 时 PR #30 历史描述快照，保留前几轮全部原始性能数据和尾部回退 |
+| [智慧养老手表管理系统/backend/internal/db/statement_cache.go](../智慧养老手表管理系统/backend/internal/db/statement_cache.go) | 物理 MySQL 连接的有界预编译语句缓存、会话清理和驱动接口转发 |
+| [智慧养老手表管理系统/backend/internal/db/statement_cache_test.go](../智慧养老手表管理系统/backend/internal/db/statement_cache_test.go) | 语句复用、FIFO 上限、参数数量、取消、错误不重放与会话变更测试 |
+| [智慧养老手表管理系统/backend/internal/handlers/latency_ab_test.go](../智慧养老手表管理系统/backend/internal/handlers/latency_ab_test.go) | 真实 MySQL 的 loopback HTTP 小请求/大批次及并发 p95/p99 对照夹具 |
+| [docs/performance/2026-10-23-latency/README.md](../docs/performance/2026-10-23-latency/README.md) | 连接级语句缓存的延迟目标、维护代价、回退和真实对照方法 |
+| [docs/performance/2026-10-23-transport/README.md](../docs/performance/2026-10-23-transport/README.md) | 驱动参数传输、原生 map 热快照、缓存预算与抖动回退的实现和性能验证说明 |
+| [docs/performance/2026-10-23-transport/cache-after.txt](../docs/performance/2026-10-23-transport/cache-after.txt) | 原生 map 批量发布及不可变计划指针缓存的三轮原始对照，含超容量场景 |
+| [docs/performance/2026-10-23-transport/cache-before.txt](../docs/performance/2026-10-23-transport/cache-before.txt) | 8a3da7c 数组快照在同一基准文件下的三轮缓存原始对照 |
+| [docs/performance/2026-10-23-transport/race-short.txt](../docs/performance/2026-10-23-transport/race-short.txt) | 当前版本本地完整短模式竞态检查输出；未配置数据库的用例跳过 |
+| [智慧养老手表管理系统/backend/internal/db/parameter_mode_integration_test.go](../智慧养老手表管理系统/backend/internal/db/parameter_mode_integration_test.go) | 隔离 MySQL 验证 JSON/BLOB/时间/NULL、转义模式、prepare 计数和保守回退 |
+| [智慧养老手表管理系统/backend/internal/db/parameter_mode_test.go](../智慧养老手表管理系统/backend/internal/db/parameter_mode_test.go) | MySQL 参数传输默认值、显式 DSN 开关及 collation 配置校验测试 |
+| [docs/performance/2026-10-23-hardware/mysql-initial.json](../docs/performance/2026-10-23-hardware/mysql-initial.json) | 首次真实 MySQL 六轮 A/B 原始结果，保留候选长尾及吞吐回退，不作为加速证明 |
+| [.github/workflows/backend-hardware-ab.yml](../.github/workflows/backend-hardware-ab.yml) | 同 runner 交替对比 60be581 的真实事务阶段、五种 HTTP 配置并归档全部日志 |
+| [docs/performance/2026-10-23-hardware/README.md](../docs/performance/2026-10-23-hardware/README.md) | 多核 SQL 缓存与健康批次布局的实现、原始对照、代价、数据库实验及维护约束 |
+| [docs/performance/2026-10-23-hardware/batch-layout.txt](../docs/performance/2026-10-23-hardware/batch-layout.txt) | 原值复制选择算法与 uint8 索引选择算法的五轮原始结果 |
+| [docs/performance/2026-10-23-hardware/cache-after.txt](../docs/performance/2026-10-23-hardware/cache-after.txt) | 64 组 8 路数组快照缓存在相同基准下的三轮原始结果 |
+| [docs/performance/2026-10-23-hardware/cache-before.txt](../docs/performance/2026-10-23-hardware/cache-before.txt) | 8f530cc 基线 SQL 缓存在 1/4/8 执行线程下的三轮原始结果 |
+| [docs/performance/2026-10-23-hardware/race-short.txt](../docs/performance/2026-10-23-hardware/race-short.txt) | 本轮完整后端短模式竞态检查输出；未配置数据库的用例跳过 |
+| [docs/performance/2026-10-23-hardware/statements.txt](../docs/performance/2026-10-23-hardware/statements.txt) | 拼接已缓存片段与读取完整 SQL 模板的三轮原始结果 |
+| [智慧养老手表管理系统/backend/internal/db/query_cache.go](../智慧养老手表管理系统/backend/internal/db/query_cache.go) | 原生 map 热快照、不可变计划指针、4096 项 FIFO 与按抖动抑制的批量发布 |
+| [智慧养老手表管理系统/backend/internal/db/query_cache_perf_test.go](../智慧养老手表管理系统/backend/internal/db/query_cache_perf_test.go) | SQL 缓存工作集及 1/4/8 执行线程吞吐和分配对照基准 |
+| [智慧养老手表管理系统/backend/internal/db/query_cache_test.go](../智慧养老手表管理系统/backend/internal/db/query_cache_test.go) | 全键隔离、FIFO 容量、并发编译、快照不可变与抖动后提升回归测试 |
+| [智慧养老手表管理系统/backend/internal/health/batch_hardware_ab_test.go](../智慧养老手表管理系统/backend/internal/health/batch_hardware_ab_test.go) | 仅显式开启时在专用隔离 MySQL 测量 100 批健康写入与提交并核对落库数量 |
+| [智慧养老手表管理系统/backend/internal/health/batch_layout_integration_test.go](../智慧养老手表管理系统/backend/internal/health/batch_layout_integration_test.go) | 真实 MySQL 验证 200 条输入的历史版本、最终版本、删除标记与重复重放 |
+| [智慧养老手表管理系统/backend/internal/health/batch_selection.go](../智慧养老手表管理系统/backend/internal/health/batch_selection.go) | 按批次私有 uint8 索引选择最终样本及有序中间事件，保持版本冲突与去重规则 |
+| [智慧养老手表管理系统/backend/internal/health/batch_selection_test.go](../智慧养老手表管理系统/backend/internal/health/batch_selection_test.go) | 原值复制算法 oracle、1000 组随机等价验证及布局分配基准 |
+| [智慧养老手表管理系统/backend/internal/health/batch_statements.go](../智慧养老手表管理系统/backend/internal/health/batch_statements.go) | 按语句类型和 1..200 行缓存健康批次完整 SQL，避免热路径拼接与重复片段常驻 |
+| [智慧养老手表管理系统/backend/internal/health/batch_statements_test.go](../智慧养老手表管理系统/backend/internal/health/batch_statements_test.go) | 完整 SQL 与原拼接等价、并发发布及拼接成本基准 |
+| [智慧养老手表管理系统/backend/internal/observability/metrics_batch_test.go](../智慧养老手表管理系统/backend/internal/observability/metrics_batch_test.go) | HTTP 指标累计桶、长尾、并发计数、慢抓取隔离及记录性能基准 |
+| [docs/performance/2026-10-23-hot-path/README.md](../docs/performance/2026-10-23-hot-path/README.md) | 后端架构、SQL 零复制绑定与紧凑 HTTP 指标优化分析、实测及验证边界 |
+| [docs/performance/2026-10-23-hot-path/before.txt](../docs/performance/2026-10-23-hot-path/before.txt) | preview 基线的三轮参数绑定、HTTP 指标、中间件与抓取原始微基准 |
+| [docs/performance/2026-10-23-hot-path/after.txt](../docs/performance/2026-10-23-hot-path/after.txt) | 优化版本相同基准的三轮原始测量结果 |
+| [docs/performance/2026-10-23-hot-path/race-short.txt](../docs/performance/2026-10-23-hot-path/race-short.txt) | 本轮完整后端短模式竞态测试输出，数据库集成用例因无测试连接而跳过 |
+| [智慧养老手表管理系统/backend/internal/db/query_binding_test.go](../智慧养老手表管理系统/backend/internal/db/query_binding_test.go) | SQL 参数绑定边界及并发缓存驱逐的数据隔离回归测试 |
+| [智慧养老手表管理系统/backend/internal/db/query_binding_perf_test.go](../智慧养老手表管理系统/backend/internal/db/query_binding_perf_test.go) | 1、14、2800 参数规模的热 SQL 模板绑定微基准 |
+| [智慧养老手表管理系统/backend/internal/observability/metrics_compact_test.go](../智慧养老手表管理系统/backend/internal/observability/metrics_compact_test.go) | 紧凑指标与原累计算法的边界等价及并发快照回归测试 |
+| [智慧养老手表管理系统/backend/internal/observability/metrics_perf_test.go](../智慧养老手表管理系统/backend/internal/observability/metrics_perf_test.go) | HTTP 指标中间件和 100 组标签抓取的微基准 |
 | [.dockerignore](../.dockerignore) | 项目配置、源文件或测试资料： |
 | [.github/CODEOWNERS](../.github/CODEOWNERS) | 指定仓库代码审查负责人和受保护路径 |
 | [.github/SECURITY.md](../.github/SECURITY.md) | 说明私下报告漏洞的渠道、范围与披露流程 |

@@ -9,7 +9,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/go-sql-driver/mysql"
@@ -60,7 +59,7 @@ func Postgres(pool *pgxpool.Pool) *Database {
 	return &Database{executor: executor{pg: pool}, pgPool: pool}
 }
 
-func OpenMySQL(ctx context.Context, dsn string) (*Database, error) {
+func mysqlConnectionConfig(dsn string) (*mysql.Config, error) {
 	if strings.TrimSpace(dsn) == "" {
 		return nil, errors.New("MYSQL_DSN is required")
 	}
@@ -80,12 +79,53 @@ func OpenMySQL(ctx context.Context, dsn string) (*Database, error) {
 	}
 	cfg.Params["charset"] = "utf8mb4"
 	cfg.Params["time_zone"] = "'+00:00'"
+	cfg.Params["transaction_isolation"] = "'READ-COMMITTED'"
 	// Preserve the existing parameterized concatenation expressions.
 	cfg.Params["sql_mode"] = "'STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION,PIPES_AS_CONCAT'"
-	formattedDSN := cfg.FormatDSN()
-	pool, err := sql.Open("mysql", formattedDSN)
+	// The driver owns escaping and safe fallback to binary prepare. Respect
+	// explicit DSN true/false; otherwise avoid one-shot prepare/close per call.
+	params := dsn[strings.LastIndexByte(dsn, '/')+1:]
+	explicit := false
+	if _, query, found := strings.Cut(params, "?"); found {
+		for _, option := range strings.Split(query, "&") {
+			key, _, _ := strings.Cut(option, "=")
+			if key == "interpolateParams" {
+				explicit = true
+				break
+			}
+		}
+	}
+	if !explicit {
+		cfg.InterpolateParams = true
+	}
+	// Revalidate because interpolation rejects collations whose encodings
+	// could make quoting ambiguous. Never silently relax the driver's guard.
+	validated, err := mysql.ParseDSN(cfg.FormatDSN())
 	if err != nil {
-		return nil, errors.New("open MySQL failed")
+		return nil, errors.New("invalid MySQL parameter transport configuration")
+	}
+	return validated, nil
+}
+
+func OpenMySQL(ctx context.Context, dsn string) (*Database, error) {
+	cfg, err := mysqlConnectionConfig(dsn)
+	if err != nil {
+		return nil, err
+	}
+	formattedDSN := cfg.FormatDSN()
+	cacheLimit, err := mysqlStatementCacheLimit(os.Getenv("MYSQL_STMT_CACHE_SIZE"))
+	if err != nil {
+		return nil, err
+	}
+	connector, err := mysql.NewConnector(cfg)
+	if err != nil {
+		return nil, errors.New("open MySQL connector failed")
+	}
+	var pool *sql.DB
+	if cacheLimit == 0 {
+		pool = sql.OpenDB(connector)
+	} else {
+		pool = sql.OpenDB(statementConnector{Connector: connector, capacity: cacheLimit, readCommittedSession: true})
 	}
 	pool.SetMaxOpenConns(20)
 	// Bursty device uploads otherwise repeatedly close and reopen 15 of the
@@ -298,37 +338,30 @@ var varcharCast = regexp.MustCompile(`(?i)\bAS varchar\b`)
 // This covers the application's SQL vocabulary, not arbitrary PostgreSQL SQL.
 // Keep parameters bound (including repeated/out-of-order $n) and never interpolate values.
 type queryPlan struct {
-	sql       string
-	positions []int
+	sql        string
+	positions  []int
+	parameters int
+	// direct means placeholders are exactly $1,$2,... in occurrence order.
+	direct bool
 }
 
-// Cache only SQL structure, never argument values. The FIFO bound prevents
-// dynamically shaped legacy searches from growing process memory indefinitely.
-var queryPlans = struct {
-	sync.RWMutex
-	plans map[string]queryPlan
-	keys  [512]string
-	next  int
-}{plans: make(map[string]queryPlan)}
+// SQL structure only; request arguments never enter the shared cache.
+var queryPlans = newQueryPlanCache()
 
 func mysqlQuery(query string, args []any) (string, []any, error) {
-	queryPlans.RLock()
-	plan, found := queryPlans.plans[query]
-	queryPlans.RUnlock()
-	if !found {
-		var err error
-		plan, err = compileMySQLQuery(query)
-		if err != nil {
-			return "", nil, err
+	plan, err := queryPlans.load(query)
+	if err != nil {
+		return "", nil, err
+	}
+	if plan.direct {
+		n := plan.parameters
+		if n > len(args) {
+			return "", nil, errors.New("SQL parameter out of range")
 		}
-		queryPlans.Lock()
-		if _, exists := queryPlans.plans[query]; !exists {
-			delete(queryPlans.plans, queryPlans.keys[queryPlans.next])
-			queryPlans.keys[queryPlans.next] = query
-			queryPlans.next = (queryPlans.next + 1) % len(queryPlans.keys)
-			queryPlans.plans[query] = plan
-		}
-		queryPlans.Unlock()
+		// Executors consume these arguments synchronously and never mutate
+		// them. Limit capacity so appending cannot overwrite caller arguments.
+		// No request values are retained in the shared SQL structure cache.
+		return plan.sql, args[:n:n], nil
 	}
 	bound := make([]any, len(plan.positions))
 	for i, position := range plan.positions {
@@ -446,7 +479,14 @@ func compileMySQLQuery(query string) (queryPlan, error) {
 		out = append(out, query[i])
 		i++
 	}
-	return queryPlan{sql: string(out), positions: positions}, nil
+	direct := true
+	for i, position := range positions {
+		if position != i {
+			direct = false
+			break
+		}
+	}
+	return queryPlan{sql: string(out), positions: positions, parameters: len(positions), direct: direct}, nil
 }
 
 // trimRightSpace 去掉尾部空格，让 REGEXP 的输出保持单一空格分隔。

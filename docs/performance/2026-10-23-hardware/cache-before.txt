@@ -1,0 +1,51 @@
+goos: linux
+goarch: amd64
+pkg: careold-go/internal/db
+cpu: AMD EPYC 9V74 80-Core Processor                
+BenchmarkQueryCacheScaling/sharedSQL2800           	55663706	         8.807 ns/op	       0 B/op	       0 allocs/op
+BenchmarkQueryCacheScaling/sharedSQL2800           	57946435	         9.366 ns/op	       0 B/op	       0 allocs/op
+BenchmarkQueryCacheScaling/sharedSQL2800           	53437630	         8.957 ns/op	       0 B/op	       0 allocs/op
+BenchmarkQueryCacheScaling/sharedSQL2800-4         	18704274	        31.33 ns/op	       0 B/op	       0 allocs/op
+BenchmarkQueryCacheScaling/sharedSQL2800-4         	12606649	        36.66 ns/op	       0 B/op	       0 allocs/op
+BenchmarkQueryCacheScaling/sharedSQL2800-4         	10987227	        40.55 ns/op	       0 B/op	       0 allocs/op
+BenchmarkQueryCacheScaling/sharedSQL2800-8         	16595804	        32.69 ns/op	       0 B/op	       0 allocs/op
+BenchmarkQueryCacheScaling/sharedSQL2800-8         	15624889	        37.35 ns/op	       0 B/op	       0 allocs/op
+BenchmarkQueryCacheScaling/sharedSQL2800-8         	13868366	        33.83 ns/op	       0 B/op	       0 allocs/op
+BenchmarkQueryCacheScaling/args14                  	27182019	        16.37 ns/op	       0 B/op	       0 allocs/op
+BenchmarkQueryCacheScaling/args14                  	31169958	        16.04 ns/op	       0 B/op	       0 allocs/op
+BenchmarkQueryCacheScaling/args14                  	30557605	        15.92 ns/op	       0 B/op	       0 allocs/op
+BenchmarkQueryCacheScaling/args14-4                	18539499	        32.01 ns/op	       0 B/op	       0 allocs/op
+BenchmarkQueryCacheScaling/args14-4                	12009570	        34.97 ns/op	       0 B/op	       0 allocs/op
+BenchmarkQueryCacheScaling/args14-4                	14994812	        31.60 ns/op	       0 B/op	       0 allocs/op
+BenchmarkQueryCacheScaling/args14-8                	12324295	        46.97 ns/op	       0 B/op	       0 allocs/op
+BenchmarkQueryCacheScaling/args14-8                	 9982552	        51.49 ns/op	       0 B/op	       0 allocs/op
+BenchmarkQueryCacheScaling/args14-8                	 9203136	        49.64 ns/op	       0 B/op	       0 allocs/op
+BenchmarkQueryCacheScaling/args2800                	 2475008	       241.8 ns/op	       0 B/op	       0 allocs/op
+BenchmarkQueryCacheScaling/args2800                	 2244477	       225.9 ns/op	       0 B/op	       0 allocs/op
+BenchmarkQueryCacheScaling/args2800                	 2068731	       228.0 ns/op	       0 B/op	       0 allocs/op
+BenchmarkQueryCacheScaling/args2800-4              	 5498757	        95.51 ns/op	       0 B/op	       0 allocs/op
+BenchmarkQueryCacheScaling/args2800-4              	 5026398	        81.34 ns/op	       0 B/op	       0 allocs/op
+BenchmarkQueryCacheScaling/args2800-4              	 4777015	        97.88 ns/op	       0 B/op	       0 allocs/op
+BenchmarkQueryCacheScaling/args2800-8              	 9175606	        50.55 ns/op	       0 B/op	       0 allocs/op
+BenchmarkQueryCacheScaling/args2800-8              	10601404	        41.38 ns/op	       0 B/op	       0 allocs/op
+BenchmarkQueryCacheScaling/args2800-8              	11873881	        50.75 ns/op	       0 B/op	       0 allocs/op
+BenchmarkQueryCacheScaling/workingSet64            	24459124	        19.63 ns/op	       0 B/op	       0 allocs/op
+BenchmarkQueryCacheScaling/workingSet64            	24441849	        19.66 ns/op	       0 B/op	       0 allocs/op
+BenchmarkQueryCacheScaling/workingSet64            	24461071	        20.31 ns/op	       0 B/op	       0 allocs/op
+BenchmarkQueryCacheScaling/workingSet64-4          	13925670	        31.64 ns/op	       0 B/op	       0 allocs/op
+BenchmarkQueryCacheScaling/workingSet64-4          	14441394	        37.69 ns/op	       0 B/op	       0 allocs/op
+BenchmarkQueryCacheScaling/workingSet64-4          	14167885	        31.48 ns/op	       0 B/op	       0 allocs/op
+BenchmarkQueryCacheScaling/workingSet64-8          	11446638	        44.46 ns/op	       0 B/op	       0 allocs/op
+BenchmarkQueryCacheScaling/workingSet64-8          	10294870	        48.88 ns/op	       0 B/op	       0 allocs/op
+BenchmarkQueryCacheScaling/workingSet64-8          	11019118	        43.04 ns/op	       0 B/op	       0 allocs/op
+BenchmarkQueryCacheScaling/workingSet1024          	   41474	     12142 ns/op	    1336 B/op	      28 allocs/op
+BenchmarkQueryCacheScaling/workingSet1024          	   37809	     12226 ns/op	    1336 B/op	      28 allocs/op
+BenchmarkQueryCacheScaling/workingSet1024          	   39336	     11959 ns/op	    1336 B/op	      28 allocs/op
+BenchmarkQueryCacheScaling/workingSet1024-4        	  151796	      3190 ns/op	     958 B/op	      19 allocs/op
+BenchmarkQueryCacheScaling/workingSet1024-4        	  143397	      3126 ns/op	     970 B/op	      20 allocs/op
+BenchmarkQueryCacheScaling/workingSet1024-4        	  139252	      3462 ns/op	     891 B/op	      18 allocs/op
+BenchmarkQueryCacheScaling/workingSet1024-8        	  262183	      1795 ns/op	     424 B/op	       8 allocs/op
+BenchmarkQueryCacheScaling/workingSet1024-8        	  263196	      1807 ns/op	     428 B/op	       8 allocs/op
+BenchmarkQueryCacheScaling/workingSet1024-8        	  258567	      1824 ns/op	     432 B/op	       8 allocs/op
+PASS
+ok  	careold-go/internal/db	26.327s

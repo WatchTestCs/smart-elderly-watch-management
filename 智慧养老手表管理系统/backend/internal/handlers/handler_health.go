@@ -76,7 +76,7 @@ func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	defer tx.Rollback(ctx)
-	d, code, msg, err := h.hwAuth(ctx, tx, req.DeviceNo, req.Secret, "设备已停用")
+	d, code, msg, err := h.healthDeviceAuth(ctx, tx, req.DeviceNo, req.Secret, "设备已停用")
 	if err != nil {
 		response.Error500(w, ref())
 		return
@@ -89,7 +89,7 @@ func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Reques
 	// under the owner-clock lock before locking the device row. Revalidate the
 	// full device binding under FOR UPDATE before committing anything.
 	if !lateDeviceLock {
-		d, err = scanOldDevice(tx.QueryRow(ctx, `SELECT `+oldDeviceCols+` FROM device WHERE device_id=$1 FOR UPDATE`, d.ID))
+		d, err = scanHealthDevice(tx.QueryRow(ctx, `SELECT `+healthDeviceCols+` FROM device WHERE device_id=$1 FOR UPDATE`, d.ID))
 		if err != nil {
 			response.Error500(w, ref())
 			return
@@ -115,7 +115,7 @@ func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	if lateDeviceLock {
-		locked, lockErr := scanOldDevice(tx.QueryRow(ctx, `SELECT `+oldDeviceCols+` FROM device WHERE device_id=$1 FOR UPDATE`, d.ID))
+		locked, lockErr := scanHealthDevice(tx.QueryRow(ctx, `SELECT `+healthDeviceCols+` FROM device WHERE device_id=$1 FOR UPDATE`, d.ID))
 		if lockErr != nil {
 			response.Error500(w, ref())
 			return
@@ -130,7 +130,7 @@ func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Reques
 			return
 		}
 	}
-	if err = touchDevice(ctx, tx, d.ID, nil, nil, time.Now()); err != nil {
+	if err = touchHealthDevice(ctx, tx, d.ID, time.Now()); err != nil {
 		response.Error500(w, ref())
 		return
 	}

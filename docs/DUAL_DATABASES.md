@@ -22,6 +22,10 @@ flowchart LR
 
 ## 配置与部署
 
+MySQL DSN 未显式设置时，当前后端使用驱动的 `interpolateParams=true`，减少逐次 prepare/execute/close。驱动负责绑定值的转义与保守回退；强制 utf8mb4、禁用多语句，拒绝插值不安全的 collation。需要二进制 prepare 兼容模式时，在 DSN 明确设置 `interpolateParams=false`。这不改变事务提交与持久性策略。SQL 中含字面量问号等情况仍可能由驱动退回 prepare。
+
+开发者向 JSON 列传值应使用 `json.RawMessage` 或 JSON 文本字符串；普通 `[]byte` 保持二进制语义，用于 BLOB。JSON 与二进制不能混用。数据库参数中不自行拼接或转义用户值。
+
 | 变量 | 使用位置 |
 | --- | --- |
 | `MYSQL_DSN` | Go 与迁移工具，go-sql-driver/mysql 原生 DSN，必须指定业务库 |
@@ -123,3 +127,7 @@ MySQL 8.4 镜像、生产数据迁移、远程 TLS、真实硬件/短信以及�
 在 backend 同时配置专用 `TEST_MYSQL_DSN` 和 `TEST_DATABASE_URL` 后执行 `go test -race -count=1 -timeout 240s ./...`、`go vet ./...`；MySQL 测试账号需要创建/删除随机测试数据库的权限。缺少变量时对应集成测试会跳过，不应把跳过视为双库验收通过。
 
 前端在 oldIot 执行 `npm run build`、`npm --prefix qa test`。真实后端浏览器脚本需独立空 MySQL、启动后的服务 URL、桌面测试令牌与 `CARE_E2E_TEST_ONLY=1`；仅支持 `qa_arch_` 前缀测试库。源码中的后端 CI 与迁移工作流已增加 MySQL 服务和双库测试变量；本轮仅修改及静态校验，没有运行远程 Actions。
+
+MySQL 业务连接默认每条物理连接缓存最多 64 个预编译语句，减少重复 SQL 解析与大参数转义；20 条连接默认最多 1280 个服务器句柄/副本，须计入服务器语句预算。`MYSQL_STMT_CACHE_SIZE=0` 恢复插值/临时 prepare 路径；可设置 0..128。冷启动与 SQL 形状抖动可能变慢，最终延迟对照见 [PR #30](https://github.com/WatchTestCs/smart-elderly-watch-management/pull/30)。
+
+MySQL 业务连接初始化时将 session 默认隔离设为 READ COMMITTED；正常业务 BeginTx 省去重复 SET TRANSACTION 往返，显式会话变更后恢复原设置路径。裸 SQL() 连接也继承此默认，需要其他隔离的工具须显式指定。[实现与验收方法](performance/2026-10-23-extreme/README.md)。

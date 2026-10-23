@@ -25,6 +25,8 @@ SQL 适配覆盖本应用使用的语法，不是任意 PostgreSQL SQL 的通用
 
 ## 运行配置
 
+MySQL 参数默认采用驱动插值传输，显式 DSN `interpolateParams=false` 可回退二进制 prepare。只由驱动编码参数，不改变业务事务和持久性。JSON 参数使用 `json.RawMessage`，BLOB 保持 `[]byte`；完整边界与回退见双库文档。
+
 在本目录启动，替换开发环境占位密码：
 
 ```powershell
@@ -150,3 +152,7 @@ MySQL 测试创建、清理随机测试数据库，需要相应权限；PG 测�
 - 工具每 100 ms 采样 Go HeapAlloc（可能漏掉更短峰值），并读取 Linux `/proc/self/status` 的 VmHWM 作为进程最大 RSS；`GCCount`、`GCPauseMs` 来自 Go 运行时累计计数，两者均不代表完整 GC CPU 消耗。
 - `GOGC=200` 可减少高分配工作负载的 GC 频率，但会增加活跃堆/驻留内存；**不自动开启**。在有余量的容器中可显式设置 `GOGC=200`，并联合监控 RSS、内存软限额、p99、队列等待、失败与真实消息持久化。小内存部署不能盲目提高 GOGC。
 - 禁止用标准库 CPU 基准声明生产系统 SLA，禁止在高压下静默丢弃健康数据或 SOS；应用层只能显式背压/拒绝并让上游确认重试。
+
+MySQL 业务连接默认每条物理连接缓存最多 64 个预编译语句，减少重复 SQL 解析与大参数转义；20 条连接默认最多 1280 个服务器句柄/副本，须计入服务器语句预算。`MYSQL_STMT_CACHE_SIZE=0` 恢复插值/临时 prepare 路径；可设置 0..128。冷启动与 SQL 形状抖动可能变慢，最终延迟对照见 [PR #30](https://github.com/WatchTestCs/smart-elderly-watch-management/pull/30)。
+
+业务 MySQL 连接默认 READ COMMITTED。已知 session 默认未被修改时，业务事务复用该隔离设置，减少一次往返；未知 SQL/显式会话变更后恢复每事务设置。裸 SQL() 工具如需其他隔离须显式指定。This also sets the default isolation of raw SQL() connections; tools requiring another isolation level must request it explicitly.
