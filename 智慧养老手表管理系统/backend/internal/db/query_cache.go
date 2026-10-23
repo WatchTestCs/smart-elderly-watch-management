@@ -44,7 +44,7 @@ type queryPlanShard struct {
 
 // Published sets and their plans are immutable. A reader keeps its snapshot
 // alive until lookup completes; Go's GC reclaims retired snapshots. Never put
-// argument values in a snapshot. Total live entries are bounded to 64*8.
+// argument values in a snapshot. Current published entries are bounded to 64*8.
 // Under churn, copy-on-write costs more allocation than the old FIFO map.
 // Per-shard FIFO also deliberately trades global eviction fairness for no
 // reader-side atomic read/modify/write and independent miss serialization.

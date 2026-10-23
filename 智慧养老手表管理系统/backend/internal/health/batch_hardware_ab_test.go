@@ -22,7 +22,7 @@ func TestBatchHardwareAB(t *testing.T) {
 	}
 	pool := dbtest.MySQL(t)
 	ctx := context.Background()
-	if _, err := pool.Exec(ctx, "INSERT INTO oldperson(old_id,name) VALUES(1,'synthetic perf fixture')"); err != nil {
+	if _, err := pool.Exec(ctx, "INSERT INTO oldperson(old_id,name) VALUES(1,'perf-ab')"); err != nil {
 		t.Fatal(err)
 	}
 	at := time.Date(2026, 10, 23, 0, 0, 0, 0, time.UTC)
