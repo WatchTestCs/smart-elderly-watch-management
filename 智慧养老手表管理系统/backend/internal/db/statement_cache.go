@@ -62,6 +62,14 @@ type statementConn struct {
 func (c *statementConn) statement(ctx context.Context, query string, count int) (mysqlWireStmt, error) {
 	stmt := c.plans[query]
 	if stmt == nil {
+		// Free capacity before preparing: a full server-side statement budget
+		// must not prevent replacement, even transiently on a cache miss.
+		if old := c.plans[c.keys[c.next]]; old != nil {
+			delete(c.plans, c.keys[c.next])
+			if err := old.Close(); err != nil {
+				return nil, err
+			}
+		}
 		prepared, err := c.PrepareContext(ctx, query)
 		if err != nil {
 			return nil, err
@@ -71,13 +79,6 @@ func (c *statementConn) statement(ctx context.Context, query string, count int) 
 		if !ok {
 			prepared.Close()
 			return nil, errors.New("MySQL driver lacks context statement interfaces")
-		}
-		if old := c.plans[c.keys[c.next]]; old != nil {
-			delete(c.plans, c.keys[c.next])
-			if err := old.Close(); err != nil {
-				stmt.Close()
-				return nil, err
-			}
 		}
 		c.plans[query] = stmt
 		c.keys[c.next] = query

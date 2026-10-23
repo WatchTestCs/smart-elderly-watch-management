@@ -12,12 +12,16 @@ import (
 type cacheTestWire struct {
 	mysqlWireConn
 	prepared, executed, direct, closed, connClosed int
+	maxOpen                                        int
 	prepareErr, executeErr                         error
 }
 
 func (c *cacheTestWire) PrepareContext(ctx context.Context, _ string) (driver.Stmt, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
+	}
+	if c.maxOpen > 0 && c.prepared-c.closed >= c.maxOpen {
+		return nil, errors.New("server statement budget exhausted")
 	}
 	c.prepared++
 	if c.prepareErr != nil {
@@ -140,5 +144,18 @@ func TestStatementCacheSessionChangeInvalidatesHandles(t *testing.T) {
 	c.ExecContext(ctx, "SELECT ?", args)
 	if w.prepared != 2 {
 		t.Fatal("statement not reprepared after session change", w)
+	}
+}
+
+func TestStatementCacheEvictsBeforeReachingServerBudget(t *testing.T) {
+	w := &cacheTestWire{maxOpen: 1}
+	c := cacheForTest(w, 1)
+	for _, q := range []string{"SELECT ?", "SELECT ?+1", "SELECT ?+2"} {
+		if _, err := c.ExecContext(context.Background(), q, []driver.NamedValue{{Ordinal: 1, Value: int64(1)}}); err != nil {
+			t.Fatal("replacement exceeded bounded server budget", err)
+		}
+	}
+	if w.prepared != 3 || w.closed != 2 {
+		t.Fatal(w)
 	}
 }
