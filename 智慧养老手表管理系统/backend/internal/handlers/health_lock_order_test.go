@@ -314,3 +314,94 @@ func TestHealthSingleAndBulkFitOneConnectionPool(t *testing.T) {
 		}
 	}
 }
+
+// Hold an uncommitted device change while the bulk path reads the old committed
+// auth snapshot. Release it only after the request waits on device FOR UPDATE;
+// the fresh locked row must reject it before any sample/history write.
+func TestBulkPreparationRevalidatesConcurrentDeviceChanges(t *testing.T) {
+	for _, tc := range []struct {
+		name, update string
+		code         int
+		factor       string
+	}{
+		{"rotation", "UPDATE device SET secret=$1 WHERE device_id=1", 200, "0004"},
+		{"disabled", "UPDATE device SET status=0 WHERE device_id=1", 200, "0004"},
+		{"unbind", "UPDATE device SET old_id=NULL WHERE device_id=1", 409, ""},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			pool := testDatabase(t)
+			if !pool.IsMySQL() {
+				t.Skip("MySQL row lock regression")
+			}
+			t.Setenv("HEALTH_LATE_DEVICE_LOCK", "0")
+			seedDevice(t, pool)
+			h := testHandler(pool)
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			holder, err := pool.Begin(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer holder.Rollback(context.Background())
+			var args []any
+			if tc.name == "rotation" {
+				hash, err := secretHash("another-test-secret-123456789012")
+				if err != nil {
+					t.Fatal(err)
+				}
+				args = append(args, hash)
+			}
+			if _, err = holder.Exec(ctx, tc.update, args...); err != nil {
+				t.Fatal(err)
+			}
+			body := healthLockOrderBody("bulk-" + tc.name)
+			samples := body["samples"].([]health.Sample)
+			second := samples[0]
+			second.RecordID += "-second"
+			body["samples"] = append(samples, second)
+			encoded, err := json.Marshal(body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			result := make(chan *httptest.ResponseRecorder, 1)
+			go func() {
+				req := httptest.NewRequest(http.MethodPost, "/restful/device/healthBatch", bytes.NewReader(encoded)).WithContext(ctx)
+				w := httptest.NewRecorder()
+				h.healthBatch(w, req)
+				result <- w
+			}()
+			for {
+				var waiters int
+				err = pool.QueryRow(ctx, `SELECT count(*) FROM performance_schema.data_lock_waits w JOIN performance_schema.data_locks l ON l.ENGINE_LOCK_ID=w.REQUESTING_ENGINE_LOCK_ID AND l.ENGINE=w.ENGINE WHERE l.OBJECT_SCHEMA=DATABASE() AND l.OBJECT_NAME='device'`).Scan(&waiters)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if waiters > 0 {
+					break
+				}
+				if ctx.Err() != nil {
+					t.Fatal(ctx.Err())
+				}
+				time.Sleep(5 * time.Millisecond)
+			}
+			if err = holder.Commit(ctx); err != nil {
+				t.Fatal(err)
+			}
+			select {
+			case w := <-result:
+				var out map[string]any
+				if json.Unmarshal(w.Body.Bytes(), &out) != nil || w.Code != tc.code || (tc.factor != "" && out["returnCode"] != tc.factor) {
+					t.Fatalf("stale bulk authorization accepted: HTTP %d %s", w.Code, w.Body.String())
+				}
+			case <-ctx.Done():
+				t.Fatal(ctx.Err())
+			}
+			for _, table := range []string{"health_sample", "health_change"} {
+				var count int
+				if err = pool.QueryRow(ctx, "SELECT count(*) FROM "+table).Scan(&count); err != nil || count != 0 {
+					t.Fatal("unauthorized bulk data persisted", table, count, err)
+				}
+			}
+		})
+	}
+}
