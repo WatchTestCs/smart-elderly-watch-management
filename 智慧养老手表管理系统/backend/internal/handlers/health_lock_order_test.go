@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -277,5 +278,39 @@ func TestLateHealthDeviceLockRejectsConcurrentCredentialChanges(t *testing.T) {
 				t.Fatalf("unauthorized change persisted %d %v", n, err)
 			}
 		})
+	}
+}
+
+func TestHealthSingleAndBulkFitOneConnectionPool(t *testing.T) {
+	pool := testDatabase(t)
+	if !pool.IsMySQL() {
+		t.Skip("MySQL pool admission regression")
+	}
+	pool.SQL().SetMaxOpenConns(1)
+	pool.SQL().SetMaxIdleConns(1)
+	seedDevice(t, pool)
+	h := testHandler(pool)
+	for _, size := range []int{1, 2} {
+		body := healthLockOrderBody(fmt.Sprintf("one-pool-%d", size))
+		samples := body["samples"].([]health.Sample)
+		if size == 2 {
+			second := samples[0]
+			second.RecordID += "-other"
+			samples = append(samples, second)
+			body["samples"] = samples
+		}
+		encoded, err := json.Marshal(body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		req := httptest.NewRequest(http.MethodPost, "/restful/device/healthBatch", bytes.NewReader(encoded)).WithContext(ctx)
+		result := httptest.NewRecorder()
+		h.healthBatch(result, req)
+		cancel()
+		var out map[string]any
+		if json.Unmarshal(result.Body.Bytes(), &out) != nil || result.Code != 200 || out["returnCode"] != "1111" || out["accepted"] != float64(size) {
+			t.Fatalf("size %d exhausted the pool: HTTP %d %s", size, result.Code, result.Body.String())
+		}
 	}
 }

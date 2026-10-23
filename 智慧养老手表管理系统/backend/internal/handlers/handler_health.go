@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"careold-go/internal/db"
 	"careold-go/internal/health"
 	"careold-go/internal/response"
 )
@@ -70,10 +71,23 @@ func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Reques
 		req.Samples[i] = normalized
 	}
 	ctx := r.Context()
-	// This read is deliberately outside the write transaction. Invalid secrets
-	// never pay JSON preparation or acquire a write connection. The snapshot is
-	// revalidated under the existing device row lock before it can authorize data.
-	d, code, msg, err := h.hwAuth(ctx, h.DB, req.DeviceNo, req.Secret, "设备已停用")
+	accepted := len(req.Samples)
+	var tx *db.Transaction
+	var err error
+	var prepared *health.PreparedBatch
+	var auth oldQuerier = h.DB
+	if accepted == 1 {
+		// Single-sample work is too small to justify a second pool checkout and
+		// preparation object. Preserve the original transaction/auth/save path.
+		tx, err = h.DB.Begin(ctx)
+		if err != nil {
+			response.Error500(w, ref())
+			return
+		}
+		defer tx.Rollback(ctx)
+		auth = tx
+	}
+	d, code, msg, err := h.hwAuth(ctx, auth, req.DeviceNo, req.Secret, "设备已停用")
 	if err != nil {
 		response.Error500(w, ref())
 		return
@@ -82,21 +96,22 @@ func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Reques
 		hwFail(w, code, msg)
 		return
 	}
-	accepted := len(req.Samples)
-	prepared, err := health.PrepareBatch(req.Samples)
-	if err != nil {
-		write400(w, err.Error())
-		return
+	if tx == nil {
+		// Authenticate before doing bulk encoding; the unlocked snapshot is
+		// revalidated under the original device lock before authorizing writes.
+		prepared, err = health.PrepareBatch(req.Samples)
+		if err != nil {
+			write400(w, err.Error())
+			return
+		}
+		req.Samples = nil
+		tx, err = h.DB.Begin(ctx)
+		if err != nil {
+			response.Error500(w, ref())
+			return
+		}
+		defer tx.Rollback(ctx)
 	}
-	// The prepared payload owns the metadata snapshot; release decoder maps and
-	// the validation slice before any database lock or commit wait.
-	req.Samples = nil
-	tx, err := h.DB.Begin(ctx)
-	if err != nil {
-		response.Error500(w, ref())
-		return
-	}
-	defer tx.Rollback(ctx)
 	// In experimental late-lock mode, perform the expensive sample write
 	// under the owner-clock lock before locking the device row. Revalidate the
 	// full device binding under FOR UPDATE before committing anything.
@@ -117,7 +132,13 @@ func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Reques
 	}
 	expectedOwner := *d.OldID
 	owner := health.Owner{OldID: expectedOwner, DeviceID: &d.ID, Epoch: d.HealthEpoch}
-	cursor, duplicates, err := health.SavePreparedBatch(ctx, tx, owner, prepared)
+	var cursor int64
+	var duplicates int
+	if prepared == nil {
+		cursor, duplicates, err = health.SaveBatch(ctx, tx, owner, req.Samples)
+	} else {
+		cursor, duplicates, err = health.SavePreparedBatch(ctx, tx, owner, prepared)
+	}
 	if err != nil {
 		if errors.Is(err, health.ErrConflict) {
 			conflict409(w, err.Error())

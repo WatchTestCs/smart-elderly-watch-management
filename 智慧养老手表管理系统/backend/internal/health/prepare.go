@@ -20,26 +20,38 @@ type PreparedBatch struct {
 }
 
 func PrepareBatch(samples []Sample) (*PreparedBatch, error) {
-	if len(samples) < 1 || len(samples) > 200 {
-		return nil, fmt.Errorf("batch must contain 1..200 samples")
+	input, minimumVersion, err := prepareSamples(samples)
+	if err != nil {
+		return nil, err
 	}
-	batch := &PreparedBatch{input: make([]preparedSample, 0, len(samples)), minimumVersion: samples[0].Version}
+	for i := range input {
+		input[i].sample.Metadata = nil
+	}
+	return &PreparedBatch{input: input, minimumVersion: minimumVersion}, nil
+}
+
+// The ordinary SaveBatch path uses this directly, without a heap-allocated
+// one-shot object or atomic consumption. Only explicitly prepared attempts need
+// that ownership guard. Keep the old input metadata lifetime on this path.
+func prepareSamples(samples []Sample) ([]preparedSample, int64, error) {
+	if len(samples) < 1 || len(samples) > 200 {
+		return nil, 0, fmt.Errorf("batch must contain 1..200 samples")
+	}
+	input := make([]preparedSample, 0, len(samples))
+	minimumVersion := samples[0].Version
 	for _, s := range samples {
 		normalized, err := s.Normalize()
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		payload, err := marshalSampleFast(normalized)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
-		batch.minimumVersion = min(batch.minimumVersion, normalized.Version)
-		// Metadata is captured in payload; storage only uses the scalar columns.
-		// Don't retain the caller's mutable map after preparation has completed.
-		normalized.Metadata = nil
-		batch.input = append(batch.input, preparedSample{sample: normalized, payload: payload})
+		minimumVersion = min(minimumVersion, normalized.Version)
+		input = append(input, preparedSample{sample: normalized, payload: payload})
 	}
-	return batch, nil
+	return input, minimumVersion, nil
 }
 
 func (b *PreparedBatch) consume() ([]preparedSample, int64, error) {

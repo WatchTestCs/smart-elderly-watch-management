@@ -41,11 +41,11 @@ func Save(ctx context.Context, tx *db.Transaction, o Owner, s Sample) (int64, bo
 // owner clock remains locked through commit, preserving each owner's cursor
 // ordering. MySQL reserves globally unique revision ranges infrequently.
 func SaveBatch(ctx context.Context, tx *db.Transaction, o Owner, samples []Sample) (int64, int, error) {
-	batch, err := PrepareBatch(samples)
+	input, minimumVersion, err := prepareSamples(samples)
 	if err != nil {
 		return 0, 0, err
 	}
-	return SavePreparedBatch(ctx, tx, o, batch)
+	return savePreparedInput(ctx, tx, o, input, minimumVersion)
 }
 
 // SavePreparedBatch consumes one preparation, preserving the caller's
@@ -58,6 +58,10 @@ func SavePreparedBatch(ctx context.Context, tx *db.Transaction, o Owner, batch *
 	if err != nil {
 		return 0, 0, err
 	}
+	return savePreparedInput(ctx, tx, o, input, minimumVersion)
+}
+
+func savePreparedInput(ctx context.Context, tx *db.Transaction, o Owner, input []preparedSample, minimumVersion int64) (int64, int, error) {
 	ids := make([]any, 1, len(input)+1)
 	seen := make(map[string]bool, len(input))
 	for i := range input {
