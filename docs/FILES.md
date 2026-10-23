@@ -1,14 +1,15 @@
 # preview 分支文件职责索引
 
-本索引覆盖当前提交的 **644 个文件**（更新：2026-10-23）。保留既有人工说明；来源附件与历史证据不代表当前版本的全套验收。
+本索引覆盖当前提交的 **645 个文件**（更新：2026-10-23）。保留既有人工说明；来源附件与历史证据不代表当前版本的全套验收。
 
 [项目 README](../README.md) · [文件职责数据](file-descriptions.json) · [历史性能资料](performance/2026-10-20-go123/README.md) · [最新性能报告](performance/2026-10-22-backend-hybrid/README.md)
 
 | 文件 | 职责 |
 | --- | --- |
-| [智慧养老手表管理系统/backend/internal/health/prepare.go](../智慧养老手表管理系统/backend/internal/health/prepare.go) | 事务外规范化与 JSON 准备、单次消费对象及请求 metadata 引用释放 |
-| [智慧养老手表管理系统/backend/internal/health/prepare_test.go](../智慧养老手表管理系统/backend/internal/health/prepare_test.go) | 准备快照、调用者修改隔离、并发单次消费与非法对象拒绝测试 |
-| [docs/performance/2026-10-23-preparation/README.md](../docs/performance/2026-10-23-preparation/README.md) | 事务外准备的鉴权和绑定复核边界、维护代价及真实延迟对照方法 |
+| [智慧养老手表管理系统/backend/internal/handlers/handler_health_device.go](../智慧养老手表管理系统/backend/internal/handlers/handler_health_device.go) | 健康写入的六字段设备投影、共享认证策略及精简时间戳更新 |
+| [docs/performance/2026-10-23-health-device/README.md](../docs/performance/2026-10-23-health-device/README.md) | 健康窄字段与顺序时间戳参数的实现、语义边界及真实延迟验证方法 |
+| [docs/performance/2026-10-23-preparation/results.json](../docs/performance/2026-10-23-preparation/results.json) | 已撤回事务外准备实验的两次全部 72 轮原始数据，含回退及阶段计时 |
+| [docs/performance/2026-10-23-preparation/README.md](../docs/performance/2026-10-23-preparation/README.md) | 已撤回的事务外准备实验、维护代价、两次对照与撤回原因 |
 | [docs/performance/2026-10-23-preparation/previous-pr30.md](../docs/performance/2026-10-23-preparation/previous-pr30.md) | 60be581 时 PR #30 完整实验快照，保留提交尖峰与所有回退 |
 | [docs/performance/2026-10-23-extreme/README.md](../docs/performance/2026-10-23-extreme/README.md) | 条件读取旧 JSON、参数数组复用、语义证明及事务阶段与大 JSON 延迟对照方法 |
 | [docs/performance/2026-10-23-extreme/previous-pr30.md](../docs/performance/2026-10-23-extreme/previous-pr30.md) | 93d609b 时 PR #30 历史描述快照，保留前几轮全部原始性能数据和尾部回退 |
