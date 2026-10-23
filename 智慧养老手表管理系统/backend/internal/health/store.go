@@ -1,11 +1,9 @@
 package health
 
 import (
-	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
@@ -45,13 +43,7 @@ func SaveBatch(ctx context.Context, tx *db.Transaction, o Owner, samples []Sampl
 	if len(samples) < 1 || len(samples) > 200 {
 		return 0, 0, fmt.Errorf("batch must contain 1..200 samples")
 	}
-	type prepared struct {
-		id       string
-		payload  []byte
-		sample   Sample
-		revision int64
-	}
-	input := make([]prepared, 0, len(samples))
+	input := make([]preparedSample, 0, len(samples))
 	ids := make([]any, 0, len(samples))
 	seen := make(map[string]bool, len(samples))
 	for _, s := range samples {
@@ -64,7 +56,7 @@ func SaveBatch(ctx context.Context, tx *db.Transaction, o Owner, samples []Sampl
 			return 0, 0, err
 		}
 		id := identityDigest(o, s)
-		input = append(input, prepared{id: id, payload: b, sample: s})
+		input = append(input, preparedSample{id: id, payload: b, sample: s})
 		if !seen[id] {
 			ids = append(ids, id)
 			seen[id] = true
@@ -74,18 +66,14 @@ func SaveBatch(ctx context.Context, tx *db.Transaction, o Owner, samples []Sampl
 	if err != nil {
 		return 0, 0, err
 	}
-	rows, err := tx.Query(ctx, `SELECT sample_id,version,revision,payload FROM health_sample WHERE sample_id IN `+valueRows(1, len(ids)), ids...)
+	rows, err := tx.Query(ctx, batchSQL(batchLookup, len(ids)), ids...)
 	if err != nil {
 		return 0, 0, err
 	}
-	type stored struct {
-		version, revision int64
-		payload           []byte
-	}
-	previous := make(map[string]stored, len(ids))
+	previous := make(map[string]storedSample, len(ids))
 	for rows.Next() {
 		var id string
-		var item stored
+		var item storedSample
 		if err = rows.Scan(&id, &item.version, &item.revision, &item.payload); err != nil {
 			break
 		}
@@ -98,65 +86,39 @@ func SaveBatch(ctx context.Context, tx *db.Transaction, o Owner, samples []Sampl
 	if err != nil {
 		return 0, 0, err
 	}
-	final := make(map[string]prepared, len(ids))
-	order := make([]string, 0, len(ids))
-	events := make([]prepared, 0, len(samples))
-	duplicates := 0
-	var cursor int64
-	for _, item := range input {
-		prior, exists := previous[item.id]
-		if exists && item.sample.Version <= prior.version {
-			if item.sample.Version == prior.version && !bytes.Equal(prior.payload, item.payload) {
-				var old Sample
-				if err = json.Unmarshal(prior.payload, &old); err != nil {
-					return 0, 0, err
-				}
-				canonical, _ := json.Marshal(old)
-				if !bytes.Equal(canonical, item.payload) {
-					return 0, 0, ErrConflict
-				}
-			}
-			duplicates++
-			cursor = max(cursor, prior.revision)
-			continue
-		}
-		if _, exists := final[item.id]; !exists {
-			order = append(order, item.id)
-		}
-		final[item.id] = item
-		previous[item.id] = stored{item.sample.Version, 0, item.payload}
-		events = append(events, item)
-	}
-	if len(events) == 0 {
-		return cursor, duplicates, nil
-	}
-	revision, err := clock.reserve(ctx, tx, o.OldID, len(events))
+	selection, err := selectBatch(input, previous, len(ids))
 	if err != nil {
 		return 0, 0, err
 	}
-	for i := range events {
-		revision++
-		events[i].revision = revision
-		final[events[i].id] = events[i]
+	if len(selection.events) == 0 {
+		return selection.cursor, selection.duplicates, nil
 	}
-	cursor = max(cursor, revision)
-	args := make([]any, 0, len(final)*14)
-	for _, id := range order {
-		item := final[id]
-		s := item.sample
+	revision, err := clock.reserve(ctx, tx, o.OldID, len(selection.events))
+	if err != nil {
+		return 0, 0, err
+	}
+	for _, index := range selection.events {
+		revision++
+		input[index].revision = revision
+	}
+	cursor := max(selection.cursor, revision)
+	args := make([]any, 0, len(selection.final)*14)
+	for _, id := range selection.order {
+		item := &input[selection.final[id]]
+		s := &item.sample
 		args = append(args, id, o.OldID, o.DeviceID, o.Epoch, s.Version, item.revision, item.payload, s.Source, s.SourceDevice, s.Metric, s.Semantics, s.Start.UnixMicro(), s.End.UnixMicro(), s.Deleted)
 	}
-	_, err = tx.Exec(ctx, `INSERT INTO health_sample(sample_id,old_id,device_id,epoch,version,revision,payload,source,source_device,metric,semantics,sample_start,sample_end,deleted) VALUES `+valueRows(len(final), 14)+`
-	 ON CONFLICT(sample_id) DO UPDATE SET version=EXCLUDED.version,revision=EXCLUDED.revision,payload=EXCLUDED.payload,source=EXCLUDED.source,source_device=EXCLUDED.source_device,metric=EXCLUDED.metric,semantics=EXCLUDED.semantics,sample_start=EXCLUDED.sample_start,sample_end=EXCLUDED.sample_end,deleted=EXCLUDED.deleted`, args...)
+	_, err = tx.Exec(ctx, batchSQL(batchUpsert, len(selection.final)), args...)
 	if err != nil {
 		return 0, 0, err
 	}
-	args = make([]any, 0, len(events)*4)
-	for _, event := range events {
+	args = make([]any, 0, len(selection.events)*4)
+	for _, index := range selection.events {
+		event := &input[index]
 		b := changePayload(o, event.id, event.revision, event.payload)
 		args = append(args, event.revision, o.OldID, event.id, b)
 	}
-	_, err = tx.Exec(ctx, `INSERT INTO health_change(revision,old_id,sample_id,payload) VALUES `+valueRows(len(events), 4), args...)
+	_, err = tx.Exec(ctx, batchSQL(batchChanges, len(selection.events)), args...)
 	if err != nil {
 		return 0, 0, fmt.Errorf("save health change: %w", err)
 	}
@@ -168,7 +130,7 @@ func SaveBatch(ctx context.Context, tx *db.Transaction, o Owner, samples []Sampl
 			return 0, 0, err
 		}
 	}
-	return cursor, duplicates, nil
+	return cursor, selection.duplicates, nil
 }
 
 // The sample was already JSON-encoded before taking the revision lock. Reuse

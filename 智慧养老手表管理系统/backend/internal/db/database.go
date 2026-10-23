@@ -9,7 +9,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/go-sql-driver/mysql"
@@ -298,42 +297,23 @@ var varcharCast = regexp.MustCompile(`(?i)\bAS varchar\b`)
 // This covers the application's SQL vocabulary, not arbitrary PostgreSQL SQL.
 // Keep parameters bound (including repeated/out-of-order $n) and never interpolate values.
 type queryPlan struct {
-	sql       string
-	positions []int
+	sql        string
+	positions  []int
+	parameters int
 	// direct means placeholders are exactly $1,$2,... in occurrence order.
 	direct bool
 }
 
-// Cache only SQL structure, never argument values. The FIFO bound prevents
-// dynamically shaped legacy searches from growing process memory indefinitely.
-var queryPlans = struct {
-	sync.RWMutex
-	plans map[string]queryPlan
-	keys  [512]string
-	next  int
-}{plans: make(map[string]queryPlan)}
+// SQL structure only; request arguments never enter the shared cache.
+var queryPlans = newQueryPlanCache()
 
 func mysqlQuery(query string, args []any) (string, []any, error) {
-	queryPlans.RLock()
-	plan, found := queryPlans.plans[query]
-	queryPlans.RUnlock()
-	if !found {
-		var err error
-		plan, err = compileMySQLQuery(query)
-		if err != nil {
-			return "", nil, err
-		}
-		queryPlans.Lock()
-		if _, exists := queryPlans.plans[query]; !exists {
-			delete(queryPlans.plans, queryPlans.keys[queryPlans.next])
-			queryPlans.keys[queryPlans.next] = query
-			queryPlans.next = (queryPlans.next + 1) % len(queryPlans.keys)
-			queryPlans.plans[query] = plan
-		}
-		queryPlans.Unlock()
+	plan, err := queryPlans.load(query)
+	if err != nil {
+		return "", nil, err
 	}
 	if plan.direct {
-		n := len(plan.positions)
+		n := plan.parameters
 		if n > len(args) {
 			return "", nil, errors.New("SQL parameter out of range")
 		}
@@ -465,7 +445,7 @@ func compileMySQLQuery(query string) (queryPlan, error) {
 			break
 		}
 	}
-	return queryPlan{sql: string(out), positions: positions, direct: direct}, nil
+	return queryPlan{sql: string(out), positions: positions, parameters: len(positions), direct: direct}, nil
 }
 
 // trimRightSpace 去掉尾部空格，让 REGEXP 的输出保持单一空格分隔。
