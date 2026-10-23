@@ -13,7 +13,7 @@ import (
 	"careold-go/internal/db/dbtest"
 )
 
-// This fixture must also compile unchanged at e39e14b. It measures the real
+// This fixture must also compile unchanged at 93d609b. It measures the real
 // SaveBatch+commit path, not a copy of the implementation. dbtest always creates
 // and drops an isolated database; never substitute a production connection.
 func TestBatchHardwareAB(t *testing.T) {
@@ -30,22 +30,26 @@ func TestBatchHardwareAB(t *testing.T) {
 	for i := range samples {
 		samples[i] = Sample{RecordID: fmt.Sprint(i), Source: "synthetic", SourceDevice: "synthetic", Metric: "heart_rate", Unit: "count/min", Value: Number(72), Start: at, End: at, Version: 1}
 	}
-	save := func(version int64) {
+	save := func(version int64) [3]time.Duration {
 		for i := range samples {
 			samples[i].Version = version
 		}
+		started := time.Now()
 		tx, err := pool.Begin(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
+		begun := time.Now()
 		_, duplicates, err := SaveBatch(ctx, tx, Owner{OldID: 1}, samples)
 		if err != nil || duplicates != 0 {
 			tx.Rollback(ctx)
 			t.Fatalf("save: duplicates=%d err=%v", duplicates, err)
 		}
+		written := time.Now()
 		if err := tx.Commit(ctx); err != nil {
 			t.Fatal(err)
 		}
+		return [3]time.Duration{begun.Sub(started), written.Sub(begun), time.Since(written)}
 	}
 	const warmup, batches = 3, 500
 	for version := int64(1); version <= warmup; version++ {
@@ -55,10 +59,11 @@ func TestBatchHardwareAB(t *testing.T) {
 	var before, after runtime.MemStats
 	runtime.ReadMemStats(&before)
 	durations := make([]time.Duration, 0, batches)
+	phases := make([][3]time.Duration, 0, batches)
 	start := time.Now()
 	for batch := range batches {
 		at := time.Now()
-		save(int64(warmup + batch + 1))
+		phases = append(phases, save(int64(warmup+batch+1)))
 		durations = append(durations, time.Since(at))
 	}
 	elapsed := time.Since(start)
@@ -86,6 +91,24 @@ func TestBatchHardwareAB(t *testing.T) {
 		"gc_cycles": after.NumGC - before.NumGC, "gc_pause_ns": after.PauseTotalNs - before.PauseTotalNs,
 		"persisted_samples": sampleCount, "persisted_events": eventCount,
 	}
+	phaseResults := make(map[string]any)
+	for phase, name := range []string{"begin", "save", "commit"} {
+		values := make([]time.Duration, len(phases))
+		for i, p := range phases {
+			values[i] = p[phase]
+		}
+		sort.Slice(values, func(i, j int) bool { return values[i] < values[j] })
+		phaseResults[name] = map[string]float64{"p50_ms": float64(values[len(values)/2]) / float64(time.Millisecond), "p99_ms": float64(values[(len(values)*99+99)/100-1]) / float64(time.Millisecond)}
+	}
+	sort.Slice(phases, func(i, j int) bool {
+		return phases[i][0]+phases[i][1]+phases[i][2] > phases[j][0]+phases[j][1]+phases[j][2]
+	})
+	tail := make([]map[string]float64, 0, 5)
+	for _, p := range phases[:5] {
+		tail = append(tail, map[string]float64{"begin_ms": float64(p[0]) / float64(time.Millisecond), "save_ms": float64(p[1]) / float64(time.Millisecond), "commit_ms": float64(p[2]) / float64(time.Millisecond)})
+	}
+	result["phases"] = phaseResults
+	result["slowest_transactions"] = tail
 	data, err := json.Marshal(result)
 	if err != nil {
 		t.Fatal(err)

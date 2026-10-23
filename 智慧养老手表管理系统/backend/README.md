@@ -154,3 +154,5 @@ MySQL 测试创建、清理随机测试数据库，需要相应权限；PG 测�
 - 禁止用标准库 CPU 基准声明生产系统 SLA，禁止在高压下静默丢弃健康数据或 SOS；应用层只能显式背压/拒绝并让上游确认重试。
 
 MySQL 业务连接默认每条物理连接缓存最多 64 个预编译语句，减少重复 SQL 解析与大参数转义；20 条连接默认最多 1280 个服务器句柄/副本，须计入服务器语句预算。`MYSQL_STMT_CACHE_SIZE=0` 恢复插值/临时 prepare 路径；可设置 0..128。冷启动与 SQL 形状抖动可能变慢，最终延迟对照见 [PR #30](https://github.com/WatchTestCs/smart-elderly-watch-management/pull/30)。
+
+业务 MySQL 连接默认 READ COMMITTED。已知 session 默认未被修改时，业务事务复用该隔离设置，减少一次往返；未知 SQL/显式会话变更后恢复每事务设置。裸 SQL() 工具如需其他隔离须显式指定。This also sets the default isolation of raw SQL() connections; tools requiring another isolation level must request it explicitly.

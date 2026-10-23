@@ -24,7 +24,7 @@ func TestMySQLParameterModeConfiguration(t *testing.T) {
 		if (err != nil) != tc.fail {
 			t.Fatalf("mode config error=%v want failure=%v", err, tc.fail)
 		}
-		if err == nil && (cfg.InterpolateParams != tc.want || cfg.MultiStatements || !strings.Contains(cfg.FormatDSN(), "charset=utf8mb4")) {
+		if err == nil && (cfg.Params["transaction_isolation"] != "'READ-COMMITTED'" || cfg.InterpolateParams != tc.want || cfg.MultiStatements || !strings.Contains(cfg.FormatDSN(), "charset=utf8mb4")) {
 			t.Fatal("parameter transport options not preserved")
 		}
 	}

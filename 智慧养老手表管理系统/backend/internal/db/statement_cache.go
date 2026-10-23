@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"database/sql/driver"
 	"errors"
 	"fmt"
@@ -33,7 +34,8 @@ type mysqlWireStmt interface {
 }
 type statementConnector struct {
 	driver.Connector
-	capacity int
+	capacity             int
+	readCommittedSession bool
 }
 
 func (c statementConnector) Connect(ctx context.Context) (driver.Conn, error) {
@@ -46,14 +48,68 @@ func (c statementConnector) Connect(ctx context.Context) (driver.Conn, error) {
 		conn.Close()
 		return nil, errors.New("MySQL driver lacks required connection interfaces")
 	}
-	return &statementConn{mysqlWireConn: wire, plans: make(map[string]mysqlWireStmt, c.capacity), keys: make([]string, c.capacity)}, nil
+	return &statementConn{mysqlWireConn: wire, plans: make(map[string]mysqlWireStmt, c.capacity), keys: make([]string, c.capacity), readCommittedSession: c.readCommittedSession}, nil
 }
 
 type statementConn struct {
 	mysqlWireConn
-	plans map[string]mysqlWireStmt
-	keys  []string
-	next  int
+	plans                map[string]mysqlWireStmt
+	keys                 []string
+	next                 int
+	readCommittedSession bool
+}
+
+// The connector initializes the session to READ COMMITTED. Ordinary application
+// DML/DDL cannot change that default, so avoid mysql's per-transaction SET round
+// trip. Unknown/session-changing SQL permanently disables this shortcut on that
+// connection; the explicit isolation request then follows the original driver.
+func sessionNeutralSQL(query string) bool {
+	q := strings.TrimSpace(query)
+	// Migration templates start with ordinary comments. Skip only comments
+	// that cannot execute SQL; MySQL version comments/hints stay conservative.
+	for len(q) > 0 {
+		if q[0] == '#' || (strings.HasPrefix(q, "--") && (len(q) == 2 || q[2] <= 32)) {
+			end := strings.IndexByte(q, '\n')
+			if end < 0 {
+				return false
+			}
+			q = strings.TrimSpace(q[end+1:])
+			continue
+		}
+		if strings.HasPrefix(q, "/*") && len(q) > 2 && q[2] != '!' && q[2] != '+' {
+			end := strings.Index(q[2:], "*/")
+			if end < 0 {
+				return false
+			}
+			q = strings.TrimSpace(q[end+4:])
+			continue
+		}
+		break
+	}
+	for _, prefix := range []string{"SELECT ", "INSERT ", "UPDATE ", "DELETE ", "CREATE ", "ALTER ", "DROP ", "TRUNCATE ", "SHOW ", "EXPLAIN ", "DESCRIBE "} {
+		if len(q) >= len(prefix) && strings.EqualFold(q[:len(prefix)], prefix) {
+			return true
+		}
+	}
+	return false
+}
+func (c *statementConn) BeginTx(ctx context.Context, opts driver.TxOptions) (driver.Tx, error) {
+	if c.readCommittedSession && opts.Isolation == driver.IsolationLevel(sql.LevelReadCommitted) {
+		opts.Isolation = driver.IsolationLevel(sql.LevelDefault)
+	}
+	return c.mysqlWireConn.BeginTx(ctx, opts)
+}
+func (c *statementConn) PrepareContext(ctx context.Context, query string) (driver.Stmt, error) {
+	if !sessionNeutralSQL(query) {
+		c.readCommittedSession = false
+	}
+	return c.mysqlWireConn.PrepareContext(ctx, query)
+}
+func (c *statementConn) Prepare(query string) (driver.Stmt, error) {
+	if !sessionNeutralSQL(query) {
+		c.readCommittedSession = false
+	}
+	return c.mysqlWireConn.Prepare(query)
 }
 
 // Entries belong exclusively to this physical connection. No global cache lock,
@@ -122,6 +178,9 @@ func (c *statementConn) clearStatements() error {
 	return first
 }
 func (c *statementConn) ExecContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Result, error) {
+	if !sessionNeutralSQL(query) {
+		c.readCommittedSession = false
+	}
 	if len(args) == 0 || !cacheableDML(query) {
 		if err := c.clearStatements(); err != nil {
 			return nil, err
@@ -138,6 +197,9 @@ func (c *statementConn) ExecContext(ctx context.Context, query string, args []dr
 	return stmt.ExecContext(ctx, args)
 }
 func (c *statementConn) QueryContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Rows, error) {
+	if !sessionNeutralSQL(query) {
+		c.readCommittedSession = false
+	}
 	if !cacheableDML(query) {
 		q := strings.TrimSpace(query)
 		if len(q) < 5 || !strings.EqualFold(q[:5], "SHOW ") {

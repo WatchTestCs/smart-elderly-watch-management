@@ -14,7 +14,7 @@ func TestBatchStatementsMatchOriginalAssembly(t *testing.T) {
 			defer wg.Done()
 			for rows := 1; rows <= 200; rows++ {
 				want := [...]string{
-					batchLookupPrefix + valueRows(1, rows),
+					batchLookupPrefix + fmt.Sprintf("$%d", rows+1) + batchLookupSuffix + valueRows(1, rows),
 					batchUpsertPrefix + valueRows(rows, 14) + batchUpsertSuffix,
 					batchChangesPrefix + valueRows(rows, 4),
 				}
@@ -44,7 +44,7 @@ func BenchmarkCompleteBatchSQL(b *testing.B) {
 			b.Run("fragments", func(b *testing.B) {
 				b.ReportAllocs()
 				for range b.N {
-					batchSQLSink = batchLookupPrefix + valueRows(1, rows)
+					batchSQLSink = batchLookupPrefix + fmt.Sprintf("$%d", rows+1) + batchLookupSuffix + valueRows(1, rows)
 					batchSQLSink = batchUpsertPrefix + valueRows(rows, 14) + batchUpsertSuffix
 					batchSQLSink = batchChangesPrefix + valueRows(rows, 4)
 				}

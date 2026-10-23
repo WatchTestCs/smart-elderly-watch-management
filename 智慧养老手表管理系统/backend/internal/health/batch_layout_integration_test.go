@@ -1,9 +1,12 @@
 package health
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"strings"
 	"testing"
 
 	"careold-go/internal/db/dbtest"
@@ -98,5 +101,78 @@ func TestIndexedBatchPersistsAllVersionsAndTombstones(t *testing.T) {
 	rows.Close()
 	if count != 50 {
 		t.Fatalf("final count %d", count)
+	}
+}
+
+func TestConditionalPreviousPayloadPreservesMixedVersionsAndConflicts(t *testing.T) {
+	pool := dbtest.MySQL(t)
+	ctx := context.Background()
+	if _, err := pool.Exec(ctx, "INSERT INTO oldperson(old_id,name) VALUES(1,'pruned')"); err != nil {
+		t.Fatal(err)
+	}
+	_, a := sampleBenchmarkInput()
+	a.RecordID = "a"
+	a.Version = 4
+	a.Metadata = map[string]string{"large": strings.Repeat("x", 1024)}
+	b := a
+	b.RecordID = "b"
+	b.Version = 12
+	owner := Owner{OldID: 1}
+	save := func(samples []Sample) (int64, int, error) {
+		tx, err := pool.Begin(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer tx.Rollback(ctx)
+		rev, duplicates, err := SaveBatch(ctx, tx, owner, samples)
+		if err == nil {
+			err = tx.Commit(ctx)
+		}
+		return rev, duplicates, err
+	}
+	if _, d, err := save([]Sample{a, b}); err != nil || d != 0 {
+		t.Fatal(d, err)
+	}
+	rows, err := pool.Query(ctx, batchSQL(batchLookup, 2), identityDigest(owner, a), identityDigest(owner, b), int64(10))
+	if err != nil {
+		t.Fatal(err)
+	}
+	seen := 0
+	for rows.Next() {
+		var id string
+		var prior storedSample
+		if err := rows.Scan(&id, &prior.version, &prior.revision, &prior.payload); err != nil {
+			t.Fatal(err)
+		}
+		if prior.version == 4 && prior.payload != nil {
+			t.Fatal("obsolete JSON was transferred")
+		}
+		if prior.version == 12 && !bytes.Contains(prior.payload, []byte("large")) {
+			t.Fatal("needed conflict payload was omitted")
+		}
+		seen++
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatal(err)
+	}
+	rows.Close()
+	if seen != 2 {
+		t.Fatal(seen)
+	}
+	a.Version = 5
+	if rev, d, err := save([]Sample{a, b}); err != nil || d != 1 || rev != 3 {
+		t.Fatal("mixed update/replay changed", rev, d, err)
+	}
+	a.Version = 6
+	b.Value = Number(199)
+	if _, _, err := save([]Sample{a, b}); !errors.Is(err, ErrConflict) {
+		t.Fatal("equal-version conflict lost", err)
+	}
+	var count, version int64
+	if err := pool.QueryRow(ctx, "SELECT count(*) FROM health_change").Scan(&count); err != nil || count != 3 {
+		t.Fatal("failed batch persisted history", count, err)
+	}
+	if err := pool.QueryRow(ctx, "SELECT version FROM health_sample WHERE sample_id=$1", identityDigest(owner, a)).Scan(&version); err != nil || version != 5 {
+		t.Fatal("failed batch persisted current row", version, err)
 	}
 }

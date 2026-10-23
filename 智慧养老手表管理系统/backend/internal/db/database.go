@@ -79,6 +79,7 @@ func mysqlConnectionConfig(dsn string) (*mysql.Config, error) {
 	}
 	cfg.Params["charset"] = "utf8mb4"
 	cfg.Params["time_zone"] = "'+00:00'"
+	cfg.Params["transaction_isolation"] = "'READ-COMMITTED'"
 	// Preserve the existing parameterized concatenation expressions.
 	cfg.Params["sql_mode"] = "'STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION,PIPES_AS_CONCAT'"
 	// The driver owns escaping and safe fallback to binary prepare. Respect
@@ -124,7 +125,7 @@ func OpenMySQL(ctx context.Context, dsn string) (*Database, error) {
 	if cacheLimit == 0 {
 		pool = sql.OpenDB(connector)
 	} else {
-		pool = sql.OpenDB(statementConnector{Connector: connector, capacity: cacheLimit})
+		pool = sql.OpenDB(statementConnector{Connector: connector, capacity: cacheLimit, readCommittedSession: true})
 	}
 	pool.SetMaxOpenConns(20)
 	// Bursty device uploads otherwise repeatedly close and reopen 15 of the

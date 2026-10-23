@@ -68,6 +68,9 @@ func TestIndexedBatchMatchesValueCopySelection(t *testing.T) {
 			s := base
 			s.RecordID = fmt.Sprint(random.Intn(30))
 			s.Version = 1 + random.Int63n(6)
+			if trial%3 == 0 {
+				s.Version += 10
+			}
 			s.Value = Number(float64(random.Intn(4)))
 			if random.Intn(8) == 0 {
 				s.Deleted = true
@@ -105,6 +108,16 @@ func TestIndexedBatchMatchesValueCopySelection(t *testing.T) {
 			}
 		}
 		before := cloneStored(previous)
+		minimumVersion := input[0].sample.Version
+		for _, item := range input {
+			minimumVersion = min(minimumVersion, item.sample.Version)
+		}
+		for id, prior := range previous {
+			if prior.version < minimumVersion {
+				prior.payload = nil
+				previous[id] = prior
+			}
+		}
 		got, err := selectBatch(input, previous, len(distinct))
 		want, werr := selectBatchReference(input, before, len(distinct))
 		if (err == nil) != (werr == nil) || errors.Is(err, ErrConflict) != errors.Is(werr, ErrConflict) {

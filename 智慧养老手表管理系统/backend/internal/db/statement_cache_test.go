@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"database/sql/driver"
 	"errors"
 	"testing"
@@ -10,6 +11,7 @@ import (
 )
 
 type cacheTestWire struct {
+	lastOptions driver.TxOptions
 	mysqlWireConn
 	prepared, executed, direct, closed, connClosed int
 	maxOpen                                        int
@@ -157,5 +159,49 @@ func TestStatementCacheEvictsBeforeReachingServerBudget(t *testing.T) {
 	}
 	if w.prepared != 3 || w.closed != 2 {
 		t.Fatal(w)
+	}
+}
+
+func (w *cacheTestWire) BeginTx(_ context.Context, opts driver.TxOptions) (driver.Tx, error) {
+	w.lastOptions = opts
+	return nil, nil
+}
+func TestKnownSessionIsolationAvoidsRedundantSetAndDisablesOnMutation(t *testing.T) {
+	w := &cacheTestWire{}
+	c := cacheForTest(w, 2)
+	c.readCommittedSession = true
+	opts := driver.TxOptions{Isolation: driver.IsolationLevel(sql.LevelReadCommitted), ReadOnly: true}
+	c.BeginTx(context.Background(), opts)
+	if w.lastOptions.Isolation != driver.IsolationLevel(sql.LevelDefault) || !w.lastOptions.ReadOnly {
+		t.Fatal("known session or readonly options changed", w.lastOptions)
+	}
+	c.BeginTx(context.Background(), driver.TxOptions{Isolation: driver.IsolationLevel(sql.LevelSerializable)})
+	if w.lastOptions.Isolation != driver.IsolationLevel(sql.LevelSerializable) {
+		t.Fatal("overrode caller isolation")
+	}
+	c.ExecContext(context.Background(), "SET SESSION transaction_isolation='REPEATABLE-READ'", nil)
+	c.BeginTx(context.Background(), opts)
+	if w.lastOptions.Isolation != opts.Isolation {
+		t.Fatal("session mutation did not restore explicit isolation")
+	}
+	for _, q := range []string{"/* session */ SET sql_mode=''", "CALL session_change()"} {
+		c.readCommittedSession = true
+		c.PrepareContext(context.Background(), q)
+		if c.readCommittedSession {
+			t.Fatal("explicit prepare retained unsafe assumption", q)
+		}
+	}
+	for _, q := range []string{"CREATE TABLE t(id INT)", "ALTER TABLE t ADD v INT", "SELECT ?", "SHOW TABLES", "-- migration\nCREATE TABLE t(id INT)", "/* ordinary */ SELECT ?"} {
+		if !sessionNeutralSQL(q) {
+			t.Fatal("unexpected isolation invalidation", q)
+		}
+	}
+}
+
+func TestExecutableCommentsDoNotRetainKnownIsolation(t *testing.T) {
+	for _, q := range []string{"/*! SET SESSION transaction_isolation='REPEATABLE-READ' */", "/*+ hint */ SELECT 1", "-- no newline", "/* unterminated"} {
+		if sessionNeutralSQL(q) {
+			t.Fatal("unknown SQL retained session assumption", q)
+		}
 	}
 }

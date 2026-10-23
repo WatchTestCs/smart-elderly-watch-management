@@ -129,3 +129,5 @@ MySQL 8.4 镜像、生产数据迁移、远程 TLS、真实硬件/短信以及�
 前端在 oldIot 执行 `npm run build`、`npm --prefix qa test`。真实后端浏览器脚本需独立空 MySQL、启动后的服务 URL、桌面测试令牌与 `CARE_E2E_TEST_ONLY=1`；仅支持 `qa_arch_` 前缀测试库。源码中的后端 CI 与迁移工作流已增加 MySQL 服务和双库测试变量；本轮仅修改及静态校验，没有运行远程 Actions。
 
 MySQL 业务连接默认每条物理连接缓存最多 64 个预编译语句，减少重复 SQL 解析与大参数转义；20 条连接默认最多 1280 个服务器句柄/副本，须计入服务器语句预算。`MYSQL_STMT_CACHE_SIZE=0` 恢复插值/临时 prepare 路径；可设置 0..128。冷启动与 SQL 形状抖动可能变慢，最终延迟对照见 [PR #30](https://github.com/WatchTestCs/smart-elderly-watch-management/pull/30)。
+
+MySQL 业务连接初始化时将 session 默认隔离设为 READ COMMITTED；正常业务 BeginTx 省去重复 SET TRANSACTION 往返，显式会话变更后恢复原设置路径。裸 SQL() 连接也继承此默认，需要其他隔离的工具须显式指定。[实现与验收方法](performance/2026-10-23-extreme/README.md)。

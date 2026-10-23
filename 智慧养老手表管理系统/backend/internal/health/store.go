@@ -45,13 +45,15 @@ func SaveBatch(ctx context.Context, tx *db.Transaction, o Owner, samples []Sampl
 		return 0, 0, fmt.Errorf("batch must contain 1..200 samples")
 	}
 	input := make([]preparedSample, 0, len(samples))
-	ids := make([]any, 0, len(samples))
+	ids := make([]any, 0, len(samples)+1)
+	minimumVersion := samples[0].Version
 	seen := make(map[string]bool, len(samples))
 	for _, s := range samples {
 		s, err := s.Normalize()
 		if err != nil {
 			return 0, 0, err
 		}
+		minimumVersion = min(minimumVersion, s.Version)
 		b, err := marshalSampleFast(s)
 		if err != nil {
 			return 0, 0, err
@@ -67,11 +69,16 @@ func SaveBatch(ctx context.Context, tx *db.Transaction, o Owner, samples []Sampl
 	if err != nil {
 		return 0, 0, err
 	}
-	rows, err := tx.Query(ctx, batchSQL(batchLookup, len(ids)), ids...)
+	// Older stored versions cannot require equality/conflict comparison against
+	// any input in this batch. Keep their metadata but avoid serializing and
+	// transferring the JSON under the owner lock. Equal/newer versions retain
+	// payloads, including mixed-version and out-of-order batches.
+	ids = append(ids, minimumVersion)
+	rows, err := tx.Query(ctx, batchSQL(batchLookup, len(ids)-1), ids...)
 	if err != nil {
 		return 0, 0, err
 	}
-	previous := make(map[string]storedSample, len(ids))
+	previous := make(map[string]storedSample, len(ids)-1)
 	for rows.Next() {
 		var id string
 		var item storedSample
@@ -87,7 +94,7 @@ func SaveBatch(ctx context.Context, tx *db.Transaction, o Owner, samples []Sampl
 	if err != nil {
 		return 0, 0, err
 	}
-	selection, err := selectBatch(input, previous, len(ids))
+	selection, err := selectBatch(input, previous, len(ids)-1)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -103,7 +110,7 @@ func SaveBatch(ctx context.Context, tx *db.Transaction, o Owner, samples []Sampl
 		input[index].revision = revision
 	}
 	cursor := max(selection.cursor, revision)
-	args := make([]any, 0, len(selection.final)*14)
+	args := make([]any, 0, max(len(selection.final)*14, len(selection.events)*4))
 	for _, id := range selection.order {
 		item := &input[selection.final[id]]
 		s := &item.sample
@@ -113,7 +120,9 @@ func SaveBatch(ctx context.Context, tx *db.Transaction, o Owner, samples []Sampl
 	if err != nil {
 		return 0, 0, err
 	}
-	args = make([]any, 0, len(selection.events)*4)
+	// Exec consumes arguments synchronously; reuse the transaction-private backing
+	// array for history instead of allocating another large pointer slice.
+	args = args[:0]
 	for _, index := range selection.events {
 		event := &input[index]
 		b := changePayload(o, event.id, event.revision, event.payload)

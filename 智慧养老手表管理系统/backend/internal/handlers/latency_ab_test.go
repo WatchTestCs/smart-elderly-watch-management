@@ -12,6 +12,7 @@ import (
 	"runtime"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -19,7 +20,7 @@ import (
 	"careold-go/internal/health"
 )
 
-// Copy this fixture unchanged into e39e14b for the A/B baseline. This includes
+// Copy this fixture unchanged into 93d609b for the A/B baseline. This includes
 // loopback HTTP, JSON decoding, real device authentication, row locks and commit.
 // It excludes the outer production middleware, proxies and external device RTT.
 func TestHTTPBatchLatencyAB(t *testing.T) {
@@ -39,7 +40,16 @@ func TestHTTPBatchLatencyAB(t *testing.T) {
 	}
 	size := option("BATCH_AB_SIZE", 200, 200)
 	workers := option("BATCH_AB_WORKERS", 1, 8)
-	const warmup, requests = 3, 500
+	const warmup = 3
+	requests := option("BATCH_AB_REQUESTS", 500, 2000)
+	metadataBytes := 0
+	if raw := os.Getenv("BATCH_AB_METADATA_BYTES"); raw != "" && raw != "0" {
+		metadataBytes = option("BATCH_AB_METADATA_BYTES", 1, 4096)
+	}
+	var metadata map[string]string
+	if metadataBytes > 0 {
+		metadata = map[string]string{"synthetic": strings.Repeat("x", metadataBytes)}
+	}
 	pool := testDatabase(t)
 	seedDevice(t, pool)
 	h := testHandler(pool)
@@ -51,7 +61,7 @@ func TestHTTPBatchLatencyAB(t *testing.T) {
 	send := func(worker, version int) (time.Duration, error) {
 		samples := make([]health.Sample, size)
 		for i := range samples {
-			samples[i] = health.Sample{RecordID: fmt.Sprintf("lat-%d-%d", worker, i), Source: "synthetic", SourceDevice: "WATCH001", Metric: "heart_rate", Unit: "count/min", Value: health.Number(72), Start: at, End: at, Version: int64(version)}
+			samples[i] = health.Sample{RecordID: fmt.Sprintf("lat-%d-%d", worker, i), Source: "synthetic", SourceDevice: "WATCH001", Metric: "heart_rate", Unit: "count/min", Value: health.Number(72), Start: at, End: at, Version: int64(version), Metadata: metadata}
 		}
 		body, err := json.Marshal(map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "bindingVersion": 1, "samples": samples})
 		if err != nil {
@@ -139,7 +149,7 @@ func TestHTTPBatchLatencyAB(t *testing.T) {
 	}
 	sort.Slice(durations, func(i, j int) bool { return durations[i] < durations[j] })
 	percentile := func(p int) float64 { return float64(durations[(requests*p+99)/100-1]) / float64(time.Millisecond) }
-	result := map[string]any{"variant": os.Getenv("PERF_AB_VARIANT"), "kind": "loopback-http-handler-real-mysql", "go": runtime.Version(), "gomaxprocs": runtime.GOMAXPROCS(0), "workers": workers, "requests": requests, "samples_per_request": size, "errors": 0, "elapsed_ms": float64(elapsed) / float64(time.Millisecond), "requests_per_second": requests / elapsed.Seconds(), "p50_ms": percentile(50), "p95_ms": percentile(95), "p99_ms": percentile(99), "max_ms": float64(durations[len(durations)-1]) / float64(time.Millisecond), "allocated_bytes_per_request": (after.TotalAlloc - before.TotalAlloc) / requests, "gc_cycles": after.NumGC - before.NumGC, "persisted_samples": samples, "persisted_events": events}
+	result := map[string]any{"variant": os.Getenv("PERF_AB_VARIANT"), "kind": "loopback-http-handler-real-mysql", "go": runtime.Version(), "gomaxprocs": runtime.GOMAXPROCS(0), "workers": workers, "metadata_bytes": metadataBytes, "requests": requests, "samples_per_request": size, "errors": 0, "elapsed_ms": float64(elapsed) / float64(time.Millisecond), "requests_per_second": float64(requests) / elapsed.Seconds(), "p50_ms": percentile(50), "p95_ms": percentile(95), "p99_ms": percentile(99), "max_ms": float64(durations[len(durations)-1]) / float64(time.Millisecond), "allocated_bytes_per_request": (after.TotalAlloc - before.TotalAlloc) / uint64(requests), "gc_cycles": after.NumGC - before.NumGC, "persisted_samples": samples, "persisted_events": events}
 	data, err := json.Marshal(result)
 	if err != nil {
 		t.Fatal(err)

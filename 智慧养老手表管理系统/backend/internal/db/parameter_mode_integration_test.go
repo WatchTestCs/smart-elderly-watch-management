@@ -192,3 +192,72 @@ func TestMySQLConnectionStatementCacheLifecycle(t *testing.T) {
 		t.Fatal("cancelled write persisted", count, err)
 	}
 }
+
+func TestMySQLSessionIsolationShortcutAndMutationFallback(t *testing.T) {
+	primary := dbtest.MySQL(t)
+	ctx := context.Background()
+	conn, err := primary.SQL().Conn(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+	// The migrated connection keeps the configured session default. Each normal
+	// BeginTx must no longer send SET TRANSACTION before START TRANSACTION.
+	var isolation string
+	if err = conn.QueryRowContext(ctx, "SELECT @@session.transaction_isolation").Scan(&isolation); err != nil || isolation != "READ-COMMITTED" {
+		t.Fatal(isolation, err)
+	}
+	options := func() uint64 {
+		var name string
+		var count uint64
+		if err := conn.QueryRowContext(ctx, "SHOW SESSION STATUS LIKE 'Com_set_option'").Scan(&name, &count); err != nil {
+			t.Fatal(err)
+		}
+		return count
+	}
+	before := options()
+	tx, err := conn.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = tx.Commit(); err != nil {
+		t.Fatal(err)
+	}
+	if after := options(); after != before {
+		t.Fatal("redundant per-transaction SET remains", before, after)
+	}
+	// An explicit session change invalidates the shortcut. Verify actual visibility
+	// with a second physical connection, rather than querying only the session
+	// default (which does not report a transaction-specific isolation override).
+	if _, err = conn.ExecContext(ctx, "CREATE TABLE isolation_probe(id INT PRIMARY KEY,v INT)"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = conn.ExecContext(ctx, "INSERT INTO isolation_probe VALUES(1,1)"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = conn.ExecContext(ctx, "SET SESSION transaction_isolation='REPEATABLE-READ'"); err != nil {
+		t.Fatal(err)
+	}
+	before = options()
+	tx, err = conn.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback()
+	var value int
+	if err = tx.QueryRowContext(ctx, "SELECT v FROM isolation_probe WHERE id=1").Scan(&value); err != nil || value != 1 {
+		t.Fatal(value, err)
+	}
+	if _, err = primary.SQL().ExecContext(ctx, "UPDATE isolation_probe SET v=2 WHERE id=1"); err != nil {
+		t.Fatal(err)
+	}
+	if err = tx.QueryRowContext(ctx, "SELECT v FROM isolation_probe WHERE id=1").Scan(&value); err != nil || value != 2 {
+		t.Fatal("READ COMMITTED visibility lost after session mutation", value, err)
+	}
+	if err = tx.Commit(); err != nil {
+		t.Fatal(err)
+	}
+	if after := options(); after != before+1 {
+		t.Fatal("did not restore explicit SET TRANSACTION", before, after)
+	}
+}
