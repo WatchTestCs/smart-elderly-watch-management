@@ -47,7 +47,7 @@ func TestBatchHardwareAB(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	const warmup, batches = 3, 100
+	const warmup, batches = 3, 500
 	for version := int64(1); version <= warmup; version++ {
 		save(version)
 	}
@@ -74,11 +74,14 @@ func TestBatchHardwareAB(t *testing.T) {
 		t.Fatalf("persisted counts: samples=%d events=%d", sampleCount, eventCount)
 	}
 	sort.Slice(durations, func(i, j int) bool { return durations[i] < durations[j] })
+	percentile := func(percent int) float64 {
+		return float64(durations[(len(durations)*percent+99)/100-1]) / float64(time.Millisecond)
+	}
 	result := map[string]any{
 		"variant": os.Getenv("PERF_AB_VARIANT"), "go": runtime.Version(), "gomaxprocs": runtime.GOMAXPROCS(0),
 		"batches": batches, "samples_per_batch": 200, "errors": 0, "elapsed_ms": float64(elapsed) / float64(time.Millisecond),
 		"samples_per_second": float64(batches*200) / elapsed.Seconds(),
-		"p50_ms":             float64(durations[49]) / float64(time.Millisecond), "p95_ms": float64(durations[94]) / float64(time.Millisecond), "p99_ms": float64(durations[98]) / float64(time.Millisecond),
+		"p50_ms":             percentile(50), "p95_ms": percentile(95), "p99_ms": percentile(99),
 		"allocated_bytes_per_batch": (after.TotalAlloc - before.TotalAlloc) / batches, "allocations_per_batch": (after.Mallocs - before.Mallocs) / batches,
 		"gc_cycles": after.NumGC - before.NumGC, "gc_pause_ns": after.PauseTotalNs - before.PauseTotalNs,
 		"persisted_samples": sampleCount, "persisted_events": eventCount,

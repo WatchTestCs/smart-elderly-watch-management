@@ -625,5 +625,6 @@
   "智慧养老手表管理系统/backend/internal/health/batch_selection_test.go": "原值复制算法 oracle、1000 组随机等价验证及布局分配基准",
   "智慧养老手表管理系统/backend/internal/health/batch_statements.go": "按语句类型和 1..200 行缓存健康批次完整 SQL，避免热路径拼接与重复片段常驻",
   "智慧养老手表管理系统/backend/internal/health/batch_statements_test.go": "完整 SQL 与原拼接等价、并发发布及拼接成本基准",
-  "智慧养老手表管理系统/backend/internal/observability/metrics_batch_test.go": "HTTP 指标累计桶、长尾、并发计数、慢抓取隔离及记录性能基准"
+  "智慧养老手表管理系统/backend/internal/observability/metrics_batch_test.go": "HTTP 指标累计桶、长尾、并发计数、慢抓取隔离及记录性能基准",
+  "docs/performance/2026-10-23-hardware/mysql-initial.json": "首次真实 MySQL 六轮 A/B 原始结果，保留候选长尾及吞吐回退，不作为加速证明"
 }

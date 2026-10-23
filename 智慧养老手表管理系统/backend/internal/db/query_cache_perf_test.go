@@ -9,16 +9,22 @@ import (
 var sharedQueryCacheFixture = func() struct {
 	query string
 	args  []any
-} { var q strings.Builder; q.WriteString("SELECT "); args := make([]any, 2800); for i := range args {
-	if i > 0 {
-		q.WriteByte(',')
+} {
+	var q strings.Builder
+	q.WriteString("SELECT ")
+	args := make([]any, 2800)
+	for i := range args {
+		if i > 0 {
+			q.WriteByte(',')
+		}
+		fmt.Fprintf(&q, "$%d", i+1)
+		args[i] = i
 	}
-	fmt.Fprintf(&q, "$%d", i+1)
-	args[i] = i
-}; return struct {
-	query string
-	args  []any
-}{q.String(), args} }()
+	return struct {
+		query string
+		args  []any
+	}{q.String(), args}
+}()
 
 func BenchmarkQueryCacheScaling(b *testing.B) {
 	b.Run("sharedSQL2800", func(b *testing.B) {

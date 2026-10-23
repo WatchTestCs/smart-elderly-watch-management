@@ -1,11 +1,12 @@
 # preview 分支文件职责索引
 
-本索引覆盖当前提交的 **627 个文件**（更新：2026-10-23）。保留既有人工说明；来源附件与历史证据不代表当前版本的全套验收。
+本索引覆盖当前提交的 **628 个文件**（更新：2026-10-23）。保留既有人工说明；来源附件与历史证据不代表当前版本的全套验收。
 
 [项目 README](../README.md) · [文件职责数据](file-descriptions.json) · [历史性能资料](performance/2026-10-20-go123/README.md) · [最新性能报告](performance/2026-10-22-backend-hybrid/README.md)
 
 | 文件 | 职责 |
 | --- | --- |
+| [docs/performance/2026-10-23-hardware/mysql-initial.json](../docs/performance/2026-10-23-hardware/mysql-initial.json) | 首次真实 MySQL 六轮 A/B 原始结果，保留候选长尾及吞吐回退，不作为加速证明 |
 | [.github/workflows/backend-hardware-ab.yml](../.github/workflows/backend-hardware-ab.yml) | 在同一 GitHub runner 交替运行 8f530cc 与当前代码的隔离 MySQL 健康批次对照并归档日志 |
 | [docs/performance/2026-10-23-hardware/README.md](../docs/performance/2026-10-23-hardware/README.md) | 多核 SQL 缓存与健康批次布局的实现、原始对照、代价、数据库实验及维护约束 |
 | [docs/performance/2026-10-23-hardware/batch-layout.txt](../docs/performance/2026-10-23-hardware/batch-layout.txt) | 原值复制选择算法与 uint8 索引选择算法的五轮原始结果 |
