@@ -609,7 +609,7 @@
   "智慧养老手表管理系统/backend/internal/db/query_binding_perf_test.go": "1、14、2800 参数规模的热 SQL 模板绑定微基准",
   "智慧养老手表管理系统/backend/internal/observability/metrics_compact_test.go": "紧凑指标与原累计算法的边界等价及并发快照回归测试",
   "智慧养老手表管理系统/backend/internal/observability/metrics_perf_test.go": "HTTP 指标中间件和 100 组标签抓取的微基准",
-  ".github/workflows/backend-hardware-ab.yml": "同 runner 交替对比 93d609b 的真实事务阶段、四种 HTTP 配置与大 JSON 延迟并归档全部日志",
+  ".github/workflows/backend-hardware-ab.yml": "同 runner 交替对比 60be581 的真实事务阶段、五种 HTTP 配置并归档全部日志",
   "docs/performance/2026-10-23-hardware/README.md": "多核 SQL 缓存与健康批次布局的实现、原始对照、代价、数据库实验及维护约束",
   "docs/performance/2026-10-23-hardware/batch-layout.txt": "原值复制选择算法与 uint8 索引选择算法的五轮原始结果",
   "docs/performance/2026-10-23-hardware/cache-after.txt": "64 组 8 路数组快照缓存在相同基准下的三轮原始结果",
@@ -638,5 +638,9 @@
   "智慧养老手表管理系统/backend/internal/handlers/latency_ab_test.go": "真实 MySQL 的 loopback HTTP 小请求/大批次及并发 p95/p99 对照夹具",
   "docs/performance/2026-10-23-latency/README.md": "连接级语句缓存的延迟目标、维护代价、回退和真实对照方法",
   "docs/performance/2026-10-23-extreme/README.md": "条件读取旧 JSON、参数数组复用、语义证明及事务阶段与大 JSON 延迟对照方法",
-  "docs/performance/2026-10-23-extreme/previous-pr30.md": "93d609b 时 PR #30 历史描述快照，保留前几轮全部原始性能数据和尾部回退"
+  "docs/performance/2026-10-23-extreme/previous-pr30.md": "93d609b 时 PR #30 历史描述快照，保留前几轮全部原始性能数据和尾部回退",
+  "智慧养老手表管理系统/backend/internal/health/prepare.go": "事务外规范化与 JSON 准备、单次消费对象及请求 metadata 引用释放",
+  "智慧养老手表管理系统/backend/internal/health/prepare_test.go": "准备快照、调用者修改隔离、并发单次消费与非法对象拒绝测试",
+  "docs/performance/2026-10-23-preparation/README.md": "事务外准备的鉴权和绑定复核边界、维护代价及真实延迟对照方法",
+  "docs/performance/2026-10-23-preparation/previous-pr30.md": "60be581 时 PR #30 完整实验快照，保留提交尖峰与所有回退"
 }

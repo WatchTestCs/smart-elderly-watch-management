@@ -41,25 +41,28 @@ func Save(ctx context.Context, tx *db.Transaction, o Owner, s Sample) (int64, bo
 // owner clock remains locked through commit, preserving each owner's cursor
 // ordering. MySQL reserves globally unique revision ranges infrequently.
 func SaveBatch(ctx context.Context, tx *db.Transaction, o Owner, samples []Sample) (int64, int, error) {
-	if len(samples) < 1 || len(samples) > 200 {
-		return 0, 0, fmt.Errorf("batch must contain 1..200 samples")
+	batch, err := PrepareBatch(samples)
+	if err != nil {
+		return 0, 0, err
 	}
-	input := make([]preparedSample, 0, len(samples))
-	ids := make([]any, 1, len(samples)+1)
-	minimumVersion := samples[0].Version
-	seen := make(map[string]bool, len(samples))
-	for _, s := range samples {
-		s, err := s.Normalize()
-		if err != nil {
-			return 0, 0, err
-		}
-		minimumVersion = min(minimumVersion, s.Version)
-		b, err := marshalSampleFast(s)
-		if err != nil {
-			return 0, 0, err
-		}
-		id := identityDigest(o, s)
-		input = append(input, preparedSample{id: id, payload: b, sample: s})
+	return SavePreparedBatch(ctx, tx, o, batch)
+}
+
+// SavePreparedBatch consumes one preparation, preserving the caller's
+// transaction and fresh owner binding. Initial input normalization and JSON encoding are finished
+// before the caller takes the device row lock; equal-version conflict checks may
+// still canonicalize previously stored JSON under the existing owner lock. Identity/revisions remain scoped
+// to this attempt; never cache or reuse them across owners or transactions.
+func SavePreparedBatch(ctx context.Context, tx *db.Transaction, o Owner, batch *PreparedBatch) (int64, int, error) {
+	input, minimumVersion, err := batch.consume()
+	if err != nil {
+		return 0, 0, err
+	}
+	ids := make([]any, 1, len(input)+1)
+	seen := make(map[string]bool, len(input))
+	for i := range input {
+		id := identityDigest(o, input[i].sample)
+		input[i].id = id
 		if !seen[id] {
 			ids = append(ids, id)
 			seen[id] = true

@@ -45,7 +45,7 @@ jobs:
         run: |
           set -euo pipefail
           baseline="${RUNNER_TEMP}/hardware-baseline"
-          git worktree add --detach "$baseline" 93d609b10ec44b7245cfcde3173bb8da7e86512e
+          git worktree add --detach "$baseline" 60be581e69048c6e9f3be680fcbee3067b8750e8
           fixture='智慧养老手表管理系统/backend/internal/health/batch_hardware_ab_test.go'
           cp "$fixture" "$baseline/$fixture"
           http_fixture='智慧养老手表管理系统/backend/internal/handlers/latency_ab_test.go'

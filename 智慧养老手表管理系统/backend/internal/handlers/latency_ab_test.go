@@ -20,7 +20,7 @@ import (
 	"careold-go/internal/health"
 )
 
-// Copy this fixture unchanged into 93d609b for the A/B baseline. This includes
+// Copy this fixture unchanged into 60be581 for the A/B baseline. This includes
 // loopback HTTP, JSON decoding, real device authentication, row locks and commit.
 // It excludes the outer production middleware, proxies and external device RTT.
 func TestHTTPBatchLatencyAB(t *testing.T) {

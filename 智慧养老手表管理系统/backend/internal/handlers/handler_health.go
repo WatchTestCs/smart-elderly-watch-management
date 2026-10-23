@@ -62,21 +62,18 @@ func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Reques
 			write400(w, "采样来源设备与认证设备不一致")
 			return
 		}
-		n, err := s.Normalize()
+		normalized, err := s.Normalize()
 		if err != nil {
 			write400(w, err.Error())
 			return
 		}
-		req.Samples[i] = n
+		req.Samples[i] = normalized
 	}
 	ctx := r.Context()
-	tx, err := h.DB.Begin(ctx)
-	if err != nil {
-		response.Error500(w, ref())
-		return
-	}
-	defer tx.Rollback(ctx)
-	d, code, msg, err := h.hwAuth(ctx, tx, req.DeviceNo, req.Secret, "设备已停用")
+	// This read is deliberately outside the write transaction. Invalid secrets
+	// never pay JSON preparation or acquire a write connection. The snapshot is
+	// revalidated under the existing device row lock before it can authorize data.
+	d, code, msg, err := h.hwAuth(ctx, h.DB, req.DeviceNo, req.Secret, "设备已停用")
 	if err != nil {
 		response.Error500(w, ref())
 		return
@@ -85,6 +82,21 @@ func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Reques
 		hwFail(w, code, msg)
 		return
 	}
+	accepted := len(req.Samples)
+	prepared, err := health.PrepareBatch(req.Samples)
+	if err != nil {
+		write400(w, err.Error())
+		return
+	}
+	// The prepared payload owns the metadata snapshot; release decoder maps and
+	// the validation slice before any database lock or commit wait.
+	req.Samples = nil
+	tx, err := h.DB.Begin(ctx)
+	if err != nil {
+		response.Error500(w, ref())
+		return
+	}
+	defer tx.Rollback(ctx)
 	// In experimental late-lock mode, perform the expensive sample write
 	// under the owner-clock lock before locking the device row. Revalidate the
 	// full device binding under FOR UPDATE before committing anything.
@@ -105,7 +117,7 @@ func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Reques
 	}
 	expectedOwner := *d.OldID
 	owner := health.Owner{OldID: expectedOwner, DeviceID: &d.ID, Epoch: d.HealthEpoch}
-	cursor, duplicates, err := health.SaveBatch(ctx, tx, owner, req.Samples)
+	cursor, duplicates, err := health.SavePreparedBatch(ctx, tx, owner, prepared)
 	if err != nil {
 		if errors.Is(err, health.ErrConflict) {
 			conflict409(w, err.Error())
@@ -139,7 +151,7 @@ func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	// This is a write acknowledgement, not the client's read cursor.
-	response.OK(w, map[string]any{"writeRevision": cursor, "accepted": len(req.Samples), "duplicates": duplicates})
+	response.OK(w, map[string]any{"writeRevision": cursor, "accepted": accepted, "duplicates": duplicates})
 }
 
 func (h *Handler) healthChanges(w http.ResponseWriter, r *http.Request) {
