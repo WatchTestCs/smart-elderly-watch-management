@@ -25,6 +25,8 @@ SQL 适配覆盖本应用使用的语法，不是任意 PostgreSQL SQL 的通用
 
 ## 运行配置
 
+MySQL 参数默认采用驱动插值传输，显式 DSN `interpolateParams=false` 可回退二进制 prepare。只由驱动编码参数，不改变业务事务和持久性。JSON 参数使用 `json.RawMessage`，BLOB 保持 `[]byte`；完整边界与回退见双库文档。
+
 在本目录启动，替换开发环境占位密码：
 
 ```powershell

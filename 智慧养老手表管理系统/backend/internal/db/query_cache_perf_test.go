@@ -68,7 +68,7 @@ func BenchmarkQueryCacheScaling(b *testing.B) {
 			})
 		})
 	}
-	for _, count := range []int{64, 1024} {
+	for _, count := range []int{64, 1024, 8192} {
 		b.Run(fmt.Sprintf("workingSet%d", count), func(b *testing.B) {
 			queries := make([]string, count)
 			for i := range queries {

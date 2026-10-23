@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
@@ -106,7 +107,7 @@ func SaveBatch(ctx context.Context, tx *db.Transaction, o Owner, samples []Sampl
 	for _, id := range selection.order {
 		item := &input[selection.final[id]]
 		s := &item.sample
-		args = append(args, id, o.OldID, o.DeviceID, o.Epoch, s.Version, item.revision, item.payload, s.Source, s.SourceDevice, s.Metric, s.Semantics, s.Start.UnixMicro(), s.End.UnixMicro(), s.Deleted)
+		args = append(args, id, o.OldID, o.DeviceID, o.Epoch, s.Version, item.revision, json.RawMessage(item.payload), s.Source, s.SourceDevice, s.Metric, s.Semantics, s.Start.UnixMicro(), s.End.UnixMicro(), s.Deleted)
 	}
 	_, err = tx.Exec(ctx, batchSQL(batchUpsert, len(selection.final)), args...)
 	if err != nil {
@@ -116,7 +117,7 @@ func SaveBatch(ctx context.Context, tx *db.Transaction, o Owner, samples []Sampl
 	for _, index := range selection.events {
 		event := &input[index]
 		b := changePayload(o, event.id, event.revision, event.payload)
-		args = append(args, event.revision, o.OldID, event.id, b)
+		args = append(args, event.revision, o.OldID, event.id, json.RawMessage(b))
 	}
 	_, err = tx.Exec(ctx, batchSQL(batchChanges, len(selection.events)), args...)
 	if err != nil {

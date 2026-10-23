@@ -22,6 +22,10 @@ flowchart LR
 
 ## 配置与部署
 
+MySQL DSN 未显式设置时，当前后端使用驱动的 `interpolateParams=true`，减少逐次 prepare/execute/close。驱动负责绑定值的转义与保守回退；强制 utf8mb4、禁用多语句，拒绝插值不安全的 collation。需要二进制 prepare 兼容模式时，在 DSN 明确设置 `interpolateParams=false`。这不改变事务提交与持久性策略。SQL 中含字面量问号等情况仍可能由驱动退回 prepare。
+
+开发者向 JSON 列传值应使用 `json.RawMessage` 或 JSON 文本字符串；普通 `[]byte` 保持二进制语义，用于 BLOB。JSON 与二进制不能混用。数据库参数中不自行拼接或转义用户值。
+
 | 变量 | 使用位置 |
 | --- | --- |
 | `MYSQL_DSN` | Go 与迁移工具，go-sql-driver/mysql 原生 DSN，必须指定业务库 |

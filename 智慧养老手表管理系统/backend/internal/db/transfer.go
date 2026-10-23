@@ -118,10 +118,12 @@ func TransferLegacy(ctx context.Context, source *pgxpool.Pool, target *Database,
 				}
 				values = append(values, sample.Source, sample.Device, sample.Metric, sample.Semantics, sample.Start.UnixMicro(), sample.End.UnixMicro(), sample.Deleted)
 			}
-			// pgx decodes jsonb into maps; the MySQL driver expects JSON bytes.
+			// Preserve JSON text type under both binary and interpolated transport.
 			for i, column := range rows.FieldDescriptions() {
 				if column.DataTypeOID == 3802 || column.DataTypeOID == 114 {
-					values[i], err = json.Marshal(values[i])
+					payload, marshalErr := json.Marshal(values[i])
+					err = marshalErr
+					values[i] = json.RawMessage(payload)
 					if err != nil {
 						rows.Close()
 						return nil, err

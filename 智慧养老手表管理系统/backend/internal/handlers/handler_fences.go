@@ -84,7 +84,7 @@ func (h *Handler) fenceSave(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		err = tx.QueryRow(ctx, `INSERT INTO device_fence(device_id,old_id,epoch,name,enabled,coordinates,coordinate_system,timezone,time_begin,time_end,min_points,dwell_seconds,max_accuracy,updated_by)
- VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING id`, d.ID, *d.OldID, d.HealthEpoch, req.Name, req.Enabled, b, req.CoordinateSystem, req.Timezone, req.TimeBegin, req.TimeEnd, req.MinPoints, req.DwellSeconds, req.MaxAccuracy, actor).Scan(&req.ID)
+ VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING id`, d.ID, *d.OldID, d.HealthEpoch, req.Name, req.Enabled, json.RawMessage(b), req.CoordinateSystem, req.Timezone, req.TimeBegin, req.TimeEnd, req.MinPoints, req.DwellSeconds, req.MaxAccuracy, actor).Scan(&req.ID)
 		req.Revision = 1
 	} else {
 		var revision int64
@@ -98,7 +98,7 @@ func (h *Handler) fenceSave(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		req.Revision++
-		_, err = tx.Exec(ctx, `UPDATE device_fence SET name=$2,enabled=$3,coordinates=$4,coordinate_system=$5,timezone=$6,time_begin=$7,time_end=$8,min_points=$9,dwell_seconds=$10,max_accuracy=$11,updated_by=$12,revision=$13,updated_at=now() WHERE id=$1`, req.ID, req.Name, req.Enabled, b, req.CoordinateSystem, req.Timezone, req.TimeBegin, req.TimeEnd, req.MinPoints, req.DwellSeconds, req.MaxAccuracy, actor, req.Revision)
+		_, err = tx.Exec(ctx, `UPDATE device_fence SET name=$2,enabled=$3,coordinates=$4,coordinate_system=$5,timezone=$6,time_begin=$7,time_end=$8,min_points=$9,dwell_seconds=$10,max_accuracy=$11,updated_by=$12,revision=$13,updated_at=now() WHERE id=$1`, req.ID, req.Name, req.Enabled, json.RawMessage(b), req.CoordinateSystem, req.Timezone, req.TimeBegin, req.TimeEnd, req.MinPoints, req.DwellSeconds, req.MaxAccuracy, actor, req.Revision)
 		if err == nil {
 			_, err = tx.Exec(ctx, "DELETE FROM fence_state WHERE fence_id=$1", req.ID)
 		}
@@ -246,7 +246,7 @@ func (h *Handler) fencePoint(w http.ResponseWriter, r *http.Request) {
 			direction = state.Observe(fence.Contains(f.Coordinates, req.Point), at, f.MinPoints, time.Duration(f.DwellSeconds)*time.Second)
 		}
 		b, _ = json.Marshal(state)
-		_, err = tx.Exec(ctx, `INSERT INTO fence_state(fence_id,revision,payload) VALUES($1,$2,$3) ON CONFLICT(fence_id) DO UPDATE SET revision=EXCLUDED.revision,payload=EXCLUDED.payload`, f.ID, f.Revision, b)
+		_, err = tx.Exec(ctx, `INSERT INTO fence_state(fence_id,revision,payload) VALUES($1,$2,$3) ON CONFLICT(fence_id) DO UPDATE SET revision=EXCLUDED.revision,payload=EXCLUDED.payload`, f.ID, f.Revision, json.RawMessage(b))
 		if err != nil {
 			response.Error500(w, ref())
 			return

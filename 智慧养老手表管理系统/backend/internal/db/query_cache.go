@@ -1,111 +1,91 @@
 package db
 
 import (
-	"encoding/binary"
-	"hash/maphash"
 	"sync"
 	"sync/atomic"
 )
 
-const queryCacheShards = 64
-const queryCachePerShard = 8
+const queryCacheCapacity = 4096
+const queryCachePublishInterval = 32
 
-type queryCacheEntry struct {
-	hash  uint64
-	query string
-	plan  queryPlan
+type queryPlanSnapshot struct{ plans map[string]*queryPlan }
+
+// Hits read an immutable native string map without touching a reader counter.
+// The mutable FIFO is an admission buffer; publish only once per quiet 32 snapshot
+// misses to amortize copying under SQL-shape churn. Both maps are bounded by
+// 4096 entries; old snapshots can transiently survive until readers/GC release
+// them. No argument values or database state enter these structures.
+type queryPlanCache struct {
+	snapshot  atomic.Pointer[queryPlanSnapshot]
+	mu        sync.Mutex
+	plans     map[string]*queryPlan
+	keys      [queryCacheCapacity]string
+	next      int
+	pending   int
+	newShapes int
 }
 
-type queryPlanSnapshot struct {
-	entries [queryCachePerShard]queryCacheEntry
-	count   int
+func newQueryPlanCache() *queryPlanCache { return &queryPlanCache{plans: make(map[string]*queryPlan)} }
+
+// Caller holds mu. A repeated new query also advances admission so it cannot
+// remain on the locked slow path just because no other SQL shapes arrive.
+func (c *queryPlanCache) admit(newShape bool) {
+	if newShape {
+		c.newShapes++
+	}
+	c.pending++
+	if c.snapshot.Load() != nil && c.pending < queryCachePublishInterval {
+		return
+	}
+	// During churn keep the last published hot set rather than copying
+	// thousands of entries every 32 calls. Repeated shapes still promote
+	// after a quiet admission window, even if only one query is active.
+	if c.snapshot.Load() != nil && c.newShapes > 1 {
+		c.pending = 0
+		c.newShapes = 0
+		return
+	}
+	plans := make(map[string]*queryPlan, len(c.plans))
+	for query, plan := range c.plans {
+		plans[query] = plan
+	}
+	c.snapshot.Store(&queryPlanSnapshot{plans: plans})
+	c.pending = 0
+	c.newShapes = 0
 }
 
-func (s *queryPlanSnapshot) lookup(query string, hash uint64) (queryPlan, bool) {
-	if s != nil {
-		for i := 0; i < s.count; i++ {
-			entry := &s.entries[i]
-			if entry.hash == hash && entry.query == query {
-				return entry.plan, true
-			}
+func (c *queryPlanCache) load(query string) (*queryPlan, error) {
+	if snapshot := c.snapshot.Load(); snapshot != nil {
+		if plan, ok := snapshot.plans[query]; ok {
+			return plan, nil
 		}
 	}
-	return queryPlan{}, false
-}
-
-type queryPlanShard struct {
-	snapshot atomic.Pointer[queryPlanSnapshot]
-	mu       sync.Mutex // misses only; hits never modify a shared cache line
-	next     int
-	// Separate mutable publication/eviction state across shards on machines
-	// with cache lines up to 128 bytes. This is spacing, not CPU pinning.
-	_ [128]byte
-}
-
-// Published sets and their plans are immutable. A reader keeps its snapshot
-// alive until lookup completes; Go's GC reclaims retired snapshots. Never put
-// argument values in a snapshot. Current published entries are bounded to 64*8.
-// Under churn, copy-on-write costs more allocation than the old FIFO map.
-// Per-shard FIFO also deliberately trades global eviction fairness for no
-// reader-side atomic read/modify/write and independent miss serialization.
-type queryPlanCache struct {
-	seed   maphash.Seed
-	shards [queryCacheShards]queryPlanShard
-}
-
-func newQueryPlanCache() *queryPlanCache {
-	return &queryPlanCache{seed: maphash.MakeSeed()}
-}
-
-func (c *queryPlanCache) hash(query string) uint64 {
-	var hash uint64
-	if len(query) <= 64 {
-		hash = maphash.String(c.seed, query)
-	} else {
-		// Routing is not a cache identity. Sampling avoids hashing multi-kilobyte
-		// batch SQL twice. The snapshot set ALWAYS checks the full string, so even
-		// deliberate sampling collisions cannot return a different query's plan.
-		var sample [32]byte
-		binary.LittleEndian.PutUint64(sample[:8], uint64(len(query)))
-		copy(sample[8:16], query[:8])
-		middle := len(query) / 2
-		copy(sample[16:24], query[middle:middle+8])
-		copy(sample[24:], query[len(query)-8:])
-		hash = maphash.Bytes(c.seed, sample[:])
-	}
-	return hash
-}
-
-func (c *queryPlanCache) load(query string) (queryPlan, error) {
-	hash := c.hash(query)
-	shard := &c.shards[hash&(queryCacheShards-1)]
-	if plan, ok := shard.snapshot.Load().lookup(query, hash); ok {
+	c.mu.Lock()
+	if plan, ok := c.plans[query]; ok {
+		c.admit(false)
+		c.mu.Unlock()
 		return plan, nil
 	}
-	shard.mu.Lock()
-	defer shard.mu.Unlock()
-	prior := shard.snapshot.Load()
-	if plan, ok := prior.lookup(query, hash); ok {
-		return plan, nil
-	}
+	c.mu.Unlock()
+	// Compile outside admission lock. Concurrent first callers may do duplicate
+	// parsing, but unrelated misses and all snapshot hits can keep progressing.
 	plan, err := compileMySQLQuery(query)
 	if err != nil {
-		return queryPlan{}, err
+		return nil, err
 	}
-	// Ordered plans need only their arity. Do not retain thousands of
-	// redundant identity indices for a large health-batch statement.
 	if plan.direct {
 		plan.positions = nil
 	}
-	next := new(queryPlanSnapshot)
-	if prior != nil {
-		*next = *prior
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if prior, ok := c.plans[query]; ok {
+		c.admit(false)
+		return prior, nil
 	}
-	next.entries[shard.next] = queryCacheEntry{hash: hash, query: query, plan: plan}
-	if next.count < queryCachePerShard {
-		next.count++
-	}
-	shard.next = (shard.next + 1) % queryCachePerShard
-	shard.snapshot.Store(next)
-	return plan, nil
+	delete(c.plans, c.keys[c.next])
+	c.plans[query] = &plan
+	c.keys[c.next] = query
+	c.next = (c.next + 1) % queryCacheCapacity
+	c.admit(true)
+	return &plan, nil
 }

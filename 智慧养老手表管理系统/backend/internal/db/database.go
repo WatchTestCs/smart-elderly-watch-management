@@ -59,7 +59,7 @@ func Postgres(pool *pgxpool.Pool) *Database {
 	return &Database{executor: executor{pg: pool}, pgPool: pool}
 }
 
-func OpenMySQL(ctx context.Context, dsn string) (*Database, error) {
+func mysqlConnectionConfig(dsn string) (*mysql.Config, error) {
 	if strings.TrimSpace(dsn) == "" {
 		return nil, errors.New("MYSQL_DSN is required")
 	}
@@ -81,6 +81,36 @@ func OpenMySQL(ctx context.Context, dsn string) (*Database, error) {
 	cfg.Params["time_zone"] = "'+00:00'"
 	// Preserve the existing parameterized concatenation expressions.
 	cfg.Params["sql_mode"] = "'STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION,PIPES_AS_CONCAT'"
+	// The driver owns escaping and safe fallback to binary prepare. Respect
+	// explicit DSN true/false; otherwise avoid one-shot prepare/close per call.
+	params := dsn[strings.LastIndexByte(dsn, '/')+1:]
+	explicit := false
+	if _, query, found := strings.Cut(params, "?"); found {
+		for _, option := range strings.Split(query, "&") {
+			key, _, _ := strings.Cut(option, "=")
+			if key == "interpolateParams" {
+				explicit = true
+				break
+			}
+		}
+	}
+	if !explicit {
+		cfg.InterpolateParams = true
+	}
+	// Revalidate because interpolation rejects collations whose encodings
+	// could make quoting ambiguous. Never silently relax the driver's guard.
+	validated, err := mysql.ParseDSN(cfg.FormatDSN())
+	if err != nil {
+		return nil, errors.New("invalid MySQL parameter transport configuration")
+	}
+	return validated, nil
+}
+
+func OpenMySQL(ctx context.Context, dsn string) (*Database, error) {
+	cfg, err := mysqlConnectionConfig(dsn)
+	if err != nil {
+		return nil, err
+	}
 	formattedDSN := cfg.FormatDSN()
 	pool, err := sql.Open("mysql", formattedDSN)
 	if err != nil {
