@@ -128,6 +128,12 @@ func TestReadPathProfile(t *testing.T) {
 	}
 	sessions := session.NewStore(12 * time.Hour)
 	sessions.UseDatabase(pool.SQL(), box)
+	// 与生产 env 同名：SESSION_CACHE_MS>0 时启用会话微缓存（读延迟亚毫秒口径）。
+	if v := os.Getenv("SESSION_CACHE_MS"); v != "" {
+		if ms, e := strconv.Atoi(v); e == nil && ms > 0 {
+			sessions.UseSessionCache(time.Duration(ms) * time.Millisecond)
+		}
+	}
 	sess := sessions.Create(session.Principal{Role: auth.RoleAdmin, ID: 1, Phone: "13800000001"})
 	if sess == nil {
 		t.Fatal("session setup failed")

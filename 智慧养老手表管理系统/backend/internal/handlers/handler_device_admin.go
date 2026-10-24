@@ -89,18 +89,14 @@ func (h *Handler) deviceList(w http.ResponseWriter, r *http.Request) {
 	const onlineExpr = `d.last_time >= now() - interval '60 seconds'`
 	filter := `WHERE ($1='' OR LOWER(d.device_no) LIKE $2 OR LOWER(COALESCE(d.alias,'') || ' ' || COALESCE(o.name,'')) LIKE $2)
 		AND ($3='all' OR CASE WHEN ` + onlineExpr + ` THEN 'online' ELSE 'offline' END = $3)`
+	// total/onlineCount 以窗口函数搭在分页查询上（同一过滤集、同一 now() 快照），
+	// 常规路径一次往返；空页（分页越过末尾）无行可带总数，回退独立 COUNT 保持语义。
 	base := `SELECT d.device_id, d.device_no, d.alias, d.model, d.app_version, d.battery,
 		d.old_id, o.name, o.phone, d.bind_time, d.last_time, d.last_lng, d.last_lat,
-		d.status, d.person_handled, d.rate_handled, d.pre_handled
+		d.status, d.person_handled, d.rate_handled, d.pre_handled,
+		COUNT(*) OVER() AS _total,
+		COALESCE(SUM(CASE WHEN ` + onlineExpr + ` THEN 1 ELSE 0 END) OVER(), 0) AS _online
 		FROM device d LEFT JOIN oldperson o ON o.old_id = d.old_id ` + filter + ` ORDER BY d.device_id`
-	var total, onlineCount int64
-	if err := h.DB.QueryRow(ctx,
-		`SELECT COUNT(*), COALESCE(SUM(CASE WHEN `+onlineExpr+` THEN 1 ELSE 0 END),0)
-		 FROM device d LEFT JOIN oldperson o ON o.old_id=d.old_id `+filter,
-		pattern, pattern, state).Scan(&total, &onlineCount); err != nil {
-		response.Error500(w, ref())
-		return
-	}
 	rows, err := h.DB.Query(ctx, base+` LIMIT $4 OFFSET $5`, pattern, pattern, state, ps, (p-1)*ps)
 	if err != nil {
 		response.Error500(w, ref())
@@ -109,6 +105,8 @@ func (h *Handler) deviceList(w http.ResponseWriter, r *http.Request) {
 	defer rows.Close()
 	now := time.Now()
 	list := []map[string]any{}
+	var total, onlineCount int64
+	first := true
 	for rows.Next() {
 		var id int64
 		var no string
@@ -118,11 +116,16 @@ func (h *Handler) deviceList(w http.ResponseWriter, r *http.Request) {
 		var bindTime, lastTime *time.Time
 		var status *int
 		var personHandled, rateHandled, preHandled int
+		var wTotal, wOnline int64
 		if err := rows.Scan(&id, &no, &alias, &model, &appVersion, &battery, &oldID,
 			&oldName, &oldPhone, &bindTime, &lastTime, &lastLng, &lastLat, &status,
-			&personHandled, &rateHandled, &preHandled); err != nil {
+			&personHandled, &rateHandled, &preHandled, &wTotal, &wOnline); err != nil {
 			response.Error500(w, ref())
 			return
+		}
+		if first {
+			total, onlineCount = wTotal, wOnline
+			first = false
 		}
 		name := "（未绑定）"
 		if oldName != nil {
@@ -145,6 +148,15 @@ func (h *Handler) deviceList(w http.ResponseWriter, r *http.Request) {
 	if err := rows.Err(); err != nil {
 		response.Error500(w, ref())
 		return
+	}
+	if first { // 空页：窗口无行可带总数，回退独立 COUNT 保持 total 语义
+		if err := h.DB.QueryRow(ctx,
+			`SELECT COUNT(*), COALESCE(SUM(CASE WHEN `+onlineExpr+` THEN 1 ELSE 0 END),0)
+			 FROM device d LEFT JOIN oldperson o ON o.old_id=d.old_id `+filter,
+			pattern, pattern, state).Scan(&total, &onlineCount); err != nil {
+			response.Error500(w, ref())
+			return
+		}
 	}
 	response.OK(w, map[string]any{
 		"total": total, "onlineCount": onlineCount, "page": p, "pageSize": ps,

@@ -44,12 +44,9 @@ func (h *Handler) textSelect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	title := str(m, "title")
-	sql := "SELECT " + textColumns + " FROM text WHERE ($1='' OR title LIKE $2) ORDER BY time DESC, text_id DESC"
+	// total 以窗口函数搭在分页查询上（常规路径一次往返）；空页回退独立 COUNT。
+	sql := "SELECT " + textColumns + ", COUNT(*) OVER() AS _total FROM text WHERE ($1='' OR title LIKE $2) ORDER BY time DESC, text_id DESC"
 	args := []any{title, "%" + title + "%"}
-	total, ok := h.pagedTotal(w, r, sql, args)
-	if !ok {
-		return
-	}
 	limitSQL, fullArgs := pageArgs(args, page, pageSize)
 	rows, err := h.DB.Query(r.Context(), sql+limitSQL, fullArgs...)
 	if err != nil {
@@ -58,17 +55,30 @@ func (h *Handler) textSelect(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 	items := []textDTO{}
+	var total int64
+	first := true
 	for rows.Next() {
 		var d textDTO
-		if err := scanTextDTO(rows, &d); err != nil {
+		var wTotal int64
+		if err := rows.Scan(&d.TextID, &d.Title, &d.TextMain, &d.Time, &d.PicID, &wTotal); err != nil {
 			rows.Close()
 			response.Error500(w, ref())
 			return
 		}
 		items = append(items, d)
+		if first {
+			total = wTotal
+			first = false
+		}
 	}
 	if !rowsOK(w, rows) {
 		return
+	}
+	if first { // 空页：窗口无行可带总数，回退独立 COUNT 保持 total 语义
+		total, ok = h.pagedTotal(w, r, "SELECT text_id FROM text WHERE ($1='' OR title LIKE $2)", args)
+		if !ok {
+			return
+		}
 	}
 	response.JSON(w, http.StatusOK, map[string]any{
 		"texts": items, "total": total, "page": page, "pageSize": pageSize,

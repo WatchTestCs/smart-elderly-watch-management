@@ -59,16 +59,11 @@ func (h *Handler) familySelect(w http.ResponseWriter, r *http.Request) {
 	name := str(m, "familyName")
 	p, ps := bodyPage(m)
 	ctx := r.Context()
-	var total int64
-	if err := h.DB.QueryRow(ctx,
-		`SELECT COUNT(*) FROM oldperson o JOIN family f ON o.family_id=f.family_id
-		 WHERE ($1='' OR f.family_name LIKE '%'||$1||'%')`, name).Scan(&total); err != nil {
-		response.Error500(w, ref())
-		return
-	}
+	// total 以窗口函数搭在分页查询上（常规路径一次往返）；空页回退独立 COUNT。
 	rows, err := h.DB.Query(ctx,
 		`SELECT o.old_id,o.name,f.family_id,f.family_name,f.family_relation,
-		        f.family_sex,f.family_phone,f.family_address,f.family_tou_pic
+		        f.family_sex,f.family_phone,f.family_address,f.family_tou_pic,
+		        COUNT(*) OVER() AS _total
 		 FROM oldperson o JOIN family f ON o.family_id=f.family_id
 		 WHERE ($1='' OR f.family_name LIKE '%'||$1||'%')
 		 ORDER BY o.old_id LIMIT $2 OFFSET $3`, name, ps, (p-1)*ps)
@@ -78,10 +73,13 @@ func (h *Handler) familySelect(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 	list := []map[string]any{}
+	var total int64
+	first := true
 	for rows.Next() {
 		var oldID, familyID int64
 		var oldName, fname, frel, fsex, fphone, faddr, fpic *string
-		if err := rows.Scan(&oldID, &oldName, &familyID, &fname, &frel, &fsex, &fphone, &faddr, &fpic); err != nil {
+		var wTotal int64
+		if err := rows.Scan(&oldID, &oldName, &familyID, &fname, &frel, &fsex, &fphone, &faddr, &fpic, &wTotal); err != nil {
 			response.Error500(w, ref())
 			return
 		}
@@ -90,10 +88,22 @@ func (h *Handler) familySelect(w http.ResponseWriter, r *http.Request) {
 			"familyName": fname, "familyRelation": frel, "familySex": fsex,
 			"familyPhone": fphone, "familyAddress": faddr, "familyTouPic": fpic,
 		})
+		if first {
+			total = wTotal
+			first = false
+		}
 	}
 	if err := rows.Err(); err != nil {
 		response.Error500(w, ref())
 		return
+	}
+	if first { // 空页：窗口无行可带总数，回退独立 COUNT 保持 total 语义
+		if err := h.DB.QueryRow(ctx,
+			`SELECT COUNT(*) FROM oldperson o JOIN family f ON o.family_id=f.family_id
+			 WHERE ($1='' OR f.family_name LIKE '%'||$1||'%')`, name).Scan(&total); err != nil {
+			response.Error500(w, ref())
+			return
+		}
 	}
 	response.JSON(w, http.StatusOK, map[string]any{
 		"familyDtos": list, "total": total, "page": p, "pageSize": ps,
