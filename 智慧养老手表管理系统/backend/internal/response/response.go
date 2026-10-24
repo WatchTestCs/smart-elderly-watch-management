@@ -19,7 +19,7 @@ const (
 var contentTypeJSON = []string{"application/json;charset=UTF-8"}
 
 // newLine 单独一次 Write，避免 append 触发 json.Marshal 结果扩容拷贝
-//（与旧 json.Encoder 在内部缓冲追加 '\n' 后单次写出字节流一致）。
+// （与旧 json.Encoder 在内部缓冲追加 '\n' 后单次写出字节流一致）。
 var newLine = []byte{'\n'}
 
 // okEmptyEnvelope 空成功包络（22 处 OK(w, nil)/OK(w, map{} 调用形状）。
