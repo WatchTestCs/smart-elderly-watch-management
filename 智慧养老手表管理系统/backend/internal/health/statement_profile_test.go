@@ -13,7 +13,7 @@ import (
 )
 
 // TestBatchStatementProfile 逐条计时 SaveBatch 内部语句的真实执行耗时
-//（opt-in: HEALTH_STMT_PROFILE=1），定位 SaveBatch 总量（此前测得 ~18.75ms）
+// （opt-in: HEALTH_STMT_PROFILE=1），定位 SaveBatch 总量（此前测得 ~18.75ms）
 // 的分布。每轮整事务回滚，种子经真实 SaveBatch 建立（1000 行既有样本）。
 func TestBatchStatementProfile(t *testing.T) {
 	if os.Getenv("HEALTH_STMT_PROFILE") != "1" {
