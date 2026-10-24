@@ -2,7 +2,6 @@ package health
 
 import (
 	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"strconv"
 )
@@ -31,15 +30,23 @@ func identityDigest(o Owner, s Sample) string {
 	b = appendJSONStringIdentity(b, s.Metric)
 	b = append(b, ']')
 	hash := sha256.Sum256(b)
-	return hex.EncodeToString(hash[:])
+	// Encode into a stack buffer and convert once; hex.EncodeToString would
+	// allocate both an intermediate slice and the returned string.
+	var hexID [64]byte
+	for i, c := range hash {
+		hexID[2*i] = hexDigits[c>>4]
+		hexID[2*i+1] = hexDigits[c&0xf]
+	}
+	return string(hexID[:])
 }
+
+const hexDigits = "0123456789abcdef"
 
 func appendJSONStringIdentity(b []byte, value string) []byte {
 	b = append(b, ',', '"')
 	safe := true
 	for i := 0; i < len(value); i++ {
-		c := value[i]
-		if c < 0x20 || c >= 0x80 || c == '"' || c == '\\' || c == '<' || c == '>' || c == '&' {
+		if unsafeSampleByte[value[i]] {
 			safe = false
 			break
 		}

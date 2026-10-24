@@ -6,7 +6,7 @@ package notify
 
 import (
 	"context"
-	"fmt"
+	"strconv"
 	"strings"
 
 	"careold-go/internal/db"
@@ -60,7 +60,7 @@ func QueueCareSMS(ctx context.Context, tx *db.Transaction, box *securestore.Box,
 	if len(phones) == 0 {
 		return 0, nil
 	}
-	var values strings.Builder
+	var values []byte
 	args := make([]any, 0, len(phones)*3)
 	for i, phone := range phones {
 		sealed, key, err := SealNotificationRecipient(box, phone)
@@ -68,14 +68,22 @@ func QueueCareSMS(ctx context.Context, tx *db.Transaction, box *securestore.Box,
 			return 0, err
 		}
 		if i > 0 {
-			values.WriteByte(',')
+			values = append(values, ',')
 		}
-		// 每个值用独立占位符，避免依赖方言改写层对重复 $n 的处理。
-		fmt.Fprintf(&values, "($%d,'sms',$%d,$%d)", 3*i+1, 3*i+2, 3*i+3)
+		// 每个值用独立占位符，避免依赖方言改写层对重复 $n 的处理；
+		// 手工渲染与原 fmt.Fprintf 输出逐字节一致。
+		n := 3*i + 1
+		values = append(values, "($"...)
+		values = strconv.AppendInt(values, int64(n), 10)
+		values = append(values, ",'sms',$"...)
+		values = strconv.AppendInt(values, int64(n+1), 10)
+		values = append(values, ",$"...)
+		values = strconv.AppendInt(values, int64(n+2), 10)
+		values = append(values, ')')
 		args = append(args, incidentID, sealed, key)
 	}
 	ct, err := tx.Exec(ctx, `INSERT INTO care_notification_outbox(incident_id,channel,recipient,recipient_key)
-		VALUES `+values.String()+` ON CONFLICT DO NOTHING`, args...)
+		VALUES `+string(values)+` ON CONFLICT DO NOTHING`, args...)
 	if err != nil {
 		return 0, err
 	}
