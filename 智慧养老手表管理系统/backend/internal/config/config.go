@@ -23,6 +23,10 @@ type Config struct {
 	DataKey          string
 	SessionBackend   string
 	HealthCacheBytes int64 // 健康统计内存缓存预算；0 禁用
+	// SessionCacheMS 是已登录会话的微缓存时长（毫秒）。0（默认）= 关闭，
+	// 行为与逐请求实时读库一致。开启后同副本撤销立即生效，跨副本撤销的
+	// 生效延迟变为 ≤ 该值（有界安全取舍，属性能换语义的显式运维决策）。
+	SessionCacheMS int
 }
 
 func getenv(key, def string) string {
@@ -61,6 +65,10 @@ func (c Config) Validate() error {
 	if t := strings.TrimSpace(c.DesktopToken); t != "" && len(t) < 24 {
 		return errors.New("DESKTOP_TOKEN 至少需要 24 个字符（桌面端每次启动自动生成 64 位随机值）；" +
 			"过短的令牌可被线速穷举，校验失败时 setup 与 desktop/exit 均会拒绝")
+	}
+	if c.SessionCacheMS != 0 && (c.SessionCacheMS < 250 || c.SessionCacheMS > 5000) {
+		return errors.New("SESSION_CACHE_MS 开启时须为 250..5000 毫秒（0=关闭）；" +
+			"该值是跨副本撤销生效延迟的上界，过小无收益、过大放大撤销窗口")
 	}
 	switch c.SessionBackend {
 	case "", "memory":
@@ -107,6 +115,12 @@ func Load() Config {
 	if err != nil || cacheMiB < 0 || cacheMiB > 256 {
 		cacheMiB = 16
 	}
+	cacheMS := 0
+	if v := strings.TrimSpace(getenv("SESSION_CACHE_MS", "")); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			cacheMS = n
+		}
+	}
 	return Config{
 		MySQLDSN:         getenv("MYSQL_DSN", ""),
 		PGAnalyticsURL:   getenv("PG_ANALYTICS_URL", ""),
@@ -117,5 +131,6 @@ func Load() Config {
 		DataKey:          getenv("DATA_ENCRYPTION_KEY", ""),
 		SessionBackend:   strings.ToLower(strings.TrimSpace(getenv("SESSION_BACKEND", "database"))),
 		HealthCacheBytes: cacheMiB << 20,
+		SessionCacheMS:   cacheMS,
 	}
 }

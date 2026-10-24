@@ -158,6 +158,10 @@ func watchDatabase(ctx context.Context, cfg config.Config, sessions *session.Sto
 						return
 					}
 					sessions.UseDatabase(pool.SQL(), box)
+					if cfg.SessionCacheMS > 0 {
+						sessions.UseSessionCache(time.Duration(cfg.SessionCacheMS) * time.Millisecond)
+						log.Printf("session micro-cache enabled: cross-replica revocation delay bounded at %dms", cfg.SessionCacheMS)
+					}
 				}
 				mux := http.NewServeMux()
 				h := handlers.New(pool, sessions, cfg)

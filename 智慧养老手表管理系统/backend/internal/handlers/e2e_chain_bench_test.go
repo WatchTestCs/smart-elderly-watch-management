@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"strconv"
 	"testing"
 	"time"
 
@@ -53,6 +54,12 @@ func BenchmarkAuthenticatedRequestChain(b *testing.B) {
 	}
 	store := session.NewStore(12 * time.Hour)
 	store.UseDatabase(pool.SQL(), box)
+	// 可选微缓存：SESSION_CACHE_MS>0 时启用（与生产 env 同名）。
+	if v := os.Getenv("SESSION_CACHE_MS"); v != "" {
+		if ms, e := strconv.Atoi(v); e == nil && ms > 0 {
+			store.UseSessionCache(time.Duration(ms) * time.Millisecond)
+		}
+	}
 	sess := store.Create(session.Principal{Role: auth.RoleAdmin, ID: 1, Phone: "13800000001", FactorGeneration: "bench-generation"})
 	if sess == nil || store.Get(sess.ID) == nil {
 		b.Fatal("session setup failed")
