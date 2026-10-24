@@ -15,7 +15,7 @@ type benchRW struct {
 	n      int
 }
 
-func newBenchRW() *benchRW { return &benchRW{h: make(http.Header)} }
+func newBenchRW() *benchRW             { return &benchRW{h: make(http.Header)} }
 func (b *benchRW) Header() http.Header { return b.h }
 func (b *benchRW) WriteHeader(s int)   { b.status = s }
 func (b *benchRW) Write(p []byte) (int, error) {
