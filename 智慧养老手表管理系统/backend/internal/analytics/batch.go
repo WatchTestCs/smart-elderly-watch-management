@@ -137,7 +137,7 @@ func applyEvents(ctx context.Context, pg *pgxpool.Pool, events []claimedEvent) e
 }
 
 // releaseLease 在 PG 写失败时立即归还租约，恢复快速重试语义
-//（否则需等待租约到期）。尽力而为：失败时等待到期同样安全。
+// （否则需等待租约到期）。尽力而为：失败时等待到期同样安全。
 func releaseLease(ctx context.Context, primary *db.Database, token string) {
 	_, _ = primary.SQL().ExecContext(ctx,
 		"UPDATE analytics_outbox SET lease_token=NULL, lease_until=NULL WHERE lease_token=?", token)
