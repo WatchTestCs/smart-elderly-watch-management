@@ -3,8 +3,8 @@ package rules
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 
@@ -39,7 +39,7 @@ func (e *Engine) Tick(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	ids := []int64{}
+	ids := make([]int64, 0, 100)
 	for rows.Next() {
 		var id int64
 		if err = rows.Scan(&id); err != nil {
@@ -141,7 +141,8 @@ func (e *Engine) Device(ctx context.Context, id int64, now time.Time) error {
 		in.LastReport = *bound
 	}
 	if battery != nil && last != nil {
-		in.Battery = &Value{Value: *battery, Key: last.Format(time.RFC3339Nano), At: *last}
+		var keyBuffer [40]byte
+		in.Battery = &Value{Value: *battery, Key: string(last.AppendFormat(keyBuffer[:0], time.RFC3339Nano)), At: *last}
 	}
 	// Fetch one latest observation per metric so a heart-rate burst cannot hide
 	// activity or blood pressure in a shared LIMIT window.
@@ -167,7 +168,10 @@ func (e *Engine) Device(ctx context.Context, id int64, now time.Time) error {
 		if sample.Value == nil || sample.TimeBasis == "legacy-unzoned" {
 			continue
 		}
-		v := &Value{Value: *sample.Value, Key: sampleID + ":" + fmt.Sprint(revision), Source: sample.Source, Device: sample.SourceDevice, At: sample.Start}
+		// The revision digits come from a stack buffer; only the concatenated
+		// key string itself is allocated.
+		var revBuffer [24]byte
+		v := &Value{Value: *sample.Value, Key: sampleID + ":" + string(strconv.AppendInt(revBuffer[:0], revision, 10)), Source: sample.Source, Device: sample.SourceDevice, At: sample.Start}
 		switch metric {
 		case "heart_rate":
 			in.Heart = v
@@ -189,10 +193,10 @@ func (e *Engine) Device(ctx context.Context, id int64, now time.Time) error {
 		}
 		if err == nil {
 			if hr != nil && in.Heart == nil {
-				in.Heart = &Value{*hr, fmt.Sprint("legacy:", record), "legacy", no, at}
+				in.Heart = &Value{*hr, "legacy:" + strconv.FormatInt(record, 10), "legacy", no, at}
 			}
 			if bp != nil && in.Blood == nil {
-				in.Blood = &Value{*bp, fmt.Sprint("legacy:", record), "legacy", no, at}
+				in.Blood = &Value{*bp, "legacy:" + strconv.FormatInt(record, 10), "legacy", no, at}
 			}
 		}
 	}
