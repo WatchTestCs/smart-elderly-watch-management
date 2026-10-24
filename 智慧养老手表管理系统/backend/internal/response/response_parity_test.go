@@ -98,11 +98,11 @@ func TestParityError500(t *testing.T) {
 		uuid.NewString(),
 		"ABCDEF01-2345-6789-ABCD-EF0123456789", // 大写 hex，同属合法 uuid 形式
 		"00000000-0000-0000-0000-000000000000",
-		"not-a-uuid",                          // 回退 map 编码路径
-		"",                                    // 回退路径
-		`weird "<ref>&\` + "\t",               // 回退路径，需转义
-		strings.Repeat("x", 300),              // 回退路径，超长
-		"12345678-1234-1234-1234-12345678",    // 长度 35 非 36，回退
+		"not-a-uuid",                       // 回退 map 编码路径
+		"",                                 // 回退路径
+		`weird "<ref>&\` + "\t",            // 回退路径，需转义
+		strings.Repeat("x", 300),           // 回退路径，超长
+		"12345678-1234-1234-1234-12345678", // 长度 35 非 36，回退
 	}
 	for _, ref := range refs {
 		assertParity(t, "Error500("+ref+")", func(w http.ResponseWriter) { legacyError500(w, ref) },
@@ -190,7 +190,7 @@ func TestParityJSON(t *testing.T) {
 		"plain string",
 		[]any{1, "x", nil, 2.5},
 		goldenStruct{B: 2, A: "s"}, // 结构体按字段声明序
-		42, 0.1, 1e21, 1e-7, -0.0, // 数值格式
+		42, 0.1, 1e21, 1e-7, -0.0,  // 数值格式
 		nil,
 		map[string]any{"html": `<p>&'"/></p>`},
 	}
