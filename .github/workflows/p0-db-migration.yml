@@ -1,3 +1,4 @@
+# CI-only service container: these ephemeral runner credentials are never shared with production.
 name: Dual database migration verification
 on:
   workflow_dispatch:

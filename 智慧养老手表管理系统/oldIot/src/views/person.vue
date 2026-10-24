@@ -90,7 +90,7 @@
       title="角色编辑"
       v-model="oldEditDialogVisible"
       width="30%">
-      <el-form label-width="80px" :rules="rules" :model="oldEditForm">
+      <el-form label-width="80px" :rules="rules" :model="oldEditForm" ref="editoldFormRef">
         		<el-form-item label="姓名" prop="name">
         			<el-input v-model="oldEditForm.name"></el-input>
         		</el-form-item>
@@ -332,33 +332,37 @@ export default {
     },
     addOldPersons () {
       var _this = this
-    var param = _this.oldForm
-      axios.post('restful/oldPerson/add',
-        param,
-        {
-          headers: {
-            'content-type': 'application/json'
-          },
-          withCredentials: true
-        }).then(function (response) {
+      // 提交前执行表单校验（手机号格式等），此前规则定义了但从未被调用
+      this.$refs.addoldFormRef.validate(function (valid) {
+        if (!valid) return
+        var param = _this.oldForm
+        axios.post('restful/oldPerson/add',
+          param,
+          {
+            headers: {
+              'content-type': 'application/json'
+            },
+            withCredentials: true
+          }).then(function (response) {
 
-        if (response.data.returnCode === '1111') {
-          _this.oldDialogVisible = false
-          _this.searchOldPersons()
-          _this.$message({
-            type: 'success',
-            message: '添加老人成功'
-          })
-        } else {
-          _this.$message({
-            type: 'error',
-            message: '添加老人失败'
-          })
-        }
-      })
-        .catch(function (error) {
-          console.log(error)
+          if (response.data.returnCode === '1111') {
+            _this.oldDialogVisible = false
+            _this.searchOldPersons()
+            _this.$message({
+              type: 'success',
+              message: '添加老人成功'
+            })
+          } else {
+            _this.$message({
+              type: 'error',
+              message: '添加老人失败'
+            })
+          }
         })
+          .catch(function (error) {
+            console.log(error)
+          })
+      })
     },
     closeRoleAddDialog () {
       this.$refs.addoldFormRef.resetFields()
@@ -366,31 +370,34 @@ export default {
     editOldPerson () {
       this.addCustomerList()
       var _this = this
-      axios.post('restful/oldPerson/update', _this.oldEditForm,
-        {
-          headers: {
-            'content-type': 'application/json'
-          },
-          withCredentials: true
-        }).then(function (response) {
+      this.$refs.editoldFormRef.validate(function (valid) {
+        if (!valid) return
+        axios.post('restful/oldPerson/update', _this.oldEditForm,
+          {
+            headers: {
+              'content-type': 'application/json'
+            },
+            withCredentials: true
+          }).then(function (response) {
 
-        if (response.data.returnCode === '1111') {
-          _this.oldEditDialogVisible = false
-          _this.$message({
-            type: 'success',
-            message: '编辑老人信息成功'
-          })
-          _this.searchOldPersons()
-        } else {
-          _this.$message({
-            type: 'error',
-            message: '编辑老人信息失败，请检查填写内容后重试'
-          })
-        }
-      })
-        .catch(function (error) {
-          console.log(error)
+          if (response.data.returnCode === '1111') {
+            _this.oldEditDialogVisible = false
+            _this.$message({
+              type: 'success',
+              message: '编辑老人信息成功'
+            })
+            _this.searchOldPersons()
+          } else {
+            _this.$message({
+              type: 'error',
+              message: '编辑老人信息失败，请检查填写内容后重试'
+            })
+          }
         })
+          .catch(function (error) {
+            console.log(error)
+          })
+      })
     },
     async addCustomerList () {
       if (this.customerLoading) return

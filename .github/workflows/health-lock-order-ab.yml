@@ -1,3 +1,4 @@
+# CI-only service container: these ephemeral runner credentials are never shared with production.
 name: Health owner/device lock-order experiment
 
 on:
