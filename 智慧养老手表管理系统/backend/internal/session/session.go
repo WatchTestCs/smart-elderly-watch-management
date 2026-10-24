@@ -101,8 +101,16 @@ func (s *Store) Get(id string) *Session {
 	if database != nil {
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
+		// payload 与 MFA generation 合并为一次往返：generation 通过 web_session
+		// 自身的 role/actor_id 列（与 payload 在 Create 中同一事务写入）关联取回。
+		// 仍是每请求实时读库，撤销在下一个请求立即生效；NULL 即旧两次查询的
+		// ErrNoRows 分支（启用了 MFA 的会话缺行时拒绝）。
 		var sealed string
-		if database.QueryRowContext(ctx, "SELECT payload FROM web_session WHERE id_hash=? AND expires_at>UTC_TIMESTAMP(6)", idHash(id)).Scan(&sealed) != nil {
+		var generation sql.NullString
+		err := database.QueryRowContext(ctx, `SELECT s.payload,
+			(SELECT f.generation FROM auth_factor f WHERE f.role=s.role AND f.actor_id=s.actor_id AND f.enabled=true)
+			FROM web_session s WHERE s.id_hash=? AND s.expires_at>UTC_TIMESTAMP(6)`, idHash(id)).Scan(&sealed, &generation)
+		if err != nil {
 			return nil
 		}
 		plain, err := box.Open(sealed, "session")
@@ -114,9 +122,8 @@ func (s *Store) Get(id string) *Session {
 			return nil
 		}
 		if sess.Principal.Role != "" {
-			var generation string
-			err = database.QueryRowContext(ctx, "SELECT generation FROM auth_factor WHERE role=? AND actor_id=? AND enabled=true", sess.Principal.Role, sess.Principal.ID).Scan(&generation)
-			if (err != nil && err != sql.ErrNoRows) || (err == nil && generation != sess.Principal.FactorGeneration) || (err == sql.ErrNoRows && sess.Principal.FactorGeneration != "") {
+			if (!generation.Valid && sess.Principal.FactorGeneration != "") ||
+				(generation.Valid && generation.String != sess.Principal.FactorGeneration) {
 				return nil
 			}
 		}
@@ -179,25 +186,27 @@ func (s *Store) Revoke(role string, id int64) error {
 	return nil
 }
 
-// SetCookie 写 JSESSIONID cookie。
-func SetCookie(w http.ResponseWriter, id string) {
+// SetCookie 写 JSESSIONID cookie。secure 由部署地址决定（非回环监听必须为 true）。
+func SetCookie(w http.ResponseWriter, id string, secure bool) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     CookieName,
 		Value:    id,
 		Path:     "/",
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
+		Secure:   secure,
 	})
 }
 
 // ClearCookie 清除 JSESSIONID cookie。
-func ClearCookie(w http.ResponseWriter) {
+func ClearCookie(w http.ResponseWriter, secure bool) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     CookieName,
 		Value:    "",
 		Path:     "/",
 		MaxAge:   -1,
 		HttpOnly: true,
+		Secure:   secure,
 	})
 }
 

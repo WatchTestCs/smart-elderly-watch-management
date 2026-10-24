@@ -90,7 +90,13 @@ func Middleware(store *session.Store, next http.Handler) http.Handler {
 			return
 		}
 
-		sess := store.FromRequest(r)
+		// csrf 中间件在本请求内已查询并注入会话；直接复用，避免每个请求
+		// 重复一次完整的会话数据库往返。会话在本请求开始时有效即可，撤销
+		// 从下一个请求起生效，语义与逐中间件实时读取一致。
+		sess := session.FromContext(r)
+		if sess == nil {
+			sess = store.FromRequest(r)
+		}
 		if sess == nil {
 			response.JSON(w, http.StatusUnauthorized, map[string]any{
 				"returnCode": "0000",

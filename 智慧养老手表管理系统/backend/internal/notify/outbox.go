@@ -37,20 +37,25 @@ type Message struct {
 	Channels   []string
 }
 
+// defaultChannels 是 Channels 为 nil 时的默认投递通道；只读共享，避免每消息分配。
+var defaultChannels = []string{"sms", "in_app"}
+
 // EnqueueBatch shares the caller's transaction; success still requires its commit.
 // Statements are bounded, but no messages are discarded when the input is larger.
 func EnqueueBatch(ctx context.Context, tx *db.Transaction, box *securestore.Box, messages []Message) error {
 	if !tx.IsMySQL() {
 		return nil
 	}
-	var values strings.Builder
+	// 占位符行手工渲染（等价于 fmt.Fprintf 的 "($n,$n+1,...)"），消除每行反射；
+	// SQL 字节与原实现完全一致。
+	values := make([]byte, 0, 64*min(len(messages), 256))
 	args := make([]any, 0, min(len(messages), 256)*10)
 	flush := func() error {
 		if len(args) == 0 {
 			return nil
 		}
-		_, err := tx.Exec(ctx, `INSERT INTO message_outbox(topic,source_key,family_id,channel,recipient,status,delivered_at) VALUES `+values.String()+` ON CONFLICT(topic,source_key,family_id,channel) DO NOTHING`, args...)
-		values.Reset()
+		_, err := tx.Exec(ctx, `INSERT INTO message_outbox(topic,source_key,family_id,channel,recipient,status,delivered_at) VALUES `+string(values)+` ON CONFLICT(topic,source_key,family_id,channel) DO NOTHING`, args...)
+		values = values[:0]
 		args = args[:0]
 		return err
 	}
@@ -65,11 +70,11 @@ func EnqueueBatch(ctx context.Context, tx *db.Transaction, box *securestore.Box,
 		}
 		channels := message.Channels
 		if channels == nil {
-			channels = []string{"sms", "in_app"}
+			channels = defaultChannels
 		}
 		for _, channel := range channels {
 			if len(args) > 0 {
-				values.WriteByte(',')
+				values = append(values, ',')
 			}
 			n := len(args)
 			// The inbox entry becomes available with the parent's commit. This
@@ -78,7 +83,17 @@ func EnqueueBatch(ctx context.Context, tx *db.Transaction, box *securestore.Box,
 			if channel == "in_app" {
 				state, delivered = "'delivered'", "now()"
 			}
-			fmt.Fprintf(&values, "($%d,$%d,$%d,$%d,$%d,%s,%s)", n+1, n+2, n+3, n+4, n+5, state, delivered)
+			values = append(values, "($"...)
+			values = strconv.AppendInt(values, int64(n+1), 10)
+			for _, arg := range [4]int{n + 2, n + 3, n + 4, n + 5} {
+				values = append(values, ",$"...)
+				values = strconv.AppendInt(values, int64(arg), 10)
+			}
+			values = append(values, ',')
+			values = append(values, state...)
+			values = append(values, ',')
+			values = append(values, delivered...)
+			values = append(values, ')')
 			args = append(args, message.Topic, message.Key, message.FamilyID, channel, recipient)
 			if len(args) == 512*5 {
 				if err := flush(); err != nil {

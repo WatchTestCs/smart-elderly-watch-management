@@ -30,25 +30,32 @@ import (
 
 // Only fully migrated database handlers are published to HTTP requests.
 type databaseService struct {
-	api       atomic.Pointer[http.Handler]
-	currentDB atomic.Pointer[dbstore.Database]
-	analytics analytics.State
+	api          atomic.Pointer[http.Handler]
+	currentDB    atomic.Pointer[dbstore.Database]
+	analytics    analytics.State
+	desktopToken string
 	// configErr 记录启动阶段的配置错误。它一旦非空，watchDatabase 不再进入
 	// 重连循环，服务状态接口也会把原因暴露出来，避免前端一直显示"正在自动连接"。
 	configErr error
 }
 
-// configErrorText 返回可序列化的配置错误说明（无错误时为空串）。
+// configErrorText 返回可序列化的配置错误说明。/restful/service/status 公开可读，
+// 只回固定文案，不透出环境变量等部署细节（细节已由启动日志完整记录）。
 func (s *databaseService) configErrorText() string {
 	if s.configErr == nil {
 		return ""
 	}
-	return s.configErr.Error()
+	return "服务端配置有误，依赖数据库的功能不可用，自动重连不会恢复；请检查环境变量配置后重启服务"
 }
 
 func (s *databaseService) middleware(local http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/openapi.json" && r.Method == "GET" {
+			// API 规格含完整端点清单（含硬件接口），等同配置面信息，需桌面令牌。
+			if s.desktopToken == "" || subtle.ConstantTimeCompare([]byte(r.Header.Get("X-Suining-Desktop")), []byte(s.desktopToken)) != 1 {
+				response.JSON(w, 401, map[string]any{"message": "API 文档端点需要授权"})
+				return
+			}
 			apidoc.ServeHTTP(w, r)
 			return
 		}
@@ -166,7 +173,7 @@ func watchDatabase(ctx context.Context, cfg config.Config, sessions *session.Sto
 					go func() { defer jobs.Done(); rules.Run(ctx, pool, h.Box) }()
 					go func() { defer jobs.Done(); notify.Run(ctx, pool, h.Box) }()
 					go func() { defer jobs.Done(); h.RunCapabilities(ctx) }()
-					go func() { defer jobs.Done(); care.Run(ctx, pool) }()
+					go func() { defer jobs.Done(); care.Run(ctx, pool, h.Box) }()
 					go func() { defer jobs.Done(); analytics.Run(ctx, pool, cfg.PGAnalyticsURL, &service.analytics) }()
 					jobs.Wait()
 				}()

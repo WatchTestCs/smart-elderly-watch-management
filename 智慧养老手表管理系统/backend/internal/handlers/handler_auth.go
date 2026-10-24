@@ -25,6 +25,11 @@ func (h *Handler) routeAuth(mux *http.ServeMux) {
 	mux.HandleFunc("POST /restful/desktop/exit", h.desktopExit)
 }
 
+// timingDummyHash 是一条与本哈希同 cost（12）的无效 bcrypt 记录：手机号在
+// users/family 两表都不存在时也执行一次口令比较，使"账号是否存在"无法通过
+// 响应时间区分。它不是任何账号的凭据。
+const timingDummyHash = "$2a$12$S1k/y1BsWtNAy/eeN.zaleT.hNjDpyRQ/1S7MCXu5Y8GN61EoKbMK"
+
 // MountDesktopExit allows closing the desktop even before the database is ready.
 func (h *Handler) MountDesktopExit(mux *http.ServeMux) {
 	mux.HandleFunc("POST /restful/desktop/exit", h.desktopExit)
@@ -53,7 +58,7 @@ func (h *Handler) sessionInfo(w http.ResponseWriter, r *http.Request) {
 			response.JSON(w, 503, map[string]any{"message": "会话存储不可用"})
 			return
 		}
-		session.SetCookie(w, sess.ID)
+		session.SetCookie(w, sess.ID, h.CookieSecure)
 	}
 	authenticated := sess.Principal.Role == auth.RoleAdmin || sess.Principal.Role == auth.RoleFamily
 	account := map[string]any{}
@@ -106,7 +111,9 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 		response.Error500(w, ref())
 		return
 	}
+	compared := false
 	if err == nil && auth.Matches(password, uPass.String) {
+		compared = true
 		if !h.factorLogin(w, r, m, auth.RoleAdmin, uid, phone) {
 			return
 		}
@@ -148,6 +155,9 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 		response.Error500(w, ref())
 		return
 	}
+	if err == nil {
+		compared = true
+	}
 	if err == nil && auth.Matches(password, fPass.String) {
 		if !oldID.Valid {
 			response.Fail(w, "该家属账号尚未关联老人，请联系管理员")
@@ -173,6 +183,10 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !compared {
+		// 两次查询都未命中：补一次等价 bcrypt 比较，消除账号枚举计时侧信道。
+		_ = auth.Matches(password, timingDummyHash)
+	}
 	if h.loginAudit(r, phone, "", 0, "invalid_credentials") != nil {
 		response.Error500(w, ref())
 		return
@@ -199,7 +213,7 @@ func (h *Handler) renewSession(w http.ResponseWriter, r *http.Request, p session
 		response.Error500(w, ref())
 		return false
 	}
-	session.SetCookie(w, sess.ID)
+	session.SetCookie(w, sess.ID, h.CookieSecure)
 	return true
 }
 
@@ -215,7 +229,7 @@ func (h *Handler) logout(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	session.ClearCookie(w)
+	session.ClearCookie(w, h.CookieSecure)
 	response.OK(w, nil)
 }
 

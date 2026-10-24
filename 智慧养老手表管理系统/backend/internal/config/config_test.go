@@ -53,20 +53,24 @@ func TestValidateRejectsUnusableConfigurations(t *testing.T) {
 		name    string
 		backend string
 		key     string
+		dsn     string
 		wantErr bool
 	}{
-		{"memory 模式允许无密钥", "memory", "", false},
-		{"空后端按单实例处理", "", "", false},
-		{"database 缺密钥必须报错", "database", "", true},
-		{"database 空白密钥必须报错", "database", "   ", true},
-		{"database 非法 base64 必须报错", "database", "not-base64!!", true},
-		{"database 长度不足必须报错", "database", base64.StdEncoding.EncodeToString([]byte("short")), true},
-		{"database 合法密钥通过", "database", validKey, false},
-		{"未知后端必须报错", "postgres", validKey, true},
-		{"大小写敏感的后端必须报错", "Database", validKey, true},
+		{"memory 模式允许无密钥", "memory", "", "", false},
+		{"空后端按单实例处理", "", "", "", false},
+		{"database 缺密钥必须报错", "database", "", "", true},
+		{"database 空白密钥必须报错", "database", "   ", "", true},
+		{"database 非法 base64 必须报错", "database", "not-base64!!", "", true},
+		{"database 长度不足必须报错", "database", base64.StdEncoding.EncodeToString([]byte("short")), "", true},
+		{"database 合法密钥通过", "database", validKey, "", false},
+		{"未知后端必须报错", "postgres", validKey, "", true},
+		{"大小写敏感的后端必须报错", "Database", validKey, "", true},
+		{"配置 DSN 缺密钥必须报错（memory 后端也一样）", "memory", "", "suining@tcp(mysql.local:3306)/suining", true},
+		{"配置 DSN 非法密钥必须报错", "memory", "not-base64!!", "suining@tcp(mysql.local:3306)/suining", true},
+		{"配置 DSN 且密钥合法通过", "memory", validKey, "suining@tcp(mysql.local:3306)/suining", false},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			cfg := Config{SessionBackend: test.backend, DataKey: test.key}
+			cfg := Config{SessionBackend: test.backend, DataKey: test.key, MySQLDSN: test.dsn}
 			err := cfg.Validate()
 			if test.wantErr && err == nil {
 				t.Fatal("配置未被拒绝，会导致业务接口永久 503 且无提示")
@@ -75,5 +79,24 @@ func TestValidateRejectsUnusableConfigurations(t *testing.T) {
 				t.Fatalf("合法配置被拒绝: %v", err)
 			}
 		})
+	}
+}
+
+func TestSecureCookies(t *testing.T) {
+	for _, test := range []struct {
+		addr string
+		want bool
+	}{
+		{"127.0.0.1:8080", false},
+		{"localhost:80", false},
+		{"[::1]:8080", false},
+		{"[::ffff:127.0.0.1]:8080", false},
+		{"0.0.0.0:9090", true},
+		{"192.168.1.5:8080", true},
+		{"example.local:8080", true},
+	} {
+		if got := (Config{Addr: test.addr}).SecureCookies(); got != test.want {
+			t.Fatalf("SecureCookies(%q)=%v, want %v", test.addr, got, test.want)
+		}
 	}
 }

@@ -4,6 +4,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"net"
 	"os"
 	"strconv"
 	"strings"
@@ -46,6 +47,21 @@ func Secret(key string) string { return getenv(key, "") }
 // 探针都认为服务正常。配置错误本身不会随等待消失（环境变量在进程生命周期内
 // 不变），所以必须在启动阶段就说清楚，而不是让调用方永远看到"稍后重试"。
 func (c Config) Validate() error {
+	// 只要配置了 MySQL，就必须有数据加密密钥：缺少它时照护备注、通知收件人等
+	// 敏感字段会明文落库，登录审计退化为可离线穷举的裸哈希——无论会话后端是什么。
+	if strings.TrimSpace(c.MySQLDSN) != "" {
+		if strings.TrimSpace(c.DataKey) == "" {
+			return errors.New("配置 MYSQL_DSN 时必须设置 DATA_ENCRYPTION_KEY（32 字节随机数的 base64）；" +
+				"缺少它时敏感字段会明文落库，业务接口会永久返回 503")
+		}
+		if _, err := securestore.New(c.DataKey); err != nil {
+			return fmt.Errorf("DATA_ENCRYPTION_KEY 无效：%w", err)
+		}
+	}
+	if t := strings.TrimSpace(c.DesktopToken); t != "" && len(t) < 24 {
+		return errors.New("DESKTOP_TOKEN 至少需要 24 个字符（桌面端每次启动自动生成 64 位随机值）；" +
+			"过短的令牌可被线速穷举，校验失败时 setup 与 desktop/exit 均会拒绝")
+	}
 	switch c.SessionBackend {
 	case "", "memory":
 		// 空值与 memory 都是单实例开发模式，会话保存在进程内存里。
@@ -62,6 +78,24 @@ func (c Config) Validate() error {
 		return fmt.Errorf("DATA_ENCRYPTION_KEY 无效：%w", err)
 	}
 	return nil
+}
+
+// SecureCookies 报告会话 Cookie 是否应携带 Secure 标志：凡是非回环监听地址，
+// 都假定可能经网络（含明文代理）访问，Cookie 必须只在 TLS 上传输。
+func (c Config) SecureCookies() bool {
+	host, _, err := net.SplitHostPort(c.Addr)
+	if err != nil {
+		host = c.Addr
+	}
+	host = strings.Trim(host, "[]")
+	if ip := net.ParseIP(host); ip != nil {
+		return !ip.IsLoopback()
+	}
+	switch strings.ToLower(host) {
+	case "", "localhost", "127.0.0.1", "::1":
+		return false
+	}
+	return true
 }
 
 func Load() Config {

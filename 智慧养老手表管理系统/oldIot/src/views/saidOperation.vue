@@ -119,7 +119,7 @@ export default {
           _this.total = response.data.total ?? response.data.saidDtos.length
 					for(var i=0;i<tableData2.length;i++){
 
-						tableData2[i].touPic = '/restful/image/download?name='+tableData2[i].touPic
+						tableData2[i].touPic = '/restful/image/download?name='+encodeURIComponent(tableData2[i].touPic)
 					}
 					_this.saidList=tableData2
 

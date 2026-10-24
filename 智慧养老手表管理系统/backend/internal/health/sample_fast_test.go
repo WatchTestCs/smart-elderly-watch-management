@@ -34,6 +34,10 @@ func TestMarshalSampleFastByteExact(t *testing.T) {
 			s.Start = time.Date(2026, 10, 20, 12, 0, 0, rand1.Intn(1000000000), time.FixedZone("odd", 30))
 		case 5:
 			s.Start = time.Date(2026, 10, 20, 12, 0, 0, rand1.Intn(1000000000), time.UTC)
+		case 6:
+			s.Start = time.Date(1+rand1.Intn(9999), time.Month(1+rand1.Intn(12)), 1+rand1.Intn(28), rand1.Intn(24), rand1.Intn(60), rand1.Intn(60), rand1.Intn(1000000000), time.FixedZone("rep", (rand1.Intn(1601)-800)*60))
+		case 7:
+			s.End = time.Date(1+rand1.Intn(9999), time.Month(1+rand1.Intn(12)), 1+rand1.Intn(28), rand1.Intn(24), rand1.Intn(60), rand1.Intn(60), rand1.Intn(1000000000), time.FixedZone("rep", (rand1.Intn(1601)-800)*60))
 		}
 		val := []float64{math.Copysign(0, -1), 1e-7, 1e21, 1e26, 1.3, 1234, -345, math.MaxFloat64, float64(rand1.Intn(101))}[i%9]
 		if s.Value != nil {

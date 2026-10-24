@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+	"unicode/utf8"
 )
 
 func (h *Handler) routeSocial(mux *http.ServeMux) {
@@ -56,6 +57,17 @@ type saidAdminDTO struct {
 	Title      *string `json:"title"`
 }
 
+// maskPhone 将评论作者手机号脱敏为 138****1234：said/select 面向任意登录家属，
+// 原样返回会批量暴露全体用户的登录账号（手机号）。非 11 位号码一律不返回。
+func maskPhone(phone *string) *string {
+	if phone == nil || len(*phone) != 11 {
+		return nil
+	}
+	v := *phone
+	masked := v[:3] + "****" + v[7:]
+	return &masked
+}
+
 // POST /restful/said/select —— 查询某公告下的说说/评论（含当前人点赞状态）。
 func (h *Handler) saidSelect(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
@@ -97,6 +109,7 @@ func (h *Handler) saidSelect(w http.ResponseWriter, r *http.Request) {
 			response.Error500(w, ref())
 			return
 		}
+		d.SaidPhone = maskPhone(d.SaidPhone)
 		items = append(items, d)
 	}
 	if !rowsOK(w, rows) {
@@ -184,6 +197,11 @@ func (h *Handler) saidInsert(w http.ResponseWriter, r *http.Request) {
 		saidContent = s
 	} else {
 		saidContent = fmt.Sprintf("%v", v)
+	}
+	// 与前端 maxlength=30 对齐；仅约束新留言，历史数据不受影响。
+	if utf8.RuneCountInString(saidContent) > 30 || saidContent == "" {
+		response.Fail(w, "留言内容须为1-30个字符")
+		return
 	}
 	textID, ok := numParam(m, "textId")
 	if !ok {

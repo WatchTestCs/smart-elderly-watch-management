@@ -122,6 +122,21 @@ func (h *Handler) familyAdd(w http.ResponseWriter, r *http.Request) {
 		response.Error500(w, ref())
 		return
 	}
+	// 手机号是家属账号与多处查询的定位键，拒绝重复创建，避免后续按手机号
+	// 的 UPDATE/查询命中多行产生数据歧义。
+	var dup bool
+	if err := tx.QueryRow(ctx,
+		`SELECT EXISTS(SELECT 1 FROM users WHERE user_phone=$1)
+		      OR EXISTS(SELECT 1 FROM family WHERE family_phone=$1)`, phone).Scan(&dup); err != nil {
+		_ = tx.Rollback(ctx)
+		response.Error500(w, ref())
+		return
+	}
+	if dup {
+		_ = tx.Rollback(ctx)
+		response.Fail(w, "该手机号已被使用，请更换手机号")
+		return
+	}
 	// 1. INSERT family（不写 family_password，保持 NULL）
 	var familyID int64
 	if err := tx.QueryRow(ctx,
