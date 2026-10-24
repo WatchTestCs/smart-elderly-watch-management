@@ -87,17 +87,18 @@ func TestRunnerDrainsSaturatedTransactionalBacklog(t *testing.T) {
 		var copied int
 		err = pg.QueryRow(ctx, "SELECT count(*) FROM suining_analytics.record WHERE entity='ratepre' AND NOT deleted").Scan(&copied)
 		if err == nil && copied == events {
-			elapsed := time.Since(start)
-			t.Logf("ANALYTICS_BACKLOG_DRAIN rows=%d elapsed_ms=%d rows_per_second=%.1f", copied, elapsed.Milliseconds(), float64(events)/elapsed.Seconds())
+			// Projection commit happens before the MySQL outbox acknowledgement.
+			// Do not fail if polling observes that intentional handoff window.
 			var remaining int
-			if err := primary.QueryRow(ctx, "SELECT count(*) FROM analytics_outbox").Scan(&remaining); err != nil || remaining != 0 {
-				t.Fatalf("outbox residual: count=%d err=%v", remaining, err)
+			if err := primary.QueryRow(ctx, "SELECT count(*) FROM analytics_outbox").Scan(&remaining); err == nil && remaining == 0 {
+				elapsed := time.Since(start)
+				t.Logf("ANALYTICS_BACKLOG_DRAIN rows=%d elapsed_ms=%d rows_per_second=%.1f", copied, elapsed.Milliseconds(), float64(events)/elapsed.Seconds())
+				snapshot := state.Snapshot()
+				if !snapshot.Configured {
+					t.Fatal("runner lost analytics configuration")
+				}
+				return
 			}
-			snapshot := state.Snapshot()
-			if !snapshot.Configured {
-				t.Fatal("runner lost analytics configuration")
-			}
-			return
 		}
 		if ctx.Err() != nil {
 			t.Fatalf("6,000-event backlog not drained: %v; last PG count %d, error %v", ctx.Err(), copied, err)

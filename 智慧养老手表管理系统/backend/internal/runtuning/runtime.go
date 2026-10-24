@@ -17,6 +17,7 @@ import (
 type Decision struct {
 	Parallelism   int
 	GoMemoryLimit int64
+	GOGC          int
 }
 
 // ApplyOptIn checks an explicit opt-in to avoid altering desktop/host behavior.
@@ -25,7 +26,7 @@ func ApplyOptIn() Decision {
 	if os.Getenv("SUINING_RUNTIME_AUTOTUNE") != "1" || runtime.GOOS != "linux" {
 		return Decision{}
 	}
-	return apply("/sys/fs/cgroup", os.Getenv, runtime.NumCPU(), runtime.GOMAXPROCS, debug.SetMemoryLimit)
+	return apply("/sys/fs/cgroup", os.Getenv, runtime.NumCPU(), runtime.GOMAXPROCS, debug.SetMemoryLimit, debug.SetGCPercent)
 }
 
 // cgroup v2 CPU quota may be fractional; at least one P is required.
@@ -70,7 +71,26 @@ func goMemoryBudget(text string) int64 {
 	return (limit/10)*7 + (limit%10)*7/10 // avoid overflow; floor(0.7 * limit)
 }
 
-func apply(root string, getenv func(string) string, online int, setCPU func(int) int, setMemory func(int64) int64) Decision {
+// Raising GOGC trades heap headroom (higher RSS between collections) for
+// fewer GC cycles. The batch-ingest hardware A/B measured ~914 KiB allocated
+// per 200-row batch and ~30 GC runs per trial, so that pressure is real. It
+// is only raised while the cgroup-derived GOMEMLIMIT is in force: the soft
+// limit is the backstop that bounds the extra heap a higher GOGC keeps live
+// between collections. Default 200; SUINING_RUNTIME_GOGC may override within
+// 50..800; malformed or out-of-range values return 0 and leave GOGC alone.
+func goGCPercent(override string) int {
+	value := 200
+	if override != "" {
+		n, err := strconv.Atoi(override)
+		if err != nil || n < 50 || n > 800 {
+			return 0
+		}
+		value = n
+	}
+	return value
+}
+
+func apply(root string, getenv func(string) string, online int, setCPU func(int) int, setMemory func(int64) int64, setGC func(int) int) Decision {
 	var decision Decision
 	if getenv("GOMAXPROCS") == "" {
 		if content, err := os.ReadFile(filepath.Join(root, "cpu.max")); err == nil {
@@ -88,6 +108,14 @@ func apply(root string, getenv func(string) string, online int, setCPU func(int)
 				setMemory(n)
 				decision.GoMemoryLimit = n
 			}
+		}
+	}
+	// Without the effective memory budget there is no backstop, so GOGC
+	// stays at its default instead of betting RSS on an unbounded heap.
+	if getenv("GOGC") == "" && decision.GoMemoryLimit > 0 {
+		if n := goGCPercent(getenv("SUINING_RUNTIME_GOGC")); n > 0 {
+			setGC(n)
+			decision.GOGC = n
 		}
 	}
 	return decision

@@ -131,12 +131,16 @@ func (s Sample) Normalize() (Sample, error) {
 	if math.IsNaN(v) || math.IsInf(v, 0) || v < 0 {
 		return s, fmt.Errorf("normalized measurement must be finite and nonnegative")
 	}
+	// Re-box only when a unit conversion changed the value; reusing the caller's
+	// pointer keeps the encoded JSON identical while skipping one allocation.
+	if v != *s.Value {
+		s.Value = Number(v)
+	}
 	if s.Metric == "steps" && v != math.Trunc(v) {
 		return s, fmt.Errorf("steps must be an integer")
 	}
 	if s.Metric == "oxygen_saturation" && v > 100 {
 		return s, fmt.Errorf("oxygen saturation exceeds 100 percent")
 	}
-	s.Value = Number(v)
 	return s, nil
 }

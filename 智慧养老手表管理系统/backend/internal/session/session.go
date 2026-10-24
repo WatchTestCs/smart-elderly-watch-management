@@ -42,6 +42,31 @@ type Store struct {
 	ttl      time.Duration
 	database *sql.DB
 	box      *securestore.Box
+	// cacheTTL>0 时启用已登录会话的微缓存（opt-in，默认关闭）：命中则跳过
+	// 每请求的会话读库往返。安全语义的取舍是显式的——
+	//   同副本撤销（Destroy/Revoke）仍立即失效；
+	//   跨副本撤销的生效延迟从"立即"变为"≤cacheTTL"（有界）；
+	//   过期/生成号校验在缓存条目写入时已生效，TTL 内不重查。
+	// 内存上界 = 活跃会话数 × cacheTTL 内的请求并发，条目惰性过期。
+	cacheTTL time.Duration
+	cmu      sync.RWMutex
+	cache    map[string]cacheEntry
+}
+
+type cacheEntry struct {
+	sess     *Session
+	cachedAt time.Time
+}
+
+// UseSessionCache 启用会话微缓存（仅在数据库会话后端下有意义）。
+// ttl 必须为正；调用方（cmd/server）负责把环境变量映射为时长并做范围校验。
+func (s *Store) UseSessionCache(ttl time.Duration) {
+	if ttl <= 0 {
+		return
+	}
+	s.mu.Lock()
+	s.cacheTTL = ttl
+	s.mu.Unlock()
 }
 
 func NewStore(ttl time.Duration) *Store {
@@ -97,12 +122,31 @@ func (s *Store) Get(id string) *Session {
 	}
 	s.mu.RLock()
 	database, box := s.database, s.box
+	cacheTTL := s.cacheTTL
 	s.mu.RUnlock()
 	if database != nil {
+		// 微缓存命中：跳过本轮会话读库。撤销语义见 UseSessionCache 注释。
+		if cacheTTL > 0 {
+			key := idHash(id)
+			s.cmu.RLock()
+			e, ok := s.cache[key]
+			s.cmu.RUnlock()
+			if ok && time.Since(e.cachedAt) < cacheTTL && time.Now().Before(e.sess.ExpiresAt) {
+				return e.sess
+			}
+		}
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
+		// payload 与 MFA generation 合并为一次往返：generation 通过 web_session
+		// 自身的 role/actor_id 列（与 payload 在 Create 中同一事务写入）关联取回。
+		// 仍是每请求实时读库，撤销在下一个请求立即生效；NULL 即旧两次查询的
+		// ErrNoRows 分支（启用了 MFA 的会话缺行时拒绝）。
 		var sealed string
-		if database.QueryRowContext(ctx, "SELECT payload FROM web_session WHERE id_hash=? AND expires_at>UTC_TIMESTAMP(6)", idHash(id)).Scan(&sealed) != nil {
+		var generation sql.NullString
+		err := database.QueryRowContext(ctx, `SELECT s.payload,
+			(SELECT f.generation FROM auth_factor f WHERE f.role=s.role AND f.actor_id=s.actor_id AND f.enabled=true)
+			FROM web_session s WHERE s.id_hash=? AND s.expires_at>UTC_TIMESTAMP(6)`, idHash(id)).Scan(&sealed, &generation)
+		if err != nil {
 			return nil
 		}
 		plain, err := box.Open(sealed, "session")
@@ -114,11 +158,19 @@ func (s *Store) Get(id string) *Session {
 			return nil
 		}
 		if sess.Principal.Role != "" {
-			var generation string
-			err = database.QueryRowContext(ctx, "SELECT generation FROM auth_factor WHERE role=? AND actor_id=? AND enabled=true", sess.Principal.Role, sess.Principal.ID).Scan(&generation)
-			if (err != nil && err != sql.ErrNoRows) || (err == nil && generation != sess.Principal.FactorGeneration) || (err == sql.ErrNoRows && sess.Principal.FactorGeneration != "") {
+			if (!generation.Valid && sess.Principal.FactorGeneration != "") ||
+				(generation.Valid && generation.String != sess.Principal.FactorGeneration) {
 				return nil
 			}
+		}
+		if cacheTTL > 0 {
+			key := idHash(id)
+			s.cmu.Lock()
+			if s.cache == nil {
+				s.cache = make(map[string]cacheEntry)
+			}
+			s.cache[key] = cacheEntry{sess: &sess, cachedAt: time.Now()}
+			s.cmu.Unlock()
 		}
 		return &sess
 	}
@@ -140,6 +192,11 @@ func (s *Store) Destroy(id string) bool {
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
 		_, err := database.ExecContext(ctx, "DELETE FROM web_session WHERE id_hash=?", idHash(id))
+		if s.cacheTTL > 0 { // 同副本撤销立即失效缓存
+			s.cmu.Lock()
+			delete(s.cache, idHash(id))
+			s.cmu.Unlock()
+		}
 		return err == nil
 	}
 	s.mu.Lock()
@@ -167,6 +224,15 @@ func (s *Store) Revoke(role string, id int64) error {
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
 		_, err := database.ExecContext(ctx, "DELETE FROM web_session WHERE role=? AND actor_id=?", role, id)
+		if s.cacheTTL > 0 { // 同副本撤销立即失效缓存
+			s.cmu.Lock()
+			for key, e := range s.cache {
+				if e.sess.Principal.Role == role && e.sess.Principal.ID == id {
+					delete(s.cache, key)
+				}
+			}
+			s.cmu.Unlock()
+		}
 		return err
 	}
 	s.mu.Lock()
@@ -179,25 +245,27 @@ func (s *Store) Revoke(role string, id int64) error {
 	return nil
 }
 
-// SetCookie 写 JSESSIONID cookie。
-func SetCookie(w http.ResponseWriter, id string) {
+// SetCookie 写 JSESSIONID cookie。secure 由部署地址决定（非回环监听必须为 true）。
+func SetCookie(w http.ResponseWriter, id string, secure bool) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     CookieName,
 		Value:    id,
 		Path:     "/",
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
+		Secure:   secure,
 	})
 }
 
 // ClearCookie 清除 JSESSIONID cookie。
-func ClearCookie(w http.ResponseWriter) {
+func ClearCookie(w http.ResponseWriter, secure bool) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     CookieName,
 		Value:    "",
 		Path:     "/",
 		MaxAge:   -1,
 		HttpOnly: true,
+		Secure:   secure,
 	})
 }
 

@@ -268,7 +268,7 @@ func (h *Handler) fencePoint(w http.ResponseWriter, r *http.Request) {
 				_, err = tx.Exec(ctx, "INSERT INTO care_incident_event(incident_id,actor,action,note) VALUES($1,'rule','received','围栏离开事件，等待通知与照护处置')", id)
 			}
 			if err == nil {
-				_, err = tx.Exec(ctx, `INSERT INTO care_notification_outbox(incident_id,channel,recipient) SELECT $1,'sms',f.family_phone FROM oldperson o JOIN family f ON f.family_id=o.family_id WHERE o.old_id=$2 AND f.family_phone ~ '^1[0-9]{10}$' ON CONFLICT DO NOTHING`, id, *d.OldID)
+				_, err = notify.QueueCareSMS(ctx, tx, h.Box, id, *d.OldID)
 			}
 			if err == nil {
 				_, err = tx.Exec(ctx, "UPDATE fence_event SET incident_id=$2 WHERE id=$1", eventID, id)

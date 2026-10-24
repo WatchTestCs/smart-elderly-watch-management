@@ -12,7 +12,8 @@ import (
 	"github.com/google/uuid"
 )
 
-func MySQL(t *testing.T) *db.Database {
+// MySQL 接受 *testing.T 或 *testing.B（集成基准同样需要一次性建库）。
+func MySQL(t testing.TB) *db.Database {
 	t.Helper()
 	dsn := os.Getenv("TEST_MYSQL_DSN")
 	if dsn == "" {

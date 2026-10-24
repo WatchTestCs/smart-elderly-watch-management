@@ -226,30 +226,21 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 		if _, err := tx.Exec(ctx,
 			`INSERT INTO device_location(device_id, old_id, lng, lat, source, be_time, create_time)
 			 VALUES($1,$2,$3,$4,$5,$6,now())`,
-			d.ID, oldID, lng, lat, sourceStr, beTime); err != nil {
+			d.ID, oldID, sealCoordinate(h.Box, lng), sealCoordinate(h.Box, lat), sourceStr, beTime); err != nil {
 			rollback()
 			response.Error500(w, ref())
 			return
 		}
 		if _, err := tx.Exec(ctx, `UPDATE device SET last_lng=$1, last_lat=$2 WHERE device_id=$3`,
-			lng, lat, d.ID); err != nil {
+			sealCoordinate(h.Box, lng), sealCoordinate(h.Box, lat), d.ID); err != nil {
 			rollback()
 			response.Error500(w, ref())
 			return
 		}
 	}
 	if alarm == "1" || strings.EqualFold(alarm, "fall") {
-		var alarmLng, alarmLat any
-		if lng != "" {
-			alarmLng = lng
-		} else {
-			alarmLng = d.LastLng
-		}
-		if lat != "" {
-			alarmLat = lat
-		} else {
-			alarmLat = d.LastLat
-		}
+		alarmLng := coordinateArg(h.Box, lng, d.LastLng)
+		alarmLat := coordinateArg(h.Box, lat, d.LastLat)
 		if _, err := tx.Exec(ctx,
 			`INSERT INTO alarm_precess(status, old_id, device_id, be_time, lng, lat)
 			 VALUES('1',$1,$2,$3,$4,$5)`,
@@ -362,7 +353,7 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 	if err := tx.QueryRow(ctx,
 		`INSERT INTO alarm_precess(status, old_id, device_id, be_time, lng, lat)
 		 VALUES('1',$1,$2,$3,$4,$5) RETURNING id`,
-		*d.OldID, d.ID, now, nullableCoordinate(lng), nullableCoordinate(lat)).Scan(&alarmID); err != nil {
+		*d.OldID, d.ID, now, coordinateArg(h.Box, lng, nil), coordinateArg(h.Box, lat, nil)).Scan(&alarmID); err != nil {
 		rollback()
 		response.Error500(w, ref())
 		return
@@ -371,7 +362,7 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 		if _, err := tx.Exec(ctx,
 			`INSERT INTO device_location(device_id, old_id, lng, lat, source, be_time, create_time)
 			 VALUES($1,$2,$3,$4,'sos',$5,now())`,
-			d.ID, *d.OldID, lng, lat, now); err != nil {
+			d.ID, *d.OldID, sealCoordinate(h.Box, lng), sealCoordinate(h.Box, lat), now); err != nil {
 			rollback()
 			response.Error500(w, ref())
 			return
@@ -405,12 +396,7 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 	}
 	// Persist possible family SMS attempts in the same transaction as the SOS.
 	// This creates a pending task, NOT a claim of dispatch or delivery.
-	queued, err := tx.Exec(ctx,
-		`INSERT INTO care_notification_outbox(incident_id, channel, recipient)
-		 SELECT $1, 'sms', f.family_phone
-		 FROM oldperson o JOIN family f ON f.family_id=o.family_id
-		 WHERE o.old_id=$2 AND f.family_phone ~ '^1[0-9]{10}$'
-		 ON CONFLICT DO NOTHING`, incidentID, *d.OldID)
+	queued, err := notify.QueueCareSMS(ctx, tx, h.Box, incidentID, *d.OldID)
 	if err != nil {
 		rollback()
 		response.Error500(w, ref())
@@ -422,7 +408,7 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 		response.Error500(w, ref())
 		return
 	}
-	if queued.RowsAffected() > 0 {
+	if queued > 0 {
 		notificationState = "pending"
 	}
 	if err := tx.Commit(ctx); err != nil {

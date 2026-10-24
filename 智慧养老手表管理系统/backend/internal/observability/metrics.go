@@ -1,6 +1,7 @@
 package observability
 
 import (
+	"context"
 	"fmt"
 	"github.com/google/uuid"
 	"log/slog"
@@ -9,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -16,19 +18,48 @@ type Registry struct {
 	mu             sync.Mutex
 	values         map[string]float64
 	httpHistograms map[string]*httpHistogram
-	resolve        func(*http.Request) string
+	// labelStrings interns the rendered `route=...,method=...,status="..."`
+	// label key per (route, method, status) combination so the request hot
+	// path looks histograms up by a stack composite key instead of rendering
+	// a fresh string per request. Cardinality is identical to httpHistograms.
+	labelStrings map[labelKey]string
+	// inFlight tracks the suining_http_in_flight gauge with an atomic counter
+	// instead of two map writes under mu per request. inFlightStarted records
+	// that the key must be exposed (the old map-based Add left a zero-valued
+	// entry in the exposition once any request had started); it is only
+	// written on the idle→busy transition, not per request.
+	inFlight        atomic.Int64
+	inFlightStarted atomic.Bool
+	// resolve is read on every request; an atomic load avoids taking mu once
+	// per request just to fetch the immutable resolver. SetRouteResolver
+	// publishes a fully built pointer, so readers see either nil or a usable
+	// resolver, never a torn one.
+	resolve atomic.Pointer[func(*http.Request) string]
 }
 
 func New() *Registry {
-	return &Registry{values: map[string]float64{}, httpHistograms: make(map[string]*httpHistogram)}
+	return &Registry{
+		values:         map[string]float64{},
+		httpHistograms: make(map[string]*httpHistogram),
+		labelStrings:   make(map[labelKey]string),
+	}
 }
 
 var Default = New()
 
+// uuid.EnableRandPool batches crypto/rand reads for Version 4 UUIDs (one
+// 256-byte read per 16 IDs instead of one syscall per request). Generated
+// values keep the exact v4 semantics of uuid.NewString; the toggle itself is
+// only safe before concurrent generation starts, and package init runs before
+// any goroutine serves requests.
+func init() { uuid.EnableRandPool() }
+
 func (r *Registry) SetRouteResolver(f func(*http.Request) string) {
-	r.mu.Lock()
-	r.resolve = f
-	r.mu.Unlock()
+	if f == nil {
+		r.resolve.Store(nil)
+		return
+	}
+	r.resolve.Store(&f)
 }
 func (r *Registry) Add(name string, delta float64) {
 	r.mu.Lock()
@@ -85,6 +116,57 @@ func (r *Registry) observeHTTP(labels string, seconds float64) {
 	}
 }
 
+// labelKey identifies a histogram by its raw label parts. Constructing one on
+// the stack does not allocate, unlike rendering the label string.
+type labelKey struct {
+	route  string
+	method string
+	status int
+}
+
+// buildHTTPLabels renders exactly `route=`+Quote(route)+`,method=`+Quote(method)
+// +`,status="`+Itoa(status)+`"`: AppendQuote is byte-identical to Quote, and a
+// decimal status never needs Quote's escaping.
+func buildHTTPLabels(route, method string, status int) string {
+	buf := make([]byte, 0, 96)
+	buf = append(buf, `route=`...)
+	buf = strconv.AppendQuote(buf, route)
+	buf = append(buf, `,method=`...)
+	buf = strconv.AppendQuote(buf, method)
+	buf = append(buf, `,status=`...)
+	buf = append(buf, '"')
+	buf = strconv.AppendInt(buf, int64(status), 10)
+	buf = append(buf, '"')
+	return string(buf)
+}
+
+// observe interns labels under the same lock as the histogram update, so a
+// repeated (route, method, status) combination performs no per-request
+// string allocation.
+func (r *Registry) observe(route, method string, status int, seconds float64) {
+	k := labelKey{route: route, method: method, status: status}
+	r.mu.Lock()
+	labels, ok := r.labelStrings[k]
+	if !ok {
+		labels = buildHTTPLabels(route, method, status)
+		r.labelStrings[k] = labels
+	}
+	h := r.httpHistograms[labels]
+	if h == nil {
+		h = newHTTPHistogram(labels)
+		r.httpHistograms[labels] = h
+	}
+	h.count++
+	h.sum += seconds
+	for i, upper := range httpBucketBounds {
+		if seconds <= upper {
+			h.buckets[i]++
+			break
+		}
+	}
+	r.mu.Unlock()
+}
+
 func (r *Registry) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
 	fmt.Fprintln(w, "# TYPE suining_http_requests_total counter\n# TYPE suining_http_duration_seconds histogram\n# TYPE suining_http_in_flight gauge")
@@ -111,6 +193,12 @@ func (r *Registry) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			keys = append(keys, key)
 		}
 		values[key] = value
+	}
+	// The in-flight gauge lives in an atomic counter; expose it under the
+	// same exposition key as before (present once any request has started,
+	// even when idle at zero, matching the old map entry that never went away).
+	if v := r.values["suining_http_in_flight"]; r.inFlightStarted.Load() || v != 0 {
+		put("suining_http_in_flight", float64(r.inFlight.Load())+v)
 	}
 	for _, h := range histograms {
 		put(h.keys[0], float64(h.count))
@@ -149,25 +237,39 @@ func (w *writer) Write(b []byte) (int, error) {
 	return w.ResponseWriter.Write(b)
 }
 func (w *writer) Unwrap() http.ResponseWriter { return w.ResponseWriter }
+
+// "X-Request-ID" canonicalizes to "X-Request-Id" in net/textproto on every
+// Header.Set call. Using the canonical spelling skips that per-request key
+// allocation, and overwriting an existing single value in place skips the
+// fresh []string. Observable behavior matches Header.Set: the stored value is
+// always exactly {id}, duplicates collapse to one entry.
+const requestIDHeader = "X-Request-Id"
+
+func setRequestID(h http.Header, id string) {
+	if v := h[requestIDHeader]; len(v) == 1 {
+		v[0] = id
+		return
+	}
+	h[requestIDHeader] = []string{id}
+}
 func (r *Registry) HTTP(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		id := uuid.NewString()
-		req.Header.Set("X-Request-ID", id)
-		w.Header().Set("X-Request-ID", id)
+		setRequestID(req.Header, id)
+		setRequestID(w.Header(), id)
 		start := time.Now()
-		r.Add("suining_http_in_flight", 1)
-		defer r.Add("suining_http_in_flight", -1)
+		if r.inFlight.Add(1) == 1 {
+			r.inFlightStarted.Store(true)
+		}
+		defer r.inFlight.Add(-1)
 		out := &writer{ResponseWriter: w}
 		next.ServeHTTP(out, req)
 		if out.status == 0 {
 			out.status = 200
 		}
-		r.mu.Lock()
-		resolver := r.resolve
-		r.mu.Unlock()
 		route := "unknown"
-		if resolver != nil {
-			if pattern := resolver(req); pattern != "" {
+		if p := r.resolve.Load(); p != nil {
+			if pattern := (*p)(req); pattern != "" {
 				route = pattern
 			}
 		}
@@ -184,8 +286,16 @@ func (r *Registry) HTTP(next http.Handler) http.Handler {
 		default:
 			method = "OTHER"
 		}
-		labels := `route=` + strconv.Quote(route) + `,method=` + strconv.Quote(method) + `,status=` + strconv.Quote(strconv.Itoa(out.status))
-		r.observeHTTP(labels, seconds)
-		slog.Info("http_request", "request_id", id, "route", route, "method", method, "status", out.status, "duration_ms", seconds*1000)
+		r.observe(route, method, out.status, seconds)
+		// LogAttrs skips the ...any boxing and argsToAttrSlice allocations of
+		// slog.Info. Key order and value kinds (string/int64/float64) are the
+		// same, so handler output is byte-identical.
+		slog.Default().LogAttrs(context.Background(), slog.LevelInfo, "http_request",
+			slog.String("request_id", id),
+			slog.String("route", route),
+			slog.String("method", method),
+			slog.Int64("status", int64(out.status)),
+			slog.Float64("duration_ms", seconds*1000),
+		)
 	})
 }

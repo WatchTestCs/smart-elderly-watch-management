@@ -45,16 +45,58 @@ func TestApplyOptInPrecedenceAndV2Files(t *testing.T) {
 	}
 	var cpu int
 	var memory int64
+	var gc int
 	setCPU := func(n int) int { cpu = n; return n }
 	setMemory := func(n int64) int64 { memory = n; return n }
+	setGC := func(n int) int { gc = n; return n }
 	get := func(k string) string { return "" }
-	d := apply(root, get, 8, setCPU, setMemory)
+	d := apply(root, get, 8, setCPU, setMemory, setGC)
 	if d.Parallelism != 3 || d.GoMemoryLimit != 3006477107 || cpu != 3 || memory != 3006477107 {
 		t.Fatalf("decision %+v cpu=%d memory=%d", d, cpu, memory)
 	}
-	cpu, memory = 0, 0
-	d = apply(root, func(k string) string { return "administrator setting" }, 8, setCPU, setMemory)
-	if d != (Decision{}) || cpu != 0 || memory != 0 {
+	cpu, memory, gc = 0, 0, 0
+	d = apply(root, func(k string) string { return "administrator setting" }, 8, setCPU, setMemory, setGC)
+	if d != (Decision{}) || cpu != 0 || memory != 0 || gc != 0 {
 		t.Fatalf("overwrote explicit environment: %+v", d)
+	}
+}
+
+func TestApplyOptInGOGCPolicy(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "cpu.max"), []byte("250000 100000"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "memory.max"), []byte("4294967296"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct {
+		name string
+		env  map[string]string
+		want int
+	}{
+		{"explicit GOGC untouched", map[string]string{"GOGC": "150"}, 0},
+		{"default when unset", map[string]string{}, 200},
+		{"valid override", map[string]string{"SUINING_RUNTIME_GOGC": "300"}, 300},
+		{"override below range", map[string]string{"SUINING_RUNTIME_GOGC": "49"}, 0},
+		{"override above range", map[string]string{"SUINING_RUNTIME_GOGC": "801"}, 0},
+		{"override malformed", map[string]string{"SUINING_RUNTIME_GOGC": "fast"}, 0},
+	} {
+		var gc int
+		d := apply(root, func(k string) string { return tc.env[k] }, 8,
+			func(n int) int { return n }, func(n int64) int64 { return n }, func(n int) int { gc = n; return n })
+		if d.GOGC != tc.want || gc != tc.want {
+			t.Errorf("%s: decision.GOGC=%d set=%d want %d", tc.name, d.GOGC, gc, tc.want)
+		}
+	}
+	// No effective memory budget means no backstop, so GOGC stays untouched.
+	noMemory := t.TempDir()
+	if err := os.WriteFile(filepath.Join(noMemory, "cpu.max"), []byte("250000 100000"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	var gc int
+	d := apply(noMemory, func(string) string { return "" }, 8,
+		func(n int) int { return n }, func(n int64) int64 { return n }, func(n int) int { gc = n; return n })
+	if d.Parallelism != 3 || d.GoMemoryLimit != 0 || d.GOGC != 0 || gc != 0 {
+		t.Fatalf("GOGC applied without memory budget: %+v gc=%d", d, gc)
 	}
 }

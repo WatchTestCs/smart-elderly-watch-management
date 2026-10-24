@@ -4,6 +4,7 @@ import (
 	"careold-go/internal/auth"
 	dbstore "careold-go/internal/db"
 	"careold-go/internal/response"
+	"careold-go/internal/securestore"
 
 	"net/http"
 	"strconv"
@@ -25,7 +26,7 @@ const posLatest = `SELECT o.name, o.old_id, o.sex, l.lng, l.lat,
 		ROW_NUMBER() OVER (PARTITION BY old_id ORDER BY be_time DESC, id DESC) AS rn FROM alarm_precess) a
 		ON a.old_id = o.old_id AND a.rn = 1`
 
-func scanPositionRow(row dbstore.Row) (map[string]any, error) {
+func scanPositionRow(box *securestore.Box, row dbstore.Row) (map[string]any, error) {
 	var name, sex, lng, lat, status *string
 	var oldID int64
 	var beTime *time.Time
@@ -33,7 +34,8 @@ func scanPositionRow(row dbstore.Row) (map[string]any, error) {
 		return nil, err
 	}
 	return map[string]any{
-		"name": name, "oldId": oldID, "sex": sex, "lng": lng, "lat": lat,
+		"name": name, "oldId": oldID, "sex": sex,
+		"lng": openCoordinate(box, lng), "lat": openCoordinate(box, lat),
 		"beTime": tsOrNil(beTime), "status": status,
 	}, nil
 }
@@ -68,7 +70,7 @@ func (h *Handler) positionSelect(w http.ResponseWriter, r *http.Request) {
 	defer rows.Close()
 	list := []map[string]any{}
 	for rows.Next() {
-		item, err := scanPositionRow(rows)
+		item, err := scanPositionRow(h.Box, rows)
 		if err != nil {
 			response.Error500(w, ref())
 			return
@@ -147,7 +149,7 @@ func (h *Handler) positionSelectFamily(w http.ResponseWriter, r *http.Request) {
 	defer rows.Close()
 	list := []map[string]any{}
 	for rows.Next() {
-		item, err := scanPositionRow(rows)
+		item, err := scanPositionRow(h.Box, rows)
 		if err != nil {
 			response.Error500(w, ref())
 			return

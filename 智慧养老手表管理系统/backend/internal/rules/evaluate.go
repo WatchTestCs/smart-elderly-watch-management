@@ -4,6 +4,7 @@ package rules
 import (
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"time"
 	_ "time/tzdata"
 )
@@ -62,27 +63,41 @@ var locations = struct {
 	next   int
 }{values: make(map[string]*time.Location)}
 
+// locationMemo is a single-entry lock-free hit cache in front of the bounded
+// map: per-sample night checks otherwise pay the string hash, map lookup and
+// RWMutex round trip for the same policy timezone. Entries are immutable and
+// small; misses fall through to the bounded map and refresh the memo.
+type locationEntry struct {
+	name string
+	loc  *time.Location
+}
+
+var locationMemo atomic.Pointer[locationEntry]
+
 func ruleLocation(name string) (*time.Location, error) {
+	if e := locationMemo.Load(); e != nil && e.name == name {
+		return e.loc, nil
+	}
 	locations.RLock()
 	loc := locations.values[name]
 	locations.RUnlock()
-	if loc != nil {
-		return loc, nil
+	if loc == nil {
+		var err error
+		if loc, err = time.LoadLocation(name); err != nil {
+			return nil, err
+		}
+		locations.Lock()
+		if cached := locations.values[name]; cached != nil {
+			loc = cached
+		} else {
+			delete(locations.values, locations.keys[locations.next])
+			locations.values[name] = loc
+			locations.keys[locations.next] = name
+			locations.next = (locations.next + 1) % len(locations.keys)
+		}
+		locations.Unlock()
 	}
-	loc, err := time.LoadLocation(name)
-	if err != nil {
-		return nil, err
-	}
-	locations.Lock()
-	if cached := locations.values[name]; cached != nil {
-		loc = cached
-	} else {
-		delete(locations.values, locations.keys[locations.next])
-		locations.values[name] = loc
-		locations.keys[locations.next] = name
-		locations.next = (locations.next + 1) % len(locations.keys)
-	}
-	locations.Unlock()
+	locationMemo.Store(&locationEntry{name: name, loc: loc})
 	return loc, nil
 }
 

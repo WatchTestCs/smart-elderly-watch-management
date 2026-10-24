@@ -27,8 +27,8 @@
       v-model="watchDialogVisible"
       @close="closeRoleAddDialog"
       width="30%">
-      <el-form label-width="80px" :model="watchForm"  ref="addwatchFormRef">
-        
+      <el-form label-width="80px" :model="watchForm" :rules="rules"  ref="addwatchFormRef">
+
         <el-form-item label="手表Id" prop="deviceId">
           <el-input v-model="watchForm.deviceId"></el-input>
         </el-form-item>
@@ -55,8 +55,8 @@
       title="设备编辑"
       v-model="watchEditDialogVisible"
       width="30%">
-      <el-form label-width="80px" :model="watchEditForm">
-        
+      <el-form label-width="80px" :model="watchEditForm" :rules="rules" ref="editwatchFormRef">
+
         <el-form-item label="手表Id" prop="deviceId">
         <el-input v-model="watchEditForm.deviceId" disabled="disabled"></el-input>
         </el-form-item>
@@ -132,6 +132,17 @@ import RecordCards from '@/components/RecordCards.vue'
 export default {
   components: { RecordCards },
   data () {
+    // 监测阈值为整数（血压/心率），此前表单无数值与范围校验
+    var checkThreshold = (rule, value, callback) => {
+      if (value === '' || value === null || value === undefined) {
+        return callback(new Error('请输入阈值'))
+      }
+      var n = Number(value)
+      if (!Number.isInteger(n) || n < 1 || n > 300) {
+        return callback(new Error('阈值须为1-300的整数'))
+      }
+      callback()
+    }
     return {
       searchText: '', // 角色查询内容
       watchDialogVisible: false,
@@ -150,7 +161,16 @@ export default {
         hrf: '',
         hrl: ''
       },
-      
+      rules: {
+        deviceId: [
+          { required: true, message: '请输入手表Id', trigger: 'blur' }
+        ],
+        bpf: [{ validator: checkThreshold, trigger: 'blur' }],
+        bpl: [{ validator: checkThreshold, trigger: 'blur' }],
+        hrf: [{ validator: checkThreshold, trigger: 'blur' }],
+        hrl: [{ validator: checkThreshold, trigger: 'blur' }]
+      },
+
       isLoading: false,
       loadError: '',
       total: 0,
@@ -196,63 +216,69 @@ export default {
     },
     addWatchs () {
       var _this = this
-      axios.post('restful/watchInfo/add',
-        _this.watchForm,
-        {
-          headers: {
-            'content-type': 'application/json'
-          },
-          withCredentials: true
-        }).then(function (response) {
+      this.$refs.addwatchFormRef.validate(function (valid) {
+        if (!valid) return
+        axios.post('restful/watchInfo/add',
+          _this.watchForm,
+          {
+            headers: {
+              'content-type': 'application/json'
+            },
+            withCredentials: true
+          }).then(function (response) {
 
-        if (response.data.returnCode === '1111') {
-          _this.watchDialogVisible = false
-          _this.searchWatchs()
-          _this.$message({
-            type: 'success',
-            message: '添加手表成功'
-          })
-        } else {
-          _this.$message({
-            type: 'error',
-            message: '添加手表失败——可能原因手表ID重复'
-          })
-        }
-      })
-        .catch(function (error) {
-          console.log(error)
+          if (response.data.returnCode === '1111') {
+            _this.watchDialogVisible = false
+            _this.searchWatchs()
+            _this.$message({
+              type: 'success',
+              message: '添加手表成功'
+            })
+          } else {
+            _this.$message({
+              type: 'error',
+              message: '添加手表失败——可能原因手表ID重复'
+            })
+          }
         })
+          .catch(function (error) {
+            console.log(error)
+          })
+      })
     },
     closeRoleAddDialog () {
       this.$refs.addwatchFormRef.resetFields()
     },
     editWatch () {
       var _this = this
-      axios.post('restful/watchInfo/update', _this.watchEditForm,
-        {
-          headers: {
-            'content-type': 'application/json'
-          },
-          withCredentials: true
-        }).then(function (response) {
+      this.$refs.editwatchFormRef.validate(function (valid) {
+        if (!valid) return
+        axios.post('restful/watchInfo/update', _this.watchEditForm,
+          {
+            headers: {
+              'content-type': 'application/json'
+            },
+            withCredentials: true
+          }).then(function (response) {
 
-        if (response.data.returnCode === '1111') {
-          _this.watchEditDialogVisible = false
-          _this.$message({
-            type: 'success',
-            message: '编辑手表信息成功'
-          })
-          _this.searchWatchs()
-        } else {
-          _this.$message({
-            type: 'error',
-            message: '编辑手表信息失败'
-          })
-        }
-      })
-        .catch(function (error) {
-          console.log(error)
+          if (response.data.returnCode === '1111') {
+            _this.watchEditDialogVisible = false
+            _this.$message({
+              type: 'success',
+              message: '编辑手表信息成功'
+            })
+            _this.searchWatchs()
+          } else {
+            _this.$message({
+              type: 'error',
+              message: '编辑手表信息失败'
+            })
+          }
         })
+          .catch(function (error) {
+            console.log(error)
+          })
+      })
     },
     async deleteRole (deviceId) {
 
