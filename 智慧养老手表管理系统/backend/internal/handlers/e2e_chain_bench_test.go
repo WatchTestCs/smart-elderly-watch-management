@@ -27,8 +27,8 @@ type chainRW struct {
 	status int
 }
 
-func (b *chainRW) Header() http.Header { return b.h }
-func (b *chainRW) WriteHeader(s int)   { b.status = s }
+func (b *chainRW) Header() http.Header         { return b.h }
+func (b *chainRW) WriteHeader(s int)           { b.status = s }
 func (b *chainRW) Write(p []byte) (int, error) { return len(p), nil }
 
 // BenchmarkAuthenticatedRequestChain 测一条已登录 POST 请求穿过生产中间件链的
