@@ -179,25 +179,27 @@ func (s *Store) Revoke(role string, id int64) error {
 	return nil
 }
 
-// SetCookie 写 JSESSIONID cookie。
-func SetCookie(w http.ResponseWriter, id string) {
+// SetCookie 写 JSESSIONID cookie。secure 由部署地址决定（非回环监听必须为 true）。
+func SetCookie(w http.ResponseWriter, id string, secure bool) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     CookieName,
 		Value:    id,
 		Path:     "/",
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
+		Secure:   secure,
 	})
 }
 
 // ClearCookie 清除 JSESSIONID cookie。
-func ClearCookie(w http.ResponseWriter) {
+func ClearCookie(w http.ResponseWriter, secure bool) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     CookieName,
 		Value:    "",
 		Path:     "/",
 		MaxAge:   -1,
 		HttpOnly: true,
+		Secure:   secure,
 	})
 }
 

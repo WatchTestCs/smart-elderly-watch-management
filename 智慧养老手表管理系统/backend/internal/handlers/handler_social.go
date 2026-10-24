@@ -56,6 +56,17 @@ type saidAdminDTO struct {
 	Title      *string `json:"title"`
 }
 
+// maskPhone 将评论作者手机号脱敏为 138****1234：said/select 面向任意登录家属，
+// 原样返回会批量暴露全体用户的登录账号（手机号）。非 11 位号码一律不返回。
+func maskPhone(phone *string) *string {
+	if phone == nil || len(*phone) != 11 {
+		return nil
+	}
+	v := *phone
+	masked := v[:3] + "****" + v[7:]
+	return &masked
+}
+
 // POST /restful/said/select —— 查询某公告下的说说/评论（含当前人点赞状态）。
 func (h *Handler) saidSelect(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
@@ -97,6 +108,7 @@ func (h *Handler) saidSelect(w http.ResponseWriter, r *http.Request) {
 			response.Error500(w, ref())
 			return
 		}
+		d.SaidPhone = maskPhone(d.SaidPhone)
 		items = append(items, d)
 	}
 	if !rowsOK(w, rows) {
