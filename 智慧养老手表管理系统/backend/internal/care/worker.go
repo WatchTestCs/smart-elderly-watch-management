@@ -18,12 +18,15 @@ import (
 	"strings"
 	"time"
 
+	"careold-go/internal/notify"
 	"careold-go/internal/observability"
+	"careold-go/internal/securestore"
 	"github.com/jackc/pgx/v5"
 )
 
 type dispatcher struct {
 	db              *dbstore.Database
+	box             *securestore.Box
 	webhookURL      string
 	webhookToken    string
 	escalationPhone string
@@ -41,7 +44,7 @@ func NotificationConfigured() bool {
 
 // Run starts only after migrations succeed. A stale "sending" job can be claimed
 // again after a crash; the receiver must honor Idempotency-Key.
-func Run(ctx context.Context, db *dbstore.Database) {
+func Run(ctx context.Context, db *dbstore.Database, box *securestore.Box) {
 	endpoint := strings.TrimSpace(os.Getenv("CARE_NOTIFY_WEBHOOK_URL"))
 	token := strings.TrimSpace(os.Getenv("CARE_NOTIFY_WEBHOOK_TOKEN"))
 	if !NotificationConfigured() {
@@ -52,7 +55,7 @@ func Run(ctx context.Context, db *dbstore.Database) {
 	if !phonePattern.MatchString(escalation) {
 		escalation = ""
 	}
-	d := &dispatcher{db: db, webhookURL: endpoint, webhookToken: token,
+	d := &dispatcher{db: db, box: box, webhookURL: endpoint, webhookToken: token,
 		escalationPhone: escalation, httpClient: &http.Client{Timeout: 12 * time.Second}}
 	if endpoint != "" {
 		done := make(chan struct{})
@@ -191,6 +194,10 @@ func (d *dispatcher) dispatchNext(ctx context.Context) (bool, error) {
 		}
 		return true, err
 	}
+	// 收件人在入库时是密文；解密失败（密钥错误或已轮换）按投递失败走退避路径，
+	// 不把密文原样交给网关。
+	recipient, openErr := notify.OpenNotificationRecipient(d.box, job.recipient)
+	job.recipient = recipient
 	job.attempts++
 	observability.Default.Add(`suining_notification_attempts_total{queue="care"}`, 1)
 	if err := tx.QueryRow(ctx, "SELECT kind FROM care_incident WHERE id=$1", job.incidentID).Scan(&job.kind); err != nil {
@@ -203,10 +210,14 @@ func (d *dispatcher) dispatchNext(ctx context.Context) (bool, error) {
 	if err := tx.Commit(ctx); err != nil {
 		return true, err
 	}
-	payload, err := json.Marshal(map[string]any{
-		"type": "care." + job.kind, "incidentId": job.incidentID,
-		"notificationId": job.id, "channel": job.channel, "recipient": job.recipient,
-	})
+	err = openErr
+	var payload []byte
+	if err == nil {
+		payload, err = json.Marshal(map[string]any{
+			"type": "care." + job.kind, "incidentId": job.incidentID,
+			"notificationId": job.id, "channel": job.channel, "recipient": job.recipient,
+		})
+	}
 	if err == nil {
 		req, reqErr := http.NewRequestWithContext(ctx, http.MethodPost, d.webhookURL, bytes.NewReader(payload))
 		if reqErr != nil {
@@ -253,7 +264,11 @@ func (d *dispatcher) dispatchNext(ctx context.Context) (bool, error) {
 		return true, updateErr
 	}
 	if changed.RowsAffected() > 0 && job.attempts >= 5 && job.channel == "sms" {
-		_, err = finish.Exec(ctx, `INSERT INTO care_notification_outbox(incident_id,channel,recipient) VALUES($1,'voice',$2) ON CONFLICT DO NOTHING`, job.incidentID, job.recipient)
+		voiceRecipient, voiceKey, sealErr := notify.SealNotificationRecipient(d.box, job.recipient)
+		if sealErr != nil {
+			return true, sealErr
+		}
+		_, err = finish.Exec(ctx, `INSERT INTO care_notification_outbox(incident_id,channel,recipient,recipient_key) VALUES($1,'voice',$2,$3) ON CONFLICT DO NOTHING`, job.incidentID, voiceRecipient, voiceKey)
 		if err != nil {
 			return true, err
 		}
@@ -313,8 +328,12 @@ func (d *dispatcher) escalate(ctx context.Context) error {
 			return err
 		}
 		if d.escalationPhone != "" {
-			if _, err := tx.Exec(ctx, `INSERT INTO care_notification_outbox(incident_id,channel,recipient)
-				VALUES($1,'sms',$2) ON CONFLICT DO NOTHING`, id, d.escalationPhone); err != nil {
+			sealed, key, sealErr := notify.SealNotificationRecipient(d.box, d.escalationPhone)
+			if sealErr != nil {
+				return sealErr
+			}
+			if _, err := tx.Exec(ctx, `INSERT INTO care_notification_outbox(incident_id,channel,recipient,recipient_key)
+				VALUES($1,'sms',$2,$3) ON CONFLICT DO NOTHING`, id, sealed, key); err != nil {
 				return err
 			}
 		}

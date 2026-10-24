@@ -37,7 +37,12 @@ func (h *Handler) loginAuditTx(r *http.Request, phone, role string, id int64, ou
 	}
 	ip, _, _ := net.SplitHostPort(r.RemoteAddr)
 	q := "INSERT INTO login_audit(account_hash,ip_hash,role,actor_id,outcome,request_id) VALUES($1,$2,$3,$4,$5,$6)"
-	args := []any{h.Box.Index("account", phone), h.Box.Index("ip", ip), role, id, outcome, r.Header.Get("X-Request-ID")}
+	// X-Request-ID 是客户端可控的请求头，截断到列宽，防止超长值导致审计写入失败。
+	requestID := r.Header.Get("X-Request-ID")
+	if len(requestID) > 64 {
+		requestID = requestID[:64]
+	}
+	args := []any{h.Box.Index("account", phone), h.Box.Index("ip", ip), role, id, outcome, requestID}
 	if tx != nil {
 		_, err := tx.Exec(r.Context(), q, args...)
 		return err

@@ -340,7 +340,7 @@ func (e *Engine) persist(ctx context.Context, tx *db.Transaction, device, old, e
 		if _, err = tx.Exec(ctx, "INSERT INTO care_incident_event(incident_id,actor,action,note) VALUES($1,'rule','received',$2)", id, note); err != nil {
 			return err
 		}
-		if _, err = tx.Exec(ctx, `INSERT INTO care_notification_outbox(incident_id,channel,recipient) SELECT $1,'sms',f.family_phone FROM oldperson o JOIN family f ON f.family_id=o.family_id WHERE o.old_id=$2 AND f.family_phone ~ '^1[0-9]{10}$' ON CONFLICT DO NOTHING`, id, old); err != nil {
+		if _, err = notify.QueueCareSMS(ctx, tx, e.Box, id, old); err != nil {
 			return err
 		}
 		if err = notify.CareInbox(ctx, tx, e.Box, old, id); err != nil {

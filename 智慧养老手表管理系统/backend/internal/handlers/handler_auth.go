@@ -55,7 +55,7 @@ func (h *Handler) sessionInfo(w http.ResponseWriter, r *http.Request) {
 			response.JSON(w, 503, map[string]any{"message": "会话存储不可用"})
 			return
 		}
-		session.SetCookie(w, sess.ID)
+		session.SetCookie(w, sess.ID, h.CookieSecure)
 	}
 	authenticated := sess.Principal.Role == auth.RoleAdmin || sess.Principal.Role == auth.RoleFamily
 	account := map[string]any{}
@@ -214,7 +214,7 @@ func (h *Handler) renewSession(w http.ResponseWriter, r *http.Request, p session
 		response.Error500(w, ref())
 		return false
 	}
-	session.SetCookie(w, sess.ID)
+	session.SetCookie(w, sess.ID, h.CookieSecure)
 	return true
 }
 
@@ -230,7 +230,7 @@ func (h *Handler) logout(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	session.ClearCookie(w)
+	session.ClearCookie(w, h.CookieSecure)
 	response.OK(w, nil)
 }
 

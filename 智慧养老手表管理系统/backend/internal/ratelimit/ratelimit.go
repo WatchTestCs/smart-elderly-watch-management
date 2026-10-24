@@ -23,6 +23,16 @@ var limits = map[string]int{
 	"/restful/device/bind":          30,
 	"/restful/inviteCode/checkCode": 60,
 	"/restful/device/login":         60,
+	// 硬件端点免会话鉴权，也按 IP 限流：上限刻意宽松（合法网关 NAT 后多设备共享
+	// 一个出口 IP），只用于拦住未认证洪水消耗数据库事务，不用于精确配额。
+	"/restful/device/heartbeat":   1800,
+	"/restful/device/report":      1800,
+	"/restful/device/healthBatch": 1800,
+	"/restful/device/commandPull": 1800,
+	"/restful/device/commandAck":  1800,
+	"/restful/device/fencePoint":  1800,
+	"/restful/device/sos":         300,
+	"/restful/care/receipt":       600,
 }
 
 type Limiter struct {
