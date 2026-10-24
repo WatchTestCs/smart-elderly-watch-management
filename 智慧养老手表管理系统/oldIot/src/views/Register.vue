@@ -52,7 +52,7 @@
           </el-form-item>
 
           <el-form-item label="密码" prop="familyPassword" for="register-familyPassword">
-            <el-input :type="showPassword ? 'text' : 'password'" autocomplete="new-password" id="register-familyPassword" aria-label="密码" v-model="registerForm.familyPassword" placeholder="6-20个字符"><template #suffix><button  type="button" class="password-visibility" :aria-label="showPassword ? '隐藏密码' : '显示密码'" :aria-pressed="String(showPassword)" @click="showPassword = !showPassword"><i class="el-icon-view" aria-hidden="true"></i></button></template></el-input>
+            <el-input :type="showPassword ? 'text' : 'password'" autocomplete="new-password" id="register-familyPassword" aria-label="密码" v-model="registerForm.familyPassword" placeholder="12-20位，须包含字母和数字"><template #suffix><button  type="button" class="password-visibility" :aria-label="showPassword ? '隐藏密码' : '显示密码'" :aria-pressed="String(showPassword)" @click="showPassword = !showPassword"><i class="el-icon-view" aria-hidden="true"></i></button></template></el-input>
           </el-form-item>
 
           <el-form-item label="确认密码" prop="confirmPassword" for="register-confirmPassword">
@@ -97,6 +97,16 @@ export default {
       }
       callback()
     }
+    // 与后端 ValidNewPassword 对齐：12-20 位且同时包含字母和数字
+    var checkPasswordComplexity = (rule, value, callback) => {
+      if (!value) {
+        return callback()
+      }
+      if (!/[a-zA-Z]/.test(value) || !/\d/.test(value)) {
+        return callback(new Error('密码必须同时包含字母和数字'))
+      }
+      callback()
+    }
     return {
       submitting: false,
       showPassword: false,
@@ -133,7 +143,8 @@ export default {
         ],
         familyPassword: [
           { required: true, message: '请输入密码', trigger: 'blur' },
-          { min: 6, max: 20, message: '密码长度为6-20个字符', trigger: 'blur' }
+          { min: 12, max: 20, message: '密码长度为12-20个字符', trigger: 'blur' },
+          { validator: checkPasswordComplexity, trigger: 'blur' }
         ],
         confirmPassword: [
           { validator: checkConfirm, trigger: 'blur' }

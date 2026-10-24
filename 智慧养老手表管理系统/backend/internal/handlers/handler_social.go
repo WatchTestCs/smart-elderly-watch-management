@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+	"unicode/utf8"
 )
 
 func (h *Handler) routeSocial(mux *http.ServeMux) {
@@ -196,6 +197,11 @@ func (h *Handler) saidInsert(w http.ResponseWriter, r *http.Request) {
 		saidContent = s
 	} else {
 		saidContent = fmt.Sprintf("%v", v)
+	}
+	// 与前端 maxlength=30 对齐；仅约束新留言，历史数据不受影响。
+	if utf8.RuneCountInString(saidContent) > 30 || saidContent == "" {
+		response.Fail(w, "留言内容须为1-30个字符")
+		return
 	}
 	textID, ok := numParam(m, "textId")
 	if !ok {

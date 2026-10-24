@@ -174,7 +174,8 @@ func (h *Handler) inviteJoin(w http.ResponseWriter, r *http.Request) {
 	}
 	if dup {
 		_ = tx.Rollback(ctx)
-		response.Fail(w, "该手机号已注册，请直接登录或更换手机号")
+		// 不直接提示"已注册"：本接口公开，统一文案避免被用于枚举注册手机号。
+		response.Fail(w, "注册失败，请核对邀请码与信息后重试")
 		return
 	}
 	// 邀请码绑定的老人须存在

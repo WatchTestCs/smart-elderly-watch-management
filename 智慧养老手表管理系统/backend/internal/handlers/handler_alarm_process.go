@@ -52,7 +52,7 @@ func (h *Handler) alarmProcessSelect(w http.ResponseWriter, r *http.Request) {
 		}
 		list = append(list, map[string]any{
 			"id": aid, "status": status, "oldId": oldID, "deviceId": deviceID,
-			"beTime": tsOrNil(beTime), "lng": lng, "lat": lat,
+			"beTime": tsOrNil(beTime), "lng": openCoordinate(h.Box, lng), "lat": openCoordinate(h.Box, lat),
 		})
 	}
 	if err := rows.Err(); err != nil {

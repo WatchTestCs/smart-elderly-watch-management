@@ -58,6 +58,10 @@ func (c Config) Validate() error {
 			return fmt.Errorf("DATA_ENCRYPTION_KEY 无效：%w", err)
 		}
 	}
+	if t := strings.TrimSpace(c.DesktopToken); t != "" && len(t) < 24 {
+		return errors.New("DESKTOP_TOKEN 至少需要 24 个字符（桌面端每次启动自动生成 64 位随机值）；" +
+			"过短的令牌可被线速穷举，校验失败时 setup 与 desktop/exit 均会拒绝")
+	}
 	switch c.SessionBackend {
 	case "", "memory":
 		// 空值与 memory 都是单实例开发模式，会话保存在进程内存里。

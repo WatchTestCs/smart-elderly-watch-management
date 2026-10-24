@@ -39,7 +39,7 @@ func main() {
 	ctx := context.Background()
 
 	sessions := session.NewStore(cfg.SessionTTL)
-	service := &databaseService{configErr: cfgErr}
+	service := &databaseService{configErr: cfgErr, desktopToken: cfg.DesktopToken}
 	mux := http.NewServeMux()
 	handlers.MountWeb(mux)
 	localHandlers := handlers.New(nil, sessions, cfg)

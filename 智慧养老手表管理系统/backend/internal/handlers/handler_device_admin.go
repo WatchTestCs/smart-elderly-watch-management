@@ -137,7 +137,7 @@ func (h *Handler) deviceList(w http.ResponseWriter, r *http.Request) {
 			"appVersion": appVersion, "battery": battery, "oldId": oldID,
 			"oldPersonName": name, "oldPersonPhone": oldPhone,
 			"bindTime": tsOrNil(bindTime), "lastTime": tsOrNil(lastTime),
-			"lastLng": lastLng, "lastLat": lastLat, "status": status,
+			"lastLng": openCoordinate(h.Box, lastLng), "lastLat": openCoordinate(h.Box, lastLat), "status": status,
 			"online": online, "personHandled": personHandled,
 			"rateHandled": rateHandled, "preHandled": preHandled,
 		})

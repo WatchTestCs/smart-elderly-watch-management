@@ -25,7 +25,9 @@ func TestConfigurationErrorIsVisibleWithoutBlockingApplication(t *testing.T) {
 		want    string
 	}{
 		{"connection outage", &databaseService{}, ""},
-		{"configuration error", &databaseService{configErr: err}, err.Error()},
+		// /restful/service/status 公开可读，只回固定文案，不透出具体配置细节。
+		{"configuration error", &databaseService{configErr: err},
+			"服务端配置有误，依赖数据库的功能不可用，自动重连不会恢复；请检查环境变量配置后重启服务"},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			local := http.NewServeMux()
@@ -43,8 +45,8 @@ func TestConfigurationErrorIsVisibleWithoutBlockingApplication(t *testing.T) {
 			if status.Code != http.StatusOK || body.DatabaseReady || body.ConfigError != test.want {
 				t.Fatalf("unexpected status: HTTP %d %s", status.Code, status.Body.String())
 			}
-			if strings.Contains(status.Body.String(), cfg.DataKey) {
-				t.Fatal("configuration diagnostic disclosed the key")
+			if strings.Contains(status.Body.String(), cfg.DataKey) || strings.Contains(status.Body.String(), err.Error()) {
+				t.Fatal("configuration diagnostic disclosed the key or raw error detail")
 			}
 			page := httptest.NewRecorder()
 			app.ServeHTTP(page, httptest.NewRequest("GET", "/", nil))
@@ -73,6 +75,7 @@ func TestDatabaseUnavailableDoesNotBlockApplication(t *testing.T) {
 	}{
 		{"GET", "/", 200, "application"},
 		{"GET", "/restful/service/status", 200, `"databaseReady":false`},
+		{"GET", "/openapi.json", 401, "需要授权"},
 		{"GET", "/restful/userLogin/session", 503, "DATABASE_UNAVAILABLE"},
 		{"POST", "/restful/device/sos", 503, "DATABASE_UNAVAILABLE"},
 		{"POST", "/restful/desktop/exit", 403, ""},

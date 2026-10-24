@@ -1,3 +1,4 @@
+# CI-only service container: these ephemeral runner credentials are never shared with production.
 name: Preview MySQL 20-minute endurance
 on:
   push:

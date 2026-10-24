@@ -30,6 +30,8 @@ var limits = map[string]int{
 	"/restful/device/fencePoint":  1800,
 	"/restful/device/sos":         300,
 	"/restful/care/receipt":       600,
+	// 桌面令牌端点：令牌校验失败无独立锁定，靠路径限流兜底防弱口令线速尝试。
+	"/restful/desktop/exit": 30,
 }
 
 type Limiter struct {
