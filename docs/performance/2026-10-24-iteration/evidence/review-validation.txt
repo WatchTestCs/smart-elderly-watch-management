@@ -1,0 +1,230 @@
+# Go1.23.2 full short run: package results and the original failure
+careold-go/cmd/server pass
+=== RUN   TestRunnerDrainsSaturatedTransactionalBacklog
+careold-go/internal/apidoc pass
+careold-go/internal/auth pass
+    runner_backlog_test.go:91: ANALYTICS_BACKLOG_DRAIN rows=6000 elapsed_ms=551 rows_per_second=10885.8
+    runner_backlog_test.go:94: outbox residual: count=250 err=<nil>
+--- FAIL: TestRunnerDrainsSaturatedTransactionalBacklog (6.81s)
+careold-go/internal/analytics fail
+careold-go/internal/commands pass
+careold-go/internal/config pass
+careold-go/internal/care pass
+careold-go/internal/fence pass
+careold-go/internal/db pass
+careold-go/internal/health pass
+careold-go/internal/notify pass
+careold-go/internal/observability pass
+careold-go/internal/rules pass
+careold-go/internal/runtuning pass
+careold-go/internal/securestore pass
+careold-go/internal/session pass
+careold-go/internal/handlers pass
+
+# baseline-backlog-race.log
+=== RUN   TestRunnerDrainsSaturatedTransactionalBacklog
+    runner_backlog_test.go:91: ANALYTICS_BACKLOG_DRAIN rows=6000 elapsed_ms=651 rows_per_second=9204.2
+    runner_backlog_test.go:94: outbox residual: count=250 err=<nil>
+--- FAIL: TestRunnerDrainsSaturatedTransactionalBacklog (13.08s)
+=== RUN   TestRunnerDrainsSaturatedTransactionalBacklog
+    runner_backlog_test.go:91: ANALYTICS_BACKLOG_DRAIN rows=6000 elapsed_ms=601 rows_per_second=9971.1
+    runner_backlog_test.go:94: outbox residual: count=250 err=<nil>
+--- FAIL: TestRunnerDrainsSaturatedTransactionalBacklog (14.81s)
+=== RUN   TestRunnerDrainsSaturatedTransactionalBacklog
+    runner_backlog_test.go:91: ANALYTICS_BACKLOG_DRAIN rows=6000 elapsed_ms=400 rows_per_second=14968.8
+--- PASS: TestRunnerDrainsSaturatedTransactionalBacklog (7.20s)
+FAIL
+FAIL	careold-go/internal/analytics	35.615s
+FAIL
+
+
+# fixed-backlog-race.log
+=== RUN   TestRunnerDrainsSaturatedTransactionalBacklog
+    runner_backlog_test.go:98: ANALYTICS_BACKLOG_DRAIN rows=6000 elapsed_ms=703 rows_per_second=8534.3
+--- PASS: TestRunnerDrainsSaturatedTransactionalBacklog (11.57s)
+=== RUN   TestRunnerDrainsSaturatedTransactionalBacklog
+    runner_backlog_test.go:98: ANALYTICS_BACKLOG_DRAIN rows=6000 elapsed_ms=652 rows_per_second=9193.3
+--- PASS: TestRunnerDrainsSaturatedTransactionalBacklog (11.83s)
+=== RUN   TestRunnerDrainsSaturatedTransactionalBacklog
+    runner_backlog_test.go:98: ANALYTICS_BACKLOG_DRAIN rows=6000 elapsed_ms=602 rows_per_second=9951.2
+--- PASS: TestRunnerDrainsSaturatedTransactionalBacklog (11.69s)
+=== RUN   TestRunnerDrainsSaturatedTransactionalBacklog
+    runner_backlog_test.go:98: ANALYTICS_BACKLOG_DRAIN rows=6000 elapsed_ms=652 rows_per_second=9197.7
+--- PASS: TestRunnerDrainsSaturatedTransactionalBacklog (13.76s)
+=== RUN   TestRunnerDrainsSaturatedTransactionalBacklog
+    runner_backlog_test.go:98: ANALYTICS_BACKLOG_DRAIN rows=6000 elapsed_ms=404 rows_per_second=14827.5
+--- PASS: TestRunnerDrainsSaturatedTransactionalBacklog (7.90s)
+PASS
+ok  	careold-go/internal/analytics	57.174s
+
+
+# go123-analytics-after-fix.log
+ok  	careold-go/internal/analytics	37.386s
+
+
+# full-race-go127.log
+go: downloading go1.27.2 (linux/amd64)
+?   	careold-go/cmd/analytics-backfill	[no test files]
+?   	careold-go/cmd/healthcheck	[no test files]
+?   	careold-go/cmd/migrate	[no test files]
+?   	careold-go/cmd/mock-gateway	[no test files]
+?   	careold-go/cmd/protect-notes	[no test files]
+ok  	careold-go/cmd/server	16.534s
+?   	careold-go/cmd/transfer-postgres	[no test files]
+ok  	careold-go/internal/analytics	33.817s
+ok  	careold-go/internal/apidoc	1.021s
+ok  	careold-go/internal/auth	1.017s
+ok  	careold-go/internal/care	49.131s
+ok  	careold-go/internal/commands	1.018s
+ok  	careold-go/internal/config	1.013s
+?   	careold-go/internal/csrf	[no test files]
+ok  	careold-go/internal/db	91.595s
+?   	careold-go/internal/db/dbtest	[no test files]
+ok  	careold-go/internal/fence	1.017s
+--- FAIL: TestTOTPEnrollmentRecoveryAndCrossReplicaRevocation (5.03s)
+    platform_integration_test.go:34: MySQL unavailable
+FAIL
+FAIL	careold-go/internal/handlers	446.402s
+ok  	careold-go/internal/health	44.253s
+ok  	careold-go/internal/notify	109.856s
+ok  	careold-go/internal/observability	1.019s
+?   	careold-go/internal/ratelimit	[no test files]
+?   	careold-go/internal/response	[no test files]
+--- FAIL: TestNightActivityMonotonicAndIntervals (11.26s)
+    --- FAIL: TestNightActivityMonotonicAndIntervals/interval (5.06s)
+        engine_test.go:206: MySQL unavailable
+FAIL
+FAIL	careold-go/internal/rules	90.631s
+ok  	careold-go/internal/runtuning	1.013s
+ok  	careold-go/internal/securestore	1.013s
+ok  	careold-go/internal/session	11.052s
+?   	careold-go/migrations	[no test files]
+FAIL
+
+
+# race-go127-connection-recheck.log
+=== RUN   TestTOTPEnrollmentRecoveryAndCrossReplicaRevocation
+--- PASS: TestTOTPEnrollmentRecoveryAndCrossReplicaRevocation (26.10s)
+=== RUN   TestTOTPEnrollmentRecoveryAndCrossReplicaRevocation
+--- PASS: TestTOTPEnrollmentRecoveryAndCrossReplicaRevocation (25.05s)
+=== RUN   TestTOTPEnrollmentRecoveryAndCrossReplicaRevocation
+--- PASS: TestTOTPEnrollmentRecoveryAndCrossReplicaRevocation (25.07s)
+PASS
+ok  	careold-go/internal/handlers	77.234s
+=== RUN   TestNightActivityMonotonicAndIntervals
+=== RUN   TestNightActivityMonotonicAndIntervals/daily_total
+=== RUN   TestNightActivityMonotonicAndIntervals/interval
+--- PASS: TestNightActivityMonotonicAndIntervals (11.29s)
+    --- PASS: TestNightActivityMonotonicAndIntervals/daily_total (5.66s)
+    --- PASS: TestNightActivityMonotonicAndIntervals/interval (5.64s)
+=== RUN   TestNightActivityMonotonicAndIntervals
+=== RUN   TestNightActivityMonotonicAndIntervals/daily_total
+=== RUN   TestNightActivityMonotonicAndIntervals/interval
+--- PASS: TestNightActivityMonotonicAndIntervals (14.20s)
+    --- PASS: TestNightActivityMonotonicAndIntervals/daily_total (8.43s)
+    --- PASS: TestNightActivityMonotonicAndIntervals/interval (5.77s)
+=== RUN   TestNightActivityMonotonicAndIntervals
+=== RUN   TestNightActivityMonotonicAndIntervals/daily_total
+=== RUN   TestNightActivityMonotonicAndIntervals/interval
+--- PASS: TestNightActivityMonotonicAndIntervals (9.74s)
+    --- PASS: TestNightActivityMonotonicAndIntervals/daily_total (6.17s)
+    --- PASS: TestNightActivityMonotonicAndIntervals/interval (3.57s)
+PASS
+ok  	careold-go/internal/rules	36.248s
+
+
+# go127-focused.log
+ok  	careold-go/internal/session	0.429s
+ok  	careold-go/internal/auth	0.637s
+ok  	careold-go/internal/health	0.833s
+ok  	careold-go/internal/rules	1.272s
+ok  	careold-go/internal/handlers	1.516s
+ok  	careold-go/cmd/server	0.387s
+
+
+# pg-pagination-contract.log
+=== RUN   TestIntegrationListPageTotals
+=== RUN   TestIntegrationListPageTotals/customers
+=== RUN   TestIntegrationListPageTotals/customers/first
+=== RUN   TestIntegrationListPageTotals/customers/next
+=== RUN   TestIntegrationListPageTotals/customers/filtered
+=== RUN   TestIntegrationListPageTotals/customers/full_filtered
+=== RUN   TestIntegrationListPageTotals/customers/partial
+=== RUN   TestIntegrationListPageTotals/customers/exact_boundary
+=== RUN   TestIntegrationListPageTotals/customers/out_of_range
+=== RUN   TestIntegrationListPageTotals/customers/empty_first
+=== RUN   TestIntegrationListPageTotals/customers/empty_later
+=== RUN   TestIntegrationListPageTotals/family
+=== RUN   TestIntegrationListPageTotals/family/first
+=== RUN   TestIntegrationListPageTotals/family/next
+=== RUN   TestIntegrationListPageTotals/family/filtered
+=== RUN   TestIntegrationListPageTotals/family/full_filtered
+=== RUN   TestIntegrationListPageTotals/family/partial
+=== RUN   TestIntegrationListPageTotals/family/exact_boundary
+=== RUN   TestIntegrationListPageTotals/family/out_of_range
+=== RUN   TestIntegrationListPageTotals/family/empty_first
+=== RUN   TestIntegrationListPageTotals/family/empty_later
+=== RUN   TestIntegrationListPageTotals/texts
+=== RUN   TestIntegrationListPageTotals/texts/first
+=== RUN   TestIntegrationListPageTotals/texts/next
+=== RUN   TestIntegrationListPageTotals/texts/filtered
+=== RUN   TestIntegrationListPageTotals/texts/full_filtered
+=== RUN   TestIntegrationListPageTotals/texts/partial
+=== RUN   TestIntegrationListPageTotals/texts/exact_boundary
+=== RUN   TestIntegrationListPageTotals/texts/out_of_range
+=== RUN   TestIntegrationListPageTotals/texts/empty_first
+=== RUN   TestIntegrationListPageTotals/texts/empty_later
+--- PASS: TestIntegrationListPageTotals (0.85s)
+    --- PASS: TestIntegrationListPageTotals/customers (0.02s)
+        --- PASS: TestIntegrationListPageTotals/customers/first (0.01s)
+        --- PASS: TestIntegrationListPageTotals/customers/next (0.00s)
+        --- PASS: TestIntegrationListPageTotals/customers/filtered (0.00s)
+        --- PASS: TestIntegrationListPageTotals/customers/full_filtered (0.00s)
+        --- PASS: TestIntegrationListPageTotals/customers/partial (0.00s)
+        --- PASS: TestIntegrationListPageTotals/customers/exact_boundary (0.00s)
+        --- PASS: TestIntegrationListPageTotals/customers/out_of_range (0.00s)
+        --- PASS: TestIntegrationListPageTotals/customers/empty_first (0.00s)
+        --- PASS: TestIntegrationListPageTotals/customers/empty_later (0.00s)
+    --- PASS: TestIntegrationListPageTotals/family (0.01s)
+        --- PASS: TestIntegrationListPageTotals/family/first (0.00s)
+        --- PASS: TestIntegrationListPageTotals/family/next (0.00s)
+        --- PASS: TestIntegrationListPageTotals/family/filtered (0.00s)
+        --- PASS: TestIntegrationListPageTotals/family/full_filtered (0.00s)
+        --- PASS: TestIntegrationListPageTotals/family/partial (0.00s)
+        --- PASS: TestIntegrationListPageTotals/family/exact_boundary (0.00s)
+        --- PASS: TestIntegrationListPageTotals/family/out_of_range (0.00s)
+        --- PASS: TestIntegrationListPageTotals/family/empty_first (0.00s)
+        --- PASS: TestIntegrationListPageTotals/family/empty_later (0.00s)
+    --- PASS: TestIntegrationListPageTotals/texts (0.01s)
+        --- PASS: TestIntegrationListPageTotals/texts/first (0.00s)
+        --- PASS: TestIntegrationListPageTotals/texts/next (0.00s)
+        --- PASS: TestIntegrationListPageTotals/texts/filtered (0.00s)
+        --- PASS: TestIntegrationListPageTotals/texts/full_filtered (0.00s)
+        --- PASS: TestIntegrationListPageTotals/texts/partial (0.00s)
+        --- PASS: TestIntegrationListPageTotals/texts/exact_boundary (0.00s)
+        --- PASS: TestIntegrationListPageTotals/texts/out_of_range (0.00s)
+        --- PASS: TestIntegrationListPageTotals/texts/empty_first (0.00s)
+        --- PASS: TestIntegrationListPageTotals/texts/empty_later (0.00s)
+PASS
+ok  	careold-go/internal/handlers	0.930s
+
+
+# independent-decoder-probe.log
+PASS 12006 independent Sample acceptance/field/float-bit checks
+
+
+# go127-toolchain.txt
+go: downloading go1.27.2 (windows/amd64)
+go version go1.27.2 windows/amd64
+
+
+# Build, vet, module, schema and probe command results
+go123-analytics-after-fix exit_code=0
+pg-pagination-contract exit_code=0
+go1.23.2-build exit_code=0
+go1.23.2-vet exit_code=0
+go1.27.2-build exit_code=0
+go1.27.2-vet exit_code=0
+module-checksums exit_code=0
+independent-decoder-probe exit_code=0
+openapi-contract exit_code=0

@@ -69,15 +69,13 @@ func (h *Handler) customerSelect(w http.ResponseWriter, r *http.Request) {
 	p, ps := bodyPage(m)
 	ctx := r.Context()
 	var total int64
-	if err := h.DB.QueryRow(ctx,
-		`SELECT COUNT(*) FROM customer WHERE ($1='' OR customer_name LIKE '%'||$1||'%')`, name).Scan(&total); err != nil {
-		response.Error500(w, ref())
-		return
-	}
+	const filter = ` FROM customer WHERE ($1='' OR customer_name LIKE '%'||$1||'%')`
+	const countSQL = `SELECT COUNT(*) AS total` + filter
 	rows, err := h.DB.Query(ctx,
-		`SELECT customer_id,customer_name,customer_age,customer_sex,customer_phone,customer_address
-		 FROM customer WHERE ($1='' OR customer_name LIKE '%'||$1||'%')
-		 ORDER BY customer_id LIMIT $2 OFFSET $3`, name, ps, (p-1)*ps)
+		`SELECT page.*, totals.total FROM (`+countSQL+`) AS totals LEFT JOIN (
+		 SELECT customer_id,customer_name,customer_age,customer_sex,customer_phone,customer_address`+filter+`
+		 ORDER BY customer_id LIMIT $2 OFFSET $3) AS page
+		 ON TRUE ORDER BY page.customer_id`, name, ps, (p-1)*ps)
 	if err != nil {
 		response.Error500(w, ref())
 		return
@@ -85,16 +83,20 @@ func (h *Handler) customerSelect(w http.ResponseWriter, r *http.Request) {
 	defer rows.Close()
 	list := []map[string]any{}
 	for rows.Next() {
-		var id int64
+		var id *int64
 		var cname *string
 		var cage *int64
 		var csex, cphone, caddr *string
-		if err := rows.Scan(&id, &cname, &cage, &csex, &cphone, &caddr); err != nil {
+		if err := rows.Scan(&id, &cname, &cage, &csex, &cphone, &caddr, &total); err != nil {
 			response.Error500(w, ref())
 			return
 		}
+		// The aggregate supplies one count row even when the page is empty.
+		if id == nil {
+			continue
+		}
 		list = append(list, map[string]any{
-			"customerId": id, "customerName": cname, "customerAge": cage,
+			"customerId": *id, "customerName": cname, "customerAge": cage,
 			"customerSex": csex, "customerPhone": cphone, "customerAddress": caddr,
 		})
 	}

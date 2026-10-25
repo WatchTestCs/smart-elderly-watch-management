@@ -4,6 +4,7 @@ go 1.23.0
 
 require (
 	github.com/go-sql-driver/mysql v1.9.3
+	github.com/goccy/go-json v0.11.2
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.7.5
 	golang.org/x/crypto v0.41.0

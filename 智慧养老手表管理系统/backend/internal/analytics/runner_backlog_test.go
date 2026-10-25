@@ -87,17 +87,21 @@ func TestRunnerDrainsSaturatedTransactionalBacklog(t *testing.T) {
 		var copied int
 		err = pg.QueryRow(ctx, "SELECT count(*) FROM suining_analytics.record WHERE entity='ratepre' AND NOT deleted").Scan(&copied)
 		if err == nil && copied == events {
-			elapsed := time.Since(start)
-			t.Logf("ANALYTICS_BACKLOG_DRAIN rows=%d elapsed_ms=%d rows_per_second=%.1f", copied, elapsed.Milliseconds(), float64(events)/elapsed.Seconds())
 			var remaining int
-			if err := primary.QueryRow(ctx, "SELECT count(*) FROM analytics_outbox").Scan(&remaining); err != nil || remaining != 0 {
+			if err := primary.QueryRow(ctx, "SELECT count(*) FROM analytics_outbox").Scan(&remaining); err != nil {
 				t.Fatalf("outbox residual: count=%d err=%v", remaining, err)
 			}
-			snapshot := state.Snapshot()
-			if !snapshot.Configured {
-				t.Fatal("runner lost analytics configuration")
+			// The PG commit becomes visible before its MySQL acknowledgement.
+			// A fully drained backlog requires observing both durable outcomes.
+			if remaining == 0 {
+				elapsed := time.Since(start)
+				t.Logf("ANALYTICS_BACKLOG_DRAIN rows=%d elapsed_ms=%d rows_per_second=%.1f", copied, elapsed.Milliseconds(), float64(events)/elapsed.Seconds())
+				snapshot := state.Snapshot()
+				if !snapshot.Configured {
+					t.Fatal("runner lost analytics configuration")
+				}
+				return
 			}
-			return
 		}
 		if ctx.Err() != nil {
 			t.Fatalf("6,000-event backlog not drained: %v; last PG count %d, error %v", ctx.Err(), copied, err)

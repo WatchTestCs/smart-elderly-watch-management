@@ -101,8 +101,10 @@ func (s *Store) Get(id string) *Session {
 	if database != nil {
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
-		var sealed string
-		if database.QueryRowContext(ctx, "SELECT payload FROM web_session WHERE id_hash=? AND expires_at>UTC_TIMESTAMP(6)", idHash(id)).Scan(&sealed) != nil {
+		var sealed, role string
+		var actorID int64
+		var generation sql.NullString
+		if database.QueryRowContext(ctx, "SELECT s.payload,s.role,s.actor_id,f.generation FROM web_session s LEFT JOIN auth_factor f ON f.role=s.role AND f.actor_id=s.actor_id AND f.enabled=true WHERE s.id_hash=? AND s.expires_at>UTC_TIMESTAMP(6)", idHash(id)).Scan(&sealed, &role, &actorID, &generation) != nil {
 			return nil
 		}
 		plain, err := box.Open(sealed, "session")
@@ -110,15 +112,11 @@ func (s *Store) Get(id string) *Session {
 			return nil
 		}
 		var sess Session
-		if json.Unmarshal([]byte(plain), &sess) != nil || sess.ID != id || time.Now().After(sess.ExpiresAt) {
+		if json.Unmarshal([]byte(plain), &sess) != nil || sess.ID != id || time.Now().After(sess.ExpiresAt) || sess.Principal.Role != role || sess.Principal.ID != actorID {
 			return nil
 		}
-		if sess.Principal.Role != "" {
-			var generation string
-			err = database.QueryRowContext(ctx, "SELECT generation FROM auth_factor WHERE role=? AND actor_id=? AND enabled=true", sess.Principal.Role, sess.Principal.ID).Scan(&generation)
-			if (err != nil && err != sql.ErrNoRows) || (err == nil && generation != sess.Principal.FactorGeneration) || (err == sql.ErrNoRows && sess.Principal.FactorGeneration != "") {
-				return nil
-			}
+		if role != "" && generation.String != sess.Principal.FactorGeneration {
+			return nil
 		}
 		return &sess
 	}
@@ -201,13 +199,26 @@ func ClearCookie(w http.ResponseWriter) {
 	})
 }
 
-// FromRequest 从请求 cookie 取会话。
+type requestKey struct{ store *Store }
+
+// FromRequest 从请求 cookie 取会话；同一请求内复用已验证结果。
+// Like gorilla/sessions' request registry, this context is local to the request:
+// https://github.com/gorilla/sessions/blob/main/sessions.go
+// A new request always reloads storage, so replica revocations remain visible.
 func (s *Store) FromRequest(r *http.Request) *Session {
 	c, err := r.Cookie(CookieName)
 	if err != nil {
 		return nil
 	}
-	return s.Get(c.Value)
+	key := requestKey{s}
+	if sess, ok := r.Context().Value(key).(*Session); ok && sess.ID == c.Value && !time.Now().After(sess.ExpiresAt) {
+		return sess
+	}
+	sess := s.Get(c.Value)
+	if sess != nil {
+		*r = *r.WithContext(context.WithValue(r.Context(), key, sess))
+	}
+	return sess
 }
 
 // contextKey 会话在 request context 中的 key。

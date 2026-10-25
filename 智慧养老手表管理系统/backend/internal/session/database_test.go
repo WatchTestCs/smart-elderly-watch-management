@@ -46,6 +46,26 @@ func TestDatabaseSessionsShareRevokeAndFactorGeneration(t *testing.T) {
 	if current == nil || b.Get(current.ID) == nil {
 		t.Fatal("verified generation rejected")
 	}
+	if _, err = pool.Exec(context.Background(), "UPDATE auth_factor SET enabled=false WHERE role='ADMIN' AND actor_id=1"); err != nil {
+		t.Fatal(err)
+	}
+	if b.Get(current.ID) != nil {
+		t.Fatal("disabled factor retained the old generation")
+	}
+	withoutFactor := a.Create(session.Principal{Role: "ADMIN", ID: 1})
+	if withoutFactor == nil || b.Get(withoutFactor.ID) == nil {
+		t.Fatal("disabled factor rejected a session without generation")
+	}
+	if _, err = pool.Exec(context.Background(), "UPDATE auth_factor SET enabled=true,generation='rotated-generation' WHERE role='ADMIN' AND actor_id=1"); err != nil {
+		t.Fatal(err)
+	}
+	if b.Get(current.ID) != nil || b.Get(withoutFactor.ID) != nil {
+		t.Fatal("changed factor generation retained an old session")
+	}
+	current = a.Create(session.Principal{Role: "ADMIN", ID: 1, FactorGeneration: "rotated-generation"})
+	if current == nil || b.Get(current.ID) == nil {
+		t.Fatal("rotated generation rejected")
+	}
 	if err = a.Revoke("ADMIN", 1); err != nil || b.Get(current.ID) != nil {
 		t.Fatal("principal revocation failed", err)
 	}
@@ -59,5 +79,37 @@ func TestDatabaseSessionsShareRevokeAndFactorGeneration(t *testing.T) {
 	pool.Close()
 	if a.Create(session.Principal{}) != nil || b.Get(old.ID) != nil || a.Destroy(old.ID) {
 		t.Fatal("storage failure did not fail closed")
+	}
+}
+
+func TestDatabaseSessionRejectsMismatchedIdentity(t *testing.T) {
+	pool := dbtest.MySQL(t)
+	box, _ := securestore.New(base64.StdEncoding.EncodeToString(make([]byte, 32)))
+	store := session.NewStore(time.Hour)
+	store.UseDatabase(pool.SQL(), box)
+	for _, identity := range []struct {
+		role string
+		id   int64
+	}{{"FAMILY", 1}, {"ADMIN", 2}} {
+		sess := store.Create(session.Principal{Role: "ADMIN", ID: 1})
+		if sess == nil {
+			t.Fatal("create")
+		}
+		if _, err := pool.Exec(context.Background(), "UPDATE web_session SET role=$1,actor_id=$2", identity.role, identity.id); err != nil {
+			t.Fatal(err)
+		}
+		if store.Get(sess.ID) != nil {
+			t.Fatal("session accepted metadata different from encrypted principal")
+		}
+	}
+	sess := store.Create(session.Principal{Role: "ADMIN", ID: 1})
+	if sess == nil {
+		t.Fatal("create")
+	}
+	if _, err := pool.Exec(context.Background(), "UPDATE web_session SET payload='corrupt'"); err != nil {
+		t.Fatal(err)
+	}
+	if store.Get(sess.ID) != nil {
+		t.Fatal("session accepted corrupt encrypted payload")
 	}
 }

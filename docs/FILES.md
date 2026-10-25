@@ -1,11 +1,30 @@
 # preview 分支文件职责索引
 
-本索引覆盖当前提交的 **648 个文件**（更新：2026-10-23）。保留既有人工说明；来源附件与历史证据不代表当前版本的全套验收。
+本索引覆盖当前提交的 **667 个文件**（更新：2026-10-25）。保留既有人工说明；来源附件与历史证据不代表当前版本的全套验收。
 
-[项目 README](../README.md) · [文件职责数据](file-descriptions.json) · [历史性能资料](performance/2026-10-20-go123/README.md) · [最新性能报告](performance/2026-10-22-backend-hybrid/README.md)
+[项目 README](../README.md) · [文件职责数据](file-descriptions.json) · [历史性能资料](performance/2026-10-20-go123/README.md) · [最新性能报告](performance/2026-10-24-iteration/README.md)
 
 | 文件 | 职责 |
 | --- | --- |
+| [docs/performance/2026-10-24-iteration/evidence/review-validation.txt](../docs/performance/2026-10-24-iteration/evidence/review-validation.txt) | 保留提交前复审的原始失败、竞态修正重跑及双版本验证输出 |
+| [智慧养老手表管理系统/backend/internal/handlers/read_latency_ab_test.go](../智慧养老手表管理系统/backend/internal/handlers/read_latency_ab_test.go) | 可复制到固定基线的真实 HTTP 延迟夹具，校验响应、持久化与会话撤销并记录版本信息 |
+| [docs/performance/2026-10-24-iteration/REVIEW.md](../docs/performance/2026-10-24-iteration/REVIEW.md) | 记录提交前的规范与需求复审、已修复测试竞态及双版本验证结果 |
+| [docs/performance/2026-10-24-iteration/evidence/README.md](../docs/performance/2026-10-24-iteration/evidence/README.md) | 说明仓库内性能证据、原始运行标签、文件散列和复现范围 |
+| [docs/performance/2026-10-24-iteration/evidence/http-runs.jsonl](../docs/performance/2026-10-24-iteration/evidence/http-runs.jsonl) | 保留最终基线与候选四次完整 HTTP 测量报告及逐请求延迟 |
+| [docs/performance/2026-10-24-iteration/evidence/microbenchmarks.txt](../docs/performance/2026-10-24-iteration/evidence/microbenchmarks.txt) | 保留相同输入下的纯计算与最终规模分页基准原始输出 |
+| [docs/performance/2026-10-24-iteration/evidence/rejected-pagination.txt](../docs/performance/2026-10-24-iteration/evidence/rejected-pagination.txt) | 保留已淘汰分页方案的全部有利及不利原始对照 |
+| [docs/performance/2026-10-24-iteration/evidence/decoder-experiment.txt](../docs/performance/2026-10-24-iteration/evidence/decoder-experiment.txt) | 保留外部 JSON 解码器的速度、兼容性和已拒绝差异记录 |
+| [docs/performance/2026-10-24-iteration/evidence/source-hashes.json](../docs/performance/2026-10-24-iteration/evidence/source-hashes.json) | 记录打包前原始性能报告和日志的 SHA-256 散列 |
+| [docs/performance/2026-10-24-iteration/evidence/production-source-hashes.json](../docs/performance/2026-10-24-iteration/evidence/production-source-hashes.json) | 核对复审后的生产 Go 与模块文件和实测候选完全相同 |
+| [docs/licenses/goccy-go-json-LICENSE.txt](../docs/licenses/goccy-go-json-LICENSE.txt) | 保留固定 go-json v0.11.2 的 MIT 授权全文 |
+| [docs/performance/2026-10-24-iteration/README.md](../docs/performance/2026-10-24-iteration/README.md) | 记录后端多轮性能迭代、真实双库验证、实测收益及所有回退边界 |
+| [docs/performance/2026-10-24-iteration/OPEN_SOURCE_REFERENCES.md](../docs/performance/2026-10-24-iteration/OPEN_SOURCE_REFERENCES.md) | 对照成熟开源会话、分页和数据库机制，记录来源、许可证与适用条件 |
+| [docs/performance/2026-10-24-iteration/JSON_DECODING.md](../docs/performance/2026-10-24-iteration/JSON_DECODING.md) | 记录存储样本 JSON 解码器的兼容性、实测性能及候选淘汰原因 |
+| [docs/performance/2026-10-24-iteration/results-summary.json](../docs/performance/2026-10-24-iteration/results-summary.json) | 汇总基线与最终版本的 HTTP、规模分页和纯计算对照指标 |
+| [智慧养老手表管理系统/backend/internal/handlers/list_pagination_benchmark_test.go](../智慧养老手表管理系统/backend/internal/handlers/list_pagination_benchmark_test.go) | 比较不同数据规模、筛选和空页条件下分页查询的时间及分配 |
+| [智慧养老手表管理系统/backend/internal/handlers/list_pagination_integration_test.go](../智慧养老手表管理系统/backend/internal/handlers/list_pagination_integration_test.go) | 验证双库分页的精确总数、排序、空页、NULL 与时间格式契约 |
+| [智慧养老手表管理系统/backend/internal/handlers/stored_sample_decoder_test.go](../智慧养老手表管理系统/backend/internal/handlers/stored_sample_decoder_test.go) | 逐例核对快速解码与标准库的字段、浮点位、错误接受及缓冲区所有权 |
+| [智慧养老手表管理系统/backend/internal/session/request_test.go](../智慧养老手表管理系统/backend/internal/session/request_test.go) | 验证会话请求内复用的 Store、cookie、过期与撤销隔离边界 |
 | [智慧养老手表管理系统/backend/internal/fence/algorithm_regression_test.go](../智慧养老手表管理系统/backend/internal/fence/algorithm_regression_test.go) | 围栏新旧射线对照及退化线段距离有限性回归测试 |
 | [智慧养老手表管理系统/backend/internal/health/algorithm_regression_test.go](../智慧养老手表管理系统/backend/internal/health/algorithm_regression_test.go) | 跨窗整数步数守恒、大计数精度、统计输出和原有日累计契约回归测试 |
 | [智慧养老手表管理系统/backend/internal/rules/algorithm_regression_test.go](../智慧养老手表管理系统/backend/internal/rules/algorithm_regression_test.go) | 计数日界时区、午夜归零、同日回退与基线绝对容差边界回归测试 |

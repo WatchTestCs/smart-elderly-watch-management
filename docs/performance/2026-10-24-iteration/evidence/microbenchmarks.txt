@@ -1,0 +1,255 @@
+# cpu-baseline-A1
+goos: windows
+goarch: amd64
+pkg: careold-go/internal/health
+cpu: AMD Ryzen AI 9 H 365 w/ Radeon 880M
+BenchmarkAggregate/instant/10-2         	  163189	      1380 ns/op	    7912 B/op	       8 allocs/op
+BenchmarkAggregate/interval/10-2        	  138756	      2605 ns/op	    8224 B/op	      11 allocs/op
+BenchmarkAggregate/daily_total/10-2     	   70286	      3005 ns/op	    8312 B/op	      19 allocs/op
+BenchmarkAggregate/sparse/10-2          	 1418248	       177.0 ns/op	     264 B/op	       4 allocs/op
+BenchmarkAggregate/sleep/10-2           	   75259	      2917 ns/op	   12216 B/op	      27 allocs/op
+BenchmarkAggregate/instant/1000-2       	    3314	     83156 ns/op	  794344 B/op	      15 allocs/op
+BenchmarkAggregate/interval/1000-2      	    2005	    125028 ns/op	  794656 B/op	      18 allocs/op
+BenchmarkAggregate/daily_total/1000-2   	    1284	    181746 ns/op	  810584 B/op	    1016 allocs/op
+BenchmarkAggregate/sparse/1000-2        	   47378	      4841 ns/op	    7912 B/op	       8 allocs/op
+BenchmarkAggregate/sleep/1000-2         	    1675	    143151 ns/op	 1088472 B/op	      46 allocs/op
+PASS
+ok  	careold-go/internal/health	3.716s
+goos: windows
+goarch: amd64
+pkg: careold-go/internal/rules
+cpu: AMD Ryzen AI 9 H 365 w/ Radeon 880M
+BenchmarkActivityWindow/daily_total/100/reference-2         	   21661	     11179 ns/op	   66032 B/op	     108 allocs/op
+BenchmarkActivityWindow/daily_total/100/stream-2            	   49389	      4785 ns/op	       0 B/op	       0 allocs/op
+BenchmarkActivityWindow/interval/100/reference-2            	    9148	     25803 ns/op	  131600 B/op	     122 allocs/op
+BenchmarkActivityWindow/interval/100/stream-2               	   35276	      6856 ns/op	       0 B/op	       0 allocs/op
+BenchmarkActivityWindow/daily_total/1000/reference-2        	    2054	    118896 ns/op	  802321 B/op	    1012 allocs/op
+BenchmarkActivityWindow/daily_total/1000/stream-2           	    5182	     48281 ns/op	       0 B/op	       0 allocs/op
+BenchmarkActivityWindow/interval/1000/reference-2           	     858	    298181 ns/op	 1596983 B/op	    1030 allocs/op
+BenchmarkActivityWindow/interval/1000/stream-2              	    3505	     69438 ns/op	       0 B/op	       0 allocs/op
+PASS
+ok  	careold-go/internal/rules	2.958s
+
+# cpu-candidate-B1
+goos: windows
+goarch: amd64
+pkg: careold-go/internal/health
+cpu: AMD Ryzen AI 9 H 365 w/ Radeon 880M
+BenchmarkAggregate/instant/10-2         	 1000000	       218.0 ns/op	     272 B/op	       8 allocs/op
+BenchmarkAggregate/interval/10-2        	  338829	       743.0 ns/op	     328 B/op	      10 allocs/op
+BenchmarkAggregate/daily_total/10-2     	  345811	       672.8 ns/op	     272 B/op	       8 allocs/op
+BenchmarkAggregate/sparse/10-2          	 4026790	        61.01 ns/op	      32 B/op	       4 allocs/op
+BenchmarkAggregate/sleep/10-2           	  150596	      1641 ns/op	    4576 B/op	      27 allocs/op
+BenchmarkAggregate/instant/1000-2       	   22527	      9636 ns/op	   17552 B/op	      14 allocs/op
+BenchmarkAggregate/interval/1000-2      	    3997	     56525 ns/op	   17608 B/op	      16 allocs/op
+BenchmarkAggregate/daily_total/1000-2   	    5066	     53948 ns/op	   17552 B/op	      14 allocs/op
+BenchmarkAggregate/sparse/1000-2        	  241225	      1049 ns/op	     272 B/op	       8 allocs/op
+BenchmarkAggregate/sleep/1000-2         	    3290	     73912 ns/op	  311680 B/op	      45 allocs/op
+PASS
+ok  	careold-go/internal/health	3.119s
+goos: windows
+goarch: amd64
+pkg: careold-go/internal/rules
+cpu: AMD Ryzen AI 9 H 365 w/ Radeon 880M
+BenchmarkActivityWindow/daily_total/100/reference-2         	   23246	     10552 ns/op	   66032 B/op	     108 allocs/op
+BenchmarkActivityWindow/daily_total/100/stream-2            	   72961	      3371 ns/op	       0 B/op	       0 allocs/op
+BenchmarkActivityWindow/interval/100/reference-2            	   13408	     16319 ns/op	   68280 B/op	     121 allocs/op
+BenchmarkActivityWindow/interval/100/stream-2               	   39348	      6097 ns/op	       0 B/op	       0 allocs/op
+BenchmarkActivityWindow/daily_total/1000/reference-2        	    2643	     86643 ns/op	  802323 B/op	    1012 allocs/op
+BenchmarkActivityWindow/daily_total/1000/stream-2           	    7435	     33097 ns/op	       0 B/op	       0 allocs/op
+BenchmarkActivityWindow/interval/1000/reference-2           	    1782	    147384 ns/op	  819929 B/op	    1028 allocs/op
+BenchmarkActivityWindow/interval/1000/stream-2              	    4041	     60277 ns/op	       0 B/op	       0 allocs/op
+PASS
+ok  	careold-go/internal/rules	2.738s
+
+# cpu-candidate-B2
+goos: windows
+goarch: amd64
+pkg: careold-go/internal/health
+cpu: AMD Ryzen AI 9 H 365 w/ Radeon 880M
+BenchmarkAggregate/instant/10-2         	 1000000	       205.9 ns/op	     272 B/op	       8 allocs/op
+BenchmarkAggregate/interval/10-2        	  348117	       782.7 ns/op	     328 B/op	      10 allocs/op
+BenchmarkAggregate/daily_total/10-2     	  389509	       694.6 ns/op	     272 B/op	       8 allocs/op
+BenchmarkAggregate/sparse/10-2          	 3549198	        60.64 ns/op	      32 B/op	       4 allocs/op
+BenchmarkAggregate/sleep/10-2           	  139989	      1729 ns/op	    4576 B/op	      27 allocs/op
+BenchmarkAggregate/instant/1000-2       	   24309	      9450 ns/op	   17552 B/op	      14 allocs/op
+BenchmarkAggregate/interval/1000-2      	    4840	     52994 ns/op	   17608 B/op	      16 allocs/op
+BenchmarkAggregate/daily_total/1000-2   	    5090	     49562 ns/op	   17552 B/op	      14 allocs/op
+BenchmarkAggregate/sparse/1000-2        	  228375	       992.3 ns/op	     272 B/op	       8 allocs/op
+BenchmarkAggregate/sleep/1000-2         	    3673	     74821 ns/op	  311680 B/op	      45 allocs/op
+PASS
+ok  	careold-go/internal/health	3.003s
+goos: windows
+goarch: amd64
+pkg: careold-go/internal/rules
+cpu: AMD Ryzen AI 9 H 365 w/ Radeon 880M
+BenchmarkActivityWindow/daily_total/100/reference-2         	   24681	      9993 ns/op	   66032 B/op	     108 allocs/op
+BenchmarkActivityWindow/daily_total/100/stream-2            	   71384	      3301 ns/op	       0 B/op	       0 allocs/op
+BenchmarkActivityWindow/interval/100/reference-2            	   14389	     14916 ns/op	   68280 B/op	     121 allocs/op
+BenchmarkActivityWindow/interval/100/stream-2               	   39702	      6064 ns/op	       0 B/op	       0 allocs/op
+BenchmarkActivityWindow/daily_total/1000/reference-2        	    2488	     86130 ns/op	  802323 B/op	    1012 allocs/op
+BenchmarkActivityWindow/daily_total/1000/stream-2           	    7477	     32622 ns/op	       0 B/op	       0 allocs/op
+BenchmarkActivityWindow/interval/1000/reference-2           	    1658	    137113 ns/op	  819928 B/op	    1028 allocs/op
+BenchmarkActivityWindow/interval/1000/stream-2              	    4036	     60680 ns/op	       0 B/op	       0 allocs/op
+PASS
+ok  	careold-go/internal/rules	2.587s
+
+# cpu-baseline-A2
+goos: windows
+goarch: amd64
+pkg: careold-go/internal/health
+cpu: AMD Ryzen AI 9 H 365 w/ Radeon 880M
+BenchmarkAggregate/instant/10-2         	  138942	      1664 ns/op	    7912 B/op	       8 allocs/op
+BenchmarkAggregate/interval/10-2        	  147061	      1832 ns/op	    8224 B/op	      11 allocs/op
+BenchmarkAggregate/daily_total/10-2     	  113395	      2334 ns/op	    8312 B/op	      19 allocs/op
+BenchmarkAggregate/sparse/10-2          	 1843446	       135.1 ns/op	     264 B/op	       4 allocs/op
+BenchmarkAggregate/sleep/10-2           	  102732	      2708 ns/op	   12216 B/op	      27 allocs/op
+BenchmarkAggregate/instant/1000-2       	    2599	     77748 ns/op	  794344 B/op	      15 allocs/op
+BenchmarkAggregate/interval/1000-2      	    2389	    125772 ns/op	  794656 B/op	      18 allocs/op
+BenchmarkAggregate/daily_total/1000-2   	    1450	    174343 ns/op	  810585 B/op	    1016 allocs/op
+BenchmarkAggregate/sparse/1000-2        	   53248	      4439 ns/op	    7912 B/op	       8 allocs/op
+BenchmarkAggregate/sleep/1000-2         	    1850	    127852 ns/op	 1088472 B/op	      46 allocs/op
+PASS
+ok  	careold-go/internal/health	3.399s
+goos: windows
+goarch: amd64
+pkg: careold-go/internal/rules
+cpu: AMD Ryzen AI 9 H 365 w/ Radeon 880M
+BenchmarkActivityWindow/daily_total/100/reference-2         	   23571	     10238 ns/op	   66032 B/op	     108 allocs/op
+BenchmarkActivityWindow/daily_total/100/stream-2            	   49878	      4784 ns/op	       0 B/op	       0 allocs/op
+BenchmarkActivityWindow/interval/100/reference-2            	    9361	     22461 ns/op	  131600 B/op	     122 allocs/op
+BenchmarkActivityWindow/interval/100/stream-2               	   36306	      6564 ns/op	       0 B/op	       0 allocs/op
+BenchmarkActivityWindow/daily_total/1000/reference-2        	    2328	    103753 ns/op	  802324 B/op	    1012 allocs/op
+BenchmarkActivityWindow/daily_total/1000/stream-2           	    5121	     48347 ns/op	       0 B/op	       0 allocs/op
+BenchmarkActivityWindow/interval/1000/reference-2           	     964	    226454 ns/op	 1596977 B/op	    1030 allocs/op
+BenchmarkActivityWindow/interval/1000/stream-2              	    3669	     65855 ns/op	       0 B/op	       0 allocs/op
+PASS
+ok  	careold-go/internal/rules	2.471s
+
+# lists-baseline-A3
+goos: windows
+goarch: amd64
+pkg: careold-go/internal/handlers
+cpu: AMD Ryzen AI 9 H 365 w/ Radeon 880M
+BenchmarkListPagination/100/customer/first-2         	      60	   1183372 ns/op	   32446 B/op	     600 allocs/op
+BenchmarkListPagination/100/customer/last-2          	      60	   1258773 ns/op	   33206 B/op	     600 allocs/op
+BenchmarkListPagination/100/customer/selective-2     	      60	    792963 ns/op	   12987 B/op	     150 allocs/op
+BenchmarkListPagination/100/customer/out_of_range-2  	      60	   1167375 ns/op	   10732 B/op	      94 allocs/op
+BenchmarkListPagination/100/family/first-2           	      60	    873185 ns/op	   48184 B/op	     903 allocs/op
+BenchmarkListPagination/100/family/last-2            	      60	    888090 ns/op	   48059 B/op	     903 allocs/op
+BenchmarkListPagination/100/family/selective-2       	      60	    796083 ns/op	   14137 B/op	     183 allocs/op
+BenchmarkListPagination/100/family/out_of_range-2    	      60	    806733 ns/op	   10400 B/op	      97 allocs/op
+BenchmarkListPagination/100/text/first-2             	      60	   1379808 ns/op	   41298 B/op	     342 allocs/op
+BenchmarkListPagination/100/text/last-2              	      60	   1389105 ns/op	   41907 B/op	     342 allocs/op
+BenchmarkListPagination/100/text/selective-2         	      60	    810385 ns/op	   14002 B/op	     125 allocs/op
+BenchmarkListPagination/100/text/out_of_range-2      	      60	   1224145 ns/op	   10344 B/op	      96 allocs/op
+BenchmarkListPagination/10000/customer/first-2       	      60	   1385183 ns/op	   32456 B/op	     602 allocs/op
+BenchmarkListPagination/10000/customer/last-2        	      60	   2456712 ns/op	   33427 B/op	     646 allocs/op
+BenchmarkListPagination/10000/customer/selective-2   	      60	   2756078 ns/op	   22179 B/op	     378 allocs/op
+BenchmarkListPagination/10000/customer/out_of_range-2         	      60	   2263268 ns/op	   10160 B/op	     100 allocs/op
+BenchmarkListPagination/10000/family/first-2                  	      60	   8012092 ns/op	   47456 B/op	     905 allocs/op
+BenchmarkListPagination/10000/family/last-2                   	      60	   8904515 ns/op	   48542 B/op	     949 allocs/op
+BenchmarkListPagination/10000/family/selective-2              	      60	    986942 ns/op	   30065 B/op	     531 allocs/op
+BenchmarkListPagination/10000/family/out_of_range-2           	      60	   8756780 ns/op	   11051 B/op	     103 allocs/op
+BenchmarkListPagination/10000/text/first-2                    	      60	   6242548 ns/op	   42083 B/op	     364 allocs/op
+BenchmarkListPagination/10000/text/last-2                     	      60	  14696722 ns/op	   41337 B/op	     348 allocs/op
+BenchmarkListPagination/10000/text/selective-2                	      60	   3788435 ns/op	   26870 B/op	     233 allocs/op
+BenchmarkListPagination/10000/text/out_of_range-2             	      60	  14359787 ns/op	   11011 B/op	     102 allocs/op
+PASS
+ok  	careold-go/internal/handlers	22.127s
+
+# lists-final-B3
+goos: windows
+goarch: amd64
+pkg: careold-go/internal/handlers
+cpu: AMD Ryzen AI 9 H 365 w/ Radeon 880M
+BenchmarkListPagination/100/customer/first-2         	      60	    914887 ns/op	   32560 B/op	     602 allocs/op
+BenchmarkListPagination/100/customer/last-2          	      60	    973405 ns/op	   32555 B/op	     602 allocs/op
+BenchmarkListPagination/100/customer/selective-2     	      60	    474932 ns/op	   12024 B/op	     133 allocs/op
+BenchmarkListPagination/100/customer/out_of_range-2  	      60	    910695 ns/op	    9904 B/op	      83 allocs/op
+BenchmarkListPagination/100/family/first-2           	      60	    994295 ns/op	   48085 B/op	     904 allocs/op
+BenchmarkListPagination/100/family/last-2            	      60	    925068 ns/op	   48099 B/op	     904 allocs/op
+BenchmarkListPagination/100/family/selective-2       	      60	    450420 ns/op	   13516 B/op	     163 allocs/op
+BenchmarkListPagination/100/family/out_of_range-2    	      60	    895597 ns/op	   10416 B/op	      98 allocs/op
+BenchmarkListPagination/100/text/first-2             	      60	   1045780 ns/op	   41294 B/op	     325 allocs/op
+BenchmarkListPagination/100/text/last-2              	      60	    998475 ns/op	   41288 B/op	     325 allocs/op
+BenchmarkListPagination/100/text/selective-2         	      60	    483442 ns/op	   13048 B/op	     108 allocs/op
+BenchmarkListPagination/100/text/out_of_range-2      	      60	    979477 ns/op	   10168 B/op	      81 allocs/op
+BenchmarkListPagination/10000/customer/first-2       	      60	   1233263 ns/op	   32852 B/op	     623 allocs/op
+BenchmarkListPagination/10000/customer/last-2        	      60	   2001278 ns/op	   33064 B/op	     667 allocs/op
+BenchmarkListPagination/10000/customer/selective-2   	      60	   2365757 ns/op	   21551 B/op	     378 allocs/op
+BenchmarkListPagination/10000/customer/out_of_range-2         	      60	   1970425 ns/op	    9952 B/op	      89 allocs/op
+BenchmarkListPagination/10000/family/first-2                  	      60	   8047047 ns/op	   47472 B/op	     906 allocs/op
+BenchmarkListPagination/10000/family/last-2                   	      60	   8855898 ns/op	   48560 B/op	     950 allocs/op
+BenchmarkListPagination/10000/family/selective-2              	      60	    704387 ns/op	   28806 B/op	     510 allocs/op
+BenchmarkListPagination/10000/family/out_of_range-2           	      60	   8828427 ns/op	   11067 B/op	     104 allocs/op
+BenchmarkListPagination/10000/text/first-2                    	      60	   6007563 ns/op	   41608 B/op	     366 allocs/op
+BenchmarkListPagination/10000/text/last-2                     	      60	  14010385 ns/op	   42240 B/op	     350 allocs/op
+BenchmarkListPagination/10000/text/selective-2                	      60	   3034403 ns/op	   25768 B/op	     225 allocs/op
+BenchmarkListPagination/10000/text/out_of_range-2             	      60	  15603893 ns/op	   10219 B/op	      87 allocs/op
+PASS
+ok  	careold-go/internal/handlers	21.616s
+
+# lists-final-B4
+goos: windows
+goarch: amd64
+pkg: careold-go/internal/handlers
+cpu: AMD Ryzen AI 9 H 365 w/ Radeon 880M
+BenchmarkListPagination/100/customer/first-2         	      60	    943792 ns/op	   32698 B/op	     602 allocs/op
+BenchmarkListPagination/100/customer/last-2          	      60	    905998 ns/op	   32552 B/op	     602 allocs/op
+BenchmarkListPagination/100/customer/selective-2     	      60	    434765 ns/op	   12025 B/op	     133 allocs/op
+BenchmarkListPagination/100/customer/out_of_range-2  	      60	    868105 ns/op	    9904 B/op	      83 allocs/op
+BenchmarkListPagination/100/family/first-2           	      60	    888217 ns/op	   47453 B/op	     904 allocs/op
+BenchmarkListPagination/100/family/last-2            	      60	    875412 ns/op	   47458 B/op	     904 allocs/op
+BenchmarkListPagination/100/family/selective-2       	      60	    423908 ns/op	   13512 B/op	     163 allocs/op
+BenchmarkListPagination/100/family/out_of_range-2    	      60	    867663 ns/op	   11035 B/op	      98 allocs/op
+BenchmarkListPagination/100/text/first-2             	      60	   1077795 ns/op	   42052 B/op	     325 allocs/op
+BenchmarkListPagination/100/text/last-2              	      60	   1037598 ns/op	   41288 B/op	     325 allocs/op
+BenchmarkListPagination/100/text/selective-2         	      60	    478485 ns/op	   13048 B/op	     108 allocs/op
+BenchmarkListPagination/100/text/out_of_range-2      	      60	    999280 ns/op	   10168 B/op	      81 allocs/op
+BenchmarkListPagination/10000/customer/first-2       	      60	   1727802 ns/op	   32712 B/op	     623 allocs/op
+BenchmarkListPagination/10000/customer/last-2        	      60	   2484692 ns/op	   33064 B/op	     667 allocs/op
+BenchmarkListPagination/10000/customer/selective-2   	      60	   2503437 ns/op	   21480 B/op	     378 allocs/op
+BenchmarkListPagination/10000/customer/out_of_range-2         	      60	   2351447 ns/op	    9952 B/op	      89 allocs/op
+BenchmarkListPagination/10000/family/first-2                  	      60	   8316957 ns/op	   47476 B/op	     906 allocs/op
+BenchmarkListPagination/10000/family/last-2                   	      60	   8741357 ns/op	   48556 B/op	     950 allocs/op
+BenchmarkListPagination/10000/family/selective-2              	      60	    612440 ns/op	   28801 B/op	     510 allocs/op
+BenchmarkListPagination/10000/family/out_of_range-2           	      60	   8577668 ns/op	   10448 B/op	     104 allocs/op
+BenchmarkListPagination/10000/text/first-2                    	      60	   6012612 ns/op	   42360 B/op	     366 allocs/op
+BenchmarkListPagination/10000/text/last-2                     	      60	  16602105 ns/op	   41480 B/op	     350 allocs/op
+BenchmarkListPagination/10000/text/selective-2                	      60	   3495850 ns/op	   26154 B/op	     225 allocs/op
+BenchmarkListPagination/10000/text/out_of_range-2             	      60	  14250548 ns/op	   10220 B/op	      87 allocs/op
+PASS
+ok  	careold-go/internal/handlers	22.413s
+
+# lists-baseline-A4
+goos: windows
+goarch: amd64
+pkg: careold-go/internal/handlers
+cpu: AMD Ryzen AI 9 H 365 w/ Radeon 880M
+BenchmarkListPagination/100/customer/first-2         	      60	   1203237 ns/op	   32450 B/op	     600 allocs/op
+BenchmarkListPagination/100/customer/last-2          	      60	   1358840 ns/op	   33059 B/op	     600 allocs/op
+BenchmarkListPagination/100/customer/selective-2     	      60	    800045 ns/op	   12987 B/op	     150 allocs/op
+BenchmarkListPagination/100/customer/out_of_range-2  	      60	   1162003 ns/op	   10113 B/op	      94 allocs/op
+BenchmarkListPagination/100/family/first-2           	      60	    915818 ns/op	   48049 B/op	     903 allocs/op
+BenchmarkListPagination/100/family/last-2            	      60	    940478 ns/op	   48059 B/op	     903 allocs/op
+BenchmarkListPagination/100/family/selective-2       	      60	    826418 ns/op	   14136 B/op	     183 allocs/op
+BenchmarkListPagination/100/family/out_of_range-2    	      60	    852867 ns/op	   10400 B/op	      97 allocs/op
+BenchmarkListPagination/100/text/first-2             	      60	   1868258 ns/op	   41916 B/op	     342 allocs/op
+BenchmarkListPagination/100/text/last-2              	      60	   1631945 ns/op	   41288 B/op	     342 allocs/op
+BenchmarkListPagination/100/text/selective-2         	      60	   1084700 ns/op	   13336 B/op	     125 allocs/op
+BenchmarkListPagination/100/text/out_of_range-2      	      60	   1593342 ns/op	   10963 B/op	      96 allocs/op
+BenchmarkListPagination/10000/customer/first-2       	      60	   1448237 ns/op	   33214 B/op	     602 allocs/op
+BenchmarkListPagination/10000/customer/last-2        	      60	   2707602 ns/op	   33567 B/op	     646 allocs/op
+BenchmarkListPagination/10000/customer/selective-2   	      60	   3465952 ns/op	   22246 B/op	     378 allocs/op
+BenchmarkListPagination/10000/customer/out_of_range-2         	      60	   2841342 ns/op	   10160 B/op	     100 allocs/op
+BenchmarkListPagination/10000/family/first-2                  	      60	   8483083 ns/op	   47465 B/op	     905 allocs/op
+BenchmarkListPagination/10000/family/last-2                   	      60	   8773625 ns/op	   47783 B/op	     949 allocs/op
+BenchmarkListPagination/10000/family/selective-2              	      60	   1380605 ns/op	   30065 B/op	     531 allocs/op
+BenchmarkListPagination/10000/family/out_of_range-2           	      60	   9077918 ns/op	   11051 B/op	     103 allocs/op
+BenchmarkListPagination/10000/text/first-2                    	      60	   6667868 ns/op	   41464 B/op	     364 allocs/op
+BenchmarkListPagination/10000/text/last-2                     	      60	  15394818 ns/op	   41336 B/op	     348 allocs/op
+BenchmarkListPagination/10000/text/selective-2                	      60	   4045802 ns/op	   26868 B/op	     233 allocs/op
+BenchmarkListPagination/10000/text/out_of_range-2             	      60	  14887327 ns/op	   11014 B/op	     102 allocs/op
+PASS
+ok  	careold-go/internal/handlers	22.668s

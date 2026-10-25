@@ -27,12 +27,6 @@ type picDTO struct {
 
 const textColumns = `text_id, title, text_main, TO_CHAR(time,'YYYY-MM-DD HH24:MI:SS.MS') AS time, pic_id`
 
-func scanTextDTO(rows interface {
-	Scan(dest ...any) error
-}, d *textDTO) error {
-	return rows.Scan(&d.TextID, &d.Title, &d.TextMain, &d.Time, &d.PicID)
-}
-
 // POST /restful/text/select —— 公告列表（标题模糊+分页）。
 func (h *Handler) textSelect(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
@@ -44,14 +38,14 @@ func (h *Handler) textSelect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	title := str(m, "title")
-	sql := "SELECT " + textColumns + " FROM text WHERE ($1='' OR title LIKE $2) ORDER BY time DESC, text_id DESC"
+	const filter = " FROM text WHERE ($1='' OR title LIKE $2)"
+	const countSQL = "SELECT COUNT(*) AS total" + filter
+	sql := "SELECT " + textColumns + filter + " ORDER BY time DESC, text_id DESC"
 	args := []any{title, "%" + title + "%"}
-	total, ok := h.pagedTotal(w, r, sql, args)
-	if !ok {
-		return
-	}
+	var total int64
 	limitSQL, fullArgs := pageArgs(args, page, pageSize)
-	rows, err := h.DB.Query(r.Context(), sql+limitSQL, fullArgs...)
+	rows, err := h.DB.Query(r.Context(), "SELECT page.*, totals.total FROM ("+countSQL+
+		") AS totals LEFT JOIN ("+sql+limitSQL+") AS page ON TRUE ORDER BY page.time DESC, page.text_id DESC", fullArgs...)
 	if err != nil {
 		response.Error500(w, ref())
 		return
@@ -60,10 +54,14 @@ func (h *Handler) textSelect(w http.ResponseWriter, r *http.Request) {
 	items := []textDTO{}
 	for rows.Next() {
 		var d textDTO
-		if err := scanTextDTO(rows, &d); err != nil {
+		if err := rows.Scan(&d.TextID, &d.Title, &d.TextMain, &d.Time, &d.PicID, &total); err != nil {
 			rows.Close()
 			response.Error500(w, ref())
 			return
+		}
+		// The aggregate supplies one count row even when the page is empty.
+		if d.TextID == nil {
+			continue
 		}
 		items = append(items, d)
 	}

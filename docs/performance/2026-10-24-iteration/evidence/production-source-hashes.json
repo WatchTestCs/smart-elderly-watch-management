@@ -1,0 +1,15 @@
+{
+  "base_sha": "daac58a9d20420cc4bdf71675be64bcc20cc8e49",
+  "description": "Production Go/module files modified by the measured optimization; byte-identical after review-only test/documentation fixes.",
+  "sha256": {
+    "智慧养老手表管理系统/backend/go.mod": "72a581219ba217e3b798f666b6832a59902223defe752dc797cc6d2f14ea6f0d",
+    "智慧养老手表管理系统/backend/go.sum": "96c6009fe0e5f25504d1d555266b0919a516579743b68d3316e6ad8c3c2ecb91",
+    "智慧养老手表管理系统/backend/internal/handlers/handler_family.go": "df19536e688e17bb39b923947e65cc69f482a7e24eae75de7c79e944612ccf59",
+    "智慧养老手表管理系统/backend/internal/handlers/handler_social_text.go": "99c9ab78e93c4f49987789de8ab3cfcab0e85bdfb4e6faee3b8d524418e97057",
+    "智慧养老手表管理系统/backend/internal/handlers/handler_statistics.go": "846aeb04640a3893335b426c79baa8264c0e45d006db4069a44c410701d5511d",
+    "智慧养老手表管理系统/backend/internal/handlers/handler_user.go": "590377958847af998fce24863cef82eacf21a266192c228633dcd507aecfed86",
+    "智慧养老手表管理系统/backend/internal/health/statistics.go": "d67035828be2afe3aae140b44ae8597112dd83fb16d5774439c72431b25d88f9",
+    "智慧养老手表管理系统/backend/internal/rules/activity.go": "bb26eef61d889615a487fa697af1e04f265e780306690244e5ac4bd5e9c3d552",
+    "智慧养老手表管理系统/backend/internal/session/session.go": "6d3304ca8880b008a0703aba379f161738fcc6f8dee12fec408b134f8731c645"
+  }
+}

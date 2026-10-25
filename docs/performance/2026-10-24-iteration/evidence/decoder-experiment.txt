@@ -1,0 +1,2614 @@
+# benchmark.log
+goos: windows
+goarch: amd64
+pkg: careold-go/json-experiment
+cpu: AMD Ryzen AI 9 H 365 w/ Radeon 880M
+BenchmarkStoredSampleDecode/stored_001/Std-20         	  118285	      2315 ns/op	 102.81 MB/s	     528 B/op	      12 allocs/op
+BenchmarkStoredSampleDecode/stored_001/Std-20         	  108633	      1977 ns/op	 120.39 MB/s	     528 B/op	      12 allocs/op
+BenchmarkStoredSampleDecode/stored_001/Std-20         	  127581	      1820 ns/op	 130.74 MB/s	     528 B/op	      12 allocs/op
+BenchmarkStoredSampleDecode/stored_001/GoJSON-20      	  682292	       343.2 ns/op	 693.51 MB/s	     299 B/op	       2 allocs/op
+BenchmarkStoredSampleDecode/stored_001/GoJSON-20      	  645303	       335.1 ns/op	 710.15 MB/s	     299 B/op	       2 allocs/op
+BenchmarkStoredSampleDecode/stored_001/GoJSON-20      	  654528	       362.1 ns/op	 657.30 MB/s	     299 B/op	       2 allocs/op
+BenchmarkStoredSampleDecode/stored_001/SonicStd-20    	  351154	       646.3 ns/op	 368.25 MB/s	     613 B/op	      10 allocs/op
+BenchmarkStoredSampleDecode/stored_001/SonicStd-20    	  324801	       682.1 ns/op	 348.91 MB/s	     612 B/op	      10 allocs/op
+BenchmarkStoredSampleDecode/stored_001/SonicStd-20    	  329552	       638.8 ns/op	 372.57 MB/s	     616 B/op	      10 allocs/op
+BenchmarkStoredSampleDecode/stored_003/Std-20         	   73365	      3252 ns/op	 122.71 MB/s	    1080 B/op	      26 allocs/op
+BenchmarkStoredSampleDecode/stored_003/Std-20         	   69010	      3629 ns/op	 109.96 MB/s	    1080 B/op	      26 allocs/op
+BenchmarkStoredSampleDecode/stored_003/Std-20         	   53884	      4482 ns/op	  89.03 MB/s	    1080 B/op	      26 allocs/op
+BenchmarkStoredSampleDecode/stored_003/GoJSON-20      	  206004	      1104 ns/op	 361.46 MB/s	     704 B/op	       4 allocs/op
+BenchmarkStoredSampleDecode/stored_003/GoJSON-20      	  260869	      1062 ns/op	 375.61 MB/s	     704 B/op	       4 allocs/op
+BenchmarkStoredSampleDecode/stored_003/GoJSON-20      	  250245	       802.0 ns/op	 497.52 MB/s	     704 B/op	       4 allocs/op
+BenchmarkStoredSampleDecode/stored_003/SonicStd-20    	  222648	      1213 ns/op	 329.00 MB/s	    1238 B/op	      19 allocs/op
+BenchmarkStoredSampleDecode/stored_003/SonicStd-20    	  221829	      1190 ns/op	 335.18 MB/s	    1235 B/op	      19 allocs/op
+BenchmarkStoredSampleDecode/stored_003/SonicStd-20    	  179613	      1139 ns/op	 350.34 MB/s	    1235 B/op	      19 allocs/op
+BenchmarkStoredSampleDecode/maximum_fields/Std-20     	     242	   1046836 ns/op	 271.48 MB/s	  295089 B/op	     218 allocs/op
+BenchmarkStoredSampleDecode/maximum_fields/Std-20     	     218	    984902 ns/op	 288.55 MB/s	  295115 B/op	     218 allocs/op
+BenchmarkStoredSampleDecode/maximum_fields/Std-20     	     218	   1088426 ns/op	 261.10 MB/s	  295110 B/op	     218 allocs/op
+BenchmarkStoredSampleDecode/maximum_fields/GoJSON-20  	     579	    437316 ns/op	 649.85 MB/s	  290943 B/op	      71 allocs/op
+BenchmarkStoredSampleDecode/maximum_fields/GoJSON-20  	     602	    397955 ns/op	 714.13 MB/s	  291369 B/op	      71 allocs/op
+BenchmarkStoredSampleDecode/maximum_fields/GoJSON-20  	     585	    419798 ns/op	 676.97 MB/s	  290389 B/op	      71 allocs/op
+BenchmarkStoredSampleDecode/maximum_fields/SonicStd-20         	    2168	    106670 ns/op	2664.21 MB/s	  589449 B/op	     151 allocs/op
+BenchmarkStoredSampleDecode/maximum_fields/SonicStd-20         	    2385	    102460 ns/op	2773.68 MB/s	  589480 B/op	     151 allocs/op
+BenchmarkStoredSampleDecode/maximum_fields/SonicStd-20         	    2022	    114413 ns/op	2483.90 MB/s	  591323 B/op	     151 allocs/op
+BenchmarkStoredSampleBatch1000/Std-20                          	      94	   2405868 ns/op	  719042 B/op	   16733 allocs/op
+BenchmarkStoredSampleBatch1000/Std-20                          	     100	   2478869 ns/op	  719048 B/op	   16733 allocs/op
+BenchmarkStoredSampleBatch1000/Std-20                          	     100	   2337892 ns/op	  719043 B/op	   16733 allocs/op
+BenchmarkStoredSampleBatch1000/GoJSON-20                       	     400	    543032 ns/op	  436448 B/op	    2532 allocs/op
+BenchmarkStoredSampleBatch1000/GoJSON-20                       	     456	    582337 ns/op	  436300 B/op	    2532 allocs/op
+BenchmarkStoredSampleBatch1000/GoJSON-20                       	     474	    537035 ns/op	  436224 B/op	    2532 allocs/op
+BenchmarkStoredSampleBatch1000/SonicStd-20                     	     252	    917225 ns/op	  823905 B/op	   13064 allocs/op
+BenchmarkStoredSampleBatch1000/SonicStd-20                     	     236	    955507 ns/op	  833403 B/op	   13064 allocs/op
+BenchmarkStoredSampleBatch1000/SonicStd-20                     	     270	    910915 ns/op	  830832 B/op	   13064 allocs/op
+PASS
+ok  	careold-go/json-experiment	11.611s
+
+# compatibility.log
+=== RUN   TestStoredSampleCompatibility
+=== RUN   TestStoredSampleCompatibility/stored_040/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_040/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_062/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_062/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_206/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_206/seeded_true
+=== RUN   TestStoredSampleCompatibility/surrogate_low/seeded_false
+=== RUN   TestStoredSampleCompatibility/surrogate_low/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_086/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_086/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_129/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_129/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_132/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_132/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_235/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_235/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_253/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_253/seeded_true
+=== RUN   TestStoredSampleCompatibility/duplicate_null/seeded_false
+=== RUN   TestStoredSampleCompatibility/duplicate_null/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_005/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_005/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_117/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_117/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_138/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_138/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_228/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_228/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_234/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_234/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_107/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_107/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_123/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_123/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_125/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_125/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_193/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_193/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_199/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_199/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_212/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_212/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_224/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_224/seeded_true
+=== RUN   TestStoredSampleCompatibility/escaped_key/seeded_false
+=== RUN   TestStoredSampleCompatibility/escaped_key/seeded_true
+=== RUN   TestStoredSampleCompatibility/float_nan/seeded_false
+=== RUN   TestStoredSampleCompatibility/float_nan/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_024/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_024/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_025/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_025/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_045/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_045/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_070/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_070/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_096/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_096/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_182/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_182/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_198/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_198/seeded_true
+=== RUN   TestStoredSampleCompatibility/int_min/seeded_false
+=== RUN   TestStoredSampleCompatibility/int_min/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_013/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_013/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_109/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_109/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_116/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_116/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_119/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_119/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_240/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_240/seeded_true
+=== RUN   TestStoredSampleCompatibility/unknown_valid/seeded_false
+=== RUN   TestStoredSampleCompatibility/unknown_valid/seeded_true
+=== RUN   TestStoredSampleCompatibility/unknown_invalid/seeded_false
+=== RUN   TestStoredSampleCompatibility/unknown_invalid/seeded_true
+=== RUN   TestStoredSampleCompatibility/boolean/seeded_false
+=== RUN   TestStoredSampleCompatibility/boolean/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_058/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_058/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_122/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_122/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_154/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_154/seeded_true
+=== RUN   TestStoredSampleCompatibility/metadata_number/seeded_false
+=== RUN   TestStoredSampleCompatibility/metadata_number/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_054/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_054/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_061/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_061/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_019/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_019/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_020/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_020/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_033/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_033/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_075/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_075/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_080/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_080/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_134/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_134/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_142/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_142/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_164/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_164/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_236/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_236/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_242/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_242/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_252/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_252/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_066/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_066/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_128/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_128/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_141/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_141/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_251/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_251/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_060/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_060/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_087/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_087/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_191/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_191/seeded_true
+=== RUN   TestStoredSampleCompatibility/time_null/seeded_false
+=== RUN   TestStoredSampleCompatibility/time_null/seeded_true
+=== RUN   TestStoredSampleCompatibility/casefold/seeded_false
+=== RUN   TestStoredSampleCompatibility/casefold/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_105/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_105/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_149/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_149/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_218/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_218/seeded_true
+=== RUN   TestStoredSampleCompatibility/time_bad_offset/seeded_false
+=== RUN   TestStoredSampleCompatibility/time_bad_offset/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_034/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_034/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_151/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_151/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_161/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_161/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_169/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_169/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_172/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_172/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_067/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_067/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_165/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_165/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_220/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_220/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_048/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_048/seeded_true
+=== RUN   TestStoredSampleCompatibility/empty_object/seeded_false
+=== RUN   TestStoredSampleCompatibility/empty_object/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_011/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_011/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_012/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_012/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_094/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_094/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_146/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_146/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_158/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_158/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_196/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_196/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_244/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_244/seeded_true
+=== RUN   TestStoredSampleCompatibility/maximum_fields/seeded_false
+=== RUN   TestStoredSampleCompatibility/maximum_fields/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_201/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_201/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_222/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_222/seeded_true
+=== RUN   TestStoredSampleCompatibility/float_underflow/seeded_false
+=== RUN   TestStoredSampleCompatibility/float_underflow/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_026/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_026/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_108/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_108/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_232/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_232/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_233/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_233/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_254/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_254/seeded_true
+=== RUN   TestStoredSampleCompatibility/array/seeded_false
+=== RUN   TestStoredSampleCompatibility/array/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_003/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_003/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_205/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_205/seeded_true
+=== RUN   TestStoredSampleCompatibility/surrogate_high/seeded_false
+=== RUN   TestStoredSampleCompatibility/surrogate_high/seeded_true
+=== RUN   TestStoredSampleCompatibility/time_nano_offset/seeded_false
+=== RUN   TestStoredSampleCompatibility/time_nano_offset/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_023/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_023/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_115/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_115/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_120/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_120/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_131/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_131/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_175/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_175/seeded_true
+=== RUN   TestStoredSampleCompatibility/duplicate_map/seeded_false
+=== RUN   TestStoredSampleCompatibility/duplicate_map/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_076/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_076/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_130/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_130/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_137/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_137/seeded_true
+=== RUN   TestStoredSampleCompatibility/duplicate_map_null/seeded_false
+=== RUN   TestStoredSampleCompatibility/duplicate_map_null/seeded_true
+=== RUN   TestStoredSampleCompatibility/deleted_wrong/seeded_false
+=== RUN   TestStoredSampleCompatibility/deleted_wrong/seeded_true
+=== RUN   TestStoredSampleCompatibility/metadata_array/seeded_false
+=== RUN   TestStoredSampleCompatibility/metadata_array/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_006/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_006/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_093/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_093/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_203/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_203/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_213/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_213/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_221/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_221/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_246/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_246/seeded_true
+=== RUN   TestStoredSampleCompatibility/float_negative_zero/seeded_false
+    json_test.go:157: SonicStd output mismatch: std={"recordId":"","source":"","sourceDevice":"","metric":"","unit":"","value":-0,"start":"0001-01-01T00:00:00Z","end":"0001-01-01T00:00:00Z","semantics":"","version":0} candidate={"recordId":"","source":"","sourceDevice":"","metric":"","unit":"","value":0,"start":"0001-01-01T00:00:00Z","end":"0001-01-01T00:00:00Z","semantics":"","version":0}
+    json_test.go:160: SonicStd float bits differ
+=== RUN   TestStoredSampleCompatibility/float_negative_zero/seeded_true
+    json_test.go:157: SonicStd output mismatch: std={"recordId":"sample-3","source":"watch","sourceDevice":"WATCH-123456","sourceVersion":"v2.1.0","metric":"heart_rate","unit":"count/min","value":-0,"start":"2026-10-20T12:03:03.000000003Z","end":"2026-10-20T12:03:03.000000003Z","semantics":"instant","groupId":"group-123","timeBasis":"legacy-unzoned","metadata":{"model":"设备 A","note":"\u003ctag\u003e\u0026 \"quoted\"\n\\ \u2028"},"version":1} candidate={"recordId":"sample-3","source":"watch","sourceDevice":"WATCH-123456","sourceVersion":"v2.1.0","metric":"heart_rate","unit":"count/min","value":0,"start":"2026-10-20T12:03:03.000000003Z","end":"2026-10-20T12:03:03.000000003Z","semantics":"instant","groupId":"group-123","timeBasis":"legacy-unzoned","metadata":{"model":"设备 A","note":"\u003ctag\u003e\u0026 \"quoted\"\n\\ \u2028"},"version":1}
+    json_test.go:160: SonicStd float bits differ
+=== RUN   TestStoredSampleCompatibility/truncated/seeded_false
+=== RUN   TestStoredSampleCompatibility/truncated/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_190/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_190/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_008/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_008/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_053/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_053/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_084/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_084/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_163/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_163/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_237/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_237/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_239/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_239/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_162/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_162/seeded_true
+=== RUN   TestStoredSampleCompatibility/int_overflow/seeded_false
+=== RUN   TestStoredSampleCompatibility/int_overflow/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_051/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_051/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_072/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_072/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_139/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_139/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_145/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_145/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_156/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_156/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_185/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_185/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_223/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_223/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_028/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_028/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_079/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_079/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_111/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_111/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_135/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_135/seeded_true
+=== RUN   TestStoredSampleCompatibility/time_invalid_date/seeded_false
+=== RUN   TestStoredSampleCompatibility/time_invalid_date/seeded_true
+=== RUN   TestStoredSampleCompatibility/trailing_object/seeded_false
+=== RUN   TestStoredSampleCompatibility/trailing_object/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_010/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_010/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_037/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_037/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_099/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_099/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_192/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_192/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_215/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_215/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_243/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_243/seeded_true
+=== RUN   TestStoredSampleCompatibility/float_string/seeded_false
+=== RUN   TestStoredSampleCompatibility/float_string/seeded_true
+=== RUN   TestStoredSampleCompatibility/time_max/seeded_false
+=== RUN   TestStoredSampleCompatibility/time_max/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_035/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_035/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_148/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_148/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_188/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_188/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_202/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_202/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_226/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_226/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_247/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_247/seeded_true
+=== RUN   TestStoredSampleCompatibility/int_null/seeded_false
+=== RUN   TestStoredSampleCompatibility/int_null/seeded_true
+=== RUN   TestStoredSampleCompatibility/time_space/seeded_false
+=== RUN   TestStoredSampleCompatibility/time_space/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_036/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_036/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_043/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_043/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_136/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_136/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_177/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_177/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_183/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_183/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_007/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_007/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_147/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_147/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_176/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_176/seeded_true
+=== RUN   TestStoredSampleCompatibility/int_exponent/seeded_false
+=== RUN   TestStoredSampleCompatibility/int_exponent/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_057/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_057/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_181/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_181/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_126/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_126/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_021/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_021/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_092/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_092/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_140/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_140/seeded_true
+=== RUN   TestStoredSampleCompatibility/float_inf/seeded_false
+=== RUN   TestStoredSampleCompatibility/float_inf/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_063/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_063/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_065/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_065/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_179/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_179/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_230/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_230/seeded_true
+=== RUN   TestStoredSampleCompatibility/trailing_garbage/seeded_false
+=== RUN   TestStoredSampleCompatibility/trailing_garbage/seeded_true
+=== RUN   TestStoredSampleCompatibility/metadata_null/seeded_false
+=== RUN   TestStoredSampleCompatibility/metadata_null/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_068/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_068/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_077/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_077/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_207/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_207/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_255/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_255/seeded_true
+=== RUN   TestStoredSampleCompatibility/float_overflow/seeded_false
+=== RUN   TestStoredSampleCompatibility/float_overflow/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_015/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_015/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_038/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_038/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_049/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_049/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_153/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_153/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_216/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_216/seeded_true
+=== RUN   TestStoredSampleCompatibility/time_lowercase/seeded_false
+=== RUN   TestStoredSampleCompatibility/time_lowercase/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_018/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_018/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_052/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_052/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_171/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_171/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_204/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_204/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_229/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_229/seeded_true
+=== RUN   TestStoredSampleCompatibility/unicode/seeded_false
+=== RUN   TestStoredSampleCompatibility/unicode/seeded_true
+=== RUN   TestStoredSampleCompatibility/escape_invalid/seeded_false
+=== RUN   TestStoredSampleCompatibility/escape_invalid/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_047/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_047/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_167/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_167/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_210/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_210/seeded_true
+=== RUN   TestStoredSampleCompatibility/metadata_nested/seeded_false
+=== RUN   TestStoredSampleCompatibility/metadata_nested/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_017/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_017/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_032/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_032/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_044/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_044/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_103/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_103/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_121/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_121/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_170/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_170/seeded_true
+=== RUN   TestStoredSampleCompatibility/int_max/seeded_false
+=== RUN   TestStoredSampleCompatibility/int_max/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_112/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_112/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_152/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_152/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_157/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_157/seeded_true
+=== RUN   TestStoredSampleCompatibility/duplicate_scalar/seeded_false
+=== RUN   TestStoredSampleCompatibility/duplicate_scalar/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_078/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_078/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_155/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_155/seeded_true
+=== RUN   TestStoredSampleCompatibility/empty_input/seeded_false
+=== RUN   TestStoredSampleCompatibility/empty_input/seeded_true
+=== RUN   TestStoredSampleCompatibility/float_max/seeded_false
+=== RUN   TestStoredSampleCompatibility/float_max/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_016/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_016/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_113/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_113/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_160/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_160/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_189/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_189/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_248/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_248/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_002/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_002/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_004/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_004/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_022/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_022/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_104/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_104/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_166/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_166/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_168/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_168/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_001/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_001/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_009/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_009/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_029/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_029/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_082/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_082/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_088/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_088/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_095/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_095/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_102/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_102/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_195/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_195/seeded_true
+=== RUN   TestStoredSampleCompatibility/metadata_null_value/seeded_false
+=== RUN   TestStoredSampleCompatibility/metadata_null_value/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_056/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_056/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_074/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_074/seeded_true
+=== RUN   TestStoredSampleCompatibility/time_leap/seeded_false
+=== RUN   TestStoredSampleCompatibility/time_leap/seeded_true
+=== RUN   TestStoredSampleCompatibility/time_number/seeded_false
+=== RUN   TestStoredSampleCompatibility/time_number/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_027/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_027/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_031/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_031/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_055/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_055/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_081/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_081/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_110/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_110/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_133/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_133/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_143/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_143/seeded_true
+=== RUN   TestStoredSampleCompatibility/number/seeded_false
+=== RUN   TestStoredSampleCompatibility/number/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_071/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_071/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_114/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_114/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_124/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_124/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_180/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_180/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_039/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_039/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_085/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_085/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_101/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_101/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_118/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_118/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_241/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_241/seeded_true
+=== RUN   TestStoredSampleCompatibility/time_min/seeded_false
+=== RUN   TestStoredSampleCompatibility/time_min/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_050/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_050/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_073/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_073/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_194/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_194/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_214/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_214/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_225/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_225/seeded_true
+=== RUN   TestStoredSampleCompatibility/float_subnormal/seeded_false
+=== RUN   TestStoredSampleCompatibility/float_subnormal/seeded_true
+=== RUN   TestStoredSampleCompatibility/int_underflow/seeded_false
+=== RUN   TestStoredSampleCompatibility/int_underflow/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_186/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_186/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_217/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_217/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_014/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_014/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_174/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_174/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_208/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_208/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_245/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_245/seeded_true
+=== RUN   TestStoredSampleCompatibility/whitespace/seeded_false
+=== RUN   TestStoredSampleCompatibility/whitespace/seeded_true
+=== RUN   TestStoredSampleCompatibility/int_fraction/seeded_false
+=== RUN   TestStoredSampleCompatibility/int_fraction/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_089/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_089/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_127/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_127/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_150/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_150/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_197/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_197/seeded_true
+=== RUN   TestStoredSampleCompatibility/deleted_null/seeded_false
+=== RUN   TestStoredSampleCompatibility/deleted_null/seeded_true
+=== RUN   TestStoredSampleCompatibility/float_precision/seeded_false
+=== RUN   TestStoredSampleCompatibility/float_precision/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_069/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_069/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_211/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_211/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_231/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_231/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_249/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_249/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_042/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_042/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_046/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_046/seeded_true
+=== RUN   TestStoredSampleCompatibility/int_string/seeded_false
+=== RUN   TestStoredSampleCompatibility/int_string/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_041/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_041/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_059/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_059/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_090/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_090/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_106/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_106/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_144/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_144/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_200/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_200/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_173/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_173/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_187/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_187/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_250/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_250/seeded_true
+=== RUN   TestStoredSampleCompatibility/null/seeded_false
+=== RUN   TestStoredSampleCompatibility/null/seeded_true
+=== RUN   TestStoredSampleCompatibility/metadata_empty/seeded_false
+=== RUN   TestStoredSampleCompatibility/metadata_empty/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_000/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_000/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_083/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_083/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_091/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_091/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_097/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_097/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_178/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_178/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_219/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_219/seeded_true
+=== RUN   TestStoredSampleCompatibility/string/seeded_false
+=== RUN   TestStoredSampleCompatibility/string/seeded_true
+=== RUN   TestStoredSampleCompatibility/control_unescaped/seeded_false
+=== RUN   TestStoredSampleCompatibility/control_unescaped/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_098/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_098/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_159/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_159/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_209/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_209/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_227/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_227/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_238/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_238/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_030/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_030/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_064/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_064/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_100/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_100/seeded_true
+=== RUN   TestStoredSampleCompatibility/stored_184/seeded_false
+=== RUN   TestStoredSampleCompatibility/stored_184/seeded_true
+=== RUN   TestStoredSampleCompatibility/invalid_utf8/seeded_false
+=== RUN   TestStoredSampleCompatibility/invalid_utf8/seeded_true
+--- FAIL: TestStoredSampleCompatibility (0.05s)
+    --- PASS: TestStoredSampleCompatibility/stored_040/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_040/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_062/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_062/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_206/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_206/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/surrogate_low/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/surrogate_low/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_086/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_086/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_129/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_129/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_132/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_132/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_235/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_235/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_253/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_253/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/duplicate_null/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/duplicate_null/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_005/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_005/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_117/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_117/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_138/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_138/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_228/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_228/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_234/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_234/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_107/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_107/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_123/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_123/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_125/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_125/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_193/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_193/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_199/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_199/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_212/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_212/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_224/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_224/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/escaped_key/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/escaped_key/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/float_nan/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/float_nan/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_024/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_024/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_025/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_025/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_045/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_045/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_070/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_070/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_096/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_096/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_182/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_182/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_198/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_198/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/int_min/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/int_min/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_013/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_013/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_109/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_109/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_116/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_116/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_119/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_119/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_240/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_240/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/unknown_valid/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/unknown_valid/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/unknown_invalid/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/unknown_invalid/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/boolean/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/boolean/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_058/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_058/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_122/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_122/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_154/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_154/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/metadata_number/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/metadata_number/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_054/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_054/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_061/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_061/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_019/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_019/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_020/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_020/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_033/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_033/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_075/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_075/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_080/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_080/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_134/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_134/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_142/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_142/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_164/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_164/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_236/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_236/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_242/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_242/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_252/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_252/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_066/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_066/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_128/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_128/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_141/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_141/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_251/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_251/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_060/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_060/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_087/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_087/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_191/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_191/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/time_null/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/time_null/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/casefold/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/casefold/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_105/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_105/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_149/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_149/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_218/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_218/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/time_bad_offset/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/time_bad_offset/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_034/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_034/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_151/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_151/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_161/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_161/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_169/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_169/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_172/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_172/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_067/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_067/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_165/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_165/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_220/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_220/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_048/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_048/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/empty_object/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/empty_object/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_011/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_011/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_012/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_012/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_094/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_094/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_146/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_146/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_158/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_158/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_196/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_196/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_244/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_244/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/maximum_fields/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/maximum_fields/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_201/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_201/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_222/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_222/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/float_underflow/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/float_underflow/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_026/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_026/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_108/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_108/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_232/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_232/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_233/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_233/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_254/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_254/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/array/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/array/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_003/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_003/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_205/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_205/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/surrogate_high/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/surrogate_high/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/time_nano_offset/seeded_false (0.02s)
+    --- PASS: TestStoredSampleCompatibility/time_nano_offset/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_023/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_023/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_115/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_115/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_120/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_120/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_131/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_131/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_175/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_175/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/duplicate_map/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/duplicate_map/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_076/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_076/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_130/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_130/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_137/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_137/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/duplicate_map_null/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/duplicate_map_null/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/deleted_wrong/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/deleted_wrong/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/metadata_array/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/metadata_array/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_006/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_006/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_093/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_093/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_203/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_203/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_213/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_213/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_221/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_221/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_246/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_246/seeded_true (0.00s)
+    --- FAIL: TestStoredSampleCompatibility/float_negative_zero/seeded_false (0.00s)
+    --- FAIL: TestStoredSampleCompatibility/float_negative_zero/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/truncated/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/truncated/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_190/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_190/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_008/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_008/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_053/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_053/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_084/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_084/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_163/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_163/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_237/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_237/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_239/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_239/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_162/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_162/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/int_overflow/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/int_overflow/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_051/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_051/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_072/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_072/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_139/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_139/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_145/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_145/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_156/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_156/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_185/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_185/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_223/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_223/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_028/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_028/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_079/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_079/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_111/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_111/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_135/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_135/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/time_invalid_date/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/time_invalid_date/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/trailing_object/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/trailing_object/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_010/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_010/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_037/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_037/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_099/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_099/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_192/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_192/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_215/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_215/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_243/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_243/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/float_string/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/float_string/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/time_max/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/time_max/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_035/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_035/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_148/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_148/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_188/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_188/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_202/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_202/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_226/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_226/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_247/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_247/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/int_null/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/int_null/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/time_space/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/time_space/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_036/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_036/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_043/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_043/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_136/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_136/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_177/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_177/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_183/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_183/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_007/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_007/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_147/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_147/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_176/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_176/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/int_exponent/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/int_exponent/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_057/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_057/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_181/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_181/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_126/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_126/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_021/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_021/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_092/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_092/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_140/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_140/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/float_inf/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/float_inf/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_063/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_063/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_065/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_065/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_179/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_179/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_230/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_230/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/trailing_garbage/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/trailing_garbage/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/metadata_null/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/metadata_null/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_068/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_068/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_077/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_077/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_207/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_207/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_255/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_255/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/float_overflow/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/float_overflow/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_015/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_015/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_038/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_038/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_049/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_049/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_153/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_153/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_216/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_216/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/time_lowercase/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/time_lowercase/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_018/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_018/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_052/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_052/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_171/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_171/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_204/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_204/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_229/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_229/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/unicode/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/unicode/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/escape_invalid/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/escape_invalid/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_047/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_047/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_167/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_167/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_210/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_210/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/metadata_nested/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/metadata_nested/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_017/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_017/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_032/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_032/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_044/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_044/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_103/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_103/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_121/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_121/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_170/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_170/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/int_max/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/int_max/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_112/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_112/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_152/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_152/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_157/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_157/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/duplicate_scalar/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/duplicate_scalar/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_078/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_078/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_155/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_155/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/empty_input/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/empty_input/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/float_max/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/float_max/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_016/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_016/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_113/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_113/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_160/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_160/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_189/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_189/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_248/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_248/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_002/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_002/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_004/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_004/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_022/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_022/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_104/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_104/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_166/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_166/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_168/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_168/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_001/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_001/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_009/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_009/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_029/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_029/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_082/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_082/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_088/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_088/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_095/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_095/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_102/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_102/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_195/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_195/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/metadata_null_value/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/metadata_null_value/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_056/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_056/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_074/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_074/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/time_leap/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/time_leap/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/time_number/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/time_number/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_027/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_027/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_031/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_031/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_055/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_055/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_081/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_081/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_110/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_110/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_133/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_133/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_143/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_143/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/number/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/number/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_071/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_071/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_114/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_114/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_124/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_124/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_180/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_180/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_039/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_039/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_085/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_085/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_101/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_101/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_118/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_118/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_241/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_241/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/time_min/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/time_min/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_050/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_050/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_073/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_073/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_194/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_194/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_214/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_214/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_225/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_225/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/float_subnormal/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/float_subnormal/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/int_underflow/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/int_underflow/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_186/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_186/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_217/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_217/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_014/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_014/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_174/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_174/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_208/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_208/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_245/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_245/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/whitespace/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/whitespace/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/int_fraction/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/int_fraction/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_089/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_089/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_127/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_127/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_150/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_150/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_197/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_197/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/deleted_null/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/deleted_null/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/float_precision/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/float_precision/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_069/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_069/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_211/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_211/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_231/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_231/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_249/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_249/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_042/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_042/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_046/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_046/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/int_string/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/int_string/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_041/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_041/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_059/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_059/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_090/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_090/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_106/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_106/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_144/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_144/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_200/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_200/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_173/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_173/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_187/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_187/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_250/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_250/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/null/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/null/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/metadata_empty/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/metadata_empty/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_000/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_000/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_083/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_083/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_091/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_091/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_097/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_097/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_178/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_178/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_219/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_219/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/string/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/string/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/control_unescaped/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/control_unescaped/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_098/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_098/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_159/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_159/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_209/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_209/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_227/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_227/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_238/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_238/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_030/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_030/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_064/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_064/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_100/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_100/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_184/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/stored_184/seeded_true (0.00s)
+    --- PASS: TestStoredSampleCompatibility/invalid_utf8/seeded_false (0.00s)
+    --- PASS: TestStoredSampleCompatibility/invalid_utf8/seeded_true (0.00s)
+=== RUN   TestDecodedSampleOwnsStrings
+=== RUN   TestDecodedSampleOwnsStrings/Std
+=== RUN   TestDecodedSampleOwnsStrings/GoJSON
+=== RUN   TestDecodedSampleOwnsStrings/SonicStd
+--- PASS: TestDecodedSampleOwnsStrings (0.00s)
+    --- PASS: TestDecodedSampleOwnsStrings/Std (0.00s)
+    --- PASS: TestDecodedSampleOwnsStrings/GoJSON (0.00s)
+    --- PASS: TestDecodedSampleOwnsStrings/SonicStd (0.00s)
+FAIL
+exit status 1
+FAIL	careold-go/json-experiment	0.395s
+
+# compatibility-gojson.log
+=== RUN   TestStoredSampleCompatibility
+=== RUN   TestStoredSampleCompatibility/GoJSON
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_066/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_066/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_149/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_149/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_190/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_190/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_237/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_237/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_239/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_239/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_036/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_036/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_078/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_078/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_242/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_242/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/array/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/array/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/duplicate_scalar/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/duplicate_scalar/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_110/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_110/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/time_bad_offset/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/time_bad_offset/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_045/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_045/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_055/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_055/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_073/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_073/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_077/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_077/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_109/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_109/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_128/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_128/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/metadata_empty/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/metadata_empty/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_030/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_030/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_087/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_087/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_064/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_064/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_080/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_080/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_103/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_103/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_142/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_142/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/duplicate_map/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/duplicate_map/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_049/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_049/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_068/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_068/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_188/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_188/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_228/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_228/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_042/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_042/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_083/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_083/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_095/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_095/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_169/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_169/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_203/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_203/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/int_exponent/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/int_exponent/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/int_max/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/int_max/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_012/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_012/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_029/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_029/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_041/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_041/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_120/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_120/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_131/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_131/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/metadata_number/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/metadata_number/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_054/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_054/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_093/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_093/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_121/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_121/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_138/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_138/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_151/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_151/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_174/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_174/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_250/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_250/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_158/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_158/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_200/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_200/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_226/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_226/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/int_null/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/int_null/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_022/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_022/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_043/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_043/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_069/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_069/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_098/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_098/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_152/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_152/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_234/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_234/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_253/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_253/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_027/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_027/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_050/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_050/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_154/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_154/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_219/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_219/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_233/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_233/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/deleted_null/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/deleted_null/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/trailing_garbage/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/trailing_garbage/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_071/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_071/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_223/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_223/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_000/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_000/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_006/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_006/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_020/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_020/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_094/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_094/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_199/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_199/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_096/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_096/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_127/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_127/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_150/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_150/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_216/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_216/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_225/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_225/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/time_space/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/time_space/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_125/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_125/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_205/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_205/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/float_negative_zero/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/float_negative_zero/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_061/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_061/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_144/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_144/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_156/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_156/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_241/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_241/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_243/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_243/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_040/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_040/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_056/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_056/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_059/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_059/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_075/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_075/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_208/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_208/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/string/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/string/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/float_max/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/float_max/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_019/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_019/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_034/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_034/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_079/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_079/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_193/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_193/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_211/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_211/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_232/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_232/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_244/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_244/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/truncated/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/truncated/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/maximum_fields/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/maximum_fields/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_132/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_132/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_148/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_148/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_171/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_171/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_191/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_191/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_218/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_218/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_238/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_238/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_063/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_063/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_129/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_129/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_139/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_139/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_178/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_178/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_248/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_248/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/metadata_null/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/metadata_null/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/trailing_object/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/trailing_object/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_008/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_008/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_031/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_031/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_126/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_126/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_236/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_236/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_017/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_017/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_058/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_058/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_155/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_155/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/control_unescaped/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/control_unescaped/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_032/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_032/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_118/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_118/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_135/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_135/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_160/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_160/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_170/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_170/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/float_inf/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/float_inf/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/whitespace/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/whitespace/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_015/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_015/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_161/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_161/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_198/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_198/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_214/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_214/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_010/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_010/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_038/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_038/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_115/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_115/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_124/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_124/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_136/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_136/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_201/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_201/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/escape_invalid/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/escape_invalid/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_007/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_007/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_035/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_035/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_247/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_247/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/number/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/number/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_088/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_088/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_005/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_005/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_014/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_014/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_048/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_048/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_212/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_212/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_245/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_245/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/time_max/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/time_max/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_003/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_003/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_025/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_025/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_051/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_051/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_189/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_189/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_196/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_196/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/float_precision/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/float_precision/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_016/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_016/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_046/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_046/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_182/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_182/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_213/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_213/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/escaped_key/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/escaped_key/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/time_number/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/time_number/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_114/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_114/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/time_min/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/time_min/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/boolean/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/boolean/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_074/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_074/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_137/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_137/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_186/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_186/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/time_lowercase/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/time_lowercase/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_013/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_013/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_141/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_141/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_187/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_187/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_222/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_222/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_229/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_229/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/deleted_wrong/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/deleted_wrong/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/unicode/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/unicode/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_067/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_067/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_105/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_105/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_111/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_111/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_167/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_167/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_183/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_183/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_220/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_220/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_224/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_224/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_039/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_039/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_070/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_070/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_090/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_090/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_177/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_177/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_194/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_194/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_202/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_202/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/float_subnormal/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/float_subnormal/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_112/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_112/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_175/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_175/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/unknown_valid/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/unknown_valid/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_089/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_089/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_231/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_231/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/empty_input/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/empty_input/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/empty_object/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/empty_object/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_002/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_002/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_037/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_037/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_107/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_107/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_207/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_207/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_108/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_108/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_122/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_122/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_130/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_130/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_143/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_143/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_255/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_255/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/time_invalid_date/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/time_invalid_date/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/duplicate_null/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/duplicate_null/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_084/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_084/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_101/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_101/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_157/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_157/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_168/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_168/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_197/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_197/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/duplicate_map_null/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/duplicate_map_null/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_018/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_018/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_021/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_021/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_026/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_026/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_081/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_081/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_086/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_086/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_140/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_140/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_235/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_235/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_100/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_100/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/int_underflow/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/int_underflow/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_116/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_116/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_146/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_146/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/unknown_invalid/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/unknown_invalid/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_091/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_091/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_210/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_210/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_249/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_249/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_254/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_254/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_011/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_011/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_072/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_072/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_099/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_099/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_176/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_176/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/casefold/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/casefold/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_024/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_024/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_102/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_102/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_106/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_106/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_145/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_145/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_195/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_195/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/time_null/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/time_null/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_252/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_252/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_033/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_033/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_047/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_047/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_092/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_092/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_134/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_134/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_147/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_147/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_164/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_164/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_166/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_166/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/metadata_nested/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/metadata_nested/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_001/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_001/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_023/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_023/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_133/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_133/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_179/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_179/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/float_overflow/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/float_overflow/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_009/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_009/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_028/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_028/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_119/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_119/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_206/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_206/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/metadata_array/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/metadata_array/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_159/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_159/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_209/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_209/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_215/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_215/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/float_nan/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/float_nan/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/surrogate_low/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/surrogate_low/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/float_string/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/float_string/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_044/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_044/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_163/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_163/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_192/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_192/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_230/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_230/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/int_string/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/int_string/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_062/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_062/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_104/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_104/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_153/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_153/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_227/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_227/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_065/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_065/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_082/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_082/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_204/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_204/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/int_overflow/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/int_overflow/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_117/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_117/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_165/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_165/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/float_underflow/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/float_underflow/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/invalid_utf8/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/invalid_utf8/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_113/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_113/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_172/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_172/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_173/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_173/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_217/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_217/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/time_nano_offset/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/time_nano_offset/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/surrogate_high/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/surrogate_high/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_053/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_053/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_057/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_057/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_181/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_181/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_185/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_185/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_246/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_246/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/int_fraction/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/int_fraction/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_060/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_060/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_076/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_076/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_162/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_162/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_180/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_180/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/metadata_null_value/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/metadata_null_value/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_004/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_004/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_052/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_052/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_097/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_097/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_221/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_221/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/int_min/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/int_min/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_085/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_085/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_123/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_123/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_184/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_184/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_240/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_240/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_251/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/stored_251/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/null/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/null/seeded_true
+=== RUN   TestStoredSampleCompatibility/GoJSON/time_leap/seeded_false
+=== RUN   TestStoredSampleCompatibility/GoJSON/time_leap/seeded_true
+--- PASS: TestStoredSampleCompatibility (0.06s)
+    --- PASS: TestStoredSampleCompatibility/GoJSON (0.06s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_066/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_066/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_149/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_149/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_190/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_190/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_237/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_237/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_239/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_239/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_036/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_036/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_078/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_078/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_242/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_242/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/array/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/array/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/duplicate_scalar/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/duplicate_scalar/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_110/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_110/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/time_bad_offset/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/time_bad_offset/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_045/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_045/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_055/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_055/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_073/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_073/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_077/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_077/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_109/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_109/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_128/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_128/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/metadata_empty/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/metadata_empty/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_030/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_030/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_087/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_087/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_064/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_064/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_080/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_080/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_103/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_103/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_142/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_142/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/duplicate_map/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/duplicate_map/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_049/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_049/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_068/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_068/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_188/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_188/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_228/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_228/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_042/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_042/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_083/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_083/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_095/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_095/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_169/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_169/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_203/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_203/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/int_exponent/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/int_exponent/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/int_max/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/int_max/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_012/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_012/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_029/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_029/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_041/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_041/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_120/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_120/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_131/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_131/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/metadata_number/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/metadata_number/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_054/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_054/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_093/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_093/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_121/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_121/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_138/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_138/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_151/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_151/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_174/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_174/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_250/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_250/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_158/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_158/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_200/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_200/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_226/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_226/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/int_null/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/int_null/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_022/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_022/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_043/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_043/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_069/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_069/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_098/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_098/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_152/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_152/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_234/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_234/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_253/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_253/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_027/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_027/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_050/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_050/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_154/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_154/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_219/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_219/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_233/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_233/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/deleted_null/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/deleted_null/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/trailing_garbage/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/trailing_garbage/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_071/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_071/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_223/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_223/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_000/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_000/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_006/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_006/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_020/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_020/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_094/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_094/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_199/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_199/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_096/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_096/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_127/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_127/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_150/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_150/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_216/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_216/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_225/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_225/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/time_space/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/time_space/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_125/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_125/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_205/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_205/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/float_negative_zero/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/float_negative_zero/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_061/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_061/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_144/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_144/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_156/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_156/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_241/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_241/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_243/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_243/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_040/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_040/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_056/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_056/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_059/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_059/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_075/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_075/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_208/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_208/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/string/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/string/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/float_max/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/float_max/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_019/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_019/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_034/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_034/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_079/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_079/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_193/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_193/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_211/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_211/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_232/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_232/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_244/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_244/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/truncated/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/truncated/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/maximum_fields/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/maximum_fields/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_132/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_132/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_148/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_148/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_171/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_171/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_191/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_191/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_218/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_218/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_238/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_238/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_063/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_063/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_129/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_129/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_139/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_139/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_178/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_178/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_248/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_248/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/metadata_null/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/metadata_null/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/trailing_object/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/trailing_object/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_008/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_008/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_031/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_031/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_126/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_126/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_236/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_236/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_017/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_017/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_058/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_058/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_155/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_155/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/control_unescaped/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/control_unescaped/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_032/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_032/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_118/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_118/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_135/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_135/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_160/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_160/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_170/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_170/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/float_inf/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/float_inf/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/whitespace/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/whitespace/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_015/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_015/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_161/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_161/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_198/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_198/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_214/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_214/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_010/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_010/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_038/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_038/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_115/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_115/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_124/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_124/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_136/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_136/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_201/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_201/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/escape_invalid/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/escape_invalid/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_007/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_007/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_035/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_035/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_247/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_247/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/number/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/number/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_088/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_088/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_005/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_005/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_014/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_014/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_048/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_048/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_212/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_212/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_245/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_245/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/time_max/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/time_max/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_003/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_003/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_025/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_025/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_051/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_051/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_189/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_189/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_196/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_196/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/float_precision/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/float_precision/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_016/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_016/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_046/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_046/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_182/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_182/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_213/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_213/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/escaped_key/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/escaped_key/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/time_number/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/time_number/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_114/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_114/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/time_min/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/time_min/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/boolean/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/boolean/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_074/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_074/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_137/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_137/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_186/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_186/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/time_lowercase/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/time_lowercase/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_013/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_013/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_141/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_141/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_187/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_187/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_222/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_222/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_229/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_229/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/deleted_wrong/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/deleted_wrong/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/unicode/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/unicode/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_067/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_067/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_105/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_105/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_111/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_111/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_167/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_167/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_183/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_183/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_220/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_220/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_224/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_224/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_039/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_039/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_070/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_070/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_090/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_090/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_177/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_177/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_194/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_194/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_202/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_202/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/float_subnormal/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/float_subnormal/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_112/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_112/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_175/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_175/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/unknown_valid/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/unknown_valid/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_089/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_089/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_231/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_231/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/empty_input/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/empty_input/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/empty_object/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/empty_object/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_002/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_002/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_037/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_037/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_107/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_107/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_207/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_207/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_108/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_108/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_122/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_122/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_130/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_130/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_143/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_143/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_255/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_255/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/time_invalid_date/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/time_invalid_date/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/duplicate_null/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/duplicate_null/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_084/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_084/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_101/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_101/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_157/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_157/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_168/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_168/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_197/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_197/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/duplicate_map_null/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/duplicate_map_null/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_018/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_018/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_021/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_021/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_026/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_026/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_081/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_081/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_086/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_086/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_140/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_140/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_235/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_235/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_100/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_100/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/int_underflow/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/int_underflow/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_116/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_116/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_146/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_146/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/unknown_invalid/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/unknown_invalid/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_091/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_091/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_210/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_210/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_249/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_249/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_254/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_254/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_011/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_011/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_072/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_072/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_099/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_099/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_176/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_176/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/casefold/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/casefold/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_024/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_024/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_102/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_102/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_106/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_106/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_145/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_145/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_195/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_195/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/time_null/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/time_null/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_252/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_252/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_033/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_033/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_047/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_047/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_092/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_092/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_134/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_134/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_147/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_147/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_164/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_164/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_166/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_166/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/metadata_nested/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/metadata_nested/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_001/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_001/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_023/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_023/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_133/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_133/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_179/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_179/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/float_overflow/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/float_overflow/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_009/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_009/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_028/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_028/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_119/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_119/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_206/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_206/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/metadata_array/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/metadata_array/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_159/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_159/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_209/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_209/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_215/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_215/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/float_nan/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/float_nan/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/surrogate_low/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/surrogate_low/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/float_string/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/float_string/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_044/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_044/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_163/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_163/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_192/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_192/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_230/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_230/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/int_string/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/int_string/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_062/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_062/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_104/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_104/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_153/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_153/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_227/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_227/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_065/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_065/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_082/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_082/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_204/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_204/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/int_overflow/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/int_overflow/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_117/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_117/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_165/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_165/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/float_underflow/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/float_underflow/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/invalid_utf8/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/invalid_utf8/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_113/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_113/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_172/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_172/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_173/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_173/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_217/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_217/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/time_nano_offset/seeded_false (0.02s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/time_nano_offset/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/surrogate_high/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/surrogate_high/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_053/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_053/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_057/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_057/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_181/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_181/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_185/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_185/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_246/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_246/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/int_fraction/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/int_fraction/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_060/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_060/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_076/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_076/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_162/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_162/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_180/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_180/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/metadata_null_value/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/metadata_null_value/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_004/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_004/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_052/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_052/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_097/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_097/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_221/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_221/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/int_min/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/int_min/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_085/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_085/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_123/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_123/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_184/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_184/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_240/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_240/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_251/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/stored_251/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/null/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/null/seeded_true (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/time_leap/seeded_false (0.00s)
+        --- PASS: TestStoredSampleCompatibility/GoJSON/time_leap/seeded_true (0.00s)
+=== RUN   TestDecodedSampleOwnsStrings
+=== RUN   TestDecodedSampleOwnsStrings/Std
+=== RUN   TestDecodedSampleOwnsStrings/GoJSON
+=== RUN   TestDecodedSampleOwnsStrings/SonicStd
+--- PASS: TestDecodedSampleOwnsStrings (0.00s)
+    --- PASS: TestDecodedSampleOwnsStrings/Std (0.00s)
+    --- PASS: TestDecodedSampleOwnsStrings/GoJSON (0.00s)
+    --- PASS: TestDecodedSampleOwnsStrings/SonicStd (0.00s)
+PASS
+ok  	careold-go/json-experiment	0.387s

@@ -124,7 +124,7 @@ func TestLogoutDoesNotRequireDatabase(t *testing.T) {
 	if result.Code != http.StatusOK || !strings.Contains(result.Body.String(), "1111") {
 		t.Fatalf("offline logout: HTTP %d %s", result.Code, result.Body.String())
 	}
-	if store.FromRequest(request) != nil {
+	if store.Get(account.ID) != nil {
 		t.Fatal("logout retained the authenticated server session")
 	}
 }

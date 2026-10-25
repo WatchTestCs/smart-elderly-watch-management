@@ -1,0 +1,1281 @@
+{
+  "base_sha": "daac58a9d20420cc4bdf71675be64bcc20cc8e49",
+  "http": [
+    {
+      "name": "authenticated_probe",
+      "mode": "in_process",
+      "rounds": {
+        "baseline": 6,
+        "final": 6
+      },
+      "p50_ms": {
+        "baseline": 1.5252,
+        "final": 0.5258499999999999,
+        "change_percent": -65.52255441909259
+      },
+      "p95_ms": {
+        "baseline": 2.00325,
+        "final": 0.9675,
+        "change_percent": -51.70348184200674
+      },
+      "p99_ms": {
+        "baseline": 2.09865,
+        "final": 1.08495,
+        "change_percent": -48.30248016582088
+      },
+      "allocated_bytes_per_operation": {
+        "baseline": 13802.0,
+        "final": 8714.0,
+        "change_percent": -36.8642225764382
+      }
+    },
+    {
+      "name": "authenticated_probe",
+      "mode": "loopback_http",
+      "rounds": {
+        "baseline": 6,
+        "final": 6
+      },
+      "p50_ms": {
+        "baseline": 1.6277,
+        "final": 0.52615,
+        "change_percent": -67.67524728144006
+      },
+      "p95_ms": {
+        "baseline": 2.3296,
+        "final": 1.041,
+        "change_percent": -55.314217032967036
+      },
+      "p99_ms": {
+        "baseline": 2.6615,
+        "final": 1.22885,
+        "change_percent": -53.828668044335906
+      },
+      "allocated_bytes_per_operation": {
+        "baseline": 20789.0,
+        "final": 15690.5,
+        "change_percent": -24.524989176968592
+      }
+    },
+    {
+      "name": "bcrypt_verify_cost12",
+      "mode": "in_process",
+      "rounds": {
+        "baseline": 2,
+        "final": 2
+      },
+      "p50_ms": {
+        "baseline": 168.99534999999997,
+        "final": 171.3564,
+        "change_percent": 1.3971094470942802
+      },
+      "p95_ms": {
+        "baseline": 187.27679999999998,
+        "final": 195.5784,
+        "change_percent": 4.432796801312278
+      },
+      "p99_ms": {
+        "baseline": 203.6818,
+        "final": 207.7044,
+        "change_percent": 1.9749432693544344
+      },
+      "allocated_bytes_per_operation": {
+        "baseline": 5266.0,
+        "final": 5266.0,
+        "change_percent": 0.0
+      }
+    },
+    {
+      "name": "customer/select",
+      "mode": "in_process",
+      "rounds": {
+        "baseline": 6,
+        "final": 6
+      },
+      "p50_ms": {
+        "baseline": 2.96485,
+        "final": 1.50915,
+        "change_percent": -49.09860532573318
+      },
+      "p95_ms": {
+        "baseline": 3.9637000000000002,
+        "final": 2.1574,
+        "change_percent": -45.57105734540959
+      },
+      "p99_ms": {
+        "baseline": 4.4738,
+        "final": 2.5027999999999997,
+        "change_percent": -44.05650677276589
+      },
+      "allocated_bytes_per_operation": {
+        "baseline": 51359.0,
+        "final": 46375.0,
+        "change_percent": -9.704238789696063
+      }
+    },
+    {
+      "name": "customer/select",
+      "mode": "loopback_http",
+      "rounds": {
+        "baseline": 6,
+        "final": 6
+      },
+      "p50_ms": {
+        "baseline": 2.8461499999999997,
+        "final": 1.59925,
+        "change_percent": -43.8100592027827
+      },
+      "p95_ms": {
+        "baseline": 3.6870000000000003,
+        "final": 2.2441500000000003,
+        "change_percent": -39.13344182262001
+      },
+      "p99_ms": {
+        "baseline": 4.119949999999999,
+        "final": 2.77495,
+        "change_percent": -32.646027257612346
+      },
+      "allocated_bytes_per_operation": {
+        "baseline": 63990.0,
+        "final": 58839.0,
+        "change_percent": -8.049695264885138
+      }
+    },
+    {
+      "name": "device/list",
+      "mode": "in_process",
+      "rounds": {
+        "baseline": 6,
+        "final": 6
+      },
+      "p50_ms": {
+        "baseline": 2.3517,
+        "final": 1.32865,
+        "change_percent": -43.50257260705022
+      },
+      "p95_ms": {
+        "baseline": 2.91455,
+        "final": 2.06955,
+        "change_percent": -28.992468820229544
+      },
+      "p99_ms": {
+        "baseline": 3.2169499999999998,
+        "final": 2.4231499999999997,
+        "change_percent": -24.675546713501927
+      },
+      "allocated_bytes_per_operation": {
+        "baseline": 142056.0,
+        "final": 136297.0,
+        "change_percent": -4.054035028439484
+      }
+    },
+    {
+      "name": "device/list",
+      "mode": "loopback_http",
+      "rounds": {
+        "baseline": 6,
+        "final": 6
+      },
+      "p50_ms": {
+        "baseline": 2.68985,
+        "final": 1.6175,
+        "change_percent": -39.86653530866033
+      },
+      "p95_ms": {
+        "baseline": 3.5492,
+        "final": 2.4179500000000003,
+        "change_percent": -31.873379916600918
+      },
+      "p99_ms": {
+        "baseline": 4.2978000000000005,
+        "final": 2.8373999999999997,
+        "change_percent": -33.98017590395087
+      },
+      "allocated_bytes_per_operation": {
+        "baseline": 166589.0,
+        "final": 161604.0,
+        "change_percent": -2.992394455816405
+      }
+    },
+    {
+      "name": "family/select",
+      "mode": "in_process",
+      "rounds": {
+        "baseline": 6,
+        "final": 6
+      },
+      "p50_ms": {
+        "baseline": 2.3270999999999997,
+        "final": 1.24485,
+        "change_percent": -46.506381332989555
+      },
+      "p95_ms": {
+        "baseline": 2.9729,
+        "final": 2.03475,
+        "change_percent": -31.556729119714767
+      },
+      "p99_ms": {
+        "baseline": 3.41735,
+        "final": 2.25265,
+        "change_percent": -34.08196409498587
+      },
+      "allocated_bytes_per_operation": {
+        "baseline": 80860.5,
+        "final": 75085.5,
+        "change_percent": -7.14192961952993
+      }
+    },
+    {
+      "name": "family/select",
+      "mode": "loopback_http",
+      "rounds": {
+        "baseline": 6,
+        "final": 6
+      },
+      "p50_ms": {
+        "baseline": 2.37875,
+        "final": 1.3403,
+        "change_percent": -43.65528113504992
+      },
+      "p95_ms": {
+        "baseline": 3.069,
+        "final": 2.0662000000000003,
+        "change_percent": -32.67513848159008
+      },
+      "p99_ms": {
+        "baseline": 3.39065,
+        "final": 2.34185,
+        "change_percent": -30.932122159467944
+      },
+      "allocated_bytes_per_operation": {
+        "baseline": 95099.5,
+        "final": 89937.0,
+        "change_percent": -5.428524860803686
+      }
+    },
+    {
+      "name": "health/changes",
+      "mode": "in_process",
+      "rounds": {
+        "baseline": 6,
+        "final": 6
+      },
+      "p50_ms": {
+        "baseline": 2.3289,
+        "final": 1.2677,
+        "change_percent": -45.56657649534115
+      },
+      "p95_ms": {
+        "baseline": 2.8847,
+        "final": 1.7482,
+        "change_percent": -39.39751100634381
+      },
+      "p99_ms": {
+        "baseline": 3.15375,
+        "final": 1.8747,
+        "change_percent": -40.5564803804994
+      },
+      "allocated_bytes_per_operation": {
+        "baseline": 297381.0,
+        "final": 293472.0,
+        "change_percent": -1.3144753699799283
+      }
+    },
+    {
+      "name": "health/changes",
+      "mode": "loopback_http",
+      "rounds": {
+        "baseline": 6,
+        "final": 6
+      },
+      "p50_ms": {
+        "baseline": 2.6107,
+        "final": 1.5064,
+        "change_percent": -42.29900026812733
+      },
+      "p95_ms": {
+        "baseline": 3.6929499999999997,
+        "final": 2.17645,
+        "change_percent": -41.06473144775856
+      },
+      "p99_ms": {
+        "baseline": 4.214499999999999,
+        "final": 2.5718,
+        "change_percent": -38.97734013524735
+      },
+      "allocated_bytes_per_operation": {
+        "baseline": 422967.5,
+        "final": 416697.5,
+        "change_percent": -1.482383398251641
+      }
+    },
+    {
+      "name": "login",
+      "mode": "loopback_http",
+      "rounds": {
+        "baseline": 2,
+        "final": 2
+      },
+      "p50_ms": {
+        "baseline": 189.49290000000002,
+        "final": 188.3635,
+        "change_percent": -0.5960117766945494
+      },
+      "p95_ms": {
+        "baseline": 216.76375000000002,
+        "final": 196.21435,
+        "change_percent": -9.480090651688766
+      },
+      "p99_ms": {
+        "baseline": 229.74995,
+        "final": 200.94085,
+        "change_percent": -12.539328082552359
+      },
+      "allocated_bytes_per_operation": {
+        "baseline": 44943.0,
+        "final": 44211.0,
+        "change_percent": -1.628729724317468
+      }
+    },
+    {
+      "name": "notification/list",
+      "mode": "in_process",
+      "rounds": {
+        "baseline": 6,
+        "final": 6
+      },
+      "p50_ms": {
+        "baseline": 2.57215,
+        "final": 1.0566,
+        "change_percent": -58.92152479443268
+      },
+      "p95_ms": {
+        "baseline": 3.2611499999999998,
+        "final": 1.447,
+        "change_percent": -55.62914922649984
+      },
+      "p99_ms": {
+        "baseline": 4.3363499999999995,
+        "final": 1.85445,
+        "change_percent": -57.23477117852571
+      },
+      "allocated_bytes_per_operation": {
+        "baseline": 193672.0,
+        "final": 188804.0,
+        "change_percent": -2.513528026766909
+      }
+    },
+    {
+      "name": "notification/list",
+      "mode": "loopback_http",
+      "rounds": {
+        "baseline": 6,
+        "final": 6
+      },
+      "p50_ms": {
+        "baseline": 2.3918999999999997,
+        "final": 1.2294,
+        "change_percent": -48.60153016430452
+      },
+      "p95_ms": {
+        "baseline": 3.1938500000000003,
+        "final": 1.9818000000000002,
+        "change_percent": -37.94949668894907
+      },
+      "p99_ms": {
+        "baseline": 3.62515,
+        "final": 2.4377,
+        "change_percent": -32.75588596333945
+      },
+      "allocated_bytes_per_operation": {
+        "baseline": 237445.0,
+        "final": 231818.0,
+        "change_percent": -2.3698119564530717
+      }
+    },
+    {
+      "name": "oldPerson/select",
+      "mode": "in_process",
+      "rounds": {
+        "baseline": 6,
+        "final": 6
+      },
+      "p50_ms": {
+        "baseline": 2.70365,
+        "final": 1.6423999999999999,
+        "change_percent": -39.25249200155346
+      },
+      "p95_ms": {
+        "baseline": 3.32735,
+        "final": 2.60555,
+        "change_percent": -21.69293882519122
+      },
+      "p99_ms": {
+        "baseline": 3.80865,
+        "final": 2.8776,
+        "change_percent": -24.44566972549328
+      },
+      "allocated_bytes_per_operation": {
+        "baseline": 131840.0,
+        "final": 126346.5,
+        "change_percent": -4.166793082524267
+      }
+    },
+    {
+      "name": "oldPerson/select",
+      "mode": "loopback_http",
+      "rounds": {
+        "baseline": 6,
+        "final": 6
+      },
+      "p50_ms": {
+        "baseline": 3.0497500000000004,
+        "final": 2.0044,
+        "change_percent": -34.27658004754489
+      },
+      "p95_ms": {
+        "baseline": 3.7079,
+        "final": 2.7364499999999996,
+        "change_percent": -26.199466005016326
+      },
+      "p99_ms": {
+        "baseline": 4.249549999999999,
+        "final": 3.12925,
+        "change_percent": -26.36279135437869
+      },
+      "allocated_bytes_per_operation": {
+        "baseline": 150067.0,
+        "final": 144575.0,
+        "change_percent": -3.659698667928324
+      }
+    },
+    {
+      "name": "session.Get",
+      "mode": "database",
+      "rounds": {
+        "baseline": 6,
+        "final": 6
+      },
+      "p50_ms": {
+        "baseline": 0.7203999999999999,
+        "final": 0.52685,
+        "change_percent": -26.86701832315379
+      },
+      "p95_ms": {
+        "baseline": 1.2893,
+        "final": 0.8553,
+        "change_percent": -33.66167687892655
+      },
+      "p99_ms": {
+        "baseline": 1.6543999999999999,
+        "final": 1.1432,
+        "change_percent": -30.899419729206954
+      },
+      "allocated_bytes_per_operation": {
+        "baseline": 4748.5,
+        "final": 4355.5,
+        "change_percent": -8.276297778245766
+      }
+    },
+    {
+      "name": "statistics_hot",
+      "mode": "in_process",
+      "rounds": {
+        "baseline": 6,
+        "final": 6
+      },
+      "p50_ms": {
+        "baseline": 1.99465,
+        "final": 0.76275,
+        "change_percent": -61.76020855789236
+      },
+      "p95_ms": {
+        "baseline": 2.7561,
+        "final": 1.3122,
+        "change_percent": -52.38924567323391
+      },
+      "p99_ms": {
+        "baseline": 3.09945,
+        "final": 1.7184,
+        "change_percent": -44.55790543483522
+      },
+      "allocated_bytes_per_operation": {
+        "baseline": 18322.0,
+        "final": 12751.5,
+        "change_percent": -30.40334024669796
+      }
+    },
+    {
+      "name": "statistics_hot",
+      "mode": "loopback_http",
+      "rounds": {
+        "baseline": 6,
+        "final": 6
+      },
+      "p50_ms": {
+        "baseline": 2.04505,
+        "final": 1.03625,
+        "change_percent": -49.328867264859056
+      },
+      "p95_ms": {
+        "baseline": 2.80855,
+        "final": 1.58115,
+        "change_percent": -43.702266293995116
+      },
+      "p99_ms": {
+        "baseline": 3.1446,
+        "final": 1.7842500000000001,
+        "change_percent": -43.259874069834005
+      },
+      "allocated_bytes_per_operation": {
+        "baseline": 25143.0,
+        "final": 20059.0,
+        "change_percent": -20.220339657161034
+      }
+    },
+    {
+      "name": "statistics_uncached",
+      "mode": "in_process",
+      "rounds": {
+        "baseline": 6,
+        "final": 6
+      },
+      "p50_ms": {
+        "baseline": 36.072900000000004,
+        "final": 22.2039,
+        "change_percent": -38.447144532322056
+      },
+      "p95_ms": {
+        "baseline": 43.2654,
+        "final": 24.6149,
+        "change_percent": -43.10719420137108
+      },
+      "p99_ms": {
+        "baseline": 46.19755,
+        "final": 27.2568,
+        "change_percent": -40.9994685865376
+      },
+      "allocated_bytes_per_operation": {
+        "baseline": 32319129.0,
+        "final": 18266957.5,
+        "change_percent": -43.479425141686214
+      }
+    },
+    {
+      "name": "statistics_uncached",
+      "mode": "loopback_http",
+      "rounds": {
+        "baseline": 6,
+        "final": 6
+      },
+      "p50_ms": {
+        "baseline": 37.4835,
+        "final": 22.817050000000002,
+        "change_percent": -39.1277495431323
+      },
+      "p95_ms": {
+        "baseline": 46.37475,
+        "final": 24.360599999999998,
+        "change_percent": -47.47012113272848
+      },
+      "p99_ms": {
+        "baseline": 49.17755,
+        "final": 24.806,
+        "change_percent": -49.55828421708686
+      },
+      "allocated_bytes_per_operation": {
+        "baseline": 32370459.5,
+        "final": 18318407.0,
+        "change_percent": -43.41011130842922
+      }
+    },
+    {
+      "name": "text/select",
+      "mode": "in_process",
+      "rounds": {
+        "baseline": 6,
+        "final": 6
+      },
+      "p50_ms": {
+        "baseline": 2.66885,
+        "final": 1.554,
+        "change_percent": -41.77267362347078
+      },
+      "p95_ms": {
+        "baseline": 3.33935,
+        "final": 2.20035,
+        "change_percent": -34.1084342761316
+      },
+      "p99_ms": {
+        "baseline": 3.6765499999999998,
+        "final": 2.83095,
+        "change_percent": -22.999823203818792
+      },
+      "allocated_bytes_per_operation": {
+        "baseline": 40102.0,
+        "final": 35102.5,
+        "change_percent": -12.466959253902543
+      }
+    },
+    {
+      "name": "text/select",
+      "mode": "loopback_http",
+      "rounds": {
+        "baseline": 6,
+        "final": 6
+      },
+      "p50_ms": {
+        "baseline": 2.82985,
+        "final": 1.5863999999999998,
+        "change_percent": -43.94049154548828
+      },
+      "p95_ms": {
+        "baseline": 3.6578999999999997,
+        "final": 2.2815,
+        "change_percent": -37.62814729762979
+      },
+      "p99_ms": {
+        "baseline": 4.2467,
+        "final": 2.7055,
+        "change_percent": -36.29170885628841
+      },
+      "allocated_bytes_per_operation": {
+        "baseline": 53131.5,
+        "final": 47828.0,
+        "change_percent": -9.981837516350945
+      }
+    }
+  ],
+  "benchmarks": [
+    {
+      "kind": "lists",
+      "name": "BenchmarkListPagination/100/customer/first",
+      "baseline": {
+        "ns": 1193304.5,
+        "bytes": 32448.0,
+        "allocations": 600.0
+      },
+      "final": {
+        "ns": 929339.5,
+        "bytes": 32629.0,
+        "allocations": 602.0
+      },
+      "change_percent": -22.12050654296536
+    },
+    {
+      "kind": "lists",
+      "name": "BenchmarkListPagination/100/customer/last",
+      "baseline": {
+        "ns": 1308806.5,
+        "bytes": 33132.5,
+        "allocations": 600.0
+      },
+      "final": {
+        "ns": 939701.5,
+        "bytes": 32553.5,
+        "allocations": 602.0
+      },
+      "change_percent": -28.20164783717074
+    },
+    {
+      "kind": "lists",
+      "name": "BenchmarkListPagination/100/customer/out_of_range",
+      "baseline": {
+        "ns": 1164689.0,
+        "bytes": 10422.5,
+        "allocations": 94.0
+      },
+      "final": {
+        "ns": 889400.0,
+        "bytes": 9904.0,
+        "allocations": 83.0
+      },
+      "change_percent": -23.636266848918464
+    },
+    {
+      "kind": "lists",
+      "name": "BenchmarkListPagination/100/customer/selective",
+      "baseline": {
+        "ns": 796504.0,
+        "bytes": 12987.0,
+        "allocations": 150.0
+      },
+      "final": {
+        "ns": 454848.5,
+        "bytes": 12024.5,
+        "allocations": 133.0
+      },
+      "change_percent": -42.89438596667436
+    },
+    {
+      "kind": "lists",
+      "name": "BenchmarkListPagination/100/family/first",
+      "baseline": {
+        "ns": 894501.5,
+        "bytes": 48116.5,
+        "allocations": 903.0
+      },
+      "final": {
+        "ns": 941256.0,
+        "bytes": 47769.0,
+        "allocations": 904.0
+      },
+      "change_percent": 5.226877763760029
+    },
+    {
+      "kind": "lists",
+      "name": "BenchmarkListPagination/100/family/last",
+      "baseline": {
+        "ns": 914284.0,
+        "bytes": 48059.0,
+        "allocations": 903.0
+      },
+      "final": {
+        "ns": 900240.0,
+        "bytes": 47778.5,
+        "allocations": 904.0
+      },
+      "change_percent": -1.5360653801225865
+    },
+    {
+      "kind": "lists",
+      "name": "BenchmarkListPagination/100/family/out_of_range",
+      "baseline": {
+        "ns": 829800.0,
+        "bytes": 10400.0,
+        "allocations": 97.0
+      },
+      "final": {
+        "ns": 881630.0,
+        "bytes": 10725.5,
+        "allocations": 98.0
+      },
+      "change_percent": 6.246083393588808
+    },
+    {
+      "kind": "lists",
+      "name": "BenchmarkListPagination/100/family/selective",
+      "baseline": {
+        "ns": 811250.5,
+        "bytes": 14136.5,
+        "allocations": 183.0
+      },
+      "final": {
+        "ns": 437164.0,
+        "bytes": 13514.0,
+        "allocations": 163.0
+      },
+      "change_percent": -46.11232905249365
+    },
+    {
+      "kind": "lists",
+      "name": "BenchmarkListPagination/100/text/first",
+      "baseline": {
+        "ns": 1624033.0,
+        "bytes": 41607.0,
+        "allocations": 342.0
+      },
+      "final": {
+        "ns": 1061787.5,
+        "bytes": 41673.0,
+        "allocations": 325.0
+      },
+      "change_percent": -34.6203248333008
+    },
+    {
+      "kind": "lists",
+      "name": "BenchmarkListPagination/100/text/last",
+      "baseline": {
+        "ns": 1510525.0,
+        "bytes": 41597.5,
+        "allocations": 342.0
+      },
+      "final": {
+        "ns": 1018036.5,
+        "bytes": 41288.0,
+        "allocations": 325.0
+      },
+      "change_percent": -32.60379669320269
+    },
+    {
+      "kind": "lists",
+      "name": "BenchmarkListPagination/100/text/out_of_range",
+      "baseline": {
+        "ns": 1408743.5,
+        "bytes": 10653.5,
+        "allocations": 96.0
+      },
+      "final": {
+        "ns": 989378.5,
+        "bytes": 10168.0,
+        "allocations": 81.0
+      },
+      "change_percent": -29.768726528285672
+    },
+    {
+      "kind": "lists",
+      "name": "BenchmarkListPagination/100/text/selective",
+      "baseline": {
+        "ns": 947542.5,
+        "bytes": 13669.0,
+        "allocations": 125.0
+      },
+      "final": {
+        "ns": 480963.5,
+        "bytes": 13048.0,
+        "allocations": 108.0
+      },
+      "change_percent": -49.24095752960949
+    },
+    {
+      "kind": "lists",
+      "name": "BenchmarkListPagination/10000/customer/first",
+      "baseline": {
+        "ns": 1416710.0,
+        "bytes": 32835.0,
+        "allocations": 602.0
+      },
+      "final": {
+        "ns": 1480532.5,
+        "bytes": 32782.0,
+        "allocations": 623.0
+      },
+      "change_percent": 4.504979847675239
+    },
+    {
+      "kind": "lists",
+      "name": "BenchmarkListPagination/10000/customer/last",
+      "baseline": {
+        "ns": 2582157.0,
+        "bytes": 33497.0,
+        "allocations": 646.0
+      },
+      "final": {
+        "ns": 2242985.0,
+        "bytes": 33064.0,
+        "allocations": 667.0
+      },
+      "change_percent": -13.135219895614403
+    },
+    {
+      "kind": "lists",
+      "name": "BenchmarkListPagination/10000/customer/out_of_range",
+      "baseline": {
+        "ns": 2552305.0,
+        "bytes": 10160.0,
+        "allocations": 100.0
+      },
+      "final": {
+        "ns": 2160936.0,
+        "bytes": 9952.0,
+        "allocations": 89.0
+      },
+      "change_percent": -15.333943239542291
+    },
+    {
+      "kind": "lists",
+      "name": "BenchmarkListPagination/10000/customer/selective",
+      "baseline": {
+        "ns": 3111015.0,
+        "bytes": 22212.5,
+        "allocations": 378.0
+      },
+      "final": {
+        "ns": 2434597.0,
+        "bytes": 21515.5,
+        "allocations": 378.0
+      },
+      "change_percent": -21.742678836328334
+    },
+    {
+      "kind": "lists",
+      "name": "BenchmarkListPagination/10000/family/first",
+      "baseline": {
+        "ns": 8247587.5,
+        "bytes": 47460.5,
+        "allocations": 905.0
+      },
+      "final": {
+        "ns": 8182002.0,
+        "bytes": 47474.0,
+        "allocations": 906.0
+      },
+      "change_percent": -0.7952082957592199
+    },
+    {
+      "kind": "lists",
+      "name": "BenchmarkListPagination/10000/family/last",
+      "baseline": {
+        "ns": 8839070.0,
+        "bytes": 48162.5,
+        "allocations": 949.0
+      },
+      "final": {
+        "ns": 8798627.5,
+        "bytes": 48558.0,
+        "allocations": 950.0
+      },
+      "change_percent": -0.4575424790164595
+    },
+    {
+      "kind": "lists",
+      "name": "BenchmarkListPagination/10000/family/out_of_range",
+      "baseline": {
+        "ns": 8917349.0,
+        "bytes": 11051.0,
+        "allocations": 103.0
+      },
+      "final": {
+        "ns": 8703047.5,
+        "bytes": 10757.5,
+        "allocations": 104.0
+      },
+      "change_percent": -2.4031974076600515
+    },
+    {
+      "kind": "lists",
+      "name": "BenchmarkListPagination/10000/family/selective",
+      "baseline": {
+        "ns": 1183773.5,
+        "bytes": 30065.0,
+        "allocations": 531.0
+      },
+      "final": {
+        "ns": 658413.5,
+        "bytes": 28803.5,
+        "allocations": 510.0
+      },
+      "change_percent": -44.380111566950944
+    },
+    {
+      "kind": "lists",
+      "name": "BenchmarkListPagination/10000/text/first",
+      "baseline": {
+        "ns": 6455208.0,
+        "bytes": 41773.5,
+        "allocations": 364.0
+      },
+      "final": {
+        "ns": 6010087.5,
+        "bytes": 41984.0,
+        "allocations": 366.0
+      },
+      "change_percent": -6.895525287488802
+    },
+    {
+      "kind": "lists",
+      "name": "BenchmarkListPagination/10000/text/last",
+      "baseline": {
+        "ns": 15045770.0,
+        "bytes": 41336.5,
+        "allocations": 348.0
+      },
+      "final": {
+        "ns": 15306245.0,
+        "bytes": 41860.0,
+        "allocations": 350.0
+      },
+      "change_percent": 1.7312174784009038
+    },
+    {
+      "kind": "lists",
+      "name": "BenchmarkListPagination/10000/text/out_of_range",
+      "baseline": {
+        "ns": 14623557.0,
+        "bytes": 11012.5,
+        "allocations": 102.0
+      },
+      "final": {
+        "ns": 14927220.5,
+        "bytes": 10219.5,
+        "allocations": 87.0
+      },
+      "change_percent": 2.076536508867166
+    },
+    {
+      "kind": "lists",
+      "name": "BenchmarkListPagination/10000/text/selective",
+      "baseline": {
+        "ns": 3917118.5,
+        "bytes": 26869.0,
+        "allocations": 233.0
+      },
+      "final": {
+        "ns": 3265126.5,
+        "bytes": 25961.0,
+        "allocations": 225.0
+      },
+      "change_percent": -16.644684096230435
+    },
+    {
+      "kind": "cpu",
+      "name": "BenchmarkActivityWindow/daily_total/100/reference",
+      "baseline": {
+        "ns": 10708.5,
+        "bytes": 66032.0,
+        "allocations": 108.0
+      },
+      "final": {
+        "ns": 10272.5,
+        "bytes": 66032.0,
+        "allocations": 108.0
+      },
+      "change_percent": -4.071531960592056
+    },
+    {
+      "kind": "cpu",
+      "name": "BenchmarkActivityWindow/daily_total/100/stream",
+      "baseline": {
+        "ns": 4784.5,
+        "bytes": 0.0,
+        "allocations": 0.0
+      },
+      "final": {
+        "ns": 3336.0,
+        "bytes": 0.0,
+        "allocations": 0.0
+      },
+      "change_percent": -30.274845856411325
+    },
+    {
+      "kind": "cpu",
+      "name": "BenchmarkActivityWindow/daily_total/1000/reference",
+      "baseline": {
+        "ns": 111324.5,
+        "bytes": 802322.5,
+        "allocations": 1012.0
+      },
+      "final": {
+        "ns": 86386.5,
+        "bytes": 802323.0,
+        "allocations": 1012.0
+      },
+      "change_percent": -22.401178536620424
+    },
+    {
+      "kind": "cpu",
+      "name": "BenchmarkActivityWindow/daily_total/1000/stream",
+      "baseline": {
+        "ns": 48314.0,
+        "bytes": 0.0,
+        "allocations": 0.0
+      },
+      "final": {
+        "ns": 32859.5,
+        "bytes": 0.0,
+        "allocations": 0.0
+      },
+      "change_percent": -31.987622635261005
+    },
+    {
+      "kind": "cpu",
+      "name": "BenchmarkActivityWindow/interval/100/reference",
+      "baseline": {
+        "ns": 24132.0,
+        "bytes": 131600.0,
+        "allocations": 122.0
+      },
+      "final": {
+        "ns": 15617.5,
+        "bytes": 68280.0,
+        "allocations": 121.0
+      },
+      "change_percent": -35.28302668655727
+    },
+    {
+      "kind": "cpu",
+      "name": "BenchmarkActivityWindow/interval/100/stream",
+      "baseline": {
+        "ns": 6710.0,
+        "bytes": 0.0,
+        "allocations": 0.0
+      },
+      "final": {
+        "ns": 6080.5,
+        "bytes": 0.0,
+        "allocations": 0.0
+      },
+      "change_percent": -9.38152011922504
+    },
+    {
+      "kind": "cpu",
+      "name": "BenchmarkActivityWindow/interval/1000/reference",
+      "baseline": {
+        "ns": 262317.5,
+        "bytes": 1596980.0,
+        "allocations": 1030.0
+      },
+      "final": {
+        "ns": 142248.5,
+        "bytes": 819928.5,
+        "allocations": 1028.0
+      },
+      "change_percent": -45.77239414068829
+    },
+    {
+      "kind": "cpu",
+      "name": "BenchmarkActivityWindow/interval/1000/stream",
+      "baseline": {
+        "ns": 67646.5,
+        "bytes": 0.0,
+        "allocations": 0.0
+      },
+      "final": {
+        "ns": 60478.5,
+        "bytes": 0.0,
+        "allocations": 0.0
+      },
+      "change_percent": -10.596261447377175
+    },
+    {
+      "kind": "cpu",
+      "name": "BenchmarkAggregate/daily_total/10",
+      "baseline": {
+        "ns": 2669.5,
+        "bytes": 8312.0,
+        "allocations": 19.0
+      },
+      "final": {
+        "ns": 683.7,
+        "bytes": 272.0,
+        "allocations": 8.0
+      },
+      "change_percent": -74.38846225884997
+    },
+    {
+      "kind": "cpu",
+      "name": "BenchmarkAggregate/daily_total/1000",
+      "baseline": {
+        "ns": 178044.5,
+        "bytes": 810584.5,
+        "allocations": 1016.0
+      },
+      "final": {
+        "ns": 51755.0,
+        "bytes": 17552.0,
+        "allocations": 14.0
+      },
+      "change_percent": -70.93142444725898
+    },
+    {
+      "kind": "cpu",
+      "name": "BenchmarkAggregate/instant/10",
+      "baseline": {
+        "ns": 1522.0,
+        "bytes": 7912.0,
+        "allocations": 8.0
+      },
+      "final": {
+        "ns": 211.95,
+        "bytes": 272.0,
+        "allocations": 8.0
+      },
+      "change_percent": -86.0742444152431
+    },
+    {
+      "kind": "cpu",
+      "name": "BenchmarkAggregate/instant/1000",
+      "baseline": {
+        "ns": 80452.0,
+        "bytes": 794344.0,
+        "allocations": 15.0
+      },
+      "final": {
+        "ns": 9543.0,
+        "bytes": 17552.0,
+        "allocations": 14.0
+      },
+      "change_percent": -88.13826878138518
+    },
+    {
+      "kind": "cpu",
+      "name": "BenchmarkAggregate/interval/10",
+      "baseline": {
+        "ns": 2218.5,
+        "bytes": 8224.0,
+        "allocations": 11.0
+      },
+      "final": {
+        "ns": 762.85,
+        "bytes": 328.0,
+        "allocations": 10.0
+      },
+      "change_percent": -65.61415370746
+    },
+    {
+      "kind": "cpu",
+      "name": "BenchmarkAggregate/interval/1000",
+      "baseline": {
+        "ns": 125400.0,
+        "bytes": 794656.0,
+        "allocations": 18.0
+      },
+      "final": {
+        "ns": 54759.5,
+        "bytes": 17608.0,
+        "allocations": 16.0
+      },
+      "change_percent": -56.332137161084525
+    },
+    {
+      "kind": "cpu",
+      "name": "BenchmarkAggregate/sleep/10",
+      "baseline": {
+        "ns": 2812.5,
+        "bytes": 12216.0,
+        "allocations": 27.0
+      },
+      "final": {
+        "ns": 1685.0,
+        "bytes": 4576.0,
+        "allocations": 27.0
+      },
+      "change_percent": -40.08888888888889
+    },
+    {
+      "kind": "cpu",
+      "name": "BenchmarkAggregate/sleep/1000",
+      "baseline": {
+        "ns": 135501.5,
+        "bytes": 1088472.0,
+        "allocations": 46.0
+      },
+      "final": {
+        "ns": 74366.5,
+        "bytes": 311680.0,
+        "allocations": 45.0
+      },
+      "change_percent": -45.11758172418755
+    },
+    {
+      "kind": "cpu",
+      "name": "BenchmarkAggregate/sparse/10",
+      "baseline": {
+        "ns": 156.05,
+        "bytes": 264.0,
+        "allocations": 4.0
+      },
+      "final": {
+        "ns": 60.825,
+        "bytes": 32.0,
+        "allocations": 4.0
+      },
+      "change_percent": -61.022108298622236
+    },
+    {
+      "kind": "cpu",
+      "name": "BenchmarkAggregate/sparse/1000",
+      "baseline": {
+        "ns": 4640.0,
+        "bytes": 7912.0,
+        "allocations": 8.0
+      },
+      "final": {
+        "ns": 1020.65,
+        "bytes": 272.0,
+        "allocations": 8.0
+      },
+      "change_percent": -78.00323275862068
+    }
+  ]
+}

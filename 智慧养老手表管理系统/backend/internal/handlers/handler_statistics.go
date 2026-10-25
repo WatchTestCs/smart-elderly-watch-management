@@ -10,6 +10,7 @@ import (
 	"careold-go/internal/health"
 	"careold-go/internal/observability"
 	"careold-go/internal/response"
+	fastjson "github.com/goccy/go-json"
 )
 
 func (h *Handler) healthStatistics(w http.ResponseWriter, r *http.Request) {
@@ -93,7 +94,9 @@ func (h *Handler) healthStatistics(w http.ResponseWriter, r *http.Request) {
 			response.Error500(w, ref())
 			return
 		}
-		if err = json.Unmarshal(b, &s); err != nil {
+		// Stored samples use the compatible decoder; request validation and
+		// canonical/cache encoding retain encoding/json.
+		if err = fastjson.Unmarshal(b, &s); err != nil {
 			response.Error500(w, ref())
 			return
 		}

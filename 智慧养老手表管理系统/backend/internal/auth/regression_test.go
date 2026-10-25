@@ -24,3 +24,19 @@ func TestLogoutRoleAccess(t *testing.T) {
 		})
 	}
 }
+
+func TestContextPrincipalDoesNotReplaceSessionValidation(t *testing.T) {
+	store := session.NewStore(time.Hour)
+	sess := store.Create(session.Principal{Role: auth.RoleAdmin, ID: 1})
+	store.Destroy(sess.ID)
+	r := httptest.NewRequest(http.MethodPost, "/restful/userLogin/logout", nil)
+	r.AddCookie(&http.Cookie{Name: session.CookieName, Value: sess.ID})
+	r = session.WithContext(r, sess)
+	w := httptest.NewRecorder()
+	auth.Middleware(store, http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
+		t.Fatal("unvalidated context principal authorized")
+	})).ServeHTTP(w, r)
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401, got %d", w.Code)
+	}
+}

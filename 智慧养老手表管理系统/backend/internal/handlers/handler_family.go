@@ -60,17 +60,12 @@ func (h *Handler) familySelect(w http.ResponseWriter, r *http.Request) {
 	p, ps := bodyPage(m)
 	ctx := r.Context()
 	var total int64
-	if err := h.DB.QueryRow(ctx,
-		`SELECT COUNT(*) FROM oldperson o JOIN family f ON o.family_id=f.family_id
-		 WHERE ($1='' OR f.family_name LIKE '%'||$1||'%')`, name).Scan(&total); err != nil {
-		response.Error500(w, ref())
-		return
-	}
+	const filter = ` FROM oldperson o JOIN family f ON o.family_id=f.family_id
+		 WHERE ($1='' OR f.family_name LIKE '%'||$1||'%')`
+	const countSQL = `SELECT COUNT(*) AS total` + filter
 	rows, err := h.DB.Query(ctx,
 		`SELECT o.old_id,o.name,f.family_id,f.family_name,f.family_relation,
-		        f.family_sex,f.family_phone,f.family_address,f.family_tou_pic
-		 FROM oldperson o JOIN family f ON o.family_id=f.family_id
-		 WHERE ($1='' OR f.family_name LIKE '%'||$1||'%')
+		        f.family_sex,f.family_phone,f.family_address,f.family_tou_pic`+filter+`
 		 ORDER BY o.old_id LIMIT $2 OFFSET $3`, name, ps, (p-1)*ps)
 	if err != nil {
 		response.Error500(w, ref())
@@ -94,6 +89,16 @@ func (h *Handler) familySelect(w http.ResponseWriter, r *http.Request) {
 	if err := rows.Err(); err != nil {
 		response.Error500(w, ref())
 		return
+	}
+	// A partial page determines the total, except for an empty later page.
+	if len(list) < ps && (p == 1 || len(list) > 0) {
+		total = int64((p-1)*ps + len(list))
+	} else {
+		rows.Close()
+		if err := h.DB.QueryRow(ctx, countSQL, name).Scan(&total); err != nil {
+			response.Error500(w, ref())
+			return
+		}
 	}
 	response.JSON(w, http.StatusOK, map[string]any{
 		"familyDtos": list, "total": total, "page": p, "pageSize": ps,

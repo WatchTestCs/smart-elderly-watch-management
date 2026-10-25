@@ -14,13 +14,35 @@ type activityWindow struct {
 	semantics, source, device, metric string
 	counterTimezone                   string
 	counterOffset                     int
+	counterLocation                   *time.Location
+	previousLocation                  *time.Location
+	previousYear, previousDay         int
+	previousMonth                     time.Month
+	nightTimezone                     string
+	nightLocation                     *time.Location
 	previousAt                        time.Time
 	previousEnd                       time.Time
 	invalid                           bool
 }
 
+func (w *activityWindow) night(p Policy, at time.Time) bool {
+	if w.nightLocation == nil || w.nightTimezone != p.Timezone {
+		loc, err := ruleLocation(p.Timezone)
+		if err != nil {
+			return false
+		}
+		w.nightTimezone, w.nightLocation = p.Timezone, loc
+	}
+	hour, minute, second := at.In(w.nightLocation).Clock()
+	s := hour*3600 + minute*60 + second
+	if p.NightBegin < p.NightEnd {
+		return s >= p.NightBegin && s < p.NightEnd
+	}
+	return s >= p.NightBegin || s < p.NightEnd
+}
+
 func (w *activityWindow) add(p Policy, sample health.Sample, from, to time.Time) {
-	if sample.Value == nil || !p.Night(sample.Start) || sample.TimeBasis == "legacy-unzoned" {
+	if sample.Value == nil || !w.night(p, sample.Start) || sample.TimeBasis == "legacy-unzoned" {
 		return
 	}
 	if w.count == 0 {
@@ -34,20 +56,28 @@ func (w *activityWindow) add(p Policy, sample health.Sample, from, to time.Time)
 		loc := sample.Start.Location()
 		_, offset := sample.Start.Zone()
 		if zone != "" {
-			var err error
-			loc, err = ruleLocation(zone)
-			if err != nil || zone == "Local" {
-				w.invalid = true
-				return
+			if zone == w.counterTimezone && w.counterLocation != nil {
+				loc = w.counterLocation
+			} else {
+				var err error
+				loc, err = ruleLocation(zone)
+				if err != nil || zone == "Local" {
+					w.invalid = true
+					return
+				}
 			}
 		}
+		y, m, d := sample.Start.In(loc).Date()
 		if w.count == 0 {
 			w.counterTimezone, w.counterOffset = zone, offset
+			w.counterLocation = loc
 		} else if zone != w.counterTimezone || zone == "" && offset != w.counterOffset || sample.Start.Before(w.previousAt) {
 			w.invalid = true
 		} else {
-			y, m, d := sample.Start.In(loc).Date()
-			py, pm, pd := w.previousAt.In(loc).Date()
+			py, pm, pd := w.previousYear, w.previousMonth, w.previousDay
+			if loc != w.previousLocation {
+				py, pm, pd = w.previousAt.In(loc).Date()
+			}
 			if y != py || m != pm || d != pd {
 				// The new day's cumulative value is already an increment,
 				// even when it is larger than the last pre-midnight sample.
@@ -61,6 +91,8 @@ func (w *activityWindow) add(p Policy, sample health.Sample, from, to time.Time)
 		if !(*sample.Value >= 0 && *sample.Value <= 9007199254740991) {
 			w.invalid = true
 		}
+		w.previousYear, w.previousMonth, w.previousDay = y, m, d
+		w.previousLocation = loc
 	} else if sample.Semantics == "interval" {
 		if !sample.Deleted {
 			if w.intervals == 0 {

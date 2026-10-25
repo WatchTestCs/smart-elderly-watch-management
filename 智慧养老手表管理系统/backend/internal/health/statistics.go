@@ -81,9 +81,15 @@ func IntervalSteps(s Sample, from, to time.Time) (float64, error) {
 // use only the latest sample per day in the requested reporting offset.
 func Aggregate(samples []Sample, from, to time.Time) (Statistics, error) {
 	out := Statistics{}
-	daily := map[string]Sample{}
-	filtered := []Sample{}
-	for _, s := range samples {
+	type calendarDay struct {
+		year  int
+		month time.Month
+		day   int
+	}
+	daily := map[calendarDay]*Sample{}
+	filtered := []*Sample{}
+	for i := range samples {
+		s := &samples[i]
 		if s.Deleted || s.Value == nil {
 			continue
 		}
@@ -97,12 +103,13 @@ func Aggregate(samples []Sample, from, to time.Time) (Statistics, error) {
 			}
 		}
 		if s.Semantics == "daily_total" {
-			day := s.Start.In(from.Location()).Format("2006-01-02")
-			if old, ok := daily[day]; ok && s.Start.Equal(old.Start) && *s.Value != *old.Value {
+			year, month, day := s.Start.In(from.Location()).Date()
+			key := calendarDay{year, month, day}
+			if old, ok := daily[key]; ok && s.Start.Equal(old.Start) && *s.Value != *old.Value {
 				return out, fmt.Errorf("conflicting daily totals at the same observation time")
 			}
-			if old, ok := daily[day]; !ok || s.Start.After(old.Start) {
-				daily[day] = s
+			if old, ok := daily[key]; !ok || s.Start.After(old.Start) {
+				daily[key] = s
 			}
 		}
 		filtered = append(filtered, s)
@@ -159,7 +166,7 @@ func Aggregate(samples []Sample, from, to time.Time) (Statistics, error) {
 			if i > 0 && s.Start.Before(filtered[i-1].End) {
 				return out, fmt.Errorf("overlapping step intervals require source review")
 			}
-			v, err := IntervalSteps(s, from, to)
+			v, err := IntervalSteps(*s, from, to)
 			if err != nil {
 				return out, err
 			}
