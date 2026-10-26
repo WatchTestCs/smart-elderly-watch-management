@@ -1,0 +1,52 @@
+{
+  "source_sha": "2d0f308996115dab106f03627b98c007e9cb1ff2",
+  "binary_sha256": "7f566654d95edd7a783798f4c320b9e6aca616b16242516304cd124bf6b9bc36",
+  "scope": "local real processes/MySQL/PostgreSQL/TLS gateway/Prometheus/Alertmanager/receiver; synthetic device and actors; no external host or human paging verified",
+  "mysql_port": 33372,
+  "pg_port": 55471,
+  "mysql_durability": {
+    "datadir": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\suining-reliability-20261026\\process-drill\\b5ef267dd9d0\\mysql\\",
+    "version": "8.0.43",
+    "innodb_flush_log_at_trx_commit": 1
+  },
+  "postgres_version": "postgres (PostgreSQL) 16.15",
+  "cases": [
+    {
+      "case": "SOS duplicate + signed receipt",
+      "result": "pass",
+      "unix": 1793010816.6804283,
+      "incident_id": 1,
+      "notification": {
+        "id": 1,
+        "status": "delivered",
+        "attempts": 1,
+        "last_error": null,
+        "retry_seconds": -28801
+      },
+      "incident": {
+        "state": "notified",
+        "resolved": null,
+        "acknowledged": null
+      }
+    },
+    {
+      "case": "connection severed after provider acceptance",
+      "result": "pass",
+      "unix": 1793010818.818485,
+      "notification": {
+        "id": 2,
+        "status": "delivered",
+        "attempts": 1,
+        "last_error": "gateway network failure",
+        "retry_seconds": -28770
+      },
+      "incident": {
+        "state": "notified",
+        "resolved": null,
+        "acknowledged": null
+      }
+    }
+  ],
+  "complete": false,
+  "smoke_only": true
+}

@@ -5,6 +5,8 @@
 CSV 包含每一个字段、实际索引、查询需求、当前形态和迁移设计。S2 为内部元数据，S3 为人员与
 联系方式，S4 为健康、位置、凭据及可关联的敏感载荷。此分级是工程设计，不是合规认证。
 表的其他列也可能通过 ID 关联到自然人，不能当作匿名数据发布。
+PG 的 7 个基表字段、12 个视图输出及非字段资产另列于
+[projection-and-assets.csv](projection-and-assets.csv)，依据 migrations/analytics/0001_projection.sql。
 
 ## 当前边界
 

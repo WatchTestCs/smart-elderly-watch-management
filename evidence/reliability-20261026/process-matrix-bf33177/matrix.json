@@ -1,0 +1,156 @@
+{
+  "source_sha": "bf331775e68b43c64ad3dfaa37ec1f63291eb3f0",
+  "working_tree_dirty": false,
+  "binary_sha256": "806c4f920014254812efa1d695ec266ada99286d0e6e8f184249bf0ef40ac244",
+  "scope": "local real processes/MySQL/PostgreSQL/TLS gateway/Prometheus/Alertmanager/receiver; synthetic device and actors; no external host or human paging verified",
+  "mysql_port": 33372,
+  "pg_port": 55471,
+  "mysql_durability": {
+    "datadir": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\suining-reliability-20261026\\process-drill\\4dbaa647c03c\\mysql\\",
+    "version": "8.0.43",
+    "innodb_flush_log_at_trx_commit": 1
+  },
+  "postgres_version": "postgres (PostgreSQL) 16.15",
+  "cases": [
+    {
+      "case": "SOS duplicate + signed receipt",
+      "result": "pass",
+      "unix": 1793011417.0028367,
+      "incident_id": 1,
+      "notification": {
+        "id": 1,
+        "status": "delivered",
+        "attempts": 1,
+        "last_error": null,
+        "retry_seconds": -28801
+      },
+      "incident": {
+        "state": "notified",
+        "resolved": null,
+        "acknowledged": null
+      }
+    },
+    {
+      "case": "connection severed after provider acceptance",
+      "result": "pass",
+      "unix": 1793011418.124529,
+      "notification": {
+        "id": 2,
+        "status": "delivered",
+        "attempts": 1,
+        "last_error": "gateway network failure",
+        "retry_seconds": -28770
+      },
+      "incident": {
+        "state": "notified",
+        "resolved": null,
+        "acknowledged": null
+      }
+    },
+    {
+      "case": "PG down + persistent 5xx + unattended escalation",
+      "result": "pass",
+      "unix": 1793011724.6467276,
+      "incident_id": 3,
+      "incident": {
+        "state": "escalated",
+        "resolved": null,
+        "acknowledged": null
+      },
+      "notification": {
+        "id": 3,
+        "status": "failed",
+        "attempts": 4,
+        "last_error": "gateway HTTP 503",
+        "retry_seconds": -28655
+      },
+      "core_ready": true
+    },
+    {
+      "case": "PG recovery + backlog replay",
+      "result": "pass",
+      "unix": 1793011729.6615777,
+      "pending_projection": 0
+    },
+    {
+      "case": "429 persists and backs off",
+      "result": "pass",
+      "unix": 1793011760.2664614,
+      "initial": {
+        "id": 6,
+        "status": "failed",
+        "attempts": 1,
+        "last_error": "gateway HTTP 429",
+        "retry_seconds": -28770
+      },
+      "after": {
+        "id": 6,
+        "status": "failed",
+        "attempts": 2,
+        "last_error": "gateway HTTP 429",
+        "retry_seconds": -28740
+      }
+    },
+    {
+      "case": "gateway stopped, outbox retained",
+      "result": "pass",
+      "unix": 1793011761.3328989,
+      "notification": {
+        "id": 7,
+        "status": "failed",
+        "attempts": 1,
+        "last_error": "gateway network failure",
+        "retry_seconds": -28770
+      },
+      "receiver_alive": true
+    },
+    {
+      "case": "DNS distinguished from HTTP",
+      "result": "pass",
+      "unix": 1793011764.9069593,
+      "notification": {
+        "id": 8,
+        "status": "failed",
+        "attempts": 1,
+        "last_error": "gateway dns failure",
+        "retry_seconds": -28769
+      }
+    },
+    {
+      "case": "worker killed mid-send + stale lease recovery",
+      "result": "pass",
+      "unix": 1793011887.5766132,
+      "notification": {
+        "id": 9,
+        "status": "delivered",
+        "attempts": 2,
+        "last_error": null,
+        "retry_seconds": -28921
+      },
+      "provider_acceptances": 1
+    },
+    {
+      "case": "MySQL down critical + SOS unavailable",
+      "result": "pass",
+      "unix": 1793011957.7399755,
+      "sos_http": 503,
+      "healthz_http": 200,
+      "prometheus_alive": true
+    },
+    {
+      "case": "MySQL recovery",
+      "result": "pass",
+      "unix": 1793011959.3513217,
+      "incident_id": 8,
+      "persisted_incident_count": 8
+    },
+    {
+      "case": "care heartbeat blocked + stale alert",
+      "result": "pass",
+      "unix": 1793012007.468583,
+      "app_business_ready": true
+    }
+  ],
+  "complete": false,
+  "failure": "Command '['E:\\\\DevEco Test\\\\.reliability-lab\\\\reliability.exe', '--action', 'hold-heartbeat', '--hold', '150s']' timed out after 30 seconds"
+}

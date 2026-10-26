@@ -1,0 +1,18 @@
+2026-10-26T10:43:25.975813Z 0 [System] [MY-010116] [Server] C:\Program Files\MySQL\MySQL Server 8.0\bin\mysqld.exe (mysqld 8.0.43) starting as process 30184
+2026-10-26T10:43:25.981556Z 1 [System] [MY-013576] [InnoDB] InnoDB initialization has started.
+2026-10-26T10:43:26.170662Z 1 [System] [MY-013577] [InnoDB] InnoDB initialization has ended.
+2026-10-26T10:43:26.354342Z 0 [Warning] [MY-010068] [Server] CA certificate ca.pem is self signed.
+2026-10-26T10:43:26.354389Z 0 [System] [MY-013602] [Server] Channel mysql_main configured to support TLS. Encrypted connections are now supported for this channel.
+2026-10-26T10:43:26.379236Z 0 [System] [MY-010931] [Server] C:\Program Files\MySQL\MySQL Server 8.0\bin\mysqld.exe: ready for connections. Version: '8.0.43'  socket: ''  port: 33372  MySQL Community Server - GPL.
+2026-10-26T10:51:27.618144Z 252 [System] [MY-013172] [Server] Received SHUTDOWN from user root. Shutting down mysqld (Version: 8.0.43).
+2026-10-26T10:51:27.618238Z 0 [System] [MY-013105] [Server] C:\Program Files\MySQL\MySQL Server 8.0\bin\mysqld.exe: Normal shutdown.
+2026-10-26T10:51:30.574124Z 0 [System] [MY-010910] [Server] C:\Program Files\MySQL\MySQL Server 8.0\bin\mysqld.exe: Shutdown complete (mysqld 8.0.43)  MySQL Community Server - GPL.
+2026-10-26T10:52:37.847987Z 0 [System] [MY-010116] [Server] C:\Program Files\MySQL\MySQL Server 8.0\bin\mysqld.exe (mysqld 8.0.43) starting as process 29188
+2026-10-26T10:52:37.853796Z 1 [System] [MY-013576] [InnoDB] InnoDB initialization has started.
+2026-10-26T10:52:38.071647Z 1 [System] [MY-013577] [InnoDB] InnoDB initialization has ended.
+2026-10-26T10:52:38.257206Z 0 [Warning] [MY-010068] [Server] CA certificate ca.pem is self signed.
+2026-10-26T10:52:38.257248Z 0 [System] [MY-013602] [Server] Channel mysql_main configured to support TLS. Encrypted connections are now supported for this channel.
+2026-10-26T10:52:38.282982Z 0 [System] [MY-010931] [Server] C:\Program Files\MySQL\MySQL Server 8.0\bin\mysqld.exe: ready for connections. Version: '8.0.43'  socket: ''  port: 33372  MySQL Community Server - GPL.
+2026-10-26T10:53:57.532446Z 25 [System] [MY-013172] [Server] Received SHUTDOWN from user root. Shutting down mysqld (Version: 8.0.43).
+2026-10-26T10:53:57.532512Z 0 [System] [MY-013105] [Server] C:\Program Files\MySQL\MySQL Server 8.0\bin\mysqld.exe: Normal shutdown.
+2026-10-26T10:53:58.251245Z 0 [System] [MY-010910] [Server] C:\Program Files\MySQL\MySQL Server 8.0\bin\mysqld.exe: Shutdown complete (mysqld 8.0.43)  MySQL Community Server - GPL.

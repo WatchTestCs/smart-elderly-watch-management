@@ -1,0 +1,115 @@
+{"unix": 1793011415.3133767, "event": "provider_accepted", "notification_id": 1, "mode": "normal"}
+{"unix": 1793011415.9382029, "event": "signed_receipt", "notification_id": 1, "http_status": 200}
+{"unix": 1793011416.9815552, "event": "signed_receipt", "notification_id": 1, "http_status": 200}
+{"unix": 1793011417.3005638, "event": "provider_accepted", "notification_id": 2, "mode": "disconnect"}
+{"unix": 1793011418.0194612, "event": "signed_receipt", "notification_id": 2, "http_status": 200}
+{"unix": 1793011418.2986395, "event": "gateway_rejection", "notification_id": 3, "http_status": 503}
+{"unix": 1793011419.0666783, "event": "signed_receipt", "notification_id": 2, "http_status": 200}
+{"unix": 1793011448.3479939, "event": "gateway_rejection", "notification_id": 3, "http_status": 503}
+{"unix": 1793011508.4033365, "event": "gateway_rejection", "notification_id": 3, "http_status": 503}
+{"unix": 1793011628.4770224, "event": "gateway_rejection", "notification_id": 3, "http_status": 503}
+{"unix": 1793011718.5609581, "event": "gateway_rejection", "notification_id": 5, "http_status": 503}
+{"unix": 1793011718.5850625, "event": "gateway_rejection", "notification_id": 4, "http_status": 503}
+{"unix": 1793011729.792776, "event": "gateway_rejection", "notification_id": 6, "http_status": 429}
+{"unix": 1793011748.6225414, "event": "gateway_rejection", "notification_id": 5, "http_status": 429}
+{"unix": 1793011748.6461453, "event": "gateway_rejection", "notification_id": 4, "http_status": 429}
+{"unix": 1793011759.8614264, "event": "gateway_rejection", "notification_id": 6, "http_status": 429}
+{"unix": 1793011765.9623373, "event": "provider_accepted", "notification_id": 9, "mode": "kill"}
+{"unix": 1793011791.5665193, "event": "provider_accepted", "notification_id": 7, "mode": "normal"}
+{"unix": 1793011792.467723, "event": "signed_receipt", "notification_id": 7, "http_status": 200}
+{"unix": 1793011793.5041602, "event": "signed_receipt", "notification_id": 7, "http_status": 200}
+{"unix": 1793011794.5599976, "event": "provider_accepted", "notification_id": 8, "mode": "normal"}
+{"unix": 1793011795.5571213, "event": "signed_receipt", "notification_id": 8, "http_status": 200}
+{"unix": 1793011796.5969446, "event": "signed_receipt", "notification_id": 8, "http_status": 200}
+{"unix": 1793011809.572209, "event": "provider_accepted", "notification_id": 4, "mode": "normal"}
+{"unix": 1793011809.5912423, "event": "provider_accepted", "notification_id": 5, "mode": "normal"}
+{"unix": 1793011809.641108, "event": "signed_receipt", "notification_id": 4, "http_status": 200}
+{"unix": 1793011809.6918623, "event": "signed_receipt", "notification_id": 5, "http_status": 200}
+{"unix": 1793011810.7530186, "event": "signed_receipt", "notification_id": 4, "http_status": 200}
+{"unix": 1793011810.7841573, "event": "signed_receipt", "notification_id": 5, "http_status": 200}
+{"unix": 1793011820.582156, "event": "provider_accepted", "notification_id": 6, "mode": "normal"}
+{"unix": 1793011820.8286269, "event": "signed_receipt", "notification_id": 6, "http_status": 200}
+{"unix": 1793011821.863727, "event": "signed_receipt", "notification_id": 6, "http_status": 200}
+{"unix": 1793011868.6271331, "event": "provider_accepted", "notification_id": 3, "mode": "normal"}
+{"unix": 1793011868.934715, "event": "signed_receipt", "notification_id": 3, "http_status": 200}
+{"unix": 1793011869.9770539, "event": "signed_receipt", "notification_id": 3, "http_status": 200}
+{"unix": 1793011886.64267, "event": "provider_deduplicated", "notification_id": 9, "mode": "normal"}
+{"unix": 1793011887.0255098, "event": "signed_receipt", "notification_id": 9, "http_status": 200}
+{"unix": 1793011888.0524237, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011889.0776212, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011890.125931, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011891.16943, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011892.195056, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011893.2240207, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011894.244322, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011895.2787514, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011896.3027732, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011897.3380065, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011898.3604991, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011899.3850436, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011900.406145, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011901.4271066, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011902.4476562, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011903.4686744, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011904.4945695, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011905.515141, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011906.5349984, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011907.555597, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011908.577283, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011909.597836, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011910.641265, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011911.673217, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011912.7072499, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011913.7310843, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011914.7515333, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011915.7764444, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011916.8013537, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011917.823666, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011918.8730285, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011919.9137022, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011920.9347548, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011921.9599276, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011922.9852066, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011924.009641, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011925.030792, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011926.0641146, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011927.1059995, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011928.1258526, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011929.150917, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011930.1768005, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011931.1969264, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011932.2515376, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011933.2717083, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011934.334764, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011935.3595917, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011936.3940544, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011937.417533, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011938.458661, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011939.4801025, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011940.5267959, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011941.5509772, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011942.5758255, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011943.6056273, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011944.6286173, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011945.6509285, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011946.675828, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011947.6953075, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011948.7317371, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011949.7589402, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011950.7770166, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011951.8009887, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011952.8254426, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011953.8511653, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011954.890856, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011955.911059, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011956.9466617, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011957.9752686, "event": "signed_receipt_retry", "notification_id": 9}
+{"unix": 1793011959.0177236, "event": "signed_receipt", "notification_id": 9, "http_status": 200}
+{"unix": 1793011959.6806173, "event": "provider_accepted", "notification_id": 10, "mode": "normal"}
+{"unix": 1793011960.0557683, "event": "signed_receipt", "notification_id": 10, "http_status": 200}
+{"unix": 1793011961.0878134, "event": "signed_receipt", "notification_id": 10, "http_status": 200}
+{"unix": 1793012021.7766824, "event": "provider_accepted", "notification_id": 11, "mode": "normal"}
+{"unix": 1793012022.1610765, "event": "signed_receipt", "notification_id": 11, "http_status": 200}
+{"unix": 1793012023.1903057, "event": "signed_receipt", "notification_id": 11, "http_status": 200}
+{"unix": 1793012036.7907584, "event": "provider_accepted", "notification_id": 12, "mode": "normal"}
+{"unix": 1793012037.2382102, "event": "signed_receipt", "notification_id": 12, "http_status": 200}

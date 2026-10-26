@@ -1,0 +1,15 @@
+=== RUN   TestCareFullHTTPChainAfterRealGatewayTimeout
+    care_full_chain_test.go:180: LOCAL REAL DB + TLS HTTP TRACE incident=1 notification=1 actions=[received delivered acknowledge start resolve verify]; synthetic device/provider/actors, no real person contacted
+--- PASS: TestCareFullHTTPChainAfterRealGatewayTimeout (16.36s)
+=== RUN   TestCareImmediateSignedReceiptDuringSending
+--- PASS: TestCareImmediateSignedReceiptDuringSending (4.19s)
+=== RUN   TestCareDelayedReceiptAfterGatewayTimeout
+--- PASS: TestCareDelayedReceiptAfterGatewayTimeout (4.23s)
+=== RUN   TestAdminDutyGateRestrictsLegacyRoutes
+--- PASS: TestAdminDutyGateRestrictsLegacyRoutes (4.48s)
+PASS
+ok  	careold-go/internal/handlers	31.552s
+=== RUN   TestKeyRotationAndRetirementFailClosed
+--- PASS: TestKeyRotationAndRetirementFailClosed (0.00s)
+PASS
+ok  	careold-go/internal/securestore	1.174s

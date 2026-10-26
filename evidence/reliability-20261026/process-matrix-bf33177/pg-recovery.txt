@@ -1,0 +1,25 @@
+2026-10-26 18:48:44.840 CST [31500] LOG:  starting PostgreSQL 16.15, compiled by Visual C++ build 1944, 64-bit
+2026-10-26 18:48:44.840 CST [31500] LOG:  listening on IPv4 address "127.0.0.1", port 55471
+2026-10-26 18:48:44.871 CST [17188] LOG:  database system was interrupted; last known up at 2026-10-26 18:36:15 CST
+2026-10-26 18:48:45.453 CST [25720] FATAL:  the database system is starting up
+2026-10-26 18:48:46.737 CST [17188] LOG:  database system was not properly shut down; automatic recovery in progress
+2026-10-26 18:48:46.741 CST [17188] LOG:  redo starts at 0/593D368
+2026-10-26 18:48:46.834 CST [17188] LOG:  invalid record length at 0/5DBC430: expected at least 24, got 0
+2026-10-26 18:48:46.834 CST [17188] LOG:  redo done at 0/5DBC408 system usage: CPU: user: 0.00 s, system: 0.00 s, elapsed: 0.09 s
+2026-10-26 18:48:46.839 CST [18364] LOG:  checkpoint starting: end-of-recovery immediate wait
+2026-10-26 18:48:47.464 CST [31816] FATAL:  the database system is not yet accepting connections
+2026-10-26 18:48:47.464 CST [31816] DETAIL:  Consistent recovery state has not been yet reached.
+2026-10-26 18:48:47.496 CST [18364] LOG:  checkpoint complete: wrote 986 buffers (6.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.057 s, sync=0.587 s, total=0.659 s; sync files=306, longest=0.005 s, average=0.002 s; distance=4604 kB, estimate=4604 kB; lsn=0/5DBC430, redo lsn=0/5DBC430
+2026-10-26 18:48:47.544 CST [31500] LOG:  database system is ready to accept connections
+2026-10-26 18:49:23.337 CST [16016] LOG:  could not receive data from client: An existing connection was forcibly closed by the remote host.
+	
+2026-10-26 18:49:24.908 CST [29956] LOG:  could not receive data from client: An existing connection was forcibly closed by the remote host.
+	
+2026-10-26 18:49:26.496 CST [30360] LOG:  could not receive data from client: An existing connection was forcibly closed by the remote host.
+	
+2026-10-26 18:53:46.507 CST [18364] LOG:  checkpoint starting: time
+2026-10-26 18:53:52.998 CST [18364] LOG:  checkpoint complete: wrote 60 buffers (0.4%); 0 WAL file(s) added, 0 removed, 0 recycled; write=6.430 s, sync=0.049 s, total=6.492 s; sync files=23, longest=0.005 s, average=0.003 s; distance=407 kB, estimate=4184 kB; lsn=0/5E22250, redo lsn=0/5E221E0
+2026-10-26 18:53:57.480 CST [6536] LOG:  could not receive data from client: An existing connection was forcibly closed by the remote host.
+	
+2026-10-26 18:56:11.215 CST [31500] LOG:  received immediate shutdown request
+2026-10-26 18:56:11.232 CST [31500] LOG:  database system is shut down

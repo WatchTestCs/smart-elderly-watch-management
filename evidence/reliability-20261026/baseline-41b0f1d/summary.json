@@ -1,0 +1,94 @@
+{
+  "sha": "41b0f1d8752d1cf023872b067af8655f7a2580fd",
+  "scope": "local real MySQL 8.0.43 + PostgreSQL 16.15; Go 1.26.10 Windows amd64; not CI/staging/production",
+  "command": [
+    "E:\\DevEco Test\\.reliability-lab\\go\\bin\\go.exe",
+    "test",
+    "-race",
+    "-json",
+    "-count=1",
+    "-timeout=600s",
+    "./..."
+  ],
+  "exit_code": 1,
+  "seconds": 614.61,
+  "counts": {
+    "pass": 210,
+    "skip": 6,
+    "fail": 6
+  },
+  "skips": [
+    {
+      "package": "careold-go/internal/health",
+      "test": "TestBatchHardwareAB",
+      "output": "=== RUN   TestBatchHardwareAB\n    batch_hardware_ab_test.go:21: opt-in hardware A/B\n--- SKIP: TestBatchHardwareAB (0.00s)\n"
+    },
+    {
+      "package": "careold-go/internal/analytics",
+      "test": "TestAnalyticsConsumerAB",
+      "output": "=== RUN   TestAnalyticsConsumerAB\n    consumer_ab_test.go:20: set RUN_ANALYTICS_DB_AB=1 for the isolated consumer A/B\n--- SKIP: TestAnalyticsConsumerAB (0.00s)\n"
+    },
+    {
+      "package": "careold-go/internal/analytics",
+      "test": "TestMySQLRoundTripAB",
+      "output": "=== RUN   TestMySQLRoundTripAB\n    mysql_roundtrip_ab_test.go:23: set RUN_MYSQL_ROUNDTRIP_AB=1 for isolated MySQL A/B\n--- SKIP: TestMySQLRoundTripAB (0.00s)\n"
+    },
+    {
+      "package": "careold-go/internal/analytics",
+      "test": "TestAnalyticsProducerAB",
+      "output": "=== RUN   TestAnalyticsProducerAB\n    producer_ab_test.go:24: set RUN_ANALYTICS_DB_AB=1 for the isolated producer A/B\n--- SKIP: TestAnalyticsProducerAB (0.00s)\n"
+    },
+    {
+      "package": "careold-go/internal/analytics",
+      "test": "TestAnalyticsQueueDepthAB",
+      "output": "=== RUN   TestAnalyticsQueueDepthAB\n    queue_depth_ab_test.go:20: set RUN_MYSQL_ROUNDTRIP_AB=1 for isolated queue-depth A/B\n--- SKIP: TestAnalyticsQueueDepthAB (0.00s)\n"
+    },
+    {
+      "package": "careold-go/internal/db",
+      "test": "TestMySQLIdleConnectionRetentionAB",
+      "output": "=== RUN   TestMySQLIdleConnectionRetentionAB\n    idle_pool_ab_test.go:36: set RUN_MYSQL_POOL_AB=1 for isolated pool A/B\n--- SKIP: TestMySQLIdleConnectionRetentionAB (0.00s)\n"
+    }
+  ],
+  "failures": [
+    {
+      "package": "careold-go/internal/session",
+      "test": "TestDatabaseSessionsShareRevokeAndFactorGeneration",
+      "output": "=== RUN   TestDatabaseSessionsShareRevokeAndFactorGeneration\n[mysql] 2026/10/26 17:10:16 packets.go:58 read tcp 127.0.0.1:14439->127.0.0.1:33370: i/o timeout\n    database_test.go:15: MySQL migration mysql/0001_core.sql: invalid connection\n--- FAIL: TestDatabaseSessionsShareRevokeAndFactorGeneration (152.79s)\n"
+    },
+    {
+      "package": "careold-go/internal/health",
+      "test": "TestIndexedBatchPersistsAllVersionsAndTombstones",
+      "output": "=== RUN   TestIndexedBatchPersistsAllVersionsAndTombstones\n[mysql] 2026/10/26 17:10:40 packets.go:58 read tcp 127.0.0.1:14436->127.0.0.1:33370: i/o timeout\n    batch_layout_integration_test.go:16: MySQL migration mysql/0001_core.sql: invalid connection\n--- FAIL: TestIndexedBatchPersistsAllVersionsAndTombstones (154.05s)\n"
+    },
+    {
+      "package": "careold-go/internal/session",
+      "test": "TestDatabaseSessionRejectsMismatchedIdentity",
+      "output": "=== RUN   TestDatabaseSessionRejectsMismatchedIdentity\n[mysql] 2026/10/26 17:14:10 packets.go:58 read tcp 127.0.0.1:14561->127.0.0.1:33370: i/o timeout\n    database_test.go:88: MySQL migration mysql/0001_core.sql: invalid connection\n--- FAIL: TestDatabaseSessionRejectsMismatchedIdentity (207.91s)\n"
+    },
+    {
+      "package": "careold-go/internal/care",
+      "test": "TestFenceNotificationPreservesIncidentKind",
+      "output": "=== RUN   TestFenceNotificationPreservesIncidentKind\n[mysql] 2026/10/26 17:13:38 packets.go:58 read tcp 127.0.0.1:14426->127.0.0.1:33370: i/o timeout\n    worker_test.go:24: MySQL migration mysql/0005_platform.sql: invalid connection\n--- FAIL: TestFenceNotificationPreservesIncidentKind (374.39s)\n"
+    },
+    {
+      "package": "careold-go/internal/handlers",
+      "test": "TestArchitectureFormattedRecordsAcrossDatabases",
+      "output": "=== RUN   TestArchitectureFormattedRecordsAcrossDatabases\n[mysql] 2026/10/26 17:16:17 packets.go:58 read tcp 127.0.0.1:9624->127.0.0.1:33370: i/o timeout\n    integration_test.go:32: MySQL migration mysql/0001_core.sql: invalid connection\n--- FAIL: TestArchitectureFormattedRecordsAcrossDatabases (22.76s)\n"
+    },
+    {
+      "package": "careold-go/internal/health",
+      "test": "TestConditionalPreviousPayloadPreservesMixedVersionsAndConflicts",
+      "output": "=== RUN   TestConditionalPreviousPayloadPreservesMixedVersionsAndConflicts\n[mysql] 2026/10/26 17:16:18 packets.go:58 read tcp 127.0.0.1:14565->127.0.0.1:33370: i/o timeout\n    batch_layout_integration_test.go:108: MySQL migration mysql/0005_platform.sql: invalid connection\n--- FAIL: TestConditionalPreviousPayloadPreservesMixedVersionsAndConflicts (370.49s)\n"
+    }
+  ],
+  "checks": [
+    {
+      "name": "build",
+      "exit_code": 0
+    },
+    {
+      "name": "vet",
+      "exit_code": 0
+    }
+  ]
+}

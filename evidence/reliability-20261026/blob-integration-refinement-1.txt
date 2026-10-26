@@ -1,0 +1,15 @@
+=== RUN   TestCatalogGCReferenceLocksAndBackupLease
+    catalog_test.go:59: Error 1064 (42000): You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near ') WHERE id=1' at line 1
+--- FAIL: TestCatalogGCReferenceLocksAndBackupLease (5.55s)
+=== RUN   TestCatalogInsertFailureCompensatesBlob
+--- PASS: TestCatalogInsertFailureCompensatesBlob (5.47s)
+=== RUN   TestLocalEncryptedImmutabilityAndIntegrity
+--- PASS: TestLocalEncryptedImmutabilityAndIntegrity (0.04s)
+FAIL
+FAIL	careold-go/internal/blob	11.840s
+=== RUN   TestImageS3TwoInstancesAndRealRestore
+    image_s3_restore_test.go:160: Error 1064 (42000): You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near ') WHERE id=1' at line 1
+--- FAIL: TestImageS3TwoInstancesAndRealRestore (6.43s)
+FAIL
+FAIL	careold-go/internal/handlers	7.838s
+FAIL

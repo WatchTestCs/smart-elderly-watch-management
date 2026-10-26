@@ -1,0 +1,68 @@
+git exit=0
+2d0f308996115dab106f03627b98c007e9cb1ff2
+
+mysqld.exe exit=0
+2026-10-26T10:33:19.010694Z 0 [System] [MY-013169] [Server] C:\Program Files\MySQL\MySQL Server 8.0\bin\mysqld.exe (mysqld 8.0.43) initializing of server in progress as process 28608
+2026-10-26T10:33:19.134167Z 1 [System] [MY-013576] [InnoDB] InnoDB initialization has started.
+2026-10-26T10:33:19.592358Z 1 [System] [MY-013577] [InnoDB] InnoDB initialization has ended.
+2026-10-26T10:33:21.259416Z 5 [Warning] [MY-010453] [Server] root@localhost is created with an empty password ! Please consider switching off the --initialize-insecure option.
+
+mysql.exe exit=1
+ERROR 2003 (HY000): Can't connect to MySQL server on '127.0.0.1:33372' (10060)
+
+mysql.exe exit=0
+
+mysql.exe exit=0
+
+createdb.exe exit=0
+
+reliability.exe exit=0
+Disposable synthetic fixture initialized; credentials written only to private state file
+
+mysql.exe exit=0
+{"datadir": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\suining-reliability-20261026\\process-drill\\b5ef267dd9d0\\mysql\\", "version": "8.0.43", "innodb_flush_log_at_trx_commit": 1}
+
+postgres.exe exit=0
+postgres (PostgreSQL) 16.15
+
+mysql.exe exit=0
+{"id": 1, "status": "pending", "attempts": 0, "last_error": null, "retry_seconds": -28799}
+
+mysql.exe exit=0
+{"id": 1, "status": "sent", "attempts": 1, "last_error": null, "retry_seconds": -28800}
+
+mysql.exe exit=0
+{"id": 1, "status": "delivered", "attempts": 1, "last_error": null, "retry_seconds": -28801}
+
+mysql.exe exit=0
+{"state": "notified", "resolved": null, "acknowledged": null}
+
+mysql.exe exit=0
+{"id": 1, "status": "delivered", "attempts": 1, "last_error": null, "retry_seconds": -28801}
+
+mysql.exe exit=0
+{"state": "notified", "resolved": null, "acknowledged": null}
+
+mysql.exe exit=0
+{"id": 2, "status": "pending", "attempts": 0, "last_error": null, "retry_seconds": -28799}
+
+mysql.exe exit=0
+{"id": 2, "status": "failed", "attempts": 1, "last_error": "gateway network failure", "retry_seconds": -28769}
+
+mysql.exe exit=0
+{"id": 2, "status": "delivered", "attempts": 1, "last_error": "gateway network failure", "retry_seconds": -28770}
+
+mysql.exe exit=0
+{"id": 2, "status": "delivered", "attempts": 1, "last_error": "gateway network failure", "retry_seconds": -28770}
+
+mysql.exe exit=0
+{"id": 2, "status": "delivered", "attempts": 1, "last_error": "gateway network failure", "retry_seconds": -28770}
+
+mysql.exe exit=0
+{"state": "notified", "resolved": null, "acknowledged": null}
+
+mysql.exe exit=0
+C:\Users\Administrator\AppData\Local\Temp\suining-reliability-20261026\process-drill\b5ef267dd9d0\mysql\
+
+mysqladmin.exe exit=0
+

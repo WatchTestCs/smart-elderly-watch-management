@@ -1,0 +1,13 @@
+=== RUN   TestCapabilitiesRollbackAndReapply
+    capabilities_migration_test.go:25: MySQL unavailable
+--- FAIL: TestCapabilitiesRollbackAndReapply (0.00s)
+FAIL
+FAIL	careold-go/internal/db	0.983s
+=== RUN   TestImageS3TwoInstancesAndRealRestore
+    image_s3_restore_test.go:255: LOCAL REAL MYSQL+S3 RESTORE image_sha256=8f9aae64d410eb9a9ba7a115fec22c431cf937a2a5ca6010dfbca344f8e2dfff mysql_dump_sha256=d8c5b4a7cd7acfb8f0bf53e4faa9ad37a342f16e3a44c602557e8f23143acc9a references=1 incidents=1 pending_outbox=1 sessions=1; A stopped, B read; original DB and blob destroyed and restored; anonymous access denied
+--- PASS: TestImageS3TwoInstancesAndRealRestore (7.60s)
+=== RUN   TestIntegrationMigrationsAndBindingConstraint
+--- PASS: TestIntegrationMigrationsAndBindingConstraint (4.49s)
+PASS
+ok  	careold-go/internal/handlers	14.591s
+FAIL

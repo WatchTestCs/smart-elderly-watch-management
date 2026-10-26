@@ -1,0 +1,8 @@
+{
+  "source_sha": "110b5a43b400f6018c496855b1458d47181785aa",
+  "exit_code": 0,
+  "elapsed_seconds": 62.20300000000134,
+  "harness_sha256": "03105ca62040f63c811a6d2771fc7b6d9cc6ca4cc35d22e42eb7d2ef67e057da",
+  "overlay_scope": "ONLY test fixture cold sample count 40 -> 200 per round (3 rounds); no production code changes; source test overlays separately recorded",
+  "scope": "local loopback HTTP tail benchmark, MySQL 8.0.43 NVMe, Go1.26.10 Windows, GOMAXPROCS4; no TLS/proxy/background worker/production"
+}

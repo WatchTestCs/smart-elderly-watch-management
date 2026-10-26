@@ -1,0 +1,660 @@
+2026-10-26T10:42:30.6554801Z Current runner version: '2.338.0'
+2026-10-26T10:42:30.6579316Z ##[group]Runner Image Provisioner
+2026-10-26T10:42:30.6580285Z Hosted Compute Agent
+2026-10-26T10:42:30.6580879Z Version: 20261021.618
+2026-10-26T10:42:30.6581526Z Commit: 21505ad2541d5be6135ed84fc33697146cf75b8e
+2026-10-26T10:42:30.6582334Z Build Date: 2026-10-21T00:45:21Z
+2026-10-26T10:42:30.6583034Z Worker ID: {e6c0e642-e0a6-4d19-9265-98d8c842c2ed}
+2026-10-26T10:42:30.6583825Z Region: westus3
+2026-10-26T10:42:30.6584414Z Cloud: Azure
+2026-10-26T10:42:30.6584943Z ##[endgroup]
+2026-10-26T10:42:30.6586433Z ##[group]Operating System
+2026-10-26T10:42:30.6587574Z Ubuntu
+2026-10-26T10:42:30.6588176Z 26.04.1
+2026-10-26T10:42:30.6588708Z LTS
+2026-10-26T10:42:30.6589261Z ##[endgroup]
+2026-10-26T10:42:30.6589863Z ##[group]Runner Image
+2026-10-26T10:42:30.6590476Z Image: ubuntu-26.04
+2026-10-26T10:42:30.6591111Z Version: 20261012.163.1
+2026-10-26T10:42:30.6592390Z Included Software: https://github.com/actions/runner-images/blob/ubuntu26/20261012.163/images/ubuntu/Ubuntu2604-Readme.md
+2026-10-26T10:42:30.6594022Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu26%2F20261012.163
+2026-10-26T10:42:30.6595003Z ##[endgroup]
+2026-10-26T10:42:30.6596168Z ##[group]GITHUB_TOKEN Permissions
+2026-10-26T10:42:30.6598541Z Contents: read
+2026-10-26T10:42:30.6599241Z Metadata: read
+2026-10-26T10:42:30.6599824Z ##[endgroup]
+2026-10-26T10:42:30.6601848Z Secret source: Actions
+2026-10-26T10:42:30.6602908Z Cache mode: write
+2026-10-26T10:42:30.6603633Z Prepare workflow directory
+2026-10-26T10:42:30.7088633Z Prepare all required actions
+2026-10-26T10:42:30.7135390Z Getting action download info
+2026-10-26T10:42:31.0323382Z Download action repository 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+2026-10-26T10:42:31.1339730Z Download action repository 'actions/setup-go@v6' (SHA:924ae3a1cded613372ab5595356fb5720e22ba16)
+2026-10-26T10:42:31.7315895Z Download action repository 'actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f' (SHA:b7c566a772e6b6bfb58ed0dc250532a479d7789f)
+2026-10-26T10:42:31.9694193Z Uses: WatchTestCs/smart-elderly-watch-management/.github/workflows/reusable-backend.yml@refs/heads/codex/reliability-validation-20261026 (bf331775e68b43c64ad3dfaa37ec1f63291eb3f0)
+2026-10-26T10:42:31.9701864Z Complete job name: Backend / Test, build and vet (Go 1.26.10)
+2026-10-26T10:42:32.0380484Z ##[group]Checking docker version
+2026-10-26T10:42:32.0394428Z ##[command]/usr/bin/docker version --format '{{.Server.APIVersion}}'
+2026-10-26T10:42:32.1503773Z '1.54'
+2026-10-26T10:42:32.1528414Z Docker daemon API version: '1.54'
+2026-10-26T10:42:32.1530120Z ##[command]/usr/bin/docker version --format '{{.Client.APIVersion}}'
+2026-10-26T10:42:32.1714236Z '1.54'
+2026-10-26T10:42:32.1730761Z Docker client API version: '1.54'
+2026-10-26T10:42:32.1737558Z ##[endgroup]
+2026-10-26T10:42:32.1741342Z ##[group]Clean up resources from previous jobs
+2026-10-26T10:42:32.1748109Z ##[command]/usr/bin/docker ps --all --quiet --no-trunc --filter "label=a018c3"
+2026-10-26T10:42:32.1934273Z ##[command]/usr/bin/docker network prune --force --filter "label=a018c3"
+2026-10-26T10:42:32.2098512Z ##[endgroup]
+2026-10-26T10:42:32.2099527Z ##[group]Create local container network
+2026-10-26T10:42:32.2111402Z ##[command]/usr/bin/docker network create --label a018c3 github_network_8ed73b31c58e44f9a6939dcd01affc6d
+2026-10-26T10:42:32.2619194Z 88b47e1de9016888a235ac630539e37695847d92a252a5f056328984126fb6ae
+2026-10-26T10:42:32.2645022Z ##[endgroup]
+2026-10-26T10:42:32.2671759Z ##[group]Starting mysql service container
+2026-10-26T10:42:32.2693858Z ##[command]/usr/bin/docker pull mysql:8.4
+2026-10-26T10:42:32.9409679Z 8.4: Pulling from library/mysql
+2026-10-26T10:42:33.1351200Z d14dbab65632: Pulling fs layer
+2026-10-26T10:42:33.1353708Z 97347cf073b1: Pulling fs layer
+2026-10-26T10:42:33.1355904Z 4730445dfddd: Pulling fs layer
+2026-10-26T10:42:33.1358289Z a3274015618b: Pulling fs layer
+2026-10-26T10:42:33.1360401Z e8d4024251a9: Pulling fs layer
+2026-10-26T10:42:33.1365665Z 65fb9e68a2ac: Pulling fs layer
+2026-10-26T10:42:33.1368011Z ea1749d53e24: Pulling fs layer
+2026-10-26T10:42:33.1369807Z 1ba383bbcb80: Pulling fs layer
+2026-10-26T10:42:33.1371876Z e99723a85985: Pulling fs layer
+2026-10-26T10:42:33.1374083Z 0c9ac1647849: Pulling fs layer
+2026-10-26T10:42:33.2872908Z 0c9ac1647849: Download complete
+2026-10-26T10:42:33.2874729Z 4730445dfddd: Download complete
+2026-10-26T10:42:33.3889283Z 65fb9e68a2ac: Download complete
+2026-10-26T10:42:33.3927751Z e8d4024251a9: Download complete
+2026-10-26T10:42:33.3930831Z ea1749d53e24: Download complete
+2026-10-26T10:42:33.3948554Z d14dbab65632: Download complete
+2026-10-26T10:42:33.4883485Z e99723a85985: Download complete
+2026-10-26T10:42:33.5878192Z 8ac39cbaf10f: Download complete
+2026-10-26T10:42:33.6888343Z 97347cf073b1: Download complete
+2026-10-26T10:42:33.6893011Z a3274015618b: Download complete
+2026-10-26T10:42:33.6896244Z bb103901fbb7: Download complete
+2026-10-26T10:42:34.0881784Z 1ba383bbcb80: Download complete
+2026-10-26T10:42:34.8909181Z e8d4024251a9: Pull complete
+2026-10-26T10:42:34.8935415Z ea1749d53e24: Pull complete
+2026-10-26T10:42:34.8971345Z 97347cf073b1: Pull complete
+2026-10-26T10:42:35.0885623Z 0c9ac1647849: Pull complete
+2026-10-26T10:42:35.0899326Z 4730445dfddd: Pull complete
+2026-10-26T10:42:35.0943559Z e99723a85985: Pull complete
+2026-10-26T10:42:35.6874592Z 65fb9e68a2ac: Pull complete
+2026-10-26T10:42:35.6903561Z a3274015618b: Pull complete
+2026-10-26T10:42:40.6879129Z 1ba383bbcb80: Pull complete
+2026-10-26T10:42:41.1426768Z d14dbab65632: Pull complete
+2026-10-26T10:42:41.1427604Z Digest: sha256:76f0358884cb92d9a086d24e5671c38048d3fef40f2588703d73eb55392d6b69
+2026-10-26T10:42:41.1428395Z Status: Downloaded newer image for mysql:8.4
+2026-10-26T10:42:41.1433478Z docker.io/library/mysql:8.4
+2026-10-26T10:42:41.1530480Z ##[command]/usr/bin/docker create --name 9b85110db58c49ef9323a55dbbcbacf8_mysql84_7a1662 --label a018c3 --network github_network_8ed73b31c58e44f9a6939dcd01affc6d --network-alias mysql -p 3306:3306 --health-cmd "mysqladmin ping -h 127.0.0.1 -u root -pci_root_only --silent" --health-interval 5s --health-timeout 5s --health-retries 20 -e "MYSQL_ROOT_PASSWORD=ci_root_only" -e "MYSQL_ROOT_HOST=%" -e "MYSQL_DATABASE=suining_test" -e GITHUB_ACTIONS=true -e CI=true mysql:8.4
+2026-10-26T10:42:43.1333026Z d6f50e2b1ad617d77e44c9c45f0821c6c35d41b9d5d05cfcec8614630ca33d11
+2026-10-26T10:42:43.1367436Z ##[command]/usr/bin/docker start d6f50e2b1ad617d77e44c9c45f0821c6c35d41b9d5d05cfcec8614630ca33d11
+2026-10-26T10:42:43.3547350Z d6f50e2b1ad617d77e44c9c45f0821c6c35d41b9d5d05cfcec8614630ca33d11
+2026-10-26T10:42:43.3569866Z ##[command]/usr/bin/docker ps --all --filter id=d6f50e2b1ad617d77e44c9c45f0821c6c35d41b9d5d05cfcec8614630ca33d11 --filter status=running --no-trunc --format "{{.ID}} {{.Status}}"
+2026-10-26T10:42:43.3815808Z d6f50e2b1ad617d77e44c9c45f0821c6c35d41b9d5d05cfcec8614630ca33d11 Up Less than a second (health: starting)
+2026-10-26T10:42:43.3848164Z ##[command]/usr/bin/docker port d6f50e2b1ad617d77e44c9c45f0821c6c35d41b9d5d05cfcec8614630ca33d11
+2026-10-26T10:42:43.4014766Z 3306/tcp -> 0.0.0.0:3306
+2026-10-26T10:42:43.4015693Z 3306/tcp -> [::]:3306
+2026-10-26T10:42:43.4065763Z ##[endgroup]
+2026-10-26T10:42:43.4067405Z ##[group]Starting postgres service container
+2026-10-26T10:42:43.4068705Z ##[command]/usr/bin/docker pull postgres:16
+2026-10-26T10:42:44.0328413Z 16: Pulling from library/postgres
+2026-10-26T10:42:44.2384802Z c85ce0e29e80: Pulling fs layer
+2026-10-26T10:42:44.2386194Z d9b4aee93490: Pulling fs layer
+2026-10-26T10:42:44.2417718Z b1c4822f4553: Pulling fs layer
+2026-10-26T10:42:44.2418938Z f2010d5c8971: Pulling fs layer
+2026-10-26T10:42:44.2419444Z e9da7c9f979b: Pulling fs layer
+2026-10-26T10:42:44.2419887Z ef42abb17c7a: Pulling fs layer
+2026-10-26T10:42:44.2420293Z 852f46917486: Pulling fs layer
+2026-10-26T10:42:44.2420717Z 9fbbdc3bcbff: Pulling fs layer
+2026-10-26T10:42:44.2421131Z 46109ed24d00: Pulling fs layer
+2026-10-26T10:42:44.2421536Z 393ce45a5829: Pulling fs layer
+2026-10-26T10:42:44.2422094Z c79a7210985e: Pulling fs layer
+2026-10-26T10:42:44.2422347Z 48eee0ea92d8: Pulling fs layer
+2026-10-26T10:42:44.2422586Z 25140b6d6501: Pulling fs layer
+2026-10-26T10:42:44.2422935Z f2be67225471: Pulling fs layer
+2026-10-26T10:42:44.4264641Z b1c4822f4553: Download complete
+2026-10-26T10:42:44.4277205Z c85ce0e29e80: Download complete
+2026-10-26T10:42:44.4281803Z 46109ed24d00: Download complete
+2026-10-26T10:42:44.5267890Z d9b4aee93490: Download complete
+2026-10-26T10:42:44.5289680Z 48eee0ea92d8: Download complete
+2026-10-26T10:42:44.5295194Z ef42abb17c7a: Download complete
+2026-10-26T10:42:44.5302478Z 9fbbdc3bcbff: Download complete
+2026-10-26T10:42:44.5351691Z 393ce45a5829: Download complete
+2026-10-26T10:42:44.5353272Z f2010d5c8971: Download complete
+2026-10-26T10:42:44.5367948Z e9da7c9f979b: Download complete
+2026-10-26T10:42:44.5400455Z 852f46917486: Download complete
+2026-10-26T10:42:44.5413816Z 25140b6d6501: Download complete
+2026-10-26T10:42:44.6309437Z 22f39cf62ad6: Download complete
+2026-10-26T10:42:44.7284279Z 29e2244f39ca: Download complete
+2026-10-26T10:42:44.7301030Z f2be67225471: Download complete
+2026-10-26T10:42:45.1264317Z c79a7210985e: Download complete
+2026-10-26T10:42:45.7329043Z d9b4aee93490: Pull complete
+2026-10-26T10:42:45.7467021Z f2be67225471: Pull complete
+2026-10-26T10:42:45.8268026Z b1c4822f4553: Pull complete
+2026-10-26T10:42:45.8310789Z 46109ed24d00: Pull complete
+2026-10-26T10:42:46.0282072Z 48eee0ea92d8: Pull complete
+2026-10-26T10:42:46.0293184Z ef42abb17c7a: Pull complete
+2026-10-26T10:42:46.1275694Z c85ce0e29e80: Pull complete
+2026-10-26T10:42:46.1289652Z 9fbbdc3bcbff: Pull complete
+2026-10-26T10:42:48.2283990Z 393ce45a5829: Pull complete
+2026-10-26T10:42:48.2302470Z f2010d5c8971: Pull complete
+2026-10-26T10:42:48.2320847Z e9da7c9f979b: Pull complete
+2026-10-26T10:42:48.2337333Z 852f46917486: Pull complete
+2026-10-26T10:42:48.2372417Z 393ce45a5829: Pull complete
+2026-10-26T10:42:48.2426989Z f2010d5c8971: Pull complete
+2026-10-26T10:42:48.2438071Z e9da7c9f979b: Pull complete
+2026-10-26T10:42:48.2450358Z 852f46917486: Pull complete
+2026-10-26T10:42:48.2469878Z 25140b6d6501: Pull complete
+2026-10-26T10:42:48.2481661Z c79a7210985e: Pull complete
+2026-10-26T10:42:48.2483045Z Digest: sha256:9e2cf6287f25c3151f4c9421ccce2b17f3e60061c111a29165e0d2cdd9ff0a97
+2026-10-26T10:42:48.2484048Z Status: Downloaded newer image for postgres:16
+2026-10-26T10:42:48.2493624Z docker.io/library/postgres:16
+2026-10-26T10:42:48.2522739Z ##[command]/usr/bin/docker create --name 7867e645540b4553a0e6dbacb2feee10_postgres16_f024c1 --label a018c3 --network github_network_8ed73b31c58e44f9a6939dcd01affc6d --network-alias postgres -p 5432:5432 --health-cmd "pg_isready -U careold -d careold_test" --health-interval 5s --health-timeout 5s --health-retries 10 -e "POSTGRES_USER=careold" -e "POSTGRES_PASSWORD=careold" -e "POSTGRES_DB=careold_test" -e GITHUB_ACTIONS=true -e CI=true postgres:16
+2026-10-26T10:42:49.3138559Z 8beacd23a342b231b45abaf860fd0317abfa7678a206a4fb08c5a13496e569da
+2026-10-26T10:42:49.3162847Z ##[command]/usr/bin/docker start 8beacd23a342b231b45abaf860fd0317abfa7678a206a4fb08c5a13496e569da
+2026-10-26T10:42:49.5019768Z 8beacd23a342b231b45abaf860fd0317abfa7678a206a4fb08c5a13496e569da
+2026-10-26T10:42:49.5044039Z ##[command]/usr/bin/docker ps --all --filter id=8beacd23a342b231b45abaf860fd0317abfa7678a206a4fb08c5a13496e569da --filter status=running --no-trunc --format "{{.ID}} {{.Status}}"
+2026-10-26T10:42:49.5364227Z 8beacd23a342b231b45abaf860fd0317abfa7678a206a4fb08c5a13496e569da Up Less than a second (health: starting)
+2026-10-26T10:42:49.5383559Z ##[command]/usr/bin/docker port 8beacd23a342b231b45abaf860fd0317abfa7678a206a4fb08c5a13496e569da
+2026-10-26T10:42:49.5557579Z 5432/tcp -> 0.0.0.0:5432
+2026-10-26T10:42:49.5558155Z 5432/tcp -> [::]:5432
+2026-10-26T10:42:49.5579787Z ##[endgroup]
+2026-10-26T10:42:49.5593208Z ##[group]Waiting for all services to be ready
+2026-10-26T10:42:49.5611948Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" d6f50e2b1ad617d77e44c9c45f0821c6c35d41b9d5d05cfcec8614630ca33d11
+2026-10-26T10:42:49.5778358Z starting
+2026-10-26T10:42:49.5804582Z mysql service is starting, waiting 2 seconds before checking again.
+2026-10-26T10:42:51.5807101Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" d6f50e2b1ad617d77e44c9c45f0821c6c35d41b9d5d05cfcec8614630ca33d11
+2026-10-26T10:42:51.5977282Z starting
+2026-10-26T10:42:51.5994752Z mysql service is starting, waiting 3 seconds before checking again.
+2026-10-26T10:42:55.5917578Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" d6f50e2b1ad617d77e44c9c45f0821c6c35d41b9d5d05cfcec8614630ca33d11
+2026-10-26T10:42:55.6063634Z healthy
+2026-10-26T10:42:55.6085396Z mysql service is healthy.
+2026-10-26T10:42:55.6086224Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" 8beacd23a342b231b45abaf860fd0317abfa7678a206a4fb08c5a13496e569da
+2026-10-26T10:42:55.6229695Z healthy
+2026-10-26T10:42:55.6248500Z postgres service is healthy.
+2026-10-26T10:42:55.6248921Z ##[endgroup]
+2026-10-26T10:42:55.6556104Z ##[group]Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+2026-10-26T10:42:55.6557007Z with:
+2026-10-26T10:42:55.6557228Z   persist-credentials: false
+2026-10-26T10:42:55.6557514Z   ref: bf331775e68b43c64ad3dfaa37ec1f63291eb3f0
+2026-10-26T10:42:55.6557871Z   repository: WatchTestCs/smart-elderly-watch-management
+2026-10-26T10:42:55.6560508Z   token: ***
+2026-10-26T10:42:55.6560713Z   ssh-strict: true
+2026-10-26T10:42:55.6560918Z   ssh-user: git
+2026-10-26T10:42:55.6561106Z   clean: true
+2026-10-26T10:42:55.6561310Z   sparse-checkout-cone-mode: true
+2026-10-26T10:42:55.6561560Z   fetch-depth: 1
+2026-10-26T10:42:55.6561753Z   fetch-tags: false
+2026-10-26T10:42:55.6561952Z   show-progress: true
+2026-10-26T10:42:55.6562154Z   lfs: false
+2026-10-26T10:42:55.6562335Z   submodules: false
+2026-10-26T10:42:55.6562560Z   set-safe-directory: true
+2026-10-26T10:42:55.6562807Z   allow-unsafe-pr-checkout: false
+2026-10-26T10:42:55.6563244Z ##[endgroup]
+2026-10-26T10:42:55.7618455Z Syncing repository: WatchTestCs/smart-elderly-watch-management
+2026-10-26T10:42:55.7620384Z ##[group]Getting Git version info
+2026-10-26T10:42:55.7621243Z Working directory is '/home/runner/work/smart-elderly-watch-management/smart-elderly-watch-management'
+2026-10-26T10:42:55.7622370Z [command]/usr/bin/git version
+2026-10-26T10:42:55.7642528Z git version 2.55.0
+2026-10-26T10:42:55.7668312Z ##[endgroup]
+2026-10-26T10:42:55.7681527Z Temporarily overriding HOME='/home/runner/work/_temp/d59632af-12f9-42d7-9441-9e3958a5089f' before making global git config changes
+2026-10-26T10:42:55.7682937Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-26T10:42:55.7688139Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/smart-elderly-watch-management/smart-elderly-watch-management
+2026-10-26T10:42:55.7752572Z Deleting the contents of '/home/runner/work/smart-elderly-watch-management/smart-elderly-watch-management'
+2026-10-26T10:42:55.7756167Z ##[group]Determining repository object format
+2026-10-26T10:42:55.7758674Z ##[endgroup]
+2026-10-26T10:42:55.7759314Z ##[group]Initializing the repository
+2026-10-26T10:42:55.7764509Z [command]/usr/bin/git init /home/runner/work/smart-elderly-watch-management/smart-elderly-watch-management
+2026-10-26T10:42:55.7870723Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-10-26T10:42:55.7872000Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-10-26T10:42:55.7872890Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-10-26T10:42:55.7873513Z hint: call:
+2026-10-26T10:42:55.7873815Z hint:
+2026-10-26T10:42:55.7874245Z hint: 	git config --global init.defaultBranch <name>
+2026-10-26T10:42:55.7874772Z hint:
+2026-10-26T10:42:55.7875294Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-10-26T10:42:55.7876752Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-10-26T10:42:55.7877396Z hint:
+2026-10-26T10:42:55.7877715Z hint: 	git branch -m <name>
+2026-10-26T10:42:55.7878071Z hint:
+2026-10-26T10:42:55.7878598Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-10-26T10:42:55.7879865Z Initialized empty Git repository in /home/runner/work/smart-elderly-watch-management/smart-elderly-watch-management/.git/
+2026-10-26T10:42:55.7891736Z [command]/usr/bin/git remote add origin https://github.com/WatchTestCs/smart-elderly-watch-management
+2026-10-26T10:42:55.7946127Z ##[endgroup]
+2026-10-26T10:42:55.7947071Z ##[group]Disabling automatic garbage collection
+2026-10-26T10:42:55.7950899Z [command]/usr/bin/git config --local gc.auto 0
+2026-10-26T10:42:55.7998611Z ##[endgroup]
+2026-10-26T10:42:55.7999552Z ##[group]Setting up auth
+2026-10-26T10:42:55.8000059Z Removing SSH command configuration
+2026-10-26T10:42:55.8000792Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-26T10:42:55.8060684Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-26T10:42:55.8531343Z Removing HTTP extra header
+2026-10-26T10:42:55.8537017Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-26T10:42:55.8571703Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-26T10:42:55.8840487Z Removing includeIf entries pointing to credentials config files
+2026-10-26T10:42:55.8846787Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-26T10:42:55.8883595Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-26T10:42:55.9167288Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-f88aeb5e-1f03-44ca-a855-ce85cd728bc4.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-10-26T10:42:55.9213628Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/smart-elderly-watch-management/smart-elderly-watch-management/.git.path /home/runner/work/_temp/git-credentials-f88aeb5e-1f03-44ca-a855-ce85cd728bc4.config
+2026-10-26T10:42:55.9247048Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/smart-elderly-watch-management/smart-elderly-watch-management/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-f88aeb5e-1f03-44ca-a855-ce85cd728bc4.config
+2026-10-26T10:42:55.9280684Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-f88aeb5e-1f03-44ca-a855-ce85cd728bc4.config
+2026-10-26T10:42:55.9312413Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-f88aeb5e-1f03-44ca-a855-ce85cd728bc4.config
+2026-10-26T10:42:55.9342404Z ##[endgroup]
+2026-10-26T10:42:55.9342969Z ##[group]Fetching the repository
+2026-10-26T10:42:55.9349034Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin bf331775e68b43c64ad3dfaa37ec1f63291eb3f0
+2026-10-26T10:42:57.0917086Z From https://github.com/WatchTestCs/smart-elderly-watch-management
+2026-10-26T10:42:57.0918023Z  * branch            bf331775e68b43c64ad3dfaa37ec1f63291eb3f0 -> FETCH_HEAD
+2026-10-26T10:42:57.0928622Z [command]/usr/bin/git rev-parse --verify --quiet bf331775e68b43c64ad3dfaa37ec1f63291eb3f0^{object}
+2026-10-26T10:42:57.0956951Z bf331775e68b43c64ad3dfaa37ec1f63291eb3f0
+2026-10-26T10:42:57.0961915Z ##[endgroup]
+2026-10-26T10:42:57.0962590Z ##[group]Determining the checkout info
+2026-10-26T10:42:57.0963723Z ##[endgroup]
+2026-10-26T10:42:57.0968205Z [command]/usr/bin/git sparse-checkout disable
+2026-10-26T10:42:57.1020462Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-10-26T10:42:57.1052742Z ##[group]Checking out the ref
+2026-10-26T10:42:57.1057436Z [command]/usr/bin/git checkout --progress --force bf331775e68b43c64ad3dfaa37ec1f63291eb3f0
+2026-10-26T10:42:57.1975057Z Note: switching to 'bf331775e68b43c64ad3dfaa37ec1f63291eb3f0'.
+2026-10-26T10:42:57.1975709Z 
+2026-10-26T10:42:57.1976172Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-10-26T10:42:57.1977369Z changes and commit them, and you can discard any commits you make in this
+2026-10-26T10:42:57.1978158Z state without impacting any branches by switching back to a branch.
+2026-10-26T10:42:57.1978621Z 
+2026-10-26T10:42:57.1978929Z If you want to create a new branch to retain commits you create, you may
+2026-10-26T10:42:57.1979665Z do so (now or later) by using -c with the switch command. Example:
+2026-10-26T10:42:57.1980123Z 
+2026-10-26T10:42:57.1980297Z   git switch -c <new-branch-name>
+2026-10-26T10:42:57.1980588Z 
+2026-10-26T10:42:57.1981008Z Or undo this operation with:
+2026-10-26T10:42:57.1981286Z 
+2026-10-26T10:42:57.1981426Z   git switch -
+2026-10-26T10:42:57.1981630Z 
+2026-10-26T10:42:57.1981984Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-10-26T10:42:57.1982544Z 
+2026-10-26T10:42:57.1983011Z HEAD is now at bf33177 feat: add encrypted shared images and isolated process failure acceptance
+2026-10-26T10:42:57.1993713Z ##[endgroup]
+2026-10-26T10:42:57.2048875Z [command]/usr/bin/git log -1 --format=%H
+2026-10-26T10:42:57.2081105Z bf331775e68b43c64ad3dfaa37ec1f63291eb3f0
+2026-10-26T10:42:57.2090240Z ##[group]Removing auth
+2026-10-26T10:42:57.2090724Z Removing SSH command configuration
+2026-10-26T10:42:57.2094557Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-26T10:42:57.2129685Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-26T10:42:57.2403457Z Removing HTTP extra header
+2026-10-26T10:42:57.2407414Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-26T10:42:57.2442463Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-26T10:42:57.2718718Z Removing includeIf entries pointing to credentials config files
+2026-10-26T10:42:57.2723042Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-26T10:42:57.2750681Z includeif.gitdir:/home/runner/work/smart-elderly-watch-management/smart-elderly-watch-management/.git.path
+2026-10-26T10:42:57.2752102Z includeif.gitdir:/home/runner/work/smart-elderly-watch-management/smart-elderly-watch-management/.git/worktrees/*.path
+2026-10-26T10:42:57.2753398Z includeif.gitdir:/github/workspace/.git.path
+2026-10-26T10:42:57.2753788Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-10-26T10:42:57.2763725Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/smart-elderly-watch-management/smart-elderly-watch-management/.git.path
+2026-10-26T10:42:57.2801596Z /home/runner/work/_temp/git-credentials-f88aeb5e-1f03-44ca-a855-ce85cd728bc4.config
+2026-10-26T10:42:57.2812101Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/smart-elderly-watch-management/smart-elderly-watch-management/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-f88aeb5e\-1f03\-44ca\-a855\-ce85cd728bc4\.config
+2026-10-26T10:42:57.2846977Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/smart-elderly-watch-management/smart-elderly-watch-management/.git/worktrees/*.path
+2026-10-26T10:42:57.2870371Z /home/runner/work/_temp/git-credentials-f88aeb5e-1f03-44ca-a855-ce85cd728bc4.config
+2026-10-26T10:42:57.2882723Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/smart-elderly-watch-management/smart-elderly-watch-management/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-f88aeb5e\-1f03\-44ca\-a855\-ce85cd728bc4\.config
+2026-10-26T10:42:57.2928549Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-10-26T10:42:57.2954890Z /github/runner_temp/git-credentials-f88aeb5e-1f03-44ca-a855-ce85cd728bc4.config
+2026-10-26T10:42:57.2963679Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-f88aeb5e\-1f03\-44ca\-a855\-ce85cd728bc4\.config
+2026-10-26T10:42:57.3001270Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-10-26T10:42:57.3024892Z /github/runner_temp/git-credentials-f88aeb5e-1f03-44ca-a855-ce85cd728bc4.config
+2026-10-26T10:42:57.3032839Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-f88aeb5e\-1f03\-44ca\-a855\-ce85cd728bc4\.config
+2026-10-26T10:42:57.3069604Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-26T10:42:57.3347105Z Removing credentials config '/home/runner/work/_temp/git-credentials-f88aeb5e-1f03-44ca-a855-ce85cd728bc4.config'
+2026-10-26T10:42:57.3356130Z ##[endgroup]
+2026-10-26T10:42:57.3583768Z ##[group]Run actions/setup-go@v6
+2026-10-26T10:42:57.3584040Z with:
+2026-10-26T10:42:57.3584227Z   go-version: 1.26.10
+2026-10-26T10:42:57.3584486Z   cache-dependency-path: 智慧养老手表管理系统/backend/go.sum
+2026-10-26T10:42:57.3584793Z   check-latest: false
+2026-10-26T10:42:57.3587553Z   token: ***
+2026-10-26T10:42:57.3587750Z   cache: true
+2026-10-26T10:42:57.3587938Z ##[endgroup]
+2026-10-26T10:42:57.4840634Z Setup go version spec 1.26.10
+2026-10-26T10:42:57.4854663Z Attempting to download 1.26.10...
+2026-10-26T10:42:58.4875464Z matching 1.26.10...
+2026-10-26T10:42:58.4937596Z Acquiring 1.26.10 from https://github.com/actions/go-versions/releases/download/1.26.10-39437851726/go-1.26.10-linux-x64.tar.gz
+2026-10-26T10:42:59.0687213Z Extracting Go...
+2026-10-26T10:42:59.0808010Z [command]/usr/bin/tar xz --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/3c0b24c2-1736-4fab-b529-ff9973b2774f -f /home/runner/work/_temp/0c85731b-78c1-4423-8b1b-2053cca98d30
+2026-10-26T10:43:00.2604360Z Successfully extracted go to /home/runner/work/_temp/3c0b24c2-1736-4fab-b529-ff9973b2774f
+2026-10-26T10:43:00.2605357Z Adding to the cache ...
+2026-10-26T10:43:05.0096335Z Successfully cached go to /opt/hostedtoolcache/go/1.26.10/x64
+2026-10-26T10:43:05.0099560Z Added go to the path
+2026-10-26T10:43:05.0101897Z Successfully set up Go version 1.26.10
+2026-10-26T10:43:05.0327789Z [command]/opt/hostedtoolcache/go/1.26.10/x64/bin/go env GOMODCACHE
+2026-10-26T10:43:05.0364458Z [command]/opt/hostedtoolcache/go/1.26.10/x64/bin/go env GOCACHE
+2026-10-26T10:43:05.0403408Z /home/runner/go/pkg/mod
+2026-10-26T10:43:05.0426075Z /home/runner/.cache/go-build
+2026-10-26T10:43:05.2420328Z Cache is not found
+2026-10-26T10:43:05.2438683Z go version go1.26.10 linux/amd64
+2026-10-26T10:43:05.2438934Z 
+2026-10-26T10:43:05.2439254Z ##[group]go env
+2026-10-26T10:43:05.8088072Z AR='ar'
+2026-10-26T10:43:05.8088396Z CC='gcc'
+2026-10-26T10:43:05.8088833Z CGO_CFLAGS='-O2 -g'
+2026-10-26T10:43:05.8089186Z CGO_CPPFLAGS=''
+2026-10-26T10:43:05.8089572Z CGO_CXXFLAGS='-O2 -g'
+2026-10-26T10:43:05.8089946Z CGO_ENABLED='1'
+2026-10-26T10:43:05.8090298Z CGO_FFLAGS='-O2 -g'
+2026-10-26T10:43:05.8090671Z CGO_LDFLAGS='-O2 -g'
+2026-10-26T10:43:05.8091062Z CXX='g++'
+2026-10-26T10:43:05.8091409Z GCCGO='gccgo'
+2026-10-26T10:43:05.8091738Z GO111MODULE=''
+2026-10-26T10:43:05.8092043Z GOAMD64='v1'
+2026-10-26T10:43:05.8092352Z GOARCH='amd64'
+2026-10-26T10:43:05.8092656Z GOAUTH='netrc'
+2026-10-26T10:43:05.8093150Z GOBIN=''
+2026-10-26T10:43:05.8093418Z GOCACHE='/home/runner/.cache/go-build'
+2026-10-26T10:43:05.8093745Z GOCACHEPROG=''
+2026-10-26T10:43:05.8093981Z GODEBUG=''
+2026-10-26T10:43:05.8094230Z GOENV='/home/runner/.config/go/env'
+2026-10-26T10:43:05.8094522Z GOEXE=''
+2026-10-26T10:43:05.8094742Z GOEXPERIMENT=''
+2026-10-26T10:43:05.8094978Z GOFIPS140='off'
+2026-10-26T10:43:05.8095205Z GOFLAGS=''
+2026-10-26T10:43:05.8095999Z GOGCCFLAGS='-fPIC -m64 -pthread -Wl,--no-gc-sections -fmessage-length=0 -ffile-prefix-map=/tmp/go-build1334503712=/tmp/go-build -gno-record-gcc-switches'
+2026-10-26T10:43:05.8097135Z GOHOSTARCH='amd64'
+2026-10-26T10:43:05.8097393Z GOHOSTOS='linux'
+2026-10-26T10:43:05.8097643Z GOINSECURE=''
+2026-10-26T10:43:05.8097876Z GOMOD='/dev/null'
+2026-10-26T10:43:05.8098145Z GOMODCACHE='/home/runner/go/pkg/mod'
+2026-10-26T10:43:05.8098473Z GONOPROXY=''
+2026-10-26T10:43:05.8121987Z GONOSUMDB=''
+2026-10-26T10:43:05.8122365Z GOOS='linux'
+2026-10-26T10:43:05.8122751Z GOPATH='/home/runner/go'
+2026-10-26T10:43:05.8123173Z GOPRIVATE=''
+2026-10-26T10:43:05.8123568Z GOPROXY='https://proxy.golang.org,direct'
+2026-10-26T10:43:05.8123968Z GOROOT='/opt/hostedtoolcache/go/1.26.10/x64'
+2026-10-26T10:43:05.8124336Z GOSUMDB='sum.golang.org'
+2026-10-26T10:43:05.8124630Z GOTELEMETRY='local'
+2026-10-26T10:43:05.8124964Z GOTELEMETRYDIR='/home/runner/.config/go/telemetry'
+2026-10-26T10:43:05.8125318Z GOTMPDIR=''
+2026-10-26T10:43:05.8125536Z GOTOOLCHAIN='local'
+2026-10-26T10:43:05.8125889Z GOTOOLDIR='/opt/hostedtoolcache/go/1.26.10/x64/pkg/tool/linux_amd64'
+2026-10-26T10:43:05.8126877Z GOVCS=''
+2026-10-26T10:43:05.8127169Z GOVERSION='go1.26.10'
+2026-10-26T10:43:05.8127429Z GOWORK=''
+2026-10-26T10:43:05.8127637Z PKG_CONFIG='pkg-config'
+2026-10-26T10:43:05.8127807Z 
+2026-10-26T10:43:05.8128139Z ##[endgroup]
+2026-10-26T10:43:05.8333524Z ##[group]Run python3 scripts/generate-openapi.py --check
+2026-10-26T10:43:05.8334003Z [36;1mpython3 scripts/generate-openapi.py --check[0m
+2026-10-26T10:43:05.8501319Z shell: /usr/bin/bash -e {0}
+2026-10-26T10:43:05.8501612Z env:
+2026-10-26T10:43:05.8501812Z   GOTOOLCHAIN: local
+2026-10-26T10:43:05.8502039Z ##[endgroup]
+2026-10-26T10:43:05.8925661Z OpenAPI: 123 paths
+2026-10-26T10:43:05.9004797Z ##[group]Run cat > "$RUNNER_TEMP/s3-test.json" <<'JSON'
+2026-10-26T10:43:05.9005229Z [36;1mcat > "$RUNNER_TEMP/s3-test.json" <<'JSON'[0m
+2026-10-26T10:43:05.9006009Z [36;1m{"identities":[{"name":"ci-only","credentials":[{"accessKey":"ci-only-access","secretKey":"ci-only-not-production-secret-key"}],"actions":["Admin","Read","Write","List","Tagging"]}]}[0m
+2026-10-26T10:43:05.9007098Z [36;1mJSON[0m
+2026-10-26T10:43:05.9007405Z [36;1mdocker run -d --name s3-integration -p 127.0.0.1:8333:8333 \[0m
+2026-10-26T10:43:05.9007836Z [36;1m  -v "$RUNNER_TEMP/s3-test.json:/etc/s3-test.json:ro" \[0m
+2026-10-26T10:43:05.9008528Z [36;1m  chrislusf/seaweedfs:4.51@sha256:f7a49e3f3972ebed5be2ed4befa4a0c68eb7bdddba6e692d42729ceb545134b8 mini -dir=/data -ip.bind=0.0.0.0 \[0m
+2026-10-26T10:43:05.9009289Z [36;1m  -admin.ui=false -volume.max=2 -bucket=care-ci -s3.config=/etc/s3-test.json[0m
+2026-10-26T10:43:05.9009703Z [36;1mfor attempt in $(seq 1 60); do[0m
+2026-10-26T10:43:05.9010156Z [36;1m  code="$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8333/care-ci || true)"[0m
+2026-10-26T10:43:05.9010622Z [36;1m  if [ "$code" = 403 ] || [ "$code" = 401 ]; then exit 0; fi[0m
+2026-10-26T10:43:05.9010950Z [36;1m  sleep 1[0m
+2026-10-26T10:43:05.9011152Z [36;1mdone[0m
+2026-10-26T10:43:05.9011360Z [36;1mdocker logs s3-integration[0m
+2026-10-26T10:43:05.9011611Z [36;1mexit 1[0m
+2026-10-26T10:43:05.9073844Z shell: /usr/bin/bash -e {0}
+2026-10-26T10:43:05.9074099Z env:
+2026-10-26T10:43:05.9074286Z   GOTOOLCHAIN: local
+2026-10-26T10:43:05.9074500Z ##[endgroup]
+2026-10-26T10:43:05.9334763Z Unable to find image 'chrislusf/seaweedfs:4.51@sha256:f7a49e3f3972ebed5be2ed4befa4a0c68eb7bdddba6e692d42729ceb545134b8' locally
+2026-10-26T10:43:06.5300704Z docker.io/chrislusf/seaweedfs@sha256:f7a49e3f3972ebed5be2ed4befa4a0c68eb7bdddba6e692d42729ceb545134b8: Pulling from chrislusf/seaweedfs
+2026-10-26T10:43:06.7178499Z 4f4fb700ef54: Pulling fs layer
+2026-10-26T10:43:06.7179115Z 7b229517ed22: Pulling fs layer
+2026-10-26T10:43:06.7179594Z 8be1926aac0e: Pulling fs layer
+2026-10-26T10:43:06.7180041Z 018e268ad9d3: Pulling fs layer
+2026-10-26T10:43:06.7180493Z 3356273a8b01: Pulling fs layer
+2026-10-26T10:43:06.7180964Z 6b95bd4d7993: Pulling fs layer
+2026-10-26T10:43:06.7181423Z eee8c4812dd5: Pulling fs layer
+2026-10-26T10:43:06.7181866Z 47a7a7918062: Pulling fs layer
+2026-10-26T10:43:06.7182289Z d291fcf22f5b: Pulling fs layer
+2026-10-26T10:43:06.7183170Z cd39e0f022e9: Pulling fs layer
+2026-10-26T10:43:06.7367676Z 4f4fb700ef54: Already exists
+2026-10-26T10:43:06.8370925Z cd39e0f022e9: Download complete
+2026-10-26T10:43:06.9378511Z 7b229517ed22: Download complete
+2026-10-26T10:43:06.9403909Z 3356273a8b01: Download complete
+2026-10-26T10:43:06.9415986Z 6b95bd4d7993: Download complete
+2026-10-26T10:43:06.9416985Z eee8c4812dd5: Download complete
+2026-10-26T10:43:06.9427395Z d291fcf22f5b: Download complete
+2026-10-26T10:43:07.0418646Z 44136fa355b3: Already exists
+2026-10-26T10:43:07.0428663Z 47a7a7918062: Download complete
+2026-10-26T10:43:07.1378637Z b85d6c19b57f: Download complete
+2026-10-26T10:43:07.1389172Z 11fdd6955dfe: Download complete
+2026-10-26T10:43:07.2407475Z 7b229517ed22: Pull complete
+2026-10-26T10:43:07.3362187Z 018e268ad9d3: Download complete
+2026-10-26T10:43:07.4360828Z 8be1926aac0e: Download complete
+2026-10-26T10:43:08.2492179Z 8be1926aac0e: Pull complete
+2026-10-26T10:43:08.4466993Z 47a7a7918062: Pull complete
+2026-10-26T10:43:09.4419640Z 3356273a8b01: Pull complete
+2026-10-26T10:43:09.4427150Z 6b95bd4d7993: Pull complete
+2026-10-26T10:43:09.4457463Z d291fcf22f5b: Pull complete
+2026-10-26T10:43:09.4469065Z 018e268ad9d3: Pull complete
+2026-10-26T10:43:09.4864346Z 4f4fb700ef54: Pull complete
+2026-10-26T10:43:09.4881723Z cd39e0f022e9: Pull complete
+2026-10-26T10:43:09.4893333Z eee8c4812dd5: Pull complete
+2026-10-26T10:43:09.4894241Z Digest: sha256:f7a49e3f3972ebed5be2ed4befa4a0c68eb7bdddba6e692d42729ceb545134b8
+2026-10-26T10:43:09.4895701Z Status: Downloaded newer image for chrislusf/seaweedfs@sha256:f7a49e3f3972ebed5be2ed4befa4a0c68eb7bdddba6e692d42729ceb545134b8
+2026-10-26T10:43:11.5889574Z e3240984a53e06d6b17a463f4936039f6c4bea758438766ea313ccaf9fe9eaad
+2026-10-26T10:43:15.7990267Z ##[group]Run set -euo pipefail
+2026-10-26T10:43:15.7990614Z [36;1mset -euo pipefail[0m
+2026-10-26T10:43:15.7990902Z [36;1mmkdir -p ../../evidence/ci/backend-1.26.10[0m
+2026-10-26T10:43:15.7991243Z [36;1mevidence=../../evidence/ci/backend-1.26.10[0m
+2026-10-26T10:43:15.7991614Z [36;1mtest -n "$TEST_MYSQL_DSN" && test -n "$TEST_DATABASE_URL"[0m
+2026-10-26T10:43:15.7992013Z [36;1mgit rev-parse HEAD > "$evidence/source-sha.txt"[0m
+2026-10-26T10:43:15.7992357Z [36;1mgo version > "$evidence/go-version.txt"[0m
+2026-10-26T10:43:15.7992730Z [36;1mgo env GOOS GOARCH CGO_ENABLED >> "$evidence/go-version.txt"[0m
+2026-10-26T10:43:15.7993225Z [36;1mgo test -json -race -count=1 -timeout 600s ./... > "$evidence/mysql.jsonl" 2>&1[0m
+2026-10-26T10:43:15.7993955Z [36;1mpython3 ../../scripts/reliability/audit-go-results.py "$evidence/mysql.jsonl" --mode mysql --output "$evidence/mysql-summary.json"[0m
+2026-10-26T10:43:15.7994998Z [36;1mTEST_MYSQL_DSN= go test -json -race -count=1 -timeout 600s ./internal/db ./internal/handlers ./internal/care ./internal/analytics > "$evidence/postgres.jsonl" 2>&1[0m
+2026-10-26T10:43:15.7996031Z [36;1mpython3 ../../scripts/reliability/audit-go-results.py "$evidence/postgres.jsonl" --mode postgres --output "$evidence/postgres-summary.json"[0m
+2026-10-26T10:43:15.7996896Z [36;1mgo build ./... > "$evidence/build.txt" 2>&1[0m
+2026-10-26T10:43:15.7997215Z [36;1mgo vet ./... > "$evidence/vet.txt" 2>&1[0m
+2026-10-26T10:43:15.7997577Z [36;1munformatted="$(gofmt -l ./cmd ./internal ./migrations)"[0m
+2026-10-26T10:43:15.7997946Z [36;1mif [ -n "$unformatted" ]; then[0m
+2026-10-26T10:43:15.7998281Z [36;1m  printf 'Go files requiring gofmt:\n%s\n' "$unformatted"[0m
+2026-10-26T10:43:15.7998814Z [36;1m  gofmt -d ./cmd ./internal ./migrations[0m
+2026-10-26T10:43:15.7999092Z [36;1m  exit 1[0m
+2026-10-26T10:43:15.7999285Z [36;1mfi[0m
+2026-10-26T10:43:15.8057712Z shell: /usr/bin/bash -e {0}
+2026-10-26T10:43:15.8057961Z env:
+2026-10-26T10:43:15.8058164Z   GOTOOLCHAIN: local
+2026-10-26T10:43:15.8058479Z   TEST_MYSQL_DSN: root:ci_root_only@tcp(localhost:3306)/suining_test
+2026-10-26T10:43:15.8059270Z   TEST_DATABASE_URL: ***localhost:5432/careold_test?sslmode=disable
+2026-10-26T10:43:15.8059652Z   TEST_S3_ENDPOINT: http://127.0.0.1:8333
+2026-10-26T10:43:15.8059924Z   TEST_S3_BUCKET: care-ci
+2026-10-26T10:43:15.8060161Z   TEST_S3_ACCESS_KEY: ci-only-access
+2026-10-26T10:43:15.8060473Z   TEST_S3_SECRET_KEY: ci-only-not-production-secret-key
+2026-10-26T10:43:15.8060777Z ##[endgroup]
+2026-10-26T10:46:47.1952114Z ##[error]Process completed with exit code 1.
+2026-10-26T10:46:47.2022812Z ##[group]Run actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+2026-10-26T10:46:47.2023251Z with:
+2026-10-26T10:46:47.2023530Z   name: backend-1.26.10-bf331775e68b43c64ad3dfaa37ec1f63291eb3f0
+2026-10-26T10:46:47.2023893Z   path: evidence/ci/backend-1.26.10/
+2026-10-26T10:46:47.2024159Z   if-no-files-found: error
+2026-10-26T10:46:47.2024391Z   retention-days: 30
+2026-10-26T10:46:47.2024602Z   compression-level: 6
+2026-10-26T10:46:47.2024805Z   overwrite: false
+2026-10-26T10:46:47.2025013Z   include-hidden-files: false
+2026-10-26T10:46:47.2025245Z env:
+2026-10-26T10:46:47.2025421Z   GOTOOLCHAIN: local
+2026-10-26T10:46:47.2025618Z ##[endgroup]
+2026-10-26T10:46:47.3713230Z With the provided path, there will be 3 files uploaded
+2026-10-26T10:46:47.3719916Z Artifact name is valid!
+2026-10-26T10:46:47.3720619Z Root directory input is valid!
+2026-10-26T10:46:47.7088932Z Beginning upload of artifact content to blob storage
+2026-10-26T10:46:48.0436664Z Uploaded bytes 69998
+2026-10-26T10:46:48.0986699Z Finished uploading artifact content to blob storage!
+2026-10-26T10:46:48.0987749Z SHA256 digest of uploaded artifact zip is b4c975cb37ae589d6b6fc8ff9817ecca33d8cadda5c8b1151dee803a3ba69852
+2026-10-26T10:46:48.0989864Z Finalizing artifact upload
+2026-10-26T10:46:48.6475295Z Artifact backend-1.26.10-bf331775e68b43c64ad3dfaa37ec1f63291eb3f0.zip successfully finalized. Artifact ID 12644346858
+2026-10-26T10:46:48.6477120Z Artifact backend-1.26.10-bf331775e68b43c64ad3dfaa37ec1f63291eb3f0 has been successfully uploaded! Final size is 69998 bytes. Artifact ID is 12644346858
+2026-10-26T10:46:48.6481554Z Artifact download URL: https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/40309489568/artifacts/12644346858
+2026-10-26T10:46:48.6707474Z Post job cleanup.
+2026-10-26T10:46:48.7575111Z [command]/usr/bin/git version
+2026-10-26T10:46:48.7635293Z git version 2.55.0
+2026-10-26T10:46:48.7677607Z Temporarily overriding HOME='/home/runner/work/_temp/9733f3a1-2064-40e7-8b95-c7260a43077b' before making global git config changes
+2026-10-26T10:46:48.7679054Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-26T10:46:48.7683323Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/smart-elderly-watch-management/smart-elderly-watch-management
+2026-10-26T10:46:48.7718133Z Removing SSH command configuration
+2026-10-26T10:46:48.7725155Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-26T10:46:48.7766832Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-26T10:46:48.8072742Z Removing HTTP extra header
+2026-10-26T10:46:48.8080246Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-26T10:46:48.8121200Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-26T10:46:48.8530373Z Removing includeIf entries pointing to credentials config files
+2026-10-26T10:46:48.8531380Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-26T10:46:48.8598081Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-26T10:46:48.9118304Z Print service container logs: 9b85110db58c49ef9323a55dbbcbacf8_mysql84_7a1662
+2026-10-26T10:46:48.9123102Z ##[command]/usr/bin/docker logs --details d6f50e2b1ad617d77e44c9c45f0821c6c35d41b9d5d05cfcec8614630ca33d11
+2026-10-26T10:46:48.9267767Z  2026-10-26 10:42:43+00:00 [Note] [Entrypoint]: Entrypoint script for MySQL Server 8.4.13-1.el9 started.
+2026-10-26T10:46:48.9269918Z  2026-10-26T10:42:43.788461Z 0 [System] [MY-015017] [Server] MySQL Server Initialization - start.
+2026-10-26T10:46:48.9271002Z  2026-10-26 10:42:43+00:00 [Note] [Entrypoint]: Switching to dedicated user 'mysql'
+2026-10-26T10:46:48.9272296Z  2026-10-26T10:42:43.789636Z 0 [System] [MY-013169] [Server] /usr/sbin/mysqld (mysqld 8.4.13) initializing of server in progress as process 80
+2026-10-26T10:46:48.9273557Z  2026-10-26T10:42:43.789638Z 0 [System] [MY-015150] [Server] Server version with update: '8.4.13.0'
+2026-10-26T10:46:48.9274610Z  2026-10-26T10:42:43.794144Z 1 [System] [MY-013576] [InnoDB] InnoDB initialization has started.
+2026-10-26T10:46:48.9275574Z  2026-10-26T10:42:43.934591Z 1 [System] [MY-013577] [InnoDB] InnoDB initialization has ended.
+2026-10-26T10:46:48.9277329Z  2026-10-26T10:42:44.523453Z 6 [Warning] [MY-010453] [Server] root@localhost is created with an empty password ! Please consider switching off the --initialize-insecure option.
+2026-10-26T10:46:48.9278840Z  2026-10-26T10:42:46.565073Z 0 [System] [MY-015018] [Server] MySQL Server Initialization - end.
+2026-10-26T10:46:48.9279757Z  2026-10-26T10:42:46.607863Z 0 [System] [MY-015015] [Server] MySQL Server - start.
+2026-10-26T10:46:48.9280805Z  2026-10-26T10:42:46.860675Z 0 [System] [MY-010116] [Server] /usr/sbin/mysqld (mysqld 8.4.13) starting as process 121
+2026-10-26T10:46:48.9281916Z  2026-10-26T10:42:46.860680Z 0 [System] [MY-015150] [Server] Server version with update: '8.4.13.0'
+2026-10-26T10:46:48.9282901Z  2026-10-26T10:42:46.882760Z 1 [System] [MY-013576] [InnoDB] InnoDB initialization has started.
+2026-10-26T10:46:48.9283914Z  2026-10-26T10:42:47.078212Z 1 [System] [MY-013577] [InnoDB] InnoDB initialization has ended.
+2026-10-26T10:46:48.9285042Z  2026-10-26T10:42:47.345392Z 0 [Warning] [MY-010068] [Server] CA certificate ca.pem is self signed.
+2026-10-26T10:46:48.9286658Z  2026-10-26T10:42:47.345543Z 0 [System] [MY-013602] [Server] Channel mysql_main configured to support TLS. Encrypted connections are now supported for this channel.
+2026-10-26T10:46:48.9288744Z  2026-10-26T10:42:47.347830Z 0 [Warning] [MY-011810] [Server] Insecure configuration for --pid-file: Location '/var/run/mysqld' in the path is accessible to all OS users. Consider choosing a different directory.
+2026-10-26T10:46:48.9290480Z  2026-10-26T10:42:47.369301Z 0 [System] [MY-011323] [Server] X Plugin ready for connections. Socket: /var/run/mysqld/mysqlx.sock
+2026-10-26T10:46:48.9291500Z  2026-10-26T10:42:47.369560Z 0 [System] [MY-010931] [Server] /usr/sbin/mysqld: ready for connections. Version: '8.4.13'  socket: '/var/run/mysqld/mysqld.sock'  port: 0  MySQL Community Server - GPL.
+2026-10-26T10:46:48.9292521Z  2026-10-26T10:42:49.494343Z 11 [System] [MY-013172] [Server] Received SHUTDOWN from user root. Shutting down mysqld (Version: 8.4.13).
+2026-10-26T10:46:48.9293370Z  2026-10-26T10:42:50.717811Z 0 [System] [MY-010910] [Server] /usr/sbin/mysqld: Shutdown complete (mysqld 8.4.13)  MySQL Community Server - GPL.
+2026-10-26T10:46:48.9294052Z  2026-10-26T10:42:50.717832Z 0 [System] [MY-015016] [Server] MySQL Server - end.
+2026-10-26T10:46:48.9294535Z  2026-10-26T10:42:51.513542Z 0 [System] [MY-015015] [Server] MySQL Server - start.
+2026-10-26T10:46:48.9295355Z  2026-10-26T10:42:51.743903Z 0 [System] [MY-010116] [Server] /usr/sbin/mysqld (mysqld 8.4.13) starting as process 1
+2026-10-26T10:46:48.9295992Z  2026-10-26T10:42:51.743907Z 0 [System] [MY-015150] [Server] Server version with update: '8.4.13.0'
+2026-10-26T10:46:48.9297049Z  2026-10-26T10:42:51.749008Z 1 [System] [MY-013576] [InnoDB] InnoDB initialization has started.
+2026-10-26T10:46:48.9297944Z  2026-10-26T10:42:51.895293Z 1 [System] [MY-013577] [InnoDB] InnoDB initialization has ended.
+2026-10-26T10:46:48.9298545Z  2026-10-26T10:42:52.087766Z 0 [Warning] [MY-010068] [Server] CA certificate ca.pem is self signed.
+2026-10-26T10:46:48.9299378Z  2026-10-26T10:42:52.087804Z 0 [System] [MY-013602] [Server] Channel mysql_main configured to support TLS. Encrypted connections are now supported for this channel.
+2026-10-26T10:46:48.9300549Z  2026-10-26T10:42:52.089426Z 0 [Warning] [MY-011810] [Server] Insecure configuration for --pid-file: Location '/var/run/mysqld' in the path is accessible to all OS users. Consider choosing a different directory.
+2026-10-26T10:46:48.9301704Z  2026-10-26T10:42:52.107220Z 0 [System] [MY-011323] [Server] X Plugin ready for connections. Bind-address: '::' port: 33060, socket: /var/run/mysqld/mysqlx.sock
+2026-10-26T10:46:48.9302795Z  2026-10-26T10:42:52.107315Z 0 [System] [MY-010931] [Server] /usr/sbin/mysqld: ready for connections. Version: '8.4.13'  socket: '/var/run/mysqld/mysqld.sock'  port: 3306  MySQL Community Server - GPL.
+2026-10-26T10:46:48.9304169Z  2026-10-26T10:45:42.763117Z 0 [Warning] [MY-014089] [InnoDB] Redo log writer is waiting for a new redo log file. Consider increasing innodb_redo_log_capacity. The current log capacity is 104857600 bytes. The log capacity used is 104857600 bytes.
+2026-10-26T10:46:48.9305288Z  2026-10-26 10:42:43+00:00 [Note] [Entrypoint]: Entrypoint script for MySQL Server 8.4.13-1.el9 started.
+2026-10-26T10:46:48.9305818Z  2026-10-26 10:42:43+00:00 [Note] [Entrypoint]: Initializing database files
+2026-10-26T10:46:48.9306259Z  2026-10-26 10:42:46+00:00 [Note] [Entrypoint]: Database files initialized
+2026-10-26T10:46:48.9306988Z  2026-10-26 10:42:46+00:00 [Note] [Entrypoint]: Starting temporary server
+2026-10-26T10:46:48.9307400Z  2026-10-26 10:42:47+00:00 [Note] [Entrypoint]: Temporary server started.
+2026-10-26T10:46:48.9307816Z  '/var/lib/mysql/mysql.sock' -> '/var/run/mysqld/mysqld.sock'
+2026-10-26T10:46:48.9308238Z  2026-10-26 10:42:49+00:00 [Note] [Entrypoint]: Creating database suining_test
+2026-10-26T10:46:48.9308592Z  
+2026-10-26T10:46:48.9308854Z  2026-10-26 10:42:49+00:00 [Note] [Entrypoint]: Stopping temporary server
+2026-10-26T10:46:48.9309266Z  2026-10-26 10:42:51+00:00 [Note] [Entrypoint]: Temporary server stopped
+2026-10-26T10:46:48.9309587Z  
+2026-10-26T10:46:48.9309899Z  2026-10-26 10:42:51+00:00 [Note] [Entrypoint]: MySQL init process done. Ready for start up.
+2026-10-26T10:46:48.9310281Z  
+2026-10-26T10:46:48.9316111Z Stop and remove container: 9b85110db58c49ef9323a55dbbcbacf8_mysql84_7a1662
+2026-10-26T10:46:48.9320985Z ##[command]/usr/bin/docker rm --force d6f50e2b1ad617d77e44c9c45f0821c6c35d41b9d5d05cfcec8614630ca33d11
+2026-10-26T10:46:49.2070303Z d6f50e2b1ad617d77e44c9c45f0821c6c35d41b9d5d05cfcec8614630ca33d11
+2026-10-26T10:46:49.2097981Z Print service container logs: 7867e645540b4553a0e6dbacb2feee10_postgres16_f024c1
+2026-10-26T10:46:49.2098812Z ##[command]/usr/bin/docker logs --details 8beacd23a342b231b45abaf860fd0317abfa7678a206a4fb08c5a13496e569da
+2026-10-26T10:46:49.2247112Z  The files belonging to this database system will be owned by user "postgres".
+2026-10-26T10:46:49.2248147Z  This user must also own the server process.
+2026-10-26T10:46:49.2248875Z  initdb: warning: enabling "trust" authentication for local connections
+2026-10-26T10:46:49.2250154Z  initdb: hint: You can change this by editing pg_hba.conf or using the option -A, or --auth-local and --auth-host, the next time you run initdb.
+2026-10-26T10:46:49.2251200Z  
+2026-10-26T10:46:49.2251683Z  The database cluster will be initialized with locale "en_US.utf8".
+2026-10-26T10:46:49.2252812Z  The default database encoding has accordingly been set to "UTF8".
+2026-10-26T10:46:49.2253335Z  The default text search configuration will be set to "english".
+2026-10-26T10:46:49.2253693Z  
+2026-10-26T10:46:49.2254035Z  Data page checksums are disabled.
+2026-10-26T10:46:49.2254419Z  
+2026-10-26T10:46:49.2254734Z  fixing permissions on existing directory /var/lib/postgresql/data ... ok
+2026-10-26T10:46:49.2255370Z  creating subdirectories ... ok
+2026-10-26T10:46:49.2255720Z  selecting dynamic shared memory implementation ... posix
+2026-10-26T10:46:49.2256091Z  selecting default max_connections ... 100
+2026-10-26T10:46:49.2256398Z  selecting default shared_buffers ... 128MB
+2026-10-26T10:46:49.2257097Z  selecting default time zone ... Etc/UTC
+2026-10-26T10:46:49.2257406Z  creating configuration files ... ok
+2026-10-26T10:46:49.2257697Z  running bootstrap script ... ok
+2026-10-26T10:46:49.2258164Z  performing post-bootstrap initialization ... ok
+2026-10-26T10:46:49.2258503Z  syncing data to disk ... ok
+2026-10-26T10:46:49.2258752Z  
+2026-10-26T10:46:49.2258931Z  
+2026-10-26T10:46:49.2259172Z  Success. You can now start the database server using:
+2026-10-26T10:46:49.2259497Z  
+2026-10-26T10:46:49.2259734Z      pg_ctl -D /var/lib/postgresql/data -l logfile start
+2026-10-26T10:46:49.2260035Z  
+2026-10-26T10:46:49.2260699Z  waiting for server to start....2026-10-26 10:42:50.140 UTC [49] LOG:  starting PostgreSQL 16.15 (Debian 16.15-1.pgdg13+2) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit
+2026-10-26T10:46:49.2261598Z  2026-10-26 10:42:50.141 UTC [49] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+2026-10-26T10:46:49.2262156Z  2026-10-26 10:42:50.143 UTC [52] LOG:  database system was shut down at 2026-10-26 10:42:50 UTC
+2026-10-26T10:46:49.2262671Z  2026-10-26 10:42:50.147 UTC [49] LOG:  database system is ready to accept connections
+2026-10-26T10:46:49.2263037Z   done
+2026-10-26T10:46:49.2263602Z  2026-10-26 10:42:50.451 UTC [1] LOG:  starting PostgreSQL 16.15 (Debian 16.15-1.pgdg13+2) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit
+2026-10-26T10:46:49.2264306Z  2026-10-26 10:42:50.451 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+2026-10-26T10:46:49.2264764Z  2026-10-26 10:42:50.452 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+2026-10-26T10:46:49.2265279Z  2026-10-26 10:42:50.452 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+2026-10-26T10:46:49.2265820Z  2026-10-26 10:42:50.455 UTC [65] LOG:  database system was shut down at 2026-10-26 10:42:50 UTC
+2026-10-26T10:46:49.2266308Z  2026-10-26 10:42:50.460 UTC [1] LOG:  database system is ready to accept connections
+2026-10-26T10:46:49.2267448Z  2026-10-26 10:44:04.534 UTC [183] ERROR:  relation "suining_analytics.record" does not exist at character 13
+2026-10-26T10:46:49.2268429Z  2026-10-26 10:44:04.534 UTC [183] STATEMENT:  INSERT INTO suining_analytics.record
+2026-10-26T10:46:49.2269212Z  	       (source_id,entity,entity_id,last_event_id,payload,deleted)
+2026-10-26T10:46:49.2269929Z  	       SELECT x.source_id::uuid,x.entity,x.entity_id,x.event_id,
+2026-10-26T10:46:49.2270758Z  	              CASE WHEN x.has_payload THEN x.payload::jsonb ELSE NULL END,x.deleted
+2026-10-26T10:46:49.2271525Z  	       FROM UNNEST($1::text[],$2::text[],$3::bigint[],$4::bigint[],
+2026-10-26T10:46:49.2272161Z  	                   $5::text[],$6::boolean[],$7::boolean[])
+2026-10-26T10:46:49.2272851Z  	         AS x(source_id,entity,entity_id,event_id,payload,has_payload,deleted)
+2026-10-26T10:46:49.2273604Z  	       ON CONFLICT (source_id,entity,entity_id) DO UPDATE SET
+2026-10-26T10:46:49.2274204Z  	         last_event_id=EXCLUDED.last_event_id,
+2026-10-26T10:46:49.2274712Z  	         payload=EXCLUDED.payload,
+2026-10-26T10:46:49.2275170Z  	         deleted=EXCLUDED.deleted,
+2026-10-26T10:46:49.2275610Z  	         synced_at=now()
+2026-10-26T10:46:49.2276198Z  	       WHERE suining_analytics.record.last_event_id < EXCLUDED.last_event_id
+2026-10-26T10:46:49.2277424Z  2026-10-26 10:44:04.547 UTC [63] LOG:  checkpoint starting: immediate force wait
+2026-10-26T10:46:49.2279285Z  2026-10-26 10:44:04.562 UTC [63] LOG:  checkpoint complete: wrote 45 buffers (0.3%); 1 WAL file(s) added, 0 removed, 0 recycled; write=0.002 s, sync=0.001 s, total=0.015 s; sync files=14, longest=0.001 s, average=0.001 s; distance=4646 kB, estimate=4646 kB; lsn=0/1DA8B60, redo lsn=0/1DA8B28
+2026-10-26T10:46:49.2281433Z  2026-10-26 10:44:06.770 UTC [194] FATAL:  terminating connection due to administrator command
+2026-10-26T10:46:49.2282391Z  2026-10-26 10:44:06.771 UTC [193] FATAL:  terminating connection due to administrator command
+2026-10-26T10:46:49.2283281Z  2026-10-26 10:44:06.871 UTC [63] LOG:  checkpoint starting: immediate force wait
+2026-10-26T10:46:49.2285247Z  2026-10-26 10:44:06.874 UTC [63] LOG:  checkpoint complete: wrote 4 buffers (0.0%); 0 WAL file(s) added, 0 removed, 1 recycled; write=0.001 s, sync=0.001 s, total=0.003 s; sync files=4, longest=0.001 s, average=0.001 s; distance=7301 kB, estimate=7301 kB; lsn=0/24CA0B8, redo lsn=0/24CA080
+2026-10-26T10:46:49.2287391Z  2026-10-26 10:44:08.833 UTC [196] ERROR:  relation "suining_analytics.record" does not exist at character 13
+2026-10-26T10:46:49.2288162Z  2026-10-26 10:44:08.833 UTC [196] STATEMENT:  INSERT INTO suining_analytics.record(source_id,entity,entity_id,last_event_id,payload,deleted)
+2026-10-26T10:46:49.2288754Z  	      VALUES($1,$2,$3,$4,$5::jsonb,$6)
+2026-10-26T10:46:49.2289084Z  	      ON CONFLICT(source_id,entity,entity_id) DO UPDATE SET
+2026-10-26T10:46:49.2289494Z  	      last_event_id=EXCLUDED.last_event_id,payload=EXCLUDED.payload,
+2026-10-26T10:46:49.2289883Z  	      deleted=EXCLUDED.deleted,synced_at=now()
+2026-10-26T10:46:49.2290278Z  	      WHERE suining_analytics.record.last_event_id<EXCLUDED.last_event_id
+2026-10-26T10:46:49.2290755Z  2026-10-26 10:44:08.913 UTC [63] LOG:  checkpoint starting: immediate force wait
+2026-10-26T10:46:49.2291795Z  2026-10-26 10:44:08.917 UTC [63] LOG:  checkpoint complete: wrote 4 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.001 s, sync=0.002 s, total=0.004 s; sync files=4, longest=0.001 s, average=0.001 s; distance=4408 kB, estimate=7012 kB; lsn=0/2918420, redo lsn=0/29183E8
+2026-10-26T10:46:49.2292737Z  server started
+2026-10-26T10:46:49.2292932Z  CREATE DATABASE
+2026-10-26T10:46:49.2293117Z  
+2026-10-26T10:46:49.2293281Z  
+2026-10-26T10:46:49.2293601Z  /usr/local/bin/docker-entrypoint.sh: ignoring /docker-entrypoint-initdb.d/*
+2026-10-26T10:46:49.2293991Z  
+2026-10-26T10:46:49.2294245Z  2026-10-26 10:42:50.330 UTC [49] LOG:  received fast shutdown request
+2026-10-26T10:46:49.2294792Z  waiting for server to shut down....2026-10-26 10:42:50.330 UTC [49] LOG:  aborting any active transactions
+2026-10-26T10:46:49.2295481Z  2026-10-26 10:42:50.332 UTC [49] LOG:  background worker "logical replication launcher" (PID 55) exited with exit code 1
+2026-10-26T10:46:49.2296037Z  2026-10-26 10:42:50.332 UTC [50] LOG:  shutting down
+2026-10-26T10:46:49.2296446Z  2026-10-26 10:42:50.333 UTC [50] LOG:  checkpoint starting: shutdown immediate
+2026-10-26T10:46:49.2297757Z  2026-10-26 10:42:50.347 UTC [50] LOG:  checkpoint complete: wrote 926 buffers (5.7%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.012 s, sync=0.002 s, total=0.016 s; sync files=301, longest=0.001 s, average=0.001 s; distance=4273 kB, estimate=4273 kB; lsn=0/191F0E8, redo lsn=0/191F0E8
+2026-10-26T10:46:49.2298799Z  2026-10-26 10:42:50.355 UTC [49] LOG:  database system is shut down
+2026-10-26T10:46:49.2299123Z   done
+2026-10-26T10:46:49.2299311Z  server stopped
+2026-10-26T10:46:49.2299499Z  
+2026-10-26T10:46:49.2299731Z  PostgreSQL init process complete; ready for start up.
+2026-10-26T10:46:49.2300025Z  
+2026-10-26T10:46:49.2301021Z Stop and remove container: 7867e645540b4553a0e6dbacb2feee10_postgres16_f024c1
+2026-10-26T10:46:49.2301777Z ##[command]/usr/bin/docker rm --force 8beacd23a342b231b45abaf860fd0317abfa7678a206a4fb08c5a13496e569da
+2026-10-26T10:46:49.3544193Z 8beacd23a342b231b45abaf860fd0317abfa7678a206a4fb08c5a13496e569da
+2026-10-26T10:46:49.3571737Z Remove container network: github_network_8ed73b31c58e44f9a6939dcd01affc6d
+2026-10-26T10:46:49.3577384Z ##[command]/usr/bin/docker network rm github_network_8ed73b31c58e44f9a6939dcd01affc6d
+2026-10-26T10:46:49.4189828Z github_network_8ed73b31c58e44f9a6939dcd01affc6d
+2026-10-26T10:46:49.4264307Z Cleaning up orphan processes
+

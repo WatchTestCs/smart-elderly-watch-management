@@ -1,0 +1,15 @@
+=== RUN   TestCatalogGCReferenceLocksAndBackupLease
+    catalog_test.go:33: Error 1054 (42S22): Unknown column 'id' in 'field list'
+--- FAIL: TestCatalogGCReferenceLocksAndBackupLease (5.70s)
+=== RUN   TestCatalogInsertFailureCompensatesBlob
+--- PASS: TestCatalogInsertFailureCompensatesBlob (5.33s)
+=== RUN   TestLocalEncryptedImmutabilityAndIntegrity
+--- PASS: TestLocalEncryptedImmutabilityAndIntegrity (0.04s)
+FAIL
+FAIL	careold-go/internal/blob	11.838s
+=== RUN   TestImageS3TwoInstancesAndRealRestore
+    image_s3_restore_test.go:44: Error 1406 (22001): Data too long for column 'user_name' at row 1
+--- FAIL: TestImageS3TwoInstancesAndRealRestore (6.14s)
+FAIL
+FAIL	careold-go/internal/handlers	7.610s
+FAIL

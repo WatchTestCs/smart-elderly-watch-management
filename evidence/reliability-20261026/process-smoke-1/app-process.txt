@@ -1,0 +1,12 @@
+{"time":"2026-10-26T18:33:32.4700503+08:00","level":"INFO","msg":"careold-go listening on 127.0.0.1:18081"}
+{"time":"2026-10-26T18:33:32.4757909+08:00","level":"INFO","msg":"database ready"}
+{"time":"2026-10-26T18:33:32.4774202+08:00","level":"INFO","msg":"http_request","request_id":"d9738c2e-cbca-4ecd-b7f5-18f18f0bc65a","route":"unknown","method":"GET","status":200,"duration_ms":0.5037}
+{"time":"2026-10-26T18:33:32.5047527+08:00","level":"INFO","msg":"http_request","request_id":"a9c98f93-c2be-491a-bced-c1461e0111a0","route":"unknown","method":"GET","status":200,"duration_ms":0}
+{"time":"2026-10-26T18:33:33.5059643+08:00","level":"INFO","msg":"http_request","request_id":"866c05b7-5592-404b-aed2-fe19f80a2202","route":"unknown","method":"GET","status":200,"duration_ms":0}
+{"time":"2026-10-26T18:33:34.5646557+08:00","level":"INFO","msg":"http_request","request_id":"b49286f6-bbfd-4f45-a669-515ada76b851","route":"POST /restful/device/sos","method":"POST","status":200,"duration_ms":9.0315}
+{"time":"2026-10-26T18:33:34.5659939+08:00","level":"INFO","msg":"http_request","request_id":"be7fc63a-a62a-4020-8143-bd4333a2a459","route":"POST /restful/device/sos","method":"POST","status":200,"duration_ms":0.6002}
+{"time":"2026-10-26T18:33:36.0866007+08:00","level":"INFO","msg":"http_request","request_id":"a4af7cda-fcce-4dd6-84cf-63923614aba8","route":"POST /restful/care/receipt","method":"POST","status":200,"duration_ms":8.841899999999999}
+{"time":"2026-10-26T18:33:36.6897336+08:00","level":"INFO","msg":"http_request","request_id":"d938940b-5a0e-4639-af11-b661b1483eae","route":"POST /restful/care/transition","method":"POST","status":200,"duration_ms":8.1893}
+{"time":"2026-10-26T18:33:36.697644+08:00","level":"INFO","msg":"http_request","request_id":"0f3b8e0d-8bdb-4f42-a733-5d4109f3f059","route":"POST /restful/device/sos","method":"POST","status":200,"duration_ms":5.986}
+{"time":"2026-10-26T18:33:37.1218013+08:00","level":"INFO","msg":"http_request","request_id":"52647779-7eee-42c7-81ae-828b5d461a41","route":"POST /restful/care/receipt","method":"POST","status":200,"duration_ms":0.7231}
+{"time":"2026-10-26T18:33:38.173313+08:00","level":"INFO","msg":"http_request","request_id":"0cd931a1-8ac2-45c2-8f80-18a9b62bc96b","route":"POST /restful/care/receipt","method":"POST","status":200,"duration_ms":8.7692}

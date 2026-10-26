@@ -1,0 +1,685 @@
+{
+  "scope": "evidence files excluding this manifest; each source SHA is in the respective manifest/source-sha",
+  "files": [
+    {
+      "path": "backend-refinement-scope.txt",
+      "sha256": "a478c7e8dce2ba562ceb9f32be2a22fc0dc6fb99565044ef3267b5ceec02cf12",
+      "bytes": 290
+    },
+    {
+      "path": "baseline-41b0f1d/build.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "baseline-41b0f1d/go-test.jsonl",
+      "sha256": "69faae0a2602ca41bdf45fa58f14fa43aeeb43984973156eb0e8587bf02a84c6",
+      "bytes": 406340
+    },
+    {
+      "path": "baseline-41b0f1d/summary.json",
+      "sha256": "dd822c8301e4715cf7b003e36aebab8869cb621a4a31b205f5cd7e5e3990621a",
+      "bytes": 5180
+    },
+    {
+      "path": "baseline-41b0f1d/vet.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "baseline-41b0f1d-nvme/build.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "baseline-41b0f1d-nvme/go-test.jsonl",
+      "sha256": "bab917a58affc6ee8556501f6cabd3b1a44645d29455e24073209eb36315058a",
+      "bytes": 920334
+    },
+    {
+      "path": "baseline-41b0f1d-nvme/summary.json",
+      "sha256": "4cd1b2bbae13d471f5b20f1065cb901d3db96c945f2c9555d0921766925eb2d2",
+      "bytes": 3419
+    },
+    {
+      "path": "baseline-41b0f1d-nvme/vet.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "baseline-50b9cc0/build.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "baseline-50b9cc0/go-test.jsonl",
+      "sha256": "ba40c86f5c14ece77e1cd3e908238c0d2ea4c4db541ffbfbdbbb14300d4cabbf",
+      "bytes": 376261
+    },
+    {
+      "path": "baseline-50b9cc0/summary.json",
+      "sha256": "6a1a9a7f5528ce4d2bdb1a52f787e9ada3eb85b084b8d8003e69a8dac4cfd1a9",
+      "bytes": 7658
+    },
+    {
+      "path": "baseline-50b9cc0/vet.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "baseline-50b9cc0-nvme/build.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "baseline-50b9cc0-nvme/go-test.jsonl",
+      "sha256": "a171cc72a00b2603ac443364a3fa25979f27af3aebd861c722804e85b5ce3113",
+      "bytes": 897907
+    },
+    {
+      "path": "baseline-50b9cc0-nvme/summary.json",
+      "sha256": "8cb74b2743a8c14cbeb126cb6bd1180b4e7d9ff4269cb692e481d23c09b58dd0",
+      "bytes": 3419
+    },
+    {
+      "path": "baseline-50b9cc0-nvme/vet.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "blob-integration-dirty.txt",
+      "sha256": "d14a84f0758bfb71d7c4ae3016ea167ade07316efede6e5b0215404d769d43b7",
+      "bytes": 726
+    },
+    {
+      "path": "blob-integration-refinement-1.txt",
+      "sha256": "83ab13c69ae931bea68d92f53802ebcb95b569c8ba0edcc36b21c4bdb953ecb1",
+      "bytes": 963
+    },
+    {
+      "path": "blob-integration-refinement-2.txt",
+      "sha256": "1e9f3f2658cf83687f6d241db09229d300cb4d5ffc15b4a842a85674b69fd728",
+      "bytes": 906
+    },
+    {
+      "path": "candidate-acceptance-nvme/build.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "candidate-acceptance-nvme/go-test.jsonl",
+      "sha256": "26273d1418e0ffbc409c7e1af2549ba10f672e91b05897cc7b708537d0dfe8b6",
+      "bytes": 942105
+    },
+    {
+      "path": "candidate-acceptance-nvme/summary.json",
+      "sha256": "863b7220fb89bde7d820ae0eef4202454530cbf28ac3b8fcdb33d1b90bfe47bf",
+      "bytes": 3419
+    },
+    {
+      "path": "candidate-acceptance-nvme/vet.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "candidate-focused-dirty.txt",
+      "sha256": "b3ecf358c065c76f7f7af70666a83d2be07988f2d8e31d596750f06d8d47e146",
+      "bytes": 882
+    },
+    {
+      "path": "ci-bf33177-failed/go-version.txt",
+      "sha256": "077e48e26315a7710955add7be6c4fbc59a1a2d98f00886e45ac5f2887b9ff88",
+      "bytes": 47
+    },
+    {
+      "path": "ci-bf33177-failed/job-121526805316.txt",
+      "sha256": "df01d612934e66795db852fa0074a329b639e0ff9bb4aa16d5ee1e0d60bfec15",
+      "bytes": 57791
+    },
+    {
+      "path": "ci-bf33177-failed/mysql.jsonl",
+      "sha256": "59474ab923375369170dbeeaa0536be3b498a04f4387f520fedb88e00f0be8c1",
+      "bytes": 939704
+    },
+    {
+      "path": "ci-bf33177-failed/source-sha.txt",
+      "sha256": "18abbcaacd7542dbf2a41739bee2e39fad5fa896dfde4a40fd11e71a8ff55107",
+      "bytes": 41
+    },
+    {
+      "path": "ci-f1417a9-backend-1.26.10/build.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "ci-f1417a9-backend-1.26.10/database-images.txt",
+      "sha256": "77863f7476ff61fb6ea40f739e5e6505c7db75b36e47d180dbcf39352ea0a970",
+      "bytes": 166
+    },
+    {
+      "path": "ci-f1417a9-backend-1.26.10/go-version.txt",
+      "sha256": "077e48e26315a7710955add7be6c4fbc59a1a2d98f00886e45ac5f2887b9ff88",
+      "bytes": 47
+    },
+    {
+      "path": "ci-f1417a9-backend-1.26.10/modules.jsonl",
+      "sha256": "ae5bd4bf18c2728111eda17f078d827c55fd96993fca6949ac12856f7b44d032",
+      "bytes": 13713
+    },
+    {
+      "path": "ci-f1417a9-backend-1.26.10/mysql-environment.txt",
+      "sha256": "530467dda59e0d2c3c913b7f5ef99cd01ef8cc0367909e5772ac7999f17bf87e",
+      "bytes": 38
+    },
+    {
+      "path": "ci-f1417a9-backend-1.26.10/mysql-summary.json",
+      "sha256": "471c8a778d034502c27a3f0c590d4658dc5cdb47a79fea1df84d7acdbb51ff75",
+      "bytes": 3950
+    },
+    {
+      "path": "ci-f1417a9-backend-1.26.10/mysql.jsonl",
+      "sha256": "92237dcf0c20ffca59a68b63ebc925cf57049c332453f2fb50546e9e35550888",
+      "bytes": 937621
+    },
+    {
+      "path": "ci-f1417a9-backend-1.26.10/postgres-environment.txt",
+      "sha256": "a4ba72a59bce1af7930302acba27a2f98fd46a0d5bb6f857358455429ab55408",
+      "bytes": 120
+    },
+    {
+      "path": "ci-f1417a9-backend-1.26.10/postgres-summary.json",
+      "sha256": "233c923fbfc5713ec6d4f92a9e379b043f02f36508817e8807977f319111f2bd",
+      "bytes": 17128
+    },
+    {
+      "path": "ci-f1417a9-backend-1.26.10/postgres.jsonl",
+      "sha256": "622c3180ce3ad727d49c53d9bb0d7a01ba9fb9b75aa48e8b98a2d00690dbdcda",
+      "bytes": 737014
+    },
+    {
+      "path": "ci-f1417a9-backend-1.26.10/source-sha.txt",
+      "sha256": "a0ca498b37f61110d12310b1feea424c21ae1a4da3ac0182b8580104ff84bcac",
+      "bytes": 41
+    },
+    {
+      "path": "ci-f1417a9-backend-1.26.10/vet.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "ci-f1417a9-backend-1.27.2/build.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "ci-f1417a9-backend-1.27.2/database-images.txt",
+      "sha256": "77863f7476ff61fb6ea40f739e5e6505c7db75b36e47d180dbcf39352ea0a970",
+      "bytes": 166
+    },
+    {
+      "path": "ci-f1417a9-backend-1.27.2/go-version.txt",
+      "sha256": "c626328a93824a08aed4a17a0ed233b0b0e138b3f16bb7337c1e99287c3f7c98",
+      "bytes": 46
+    },
+    {
+      "path": "ci-f1417a9-backend-1.27.2/modules.jsonl",
+      "sha256": "ae5bd4bf18c2728111eda17f078d827c55fd96993fca6949ac12856f7b44d032",
+      "bytes": 13713
+    },
+    {
+      "path": "ci-f1417a9-backend-1.27.2/mysql-environment.txt",
+      "sha256": "530467dda59e0d2c3c913b7f5ef99cd01ef8cc0367909e5772ac7999f17bf87e",
+      "bytes": 38
+    },
+    {
+      "path": "ci-f1417a9-backend-1.27.2/mysql-summary.json",
+      "sha256": "471c8a778d034502c27a3f0c590d4658dc5cdb47a79fea1df84d7acdbb51ff75",
+      "bytes": 3950
+    },
+    {
+      "path": "ci-f1417a9-backend-1.27.2/mysql.jsonl",
+      "sha256": "4f977c2e9136c193f9df462ae85c1b32752f7528efb9589b86d960c8cbd16402",
+      "bytes": 984858
+    },
+    {
+      "path": "ci-f1417a9-backend-1.27.2/postgres-environment.txt",
+      "sha256": "a4ba72a59bce1af7930302acba27a2f98fd46a0d5bb6f857358455429ab55408",
+      "bytes": 120
+    },
+    {
+      "path": "ci-f1417a9-backend-1.27.2/postgres-summary.json",
+      "sha256": "abcfa1eaacded9d85d1239297124946187dbfac16d7ffe582b379d70993b9008",
+      "bytes": 17128
+    },
+    {
+      "path": "ci-f1417a9-backend-1.27.2/postgres.jsonl",
+      "sha256": "15295e28260e409171087bc9dbda4997888584113a4fd4efd0b75fe80b29f58f",
+      "bytes": 773455
+    },
+    {
+      "path": "ci-f1417a9-backend-1.27.2/source-sha.txt",
+      "sha256": "a0ca498b37f61110d12310b1feea424c21ae1a4da3ac0182b8580104ff84bcac",
+      "bytes": 41
+    },
+    {
+      "path": "ci-f1417a9-backend-1.27.2/vet.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "ci-f1417a9-frontend/build.txt",
+      "sha256": "e456c50a842e984d0b0f51dd327d5ebfdf0c923049548418cdcdcb6ea3c22034",
+      "bytes": 6115
+    },
+    {
+      "path": "ci-f1417a9-frontend/node-version.txt",
+      "sha256": "f2ec568164f99546161909b0189b57bb5be3e80f8e2ccd8a51a4aed8c4055a04",
+      "bytes": 9
+    },
+    {
+      "path": "ci-f1417a9-frontend/npm-audit.json",
+      "sha256": "dc5e5061a97b5629dbfccfd170f2aedb62e3dfc3fde0dd9851fc8dd77717dbd6",
+      "bytes": 363
+    },
+    {
+      "path": "ci-f1417a9-frontend/source-sha.txt",
+      "sha256": "a0ca498b37f61110d12310b1feea424c21ae1a4da3ac0182b8580104ff84bcac",
+      "bytes": 41
+    },
+    {
+      "path": "ci-f1417a9-frontend/test.txt",
+      "sha256": "46edc3f7b8481a5b58358a922b8e574ae94a34cae4ce818d61904e952b847e31",
+      "bytes": 1412
+    },
+    {
+      "path": "ci-f1417a9-frontend/typecheck.txt",
+      "sha256": "ccd858d93e6f85afffad0d7a313000878cb621803185f858afcc81b22299be08",
+      "bytes": 50
+    },
+    {
+      "path": "ci-refinement-rollback-restore.txt",
+      "sha256": "613762594f676593fa2a86312b376088d0eb981af5e59652c0f9142a6bfb0dd1",
+      "bytes": 849
+    },
+    {
+      "path": "frontend-test-dirty.txt",
+      "sha256": "ee8055a28ac37a6ec6b998bc92d7025a869d113be2367aaa0cb620c6244cfca2",
+      "bytes": 315
+    },
+    {
+      "path": "http-audit-baseline-50b9cc0/go-test.txt",
+      "sha256": "cdd8330ed5d61beee7adecd98b7ec5dd219c001e7915f1edcb4a80941996a95c",
+      "bytes": 8146
+    },
+    {
+      "path": "http-audit-baseline-50b9cc0/latencies.json",
+      "sha256": "a950449d07a7c4454d6a9062c51cb0a48deadb72322b5640296bebae8a542758",
+      "bytes": 242642
+    },
+    {
+      "path": "http-audit-baseline-50b9cc0/manifest.json",
+      "sha256": "7fa0ee7cdfc4c96dd7585359671dddaed20b74a0f072ab335a3962f70fbe3bcd",
+      "bytes": 259
+    },
+    {
+      "path": "http-audit-baseline-50b9cc0-repeat/go-test.txt",
+      "sha256": "106e302dedb4b19de2641032ddae87dbfd479dc79c374a0791b4f0c22dd5d96a",
+      "bytes": 8146
+    },
+    {
+      "path": "http-audit-baseline-50b9cc0-repeat/latencies.json",
+      "sha256": "58bc363777956ac5ba90eaab0232e0b36415e7880a5547d6adc352838ae8424a",
+      "bytes": 237411
+    },
+    {
+      "path": "http-audit-baseline-50b9cc0-repeat/manifest.json",
+      "sha256": "d42607e0cb101d7cf803d6c4d88c0e7fab3ca29ccac379f996bc7e70a83e52fd",
+      "bytes": 260
+    },
+    {
+      "path": "http-audit-candidate-bf33177/go-test.txt",
+      "sha256": "f5f71160f1c83bafef059bcf87cd89041dfc1f0ca1c8bf808cc5ff98e6a4faab",
+      "bytes": 8146
+    },
+    {
+      "path": "http-audit-candidate-bf33177/latencies.json",
+      "sha256": "b7a33c6c5766f807dac3e8152aa1f2dca1d3415bfdcb6d9ee03b2678f4125436",
+      "bytes": 242789
+    },
+    {
+      "path": "http-audit-candidate-bf33177/manifest.json",
+      "sha256": "c6115cd6bc4e78e786897dadb1b108c31545ca607e88c74263bfdfd16a6af94a",
+      "bytes": 259
+    },
+    {
+      "path": "http-audit-candidate-bf33177-repeat/go-test.txt",
+      "sha256": "5e16d21506234eea5c7be1cf9cac61fa1d740d52bbe4a2b9d636a97b2711f527",
+      "bytes": 8146
+    },
+    {
+      "path": "http-audit-candidate-bf33177-repeat/latencies.json",
+      "sha256": "d0992c9e29b0ad2b8a2abc406e783e011cc6b851c43200dc3e55cbe77cdac5b6",
+      "bytes": 238211
+    },
+    {
+      "path": "http-audit-candidate-bf33177-repeat/manifest.json",
+      "sha256": "ec14be369c69ea171ee54a2d3325996501492e9701d087184f857f90b05ddaca",
+      "bytes": 259
+    },
+    {
+      "path": "http-tail-baseline-50b9cc0/go-test.txt",
+      "sha256": "6209aa061561e7abd26c987e41f5f6a9f23d398e149305e6d305e5a747dfbb2c",
+      "bytes": 8152
+    },
+    {
+      "path": "http-tail-baseline-50b9cc0/harness-only.patch",
+      "sha256": "38fc2734a8d0c3109f9df902ef700557670a8f1cdb07d08ec7ca42147c77cc82",
+      "bytes": 248
+    },
+    {
+      "path": "http-tail-baseline-50b9cc0/latencies.json",
+      "sha256": "2a18953741804d58da3ff5d4e49d47d2234ef9b39f182d77663f5f7ac1545d5f",
+      "bytes": 259115
+    },
+    {
+      "path": "http-tail-baseline-50b9cc0/manifest.json",
+      "sha256": "eab3d6fb9ca1fd0cc340f7fba1b2be37c270682b2040b61e2257cbe57684e8c0",
+      "bytes": 506
+    },
+    {
+      "path": "http-tail-candidate-110b5a4/go-test.txt",
+      "sha256": "41159baa97398936b357510d5e3dc77eefe4032bc6929a7948fe20a2a1583aa8",
+      "bytes": 8152
+    },
+    {
+      "path": "http-tail-candidate-110b5a4/harness-only.patch",
+      "sha256": "f1259c51627e464f4af3426fc272779306338eea854306f277c8211e6ed94d44",
+      "bytes": 248
+    },
+    {
+      "path": "http-tail-candidate-110b5a4/latencies.json",
+      "sha256": "67306e0cc29c2fc77b4306beb34bfe7869d1bc0aa2bd5a0b64e38edf255e5869",
+      "bytes": 259769
+    },
+    {
+      "path": "http-tail-candidate-110b5a4/manifest.json",
+      "sha256": "38ca8ecca0d76af67e0ab6a056b447ce76c8e287fcfe5fffcbfe5545ef0252c6",
+      "bytes": 517
+    },
+    {
+      "path": "limiter-memory-bf33177/probe.txt",
+      "sha256": "4924b0a2eb07c0bc93d79040ccdafc510ff386186b82de23a58f42e7f8af5f2a",
+      "bytes": 891
+    },
+    {
+      "path": "limiter-memory-bf33177/rss.json",
+      "sha256": "fa7c225938f0fb0e066bedc13bf30d3527104aeb9ba8c2d32ec717833ea5f7f4",
+      "bytes": 32229
+    },
+    {
+      "path": "owned-services-cleanup.json",
+      "sha256": "c34953116e86bfc2dbf2cc4b45ca2597ad3b40b95ef83828577fdaa4c4d096c3",
+      "bytes": 363
+    },
+    {
+      "path": "process-matrix-110b5a4/alertmanager-process.txt",
+      "sha256": "53dc5578f2609b340f4f776fdfcd6422de261b076f057c3dc5882e819c9bf85b",
+      "bytes": 1110
+    },
+    {
+      "path": "process-matrix-110b5a4/app-process.txt",
+      "sha256": "042644555a8c548b12783a3ed1454a2f2a4234dfe84a96ba354b7f31b3af0375",
+      "bytes": 136353
+    },
+    {
+      "path": "process-matrix-110b5a4/environment.json",
+      "sha256": "890e3557b9f945daa0cafff811fe9d77a8518db08dd1ae3aefdb8c9e10b0ade3",
+      "bytes": 685
+    },
+    {
+      "path": "process-matrix-110b5a4/final-audit-timeline.json",
+      "sha256": "05a2b2ed41d2e223f87cfa32ff4a970771666503c271f581bfb2825182426e8a",
+      "bytes": 5272
+    },
+    {
+      "path": "process-matrix-110b5a4/final-readonly-mysql-process.txt",
+      "sha256": "f9b7e532a5048d35797c0ca4ff4ae876934ca5b616cebfddc6fd7a31b23895e8",
+      "bytes": 1279
+    },
+    {
+      "path": "process-matrix-110b5a4/gateway-process.txt",
+      "sha256": "de0ec075e0c80c65b563bc12fc9b4f3cb53989a7f4d5c969fb78dda00e049fac",
+      "bytes": 2320
+    },
+    {
+      "path": "process-matrix-110b5a4/gateway.jsonl",
+      "sha256": "e8b452fd8785f20776a3e4c209ed1a52e8f0b7185922780ad22227f041a6c7d1",
+      "bytes": 11694
+    },
+    {
+      "path": "process-matrix-110b5a4/heartbeat-lock-process.txt",
+      "sha256": "1b7ebacd96f829385dd9dc404e46f606d22472b94402f695343f51e0a93854fa",
+      "bytes": 45
+    },
+    {
+      "path": "process-matrix-110b5a4/matrix.json",
+      "sha256": "450a8094e8ca2fcd94b187f219c5a92ea98d2e4cd68da44b394ee9ea75c55e87",
+      "bytes": 5155
+    },
+    {
+      "path": "process-matrix-110b5a4/mysql-process.txt",
+      "sha256": "0b68950364efdd9c23a39234994a18e8d9f4ccd8711ad7dc2f5b95de6df66164",
+      "bytes": 2559
+    },
+    {
+      "path": "process-matrix-110b5a4/native-build-info.txt",
+      "sha256": "5e6ddb8f9175a601bddf6d7276f39d5035ab8899653c6bef55d07ffa8d93288b",
+      "bytes": 2542
+    },
+    {
+      "path": "process-matrix-110b5a4/pg-recovery.txt",
+      "sha256": "38d3915b5104218e65e8d6e8edc6c1496d458511c83285ec58290ddee1cdb3ff",
+      "bytes": 3601
+    },
+    {
+      "path": "process-matrix-110b5a4/prometheus-process.txt",
+      "sha256": "952c7c5a5d07035541974eb9a56d5c6f361ee8cf4f0794b274b1aedb9aaa74cb",
+      "bytes": 3473
+    },
+    {
+      "path": "process-matrix-110b5a4/receiver-process.txt",
+      "sha256": "3367dc7bc3d589894679f537e1efcac1464909d5b3ae17950cc8a4e2d867701f",
+      "bytes": 33
+    },
+    {
+      "path": "process-matrix-110b5a4/receiver.jsonl",
+      "sha256": "79c3dde711709167fbc8419b82df3b6a42ff55730d59a65ba3956cbab3dac591",
+      "bytes": 67826
+    },
+    {
+      "path": "process-matrix-110b5a4/setup-commands.txt",
+      "sha256": "4d7e282058b00d007cbe9130a4f1f8a72a436bb63a5cd72920af8c159b8bde50",
+      "bytes": 21356
+    },
+    {
+      "path": "process-matrix-110b5a4/watchdog-process.txt",
+      "sha256": "44d5bdcd7d3047be979dbd839f67d9c24e6dee2b4f9a7bf001dae34f23c9fd50",
+      "bytes": 141
+    },
+    {
+      "path": "process-matrix-bf33177/alertmanager-process.txt",
+      "sha256": "49a5235dee28653210145fd0107cc732b01fd3eaf56213a9006f9c9ba41db6e4",
+      "bytes": 1110
+    },
+    {
+      "path": "process-matrix-bf33177/app-process.txt",
+      "sha256": "37f06c1232dda25aa248decd35dbcc269444973379ba6e68f3a009dad2f31c2c",
+      "bytes": 129051
+    },
+    {
+      "path": "process-matrix-bf33177/environment.json",
+      "sha256": "7a30aa51685e662ac96c6d003544584d4dfa8bc402a935142efdb50a549d9290",
+      "bytes": 685
+    },
+    {
+      "path": "process-matrix-bf33177/gateway-process.txt",
+      "sha256": "0bb3fc1cf81f9a0856b2b238088bbdac3c24da92f7fa771fdf9ad9225e440db9",
+      "bytes": 2314
+    },
+    {
+      "path": "process-matrix-bf33177/gateway.jsonl",
+      "sha256": "3c30ebadcf441a14c9b00417c8d5d8e205356226c22090b4c7b1bf68032c7500",
+      "bytes": 10445
+    },
+    {
+      "path": "process-matrix-bf33177/heartbeat-lock-process.txt",
+      "sha256": "1b7ebacd96f829385dd9dc404e46f606d22472b94402f695343f51e0a93854fa",
+      "bytes": 45
+    },
+    {
+      "path": "process-matrix-bf33177/matrix.json",
+      "sha256": "561fc144dd16b15677046a7af69c0ffad3f4fa7265a01bb15d92498c246f66b0",
+      "bytes": 4431
+    },
+    {
+      "path": "process-matrix-bf33177/mysql-process.txt",
+      "sha256": "139e891ff0894a5c02005c237539c4f4caa7e68debbdc787ad0a69c671972027",
+      "bytes": 2559
+    },
+    {
+      "path": "process-matrix-bf33177/pg-recovery.txt",
+      "sha256": "b62b4b10763edd66756b54f78081b5872375369b0a9f7c7c88d0d2b776567700",
+      "bytes": 2583
+    },
+    {
+      "path": "process-matrix-bf33177/prometheus-process.txt",
+      "sha256": "4043e5519955b2eb0e2059ac81e93fb62421aabc4c8f8ecefe2e65fb468d867b",
+      "bytes": 3471
+    },
+    {
+      "path": "process-matrix-bf33177/receiver-process.txt",
+      "sha256": "3367dc7bc3d589894679f537e1efcac1464909d5b3ae17950cc8a4e2d867701f",
+      "bytes": 33
+    },
+    {
+      "path": "process-matrix-bf33177/receiver.jsonl",
+      "sha256": "16436f2b269dc7ddc721ab8f3923da356e73ab583b7ebdec8ad43e03de1e26dd",
+      "bytes": 66636
+    },
+    {
+      "path": "process-matrix-bf33177/setup-commands.txt",
+      "sha256": "8a9815ac01a54bb491947a5cc996b95cd5e51cf4d753052996f8d49f894a52c3",
+      "bytes": 21753
+    },
+    {
+      "path": "process-matrix-bf33177/watchdog-process.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "process-smoke-1/alertmanager-process.txt",
+      "sha256": "d2ab8a4cac8bcb669db399b6690c05a2988de1b013870fcb8727a24656d04dc5",
+      "bytes": 1110
+    },
+    {
+      "path": "process-smoke-1/app-process.txt",
+      "sha256": "87979c96c9fd3c1dbee04888f7f43e958243c1879037802a1054675faff6e0b7",
+      "bytes": 2326
+    },
+    {
+      "path": "process-smoke-1/environment.json",
+      "sha256": "d5cf1ae86ddb83fb65494ded2a1d40b14b1dedd864f7c3d4c3399971d78aa9e8",
+      "bytes": 653
+    },
+    {
+      "path": "process-smoke-1/gateway-process.txt",
+      "sha256": "e20b7d6b0a62daa5d2c0cfa7b3f4dcf78186929f017ce717217447e9cae8b18f",
+      "bytes": 32
+    },
+    {
+      "path": "process-smoke-1/gateway.jsonl",
+      "sha256": "21759d2fc89b237cd74c8e2ff762789b1bfe05b28d8b83d5cfd1ace6a582a727",
+      "bytes": 501
+    },
+    {
+      "path": "process-smoke-1/matrix.json",
+      "sha256": "97d0ab2224826550f3851daca7dee60a4042c7050519b92a4eeb23ff612f4dc5",
+      "bytes": 1600
+    },
+    {
+      "path": "process-smoke-1/mysql-process.txt",
+      "sha256": "2388fd605868f65a1ff7ba1b525d69de9ae256ca7c814036413ebfa0e56a0d58",
+      "bytes": 1279
+    },
+    {
+      "path": "process-smoke-1/prometheus-process.txt",
+      "sha256": "3f60a8dee0912329ea7e63a53f98e785025d499a14a0c1389ca47c18858e3986",
+      "bytes": 3454
+    },
+    {
+      "path": "process-smoke-1/receiver-process.txt",
+      "sha256": "3367dc7bc3d589894679f537e1efcac1464909d5b3ae17950cc8a4e2d867701f",
+      "bytes": 33
+    },
+    {
+      "path": "process-smoke-1/setup-commands.txt",
+      "sha256": "1ab214d7fdec4970dd06eea6711edd1796871f4d3f9aae4415052ec2dcded16f",
+      "bytes": 2686
+    },
+    {
+      "path": "process-smoke-1/watchdog-process.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "promtool-check.txt",
+      "sha256": "2f87a5fad414c360027dca86d0d426b85ef529ab4061ff52d4b196aa5df101dc",
+      "bytes": 57
+    },
+    {
+      "path": "promtool-test-windows-path.txt",
+      "sha256": "97155500dfaeb03dbcded24ae1575a3347e64600777edd46154817c2a56ae07b",
+      "bytes": 13
+    },
+    {
+      "path": "publication-check.json",
+      "sha256": "2cd97b819a1d4ed8924e3230d6c495c96ef99e3dba797b41b3b34317dd2eb626",
+      "bytes": 328
+    },
+    {
+      "path": "python-gates-and-watchdog.txt",
+      "sha256": "8dc58237161f66cfe81d44a47cb413e0e46893070bf9d7783ec20b9d99317533",
+      "bytes": 1444
+    },
+    {
+      "path": "README.md",
+      "sha256": "dd73ecaafb270ecb8497acf315563db9d1e7ff2cfc627c7d589530f17bcab4e7",
+      "bytes": 3653
+    },
+    {
+      "path": "remote-baseline.json",
+      "sha256": "19c8c73ed4ecfc614d9b2603bc3cb9a5ab4cc1cd4a7cfbbafc6241a4c3b8eb5e",
+      "bytes": 15534
+    },
+    {
+      "path": "rollback-refinement-correct-db.txt",
+      "sha256": "5057f414b8e31cbbe4e4b4b3b2e77cf278d5ce04a725633efaa513941099d312",
+      "bytes": 142
+    },
+    {
+      "path": "schema-bf33177.tsv",
+      "sha256": "c3413df30806c9fb19dd452712f31c9102b5870409ad19d20048717512b8f5ca",
+      "bytes": 17134
+    },
+    {
+      "path": "security-gateway-refinement.txt",
+      "sha256": "34d8feb9e81660586d9e753f4199261808a36660a4e4014b8be229df77826e4f",
+      "bytes": 1211
+    },
+    {
+      "path": "verified-source-f1417a9.json",
+      "sha256": "5436f573bffed714ed5e88e990b3b616793321a2f149766e6032ace8a83ec3a4",
+      "bytes": 2081
+    }
+  ]
+}

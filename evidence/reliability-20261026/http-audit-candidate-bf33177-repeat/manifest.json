@@ -1,0 +1,6 @@
+{
+  "source_sha": "bf331775e68b43c64ad3dfaa37ec1f63291eb3f0",
+  "exit_code": 0,
+  "elapsed_seconds": 30.90599999999904,
+  "scope": "local loopback HTTP benchmark, real durable MySQL 8.0.43, Go 1.26.10 Windows; no TLS/proxy/production/background worker"
+}

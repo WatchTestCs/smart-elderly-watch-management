@@ -1,0 +1,13 @@
+=== RUN   TestCatalogGCReferenceLocksAndBackupLease
+--- PASS: TestCatalogGCReferenceLocksAndBackupLease (5.46s)
+=== RUN   TestCatalogInsertFailureCompensatesBlob
+--- PASS: TestCatalogInsertFailureCompensatesBlob (5.51s)
+=== RUN   TestLocalEncryptedImmutabilityAndIntegrity
+--- PASS: TestLocalEncryptedImmutabilityAndIntegrity (0.05s)
+PASS
+ok  	careold-go/internal/blob	12.755s
+=== RUN   TestImageS3TwoInstancesAndRealRestore
+    image_s3_restore_test.go:255: LOCAL REAL MYSQL+S3 RESTORE image_sha256=8f9aae64d410eb9a9ba7a115fec22c431cf937a2a5ca6010dfbca344f8e2dfff mysql_dump_sha256=b5b296fb28baa10e2f2d0798eda2b848113be3d6d370890918252a6608891f24 references=1 incidents=1 pending_outbox=1 sessions=1; A stopped, B read; original DB and blob destroyed and restored; anonymous access denied
+--- PASS: TestImageS3TwoInstancesAndRealRestore (9.28s)
+PASS
+ok  	careold-go/internal/handlers	11.551s

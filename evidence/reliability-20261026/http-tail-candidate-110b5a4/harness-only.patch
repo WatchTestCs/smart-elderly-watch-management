@@ -1,0 +1,10 @@
+--- original_test.go
++++ extended_test.go
+@@ -245,6 +245,7 @@
+ 			if mode == "in_process" || ep.cold {
+ 				n = 40
+ 			}
++			if ep.cold { n = 200 }
+ 			for round := 1; round <= 3; round++ {
+ 				measure(ep.name, mode, round, n, op)
+ 			}

@@ -1,0 +1,11 @@
+{"cumulative_distinct_sources":100000,"live_heap_bytes":2534248,"runtime_reserved_bytes":23638016,"scope":"microbenchmark; simulated sources, not HTTP/staging/production","wave":1,"workers":256}
+{"cumulative_distinct_sources":200000,"live_heap_bytes":2625512,"runtime_reserved_bytes":27840512,"scope":"microbenchmark; simulated sources, not HTTP/staging/production","wave":2,"workers":256}
+{"cumulative_distinct_sources":300000,"live_heap_bytes":2721496,"runtime_reserved_bytes":27840512,"scope":"microbenchmark; simulated sources, not HTTP/staging/production","wave":3,"workers":256}
+suining_ratelimit_active_keys 8192
+suining_ratelimit_timestamp_slots 8192
+suining_ratelimit_key_cap 8192
+suining_ratelimit_slot_cap 262144
+suining_ratelimit_key_high_water 8192
+suining_ratelimit_slot_high_water 8192
+suining_ratelimit_capacity_rejected_total 291808
+suining_ratelimit_quota_rejected_total 0
