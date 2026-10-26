@@ -35,6 +35,9 @@ services:
       PG_ANALYTICS_URL: postgres://suining_analytics:${PG_PASSWORD}@postgres:5432/suining_analytics?sslmode=disable
       SESSION_BACKEND: database
       HEALTH_HOT_CACHE_MIB: ${HEALTH_HOT_CACHE_MIB:-16}
+      RATE_LIMIT_MAX_KEYS: ${RATE_LIMIT_MAX_KEYS:-8192}
+      RATE_LIMIT_MAX_SLOTS: ${RATE_LIMIT_MAX_SLOTS:-262144}
+      TRUSTED_PROXY_CIDRS: ${TRUSTED_PROXY_CIDRS:-172.30.73.10/32}
       DATA_ENCRYPTION_KEY_FILE: /run/secrets/data_key
       METRICS_TOKEN_FILE: /run/secrets/metrics_token
       DESKTOP_TOKEN_FILE: /run/secrets/bootstrap_token
@@ -67,6 +70,17 @@ services:
     depends_on:
       app: {condition: service_healthy}
     restart: unless-stopped
+    networks:
+      default:
+        ipv4_address: ${GATEWAY_IPV4:-172.30.73.10}
+  alertmanager:
+    image: prom/alertmanager:v0.28.1
+    profiles: [paging]
+    command: ["--config.file=/etc/alertmanager/alertmanager.yml", "--storage.path=/alertmanager"]
+    volumes: ["./alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro", "alertmanager:/alertmanager"]
+    secrets: [oncall_webhook_url, oncall_token]
+    expose: ["9093"]
+    restart: unless-stopped
   prometheus:
     image: prom/prometheus:v3.5.0
     volumes: ["./prometheus.yml:/etc/prometheus/prometheus.yml:ro", "./alerts.yml:/etc/prometheus/alerts.yml:ro", "prometheus:/prometheus"]
@@ -78,8 +92,16 @@ secrets:
   data_key: {file: ./secrets/data-key}
   metrics_token: {file: ./secrets/metrics-token}
   bootstrap_token: {file: ./secrets/bootstrap-token}
+  oncall_webhook_url: {file: ./secrets/oncall-webhook-url}
+  oncall_token: {file: ./secrets/oncall-token}
 volumes:
   mysql:
   postgres:
   images:
   prometheus:
+  alertmanager:
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: ${PLATFORM_SUBNET:-172.30.73.0/24}

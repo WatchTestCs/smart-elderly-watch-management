@@ -98,7 +98,7 @@ func testHandler(t testing.TB, pool *dbstore.Database) *Handler {
 	t.Helper()
 	store := session.NewStore(time.Hour)
 	t.Cleanup(store.Close)
-	return New(pool, store, config.Config{})
+	return New(pool, store, config.Config{ImageDir: t.TempDir()})
 }
 
 func mustExec(t *testing.T, pool *dbstore.Database, sql string, args ...any) {

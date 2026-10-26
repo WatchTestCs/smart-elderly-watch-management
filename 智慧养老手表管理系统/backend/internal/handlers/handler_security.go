@@ -6,7 +6,6 @@ import (
 	"encoding/base32"
 	"encoding/hex"
 	"encoding/json"
-	"net"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -35,7 +34,7 @@ func (h *Handler) loginAuditTx(r *http.Request, phone, role string, id int64, ou
 	if !h.DB.IsMySQL() {
 		return nil
 	}
-	ip, _, _ := net.SplitHostPort(r.RemoteAddr)
+	ip := h.clientIP(r)
 	q := "INSERT INTO login_audit(account_hash,ip_hash,role,actor_id,outcome,request_id) VALUES($1,$2,$3,$4,$5,$6)"
 	// X-Request-ID 是客户端可控的请求头，截断到列宽，防止超长值导致审计写入失败。
 	requestID := r.Header.Get("X-Request-ID")
@@ -54,14 +53,19 @@ func (h *Handler) loginAllowed(w http.ResponseWriter, r *http.Request, phone str
 	if !h.DB.IsMySQL() {
 		return true
 	}
-	ip, _, _ := net.SplitHostPort(r.RemoteAddr)
-	var failures int
-	err := h.DB.QueryRow(r.Context(), "SELECT count(*) FROM login_audit WHERE account_hash=$1 AND ip_hash=$2 AND outcome IN ('invalid_credentials','factor_required') AND created_at>$3", h.Box.Index("account", phone), h.Box.Index("ip", ip), time.Now().Add(-15*time.Minute)).Scan(&failures)
+	ip := h.clientIP(r)
+	var failures, accountFailures int
+	// Shared durable audits apply across app replicas and rotating client IPs.
+	// Bounded subqueries avoid counting an unbounded audit history on each login.
+	err := h.DB.QueryRow(r.Context(), `SELECT
+ (SELECT count(*) FROM (SELECT 1 FROM login_audit WHERE account_hash=$1 AND ip_hash=$2 AND outcome IN ('invalid_credentials','factor_required') AND created_at>$3 LIMIT 10) pair_attempts),
+ (SELECT count(*) FROM (SELECT 1 FROM login_audit WHERE account_hash=$1 AND outcome IN ('invalid_credentials','factor_required') AND created_at>$3 LIMIT 30) account_attempts)`, h.Box.Index("account", phone), h.Box.Index("ip", ip), time.Now().Add(-15*time.Minute)).Scan(&failures, &accountFailures)
 	if err != nil {
 		response.Error500(w, ref())
 		return false
 	}
-	if failures >= 10 {
+	if failures >= 10 || accountFailures >= 30 {
+		w.Header().Set("Retry-After", "900")
 		response.JSON(w, 429, map[string]any{"message": "登录尝试过多，请稍后重试"})
 		return false
 	}

@@ -157,6 +157,9 @@ func (h *Handler) textAdd(w http.ResponseWriter, r *http.Request) {
 	}
 	defer tx.Rollback(r.Context())
 	var picID int64
+	if !h.lockImages(w, r.Context(), tx, fileList) {
+		return
+	}
 	if err := tx.QueryRow(r.Context(), "SELECT nextval('picture_group')").Scan(&picID); err != nil {
 		response.Error500(w, ref())
 		return
@@ -281,6 +284,9 @@ func (h *Handler) textUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 	defer tx.Rollback(r.Context())
 	picID := int64(0)
+	if !h.lockImages(w, r.Context(), tx, fileList) {
+		return
+	}
 	if existing.PicID == nil {
 		if err := tx.QueryRow(r.Context(), "SELECT nextval('picture_group')").Scan(&picID); err != nil {
 			response.Error500(w, ref())

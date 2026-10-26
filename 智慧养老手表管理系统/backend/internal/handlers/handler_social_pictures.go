@@ -73,6 +73,9 @@ func (h *Handler) picshowAdd(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer tx.Rollback(r.Context())
+	if !h.lockImages(w, r.Context(), tx, names) {
+		return
+	}
 	if _, err := tx.Exec(r.Context(), "DELETE FROM pic_show"); err != nil {
 		response.Error500(w, ref())
 		return

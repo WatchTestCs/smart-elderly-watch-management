@@ -334,17 +334,29 @@ func (h *Handler) familyUpdateTouPic(w http.ResponseWriter, r *http.Request) {
 		scopeDeny(w)
 		return
 	}
-	ct, err := h.DB.Exec(r.Context(),
-		`UPDATE family SET family_tou_pic=$1 WHERE family_phone=$2`, pic, phone)
+	tx, err := h.DB.Begin(r.Context())
 	if err != nil {
 		response.Error500(w, ref())
 		return
 	}
-	if ct.RowsAffected() == 1 {
-		response.OK(w, nil)
-	} else {
-		failBare0000(w)
+	defer tx.Rollback(r.Context())
+	if !h.lockImages(w, r.Context(), tx, []string{pic}) {
+		return
 	}
+	ct, err := tx.Exec(r.Context(), `UPDATE family SET family_tou_pic=$1 WHERE family_phone=$2`, pic, phone)
+	if err != nil {
+		response.Error500(w, ref())
+		return
+	}
+	if ct.RowsAffected() != 1 {
+		failBare0000(w)
+		return
+	}
+	if err = tx.Commit(r.Context()); err != nil {
+		response.Error500(w, ref())
+		return
+	}
+	response.OK(w, nil)
 }
 
 // POST /restful/family/updatePassword —— 家属修改自己的登录密码（ADMIN+FAMILY，归属隔离）。

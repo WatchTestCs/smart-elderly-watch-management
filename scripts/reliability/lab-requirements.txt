@@ -1,0 +1,2 @@
+# Native loopback TLS certificate generation only; watchdog itself is stdlib-only.
+cryptography==50.0.2

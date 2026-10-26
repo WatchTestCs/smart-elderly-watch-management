@@ -51,12 +51,20 @@ func Run(ctx context.Context, db *dbstore.Database, box *securestore.Box) {
 		log.Print("care: notification gateway not configured (HTTPS URL + token required); delivery tasks remain pending")
 		endpoint = ""
 	}
+	client, clientErr := gatewayClient(strings.TrimSpace(os.Getenv("CARE_NOTIFY_CA_FILE")))
+	if clientErr != nil {
+		log.Print("care: gateway TLS configuration invalid; durable notification tasks remain pending")
+		observability.Default.Set("suining_care_gateway_tls_configured", 0)
+		endpoint = ""
+	} else {
+		observability.Default.Set("suining_care_gateway_tls_configured", 1)
+	}
 	escalation := strings.TrimSpace(os.Getenv("CARE_ESCALATION_PHONE"))
 	if !phonePattern.MatchString(escalation) {
 		escalation = ""
 	}
 	d := &dispatcher{db: db, box: box, webhookURL: endpoint, webhookToken: token,
-		escalationPhone: escalation, httpClient: &http.Client{Timeout: 12 * time.Second}}
+		escalationPhone: escalation, httpClient: client}
 	if endpoint != "" {
 		done := make(chan struct{})
 		go func() { defer close(done); d.runDispatchers(ctx, deliveryConcurrency()) }()
@@ -84,6 +92,7 @@ func Run(ctx context.Context, db *dbstore.Database, box *securestore.Box) {
 		if err := d.escalate(cycleCtx); err != nil && cycleCtx.Err() == nil {
 			log.Printf("care: escalation check failed: %v", err)
 		}
+		sampleCareQueue(cycleCtx, db)
 
 		cancelCycle()
 		select {
@@ -211,6 +220,9 @@ func (d *dispatcher) dispatchNext(ctx context.Context) (bool, error) {
 		return true, err
 	}
 	err = openErr
+	if openErr != nil {
+		err = &gatewayFailure{reason: "decrypt"}
+	}
 	var payload []byte
 	if err == nil {
 		payload, err = json.Marshal(map[string]any{
@@ -221,18 +233,26 @@ func (d *dispatcher) dispatchNext(ctx context.Context) (bool, error) {
 	if err == nil {
 		req, reqErr := http.NewRequestWithContext(ctx, http.MethodPost, d.webhookURL, bytes.NewReader(payload))
 		if reqErr != nil {
-			err = reqErr
+			err = &gatewayFailure{reason: "request"}
 		} else {
 			req.Header.Set("Authorization", "Bearer "+d.webhookToken)
 			req.Header.Set("Idempotency-Key", "care-outbox-"+strconv.FormatInt(job.id, 10))
 			req.Header.Set("Content-Type", "application/json")
 			resp, callErr := d.httpClient.Do(req)
 			if callErr != nil {
-				err = callErr
+				err = transportFailure(callErr)
 			} else {
 				resp.Body.Close()
 				if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-					err = fmt.Errorf("gateway HTTP %d", resp.StatusCode)
+					reason := "http_4xx"
+					if resp.StatusCode == 429 {
+						reason = "http_429"
+					} else if resp.StatusCode >= 500 {
+						reason = "http_5xx"
+					} else if resp.StatusCode < 400 {
+						reason = "http_redirect"
+					}
+					err = &gatewayFailure{reason: reason, status: resp.StatusCode, retryAfter: providerRetryAfter(resp.Header.Get("Retry-After"), time.Now())}
 				}
 			}
 		}
@@ -247,6 +267,11 @@ func (d *dispatcher) dispatchNext(ctx context.Context) (bool, error) {
 		return true, updateErr
 	}
 	wait := retryDelay(job.attempts)
+	var failure *gatewayFailure
+	if errors.As(err, &failure) {
+		wait = max(wait, failure.retryAfter)
+		observability.Default.Add(`suining_care_gateway_failures_total{reason="`+failure.reason+`"}`, 1)
+	}
 	finish, beginErr := d.db.Begin(ctx)
 	if beginErr != nil {
 		return true, beginErr

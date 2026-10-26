@@ -50,9 +50,14 @@ func (h *Handler) alarmProcessSelect(w http.ResponseWriter, r *http.Request) {
 			response.Error500(w, ref())
 			return
 		}
+		lng, lat, err = openCoordinates(h.Box, lng, lat)
+		if err != nil {
+			response.Error500(w, ref())
+			return
+		}
 		list = append(list, map[string]any{
 			"id": aid, "status": status, "oldId": oldID, "deviceId": deviceID,
-			"beTime": tsOrNil(beTime), "lng": openCoordinate(h.Box, lng), "lat": openCoordinate(h.Box, lat),
+			"beTime": tsOrNil(beTime), "lng": lng, "lat": lat,
 		})
 	}
 	if err := rows.Err(); err != nil {

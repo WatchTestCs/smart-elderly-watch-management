@@ -33,9 +33,13 @@ func scanPositionRow(box *securestore.Box, row dbstore.Row) (map[string]any, err
 	if err := row.Scan(&name, &oldID, &sex, &lng, &lat, &beTime, &status); err != nil {
 		return nil, err
 	}
+	lng, lat, err := openCoordinates(box, lng, lat)
+	if err != nil {
+		return nil, err
+	}
 	return map[string]any{
 		"name": name, "oldId": oldID, "sex": sex,
-		"lng": openCoordinate(box, lng), "lat": openCoordinate(box, lat),
+		"lng": lng, "lat": lat,
 		"beTime": tsOrNil(beTime), "status": status,
 	}, nil
 }

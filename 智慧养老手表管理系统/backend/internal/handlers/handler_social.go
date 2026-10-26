@@ -212,18 +212,31 @@ func (h *Handler) saidInsert(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	tx, err := h.DB.Begin(r.Context())
+	if err != nil {
+		response.Error500(w, ref())
+		return
+	}
+	defer tx.Rollback(r.Context())
 	touPic := ""
 	var pic *string
-	if err := h.DB.QueryRow(r.Context(), "SELECT family_tou_pic FROM family WHERE family_phone=$1", p.Phone).Scan(&pic); err == nil && pic != nil {
+	if err := tx.QueryRow(r.Context(), "SELECT family_tou_pic FROM family WHERE family_phone=$1", p.Phone).Scan(&pic); err == nil && pic != nil {
 		touPic = *pic
 	} else if err != nil && !isNotFound(err) {
 		response.Error500(w, ref())
 		return
 	}
-	ct, err := h.DB.Exec(r.Context(),
+	if touPic != "" && !h.lockImages(w, r.Context(), tx, []string{touPic}) {
+		return
+	}
+	ct, err := tx.Exec(r.Context(),
 		"INSERT INTO said(said,text_id,said_time,person_name,said_phone,tou_pic) VALUES($1,$2,$3,$4,$5,$6)",
 		saidContent, textID, time.Now(), p.DisplayName, p.Phone, touPic)
 	if err != nil {
+		response.Error500(w, ref())
+		return
+	}
+	if err = tx.Commit(r.Context()); err != nil {
 		response.Error500(w, ref())
 		return
 	}

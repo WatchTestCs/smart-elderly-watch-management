@@ -14,3 +14,4 @@ deploy/dual-db.env
 deploy/platform.env
 deploy/secrets/
 __pycache__/
+/evidence/ci/

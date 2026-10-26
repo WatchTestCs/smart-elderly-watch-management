@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"careold-go/internal/blob"
 	"careold-go/internal/ratelimit"
 	"careold-go/internal/securestore"
 )
@@ -25,6 +26,8 @@ type Config struct {
 	SessionBackend   string
 	HealthCacheBytes int64 // 健康统计内存缓存预算；0 禁用
 	RateLimit        ratelimit.Options
+	BlobBackend      string
+	Blob             blob.S3Options
 }
 
 func getenv(key, def string) string {
@@ -49,6 +52,17 @@ func Secret(key string) string { return getenv(key, "") }
 // 探针都认为服务正常。配置错误本身不会随等待消失（环境变量在进程生命周期内
 // 不变），所以必须在启动阶段就说清楚，而不是让调用方永远看到"稍后重试"。
 func (c Config) Validate() error {
+	if c.BlobBackend != "" && c.BlobBackend != "local" && c.BlobBackend != "s3" {
+		return errors.New("BLOB_BACKEND must be local or s3")
+	}
+	if c.BlobBackend == "s3" {
+		if err := blob.ValidateS3(c.Blob); err != nil {
+			return err
+		}
+		if c.MySQLDSN == "" || c.DataKey == "" {
+			return errors.New("S3 storage requires the shared MySQL catalog and an encryption key")
+		}
+	}
 	if err := ratelimit.ValidateOptions(c.RateLimit); err != nil {
 		return err
 	}
@@ -135,5 +149,7 @@ func Load() Config {
 		SessionBackend:   strings.ToLower(strings.TrimSpace(getenv("SESSION_BACKEND", "database"))),
 		HealthCacheBytes: cacheMiB << 20,
 		RateLimit:        ratelimit.Options{MaxKeys: maxKeys, MaxSlots: maxSlots, TrustedProxyCIDRs: proxies},
+		BlobBackend:      strings.ToLower(strings.TrimSpace(getenv("BLOB_BACKEND", "local"))),
+		Blob:             blob.S3Options{Endpoint: getenv("S3_ENDPOINT", ""), Region: getenv("S3_REGION", "us-east-1"), Bucket: getenv("S3_BUCKET", ""), AccessKey: getenv("S3_ACCESS_KEY", ""), SecretKey: getenv("S3_SECRET_KEY", "")},
 	}
 }

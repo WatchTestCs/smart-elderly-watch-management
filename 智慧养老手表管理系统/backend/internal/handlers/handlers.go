@@ -3,8 +3,11 @@ package handlers
 
 import (
 	"careold-go/internal/analytics"
+	"careold-go/internal/blob"
 	dbstore "careold-go/internal/db"
+	"careold-go/internal/ratelimit"
 	"net/http"
+	"sync"
 
 	"careold-go/internal/config"
 	"careold-go/internal/securestore"
@@ -20,11 +23,19 @@ type Handler struct {
 	Box          *securestore.Box
 	CookieSecure bool // 非回环监听时会话 Cookie 携带 Secure
 	healthCache  *statisticsCache
+	imageOnce    sync.Once
+	imageManager *blob.Manager
+	imageError   error
+	clientIP     func(*http.Request) string
 }
 
 func New(pool *dbstore.Database, sessions *session.Store, cfg config.Config) *Handler {
 	box, _ := securestore.New(cfg.DataKey)
-	return &Handler{DB: pool, Sessions: sessions, Cfg: cfg, Box: box, CookieSecure: cfg.SecureCookies(), healthCache: newStatisticsCache(cfg.HealthCacheBytes)}
+	resolve, err := ratelimit.NewClientIPResolver(cfg.RateLimit.TrustedProxyCIDRs)
+	if err != nil {
+		resolve, _ = ratelimit.NewClientIPResolver(nil)
+	}
+	return &Handler{DB: pool, Sessions: sessions, Cfg: cfg, Box: box, CookieSecure: cfg.SecureCookies(), healthCache: newStatisticsCache(cfg.HealthCacheBytes), clientIP: resolve}
 }
 
 // Routes 注册全部路由。各组在自己的文件中通过 h.route 注册。

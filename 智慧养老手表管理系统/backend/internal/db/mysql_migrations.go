@@ -40,7 +40,7 @@ func MigrateMySQL(ctx context.Context, database *Database) error {
 	if _, err = conn.ExecContext(ctx, "CREATE TABLE IF NOT EXISTS schema_migrations(name varchar(191) PRIMARY KEY,checksum char(64) NOT NULL,applied_at datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)) ENGINE=InnoDB"); err != nil {
 		return err
 	}
-	for _, name := range []string{"mysql/0001_core.sql", "mysql/0002_analytics.sql", "mysql/0003_health_samples.sql", "mysql/0004_device_capabilities.sql", "mysql/0005_platform.sql", "mysql/0006_health_performance.sql", "mysql/0007_cluster_scheduling.sql", "mysql/0008_rule_baseline_source.sql", "mysql/0009_rule_baseline_cover.sql", "mysql/0010_care_recipient_key.sql", "mysql/0011_encrypt_coordinates.sql"} {
+	for _, name := range []string{"mysql/0001_core.sql", "mysql/0002_analytics.sql", "mysql/0003_health_samples.sql", "mysql/0004_device_capabilities.sql", "mysql/0005_platform.sql", "mysql/0006_health_performance.sql", "mysql/0007_cluster_scheduling.sql", "mysql/0008_rule_baseline_source.sql", "mysql/0009_rule_baseline_cover.sql", "mysql/0010_care_recipient_key.sql", "mysql/0011_encrypt_coordinates.sql", "mysql/0013_image_blob.sql", "mysql/0014_operational_indexes.sql"} {
 		data, err := migrations.Files.ReadFile(name)
 		if err != nil {
 			return err

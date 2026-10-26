@@ -41,6 +41,38 @@ groups:
         annotations:
           summary: "SOS dispatcher heartbeat is stale"
           description: "This checks durable worker progress, not a guarantee of message delivery or responder arrival."
+      - alert: SuiningCareQueueStalled
+        expr: (suining_care_outbox_oldest_age_seconds > 120) and on(job,instance) (suining_care_queue_sample_valid == 1)
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "SOS notification jobs remain unfinished"
+          description: "Inspect gateway failures and durable outbox. Delivery and human acknowledgement are independent states. Use the manual fallback."
+      - alert: SuiningCareQueueObservationFailed
+        expr: suining_care_queue_sample_valid == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "SOS queue progress cannot be observed"
+          description: "An unavailable queue sample must never be interpreted as an empty healthy queue."
+      - alert: SuiningCareGatewayTLSInvalid
+        expr: suining_care_gateway_tls_configured == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "SOS gateway TLS trust configuration is invalid"
+          description: "Core MySQL ingestion remains available; dispatch is disabled and jobs remain durable. Repair certificate trust."
+      - alert: SuiningCareGatewayRepeatedFailures
+        expr: sum by(job,instance,reason)(increase(suining_care_gateway_failures_total[5m])) >= 3
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "SOS notification gateway repeatedly fails"
+          description: "The reason label distinguishes DNS, timeout, network, HTTP and decryption failures. Check pending jobs and human fallback."
   - name: suining-analytics
     rules:
       - alert: SuiningOptionalAnalyticsUnavailable

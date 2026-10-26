@@ -104,8 +104,10 @@ func (h *Handler) findDeviceByNo(ctx context.Context, q oldQuerier, deviceNo str
 		}
 		return nil, err
 	}
-	d.LastLng = openCoordinate(h.Box, d.LastLng)
-	d.LastLat = openCoordinate(h.Box, d.LastLat)
+	d.LastLng, d.LastLat, err = openCoordinates(h.Box, d.LastLng, d.LastLat)
+	if err != nil {
+		return nil, err
+	}
 	return d, nil
 }
 
@@ -118,8 +120,10 @@ func (h *Handler) findDeviceByID(ctx context.Context, q oldQuerier, deviceID int
 		}
 		return nil, err
 	}
-	d.LastLng = openCoordinate(h.Box, d.LastLng)
-	d.LastLat = openCoordinate(h.Box, d.LastLat)
+	d.LastLng, d.LastLat, err = openCoordinates(h.Box, d.LastLng, d.LastLat)
+	if err != nil {
+		return nil, err
+	}
 	return d, nil
 }
 

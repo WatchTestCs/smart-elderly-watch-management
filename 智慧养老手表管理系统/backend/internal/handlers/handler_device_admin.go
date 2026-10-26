@@ -132,12 +132,17 @@ func (h *Handler) deviceList(w http.ResponseWriter, r *http.Request) {
 		if lastTime != nil && now.Sub(*lastTime) <= 60*time.Second {
 			online = 1
 		}
+		lastLng, lastLat, err = openCoordinates(h.Box, lastLng, lastLat)
+		if err != nil {
+			response.Error500(w, ref())
+			return
+		}
 		list = append(list, map[string]any{
 			"deviceId": id, "deviceNo": no, "alias": alias, "model": model,
 			"appVersion": appVersion, "battery": battery, "oldId": oldID,
 			"oldPersonName": name, "oldPersonPhone": oldPhone,
 			"bindTime": tsOrNil(bindTime), "lastTime": tsOrNil(lastTime),
-			"lastLng": openCoordinate(h.Box, lastLng), "lastLat": openCoordinate(h.Box, lastLat), "status": status,
+			"lastLng": lastLng, "lastLat": lastLat, "status": status,
 			"online": online, "personHandled": personHandled,
 			"rateHandled": rateHandled, "preHandled": preHandled,
 		})

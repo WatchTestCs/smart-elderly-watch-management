@@ -8,6 +8,17 @@ import (
 	"strings"
 )
 
+// NewClientIPResolver shares the exact trusted-hop policy with audit/auth code.
+// It creates no limiter state or background worker.
+func NewClientIPResolver(cidrs []string) (func(*http.Request) string, error) {
+	_, trusted, err := normalized(Options{TrustedProxyCIDRs: cidrs})
+	if err != nil {
+		return nil, err
+	}
+	resolver := &Limiter{trusted: trusted}
+	return resolver.clientIP, nil
+}
+
 func parseAddress(raw string) (netip.Addr, bool) {
 	raw = strings.TrimSpace(raw)
 	if strings.HasPrefix(raw, "\"") {

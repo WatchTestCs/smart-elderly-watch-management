@@ -23,14 +23,27 @@ func sealCoordinate(box *securestore.Box, v string) string {
 }
 
 // openCoordinate 解密坐标；nil、空值与无密文前缀的历史明文行原样返回。
-func openCoordinate(box *securestore.Box, v *string) *string {
+func openCoordinate(box *securestore.Box, v *string) (*string, error) {
 	if v == nil || *v == "" || !strings.HasPrefix(*v, securestore.Prefix) {
-		return v
+		return v, nil
 	}
-	if plain, err := box.Open(*v, coordinateScope); err == nil {
-		return &plain
+	plain, err := box.Open(*v, coordinateScope)
+	if err != nil {
+		return nil, err
 	}
-	return v
+	return &plain, nil
+}
+
+func openCoordinates(box *securestore.Box, lng, lat *string) (*string, *string, error) {
+	lng, err := openCoordinate(box, lng)
+	if err != nil {
+		return nil, nil, err
+	}
+	lat, err = openCoordinate(box, lat)
+	if err != nil {
+		return nil, nil, err
+	}
+	return lng, lat, nil
 }
 
 // coordinateArg 供 INSERT 使用：优先取本次上报坐标，否则取设备最近坐标（已解密），

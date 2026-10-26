@@ -2,8 +2,10 @@ package handlers
 
 import (
 	"bytes"
+	"careold-go/internal/blob"
 	"careold-go/internal/response"
 	"encoding/binary"
+	"errors"
 	"github.com/google/uuid"
 	"image"
 	"image/color"
@@ -12,10 +14,9 @@ import (
 	"io"
 	"math/bits"
 	"net/http"
-	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 )
 
 // ImagesApi —— 图片上传下载（PhotoUtil 等价实现，仅标准库）
@@ -58,48 +59,23 @@ func (h *Handler) imageSave(w http.ResponseWriter, r *http.Request) {
 		ext = "jpg"
 	}
 	name := uuid.NewString() + "." + ext
-	if err := os.MkdirAll(h.Cfg.ImageDir, 0o755); err != nil {
+	var encoded bytes.Buffer
+	if ext == "jpg" {
+		err = jpeg.Encode(&encoded, img, nil)
+	} else {
+		err = png.Encode(&encoded, img)
+	}
+	if err != nil || encoded.Len() > maxImageBytes {
 		fail()
 		return
 	}
-	realDir, err := filepath.EvalSymlinks(h.Cfg.ImageDir)
+	manager, err := h.images()
 	if err != nil {
-		fail()
+		imageUnavailable(w)
 		return
 	}
-	tmp, err := os.CreateTemp(realDir, "image-*.tmp")
-	if err != nil {
-		fail()
-		return
-	}
-	tmpName := tmp.Name()
-	encoded := false
-	func() {
-		defer func() {
-			tmp.Close()
-			if !encoded {
-				os.Remove(tmpName)
-			}
-		}()
-		if ext == "jpg" {
-			if err := jpeg.Encode(tmp, img, nil); err != nil {
-				return
-			}
-		} else {
-			if err := png.Encode(tmp, img); err != nil {
-				return
-			}
-		}
-		encoded = true
-	}()
-	if !encoded {
-		fail()
-		return
-	}
-	// 原子改名落盘（同目录 rename）。
-	if err := os.Rename(tmpName, filepath.Join(realDir, name)); err != nil {
-		os.Remove(tmpName)
-		fail()
+	if err = manager.Put(r.Context(), name, encoded.Bytes()); err != nil {
+		imageUnavailable(w)
 		return
 	}
 	response.JSON(w, http.StatusOK, map[string]any{"returnCode": "1111", "filename": name})
@@ -244,54 +220,23 @@ func (h *Handler) imageDownload(w http.ResponseWriter, r *http.Request) {
 		notFound()
 		return
 	}
-	fi, err := os.Stat(h.Cfg.ImageDir)
-	if err != nil || !fi.IsDir() {
-		notFound()
-		return
-	}
-	root, err := filepath.EvalSymlinks(h.Cfg.ImageDir)
+	manager, err := h.images()
 	if err != nil {
+		imageUnavailable(w)
+		return
+	}
+	data, err := manager.Get(r.Context(), name)
+	if errors.Is(err, blob.ErrNotFound) {
 		notFound()
 		return
 	}
-	candidate := filepath.Join(root, name)
-	if rel, err := filepath.Rel(root, candidate); err != nil || rel == ".." ||
-		strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
-		notFound()
-		return
-	}
-	st, err := os.Stat(candidate)
-	if err != nil || !st.Mode().IsRegular() {
-		notFound()
-		return
-	}
-	real, err := filepath.EvalSymlinks(candidate)
 	if err != nil {
-		notFound()
+		imageUnavailable(w)
 		return
 	}
-	if rel, err := filepath.Rel(root, real); err != nil || rel == ".." ||
-		strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
-		notFound()
-		return
-	}
-	ext := strings.ToLower(strings.TrimPrefix(filepath.Ext(name), "."))
-	contentType := "image/jpeg"
-	switch ext {
-	case "png":
-		contentType = "image/png"
-	case "bmp":
-		contentType = "image/bmp"
-	}
-	f, err := os.Open(real)
-	if err != nil {
-		notFound()
-		return
-	}
-	defer f.Close()
-	w.Header().Set("Content-Type", contentType)
+	w.Header().Set("Content-Type", http.DetectContentType(data))
 	w.Header().Set("Cache-Control", "private, no-store")
-	http.ServeContent(w, r, name, st.ModTime(), f)
+	http.ServeContent(w, r, name, time.Time{}, bytes.NewReader(data))
 }
 
 // ---------------------------------------------------------------------------
