@@ -7,3 +7,7 @@
 **/*.log
 deploy/platform.env
 deploy/secrets
+SuiningWatch/.hvigor
+SuiningWatch/entry/build
+SuiningWatch/artifacts
+SuiningWatch/.idea

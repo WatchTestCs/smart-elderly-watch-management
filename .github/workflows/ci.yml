@@ -19,6 +19,10 @@ jobs:
     name: Frontend
     uses: ./.github/workflows/reusable-frontend.yml
 
+  watch:
+    name: Watch protocol
+    uses: ./.github/workflows/reusable-watch.yml
+
   backend:
     name: Backend
     uses: ./.github/workflows/reusable-backend.yml
@@ -61,7 +65,7 @@ jobs:
   required:
     name: Release gate / required
     if: ${{ always() }}
-    needs: [frontend, backend, windows, deployment, security-scan]
+    needs: [frontend, watch, backend, windows, deployment, security-scan]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -74,6 +78,7 @@ jobs:
         shell: bash
         run: |
           test "${{ needs.frontend.result }}" = "success"
+          test "${{ needs.watch.result }}" = "success"
           test "${{ needs.backend.result }}" = "success"
           test "${{ needs.windows.result }}" = "success"
           test "${{ needs.deployment.result }}" = "success"

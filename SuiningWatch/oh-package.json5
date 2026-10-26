@@ -1,0 +1,4 @@
+{
+  "modelVersion": "6.0.0", "name": "suining-watch", "version": "0.1.0",
+  "description": "岁宁 WATCH 5 模拟器联调端", "dependencies": {}
+}

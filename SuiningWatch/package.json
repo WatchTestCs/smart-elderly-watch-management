@@ -1,0 +1,13 @@
+{
+  "name": "suining-watch-protocol-checks",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Portable checks for the HarmonyOS simulator protocol; native builds use DevEco SDK",
+  "scripts": {
+    "test": "node --test tests/protocol.test.cjs",
+    "test:e2e": "node tests/backend.e2e.cjs"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
+  }
+}

@@ -46,7 +46,7 @@ def verify(repo, branch, sha, api=get_api):
     if not any(job["name"] == "Release gate / required" and job["conclusion"] == "success" for job in jobs):
         raise ValueError("current release aggregator did not pass (historical CI is insufficient)")
     artifacts = api(base+"/actions/runs/"+str(ci["id"])+"/artifacts?per_page=100")["artifacts"]
-    required = ["backend-1.26.10-", "backend-1.27.2-", "frontend-", "windows-sidecar-", "security-"]
+    required = ["backend-1.26.10-", "backend-1.27.2-", "frontend-", "watch-", "windows-sidecar-", "security-"]
     evidence = []
     for prefix in required:
         matches = [a for a in artifacts if a["name"] == prefix+sha and not a["expired"]]

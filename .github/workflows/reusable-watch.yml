@@ -1,0 +1,38 @@
+name: Reusable watch protocol verification
+on:
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  verify:
+    name: Protocol and dependency audit
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: SuiningWatch
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: SuiningWatch/package-lock.json
+      - name: Run portable protocol checks (not an ArkTS SDK build)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ../evidence/ci/watch
+          git rev-parse HEAD > ../evidence/ci/watch/source-sha.txt
+          node --version > ../evidence/ci/watch/node-version.txt
+          npm ci
+          npm test 2>&1 | tee ../evidence/ci/watch/protocol-test.txt
+          npm audit --audit-level=high --json > ../evidence/ci/watch/npm-audit.json
+      - if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: watch-${{ github.event.pull_request.head.sha || github.sha }}
+          path: evidence/ci/watch/
+          if-no-files-found: error

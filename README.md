@@ -16,6 +16,10 @@
 
 岁宁面向照护机构与家属，将长者档案、手表设备、健康记录、位置告警与照护任务放在同一工作台。采用 **Tauri 2 / Rust + Vue 3 / Vite + Go**，以独立部署的 **MySQL** 保存业务数据，**PostgreSQL** 承接异步分析。
 
+本分支同时包含 [HarmonyOS 手表端 SuiningWatch](SuiningWatch/README.md)，与网页和后端源码
+一并管理。该原生 Wearable 工程用于模拟数据联调；构建与验收范围见
+[手表端整合记录](docs/WATCH_INTEGRATION.md)，不包含真实传感器采集或真机签名发布。
+
 ![岁宁管理员工作台：设备异常、位置告警与平台公告](docs/screenshots/overview-desktop.png)
 
 *仓库已有界面示例，使用测试数据；不作为 2.1.0 原生窗口验收记录。*
