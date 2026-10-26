@@ -1,0 +1,639 @@
+# 可靠性修复后问题与任务交接文档
+
+**项目**：WatchTestCs/smart-elderly-watch-management
+**交付分支**：`codex/reliability-validation-20261026`
+**交接基线**：`0dc3715ef0e8dcc197cbcf59ee84bbfd8a2c5b9b`（手表源码导入；包含更新文档的最新提交仍需 CI 验证）
+**此前可靠性验收基线**：`30464e55008149c8d3712d8f4d129eadaf7e80c3`
+**后续集成目标**：`preview`（本次未合并，保持新分支交付）
+**交付日期**：2026-10-26
+**执行范围**：用户确认的本机隔离环境；未提供 staging、真实通知网关及真实外部值班接收端。
+**交接原则**：优先解决可靠性、安全边界和可验证性问题。不要为了漂亮的 benchmark、全绿 CI 或代码整洁而削弱事务、审计、通知语义和故障检测。所有结论必须绑定具体 SHA，并区分本机、CI、staging 和 production。
+
+---
+
+## 一、当前判断
+
+本次已经按照：
+
+`先制定计划 → 集成与执行 → 根据失败微调 → 从固定版本验收 → 新分支交付`
+
+完成了本机范围的修复与验证。计划文件为仓库根目录的 `IMPLEMENTATION_PLAN.md`。
+
+需要先纠正旧交接文档中的版本信息：
+
+- 旧交接基线为 `50b9cc094002ca691244b7d504cdeedf117787dd`。
+- 实际接手时 `preview` 已经是 `41b0f1d8752d1cf023872b067af8655f7a2580fd`，已有对应 CI、Security 和 20 分钟 endurance 成功记录，不能继续把旧文档的“最新 HEAD 无 CI”当作当前事实。
+- 上一轮可靠性最终验收基线为 `30464e55008149c8d3712d8f4d129eadaf7e80c3`。
+- 本轮已在同一分支增加仓库根目录 `SuiningWatch/`，源码导入提交为 `0dc3715ef0e8dcc197cbcf59ee84bbfd8a2c5b9b`；网页、Go 后端、桌面壳和原生手表端一并管理。
+- 原独立目录 `E:\DevEco Test\SuiningWatch` 保持原状。依赖、缓存、历史 artifacts、HAP 和签名/私有配置不进入 Git。
+- 推送与最终核对时，`preview` 仍为 `41b0f1d8752d1cf023872b067af8655f7a2580fd`；没有改动 `preview/main` 或原 PR 分支，没有创建正式发布。
+
+**此前 30464e5 的 CI、Security、Release gate / required 已全部通过。下表为该已验收基线，不代替新增手表后提交的验证。**
+
+| 验证项 | 已确认结果 | 范围 |
+|---|---|---|
+| Go 1.26.10 主套件 | 1106 项测试/子测试通过，10 项可选性能实验跳过 | 真实 MySQL + PG 环境，race |
+| Go 1.27.2 主套件 | 1106 项测试/子测试通过，10 项可选性能实验跳过 | 真实 MySQL + PG 环境，race |
+| 两版本 PG 专项 | 各 825 项通过，42 项跳过均有解释 | MySQL 专属项在配对主套件强制运行 |
+| 数据库版本 | CI MySQL 8.4.13、PostgreSQL 16.15 | 实际环境记录保存在 artifact |
+| 构建与契约 | Go build/vet、迁移/重放/rollback、OpenAPI、Windows sidecar 通过 | 此前 30464e5 SHA |
+| 前端 | 21 项测试及 typecheck/build/audit 通过 | 此前 30464e5 SHA |
+| 本机故障矩阵 | 14 项真实进程、数据库与网络故障场景通过 | 同机隔离，不等于跨宿主机演练 |
+| 图片与恢复 | 真实 S3、双实例读取、删除测试库和对象后恢复通过 | 合成数据、私有对象空间 |
+| 证据完整性 | 干净检出核对 136 份证据 SHA-256 全部一致 | 仓库内原始记录 |
+
+测试计数包含子测试，不应解读为同等数量的独立业务场景。数据库测试没有因为缺少 DSN 被默认记作成功。
+
+此前可靠性基线的验收链接（手表整合后的最新提交结果需另行核对）：
+
+- 分支：https://github.com/WatchTestCs/smart-elderly-watch-management/tree/codex/reliability-validation-20261026
+- CI：https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/40313719854
+- Security：https://github.com/WatchTestCs/smart-elderly-watch-management/actions/runs/40313719845
+
+当前剩余风险已经转为：
+
+| 优先级 | 剩余问题 | 当前边界 |
+|---|---|---|
+| P0 / 上线前 | 真实手表、供应商渠道与人工响应闭环 | 本机合成网关和 actor 通过，不代表家属实际收到或真人已经救援 |
+| P0 / 上线前 | 异机告警与整机故障 | app/Prometheus 进程停止已测，主机断电、网络隔离与异地值班尚未验 |
+| P1 | 历史明文和旧摘要索引迁移 | 完成分类、keyring 与原语测试，尚未自动执行真实历史全量迁移 |
+| P1 | 生产图片迁移与生产规模灾备 | 新抽象和测试恢复通过，旧 IMAGE_DIR 迁 S3、最旧备份与 RPO/RTO 仍待验 |
+| P1 | 多 ingress 全局配额及生产容量 | 单进程预算、同 ingress 共享限额、跨实例登录保护已做；跨 ingress 仍需统一边缘控制 |
+| P1 / Release | 仓库保护、独立 review、签名发布 | 提案和发布证据门槛已做，管理员规则与正式签名未应用 |
+
+不能把“本机范围完成”描述成“所有生产上线条件已经满足”。
+
+---
+
+# TASK-01 · P0
+## 保持当前提交的发布门槛，并完成后续集成与安装器验收
+
+### 已完成
+
+此前可靠性验收基线：
+
+`30464e55008149c8d3712d8f4d129eadaf7e80c3`
+
+已经完成真实数据库 CI、race、迁移/重复执行/必要 rollback、前端、OpenAPI、Go build/vet、Windows sidecar、安全检查和 SHA 绑定 artifact。
+
+发布检查脚本：
+
+`scripts/reliability/release-gate.py`
+
+检查内容包括：
+
+- 明确提供完整 40 位 SHA；
+- SHA 等于待发布分支当前 head；
+- 对应 SHA 的最新 CI/Security 成功，不能拿旧成功覆盖新失败；
+- `Release gate / required` 成功；
+- 必要 artifact 存在、未过期且有 SHA-256 digest；
+- 验证结束再次确认分支没有移动。
+
+两个手动发布入口已经加入检查，实际安装器入口固定源码 SHA，并在上传产物前再次核对。
+
+### 任务
+
+后续维护者应在新分支基础上审查集成；合并或其他修改一旦产生新 SHA，必须针对新 SHA 重新验证。
+
+| 检查 | 后续要求 |
+|---|---|
+| 当前基线证据 | 保留最终 CI 与本机记录，不与历史候选混用 |
+| 新提交 | 重新运行完整 required checks |
+| 合入 preview | 独立审查后，对新的 preview HEAD 再做 exact-source 校验 |
+| 完整 Windows 安装器 | 在受门槛约束的 preview-candidate 入口构建并验证安装/启动/卸载 |
+| 长期负载 | 带后台日统计、真实并发、TLS/反代验证 tail latency 与容量 |
+
+### 特别检查
+
+旧基线 `50b9cc0` 已在本机真实 MySQL 8.0.43 + PG 16.15/race 下完成：1041 pass、10 可选实验 skip，build/vet 成功。
+
+接手时的 `41b0f1d` 同环境为 1068 pass、10 可选实验 skip。
+
+最初 HDD 数据目录的 DDL/迁移超时失败已保留；更换独立 NVMe 数据目录后重跑，没有降低事务确认或 fsync。
+
+统计实现目录 `backend/internal/health` 在旧基线与功能验收版本的 tree ID 一致。真实数据库日统计、失效、owner clock 并发和历史版本回归通过。本机 HTTP p95/p99 记录在 `docs/reliability/performance.md`，不等于生产 SLA。
+
+### 验收标准
+
+必须能够对准备发布的那个具体 SHA 提供：
+
+`源码 → 当前 CI → 原始日志 → artifact digest → 构建环境 → 安装包`
+
+的可追溯关系。
+
+**当前基线通过，不代表未来提交自动通过；Windows sidecar contract 也不代表完整安装器已经正式验收或签名。**
+
+---
+
+# TASK-02 · P0
+## 从合成闭环推进到真实渠道和人工接手验收
+
+### 已完成
+
+已经基于现有 PR #27 集成回执幂等与 ADMIN duty 约束，没有另起一套平行实现。
+
+| 场景 | 本次结果 |
+|---|---|
+| 同一 SOS requestId 重发 | 不重复创建事件 |
+| 实际 HTTPS 请求超时、网关已接收 | 后续签名回执可收敛 |
+| 重复/晚到回执 | 幂等，不重复审计；旧 worker 不能覆盖 delivered |
+| 发送中强制终止 app/worker | 重启后等实际 2 分钟租约恢复，供应商幂等接受一次 |
+| 网关 429/5xx/网络断开/DNS | 持久任务保留，分类错误与退避得到验证 |
+| 无人接单 | 按原始期限升级 |
+| 接单后无人处理 | 原始审计显示 acknowledge 后 614.111 秒升级，未伪造处理成功 |
+| 同人处置并复核 | 被禁止；另一个授权 actor 才能 verify |
+| delivered 但未接单 | UI 回归继续显示未接手 |
+
+完整 HTTP 回归测试保留了：
+
+`设备 SOS → MySQL 持久化 → outbox → TLS gateway → signed receipt → delivered → acknowledge → start → resolve → 第二个 actor verify`
+
+以及对应审计事件。
+
+### 任务
+
+下一步接入专用 staging、真实测试手表、受控供应商测试渠道以及明确同意参与的值班人员。
+
+1. 使用测试账号与测试联系人建立设备归属、家属和照护职责。
+2. 核对供应商真实渠道的 accepted/sent/delivered 回执含义、签名与幂等协议。
+3. 重新执行超时、回执重试、网络断开、worker 崩溃和恢复。
+4. 记录真正的渠道送达、人员看到、接单、处置和独立复核时间。
+5. 核对数据库、审计事件、前端展示以及接收端记录的一致性。
+
+### 最重要的语义
+
+始终保持：
+
+`received ≠ sent ≠ delivered ≠ acknowledged ≠ resolved ≠ verified`
+
+并明确：
+
+`receiver_accepted ≠ human_acknowledged`
+
+本机 receiver 返回 2xx 只证明该接收进程接受事件，不能证明真人收到、接手或完成救援。
+
+### 验收标准
+
+留下真实设备、真实渠道及两名独立授权人员参与的完整轨迹，分别量化持久化、送达、接手、处置和复核时延，并保留超时升级及备用救援流程的证据。
+
+---
+
+# TASK-03 · P0
+## 从同机进程故障推进到异机监控与生产级恢复
+
+### 已完成
+
+已集成 PR #29 的 MySQL/可选 PG 解耦方向，并补齐 Alertmanager、独立 receiver、持久 watchdog 与故障记录。
+
+本机完整进程矩阵有 14 项通过；覆盖以下行为：
+
+| 故障 | 已验证结果 |
+|---|---|
+| PG 真实停机 | MySQL 照护路径继续，analytics 告警到独立 receiver |
+| PG 恢复 | 自行重连，analytics backlog 重放至 0 |
+| MySQL 真实停机 | databaseReady=false，SOS HTTP 503，critical 实际送达 receiver |
+| MySQL 恢复 | 服务与新 SOS 自行恢复 |
+| app 强制终止 | Prometheus/Alertmanager/receiver 仍运行并报警 |
+| worker 心跳行锁 150 秒 | 业务 DB 仍 ready；本次新 stale 告警送达，释放后持久心跳恢复 |
+| 网关进程停止/持续 5xx/429/DNS 错误 | outbox 保留、退避、错误分类及告警得到验证 |
+| Prometheus 强制终止 | 另一 watchdog 进程向 receiver 送达告警 |
+
+正式规则的 `for` 时长和业务租约/升级期限没有缩短。演练脚本修正了旧 firing 误归属问题：注入前先确认心跳恢复与旧告警解除，并核对新告警 startsAt。
+
+### 任务
+
+建立与 app 不在同一宿主机故障域的 Prometheus/Alertmanager/watchdog/值班渠道，执行：
+
+- app 宿主机断电或停止；
+- app 到数据库、网关和监控的网络隔离；
+- Prometheus/Alertmanager 宿主机故障；
+- receiver 不可用和恢复；
+- 监控凭据、TLS 证书到期或错误；
+- 实际值班人员接手与备用救援。
+
+不能用“同机进程还活着”替代“整台机器坏掉后外部仍能发现”。
+
+### Disaster Recovery
+
+真实 MySQL + S3 恢复回归已经执行：
+
+`备份 → 删除专用测试数据库和对象 → 重建 → 导入 SQL/恢复对象 → 启动实例 → 核对引用/哈希 → 核对 SOS、pending outbox、session`
+
+这不是空库恢复，也不是 mock。MySQL 仍为业务真相源，PG 是可重建分析投影。
+
+后续需对生产体量、最旧保留备份、长期 key/lookupKey、异地副本、binlog/PITR 和通知恢复防重复进行演练，给出实际 RPO/RTO。
+
+### 不要做
+
+- 不手工改任务状态、删除失败记录或抹掉审计。
+- 不把 `/healthz = 200` 当作 SOS 可用；本次停 MySQL 时 healthz 仍可能为 200。
+- 不把 PG 恢复当作 MySQL 业务恢复。
+- 不在唯一生产副本执行本机测试的 drop/清空步骤。
+
+### 验收标准
+
+真实整机/网络故障期间，异地监控仍能发出告警、真人确认并执行备用流程；生产规模恢复必须核对业务、队列、图片、会话和密钥，记录 RPO/RTO。
+
+---
+
+# TASK-04 · P1
+## 保持有界限流，并补齐跨 ingress 与生产容量边界
+
+### 已完成
+
+进程限流已增加 32 shard 下的总预算：
+
+- 默认最多 8192 active key；
+- 默认最多 262144 时间戳槽；
+- 拒绝新增/扩容，保留活跃配额，有限扫描过期 entry；
+- 后台回收与 key/slot 高水位、容量拒绝指标；
+- 每请求只锁对应 shard，未退回全局请求锁。
+
+可信代理仅接受配置 CIDR 内的 TCP peer；Forwarded/XFF 有长度/hops 限制，从右向左处理可信链，直接伪造 XFF 无效。审计与登录使用同样的 IP 解析策略。
+
+Nginx shared zone 覆盖同 ingress 后的多个应用副本；共享 MySQL 登录审计提供账号+IP 和账号级窗口，没有为所有普通请求新增数据库限流写入。
+
+### 压测证据
+
+| 项目 | 已验证范围 |
+|---|---|
+| 高基数 | 三波累计 300000 模拟来源 |
+| 并发 | 256 goroutine；另有 race 回归 |
+| 地址 | IPv4、IPv6、规范化及伪造代理链 |
+| 共享来源 | 高频单 IP、NAT、trusted proxy、forged XFF |
+| 状态上限 | 活跃 key 停在 8192；容量拒绝 291808 次 |
+| 内存 | Windows GetProcessMemoryInfo 采样，微压测 RSS 峰值约 23.09 MiB |
+
+上述为 limiter microbenchmark；不是 HTTP 吞吐、staging 容量或生产 RSS 上限。
+
+### 任务
+
+1. 多 ingress/多宿主部署时配置上游统一网关或 WAF 共享配额，不能把单进程 limiter 当全局配额。
+2. 验证客户端不能绕过 ingress 直连公开后端，审查 TRUSTED_PROXY_CIDRS 的最小范围。
+3. 在真实 NAT 分布、慢请求、持续来源轮换和后台任务下验证拒绝行为、误伤与 tail latency。
+4. 给整个应用配置合理的请求并发、容器内存预算和高水位告警；limiter 状态预算不覆盖其他内存。
+
+### 验收标准
+
+持续高基数输入不能使 limiter 保留状态无界增长；多入口下的关键额度仍统一生效，正常 NAT 用户和可信代理识别正确，并提供实际环境、来源分布、RSS 与拒绝记录。
+
+---
+
+# TASK-05 · P1
+## 在已交付分类和 keyring 基础上完成真实历史迁移
+
+### 已完成
+
+已基于 PR #32 的安全提交继续集成收件人、部分坐标与 cookie 保护，没有重复实现同一批字段。
+
+数据分类包括：
+
+- MySQL 50 张表的 385 个字段；
+- PG 分析 record 的 7 个字段、12 个视图输出；
+- 图片、备份、日志、配置密钥、session、历史明文等资产。
+
+分类表沿用以下维度：
+
+| 字段 | 敏感级别 | 当前存储 | 查询需求 | 当前实际索引 | 保护方案 | 迁移方案/边界 |
+|---|---|---|---|---|---|---|
+
+文件位于 `docs/reliability/data-classification.csv`、`projection-and-assets.csv` 和 `data-protection.md`。
+
+新增版本 keyring，分离加密 key 与 lookupKey；新密文认证 key ID 与 scope，限制 reader 数量。
+
+测试已经验证：
+
+`key A 数据 → B 写入 → A 老数据可读 → B 重封装 → 删除 A 后可读`
+
+以及错误 key、缺失 key、错误 scope、key ID 篡改时失败关闭。坐标解密失败不会把密文当正常坐标返回。
+
+### 当前问题
+
+仍不能声称全库加密。姓名、电话、地址、原始健康样本、生成列、围栏/事件、自由文本、部分历史明文与备份仍有待治理范围。
+
+旧单 key 同时承担加密与 HMAC；历史 recipient_key 还可能是未配置 key 时的 SHA 回填。直接换 lookupKey 会改变去重/唯一索引及登录审计摘要。
+
+### 任务
+
+1. 对真实历史数据库与备份盘点明文、A/无版本密文、旧摘要和失败解密数量。
+2. 为手机号制定规范化 + scoped HMAC lookup + AEAD 的扩列、双写、回填、唯一性校验与切读计划。
+3. 旧 HMAC 索引采用停写迁移或有期限双读，保留登录限流旧窗口，不能直接换 C。
+4. 健康 JSON、生成列、统计和范围索引先设计受控计算/投影边界，不能直接整体加密后破坏查询。
+5. 分批重封装时用版本/CAS 防止覆盖并发修改；同步覆盖 change、归档、PG、重放队列与历史导出。
+6. 所有副本先支持 A+B 读取，再切 B 写；最旧保留备份仍需 A 时保持离线受托保管。
+
+### 验收标准
+
+在生产结构与代表性历史数据的隔离恢复环境，证明所有依赖 A 的在线数据、回滚版本与备份均已处理，才允许退役 A。保留索引迁移、并发、唯一性、审计和恢复记录。
+
+**keyring 原语通过，不代表真实旧数据库已经完成全量安全轮换；禁止自动生成替代 key 后继续运行。**
+
+---
+
+# TASK-06 · P1
+## 完成旧图片向共享存储的迁移及生产规模备份验收
+
+### 已完成
+
+已实现 local/S3 统一存储抽象，包括：
+
+- 保留大小、解码、尺寸检查和重新编码；
+- 配置 key 时的新对象 AEAD、内容 SHA-256/大小校验；
+- S3 私有命名空间、认证访问与 HTTPS 边界；
+- 不可变对象，DB 明确失败补偿，提交不明时保留对象供后续核对；
+- 目录行锁、引用检查、先提交 deleting 墓碑再物理删除；
+- 默认 dry-run、至少 24 小时宽限的 orphan GC；
+- 阻止 GC 的备份租约及引用检查工具。
+
+S3 模式要求共享 MySQL 与配置密钥；本地兼容模式仍需明确 key 配置和历史明文范围，不能把兼容旧图读取描述为旧图已加密。
+
+双实例和实际恢复测试已经通过：
+
+`A 上传 → B 读取 → A 下线 → B 继续读取`
+
+`真实 MySQL dump + blob → 删除测试库/对象 → 恢复 → 全引用与 hash、SOS、outbox、session 核对`
+
+匿名对象 GET 被拒绝。测试使用真实 SeaweedFS S3 兼容服务，并不构成所有供应商对象存储的认证。
+
+### 任务
+
+1. 旧 IMAGE_DIR 切 S3 前，受控停写/备份并盘点四处数据库图片引用。
+2. 读取和验证旧明文/旧密文，按受控方案加密写对象、回填目录并核对全引用。
+3. 当前没有自动复制历史图片目录的迁移命令，后续需实现或提供受审核迁移程序，不能只改 BLOB_BACKEND。
+4. 生产备份持有 GC 租约，MySQL 一致快照后复制不可变对象集合/引用集；长任务必须在租约过期前续期。
+5. 续期失败、对象缺失或 hash 不符应判备份失败；备份加密 key 与备份包分离保管。
+6. 在多宿主、实际供应商和生产数据规模下验证一致性、恢复、权限、对象保留策略与 RPO/RTO。
+
+### 回滚限制
+
+MySQL 0013 rollback 保留目录与墓碑；0014 可撤销新增索引。MySQL 0012 留给已存在的相关 PR 工作，不能重新占号。
+
+旧二进制不支持 S3/keyring 时，必须先恢复其可读格式或部署仍兼容新格式的修复版本。不能为回滚删除新业务记录、目录或旧 key。
+
+### 验收标准
+
+旧图片迁移后两个真实宿主机读到同一内容；生产规模备份恢复后全部引用存在且 hash 正确，业务/outbox/session 可核对，没有 dangling DB reference，也没有依靠公开 bucket 绕过认证。
+
+---
+
+# TASK-07 · P1 / Release
+## 将治理提案落实为管理员保护和签名发布
+
+### 当前状态
+
+已经交付：
+
+- 固定 SHA、最新 CI/Security、聚合门槛及 artifact digest 校验；
+- 构建版本、数据库版本/镜像、Go 模块来源、原始日志与 SHA-256；
+- 核心工作流 setup-go 固定到官方 v6.5.0 commit SHA；
+- `deploy/preview-ruleset.proposed.json` 保护提案；
+- `docs/reliability/release-governance.md` 操作与边界说明。
+
+**本次没有应用管理员规则，没有伪造独立批准，没有创建签名 tag、签名证书或正式 Release。**
+
+规则提案中的 GitHub Actions integration_id 来自本仓库实际 check-runs。正式应用前仍应核对 check 名称和来源。
+
+### 任务
+
+| 项 | 下一步要求 |
+|---|---|
+| preview | 由管理员审查并应用禁止普通直接 push 的规则 |
+| 合并 | PR + 至少一名独立 reviewer，最后推送者不能自行批准 |
+| required checks | 当前 SHA 的聚合检查及指定来源 CodeQL 检查 |
+| 新推送 | 旧批准失效，重新验证 |
+| force push / 删除 | 禁止 |
+| release | 明确固定源码 SHA，不用漂移分支代替来源 |
+| artifacts | SHA-256、环境、依赖、CI run 与安装包清单一致 |
+| tag / binary | 配置受托签名、证书、时间戳及轮换策略 |
+| 历史工作流/基础镜像 | 继续审核和固定来源，保持补丁更新策略 |
+
+仓库默认分支的历史 Dependabot 告警不等于本新分支的当前扫描结果，不能据本次 CI 宣称默认分支旧漏洞全部清零。
+
+### 验收标准
+
+管理员规则实际阻止绕过，独立 review 可核查；某个正式安装包能够追溯到固定 SHA、具体 CI、依赖与签名身份。不能仅靠工作流文件存在就宣称仓库写权限已经受保护。
+
+---
+
+# TASK-08 · P1 / Watch
+## 同分支手表源码整合与下一阶段原生验收
+
+### 已完成
+
+手表代码来自 `E:\DevEco Test\SuiningWatch`，现位于同一仓库的 `SuiningWatch/`，不是 submodule，也不是另一个分支。
+
+| 工程 | 仓库位置 | 用途 |
+|---|---|---|
+| 网页端 | `智慧养老手表管理系统/oldIot` | 管理端和家属端 Vue 页面 |
+| 后端 | `智慧养老手表管理系统/backend` | Go/MySQL 业务与可选 PG 分析 |
+| 桌面壳 | `智慧养老手表管理系统/desktop` | Windows Tauri 壳与打包 |
+| 手表端 | `SuiningWatch` | ArkTS/ArkUI Stage Wearable 原生模拟联调端 |
+
+包含应用配置、页面、协议、HTTP 客户端、Preferences 存储、资源、构建/模拟器脚本和协议/E2E 测试。生产 ETS 与资源保持原代码，只调整测试可移植性、忽略规则、说明与 CI。
+
+本次从干净提交 0dc3715 重新验证：
+
+- `npm ci` 和 6 项协议测试通过，锁定 TypeScript 5.9.3，npm audit 无漏洞。
+- DevEco SDK API 24 原生构建成功，生成 unsigned debug HAP；异常处理静态警告和未签名警告保留。
+- 当前 Go 后端 + 独立真实 MySQL 8.0.43 联调 6 项通过：认证、绑定、心跳、模拟采样入库/去重、SOS 幂等、重绑定后拒绝旧批次。
+- 联调没有真实收件人；测试服务结束后停止，不连接既有网页业务库。
+- CI 新增 Watch protocol，并成为 Release gate / required 的依赖；发布脚本额外要求 `watch-<SHA>` artifact。此检查不是 HarmonyOS SDK 原生编译。
+
+### 构建与联调入口
+
+DevEco 打开仓库的 `SuiningWatch` 目录；普通协议测试在该目录运行 `npm ci`、`npm test`。
+
+原生编译运行 `./scripts/build.ps1 -DevEcoHome '<DevEco安装目录>'`。当前本机安装目录为 `D:\Huawei\DevEco Studio`。
+
+模拟器启动脚本 `scripts/run-emulator.ps1` 通过 HDC 将模拟器 18796 转发至主机后端端口，默认 8796；这只是可配置联调约定，不证明该端口现在有常驻服务。
+
+`npm run test:e2e` 必须提供 `WATCH_TEST_URL`（仅本机 HTTP）和 `WATCH_TEST_SETUP_TOKEN`，且仅对全新隔离测试库运行。测试会创建管理员、监护、长者、设备及 SOS，不能指向已有业务库。
+
+### 当前问题与任务
+
+1. 当前为手动模拟心率/步数，没有真实传感器、GPS、后台持续采集或自动上传；数据始终标记 simulated。
+2. 本次未重新执行模拟器安装、视觉/完整点击或真机测试；VALIDATION.md 的 2026-10-25 历史记录不能当作本次证明。
+3. SDK API 24 构建通过不证明 WATCH 5 真机和兼容 API 18 已实测；需个人开发者签名及系统版本验收。
+4. healthBatch 有服务端 bindingVersion 校验，SOS 尚无同等条件。客户端认证与发送之间仍存在重绑定竞态，后续需设计兼容的服务端条件和幂等语义；本次未改写后端 API。
+5. 设备密钥仅在内存中，Preferences 保存地址、模拟队列与未确认 SOS。接入真实敏感数据前需本地加密、密钥安全存储、退出清理和损坏数据恢复设计。
+6. 对圆屏布局、异常网络、应用重启、离线补传、旧绑定拒传及求助重试开展模拟器完整交互，再进行受控真机验收。
+
+### 验收标准
+
+源码和网页端在同一新分支可完整检出；干净环境可重复协议测试与原生构建；当前后端联调通过。随后提供真机签名/系统兼容、真实传感器、持久化安全、SOS 重绑定竞态、模拟器交互的独立记录，不能将“编译成功”写成“真实手表健康采集和救援闭环完成”。
+
+---
+
+# 二、开放 PR 边界
+
+本节记录本次处理方式，不代表远端 PR 已关闭、已合并或其状态永远不变。后续接手先核对实际 head 与差异。
+
+| PR | 本次处理 | 后续注意 |
+|---|---|---|
+| #27 | 回执幂等、ADMIN duty 约束已集成到新分支 | 保留当前事务、审计和旧 worker CAS |
+| #29 | 可选 PG 与独立监控方向已集成并完成本机故障矩阵 | 异机/整机与真人值守仍待验 |
+| #32 | 采用 c709daf、32fc08b、ac1fceb 三个安全提交并迁入 Secure cookie | 未整支合入；其后续跨请求 session 缓存会延迟跨实例撤销，不应盲目覆盖当前每请求 DB 撤销语义 |
+| #33 | CI annotation 兼容集成 | 不替代真正的 required checks 或人工 review |
+
+不要为了“重新实现”复制这些工作的代码，也不要在不核对最新差异时整支合并 #32。
+
+推荐继续顺序：
+
+`阅读本次结果与原始证据 → 核对分支/PR head → 独立 review → 新 SHA 的 exact-source CI → staging/真实渠道 → 根据新失败修复`
+
+---
+
+# 三、推荐分工
+
+**第一责任：TASK-01 + TASK-02 + TASK-03。**
+
+由可靠性/发布负责人维护固定 SHA 门槛，推进真实设备、渠道、值班人员、异机故障和生产恢复验收。
+
+TASK-04 由平台/网关负责人补齐跨 ingress 配额与持续负载容量。
+
+TASK-05 由安全/数据负责人承担历史字段、HMAC 索引、全量轮换与最旧备份恢复；不能只做新写加密。
+
+TASK-06 由存储/DBA 负责人完成旧图片迁移、备份自动化及生产规模 RPO/RTO。
+
+TASK-07 由仓库管理员与独立发布审查者落实保护和签名。
+
+TASK-08 由 HarmonyOS/设备协议负责人推进模拟器完整交互、真机/传感器和 SOS 重绑定竞态验收。
+
+仍未提供的外部环境、真实渠道、值班人员、生产 key custody 和管理员配置，应作为下一阶段的明确输入，不能由本机合成结果代替。
+
+---
+
+# 四、明确禁止的优化方式
+
+以下行为不接受：
+
+- 为提升吞吐改成“先返回成功、稍后落库”；
+- 删除事务确认或关闭审计；
+- 把 gateway/receiver 2xx 当渠道送达或真人响应；
+- 把 delivered 当作已接手、已处置或已复核；
+- 用旧 SHA 的绿灯或 benchmark 证明新提交；
+- 缺数据库配置时跳过集成，再把结果写成成功；
+- 删除失败测试、失败日志或手工改任务状态获得全绿；
+- 用 mock、空库恢复或单进程测试替代真实数据库、双实例和恢复验证；
+- 用 `/healthz` 证明 SOS 可用，或把 PG 分析升格为业务真相源；
+- 为 p99 放宽会话撤销、一致性、权限或通知语义；
+- 盲目信任 XFF，或把进程限流描述成多 ingress 全局额度；
+- 直接更换 lookupKey，忽略历史唯一索引和登录限流窗口；
+- 丢 key 后自动生成新 key 继续运行；
+- 只改对象存储开关而不迁移旧图，或通过公开 bucket 绕开权限；
+- 租约过期、对象缺失或 hash 错误后仍宣布备份完成；
+- 把同机隔离、合成 actor 或本地 receiver 描述成生产救援闭环；
+- 未经审查把本次新分支直接覆盖 preview/main，或伪造签名、review 与管理员保护。
+
+---
+
+# 五、交付物
+
+本机代码与证据位置：
+
+| 交付物 | 位置/内容 |
+|---|---|
+| 代码仓库 | `E:\DevEco Test\smart-elderly-watch-remediation` |
+| 手表端源码 | 仓库根 `SuiningWatch/`，与网页端同分支 |
+| 手表端整合记录 | `docs/WATCH_INTEGRATION.md` |
+| 手表新验收证据 | `evidence/watch-import-20261026/`：干净提交、原生构建、6 项协议测试、6 项真实 MySQL 联调与 HAP hash |
+| 仓库内同步交接 | `docs/问题与任务交接文档.txt`；本桌面文件为工作副本 |
+| 计划 | 仓库根 `IMPLEMENTATION_PLAN.md` |
+| 完成报告 | 仓库根 `HANDOFF_RESULT.md` |
+| 场景矩阵 | 仓库根 `validation-matrix.md` |
+| 原始证据索引 | `evidence/reliability-20261026/README.md` |
+| 原始证据校验 | 同目录 `SHA256SUMS.json`，136 份记录已从干净检出核对 |
+| 完整进程矩阵 | 同目录 `process-matrix-110b5a4/matrix.json`，complete=true |
+| 原始事件时间线 | 同目录 `process-matrix-110b5a4/final-audit-timeline.json` |
+| 数据分类与轮换 | `docs/reliability/data-protection.md` 及两份分类 CSV |
+| 图片/备份操作 | `docs/reliability/storage-operations.md` |
+| 代理/限流/监控 | `docs/reliability/abuse-and-monitoring.md` |
+| 本机性能/RSS | `docs/reliability/performance.md` |
+| 环境、重现、回滚、生产门槛 | `docs/reliability/environment-and-rollback.md` |
+| 治理与规则提案 | `docs/reliability/release-governance.md`、`deploy/preview-ruleset.proposed.json` |
+| 最终提交验收记录 | `E:\DevEco Test\final-acceptance-30464e5\README.md` |
+| 最终在线发布证据校验 | 上述目录 `verified-source.json`，绑定最终 30464e5 |
+| 最终 SHA 原始 CI 日志 | 上述目录 `backend-1.26.10`、`backend-1.27.2`、`frontend`、`security`，ZIP digest 已核对 |
+
+### 证据版本说明
+
+功能和完整进程演练固定于：
+
+`110b5a43b400f6018c496855b1458d47181785aa`
+
+最终提交 30464e5 与该版本的完整 backend tree 均为：
+
+`4e986ae823a67a2d7809b3bd756e413bacd2c86f`
+
+此前最终提交 30464e5 已另外完成自己的 CI/Security，不是仅凭目录相同复用旧绿灯。
+
+手表导入的生产源码固定于 0dc3715；本次没有修改后端和网页业务代码。包含手表、CI 和更新文档的新提交必须另外通过自己的 CI/Security，结果以最新验收记录为准。
+
+仓库内 `HANDOFF_RESULT.md` 保留了当时 f1417a9 的验收记录，并明确提示后续 HEAD 必须再验证；最后的 30464e5 校验和原始 CI 日志保存在仓库外 `final-acceptance-30464e5`，避免“提交最终 CI 记录又产生新待验 SHA”的循环。
+
+### 失败证据
+
+以下原始失败已保留，不能删除或把它们改写成通过：
+
+- HDD 数据目录的迁移/DDL 超时；
+- bf33177 的 rollback 注释分割、迁移计数和 Linux localhost socket 问题；
+- 首轮进程脚本等待不足与旧 firing 归属问题；
+- dirty 候选开发记录与 setup-only smoke。
+
+以每份 manifest/source-sha、complete 标记及后续修复日志区分它们；不能拿 partial/smoke 当完整矩阵。
+
+### 环境与凭据边界
+
+本机工具包括 Go 1.26.10、GCC 15.2.0、MySQL 8.0.43、PG 16.15、SeaweedFS 4.51、Prometheus 3.5.0、Alertmanager 0.28.1，以及 Python/Node 工具链。CI 的数据库版本另见实际日志，不与本机混称。
+
+验收后已停止本次独立 MySQL/PG/S3 与故障演练服务，数据和工具保留。原 `MySQL2077` 服务保持运行，没有作为测试库停掉或清空。
+
+实验配置和临时材料在 `E:\DevEco Test\.reliability-lab` 及专用 Temp 数据根。凭据、私钥、fixture session、SQL dump 不在公开证据中；接手不得把它们复制进仓库或交接正文。
+
+所有性能数字必须标清：
+
+`microbenchmark / HTTP benchmark / staging / production`
+
+本次 RSS 和 HTTP 分位数均为本机实验，不能用作生产容量承诺。
+
+---
+
+# 六、完成标准
+
+接手者应能基于现有证据回答：
+
+**30464e5 是否通过自己的真实数据库 CI？**
+
+已通过，最终 CI/Security 和发布证据校验可核对。
+
+**重复回执、晚到回执和 worker 中途崩溃是否有验证？**
+
+有真实数据库、TLS/连接断开、实际进程终止及原租约恢复证据；保留幂等和审计。
+
+**MySQL、PG、app、worker 和 Prometheus 停止后谁发现？**
+
+本机独立进程链已验证；异机/整机和真人应答仍待下一阶段验收。
+
+**十万以上来源是否仍使 limiter 状态无界增长？**
+
+有 key/slot 设计上限与 30 万来源微压测证据；整个应用、多 ingress 的容量仍需实际部署验证。
+
+**两个实例能否共享图片，数据库和 blob 能否真实删除后恢复？**
+
+新存储方案已通过真实 S3/DB 双实例与恢复测试；生产历史图片迁移及规模化恢复仍待完成。
+
+**密钥轮换是否已经覆盖所有真实历史数据和备份？**
+
+没有。原语、版本和 fail-closed 已验证，真实历史索引/数据/备份迁移仍是明确待办。
+
+**手表代码是否已和网页端同分支，是否等于真机已完成？**
+
+同分支源码整合、原生 HAP 编译、6 项协议与 6 项当前后端联调已完成；不等于真实传感器、真机签名或模拟器完整交互已验收，见 TASK-08。
+
+**是否已经满足生产上线、仓库保护和签名发布要求？**
+
+没有。真实渠道/人员、异地故障、生产灾备/容量、历史迁移、管理员保护、独立 review 与正式签名仍须补齐证据。
+
+最终交接目标是：
+
+> 已完成的结论能指向具体源码与原始证据；未完成的项目有明确输入、步骤和验收标准，不能用“理论上应该可以”替代。

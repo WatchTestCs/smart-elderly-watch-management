@@ -1,0 +1,26 @@
+{
+  "source_sha": "0dc3715ef0e8dcc197cbcf59ee84bbfd8a2c5b9b",
+  "backend_baseline": "30464e55008149c8d3712d8f4d129eadaf7e80c3",
+  "working_tree_dirty": false,
+  "imported_watch_files": 28,
+  "production_source_resources_match_original": [
+    "entry\\src\\main\\module.json5",
+    "entry\\src\\main\\ets\\entryability\\EntryAbility.ets",
+    "entry\\src\\main\\ets\\model\\Protocol.ets",
+    "entry\\src\\main\\ets\\pages\\Index.ets",
+    "entry\\src\\main\\ets\\services\\WatchApi.ets",
+    "entry\\src\\main\\ets\\services\\WatchStore.ets",
+    "entry\\src\\main\\resources\\base\\element\\color.json",
+    "entry\\src\\main\\resources\\base\\element\\string.json",
+    "entry\\src\\main\\resources\\base\\profile\\main_pages.json",
+    "AppScope\\app.json5",
+    "AppScope\\resources\\base\\element\\string.json",
+    "AppScope\\resources\\base\\media\\app_icon.svg"
+  ],
+  "native_build": "PASS DevEco SDK API24; unsigned debug HAP; static exception warnings retained",
+  "hap_sha256": "ce2c403acb8e7fa1be3812bc2c6b01f5386a0611346296144b49d4b2cde2b04c",
+  "hap_bytes": 94505,
+  "protocol_tests": 6,
+  "backend_e2e_checks": 6,
+  "scope": "local native compile + portable protocol + real MySQL protocol requests; no new simulator UI/installation/hardware/sensor acceptance"
+}

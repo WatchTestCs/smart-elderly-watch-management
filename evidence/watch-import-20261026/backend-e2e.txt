@@ -1,0 +1,11 @@
+{
+  "passed": 6,
+  "checks": [
+    "new device authenticated and reported unbound",
+    "bind code attached device to test elder",
+    "heartbeat acknowledged",
+    "two simulated samples persisted; retry acknowledged two duplicates without extra changes",
+    "same SOS request ID reused one incident; no real notification recipient",
+    "rebind changed epoch; both client and backend rejected old offline batch"
+  ]
+}

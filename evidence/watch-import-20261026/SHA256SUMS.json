@@ -1,0 +1,48 @@
+{
+  "files": [
+    {
+      "path": "backend-e2e.json",
+      "sha256": "b2a4fc2ea0cc507b06b547c204835da3e8e402e15a2bd85978af550870337a82"
+    },
+    {
+      "path": "backend-e2e.txt",
+      "sha256": "50d27d08ac36e16e8081fa29d97691d7b115b53709a159b729e3ace13fe8673c"
+    },
+    {
+      "path": "backend-process.txt",
+      "sha256": "3d8f795e3ce7bca9e24b44445f1debe77d318180c236eae7be8ca80305be0f82"
+    },
+    {
+      "path": "manifest.json",
+      "sha256": "84898fa89fca34a9dc4d20ec5d0f4b2e4f697de4a4faed350cacbf1358f472d7"
+    },
+    {
+      "path": "mysql-process.txt",
+      "sha256": "67efdd92e545a410c17f806f4a48829dcb3e4154d1334301956e736ad78b9ef1"
+    },
+    {
+      "path": "native-build.txt",
+      "sha256": "e8c94450e862a009691b1c5e0a4f5e9f71b0dfd3290ed814f2e955a9dc9baf31"
+    },
+    {
+      "path": "npm-audit.json",
+      "sha256": "9eb873e86a9736534b3f2dac887f18523d452211ddd058faa3ad016439916915"
+    },
+    {
+      "path": "npm-ci.txt",
+      "sha256": "482ab414285eb0cf4a8e7654208ea7b7238d48a12bf6b2545cbec00399d1b132"
+    },
+    {
+      "path": "protocol-test.txt",
+      "sha256": "4e03bb20013c37ef32dae9d3356fa82831784e93e3344255804c308aff475021"
+    },
+    {
+      "path": "publication-check.json",
+      "sha256": "7a758a65eb16a5c10a8e98a692621f1224b1426bb2de8bd73b100db60e2a1b29"
+    },
+    {
+      "path": "release-gate-tests.txt",
+      "sha256": "25f7f8bda2f291699c10744b52601eb5b5b40aaee451c5ce8195f8071bda76af"
+    }
+  ]
+}

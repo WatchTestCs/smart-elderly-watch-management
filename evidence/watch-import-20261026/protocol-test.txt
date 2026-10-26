@@ -1,0 +1,14 @@
+✔ server validation rejects credentials, paths and query strings (0.6302ms)
+✔ unbound or missing binding version cannot produce an authenticated owner (0.106ms)
+✔ samples declare simulation, units, and UTC cumulative day boundary (0.0933ms)
+✔ serialized offline batch retries preserve sample IDs and original binding version (0.5349ms)
+✔ server, owner, device or epoch changes prevent uploading and mixing old samples (0.148ms)
+✔ queue capacity never silently evicts old records (0.1396ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 205.3244

@@ -1,0 +1,16 @@
+{
+  "passed": 6,
+  "checks": [
+    "new device authenticated and reported unbound",
+    "bind code attached device to test elder",
+    "heartbeat acknowledged",
+    "two simulated samples persisted; retry acknowledged two duplicates without extra changes",
+    "same SOS request ID reused one incident; no real notification recipient",
+    "rebind changed epoch; both client and backend rejected old offline batch"
+  ],
+  "source_sha": "0dc3715ef0e8dcc197cbcf59ee84bbfd8a2c5b9b",
+  "mysql_version": "8.0.43",
+  "scope": "computer-side Node protocol requests against real isolated Go/MySQL; no simulator clicks, real sensors or human/provider delivery",
+  "database": "suining_watch_import_3ba44f945962",
+  "real_recipients": false
+}

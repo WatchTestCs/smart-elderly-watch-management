@@ -1,3 +1,4 @@
 **/openapi.json text eol=lf
 # Preserve raw logs byte-for-byte, including original CRLF and tool whitespace.
 /evidence/reliability-20261026/** -text -whitespace
+/evidence/watch-import-20261026/** -text -whitespace

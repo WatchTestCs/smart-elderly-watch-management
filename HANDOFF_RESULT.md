@@ -4,6 +4,11 @@
 `codex/reliability-validation-20261026`；未修改 preview/main、原 PR 分支、仓库保护或生产环境。
 本次执行范围由用户明确为本机隔离环境，真实渠道和人工值班条件未提供。
 
+后续新增：用户要求将独立 `SuiningWatch` 手表源码加入同一分支，现已导入仓库根目录，
+原生构建、6 项协议测试与 6 项真实 MySQL 联调检查通过。新增 CI 协议门槛及更新交接文档，
+详见 [手表整合记录](docs/WATCH_INTEGRATION.md) 和 [完整交接文档](docs/问题与任务交接文档.txt)。
+本报告下文的历史 SHA/计数属于此前可靠性验收；包含手表的新 SHA 需要自己的 CI/Security。
+
 ## 结论与版本
 
 - 原交接基线 `50b9cc094002ca691244b7d504cdeedf117787dd` 已在真实 MySQL 8.0.43 + PG 16.15

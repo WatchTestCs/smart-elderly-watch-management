@@ -1,0 +1,98 @@
+> hvigor [32mFinished :entry:clean... after 2 ms [39m
+> hvigor WARN: The version number of the 'entry' module does not comply with the SemVer specification.
+               This will affect the installation and publication by ohpm.
+               Make sure the value of version in the oh-package.json5 file of the module complies with the SemVer specification.
+> hvigor [32mFinished :entry:default@PreBuild... after 129 ms [39m
+> hvigor [32mFinished :entry:default@CreateModuleInfo... after 1 ms [39m
+> hvigor [32mFinished :entry:default@GenerateMetadata... after 2 ms [39m
+> hvigor [32mFinished :entry:default@ConfigureCmake... after 1 ms [39m
+> hvigor [32mFinished :entry:default@MergeProfile... after 3 ms [39m
+> hvigor [32mFinished :entry:default@CreateBuildProfile... after 2 ms [39m
+> hvigor [32mFinished :entry:default@PreCheckSyscap... after 1 ms [39m
+> hvigor [32mFinished :entry:default@GeneratePkgContextInfo... after 7 ms [39m
+> hvigor [32mFinished :entry:default@GeneratePkgSdkInfo... after 2 ms [39m
+> hvigor [32mFinished :entry:default@ProcessIntegratedHsp... after 1 ms [39m
+> hvigor [32mFinished :entry:default@BuildNativeWithCmake... after 1 ms [39m
+> hvigor [32mFinished :entry:default@MakePackInfo... after 2 ms [39m
+> hvigor [32mFinished :entry:default@SyscapTransform... after 2 ms [39m
+> hvigor [32mFinished :entry:default@ProcessProfile... after 233 ms [39m
+> hvigor [32mFinished :entry:default@ProcessRouterMap... after 2 ms [39m
+> hvigor [32mFinished :entry:default@ProcessShareConfig... after 2 ms [39m
+> hvigor [32mFinished :entry:default@ProcessStartupConfig... after 1 ms [39m
+> hvigor [32mFinished :entry:default@BuildNativeWithNinja... after 1 ms [39m
+> hvigor [32mFinished :entry:default@ProcessResource... after 6 ms [39m
+> hvigor [32mFinished :entry:default@GenerateLoaderJson... after 6 ms [39m
+> hvigor [32mFinished :entry:default@ProcessLibs... after 6 ms [39m
+> hvigor [32mFinished :entry:default@CompileResource... after 596 ms [39m
+> hvigor [32mFinished :entry:default@DoNativeStrip... after 2 ms [39m
+> hvigor [32mFinished :entry:default@BuildJS... after 2 ms [39m
+> hvigor [32mFinished :entry:default@CacheNativeLibs... after 5 ms [39m
+> hvigor WARN: WARN: ArkTS:WARN File: E:/DevEco Test/.reliability-lab/watch-import-build/SuiningWatch/entry/src/main/ets/services/WatchApi.ets:11:30
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: E:/DevEco Test/.reliability-lab/watch-import-build/SuiningWatch/entry/src/main/ets/services/WatchStore.ets:12:15
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: E:/DevEco Test/.reliability-lab/watch-import-build/SuiningWatch/entry/src/main/ets/services/WatchStore.ets:13:17
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: E:/DevEco Test/.reliability-lab/watch-import-build/SuiningWatch/entry/src/main/ets/services/WatchStore.ets:17:5
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: E:/DevEco Test/.reliability-lab/watch-import-build/SuiningWatch/entry/src/main/ets/services/WatchStore.ets:18:5
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: E:/DevEco Test/.reliability-lab/watch-import-build/SuiningWatch/entry/src/main/ets/services/WatchStore.ets:19:11
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: E:/DevEco Test/.reliability-lab/watch-import-build/SuiningWatch/entry/src/main/ets/services/WatchStore.ets:22:17
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: E:/DevEco Test/.reliability-lab/watch-import-build/SuiningWatch/entry/src/main/ets/services/WatchStore.ets:26:17
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: E:/DevEco Test/.reliability-lab/watch-import-build/SuiningWatch/entry/src/main/ets/services/WatchStore.ets:30:5
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: E:/DevEco Test/.reliability-lab/watch-import-build/SuiningWatch/entry/src/main/ets/services/WatchStore.ets:31:11
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: E:/DevEco Test/.reliability-lab/watch-import-build/SuiningWatch/entry/src/main/ets/services/WatchStore.ets:34:5
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: E:/DevEco Test/.reliability-lab/watch-import-build/SuiningWatch/entry/src/main/ets/services/WatchStore.ets:35:11
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: E:/DevEco Test/.reliability-lab/watch-import-build/SuiningWatch/entry/src/main/ets/services/WatchStore.ets:38:19
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: E:/DevEco Test/.reliability-lab/watch-import-build/SuiningWatch/entry/src/main/ets/services/WatchStore.ets:39:14
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: E:/DevEco Test/.reliability-lab/watch-import-build/SuiningWatch/entry/src/main/ets/services/WatchStore.ets:42:5
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: E:/DevEco Test/.reliability-lab/watch-import-build/SuiningWatch/entry/src/main/ets/services/WatchStore.ets:43:5
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: E:/DevEco Test/.reliability-lab/watch-import-build/SuiningWatch/entry/src/main/ets/services/WatchStore.ets:44:11
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: E:/DevEco Test/.reliability-lab/watch-import-build/SuiningWatch/entry/src/main/ets/services/WatchStore.ets:48:23
+ Function may throw exceptions. Special handling is required.
+
+WARN: ArkTS:WARN File: E:/DevEco Test/.reliability-lab/watch-import-build/SuiningWatch/entry/src/main/ets/services/WatchStore.ets:49:5
+ Function may throw exceptions. Special handling is required.
+
+
+> hvigor [32mFinished :entry:default@CompileArkTS... after 13 s 309 ms [39m
+> hvigor [32mFinished :entry:default@GeneratePkgModuleJson... after 2 ms [39m
+> hvigor [32mFinished :entry:default@ProcessCompiledResources... after 1 ms [39m
+> hvigor [32mFinished :entry:default@PackageHap... after 386 ms [39m
+> hvigor [32mFinished :entry:default@PackingCheck... after 4 ms [39m
+> hvigor WARN: No signingConfig found for product default
+> hvigor [32mFinished :entry:default@SignHap... after 1 ms [39m
+> hvigor [32mFinished :entry:default@CollectDebugSymbol... after 1 ms [39m
+> hvigor [32mFinished :entry:assembleHap... after 1 ms [39m
+> hvigor [32mBUILD SUCCESSFUL in 31 s 896 ms [39m
+模拟器调试包：E:\DevEco Test\.reliability-lab\watch-import-build\SuiningWatch\entry\build\default\outputs\default\entry-default-unsigned.hap

@@ -20,3 +20,23 @@
 记录属于历史记录；本次原生构建、协议检查和后端联调必须各自提供新记录。
 已知 SOS 服务端没有 healthBatch 同等的 bindingVersion 条件，重绑定时需停止求助操作并重新
 认证；此次源码归档不静默改变后端协议。真实数据本地加密和真机验收仍是后续工作。
+
+## 本次执行结果
+
+源码固定于 `0dc3715ef0e8dcc197cbcf59ee84bbfd8a2c5b9b`，从干净检出重新安装锁定依赖并验证：
+
+- 6 项协议测试通过，npm audit 无漏洞；测试可独立于 DevEco 运行。
+- DevEco API 24 原生构建成功，生成 unsigned debug HAP；SDK 静态异常警告及未签名警告保留。
+- 与同提交未改动的 Go 后端、独立真实 MySQL 8.0.43 联调，6 项检查通过：认证、绑定、心跳、
+  healthBatch 入库/去重、SOS 幂等且无真实收件人、解绑重绑后旧批次由客户端及服务端拒绝。
+- 生产 ETS、资源、module 配置与原目录内容一致（仅换行不作为代码差异）；本次改动为测试
+  可移植性、忽略规则、说明与 CI，未借导入改写手表业务或后端 API。
+- 构建缓存、依赖、历史 artifacts、安装包、签名材料和私有配置不进入 Git；原独立目录保持原状。
+
+原始日志及 HAP hash 见 `evidence/watch-import-20261026/`。HAP 不提交到源码仓库。
+本次没有重新执行模拟器安装、视觉/完整点击或真机测试，旧 2026-10-25 记录不能替代这些验收。
+联调创建独立 `suining_watch_import_*` 测试库，测试服务在结束后停止，原 MySQL Windows 服务不参与。
+
+当前分支的 CI 新增 Watch protocol，并纳入 Release gate / required；发布脚本要求 watch-<SHA>
+artifact。该 CI 运行的是 Node/TypeScript 协议检查，不是托管 runner 上的 HarmonyOS SDK 构建。
+新文档/证据提交后的 SHA 仍须重新通过本分支 CI/Security，原 30464e5 绿灯不能替代。
