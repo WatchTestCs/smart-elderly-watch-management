@@ -44,7 +44,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
           go-version: ${{ matrix.go-version }}
           cache-dependency-path: 智慧养老手表管理系统/backend/go.sum
@@ -86,6 +86,10 @@ jobs:
           git rev-parse HEAD > "$evidence/source-sha.txt"
           go version > "$evidence/go-version.txt"
           go env GOOS GOARCH CGO_ENABLED >> "$evidence/go-version.txt"
+          MYSQL_PWD=ci_root_only mysql --protocol=TCP -h 127.0.0.1 -u root -N -e 'SELECT VERSION(),@@innodb_flush_log_at_trx_commit,@@version_comment' > "$evidence/mysql-environment.txt"
+          PGPASSWORD=careold psql -h 127.0.0.1 -U careold -d careold_test -Atc 'SELECT version(); SHOW fsync;' > "$evidence/postgres-environment.txt"
+          docker inspect --format '{{.Config.Image}} {{.Image}}' '${{ job.services.mysql.id }}' '${{ job.services.postgres.id }}' > "$evidence/database-images.txt"
+          go list -m -json all > "$evidence/modules.jsonl"
           go test -json -race -count=1 -timeout 600s ./... > "$evidence/mysql.jsonl" 2>&1
           python3 ../../scripts/reliability/audit-go-results.py "$evidence/mysql.jsonl" --mode mysql --output "$evidence/mysql-summary.json"
           TEST_MYSQL_DSN= go test -json -race -count=1 -timeout 600s ./internal/db ./internal/handlers ./internal/care ./internal/analytics > "$evidence/postgres.jsonl" 2>&1
