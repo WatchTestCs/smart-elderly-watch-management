@@ -8,57 +8,6 @@ import (
 	"time"
 )
 
-type interval struct{ start, end time.Time }
-
-func unionMinutes(xs []interval) float64 {
-	if len(xs) == 0 {
-		return 0
-	}
-	sort.Slice(xs, func(i, j int) bool { return xs[i].start.Before(xs[j].start) })
-	a, b := xs[0].start, xs[0].end
-	total := 0.0
-	for _, x := range xs[1:] {
-		if !x.start.After(b) {
-			if x.end.After(b) {
-				b = x.end
-			}
-		} else {
-			total += b.Sub(a).Minutes()
-			a, b = x.start, x.end
-		}
-	}
-	return total + b.Sub(a).Minutes()
-}
-
-// Both inputs have already been sorted by unionMinutes. Merge their union
-// directly instead of allocating two scratch copies and sorting them again.
-func combinedUnionMinutes(a, b []interval) float64 {
-	var start, end time.Time
-	total, initialized := 0.0, false
-	for len(a) > 0 || len(b) > 0 {
-		var x interval
-		if len(b) == 0 || len(a) > 0 && a[0].start.Before(b[0].start) {
-			x, a = a[0], a[1:]
-		} else {
-			x, b = b[0], b[1:]
-		}
-		if !initialized {
-			start, end, initialized = x.start, x.end, true
-		} else if !x.start.After(end) {
-			if x.end.After(end) {
-				end = x.end
-			}
-		} else {
-			total += end.Sub(start).Minutes()
-			start, end = x.start, x.end
-		}
-	}
-	if initialized {
-		total += end.Sub(start).Minutes()
-	}
-	return total
-}
-
 type Statistics struct {
 	Count                   int                `json:"count"`
 	Unit                    string             `json:"unit"`
@@ -179,35 +128,7 @@ func Aggregate(samples []Sample, from, to time.Time) (Statistics, error) {
 	}
 	out.Count = len(filtered)
 	if first.Metric == "sleep_stage" {
-		stages := map[string][]interval{}
-		asleep, awake := []interval{}, []interval{}
-		for _, s := range filtered {
-			a, b := s.Start, s.End
-			if a.Before(from) {
-				a = from
-			}
-			if b.After(to) {
-				b = to
-			}
-			if !b.After(a) {
-				continue
-			}
-			x := interval{a, b}
-			stages[s.Stage] = append(stages[s.Stage], x)
-			switch s.Stage {
-			case "asleep", "core", "deep", "rem":
-				asleep = append(asleep, x)
-			case "awake":
-				awake = append(awake, x)
-			}
-		}
-		out.StageMinutes = map[string]float64{}
-		for stage, xs := range stages {
-			out.StageMinutes[stage] = unionMinutes(xs)
-		}
-		out.AsleepMinutes = unionMinutes(asleep)
-		awakeMinutes := unionMinutes(awake)
-		out.ConflictingSleepMinutes = out.AsleepMinutes + awakeMinutes - combinedUnionMinutes(asleep, awake)
+		out.StageMinutes, out.AsleepMinutes, out.ConflictingSleepMinutes = aggregateSleep(filtered, from, to)
 		return out, nil
 	}
 	if first.Metric == "steps" && first.Semantics == "interval" {

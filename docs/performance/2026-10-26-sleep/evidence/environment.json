@@ -1,0 +1,81 @@
+{
+  "baseline": "d2c70eb33b7fce18ed330358a5eac279d3f7d964",
+  "go": "go version go1.23.2 linux/amd64",
+  "cpu_model": "AMD EPYC 9V74 80-Core Processor",
+  "cpu_max": "800000 100000",
+  "production_sha256": {
+    "internal/health/statistics.go": "3bd9da494adf40596fbbfc8808637b92334f9a6e5d27b832bc88c4631dc26c89",
+    "internal/health/statistics_sleep.go": "df5daf3c94e1a1dba5f67227bc8f7e9855d39c817fc9686c5bf32b382e2b4429"
+  },
+  "fixture_sha256": {
+    "internal/health/statistics_stream_test.go": "e8d16fd3a2ae80f0ffccdc710aa509c794c06e7ebfef6d9727c293cfa8314cf3",
+    "internal/health/statistics_sleep_test.go": "03f92f6e3ebdb340dbc4c4b4742693f094b9903a9dd3d89bf6719836157002c8",
+    "internal/health/statistics_test.go": "4f018a79caec578ca00fed0af722e17f168392a99133ee3358777d10bcd3b72f"
+  },
+  "commands": [
+    {
+      "label": "A1",
+      "command": [
+        "go",
+        "test",
+        "./internal/health",
+        "-run",
+        "^$",
+        "-bench",
+        "^Benchmark(Aggregate|AggregateLarge|SleepWindowLayout)$",
+        "-benchmem",
+        "-benchtime=200ms",
+        "-count=1",
+        "-cpu=1,4"
+      ]
+    },
+    {
+      "label": "B1",
+      "command": [
+        "go",
+        "test",
+        "./internal/health",
+        "-run",
+        "^$",
+        "-bench",
+        "^Benchmark(Aggregate|AggregateLarge|SleepWindowLayout)$",
+        "-benchmem",
+        "-benchtime=200ms",
+        "-count=1",
+        "-cpu=1,4"
+      ]
+    },
+    {
+      "label": "B2",
+      "command": [
+        "go",
+        "test",
+        "./internal/health",
+        "-run",
+        "^$",
+        "-bench",
+        "^Benchmark(Aggregate|AggregateLarge|SleepWindowLayout)$",
+        "-benchmem",
+        "-benchtime=200ms",
+        "-count=1",
+        "-cpu=1,4"
+      ]
+    },
+    {
+      "label": "A2",
+      "command": [
+        "go",
+        "test",
+        "./internal/health",
+        "-run",
+        "^$",
+        "-bench",
+        "^Benchmark(Aggregate|AggregateLarge|SleepWindowLayout)$",
+        "-benchmem",
+        "-benchtime=200ms",
+        "-count=1",
+        "-cpu=1,4"
+      ]
+    }
+  ]
+}

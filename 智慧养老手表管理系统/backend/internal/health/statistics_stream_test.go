@@ -157,8 +157,8 @@ func referenceAggregate(samples []Sample, from, to time.Time) (Statistics, error
 	}
 	out.Count = len(filtered)
 	if first.Metric == "sleep_stage" {
-		stages := map[string][]interval{}
-		asleep, awake := []interval{}, []interval{}
+		stages := map[string][]referenceInterval{}
+		asleep, awake := []referenceInterval{}, []referenceInterval{}
 		for _, s := range filtered {
 			a, b := s.Start, s.End
 			if a.Before(from) {
@@ -170,7 +170,7 @@ func referenceAggregate(samples []Sample, from, to time.Time) (Statistics, error
 			if !b.After(a) {
 				continue
 			}
-			x := interval{a, b}
+			x := referenceInterval{a, b}
 			stages[s.Stage] = append(stages[s.Stage], x)
 			switch s.Stage {
 			case "asleep", "core", "deep", "rem":
@@ -181,11 +181,11 @@ func referenceAggregate(samples []Sample, from, to time.Time) (Statistics, error
 		}
 		out.StageMinutes = map[string]float64{}
 		for stage, xs := range stages {
-			out.StageMinutes[stage] = unionMinutes(xs)
+			out.StageMinutes[stage] = referenceUnionMinutes(xs)
 		}
-		out.AsleepMinutes = unionMinutes(asleep)
-		both := append(append([]interval{}, asleep...), awake...)
-		out.ConflictingSleepMinutes = out.AsleepMinutes + unionMinutes(awake) - unionMinutes(both)
+		out.AsleepMinutes = referenceUnionMinutes(asleep)
+		both := append(append([]referenceInterval{}, asleep...), awake...)
+		out.ConflictingSleepMinutes = out.AsleepMinutes + referenceUnionMinutes(awake) - referenceUnionMinutes(both)
 		return out, nil
 	}
 	if first.Metric == "steps" && first.Semantics == "interval" {
@@ -234,4 +234,28 @@ func referenceAggregate(samples []Sample, from, to time.Time) (Statistics, error
 		out.Total = Number(total)
 	}
 	return out, nil
+}
+
+// The reference union is kept in test code so production layout changes cannot
+// silently change the differential oracle.
+type referenceInterval struct{ start, end time.Time }
+
+func referenceUnionMinutes(xs []referenceInterval) float64 {
+	if len(xs) == 0 {
+		return 0
+	}
+	sort.Slice(xs, func(i, j int) bool { return xs[i].start.Before(xs[j].start) })
+	a, b := xs[0].start, xs[0].end
+	total := 0.0
+	for _, x := range xs[1:] {
+		if !x.start.After(b) {
+			if x.end.After(b) {
+				b = x.end
+			}
+		} else {
+			total += b.Sub(a).Minutes()
+			a, b = x.start, x.end
+		}
+	}
+	return total + b.Sub(a).Minutes()
 }

@@ -1,11 +1,21 @@
 # preview 分支文件职责索引
 
-本索引覆盖当前提交的 **702 个文件**（更新：2026-10-26）。保留既有人工说明；来源附件与历史证据不代表当前版本的全套验收。
+本索引覆盖当前提交的 **712 个文件**（更新：2026-10-26）。保留既有人工说明；来源附件与历史证据不代表当前版本的全套验收。
 
-[项目 README](../README.md) · [文件职责数据](file-descriptions.json) · [历史性能资料](performance/2026-10-20-go123/README.md) · [最新算法与架构迭代](performance/2026-10-26-algorithms/README.md)
+[项目 README](../README.md) · [文件职责数据](file-descriptions.json) · [历史性能资料](performance/2026-10-20-go123/README.md) · [算法与架构迭代](performance/2026-10-26-algorithms/README.md) · [最新睡眠优化](performance/2026-10-26-sleep/README.md)
 
 | 文件 | 职责 |
 | --- | --- |
+| [智慧养老手表管理系统/backend/internal/health/statistics_sleep_test.go](../智慧养老手表管理系统/backend/internal/health/statistics_sleep_test.go) | 1200 组睡眠裁剪/阶段/精度/所有权差分及乱序、窗口外与稀疏大规模基准 |
+| [智慧养老手表管理系统/backend/internal/health/statistics_sleep.go](../智慧养老手表管理系统/backend/internal/health/statistics_sleep.go) | 统一排序后的阶段/睡眠/清醒并集累计，复用私有指针缓冲并排除窗口外记录 |
+| [docs/performance/2026-10-26-sleep/evidence/validation.txt](../docs/performance/2026-10-26-sleep/evidence/validation.txt) | 最终短模式竞争检测 891 通过/125 跳过与构建静态检查记录 |
+| [docs/performance/2026-10-26-sleep/evidence/summary.json](../docs/performance/2026-10-26-sleep/evidence/summary.json) | 54 个场景与 P 组合的完整两轮均值、分配及耗时变化 |
+| [docs/performance/2026-10-26-sleep/evidence/environment.json](../docs/performance/2026-10-26-sleep/evidence/environment.json) | 本轮固定基线、CPU 配额、命令及生产源码/夹具 SHA-256 |
+| [docs/performance/2026-10-26-sleep/evidence/B2.txt](../docs/performance/2026-10-26-sleep/evidence/B2.txt) | 睡眠统计 B2 完整原始交替基准输出 |
+| [docs/performance/2026-10-26-sleep/evidence/B1.txt](../docs/performance/2026-10-26-sleep/evidence/B1.txt) | 睡眠统计 B1 完整原始交替基准输出 |
+| [docs/performance/2026-10-26-sleep/evidence/A2.txt](../docs/performance/2026-10-26-sleep/evidence/A2.txt) | 睡眠统计 A2 完整原始交替基准输出 |
+| [docs/performance/2026-10-26-sleep/evidence/A1.txt](../docs/performance/2026-10-26-sleep/evidence/A1.txt) | 睡眠统计 A1 完整原始交替基准输出 |
+| [docs/performance/2026-10-26-sleep/README.md](../docs/performance/2026-10-26-sleep/README.md) | 睡眠统计后续优化、前一轮 CI、交替基准、控制回退与验证边界 |
 | [智慧养老手表管理系统/oldIot/src/composables/latestRead.ts](../智慧养老手表管理系统/oldIot/src/composables/latestRead.ts) | 一个在途和一个可替换后继的读取调度，隔离旧响应并支持卸载清理 |
 | [智慧养老手表管理系统/oldIot/src/composables/latestRead.test.ts](../智慧养老手表管理系统/oldIot/src/composables/latestRead.test.ts) | 读取突发合并、过期失败、重入页码修正、同步异常和卸载回归 |
 | [智慧养老手表管理系统/oldIot/src/components/CareInbox.test.ts](../智慧养老手表管理系统/oldIot/src/components/CareInbox.test.ts) | 照护任务最新页读取、越界页修正与卸载后不启动后继的组件回归 |

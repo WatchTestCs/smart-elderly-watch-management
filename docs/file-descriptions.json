@@ -666,7 +666,7 @@
   "docs/performance/2026-10-24-iteration/evidence/source-hashes.json": "记录打包前原始性能报告和日志的 SHA-256 散列",
   "docs/performance/2026-10-24-iteration/evidence/production-source-hashes.json": "核对复审后的生产 Go 与模块文件和实测候选完全相同",
   "docs/performance/2026-10-24-iteration/evidence/review-validation.txt": "保留提交前复审的原始失败、竞态修正重跑及双版本验证输出",
-  "智慧养老手表管理系统/backend/internal/health/statistics_stream_test.go": "固定基线统计 oracle、3000 组结果/错误/浮点位差分及 1 万/10 万条性能夹具",
+  "智慧养老手表管理系统/backend/internal/health/statistics_stream_test.go": "固定基线统计与独立区间并集 oracle、3000 组差分及大规模性能夹具",
   "智慧养老手表管理系统/backend/internal/ratelimit/benchmark_test.go": "基线与候选通用的满窗口限流基准，覆盖单客户端、多客户端及 1/4/8 P",
   "智慧养老手表管理系统/backend/internal/ratelimit/ratelimit_test.go": "精确滑动窗口差分、按需扩容、并发配额、清理隔离与退出回归",
   "智慧养老手表管理系统/backend/internal/commands/lookup_test.go": "全部线协议型号校验、未知型号拒绝与命令查找分配基准",
@@ -700,5 +700,15 @@
   "docs/performance/2026-10-26-algorithms/evidence/go-mod-verify.txt": "本轮 go-mod-verify.txt 命令、退出状态及原始验证输出",
   "docs/performance/2026-10-26-algorithms/evidence/go-vet.txt": "本轮 go-vet.txt 命令、退出状态及原始验证输出",
   "docs/performance/2026-10-26-algorithms/evidence/openapi-check.txt": "本轮 openapi-check.txt 命令、退出状态及原始验证输出",
-  "docs/performance/2026-10-26-algorithms/evidence/summary.json": "逐场景、逐 P 的完整两轮均值与分配变化，限流使用最终 A7/B7/B8/A8"
+  "docs/performance/2026-10-26-algorithms/evidence/summary.json": "逐场景、逐 P 的完整两轮均值与分配变化，限流使用最终 A7/B7/B8/A8",
+  "智慧养老手表管理系统/backend/internal/health/statistics_sleep.go": "统一排序后的阶段/睡眠/清醒并集累计，复用私有指针缓冲并排除窗口外记录",
+  "智慧养老手表管理系统/backend/internal/health/statistics_sleep_test.go": "1200 组睡眠裁剪/阶段/精度/所有权差分及乱序、窗口外与稀疏大规模基准",
+  "docs/performance/2026-10-26-sleep/README.md": "睡眠统计后续优化、前一轮 CI、交替基准、控制回退与验证边界",
+  "docs/performance/2026-10-26-sleep/evidence/A1.txt": "睡眠统计 A1 完整原始交替基准输出",
+  "docs/performance/2026-10-26-sleep/evidence/A2.txt": "睡眠统计 A2 完整原始交替基准输出",
+  "docs/performance/2026-10-26-sleep/evidence/B1.txt": "睡眠统计 B1 完整原始交替基准输出",
+  "docs/performance/2026-10-26-sleep/evidence/B2.txt": "睡眠统计 B2 完整原始交替基准输出",
+  "docs/performance/2026-10-26-sleep/evidence/environment.json": "本轮固定基线、CPU 配额、命令及生产源码/夹具 SHA-256",
+  "docs/performance/2026-10-26-sleep/evidence/summary.json": "54 个场景与 P 组合的完整两轮均值、分配及耗时变化",
+  "docs/performance/2026-10-26-sleep/evidence/validation.txt": "最终短模式竞争检测 891 通过/125 跳过与构建静态检查记录"
 }
