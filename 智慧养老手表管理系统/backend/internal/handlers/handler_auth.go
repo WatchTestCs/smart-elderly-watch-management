@@ -10,6 +10,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"careold-go/internal/auth"
@@ -63,6 +64,17 @@ func (h *Handler) sessionInfo(w http.ResponseWriter, r *http.Request) {
 		account = map[string]any{
 			"role": p.Role, "id": p.ID, "phone": p.Phone,
 			"oldId": p.OldID, "displayName": p.DisplayName,
+		}
+		if p.Role == auth.RoleAdmin {
+			var duty string
+			err := h.DB.QueryRow(ctx, "SELECT duty FROM care_staff_permission WHERE admin_id=$1", p.ID).Scan(&duty)
+			if err == pgx.ErrNoRows {
+				duty = "supervisor"
+			} else if err != nil {
+				response.Error500(w, ref())
+				return
+			}
+			account["duty"] = duty
 		}
 	}
 	response.JSON(w, http.StatusOK, map[string]any{

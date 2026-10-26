@@ -172,7 +172,7 @@ func watchDatabase(ctx context.Context, cfg config.Config, sessions *session.Sto
 					go func() { defer jobs.Done(); analytics.Run(ctx, pool, cfg.PGAnalyticsURL, &service.analytics) }()
 					jobs.Wait()
 				}()
-				api = limiter.Middleware(csrf.Middleware(sessions, auth.Middleware(sessions, sensitiveCareAudit(pool, mux))))
+				api = limiter.Middleware(csrf.Middleware(sessions, auth.Middleware(sessions, h.EnforceAdminDuty(sensitiveCareAudit(pool, mux)))))
 			}
 		}
 		if err == nil {

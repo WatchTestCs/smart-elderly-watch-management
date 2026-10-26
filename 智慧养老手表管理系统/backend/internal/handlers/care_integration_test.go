@@ -126,8 +126,16 @@ func TestCareReceiptRequiresTrustedGatewaySignature(t *testing.T) {
 	if rec := send(signature); rec.Code != 200 {
 		t.Fatalf("signed delivery rejected: %d %s", rec.Code, rec.Body.String())
 	}
-	if rec := send(signature); rec.Code != 409 {
-		t.Fatalf("replayed receipt accepted: %d", rec.Code)
+	if rec := send(signature); rec.Code != 200 {
+		t.Fatalf("authenticated delivery retry should be idempotent: %d %s", rec.Code, rec.Body.String())
+	}
+	// Replayed or forged receipts must not add another delivery audit event.
+	if rec := send("deadbeef"); rec.Code != 401 {
+		t.Fatalf("unsigned duplicate receipt accepted: %d", rec.Code)
+	}
+	var deliveries int
+	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM care_incident_event WHERE action='delivered'").Scan(&deliveries); err != nil || deliveries != 1 {
+		t.Fatalf("duplicate receipt produced %d delivery events: %v", deliveries, err)
 	}
 	var state string
 	if err := pool.QueryRow(context.Background(), "SELECT state FROM care_incident").Scan(&state); err != nil || state != "notified" {

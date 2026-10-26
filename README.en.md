@@ -51,7 +51,7 @@ Database servers are not bundled. End users do not need Go, Rust or Node.js. The
 
 Typical workflow: **Create records → register and bind a watch → receive reports → create an alert task → provide care → independently verify**.
 
-Families access only linked residents. Supervisor, caregiver and auditor restrictions currently cover the care module; other administration features retain their existing permissions. Maps use Leaflet and OpenStreetMap tiles and require access to those network services.
+Families access only linked residents. Supervisors retain existing administration permissions; caregivers and auditors are restricted to the care endpoints with individual duty checks and their own MFA settings, with all other legacy ADMIN endpoints blocked. Historical ADMIN accounts without duty assignments remain supervisors for compatibility and must be inventoried before production rollout. Maps use Leaflet and OpenStreetMap tiles and require access to those network services.
 
 ## Getting started
 
