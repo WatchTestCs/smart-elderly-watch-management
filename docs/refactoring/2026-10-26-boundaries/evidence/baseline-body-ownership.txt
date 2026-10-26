@@ -1,0 +1,8 @@
+Command: go test ./internal/handlers -run ^TestJSONParsersCloseBodiesOnSuccessAndFailure$ -v -count=1
+Exit: 1
+=== RUN   TestJSONParsersCloseBodiesOnSuccessAndFailure
+    request_json_test.go:80: body closed 0 times
+--- FAIL: TestJSONParsersCloseBodiesOnSuccessAndFailure (0.00s)
+FAIL
+FAIL	careold-go/internal/handlers	0.003s
+FAIL

@@ -1,0 +1,10 @@
+Command: go test ./internal/handlers -run ^TestCancelledSessionWritesDoNotClaimSuccess$ -v -count=1
+Exit: 0
+=== RUN   TestCancelledSessionWritesDoNotClaimSuccess
+=== RUN   TestCancelledSessionWritesDoNotClaimSuccess/logout
+=== RUN   TestCancelledSessionWritesDoNotClaimSuccess/renew
+--- PASS: TestCancelledSessionWritesDoNotClaimSuccess (0.00s)
+    --- PASS: TestCancelledSessionWritesDoNotClaimSuccess/logout (0.00s)
+    --- PASS: TestCancelledSessionWritesDoNotClaimSuccess/renew (0.00s)
+PASS
+ok  	careold-go/internal/handlers	0.004s

@@ -1,0 +1,14 @@
+Command: go test ./internal/handlers -run ^TestJSONParserPolicyCharacterization$ -v -count=1
+Exit: 0
+=== RUN   TestJSONParserPolicyCharacterization
+=== RUN   TestJSONParserPolicyCharacterization/ordinary
+=== RUN   TestJSONParserPolicyCharacterization/optional
+=== RUN   TestJSONParserPolicyCharacterization/health
+=== RUN   TestJSONParserPolicyCharacterization/capability
+--- PASS: TestJSONParserPolicyCharacterization (0.36s)
+    --- PASS: TestJSONParserPolicyCharacterization/ordinary (0.06s)
+    --- PASS: TestJSONParserPolicyCharacterization/optional (0.06s)
+    --- PASS: TestJSONParserPolicyCharacterization/health (0.12s)
+    --- PASS: TestJSONParserPolicyCharacterization/capability (0.11s)
+PASS
+ok  	careold-go/internal/handlers	0.367s

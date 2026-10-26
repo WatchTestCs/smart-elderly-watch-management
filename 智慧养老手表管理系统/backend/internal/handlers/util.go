@@ -2,39 +2,13 @@
 package handlers
 
 import (
-	"encoding/json"
-	"io"
 	"math"
 	"net/http"
 	"strconv"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-
-	"careold-go/internal/response"
 )
-
-// decodeBody accepts exactly one JSON document with a bounded body.
-// Optional endpoints may submit an empty request body for backwards compatibility.
-func decodeBody(w http.ResponseWriter, r *http.Request, v any, optional bool) bool {
-	body := http.MaxBytesReader(w, r.Body, 1<<20)
-	defer body.Close()
-	decoder := json.NewDecoder(body)
-	err := decoder.Decode(v)
-	if optional && err == io.EOF {
-		return true
-	}
-	if err == nil {
-		var extra any
-		if secondErr := decoder.Decode(&extra); secondErr == io.EOF {
-			return true
-		}
-	}
-	response.JSON(w, http.StatusBadRequest, map[string]any{
-		"returnCode": "0000", "message": "请求参数格式错误",
-	})
-	return false
-}
 
 // decode 解析 JSON body；失败返回 false 并已写 400。
 func decode(w http.ResponseWriter, r *http.Request, v any) bool {

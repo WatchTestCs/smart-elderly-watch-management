@@ -11,37 +11,12 @@ import (
 	"crypto/subtle"
 	"net/http"
 
+	"careold-go/internal/accesspolicy"
 	"careold-go/internal/response"
 	"careold-go/internal/session"
 )
 
 const HeaderName = "X-CSRF-TOKEN"
-
-// 使用设备鉴权或桌面令牌的路径不依赖浏览器 CSRF。
-// Setup is protected by the native bootstrap token, not browser session cookies.
-var exemptPaths = []string{
-	"/restful/device/commandPull",
-	"/restful/device/commandAck",
-	"/restful/device/fencePoint",
-	"/restful/setup",
-	"/restful/device/login",
-	"/restful/device/bind",
-	"/restful/device/heartbeat",
-	"/restful/device/report",
-	"/restful/device/healthBatch",
-	"/restful/device/sos",
-	"/restful/care/receipt",
-	"/restful/desktop/exit",
-}
-
-func exempt(path string) bool {
-	for _, p := range exemptPaths {
-		if path == p {
-			return true
-		}
-	}
-	return false
-}
 
 func rejected(w http.ResponseWriter) {
 	response.JSON(w, http.StatusForbidden, map[string]any{
@@ -54,7 +29,7 @@ func rejected(w http.ResponseWriter) {
 // Middleware 校验 CSRF token。
 func Middleware(store *session.Store, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if exempt(r.URL.Path) {
+		if accesspolicy.CSRFExempt(r.URL.Path) {
 			next.ServeHTTP(w, r)
 			return
 		}

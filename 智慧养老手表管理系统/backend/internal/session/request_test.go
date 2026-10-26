@@ -16,6 +16,7 @@ func sessionRequest(id string) *http.Request {
 
 func TestFromRequestReusesOnlyCurrentRequest(t *testing.T) {
 	store := session.NewStore(time.Hour)
+	t.Cleanup(store.Close)
 	sess := store.Create(session.Principal{Role: "ADMIN", ID: 1})
 	r := sessionRequest(sess.ID)
 	if store.FromRequest(r) != sess {
@@ -32,10 +33,13 @@ func TestFromRequestReusesOnlyCurrentRequest(t *testing.T) {
 
 func TestFromRequestChecksStoreCookieAndExpiry(t *testing.T) {
 	store := session.NewStore(time.Hour)
+	t.Cleanup(store.Close)
 	sess := store.Create(session.Principal{Role: "ADMIN", ID: 1})
 	r := sessionRequest(sess.ID)
 	store.FromRequest(r)
-	if session.NewStore(time.Hour).FromRequest(r) != nil {
+	peer := session.NewStore(time.Hour)
+	t.Cleanup(peer.Close)
+	if peer.FromRequest(r) != nil {
 		t.Fatal("session reused across stores")
 	}
 	r.Header.Set("Cookie", session.CookieName+"=different-id")

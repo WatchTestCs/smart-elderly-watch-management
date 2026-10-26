@@ -2,6 +2,7 @@
 package handlers
 
 import (
+	"context"
 	"crypto/subtle"
 	"net/http"
 	"os"
@@ -48,7 +49,7 @@ func (h *Handler) sessionInfo(w http.ResponseWriter, r *http.Request) {
 
 	sess := h.Sessions.FromRequest(r)
 	if sess == nil {
-		sess = h.Sessions.Create(session.Principal{})
+		sess = h.Sessions.CreateContext(r.Context(), session.Principal{})
 		if sess == nil {
 			response.JSON(w, 503, map[string]any{"message": "会话存储不可用"})
 			return
@@ -184,18 +185,20 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) renewSession(w http.ResponseWriter, r *http.Request, p session.Principal) bool {
 	p.FactorGeneration, _ = r.Context().Value(factorGenerationKey{}).(string)
 	if c, err := r.Cookie(session.CookieName); err == nil && c.Value != "" {
-		if !h.Sessions.Destroy(c.Value) {
+		if !h.Sessions.DestroyContext(r.Context(), c.Value) {
 			response.JSON(w, 503, map[string]any{"message": "会话存储不可用"})
 			return false
 		}
 	}
-	sess := h.Sessions.Create(p)
+	sess := h.Sessions.CreateContext(r.Context(), p)
 	if sess == nil {
 		response.JSON(w, 503, map[string]any{"message": "会话存储不可用"})
 		return false
 	}
 	if h.DB != nil && h.loginAudit(r, p.Phone, p.Role, p.ID, "success") != nil {
-		h.Sessions.Destroy(sess.ID)
+		// The new session has already been persisted. Compensate even if the
+		// request was cancelled; the store still imposes its three-second bound.
+		h.Sessions.DestroyContext(context.WithoutCancel(r.Context()), sess.ID)
 		response.Error500(w, ref())
 		return false
 	}
@@ -210,7 +213,7 @@ func (h *Handler) logout(w http.ResponseWriter, r *http.Request) {
 		sess = h.Sessions.FromRequest(r)
 	}
 	if sess != nil {
-		if !h.Sessions.Destroy(sess.ID) {
+		if !h.Sessions.DestroyContext(r.Context(), sess.ID) {
 			response.JSON(w, 503, map[string]any{"message": "会话撤销未完成"})
 			return
 		}

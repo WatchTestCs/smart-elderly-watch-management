@@ -1,0 +1,172 @@
+Baseline: 50b9cc094002ca691244b7d504cdeedf117787dd
+Command: go test -race -short -json ./... -count=1 -timeout 180s
+Go1.23.2 linux/amd64; TEST_MYSQL_DSN and TEST_DATABASE_URL unset.
+Result: {('start', 'package'): 29, ('output', 'package'): 48, ('skip', 'package'): 10, ('run', 'test'): 1043, ('output', 'test'): 2215, ('pass', 'test'): 918, ('skip', 'test'): 125, ('pass', 'package'): 19}
+
+Package results:
+skip careold-go/cmd/analytics-backfill 0
+skip careold-go/cmd/healthcheck 0
+skip careold-go/cmd/migrate 0
+skip careold-go/cmd/mock-gateway 0
+skip careold-go/cmd/protect-notes 0
+skip careold-go/cmd/transfer-postgres 0
+skip careold-go/internal/csrf 0
+pass careold-go/internal/auth 1.01
+skip careold-go/internal/db/dbtest 0
+pass careold-go/internal/apidoc 1.013
+pass careold-go/internal/analytics 1.016
+pass careold-go/cmd/server 1.029
+pass careold-go/internal/config 1.012
+pass careold-go/internal/commands 1.013
+pass careold-go/internal/care 1.017
+pass careold-go/internal/accesspolicy 1.086
+pass careold-go/internal/fence 1.031
+skip careold-go/internal/response 0
+pass careold-go/internal/runtuning 1.015
+pass careold-go/internal/observability 1.025
+pass careold-go/internal/notify 1.047
+pass careold-go/internal/securestore 1.013
+skip careold-go/migrations 0
+pass careold-go/internal/ratelimit 1.522
+pass careold-go/internal/db 5.496
+pass careold-go/internal/session 1.017
+pass careold-go/internal/health 7.088
+pass careold-go/internal/handlers 7.409
+pass careold-go/internal/rules 11.01
+
+Skipped tests:
+careold-go/internal/analytics TestSyncBatchPreservesTransactionalOutbox: batch_test.go:17: TEST_DATABASE_URL not set
+careold-go/internal/analytics TestAnalyticsConsumerAB: consumer_ab_test.go:20: set RUN_ANALYTICS_DB_AB=1 for the isolated consumer A/B
+careold-go/internal/analytics TestMySQLRoundTripAB: mysql_roundtrip_ab_test.go:23: set RUN_MYSQL_ROUNDTRIP_AB=1 for isolated MySQL A/B
+careold-go/internal/analytics TestAnalyticsProducerAB: producer_ab_test.go:24: set RUN_ANALYTICS_DB_AB=1 for the isolated producer A/B
+careold-go/internal/analytics TestAnalyticsQueueDepthAB: queue_depth_ab_test.go:20: set RUN_MYSQL_ROUNDTRIP_AB=1 for isolated queue-depth A/B
+careold-go/internal/analytics TestRunnerDrainsSaturatedTransactionalBacklog: runner_backlog_test.go:21: TEST_DATABASE_URL not set
+careold-go/internal/analytics TestDualDatabaseRecoveryAndReplay: sync_test.go:18: TEST_DATABASE_URL not set
+careold-go/cmd/server TestCapabilityReadsAreAudited: capabilities_privacy_test.go:16: TEST_MYSQL_DSN not set
+careold-go/internal/care TestFenceNotificationPreservesIncidentKind: fence_notification_test.go:13: PostgreSQL integration requires TEST_DATABASE_URL
+careold-go/internal/care TestDeliveryPoolHasBoundedConcurrencyAndCancels: scheduler_test.go:13: PostgreSQL integration requires TEST_DATABASE_URL
+careold-go/internal/care TestOutboxDispatchIsRecordedButNotFalselyDelivered: worker_test.go:72: PostgreSQL integration requires TEST_DATABASE_URL
+careold-go/internal/care TestOverdueSOSCreatesEscalationAuditAndFallback: worker_test.go:109: PostgreSQL integration requires TEST_DATABASE_URL
+careold-go/internal/care TestStaleNotificationAttemptCannotOverrideNewClaim: worker_test.go:140: PostgreSQL integration requires TEST_DATABASE_URL
+careold-go/internal/care TestOfflineDeviceScanSkipsBusyDevice: worker_test.go:191: PostgreSQL integration requires TEST_DATABASE_URL
+careold-go/internal/care TestOfflineDeviceScanPages: worker_test.go:232: PostgreSQL integration requires TEST_DATABASE_URL
+careold-go/internal/care TestOfflineDeviceScanRunsOnceUntilNextOnlineSession: worker_test.go:255: PostgreSQL integration requires TEST_DATABASE_URL
+careold-go/internal/db TestCapabilitiesRollbackAndReapply: capabilities_migration_test.go:17: TEST_MYSQL_DSN not set
+careold-go/internal/health TestBatchHardwareAB: batch_hardware_ab_test.go:21: opt-in hardware A/B
+careold-go/internal/health TestIndexedBatchPersistsAllVersionsAndTombstones: batch_layout_integration_test.go:16: TEST_MYSQL_DSN not set
+careold-go/internal/health TestConditionalPreviousPayloadPreservesMixedVersionsAndConflicts: batch_layout_integration_test.go:108: TEST_MYSQL_DSN not set
+careold-go/internal/notify TestBatchEnqueueBoundariesIdempotenceAndRollback: batch_test.go:20: TEST_MYSQL_DSN not set
+careold-go/internal/notify TestBatchExternalConcurrencyBoundAndAcceptedStatus: batch_test.go:78: TEST_MYSQL_DSN not set
+careold-go/internal/notify TestBatchDrainLocalJobsBeyondSingleStatement: batch_test.go:146: TEST_MYSQL_DSN not set
+careold-go/internal/notify TestStaleAndDueRetryAreNotStarvedByFreshPendingJobs: batch_test.go:182: TEST_MYSQL_DSN not set
+careold-go/internal/handlers TestArchitectureWatchProfileContract: architecture_integration_test.go:36: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestArchitectureFormattedRecordsAcrossDatabases: architecture_integration_test.go:46: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestArchitectureLifestyleFieldsKeepTheirMeaning: architecture_integration_test.go:71: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestArchitectureUnboundElderCreation: architecture_integration_test.go:81: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestArchitectureElderEditCannotRewriteBinding: architecture_integration_test.go:103: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestArchitectureBoundDeviceCannotBeTakenOver: architecture_integration_test.go:121: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestArchitectureBindingKeepsCustomizedThresholds: architecture_integration_test.go:140: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestArchitectureMissingMetricRemainsUnknown: architecture_integration_test.go:156: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestArchitectureConcurrentBindAndUnbind: architecture_integration_test.go:170: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestArchitectureUnbindingKeepsRemainingPrimary: architecture_integration_test.go:200: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestArchitectureCareQueuePaginationAndDuty: architecture_integration_test.go:212: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestArchitectureVerificationClearsOnlyLinkedAlarm: architecture_integration_test.go:237: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestArchitectureCareHistoryHasNoSilentLimit: architecture_integration_test.go:254: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestArchitectureCareNoteAcceptsChineseCharacters: architecture_integration_test.go:269: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestArchitectureDiagnosticsExposeMissingGateway: architecture_integration_test.go:280: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestCommandQueueReceiptsAndBinding: capabilities_integration_test.go:36: TEST_MYSQL_DSN not set
+careold-go/internal/handlers TestConcurrentPullAndSafeRedelivery: capabilities_integration_test.go:105: TEST_MYSQL_DSN not set
+careold-go/internal/handlers TestDailyRebuildCorrectionsDeletionAndIsolation: capabilities_integration_test.go:152: TEST_MYSQL_DSN not set
+careold-go/internal/handlers TestFenceDebounceEventsAndCareLink: capabilities_integration_test.go:217: TEST_MYSQL_DSN not set
+careold-go/internal/handlers TestCareVerdictAndVitalReviewAudit: capabilities_integration_test.go:280: TEST_MYSQL_DSN not set
+careold-go/internal/handlers TestCapabilityMiddlewareBoundaries: capabilities_integration_test.go:318: TEST_MYSQL_DSN not set
+careold-go/internal/handlers TestCareSOSOutboxAuditAndState: care_integration_test.go:24: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestCareAdminTransitionsAndFamilyIsolation: care_integration_test.go:51: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestCareReceiptRequiresTrustedGatewaySignature: care_integration_test.go:97: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestCareSOSRequestIDPreventsDuplicateAlerts: care_integration_test.go:139: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestCareDutyPermissionsAndSensitiveAudit: care_operations_test.go:12: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestCareWorkerHeartbeatSchema: care_operations_test.go:45: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestCareImmediateSignedReceiptDuringSending: care_receipt_race_test.go:18: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestHealthVersionsCursorAndIsolation: health_integration_test.go:23: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestHealthWriteCursorFollowsCommitOrder: health_integration_test.go:95: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestHealthRoutesKeepAuthenticationAndCSRF: health_integration_test.go:146: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestHealthBindingEpochAndStatistics: health_integration_test.go:172: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestHealthBadSecretDoesNotWaitForClock: health_integration_test.go:207: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestHealthDeviceLockOrderDuringOwnerClockContention/original_device_first: health_lock_order_test.go:81: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestHealthDeviceLockOrderDuringOwnerClockContention/late_device_lock: health_lock_order_test.go:81: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestLateHealthDeviceLockRejectsConcurrentUnbind: health_lock_order_test.go:165: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestLateHealthDeviceLockRejectsConcurrentCredentialChanges/secret_rotation: health_lock_order_test.go:227: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestLateHealthDeviceLockRejectsConcurrentCredentialChanges/device_disabled: health_lock_order_test.go:227: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestHealthSingleAndBulkFitOneConnectionPool: health_lock_order_test.go:285: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestBulkPreparationRevalidatesConcurrentDeviceChanges/rotation: health_lock_order_test.go:332: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestBulkPreparationRevalidatesConcurrentDeviceChanges/disabled: health_lock_order_test.go:332: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestBulkPreparationRevalidatesConcurrentDeviceChanges/unbind: health_lock_order_test.go:332: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestIntegrationMigrationsAndBindingConstraint: integration_test.go:112: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestIntegrationListContractsAndNumericAge: integration_test.go:151: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestIntegrationEditPreservesFamily: integration_test.go:181: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestIntegrationCoordinatesAndSOS: integration_test.go:207: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestIntegrationDistinctInvitesCannotOverwriteFamily: integration_test.go:237: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestIntegrationBindDeleteRace: integration_test.go:332: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestNativeSetupRequiresDesktopToken: integration_test.go:375: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestHTTPBatchLatencyAB: latency_ab_test.go:28: opt-in real MySQL HTTP latency A/B
+careold-go/internal/handlers TestIntegrationListPageTotals: list_pagination_integration_test.go:10: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestMySQLTwentyMinuteSoak: mysql_endurance_test.go:26: opt-in: set SOAK_MYSQL=1
+careold-go/internal/handlers TestTOTPEnrollmentRecoveryAndCrossReplicaRevocation: platform_integration_test.go:35: TEST_MYSQL_DSN not set
+careold-go/internal/handlers TestCareNotesAreEncryptedAndReadableThroughAuthorizedAPI: platform_integration_test.go:96: TEST_MYSQL_DSN not set
+careold-go/internal/handlers TestAnnouncementWritesOutboxInsideTransaction: platform_integration_test.go:115: TEST_MYSQL_DSN not set
+careold-go/internal/handlers TestReadLatencyAudit: read_latency_ab_test.go:36: opt-in isolated audit
+careold-go/internal/notify TestBulkStaleLeaseCannotOverwriteAcceptanceOrCreateFallback: bulk_test.go:84: TEST_MYSQL_DSN not set
+careold-go/internal/notify TestBulkBoundPartialAcceptanceAndFifthFailureFallback: bulk_test.go:151: TEST_MYSQL_DSN not set
+careold-go/internal/notify TestIndependentDrainWorkersCanProgressWhileProviderBlocks: concurrency_test.go:33: TEST_MYSQL_DSN not set
+careold-go/internal/notify TestWorkerDrainsReadyBacklogWithoutOneSecondPerMessage: drain_test.go:14: TEST_MYSQL_DSN not set
+careold-go/internal/notify TestShortCycleLeavesExternalNotificationUnclaimed: drain_test.go:62: TEST_MYSQL_DSN not set
+careold-go/internal/notify TestQueueHasNoHundredMessageDropAndRollsBack: outbox_test.go:17: TEST_MYSQL_DSN not set
+careold-go/internal/notify TestRetryExhaustionFallsBackAndInAppDoesNotNeedGateway: outbox_test.go:52: TEST_MYSQL_DSN not set
+careold-go/internal/notify TestStaleLeaseCannotScheduleSpuriousFallback: outbox_test.go:95: TEST_MYSQL_DSN not set
+careold-go/internal/notify TestNotificationThroughput: throughput_test.go:24: set NOTIFY_PERF=1 for isolated database measurements
+careold-go/internal/db TestMySQLIdleConnectionRetentionAB: idle_pool_ab_test.go:36: set RUN_MYSQL_POOL_AB=1 for isolated pool A/B
+careold-go/internal/db TestMySQLParameterTransportRoundTripsAndFallback: parameter_mode_integration_test.go:17: TEST_MYSQL_DSN not set
+careold-go/internal/db TestMySQLConnectionStatementCacheLifecycle: parameter_mode_integration_test.go:108: TEST_MYSQL_DSN not set
+careold-go/internal/db TestMySQLSessionIsolationShortcutAndMutationFallback: parameter_mode_integration_test.go:197: TEST_MYSQL_DSN not set
+careold-go/internal/db TestLivenessProbeDoesNotWaitForBusyBusinessPool: probe_integration_test.go:14: TEST_MYSQL_DSN not set
+careold-go/internal/db TestMySQLQueryTranslationPreservesLiteralsAndRegex: query_translate_mysql_test.go:12: TEST_MYSQL_DSN not set
+careold-go/internal/db TestMySQLPingDuringPoolSaturation: readiness_integration_test.go:23: TEST_MYSQL_DSN not set
+careold-go/internal/db TestMySQLPingReportsConnectionLoss: readiness_integration_test.go:51: TEST_MYSQL_DSN not set
+careold-go/internal/db TestLegacyTransferIsCheckedAndAtomic/PG0006: transfer_integration_test.go:25: TEST_DATABASE_URL not set
+careold-go/internal/db TestLegacyTransferIsCheckedAndAtomic/PG0007: transfer_integration_test.go:25: TEST_DATABASE_URL not set
+careold-go/internal/db TestLegacyTransferIsCheckedAndAtomic/PG0008: transfer_integration_test.go:25: TEST_DATABASE_URL not set
+careold-go/internal/session TestDatabaseSessionsShareRevokeAndFactorGeneration: database_test.go:15: TEST_MYSQL_DSN not set
+careold-go/internal/session TestDatabaseSessionRejectsMismatchedIdentity: database_test.go:88: TEST_MYSQL_DSN not set
+careold-go/internal/rules TestBaselineSourceIndexPreservesExactIdentity/16: engine_test.go:52: TEST_MYSQL_DSN not set
+careold-go/internal/rules TestBaselineSourceIndexPreservesExactIdentity/64: engine_test.go:52: TEST_MYSQL_DSN not set
+careold-go/internal/rules TestBaselineStreakUsesDistinctObservationsAndRecovers: engine_test.go:85: TEST_MYSQL_DSN not set
+careold-go/internal/rules TestBaselineCoverUsesIndexWithoutPayloadLookups: engine_test.go:123: TEST_MYSQL_DSN not set
+careold-go/internal/rules TestNightActivityCounterResetAndConcurrentOfflineDedup: engine_test.go:168: TEST_MYSQL_DSN not set
+careold-go/internal/rules TestNightActivityMonotonicAndIntervals/daily_total: engine_test.go:206: TEST_MYSQL_DSN not set
+careold-go/internal/rules TestNightActivityMonotonicAndIntervals/interval: engine_test.go:206: TEST_MYSQL_DSN not set
+careold-go/internal/rules TestTickPagesAndRetriesBeforeFailedDevice: engine_test.go:230: TEST_MYSQL_DSN not set
+careold-go/internal/rules TestNightIncidentUpgradeRemainsIdempotent/sos: engine_test.go:291: TEST_MYSQL_DSN not set
+careold-go/internal/rules TestNightIncidentUpgradeRemainsIdempotent/fence_exit: engine_test.go:291: TEST_MYSQL_DSN not set
+careold-go/internal/health TestBatchVersionsHistoryAndConflictRollback: batch_test.go:13: TEST_MYSQL_DSN not set
+careold-go/internal/health TestOwnerClockConcurrentFirstUse: clock_test.go:13: TEST_MYSQL_DSN not set
+careold-go/internal/health TestOwnerClockAllowsIndependentCommits: clock_test.go:78: TEST_MYSQL_DSN not set
+careold-go/internal/health TestOwnerRangeRollbackAndSafeCursorLimit: clock_test.go:140: TEST_MYSQL_DSN not set
+careold-go/internal/health TestOwnerRangeRefillPreservesVersionHistory: clock_test.go:194: TEST_MYSQL_DSN not set
+careold-go/internal/health TestSaveBatchOnlyInvalidatesCleanDailyCacheRows: daily_invalidation_perf_test.go:15: TEST_MYSQL_DSN not set
+careold-go/internal/handlers TestHealthStatisticsHotCacheConsistency: statistics_cache_integration_test.go:17: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestHealthStatisticsHotCacheAuthorizationAndIdentity: statistics_cache_integration_test.go:73: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestHealthStatisticsHotCacheRequiresDatabaseValidation: statistics_cache_integration_test.go:119: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestHealthStatisticsHotCacheReportingOffset: statistics_cache_integration_test.go:133: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestHealthStatisticsHotCacheUnencodableTime: statistics_cache_integration_test.go:166: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/handlers TestHealthStatisticsHotCacheUnserializableResult: statistics_cache_integration_test.go:187: TEST_DATABASE_URL not set; PostgreSQL integration test skipped
+careold-go/internal/rules TestMissingActivityDoesNotScanOtherMetrics: query_plan_test.go:11: TEST_MYSQL_DSN not set
+
+Command: go build ./...
+Exit: 0
+
+Command: go vet ./...
+Exit: 0
+
+Command: python3 scripts/generate-openapi.py --check
+Exit: 0
+OpenAPI: 123 paths

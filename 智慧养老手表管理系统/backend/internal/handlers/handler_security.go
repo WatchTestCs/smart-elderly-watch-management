@@ -245,7 +245,9 @@ func (h *Handler) securityFactor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if req.Action != "setup" && h.Cfg.SessionBackend != "database" {
-		if err = h.Sessions.Revoke(p.Role, p.ID); err != nil {
+		// The factor change is committed: cancellation must not retain the old
+		// memory sessions. Database mode revoked within the same transaction.
+		if err = h.Sessions.RevokeContext(context.WithoutCancel(ctx), p.Role, p.ID); err != nil {
 			response.JSON(w, 503, map[string]any{"message": "认证状态已更新，但会话撤销需重试"})
 			return
 		}

@@ -21,7 +21,7 @@ func withHealthPrincipal(h *Handler, p session.Principal, f http.HandlerFunc) ht
 
 func TestHealthVersionsCursorAndIsolation(t *testing.T) {
 	pool := testDatabase(t)
-	h := testHandler(pool)
+	h := testHandler(t, pool)
 	seedDevice(t, pool)
 	tm := time.Date(2026, 10, 18, 9, 0, 0, 0, time.FixedZone("", 8*3600))
 	s := health.Sample{RecordID: "point-1", Source: "watch", SourceDevice: "WATCH001", Metric: "heart_rate", Unit: "count/min", Value: health.Number(72), Start: tm, End: tm, Version: 1}
@@ -144,7 +144,7 @@ func TestHealthWriteCursorFollowsCommitOrder(t *testing.T) {
 
 func TestHealthRoutesKeepAuthenticationAndCSRF(t *testing.T) {
 	pool := testDatabase(t)
-	h := testHandler(pool)
+	h := testHandler(t, pool)
 	seedDevice(t, pool)
 	mux := http.NewServeMux()
 	h.routeHealth(mux)
@@ -170,7 +170,7 @@ func TestHealthRoutesKeepAuthenticationAndCSRF(t *testing.T) {
 
 func TestHealthBindingEpochAndStatistics(t *testing.T) {
 	pool := testDatabase(t)
-	h := testHandler(pool)
+	h := testHandler(t, pool)
 	seedDevice(t, pool)
 	at := time.Date(2026, 10, 19, 9, 0, 0, 0, time.UTC)
 	s := health.Sample{RecordID: "point", Source: "watch", SourceDevice: "WATCH001", Metric: "heart_rate", Unit: "count/min", Value: health.Number(72), Start: at, End: at, Version: 1}
@@ -205,7 +205,7 @@ func TestHealthBindingEpochAndStatistics(t *testing.T) {
 
 func TestHealthBadSecretDoesNotWaitForClock(t *testing.T) {
 	pool := testDatabase(t)
-	h := testHandler(pool)
+	h := testHandler(t, pool)
 	seedDevice(t, pool)
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()

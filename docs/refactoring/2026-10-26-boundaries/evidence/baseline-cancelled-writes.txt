@@ -1,0 +1,14 @@
+Command: go test ./internal/handlers -run ^TestCancelledSessionWritesDoNotClaimSuccess$ -v -count=1
+Exit: 1
+=== RUN   TestCancelledSessionWritesDoNotClaimSuccess
+=== RUN   TestCancelledSessionWritesDoNotClaimSuccess/logout
+    session_context_test.go:37: cancelled logout changed the session or claimed success: HTTP 200 cookie_present=true
+=== RUN   TestCancelledSessionWritesDoNotClaimSuccess/renew
+    session_context_test.go:34: cancelled renewal reported success
+    session_context_test.go:37: cancelled renew changed the session or claimed success: HTTP 200 cookie_present=true
+--- FAIL: TestCancelledSessionWritesDoNotClaimSuccess (0.00s)
+    --- FAIL: TestCancelledSessionWritesDoNotClaimSuccess/logout (0.00s)
+    --- FAIL: TestCancelledSessionWritesDoNotClaimSuccess/renew (0.00s)
+FAIL
+FAIL	careold-go/internal/handlers	0.004s
+FAIL

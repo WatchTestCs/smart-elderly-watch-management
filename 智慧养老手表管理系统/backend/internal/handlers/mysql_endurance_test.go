@@ -39,7 +39,7 @@ func TestMySQLTwentyMinuteSoak(t *testing.T) {
 	const workers, batch = 4, 200
 	pool := testDatabase(t)
 	seedDevice(t, pool)
-	handler := testHandler(pool)
+	handler := testHandler(t, pool)
 	server := httptest.NewServer(http.HandlerFunc(handler.healthBatch))
 	defer server.Close()
 	client := &http.Client{Timeout: 35 * time.Second, Transport: &http.Transport{MaxIdleConns: 8, MaxIdleConnsPerHost: 8}}

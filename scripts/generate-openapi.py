@@ -14,8 +14,38 @@ backend = root / "智慧养老手表管理系统/backend"
 folder = backend / "internal/apidoc"
 aliases = json.loads((folder / "aliases.json").read_text(encoding="utf-8"))
 paths = {}
-public = {"/restful/userLogin/login", "/restful/userLogin/session", "/restful/setup", "/restful/desktop/exit", "/restful/inviteCode/checkCode", "/restful/inviteCode/join"}
-hardware = {"/restful/device/" + v for v in ("healthBatch", "login", "bind", "heartbeat", "report", "sos", "commandPull", "commandAck", "fencePoint")} | {"/restful/care/receipt"}
+
+
+def route_policies():
+    """Read the explicit Go registry used by auth and CSRF middleware.
+
+    Reject unsupported expressions instead of silently inventing a policy. This
+    inventory already reads literal HandleFunc registrations from Go source.
+    """
+    source = (backend / "internal/accesspolicy/policy.go").read_text(encoding="utf-8")
+    table = re.search(r"var routes = map\[route\]rule\{\n(.*?)\n\}", source, re.S)
+    if table is None:
+        raise ValueError("Cannot locate the accesspolicy route registry")
+    policies = {}
+    for line in table[1].splitlines():
+        if not line.strip() or line.lstrip().startswith("//"):
+            continue
+        entry = re.fullmatch(
+            r'\s*\{http\.Method([A-Za-z]+), "([^" ]+)"\}:\s*'
+            r'\{access: (Admin|Public|Device|Shared)(, bootstrap: true)?\},\s*', line
+        )
+        if entry is None:
+            raise ValueError(f"Unsupported literal in accesspolicy registry: {line.strip()}")
+        method, path, access, bootstrap = entry.groups()
+        key = (method.upper(), path)
+        if key in policies:
+            raise ValueError(f"Duplicate route policy: {key}")
+        policies[key] = (access, bool(bootstrap))
+    return policies
+
+
+policies = route_policies()
+csrf_exempt = {path for (_, path), (access, bootstrap) in policies.items() if access == "Device" or bootstrap}
 fields = {
     "/restful/userLogin/login": {"phone": "string", "password": "string", "otp": "string", "recoveryCode": "string"},
     "/restful/security/factor": {"action": "string", "password": "string", "otp": "string"},
@@ -33,16 +63,17 @@ for file in sorted((backend / "internal/handlers").glob("*.go")):
     if file.name.endswith("_test.go"):
         continue
     for method, path in re.findall(r'\.HandleFunc\("(GET|POST|PUT|PATCH|DELETE) ([^" ]+)"', file.read_text(encoding="utf-8-sig")):
+        access = policies.get((method, path), ("Admin", False))[0]
         operation = {"summary": path.removeprefix("/restful/"), "deprecated": True, "tags": ["legacy"], "responses": {"200": {"description": "Legacy JSON response; payload varies by operation.", "content": {"application/json": {"schema": {"type": "object", "additionalProperties": True}}}}, "400": {"description": "Invalid request"}, "401": {"description": "Session, device credential or MFA required"}, "403": {"description": "Role, duty or CSRF denied"}, "409": {"description": "Version, binding or state conflict"}, "503": {"description": "Required storage/configuration unavailable"}}}
-        operation["security"] = [] if path in public | hardware else [{"sessionCookie": []}]
+        operation["security"] = [] if access in {"Public", "Device"} else [{"sessionCookie": []}]
         if method != "GET":
-            operation["parameters"] = [] if path in hardware | {"/restful/setup", "/restful/desktop/exit"} else [{"name": "X-CSRF-TOKEN", "in": "header", "required": True, "schema": {"type": "string"}}]
+            operation["parameters"] = [] if path in csrf_exempt else [{"name": "X-CSRF-TOKEN", "in": "header", "required": True, "schema": {"type": "string"}}]
             schema = {"type": "object", "additionalProperties": True}
             if path in fields:
                 schema["properties"] = {key: {"type": kind} for key, kind in fields[path].items()}
                 schema["additionalProperties"] = path == "/restful/userLogin/login"
             operation["requestBody"] = {"required": True, "content": {"application/json": {"schema": schema}}}
-        operation["description"] = f"Implementation: {file.relative_to(root).as_posix()}. " + ("Device body authentication or signed gateway receipt; not anonymous access." if path in hardware else "Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation.")
+        operation["description"] = f"Implementation: {file.relative_to(root).as_posix()}. " + ("Device body authentication or signed gateway receipt; not anonymous access." if access == "Device" else "Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation.")
         paths.setdefault(path, {})[method.lower()] = operation
 for alias, canonical in aliases.items():
     if canonical not in paths:

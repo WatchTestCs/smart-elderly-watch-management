@@ -8,7 +8,7 @@ import (
 
 func TestIntegrationListPageTotals(t *testing.T) {
 	pool := testDatabase(t)
-	h := testHandler(pool)
+	h := testHandler(t, pool)
 	mustExec(t, pool, `INSERT INTO customer(customer_id,customer_name) VALUES
 		(4,'match A'),(7,'match B'),(9,'other'),(12,'match C')`)
 	mustExec(t, pool, `INSERT INTO family(family_id,family_name,family_tou_pic) VALUES (2,'match fam',NULL),(3,'other',NULL)`)

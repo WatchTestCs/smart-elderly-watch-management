@@ -65,7 +65,12 @@ func main() {
 		defer close(databaseDone)
 		watchDatabase(databaseCtx, cfg, sessions, service)
 	}()
-	defer func() { cancelDatabase(); <-databaseDone }()
+	defer func() {
+		// Stop session maintenance before its caller-owned SQL pool closes.
+		sessions.Close()
+		cancelDatabase()
+		<-databaseDone
+	}()
 
 	done := make(chan struct{})
 	var shutdownOnce sync.Once

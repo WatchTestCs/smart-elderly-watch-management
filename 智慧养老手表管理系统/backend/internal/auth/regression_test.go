@@ -13,6 +13,7 @@ func TestLogoutRoleAccess(t *testing.T) {
 	for _, role := range []string{auth.RoleAdmin, auth.RoleFamily} {
 		t.Run(role, func(t *testing.T) {
 			store := session.NewStore(time.Hour)
+			t.Cleanup(store.Close)
 			sess := store.Create(session.Principal{Role: role, ID: 1})
 			request := httptest.NewRequest(http.MethodPost, "/restful/userLogin/logout", nil)
 			request.AddCookie(&http.Cookie{Name: session.CookieName, Value: sess.ID})
@@ -27,6 +28,7 @@ func TestLogoutRoleAccess(t *testing.T) {
 
 func TestContextPrincipalDoesNotReplaceSessionValidation(t *testing.T) {
 	store := session.NewStore(time.Hour)
+	t.Cleanup(store.Close)
 	sess := store.Create(session.Principal{Role: auth.RoleAdmin, ID: 1})
 	store.Destroy(sess.ID)
 	r := httptest.NewRequest(http.MethodPost, "/restful/userLogin/logout", nil)

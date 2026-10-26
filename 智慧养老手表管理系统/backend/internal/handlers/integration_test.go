@@ -94,8 +94,11 @@ func callAPI(handler http.HandlerFunc, body any) *httptest.ResponseRecorder {
 	return response
 }
 
-func testHandler(pool *dbstore.Database) *Handler {
-	return New(pool, session.NewStore(time.Hour), config.Config{})
+func testHandler(t testing.TB, pool *dbstore.Database) *Handler {
+	t.Helper()
+	store := session.NewStore(time.Hour)
+	t.Cleanup(store.Close)
+	return New(pool, store, config.Config{})
 }
 
 func mustExec(t *testing.T, pool *dbstore.Database, sql string, args ...any) {
@@ -133,12 +136,12 @@ func TestIntegrationMigrationsAndBindingConstraint(t *testing.T) {
 	}
 	mustExec(t, pool, "INSERT INTO oldperson(old_id,name) VALUES(1,'长者')")
 	mustExec(t, pool, "INSERT INTO device(device_no,secret,old_id) VALUES('bound','unused',1)")
-	out := callAPI(testHandler(pool).oldPersonDelete, map[string]any{"oldId": 1})
+	out := callAPI(testHandler(t, pool).oldPersonDelete, map[string]any{"oldId": 1})
 	if out.Code != 409 {
 		t.Fatalf("bound elder deletion: HTTP %d %s", out.Code, out.Body.String())
 	}
 	mustExec(t, pool, "UPDATE device SET old_id=NULL WHERE device_no='bound'")
-	result := api(t, testHandler(pool).oldPersonDelete, map[string]any{"oldId": 1})
+	result := api(t, testHandler(t, pool).oldPersonDelete, map[string]any{"oldId": 1})
 	if result["returnCode"] != "1111" {
 		t.Fatal(result)
 	}
@@ -146,7 +149,7 @@ func TestIntegrationMigrationsAndBindingConstraint(t *testing.T) {
 
 func TestIntegrationListContractsAndNumericAge(t *testing.T) {
 	pool := testDatabase(t)
-	h := testHandler(pool)
+	h := testHandler(t, pool)
 	mustExec(t, pool, "INSERT INTO customer(customer_id,customer_name,customer_age,customer_sex,customer_phone,customer_address) VALUES(1,'监护人',40,'女','13800000001','本地')")
 	mustExec(t, pool, "INSERT INTO family(family_id,family_name) VALUES(1,'家属')")
 	mustExec(t, pool, "INSERT INTO oldperson(old_id,name,family_id) VALUES(1,'长者',1)")
@@ -176,7 +179,7 @@ func TestIntegrationListContractsAndNumericAge(t *testing.T) {
 
 func TestIntegrationEditPreservesFamily(t *testing.T) {
 	pool := testDatabase(t)
-	h := testHandler(pool)
+	h := testHandler(t, pool)
 	mustExec(t, pool, "INSERT INTO oldperson(old_id,name,family_id) VALUES(1,'长者',7)")
 	out := api(t, h.oldPersonUpdate, map[string]any{"oldId": 1, "name": "新姓名", "bothdate": "1950-01-01", "sex": "女", "phone": "13800000000", "room": "101", "illness": "", "warn": "", "foodLike": "", "foodHate": "", "drag": "", "customerName": "1"})
 	if out["returnCode"] != "1111" {
@@ -202,7 +205,7 @@ func seedDevice(t *testing.T, pool *dbstore.Database) {
 
 func TestIntegrationCoordinatesAndSOS(t *testing.T) {
 	pool := testDatabase(t)
-	h := testHandler(pool)
+	h := testHandler(t, pool)
 	seedDevice(t, pool)
 	// No current or historical location must still create an actionable SOS.
 	out := api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret})
@@ -232,7 +235,7 @@ func TestIntegrationCoordinatesAndSOS(t *testing.T) {
 
 func TestIntegrationDistinctInvitesCannotOverwriteFamily(t *testing.T) {
 	pool := testDatabase(t)
-	h := testHandler(pool)
+	h := testHandler(t, pool)
 	ctx := context.Background()
 	mustExec(t, pool, "INSERT INTO oldperson(old_id,name) VALUES(1,'长者')")
 	mustExec(t, pool, "INSERT INTO invite_code(code,old_id,expire_time) VALUES('AAAAAA',1,now()+interval '1 day'),('BBBBBB',1,now()+interval '1 day')")
@@ -303,6 +306,7 @@ func TestLogoutDestroysSessionAndRetainsCSRF(t *testing.T) {
 	for _, role := range []string{auth.RoleFamily, auth.RoleAdmin} {
 		t.Run(role, func(t *testing.T) {
 			store := session.NewStore(time.Hour)
+			t.Cleanup(store.Close)
 			h := New(nil, store, config.Config{})
 			handler := csrf.Middleware(store, auth.Middleware(store, http.HandlerFunc(h.logout)))
 			sess := store.Create(session.Principal{Role: role, ID: 1})
@@ -326,7 +330,7 @@ func TestLogoutDestroysSessionAndRetainsCSRF(t *testing.T) {
 
 func TestIntegrationBindDeleteRace(t *testing.T) {
 	pool := testDatabase(t)
-	h := testHandler(pool)
+	h := testHandler(t, pool)
 	ctx := context.Background()
 	mustExec(t, pool, "INSERT INTO oldperson(old_id,name) VALUES(1,'长者')")
 	mustExec(t, pool, "INSERT INTO device(device_no,secret) VALUES('racing','unused')")
@@ -369,7 +373,7 @@ func TestIntegrationBindDeleteRace(t *testing.T) {
 
 func TestNativeSetupRequiresDesktopToken(t *testing.T) {
 	pool := testDatabase(t)
-	h := testHandler(pool)
+	h := testHandler(t, pool)
 	h.Cfg.DesktopToken = "test-only-bootstrap-token"
 	mux := http.NewServeMux()
 	h.routeAuth(mux)

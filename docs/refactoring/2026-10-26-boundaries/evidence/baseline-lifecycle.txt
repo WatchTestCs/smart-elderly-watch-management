@@ -1,0 +1,7 @@
+Command: go test ./internal/session -run ^TestStoreCleanupLifecycleAudit$ -v -count=1
+Exit: 0
+=== RUN   TestStoreCleanupLifecycleAudit
+    lifecycle_audit_test.go:46: stores=25 close_supported=false maintenance_workers_before=0 after=25 retained=25
+--- PASS: TestStoreCleanupLifecycleAudit (0.00s)
+PASS
+ok  	careold-go/internal/session	0.003s

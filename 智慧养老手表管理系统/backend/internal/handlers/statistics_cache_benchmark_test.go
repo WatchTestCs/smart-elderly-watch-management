@@ -70,6 +70,7 @@ func BenchmarkHealthStatisticsHybrid(b *testing.B) {
 	}{{"disk", 0}, {"hot", 16 << 20}} {
 		b.Run(mode.name, func(b *testing.B) {
 			h := New(pool, session.NewStore(time.Hour), config.Config{HealthCacheBytes: mode.bytes})
+			b.Cleanup(h.Sessions.Close)
 			handler := withHealthPrincipal(h, session.Principal{Role: "ADMIN"}, h.healthStatistics)
 			request := func() *httptest.ResponseRecorder {
 				r := httptest.NewRequest(http.MethodPost, "/restful/health/statistics", bytes.NewReader(query))

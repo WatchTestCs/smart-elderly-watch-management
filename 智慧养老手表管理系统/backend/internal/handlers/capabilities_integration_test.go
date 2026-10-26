@@ -24,7 +24,7 @@ func commandSetup(t *testing.T) *Handler {
 	t.Helper()
 	pool := dbtest.MySQL(t)
 	seedDevice(t, pool)
-	h := testHandler(pool)
+	h := testHandler(t, pool)
 	api(t, capabilityAdmin(h, h.commandProfile), map[string]any{"deviceId": 1, "wireType": "K1", "protocol": "suining-pull-v1", "enabled": true})
 	return h
 }
@@ -133,7 +133,7 @@ func TestConcurrentPullAndSafeRedelivery(t *testing.T) {
 		t.Fatal(err)
 	}
 	// A newly constructed handler proves the queue is not held in process memory.
-	second := api(t, testHandler(h.DB).commandPull, commandCredentials())["command"].(map[string]any)
+	second := api(t, testHandler(t, h.DB).commandPull, commandCredentials())["command"].(map[string]any)
 	if second["commandId"] != command["commandId"] || second["deliveryToken"] == command["deliveryToken"] {
 		t.Fatal(second)
 	}
@@ -153,7 +153,7 @@ func TestDailyRebuildCorrectionsDeletionAndIsolation(t *testing.T) {
 	seedDevice(t, pool)
 	// Deployments may inherit case-insensitive source column collations.
 	mustExec(t, pool, "ALTER TABLE health_sample MODIFY source varchar(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL")
-	h := testHandler(pool)
+	h := testHandler(t, pool)
 	admin := capabilityAdmin(h, h.healthDaily)
 	req := map[string]any{"oldId": 1, "source": "watch", "sourceDevice": "WATCH001", "metric": "heart_rate", "semantics": "instant", "day": "2026-10-20", "offsetMinutes": 480, "days": 2}
 	tm := time.Date(2026, 10, 20, 12, 0, 0, 0, time.FixedZone("", 8*3600))
@@ -216,7 +216,7 @@ func TestDailyRebuildCorrectionsDeletionAndIsolation(t *testing.T) {
 func TestFenceDebounceEventsAndCareLink(t *testing.T) {
 	pool := dbtest.MySQL(t)
 	seedDevice(t, pool)
-	h := testHandler(pool)
+	h := testHandler(t, pool)
 	req := map[string]any{"deviceId": 1, "name": "家", "enabled": true, "coordinateSystem": "WGS84", "timezone": "Asia/Shanghai", "timeBegin": 0, "timeEnd": 86400, "minPoints": 2, "dwellSeconds": 10, "maxAccuracy": 30, "coordinates": [][2]float64{{120, 30}, {120.01, 30}, {120.01, 30.01}, {120, 30.01}, {120, 30}}}
 	save := capabilityAdmin(h, h.fenceSave)
 	saved := api(t, save, req)
@@ -279,7 +279,7 @@ func TestFenceDebounceEventsAndCareLink(t *testing.T) {
 func TestCareVerdictAndVitalReviewAudit(t *testing.T) {
 	pool := dbtest.MySQL(t)
 	seedDevice(t, pool)
-	h := testHandler(pool)
+	h := testHandler(t, pool)
 	sos := api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret})
 	id := sos["incidentId"]
 	for _, step := range []struct {

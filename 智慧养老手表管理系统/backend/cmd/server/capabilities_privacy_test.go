@@ -15,6 +15,7 @@ import (
 func TestCapabilityReadsAreAudited(t *testing.T) {
 	pool := dbtest.MySQL(t)
 	store := session.NewStore(time.Hour)
+	t.Cleanup(store.Close)
 	sess := store.Create(session.Principal{Role: "ADMIN", ID: 1})
 	calls := 0
 	h := sensitiveCareAudit(pool, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { calls++; w.WriteHeader(http.StatusOK) }))

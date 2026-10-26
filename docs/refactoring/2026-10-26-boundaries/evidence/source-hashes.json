@@ -1,0 +1,31 @@
+{
+  "baseline": "50b9cc094002ca691244b7d504cdeedf117787dd",
+  "go": "go version go1.23.2 linux/amd64",
+  "passed_tests": 918,
+  "skipped_tests": 125,
+  "production_sha256": {
+    "scripts/generate-openapi.py": "9d118888b379cbe005e65c6e621ff7c9d5c535f4e18acbdec317ff500994a2cd",
+    "智慧养老手表管理系统/backend/cmd/server/main.go": "63fcd62a1a607e9ebd42aacb35578854dd14498598dffeb904efb4dd2b754ea9",
+    "智慧养老手表管理系统/backend/internal/auth/auth.go": "62ccbd17e7dda7a033006b23daea0ea383b6c851cea5c94e272057da08c7f691",
+    "智慧养老手表管理系统/backend/internal/csrf/csrf.go": "fc30dbdd8abe4a85c49261fb3116268a6bf146025412479ca3f71fc48748d1ee",
+    "智慧养老手表管理系统/backend/internal/handlers/handler_auth.go": "375c2946cfeb678794cd21739a8057222d563869bd93d7c0cea0d6c8680e9b25",
+    "智慧养老手表管理系统/backend/internal/handlers/handler_commands.go": "e6b5870dad790c0ae70451f40a48f522b56f8b6902c1fd6d4f8bf1d125d07aa3",
+    "智慧养老手表管理系统/backend/internal/handlers/handler_health.go": "3d9b990957a95df9a7645f69a1b9260276974e0c1fd2885b6908994b957c1751",
+    "智慧养老手表管理系统/backend/internal/handlers/handler_security.go": "fafe58c1bc921f87cae949d2388ae837cf95c1f8a933a0060d5c3b60dd45d6e0",
+    "智慧养老手表管理系统/backend/internal/handlers/util.go": "2d0f4077ddf00a5abe476042f2f422a1468d7cc634f285c22c3fffb72f8c1a7d",
+    "智慧养老手表管理系统/backend/internal/session/session.go": "21438c2a09d6a804a4bac2c7032dbbacf0735fe9399b71eae1148847493decdf",
+    "智慧养老手表管理系统/backend/internal/accesspolicy/policy.go": "0329a599081312cd0638393925502a17692d1675eac331a1cc5ea6cad8de6cda",
+    "智慧养老手表管理系统/backend/internal/handlers/request_json.go": "536752fd65e35f5235230a4c0b058fdf31db03a6677e12f747b2770e21484df5",
+    "智慧养老手表管理系统/backend/internal/session/cleanup.go": "83f9ca214466a5416df232e5bdd376df76b6df7c577f1f8e51325cac2c6f4880",
+    "智慧养老手表管理系统/backend/internal/session/database.go": "a940d1c9da6807da8e2bc9b3465aa96a2370bf34d9e01ce1f9e44b8873fa4f7b",
+    "智慧养老手表管理系统/backend/internal/session/http.go": "b715907815cbf421c777ead9ae09e2eb800545f196a3242d568399f212e59123"
+  },
+  "route_rules": {
+    "Public": 6,
+    "Device": 10,
+    "Shared": 23
+  },
+  "characterized_paths": 43,
+  "middleware_requests": 4515,
+  "json_comparisons": 4080
+}

@@ -25,7 +25,7 @@ func TestCareSOSOutboxAuditAndState(t *testing.T) {
 	seedDevice(t, pool)
 	mustExec(t, pool, "INSERT INTO family(family_id,family_name,family_phone) VALUES(1,'家属','13800000001')")
 	mustExec(t, pool, "UPDATE oldperson SET family_id=1 WHERE old_id=1")
-	h := testHandler(pool)
+	h := testHandler(t, pool)
 	out := api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret})
 	if out["returnCode"] != "1111" || out["notificationState"] != "pending" || out["incidentState"] != "received" {
 		t.Fatalf("SOS falsely acknowledged: %+v", out)
@@ -50,10 +50,11 @@ func TestCareSOSOutboxAuditAndState(t *testing.T) {
 func TestCareAdminTransitionsAndFamilyIsolation(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
-	h := testHandler(pool)
+	h := testHandler(t, pool)
 	out := api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret})
 	id := int64(out["incidentId"].(float64))
 	store := session.NewStore(time.Hour)
+	t.Cleanup(store.Close)
 	h = New(pool, store, config.Config{})
 	handler := csrf.Middleware(store, auth.Middleware(store, http.HandlerFunc(h.careTransition)))
 	call := func(role string, actor int64, action, note string) *httptest.ResponseRecorder {
@@ -97,7 +98,7 @@ func TestCareReceiptRequiresTrustedGatewaySignature(t *testing.T) {
 	seedDevice(t, pool)
 	mustExec(t, pool, "INSERT INTO family(family_id,family_name,family_phone) VALUES(1,'家属','13800000001')")
 	mustExec(t, pool, "UPDATE oldperson SET family_id=1 WHERE old_id=1")
-	h := testHandler(pool)
+	h := testHandler(t, pool)
 	api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret})
 	var id int64
 	mustExec(t, pool, "UPDATE care_notification_outbox SET status='sent'")
@@ -137,7 +138,7 @@ func TestCareReceiptRequiresTrustedGatewaySignature(t *testing.T) {
 func TestCareSOSRequestIDPreventsDuplicateAlerts(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
-	h := testHandler(pool)
+	h := testHandler(t, pool)
 	payload := map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "requestId": "press-123"}
 	first := api(t, h.deviceSos, payload)
 	repeated := api(t, h.deviceSos, payload)

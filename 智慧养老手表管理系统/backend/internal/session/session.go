@@ -1,25 +1,21 @@
-// Package session 复刻 Java HttpSession 语义的服务端 session：
-// JSESSIONID cookie + 可外置的服务端存储，登录时换 id。
+// Package session provides server-side sessions with request-local verification.
 package session
 
 import (
-	"careold-go/internal/securestore"
 	"context"
 	"crypto/rand"
-	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
-	"encoding/json"
-	"net/http"
 	"sync"
 	"time"
+
+	"careold-go/internal/securestore"
 )
 
 const CookieName = "JSESSIONID"
 
-// Principal 对应 Java 的 AccountPrincipal。
 type Principal struct {
-	Role             string // ADMIN 或 FAMILY
+	Role             string // ADMIN or FAMILY; empty for an anonymous session.
 	ID               int64
 	Phone            string
 	OldID            int64
@@ -27,7 +23,6 @@ type Principal struct {
 	FactorGeneration string
 }
 
-// Session 服务端会话。
 type Session struct {
 	ID        string
 	Principal Principal
@@ -40,221 +35,148 @@ type Store struct {
 	mu       sync.RWMutex
 	sessions map[string]*Session
 	ttl      time.Duration
-	database *sql.DB
-	box      *securestore.Box
+	database *databaseStore
+
+	cleanupCancel context.CancelFunc
+	cleanupDone   chan struct{}
 }
 
 func NewStore(ttl time.Duration) *Store {
-	s := &Store{sessions: make(map[string]*Session), ttl: ttl}
-	go s.janitor()
+	ctx, cancel := context.WithCancel(context.Background())
+	s := &Store{sessions: make(map[string]*Session), ttl: ttl, cleanupCancel: cancel, cleanupDone: make(chan struct{})}
+	go func() {
+		defer close(s.cleanupDone)
+		ticker := time.NewTicker(5 * time.Minute)
+		defer ticker.Stop()
+		s.cleanupLoop(ctx, ticker.C)
+	}()
 	return s
 }
 
-func token(n int) string {
-	b := make([]byte, n)
-	_, _ = rand.Read(b)
-	return hex.EncodeToString(b)
+// Close stops maintenance and cancels its in-flight database operation. It is
+// idempotent and does not close the caller-owned database or revoke sessions.
+func (s *Store) Close() {
+	s.cleanupCancel()
+	<-s.cleanupDone
 }
 
-// Create 建新会话（登录成功时调用）。
-func (s *Store) Create(p Principal) *Session {
-	sess := &Session{
-		ID:        token(32),
-		Principal: p,
-		CSRFToken: token(32),
-		CreatedAt: time.Now(),
-		ExpiresAt: time.Now().Add(s.ttl),
+func token(n int) (string, error) {
+	b := make([]byte, n)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
 	}
+	return hex.EncodeToString(b), nil
+}
+
+func (s *Store) backend() *databaseStore {
 	s.mu.RLock()
-	database, box := s.database, s.box
-	s.mu.RUnlock()
-	if database != nil {
-		b, err := json.Marshal(sess)
-		if err != nil {
-			return nil
-		}
-		sealed, err := box.Seal(string(b), "session")
-		if err != nil {
-			return nil
-		}
-		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-		defer cancel()
-		if _, err = database.ExecContext(ctx, "INSERT INTO web_session(id_hash,role,actor_id,payload,expires_at) VALUES(?,?,?,?,?)", idHash(sess.ID), p.Role, p.ID, sealed, sess.ExpiresAt.UTC()); err != nil {
+	defer s.mu.RUnlock()
+	return s.database
+}
+
+// Create is for callers without a request. HTTP handlers use CreateContext.
+func (s *Store) Create(p Principal) *Session {
+	return s.CreateContext(context.Background(), p)
+}
+
+func (s *Store) CreateContext(ctx context.Context, p Principal) *Session {
+	if ctx.Err() != nil {
+		return nil
+	}
+	id, err := token(32)
+	if err != nil {
+		return nil
+	}
+	csrf, err := token(32)
+	if err != nil {
+		return nil
+	}
+	now := time.Now()
+	sess := &Session{ID: id, Principal: p, CSRFToken: csrf, CreatedAt: now, ExpiresAt: now.Add(s.ttl)}
+	if database := s.backend(); database != nil {
+		if !database.create(ctx, sess) {
 			return nil
 		}
 		return sess
 	}
 	s.mu.Lock()
+	defer s.mu.Unlock()
+	if ctx.Err() != nil {
+		return nil
+	}
 	s.sessions[sess.ID] = sess
-	s.mu.Unlock()
 	return sess
 }
 
-// Get 按 id 取会话，过期返回 nil。
-func (s *Store) Get(id string) *Session {
-	if id == "" {
+func (s *Store) Get(id string) *Session { return s.GetContext(context.Background(), id) }
+
+func (s *Store) GetContext(ctx context.Context, id string) *Session {
+	if id == "" || ctx.Err() != nil {
 		return nil
 	}
-	s.mu.RLock()
-	database, box := s.database, s.box
-	s.mu.RUnlock()
-	if database != nil {
-		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-		defer cancel()
-		var sealed, role string
-		var actorID int64
-		var generation sql.NullString
-		if database.QueryRowContext(ctx, "SELECT s.payload,s.role,s.actor_id,f.generation FROM web_session s LEFT JOIN auth_factor f ON f.role=s.role AND f.actor_id=s.actor_id AND f.enabled=true WHERE s.id_hash=? AND s.expires_at>UTC_TIMESTAMP(6)", idHash(id)).Scan(&sealed, &role, &actorID, &generation) != nil {
-			return nil
-		}
-		plain, err := box.Open(sealed, "session")
-		if err != nil {
-			return nil
-		}
-		var sess Session
-		if json.Unmarshal([]byte(plain), &sess) != nil || sess.ID != id || time.Now().After(sess.ExpiresAt) || sess.Principal.Role != role || sess.Principal.ID != actorID {
-			return nil
-		}
-		if role != "" && generation.String != sess.Principal.FactorGeneration {
-			return nil
-		}
-		return &sess
+	if database := s.backend(); database != nil {
+		return database.get(ctx, id)
 	}
 	s.mu.RLock()
-	sess, ok := s.sessions[id]
+	sess := s.sessions[id]
 	s.mu.RUnlock()
-	if !ok || time.Now().After(sess.ExpiresAt) {
+	if sess == nil || ctx.Err() != nil || time.Now().After(sess.ExpiresAt) {
 		return nil
 	}
 	return sess
 }
 
-// Destroy 销毁会话（登出）。
-func (s *Store) Destroy(id string) bool {
-	s.mu.RLock()
-	database := s.database
-	s.mu.RUnlock()
-	if database != nil {
-		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-		defer cancel()
-		_, err := database.ExecContext(ctx, "DELETE FROM web_session WHERE id_hash=?", idHash(id))
-		return err == nil
+func (s *Store) Destroy(id string) bool { return s.DestroyContext(context.Background(), id) }
+
+func (s *Store) DestroyContext(ctx context.Context, id string) bool {
+	if ctx.Err() != nil {
+		return false
+	}
+	if database := s.backend(); database != nil {
+		return database.destroy(ctx, id)
 	}
 	s.mu.Lock()
+	defer s.mu.Unlock()
+	if ctx.Err() != nil {
+		return false
+	}
 	delete(s.sessions, id)
-	s.mu.Unlock()
 	return true
 }
 
-func idHash(id string) string { sum := sha256.Sum256([]byte(id)); return hex.EncodeToString(sum[:]) }
-
-// UseDatabase is installed before publishing API handlers. No read-through cache:
-// revocation on one replica is immediately visible to every other replica.
+// UseDatabase is installed before publishing API handlers. The backend is an
+// immutable pair; there is no read-through cache across requests or replicas.
 func (s *Store) UseDatabase(database *sql.DB, box *securestore.Box) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.database = database
-	s.box = box
-	s.sessions = make(map[string]*Session)
-}
-func (s *Store) Revoke(role string, id int64) error {
-	s.mu.RLock()
-	database := s.database
-	s.mu.RUnlock()
+	var backend *databaseStore
 	if database != nil {
-		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-		defer cancel()
-		_, err := database.ExecContext(ctx, "DELETE FROM web_session WHERE role=? AND actor_id=?", role, id)
-		return err
+		backend = &databaseStore{db: database, box: box}
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	s.database = backend
+	s.sessions = make(map[string]*Session)
+}
+
+func (s *Store) Revoke(role string, id int64) error {
+	return s.RevokeContext(context.Background(), role, id)
+}
+
+func (s *Store) RevokeContext(ctx context.Context, role string, id int64) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if database := s.backend(); database != nil {
+		return database.revoke(ctx, role, id)
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	for key, value := range s.sessions {
 		if value.Principal.Role == role && value.Principal.ID == id {
 			delete(s.sessions, key)
 		}
 	}
 	return nil
-}
-
-// SetCookie 写 JSESSIONID cookie。
-func SetCookie(w http.ResponseWriter, id string) {
-	http.SetCookie(w, &http.Cookie{
-		Name:     CookieName,
-		Value:    id,
-		Path:     "/",
-		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
-	})
-}
-
-// ClearCookie 清除 JSESSIONID cookie。
-func ClearCookie(w http.ResponseWriter) {
-	http.SetCookie(w, &http.Cookie{
-		Name:     CookieName,
-		Value:    "",
-		Path:     "/",
-		MaxAge:   -1,
-		HttpOnly: true,
-	})
-}
-
-type requestKey struct{ store *Store }
-
-// FromRequest 从请求 cookie 取会话；同一请求内复用已验证结果。
-// Like gorilla/sessions' request registry, this context is local to the request:
-// https://github.com/gorilla/sessions/blob/main/sessions.go
-// A new request always reloads storage, so replica revocations remain visible.
-func (s *Store) FromRequest(r *http.Request) *Session {
-	c, err := r.Cookie(CookieName)
-	if err != nil {
-		return nil
-	}
-	key := requestKey{s}
-	if sess, ok := r.Context().Value(key).(*Session); ok && sess.ID == c.Value && !time.Now().After(sess.ExpiresAt) {
-		return sess
-	}
-	sess := s.Get(c.Value)
-	if sess != nil {
-		*r = *r.WithContext(context.WithValue(r.Context(), key, sess))
-	}
-	return sess
-}
-
-// contextKey 会话在 request context 中的 key。
-type contextKey struct{}
-
-// WithContext 把会话放入 request context。
-func WithContext(r *http.Request, sess *Session) *http.Request {
-	return r.WithContext(context.WithValue(r.Context(), contextKey{}, sess))
-}
-
-// FromContext 从 request context 取会话，无则返回 nil。
-func FromContext(r *http.Request) *Session {
-	sess, _ := r.Context().Value(contextKey{}).(*Session)
-	return sess
-}
-
-func (s *Store) janitor() {
-	t := time.NewTicker(5 * time.Minute)
-	defer t.Stop()
-	for range t.C {
-		s.mu.RLock()
-		database := s.database
-		s.mu.RUnlock()
-		if database != nil {
-			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-			database.ExecContext(ctx, "DELETE FROM web_session WHERE expires_at<=UTC_TIMESTAMP(6)")
-			cancel()
-			continue
-		}
-		now := time.Now()
-		s.mu.Lock()
-		for id, sess := range s.sessions {
-			if now.After(sess.ExpiresAt) {
-				delete(s.sessions, id)
-			}
-		}
-		s.mu.Unlock()
-	}
 }

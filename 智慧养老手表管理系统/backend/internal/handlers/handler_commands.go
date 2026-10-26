@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
-	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -13,21 +11,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 )
-
-func decodeCapability(w http.ResponseWriter, r *http.Request, dst any) bool {
-	r.Body = http.MaxBytesReader(w, r.Body, 2<<20)
-	d := json.NewDecoder(r.Body)
-	d.DisallowUnknownFields()
-	if err := d.Decode(dst); err != nil {
-		write400(w, "参数含未知字段、JSON 无效或超出 2 MiB")
-		return false
-	}
-	if err := d.Decode(new(any)); err != io.EOF {
-		write400(w, "只允许一个 JSON 对象")
-		return false
-	}
-	return true
-}
 
 func (h *Handler) routeCapabilities(mux *http.ServeMux) {
 	mux.HandleFunc("POST /restful/device/commandProfile", h.commandProfile)

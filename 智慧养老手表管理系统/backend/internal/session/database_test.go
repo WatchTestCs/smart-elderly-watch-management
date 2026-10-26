@@ -15,6 +15,8 @@ func TestDatabaseSessionsShareRevokeAndFactorGeneration(t *testing.T) {
 	pool := dbtest.MySQL(t)
 	box, _ := securestore.New(base64.StdEncoding.EncodeToString(make([]byte, 32)))
 	a, b := session.NewStore(time.Hour), session.NewStore(time.Hour)
+	t.Cleanup(a.Close)
+	t.Cleanup(b.Close)
 	a.UseDatabase(pool.SQL(), box)
 	b.UseDatabase(pool.SQL(), box)
 	s := a.Create(session.Principal{Role: "ADMIN", ID: 1, Phone: "13800000001"})
@@ -86,6 +88,7 @@ func TestDatabaseSessionRejectsMismatchedIdentity(t *testing.T) {
 	pool := dbtest.MySQL(t)
 	box, _ := securestore.New(base64.StdEncoding.EncodeToString(make([]byte, 32)))
 	store := session.NewStore(time.Hour)
+	t.Cleanup(store.Close)
 	store.UseDatabase(pool.SQL(), box)
 	for _, identity := range []struct {
 		role string

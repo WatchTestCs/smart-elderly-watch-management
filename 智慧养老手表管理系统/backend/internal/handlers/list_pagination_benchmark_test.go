@@ -43,7 +43,7 @@ func BenchmarkListPagination(b *testing.B) {
 					}
 				}
 			}
-			h := testHandler(pool)
+			h := testHandler(b, pool)
 			for _, endpoint := range []struct {
 				name, key, filterKey string
 				handler              http.HandlerFunc

@@ -44,6 +44,7 @@ func TestReadLatencyAudit(t *testing.T) {
 	slog.SetDefault(slog.New(slog.NewTextHandler(io.Discard, nil)))
 	defer slog.SetDefault(prior)
 	store := session.NewStore(time.Hour)
+	t.Cleanup(store.Close)
 	cfg := config.Config{DataKey: base64.StdEncoding.EncodeToString(make([]byte, 32)), HealthCacheBytes: 16 << 20}
 	h := New(pool, store, cfg)
 	store.UseDatabase(pool.SQL(), h.Box)
@@ -254,6 +255,7 @@ func TestReadLatencyAudit(t *testing.T) {
 		s := sess
 		if mode != "database" {
 			ss = session.NewStore(time.Hour)
+			t.Cleanup(ss.Close)
 			s = ss.Create(session.Principal{Role: auth.RoleAdmin, ID: 1})
 		}
 		for round := 1; round <= 3; round++ {
@@ -318,6 +320,7 @@ func TestReadLatencyAudit(t *testing.T) {
 		return elapsed
 	})
 	peer := session.NewStore(time.Hour)
+	t.Cleanup(peer.Close)
 	peer.UseDatabase(pool.SQL(), h.Box)
 	if !peer.Destroy(sess.ID) || store.Get(sess.ID) != nil {
 		t.Fatal("cross-replica revoke failed")

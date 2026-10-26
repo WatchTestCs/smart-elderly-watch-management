@@ -21,6 +21,7 @@ func secureHandler(t *testing.T) *Handler {
 	key := base64.StdEncoding.EncodeToString(make([]byte, 32))
 	cfg := config.Config{DataKey: key, SessionBackend: "database"}
 	store := session.NewStore(time.Hour)
+	t.Cleanup(store.Close)
 	h := New(pool, store, cfg)
 	store.UseDatabase(pool.SQL(), h.Box)
 	password, err := auth.Hash("StrongPassword123!")
@@ -33,6 +34,7 @@ func secureHandler(t *testing.T) *Handler {
 func TestTOTPEnrollmentRecoveryAndCrossReplicaRevocation(t *testing.T) {
 	h := secureHandler(t)
 	store := session.NewStore(time.Hour)
+	t.Cleanup(store.Close)
 	store.UseDatabase(h.DB.SQL(), h.Box)
 	s := store.Create(session.Principal{Role: auth.RoleAdmin, ID: 1})
 	wrap := func(f http.HandlerFunc) http.HandlerFunc {

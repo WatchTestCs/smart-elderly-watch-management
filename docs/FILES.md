@@ -1,11 +1,30 @@
 # preview 分支文件职责索引
 
-本索引覆盖当前提交的 **712 个文件**（更新：2026-10-26）。保留既有人工说明；来源附件与历史证据不代表当前版本的全套验收。
+本索引覆盖当前提交的 **731 个文件**（更新：2026-10-26）。保留既有人工说明；来源附件与历史证据不代表当前版本的全套验收。
 
-[项目 README](../README.md) · [文件职责数据](file-descriptions.json) · [历史性能资料](performance/2026-10-20-go123/README.md) · [算法与架构迭代](performance/2026-10-26-algorithms/README.md) · [最新睡眠优化](performance/2026-10-26-sleep/README.md)
+[项目 README](../README.md) · [文件职责数据](file-descriptions.json) · [历史性能资料](performance/2026-10-20-go123/README.md) · [算法与架构迭代](performance/2026-10-26-algorithms/README.md) · [睡眠优化](performance/2026-10-26-sleep/README.md) · [最新职责重构](refactoring/2026-10-26-boundaries/README.md)
 
 | 文件 | 职责 |
 | --- | --- |
+| [智慧养老手表管理系统/backend/internal/session/lifecycle_audit_test.go](../智慧养老手表管理系统/backend/internal/session/lifecycle_audit_test.go) | 同一夹具测量基线与本轮的会话维护协程保留数 |
+| [智慧养老手表管理系统/backend/internal/session/http.go](../智慧养老手表管理系统/backend/internal/session/http.go) | Cookie 生命周期、请求内已验证会话缓存及取消检查 |
+| [智慧养老手表管理系统/backend/internal/session/database.go](../智慧养老手表管理系统/backend/internal/session/database.go) | 会话加密 SQL、身份/认证代际校验和继承调用者的有界 I/O |
+| [智慧养老手表管理系统/backend/internal/session/context_test.go](../智慧养老手表管理系统/backend/internal/session/context_test.go) | 受控 SQL driver 验证请求取消、连接释放、清理退出与数据库所有权 |
+| [智慧养老手表管理系统/backend/internal/session/cleanup.go](../智慧养老手表管理系统/backend/internal/session/cleanup.go) | 可取消的会话过期清理、内存回收与不含敏感值的失败日志 |
+| [智慧养老手表管理系统/backend/internal/handlers/session_context_test.go](../智慧养老手表管理系统/backend/internal/handlers/session_context_test.go) | 请求预取消时的登出/轮换回归，可在旧版复现会话仍被修改的问题 |
+| [智慧养老手表管理系统/backend/internal/handlers/request_json_test.go](../智慧养老手表管理系统/backend/internal/handlers/request_json_test.go) | 4080 组新旧 JSON 合同对照、边界输入及正文关闭回归 |
+| [智慧养老手表管理系统/backend/internal/handlers/request_json.go](../智慧养老手表管理系统/backend/internal/handlers/request_json.go) | 统一正文限额、所有权和单文档解析；保留各类端点严格度与错误文案 |
+| [智慧养老手表管理系统/backend/internal/accesspolicy/policy_test.go](../智慧养老手表管理系统/backend/internal/accesspolicy/policy_test.go) | 固定旧版权限合同及方法、身份、Cookie/CSRF 组合的中间件对照 |
+| [智慧养老手表管理系统/backend/internal/accesspolicy/policy.go](../智慧养老手表管理系统/backend/internal/accesspolicy/policy.go) | auth、CSRF 和 OpenAPI 共用的类型化路由权限及设备/原生豁免规则 |
+| [docs/refactoring/2026-10-26-boundaries/evidence/validation.txt](../docs/refactoring/2026-10-26-boundaries/evidence/validation.txt) | 最终后端短模式竞争检测、逐项跳过原因与构建静态/OpenAPI 检查 |
+| [docs/refactoring/2026-10-26-boundaries/evidence/source-hashes.json](../docs/refactoring/2026-10-26-boundaries/evidence/source-hashes.json) | 固定基线、测试数量、规则矩阵规模和生产源码 SHA-256 |
+| [docs/refactoring/2026-10-26-boundaries/evidence/candidate-lifecycle.txt](../docs/refactoring/2026-10-26-boundaries/evidence/candidate-lifecycle.txt) | 本轮 candidate-lifecycle.txt 命令、退出状态和基线/候选复现输出 |
+| [docs/refactoring/2026-10-26-boundaries/evidence/candidate-cancelled-writes.txt](../docs/refactoring/2026-10-26-boundaries/evidence/candidate-cancelled-writes.txt) | 本轮 candidate-cancelled-writes.txt 命令、退出状态和基线/候选复现输出 |
+| [docs/refactoring/2026-10-26-boundaries/evidence/baseline-lifecycle.txt](../docs/refactoring/2026-10-26-boundaries/evidence/baseline-lifecycle.txt) | 本轮 baseline-lifecycle.txt 命令、退出状态和基线/候选复现输出 |
+| [docs/refactoring/2026-10-26-boundaries/evidence/baseline-json-contract.txt](../docs/refactoring/2026-10-26-boundaries/evidence/baseline-json-contract.txt) | 本轮 baseline-json-contract.txt 命令、退出状态和基线/候选复现输出 |
+| [docs/refactoring/2026-10-26-boundaries/evidence/baseline-cancelled-writes.txt](../docs/refactoring/2026-10-26-boundaries/evidence/baseline-cancelled-writes.txt) | 本轮 baseline-cancelled-writes.txt 命令、退出状态和基线/候选复现输出 |
+| [docs/refactoring/2026-10-26-boundaries/evidence/baseline-body-ownership.txt](../docs/refactoring/2026-10-26-boundaries/evidence/baseline-body-ownership.txt) | 本轮 baseline-body-ownership.txt 命令、退出状态和基线/候选复现输出 |
+| [docs/refactoring/2026-10-26-boundaries/README.md](../docs/refactoring/2026-10-26-boundaries/README.md) | 请求边界与会话资源所有权重构、旧版复现、兼容性和验证边界 |
 | [智慧养老手表管理系统/backend/internal/health/statistics_sleep_test.go](../智慧养老手表管理系统/backend/internal/health/statistics_sleep_test.go) | 1200 组睡眠裁剪/阶段/精度/所有权差分及乱序、窗口外与稀疏大规模基准 |
 | [智慧养老手表管理系统/backend/internal/health/statistics_sleep.go](../智慧养老手表管理系统/backend/internal/health/statistics_sleep.go) | 统一排序后的阶段/睡眠/清醒并集累计，复用私有指针缓冲并排除窗口外记录 |
 | [docs/performance/2026-10-26-sleep/evidence/validation.txt](../docs/performance/2026-10-26-sleep/evidence/validation.txt) | 最终短模式竞争检测 891 通过/125 跳过与构建静态检查记录 |

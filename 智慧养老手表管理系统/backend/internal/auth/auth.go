@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"careold-go/internal/accesspolicy"
 	"careold-go/internal/response"
 	"careold-go/internal/session"
 )
@@ -15,62 +16,9 @@ const (
 	RoleFamily = "FAMILY"
 )
 
-// 公开路径（无需登录）。
-var publicPaths = map[string]bool{
-	"POST /restful/desktop/exit":         true,
-	"POST /restful/setup":                true,
-	"POST /restful/userLogin/login":      true,
-	"POST /restful/inviteCode/checkCode": true,
-	"POST /restful/inviteCode/join":      true,
-	"GET /restful/userLogin/session":     true,
-}
-
-// 硬件路径：公开且免 CSRF。
-var hardwarePaths = map[string]bool{
-	"POST /restful/device/commandPull": true,
-	"POST /restful/device/commandAck":  true,
-	"POST /restful/device/fencePoint":  true,
-	"POST /restful/device/healthBatch": true,
-	"POST /restful/device/login":       true,
-	"POST /restful/device/bind":        true,
-	"POST /restful/device/heartbeat":   true,
-	"POST /restful/device/report":      true,
-	"POST /restful/device/sos":         true,
-	"POST /restful/care/receipt":       true,
-}
-
-// SHARED：ADMIN 或 FAMILY 任一角色。
-var sharedPaths = map[string]bool{
-	"POST /restful/security/factor":             true,
-	"POST /restful/notification/list":           true,
-	"POST /restful/health/daily":                true,
-	"POST /restful/health/changes":              true,
-	"POST /restful/health/statistics":           true,
-	"POST /restful/userLogin/logout":            true,
-	"POST /restful/family/selectTwo":            true,
-	"POST /restful/family/updateTwo":            true,
-	"POST /restful/family/updateTouPic":         true,
-	"POST /restful/family/updatePassword":       true,
-	"POST /restful/ratepre/selectRatepreFamily": true,
-	"POST /restful/ratepre/selectRatepreDetail": true,
-	"POST /restful/step/selectStepFamily":       true,
-	"POST /restful/step/selectStepDetail":       true,
-	"POST /restful/position/selectFamily":       true,
-	"POST /restful/text/select":                 true,
-	"POST /restful/text/selectDetail":           true,
-	"POST /restful/picshow/select":              true,
-	"POST /restful/said/select":                 true,
-	"POST /restful/said/insert":                 true,
-	"POST /restful/said/goodCount":              true,
-	"POST /restful/image/saveImage":             true,
-	"GET /restful/image/download":               true,
-}
-
 // Middleware 鉴权：公开路径放行；其余按角色校验，会话注入 context。
 func Middleware(store *session.Store, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		key := r.Method + " " + r.URL.Path
-
 		// 静态/健康检查放行
 		if r.URL.Path == "/" || r.URL.Path == "/healthz" ||
 			strings.HasPrefix(r.URL.Path, "/assets/") ||
@@ -80,13 +28,14 @@ func Middleware(store *session.Store, next http.Handler) http.Handler {
 			return
 		}
 
-		if publicPaths[key] || hardwarePaths[key] {
+		access := accesspolicy.AccessFor(r.Method, r.URL.Path)
+		if access == accesspolicy.Public || access == accesspolicy.Device {
 			next.ServeHTTP(w, r)
 			return
 		}
 
 		if !strings.HasPrefix(r.URL.Path, "/restful/") {
-			deny(w)
+			forbidden(w)
 			return
 		}
 
@@ -101,7 +50,7 @@ func Middleware(store *session.Store, next http.Handler) http.Handler {
 		}
 
 		role := sess.Principal.Role
-		if sharedPaths[key] {
+		if access == accesspolicy.Shared {
 			if role != RoleAdmin && role != RoleFamily {
 				forbidden(w)
 				return
@@ -116,14 +65,6 @@ func Middleware(store *session.Store, next http.Handler) http.Handler {
 }
 
 func forbidden(w http.ResponseWriter) {
-	response.JSON(w, http.StatusForbidden, map[string]any{
-		"returnCode": "0000",
-		"code":       "ACCESS_DENIED",
-		"message":    "请求未获授权，请刷新页面后重试",
-	})
-}
-
-func deny(w http.ResponseWriter) {
 	response.JSON(w, http.StatusForbidden, map[string]any{
 		"returnCode": "0000",
 		"code":       "ACCESS_DENIED",

@@ -104,6 +104,7 @@ func TestDatabaseUnavailableDoesNotBlockApplication(t *testing.T) {
 
 func TestLogoutDoesNotRequireDatabase(t *testing.T) {
 	store := session.NewStore(12 * time.Hour)
+	t.Cleanup(store.Close)
 	account := store.Create(session.Principal{Role: "ADMIN", ID: 1})
 	local := http.NewServeMux()
 	handlers.New(nil, store, config.Config{}).MountLocalLogout(local)

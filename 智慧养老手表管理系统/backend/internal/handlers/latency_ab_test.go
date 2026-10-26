@@ -52,7 +52,7 @@ func TestHTTPBatchLatencyAB(t *testing.T) {
 	}
 	pool := testDatabase(t)
 	seedDevice(t, pool)
-	h := testHandler(pool)
+	h := testHandler(t, pool)
 	server := httptest.NewServer(http.HandlerFunc(h.healthBatch))
 	defer server.Close()
 	client := &http.Client{Timeout: 30 * time.Second, Transport: &http.Transport{MaxIdleConns: 16, MaxIdleConnsPerHost: 16}}

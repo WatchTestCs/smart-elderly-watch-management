@@ -35,7 +35,7 @@ func careRequest(t *testing.T, h *Handler, handler http.HandlerFunc, actor int64
 func TestArchitectureWatchProfileContract(t *testing.T) {
 	pool := testDatabase(t)
 	mustExec(t, pool, "INSERT INTO watch_info(device_id,op_time,hrf,hrl,bpf,bpl) VALUES(42,'2026-10-01',110,55,140,90)")
-	out := api(t, testHandler(pool).watchInfoSelect, map[string]any{"oldName": ""})
+	out := api(t, testHandler(t, pool).watchInfoSelect, map[string]any{"oldName": ""})
 	row := out["watchDtos"].([]any)[0].(map[string]any)
 	if row["deviceId"] != float64(42) || row["opTime"] != "2026-10-01" {
 		t.Fatalf("threshold page cannot identify/edit its row: %+v", row)
@@ -50,7 +50,7 @@ func TestArchitectureFormattedRecordsAcrossDatabases(t *testing.T) {
 	mustExec(t, pool, "INSERT INTO watch_day_info(device_id,step,create_time) VALUES(1,100,'2026-10-19')")
 	mustExec(t, pool, "INSERT INTO text(title,text_main,time) VALUES('公告','内容','2026-10-19 08:01:02.123')")
 	mustExec(t, pool, "INSERT INTO said(said,said_time) VALUES('评论','2026-10-19 08:01:02.123')")
-	h := testHandler(pool)
+	h := testHandler(t, pool)
 	for _, handler := range []http.HandlerFunc{h.ratepreSelect, h.ratepreSelectCount, h.stepSelect, h.textSelect} {
 		out := callAPI(handler, map[string]any{})
 		if out.Code != 200 {
@@ -70,7 +70,7 @@ func TestArchitectureFormattedRecordsAcrossDatabases(t *testing.T) {
 func TestArchitectureLifestyleFieldsKeepTheirMeaning(t *testing.T) {
 	pool := testDatabase(t)
 	mustExec(t, pool, "INSERT INTO oldperson(name,food_like,food_hate,drag) VALUES('长者','米饭','花生','常用药')")
-	out := api(t, testHandler(pool).oldPersonSelect, map[string]any{"name": ""})
+	out := api(t, testHandler(t, pool).oldPersonSelect, map[string]any{"name": ""})
 	row := out["oldPeople"].([]any)[0].(map[string]any)
 	if row["foodLike"] != "米饭" || row["foodHate"] != "花生" || row["drag"] != "常用药" {
 		t.Fatalf("diet and medication fields were interchanged: %+v", row)
@@ -80,7 +80,7 @@ func TestArchitectureLifestyleFieldsKeepTheirMeaning(t *testing.T) {
 func TestArchitectureUnboundElderCreation(t *testing.T) {
 	pool := testDatabase(t)
 	mustExec(t, pool, "INSERT INTO customer(customer_id,customer_name) VALUES(1,'监护人')")
-	out := callAPI(testHandler(pool).oldPersonAdd, elderPayload())
+	out := callAPI(testHandler(t, pool).oldPersonAdd, elderPayload())
 	if out.Code != 200 || architectureBody(t, out)["returnCode"] != "1111" {
 		t.Fatalf("elder creation must precede device binding: %d %s", out.Code, out.Body.String())
 	}
@@ -107,7 +107,7 @@ func TestArchitectureElderEditCannotRewriteBinding(t *testing.T) {
 	mustExec(t, pool, "UPDATE oldperson SET device_id=1 WHERE old_id=1")
 	body := elderPayload()
 	body["oldId"], body["deviceId"] = 1, 2
-	out := callAPI(testHandler(pool).oldPersonUpdate, body)
+	out := callAPI(testHandler(t, pool).oldPersonUpdate, body)
 	if out.Code != http.StatusConflict {
 		t.Fatalf("record editing rewrote another device association: %d %s", out.Code, out.Body.String())
 	}
@@ -123,7 +123,7 @@ func TestArchitectureBoundDeviceCannotBeTakenOver(t *testing.T) {
 	mustExec(t, pool, "UPDATE oldperson SET device_id=1 WHERE old_id=1")
 	mustExec(t, pool, "INSERT INTO oldperson(old_id,name) VALUES(2,'另一长者')")
 	mustExec(t, pool, "INSERT INTO bind_code(code,old_id,used) VALUES('OTHER',2,0)")
-	out := callAPI(testHandler(pool).deviceBind, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "code": "OTHER"})
+	out := callAPI(testHandler(t, pool).deviceBind, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "code": "OTHER"})
 	if out.Code != http.StatusConflict {
 		t.Fatalf("binding stole an assigned device: %d %s", out.Code, out.Body.String())
 	}
@@ -142,7 +142,7 @@ func TestArchitectureBindingKeepsCustomizedThresholds(t *testing.T) {
 	mustExec(t, pool, "UPDATE device SET old_id=NULL WHERE device_id=1")
 	mustExec(t, pool, "INSERT INTO watch_info(device_id,hrf,hrl,bpf,bpl) VALUES(1,125,65,150,95)")
 	mustExec(t, pool, "INSERT INTO bind_code(code,old_id,used) VALUES('FIRST',1,0)")
-	out := api(t, testHandler(pool).deviceBind, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "code": "FIRST"})
+	out := api(t, testHandler(t, pool).deviceBind, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "code": "FIRST"})
 	if out["returnCode"] != "1111" {
 		t.Fatal(out)
 	}
@@ -155,12 +155,12 @@ func TestArchitectureBindingKeepsCustomizedThresholds(t *testing.T) {
 func TestArchitectureMissingMetricRemainsUnknown(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
-	api(t, testHandler(pool).deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "hr": 72})
+	api(t, testHandler(t, pool).deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "hr": 72})
 	var missing bool
 	if err := pool.QueryRow(context.Background(), "SELECT bp IS NULL AND pre_state IS NULL FROM ratepre").Scan(&missing); err != nil || !missing {
 		t.Fatalf("absent blood pressure became a normal zero: %v %v", missing, err)
 	}
-	api(t, testHandler(pool).deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "step": 200})
+	api(t, testHandler(t, pool).deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "step": 200})
 	if err := pool.QueryRow(context.Background(), "SELECT sleep IS NULL AND sleep_sate IS NULL FROM watch_day_info").Scan(&missing); err != nil || !missing {
 		t.Fatalf("steps-only report invented a normal sleep value: %v %v", missing, err)
 	}
@@ -169,7 +169,7 @@ func TestArchitectureMissingMetricRemainsUnknown(t *testing.T) {
 func TestArchitectureConcurrentBindAndUnbind(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
-	h := testHandler(pool)
+	h := testHandler(t, pool)
 	for n := 0; n < 20; n++ {
 		mustExec(t, pool, "UPDATE device SET old_id=1 WHERE device_id=1")
 		mustExec(t, pool, "UPDATE oldperson SET device_id=1 WHERE old_id=1")
@@ -201,7 +201,7 @@ func TestArchitectureUnbindingKeepsRemainingPrimary(t *testing.T) {
 	seedDevice(t, pool)
 	mustExec(t, pool, "UPDATE oldperson SET device_id=1 WHERE old_id=1")
 	mustExec(t, pool, "INSERT INTO device(device_id,device_no,secret,old_id) VALUES(2,'SECOND','unused',1)")
-	api(t, testHandler(pool).deviceUnbind, map[string]any{"deviceId": 1})
+	api(t, testHandler(t, pool).deviceUnbind, map[string]any{"deviceId": 1})
 	var primary *int64
 	if err := pool.QueryRow(context.Background(), "SELECT device_id FROM oldperson WHERE old_id=1").Scan(&primary); err != nil || primary == nil || *primary != 2 {
 		t.Fatalf("remaining attached device lost its primary reference: %v %v", primary, err)
@@ -220,7 +220,7 @@ func TestArchitectureCareQueuePaginationAndDuty(t *testing.T) {
 		}
 		mustExec(t, pool, "INSERT INTO care_incident(old_id,device_id,kind,state,severity,due_at) VALUES(1,1,'sos',$1,'critical',now())", state)
 	}
-	h := testHandler(pool)
+	h := testHandler(t, pool)
 	out := careRequest(t, h, h.careIncidents, 2, map[string]any{"page": 2, "pageSize": 20, "state": "active"})
 	data := architectureBody(t, out)
 	if out.Code != 200 || data["total"] != float64(55) || data["duty"] != "auditor" || len(data["items"].([]any)) != 20 {
@@ -239,7 +239,7 @@ func TestArchitectureVerificationClearsOnlyLinkedAlarm(t *testing.T) {
 	mustExec(t, pool, "INSERT INTO alarm_precess(id,old_id,device_id,status,be_time) VALUES(1,1,1,'1',now()),(2,1,1,'1',now())")
 	mustExec(t, pool, `INSERT INTO care_incident(id,old_id,device_id,kind,state,severity,due_at,resolved_by,source_alarm_id)
 		VALUES(1,1,1,'sos','resolved','critical',now(),'1',1)`)
-	h := testHandler(pool)
+	h := testHandler(t, pool)
 	out := careRequest(t, h, h.careTransition, 2, map[string]any{"id": "1", "action": "verify", "note": "已独立复核"})
 	if out.Code != 200 {
 		t.Fatal(out.Body.String())
@@ -257,7 +257,7 @@ func TestArchitectureCareHistoryHasNoSilentLimit(t *testing.T) {
 	for n := 1; n <= 105; n++ {
 		mustExec(t, pool, "INSERT INTO care_incident_event(incident_id,actor,action,note) VALUES(1,'1','note',$1)", fmt.Sprint(n))
 	}
-	h := testHandler(pool)
+	h := testHandler(t, pool)
 	out := careRequest(t, h, h.careEvents, 1, map[string]any{"id": "1", "page": 3, "pageSize": 50})
 	data := architectureBody(t, out)
 	if out.Code != 200 || data["total"] != float64(105) || len(data["events"].([]any)) != 5 {
@@ -269,7 +269,7 @@ func TestArchitectureCareNoteAcceptsChineseCharacters(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
 	mustExec(t, pool, "INSERT INTO care_incident(id,old_id,device_id,kind,state,severity,due_at) VALUES(1,1,1,'sos','in_progress','critical',now())")
-	h := testHandler(pool)
+	h := testHandler(t, pool)
 	out := careRequest(t, h, h.careTransition, 1, map[string]any{"id": "1", "action": "resolve", "note": strings.Repeat("护理记录", 300)})
 	if out.Code != 200 {
 		t.Fatalf("1200 Chinese characters must fit the 2000-character limit: %d", out.Code)
@@ -282,7 +282,7 @@ func TestArchitectureDiagnosticsExposeMissingGateway(t *testing.T) {
 	t.Setenv("CARE_NOTIFY_WEBHOOK_URL", "")
 	t.Setenv("CARE_NOTIFY_WEBHOOK_TOKEN", "")
 	t.Setenv("CARE_RECEIPT_SECRET", "")
-	h := testHandler(pool)
+	h := testHandler(t, pool)
 	out := careRequest(t, h, h.careDiagnostics, 1, map[string]any{})
 	data := architectureBody(t, out)
 	if data["workerHealthy"] != true || data["notificationConfigured"] != false || data["receiptConfigured"] != false {

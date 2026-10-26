@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
-	"io"
 	"net/http"
 	"os"
 	"time"
@@ -16,21 +15,6 @@ func (h *Handler) routeHealth(mux *http.ServeMux) {
 	mux.HandleFunc("POST /restful/device/healthBatch", h.healthBatch)
 	mux.HandleFunc("POST /restful/health/changes", h.healthChanges)
 	mux.HandleFunc("POST /restful/health/statistics", h.healthStatistics)
-}
-
-func decodeHealth(w http.ResponseWriter, r *http.Request, dst any) bool {
-	r.Body = http.MaxBytesReader(w, r.Body, 2<<20)
-	d := json.NewDecoder(r.Body)
-	if err := d.Decode(dst); err != nil {
-		write400(w, "健康数据 JSON 无效或超出 2 MiB")
-		return false
-	}
-	var extra any
-	if err := d.Decode(&extra); err != io.EOF {
-		write400(w, "只允许一个 JSON 对象")
-		return false
-	}
-	return true
 }
 
 func (h *Handler) healthBatch(w http.ResponseWriter, r *http.Request) {

@@ -83,7 +83,7 @@ func TestHealthDeviceLockOrderDuringOwnerClockContention(t *testing.T) {
 				t.Skip("MySQL row lock probe only")
 			}
 			seedDevice(t, pool)
-			h := testHandler(pool)
+			h := testHandler(t, pool)
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
 			release := holdHealthOwnerClock(t, ctx, pool)
@@ -167,7 +167,7 @@ func TestLateHealthDeviceLockRejectsConcurrentUnbind(t *testing.T) {
 		t.Skip("MySQL row lock probe only")
 	}
 	seedDevice(t, pool)
-	h := testHandler(pool)
+	h := testHandler(t, pool)
 	t.Setenv("HEALTH_LATE_DEVICE_LOCK", "1")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -229,7 +229,7 @@ func TestLateHealthDeviceLockRejectsConcurrentCredentialChanges(t *testing.T) {
 				t.Skip("MySQL row lock probe only")
 			}
 			seedDevice(t, pool)
-			h := testHandler(pool)
+			h := testHandler(t, pool)
 			t.Setenv("HEALTH_LATE_DEVICE_LOCK", "1")
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
@@ -289,7 +289,7 @@ func TestHealthSingleAndBulkFitOneConnectionPool(t *testing.T) {
 	pool.SQL().SetMaxOpenConns(1)
 	pool.SQL().SetMaxIdleConns(1)
 	seedDevice(t, pool)
-	h := testHandler(pool)
+	h := testHandler(t, pool)
 	for _, size := range []int{1, 2} {
 		body := healthLockOrderBody(fmt.Sprintf("one-pool-%d", size))
 		samples := body["samples"].([]health.Sample)
@@ -335,7 +335,7 @@ func TestBulkPreparationRevalidatesConcurrentDeviceChanges(t *testing.T) {
 			}
 			t.Setenv("HEALTH_LATE_DEVICE_LOCK", "0")
 			seedDevice(t, pool)
-			h := testHandler(pool)
+			h := testHandler(t, pool)
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
 			holder, err := pool.Begin(ctx)
