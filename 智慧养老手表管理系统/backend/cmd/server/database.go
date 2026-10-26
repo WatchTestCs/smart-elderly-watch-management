@@ -34,6 +34,7 @@ type databaseService struct {
 	api          atomic.Pointer[http.Handler]
 	currentDB    atomic.Pointer[dbstore.Database]
 	analytics    analytics.State
+	limiter      atomic.Pointer[ratelimit.Limiter]
 	desktopToken string
 	// configErr 记录启动阶段的配置错误。它一旦非空，watchDatabase 不再进入
 	// 重连循环，服务状态接口也会把原因暴露出来，避免前端一直显示"正在自动连接"。
@@ -93,6 +94,9 @@ func (s *databaseService) middleware(local http.Handler) http.Handler {
 				observability.Default.Set("suining_mysql_pool_max_lifetime_closed_total", float64(stats.MaxLifetimeClosed))
 			}
 			observability.Default.ServeHTTP(w, r)
+			if limiter := s.limiter.Load(); limiter != nil {
+				limiter.WriteMetrics(w)
+			}
 			return
 		}
 		api := s.api.Load()
@@ -138,7 +142,13 @@ func watchDatabase(ctx context.Context, cfg config.Config, sessions *session.Sto
 		return
 	}
 	var pool *dbstore.Database
-	limiter := ratelimit.New()
+	limiter, limiterErr := ratelimit.NewWithOptions(cfg.RateLimit)
+	if limiterErr != nil {
+		log.Printf("invalid rate limit configuration: %v", limiterErr)
+		return
+	}
+	service.limiter.Store(limiter)
+	defer service.limiter.Store(nil)
 	defer limiter.Close()
 	var workerDone <-chan struct{}
 	defer func() {

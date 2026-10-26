@@ -22,7 +22,7 @@ func TestCareDelayedReceiptAfterGatewayTimeout(t *testing.T) {
 	seedDevice(t, pool)
 	mustExec(t, pool, "INSERT INTO family(family_id,family_name,family_phone) VALUES(1,'家属','13800000001')")
 	mustExec(t, pool, "UPDATE oldperson SET family_id=1 WHERE old_id=1")
-	h := testHandler(pool)
+	h := testHandler(t, pool)
 	api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret})
 	ctx := context.Background()
 	var id int64

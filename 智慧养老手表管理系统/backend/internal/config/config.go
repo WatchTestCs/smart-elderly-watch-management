@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"careold-go/internal/ratelimit"
 	"careold-go/internal/securestore"
 )
 
@@ -23,6 +24,7 @@ type Config struct {
 	DataKey          string
 	SessionBackend   string
 	HealthCacheBytes int64 // 健康统计内存缓存预算；0 禁用
+	RateLimit        ratelimit.Options
 }
 
 func getenv(key, def string) string {
@@ -47,6 +49,9 @@ func Secret(key string) string { return getenv(key, "") }
 // 探针都认为服务正常。配置错误本身不会随等待消失（环境变量在进程生命周期内
 // 不变），所以必须在启动阶段就说清楚，而不是让调用方永远看到"稍后重试"。
 func (c Config) Validate() error {
+	if err := ratelimit.ValidateOptions(c.RateLimit); err != nil {
+		return err
+	}
 	// 只要配置了 MySQL，就必须有数据加密密钥：缺少它时照护备注、通知收件人等
 	// 敏感字段会明文落库，登录审计退化为可离线穷举的裸哈希——无论会话后端是什么。
 	if strings.TrimSpace(c.MySQLDSN) != "" {
@@ -99,6 +104,18 @@ func (c Config) SecureCookies() bool {
 }
 
 func Load() Config {
+	maxKeys, keyErr := strconv.Atoi(getenv("RATE_LIMIT_MAX_KEYS", "8192"))
+	maxSlots, slotErr := strconv.Atoi(getenv("RATE_LIMIT_MAX_SLOTS", "262144"))
+	if keyErr != nil {
+		maxKeys = -1
+	}
+	if slotErr != nil {
+		maxSlots = -1
+	}
+	proxies := strings.Split(getenv("TRUSTED_PROXY_CIDRS", ""), ",")
+	for i := range proxies {
+		proxies[i] = strings.TrimSpace(proxies[i])
+	}
 	ttlHours, err := strconv.Atoi(getenv("SESSION_TTL_HOURS", "12"))
 	if err != nil || ttlHours <= 0 {
 		ttlHours = 12
@@ -117,5 +134,6 @@ func Load() Config {
 		DataKey:          getenv("DATA_ENCRYPTION_KEY", ""),
 		SessionBackend:   strings.ToLower(strings.TrimSpace(getenv("SESSION_BACKEND", "database"))),
 		HealthCacheBytes: cacheMiB << 20,
+		RateLimit:        ratelimit.Options{MaxKeys: maxKeys, MaxSlots: maxSlots, TrustedProxyCIDRs: proxies},
 	}
 }

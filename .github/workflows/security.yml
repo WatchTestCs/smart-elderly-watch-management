@@ -2,13 +2,7 @@ name: Security
 
 on:
   push:
-    branches: [preview]
-    paths:
-      - ".github/workflows/**"
-      - ".github/dependabot.yml"
-      - "智慧养老手表管理系统/oldIot/**"
-      - "智慧养老手表管理系统/backend/**"
-      - "智慧养老手表管理系统/desktop/**"
+    branches: [preview, 'codex/**']
   pull_request:
     branches: [preview]
   workflow_dispatch:
@@ -43,6 +37,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Set up Go
         if: matrix.language == 'go'

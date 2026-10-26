@@ -2,8 +2,12 @@
 package ratelimit
 
 import (
+	"fmt"
+	"io"
 	"net"
 	"net/http"
+	"net/netip"
+	"strings"
 	"sync"
 	"time"
 
@@ -42,13 +46,16 @@ type Limiter struct {
 	stop      chan struct{}
 	done      chan struct{}
 	closeOnce sync.Once
+	trusted   []netip.Prefix
 }
 
 type limitKey struct{ ip, path string }
 
 type limiterShard struct {
-	mu   sync.Mutex
-	hits map[limitKey]*hitWindow
+	mu                                            sync.Mutex
+	hits                                          map[limitKey]*hitWindow
+	maxKeys, maxSlots, slots, highKeys, highSlots int
+	capacityDenied, quotaDenied                   uint64
 }
 
 // A bounded FIFO preserves the exact sliding window. Every accepted timestamp
@@ -60,6 +67,10 @@ type hitWindow struct {
 }
 
 func (w *hitWindow) allow(now time.Time) bool {
+	return w.allowBudget(now, w.limit)
+}
+
+func (w *hitWindow) allowBudget(now time.Time, available int) bool {
 	for w.size > 0 && now.Sub(w.times[w.head]) >= window {
 		w.head = (w.head + 1) % len(w.times)
 		w.size--
@@ -68,9 +79,12 @@ func (w *hitWindow) allow(now time.Time) bool {
 		return false
 	}
 	if w.size == len(w.times) {
+		if available <= 0 {
+			return false
+		}
 		// Sparse clients start with one slot. Grow geometrically up to the
 		// quota, preserving FIFO order even when the old ring has wrapped.
-		times := make([]time.Time, min(w.limit, max(1, len(w.times)*2)))
+		times := make([]time.Time, min(w.limit, min(len(w.times)+available, max(1, len(w.times)*2))))
 		n := copy(times, w.times[w.head:])
 		copy(times[n:], w.times[:w.head])
 		w.times, w.head = times, 0
@@ -81,12 +95,70 @@ func (w *hitWindow) allow(now time.Time) bool {
 }
 
 func New() *Limiter {
+	l, err := NewWithOptions(Options{})
+	if err != nil {
+		panic(err)
+	}
+	return l
+}
+
+// Options bounds all retained keys and timestamp capacity, not just each key.
+// Caps are partitioned among shards; admission never takes a global lock.
+type Options struct {
+	MaxKeys           int
+	MaxSlots          int
+	TrustedProxyCIDRs []string
+}
+
+func normalized(o Options) (Options, []netip.Prefix, error) {
+	if len(o.TrustedProxyCIDRs) > 64 {
+		return o, nil, fmt.Errorf("at most 64 trusted proxy CIDRs are allowed")
+	}
+	if o.MaxKeys == 0 {
+		o.MaxKeys = 8192
+	}
+	if o.MaxSlots == 0 {
+		o.MaxSlots = 262144
+	}
+	if o.MaxKeys < shardCount || o.MaxKeys > 1048576 || o.MaxSlots < o.MaxKeys || o.MaxSlots > 16777216 {
+		return o, nil, fmt.Errorf("invalid limiter caps: keys must be 32..1048576, slots must be keys..16777216")
+	}
+	var trusted []netip.Prefix
+	for _, cidr := range o.TrustedProxyCIDRs {
+		if cidr == "" {
+			continue
+		}
+		prefix, err := netip.ParsePrefix(cidr)
+		if err != nil {
+			return o, nil, fmt.Errorf("invalid trusted proxy CIDR %q", cidr)
+		}
+		trusted = append(trusted, prefix.Masked())
+	}
+	return o, trusted, nil
+}
+
+func ValidateOptions(o Options) error { _, _, err := normalized(o); return err }
+
+func NewWithOptions(o Options) (*Limiter, error) {
+	o, trusted, err := normalized(o)
+	if err != nil {
+		return nil, err
+	}
 	l := &Limiter{stop: make(chan struct{}), done: make(chan struct{})}
+	l.trusted = trusted
 	for i := range l.shards {
 		l.shards[i].hits = make(map[limitKey]*hitWindow)
+		l.shards[i].maxKeys = o.MaxKeys / shardCount
+		if i < o.MaxKeys%shardCount {
+			l.shards[i].maxKeys++
+		}
+		l.shards[i].maxSlots = o.MaxSlots / shardCount
+		if i < o.MaxSlots%shardCount {
+			l.shards[i].maxSlots++
+		}
 	}
 	go l.janitor()
-	return l
+	return l, nil
 }
 
 // Close stops background cleanup. It is safe to call repeatedly or concurrently.
@@ -118,7 +190,7 @@ func (l *Limiter) Allow(r *http.Request) bool {
 	if !ok || r.Method != http.MethodPost {
 		return true
 	}
-	ip := clientIP(r)
+	ip := l.clientIP(r)
 	key := limitKey{ip, r.URL.Path}
 	shard := l.shard(ip)
 	shard.mu.Lock()
@@ -127,10 +199,43 @@ func (l *Limiter) Allow(r *http.Request) bool {
 	now := time.Now()
 	hits := shard.hits[key]
 	if hits == nil {
+		if len(shard.hits) >= shard.maxKeys || shard.slots >= shard.maxSlots {
+			// Evict expired quotas only. Evicting active clients would allow a
+			// rotating-source attacker to reset quotas. Scan at most 16 entries.
+			checked := 0
+			for k, old := range shard.hits {
+				if expired(old, now) {
+					shard.slots -= len(old.times)
+					delete(shard.hits, k)
+				}
+				checked++
+				if checked == 16 {
+					break
+				}
+			}
+			if len(shard.hits) >= shard.maxKeys || shard.slots >= shard.maxSlots {
+				shard.capacityDenied++
+				return false
+			}
+		}
 		hits = &hitWindow{limit: limit}
+		// Do not retain a URL substring backed by an arbitrarily large query.
+		key.path = strings.Clone(key.path)
 		shard.hits[key] = hits
 	}
-	return hits.allow(now)
+	before := len(hits.times)
+	allowed := hits.allowBudget(now, shard.maxSlots-shard.slots)
+	shard.slots += len(hits.times) - before
+	shard.highKeys = max(shard.highKeys, len(shard.hits))
+	shard.highSlots = max(shard.highSlots, shard.slots)
+	if !allowed {
+		if hits.size < hits.limit {
+			shard.capacityDenied++
+		} else {
+			shard.quotaDenied++
+		}
+	}
+	return allowed
 }
 
 // Middleware 超限返回 429 + Retry-After。
@@ -150,7 +255,7 @@ func (l *Limiter) Middleware(next http.Handler) http.Handler {
 
 func (l *Limiter) janitor() {
 	defer close(l.done)
-	t := time.NewTicker(window)
+	t := time.NewTicker(time.Minute)
 	defer t.Stop()
 	for {
 		select {
@@ -167,11 +272,36 @@ func (l *Limiter) sweep(now time.Time) {
 		shard := &l.shards[i]
 		shard.mu.Lock()
 		for key, hits := range shard.hits {
-			last := (hits.head + hits.size - 1) % len(hits.times)
-			if now.Sub(hits.times[last]) >= window {
+			if expired(hits, now) {
+				shard.slots = max(0, shard.slots-len(hits.times))
 				delete(shard.hits, key)
 			}
 		}
 		shard.mu.Unlock()
 	}
+}
+
+func expired(h *hitWindow, now time.Time) bool {
+	return h.size == 0 || now.Sub(h.times[(h.head+h.size-1)%len(h.times)]) >= window
+}
+
+// WriteMetrics snapshots bounded counters at scrape time. Request admission only
+// updates its shard, avoiding the metrics registry's global lock on every hit.
+func (l *Limiter) WriteMetrics(w io.Writer) {
+	var keys, slots, keyCap, slotCap, highKeys, highSlots int
+	var capacityDenied, quotaDenied uint64
+	for i := range l.shards {
+		s := &l.shards[i]
+		s.mu.Lock()
+		keys += len(s.hits)
+		slots += s.slots
+		keyCap += s.maxKeys
+		slotCap += s.maxSlots
+		highKeys += s.highKeys
+		highSlots += s.highSlots
+		capacityDenied += s.capacityDenied
+		quotaDenied += s.quotaDenied
+		s.mu.Unlock()
+	}
+	fmt.Fprintf(w, "suining_ratelimit_active_keys %d\nsuining_ratelimit_timestamp_slots %d\nsuining_ratelimit_key_cap %d\nsuining_ratelimit_slot_cap %d\nsuining_ratelimit_key_high_water %d\nsuining_ratelimit_slot_high_water %d\nsuining_ratelimit_capacity_rejected_total %d\nsuining_ratelimit_quota_rejected_total %d\n", keys, slots, keyCap, slotCap, highKeys, highSlots, capacityDenied, quotaDenied)
 }

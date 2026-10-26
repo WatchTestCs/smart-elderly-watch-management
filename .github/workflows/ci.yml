@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [preview]
   push:
-    branches: [preview]
+    branches: [preview, 'codex/**']
   workflow_dispatch:
 
 permissions:
@@ -23,14 +23,58 @@ jobs:
     name: Backend
     uses: ./.github/workflows/reusable-backend.yml
 
+  windows:
+    name: Windows sidecar contract
+    uses: ./.github/workflows/reusable-windows-package.yml
+
+  deployment:
+    name: Deployment and alerts
+    uses: ./.github/workflows/deploy-contract.yml
+
+  security-scan:
+    name: Current-source vulnerability scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.27.3'
+          cache-dependency-path: 智慧养老手表管理系统/backend/go.sum
+      - name: Scan reachable Go vulnerabilities
+        working-directory: 智慧养老手表管理系统/backend
+        run: |
+          mkdir -p ../../evidence/ci/security
+          git rev-parse HEAD > ../../evidence/ci/security/source-sha.txt
+          go install golang.org/x/vuln/cmd/govulncheck@v1.9.0
+          govulncheck -json ./... > ../../evidence/ci/security/govulncheck.jsonl 2>&1
+      - if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: security-${{ github.event.pull_request.head.sha || github.sha }}
+          path: evidence/ci/security/
+          if-no-files-found: error
+
   required:
-    name: Preview CI / required
+    name: Release gate / required
     if: ${{ always() }}
-    needs: [frontend, backend]
+    needs: [frontend, backend, windows, deployment, security-scan]
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Verify release gate fail-closed regressions
+        run: python3 -m unittest discover -s scripts/reliability -p 'test_*.py' -v
       - name: Require all core checks
         shell: bash
         run: |
           test "${{ needs.frontend.result }}" = "success"
           test "${{ needs.backend.result }}" = "success"
+          test "${{ needs.windows.result }}" = "success"
+          test "${{ needs.deployment.result }}" = "success"
+          test "${{ needs.security-scan.result }}" = "success"

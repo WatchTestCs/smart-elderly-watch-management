@@ -17,6 +17,16 @@ function mountInbox() {
 describe('care task read scheduling', () => {
   beforeEach(() => { post.mockReset() })
 
+  it('keeps delivered notifications visibly unclaimed until a person acknowledges', async () => {
+    post.mockResolvedValueOnce({ data: { items: [{ id: 'delivery-only', oldPersonName: '送达待接单', state: 'notified', notificationState: 'delivered', acknowledgedBy: null }], total: 1, duty: 'supervisor', actorId: 7 } })
+    const view = mountInbox()
+    await flushPromises()
+    expect(view.text()).toContain('已确认送达')
+    expect(view.text()).toContain('尚未接单')
+    expect(view.text()).not.toContain('已复核关闭')
+    view.unmount()
+  })
+
   it('discards a superseded page and loads the newest requested page', async () => {
     let second!: (value: unknown) => void
     let third!: (value: unknown) => void

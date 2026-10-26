@@ -41,6 +41,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Set up Go
         uses: actions/setup-go@v6
@@ -57,12 +58,31 @@ jobs:
           TEST_MYSQL_DSN: root:ci_root_only@tcp(localhost:3306)/suining_test
           TEST_DATABASE_URL: postgres://careold:careold@localhost:5432/careold_test?sslmode=disable
         run: |
-          go test -race -count=1 -timeout 600s ./...
-          go build ./...
-          go vet ./...
+          set -euo pipefail
+          mkdir -p ../../evidence/ci/backend-${{ matrix.go-version }}
+          evidence=../../evidence/ci/backend-${{ matrix.go-version }}
+          test -n "$TEST_MYSQL_DSN" && test -n "$TEST_DATABASE_URL"
+          git rev-parse HEAD > "$evidence/source-sha.txt"
+          go version > "$evidence/go-version.txt"
+          go env GOOS GOARCH CGO_ENABLED >> "$evidence/go-version.txt"
+          go test -json -race -count=1 -timeout 600s ./... > "$evidence/mysql.jsonl" 2>&1
+          python3 ../../scripts/reliability/audit-go-results.py "$evidence/mysql.jsonl" --mode mysql --output "$evidence/mysql-summary.json"
+          TEST_MYSQL_DSN= go test -json -race -count=1 -timeout 600s ./internal/db ./internal/handlers ./internal/care ./internal/analytics > "$evidence/postgres.jsonl" 2>&1
+          python3 ../../scripts/reliability/audit-go-results.py "$evidence/postgres.jsonl" --mode postgres --output "$evidence/postgres-summary.json"
+          go build ./... > "$evidence/build.txt" 2>&1
+          go vet ./... > "$evidence/vet.txt" 2>&1
           unformatted="$(gofmt -l ./cmd ./internal ./migrations)"
           if [ -n "$unformatted" ]; then
             printf 'Go files requiring gofmt:\n%s\n' "$unformatted"
             gofmt -d ./cmd ./internal ./migrations
             exit 1
           fi
+
+      - name: Preserve exact-source evidence including failures
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: backend-${{ matrix.go-version }}-${{ github.event.pull_request.head.sha || github.sha }}
+          path: evidence/ci/backend-${{ matrix.go-version }}/
+          if-no-files-found: error
+          retention-days: 30

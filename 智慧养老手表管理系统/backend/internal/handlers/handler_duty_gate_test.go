@@ -22,7 +22,7 @@ func TestAdminDutyGateRestrictsLegacyRoutes(t *testing.T) {
 	if sess == nil {
 		t.Fatal("admin session unavailable")
 	}
-	h := testHandler(pool)
+	h := testHandler(t, pool)
 	next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 	})
@@ -89,7 +89,7 @@ func TestRestrictedAdminGateFailsClosedWithoutAuditStore(t *testing.T) {
 	sessions := session.NewStore(time.Hour)
 	sess := sessions.Create(session.Principal{Role: auth.RoleAdmin, ID: id})
 	nextCalled := false
-	gate := auth.Middleware(sessions, testHandler(pool).EnforceAdminDuty(http.HandlerFunc(
+	gate := auth.Middleware(sessions, testHandler(t, pool).EnforceAdminDuty(http.HandlerFunc(
 		func(w http.ResponseWriter, _ *http.Request) {
 			nextCalled = true
 			w.WriteHeader(http.StatusNoContent)

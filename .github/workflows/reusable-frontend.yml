@@ -18,6 +18,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Set up Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -31,11 +32,21 @@ jobs:
 
       - name: Unit tests and incremental TypeScript checks
         run: |
-          npm test
-          npm run typecheck
+          mkdir -p ../../evidence/ci/frontend
+          git rev-parse HEAD > ../../evidence/ci/frontend/source-sha.txt
+          node --version > ../../evidence/ci/frontend/node-version.txt
+          npm test 2>&1 | tee ../../evidence/ci/frontend/test.txt
+          npm run typecheck 2>&1 | tee ../../evidence/ci/frontend/typecheck.txt
 
       - name: Build production frontend
-        run: npm run build
+        run: npm run build 2>&1 | tee ../../evidence/ci/frontend/build.txt
 
       - name: Audit production dependencies
-        run: npm audit --omit=dev --audit-level=high
+        run: npm audit --audit-level=high --json > ../../evidence/ci/frontend/npm-audit.json
+
+      - if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: frontend-${{ github.event.pull_request.head.sha || github.sha }}
+          path: evidence/ci/frontend/
+          if-no-files-found: error

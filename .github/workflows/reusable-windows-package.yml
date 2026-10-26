@@ -10,6 +10,11 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.26.10'
+          cache-dependency-path: 智慧养老手表管理系统/backend/go.sum
       - name: Validate all product versions
         shell: pwsh
         run: ./智慧养老手表管理系统/desktop/validate-version.ps1
@@ -21,3 +26,19 @@ jobs:
             [void][System.Management.Automation.Language.Parser]::ParseFile($_.FullName,[ref]$tokens,[ref]$errors)
             if($errors.Count){throw ($errors|Out-String)}
           }
+      - name: Build native Windows sidecar and record source/hash
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force evidence/ci/windows | Out-Null
+          git rev-parse HEAD | Set-Content evidence/ci/windows/source-sha.txt
+          Push-Location '智慧养老手表管理系统/backend'
+          go build -trimpath -o '../../evidence/ci/windows/suining-server.exe' ./cmd/server
+          if ($LASTEXITCODE) { throw 'Windows sidecar build failed' }
+          Pop-Location
+          Get-FileHash evidence/ci/windows/suining-server.exe -Algorithm SHA256 | ConvertTo-Json | Set-Content evidence/ci/windows/sha256.json
+      - if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: windows-sidecar-${{ github.event.pull_request.head.sha || github.sha }}
+          path: evidence/ci/windows/
+          if-no-files-found: error

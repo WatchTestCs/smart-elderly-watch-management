@@ -1,11 +1,40 @@
 name: Preview release preparation
 on:
   workflow_dispatch:
+    inputs:
+      source_sha:
+        description: 'Full current preview commit SHA to validate and package'
+        required: true
+        type: string
 permissions:
   contents: read
 jobs:
+  exact-source:
+    if: github.ref == 'refs/heads/preview'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Require current source and SHA-bound successful evidence
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha }}
+          GITHUB_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          python3 scripts/reliability/release-gate.py --repo "$REPOSITORY" --branch preview --sha "$SOURCE_SHA" --output release-provenance.json
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: release-provenance-${{ inputs.source_sha }}
+          path: release-provenance.json
+          if-no-files-found: error
   prepare:
     if: github.ref == 'refs/heads/preview'
+    needs: exact-source
     uses: ./.github/workflows/reusable-windows-package.yml
 # Publication is performed explicitly against the verified preview commit.
 # A version-file push must never start an unreviewed competing Release upload.
