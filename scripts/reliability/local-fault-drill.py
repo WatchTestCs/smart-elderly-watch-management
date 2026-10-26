@@ -167,7 +167,8 @@ def main():
                 if event["unix"] < since:
                     continue
                 for item in event.get("payload", {}).get("alerts", []):
-                    if item.get("labels", {}).get("alertname") == name and item.get("status") == "firing":
+                    started = datetime.datetime.fromisoformat(item.get("startsAt", "1970-01-01T00:00:00Z").replace("Z", "+00:00")).timestamp()
+                    if item.get("labels", {}).get("alertname") == name and item.get("status") == "firing" and started >= since-10:
                         return event
             return False
         return wait("actual receiver delivery of "+name, received, timeout)
@@ -334,14 +335,28 @@ def main():
         recovered = sos("mysql-recovered")
         record("MySQL recovery", incident_id=recovered, persisted_incident_count=int(sql("SELECT count(*) FROM care_incident")))
 
+        def fresh_heartbeat():
+            for line in metrics().splitlines():
+                if line.startswith("suining_care_worker_last_heartbeat_unixtime "):
+                    return float(line.split()[1]) > time.time()-15
+            return False
+        wait("fresh persisted heartbeat after MySQL recovery",fresh_heartbeat,60)
+        # Wait for the previous outage's stale alert to resolve before injecting
+        # the row lock. A repeated old firing notification is not new evidence.
+        def stale_alert_resolved():
+            import urllib.parse
+            query=urllib.parse.urlencode({"query":'ALERTS{alertname="SuiningCareWorkerStale",alertstate="firing"}'})
+            with urllib.request.urlopen("http://127.0.0.1:19090/api/v1/query?"+query,timeout=3) as response:
+                return json.load(response)["data"]["result"]==[]
+        wait("previous heartbeat alert resolved",stale_alert_resolved,40)
         since = time.time()
         held = spawn("heartbeat-lock", [lab/"reliability.exe", "--action", "hold-heartbeat", "--hold", "150s"], app_environment)
         wait("heartbeat row lock", lambda: "HEARTBEAT_ROW_LOCKED" in (output/"heartbeat-lock-process.txt").read_text(errors="replace"), 15)
         alert("SuiningCareWorkerStale", since, 145)
         assert status()["databaseReady"] is True
         record("care heartbeat blocked + stale alert", app_business_ready=True)
-        held.wait(timeout=30)
-        wait("heartbeat recovered", lambda: "suining_care_worker_last_heartbeat_unixtime" in metrics(), 15)
+        assert held.wait(timeout=180)==0
+        wait("heartbeat recovered",fresh_heartbeat,35)
         wait("acknowledged but unhandled incident escalates after real deadline", lambda: incident(initial)["state"] == "escalated", max(30, int(ack_unix+630-time.time())))
         record("acknowledged incident unattended timeout", incident_id=initial, elapsed_seconds=round(time.time()-ack_unix,1), incident=incident(initial))
         since = time.time(); kill("app")
