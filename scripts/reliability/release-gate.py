@@ -50,7 +50,8 @@ def verify(repo, branch, sha, api=get_api):
     evidence = []
     for prefix in required:
         matches = [a for a in artifacts if a["name"] == prefix+sha and not a["expired"]]
-        if len(matches) != 1 or not re.fullmatch(r"sha256:[0-9a-f]{64}", matches[0].get("digest", "")):
+        digest = matches[0].get("digest") if len(matches) == 1 else None
+        if not isinstance(digest, str) or not re.fullmatch(r"sha256:[0-9a-f]{64}", digest):
             raise ValueError("missing, ambiguous, expired or unhashed evidence artifact: "+prefix+sha)
         evidence.append({key: matches[0][key] for key in ("id", "name", "digest", "size_in_bytes")})
     if api(ref)["commit"]["sha"] != sha:
