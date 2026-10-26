@@ -1,0 +1,44 @@
+name: Free PR code review
+
+on:
+  pull_request:
+    branches: [preview]
+    paths:
+      - '智慧养老手表管理系统/backend/**'
+      - '.github/workflows/free-pr-review.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  checks: write
+
+concurrency:
+  group: free-review-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  go-review:
+    name: Reviewdog / Go lint
+    # Fork PRs do not receive write-scoped tokens. Skip them rather than
+    # executing untrusted code with a privileged checks token.
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Annotate new Go issues
+        uses: reviewdog/action-golangci-lint@c76cceaaab89abe74e649d2e34c6c9adc26662d2 # v2.10.0
+        with:
+          github_token: ${{ github.token }}
+          workdir: '智慧养老手表管理系统/backend'
+          go_version_file: '智慧养老手表管理系统/backend/go.mod'
+          reporter: github-pr-check
+          filter_mode: added
+          level: warning
+          fail_level: none
+          golangci_lint_flags: '--timeout=5m ./...'
