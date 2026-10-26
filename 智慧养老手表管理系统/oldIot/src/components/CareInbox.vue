@@ -54,6 +54,7 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import axios from 'axios'
+import { createLatestRead } from '../composables/latestRead'
 import CareOperationsPanel from './CareOperationsPanel.vue'
 
 const emit = defineEmits(['verified'])
@@ -78,23 +79,26 @@ const isOverdue = task => Boolean(task.dueAt && Date.now() > new Date(task.dueAt
 const nextStep = task => ({received:'值班人员立即接单并核实长者状况',notifying:'值班人员立即接单，不等待渠道回执',notified:'照护人员接单并到场核实',acknowledged:'开始现场处置并记录措施',in_progress:'完成现场处置并登记结果',resolved:'由另一名主管独立复核',escalated:'升级联系值班主管，优先接单',review_overdue:'主管立即复核或重新开启',verified:'可查看完整处置履历'})[task.state] || '核对任务状态'
 
 let timer
-async function load () {
-  if (loading.value) return
-  loading.value = true
-  try {
-    const { data } = await axios.post('restful/care/incidents', {page:page.value,pageSize,state:scope.value}, {withCredentials:true})
+const reads = createLatestRead(
+  query => axios.post('restful/care/incidents', query, {withCredentials:true}),
+  ({data}, query) => {
     if (!Array.isArray(data.items) || !Number.isInteger(data.total) || data.total < 0 || !['supervisor','caregiver','auditor'].includes(data.duty) || !Number.isInteger(data.actorId)) throw new Error('invalid care response')
     const lastPage = Math.max(1, Math.ceil(data.total / pageSize))
-    if (page.value > lastPage) { page.value = lastPage; loading.value = false; return await load() }
+    if (query.page > lastPage) { page.value = lastPage; load(); return }
     tasks.value = data.items
     total.value = data.total
     duty.value = data.duty
     actorId.value = data.actorId
     error.value = ''
-  } catch (_) {
+  },
+  () => {
     tasks.value = []; total.value = 0; duty.value = ''; actorId.value = null
     error.value = '照护任务暂时无法加载，请检查后端连接和登录状态。'
-  } finally { loading.value = false }
+  },
+  value => { loading.value = value }
+)
+function load () {
+  return reads.run({page:page.value,pageSize,state:scope.value})
 }
 function changePage (value) { page.value = value; load() }
 function changeScope () { page.value = 1; load() }
@@ -143,8 +147,8 @@ async function submit () {
     dialog.value.error = '操作未确认成功，请关闭窗口并重新加载任务核实。'
   } finally {saving.value = false}
 }
-onMounted(() => {load();timer=setInterval(() => {if (!document.hidden && !saving.value && !dialog.value.visible && !history.value.visible) load()},15000)})
-onBeforeUnmount(() => clearInterval(timer))
+onMounted(() => {load();timer=setInterval(() => {if (!document.hidden && !loading.value && !saving.value && !dialog.value.visible && !history.value.visible) load()},15000)})
+onBeforeUnmount(() => { clearInterval(timer); reads.dispose(); historyRequest++ })
 </script>
 <style scoped>
 .care-inbox{margin-bottom:24px;padding:22px;border:1px solid #d8e2da;border-radius:14px;background:#fff}

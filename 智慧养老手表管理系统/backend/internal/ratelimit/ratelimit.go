@@ -10,7 +10,10 @@ import (
 	"careold-go/internal/response"
 )
 
-const window = 10 * time.Minute
+const (
+	window     = 10 * time.Minute
+	shardCount = 32
+)
 
 // 路径→10分钟内允许次数（与 Java 端一致）。
 var limits = map[string]int{
@@ -23,14 +26,71 @@ var limits = map[string]int{
 }
 
 type Limiter struct {
+	shards    [shardCount]limiterShard
+	stop      chan struct{}
+	done      chan struct{}
+	closeOnce sync.Once
+}
+
+type limitKey struct{ ip, path string }
+
+type limiterShard struct {
 	mu   sync.Mutex
-	hits map[string][]time.Time
+	hits map[limitKey]*hitWindow
+}
+
+// A bounded FIFO preserves the exact sliding window. Every accepted timestamp
+// is removed at most once; denied attempts never extend the window.
+type hitWindow struct {
+	times      []time.Time
+	head, size int
+	limit      int
+}
+
+func (w *hitWindow) allow(now time.Time) bool {
+	for w.size > 0 && now.Sub(w.times[w.head]) >= window {
+		w.head = (w.head + 1) % len(w.times)
+		w.size--
+	}
+	if w.size == w.limit {
+		return false
+	}
+	if w.size == len(w.times) {
+		// Sparse clients start with one slot. Grow geometrically up to the
+		// quota, preserving FIFO order even when the old ring has wrapped.
+		times := make([]time.Time, min(w.limit, max(1, len(w.times)*2)))
+		n := copy(times, w.times[w.head:])
+		copy(times[n:], w.times[:w.head])
+		w.times, w.head = times, 0
+	}
+	w.times[(w.head+w.size)%len(w.times)] = now
+	w.size++
+	return true
 }
 
 func New() *Limiter {
-	l := &Limiter{hits: make(map[string][]time.Time)}
+	l := &Limiter{stop: make(chan struct{}), done: make(chan struct{})}
+	for i := range l.shards {
+		l.shards[i].hits = make(map[limitKey]*hitWindow)
+	}
 	go l.janitor()
 	return l
+}
+
+// Close stops background cleanup. It is safe to call repeatedly or concurrently.
+func (l *Limiter) Close() {
+	l.closeOnce.Do(func() { close(l.stop) })
+	<-l.done
+}
+
+func (l *Limiter) shard(ip string) *limiterShard {
+	// All limited paths for one client share a shard, with independent quotas.
+	// Hashing the IP avoids allocating a combined string key per request.
+	hash := uint32(2166136261)
+	for i := range ip {
+		hash = (hash ^ uint32(ip[i])) * 16777619
+	}
+	return &l.shards[hash&(shardCount-1)]
 }
 
 func clientIP(r *http.Request) string {
@@ -46,23 +106,19 @@ func (l *Limiter) Allow(r *http.Request) bool {
 	if !ok || r.Method != http.MethodPost {
 		return true
 	}
-	key := clientIP(r) + "|" + r.URL.Path
+	ip := clientIP(r)
+	key := limitKey{ip, r.URL.Path}
+	shard := l.shard(ip)
+	shard.mu.Lock()
+	defer shard.mu.Unlock()
+	// Take the timestamp under the lock so accepted hits remain chronological.
 	now := time.Now()
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	ts := l.hits[key]
-	kept := ts[:0]
-	for _, t := range ts {
-		if now.Sub(t) < window {
-			kept = append(kept, t)
-		}
+	hits := shard.hits[key]
+	if hits == nil {
+		hits = &hitWindow{limit: limit}
+		shard.hits[key] = hits
 	}
-	if len(kept) >= limit {
-		l.hits[key] = kept
-		return false
-	}
-	l.hits[key] = append(kept, now)
-	return true
+	return hits.allow(now)
 }
 
 // Middleware 超限返回 429 + Retry-After。
@@ -81,24 +137,29 @@ func (l *Limiter) Middleware(next http.Handler) http.Handler {
 }
 
 func (l *Limiter) janitor() {
+	defer close(l.done)
 	t := time.NewTicker(window)
 	defer t.Stop()
-	for range t.C {
-		now := time.Now()
-		l.mu.Lock()
-		for k, ts := range l.hits {
-			kept := ts[:0]
-			for _, tm := range ts {
-				if now.Sub(tm) < window {
-					kept = append(kept, tm)
-				}
-			}
-			if len(kept) == 0 {
-				delete(l.hits, k)
-			} else {
-				l.hits[k] = kept
+	for {
+		select {
+		case <-l.stop:
+			return
+		case <-t.C:
+			l.sweep(time.Now())
+		}
+	}
+}
+
+func (l *Limiter) sweep(now time.Time) {
+	for i := range l.shards {
+		shard := &l.shards[i]
+		shard.mu.Lock()
+		for key, hits := range shard.hits {
+			last := (hits.head + hits.size - 1) % len(hits.times)
+			if now.Sub(hits.times[last]) >= window {
+				delete(shard.hits, key)
 			}
 		}
-		l.mu.Unlock()
+		shard.mu.Unlock()
 	}
 }

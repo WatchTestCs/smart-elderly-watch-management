@@ -1,11 +1,46 @@
 # preview 分支文件职责索引
 
-本索引覆盖当前提交的 **667 个文件**（更新：2026-10-25）。保留既有人工说明；来源附件与历史证据不代表当前版本的全套验收。
+本索引覆盖当前提交的 **702 个文件**（更新：2026-10-26）。保留既有人工说明；来源附件与历史证据不代表当前版本的全套验收。
 
-[项目 README](../README.md) · [文件职责数据](file-descriptions.json) · [历史性能资料](performance/2026-10-20-go123/README.md) · [最新性能报告](performance/2026-10-24-iteration/README.md)
+[项目 README](../README.md) · [文件职责数据](file-descriptions.json) · [历史性能资料](performance/2026-10-20-go123/README.md) · [最新算法与架构迭代](performance/2026-10-26-algorithms/README.md)
 
 | 文件 | 职责 |
 | --- | --- |
+| [智慧养老手表管理系统/oldIot/src/composables/latestRead.ts](../智慧养老手表管理系统/oldIot/src/composables/latestRead.ts) | 一个在途和一个可替换后继的读取调度，隔离旧响应并支持卸载清理 |
+| [智慧养老手表管理系统/oldIot/src/composables/latestRead.test.ts](../智慧养老手表管理系统/oldIot/src/composables/latestRead.test.ts) | 读取突发合并、过期失败、重入页码修正、同步异常和卸载回归 |
+| [智慧养老手表管理系统/oldIot/src/components/CareInbox.test.ts](../智慧养老手表管理系统/oldIot/src/components/CareInbox.test.ts) | 照护任务最新页读取、越界页修正与卸载后不启动后继的组件回归 |
+| [智慧养老手表管理系统/backend/internal/ratelimit/ratelimit_test.go](../智慧养老手表管理系统/backend/internal/ratelimit/ratelimit_test.go) | 精确滑动窗口差分、按需扩容、并发配额、清理隔离与退出回归 |
+| [智慧养老手表管理系统/backend/internal/ratelimit/benchmark_test.go](../智慧养老手表管理系统/backend/internal/ratelimit/benchmark_test.go) | 基线与候选通用的满窗口限流基准，覆盖单客户端、多客户端及 1/4/8 P |
+| [智慧养老手表管理系统/backend/internal/health/statistics_stream_test.go](../智慧养老手表管理系统/backend/internal/health/statistics_stream_test.go) | 固定基线统计 oracle、3000 组结果/错误/浮点位差分及 1 万/10 万条性能夹具 |
+| [智慧养老手表管理系统/backend/internal/commands/lookup_test.go](../智慧养老手表管理系统/backend/internal/commands/lookup_test.go) | 全部线协议型号校验、未知型号拒绝与命令查找分配基准 |
+| [docs/performance/2026-10-26-algorithms/evidence/summary.json](../docs/performance/2026-10-26-algorithms/evidence/summary.json) | 逐场景、逐 P 的完整两轮均值与分配变化，限流使用最终 A7/B7/B8/A8 |
+| [docs/performance/2026-10-26-algorithms/evidence/openapi-check.txt](../docs/performance/2026-10-26-algorithms/evidence/openapi-check.txt) | 本轮 openapi-check.txt 命令、退出状态及原始验证输出 |
+| [docs/performance/2026-10-26-algorithms/evidence/go-vet.txt](../docs/performance/2026-10-26-algorithms/evidence/go-vet.txt) | 本轮 go-vet.txt 命令、退出状态及原始验证输出 |
+| [docs/performance/2026-10-26-algorithms/evidence/go-mod-verify.txt](../docs/performance/2026-10-26-algorithms/evidence/go-mod-verify.txt) | 本轮 go-mod-verify.txt 命令、退出状态及原始验证输出 |
+| [docs/performance/2026-10-26-algorithms/evidence/go-build.txt](../docs/performance/2026-10-26-algorithms/evidence/go-build.txt) | 本轮 go-build.txt 命令、退出状态及原始验证输出 |
+| [docs/performance/2026-10-26-algorithms/evidence/frontend-typecheck.txt](../docs/performance/2026-10-26-algorithms/evidence/frontend-typecheck.txt) | 本轮 frontend-typecheck.txt 命令、退出状态及原始验证输出 |
+| [docs/performance/2026-10-26-algorithms/evidence/frontend-tests.txt](../docs/performance/2026-10-26-algorithms/evidence/frontend-tests.txt) | 本轮 frontend-tests.txt 命令、退出状态及原始验证输出 |
+| [docs/performance/2026-10-26-algorithms/evidence/frontend-build.txt](../docs/performance/2026-10-26-algorithms/evidence/frontend-build.txt) | 本轮 frontend-build.txt 命令、退出状态及原始验证输出 |
+| [docs/performance/2026-10-26-algorithms/evidence/environment.json](../docs/performance/2026-10-26-algorithms/evidence/environment.json) | 固定基线、每轮命令、CPU 环境及生产源码和夹具 SHA-256 |
+| [docs/performance/2026-10-26-algorithms/evidence/baseline-ui-regressions.txt](../docs/performance/2026-10-26-algorithms/evidence/baseline-ui-regressions.txt) | 基线复现三个前端读取缺陷的预期失败输出 |
+| [docs/performance/2026-10-26-algorithms/evidence/backend-race.txt](../docs/performance/2026-10-26-algorithms/evidence/backend-race.txt) | 最终 Go1.23.2 短模式竞争检查，含 890 通过及 125 跳过的逐项原因 |
+| [docs/performance/2026-10-26-algorithms/evidence/B8.txt](../docs/performance/2026-10-26-algorithms/evidence/B8.txt) | 本轮 B8 原始局部基准；A5 为已排除的不完整日志，其余阶段见报告 |
+| [docs/performance/2026-10-26-algorithms/evidence/B7.txt](../docs/performance/2026-10-26-algorithms/evidence/B7.txt) | 本轮 B7 原始局部基准；A5 为已排除的不完整日志，其余阶段见报告 |
+| [docs/performance/2026-10-26-algorithms/evidence/B6.txt](../docs/performance/2026-10-26-algorithms/evidence/B6.txt) | 本轮 B6 原始局部基准；A5 为已排除的不完整日志，其余阶段见报告 |
+| [docs/performance/2026-10-26-algorithms/evidence/B5.txt](../docs/performance/2026-10-26-algorithms/evidence/B5.txt) | 本轮 B5 原始局部基准；A5 为已排除的不完整日志，其余阶段见报告 |
+| [docs/performance/2026-10-26-algorithms/evidence/B4.txt](../docs/performance/2026-10-26-algorithms/evidence/B4.txt) | 本轮 B4 原始局部基准；A5 为已排除的不完整日志，其余阶段见报告 |
+| [docs/performance/2026-10-26-algorithms/evidence/B3.txt](../docs/performance/2026-10-26-algorithms/evidence/B3.txt) | 本轮 B3 原始局部基准；A5 为已排除的不完整日志，其余阶段见报告 |
+| [docs/performance/2026-10-26-algorithms/evidence/B2.txt](../docs/performance/2026-10-26-algorithms/evidence/B2.txt) | 本轮 B2 原始局部基准；A5 为已排除的不完整日志，其余阶段见报告 |
+| [docs/performance/2026-10-26-algorithms/evidence/B1.txt](../docs/performance/2026-10-26-algorithms/evidence/B1.txt) | 本轮 B1 原始局部基准；A5 为已排除的不完整日志，其余阶段见报告 |
+| [docs/performance/2026-10-26-algorithms/evidence/A8.txt](../docs/performance/2026-10-26-algorithms/evidence/A8.txt) | 本轮 A8 原始局部基准；A5 为已排除的不完整日志，其余阶段见报告 |
+| [docs/performance/2026-10-26-algorithms/evidence/A7.txt](../docs/performance/2026-10-26-algorithms/evidence/A7.txt) | 本轮 A7 原始局部基准；A5 为已排除的不完整日志，其余阶段见报告 |
+| [docs/performance/2026-10-26-algorithms/evidence/A6.txt](../docs/performance/2026-10-26-algorithms/evidence/A6.txt) | 本轮 A6 原始局部基准；A5 为已排除的不完整日志，其余阶段见报告 |
+| [docs/performance/2026-10-26-algorithms/evidence/A5.txt](../docs/performance/2026-10-26-algorithms/evidence/A5.txt) | 本轮 A5 原始局部基准；A5 为已排除的不完整日志，其余阶段见报告 |
+| [docs/performance/2026-10-26-algorithms/evidence/A4.txt](../docs/performance/2026-10-26-algorithms/evidence/A4.txt) | 本轮 A4 原始局部基准；A5 为已排除的不完整日志，其余阶段见报告 |
+| [docs/performance/2026-10-26-algorithms/evidence/A3.txt](../docs/performance/2026-10-26-algorithms/evidence/A3.txt) | 本轮 A3 原始局部基准；A5 为已排除的不完整日志，其余阶段见报告 |
+| [docs/performance/2026-10-26-algorithms/evidence/A2.txt](../docs/performance/2026-10-26-algorithms/evidence/A2.txt) | 本轮 A2 原始局部基准；A5 为已排除的不完整日志，其余阶段见报告 |
+| [docs/performance/2026-10-26-algorithms/evidence/A1.txt](../docs/performance/2026-10-26-algorithms/evidence/A1.txt) | 本轮 A1 原始局部基准；A5 为已排除的不完整日志，其余阶段见报告 |
+| [docs/performance/2026-10-26-algorithms/README.md](../docs/performance/2026-10-26-algorithms/README.md) | 算法/架构三轮迭代、复杂度、全部方向性能与未验证范围 |
 | [docs/performance/2026-10-24-iteration/evidence/review-validation.txt](../docs/performance/2026-10-24-iteration/evidence/review-validation.txt) | 保留提交前复审的原始失败、竞态修正重跑及双版本验证输出 |
 | [智慧养老手表管理系统/backend/internal/handlers/read_latency_ab_test.go](../智慧养老手表管理系统/backend/internal/handlers/read_latency_ab_test.go) | 可复制到固定基线的真实 HTTP 延迟夹具，校验响应、持久化与会话撤销并记录版本信息 |
 | [docs/performance/2026-10-24-iteration/REVIEW.md](../docs/performance/2026-10-24-iteration/REVIEW.md) | 记录提交前的规范与需求复审、已修复测试竞态及双版本验证结果 |

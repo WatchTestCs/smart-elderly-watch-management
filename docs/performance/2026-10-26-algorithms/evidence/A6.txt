@@ -1,0 +1,12 @@
+goos: linux
+goarch: amd64
+pkg: careold-go/internal/ratelimit
+cpu: AMD EPYC 9V74 80-Core Processor                
+BenchmarkLimiterSaturated/clients_1           	  819895	       455.5 ns/op	      32 B/op	       1 allocs/op
+BenchmarkLimiterSaturated/clients_1-4         	  729006	       558.5 ns/op	      32 B/op	       1 allocs/op
+BenchmarkLimiterSaturated/clients_1-8         	  695266	       521.0 ns/op	      32 B/op	       1 allocs/op
+BenchmarkLimiterSaturated/clients_256         	  778178	       561.4 ns/op	      41 B/op	       1 allocs/op
+BenchmarkLimiterSaturated/clients_256-4       	  554511	       667.5 ns/op	      41 B/op	       1 allocs/op
+BenchmarkLimiterSaturated/clients_256-8       	  705121	       619.6 ns/op	      41 B/op	       1 allocs/op
+PASS
+ok  	careold-go/internal/ratelimit	2.512s

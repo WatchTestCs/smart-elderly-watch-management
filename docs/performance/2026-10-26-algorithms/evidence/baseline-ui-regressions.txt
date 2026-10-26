@@ -1,0 +1,83 @@
+Expected reproduction against baseline 8c22299; exit status 1
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> suining-ui@2.1.0 test
+> vitest run -t loads the latest page|waits for a read started|discards a superseded page
+
+
+ RUN  v5.0.5 /workspace/scratch/db0fe19e79f5/watch-baseline/智慧养老手表管理系统/oldIot
+
+ ❯ src/composables/useCustomers.test.ts (6 tests | 2 failed | 4 skipped) 13ms
+   ❯ guardian data flow (6)
+     × loads the latest page and search after changes during an active read 10ms
+     × waits for a read started after a confirmed write before save completes 2ms
+ ❯ src/components/CareInbox.test.ts (3 tests | 1 failed | 2 skipped) 34ms
+   ❯ care task read scheduling (3)
+     × discards a superseded page and loads the newest requested page 33ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/components/CareInbox.test.ts > care task read scheduling > discards a superseded page and loads the newest requested page
+AssertionError: expected '需要接手的照护任务求助已接收不等于通知送达；只有人工接单及复核才会结束任务…' not to contain '过期任务'
+
+Expected: "过期任务"
+Received: "需要接手的照护任务求助已接收不等于通知送达；只有人工接单及复核才会结束任务。任务范围求助 #过期任务 · 过期任务设备  · 等待通知与接单接收于 未知 · 处理期限：未知责任人：尚未接单 · 通知状态：未确认下一步：值班人员立即接单并核实长者状况"
+
+ ❯ src/components/CareInbox.test.ts:33:29
+     31|     second(fixture('过期任务'))
+     32|     await flushPromises()
+     33|     expect(view.text()).not.toContain('过期任务')
+       |                             ^
+     34|     expect(post.mock.calls.map(([, body]) => body.page)).toEqual([1, 2…
+     35|     third(fixture('最新任务'))
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/composables/useCustomers.test.ts > guardian data flow > loads the latest page and search after changes during an active read
+AssertionError: expected [ { customerName: '旧数据' } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "customerName": "旧数据",
++   },
++ ]
+
+ ❯ src/composables/useCustomers.test.ts:20:38
+     18|     first({ data: { customers: [{ customerName: '旧数据' }], total: 99 } …
+     19|     await flushPromises()
+     20|     expect(state.customerList.value).toEqual([])
+       |                                      ^
+     21|     expect(post.mock.calls.map(([, body]) => body)).toEqual([
+     22|       { page: 1, pageSize: 10, customerName: '' },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/composables/useCustomers.test.ts > guardian data flow > waits for a read started after a confirmed write before save completes
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/composables/useCustomers.test.ts:41:32
+     39|     const saved = state.save()
+     40|     await flushPromises()
+     41|     expect(state.saving.value).toBe(true)
+       |                                ^
+     42|     first({ data: { customers: [{ customerName: '过期数据' }], total: 1 } …
+     43|     expect(await saved).toBe(true)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  2 failed | 3 skipped (5)
+      Tests  3 failed | 11 skipped (14)
+   Start at  17:43:24
+   Duration  667ms (environment 53%, transform 28%, import 16%, tests 2%, worker 1%)
+

@@ -30,6 +30,35 @@ func unionMinutes(xs []interval) float64 {
 	return total + b.Sub(a).Minutes()
 }
 
+// Both inputs have already been sorted by unionMinutes. Merge their union
+// directly instead of allocating two scratch copies and sorting them again.
+func combinedUnionMinutes(a, b []interval) float64 {
+	var start, end time.Time
+	total, initialized := 0.0, false
+	for len(a) > 0 || len(b) > 0 {
+		var x interval
+		if len(b) == 0 || len(a) > 0 && a[0].start.Before(b[0].start) {
+			x, a = a[0], a[1:]
+		} else {
+			x, b = b[0], b[1:]
+		}
+		if !initialized {
+			start, end, initialized = x.start, x.end, true
+		} else if !x.start.After(end) {
+			if x.end.After(end) {
+				end = x.end
+			}
+		} else {
+			total += end.Sub(start).Minutes()
+			start, end = x.start, x.end
+		}
+	}
+	if initialized {
+		total += end.Sub(start).Minutes()
+	}
+	return total
+}
+
 type Statistics struct {
 	Count                   int                `json:"count"`
 	Unit                    string             `json:"unit"`
@@ -80,6 +109,24 @@ func IntervalSteps(s Sample, from, to time.Time) (float64, error) {
 // Sleep intervals are unioned; step intervals must not overlap. Daily snapshots
 // use only the latest sample per day in the requested reporting offset.
 func Aggregate(samples []Sample, from, to time.Time) (Statistics, error) {
+	// Scalar series need neither sorting nor a temporary pointer for each
+	// sample. Keep the original input order and floating-point operations.
+	firstIndex := -1
+	for i := range samples {
+		if !samples[i].Deleted && samples[i].Value != nil {
+			firstIndex = i
+			break
+		}
+	}
+	if firstIndex < 0 {
+		return Statistics{}, nil
+	}
+	// An ignored prefix cannot affect validation, units or sampling identity.
+	samples = samples[firstIndex:]
+	s := &samples[0]
+	if s.Semantics != "daily_total" && s.Metric != "sleep_stage" && !(s.Metric == "steps" && s.Semantics == "interval") {
+		return aggregateScalars(samples, s)
+	}
 	out := Statistics{}
 	type calendarDay struct {
 		year  int
@@ -88,6 +135,7 @@ func Aggregate(samples []Sample, from, to time.Time) (Statistics, error) {
 	}
 	daily := map[calendarDay]*Sample{}
 	filtered := []*Sample{}
+	var first *Sample
 	for i := range samples {
 		s := &samples[i]
 		if s.Deleted || s.Value == nil {
@@ -96,11 +144,12 @@ func Aggregate(samples []Sample, from, to time.Time) (Statistics, error) {
 		if s.TimeBasis == "legacy-unzoned" {
 			return out, fmt.Errorf("legacy time zone is unknown; use the legacy daily views until reviewed")
 		}
-		if len(filtered) > 0 {
-			a := filtered[0]
-			if a.Metric != s.Metric || a.Source != s.Source || a.SourceDevice != s.SourceDevice || a.Semantics != s.Semantics {
+		if first != nil {
+			if first.Metric != s.Metric || first.Source != s.Source || first.SourceDevice != s.SourceDevice || first.Semantics != s.Semantics {
 				return out, fmt.Errorf("mixed sampling sources or semantics")
 			}
+		} else {
+			first = s
 		}
 		if s.Semantics == "daily_total" {
 			year, month, day := s.Start.In(from.Location()).Date()
@@ -112,15 +161,18 @@ func Aggregate(samples []Sample, from, to time.Time) (Statistics, error) {
 				daily[key] = s
 			}
 		}
-		filtered = append(filtered, s)
+		if s.Semantics != "daily_total" {
+			filtered = append(filtered, s)
+		}
 	}
-	if len(filtered) == 0 {
+	if first == nil {
 		return out, nil
 	}
-	first := filtered[0]
 	out.Unit = first.Unit
 	if first.Semantics == "daily_total" {
-		filtered = filtered[:0]
+		// Only one pointer per reporting day is needed, independent of the
+		// number of cumulative observations received during that day.
+		filtered = make([]*Sample, 0, len(daily))
 		for _, s := range daily {
 			filtered = append(filtered, s)
 		}
@@ -154,8 +206,8 @@ func Aggregate(samples []Sample, from, to time.Time) (Statistics, error) {
 			out.StageMinutes[stage] = unionMinutes(xs)
 		}
 		out.AsleepMinutes = unionMinutes(asleep)
-		both := append(append([]interval{}, asleep...), awake...)
-		out.ConflictingSleepMinutes = out.AsleepMinutes + unionMinutes(awake) - unionMinutes(both)
+		awakeMinutes := unionMinutes(awake)
+		out.ConflictingSleepMinutes = out.AsleepMinutes + awakeMinutes - combinedUnionMinutes(asleep, awake)
 		return out, nil
 	}
 	if first.Metric == "steps" && first.Semantics == "interval" {
@@ -200,6 +252,39 @@ func Aggregate(samples []Sample, from, to time.Time) (Statistics, error) {
 	out.Max = Number(high)
 	if first.Semantics == "instant" {
 		out.Mean = Number(total / float64(out.Count))
+	} else {
+		out.Total = Number(total)
+	}
+	return out, nil
+}
+
+func aggregateScalars(samples []Sample, first *Sample) (Statistics, error) {
+	count := 0
+	total, low, high := 0.0, *first.Value, *first.Value
+	for i := range samples {
+		s := &samples[i]
+		if s.Deleted || s.Value == nil {
+			continue
+		}
+		if s.TimeBasis == "legacy-unzoned" {
+			return Statistics{}, fmt.Errorf("legacy time zone is unknown; use the legacy daily views until reviewed")
+		}
+		if first.Metric != s.Metric || first.Source != s.Source || first.SourceDevice != s.SourceDevice || first.Semantics != s.Semantics {
+			return Statistics{}, fmt.Errorf("mixed sampling sources or semantics")
+		}
+		v := *s.Value
+		total += v
+		if v < low {
+			low = v
+		}
+		if v > high {
+			high = v
+		}
+		count++
+	}
+	out := Statistics{Count: count, Unit: first.Unit, Min: Number(low), Max: Number(high)}
+	if first.Semantics == "instant" {
+		out.Mean = Number(total / float64(count))
 	} else {
 		out.Total = Number(total)
 	}

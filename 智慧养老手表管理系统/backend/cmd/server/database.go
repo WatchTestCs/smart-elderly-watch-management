@@ -116,6 +116,8 @@ func watchDatabase(ctx context.Context, cfg config.Config, sessions *session.Sto
 		return
 	}
 	var pool *dbstore.Database
+	limiter := ratelimit.New()
+	defer limiter.Close()
 	var workerDone <-chan struct{}
 	defer func() {
 		// Drain the care worker before closing its shared connection pool.
@@ -170,7 +172,7 @@ func watchDatabase(ctx context.Context, cfg config.Config, sessions *session.Sto
 					go func() { defer jobs.Done(); analytics.Run(ctx, pool, cfg.PGAnalyticsURL, &service.analytics) }()
 					jobs.Wait()
 				}()
-				api = ratelimit.New().Middleware(csrf.Middleware(sessions, auth.Middleware(sessions, sensitiveCareAudit(pool, mux))))
+				api = limiter.Middleware(csrf.Middleware(sessions, auth.Middleware(sessions, sensitiveCareAudit(pool, mux))))
 			}
 		}
 		if err == nil {

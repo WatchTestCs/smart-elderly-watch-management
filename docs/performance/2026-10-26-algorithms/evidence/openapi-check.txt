@@ -1,0 +1,3 @@
+Command: python3 scripts/generate-openapi.py --check
+Exit: 0
+OpenAPI: 123 paths

@@ -1,5 +1,6 @@
-import { ref, reactive } from 'vue'
+import { ref, reactive, getCurrentScope, onScopeDispose } from 'vue'
 import { accepted, type Envelope, type PostClient } from '../api/client'
+import { createLatestRead } from './latestRead'
 
 export interface Customer {
   customerId?: number | string
@@ -18,17 +19,23 @@ export function useCustomers(client: PostClient) {
   const customerForm = reactive(emptyCustomer()), oldEditForm = reactive(emptyCustomer())
   const isLoading = ref(false), saving = ref(false), loadError = ref(''), mutationError = ref('')
   const total = ref(0), pageSize = ref(10), currentPage = ref(1), customerList = ref<Customer[]>([])
-  async function searchCustomers(keepPage = false) {
-    if (isLoading.value) return
-    if (keepPage !== true) currentPage.value = 1
-    isLoading.value = true; loadError.value = ''
-    try {
-      const { data } = await client.post<{ customers: Customer[]; total: number }>('restful/customer/select', { page: currentPage.value, pageSize: pageSize.value, customerName: searchText.value })
+  type Query = { page: number; pageSize: number; customerName: string }
+  const reads = createLatestRead(
+    (query: Query) => client.post<{ customers: Customer[]; total: number }>('restful/customer/select', query),
+    ({ data }) => {
       if (!Array.isArray(data.customers) || !Number.isInteger(data.total) || data.total < 0) throw new Error('invalid list')
-      customerList.value = data.customers; total.value = data.total
-    } catch {
+      customerList.value = data.customers; total.value = data.total; loadError.value = ''
+    },
+    () => {
       customerList.value = []; total.value = 0; loadError.value = '监护人信息暂时无法加载，请检查服务连接后重试。'
-    } finally { isLoading.value = false }
+    },
+    value => { isLoading.value = value }
+  )
+  if (getCurrentScope()) onScopeDispose(reads.dispose)
+  function searchCustomers(keepPage = false) {
+    if (keepPage !== true) currentPage.value = 1
+    loadError.value = ''
+    return reads.run({ page: currentPage.value, pageSize: pageSize.value, customerName: searchText.value })
   }
   async function save(edit = false) {
     if (saving.value) return false

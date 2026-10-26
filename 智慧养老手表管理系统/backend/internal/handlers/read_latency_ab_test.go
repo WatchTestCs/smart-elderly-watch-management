@@ -111,7 +111,9 @@ func TestReadLatencyAudit(t *testing.T) {
 	})
 	registry := observability.New()
 	registry.SetRouteResolver(func(r *http.Request) string { _, pattern := mux.Handler(r); return pattern })
-	stack := registry.HTTP(ratelimit.New().Middleware(csrf.Middleware(store, auth.Middleware(store, mux))))
+	limiter := ratelimit.New()
+	t.Cleanup(limiter.Close)
+	stack := registry.HTTP(limiter.Middleware(csrf.Middleware(store, auth.Middleware(store, mux))))
 	server := httptest.NewServer(stack)
 	defer server.Close()
 	client := &http.Client{Timeout: 30 * time.Second, Transport: &http.Transport{MaxIdleConns: 8, MaxIdleConnsPerHost: 8}}

@@ -1,0 +1,315 @@
+{
+  "baseline": "8c22299dafe2760c878f74806b0848b29257cc43",
+  "go": "go version go1.23.2 linux/amd64",
+  "platform": "Linux-6.18.55-x86_64-with-glibc2.39",
+  "cpu_affinity": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8
+  ],
+  "cpu_max": "800000 100000",
+  "commands": [
+    {
+      "label": "A1",
+      "command": [
+        "go",
+        "test",
+        "./internal/health",
+        "./internal/ratelimit",
+        "-run",
+        "^$",
+        "-bench",
+        "^Benchmark(Aggregate|AggregateLarge|LimiterSaturated)$",
+        "-benchmem",
+        "-benchtime=150ms",
+        "-count=1",
+        "-cpu=1,4,8"
+      ]
+    },
+    {
+      "label": "B1",
+      "command": [
+        "go",
+        "test",
+        "./internal/health",
+        "./internal/ratelimit",
+        "-run",
+        "^$",
+        "-bench",
+        "^Benchmark(Aggregate|AggregateLarge|LimiterSaturated)$",
+        "-benchmem",
+        "-benchtime=150ms",
+        "-count=1",
+        "-cpu=1,4,8"
+      ]
+    },
+    {
+      "label": "B2",
+      "command": [
+        "go",
+        "test",
+        "./internal/health",
+        "./internal/ratelimit",
+        "-run",
+        "^$",
+        "-bench",
+        "^Benchmark(Aggregate|AggregateLarge|LimiterSaturated)$",
+        "-benchmem",
+        "-benchtime=150ms",
+        "-count=1",
+        "-cpu=1,4,8"
+      ]
+    },
+    {
+      "label": "A2",
+      "command": [
+        "go",
+        "test",
+        "./internal/health",
+        "./internal/ratelimit",
+        "-run",
+        "^$",
+        "-bench",
+        "^Benchmark(Aggregate|AggregateLarge|LimiterSaturated)$",
+        "-benchmem",
+        "-benchtime=150ms",
+        "-count=1",
+        "-cpu=1,4,8"
+      ]
+    },
+    {
+      "label": "A3",
+      "command": [
+        "go",
+        "test",
+        "./internal/health",
+        "./internal/ratelimit",
+        "./internal/commands",
+        "-run",
+        "^$",
+        "-bench",
+        "^Benchmark(Aggregate|AggregateLarge|LimiterSaturated|ResolveCommand)$",
+        "-benchmem",
+        "-benchtime=200ms",
+        "-count=1",
+        "-cpu=1,4,8"
+      ]
+    },
+    {
+      "label": "B3",
+      "command": [
+        "go",
+        "test",
+        "./internal/health",
+        "./internal/ratelimit",
+        "./internal/commands",
+        "-run",
+        "^$",
+        "-bench",
+        "^Benchmark(Aggregate|AggregateLarge|LimiterSaturated|ResolveCommand)$",
+        "-benchmem",
+        "-benchtime=200ms",
+        "-count=1",
+        "-cpu=1,4,8"
+      ]
+    },
+    {
+      "label": "B4",
+      "command": [
+        "go",
+        "test",
+        "./internal/health",
+        "./internal/ratelimit",
+        "./internal/commands",
+        "-run",
+        "^$",
+        "-bench",
+        "^Benchmark(Aggregate|AggregateLarge|LimiterSaturated|ResolveCommand)$",
+        "-benchmem",
+        "-benchtime=200ms",
+        "-count=1",
+        "-cpu=1,4,8"
+      ]
+    },
+    {
+      "label": "A4",
+      "command": [
+        "go",
+        "test",
+        "./internal/health",
+        "./internal/ratelimit",
+        "./internal/commands",
+        "-run",
+        "^$",
+        "-bench",
+        "^Benchmark(Aggregate|AggregateLarge|LimiterSaturated|ResolveCommand)$",
+        "-benchmem",
+        "-benchtime=200ms",
+        "-count=1",
+        "-cpu=1,4,8"
+      ]
+    },
+    {
+      "label": "A5",
+      "command": [
+        "go",
+        "test",
+        "./internal/ratelimit",
+        "-run",
+        "^$",
+        "-bench",
+        "^BenchmarkLimiterSaturated$",
+        "-benchmem",
+        "-benchtime=300ms",
+        "-count=1",
+        "-cpu=1,4,8"
+      ]
+    },
+    {
+      "label": "B5",
+      "command": [
+        "go",
+        "test",
+        "./internal/ratelimit",
+        "-run",
+        "^$",
+        "-bench",
+        "^BenchmarkLimiterSaturated$",
+        "-benchmem",
+        "-benchtime=300ms",
+        "-count=1",
+        "-cpu=1,4,8"
+      ]
+    },
+    {
+      "label": "B6",
+      "command": [
+        "go",
+        "test",
+        "./internal/ratelimit",
+        "-run",
+        "^$",
+        "-bench",
+        "^BenchmarkLimiterSaturated$",
+        "-benchmem",
+        "-benchtime=300ms",
+        "-count=1",
+        "-cpu=1,4,8"
+      ]
+    },
+    {
+      "label": "A6",
+      "command": [
+        "go",
+        "test",
+        "./internal/ratelimit",
+        "-run",
+        "^$",
+        "-bench",
+        "^BenchmarkLimiterSaturated$",
+        "-benchmem",
+        "-benchtime=300ms",
+        "-count=1",
+        "-cpu=1,4,8"
+      ]
+    },
+    {
+      "label": "A7",
+      "command": [
+        "go",
+        "test",
+        "./internal/ratelimit",
+        "-run",
+        "^$",
+        "-bench",
+        "^BenchmarkLimiterSaturated$",
+        "-benchmem",
+        "-benchtime=300ms",
+        "-count=1",
+        "-cpu=1,4,8"
+      ]
+    },
+    {
+      "label": "B7",
+      "command": [
+        "go",
+        "test",
+        "./internal/ratelimit",
+        "-run",
+        "^$",
+        "-bench",
+        "^BenchmarkLimiterSaturated$",
+        "-benchmem",
+        "-benchtime=300ms",
+        "-count=1",
+        "-cpu=1,4,8"
+      ]
+    },
+    {
+      "label": "B8",
+      "command": [
+        "go",
+        "test",
+        "./internal/ratelimit",
+        "-run",
+        "^$",
+        "-bench",
+        "^BenchmarkLimiterSaturated$",
+        "-benchmem",
+        "-benchtime=300ms",
+        "-count=1",
+        "-cpu=1,4,8"
+      ]
+    },
+    {
+      "label": "A8",
+      "command": [
+        "go",
+        "test",
+        "./internal/ratelimit",
+        "-run",
+        "^$",
+        "-bench",
+        "^BenchmarkLimiterSaturated$",
+        "-benchmem",
+        "-benchtime=300ms",
+        "-count=1",
+        "-cpu=1,4,8"
+      ]
+    }
+  ],
+  "cpu_model": "AMD EPYC 9V74 80-Core Processor",
+  "initial_round_note": "Frontend verification overlapped the beginning of A1; initial A1/B1/B2/A2 are exploratory and are not the final reported comparison.",
+  "final_round_note": "Verification completed before A3/B3/B4/A4. Same fixture on both checkouts. Shared runner, no CPU affinity pinning, no statistical significance claimed.",
+  "final_production_sha256": {
+    "智慧养老手表管理系统/backend/internal/health/statistics.go": "fed013f2479c86f22f3fe5106e459a89e41b2fd5b19217e79a268654fb2387f3",
+    "智慧养老手表管理系统/backend/internal/ratelimit/ratelimit.go": "8de6a56e11d714fd47e4848318be907d933f9566fed6f926c6c9746c5c09983b",
+    "智慧养老手表管理系统/backend/internal/commands/commands.go": "8210d745e4341247d2e45effd266ab1a587786432cd29bf3e39550a93c7d3e10",
+    "智慧养老手表管理系统/backend/cmd/server/database.go": "030e9ebafbeb1f59839242f6f06398a198d0a9a6b4da1eb04c01fc84314f5240",
+    "智慧养老手表管理系统/oldIot/src/composables/latestRead.ts": "bfbd9930724a8c6f8d47dd35dd0a4311fe4161245ca1d54cb7953a0d443ed916",
+    "智慧养老手表管理系统/oldIot/src/composables/useCustomers.ts": "b6032b185b7aaf897b6133267dc6d96dc7c0ac5e0a06480e87fc50757eed210c",
+    "智慧养老手表管理系统/oldIot/src/components/CareInbox.vue": "415b43fa2f6723bf7842b87edab60a32994ab1d088b791dc82c954752e4f3ab4"
+  },
+  "first_final_production_sha256": {
+    "智慧养老手表管理系统/backend/internal/health/statistics.go": "fed013f2479c86f22f3fe5106e459a89e41b2fd5b19217e79a268654fb2387f3",
+    "智慧养老手表管理系统/backend/internal/ratelimit/ratelimit.go": "b8de0bf5454f31ef8f6c471f4e2026843264646203f807af7017c52ab029e8a0",
+    "智慧养老手表管理系统/backend/internal/commands/commands.go": "8210d745e4341247d2e45effd266ab1a587786432cd29bf3e39550a93c7d3e10",
+    "智慧养老手表管理系统/backend/cmd/server/database.go": "030e9ebafbeb1f59839242f6f06398a198d0a9a6b4da1eb04c01fc84314f5240",
+    "智慧养老手表管理系统/oldIot/src/composables/latestRead.ts": "bfbd9930724a8c6f8d47dd35dd0a4311fe4161245ca1d54cb7953a0d443ed916",
+    "智慧养老手表管理系统/oldIot/src/composables/useCustomers.ts": "b6032b185b7aaf897b6133267dc6d96dc7c0ac5e0a06480e87fc50757eed210c",
+    "智慧养老手表管理系统/oldIot/src/components/CareInbox.vue": "415b43fa2f6723bf7842b87edab60a32994ab1d088b791dc82c954752e4f3ab4"
+  },
+  "sparse_window_revision": "After A3/B3/B4/A4 review, eager full-quota allocation was replaced by lazy geometric growth. A5/B5/B6/A6 remeasure only the changed limiter. Health/command production hashes are unchanged from A3/B3/B4/A4.",
+  "fixture_sha256": {
+    "智慧养老手表管理系统/backend/internal/health/statistics_stream_test.go": "4fef8443ad18680932bb0a1e67bd0675a5d55f294aadc6193ec1701e1bd9bd85",
+    "智慧养老手表管理系统/backend/internal/ratelimit/benchmark_test.go": "c3939dc625b4c790b62d2f884917becb35bbc6c148a8b1a1ecf0a13f7e3ebec3",
+    "智慧养老手表管理系统/backend/internal/commands/lookup_test.go": "3557dea2745f8333072d24204e1f545999956b3b964c660581ef4ff134142cf2"
+  },
+  "incomplete_log_note": "A5 returned exit zero but its saved output lacks two benchmark rows and PASS. It is retained as incomplete and excluded. Final limiter comparison uses a fresh A7/B7/B8/A8 sequence with buffered output and completeness checks."
+}

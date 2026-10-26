@@ -1,0 +1,60 @@
+goos: linux
+goarch: amd64
+pkg: careold-go/internal/health
+cpu: AMD EPYC 9V74 80-Core Processor                
+BenchmarkAggregateLarge/instant/10000           	     598	    379617 ns/op	  310416 B/op	      21 allocs/op
+BenchmarkAggregateLarge/instant/10000-4         	     552	    299282 ns/op	  310418 B/op	      21 allocs/op
+BenchmarkAggregateLarge/instant/10000-8         	     757	    230374 ns/op	  310417 B/op	      21 allocs/op
+BenchmarkAggregateLarge/sleep/10000             	      21	   8295493 ns/op	 5198552 B/op	     117 allocs/op
+BenchmarkAggregateLarge/sleep/10000-4           	      25	   8659273 ns/op	 5198563 B/op	     117 allocs/op
+BenchmarkAggregateLarge/sleep/10000-8           	      20	   8640233 ns/op	 5198561 B/op	     117 allocs/op
+BenchmarkAggregateLarge/instant/100000          	      66	   3859720 ns/op	 4496528 B/op	      31 allocs/op
+BenchmarkAggregateLarge/instant/100000-4        	     100	   2852616 ns/op	 4496533 B/op	      31 allocs/op
+BenchmarkAggregateLarge/instant/100000-8        	     100	   2635844 ns/op	 4496529 B/op	      31 allocs/op
+BenchmarkAggregateLarge/sleep/100000            	       2	  92001004 ns/op	64107224 B/op	     173 allocs/op
+BenchmarkAggregateLarge/sleep/100000-4          	       2	  95187084 ns/op	64107368 B/op	     174 allocs/op
+BenchmarkAggregateLarge/sleep/100000-8          	       2	 111090819 ns/op	64107224 B/op	     173 allocs/op
+BenchmarkAggregate/instant/10                   	  500078	       395.7 ns/op	     272 B/op	       8 allocs/op
+BenchmarkAggregate/instant/10-4                 	  457227	       425.7 ns/op	     272 B/op	       8 allocs/op
+BenchmarkAggregate/instant/10-8                 	  475383	       378.3 ns/op	     272 B/op	       8 allocs/op
+BenchmarkAggregate/interval/10                  	  145710	      1324 ns/op	     328 B/op	      10 allocs/op
+BenchmarkAggregate/interval/10-4                	  142446	      1385 ns/op	     328 B/op	      10 allocs/op
+BenchmarkAggregate/interval/10-8                	  129657	      1320 ns/op	     328 B/op	      10 allocs/op
+BenchmarkAggregate/daily_total/10               	  167996	      1108 ns/op	     272 B/op	       8 allocs/op
+BenchmarkAggregate/daily_total/10-4             	  176673	      1057 ns/op	     272 B/op	       8 allocs/op
+BenchmarkAggregate/daily_total/10-8             	  173366	       999.0 ns/op	     272 B/op	       8 allocs/op
+BenchmarkAggregate/sparse/10                    	 1554787	       125.9 ns/op	      32 B/op	       4 allocs/op
+BenchmarkAggregate/sparse/10-4                  	 1521378	       117.2 ns/op	      32 B/op	       4 allocs/op
+BenchmarkAggregate/sparse/10-8                  	 1628518	       112.4 ns/op	      32 B/op	       4 allocs/op
+BenchmarkAggregate/sleep/10                     	   69307	      2601 ns/op	    4576 B/op	      27 allocs/op
+BenchmarkAggregate/sleep/10-4                   	   65070	      2948 ns/op	    4576 B/op	      27 allocs/op
+BenchmarkAggregate/sleep/10-8                   	   61386	      3175 ns/op	    4576 B/op	      27 allocs/op
+BenchmarkAggregate/instant/1000                 	   10000	     18437 ns/op	   17552 B/op	      14 allocs/op
+BenchmarkAggregate/instant/1000-4               	   10000	     16414 ns/op	   17552 B/op	      14 allocs/op
+BenchmarkAggregate/instant/1000-8               	   10000	     15360 ns/op	   17552 B/op	      14 allocs/op
+BenchmarkAggregate/interval/1000                	    2025	     94290 ns/op	   17608 B/op	      16 allocs/op
+BenchmarkAggregate/interval/1000-4              	    1912	     91730 ns/op	   17608 B/op	      16 allocs/op
+BenchmarkAggregate/interval/1000-8              	    1887	     91023 ns/op	   17608 B/op	      16 allocs/op
+BenchmarkAggregate/daily_total/1000             	    2330	     83296 ns/op	   17552 B/op	      14 allocs/op
+BenchmarkAggregate/daily_total/1000-4           	    2197	     78323 ns/op	   17552 B/op	      14 allocs/op
+BenchmarkAggregate/daily_total/1000-8           	    2324	     79773 ns/op	   17552 B/op	      14 allocs/op
+BenchmarkAggregate/sparse/1000                  	  113377	      1567 ns/op	     272 B/op	       8 allocs/op
+BenchmarkAggregate/sparse/1000-4                	  112381	      1534 ns/op	     272 B/op	       8 allocs/op
+BenchmarkAggregate/sparse/1000-8                	  116890	      1539 ns/op	     272 B/op	       8 allocs/op
+BenchmarkAggregate/sleep/1000                   	    1323	    134321 ns/op	  311680 B/op	      45 allocs/op
+BenchmarkAggregate/sleep/1000-4                 	    1334	    129022 ns/op	  311681 B/op	      45 allocs/op
+BenchmarkAggregate/sleep/1000-8                 	    1443	    150856 ns/op	  311681 B/op	      45 allocs/op
+PASS
+ok  	careold-go/internal/health	9.614s
+goos: linux
+goarch: amd64
+pkg: careold-go/internal/ratelimit
+cpu: AMD EPYC 9V74 80-Core Processor                
+BenchmarkLimiterSaturated/clients_1           	  427272	       443.9 ns/op	      32 B/op	       1 allocs/op
+BenchmarkLimiterSaturated/clients_1-4         	  361495	       516.4 ns/op	      32 B/op	       1 allocs/op
+BenchmarkLimiterSaturated/clients_1-8         	  374122	       479.6 ns/op	      32 B/op	       1 allocs/op
+BenchmarkLimiterSaturated/clients_256         	  400195	       569.8 ns/op	      41 B/op	       1 allocs/op
+BenchmarkLimiterSaturated/clients_256-4       	  315279	       536.7 ns/op	      41 B/op	       1 allocs/op
+BenchmarkLimiterSaturated/clients_256-8       	  282235	       601.0 ns/op	      41 B/op	       1 allocs/op
+PASS
+ok  	careold-go/internal/ratelimit	1.389s

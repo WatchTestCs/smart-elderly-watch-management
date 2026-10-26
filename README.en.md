@@ -157,6 +157,7 @@ Build order: **Vue assets → embedded Go service → sidecar SHA-256 → Tauri 
 | --- | --- |
 | Current branch automation | [Preview CI](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/workflows/ci.yml?query=branch%3Apreview): frontend tests, build and dependency audit; Go 1.23.2 / 1.27.2 tests, race detection, build and static checks with dedicated MySQL 8.4 / PG 16 |
 | 2.1.0 release checks | [Release notes](docs/releases/2.1.0.md) and the attached `release-manifest.json`; use the matching commit and recorded checks |
+| Algorithms and read scheduling | [2026-10-26 iteration](docs/performance/2026-10-26-algorithms/README.md): aggregation memory, sharded rate limiting, command lookup and latest list reads; includes local benchmarks and validation limits |
 | Backend sustained load and cache | [2026-10-22 report](docs/performance/2026-10-22-backend-hybrid/README.md), including pre-merge source, isolated environment, latency and backlog limits |
 | Historical failures and raw data | [Endurance records](docs/performance/2026-10-21-go123/README.md) and [CPU / GC experiments](docs/performance/2026-10-20-go123/README.md); later results do not erase earlier failures |
 

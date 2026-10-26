@@ -157,6 +157,7 @@ cd 智慧养老手表管理系统
 | --- | --- |
 | 当前分支自动检查 | [Preview CI](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/workflows/ci.yml?query=branch%3Apreview)：前端测试、构建及依赖审计；Go 1.23.2 / 1.27.2 测试、竞争检测、构建和静态检查，使用专用 MySQL 8.4 / PG 16 |
 | 2.1.0 发布检查 | [版本说明](docs/releases/2.1.0.md)与随包 `release-manifest.json`，以对应提交和实际检查为准 |
+| 算法与读取调度 | [2026-10-26 迭代](docs/performance/2026-10-26-algorithms/README.md)：统计内存、限流分片、命令查找及列表最新查询；含局部基准与未验证范围 |
 | 后端长负载与缓存 | [2026-10-22 报告](docs/performance/2026-10-22-backend-hybrid/README.md)，保留合并前源码、隔离环境、延迟与队列积压边界 |
 | 历史失败与原始数据 | [耐久测试记录](docs/performance/2026-10-21-go123/README.md)与 [CPU / GC 实验](docs/performance/2026-10-20-go123/README.md)，不以新结果覆盖旧失败 |
 

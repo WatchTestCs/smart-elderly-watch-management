@@ -1,0 +1,3 @@
+Final production after lazy-window revision
+Command: go vet ./...
+Exit: 0
