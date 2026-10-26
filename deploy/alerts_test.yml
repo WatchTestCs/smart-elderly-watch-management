@@ -91,3 +91,58 @@ tests:
             exp_annotations:
               summary: "Suining MySQL business service unavailable"
               description: "The business API is not ready; activate the offline care response procedure."
+  - interval: 15s
+    input_series:
+      - series: 'suining_care_outbox_oldest_age_seconds{job="suining",instance="app:8080"}'
+        values: '180+0x25'
+      - series: 'suining_care_queue_sample_valid{job="suining",instance="app:8080"}'
+        values: '1+0x25'
+    alert_rule_test:
+      - eval_time: 2m
+        alertname: SuiningCareQueueStalled
+        exp_alerts:
+          - exp_labels: {job: suining, instance: 'app:8080', severity: critical}
+            exp_annotations:
+              summary: "SOS notification jobs remain unfinished"
+              description: "Inspect gateway failures and durable outbox. Delivery and human acknowledgement are independent states. Use the manual fallback."
+  - interval: 15s
+    input_series:
+      - series: 'suining_care_outbox_oldest_age_seconds{job="suining",instance="app:8080"}'
+        values: '180+0x25'
+      - series: 'suining_care_queue_sample_valid{job="suining",instance="app:8080"}'
+        values: '0+0x25'
+    alert_rule_test:
+      - eval_time: 2m
+        alertname: SuiningCareQueueStalled
+        exp_alerts: []
+      - eval_time: 2m
+        alertname: SuiningCareQueueObservationFailed
+        exp_alerts:
+          - exp_labels: {job: suining, instance: 'app:8080', severity: critical}
+            exp_annotations:
+              summary: "SOS queue progress cannot be observed"
+              description: "An unavailable queue sample must never be interpreted as an empty healthy queue."
+  - interval: 15s
+    input_series:
+      - series: 'suining_care_gateway_tls_configured{job="suining",instance="app:8080"}'
+        values: '0+0x25'
+    alert_rule_test:
+      - eval_time: 2m
+        alertname: SuiningCareGatewayTLSInvalid
+        exp_alerts:
+          - exp_labels: {job: suining, instance: 'app:8080', severity: critical}
+            exp_annotations:
+              summary: "SOS gateway TLS trust configuration is invalid"
+              description: "Core MySQL ingestion remains available; dispatch is disabled and jobs remain durable. Repair certificate trust."
+  - interval: 15s
+    input_series:
+      - series: 'suining_care_gateway_failures_total{job="suining",instance="app:8080",reason="http_5xx"}'
+        values: '0+1x25'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: SuiningCareGatewayRepeatedFailures
+        exp_alerts:
+          - exp_labels: {job: suining, instance: 'app:8080', reason: http_5xx, severity: critical}
+            exp_annotations:
+              summary: "SOS notification gateway repeatedly fails"
+              description: "The reason label distinguishes DNS, timeout, network, HTTP and decryption failures. Check pending jobs and human fallback."

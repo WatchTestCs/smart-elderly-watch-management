@@ -30,8 +30,11 @@ jobs:
           MYSQL_PASSWORD: ci-do-not-use
           PG_PASSWORD: ci-do-not-use
           CARE_RECEIPT_SECRET: ci-placeholder-not-production-32-plus-chars
+          S3_ENDPOINT: https://s3.example.invalid
+          S3_BUCKET: ci-contract-only
         run: |
           docker compose -f deploy/platform.compose.yml config --quiet
+          docker compose -f deploy/platform.compose.yml -f deploy/object-storage.compose.yml config --quiet
           python3 - <<'PY'
           from pathlib import Path
           text = Path('deploy/platform.compose.yml').read_text()
@@ -54,6 +57,11 @@ jobs:
           if 'postgresql.service' in unit:
               raise SystemExit('systemd service must not wait for optional PostgreSQL')
           PY
+      - name: Validate Nginx trusted proxy and shared edge limiter syntax
+        run: |
+          docker run --rm --add-host app:127.0.0.1 \
+            -v "$PWD/deploy/platform.nginx.conf:/etc/nginx/conf.d/default.conf:ro" \
+            nginx:1.27-alpine nginx -t
       - name: Validate Prometheus scrape and alert rules
         run: |
           docker run --rm --pull=always \

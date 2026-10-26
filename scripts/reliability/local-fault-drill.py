@@ -81,7 +81,7 @@ def main():
         return text.strip()
 
     def sql(statement, database=True):
-        command = [mysql_bin/"mysql.exe", "--no-defaults", "--connect-timeout=3", "--host=127.0.0.1", "--port="+str(mysql_port), "--user=root", "--batch", "--raw", "--skip-column-names"]
+        command = [mysql_bin/"mysql.exe", "--no-defaults", "--connect-timeout=3", "--init-command=SET time_zone='+00:00'", "--host=127.0.0.1", "--port="+str(mysql_port), "--user=root", "--batch", "--raw", "--skip-column-names"]
         if database:
             command.append(dbname)
         command += ["-e", statement]

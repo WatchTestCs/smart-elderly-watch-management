@@ -8,6 +8,7 @@ on:
         type: string
 permissions:
   contents: read
+  actions: read
 jobs:
   exact-source:
     if: github.ref == 'refs/heads/preview'

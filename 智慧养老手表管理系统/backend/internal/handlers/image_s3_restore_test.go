@@ -180,7 +180,7 @@ func TestImageS3TwoInstancesAndRealRestore(t *testing.T) {
 		if err != nil {
 			return nil, err
 		}
-		command := exec.Command(path, append([]string{"--no-defaults", "--host=" + host, "--port=" + port, "--user=" + dsn.User}, args...)...)
+		command := exec.Command(path, append([]string{"--no-defaults", "--protocol=TCP", "--host=" + host, "--port=" + port, "--user=" + dsn.User}, args...)...)
 		command.Env = append(os.Environ(), "MYSQL_PWD="+dsn.Passwd)
 		command.Stdin = bytes.NewReader(input)
 		return command.CombinedOutput()
