@@ -72,7 +72,10 @@ func Run(ctx context.Context, db *dbstore.Database) {
 		// A broken connection cannot stall worker lifecycle indefinitely.
 		cycleCtx, cancelCycle := context.WithTimeout(ctx, 25*time.Second)
 		if _, err := db.Exec(cycleCtx, `INSERT INTO care_worker_heartbeat(singleton,last_seen_at,started_at)
-            VALUES(true,now(),$1) ON CONFLICT(singleton) DO UPDATE SET last_seen_at=now(),started_at=$1`, startedAt); err != nil && cycleCtx.Err() == nil {
+            VALUES(true,now(),$1) ON CONFLICT(singleton) DO UPDATE SET last_seen_at=now(),started_at=$1`, startedAt); err == nil {
+			// Only a persisted heartbeat proves this worker could write to MySQL.
+			observability.Default.Set("suining_care_worker_last_heartbeat_unixtime", float64(time.Now().Unix()))
+		} else if cycleCtx.Err() == nil {
 			log.Printf("care: heartbeat update failed: %v", err)
 		}
 		if err := d.escalate(cycleCtx); err != nil && cycleCtx.Err() == nil {

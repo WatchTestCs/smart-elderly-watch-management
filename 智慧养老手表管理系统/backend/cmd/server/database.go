@@ -6,6 +6,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -59,6 +60,20 @@ func (s *databaseService) middleware(local http.Handler) http.Handler {
 				return
 			}
 			observability.Default.Set("suining_database_ready", boolNumber(s.api.Load() != nil))
+			snapshot := s.analytics.Snapshot()
+			observability.Default.Set("suining_analytics_configured", boolNumber(snapshot.Configured))
+			observability.Default.Set("suining_analytics_ready", boolNumber(snapshot.Ready))
+			if snapshot.Pending != nil {
+				observability.Default.Set("suining_analytics_outbox_pending", float64(*snapshot.Pending))
+				observability.Default.Set("suining_analytics_outbox_sample_valid", 1)
+			} else {
+				// Preserve the last sample value but explicitly mark it unusable.
+				observability.Default.Set("suining_analytics_outbox_sample_valid", 0)
+			}
+			observability.Default.Set("suining_care_notification_configured", boolNumber(care.NotificationConfigured()))
+			// Use the same environment source and length check as the receipt handler.
+			// Gateway dispatch may be configured while signed delivery ACKs are not.
+			observability.Default.Set("suining_care_receipt_configured", boolNumber(len(os.Getenv("CARE_RECEIPT_SECRET")) >= 32))
 			if pool := s.currentDB.Load(); pool != nil && pool.IsMySQL() {
 				stats := pool.SQL().Stats()
 				observability.Default.Set("suining_mysql_pool_open_connections", float64(stats.OpenConnections))

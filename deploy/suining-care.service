@@ -1,6 +1,7 @@
 [Unit]
 Description=Suining care API and incident dispatcher
-After=network-online.target postgresql.service
+# Analytics PostgreSQL is optional and must never delay the care API.
+After=network-online.target
 Wants=network-online.target
 
 [Service]

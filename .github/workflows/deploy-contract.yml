@@ -1,0 +1,64 @@
+name: Deployment contract
+on:
+  pull_request:
+    branches: [preview]
+    paths:
+      - "deploy/**"
+      - "scripts/start-platform.py"
+      - ".github/workflows/deploy-contract.yml"
+  push:
+    branches: [preview]
+    paths:
+      - "deploy/**"
+      - ".github/workflows/deploy-contract.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  compose-and-alert-rules:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Validate Compose dependency graph and syntax
+        env:
+          MYSQL_ROOT_PASSWORD: ci-do-not-use
+          MYSQL_PASSWORD: ci-do-not-use
+          PG_PASSWORD: ci-do-not-use
+          CARE_RECEIPT_SECRET: ci-placeholder-not-production-32-plus-chars
+        run: |
+          docker compose -f deploy/platform.compose.yml config --quiet
+          python3 - <<'PY'
+          from pathlib import Path
+          text = Path('deploy/platform.compose.yml').read_text()
+          app = text.split('\n  app:', 1)[1].split('\n  gateway:', 1)[0]
+          monitor = text.split('\n  prometheus:', 1)[1]
+          if 'postgres: {condition: service_healthy}' in app:
+              raise SystemExit('PG is optional and must not gate app startup')
+          if 'app: {condition: service_healthy}' in monitor:
+              raise SystemExit('Prometheus must not be gated on app readiness')
+          if 'mysql: {condition: service_healthy}' not in app:
+              raise SystemExit('Business app must still require healthy MySQL')
+          startup = Path('scripts/start-platform.py').read_text()
+          critical = '["up", "--build", "-d", "--wait", "mysql", "app", "gateway", "prometheus"]'
+          optional = '["up", "-d", "postgres"]'
+          if critical not in startup or optional not in startup:
+              raise SystemExit('Startup must scope --wait to business and start PG separately')
+          if startup.index(critical) >= startup.index(optional):
+              raise SystemExit('Start business before the optional PG image pull')
+          unit = Path('deploy/suining-care.service').read_text()
+          if 'postgresql.service' in unit:
+              raise SystemExit('systemd service must not wait for optional PostgreSQL')
+          PY
+      - name: Validate Prometheus scrape and alert rules
+        run: |
+          docker run --rm --pull=always \
+            -v "$PWD/deploy:/etc/prometheus:ro" \
+            --entrypoint promtool prom/prometheus:v3.5.0 \
+            check rules /etc/prometheus/alerts.yml
+          docker run --rm --pull=always \
+            -v "$PWD/deploy:/etc/prometheus:ro" \
+            --entrypoint promtool prom/prometheus:v3.5.0 \
+            test rules /etc/prometheus/alerts_test.yml

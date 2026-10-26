@@ -1,0 +1,77 @@
+groups:
+  - name: suining-service
+    rules:
+      - alert: SuiningScrapeMissing
+        expr: absent(up{job="suining"})
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Suining API target missing from Prometheus discovery"
+          description: "Verify container DNS, networking and the API process. Use the manual SOS fallback."
+      - alert: SuiningServiceDown
+        expr: up{job="suining"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Suining API cannot be scraped"
+          description: "Check the independent Go service and database. No claim about emergency delivery can be made."
+      - alert: SuiningBusinessDatabaseUnavailable
+        expr: suining_database_ready == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Suining MySQL business service unavailable"
+          description: "The business API is not ready; activate the offline care response procedure."
+      - alert: SuiningCareWorkerNeverReported
+        expr: up{job="suining"} == 1 unless on(job,instance) suining_care_worker_last_heartbeat_unixtime
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "SOS dispatcher has not reported a persisted heartbeat"
+          description: "Check dispatcher startup and the MySQL heartbeat table."
+      - alert: SuiningCareWorkerStale
+        expr: time() - suining_care_worker_last_heartbeat_unixtime > 60
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "SOS dispatcher heartbeat is stale"
+          description: "This checks durable worker progress, not a guarantee of message delivery or responder arrival."
+  - name: suining-analytics
+    rules:
+      - alert: SuiningOptionalAnalyticsUnavailable
+        expr: suining_analytics_configured == 1 and on(job,instance) suining_analytics_ready == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Optional PostgreSQL analytics projection unavailable"
+          description: "MySQL remains authoritative. Check the outbox and restore PG synchronization without blocking care operations."
+      - alert: SuiningAnalyticsBacklogGrowing
+        expr: (suining_analytics_outbox_pending > 10000) and on(job,instance) (suining_analytics_outbox_sample_valid == 1)
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Suining MySQL analytics outbox contains over 10000 events"
+          description: "Sampled queue count is approximate. Check projection availability and disk capacity."
+      - alert: SuiningCareGatewayNotConfigured
+        expr: suining_care_notification_configured == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "SOS notification gateway missing or misconfigured"
+          description: "Tasks may remain pending; arrange external gateway configuration and human on-call fallback."
+      - alert: SuiningCareReceiptVerificationDisabled
+        expr: (suining_care_notification_configured == 1) and on(job,instance) (suining_care_receipt_configured == 0)
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "SOS gateway dispatch enabled but trusted delivery receipts cannot be validated"
+          description: "The gateway may accept messages but the system cannot confirm delivery. Repair the receipt secret and use human fallback."
