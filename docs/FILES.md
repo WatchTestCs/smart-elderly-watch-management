@@ -6,6 +6,7 @@
 
 | 文件 | 职责 |
 | --- | --- |
+| [智慧养老手表管理系统/backend/internal/handlers/sos_binding_integration_test.go](../智慧养老手表管理系统/backend/internal/handlers/sos_binding_integration_test.go) | 真实双库验证 SOS 绑定版本、并发重绑定和重复求助幂等 |
 | [智慧养老手表管理系统/backend/internal/session/lifecycle_audit_test.go](../智慧养老手表管理系统/backend/internal/session/lifecycle_audit_test.go) | 同一夹具测量基线与本轮的会话维护协程保留数 |
 | [智慧养老手表管理系统/backend/internal/session/http.go](../智慧养老手表管理系统/backend/internal/session/http.go) | Cookie 生命周期、请求内已验证会话缓存及取消检查 |
 | [智慧养老手表管理系统/backend/internal/session/database.go](../智慧养老手表管理系统/backend/internal/session/database.go) | 会话加密 SQL、身份/认证代际校验和继承调用者的有界 I/O |

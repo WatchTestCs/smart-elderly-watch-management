@@ -56,3 +56,70 @@ test('queue capacity never silently evicts old records', () => {
   assert.throws(() => p.enqueue(queue, binding, samples));
   assert.equal(queue.samples.length, 200);
 });
+test('old pending SOS remains available while a new binding can create its own request', () => {
+  const old = { binding, requestId: 'old-sos' };
+  const restored = p.readPendingSOS(JSON.stringify(old));
+  const rebound = { ...binding, oldId: 8, version: 4 };
+  assert.equal(p.pendingForBinding(restored, rebound), undefined);
+  const next = { binding: rebound, requestId: 'new-sos' };
+  const saved = p.readPendingSOS(JSON.stringify([...restored, next]));
+  assert.equal(p.pendingForBinding(saved, rebound).requestId, 'new-sos');
+  assert.deepEqual(p.pendingForBinding(saved, binding), old);
+  const acknowledged = { ...next, incidentId: 42 };
+  assert.equal(p.pendingForBinding([old, acknowledged], rebound), undefined);
+  assert.equal(p.readPendingSOS(JSON.stringify([old, acknowledged]))[1].incidentId, 42);
+  assert.deepEqual(p.readPendingSOS(''), []);
+});
+test('SOS persistence failure keeps the previous value and blocks subsequent sends', async () => {
+  const storeSource = path.resolve(__dirname, '../entry/src/main/ets/services/WatchStore.ets');
+  for (const initial of ['', JSON.stringify({ binding, requestId: 'already-sent' })]) {
+    const values = { sos: initial };
+    const prefs = {
+      getSync: (key, fallback) => values[key] ?? fallback,
+      putSync: (key, value) => { values[key] = value; },
+      flush: async () => { throw new Error('simulated storage failure'); }
+    };
+    const storeModule = new Module(storeSource, module);
+    storeModule.require = id => {
+      if (id === '@kit.ArkData') return { preferences: { getPreferencesSync: () => prefs } };
+      if (id === '../model/Protocol') return p;
+      return require(id);
+    };
+    storeModule._compile(ts.transpileModule(fs.readFileSync(storeSource, 'utf8'), {
+      compilerOptions: { target: ts.ScriptTarget.ES2020, module: ts.ModuleKind.CommonJS }
+    }).outputText, storeSource);
+    const store = new storeModule.exports.WatchStore({});
+    await assert.rejects(store.saveSOS(initial ? [{ binding, requestId: 'already-sent', incidentId: 42 }] : [{ binding, requestId: 'new' }]));
+    assert.equal(values.sos, initial);
+    assert.throws(() => store.pendingSOS(), /勿重复发送/);
+    await assert.rejects(store.saveSOS([]), /勿重复发送/);
+  }
+});
+test('SOS acknowledgement retains its request ID when flush writes then fails', async () => {
+  const pending = { binding, requestId: 'uncertain' };
+  let durable = JSON.stringify([pending]);
+  let staged = durable;
+  const prefs = {
+    getSync: () => staged,
+    putSync: (key, value) => { staged = value; },
+    flush: async () => { durable = staged; throw new Error('completion lost'); }
+  };
+  const storeSource = path.resolve(__dirname, '../entry/src/main/ets/services/WatchStore.ets');
+  const storeModule = new Module(storeSource, module);
+  storeModule.require = id => {
+    if (id === '@kit.ArkData') return { preferences: { getPreferencesSync: () => prefs } };
+    if (id === '../model/Protocol') return p;
+    return require(id);
+  };
+  storeModule._compile(ts.transpileModule(fs.readFileSync(storeSource, 'utf8'), {
+    compilerOptions: { target: ts.ScriptTarget.ES2020, module: ts.ModuleKind.CommonJS }
+  }).outputText, storeSource);
+  const store = new storeModule.exports.WatchStore({});
+  await assert.rejects(store.saveSOS([{ ...pending, incidentId: 42 }]));
+  staged = durable; // simulate reloading the committed bytes in a new process
+  const afterRestart = new storeModule.exports.WatchStore({}).pendingSOS();
+  assert.equal(afterRestart[0].requestId, 'uncertain');
+  assert.equal(afterRestart[0].incidentId, 42);
+  assert.equal(p.pendingForBinding(afterRestart, binding), undefined);
+  assert.equal(p.pendingForBinding(p.readPendingSOS(JSON.stringify([pending])), binding).requestId, 'uncertain');
+});

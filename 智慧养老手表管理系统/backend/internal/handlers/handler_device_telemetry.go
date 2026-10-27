@@ -278,6 +278,16 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 	if !checkTelemetry(w, m) {
 		return
 	}
+	var bindingVersion int64
+	_, hasBindingVersion := m["bindingVersion"]
+	if hasBindingVersion {
+		var valid bool
+		bindingVersion, valid = int64Val(m, "bindingVersion")
+		if !valid || bindingVersion < 1 {
+			writeValidation400(w)
+			return
+		}
+	}
 	ctx := r.Context()
 	tx, err := h.DB.Begin(ctx)
 	if err != nil {
@@ -301,6 +311,48 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 		hwFail(w, "0005", "设备还未绑定老人")
 		return
 	}
+	// Match binding and unbinding's elder-then-device lock order. Recheck the
+	// device under its row lock before writing or acknowledging a retry.
+	expectedOwner := *d.OldID
+	if _, err := tx.Exec(ctx, `SELECT old_id FROM oldperson WHERE old_id=$1 FOR UPDATE`, expectedOwner); err != nil {
+		rollback()
+		response.Error500(w, ref())
+		return
+	}
+	locked, err := scanOldDevice(tx.QueryRow(ctx, `SELECT `+oldDeviceCols+` FROM device WHERE device_id=$1 FOR UPDATE`, d.ID))
+	if err != nil {
+		rollback()
+		response.Error500(w, ref())
+		return
+	}
+	locked, code, msg, err = checkDeviceAuth(locked, secret, "设备已停用")
+	if err != nil {
+		rollback()
+		response.Error500(w, ref())
+		return
+	}
+	if locked == nil {
+		rollback()
+		hwFail(w, code, msg)
+		return
+	}
+	if locked.No != deviceNo {
+		rollback()
+		hwFail(w, "0004", "设备号或密钥不正确")
+		return
+	}
+	if locked.OldID == nil || *locked.OldID != expectedOwner || (hasBindingVersion && locked.HealthEpoch != bindingVersion) {
+		rollback()
+		conflict409(w, "绑定已变化，请重新登录；旧绑定求助不能归入新老人")
+		return
+	}
+	locked.LastLng, locked.LastLat, err = openCoordinates(h.Box, locked.LastLng, locked.LastLat)
+	if err != nil {
+		rollback()
+		response.Error500(w, ref())
+		return
+	}
+	d = locked
 	// A device should reuse a stable requestId when retrying the same SOS on
 	// weak networks; each new press must use a new ID.
 	requestID, _ := vstr(m, "requestId")
@@ -310,20 +362,19 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 			writeValidation400(w)
 			return
 		}
-		if _, err := tx.Exec(ctx, `SELECT old_id FROM oldperson WHERE old_id=$1 FOR UPDATE`, *d.OldID); err != nil {
-			rollback()
-			response.Error500(w, ref())
-			return
-		}
-		var priorID int64
+		var priorID, priorOwner int64
 		var priorState, priorNotification string
-		err := tx.QueryRow(ctx, `SELECT i.id,i.state,
+		err := tx.QueryRow(ctx, `SELECT i.id,i.old_id,i.state,
 			COALESCE((SELECT min(n.status) FROM care_notification_outbox n
 			WHERE n.incident_id=i.id),'no_recipient')
-			FROM care_incident i WHERE i.device_id=$1 AND i.request_id=$2`,
-			d.ID, requestID).Scan(&priorID, &priorState, &priorNotification)
+			FROM care_incident i WHERE i.device_id=$1 AND i.request_id=$2 FOR UPDATE`,
+			d.ID, requestID).Scan(&priorID, &priorOwner, &priorState, &priorNotification)
 		if err == nil {
 			rollback()
+			if priorOwner != *d.OldID {
+				conflict409(w, "求助编号属于其他绑定，请联系管理员核查")
+				return
+			}
 			response.OK(w, map[string]any{"message": "求助已接收（重复请求未再次入库）",
 				"incidentId": priorID, "incidentState": priorState,
 				"notificationState": priorNotification, "duplicate": true})

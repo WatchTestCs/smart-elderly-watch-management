@@ -1,4 +1,5 @@
 {
+  "智慧养老手表管理系统/backend/internal/handlers/sos_binding_integration_test.go": "真实 MySQL/PostgreSQL 验证 SOS 绑定版本、重绑定行锁竞态及并发重复请求",
   ".dockerignore": "项目配置、源文件或测试资料：",
   ".github/CODEOWNERS": "指定仓库代码审查负责人和受保护路径",
   ".github/SECURITY.md": "说明私下报告漏洞的渠道、范围与披露流程",

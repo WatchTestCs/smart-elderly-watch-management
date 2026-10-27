@@ -65,7 +65,7 @@ async function main() {
   const changes = await request('/restful/health/changes', { oldId: elder.oldId, after: 0, limit: 100 });
   assert.equal(changes.changes.length, 2);
   checks.push('two simulated samples persisted; retry acknowledged two duplicates without extra changes');
-  const sos = { ...credentials, requestId: 'watch-sim-e2e-same-press' };
+  const sos = { ...credentials, requestId: 'watch-sim-e2e-same-press', bindingVersion: live.version };
   const first = await request('/restful/device/sos', sos);
   const retry = await request('/restful/device/sos', sos);
   assert.equal(retry.incidentId, first.incidentId);
@@ -79,7 +79,11 @@ async function main() {
   assert.notEqual(rebound.version, live.version);
   assert.throws(() => protocol.batchRequest(queue, rebound, device.secret));
   await request('/restful/device/healthBatch', body, {}, 409);
+  await request('/restful/device/sos', sos, {}, 409);
+  const currentSOS = await request('/restful/device/sos', { ...credentials, requestId: 'watch-sim-e2e-rebound', bindingVersion: rebound.version });
+  assert.notEqual(currentSOS.incidentId, first.incidentId);
   checks.push('rebind changed epoch; both client and backend rejected old offline batch');
+  checks.push('rebound device rejected old SOS retry and accepted a new SOS for the current binding');
   console.log(JSON.stringify({ passed: checks.length, checks }, null, 2));
 }
 main().catch(error => { console.error(error.message); process.exitCode = 1; });

@@ -2,7 +2,7 @@ import { common } from '@kit.AbilityKit';
 import { WatchApi } from '../services/WatchApi';
 import { WatchStore } from '../services/WatchStore';
 import { Binding, WatchConfig,
-  normalizeConfig, bindingFrom, enqueue, batchRequest, makeSamples, sameBinding } from '../model/Protocol';
+  normalizeConfig, bindingFrom, enqueue, batchRequest, makeSamples, sameBinding, pendingForBinding } from '../model/Protocol';
 
 @Entry
 @Component
@@ -20,7 +20,8 @@ struct Index {
   @State private busy: boolean = false;
   @State private status: string = '本地预览 · 尚未连接后台';
   @State private lastUpload: string = '尚未上传';
-  @State private sosPending: boolean = false;
+  @State private sosPending: number = 0;
+  @State private lastSOS: string = '';
   private api: WatchApi = new WatchApi();
   private store: WatchStore | undefined = undefined;
   private binding: Binding | undefined = undefined;
@@ -34,9 +35,16 @@ struct Index {
       const config = this.store.config();
       this.server = config.server;
       this.deviceNo = config.deviceNo;
+      const sosHistory = this.store.pendingSOS();
+      this.sosPending = sosHistory.filter((item) => !item.incidentId).length;
+      for (let i = sosHistory.length - 1; i >= 0; i--) {
+        if (sosHistory[i].incidentId) {
+          this.lastSOS = '最近已接收求助 #' + sosHistory[i].incidentId + '；再次发送可能创建新求助';
+          break;
+        }
+      }
       const batch = this.store.batch();
       this.queued = batch ? batch.samples.length : 0;
-      this.sosPending = this.store.pendingSOS() !== undefined;
       const simulator = this.store.simulator();
       if (simulator.day === this.counterDay) { this.steps = simulator.steps; }
     } catch (error) {
@@ -126,8 +134,8 @@ struct Index {
   }
   private confirmSOS(): void {
     this.getUIContext().showAlertDialog({
-      title: this.sosPending ? '重试同一次模拟求助？' : '发送模拟求助？',
-      message: '将在真实后台生成测试照护任务。接收成功不代表通知送达或人员到场。',
+      title: '确认发送模拟求助？',
+      message: '当前绑定有未确认请求时将重试；否则会新建求助。旧绑定请求保留待核查。后台接收不代表通知送达或人员到场。',
       primaryButton: { value: '取消', action: () => {} },
       secondaryButton: { value: '确认发送', action: () => { this.act(async () => { await this.sendSOS(); }); } }
     });
@@ -135,20 +143,26 @@ struct Index {
   private async sendSOS(): Promise<void> {
     if (!this.store) { throw new Error('本地存储未就绪'); }
     const live = await this.liveBinding();
-    let pending = this.store.pendingSOS();
-    if (pending && !sameBinding(pending.binding, live)) {
-      throw new Error('旧求助与当前绑定不同，禁止发送；请联系管理员核查');
-    }
+    let items = this.store.pendingSOS();
+    let pending = pendingForBinding(items, live);
     if (!pending) {
       pending = { binding: live, requestId: 'watch-sim-' + this.store.nextID() };
-      await this.store.saveSOS(pending);
-      this.sosPending = true;
+      items = items.concat([pending]);
+      await this.store.saveSOS(items);
+      this.sosPending = items.filter((item) => !item.incidentId).length;
     }
     const reply = await this.api.sos(this.config(), { deviceNo: live.deviceNo,
-      secret: this.secret, requestId: pending.requestId });
-    await this.store.saveSOS(undefined);
-    this.sosPending = false;
-    this.status = '求助 #' + (reply.incidentId || '') + ' 已接收；通知状态：' + (reply.notificationState || '待确认');
+      secret: this.secret, requestId: pending.requestId, bindingVersion: pending.binding.version });
+    if (!reply.incidentId) { throw new Error('后台确认缺少求助编号，原请求已保留'); }
+    const acceptedRequestId = pending.requestId;
+    const incidentId = reply.incidentId;
+    items = items.map((item) => item.requestId === acceptedRequestId && sameBinding(item.binding, live)
+      ? { binding: item.binding, requestId: item.requestId, incidentId: incidentId } : item);
+    await this.store.saveSOS(items);
+    this.sosPending = items.filter((item) => !item.incidentId).length;
+    this.lastSOS = '最近已接收求助 #' + incidentId + '；再次发送可能创建新求助';
+    this.status = '求助 #' + (reply.incidentId || '') + ' 已接收；通知状态：' + (reply.notificationState || '待确认') +
+      (this.sosPending ? '；另有 ' + this.sosPending + ' 条旧求助待管理员核查' : '');
   }
   private confirmDiscard(): void {
     this.getUIContext().showAlertDialog({ title: '丢弃待上传的模拟记录？',
@@ -178,7 +192,8 @@ struct Index {
     }.justifyContent(FlexAlign.Center)
     Text('步数 ' + this.steps + '  ·  模拟').fontSize(15).fontColor('#D8E4DC')
     this.action('生成模拟采样', () => { this.act(async () => { await this.sample(); }); })
-    this.action(this.sosPending ? '重试模拟求助' : 'SOS 模拟求助', () => { this.confirmSOS(); }, '#803F37')
+    this.action('SOS 模拟求助' + (this.sosPending ? '（待核查 ' + this.sosPending + '）' : ''), () => { this.confirmSOS(); }, '#803F37')
+    if (this.lastSOS) { this.caption(this.lastSOS) }
   }
   @Builder
   private records() {

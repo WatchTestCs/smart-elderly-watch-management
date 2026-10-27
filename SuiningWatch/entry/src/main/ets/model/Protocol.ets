@@ -50,8 +50,16 @@ export interface BatchRequest {
   bindingVersion: number;
   samples: HealthSample[];
 }
-export interface PendingSOS { binding: Binding; requestId: string; }
-export interface SOSRequest extends Credentials { requestId: string; }
+export interface PendingSOS { binding: Binding; requestId: string; incidentId?: number; }
+export interface SOSRequest extends Credentials { requestId: string; bindingVersion: number; }
+export function readPendingSOS(raw: string): PendingSOS[] {
+  if (!raw) { return []; }
+  const saved = JSON.parse(raw) as PendingSOS | PendingSOS[];
+  return Array.isArray(saved) ? saved : [saved];
+}
+export function pendingForBinding(items: PendingSOS[], binding: Binding): PendingSOS | undefined {
+  return items.find((item: PendingSOS) => !item.incidentId && sameBinding(item.binding, binding));
+}
 export interface HeartbeatRequest extends Credentials { appVersion: string; }
 export interface BindRequest extends Credentials { code: string; }
 

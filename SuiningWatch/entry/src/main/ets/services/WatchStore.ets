@@ -1,9 +1,10 @@
 import { preferences } from '@kit.ArkData';
 import { common } from '@kit.AbilityKit';
-import { WatchConfig, PendingBatch, PendingSOS, SimulatorState } from '../model/Protocol';
+import { WatchConfig, PendingBatch, PendingSOS, SimulatorState, readPendingSOS } from '../model/Protocol';
 
 export class WatchStore {
   private prefs: preferences.Preferences;
+  private sosStorageFailed: boolean = false;
   constructor(context: common.Context) {
     this.prefs = preferences.getPreferencesSync(context, { name: 'suining_watch_sim_v1' });
   }
@@ -22,17 +23,26 @@ export class WatchStore {
     const raw = this.prefs.getSync('batch', '') as string;
     return raw ? JSON.parse(raw) as PendingBatch : undefined;
   }
-  pendingSOS(): PendingSOS | undefined {
+  pendingSOS(): PendingSOS[] {
+    if (this.sosStorageFailed) { throw new Error('求助记录保存失败，请联系管理员核查，勿重复发送'); }
     const raw = this.prefs.getSync('sos', '') as string;
-    return raw ? JSON.parse(raw) as PendingSOS : undefined;
+    return readPendingSOS(raw);
   }
   async saveBatch(batch: PendingBatch | undefined): Promise<void> {
     this.prefs.putSync('batch', batch ? JSON.stringify(batch) : '');
     await this.prefs.flush();
   }
-  async saveSOS(sos: PendingSOS | undefined): Promise<void> {
-    this.prefs.putSync('sos', sos ? JSON.stringify(sos) : '');
-    await this.prefs.flush();
+  async saveSOS(sos: PendingSOS[]): Promise<void> {
+    if (this.sosStorageFailed) { throw new Error('求助记录保存失败，请联系管理员核查，勿重复发送'); }
+    const previous = this.prefs.getSync('sos', '') as string;
+    try {
+      this.prefs.putSync('sos', sos.length ? JSON.stringify(sos) : '');
+      await this.prefs.flush();
+    } catch (error) {
+      this.sosStorageFailed = true;
+      try { this.prefs.putSync('sos', previous); } catch (restoreError) { /* Keep sending disabled. */ }
+      throw new Error('求助记录保存失败，请联系管理员核查，勿重复发送');
+    }
   }
   simulator(): SimulatorState {
     return { day: this.prefs.getSync('counterDay', '') as string,
