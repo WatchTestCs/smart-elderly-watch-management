@@ -1,7 +1,7 @@
 package health
 
 import (
-	"careold-go/internal/db/dbtest"
+	"suining-care/internal/db/dbtest"
 	"context"
 	"encoding/json"
 	"errors"
