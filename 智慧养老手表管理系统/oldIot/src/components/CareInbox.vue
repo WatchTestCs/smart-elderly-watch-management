@@ -29,7 +29,7 @@
       </article>
     </div>
     <el-pagination v-if="!error && total > pageSize" :current-page="page" :page-size="pageSize" :total="total" :disabled="saving" layout="total, prev, pager, next" @current-change="changePage" />
-    <el-dialog v-model="history.visible" title="照护事件履历" width="min(600px, 94vw)" append-to-body>
+    <el-dialog v-model="history.visible" title="照护事件履历" width="min(600px, 94vw)" append-to-body @close="historyReads.cancel">
       <p v-if="history.loading">正在读取记录…</p>
       <p v-if="history.error" role="alert">{{ history.error }}</p>
       <ol v-if="!history.loading && !history.error" class="care-history">
@@ -53,9 +53,9 @@
   </section>
 </template>
 <script setup>
-import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import axios from 'axios'
-import { createLatestRead, awaitAbortable } from '../composables/latestRead'
+import { createLatestRead } from '../composables/latestRead'
 import CareOperationsPanel from './CareOperationsPanel.vue'
 
 const emit = defineEmits(['verified'])
@@ -103,48 +103,27 @@ function load () {
 }
 function changePage (value) { page.value = value; load() }
 function changeScope () { page.value = 1; load() }
-let historyRequest = 0
-let historyAbort
-watch(() => history.value.visible, visible => {
-  if (!visible) {
-    historyRequest++
-    historyAbort?.abort()
-    historyAbort = undefined
-    history.value.loading = false
-  }
-})
+const historyReads = createLatestRead(
+  (query, signal) => axios.post('restful/care/events', query, {withCredentials:true, signal}),
+  ({data}) => {
+    if (!Array.isArray(data.events) || !Number.isInteger(data.total)) throw new Error('invalid history')
+    history.value.events = data.events
+    history.value.total = data.total
+  },
+  error => {
+    history.value.error = error instanceof Error && error.message.includes('超时')
+      ? '审计记录读取超时，请重试' : '审计记录暂时无法加载'
+  },
+  value => { history.value.loading = value }
+)
 async function viewHistory (task) {
   history.value = {visible:true,loading:false,error:'',events:[],id:task.id,page:1,total:0}
   await loadHistory(1)
 }
-async function loadHistory (value) {
-  const request = ++historyRequest
-  historyAbort?.abort()
-  const controller = new AbortController()
-  historyAbort = controller
-  const timeout = setTimeout(() => controller.abort(), 10_000)
-  history.value.loading = true
+function loadHistory (value) {
   history.value.error = ''
   history.value.page = value
-  try {
-    const {data} = await awaitAbortable(
-      axios.post('restful/care/events', {id:String(history.value.id),page:value,pageSize}, {withCredentials:true, signal:controller.signal}),
-      controller.signal
-    )
-    if (request !== historyRequest) return
-    if (!Array.isArray(data.events) || !Number.isInteger(data.total)) throw new Error('invalid history')
-    history.value.events = data.events
-    history.value.total = data.total
-  } catch (_) {
-    if (request === historyRequest) history.value.error = controller.signal.aborted
-      ? '审计记录读取超时，请重试' : '审计记录暂时无法加载'
-  } finally {
-    clearTimeout(timeout)
-    if (request === historyRequest) {
-      history.value.loading = false
-      historyAbort = undefined
-    }
-  }
+  return historyReads.run({id:String(history.value.id),page:value,pageSize})
 }
 function begin (task, action) {
   dialog.value = {visible:true,id:task.id,action,note:'',error:''}
@@ -170,7 +149,7 @@ async function submit () {
   } finally {saving.value = false}
 }
 onMounted(() => {load();timer=setInterval(() => {if (!document.hidden && !loading.value && !saving.value && !dialog.value.visible && !history.value.visible) load()},15000)})
-onBeforeUnmount(() => { clearInterval(timer); reads.dispose(); historyRequest++; historyAbort?.abort() })
+onBeforeUnmount(() => { clearInterval(timer); reads.dispose(); historyReads.dispose() })
 </script>
 <style scoped>
 .care-inbox{margin-bottom:24px;padding:22px;border:1px solid #d8e2da;border-radius:14px;background:#fff}
