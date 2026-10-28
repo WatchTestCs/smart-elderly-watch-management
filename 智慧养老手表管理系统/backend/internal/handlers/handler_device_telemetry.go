@@ -162,10 +162,7 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	oldID := *d.OldID
-	now, beTime, day := parsed.now, parsed.beTime, parsed.day
-	hr, bp, step, sleep := parsed.hr, parsed.bp, parsed.step, parsed.sleep
-	sleepState, battery, appVersion := parsed.sleepState, parsed.battery, parsed.appVersion
-	lng, lat, sourceStr, alarm := parsed.lng, parsed.lat, parsed.sourceStr, parsed.alarm
+	now := parsed.now
 
 	// Only non-urgent step/sleep reports may use the durable queue.
 	// A successful enqueue is committed before any acknowledgement is sent.
