@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"strings"
 
-	"careold-go/migrations"
+	"suining-care/migrations"
 	"github.com/go-sql-driver/mysql"
 )
 
