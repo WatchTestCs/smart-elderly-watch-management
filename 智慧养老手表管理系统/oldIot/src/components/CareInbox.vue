@@ -2,7 +2,7 @@
   <section class="care-inbox" aria-labelledby="care-inbox-title" v-loading="loading" element-loading-text="正在读取照护任务…" :aria-busy="String(loading)">
     <div class="care-inbox-heading">
       <div><h2 id="care-inbox-title">{{ scope === 'verified' ? '已复核的照护任务' : '需要接手的照护任务' }}</h2><p>求助已接收不等于通知送达；只有人工接单及复核才会结束任务。</p></div>
-      <div class="care-inbox-tools"><label for="care-task-scope">任务范围</label><el-select id="care-task-scope" v-model="scope" :disabled="loading" @change="changeScope"><el-option label="待复核任务" value="active"/><el-option label="已复核任务" value="verified"/></el-select><el-button plain :loading="loading" @click="load">刷新任务</el-button></div>
+      <div class="care-inbox-tools"><label for="care-task-scope">任务范围</label><el-select id="care-task-scope" v-model="scope" :disabled="saving" @change="changeScope"><el-option label="待复核任务" value="active"/><el-option label="已复核任务" value="verified"/></el-select><el-button plain :disabled="saving" @click="load">刷新任务</el-button></div>
     </div>
     <CareOperationsPanel />
     <p v-if="error" role="alert" class="care-error">{{ error }}</p>
@@ -27,7 +27,7 @@
         </div>
       </article>
     </div>
-    <el-pagination v-if="!error && total > pageSize" :current-page="page" :page-size="pageSize" :total="total" :disabled="loading" layout="total, prev, pager, next" @current-change="changePage" />
+    <el-pagination v-if="!error && total > pageSize" :current-page="page" :page-size="pageSize" :total="total" :disabled="saving" layout="total, prev, pager, next" @current-change="changePage" />
     <el-dialog v-model="history.visible" title="照护事件履历" width="min(600px, 94vw)" append-to-body>
       <p v-if="history.loading">正在读取记录…</p>
       <p v-if="history.error" role="alert">{{ history.error }}</p>
@@ -52,9 +52,9 @@
   </section>
 </template>
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import axios from 'axios'
-import { createLatestRead } from '../composables/latestRead'
+import { createLatestRead, awaitAbortable } from '../composables/latestRead'
 import CareOperationsPanel from './CareOperationsPanel.vue'
 
 const emit = defineEmits(['verified'])
@@ -80,7 +80,7 @@ const nextStep = task => ({received:'值班人员立即接单并核实长者状�
 
 let timer
 const reads = createLatestRead(
-  query => axios.post('restful/care/incidents', query, {withCredentials:true}),
+  (query, signal) => axios.post('restful/care/incidents', query, {withCredentials:true, signal}),
   ({data}, query) => {
     if (!Array.isArray(data.items) || !Number.isInteger(data.total) || data.total < 0 || !['supervisor','caregiver','auditor'].includes(data.duty) || !Number.isInteger(data.actorId)) throw new Error('invalid care response')
     const lastPage = Math.max(1, Math.ceil(data.total / pageSize))
@@ -103,25 +103,46 @@ function load () {
 function changePage (value) { page.value = value; load() }
 function changeScope () { page.value = 1; load() }
 let historyRequest = 0
+let historyAbort
+watch(() => history.value.visible, visible => {
+  if (!visible) {
+    historyRequest++
+    historyAbort?.abort()
+    historyAbort = undefined
+    history.value.loading = false
+  }
+})
 async function viewHistory (task) {
   history.value = {visible:true,loading:false,error:'',events:[],id:task.id,page:1,total:0}
   await loadHistory(1)
 }
 async function loadHistory (value) {
   const request = ++historyRequest
+  historyAbort?.abort()
+  const controller = new AbortController()
+  historyAbort = controller
+  const timeout = setTimeout(() => controller.abort(), 10_000)
   history.value.loading = true
   history.value.error = ''
   history.value.page = value
   try {
-    const {data} = await axios.post('restful/care/events', {id:String(history.value.id),page:value,pageSize}, {withCredentials:true})
+    const {data} = await awaitAbortable(
+      axios.post('restful/care/events', {id:String(history.value.id),page:value,pageSize}, {withCredentials:true, signal:controller.signal}),
+      controller.signal
+    )
     if (request !== historyRequest) return
     if (!Array.isArray(data.events) || !Number.isInteger(data.total)) throw new Error('invalid history')
     history.value.events = data.events
     history.value.total = data.total
   } catch (_) {
-    if (request === historyRequest) history.value.error = '审计记录暂时无法加载'
+    if (request === historyRequest) history.value.error = controller.signal.aborted
+      ? '审计记录读取超时，请重试' : '审计记录暂时无法加载'
   } finally {
-    if (request === historyRequest) history.value.loading = false
+    clearTimeout(timeout)
+    if (request === historyRequest) {
+      history.value.loading = false
+      historyAbort = undefined
+    }
   }
 }
 function begin (task, action) {
@@ -148,7 +169,7 @@ async function submit () {
   } finally {saving.value = false}
 }
 onMounted(() => {load();timer=setInterval(() => {if (!document.hidden && !loading.value && !saving.value && !dialog.value.visible && !history.value.visible) load()},15000)})
-onBeforeUnmount(() => { clearInterval(timer); reads.dispose(); historyRequest++ })
+onBeforeUnmount(() => { clearInterval(timer); reads.dispose(); historyRequest++; historyAbort?.abort() })
 </script>
 <style scoped>
 .care-inbox{margin-bottom:24px;padding:22px;border:1px solid #d8e2da;border-radius:14px;background:#fff}

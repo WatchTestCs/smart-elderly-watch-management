@@ -49,6 +49,22 @@ describe('care task read scheduling', () => {
     view.unmount()
   })
 
+  it('does not leave loading stuck when a superseded page never resolves', async () => {
+    post.mockResolvedValueOnce(fixture('初始任务'))
+      .mockReturnValueOnce(new Promise(() => {}))
+      .mockResolvedValueOnce(fixture('恢复成功'))
+    const view = mountInbox()
+    await flushPromises()
+    view.findComponent(Pagination).vm.$emit('current-change', 2)
+    await flushPromises()
+    view.findComponent(Pagination).vm.$emit('current-change', 3)
+    await flushPromises()
+    expect(post.mock.calls.map(([, body]) => body.page)).toEqual([1, 2, 3])
+    expect(view.text()).toContain('恢复成功')
+    expect(view.get('.care-inbox').attributes('aria-busy')).toBe('false')
+    view.unmount()
+  })
+
   it('queues the last available page when records have been removed', async () => {
     post.mockResolvedValueOnce(fixture('初始任务'))
       .mockResolvedValueOnce({ ...fixture('越界响应', 21), data: { ...fixture('越界响应', 21).data, items: [] } })

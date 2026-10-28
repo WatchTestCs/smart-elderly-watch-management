@@ -21,7 +21,7 @@ export function useCustomers(client: PostClient) {
   const total = ref(0), pageSize = ref(10), currentPage = ref(1), customerList = ref<Customer[]>([])
   type Query = { page: number; pageSize: number; customerName: string }
   const reads = createLatestRead(
-    (query: Query) => client.post<{ customers: Customer[]; total: number }>('restful/customer/select', query),
+    (query: Query, signal: AbortSignal) => client.post<{ customers: Customer[]; total: number }>('restful/customer/select', query, { signal }),
     ({ data }) => {
       if (!Array.isArray(data.customers) || !Number.isInteger(data.total) || data.total < 0) throw new Error('invalid list')
       customerList.value = data.customers; total.value = data.total; loadError.value = ''

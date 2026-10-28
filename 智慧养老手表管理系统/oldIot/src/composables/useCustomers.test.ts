@@ -29,6 +29,19 @@ describe('guardian data flow', () => {
     expect(state.isLoading.value).toBe(false)
   })
 
+  it('can refresh after an earlier customer query hangs indefinitely', async () => {
+    const post = vi.fn()
+      .mockReturnValueOnce(new Promise(() => {}))
+      .mockResolvedValueOnce({ data: { customers: [{ customerName: '新数据' }], total: 1 } })
+    const state = useCustomers({ post } as PostClient)
+    const old = state.searchCustomers()
+    await flushPromises()
+    const current = state.changePage(2)
+    await Promise.all([old, current])
+    expect(post.mock.calls.map(([, body]) => body.page)).toEqual([1, 2])
+    expect(state.customerList.value[0]?.customerName).toBe('新数据')
+    expect(state.isLoading.value).toBe(false)
+  })
   it('waits for a read started after a confirmed write before save completes', async () => {
     let first!: (value: unknown) => void
     const post = vi.fn().mockReturnValueOnce(new Promise(resolve => { first = resolve })).mockResolvedValueOnce({ data: { returnCode: '1111' } }).mockResolvedValueOnce({ data: { customers: [], total: 0 } })
