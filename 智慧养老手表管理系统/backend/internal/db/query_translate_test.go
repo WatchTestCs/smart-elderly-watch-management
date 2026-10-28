@@ -49,16 +49,12 @@ func TestCompileMySQLQueryRewrites(t *testing.T) {
 		// 7. ON CONFLICT 家族
 		{"ON CONFLICT DO UPDATE 且 excluded 转 VALUES", "INSERT INTO t(a,b) VALUES($1,$2) ON CONFLICT(a) DO UPDATE SET b=EXCLUDED.b", "INSERT INTO t(a,b) VALUES(?,?) ON DUPLICATE KEY UPDATE b=VALUES(b)", []int{0, 1}},
 		{"DO NOTHING 默认用主键 id", "INSERT INTO care_notification_outbox(a) VALUES($1) ON CONFLICT DO NOTHING", "INSERT INTO care_notification_outbox(a) VALUES(?) ON DUPLICATE KEY UPDATE id=id", []int{0}},
-		{"watch_info 的 DO NOTHING 用 device_id", "INSERT INTO watch_info(a) VALUES($1) ON CONFLICT DO NOTHING", "INSERT INTO watch_info(a) VALUES(?) ON DUPLICATE KEY UPDATE device_id=device_id", []int{0}},
 
 		// 8. 行锁语法次序
 		{"SKIP LOCKED 的 LIMIT 前移", "SELECT id FROM message_outbox WHERE status='pending' ORDER BY id FOR UPDATE SKIP LOCKED LIMIT 20", "SELECT id FROM message_outbox WHERE status='pending' ORDER BY id LIMIT 20 FOR UPDATE SKIP LOCKED", nil},
 
 		// 9. 唯一被硬编码的时间偏移形状
 		{"硬编码的时间偏移", "SELECT now()+($3 * interval '1 second')", "SELECT TIMESTAMPADD(SECOND,?,CURRENT_TIMESTAMP(6))", []int{2}},
-
-		// 10. 现存业务兼容特例；拆包阶段必须逐字保持，后续再迁回 Repository。
-		{"最新位置 NULL 兼容", "SELECT GREATEST(COALESCE(l.be_time, o.be_time), COALESCE(a.be_time, o.be_time)) FROM oldperson o", "SELECT COALESCE(GREATEST(COALESCE(l.be_time, o.be_time), COALESCE(a.be_time, o.be_time)),COALESCE(l.be_time,o.be_time),COALESCE(a.be_time,o.be_time)) FROM oldperson o", nil},
 	}
 
 	for _, tc := range cases {
@@ -146,5 +142,21 @@ func TestMySQLQueryPreservesRepeatedAndDirectParameterModes(t *testing.T) {
 	if err != nil || sql != "SELECT ?,?,?" || len(args) != 3 ||
 		args[0] != "second" || args[1] != "first" || args[2] != "second" {
 		t.Fatalf("reordered binding changed: sql=%q args=%v err=%v", sql, args, err)
+	}
+}
+
+func TestCompileMySQLQueryHasNoBusinessTableSpecialCases(t *testing.T) {
+	position := "SELECT GREATEST(COALESCE(l.be_time, o.be_time), COALESCE(a.be_time, o.be_time)) FROM oldperson o"
+	plan, err := compileMySQLQuery(position)
+	if err != nil || plan.sql != position {
+		t.Fatalf("position SQL must no longer be table-special-cased: sql=%q err=%v", plan.sql, err)
+	}
+
+	plan, err = compileMySQLQuery("INSERT INTO watch_info(a) VALUES($1) ON CONFLICT DO NOTHING")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if plan.sql != "INSERT INTO watch_info(a) VALUES(?) ON DUPLICATE KEY UPDATE id=id" {
+		t.Fatalf("watch_info must use only generic DO NOTHING translation now: %s", plan.sql)
 	}
 }
