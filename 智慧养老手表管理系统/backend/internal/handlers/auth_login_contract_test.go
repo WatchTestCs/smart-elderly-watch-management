@@ -33,7 +33,7 @@ func TestNativeLoginResponseDoesNotExposeAccountDTOs(t *testing.T) {
 
 	for _, tc := range []struct {
 		name, phone, role string
-		oldID            int64
+		oldID             int64
 	}{
 		{"administrator", "13800000001", auth.RoleAdmin, 0},
 		{"family", "13800000002", auth.RoleFamily, 3},

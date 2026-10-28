@@ -141,11 +141,11 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 
 	// 2. family 表（家属）
 	var (
-		fid     int64
-		fName   pgtype.Text
-		fPhone  pgtype.Text
-		fPass   pgtype.Text
-		oldID   pgtype.Int8
+		fid    int64
+		fName  pgtype.Text
+		fPhone pgtype.Text
+		fPass  pgtype.Text
+		oldID  pgtype.Int8
 	)
 	err = h.DB.QueryRow(ctx, `
 		SELECT f.family_id, f.family_name, f.family_phone, f.family_password, o.old_id
