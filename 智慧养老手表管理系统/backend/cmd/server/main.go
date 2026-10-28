@@ -1,4 +1,4 @@
-// Command server 启动 careold-go 后端：HTTP API（复刻 preview 分支 careold）。
+// Command server starts the standalone Go HTTP API and background workers.
 package main
 
 import (
@@ -90,7 +90,7 @@ func main() {
 		}
 	}()
 
-	// 桌面端内嵌模式：写就绪文件 + 看护父进程（对齐 Java DesktopReady）。
+	// 桌面端内嵌模式：写就绪文件并看护 Tauri 父进程。
 	writeReadyFile(readyFile, actualPort)
 	watchParent(parentPid, shutdown)
 

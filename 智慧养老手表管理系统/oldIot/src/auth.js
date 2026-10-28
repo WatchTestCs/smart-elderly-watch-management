@@ -11,7 +11,7 @@ function clearProfile () { profileKeys.forEach(key => localStorage.removeItem(ke
 export function loadSession (refresh) {
   if (!refresh && loaded) return Promise.resolve(authState.account)
   if (pending) return pending
-  pending = axios.get('/restful/userLogin/session', { skipSession: true, timeout: 5000 }).then(response => {
+  pending = axios.get('/api/v1/auth/session', { skipSession: true, timeout: 5000 }).then(response => {
     const data = response.data
     if (!data || !data.csrfToken) throw new Error('Session response missing')
     authState.setupRequired = Boolean(data.setupRequired)
@@ -33,7 +33,7 @@ export function loadSession (refresh) {
 }
 
 export function endSession () {
-  return axios.post('/restful/userLogin/logout', {}, { skipSession: true, headers: { [authState.csrfHeader]: authState.csrfToken } }).then(() => {
+  return axios.post('/api/v1/auth/logout', {}, { skipSession: true, headers: { [authState.csrfHeader]: authState.csrfToken } }).then(() => {
     loaded = false
     authState.account = null
     authState.csrfToken = ''

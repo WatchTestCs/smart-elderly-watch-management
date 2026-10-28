@@ -1,8 +1,7 @@
 package handlers
 
-// Group B：老人 / 设备 / 手表信息 / 位置 / 告警处置（共 29 个 endpoint）。
-// 行为严格复刻 careold Java 端（preview 经 optimize 分支修复后的状态），
-// 细节以 go-rewrite-spec/group-b.md 为准。
+// Group B：老人、设备、健康设置、位置与告警处置。
+// HTTP 兼容路径由 Go ServeMux 处理，设备事务及业务验证均是原生 Go 实现。
 
 import (
 	dbstore "careold-go/internal/db"
@@ -54,7 +53,8 @@ func (h *Handler) routeOld(mux *http.ServeMux) {
 // 通用小工具（本组内复用；不与 util.go / 其它 handler_*.go 的同名函数冲突）
 // ---------------------------------------------------------------------------
 
-// oldQuerier 抽象 *dbstore.Database 与 pgx.Tx 的查询接口。
+// oldQuerier 为已有业务处理器提供一致的 Go 数据访问接口。
+// 实际由 dbstore.Database 或 dbstore.Transaction 实现。
 type oldQuerier interface {
 	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
 	Query(ctx context.Context, sql string, args ...any) (dbstore.Rows, error)

@@ -12,10 +12,10 @@ import (
 )
 
 // ---------------------------------------------------------------------------
-// DeviceController —— 硬件公开接口（设备密钥鉴权）
+// Go device protocol handlers: public endpoints authenticated by device key.
 // ---------------------------------------------------------------------------
 
-// checkDeviceCredentials 校验 deviceNo/secret 必填与长度（复刻 @Valid Credentials）。
+// checkDeviceCredentials 使用 Go 原生校验限制设备号和密钥长度。
 func checkDeviceCredentials(w http.ResponseWriter, m map[string]any) (string, string, bool) {
 	deviceNo, okNo := vstr(m, "deviceNo")
 	secret, okSecret := vstr(m, "secret")
@@ -318,4 +318,4 @@ func (h *Handler) deviceHeartbeat(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// checkTelemetry 校验上报类接口的字段长度（复刻 @Valid Telemetry）。
+// checkTelemetry 在 Go Handler 内限制遥测字段长度。

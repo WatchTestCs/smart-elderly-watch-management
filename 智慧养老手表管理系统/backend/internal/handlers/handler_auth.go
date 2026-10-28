@@ -1,4 +1,4 @@
-// 登录 / session / 初始化 / 桌面端：LoginController、SetupController、DesktopController。
+// 账号登录、会话生命周期、首次管理员初始化与桌面端控制。
 package handlers
 
 import (
@@ -44,7 +44,7 @@ func (h *Handler) MountLocalLogout(mux *http.ServeMux) {
 	mux.Handle("POST /restful/userLogin/logout", csrf.Middleware(h.Sessions, auth.Middleware(h.Sessions, local)))
 }
 
-// sessionInfo 复刻 GET /restful/userLogin/session：公开；无会话则建匿名会话。
+// sessionInfo 返回当前已验证会话，必要时建立匿名会话。
 func (h *Handler) sessionInfo(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	var count int64
@@ -60,6 +60,10 @@ func (h *Handler) sessionInfo(w http.ResponseWriter, r *http.Request) {
 			response.JSON(w, 503, map[string]any{"message": "会话存储不可用"})
 			return
 		}
+		session.SetCookie(w, sess.ID, h.CookieSecure)
+	} else if session.NeedsCookieUpgrade(r) {
+		// Reissue the same verified session under the Go-native cookie name.
+		// No extra login, CSRF rotation or database write is necessary.
 		session.SetCookie(w, sess.ID, h.CookieSecure)
 	}
 	authenticated := sess.Principal.Role == auth.RoleAdmin || sess.Principal.Role == auth.RoleFamily
@@ -91,7 +95,7 @@ func (h *Handler) sessionInfo(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// login 复刻 POST /restful/userLogin/login：公开；先查 users（管理员），再查 family（家属）。
+// login 验证管理员或家属身份并轮换服务器端会话。
 func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -210,8 +214,8 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 // renewSession 登录建会话：销毁请求 cookie 带来的旧会话（防 session fixation），建新会话并写 cookie。
 func (h *Handler) renewSession(w http.ResponseWriter, r *http.Request, p session.Principal) bool {
 	p.FactorGeneration, _ = r.Context().Value(factorGenerationKey{}).(string)
-	if c, err := r.Cookie(session.CookieName); err == nil && c.Value != "" {
-		if !h.Sessions.DestroyContext(r.Context(), c.Value) {
+	for _, id := range session.CookieIDs(r) {
+		if !h.Sessions.DestroyContext(r.Context(), id) {
 			response.JSON(w, 503, map[string]any{"message": "会话存储不可用"})
 			return false
 		}
@@ -232,23 +236,39 @@ func (h *Handler) renewSession(w http.ResponseWriter, r *http.Request, p session
 	return true
 }
 
-// logout 复刻 POST /restful/userLogin/logout：需登录（中间件鉴权），销毁会话并清 cookie。
+// logout 撤销已验证会话及同浏览器的旧版会话，并清理 Cookie。
 func (h *Handler) logout(w http.ResponseWriter, r *http.Request) {
 	sess := session.FromContext(r)
 	if sess == nil {
 		sess = h.Sessions.FromRequest(r)
 	}
 	if sess != nil {
-		if !h.Sessions.DestroyContext(r.Context(), sess.ID) {
-			response.JSON(w, 503, map[string]any{"message": "会话撤销未完成"})
-			return
+		// A browser may hold both a modern session and a predecessor cookie.
+		// The middleware may have bound a verified session without a cookie
+		// (for example, in native integrations). Always revoke that session.
+		ids := session.CookieIDs(r)
+		verifiedPresent := false
+		for _, id := range ids {
+			if id == sess.ID {
+				verifiedPresent = true
+				break
+			}
+		}
+		if !verifiedPresent {
+			ids = append(ids, sess.ID)
+		}
+		for _, id := range ids {
+			if !h.Sessions.DestroyContext(r.Context(), id) {
+				response.JSON(w, 503, map[string]any{"message": "会话撤销未完成"})
+				return
+			}
 		}
 	}
 	session.ClearCookie(w, h.CookieSecure)
 	response.OK(w, nil)
 }
 
-// setup 复刻 POST /restful/setup：公开 + 桌面 token；一次性初始化管理员账号。
+// setup 要求桌面令牌且仅允许首次初始化管理员。
 func (h *Handler) setup(w http.ResponseWriter, r *http.Request) {
 	if !h.checkDesktopToken(w, r) {
 		return
@@ -307,7 +327,7 @@ func (h *Handler) setup(w http.ResponseWriter, r *http.Request) {
 	response.OK(w, nil)
 }
 
-// desktopExit 复刻 POST /restful/desktop/exit：公开 + 桌面 token；通过后延迟退出进程。
+// desktopExit 验证桌面令牌后请求关闭 Go 服务。
 func (h *Handler) desktopExit(w http.ResponseWriter, r *http.Request) {
 	if !h.checkDesktopToken(w, r) {
 		return
