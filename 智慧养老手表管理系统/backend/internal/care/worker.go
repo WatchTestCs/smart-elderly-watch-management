@@ -4,7 +4,7 @@ package care
 
 import (
 	"bytes"
-	dbstore "careold-go/internal/db"
+	dbstore "suining-care/internal/db"
 	"context"
 	"encoding/json"
 	"errors"
@@ -18,9 +18,9 @@ import (
 	"strings"
 	"time"
 
-	"careold-go/internal/notify"
-	"careold-go/internal/observability"
-	"careold-go/internal/securestore"
+	"suining-care/internal/notify"
+	"suining-care/internal/observability"
+	"suining-care/internal/securestore"
 	"github.com/jackc/pgx/v5"
 )
 

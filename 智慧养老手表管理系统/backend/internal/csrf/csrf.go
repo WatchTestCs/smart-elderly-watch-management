@@ -11,9 +11,9 @@ import (
 	"crypto/subtle"
 	"net/http"
 
-	"careold-go/internal/accesspolicy"
-	"careold-go/internal/response"
-	"careold-go/internal/session"
+	"suining-care/internal/accesspolicy"
+	"suining-care/internal/response"
+	"suining-care/internal/session"
 )
 
 const HeaderName = "X-CSRF-TOKEN"

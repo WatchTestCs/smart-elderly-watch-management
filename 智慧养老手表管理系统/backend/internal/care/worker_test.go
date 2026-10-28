@@ -1,8 +1,8 @@
 package care
 
 import (
-	dbstore "careold-go/internal/db"
-	"careold-go/internal/db/dbtest"
+	dbstore "suining-care/internal/db"
+	"suining-care/internal/db/dbtest"
 	"context"
 	"fmt"
 	"net/http"
@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"careold-go/internal/db"
+	"suining-care/internal/db"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
