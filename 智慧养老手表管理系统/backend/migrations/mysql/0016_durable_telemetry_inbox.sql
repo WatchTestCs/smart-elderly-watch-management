@@ -1,4 +1,4 @@
--- Additive InnoDB queue; no hardware secret or plaintext health payload stored.
+-- Additive InnoDB queue with no hardware secret or plaintext health payload stored.
 CREATE TABLE IF NOT EXISTS telemetry_inbox (
     id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     device_id BIGINT NOT NULL,

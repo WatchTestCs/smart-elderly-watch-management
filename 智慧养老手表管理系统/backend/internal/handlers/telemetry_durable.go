@@ -233,6 +233,10 @@ func processDurableQueueItem(ctx context.Context, tx *dbstore.Transaction, repo 
 }
 
 func RunDurableTelemetry(ctx context.Context, db *dbstore.Database, box *securestore.Box) {
+	if box == nil {
+		log.Print("durable telemetry worker disabled: DATA_ENCRYPTION_KEY not configured")
+		return
+	}
 	ticker := time.NewTicker(250 * time.Millisecond)
 	defer ticker.Stop()
 	for {
