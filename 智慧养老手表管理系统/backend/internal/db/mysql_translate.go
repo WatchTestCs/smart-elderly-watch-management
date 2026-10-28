@@ -80,6 +80,27 @@ func compileMySQLQuery(query string) (queryPlan, error) {
 	out := make([]byte, 0, len(query)+32)
 	var positions []int
 	for i := 0; i < len(query); {
+		// SQL comments must not bind parameters or rewrite operators.
+		if strings.HasPrefix(query[i:], "--") || query[i] == '#' {
+			end := strings.IndexByte(query[i:], '\n')
+			if end < 0 {
+				out = append(out, query[i:]...)
+				break
+			}
+			out = append(out, query[i:i+end+1]...)
+			i += end + 1
+			continue
+		}
+		if strings.HasPrefix(query[i:], "/*") {
+			end := strings.Index(query[i+2:], "*/")
+			if end < 0 {
+				return queryPlan{}, errors.New("unterminated SQL block comment")
+			}
+			end += i + 4
+			out = append(out, query[i:end]...)
+			i = end
+			continue
+		}
 		if query[i] == '\'' || query[i] == '"' || query[i] == '`' {
 			quote := query[i]
 			out = append(out, quote)
