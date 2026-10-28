@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	"suining-care/internal/auth"
-	"suining-care/internal/session"
 	"suining-care/internal/securestore"
+	"suining-care/internal/session"
 )
 
 // The login response is a status, not a duplicate account profile. Clients
