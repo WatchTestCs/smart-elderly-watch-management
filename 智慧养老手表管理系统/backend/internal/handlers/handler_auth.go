@@ -20,11 +20,11 @@ import (
 )
 
 func (h *Handler) routeAuth(mux *http.ServeMux) {
-	mux.HandleFunc("GET /restful/userLogin/session", h.sessionInfo)
-	mux.HandleFunc("POST /restful/userLogin/login", h.login)
-	mux.HandleFunc("POST /restful/userLogin/logout", h.logout)
-	mux.HandleFunc("POST /restful/setup", h.setup)
-	mux.HandleFunc("POST /restful/desktop/exit", h.desktopExit)
+	mux.HandleFunc("GET /api/v1/auth/session", h.sessionInfo)
+	mux.HandleFunc("POST /api/v1/auth/login", h.login)
+	mux.HandleFunc("POST /api/v1/auth/logout", h.logout)
+	mux.HandleFunc("POST /api/v1/setup", h.setup)
+	mux.HandleFunc("POST /api/v1/desktop/exit", h.desktopExit)
 }
 
 // timingDummyHash 是一条与本哈希同 cost（12）的无效 bcrypt 记录：手机号在
@@ -34,17 +34,17 @@ const timingDummyHash = "$2a$12$S1k/y1BsWtNAy/eeN.zaleT.hNjDpyRQ/1S7MCXu5Y8GN61E
 
 // MountDesktopExit allows closing the desktop even before the database is ready.
 func (h *Handler) MountDesktopExit(mux *http.ServeMux) {
-	mux.HandleFunc("POST /restful/desktop/exit", h.desktopExit)
+	mux.HandleFunc("POST /api/v1/desktop/exit", h.desktopExit)
 }
 
 // MountLocalLogout keeps session cleanup available without a database.
 func (h *Handler) MountLocalLogout(mux *http.ServeMux) {
 	local := http.NewServeMux()
-	local.HandleFunc("POST /restful/userLogin/logout", h.logout)
-	mux.Handle("POST /restful/userLogin/logout", csrf.Middleware(h.Sessions, auth.Middleware(h.Sessions, local)))
+	local.HandleFunc("POST /api/v1/auth/logout", h.logout)
+	mux.Handle("POST /api/v1/auth/logout", csrf.Middleware(h.Sessions, auth.Middleware(h.Sessions, local)))
 }
 
-// sessionInfo 复刻 GET /restful/userLogin/session：公开；无会话则建匿名会话。
+// sessionInfo 复刻 GET /api/v1/auth/session：公开；无会话则建匿名会话。
 func (h *Handler) sessionInfo(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	var count int64
@@ -91,7 +91,7 @@ func (h *Handler) sessionInfo(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// login 复刻 POST /restful/userLogin/login：公开；先查 users（管理员），再查 family（家属）。
+// login 复刻 POST /api/v1/auth/login：公开；先查 users（管理员），再查 family（家属）。
 func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -232,7 +232,7 @@ func (h *Handler) renewSession(w http.ResponseWriter, r *http.Request, p session
 	return true
 }
 
-// logout 复刻 POST /restful/userLogin/logout：需登录（中间件鉴权），销毁会话并清 cookie。
+// logout 复刻 POST /api/v1/auth/logout：需登录（中间件鉴权），销毁会话并清 cookie。
 func (h *Handler) logout(w http.ResponseWriter, r *http.Request) {
 	sess := session.FromContext(r)
 	if sess == nil {
@@ -248,7 +248,7 @@ func (h *Handler) logout(w http.ResponseWriter, r *http.Request) {
 	response.OK(w, nil)
 }
 
-// setup 复刻 POST /restful/setup：公开 + 桌面 token；一次性初始化管理员账号。
+// setup 复刻 POST /api/v1/setup：公开 + 桌面 token；一次性初始化管理员账号。
 func (h *Handler) setup(w http.ResponseWriter, r *http.Request) {
 	if !h.checkDesktopToken(w, r) {
 		return
@@ -307,7 +307,7 @@ func (h *Handler) setup(w http.ResponseWriter, r *http.Request) {
 	response.OK(w, nil)
 }
 
-// desktopExit 复刻 POST /restful/desktop/exit：公开 + 桌面 token；通过后延迟退出进程。
+// desktopExit 复刻 POST /api/v1/desktop/exit：公开 + 桌面 token；通过后延迟退出进程。
 func (h *Handler) desktopExit(w http.ResponseWriter, r *http.Request) {
 	if !h.checkDesktopToken(w, r) {
 		return

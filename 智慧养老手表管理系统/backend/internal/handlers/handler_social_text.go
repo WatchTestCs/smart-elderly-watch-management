@@ -27,7 +27,7 @@ type picDTO struct {
 
 const textColumns = `text_id, title, text_main, TO_CHAR(time,'YYYY-MM-DD HH24:MI:SS.MS') AS time, pic_id`
 
-// POST /restful/text/select —— 公告列表（标题模糊+分页）。
+// POST /api/v1/text/select —— 公告列表（标题模糊+分页）。
 func (h *Handler) textSelect(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -73,7 +73,7 @@ func (h *Handler) textSelect(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// POST /restful/text/selectDetail —— 公告详情+关联图片。
+// POST /api/v1/text/selectDetail —— 公告详情+关联图片。
 func (h *Handler) textSelectDetail(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -138,7 +138,7 @@ func picNameList(w http.ResponseWriter, m map[string]any) ([]string, bool) {
 	return out, true
 }
 
-// POST /restful/text/add —— 发布公告（事务内执行；提交后异步发短信）。
+// POST /api/v1/text/add —— 发布公告（事务内执行；提交后异步发短信）。
 func (h *Handler) textAdd(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -199,7 +199,7 @@ func (h *Handler) textAdd(w http.ResponseWriter, r *http.Request) {
 	writeCode(w, true)
 }
 
-// POST /restful/text/delete —— 删除公告及关联图片（事务内执行）。
+// POST /api/v1/text/delete —— 删除公告及关联图片（事务内执行）。
 func (h *Handler) textDelete(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -249,7 +249,7 @@ func (h *Handler) textDelete(w http.ResponseWriter, r *http.Request) {
 	writeCode(w, true)
 }
 
-// POST /restful/text/update —— 更新公告并替换图片（事务内执行）。
+// POST /api/v1/text/update —— 更新公告并替换图片（事务内执行）。
 func (h *Handler) textUpdate(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {

@@ -27,6 +27,9 @@ jobs:
           cache: npm
           cache-dependency-path: 智慧养老手表管理系统/oldIot/package-lock.json
 
+      - name: Enforce native Go API boundary
+        run: python3 ../../scripts/check-api-boundary.py
+
       - name: Install locked dependencies
         run: npm ci
 

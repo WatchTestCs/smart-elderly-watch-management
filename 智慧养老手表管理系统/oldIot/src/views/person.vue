@@ -308,7 +308,7 @@ export default {
       var _this = this
       var name = _this.searchText
 
-      return axios.post('restful/oldPerson/selectDetail',
+      return axios.post('api/v1/oldPerson/selectDetail',
         { page: this.currentPage, pageSize: this.pageSize,
           'name': name === '' ? '' : _this.searchText
         },
@@ -336,7 +336,7 @@ export default {
       this.$refs.addoldFormRef.validate(function (valid) {
         if (!valid) return
         var param = _this.oldForm
-        axios.post('restful/oldPerson/add',
+        axios.post('api/v1/oldPerson/add',
           param,
           {
             headers: {
@@ -372,7 +372,7 @@ export default {
       var _this = this
       this.$refs.editoldFormRef.validate(function (valid) {
         if (!valid) return
-        axios.post('restful/oldPerson/update', _this.oldEditForm,
+        axios.post('api/v1/oldPerson/update', _this.oldEditForm,
           {
             headers: {
               'content-type': 'application/json'
@@ -406,7 +406,7 @@ export default {
       try {
         var options = [], page = 1, total = 0
         do {
-          var response = await axios.post('restful/customer/select', { customerName: '', page, pageSize: 100 }, { withCredentials: true })
+          var response = await axios.post('api/v1/customer/select', { customerName: '', page, pageSize: 100 }, { withCredentials: true })
           var items = response.data.customers
           if (!Array.isArray(items)) throw new Error('invalid guardians')
           total = response.data.total ?? items.length
@@ -433,7 +433,7 @@ export default {
       }
 
       try {
-        const response = await axios.post('restful/oldPerson/delete', { oldId }, {
+        const response = await axios.post('api/v1/oldPerson/delete', { oldId }, {
           headers: { 'content-type': 'application/json' },
           withCredentials: true
         })

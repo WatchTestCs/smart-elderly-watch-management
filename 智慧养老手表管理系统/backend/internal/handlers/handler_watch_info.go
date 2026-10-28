@@ -8,7 +8,7 @@ import (
 )
 
 // ---------------------------------------------------------------------------
-// WatchInfoController (/restful/watchInfo)
+// WatchInfoController (/api/v1/watchInfo)
 // ---------------------------------------------------------------------------
 
 // watchProfileParams 阈值校验（add/update 共用）：缺失/超范围 → 400"<key> 缺失或超出允许范围"；
@@ -55,7 +55,7 @@ func watchProfileParams(w http.ResponseWriter, m map[string]any) (deviceID int64
 	return deviceID, hrf, hrl, bpf, bpl, true
 }
 
-// POST /restful/watchInfo/select —— 手表阈值档案分页查询（ADMIN）。
+// POST /api/v1/watchInfo/select —— 手表阈值档案分页查询（ADMIN）。
 func (h *Handler) watchInfoSelect(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -110,7 +110,7 @@ func (h *Handler) watchInfoSelect(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// POST /restful/watchInfo/add —— 新增手表阈值档案（ADMIN）。
+// POST /api/v1/watchInfo/add —— 新增手表阈值档案（ADMIN）。
 func (h *Handler) watchInfoAdd(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -146,7 +146,7 @@ func (h *Handler) watchInfoAdd(w http.ResponseWriter, r *http.Request) {
 	failCodeOnly(w)
 }
 
-// POST /restful/watchInfo/update —— 更新手表阈值档案（ADMIN）。
+// POST /api/v1/watchInfo/update —— 更新手表阈值档案（ADMIN）。
 func (h *Handler) watchInfoUpdate(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -170,7 +170,7 @@ func (h *Handler) watchInfoUpdate(w http.ResponseWriter, r *http.Request) {
 	failCodeOnly(w)
 }
 
-// POST /restful/watchInfo/delete —— 删除手表阈值档案（ADMIN）。
+// POST /api/v1/watchInfo/delete —— 删除手表阈值档案（ADMIN）。
 func (h *Handler) watchInfoDelete(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {

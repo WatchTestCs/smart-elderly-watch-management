@@ -105,7 +105,7 @@ export default {
       			var oldId=_this.oldId
       _this.isLoading = true
       _this.loadError = ''
-      axios.post('restful/step/selectStepFamily',
+      axios.post('api/v1/step/selectStepFamily',
         {
           "oldId":oldId
         },
@@ -133,7 +133,7 @@ export default {
       _this.chartLoading = true
       _this.chartError = ''
       _this.name = curOld.name || ''
-      			axios.post('restful/step/selectStepDetail',{
+      			axios.post('api/v1/step/selectStepDetail',{
 								"oldId":oldId
 							},
       				{

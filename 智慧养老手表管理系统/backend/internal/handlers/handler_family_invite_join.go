@@ -32,7 +32,7 @@ func (h *Handler) inviteOldPersonList(w http.ResponseWriter, r *http.Request) {
 	response.OK(w, map[string]any{"oldPeople": list})
 }
 
-// POST /restful/inviteCode/checkCode —— 校验邀请码（公开）。
+// POST /api/v1/inviteCode/checkCode —— 校验邀请码（公开）。
 func (h *Handler) inviteCheckCode(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -83,7 +83,7 @@ func (h *Handler) inviteCheckCode(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// POST /restful/inviteCode/join —— 家属凭邀请码注册（公开，事务）。
+// POST /api/v1/inviteCode/join —— 家属凭邀请码注册（公开，事务）。
 func (h *Handler) inviteJoin(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {

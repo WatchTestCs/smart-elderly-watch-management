@@ -12,7 +12,7 @@ import (
 )
 
 // ---------------------------------------------------------------------------
-// PositionController (/restful/position)
+// PositionController (/api/v1/position)
 // ---------------------------------------------------------------------------
 
 const posLatest = `SELECT o.name, o.old_id, o.sex, l.lng, l.lat,
@@ -44,7 +44,7 @@ func scanPositionRow(box *securestore.Box, row dbstore.Row) (map[string]any, err
 	}, nil
 }
 
-// POST /restful/position/select —— 全部老人最新位置分页查询（ADMIN）。
+// POST /api/v1/position/select —— 全部老人最新位置分页查询（ADMIN）。
 func (h *Handler) positionSelect(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -90,7 +90,7 @@ func (h *Handler) positionSelect(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// POST /restful/position/selectFamily —— 家属查自己老人的最新位置（ADMIN 或 FAMILY）。
+// POST /api/v1/position/selectFamily —— 家属查自己老人的最新位置（ADMIN 或 FAMILY）。
 func (h *Handler) positionSelectFamily(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {

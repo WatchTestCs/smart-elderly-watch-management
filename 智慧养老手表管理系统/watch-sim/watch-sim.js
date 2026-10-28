@@ -256,7 +256,7 @@ async function main() {
     + '（间隔 ' + config.intervalSeconds + 's，模式 ' + config.scenario + '）');
 
   // 1. 设备登录
-  let res = await postJson(config.server, 'restful/device/login', {
+  let res = await postJson(config.server, 'api/v1/device/login', {
     deviceNo: config.deviceNo,
     secret: config.secret
   });
@@ -273,7 +273,7 @@ async function main() {
 
   // 2. 需要时先绑定
   if (args.bind) {
-    const bindRes = await postJson(config.server, 'restful/device/bind', {
+    const bindRes = await postJson(config.server, 'api/v1/device/bind', {
       deviceNo: config.deviceNo,
       secret: config.secret,
       code: String(args.bind).toUpperCase()
@@ -290,7 +290,7 @@ async function main() {
   }
 
   // 3. 心跳
-  const hb = await postJson(config.server, 'restful/device/heartbeat', {
+  const hb = await postJson(config.server, 'api/v1/device/heartbeat', {
     deviceNo: config.deviceNo,
     secret: config.secret,
     battery: 88,
@@ -316,7 +316,7 @@ async function main() {
     }
     const payload = buildPayload(config, state);
     try {
-      const r = await postJson(config.server, 'restful/device/report', payload);
+      const r = await postJson(config.server, 'api/v1/device/report', payload);
       if (r.returnCode === '1111') {
         const flag = [];
         if (payload.alarm) { flag.push('摔倒告警'); }

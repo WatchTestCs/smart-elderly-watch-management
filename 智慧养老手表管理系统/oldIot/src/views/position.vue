@@ -114,7 +114,7 @@ export default {
       _this.loadError = ''
       var name = _this.searchText
 
-      axios.post('restful/position/select',
+      axios.post('api/v1/position/select',
         {
           page: _this.currentPage, pageSize: _this.pageSize,
           'name': name === '' ? '' : _this.searchText
@@ -171,7 +171,7 @@ export default {
         cancelButtonText: '取消',
         type: 'warning'
       }).then(function () {
-        axios.post('restful/device/handleAlarm', {'oldId': row.oldId},
+        axios.post('api/v1/device/handleAlarm', {'oldId': row.oldId},
           {
             headers: {'content-type': 'application/json'},
             withCredentials: true

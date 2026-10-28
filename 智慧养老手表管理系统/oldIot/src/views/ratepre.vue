@@ -194,7 +194,7 @@ export default {
       var _this = this
       var name = _this.searchText
 
-      axios.post('restful/ratepre/selectRatepre',
+      axios.post('api/v1/ratepre/selectRatepre',
         {
           page: _this.currentPage, pageSize: _this.pageSize,
           'name': name === '' ? '' : _this.searchText,
@@ -216,7 +216,7 @@ export default {
     },
     getCount(){
       var _this=this
-      axios.post('restful/ratepre/selectRatepreCount',
+      axios.post('api/v1/ratepre/selectRatepreCount',
         {
 
         },
@@ -237,7 +237,7 @@ export default {
     },
     loadAlertCount () {
       var _this = this
-      axios.post('restful/ratepre/alertCount', {}, {
+      axios.post('api/v1/ratepre/alertCount', {}, {
         headers: { 'content-type': 'application/json' },
         withCredentials: true
       }).then(function (response) {
@@ -277,7 +277,7 @@ export default {
         occurTime: '', advice: '', message: ''
       }
       var params = recordId ? { recordId: recordId } : { oldId: oldId, kind: kind || '' }
-      axios.post('restful/ratepre/alertDetail', params, {
+      axios.post('api/v1/ratepre/alertDetail', params, {
         headers: { 'content-type': 'application/json' },
         withCredentials: true
       }).then(function (response) {
@@ -311,7 +311,7 @@ export default {
     resolveAlert (kind) {
       var _this = this
       this.alertDialog.resolving = true
-      axios.post('restful/ratepre/resolveAlert',
+      axios.post('api/v1/ratepre/resolveAlert',
         { recordId: this.alertDialog.recordId, kind: kind },
         {
           headers: { 'content-type': 'application/json' },
@@ -337,10 +337,10 @@ export default {
       var _this = this
       var tasks = []
       if (row.rateState == 1) {
-        tasks.push(axios.post('restful/ratepre/resolveAlert', { recordId: row.recordId, kind: 'rate' }, _this.postConfig()))
+        tasks.push(axios.post('api/v1/ratepre/resolveAlert', { recordId: row.recordId, kind: 'rate' }, _this.postConfig()))
       }
       if (row.preState == 1) {
-        tasks.push(axios.post('restful/ratepre/resolveAlert', { recordId: row.recordId, kind: 'pre' }, _this.postConfig()))
+        tasks.push(axios.post('api/v1/ratepre/resolveAlert', { recordId: row.recordId, kind: 'pre' }, _this.postConfig()))
       }
       Promise.all(tasks).then(function () {
         _this.$message({ type: 'success', message: '已处理，红点已消除' })
@@ -391,7 +391,7 @@ export default {
       this.chartLoading = true
       this.chartError = ''
       this.name = curOld.name || ''
-      return axios.post('restful/ratepre/selectRatepreDetail', { oldId: curOld.oldId }, { withCredentials: true }).then(response => {
+      return axios.post('api/v1/ratepre/selectRatepreDetail', { oldId: curOld.oldId }, { withCredentials: true }).then(response => {
         if (!this.isShowRoleDialog) return
         this.bps = Array.isArray(response.data.bps) ? response.data.bps : []; this.hrs = Array.isArray(response.data.hrs) ? response.data.hrs : []; this.createTimes = Array.isArray(response.data.createTimes) ? response.data.createTimes : []; this.time = response.data.time;
         if (!this.hrs.length && !this.bps.length) { this.chartError = '暂无可展示的健康详情。'; return }

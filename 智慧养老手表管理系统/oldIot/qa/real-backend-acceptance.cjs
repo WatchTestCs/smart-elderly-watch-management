@@ -14,12 +14,12 @@ async function main () {
   const check = (name, pass) => { checks.push({ name, pass: Boolean(pass) }); assert.ok(pass, name) }
   const bootstrap = await request.newContext({ baseURL: base })
   for (let n = 0; n < 100; n++) {
-    if ((await (await bootstrap.get('/restful/service/status')).json()).databaseReady) break
+    if ((await (await bootstrap.get('/api/v1/service/status')).json()).databaseReady) break
     await new Promise(resolve => setTimeout(resolve, 100))
   }
-  assert.equal((await (await bootstrap.get('/restful/userLogin/session')).json()).setupRequired, true, 'Refuses to seed a non-empty database')
+  assert.equal((await (await bootstrap.get('/api/v1/auth/session')).json()).setupRequired, true, 'Refuses to seed a non-empty database')
   const password = 'LocalTestOnly1234'
-  const setup = await bootstrap.post('/restful/setup', { headers: { 'X-Suining-Desktop': process.env.CARE_E2E_DESKTOP_TOKEN }, data: { name: '测试主管', phone: '13800000001', password } })
+  const setup = await bootstrap.post('/api/v1/setup', { headers: { 'X-Suining-Desktop': process.env.CARE_E2E_DESKTOP_TOKEN }, data: { name: '测试主管', phone: '13800000001', password } })
   assert.equal(setup.status(), 200)
   assert.equal((await setup.json()).returnCode, '1111')
   execFileSync(process.env.CARE_E2E_MYSQL, ['--no-defaults', '--host=127.0.0.1', '--port=' + process.env.CARE_E2E_MYSQL_PORT, '--user=' + process.env.CARE_E2E_MYSQL_USER, '--database=' + schema, '--execute=' + "INSERT INTO users(user_name,user_phone,password,role) SELECT 'reviewer','13800000002',password,'1' FROM users WHERE user_phone='13800000001'"], { stdio: 'pipe' })
@@ -37,8 +37,8 @@ async function main () {
     await page.locator('.care-inbox').waitFor()
   }
   const post = async (endpoint, data) => {
-    const session = await (await page.request.get(base + '/restful/userLogin/session')).json()
-    const response = await page.request.post(base + '/restful/' + endpoint, { headers: { [session.csrfHeader]: session.csrfToken }, data })
+    const session = await (await page.request.get(base + '/api/v1/auth/session')).json()
+    const response = await page.request.post(base + '/api/v1/' + endpoint, { headers: { [session.csrfHeader]: session.csrfToken }, data })
     assert.equal(response.status(), 200, endpoint)
     const body = await response.json()
     assert.notEqual(body.returnCode, '0000', endpoint)
@@ -119,7 +119,7 @@ async function main () {
     await history.getByText('已核对处置记录并独立复核', { exact: true }).waitFor()
     check('independent reviewer can retrieve the complete persisted care history', await history.locator('.care-history li').count() >= 5 && await history.getByText('护理记录'.repeat(300), { exact: true }).isVisible())
     if (process.env.CARE_E2E_EXPECT_PG_DOWN === '1') {
-      const availability = await (await page.request.get(base + '/restful/service/status')).json()
+      const availability = await (await page.request.get(base + '/api/v1/service/status')).json()
       check('MySQL core workflow completes while PG is offline', availability.databaseReady === true && availability.primaryEngine === 'mysql' && availability.analytics.ready === false)
     }
     check('no JavaScript errors with real responses', errors.length === 0)

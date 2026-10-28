@@ -88,7 +88,7 @@ func callAPI(handler http.HandlerFunc, body any) *httptest.ResponseRecorder {
 	if err != nil {
 		panic(err)
 	}
-	request := httptest.NewRequest("POST", "/restful/test", strings.NewReader(string(data)))
+	request := httptest.NewRequest("POST", "/api/v1/test", strings.NewReader(string(data)))
 	response := httptest.NewRecorder()
 	handler.ServeHTTP(response, request)
 	return response
@@ -311,7 +311,7 @@ func TestLogoutDestroysSessionAndRetainsCSRF(t *testing.T) {
 			handler := csrf.Middleware(store, auth.Middleware(store, http.HandlerFunc(h.logout)))
 			sess := store.Create(session.Principal{Role: role, ID: 1})
 			request := func(token string) *httptest.ResponseRecorder {
-				r := httptest.NewRequest("POST", "/restful/userLogin/logout", nil)
+				r := httptest.NewRequest("POST", "/api/v1/auth/logout", nil)
 				r.AddCookie(&http.Cookie{Name: session.CookieName, Value: sess.ID})
 				r.Header.Set(csrf.HeaderName, token)
 				w := httptest.NewRecorder()
@@ -386,7 +386,7 @@ func TestNativeSetupRequiresDesktopToken(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			body := `{"name":"管理员","phone":"13800000000","password":"TestPassword123!"}`
-			request := httptest.NewRequest("POST", "/restful/setup", strings.NewReader(body))
+			request := httptest.NewRequest("POST", "/api/v1/setup", strings.NewReader(body))
 			request.Header.Set("X-Suining-Desktop", test.token)
 			response := httptest.NewRecorder()
 			handler.ServeHTTP(response, request)
@@ -399,7 +399,7 @@ func TestNativeSetupRequiresDesktopToken(t *testing.T) {
 	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM users").Scan(&count); err != nil || count != 1 {
 		t.Fatalf("administrators=%d err=%v", count, err)
 	}
-	request := httptest.NewRequest("POST", "/restful/userLogin/login", strings.NewReader(`{}`))
+	request := httptest.NewRequest("POST", "/api/v1/auth/login", strings.NewReader(`{}`))
 	response := httptest.NewRecorder()
 	handler.ServeHTTP(response, request)
 	if response.Code != 403 || !strings.Contains(response.Body.String(), "CSRF_REJECTED") {

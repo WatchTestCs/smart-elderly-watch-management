@@ -115,7 +115,7 @@ MySQL is the sole business data source; PG is a rebuildable analytics projection
 | A user write fails | Preserve input and request an explicit retry; no automatic replay |
 | Invalid session configuration (current `preview`) | Status reports `configError` and asks for corrected configuration and a restart |
 
-`/healthz` reports HTTP-process liveness only. `/restful/service/status` reports database readiness and analytics connectivity. See the [overview](docs/architecture/overview.md), [implementation architecture](docs/ARCHITECTURE.md) and [dual-database guide](docs/DUAL_DATABASES.md).
+`/healthz` reports HTTP-process liveness only. `/api/v1/service/status` reports database readiness and analytics connectivity. See the [overview](docs/architecture/overview.md), [implementation architecture](docs/ARCHITECTURE.md) and [dual-database guide](docs/DUAL_DATABASES.md).
 
 See the [health data contract](智慧养老手表管理系统/backend/docs/health-data.md#跨窗口步数与夜间累计计数) for conserved integer step allocation, counter-day timezones and baseline alert tolerances.
 

@@ -21,7 +21,7 @@ export function useCustomers(client: PostClient) {
   const total = ref(0), pageSize = ref(10), currentPage = ref(1), customerList = ref<Customer[]>([])
   type Query = { page: number; pageSize: number; customerName: string }
   const reads = createLatestRead(
-    (query: Query, signal: AbortSignal) => client.post<{ customers: Customer[]; total: number }>('restful/customer/select', query, { signal }),
+    (query: Query, signal: AbortSignal) => client.post<{ customers: Customer[]; total: number }>('api/v1/customer/select', query, { signal }),
     ({ data }) => {
       if (!Array.isArray(data.customers) || !Number.isInteger(data.total) || data.total < 0) throw new Error('invalid list')
       customerList.value = data.customers; total.value = data.total; loadError.value = ''
@@ -43,7 +43,7 @@ export function useCustomers(client: PostClient) {
     if (!validPhone(form.customerPhone) || !validAge(form.customerAge) || !form.customerName.trim()) { mutationError.value = '请填写姓名、有效手机号与 0–150 岁的整数年龄'; return false }
     saving.value = true; mutationError.value = ''
     try {
-      const { data } = await client.post<Envelope>('restful/customer/' + (edit ? 'update' : 'add'), { ...form })
+      const { data } = await client.post<Envelope>('api/v1/customer/' + (edit ? 'update' : 'add'), { ...form })
       accepted(data)
       if (edit) oldEditDialogVisible.value = false
       else { customerDialogVisible.value = false; Object.assign(customerForm, emptyCustomer()) }
@@ -54,7 +54,7 @@ export function useCustomers(client: PostClient) {
   async function remove(id: number | string) {
     if (saving.value) return false
     saving.value = true; mutationError.value = ''
-    try { const { data } = await client.post<Envelope>('restful/customer/delete', { customerId: id }); accepted(data); await searchCustomers(true); return true }
+    try { const { data } = await client.post<Envelope>('api/v1/customer/delete', { customerId: id }); accepted(data); await searchCustomers(true); return true }
     catch { mutationError.value = '删除未确认成功，记录仍保留，请重新核实'; return false }
     finally { saving.value = false }
   }

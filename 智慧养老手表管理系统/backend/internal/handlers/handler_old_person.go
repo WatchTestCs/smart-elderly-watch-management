@@ -12,7 +12,7 @@ import (
 )
 
 // ---------------------------------------------------------------------------
-// OldPersonController (/restful/oldPerson)
+// OldPersonController (/api/v1/oldPerson)
 // ---------------------------------------------------------------------------
 
 const oldPersonCols = `old_id, name, age, sex, phone, room, illness, warn, food_like,
@@ -37,7 +37,7 @@ func scanOldPersonRow(row dbstore.Row) (map[string]any, error) {
 	}, nil
 }
 
-// POST /restful/oldPerson/select —— 按姓名分页查询老人档案（ADMIN）。
+// POST /api/v1/oldPerson/select —— 按姓名分页查询老人档案（ADMIN）。
 func (h *Handler) oldPersonSelect(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -83,7 +83,7 @@ func (h *Handler) oldPersonSelect(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// POST /restful/oldPerson/add —— 新增老人档案（ADMIN）。
+// POST /api/v1/oldPerson/add —— 新增老人档案（ADMIN）。
 func (h *Handler) oldPersonAdd(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -139,7 +139,7 @@ func (h *Handler) oldPersonAdd(w http.ResponseWriter, r *http.Request) {
 	failCodeOnly(w)
 }
 
-// POST /restful/oldPerson/update —— 更新老人档案（ADMIN；不更新 be_time）。
+// POST /api/v1/oldPerson/update —— 更新老人档案（ADMIN；不更新 be_time）。
 func (h *Handler) oldPersonUpdate(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -226,7 +226,7 @@ func (h *Handler) oldPersonUpdate(w http.ResponseWriter, r *http.Request) {
 	failCodeOnly(w)
 }
 
-// POST /restful/oldPerson/delete —— 删除老人（ADMIN，事务）。
+// POST /api/v1/oldPerson/delete —— 删除老人（ADMIN，事务）。
 func (h *Handler) oldPersonDelete(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -296,10 +296,10 @@ func (h *Handler) oldPersonDelete(w http.ResponseWriter, r *http.Request) {
 }
 
 // ---------------------------------------------------------------------------
-// OldPersonDetailController (/restful/oldPerson)
+// OldPersonDetailController (/api/v1/oldPerson)
 // ---------------------------------------------------------------------------
 
-// POST /restful/oldPerson/selectDetail —— 老人详情（含家属/客户）分页查询（ADMIN）。
+// POST /api/v1/oldPerson/selectDetail —— 老人详情（含家属/客户）分页查询（ADMIN）。
 func (h *Handler) oldPersonSelectDetail(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {

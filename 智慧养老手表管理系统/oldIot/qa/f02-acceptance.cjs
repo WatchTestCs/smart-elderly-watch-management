@@ -12,7 +12,7 @@ run(async ({ page, base, report, setRole, setSignedIn }) => {
   let incidents = []
   let histories = 0
 
-  await page.route('**/restful/care/incidents', async route => {
+  await page.route('**/api/v1/care/incidents', async route => {
     const query = route.request().postDataJSON()
     incidents.push(query.page)
     if (query.page === 2) {
@@ -29,7 +29,7 @@ run(async ({ page, base, report, setRole, setSignedIn }) => {
       body: JSON.stringify({ items: [{ id: 'f02-' + query.page, oldPersonName: label, state: 'received' }], total: 100, duty: 'supervisor', actorId: 7 })
     })
   })
-  await page.route('**/restful/care/events', async route => {
+  await page.route('**/api/v1/care/events', async route => {
     histories++
     if (histories === 1) {
       await stalledHistory

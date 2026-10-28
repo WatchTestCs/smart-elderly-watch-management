@@ -112,7 +112,7 @@ export default {
 
       _this.isLoading = true
       _this.loadError = ''
-      axios.post('restful/ratepre/selectRatepreFamily',
+      axios.post('api/v1/ratepre/selectRatepreFamily',
         {
 					"oldId":oldId
 				},
@@ -140,7 +140,7 @@ export default {
       _this.chartLoading = true
       _this.chartError = ''
       _this.name = curOld.name || ''
-			axios.post('restful/ratepre/selectRatepreDetail',{
+			axios.post('api/v1/ratepre/selectRatepreDetail',{
           "oldId":oldId
         },
 				{

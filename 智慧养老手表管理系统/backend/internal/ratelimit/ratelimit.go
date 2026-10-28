@@ -21,24 +21,24 @@ const (
 
 // 路径→10分钟内允许次数（与 Java 端一致）。
 var limits = map[string]int{
-	"/restful/setup":                30,
-	"/restful/userLogin/login":      30,
-	"/restful/inviteCode/join":      30,
-	"/restful/device/bind":          30,
-	"/restful/inviteCode/checkCode": 60,
-	"/restful/device/login":         60,
+	"/api/v1/setup":                30,
+	"/api/v1/auth/login":           30,
+	"/api/v1/inviteCode/join":      30,
+	"/api/v1/device/bind":          30,
+	"/api/v1/inviteCode/checkCode": 60,
+	"/api/v1/device/login":         60,
 	// 硬件端点免会话鉴权，也按 IP 限流：上限刻意宽松（合法网关 NAT 后多设备共享
 	// 一个出口 IP），只用于拦住未认证洪水消耗数据库事务，不用于精确配额。
-	"/restful/device/heartbeat":   1800,
-	"/restful/device/report":      1800,
-	"/restful/device/healthBatch": 1800,
-	"/restful/device/commandPull": 1800,
-	"/restful/device/commandAck":  1800,
-	"/restful/device/fencePoint":  1800,
-	"/restful/device/sos":         300,
-	"/restful/care/receipt":       600,
+	"/api/v1/device/heartbeat":   1800,
+	"/api/v1/device/report":      1800,
+	"/api/v1/device/healthBatch": 1800,
+	"/api/v1/device/commandPull": 1800,
+	"/api/v1/device/commandAck":  1800,
+	"/api/v1/device/fencePoint":  1800,
+	"/api/v1/device/sos":         300,
+	"/api/v1/care/receipt":       600,
 	// 桌面令牌端点：令牌校验失败无独立锁定，靠路径限流兜底防弱口令线速尝试。
-	"/restful/desktop/exit": 30,
+	"/api/v1/desktop/exit": 30,
 }
 
 type Limiter struct {

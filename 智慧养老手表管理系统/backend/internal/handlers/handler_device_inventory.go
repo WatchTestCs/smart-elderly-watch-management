@@ -27,7 +27,7 @@ func (h *Handler) genDeviceNo(ctx context.Context) (string, error) {
 	return "W" + time.Now().Format("20060102150405"), nil
 }
 
-// POST /restful/device/create —— 后台登记新手表（ADMIN，事务）。
+// POST /api/v1/device/create —— 后台登记新手表（ADMIN，事务）。
 func (h *Handler) deviceCreate(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -137,7 +137,7 @@ func (h *Handler) deviceCreate(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// POST /restful/device/resetSecret —— 重置设备密钥（ADMIN）。
+// POST /api/v1/device/resetSecret —— 重置设备密钥（ADMIN）。
 func (h *Handler) deviceResetSecret(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -181,7 +181,7 @@ func (h *Handler) deviceResetSecret(w http.ResponseWriter, r *http.Request) {
 	response.OK(w, map[string]any{"secret": clearSecret})
 }
 
-// POST /restful/device/unbind —— 解除设备绑定（ADMIN，事务）。
+// POST /api/v1/device/unbind —— 解除设备绑定（ADMIN，事务）。
 func (h *Handler) deviceUnbind(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -225,7 +225,7 @@ func (h *Handler) deviceUnbind(w http.ResponseWriter, r *http.Request) {
 	response.OK(w, nil)
 }
 
-// POST /restful/device/delete —— 删除设备（ADMIN，事务）。
+// POST /api/v1/device/delete —— 删除设备（ADMIN，事务）。
 func (h *Handler) deviceDelete(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {

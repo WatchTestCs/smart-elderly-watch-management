@@ -23,7 +23,7 @@ func TestCancelledSessionWritesDoNotClaimSuccess(t *testing.T) {
 			account := store.Create(session.Principal{Role: "ADMIN", ID: 1})
 			ctx, cancel := context.WithCancel(context.Background())
 			cancel()
-			r := httptest.NewRequest("POST", "/restful/userLogin/"+action, nil).WithContext(ctx)
+			r := httptest.NewRequest("POST", "/api/v1/userLogin/"+action, nil).WithContext(ctx)
 			r.AddCookie(&http.Cookie{Name: session.CookieName, Value: account.ID})
 			r = session.WithContext(r, account)
 			w := httptest.NewRecorder()

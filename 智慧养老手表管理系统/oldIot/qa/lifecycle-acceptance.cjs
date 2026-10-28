@@ -4,7 +4,7 @@ run(async({page,base,report,setRole,setSignedIn})=>{
  const visit=async(route,role)=>{setRole(role);setSignedIn(true);await page.goto(base+'/?lifecycle='+Date.now()+'#'+route);await page.locator('.care-app').waitFor();};
  // Exercise real Axios/XHR cancellation against held mock responses.
  let customerMode='normal';const customerRequests=[];
- await page.route('**/restful/customer/select',route=>{
+ await page.route('**/api/v1/customer/select',route=>{
   customerRequests.push(route.request());
   if(customerMode==='hold')return;
   if(customerMode==='error')return route.fulfill({status:503,json:{}});
@@ -14,7 +14,7 @@ run(async({page,base,report,setRole,setSignedIn})=>{
  await page.getByText('F02当前监护人',{exact:true}).first().waitFor();
  const searchCustomer=async(name)=>{
   await page.getByLabel('监护人姓名',{exact:true}).fill(name);
-  const requested=page.waitForRequest(r=>r.url().endsWith('/restful/customer/select')&&r.postDataJSON().customerName===name);
+  const requested=page.waitForRequest(r=>r.url().endsWith('/api/v1/customer/select')&&r.postDataJSON().customerName===name);
   await page.getByRole('button',{name:'查询监护人姓名',exact:true}).click();
   return requested;
  };
@@ -40,14 +40,14 @@ run(async({page,base,report,setRole,setSignedIn})=>{
  await page.getByRole('heading',{name:'运营总览',exact:true}).waitFor();
  const countAfterLeaving=customerRequests.length;await page.waitForTimeout(100);
  check('Navigation aborts the guardian read without starting a replacement',customerRequests.length===countAfterLeaving);
- await page.unroute('**/restful/customer/select');
+ await page.unroute('**/api/v1/customer/select');
 
- await page.route('**/restful/care/incidents',route=>route.fulfill({json:{items:[{id:1,oldPersonName:'F02照护任务',state:'received'}],total:1,duty:'supervisor',actorId:1}}));
+ await page.route('**/api/v1/care/incidents',route=>route.fulfill({json:{items:[{id:1,oldPersonName:'F02照护任务',state:'received'}],total:1,duty:'supervisor',actorId:1}}));
  const historyRequests=[];
- await page.route('**/restful/care/events',route=>{historyRequests.push(route.request())});
+ await page.route('**/api/v1/care/events',route=>{historyRequests.push(route.request())});
  await visit('/main','ADMIN');await page.locator('.care-task').first().waitFor();
  const openHistory=async()=>{
-  const requested=page.waitForRequest(r=>r.url().endsWith('/restful/care/events'));
+  const requested=page.waitForRequest(r=>r.url().endsWith('/api/v1/care/events'));
   await page.getByRole('button',{name:'处置记录',exact:true}).first().click();return requested;
  };
  const historyRequest=await openHistory();
@@ -59,20 +59,20 @@ run(async({page,base,report,setRole,setSignedIn})=>{
  await page.evaluate(()=>{location.hash='/customer'});await historyUnmounted;
  await page.locator('.roles').waitFor();
  check('History can reopen and is aborted when leaving the page',historyRequests.length===2);
- await page.unroute('**/restful/care/events');await page.unroute('**/restful/care/incidents');
+ await page.unroute('**/api/v1/care/events');await page.unroute('**/api/v1/care/incidents');
 
  await visit('/device','ADMIN');
  await page.getByRole('heading',{name:'设备管理',exact:true}).waitFor();
  await page.waitForTimeout(250);
  let release,started,requests=0;
  const gate=new Promise(resolve=>{release=resolve}),pending=new Promise(resolve=>{started=resolve});
- await page.route('**/restful/device/list',async route=>{requests++;started();await gate;await route.fulfill({contentType:'application/json',body:JSON.stringify({devices:[]})});});
+ await page.route('**/api/v1/device/list',async route=>{requests++;started();await gate;await route.fulfill({contentType:'application/json',body:JSON.stringify({devices:[]})});});
  await Promise.race([pending,new Promise((_,reject)=>setTimeout(()=>reject(new Error('Refresh did not run')),12000))]);
  await page.locator('a[href="#/main"]').first().click();
  await page.getByRole('heading',{name:'运营总览',exact:true}).waitFor();
  release();await page.waitForTimeout(5500);
  check('Pending device refresh cannot restart polling after leaving the page',requests===1,{requests});
- await page.unroute('**/restful/device/list');
+ await page.unroute('**/api/v1/device/list');
  for(const [route,role,endpoint,button,home,body]of[
   ['/ratepre','ADMIN','ratepre/selectRatepreDetail','查看健康详情','/main',{hrs:[72],bps:[120],createTimes:['08:00'],time:'2026-10-16'}],
   ['/step','ADMIN','step/selectStepDetail','查看睡眠详情','/main',{sleep:[7],createTime:['10-16']}],
@@ -81,13 +81,13 @@ run(async({page,base,report,setRole,setSignedIn})=>{
  ]){
   await visit(route,role);await page.waitForTimeout(200);
   let resume,arrived;const hold=new Promise(r=>{resume=r}),request=new Promise(r=>{arrived=r});
-  await page.route('**/restful/'+endpoint,async r=>{arrived();await hold;await r.fulfill({contentType:'application/json',body:JSON.stringify(body)});});
+  await page.route('**/api/v1/'+endpoint,async r=>{arrived();await hold;await r.fulfill({contentType:'application/json',body:JSON.stringify(body)});});
   await page.getByRole('button',{name:button}).first().click();await request;
   await page.evaluate(hash=>{location.hash=hash},home);
   await page.waitForURL(url=>url.hash==='#'+home);await page.locator('.el-dialog:visible').waitFor({state:'hidden'});
   resume();await page.waitForTimeout(350);
   check(route+': delayed chart result does not recreate a chart after navigation',await page.locator('[id^="myChart"] canvas').count()===0);
-  await page.unroute('**/restful/'+endpoint);
+  await page.unroute('**/api/v1/'+endpoint);
  }
  check('No lifecycle JavaScript errors',report.pageErrors.length===0,report.pageErrors);
  check('No missing lifecycle assets',report.missingAssets.length===0,report.missingAssets);

@@ -21,7 +21,7 @@
 
 所有接口使用现有响应包络。设备接口以设备密钥认证；浏览器接口需要 ADMIN/FAMILY 会话及 CSRF，FAMILY 仅可访问关联老人。
 
-### POST /restful/device/healthBatch
+### POST /api/v1/device/healthBatch
 
 ```json
 {
@@ -51,13 +51,13 @@
 
 返回 `accepted`、`duplicates`、`writeRevision`；最后一个字段仅为写入回执，不能替代读取游标。
 
-### POST /restful/health/changes
+### POST /api/v1/health/changes
 
 请求：`{"oldId":1,"after":0,"limit":100}`。返回记录及 `nextCursor`、`hasMore`。limit 默认 100、最大 200。读取包含删除修订。游标属于请求的 `oldId`，按该老人的 `nextCursor` 继续翻页，空页保留原游标；不得跨老人复用游标，也不得用 `writeRevision` 替代读取游标。`after` 和返回修订号不超过 JSON 客户端可精确表示的整数上限 9007199254740991。
 
 MySQL 的 `mysql/0007_cluster_scheduling.sql` 引入按老人锁定的修订时钟。同一老人的写入持锁至事务提交，保证该老人的修订次序与提交次序一致，避免增量读取跳过尚未提交的修订。不同老人可以并行提交，修订号不代表跨老人的提交次序。各老人从全局高水位预留独占号段，修订号仍保持全局唯一；预留、切换号段等操作可以留下空洞，客户端只能使用返回的 `nextCursor`，不能自行按数量推算游标。旧 PG 路径仍使用原全局时钟。升级或回滚须先停止所有旧版写入，不能混用两种写入程序。
 
-### POST /restful/health/statistics
+### POST /api/v1/health/statistics
 
 请求需明确 `oldId`、`source`、`sourceDevice`、`metric`、`semantics`、RFC3339 `from`/`to`。范围左闭右开，最长 366 天；超过 10000 条要求缩短范围。日累计必须使用相同 UTC 偏移的完整自然日；睡眠区间取并集，重叠步数区间拒绝合计，来源与语义不混合。
 

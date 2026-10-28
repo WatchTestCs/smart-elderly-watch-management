@@ -18,7 +18,7 @@ run(async ({ page, context, base, report, setRole, setSignedIn }) => {
     await route.fulfill({ contentType: 'image/png', body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aD1sAAAAASUVORK5CYII=', 'base64') })
   })
   let coordinates = { lng: '0', lat: '0', name: '<img src=x onerror=alert(1)>', oldId: 1, status: '0' }
-  for (const endpoint of ['select', 'selectFamily']) await context.route('**/restful/position/' + endpoint, route => route.fulfill({
+  for (const endpoint of ['select', 'selectFamily']) await context.route('**/api/v1/position/' + endpoint, route => route.fulfill({
     contentType: 'application/json', body: JSON.stringify({ positionDtos: [coordinates], total: 1 })
   }))
   for (const [route, role] of [['/position', 'ADMIN'], ['/positionfamily', 'FAMILY']]) {
@@ -65,7 +65,7 @@ run(async ({ page, context, base, report, setRole, setSignedIn }) => {
     ['/saidOperation', 'said/selectByUser', 'saidDtos', null],
     ['/familyMain', 'text/select', 'texts', null]
   ]) {
-    await context.route('**/restful/' + endpoint, r => {
+    await context.route('**/api/v1/' + endpoint, r => {
       const input = r.request().postDataJSON()
       return r.fulfill({ contentType: 'application/json', body: JSON.stringify({
         [key]: [{ oldId: input.page || 1, deviceId: input.page || 1, deviceNo: 'PAGE', name: '分页长者', alias: '分页设备', status: 1 }],
@@ -74,12 +74,12 @@ run(async ({ page, context, base, report, setRole, setSignedIn }) => {
     })
     await visit(route, route === '/familyMain' ? 'FAMILY' : 'ADMIN')
     await page.locator('.el-pagination .btn-next:not([disabled])').waitFor()
-    const request = page.waitForRequest(r => r.url().endsWith('/restful/' + endpoint) && r.postDataJSON().page === 2)
+    const request = page.waitForRequest(r => r.url().endsWith('/api/v1/' + endpoint) && r.postDataJSON().page === 2)
     await page.locator('.el-pagination .btn-next').click()
     const input = (await request).postDataJSON()
     check(route + ' sends page 2 to the server', input.page === 2 && input.pageSize <= 100)
     if (button) {
-      const search = page.waitForRequest(r => r.url().endsWith('/restful/' + endpoint) && r.postDataJSON().page === 1)
+      const search = page.waitForRequest(r => r.url().endsWith('/api/v1/' + endpoint) && r.postDataJSON().page === 1)
       await page.getByRole('button', { name: button, exact: true }).click()
       check(route + ' resets page on search', (await search).postDataJSON().page === 1)
     }

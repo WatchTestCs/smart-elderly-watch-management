@@ -7,11 +7,11 @@ run(async ({ page, context, base }) => {
   let writes = 0
   const checks = []
   const check = (name, pass) => { checks.push({ name, pass }); if (!pass) throw new Error(name) }
-  await context.route('**/restful/**', async route => {
+  await context.route('**/api/v1/**', async route => {
     const endpoint = new URL(route.request().url()).pathname
-    if (endpoint === '/restful/service/status') return route.fulfill({ json: { databaseReady: available } })
+    if (endpoint === '/api/v1/service/status') return route.fulfill({ json: { databaseReady: available } })
     if (!available) return route.fulfill({ status: 503, json: { code: 'DATABASE_UNAVAILABLE', message: '数据库尚未连接' } })
-    if (endpoint === '/restful/userLogin/session') return route.fulfill({ json: { authenticated, account: authenticated ? { role: 'ADMIN', id: 1, displayName: '管理员' } : null, setupRequired: false, csrfToken: 'mock-csrf-token' } })
+    if (endpoint === '/api/v1/auth/session') return route.fulfill({ json: { authenticated, account: authenticated ? { role: 'ADMIN', id: 1, displayName: '管理员' } : null, setupRequired: false, csrfToken: 'mock-csrf-token' } })
     if (route.request().method() === 'POST' && /\/(login|setup|create|update|delete|add|bind|insert)$/.test(endpoint)) writes++
     return route.fallback()
   })

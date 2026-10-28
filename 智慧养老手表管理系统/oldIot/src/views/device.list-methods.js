@@ -13,7 +13,7 @@ export const deviceListMethods = {
       else if (command === 'delete') this.deleteDevice(row)
     },
     post (path, params) {
-      return axios.post('restful/device/' + path, params || {}, {
+      return axios.post('api/v1/device/' + path, params || {}, {
         headers: { 'content-type': 'application/json' },
         withCredentials: true
       })

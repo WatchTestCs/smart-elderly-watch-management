@@ -25,7 +25,7 @@ import (
 const imageFailMessage = "请选择不超过5MB的有效 JPG、PNG 或 BMP 图片"
 const maxImageBytes = 5 * 1024 * 1024
 
-// POST /restful/image/saveImage —— 图片上传（multipart/form-data）。
+// POST /api/v1/image/saveImage —— 图片上传（multipart/form-data）。
 func (h *Handler) imageSave(w http.ResponseWriter, r *http.Request) {
 	fail := func() {
 		response.JSON(w, http.StatusBadRequest, map[string]any{"returnCode": "0000", "message": imageFailMessage})
@@ -212,7 +212,7 @@ func validImageName(name string) bool {
 	return imageNameRe.MatchString(name)
 }
 
-// GET /restful/image/download?name=xxx —— 图片下载（多层路径穿越防护）。
+// GET /api/v1/image/download?name=xxx —— 图片下载（多层路径穿越防护）。
 func (h *Handler) imageDownload(w http.ResponseWriter, r *http.Request) {
 	notFound := func() { w.WriteHeader(http.StatusNotFound) }
 	name := r.URL.Query().Get("name")

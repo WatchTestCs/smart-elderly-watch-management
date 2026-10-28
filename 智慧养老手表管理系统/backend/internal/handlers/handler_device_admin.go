@@ -53,7 +53,7 @@ func intOr400(w http.ResponseWriter, m map[string]any, key string, def, min, max
 	return int(n), true
 }
 
-// POST /restful/device/list —— 设备列表（ADMIN，分页+在线状态）。
+// POST /api/v1/device/list —— 设备列表（ADMIN，分页+在线状态）。
 func (h *Handler) deviceList(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMapOrEmpty(w, r)
 	if !ok {
@@ -184,7 +184,7 @@ func (h *Handler) genBindCode(ctx context.Context, q oldQuerier) (string, error)
 	return "", errors.New("无法生成唯一绑定码")
 }
 
-// POST /restful/device/createBindCode —— 生成绑定码（ADMIN）。
+// POST /api/v1/device/createBindCode —— 生成绑定码（ADMIN）。
 func (h *Handler) deviceCreateBindCode(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -245,7 +245,7 @@ func (h *Handler) deviceCreateBindCode(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// POST /restful/device/bindCodeList —— 某老人的绑定码列表（ADMIN）。
+// POST /api/v1/device/bindCodeList —— 某老人的绑定码列表（ADMIN）。
 func (h *Handler) deviceBindCodeList(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -287,7 +287,7 @@ func (h *Handler) deviceBindCodeList(w http.ResponseWriter, r *http.Request) {
 	response.OK(w, map[string]any{"bindCodes": list})
 }
 
-// POST /restful/device/deleteBindCode —— 作废未使用的绑定码（ADMIN）。
+// POST /api/v1/device/deleteBindCode —— 作废未使用的绑定码（ADMIN）。
 func (h *Handler) deviceDeleteBindCode(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {

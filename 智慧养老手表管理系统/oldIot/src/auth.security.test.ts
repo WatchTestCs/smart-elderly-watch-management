@@ -29,5 +29,5 @@ it('refreshes a downgraded ADMIN duty on forbidden response without replaying th
   await expect(mock.responseError(denied)).rejects.toBe(denied)
   await vi.waitFor(() => expect(router.replace).toHaveBeenCalledWith('/main'))
   expect(authState.account?.duty).toBe('caregiver')
-  expect(mock.get).toHaveBeenCalledWith('/restful/userLogin/session', expect.objectContaining({ skipSession: true }))
+  expect(mock.get).toHaveBeenCalledWith('/api/v1/auth/session', expect.objectContaining({ skipSession: true }))
 })

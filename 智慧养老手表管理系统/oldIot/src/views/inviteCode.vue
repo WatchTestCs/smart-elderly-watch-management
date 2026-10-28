@@ -108,7 +108,7 @@ export default {
       this.listLoading = true
       this.listError = ''
       var state = this.state
-      return axios.post('restful/inviteCode/list', { page: this.currentPage, pageSize: this.pageSize,  state: state }, { withCredentials: true }).then((response) => {
+      return axios.post('api/v1/inviteCode/list', { page: this.currentPage, pageSize: this.pageSize,  state: state }, { withCredentials: true }).then((response) => {
         if (state !== this.state) return
         if (!Array.isArray(response.data.inviteCodes)) throw new Error('missing invites')
         this.inviteCodeList = response.data.inviteCodes
@@ -118,7 +118,7 @@ export default {
     loadOldPeople () {
       this.oldPeopleError = ''
       var _this = this
-      axios.post('restful/inviteCode/oldPersonList', {},
+      axios.post('api/v1/inviteCode/oldPersonList', {},
         {
           headers: { 'content-type': 'application/json' },
           withCredentials: true
@@ -154,7 +154,7 @@ export default {
         }
         if (_this.creating) return
         _this.creating = true
-        axios.post('restful/inviteCode/create',
+        axios.post('api/v1/inviteCode/create',
           {
             oldId: _this.createForm.oldId,
             count: _this.createForm.count,
@@ -190,7 +190,7 @@ export default {
           cancelButtonText: '取消',
           type: 'warning'
         })
-        axios.post('restful/inviteCode/delete', { 'id': id },
+        axios.post('api/v1/inviteCode/delete', { 'id': id },
           {
             headers: { 'content-type': 'application/json' },
             withCredentials: true

@@ -10,7 +10,7 @@ parser.add_argument("--url", default="http://127.0.0.1:8080")
 args = parser.parse_args()
 token = (Path(__file__).resolve().parents[1] / "deploy/secrets/bootstrap-token").read_text().strip()
 body = {"name": input("管理员姓名："), "phone": input("手机号："), "password": getpass.getpass("初始密码：")}
-request = urllib.request.Request(args.url + "/restful/setup", data=json.dumps(body).encode(), headers={"Content-Type": "application/json", "X-Suining-Desktop": token}, method="POST")
+request = urllib.request.Request(args.url + "/api/v1/setup", data=json.dumps(body).encode(), headers={"Content-Type": "application/json", "X-Suining-Desktop": token}, method="POST")
 with urllib.request.urlopen(request, timeout=20) as response:
     result = json.load(response)
 if result.get("returnCode") != "1111":

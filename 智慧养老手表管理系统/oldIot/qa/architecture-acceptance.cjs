@@ -10,7 +10,7 @@ run(async ({ page, context, base, report, setRole }) => {
   let duty = 'supervisor', actorId = 1, failList = false, failTransition = false, workerHealthy = true, pgReady = false
   let taskRequests = [], transitions = [], diagnosticsRequests = 0
   const tasks = Array.from({ length: 61 }, (_, i) => ({ id: i + 1, oldId: 1, deviceId: 1, oldPersonName: '李奶奶', state: 'received', createdAt: '2026-10-19T08:00:00+08:00', dueAt: '2026-10-19T08:03:00+08:00', notificationState: 'pending' }))
-  await context.route('**/restful/care/incidents', route => {
+  await context.route('**/api/v1/care/incidents', route => {
     const input = route.request().postDataJSON()
     taskRequests.push(input)
     if (failList) return route.fulfill({ status: 503, json: {} })
@@ -18,15 +18,15 @@ run(async ({ page, context, base, report, setRole }) => {
     const start = (input.page - 1) * input.pageSize
     return route.fulfill({ json: { items: filtered.slice(start, start + input.pageSize), total: filtered.length, page: input.page, pageSize: input.pageSize, duty, actorId } })
   })
-  await context.route('**/restful/care/diagnostics', route => {
+  await context.route('**/api/v1/care/diagnostics', route => {
     diagnosticsRequests++
     return route.fulfill({ json: { primaryEngine: 'mysql', analytics: { configured: true, ready: pgReady, pending: pgReady ? 0 : 205, lastSyncedAt: pgReady ? '2026-10-19T08:00:00Z' : null }, workerHealthy, notificationConfigured: false, receiptConfigured: false, pendingNotifications: 2, failedNotifications: 1, staleSending: 0, overdueIncidents: 1 } })
   })
-  await context.route('**/restful/care/events', route => {
+  await context.route('**/api/v1/care/events', route => {
     const input = route.request().postDataJSON()
     return route.fulfill({ json: { events: Array.from({ length: 105 }, (_, i) => ({ action: '事件' + (i + 1), actor: '1', note: '测试记录', createdAt: '2026-10-19T08:00:00+08:00' })).slice((input.page - 1) * input.pageSize, input.page * input.pageSize), total: 105 } })
   })
-  await context.route('**/restful/care/transition', route => {
+  await context.route('**/api/v1/care/transition', route => {
     const input = route.request().postDataJSON()
     transitions.push(input)
     assert.equal(route.request().headers()['x-csrf-token'], 'mock-csrf-token')
@@ -115,7 +115,7 @@ run(async ({ page, context, base, report, setRole }) => {
     check('queue fits 390px large=' + large, await page.locator('.workspace-main').evaluate(el => el.scrollWidth <= el.clientWidth + 1))
   }
   let failGuardianPage = true
-  await context.route('**/restful/customer/select', route => {
+  await context.route('**/api/v1/customer/select', route => {
     const { page: number = 1, pageSize = 20 } = route.request().postDataJSON()
     if (failGuardianPage && number === 2) return route.fulfill({ status: 503, json: { message: 'temporarily unavailable' } })
     const start = (number - 1) * pageSize

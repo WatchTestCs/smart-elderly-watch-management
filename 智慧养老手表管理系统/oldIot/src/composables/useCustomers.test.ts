@@ -128,7 +128,7 @@ describe('guardian data flow', () => {
     expect(await saved).toBe(true)
     first({ data: { customers: [{ customerName: '过期数据' }], total: 1 } })
     await flushPromises()
-    expect(post.mock.calls.map(([path]) => path)).toEqual(['restful/customer/select', 'restful/customer/add', 'restful/customer/select'])
+    expect(post.mock.calls.map(([path]) => path)).toEqual(['api/v1/customer/select', 'api/v1/customer/add', 'api/v1/customer/select'])
     expect(state.customerList.value).toEqual([])
     expect(state.saving.value).toBe(false)
   })

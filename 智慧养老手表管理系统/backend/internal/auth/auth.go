@@ -34,7 +34,7 @@ func Middleware(store *session.Store, next http.Handler) http.Handler {
 			return
 		}
 
-		if !strings.HasPrefix(r.URL.Path, "/restful/") {
+		if !strings.HasPrefix(r.URL.Path, "/api/v1/") {
 			forbidden(w)
 			return
 		}

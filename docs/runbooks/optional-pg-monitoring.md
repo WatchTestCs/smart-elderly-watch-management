@@ -24,7 +24,7 @@ docker compose --env-file deploy/platform.env -f deploy/platform.compose.yml up 
 
 建议在单独测试环境执行：
 1. 暂停 PG：`docker compose --env-file deploy/platform.env -f deploy/platform.compose.yml stop postgres`。
-2. 检查 app 继续运行、`GET /restful/service/status` 返回 `databaseReady=true`，同时分析投影 `ready=false`。留意 worker 心跳、通知消费和 MySQL 存储仍持续成功。
+2. 检查 app 继续运行、`GET /api/v1/service/status` 返回 `databaseReady=true`，同时分析投影 `ready=false`。留意 worker 心跳、通知消费和 MySQL 存储仍持续成功。
 3. 访问经授权的 `/metrics`、Prometheus `/alerts`，核对 PG 不可用仅触发 warning，不将 MySQL 主库判定为故障。
 4. 重启 PG，观察 outbox 同步逐步减少。队列丢失或 PG 表丢失时使用 `docs/DUAL_DATABASES.md` 的重建流程，而不是从 PG 恢复主业务。
 5. 单独停止 app，确认 Prometheus 仍运行，触发 `SuiningServiceDown` 或 `SuiningScrapeMissing`；恢复后检查 SOS 排队与有无值班人员接单。

@@ -32,7 +32,7 @@ func hwFail(w http.ResponseWriter, code, msg string) {
 	response.JSON(w, http.StatusOK, map[string]any{"returnCode": code, "message": msg})
 }
 
-// POST /restful/device/login —— 设备登录（公开；限流由全局中间件处理）。
+// POST /api/v1/device/login —— 设备登录（公开；限流由全局中间件处理）。
 func (h *Handler) deviceLogin(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -114,7 +114,7 @@ func (h *Handler) findBindCode(ctx context.Context, q oldQuerier, code string) (
 	return b, nil
 }
 
-// POST /restful/device/bind —— 设备绑定老人（公开，事务）。
+// POST /api/v1/device/bind —— 设备绑定老人（公开，事务）。
 func (h *Handler) deviceBind(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -273,7 +273,7 @@ func (h *Handler) deviceBind(w http.ResponseWriter, r *http.Request) {
 	response.OK(w, map[string]any{"oldId": *bc.OldID, "oldPersonName": nm})
 }
 
-// POST /restful/device/heartbeat —— 设备心跳（公开）。
+// POST /api/v1/device/heartbeat —— 设备心跳（公开）。
 func (h *Handler) deviceHeartbeat(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {

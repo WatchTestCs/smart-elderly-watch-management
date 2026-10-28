@@ -24,7 +24,7 @@ func careRequest(t *testing.T, h *Handler, handler http.HandlerFunc, actor int64
 	if err != nil {
 		t.Fatal(err)
 	}
-	req := httptest.NewRequest("POST", "/restful/care/test", bytes.NewReader(data))
+	req := httptest.NewRequest("POST", "/api/v1/care/test", bytes.NewReader(data))
 	sess := h.Sessions.Create(session.Principal{Role: auth.RoleAdmin, ID: actor})
 	req = session.WithContext(req, sess)
 	w := httptest.NewRecorder()

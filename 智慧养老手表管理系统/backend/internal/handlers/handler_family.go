@@ -9,20 +9,20 @@ import (
 
 // routeFamily 注册 FamilyController / InviteCodeController 路由。
 func (h *Handler) routeFamily(mux *http.ServeMux) {
-	mux.HandleFunc("POST /restful/family/select", h.familySelect)
-	mux.HandleFunc("POST /restful/family/add", h.familyAdd)
-	mux.HandleFunc("POST /restful/family/updateFamily", h.familyUpdate)
-	mux.HandleFunc("POST /restful/family/deleteFamily", h.familyDelete)
-	mux.HandleFunc("POST /restful/family/selectTwo", h.familySelectTwo)
-	mux.HandleFunc("POST /restful/family/updateTwo", h.familyUpdateTwo)
-	mux.HandleFunc("POST /restful/family/updateTouPic", h.familyUpdateTouPic)
-	mux.HandleFunc("POST /restful/family/updatePassword", h.familyUpdatePassword)
-	mux.HandleFunc("POST /restful/inviteCode/list", h.inviteList)
-	mux.HandleFunc("POST /restful/inviteCode/create", h.inviteCreate)
-	mux.HandleFunc("POST /restful/inviteCode/delete", h.inviteDelete)
-	mux.HandleFunc("POST /restful/inviteCode/oldPersonList", h.inviteOldPersonList)
-	mux.HandleFunc("POST /restful/inviteCode/checkCode", h.inviteCheckCode)
-	mux.HandleFunc("POST /restful/inviteCode/join", h.inviteJoin)
+	mux.HandleFunc("POST /api/v1/family/select", h.familySelect)
+	mux.HandleFunc("POST /api/v1/family/add", h.familyAdd)
+	mux.HandleFunc("POST /api/v1/family/updateFamily", h.familyUpdate)
+	mux.HandleFunc("POST /api/v1/family/deleteFamily", h.familyDelete)
+	mux.HandleFunc("POST /api/v1/family/selectTwo", h.familySelectTwo)
+	mux.HandleFunc("POST /api/v1/family/updateTwo", h.familyUpdateTwo)
+	mux.HandleFunc("POST /api/v1/family/updateTouPic", h.familyUpdateTouPic)
+	mux.HandleFunc("POST /api/v1/family/updatePassword", h.familyUpdatePassword)
+	mux.HandleFunc("POST /api/v1/inviteCode/list", h.inviteList)
+	mux.HandleFunc("POST /api/v1/inviteCode/create", h.inviteCreate)
+	mux.HandleFunc("POST /api/v1/inviteCode/delete", h.inviteDelete)
+	mux.HandleFunc("POST /api/v1/inviteCode/oldPersonList", h.inviteOldPersonList)
+	mux.HandleFunc("POST /api/v1/inviteCode/checkCode", h.inviteCheckCode)
+	mux.HandleFunc("POST /api/v1/inviteCode/join", h.inviteJoin)
 }
 
 const tsLayout = "2006-01-02 15:04:05" // yyyy-MM-dd HH:mm:ss
@@ -50,7 +50,7 @@ func familyPhoneOK(p *session.Principal, phone string) bool {
 	return p.Role == auth.RoleFamily && phone != "" && phone == p.Phone
 }
 
-// POST /restful/family/select —— 分页模糊查询家属（管理员视角，ADMIN）。
+// POST /api/v1/family/select —— 分页模糊查询家属（管理员视角，ADMIN）。
 func (h *Handler) familySelect(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -105,7 +105,7 @@ func (h *Handler) familySelect(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// POST /restful/family/add —— 管理员新增家属并绑定老人（事务，ADMIN；不写密码）。
+// POST /api/v1/family/add —— 管理员新增家属并绑定老人（事务，ADMIN；不写密码）。
 func (h *Handler) familyAdd(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -173,7 +173,7 @@ func (h *Handler) familyAdd(w http.ResponseWriter, r *http.Request) {
 	response.OK(w, nil)
 }
 
-// POST /restful/family/updateFamily —— 管理员更新家属资料（ADMIN）。
+// POST /api/v1/family/updateFamily —— 管理员更新家属资料（ADMIN）。
 func (h *Handler) familyUpdate(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -208,7 +208,7 @@ func (h *Handler) familyUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// POST /restful/family/deleteFamily —— 管理员删除家属（事务，ADMIN）。
+// POST /api/v1/family/deleteFamily —— 管理员删除家属（事务，ADMIN）。
 func (h *Handler) familyDelete(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -248,7 +248,7 @@ func (h *Handler) familyDelete(w http.ResponseWriter, r *http.Request) {
 	response.OK(w, nil)
 }
 
-// POST /restful/family/selectTwo —— 家属查自己的资料（ADMIN+FAMILY，归属隔离）。
+// POST /api/v1/family/selectTwo —— 家属查自己的资料（ADMIN+FAMILY，归属隔离）。
 func (h *Handler) familySelectTwo(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -284,7 +284,7 @@ func (h *Handler) familySelectTwo(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// POST /restful/family/updateTwo —— 家属更新自己的资料（ADMIN+FAMILY，归属隔离）。
+// POST /api/v1/family/updateTwo —— 家属更新自己的资料（ADMIN+FAMILY，归属隔离）。
 func (h *Handler) familyUpdateTwo(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -318,7 +318,7 @@ func (h *Handler) familyUpdateTwo(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// POST /restful/family/updateTouPic —— 家属更新头像（ADMIN+FAMILY，归属隔离）。
+// POST /api/v1/family/updateTouPic —— 家属更新头像（ADMIN+FAMILY，归属隔离）。
 func (h *Handler) familyUpdateTouPic(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -359,7 +359,7 @@ func (h *Handler) familyUpdateTouPic(w http.ResponseWriter, r *http.Request) {
 	response.OK(w, nil)
 }
 
-// POST /restful/family/updatePassword —— 家属修改自己的登录密码（ADMIN+FAMILY，归属隔离）。
+// POST /api/v1/family/updatePassword —— 家属修改自己的登录密码（ADMIN+FAMILY，归属隔离）。
 func (h *Handler) familyUpdatePassword(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {

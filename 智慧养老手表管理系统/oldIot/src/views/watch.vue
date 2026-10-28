@@ -192,7 +192,7 @@ export default {
       var _this = this
         var oldName = _this.searchText
         
-        return axios.post('restful/watchInfo/select',
+        return axios.post('api/v1/watchInfo/select',
           { page: this.currentPage, pageSize: this.pageSize,
             'oldName': oldName === '' ? '' : _this.searchText
           },
@@ -218,7 +218,7 @@ export default {
       var _this = this
       this.$refs.addwatchFormRef.validate(function (valid) {
         if (!valid) return
-        axios.post('restful/watchInfo/add',
+        axios.post('api/v1/watchInfo/add',
           _this.watchForm,
           {
             headers: {
@@ -253,7 +253,7 @@ export default {
       var _this = this
       this.$refs.editwatchFormRef.validate(function (valid) {
         if (!valid) return
-        axios.post('restful/watchInfo/update', _this.watchEditForm,
+        axios.post('api/v1/watchInfo/update', _this.watchEditForm,
           {
             headers: {
               'content-type': 'application/json'
@@ -290,7 +290,7 @@ export default {
           type: 'warning'
         })
 
-        axios.post('restful/watchInfo/delete', {'deviceId': deviceId},
+        axios.post('api/v1/watchInfo/delete', {'deviceId': deviceId},
           {
             headers: {
               'content-type': 'application/json'

@@ -10,9 +10,9 @@ run(async ({ page, context, base, report, setRole }) => {
   let body = {};
   let refreshes = 0;
   page.on('request', request => {
-    if (request.url().includes('/restful/oldPerson/selectDetail')) refreshes++;
+    if (request.url().includes('/api/v1/oldPerson/selectDetail')) refreshes++;
   });
-  await context.route('**/restful/oldPerson/delete', async route => {
+  await context.route('**/api/v1/oldPerson/delete', async route => {
     requests++;
     assert.equal(route.request().headers()['x-csrf-token'], 'mock-csrf-token');
     assert.equal(route.request().postDataJSON().oldId, 1);
@@ -56,7 +56,7 @@ run(async ({ page, context, base, report, setRole }) => {
   assert.equal(refreshes, initialRefreshes);
 
   body = { returnCode: '1111' };
-  const refreshed = page.waitForRequest(request => request.url().includes('/restful/oldPerson/selectDetail'));
+  const refreshed = page.waitForRequest(request => request.url().includes('/api/v1/oldPerson/selectDetail'));
   await confirm();
   await message('删除信息成功');
   await refreshed;

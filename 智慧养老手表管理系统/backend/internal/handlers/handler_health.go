@@ -12,9 +12,9 @@ import (
 )
 
 func (h *Handler) routeHealth(mux *http.ServeMux) {
-	mux.HandleFunc("POST /restful/device/healthBatch", h.healthBatch)
-	mux.HandleFunc("POST /restful/health/changes", h.healthChanges)
-	mux.HandleFunc("POST /restful/health/statistics", h.healthStatistics)
+	mux.HandleFunc("POST /api/v1/device/healthBatch", h.healthBatch)
+	mux.HandleFunc("POST /api/v1/health/changes", h.healthChanges)
+	mux.HandleFunc("POST /api/v1/health/statistics", h.healthStatistics)
 }
 
 func (h *Handler) healthBatch(w http.ResponseWriter, r *http.Request) {

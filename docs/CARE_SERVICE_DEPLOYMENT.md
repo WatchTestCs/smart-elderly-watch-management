@@ -8,7 +8,7 @@
 
 - 在 Linux 服务器持续运行 `backend/cmd/server` 编译的 Go 程序，Windows 桌面端只作为客户端使用，不启动/终止这个服务端进程。
 - MySQL 主库与 PG 分析库需分别持久化，业务备份以 MySQL 为准；所有数据库迁移在启动前由服务执行，首次升级前必须备份。
-- `/healthz` 仅表示 HTTP 服务可连接；`GET /restful/service/status` 的 `databaseReady` 字段用于 DB 就绪诊断。注意 Web 和通知网关可用性要另行监控，不能把 HTTP 200 当作 SOS 可被救援的证明。
+- `/healthz` 仅表示 HTTP 服务可连接；`GET /api/v1/service/status` 的 `databaseReady` 字段用于 DB 就绪诊断。注意 Web 和通知网关可用性要另行监控，不能把 HTTP 200 当作 SOS 可被救援的证明。
 
 ## systemd 部署示例
 
@@ -43,7 +43,7 @@ API 不应直接暴露到公网，建议用可信 TLS 反向代理和网络 ACL�
 
 SOS 成功响应是 `received`，不是 `delivered` 或 `acknowledged`。若有已绑定家属手机号，将在同一事务生成状态 `pending` 的 outbox 记录。未配置网关时任务安全留在数据库等待部署人员处理。后台每约五秒领取待发送任务，带有 `Idempotency-Key: care-outbox-<notificationId>` 的 POST JSON 请求；**网关必须持久化该键并对重复发送去重**。HTTPS 2xx 表示网关已接收（`sent`），不是已送达。
 
-网关确认真实送达后必须带以下请求调用 `POST /restful/care/receipt`：
+网关确认真实送达后必须带以下请求调用 `POST /api/v1/care/receipt`：
 - JSON：`{"notificationId":123,"status":"delivered"}`
 - `X-Care-Timestamp`：当前 Unix 秒
 - `X-Care-Signature`：HMAC-SHA256 十六进制，密钥 `CARE_RECEIPT_SECRET`，消息为 `timestamp + "." + 原始 JSON 字节`
@@ -52,7 +52,7 @@ SOS 成功响应是 `received`，不是 `delivered` 或 `acknowledged`。若有�
 
 ## 人工处置和升级
 
-管理员使用 `/restful/care/incidents` 查询、`/restful/care/transition` 接单/开始处置/登记措施/复核；每个动作均形成审计事件。超过当前时限而未完成时，服务将写入 `escalated` 并对 `CARE_ESCALATION_PHONE` 创建额外的待发通知（如已配置）。超时升级是软件流程，仍不等于救援人员已到场。
+管理员使用 `/api/v1/care/incidents` 查询、`/api/v1/care/transition` 接单/开始处置/登记措施/复核；每个动作均形成审计事件。超过当前时限而未完成时，服务将写入 `escalated` 并对 `CARE_ESCALATION_PHONE` 创建额外的待发通知（如已配置）。超时升级是软件流程，仍不等于救援人员已到场。
 
 应对未完成任务设置独立可观测性：定时统计超过期限、未接单、网关发送失败和服务下线的任务，由值班团队在外部渠道进行确认。对生命安全事件，应保留电话/人工备用求助方式。
 

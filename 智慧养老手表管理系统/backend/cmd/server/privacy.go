@@ -14,12 +14,12 @@ import (
 // coordinates, bearer tokens or query strings are stored.
 func sensitiveCareAudit(pool *dbstore.Database, next http.Handler) http.Handler {
 	prefixes := []string{
-		"/restful/oldPerson/", "/restful/family/", "/restful/position/",
-		"/restful/ratepre/", "/restful/step/", "/restful/device/",
-		"/restful/watchInfo/", "/restful/image/download",
-		"/restful/fence/", "/restful/alert/", "/restful/health/daily",
-		"/restful/security/",
-		"/restful/notification/",
+		"/api/v1/oldPerson/", "/api/v1/family/", "/api/v1/position/",
+		"/api/v1/ratepre/", "/api/v1/step/", "/api/v1/device/",
+		"/api/v1/watchInfo/", "/api/v1/image/download",
+		"/api/v1/fence/", "/api/v1/fence-events/", "/api/v1/alert/", "/api/v1/alert-reviews/", "/api/v1/health/daily-query",
+		"/api/v1/security/",
+		"/api/v1/notification/",
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		audit := false

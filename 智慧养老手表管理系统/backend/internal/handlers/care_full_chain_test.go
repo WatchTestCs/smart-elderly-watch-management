@@ -140,7 +140,7 @@ func TestCareFullHTTPChainAfterRealGatewayTimeout(t *testing.T) {
 	act := func(actor int64, action string) int {
 		sess := store.Create(session.Principal{Role: auth.RoleAdmin, ID: actor})
 		body, _ := json.Marshal(map[string]any{"id": strconv.FormatInt(id, 10), "action": action, "note": "synthetic acceptance exercise"})
-		r := httptest.NewRequest(http.MethodPost, "/restful/care/transition", bytes.NewReader(body))
+		r := httptest.NewRequest(http.MethodPost, "/api/v1/care/transition", bytes.NewReader(body))
 		r.AddCookie(&http.Cookie{Name: session.CookieName, Value: sess.ID})
 		r.Header.Set(csrf.HeaderName, sess.CSRFToken)
 		w := httptest.NewRecorder()

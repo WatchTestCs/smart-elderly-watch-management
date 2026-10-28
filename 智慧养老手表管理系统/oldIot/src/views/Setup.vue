@@ -44,7 +44,7 @@ export default {
       this.error = ''
       try {
         await createAdministrator({ ...this.account })
-        await axios.post('/restful/userLogin/login', { phone: this.account.phone, password: this.account.password })
+        await axios.post('/api/v1/auth/login', { phone: this.account.phone, password: this.account.password })
         this.account.password = ''
         const account = await loadSession(true)
         if (!account) throw new Error('Session missing')

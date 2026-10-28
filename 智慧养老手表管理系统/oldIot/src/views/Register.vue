@@ -168,7 +168,7 @@ export default {
       if (code === '') {
         return
       }
-      axios.post('restful/inviteCode/checkCode', { 'code': code }, {
+      axios.post('api/v1/inviteCode/checkCode', { 'code': code }, {
         headers: { 'content-type': 'application/json' },
         withCredentials: true
       }).then(function (response) {
@@ -213,7 +213,7 @@ export default {
           familyPassword: _this.registerForm.familyPassword,
           familyAddress: _this.registerForm.familyAddress
         }
-        axios.post('restful/inviteCode/join', params, {
+        axios.post('api/v1/inviteCode/join', params, {
           headers: { 'content-type': 'application/json' },
           withCredentials: true
         }).then(function (response) {
