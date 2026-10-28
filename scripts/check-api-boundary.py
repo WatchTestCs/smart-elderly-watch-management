@@ -22,6 +22,11 @@ PREFIXES = ("README.md", "README.en.md", "docs/",
             "SuiningWatch/", ".github/workflows/", "deploy/", "tests/", "scripts/")
 files = subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT).decode("utf-8").split("\0")
 errors = []
+if (ROOT / '智慧养老手表管理系统/oldIot').exists():
+    errors.append('historical frontend directory must not be restored')
+module = (ROOT / '智慧养老手表管理系统/backend/go.mod').read_text(encoding='utf-8')
+if not module.startswith('module suining-care\\n'.replace('\\n', '\\n')):
+    errors.append('backend must use the native suining-care Go module')
 for name in files:
     if not name or not name.startswith(PREFIXES) or name.startswith(HISTORY):
         continue

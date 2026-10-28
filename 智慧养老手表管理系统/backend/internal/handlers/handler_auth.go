@@ -1,4 +1,4 @@
-// 登录 / session / 初始化 / 桌面端：LoginController、SetupController、DesktopController。
+// 会话、登录、初始化和桌面端控制接口。
 package handlers
 
 import (
@@ -44,7 +44,7 @@ func (h *Handler) MountLocalLogout(mux *http.ServeMux) {
 	mux.Handle("POST /api/v1/auth/logout", csrf.Middleware(h.Sessions, auth.Middleware(h.Sessions, local)))
 }
 
-// sessionInfo 复刻 GET /api/v1/auth/session：公开；无会话则建匿名会话。
+// sessionInfo 处理 GET /api/v1/auth/session：公开；无会话则建匿名会话。
 func (h *Handler) sessionInfo(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	var count int64
@@ -91,7 +91,7 @@ func (h *Handler) sessionInfo(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// login 复刻 POST /api/v1/auth/login：公开；先查 users（管理员），再查 family（家属）。
+// login 处理 POST /api/v1/auth/login：公开；先查 users（管理员），再查 family（家属）。
 func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -232,7 +232,7 @@ func (h *Handler) renewSession(w http.ResponseWriter, r *http.Request, p session
 	return true
 }
 
-// logout 复刻 POST /api/v1/auth/logout：需登录（中间件鉴权），销毁会话并清 cookie。
+// logout 处理 POST /api/v1/auth/logout：需登录（中间件鉴权），销毁会话并清 cookie。
 func (h *Handler) logout(w http.ResponseWriter, r *http.Request) {
 	sess := session.FromContext(r)
 	if sess == nil {
@@ -248,7 +248,7 @@ func (h *Handler) logout(w http.ResponseWriter, r *http.Request) {
 	response.OK(w, nil)
 }
 
-// setup 复刻 POST /api/v1/setup：公开 + 桌面 token；一次性初始化管理员账号。
+// setup 处理 POST /api/v1/setup：公开 + 桌面 token；一次性初始化管理员账号。
 func (h *Handler) setup(w http.ResponseWriter, r *http.Request) {
 	if !h.checkDesktopToken(w, r) {
 		return
@@ -307,7 +307,7 @@ func (h *Handler) setup(w http.ResponseWriter, r *http.Request) {
 	response.OK(w, nil)
 }
 
-// desktopExit 复刻 POST /api/v1/desktop/exit：公开 + 桌面 token；通过后延迟退出进程。
+// desktopExit 处理 POST /api/v1/desktop/exit：公开 + 桌面 token；通过后延迟退出进程。
 func (h *Handler) desktopExit(w http.ResponseWriter, r *http.Request) {
 	if !h.checkDesktopToken(w, r) {
 		return

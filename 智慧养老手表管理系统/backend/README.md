@@ -6,7 +6,7 @@ Go 服务负责业务 API、设备接入、会话、图片、内嵌前端、照�
 
 ## 技术与模块
 
-Go 模块名为 `careold-go`，声明最低 **Go 1.23.0**，后续 CI 已分别验证 Go 1.23.2 与 1.27.2；先前本地 2.0.6 使用 Go 1.27.2 构建。HTTP 使用标准库 `net/http`，主库存取使用 `database/sql` 与 `go-sql-driver/mysql`，PG 投影及旧库工具使用 `pgx/v5`。当前没有独立消息中间件或分布式事务协调器。
+Go 模块名为 `suining-care`，声明最低 **Go 1.26.0**、工具链 Go 1.26.10；CI 覆盖 Go 1.26.10 与 1.27.2。HTTP 使用标准库 `net/http`，主库存取使用 `database/sql` 与 `go-sql-driver/mysql`，PG 投影及旧库工具使用 `pgx/v5`。当前没有独立消息中间件或分布式事务协调器。
 
 | 位置 | 职责 |
 | --- | --- |

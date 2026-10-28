@@ -12,7 +12,7 @@ import (
 )
 
 // ---------------------------------------------------------------------------
-// OldPersonController (/api/v1/oldPerson)
+// Elder record endpoints (/api/v1/oldPerson)
 // ---------------------------------------------------------------------------
 
 const oldPersonCols = `old_id, name, age, sex, phone, room, illness, warn, food_like,

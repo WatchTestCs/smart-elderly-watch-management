@@ -18,7 +18,7 @@ Rust 启动 Go，Vue 从 Go 获取内嵌生产资源并调用同源 API；首次
 
 ## Windows 完整构建
 
-准备 PowerShell 7、Node.js（`^20.19.0 || >=22.12.0`）、Go、Rust、C++ Build Tools 和 Windows SDK。Go 模块现在声明最低 1.23.0，CI 检查 Go 1.23.2 和 1.27.2；先前 2.0.6 本地构建使用 Go 1.27.2。Rust 包声明最低 1.85。版本以锁文件和模块声明为准。
+准备 PowerShell 7、Node.js（`^20.19.0 || >=22.12.0`）、Go、Rust、C++ Build Tools 和 Windows SDK。Go 模块声明最低 Go 1.26.0，CI 检查 Go 1.26.10 与 1.27.2。Rust 包声明最低 1.85。版本以锁文件和模块声明为准。
 
 ```powershell
 ./desktop/validate-version.ps1
@@ -49,7 +49,7 @@ npm ci
 npm run dev
 ```
 
-Vite 将 `/restful` 代理到 `127.0.0.1:8795`。纯 API 模式可直接开发；完整桌面构建必须先嵌入前端。纯浏览器开发不能通过 Tauri 初始化管理员，使用原生桌面完成首次初始化，不应放开 HTTP 初始化鉴权。
+Vite 将 `/api/v1` 和 `/openapi.json` 代理到 `127.0.0.1:8795`。纯 API 模式可直接开发；完整桌面构建必须先嵌入前端。纯浏览器开发不能通过 Tauri 初始化管理员，使用原生桌面完成首次初始化，不应放开 HTTP 初始化鉴权。
 
 以上无 TLS 连接只适用于受控本机环境，远程连接需验证证书。PG 可暂不配置，核心业务仍可使用，但分析事件会积压，需监控容量。桌面使用 `SUINING_MYSQL_DSN` / `SUINING_PG_ANALYTICS_URL`，配置修改后重启；旧 `SUINING_DATABASE_URL` 不再作为主库回退。
 

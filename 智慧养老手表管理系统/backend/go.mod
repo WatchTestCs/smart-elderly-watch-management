@@ -1,4 +1,4 @@
-module careold-go
+module suining-care
 
 go 1.26.0
 

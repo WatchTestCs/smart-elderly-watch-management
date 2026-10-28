@@ -1,4 +1,4 @@
-// Command server 启动 suining-care 后端：HTTP API（复刻 preview 分支 careold）。
+// Command server starts the native Suining Go API and background workers.
 package main
 
 import (
@@ -89,7 +89,7 @@ func main() {
 		}
 	}()
 
-	// 桌面端内嵌模式：写就绪文件 + 看护父进程（对齐 Java DesktopReady）。
+	// Desktop sidecar: publish readiness and watch the owning process.
 	writeReadyFile(readyFile, actualPort)
 	watchParent(parentPid, shutdown)
 
