@@ -3,28 +3,92 @@
   "info": {
     "title": "岁宁后端 API",
     "version": "2.1.0",
-    "description": "Incremental versioned API and legacy route inventory. https://spec.openapis.org/oas/v3.1.0"
+    "description": "Native Go API v1 route inventory. No Java or legacy HTTP entry points."
   },
   "components": {
     "securitySchemes": {
       "sessionCookie": {
         "type": "apiKey",
         "in": "cookie",
-        "name": "JSESSIONID"
+        "name": "SUINING_SESSION"
       }
     }
   },
   "paths": {
-    "/api/v1/alert-reviews": {
+    "/api/v1/alarmProcess/select": {
       "post": {
-        "summary": "alert/review",
+        "summary": "alarmProcess/select",
         "deprecated": false,
         "tags": [
           "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Session, device credential or MFA required"
+          },
+          "403": {
+            "description": "Role, duty or CSRF denied"
+          },
+          "409": {
+            "description": "Version, binding or state conflict"
+          },
+          "503": {
+            "description": "Required storage/configuration unavailable"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-CSRF-TOKEN",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+      }
+    },
+    "/api/v1/alert-reviews": {
+      "post": {
+        "summary": "alert-reviews",
+        "deprecated": false,
+        "tags": [
+          "v1"
+        ],
+        "responses": {
+          "200": {
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -93,19 +157,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_commands.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation. Canonical compatibility target: /restful/alert/review. HTTP method and authorization are unchanged."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_commands.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/alert-reviews/search": {
       "post": {
-        "summary": "alert/reviews",
+        "summary": "alert-reviews/search",
         "deprecated": false,
         "tags": [
           "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -171,19 +235,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_commands.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation. Canonical compatibility target: /restful/alert/reviews. HTTP method and authorization are unchanged."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_commands.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/auth/login": {
       "post": {
-        "summary": "userLogin/login",
+        "summary": "auth/login",
         "deprecated": false,
         "tags": [
           "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -245,19 +309,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_auth.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation. Canonical compatibility target: /restful/userLogin/login. HTTP method and authorization are unchanged."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_auth.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/auth/logout": {
       "post": {
-        "summary": "userLogin/logout",
+        "summary": "auth/logout",
         "deprecated": false,
         "tags": [
           "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -309,19 +373,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_auth.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation. Canonical compatibility target: /restful/userLogin/logout. HTTP method and authorization are unchanged."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_auth.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/auth/session": {
       "get": {
-        "summary": "userLogin/session",
+        "summary": "auth/session",
         "deprecated": false,
         "tags": [
           "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -348,1043 +412,19 @@
           }
         },
         "security": [],
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_auth.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation. Canonical compatibility target: /restful/userLogin/session. HTTP method and authorization are unchanged."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_auth.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/api/v1/device-command-profiles": {
-      "post": {
-        "summary": "device/commandProfile",
-        "deprecated": false,
-        "tags": [
-          "v1"
-        ],
-        "responses": {
-          "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request"
-          },
-          "401": {
-            "description": "Session, device credential or MFA required"
-          },
-          "403": {
-            "description": "Role, duty or CSRF denied"
-          },
-          "409": {
-            "description": "Version, binding or state conflict"
-          },
-          "503": {
-            "description": "Required storage/configuration unavailable"
-          }
-        },
-        "security": [
-          {
-            "sessionCookie": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "X-CSRF-TOKEN",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "additionalProperties": false,
-                "properties": {
-                  "deviceId": {
-                    "type": "integer"
-                  },
-                  "wireType": {
-                    "type": "string"
-                  },
-                  "protocol": {
-                    "type": "string"
-                  },
-                  "enabled": {
-                    "type": "boolean"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_commands.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation. Canonical compatibility target: /restful/device/commandProfile. HTTP method and authorization are unchanged."
-      }
-    },
-    "/api/v1/device-commands": {
-      "post": {
-        "summary": "device/command",
-        "deprecated": false,
-        "tags": [
-          "v1"
-        ],
-        "responses": {
-          "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request"
-          },
-          "401": {
-            "description": "Session, device credential or MFA required"
-          },
-          "403": {
-            "description": "Role, duty or CSRF denied"
-          },
-          "409": {
-            "description": "Version, binding or state conflict"
-          },
-          "503": {
-            "description": "Required storage/configuration unavailable"
-          }
-        },
-        "security": [
-          {
-            "sessionCookie": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "X-CSRF-TOKEN",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "additionalProperties": false,
-                "properties": {
-                  "deviceId": {
-                    "type": "integer"
-                  },
-                  "action": {
-                    "type": "string"
-                  },
-                  "requestKey": {
-                    "type": "string"
-                  },
-                  "ttlSeconds": {
-                    "type": "integer"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_commands.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation. Canonical compatibility target: /restful/device/command. HTTP method and authorization are unchanged."
-      }
-    },
-    "/api/v1/device-commands/search": {
-      "post": {
-        "summary": "device/commands",
-        "deprecated": false,
-        "tags": [
-          "v1"
-        ],
-        "responses": {
-          "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request"
-          },
-          "401": {
-            "description": "Session, device credential or MFA required"
-          },
-          "403": {
-            "description": "Role, duty or CSRF denied"
-          },
-          "409": {
-            "description": "Version, binding or state conflict"
-          },
-          "503": {
-            "description": "Required storage/configuration unavailable"
-          }
-        },
-        "security": [
-          {
-            "sessionCookie": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "X-CSRF-TOKEN",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "additionalProperties": false,
-                "properties": {
-                  "deviceId": {
-                    "type": "integer"
-                  },
-                  "after": {
-                    "type": "integer"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_commands.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation. Canonical compatibility target: /restful/device/commands. HTTP method and authorization are unchanged."
-      }
-    },
-    "/api/v1/fence-events/search": {
-      "post": {
-        "summary": "fence/events",
-        "deprecated": false,
-        "tags": [
-          "v1"
-        ],
-        "responses": {
-          "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request"
-          },
-          "401": {
-            "description": "Session, device credential or MFA required"
-          },
-          "403": {
-            "description": "Role, duty or CSRF denied"
-          },
-          "409": {
-            "description": "Version, binding or state conflict"
-          },
-          "503": {
-            "description": "Required storage/configuration unavailable"
-          }
-        },
-        "security": [
-          {
-            "sessionCookie": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "X-CSRF-TOKEN",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "additionalProperties": true
-              }
-            }
-          }
-        },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_commands.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation. Canonical compatibility target: /restful/fence/events. HTTP method and authorization are unchanged."
-      }
-    },
-    "/api/v1/fences": {
-      "post": {
-        "summary": "fence/save",
-        "deprecated": false,
-        "tags": [
-          "v1"
-        ],
-        "responses": {
-          "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request"
-          },
-          "401": {
-            "description": "Session, device credential or MFA required"
-          },
-          "403": {
-            "description": "Role, duty or CSRF denied"
-          },
-          "409": {
-            "description": "Version, binding or state conflict"
-          },
-          "503": {
-            "description": "Required storage/configuration unavailable"
-          }
-        },
-        "security": [
-          {
-            "sessionCookie": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "X-CSRF-TOKEN",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "additionalProperties": true
-              }
-            }
-          }
-        },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_commands.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation. Canonical compatibility target: /restful/fence/save. HTTP method and authorization are unchanged."
-      }
-    },
-    "/api/v1/fences/search": {
-      "post": {
-        "summary": "fence/list",
-        "deprecated": false,
-        "tags": [
-          "v1"
-        ],
-        "responses": {
-          "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request"
-          },
-          "401": {
-            "description": "Session, device credential or MFA required"
-          },
-          "403": {
-            "description": "Role, duty or CSRF denied"
-          },
-          "409": {
-            "description": "Version, binding or state conflict"
-          },
-          "503": {
-            "description": "Required storage/configuration unavailable"
-          }
-        },
-        "security": [
-          {
-            "sessionCookie": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "X-CSRF-TOKEN",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "additionalProperties": true
-              }
-            }
-          }
-        },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_commands.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation. Canonical compatibility target: /restful/fence/list. HTTP method and authorization are unchanged."
-      }
-    },
-    "/api/v1/health/daily-query": {
-      "post": {
-        "summary": "health/daily",
-        "deprecated": false,
-        "tags": [
-          "v1"
-        ],
-        "responses": {
-          "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request"
-          },
-          "401": {
-            "description": "Session, device credential or MFA required"
-          },
-          "403": {
-            "description": "Role, duty or CSRF denied"
-          },
-          "409": {
-            "description": "Version, binding or state conflict"
-          },
-          "503": {
-            "description": "Required storage/configuration unavailable"
-          }
-        },
-        "security": [
-          {
-            "sessionCookie": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "X-CSRF-TOKEN",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "additionalProperties": false,
-                "properties": {
-                  "oldId": {
-                    "type": "integer"
-                  },
-                  "source": {
-                    "type": "string"
-                  },
-                  "sourceDevice": {
-                    "type": "string"
-                  },
-                  "metric": {
-                    "type": "string"
-                  },
-                  "semantics": {
-                    "type": "string"
-                  },
-                  "day": {
-                    "type": "string"
-                  },
-                  "offsetMinutes": {
-                    "type": "integer"
-                  },
-                  "days": {
-                    "type": "integer"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_commands.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation. Canonical compatibility target: /restful/health/daily. HTTP method and authorization are unchanged."
-      }
-    },
-    "/api/v1/notifications/search": {
-      "post": {
-        "summary": "notification/list",
-        "deprecated": false,
-        "tags": [
-          "v1"
-        ],
-        "responses": {
-          "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request"
-          },
-          "401": {
-            "description": "Session, device credential or MFA required"
-          },
-          "403": {
-            "description": "Role, duty or CSRF denied"
-          },
-          "409": {
-            "description": "Version, binding or state conflict"
-          },
-          "503": {
-            "description": "Required storage/configuration unavailable"
-          }
-        },
-        "security": [
-          {
-            "sessionCookie": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "X-CSRF-TOKEN",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "additionalProperties": false,
-                "properties": {
-                  "after": {
-                    "type": "integer"
-                  },
-                  "familyId": {
-                    "type": "integer"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handlers.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation. Canonical compatibility target: /restful/notification/list. HTTP method and authorization are unchanged."
-      }
-    },
-    "/api/v1/rule-policies": {
-      "post": {
-        "summary": "rules/policy",
-        "deprecated": false,
-        "tags": [
-          "v1"
-        ],
-        "responses": {
-          "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request"
-          },
-          "401": {
-            "description": "Session, device credential or MFA required"
-          },
-          "403": {
-            "description": "Role, duty or CSRF denied"
-          },
-          "409": {
-            "description": "Version, binding or state conflict"
-          },
-          "503": {
-            "description": "Required storage/configuration unavailable"
-          }
-        },
-        "security": [
-          {
-            "sessionCookie": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "X-CSRF-TOKEN",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "additionalProperties": false,
-                "properties": {
-                  "deviceId": {
-                    "type": "integer"
-                  },
-                  "revision": {
-                    "type": "integer"
-                  },
-                  "policy": {
-                    "type": "object"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handlers.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation. Canonical compatibility target: /restful/rules/policy. HTTP method and authorization are unchanged."
-      }
-    },
-    "/api/v1/security/factor": {
-      "post": {
-        "summary": "security/factor",
-        "deprecated": false,
-        "tags": [
-          "v1"
-        ],
-        "responses": {
-          "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request"
-          },
-          "401": {
-            "description": "Session, device credential or MFA required"
-          },
-          "403": {
-            "description": "Role, duty or CSRF denied"
-          },
-          "409": {
-            "description": "Version, binding or state conflict"
-          },
-          "503": {
-            "description": "Required storage/configuration unavailable"
-          }
-        },
-        "security": [
-          {
-            "sessionCookie": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "X-CSRF-TOKEN",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "additionalProperties": false,
-                "properties": {
-                  "action": {
-                    "type": "string"
-                  },
-                  "password": {
-                    "type": "string"
-                  },
-                  "otp": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handlers.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation. Canonical compatibility target: /restful/security/factor. HTTP method and authorization are unchanged."
-      }
-    },
-    "/api/v1/security/login-audit": {
-      "post": {
-        "summary": "security/loginAudit",
-        "deprecated": false,
-        "tags": [
-          "v1"
-        ],
-        "responses": {
-          "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request"
-          },
-          "401": {
-            "description": "Session, device credential or MFA required"
-          },
-          "403": {
-            "description": "Role, duty or CSRF denied"
-          },
-          "409": {
-            "description": "Version, binding or state conflict"
-          },
-          "503": {
-            "description": "Required storage/configuration unavailable"
-          }
-        },
-        "security": [
-          {
-            "sessionCookie": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "X-CSRF-TOKEN",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "additionalProperties": false,
-                "properties": {
-                  "after": {
-                    "type": "integer"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handlers.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation. Canonical compatibility target: /restful/security/loginAudit. HTTP method and authorization are unchanged."
-      }
-    },
-    "/restful/alarmProcess/select": {
-      "post": {
-        "summary": "alarmProcess/select",
-        "deprecated": true,
-        "tags": [
-          "legacy"
-        ],
-        "responses": {
-          "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request"
-          },
-          "401": {
-            "description": "Session, device credential or MFA required"
-          },
-          "403": {
-            "description": "Role, duty or CSRF denied"
-          },
-          "409": {
-            "description": "Version, binding or state conflict"
-          },
-          "503": {
-            "description": "Required storage/configuration unavailable"
-          }
-        },
-        "security": [
-          {
-            "sessionCookie": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "X-CSRF-TOKEN",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "additionalProperties": true
-              }
-            }
-          }
-        },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
-      }
-    },
-    "/restful/alert/review": {
-      "post": {
-        "summary": "alert/review",
-        "deprecated": true,
-        "tags": [
-          "legacy"
-        ],
-        "responses": {
-          "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request"
-          },
-          "401": {
-            "description": "Session, device credential or MFA required"
-          },
-          "403": {
-            "description": "Role, duty or CSRF denied"
-          },
-          "409": {
-            "description": "Version, binding or state conflict"
-          },
-          "503": {
-            "description": "Required storage/configuration unavailable"
-          }
-        },
-        "security": [
-          {
-            "sessionCookie": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "X-CSRF-TOKEN",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "additionalProperties": false,
-                "properties": {
-                  "recordId": {
-                    "type": "integer"
-                  },
-                  "kind": {
-                    "type": "string"
-                  },
-                  "verdict": {
-                    "type": "string"
-                  },
-                  "reason": {
-                    "type": "string"
-                  },
-                  "expectedReviewId": {
-                    "type": "integer"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_commands.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
-      }
-    },
-    "/restful/alert/reviews": {
-      "post": {
-        "summary": "alert/reviews",
-        "deprecated": true,
-        "tags": [
-          "legacy"
-        ],
-        "responses": {
-          "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request"
-          },
-          "401": {
-            "description": "Session, device credential or MFA required"
-          },
-          "403": {
-            "description": "Role, duty or CSRF denied"
-          },
-          "409": {
-            "description": "Version, binding or state conflict"
-          },
-          "503": {
-            "description": "Required storage/configuration unavailable"
-          }
-        },
-        "security": [
-          {
-            "sessionCookie": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "X-CSRF-TOKEN",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "additionalProperties": false,
-                "properties": {
-                  "entity": {
-                    "type": "string"
-                  },
-                  "recordId": {
-                    "type": "integer"
-                  },
-                  "kind": {
-                    "type": "string"
-                  },
-                  "after": {
-                    "type": "integer"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_commands.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
-      }
-    },
-    "/restful/care/accessAudit": {
+    "/api/v1/care/accessAudit": {
       "post": {
         "summary": "care/accessAudit",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1436,19 +476,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_care_incident.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_care_incident.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/care/assignDuty": {
+    "/api/v1/care/assignDuty": {
       "post": {
         "summary": "care/assignDuty",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1500,19 +540,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_care_incident.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_care_incident.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/care/diagnostics": {
+    "/api/v1/care/diagnostics": {
       "post": {
         "summary": "care/diagnostics",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1564,19 +604,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_care_incident.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_care_incident.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/care/events": {
+    "/api/v1/care/events": {
       "post": {
         "summary": "care/events",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1628,19 +668,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_care_incident.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_care_incident.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/care/incidents": {
+    "/api/v1/care/incidents": {
       "post": {
         "summary": "care/incidents",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1692,19 +732,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_care_incident.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_care_incident.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/care/receipt": {
+    "/api/v1/care/receipt": {
       "post": {
         "summary": "care/receipt",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1746,16 +786,16 @@
         "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_care_incident.go. Device body authentication or signed gateway receipt; not anonymous access."
       }
     },
-    "/restful/care/staff": {
+    "/api/v1/care/staff": {
       "post": {
         "summary": "care/staff",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1807,19 +847,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_care_incident.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_care_incident.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/care/transition": {
+    "/api/v1/care/transition": {
       "post": {
         "summary": "care/transition",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1871,19 +911,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_care_incident.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_care_incident.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/customer/add": {
+    "/api/v1/customer/add": {
       "post": {
         "summary": "customer/add",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1935,19 +975,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_user.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_user.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/customer/delete": {
+    "/api/v1/customer/delete": {
       "post": {
         "summary": "customer/delete",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1999,19 +1039,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_user.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_user.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/customer/select": {
+    "/api/v1/customer/select": {
       "post": {
         "summary": "customer/select",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -2063,19 +1103,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_user.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_user.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/customer/update": {
+    "/api/v1/customer/update": {
       "post": {
         "summary": "customer/update",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -2127,19 +1167,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_user.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_user.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/desktop/exit": {
+    "/api/v1/desktop/exit": {
       "post": {
         "summary": "desktop/exit",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -2178,391 +1218,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_auth.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_auth.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/device/alertCounts": {
+    "/api/v1/device-command-profiles": {
       "post": {
-        "summary": "device/alertCounts",
-        "deprecated": true,
+        "summary": "device-command-profiles",
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request"
-          },
-          "401": {
-            "description": "Session, device credential or MFA required"
-          },
-          "403": {
-            "description": "Role, duty or CSRF denied"
-          },
-          "409": {
-            "description": "Version, binding or state conflict"
-          },
-          "503": {
-            "description": "Required storage/configuration unavailable"
-          }
-        },
-        "security": [
-          {
-            "sessionCookie": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "X-CSRF-TOKEN",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "additionalProperties": true
-              }
-            }
-          }
-        },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
-      }
-    },
-    "/restful/device/alertDetail": {
-      "post": {
-        "summary": "device/alertDetail",
-        "deprecated": true,
-        "tags": [
-          "legacy"
-        ],
-        "responses": {
-          "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request"
-          },
-          "401": {
-            "description": "Session, device credential or MFA required"
-          },
-          "403": {
-            "description": "Role, duty or CSRF denied"
-          },
-          "409": {
-            "description": "Version, binding or state conflict"
-          },
-          "503": {
-            "description": "Required storage/configuration unavailable"
-          }
-        },
-        "security": [
-          {
-            "sessionCookie": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "X-CSRF-TOKEN",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "additionalProperties": true
-              }
-            }
-          }
-        },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
-      }
-    },
-    "/restful/device/bind": {
-      "post": {
-        "summary": "device/bind",
-        "deprecated": true,
-        "tags": [
-          "legacy"
-        ],
-        "responses": {
-          "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request"
-          },
-          "401": {
-            "description": "Session, device credential or MFA required"
-          },
-          "403": {
-            "description": "Role, duty or CSRF denied"
-          },
-          "409": {
-            "description": "Version, binding or state conflict"
-          },
-          "503": {
-            "description": "Required storage/configuration unavailable"
-          }
-        },
-        "security": [],
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "additionalProperties": true
-              }
-            }
-          }
-        },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Device body authentication or signed gateway receipt; not anonymous access."
-      }
-    },
-    "/restful/device/bindCodeList": {
-      "post": {
-        "summary": "device/bindCodeList",
-        "deprecated": true,
-        "tags": [
-          "legacy"
-        ],
-        "responses": {
-          "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request"
-          },
-          "401": {
-            "description": "Session, device credential or MFA required"
-          },
-          "403": {
-            "description": "Role, duty or CSRF denied"
-          },
-          "409": {
-            "description": "Version, binding or state conflict"
-          },
-          "503": {
-            "description": "Required storage/configuration unavailable"
-          }
-        },
-        "security": [
-          {
-            "sessionCookie": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "X-CSRF-TOKEN",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "additionalProperties": true
-              }
-            }
-          }
-        },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
-      }
-    },
-    "/restful/device/command": {
-      "post": {
-        "summary": "device/command",
-        "deprecated": true,
-        "tags": [
-          "legacy"
-        ],
-        "responses": {
-          "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request"
-          },
-          "401": {
-            "description": "Session, device credential or MFA required"
-          },
-          "403": {
-            "description": "Role, duty or CSRF denied"
-          },
-          "409": {
-            "description": "Version, binding or state conflict"
-          },
-          "503": {
-            "description": "Required storage/configuration unavailable"
-          }
-        },
-        "security": [
-          {
-            "sessionCookie": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "X-CSRF-TOKEN",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "additionalProperties": false,
-                "properties": {
-                  "deviceId": {
-                    "type": "integer"
-                  },
-                  "action": {
-                    "type": "string"
-                  },
-                  "requestKey": {
-                    "type": "string"
-                  },
-                  "ttlSeconds": {
-                    "type": "integer"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_commands.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
-      }
-    },
-    "/restful/device/commandAck": {
-      "post": {
-        "summary": "device/commandAck",
-        "deprecated": true,
-        "tags": [
-          "legacy"
-        ],
-        "responses": {
-          "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request"
-          },
-          "401": {
-            "description": "Session, device credential or MFA required"
-          },
-          "403": {
-            "description": "Role, duty or CSRF denied"
-          },
-          "409": {
-            "description": "Version, binding or state conflict"
-          },
-          "503": {
-            "description": "Required storage/configuration unavailable"
-          }
-        },
-        "security": [],
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "additionalProperties": true
-              }
-            }
-          }
-        },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_commands.go. Device body authentication or signed gateway receipt; not anonymous access."
-      }
-    },
-    "/restful/device/commandProfile": {
-      "post": {
-        "summary": "device/commandProfile",
-        "deprecated": true,
-        "tags": [
-          "legacy"
-        ],
-        "responses": {
-          "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -2628,19 +1296,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_commands.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_commands.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/device/commandPull": {
+    "/api/v1/device-commands": {
       "post": {
-        "summary": "device/commandPull",
-        "deprecated": true,
+        "summary": "device-commands",
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -2666,32 +1334,59 @@
             "description": "Required storage/configuration unavailable"
           }
         },
-        "security": [],
-        "parameters": [],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-CSRF-TOKEN",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "additionalProperties": true
+                "additionalProperties": false,
+                "properties": {
+                  "deviceId": {
+                    "type": "integer"
+                  },
+                  "action": {
+                    "type": "string"
+                  },
+                  "requestKey": {
+                    "type": "string"
+                  },
+                  "ttlSeconds": {
+                    "type": "integer"
+                  }
+                }
               }
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_commands.go. Device body authentication or signed gateway receipt; not anonymous access."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_commands.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/device/commands": {
+    "/api/v1/device-commands/search": {
       "post": {
-        "summary": "device/commands",
-        "deprecated": true,
+        "summary": "device-commands/search",
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -2751,19 +1446,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_commands.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_commands.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/device/create": {
+    "/api/v1/device/alertCounts": {
       "post": {
-        "summary": "device/create",
-        "deprecated": true,
+        "summary": "device/alertCounts",
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -2815,19 +1510,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/device/createBindCode": {
+    "/api/v1/device/alertDetail": {
       "post": {
-        "summary": "device/createBindCode",
-        "deprecated": true,
+        "summary": "device/alertDetail",
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -2879,19 +1574,70 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/device/delete": {
+    "/api/v1/device/bind": {
       "post": {
-        "summary": "device/delete",
-        "deprecated": true,
+        "summary": "device/bind",
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Session, device credential or MFA required"
+          },
+          "403": {
+            "description": "Role, duty or CSRF denied"
+          },
+          "409": {
+            "description": "Version, binding or state conflict"
+          },
+          "503": {
+            "description": "Required storage/configuration unavailable"
+          }
+        },
+        "security": [],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Device body authentication or signed gateway receipt; not anonymous access."
+      }
+    },
+    "/api/v1/device/bindCodeList": {
+      "post": {
+        "summary": "device/bindCodeList",
+        "deprecated": false,
+        "tags": [
+          "v1"
+        ],
+        "responses": {
+          "200": {
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -2943,83 +1689,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/device/deleteBindCode": {
+    "/api/v1/device/commandAck": {
       "post": {
-        "summary": "device/deleteBindCode",
-        "deprecated": true,
+        "summary": "device/commandAck",
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request"
-          },
-          "401": {
-            "description": "Session, device credential or MFA required"
-          },
-          "403": {
-            "description": "Role, duty or CSRF denied"
-          },
-          "409": {
-            "description": "Version, binding or state conflict"
-          },
-          "503": {
-            "description": "Required storage/configuration unavailable"
-          }
-        },
-        "security": [
-          {
-            "sessionCookie": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "X-CSRF-TOKEN",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "additionalProperties": true
-              }
-            }
-          }
-        },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
-      }
-    },
-    "/restful/device/fencePoint": {
-      "post": {
-        "summary": "device/fencePoint",
-        "deprecated": true,
-        "tags": [
-          "legacy"
-        ],
-        "responses": {
-          "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3061,16 +1743,67 @@
         "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_commands.go. Device body authentication or signed gateway receipt; not anonymous access."
       }
     },
-    "/restful/device/handleAlarm": {
+    "/api/v1/device/commandPull": {
       "post": {
-        "summary": "device/handleAlarm",
-        "deprecated": true,
+        "summary": "device/commandPull",
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Session, device credential or MFA required"
+          },
+          "403": {
+            "description": "Role, duty or CSRF denied"
+          },
+          "409": {
+            "description": "Version, binding or state conflict"
+          },
+          "503": {
+            "description": "Required storage/configuration unavailable"
+          }
+        },
+        "security": [],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_commands.go. Device body authentication or signed gateway receipt; not anonymous access."
+      }
+    },
+    "/api/v1/device/create": {
+      "post": {
+        "summary": "device/create",
+        "deprecated": false,
+        "tags": [
+          "v1"
+        ],
+        "responses": {
+          "200": {
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3122,19 +1855,326 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/device/healthBatch": {
+    "/api/v1/device/createBindCode": {
       "post": {
-        "summary": "device/healthBatch",
-        "deprecated": true,
+        "summary": "device/createBindCode",
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Session, device credential or MFA required"
+          },
+          "403": {
+            "description": "Role, duty or CSRF denied"
+          },
+          "409": {
+            "description": "Version, binding or state conflict"
+          },
+          "503": {
+            "description": "Required storage/configuration unavailable"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-CSRF-TOKEN",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+      }
+    },
+    "/api/v1/device/delete": {
+      "post": {
+        "summary": "device/delete",
+        "deprecated": false,
+        "tags": [
+          "v1"
+        ],
+        "responses": {
+          "200": {
+            "description": "Go JSON response; payload varies by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Session, device credential or MFA required"
+          },
+          "403": {
+            "description": "Role, duty or CSRF denied"
+          },
+          "409": {
+            "description": "Version, binding or state conflict"
+          },
+          "503": {
+            "description": "Required storage/configuration unavailable"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-CSRF-TOKEN",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+      }
+    },
+    "/api/v1/device/deleteBindCode": {
+      "post": {
+        "summary": "device/deleteBindCode",
+        "deprecated": false,
+        "tags": [
+          "v1"
+        ],
+        "responses": {
+          "200": {
+            "description": "Go JSON response; payload varies by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Session, device credential or MFA required"
+          },
+          "403": {
+            "description": "Role, duty or CSRF denied"
+          },
+          "409": {
+            "description": "Version, binding or state conflict"
+          },
+          "503": {
+            "description": "Required storage/configuration unavailable"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-CSRF-TOKEN",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+      }
+    },
+    "/api/v1/device/fencePoint": {
+      "post": {
+        "summary": "device/fencePoint",
+        "deprecated": false,
+        "tags": [
+          "v1"
+        ],
+        "responses": {
+          "200": {
+            "description": "Go JSON response; payload varies by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Session, device credential or MFA required"
+          },
+          "403": {
+            "description": "Role, duty or CSRF denied"
+          },
+          "409": {
+            "description": "Version, binding or state conflict"
+          },
+          "503": {
+            "description": "Required storage/configuration unavailable"
+          }
+        },
+        "security": [],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_commands.go. Device body authentication or signed gateway receipt; not anonymous access."
+      }
+    },
+    "/api/v1/device/handleAlarm": {
+      "post": {
+        "summary": "device/handleAlarm",
+        "deprecated": false,
+        "tags": [
+          "v1"
+        ],
+        "responses": {
+          "200": {
+            "description": "Go JSON response; payload varies by operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Session, device credential or MFA required"
+          },
+          "403": {
+            "description": "Role, duty or CSRF denied"
+          },
+          "409": {
+            "description": "Version, binding or state conflict"
+          },
+          "503": {
+            "description": "Required storage/configuration unavailable"
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-CSRF-TOKEN",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+      }
+    },
+    "/api/v1/device/healthBatch": {
+      "post": {
+        "summary": "device/healthBatch",
+        "deprecated": false,
+        "tags": [
+          "v1"
+        ],
+        "responses": {
+          "200": {
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3176,16 +2216,16 @@
         "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_health.go. Device body authentication or signed gateway receipt; not anonymous access."
       }
     },
-    "/restful/device/heartbeat": {
+    "/api/v1/device/heartbeat": {
       "post": {
         "summary": "device/heartbeat",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3227,16 +2267,16 @@
         "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Device body authentication or signed gateway receipt; not anonymous access."
       }
     },
-    "/restful/device/list": {
+    "/api/v1/device/list": {
       "post": {
         "summary": "device/list",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3288,19 +2328,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/device/login": {
+    "/api/v1/device/login": {
       "post": {
         "summary": "device/login",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3342,16 +2382,16 @@
         "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Device body authentication or signed gateway receipt; not anonymous access."
       }
     },
-    "/restful/device/report": {
+    "/api/v1/device/report": {
       "post": {
         "summary": "device/report",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3393,16 +2433,16 @@
         "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Device body authentication or signed gateway receipt; not anonymous access."
       }
     },
-    "/restful/device/resetSecret": {
+    "/api/v1/device/resetSecret": {
       "post": {
         "summary": "device/resetSecret",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3454,19 +2494,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/device/resolveAlert": {
+    "/api/v1/device/resolveAlert": {
       "post": {
         "summary": "device/resolveAlert",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3518,19 +2558,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/device/sos": {
+    "/api/v1/device/sos": {
       "post": {
         "summary": "device/sos",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3572,16 +2612,16 @@
         "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Device body authentication or signed gateway receipt; not anonymous access."
       }
     },
-    "/restful/device/unbind": {
+    "/api/v1/device/unbind": {
       "post": {
         "summary": "device/unbind",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3633,19 +2673,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/family/add": {
+    "/api/v1/family/add": {
       "post": {
         "summary": "family/add",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3697,19 +2737,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_family.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_family.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/family/deleteFamily": {
+    "/api/v1/family/deleteFamily": {
       "post": {
         "summary": "family/deleteFamily",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3761,19 +2801,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_family.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_family.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/family/select": {
+    "/api/v1/family/select": {
       "post": {
         "summary": "family/select",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3825,19 +2865,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_family.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_family.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/family/selectTwo": {
+    "/api/v1/family/selectTwo": {
       "post": {
         "summary": "family/selectTwo",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3889,19 +2929,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_family.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_family.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/family/updateFamily": {
+    "/api/v1/family/updateFamily": {
       "post": {
         "summary": "family/updateFamily",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3953,19 +2993,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_family.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_family.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/family/updatePassword": {
+    "/api/v1/family/updatePassword": {
       "post": {
         "summary": "family/updatePassword",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4017,19 +3057,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_family.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_family.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/family/updateTouPic": {
+    "/api/v1/family/updateTouPic": {
       "post": {
         "summary": "family/updateTouPic",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4081,19 +3121,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_family.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_family.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/family/updateTwo": {
+    "/api/v1/family/updateTwo": {
       "post": {
         "summary": "family/updateTwo",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4145,19 +3185,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_family.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_family.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/fence/events": {
+    "/api/v1/fence-events/search": {
       "post": {
-        "summary": "fence/events",
-        "deprecated": true,
+        "summary": "fence-events/search",
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4209,19 +3249,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_commands.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_commands.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/fence/list": {
+    "/api/v1/fences": {
       "post": {
-        "summary": "fence/list",
-        "deprecated": true,
+        "summary": "fences",
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4273,19 +3313,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_commands.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_commands.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/fence/save": {
+    "/api/v1/fences/search": {
       "post": {
-        "summary": "fence/save",
-        "deprecated": true,
+        "summary": "fences/search",
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4337,19 +3377,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_commands.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_commands.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/health/changes": {
+    "/api/v1/health/changes": {
       "post": {
         "summary": "health/changes",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4401,19 +3441,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_health.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_health.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/health/daily": {
+    "/api/v1/health/daily-query": {
       "post": {
-        "summary": "health/daily",
-        "deprecated": true,
+        "summary": "health/daily-query",
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4491,19 +3531,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_commands.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_commands.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/health/statistics": {
+    "/api/v1/health/statistics": {
       "post": {
         "summary": "health/statistics",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4555,19 +3595,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_health.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_health.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/image/download": {
+    "/api/v1/image/download": {
       "get": {
         "summary": "image/download",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4598,19 +3638,19 @@
             "sessionCookie": []
           }
         ],
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_social.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_social.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/image/saveImage": {
+    "/api/v1/image/saveImage": {
       "post": {
         "summary": "image/saveImage",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4662,19 +3702,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_social.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_social.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/inviteCode/checkCode": {
+    "/api/v1/inviteCode/checkCode": {
       "post": {
         "summary": "inviteCode/checkCode",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4722,19 +3762,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_family.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_family.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/inviteCode/create": {
+    "/api/v1/inviteCode/create": {
       "post": {
         "summary": "inviteCode/create",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4786,19 +3826,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_family.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_family.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/inviteCode/delete": {
+    "/api/v1/inviteCode/delete": {
       "post": {
         "summary": "inviteCode/delete",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4850,19 +3890,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_family.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_family.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/inviteCode/join": {
+    "/api/v1/inviteCode/join": {
       "post": {
         "summary": "inviteCode/join",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4910,19 +3950,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_family.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_family.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/inviteCode/list": {
+    "/api/v1/inviteCode/list": {
       "post": {
         "summary": "inviteCode/list",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4974,19 +4014,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_family.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_family.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/inviteCode/oldPersonList": {
+    "/api/v1/inviteCode/oldPersonList": {
       "post": {
         "summary": "inviteCode/oldPersonList",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5038,19 +4078,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_family.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_family.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/notification/list": {
+    "/api/v1/notifications/search": {
       "post": {
-        "summary": "notification/list",
-        "deprecated": true,
+        "summary": "notifications/search",
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5110,19 +4150,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handlers.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handlers.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/oldPerson/add": {
+    "/api/v1/oldPerson/add": {
       "post": {
         "summary": "oldPerson/add",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5174,19 +4214,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/oldPerson/delete": {
+    "/api/v1/oldPerson/delete": {
       "post": {
         "summary": "oldPerson/delete",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5238,19 +4278,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/oldPerson/select": {
+    "/api/v1/oldPerson/select": {
       "post": {
         "summary": "oldPerson/select",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5302,19 +4342,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/oldPerson/selectDetail": {
+    "/api/v1/oldPerson/selectDetail": {
       "post": {
         "summary": "oldPerson/selectDetail",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5366,19 +4406,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/oldPerson/update": {
+    "/api/v1/oldPerson/update": {
       "post": {
         "summary": "oldPerson/update",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5430,19 +4470,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/picshow/add": {
+    "/api/v1/picshow/add": {
       "post": {
         "summary": "picshow/add",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5494,19 +4534,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_social.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_social.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/picshow/select": {
+    "/api/v1/picshow/select": {
       "post": {
         "summary": "picshow/select",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5558,19 +4598,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_social.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_social.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/position/select": {
+    "/api/v1/position/select": {
       "post": {
         "summary": "position/select",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5622,19 +4662,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/position/selectFamily": {
+    "/api/v1/position/selectFamily": {
       "post": {
         "summary": "position/selectFamily",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5686,19 +4726,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/ratepre/alertCount": {
+    "/api/v1/ratepre/alertCount": {
       "post": {
         "summary": "ratepre/alertCount",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5750,19 +4790,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/ratepre/alertDetail": {
+    "/api/v1/ratepre/alertDetail": {
       "post": {
         "summary": "ratepre/alertDetail",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5814,19 +4854,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/ratepre/resolveAlert": {
+    "/api/v1/ratepre/resolveAlert": {
       "post": {
         "summary": "ratepre/resolveAlert",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5878,19 +4918,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/ratepre/selectRatepre": {
+    "/api/v1/ratepre/selectRatepre": {
       "post": {
         "summary": "ratepre/selectRatepre",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5942,19 +4982,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/ratepre/selectRatepreCount": {
+    "/api/v1/ratepre/selectRatepreCount": {
       "post": {
         "summary": "ratepre/selectRatepreCount",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -6006,19 +5046,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/ratepre/selectRatepreDetail": {
+    "/api/v1/ratepre/selectRatepreDetail": {
       "post": {
         "summary": "ratepre/selectRatepreDetail",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -6070,19 +5110,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/ratepre/selectRatepreFamily": {
+    "/api/v1/ratepre/selectRatepreFamily": {
       "post": {
         "summary": "ratepre/selectRatepreFamily",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -6134,19 +5174,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/rules/policy": {
+    "/api/v1/rule-policies": {
       "post": {
-        "summary": "rules/policy",
-        "deprecated": true,
+        "summary": "rule-policies",
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -6209,19 +5249,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handlers.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handlers.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/said/delete": {
+    "/api/v1/said/delete": {
       "post": {
         "summary": "said/delete",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -6273,19 +5313,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_social.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_social.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/said/goodCount": {
+    "/api/v1/said/goodCount": {
       "post": {
         "summary": "said/goodCount",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -6337,19 +5377,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_social.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_social.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/said/insert": {
+    "/api/v1/said/insert": {
       "post": {
         "summary": "said/insert",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -6401,19 +5441,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_social.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_social.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/said/select": {
+    "/api/v1/said/select": {
       "post": {
         "summary": "said/select",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -6465,19 +5505,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_social.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_social.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/said/selectByUser": {
+    "/api/v1/said/selectByUser": {
       "post": {
         "summary": "said/selectByUser",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -6529,19 +5569,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_social.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_social.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/said/update": {
+    "/api/v1/said/update": {
       "post": {
         "summary": "said/update",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -6593,19 +5633,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_social.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_social.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/security/factor": {
+    "/api/v1/security/factor": {
       "post": {
         "summary": "security/factor",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -6668,19 +5708,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handlers.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handlers.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/security/loginAudit": {
+    "/api/v1/security/login-audit": {
       "post": {
-        "summary": "security/loginAudit",
-        "deprecated": true,
+        "summary": "security/login-audit",
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -6737,19 +5777,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handlers.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handlers.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/setup": {
+    "/api/v1/setup": {
       "post": {
         "summary": "setup",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -6788,19 +5828,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_auth.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_auth.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/step/getAllCount": {
+    "/api/v1/step/getAllCount": {
       "post": {
         "summary": "step/getAllCount",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -6852,19 +5892,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/step/selectStep": {
+    "/api/v1/step/selectStep": {
       "post": {
         "summary": "step/selectStep",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -6916,19 +5956,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/step/selectStepCount": {
+    "/api/v1/step/selectStepCount": {
       "post": {
         "summary": "step/selectStepCount",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -6980,19 +6020,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/step/selectStepDetail": {
+    "/api/v1/step/selectStepDetail": {
       "post": {
         "summary": "step/selectStepDetail",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -7044,19 +6084,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/step/selectStepFamily": {
+    "/api/v1/step/selectStepFamily": {
       "post": {
         "summary": "step/selectStepFamily",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -7108,19 +6148,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/text/add": {
+    "/api/v1/text/add": {
       "post": {
         "summary": "text/add",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -7172,19 +6212,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_social.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_social.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/text/delete": {
+    "/api/v1/text/delete": {
       "post": {
         "summary": "text/delete",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -7236,19 +6276,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_social.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_social.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/text/select": {
+    "/api/v1/text/select": {
       "post": {
         "summary": "text/select",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -7300,19 +6340,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_social.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_social.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/text/selectDetail": {
+    "/api/v1/text/selectDetail": {
       "post": {
         "summary": "text/selectDetail",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -7364,19 +6404,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_social.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_social.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/text/update": {
+    "/api/v1/text/update": {
       "post": {
         "summary": "text/update",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -7428,19 +6468,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_social.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_social.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/user/select": {
+    "/api/v1/user/select": {
       "post": {
         "summary": "user/select",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -7492,196 +6532,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_user.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_user.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/userLogin/login": {
-      "post": {
-        "summary": "userLogin/login",
-        "deprecated": true,
-        "tags": [
-          "legacy"
-        ],
-        "responses": {
-          "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request"
-          },
-          "401": {
-            "description": "Session, device credential or MFA required"
-          },
-          "403": {
-            "description": "Role, duty or CSRF denied"
-          },
-          "409": {
-            "description": "Version, binding or state conflict"
-          },
-          "503": {
-            "description": "Required storage/configuration unavailable"
-          }
-        },
-        "security": [],
-        "parameters": [
-          {
-            "name": "X-CSRF-TOKEN",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "additionalProperties": true,
-                "properties": {
-                  "phone": {
-                    "type": "string"
-                  },
-                  "password": {
-                    "type": "string"
-                  },
-                  "otp": {
-                    "type": "string"
-                  },
-                  "recoveryCode": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_auth.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
-      }
-    },
-    "/restful/userLogin/logout": {
-      "post": {
-        "summary": "userLogin/logout",
-        "deprecated": true,
-        "tags": [
-          "legacy"
-        ],
-        "responses": {
-          "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request"
-          },
-          "401": {
-            "description": "Session, device credential or MFA required"
-          },
-          "403": {
-            "description": "Role, duty or CSRF denied"
-          },
-          "409": {
-            "description": "Version, binding or state conflict"
-          },
-          "503": {
-            "description": "Required storage/configuration unavailable"
-          }
-        },
-        "security": [
-          {
-            "sessionCookie": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "X-CSRF-TOKEN",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "additionalProperties": true
-              }
-            }
-          }
-        },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_auth.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
-      }
-    },
-    "/restful/userLogin/session": {
-      "get": {
-        "summary": "userLogin/session",
-        "deprecated": true,
-        "tags": [
-          "legacy"
-        ],
-        "responses": {
-          "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request"
-          },
-          "401": {
-            "description": "Session, device credential or MFA required"
-          },
-          "403": {
-            "description": "Role, duty or CSRF denied"
-          },
-          "409": {
-            "description": "Version, binding or state conflict"
-          },
-          "503": {
-            "description": "Required storage/configuration unavailable"
-          }
-        },
-        "security": [],
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_auth.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
-      }
-    },
-    "/restful/watchInfo/add": {
+    "/api/v1/watchInfo/add": {
       "post": {
         "summary": "watchInfo/add",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -7733,19 +6596,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/watchInfo/delete": {
+    "/api/v1/watchInfo/delete": {
       "post": {
         "summary": "watchInfo/delete",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -7797,19 +6660,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/watchInfo/select": {
+    "/api/v1/watchInfo/select": {
       "post": {
         "summary": "watchInfo/select",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -7861,19 +6724,19 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/restful/watchInfo/update": {
+    "/api/v1/watchInfo/update": {
       "post": {
         "summary": "watchInfo/update",
-        "deprecated": true,
+        "deprecated": false,
         "tags": [
-          "legacy"
+          "v1"
         ],
         "responses": {
           "200": {
-            "description": "Legacy JSON response; payload varies by operation.",
+            "description": "Go JSON response; payload varies by operation.",
             "content": {
               "application/json": {
                 "schema": {
@@ -7925,7 +6788,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Existing wire semantics are retained. Legacy DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_old.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     }
   }

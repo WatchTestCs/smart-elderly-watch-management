@@ -25,13 +25,13 @@ export default {
   created () { this.loadNotice(); this.loadComments() },
   watch: { '$route.query.textId' () { this.loadNotice(); this.loadComments() } },
   methods: {
-    imageUrl (name) { return '/restful/image/download?name=' + encodeURIComponent(name || '') },
+    imageUrl (name) { return '/api/v1/image/download?name=' + encodeURIComponent(name || '') },
     loadNotice () {
       this.loading = true
       this.error = ''
       this.notice = null
       this.pictures = []
-      axios.post('restful/text/selectDetail', { textId: this.$route.query.textId }, { withCredentials: true }).then((response) => {
+      axios.post('api/v1/text/selectDetail', { textId: this.$route.query.textId }, { withCredentials: true }).then((response) => {
         if (!response.data.text) throw new Error('missing notice')
         this.notice = response.data.text
         this.pictures = response.data.pics || []
@@ -41,7 +41,7 @@ export default {
       this.commentsLoading = true
       this.commentsError = ''
       this.comments = []
-      axios.post('restful/said/select', { textId: this.$route.query.textId, familyPhone: '' }, { withCredentials: true }).then((response) => {
+      axios.post('api/v1/said/select', { textId: this.$route.query.textId, familyPhone: '' }, { withCredentials: true }).then((response) => {
         this.comments = response.data.said2s || []
       }).catch(() => { this.commentsError = '留言暂时无法加载，请重试。' }).then(() => { this.commentsLoading = false })
     }

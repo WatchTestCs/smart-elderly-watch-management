@@ -13,14 +13,14 @@ import (
 
 // Care incident endpoints are ADMIN-only: a family session cannot accept or close a care task.
 func (h *Handler) routeCare(mux *http.ServeMux) {
-	mux.HandleFunc("POST /restful/care/incidents", h.careIncidents)
-	mux.HandleFunc("POST /restful/care/transition", h.careTransition)
-	mux.HandleFunc("POST /restful/care/events", h.careEvents)
-	mux.HandleFunc("POST /restful/care/receipt", h.careReceipt)
-	mux.HandleFunc("POST /restful/care/diagnostics", h.careDiagnostics)
-	mux.HandleFunc("POST /restful/care/staff", h.careStaff)
-	mux.HandleFunc("POST /restful/care/assignDuty", h.careAssignDuty)
-	mux.HandleFunc("POST /restful/care/accessAudit", h.careAccessAudit)
+	mux.HandleFunc("POST /api/v1/care/incidents", h.careIncidents)
+	mux.HandleFunc("POST /api/v1/care/transition", h.careTransition)
+	mux.HandleFunc("POST /api/v1/care/events", h.careEvents)
+	mux.HandleFunc("POST /api/v1/care/receipt", h.careReceipt)
+	mux.HandleFunc("POST /api/v1/care/diagnostics", h.careDiagnostics)
+	mux.HandleFunc("POST /api/v1/care/staff", h.careStaff)
+	mux.HandleFunc("POST /api/v1/care/assignDuty", h.careAssignDuty)
+	mux.HandleFunc("POST /api/v1/care/accessAudit", h.careAccessAudit)
 }
 
 func careAdmin(w http.ResponseWriter, r *http.Request) (string, bool) {

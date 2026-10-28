@@ -46,7 +46,7 @@ type picShowDTO struct {
 	PicName *string `json:"picName"`
 }
 
-// POST /restful/picshow/add —— 替换首页展示图（整体替换，事务内执行）。
+// POST /api/v1/picshow/add —— 替换首页展示图（整体替换，事务内执行）。
 func (h *Handler) picshowAdd(w http.ResponseWriter, r *http.Request) {
 	m, ok := optBody(w, r)
 	if !ok {
@@ -95,7 +95,7 @@ func (h *Handler) picshowAdd(w http.ResponseWriter, r *http.Request) {
 	writeCode(w, true)
 }
 
-// POST /restful/picshow/select —— 查询展示图列表。
+// POST /api/v1/picshow/select —— 查询展示图列表。
 func (h *Handler) picshowSelect(w http.ResponseWriter, r *http.Request) {
 	if _, ok := optBody(w, r); !ok {
 		return

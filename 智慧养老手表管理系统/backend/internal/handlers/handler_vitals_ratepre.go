@@ -42,7 +42,7 @@ func scanRatepreDTO(rows dbstore.Rows) (ratepreDTO, error) {
 	return d, err
 }
 
-// POST /restful/ratepre/alertCount —— 未处置的心率/血压异常数量。
+// POST /api/v1/ratepre/alertCount —— 未处置的心率/血压异常数量。
 func (h *Handler) ratepreAlertCount(w http.ResponseWriter, r *http.Request) {
 	if _, ok := optBody(w, r); !ok {
 		return
@@ -86,7 +86,7 @@ type alertRow struct {
 	OldPersonName *string
 }
 
-// POST /restful/ratepre/alertDetail —— 查看一条异常记录的原因。
+// POST /api/v1/ratepre/alertDetail —— 查看一条异常记录的原因。
 func (h *Handler) ratepreAlertDetail(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -207,7 +207,7 @@ func (h *Handler) findLatestPending(r *http.Request, oldID int64, kind string) (
 	return a, err == nil, err
 }
 
-// POST /restful/ratepre/resolveAlert —— 处置异常（消除红点），事务内执行。
+// POST /api/v1/ratepre/resolveAlert —— 处置异常（消除红点），事务内执行。
 func (h *Handler) ratepreResolveAlert(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {

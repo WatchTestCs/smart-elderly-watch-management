@@ -37,7 +37,7 @@ func scanStepDTO(rows dbstore.Rows) (stepDTO, error) {
 	return d, err
 }
 
-// POST /restful/step/selectStep —— 按姓名+时间范围分页查询睡眠步数。
+// POST /api/v1/step/selectStep —— 按姓名+时间范围分页查询睡眠步数。
 func (h *Handler) stepSelect(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -90,7 +90,7 @@ func (h *Handler) stepSelect(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// POST /restful/step/selectStepFamily —— 家属查询老人睡眠步数列表。
+// POST /api/v1/step/selectStepFamily —— 家属查询老人睡眠步数列表。
 func (h *Handler) stepSelectFamily(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -125,7 +125,7 @@ func (h *Handler) stepSelectFamily(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, map[string]any{"stepDtos": items})
 }
 
-// POST /restful/step/selectStepDetail —— 家属查询老人睡眠明细（图表用）。
+// POST /api/v1/step/selectStepDetail —— 家属查询老人睡眠明细（图表用）。
 func (h *Handler) stepSelectDetail(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -175,7 +175,7 @@ func (h *Handler) stepSelectDetail(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// POST /restful/step/selectStepCount —— 睡眠异常设备 ID 列表。
+// POST /api/v1/step/selectStepCount —— 睡眠异常设备 ID 列表。
 func (h *Handler) stepSelectCount(w http.ResponseWriter, r *http.Request) {
 	if _, ok := optBody(w, r); !ok {
 		return
@@ -187,7 +187,7 @@ func (h *Handler) stepSelectCount(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, map[string]any{"deviceIdList": list})
 }
 
-// POST /restful/step/getAllCount —— 异常总数汇总（心率+血压+睡眠），字符串形态。
+// POST /api/v1/step/getAllCount —— 异常总数汇总（心率+血压+睡眠），字符串形态。
 func (h *Handler) stepGetAllCount(w http.ResponseWriter, r *http.Request) {
 	if _, ok := optBody(w, r); !ok {
 		return

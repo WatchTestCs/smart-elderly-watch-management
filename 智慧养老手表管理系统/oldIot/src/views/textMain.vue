@@ -20,13 +20,13 @@ export default {
   },
   created () { this.searchDetail(); this.searchSaid() },
   methods: {
-    imageSource (name) { return 'restful/image/download?name=' + encodeURIComponent(name || '') },
+    imageSource (name) { return 'api/v1/image/download?name=' + encodeURIComponent(name || '') },
     searchDetail () {
       if (!this.$route.query.textId) { this.loadError = '缺少公告信息，请返回总览重新选择。'; return }
       this.isLoading = true
       this.loadError = ''
       this.failedImages = {}
-      axios.post('restful/text/selectDetail', { textId: this.$route.query.textId }, { withCredentials: true }).then(response => {
+      axios.post('api/v1/text/selectDetail', { textId: this.$route.query.textId }, { withCredentials: true }).then(response => {
         var text = response.data && response.data.text
         if (!text) throw new Error('missing notice')
         this.title = text.title || '未命名公告'
@@ -39,7 +39,7 @@ export default {
       if (!this.$route.query.textId) return
       this.commentsLoading = true
       this.commentsError = ''
-      return axios.post('restful/said/select', { textId: this.$route.query.textId, familyPhone: localStorage.getItem('familyPhone') || '' }, { withCredentials: true }).then(response => {
+      return axios.post('api/v1/said/select', { textId: this.$route.query.textId, familyPhone: localStorage.getItem('familyPhone') || '' }, { withCredentials: true }).then(response => {
         this.tableData = response.data && Array.isArray(response.data.said2s) ? response.data.said2s : []
       }).catch(() => { this.commentsError = '留言暂时无法加载。' }).then(() => { this.commentsLoading = false })
     },
@@ -48,7 +48,7 @@ export default {
       this.submitting = true
       this.submitError = ''
       this.submitSuccess = ''
-      axios.post('restful/said/insert', { phone: localStorage.getItem('familyPhone') || '', said: this.formSaid.said.trim(), textId: this.$route.query.textId, personName: localStorage.getItem('user_name') || '', touPic: localStorage.getItem('familyTouPic') || '' }, { withCredentials: true }).then(response => {
+      axios.post('api/v1/said/insert', { phone: localStorage.getItem('familyPhone') || '', said: this.formSaid.said.trim(), textId: this.$route.query.textId, personName: localStorage.getItem('user_name') || '', touPic: localStorage.getItem('familyTouPic') || '' }, { withCredentials: true }).then(response => {
         if (!response.data || response.data.returnCode !== '1111') throw new Error('comment rejected')
         this.formSaid.said = ''
         this.submitSuccess = '留言已发表。'
@@ -59,7 +59,7 @@ export default {
       if (this.likingId !== null) return
       this.likingId = item.saidId
       this.submitError = ''
-      axios.post('restful/said/goodCount', { saidId: item.saidId, phone: localStorage.getItem('familyPhone') || '' }, { withCredentials: true }).then(response => {
+      axios.post('api/v1/said/goodCount', { saidId: item.saidId, phone: localStorage.getItem('familyPhone') || '' }, { withCredentials: true }).then(response => {
         if (!response.data || response.data.returnCode !== '1111') throw new Error('like rejected')
         return this.searchSaid()
       }).catch(() => { this.submitError = '赞同操作未完成，请重试。' }).then(() => { this.likingId = null })

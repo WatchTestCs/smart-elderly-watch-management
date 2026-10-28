@@ -119,7 +119,7 @@ MySQL 是唯一业务数据源，PG 是可重建的分析投影。Vue 不直接�
 | 用户写入失败 | 保留输入，提示主动重试，不自动重放业务请求 |
 | 会话配置无效（当前 `preview`） | 状态返回 `configError`，提示修正配置并重启 |
 
-`/healthz` 仅表示 HTTP 进程存活；数据库就绪和分析连接状态由 `/restful/service/status` 报告。详细协议见[架构总览](docs/architecture/overview.md)、[实现架构](docs/ARCHITECTURE.md)与[双库指南](docs/DUAL_DATABASES.md)。
+`/healthz` 仅表示 HTTP 进程存活；数据库就绪和分析连接状态由 `/api/v1/service/status` 报告。详细协议见[架构总览](docs/architecture/overview.md)、[实现架构](docs/ARCHITECTURE.md)与[双库指南](docs/DUAL_DATABASES.md)。
 
 健康采样的跨窗步数分配、累计计数日界与告警容差约定见[健康数据接口](智慧养老手表管理系统/backend/docs/health-data.md#跨窗口步数与夜间累计计数)。
 
@@ -203,3 +203,5 @@ go vet ./...
 通过 [Issues](https://github.com/WatchTestCs/smart-elderly-watch-management/issues) 反馈问题时，请提供版本或提交、操作系统与脱敏复现步骤。贡献请基于 `preview`，遵循[贡献指南](CONTRIBUTING.md)；漏洞按[安全策略](.github/SECURITY.md)私下报告，不公开人员数据、连接串或密钥。
 
 [MIT License](LICENSE)。字体、地图和其他第三方组件遵循各自许可证。
+
+> **Breaking API update:** `preview` only serves `/api/v1/`, and browser sessions use `SUINING_SESSION`. Older `/restful/` clients require upgrading; see [API cutover](docs/API_V1_CUTOVER.md).

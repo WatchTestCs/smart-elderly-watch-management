@@ -54,7 +54,7 @@ sequenceDiagram
 
 ### 首次管理员初始化
 
-Vue Setup → 受限 `setup_admin` IPC → Rust 核对主窗口标签与实际 origin → Go `/restful/setup`，由 Rust 附加随机桌面令牌。普通网页请求不能凭 Cookie 直接完成管理员初始化。
+Vue Setup → 受限 `setup_admin` IPC → Rust 核对主窗口标签与实际 origin → Go `/api/v1/setup`，由 Rust 附加随机桌面令牌。普通网页请求不能凭 Cookie 直接完成管理员初始化。
 
 Tauri 能力配置限定主窗口、本机页面和必要命令；原生命令会再次核对实际 origin，而不只依赖 URL 通配能力配置。
 
@@ -70,7 +70,7 @@ Tauri 能力配置限定主窗口、本机页面和必要命令；原生命令�
 
 ### 会话与离线退出
 
-会话使用 `JSESSIONID` Cookie，登录时轮换会话标识以降低会话固定风险。当前默认 `SESSION_BACKEND=database`：加密服务端会话保存在 MySQL，跨实例查询和撤销依赖主库；明确选择 `memory` 的单实例开发环境才把会话放在 Go 进程内存，其会话重启后失效。
+会话使用 `SUINING_SESSION` Cookie，登录时轮换会话标识以降低会话固定风险。当前默认 `SESSION_BACKEND=database`：加密服务端会话保存在 MySQL，跨实例查询和撤销依赖主库；明确选择 `memory` 的单实例开发环境才把会话放在 Go 进程内存，其会话重启后失效。
 
 退出登录由本地路由执行会话与 CSRF 校验。数据库会话模式下，`Destroy` 需向 MySQL 删除服务端会话；主库不可用时可能返回 503，不能声称已完成服务端撤销。旧版内存会话的离线退出行为不适用于当前默认部署。
 
@@ -83,7 +83,7 @@ Go 的主库连接任务在后台运行；PG 分析同步独立重试，不决�
 | 接口或状态 | 含义 |
 | --- | --- |
 | `GET /healthz` | 本地 HTTP 进程存活，不代表数据库或设备业务正常 |
-| `GET /restful/service/status` | 返回 `databaseReady`，不暴露连接串或数据库错误详情 |
+| `GET /api/v1/service/status` | 返回 `databaseReady`，不暴露连接串或数据库错误详情 |
 | 数据库未就绪的业务请求 | `503 DATABASE_UNAVAILABLE`，含重试提示，不代表允许自动重放写入 |
 | 数据库无关操作 | 静态界面、状态查询和窗口操作保持可用；默认数据库会话的服务端登出依赖 MySQL，断库可能返回 503 |
 
@@ -160,3 +160,7 @@ Windows 的完整交付实现与本轮验证不等于 Linux 的原生跨平台�
 ADR-0001/0002/0003 记录旧 Electron、Spring 和 H2，已由 ADR-0006 取代。原始源码、旧 Release、旧数据库及验收历史不因迁移而被删除或伪造。
 
 该架构文档初次整理时只更新介绍与文档，执行源码一致性和本地链接检查；2026-10-19 的本地源码修复另行执行了 Go 测试、竞争检测、Vue 构建和浏览器验收，证据与限制见 [本轮报告](ARCHITECTURE_REPAIR_2026-10-19.md)。没有重新发布安装包、运行远程 CI 或移动发布标签。当前 Windows 包的既有验收、Linux 附件限制及签名状态分别见 [verification.json](verification.json)、[数据库验收](DATABASE_AVAILABILITY.md)、[Linux 说明](LINUX.md) 和 [签名手册](runbooks/signing.md)。
+
+## 原生 Go API v1 切换
+
+服务端直接注册 `/api/v1/`，不再暴露旧 `/restful/` 业务接口或 URL 重写别名；历史 ADR 中出现的旧路径仅为存档。Go 使用 `SUINING_SESSION` Cookie，前端及手表端需同时升级。完整不可兼容范围见 [API 切换说明](API_V1_CUTOVER.md)。

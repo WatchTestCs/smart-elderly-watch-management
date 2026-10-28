@@ -60,7 +60,7 @@ func TestCareAdminTransitionsAndFamilyIsolation(t *testing.T) {
 	call := func(role string, actor int64, action, note string) *httptest.ResponseRecorder {
 		sess := store.Create(session.Principal{Role: role, ID: actor})
 		data, _ := json.Marshal(map[string]any{"id": strconv.FormatInt(id, 10), "action": action, "note": note})
-		req := httptest.NewRequest("POST", "/restful/care/transition", bytes.NewReader(data))
+		req := httptest.NewRequest("POST", "/api/v1/care/transition", bytes.NewReader(data))
 		req.AddCookie(&http.Cookie{Name: session.CookieName, Value: sess.ID})
 		req.Header.Set(csrf.HeaderName, sess.CSRFToken)
 		w := httptest.NewRecorder()
@@ -113,7 +113,7 @@ func TestCareReceiptRequiresTrustedGatewaySignature(t *testing.T) {
 	mac.Write(body)
 	signature := hex.EncodeToString(mac.Sum(nil))
 	send := func(sig string) *httptest.ResponseRecorder {
-		req := httptest.NewRequest("POST", "/restful/care/receipt", bytes.NewReader(body))
+		req := httptest.NewRequest("POST", "/api/v1/care/receipt", bytes.NewReader(body))
 		req.Header.Set("X-Care-Timestamp", stamp)
 		req.Header.Set("X-Care-Signature", sig)
 		rec := httptest.NewRecorder()

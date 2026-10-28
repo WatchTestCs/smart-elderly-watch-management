@@ -11,21 +11,21 @@ import (
 )
 
 func (h *Handler) routeSocial(mux *http.ServeMux) {
-	mux.HandleFunc("POST /restful/said/select", h.saidSelect)
-	mux.HandleFunc("POST /restful/said/selectByUser", h.saidSelectByUser)
-	mux.HandleFunc("POST /restful/said/delete", h.saidDelete)
-	mux.HandleFunc("POST /restful/said/insert", h.saidInsert)
-	mux.HandleFunc("POST /restful/said/update", h.saidUpdate)
-	mux.HandleFunc("POST /restful/said/goodCount", h.saidGoodCount)
-	mux.HandleFunc("POST /restful/text/select", h.textSelect)
-	mux.HandleFunc("POST /restful/text/selectDetail", h.textSelectDetail)
-	mux.HandleFunc("POST /restful/text/add", h.textAdd)
-	mux.HandleFunc("POST /restful/text/delete", h.textDelete)
-	mux.HandleFunc("POST /restful/text/update", h.textUpdate)
-	mux.HandleFunc("POST /restful/picshow/add", h.picshowAdd)
-	mux.HandleFunc("POST /restful/picshow/select", h.picshowSelect)
-	mux.HandleFunc("POST /restful/image/saveImage", h.imageSave)
-	mux.HandleFunc("GET /restful/image/download", h.imageDownload)
+	mux.HandleFunc("POST /api/v1/said/select", h.saidSelect)
+	mux.HandleFunc("POST /api/v1/said/selectByUser", h.saidSelectByUser)
+	mux.HandleFunc("POST /api/v1/said/delete", h.saidDelete)
+	mux.HandleFunc("POST /api/v1/said/insert", h.saidInsert)
+	mux.HandleFunc("POST /api/v1/said/update", h.saidUpdate)
+	mux.HandleFunc("POST /api/v1/said/goodCount", h.saidGoodCount)
+	mux.HandleFunc("POST /api/v1/text/select", h.textSelect)
+	mux.HandleFunc("POST /api/v1/text/selectDetail", h.textSelectDetail)
+	mux.HandleFunc("POST /api/v1/text/add", h.textAdd)
+	mux.HandleFunc("POST /api/v1/text/delete", h.textDelete)
+	mux.HandleFunc("POST /api/v1/text/update", h.textUpdate)
+	mux.HandleFunc("POST /api/v1/picshow/add", h.picshowAdd)
+	mux.HandleFunc("POST /api/v1/picshow/select", h.picshowSelect)
+	mux.HandleFunc("POST /api/v1/image/saveImage", h.imageSave)
+	mux.HandleFunc("GET /api/v1/image/download", h.imageDownload)
 }
 
 // ---------------------------------------------------------------------------
@@ -68,7 +68,7 @@ func maskPhone(phone *string) *string {
 	return &masked
 }
 
-// POST /restful/said/select —— 查询某公告下的说说/评论（含当前人点赞状态）。
+// POST /api/v1/said/select —— 查询某公告下的说说/评论（含当前人点赞状态）。
 func (h *Handler) saidSelect(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -118,7 +118,7 @@ func (h *Handler) saidSelect(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, map[string]any{"said2s": items})
 }
 
-// POST /restful/said/selectByUser —— 管理员分页查询全部说说。
+// POST /api/v1/said/selectByUser —— 管理员分页查询全部说说。
 func (h *Handler) saidSelectByUser(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -162,7 +162,7 @@ func (h *Handler) saidSelectByUser(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// POST /restful/said/delete —— 删除一条说说。
+// POST /api/v1/said/delete —— 删除一条说说。
 func (h *Handler) saidDelete(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -181,7 +181,7 @@ func (h *Handler) saidDelete(w http.ResponseWriter, r *http.Request) {
 	writeCode(w, ct.RowsAffected() == 1)
 }
 
-// POST /restful/said/insert —— 发表说说/评论。
+// POST /api/v1/said/insert —— 发表说说/评论。
 func (h *Handler) saidInsert(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -243,7 +243,7 @@ func (h *Handler) saidInsert(w http.ResponseWriter, r *http.Request) {
 	writeCode(w, ct.RowsAffected() == 1)
 }
 
-// POST /restful/said/update —— 管理员回复说说。
+// POST /api/v1/said/update —— 管理员回复说说。
 func (h *Handler) saidUpdate(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -268,7 +268,7 @@ func (h *Handler) saidUpdate(w http.ResponseWriter, r *http.Request) {
 	writeCode(w, ct.RowsAffected() == 1)
 }
 
-// POST /restful/said/goodCount —— 点赞/取消点赞（事务内执行，行锁防并发）。
+// POST /api/v1/said/goodCount —— 点赞/取消点赞（事务内执行，行锁防并发）。
 func (h *Handler) saidGoodCount(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {

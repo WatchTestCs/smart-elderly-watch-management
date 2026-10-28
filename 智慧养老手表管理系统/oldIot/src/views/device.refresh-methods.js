@@ -3,7 +3,7 @@ import axios from 'axios'
 export const deviceRefreshMethods = {
     loadOldPeople () {
       var _this = this
-      axios.post('restful/inviteCode/oldPersonList', {}, {
+      axios.post('api/v1/inviteCode/oldPersonList', {}, {
         headers: { 'content-type': 'application/json' },
         withCredentials: true
       }).then(function (response) {

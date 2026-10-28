@@ -8,7 +8,7 @@
         <div class="profile-avatar"><img v-if="imageUrl" :src="imageUrl" alt="当前账号头像" @error="imageUrl = ''"><span v-else>{{ (famiyList.familyName || personName || '家').slice(0, 1) }}</span></div>
         <div class="profile-identity"><p>家属账号</p><h2>{{ famiyList.familyName || personName || '个人资料' }}</h2><span>在这里管理您的联系资料与账号。</span></div>
       </div>
-      <div class="profile-actions"><el-button type="primary" @click="handleeditMessage">修改资料</el-button><el-button plain @click="handleeditPassword">修改密码</el-button><el-upload class="avatar-uploader" action="restful/image/saveImage" :headers="$uploadHeaders" :show-file-list="false" :with-credentials="true" :on-success="handleAvatarSuccess" :on-error="handleAvatarError" :before-upload="beforeAvatarUpload"><el-button plain>更换头像</el-button></el-upload></div>
+      <div class="profile-actions"><el-button type="primary" @click="handleeditMessage">修改资料</el-button><el-button plain @click="handleeditPassword">修改密码</el-button><el-upload class="avatar-uploader" action="api/v1/image/saveImage" :headers="$uploadHeaders" :show-file-list="false" :with-credentials="true" :on-success="handleAvatarSuccess" :on-error="handleAvatarError" :before-upload="beforeAvatarUpload"><el-button plain>更换头像</el-button></el-upload></div>
       <dl class="profile-details"><div><dt>姓名</dt><dd>{{ famiyList.familyName || '暂未填写' }}</dd></div><div><dt>性别</dt><dd>{{ famiyList.familySex || '暂未填写' }}</dd></div><div><dt>手机号</dt><dd>{{ familyPhone || '暂未提供' }}</dd></div><div><dt>联系地址</dt><dd>{{ famiyList.familyAddress || '暂未填写' }}</dd></div></dl>
     </section>
 <el-dialog
@@ -165,7 +165,7 @@ export default {
 			  var _this = this
           _this.isProfileLoading = true
           _this.profileLoadError = ''
-			  axios.post('restful/family/selectTwo',
+			  axios.post('api/v1/family/selectTwo',
 			    {
 			      'familyPhone': _this.familyPhone
 			    },
@@ -180,7 +180,7 @@ export default {
 					localStorage.setItem('user_name', _this.famiyList.familyName)
 					localStorage.setItem('familyTouPic', _this.famiyList.familyTouPic)
 					_this.familyTouPic=localStorage.getItem('familyTouPic')
-					_this.imageUrl = _this.familyTouPic && _this.familyTouPic !== 'undefined' && _this.familyTouPic !== 'null' ? 'restful/image/download?name=' + encodeURIComponent(_this.familyTouPic) : ''
+					_this.imageUrl = _this.familyTouPic && _this.familyTouPic !== 'undefined' && _this.familyTouPic !== 'null' ? 'api/v1/image/download?name=' + encodeURIComponent(_this.familyTouPic) : ''
 
 			  })
 			    .catch(function (error) {
@@ -193,7 +193,7 @@ export default {
         this.$refs.profileEditForm.validate((valid) => {
           if (!valid) return
           this.isProfileSaving = true
-          axios.post('restful/family/updateTwo', this.messageEditForm, { withCredentials: true }).then((response) => {
+          axios.post('api/v1/family/updateTwo', this.messageEditForm, { withCredentials: true }).then((response) => {
             if (response.data.returnCode === '1111') {
               this.messageEditDialogVisible = false
               this.$message.success('个人资料已保存')
@@ -209,7 +209,7 @@ export default {
           this.$message.error('头像上传未成功，请重试')
           return
         }
-        axios.post('restful/family/updateTouPic', { familyTouPic: res.filename, familyPhone: this.familyPhone }, { withCredentials: true }).then((response) => {
+        axios.post('api/v1/family/updateTouPic', { familyTouPic: res.filename, familyPhone: this.familyPhone }, { withCredentials: true }).then((response) => {
           if (response.data.returnCode === '1111') {
             this.$message.success('头像已更新')
             this.searchFamily()
@@ -224,7 +224,7 @@ export default {
         this.$refs[formName].validate((valid) => {
           if (!valid) return
           this.isPasswordSaving = true
-          axios.post('restful/family/updatePassword', {
+          axios.post('api/v1/family/updatePassword', {
             familyPhone: this.familyPhone,
             oldPassword: this.passwordEditForm.oldPassword,
             familyPassword: this.passwordEditForm.familyPassword

@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-// POST /restful/ratepre/selectRatepre —— 按姓名+时间范围分页查询。
+// POST /api/v1/ratepre/selectRatepre —— 按姓名+时间范围分页查询。
 func (h *Handler) ratepreSelect(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -60,7 +60,7 @@ func (h *Handler) ratepreSelect(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// POST /restful/ratepre/selectRatepreFamily —— 家属查询自己老人的心率血压列表。
+// POST /api/v1/ratepre/selectRatepreFamily —— 家属查询自己老人的心率血压列表。
 func (h *Handler) ratepreSelectFamily(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -99,7 +99,7 @@ func (h *Handler) ratepreSelectFamily(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, map[string]any{"ratepreDtoList": items})
 }
 
-// POST /restful/ratepre/selectRatepreDetail —— 家属查询老人心率血压明细（图表用）。
+// POST /api/v1/ratepre/selectRatepreDetail —— 家属查询老人心率血压明细（图表用）。
 func (h *Handler) ratepreSelectDetail(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -165,7 +165,7 @@ func (h *Handler) ratepreSelectDetail(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// POST /restful/ratepre/selectRatepreCount —— 心率/血压异常计数。
+// POST /api/v1/ratepre/selectRatepreCount —— 心率/血压异常计数。
 func (h *Handler) ratepreSelectCount(w http.ResponseWriter, r *http.Request) {
 	if _, ok := optBody(w, r); !ok {
 		return

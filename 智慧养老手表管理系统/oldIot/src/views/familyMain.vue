@@ -140,7 +140,7 @@ export default {
 					'title': _this.searchText
 				}
 
-				axios.post('restful/text/select',params,
+				axios.post('api/v1/text/select',params,
 				{
 					headers: {
 						'content-type': 'application/json'

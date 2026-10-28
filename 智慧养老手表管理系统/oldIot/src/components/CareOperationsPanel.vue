@@ -54,7 +54,7 @@ const forbidden=ref(false)
 const showAudit=ref(false)
 const loading=ref(false)
 const error=ref('')
-const post=(url,body={})=>axios.post('restful/care/'+url,body,{withCredentials:true})
+const post=(url,body={})=>axios.post('api/v1/care/'+url,body,{withCredentials:true})
 async function refresh(){
   if(loading.value)return
   loading.value=true

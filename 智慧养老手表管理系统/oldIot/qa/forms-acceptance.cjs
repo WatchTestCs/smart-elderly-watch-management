@@ -14,9 +14,9 @@ run(async({page,base,report,setRole,setSignedIn})=>{
   }
  }
  const family={familyId:1,familyName:'小明',familyRelation:'子女',familySex:'男',familyPhone:'13000000000',familyAddress:'示例地址',name:'李奶奶',oldId:1};
- await page.route('**/restful/family/select',r=>r.fulfill({contentType:'application/json',body:JSON.stringify({familyDtos:[family]})}));
+ await page.route('**/api/v1/family/select',r=>r.fulfill({contentType:'application/json',body:JSON.stringify({familyDtos:[family]})}));
  let payload;
- await page.route('**/restful/family/updateFamily',r=>{payload=r.request().postDataJSON();check('Family edit retains CSRF protection',r.request().headers()['x-csrf-token']==='mock-csrf-token');return r.fulfill({contentType:'application/json',body:JSON.stringify({returnCode:'1111'})});});
+ await page.route('**/api/v1/family/updateFamily',r=>{payload=r.request().postDataJSON();check('Family edit retains CSRF protection',r.request().headers()['x-csrf-token']==='mock-csrf-token');return r.fulfill({contentType:'application/json',body:JSON.stringify({returnCode:'1111'})});});
  await page.goto(base+'/?edit-family=1#/family');await page.getByRole('button',{name:/编\s*辑/}).first().click();
  const active=page.locator('.el-dialog:visible');await active.waitFor();
  const nameInput=active.locator('input').first();check('Family edit loads the selected family row',await nameInput.inputValue()==='小明');await nameInput.fill('家属测试');

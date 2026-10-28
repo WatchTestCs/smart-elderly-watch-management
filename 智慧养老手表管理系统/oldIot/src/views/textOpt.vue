@@ -32,7 +32,7 @@
 
     <details class="upload-panel"><summary class="image-maintenance-summary">更多展示图片设置<span>公告附图请在公告编辑中添加</span></summary><div class="image-maintenance-body">
       <div class="upload-heading"><div><h2>公告图片</h2><p>维护独立的展示图片，JPG 格式，单张不超过8MB。</p></div></div>
-      <el-upload ref="galleryUpload" class="upload-demo" :disabled="gallerySaving" :on-change="galleryChanged" :on-error="galleryError" action="restful/image/saveImage" :with-credentials="true" :headers="$uploadHeaders" :on-preview="handlePreview" :on-remove="handleRemove" :on-success="handleAvatarSuccess" :before-upload="beforeAvatarUpload" multiple :limit="10" :file-list="fileList2" list-type="picture">
+      <el-upload ref="galleryUpload" class="upload-demo" :disabled="gallerySaving" :on-change="galleryChanged" :on-error="galleryError" action="api/v1/image/saveImage" :with-credentials="true" :headers="$uploadHeaders" :on-preview="handlePreview" :on-remove="handleRemove" :on-success="handleAvatarSuccess" :before-upload="beforeAvatarUpload" multiple :limit="10" :file-list="fileList2" list-type="picture">
         <el-button size="small" type="primary" icon="el-icon-upload2">选择图片</el-button>
         <template #tip><div  class="el-upload__tip">最多上传 10 张图片。</div></template>
       </el-upload>
@@ -88,7 +88,7 @@ export default {
       picShow () {
         if (this.gallerySaving || !this.fileList2.length || this.fileList2.some(file => file.status !== 'success')) return
         this.gallerySaving = true
-        axios.post('restful/picshow/add', { fileListName: this.fileList2.map(file => file.name) }, { withCredentials: true }).then((response) => {
+        axios.post('api/v1/picshow/add', { fileListName: this.fileList2.map(file => file.name) }, { withCredentials: true }).then((response) => {
           if (response.data.returnCode !== '1111') throw new Error('gallery rejected')
           this.$message.success('展示图片已保存')
           this.$refs.galleryUpload.clearFiles()
@@ -129,7 +129,7 @@ export default {
         if (this.deletingId !== null) return
         this.deletingId = row.textId
         this.$confirm('删除后将无法继续阅读这条公告，是否删除？', '删除公告', { confirmButtonText: '删除公告', cancelButtonText: '保留公告', type: 'warning' }).then(() => {
-          return axios.post('restful/text/delete', { textId: row.textId, picId: row.picId }, { withCredentials: true })
+          return axios.post('api/v1/text/delete', { textId: row.textId, picId: row.picId }, { withCredentials: true })
         }).then((response) => {
           if (response.data.returnCode !== '1111') throw new Error('delete rejected')
           this.$message.success('公告已删除')
@@ -143,7 +143,7 @@ export default {
       if (keepPage !== true) this.currentPage = 1
         this.isLoading = true
         this.loadError = ''
-        return axios.post('restful/text/select', { page: this.currentPage, pageSize: this.pageSize,  title: this.searchText }, { withCredentials: true }).then((response) => {
+        return axios.post('api/v1/text/select', { page: this.currentPage, pageSize: this.pageSize,  title: this.searchText }, { withCredentials: true }).then((response) => {
           if (!Array.isArray(response.data.texts)) throw new Error('missing notices')
           this.tableData = response.data.texts
           this.total = response.data.total ?? this.tableData.length

@@ -9,11 +9,11 @@ import (
 
 // routeUser 注册 UserController / CustomerController 路由。
 func (h *Handler) routeUser(mux *http.ServeMux) {
-	mux.HandleFunc("POST /restful/user/select", h.userSelect)
-	mux.HandleFunc("POST /restful/customer/select", h.customerSelect)
-	mux.HandleFunc("POST /restful/customer/add", h.customerAdd)
-	mux.HandleFunc("POST /restful/customer/update", h.customerUpdate)
-	mux.HandleFunc("POST /restful/customer/delete", h.customerDelete)
+	mux.HandleFunc("POST /api/v1/user/select", h.userSelect)
+	mux.HandleFunc("POST /api/v1/customer/select", h.customerSelect)
+	mux.HandleFunc("POST /api/v1/customer/add", h.customerAdd)
+	mux.HandleFunc("POST /api/v1/customer/update", h.customerUpdate)
+	mux.HandleFunc("POST /api/v1/customer/delete", h.customerDelete)
 }
 
 // failBare0000 写无 message 的业务失败包络 {"returnCode":"0000"}。
@@ -21,7 +21,7 @@ func failBare0000(w http.ResponseWriter) {
 	response.JSON(w, http.StatusOK, map[string]any{"returnCode": response.CodeFail})
 }
 
-// POST /restful/user/select —— 按手机号查管理员账号（ADMIN）。
+// POST /api/v1/user/select —— 按手机号查管理员账号（ADMIN）。
 func (h *Handler) userSelect(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -59,7 +59,7 @@ func (h *Handler) userSelect(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, map[string]any{"usersByPhone2": list})
 }
 
-// POST /restful/customer/select —— 分页模糊查询客户（ADMIN）。
+// POST /api/v1/customer/select —— 分页模糊查询客户（ADMIN）。
 func (h *Handler) customerSelect(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -109,7 +109,7 @@ func (h *Handler) customerSelect(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// POST /restful/customer/add —— 新增客户（ADMIN）。
+// POST /api/v1/customer/add —— 新增客户（ADMIN）。
 func (h *Handler) customerAdd(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -143,7 +143,7 @@ func (h *Handler) customerAdd(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// POST /restful/customer/update —— 更新客户（ADMIN）。
+// POST /api/v1/customer/update —— 更新客户（ADMIN）。
 func (h *Handler) customerUpdate(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -183,7 +183,7 @@ func (h *Handler) customerUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// POST /restful/customer/delete —— 删除客户（ADMIN）。
+// POST /api/v1/customer/delete —— 删除客户（ADMIN）。
 func (h *Handler) customerDelete(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {

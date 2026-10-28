@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// SetCookie 写 JSESSIONID cookie。
+// SetCookie 写 SUINING_SESSION cookie。
 func SetCookie(w http.ResponseWriter, id string, secure bool) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     CookieName,
@@ -18,7 +18,7 @@ func SetCookie(w http.ResponseWriter, id string, secure bool) {
 	})
 }
 
-// ClearCookie 清除 JSESSIONID cookie。
+// ClearCookie 清除 SUINING_SESSION cookie。
 func ClearCookie(w http.ResponseWriter, secure bool) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     CookieName,

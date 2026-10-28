@@ -56,7 +56,7 @@ func (h *Handler) deviceAlertCounts(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// POST /restful/device/alertDetail —— 查看某设备某类异常详情（ADMIN）。
+// POST /api/v1/device/alertDetail —— 查看某设备某类异常详情（ADMIN）。
 func (h *Handler) deviceAlertDetail(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -134,7 +134,7 @@ func (h *Handler) deviceAlertDetail(w http.ResponseWriter, r *http.Request) {
 	response.OK(w, fields)
 }
 
-// POST /restful/device/resolveAlert —— 处置异常、消除红点（ADMIN，事务）。
+// POST /api/v1/device/resolveAlert —— 处置异常、消除红点（ADMIN，事务）。
 func (h *Handler) deviceResolveAlert(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {

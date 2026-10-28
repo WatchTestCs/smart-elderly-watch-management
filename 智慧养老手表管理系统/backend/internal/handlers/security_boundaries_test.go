@@ -21,7 +21,7 @@ func TestLoginAuditBoundarySharedAcrossReplicasAndIPs(t *testing.T) {
 	}
 	cfg := config.Config{DataKey: base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{1}, 32)), RateLimit: ratelimit.Options{TrustedProxyCIDRs: []string{"10.0.0.0/8"}}}
 	a, b := New(pool, nil, cfg), New(pool, nil, cfg)
-	r := httptest.NewRequest(http.MethodPost, "/restful/userLogin/login", nil)
+	r := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", nil)
 	r.RemoteAddr = "10.0.0.1:42"
 	r.Header.Set("X-Forwarded-For", "192.0.2.1")
 	for range 10 {

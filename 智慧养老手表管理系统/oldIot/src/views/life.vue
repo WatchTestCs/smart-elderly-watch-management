@@ -69,7 +69,7 @@ export default {
       if (this.isLoading) return
       this.isLoading = true
       this.loadError = ''
-      return axios.post('restful/oldPerson/select', { page: this.currentPage, pageSize: this.pageSize,  name: this.searchText.trim() }, { withCredentials: true }).then(response => {
+      return axios.post('api/v1/oldPerson/select', { page: this.currentPage, pageSize: this.pageSize,  name: this.searchText.trim() }, { withCredentials: true }).then(response => {
         if (!Array.isArray(response.data.oldPeople)) throw new Error('missing life records')
         this.OldPersonList = response.data.oldPeople
         this.total = response.data.total ?? this.OldPersonList.length

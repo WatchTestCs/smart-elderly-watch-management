@@ -130,8 +130,8 @@ export default {
       this.allCount = null
       this.categoryCounts = null
       return Promise.all([
-        axios.post('restful/ratepre/selectRatepreCount', {}, { withCredentials: true }),
-        axios.post('restful/step/selectStepCount', {}, { withCredentials: true })
+        axios.post('api/v1/ratepre/selectRatepreCount', {}, { withCredentials: true }),
+        axios.post('api/v1/step/selectStepCount', {}, { withCredentials: true })
       ]).then(([vitals, steps]) => {
         var rates = vitals.data.rates, pressures = vitals.data.pres, sleeps = steps.data.deviceIdList
         if (![rates, pressures, sleeps].every(Array.isArray)) throw new Error('missing counts')
@@ -148,7 +148,7 @@ export default {
       try {
         var page = 1, loaded = 0, total = 0, falls = 0
         do {
-          var response = await axios.post('restful/position/select', { name: '', page, pageSize: 100 }, { withCredentials: true })
+          var response = await axios.post('api/v1/position/select', { name: '', page, pageSize: 100 }, { withCredentials: true })
           var positions = response.data.positionDtos
           if (!Array.isArray(positions)) throw new Error('missing positions')
           total = response.data.total ?? positions.length
@@ -176,7 +176,7 @@ export default {
       this.appliedSearch = this.searchText.trim()
       this.isLoading = true
       this.loadError = ''
-      return axios.post('restful/text/select', { page: this.currentPage, pageSize: this.pageSize,  title: this.appliedSearch }, { withCredentials: true }).then((response) => {
+      return axios.post('api/v1/text/select', { page: this.currentPage, pageSize: this.pageSize,  title: this.appliedSearch }, { withCredentials: true }).then((response) => {
         if (!Array.isArray(response.data.texts)) throw new Error('missing notices')
         this.tableData = response.data.texts
         this.total = response.data.total ?? this.tableData.length

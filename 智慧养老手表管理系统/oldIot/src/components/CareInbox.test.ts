@@ -31,7 +31,7 @@ describe('care task read scheduling', () => {
     await vi.advanceTimersByTimeAsync(5000)
     expect(view.text()).toContain('恢复任务')
     expect(view.text()).not.toContain('照护任务暂时无法加载')
-    expect(post.mock.calls.every(([path]) => path === 'restful/care/incidents')).toBe(true)
+    expect(post.mock.calls.every(([path]) => path === 'api/v1/care/incidents')).toBe(true)
     view.unmount()
     expect(vi.getTimerCount()).toBe(0)
   })

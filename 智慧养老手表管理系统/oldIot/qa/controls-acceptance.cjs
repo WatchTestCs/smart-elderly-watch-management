@@ -25,7 +25,7 @@ run(async({page,base,report,setRole,setSignedIn})=>{
     const nodes=[...el.querySelectorAll('.el-input-group,.record-summary,.toolbar-actions > .el-button,.row-search > .el-button,.row-search > .el-badge > .el-button,.announcement-actions > .el-button')];return nodes.map(n=>({bottom:n.getBoundingClientRect().bottom}));
    });
    check(prefix+': toolbar bottom edges align',alignment.length<2||Math.max(...alignment.map(x=>x.bottom))-Math.min(...alignment.map(x=>x.bottom))<=1,alignment);
-   let sent=[];const listener=request=>{if(request.url().endsWith('/restful/'+endpoint))sent.push(request.postDataJSON());};page.on('request',listener);
+   let sent=[];const listener=request=>{if(request.url().endsWith('/api/v1/'+endpoint))sent.push(request.postDataJSON());};page.on('request',listener);
    await input.fill('验收查询');await input.press('Enter');await page.waitForTimeout(180);
    check(prefix+': Enter triggers exactly one query with the entered value',sent.length===1&&sent[0][key]==='验收查询',sent);
    sent=[];await button.click();await page.waitForTimeout(180);check(prefix+': clicking triggers exactly one query',sent.length===1,sent);page.off('request',listener);

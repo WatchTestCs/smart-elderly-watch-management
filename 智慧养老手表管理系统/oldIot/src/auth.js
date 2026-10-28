@@ -11,7 +11,7 @@ function clearProfile () { profileKeys.forEach(key => localStorage.removeItem(ke
 export function loadSession (refresh) {
   if (!refresh && loaded) return Promise.resolve(authState.account)
   if (pending) return pending
-  pending = axios.get('/restful/userLogin/session', { skipSession: true, timeout: 5000 }).then(response => {
+  pending = axios.get('/api/v1/auth/session', { skipSession: true, timeout: 5000 }).then(response => {
     const data = response.data
     if (!data || !data.csrfToken) throw new Error('Session response missing')
     authState.setupRequired = Boolean(data.setupRequired)
@@ -33,7 +33,7 @@ export function loadSession (refresh) {
 }
 
 export function endSession () {
-  return axios.post('/restful/userLogin/logout', {}, { skipSession: true, headers: { [authState.csrfHeader]: authState.csrfToken } }).then(() => {
+  return axios.post('/api/v1/auth/logout', {}, { skipSession: true, headers: { [authState.csrfHeader]: authState.csrfToken } }).then(() => {
     loaded = false
     authState.account = null
     authState.csrfToken = ''
@@ -48,7 +48,7 @@ export function installHttpSecurity (router, app) {
   } })
   axios.interceptors.request.use(config => {
     const url = new URL(config.url, window.location.href)
-    if (config.skipSession || url.origin !== window.location.origin || !(url.pathname.startsWith('/restful/') || url.pathname.startsWith('/api/v1/'))) return config
+    if (config.skipSession || url.origin !== window.location.origin || !(url.pathname.startsWith('/api/v1/') || url.pathname.startsWith('/api/v1/'))) return config
     if (['get', 'head', 'options'].includes((config.method || 'get').toLowerCase())) return config
     return loadSession().then(() => {
       config.headers[authState.csrfHeader] = authState.csrfToken
@@ -101,7 +101,7 @@ export function monitorDatabase (router) {
     checking = true
     const previous = authState.databaseReady
     try {
-      const { data } = await axios.get('/restful/service/status', { skipSession: true, timeout: 5000 })
+      const { data } = await axios.get('/api/v1/service/status', { skipSession: true, timeout: 5000 })
       if (!active) return
       if (typeof data.databaseReady !== 'boolean') throw new Error('Invalid database status')
       authState.databaseReady = data.databaseReady

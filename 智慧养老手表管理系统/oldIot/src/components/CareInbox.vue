@@ -81,7 +81,7 @@ const nextStep = task => ({received:'值班人员立即接单并核实长者状�
 
 let timer
 const reads = createLatestRead(
-  (query, signal) => axios.post('restful/care/incidents', query, {withCredentials:true, signal}),
+  (query, signal) => axios.post('api/v1/care/incidents', query, {withCredentials:true, signal}),
   ({data}, query) => {
     if (!Array.isArray(data.items) || !Number.isInteger(data.total) || data.total < 0 || !['supervisor','caregiver','auditor'].includes(data.duty) || !Number.isInteger(data.actorId)) throw new Error('invalid care response')
     const lastPage = Math.max(1, Math.ceil(data.total / pageSize))
@@ -104,7 +104,7 @@ function load () {
 function changePage (value) { page.value = value; load() }
 function changeScope () { page.value = 1; load() }
 const historyReads = createLatestRead(
-  (query, signal) => axios.post('restful/care/events', query, {withCredentials:true, signal}),
+  (query, signal) => axios.post('api/v1/care/events', query, {withCredentials:true, signal}),
   ({data}) => {
     if (!Array.isArray(data.events) || !Number.isInteger(data.total)) throw new Error('invalid history')
     history.value.events = data.events
@@ -136,7 +136,7 @@ async function submit () {
   }
   saving.value = true
   try {
-    const {data} = await axios.post('restful/care/transition', {
+    const {data} = await axios.post('api/v1/care/transition', {
       id:String(dialog.value.id),action:dialog.value.action,note:dialog.value.note.trim()
     }, {withCredentials:true})
     if (data.returnCode !== '1111') throw new Error('transition rejected')

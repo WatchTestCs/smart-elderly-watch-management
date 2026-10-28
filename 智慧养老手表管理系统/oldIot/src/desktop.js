@@ -3,7 +3,7 @@ import { invoke, isTauri } from '@tauri-apps/api/core'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 
 export async function createAdministrator (account) {
-  if (!isTauri()) return axios.post('/restful/setup', account)
+  if (!isTauri()) return axios.post('/api/v1/setup', account)
   const result = await invoke('setup_admin', { account })
   if (result.status >= 400) {
     const error = new Error(result.data?.message || '暂时无法创建账号')

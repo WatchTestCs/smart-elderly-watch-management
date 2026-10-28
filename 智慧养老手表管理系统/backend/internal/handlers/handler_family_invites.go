@@ -51,7 +51,7 @@ func fmtTS(t *time.Time) string {
 	return t.Format(tsLayout)
 }
 
-// POST /restful/inviteCode/list —— 邀请码列表（ADMIN）。
+// POST /api/v1/inviteCode/list —— 邀请码列表（ADMIN）。
 func (h *Handler) inviteList(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -133,7 +133,7 @@ func (h *Handler) inviteList(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// POST /restful/inviteCode/create —— 生成邀请码（ADMIN，事务）。
+// POST /api/v1/inviteCode/create —— 生成邀请码（ADMIN，事务）。
 func (h *Handler) inviteCreate(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -238,7 +238,7 @@ func (h *Handler) inviteCreate(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// POST /restful/inviteCode/delete —— 作废未使用的邀请码（ADMIN）。
+// POST /api/v1/inviteCode/delete —— 作废未使用的邀请码（ADMIN）。
 func (h *Handler) inviteDelete(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -262,4 +262,4 @@ func (h *Handler) inviteDelete(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// POST /restful/inviteCode/oldPersonList —— 老人下拉列表（ADMIN）。
+// POST /api/v1/inviteCode/oldPersonList —— 老人下拉列表（ADMIN）。

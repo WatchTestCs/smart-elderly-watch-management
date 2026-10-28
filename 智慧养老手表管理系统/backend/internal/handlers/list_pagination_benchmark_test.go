@@ -69,7 +69,7 @@ func BenchmarkListPagination(b *testing.B) {
 							b.Fatal(err)
 						}
 						request := func() *httptest.ResponseRecorder {
-							r := httptest.NewRequest(http.MethodPost, "/restful/benchmark", bytes.NewReader(payload))
+							r := httptest.NewRequest(http.MethodPost, "/api/v1/benchmark", bytes.NewReader(payload))
 							w := httptest.NewRecorder()
 							endpoint.handler(w, r)
 							return w

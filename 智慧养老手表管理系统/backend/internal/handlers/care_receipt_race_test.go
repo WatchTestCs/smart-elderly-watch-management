@@ -35,7 +35,7 @@ func TestCareImmediateSignedReceiptDuringSending(t *testing.T) {
 	mac := hmac.New(sha256.New, []byte(secret))
 	mac.Write([]byte(stamp + "."))
 	mac.Write(body)
-	req := httptest.NewRequest(http.MethodPost, "/restful/care/receipt", bytes.NewReader(body))
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/care/receipt", bytes.NewReader(body))
 	req.Header.Set("X-Care-Timestamp", stamp)
 	req.Header.Set("X-Care-Signature", hex.EncodeToString(mac.Sum(nil)))
 	rec := httptest.NewRecorder()

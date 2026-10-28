@@ -9,7 +9,7 @@ import (
 )
 
 func sessionRequest(id string) *http.Request {
-	r := httptest.NewRequest(http.MethodPost, "/restful/health/daily", nil)
+	r := httptest.NewRequest(http.MethodPost, "/api/v1/health/daily-query", nil)
 	r.AddCookie(&http.Cookie{Name: session.CookieName, Value: id})
 	return r
 }

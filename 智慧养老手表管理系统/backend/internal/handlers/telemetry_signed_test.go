@@ -39,19 +39,19 @@ func TestSignedTelemetryValidationWithoutDatabase(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	req := httptest.NewRequest(http.MethodPost, "/restful/device/report", bytes.NewReader(unsigned))
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/device/report", bytes.NewReader(unsigned))
 	w := httptest.NewRecorder()
 	h.deviceReport(w, req)
 	if w.Code != http.StatusUnauthorized {
 		t.Fatalf("unsigned request accepted: %d %s", w.Code, w.Body.String())
 	}
-	req = signedTestRequest(t, "/restful/device/report", body, "test-nonce-1234567890", time.Now().Add(-20*time.Minute))
+	req = signedTestRequest(t, "/api/v1/device/report", body, "test-nonce-1234567890", time.Now().Add(-20*time.Minute))
 	w = httptest.NewRecorder()
 	h.deviceReport(w, req)
 	if w.Code != http.StatusUnauthorized {
 		t.Fatalf("expired request accepted: %d %s", w.Code, w.Body.String())
 	}
-	req = signedTestRequest(t, "/restful/device/report", body, "test-nonce-1234567890", time.Now())
+	req = signedTestRequest(t, "/api/v1/device/report", body, "test-nonce-1234567890", time.Now())
 	req.Header.Set("X-Device-Signature", "00")
 	w = httptest.NewRecorder()
 	h.deviceReport(w, req)
@@ -68,7 +68,7 @@ func TestSignedTelemetryReplayAcrossTransactions(t *testing.T) {
 	body := map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "hr": "72"}
 	send := func(nonce string) *httptest.ResponseRecorder {
 		w := httptest.NewRecorder()
-		h.deviceReport(w, signedTestRequest(t, "/restful/device/report", body, nonce, time.Now()))
+		h.deviceReport(w, signedTestRequest(t, "/api/v1/device/report", body, nonce, time.Now()))
 		return w
 	}
 	nonce := "test-nonce-replay-0123456789"
@@ -95,7 +95,7 @@ func TestSignedSOSIdempotentRetry(t *testing.T) {
 	body := map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "requestId": "signed-sos-retry", "bindingVersion": 1}
 	send := func() *httptest.ResponseRecorder {
 		w := httptest.NewRecorder()
-		h.deviceSos(w, signedTestRequest(t, "/restful/device/sos", body, "sos-nonce-retry-0123456789", time.Now()))
+		h.deviceSos(w, signedTestRequest(t, "/api/v1/device/sos", body, "sos-nonce-retry-0123456789", time.Now()))
 		return w
 	}
 	first, again := send(), send()

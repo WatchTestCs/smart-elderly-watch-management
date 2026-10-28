@@ -12,7 +12,7 @@ import (
 	"careold-go/internal/securestore"
 )
 
-const CookieName = "JSESSIONID"
+const CookieName = "SUINING_SESSION"
 
 type Principal struct {
 	Role             string // ADMIN or FAMILY; empty for an anonymous session.

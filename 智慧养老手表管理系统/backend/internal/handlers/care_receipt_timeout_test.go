@@ -37,7 +37,7 @@ func TestCareDelayedReceiptAfterGatewayTimeout(t *testing.T) {
 	mac.Write([]byte(stamp + "."))
 	mac.Write(body)
 	send := func() *httptest.ResponseRecorder {
-		req := httptest.NewRequest(http.MethodPost, "/restful/care/receipt", bytes.NewReader(body))
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/care/receipt", bytes.NewReader(body))
 		req.Header.Set("X-Care-Timestamp", stamp)
 		req.Header.Set("X-Care-Signature", hex.EncodeToString(mac.Sum(nil)))
 		w := httptest.NewRecorder()

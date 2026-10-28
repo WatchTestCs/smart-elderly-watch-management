@@ -105,7 +105,7 @@ export default {
       if (keepPage !== true) this.currentPage = 1
       var _this = this
         
-        return axios.post('restful/said/selectByUser',
+        return axios.post('api/v1/said/selectByUser',
           { page: this.currentPage, pageSize: this.pageSize,
           },
           {
@@ -119,7 +119,7 @@ export default {
           _this.total = response.data.total ?? response.data.saidDtos.length
 					for(var i=0;i<tableData2.length;i++){
 
-						tableData2[i].touPic = '/restful/image/download?name='+encodeURIComponent(tableData2[i].touPic)
+						tableData2[i].touPic = '/api/v1/image/download?name='+encodeURIComponent(tableData2[i].touPic)
 					}
 					_this.saidList=tableData2
 
@@ -135,7 +135,7 @@ export default {
     
     editSaid () {
       var _this = this
-      axios.post('restful/said/update',_this.saidEditForm,
+      axios.post('api/v1/said/update',_this.saidEditForm,
         {
           headers: {
             'content-type': 'application/json'
@@ -170,7 +170,7 @@ export default {
           cancelButtonText: '取消',
           type: 'warning'
         })
-        axios.post('restful/said/delete', {'saidId': saidId},
+        axios.post('api/v1/said/delete', {'saidId': saidId},
           {
             headers: {
               'content-type': 'application/json'

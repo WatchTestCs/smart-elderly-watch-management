@@ -112,7 +112,7 @@ func parseDeviceTelemetryPayload(w http.ResponseWriter, m map[string]any, now ti
 	return out, true
 }
 
-// POST /restful/device/report —— 设备数据上报（公开，事务）。
+// POST /api/v1/device/report —— 设备数据上报（公开，事务）。
 func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 	r, signedOK := prepareSignedDeviceRequest(w, r)
 	if !signedOK {
@@ -200,7 +200,7 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// POST /restful/device/sos —— SOS 一键呼叫（公开，事务）。
+// POST /api/v1/device/sos —— SOS 一键呼叫（公开，事务）。
 func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 	r, signedOK := prepareSignedDeviceRequest(w, r)
 	if !signedOK {

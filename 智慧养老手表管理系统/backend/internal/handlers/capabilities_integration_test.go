@@ -320,7 +320,7 @@ func TestCapabilityMiddlewareBoundaries(t *testing.T) {
 	h.Routes(mux)
 	wrapped := csrf.Middleware(h.Sessions, auth.Middleware(h.Sessions, mux))
 	family := h.Sessions.Create(session.Principal{Role: auth.RoleFamily, ID: 1})
-	for _, path := range []string{"/restful/device/commandProfile", "/restful/device/command", "/restful/device/commands", "/restful/fence/save", "/restful/fence/list", "/restful/fence/events", "/restful/alert/review", "/restful/alert/reviews"} {
+	for _, path := range []string{"/api/v1/device-command-profiles", "/api/v1/device-commands", "/api/v1/device-commands/search", "/api/v1/fences", "/api/v1/fences/search", "/api/v1/fence-events/search", "/api/v1/alert-reviews", "/api/v1/alert-reviews/search"} {
 		r := httptest.NewRequest("POST", path, strings.NewReader("{}"))
 		r.AddCookie(&http.Cookie{Name: session.CookieName, Value: family.ID})
 		r.Header.Set(csrf.HeaderName, family.CSRFToken)
@@ -330,7 +330,7 @@ func TestCapabilityMiddlewareBoundaries(t *testing.T) {
 			t.Fatal(path, w.Code, w.Body.String())
 		}
 	}
-	for _, path := range []string{"/restful/device/commandPull", "/restful/device/commandAck", "/restful/device/fencePoint"} {
+	for _, path := range []string{"/api/v1/device-commandsPull", "/api/v1/device-commandsAck", "/api/v1/device/fencePoint"} {
 		// Hardware routes must use body authentication rather than cookie authority.
 		body := map[string]any{}
 		if strings.HasSuffix(path, "commandAck") {

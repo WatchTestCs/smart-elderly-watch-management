@@ -204,7 +204,7 @@ export default {
      var _this = this
        var familyName = _this.searchText
 
-       return axios.post('restful/family/select',
+       return axios.post('api/v1/family/select',
          { page: this.currentPage, pageSize: this.pageSize,
            'familyName': familyName === '' ? '' : _this.searchText
          },
@@ -228,7 +228,7 @@ export default {
     },
     addFamily () {
       var _this = this
-      axios.post('restful/family/add',
+      axios.post('api/v1/family/add',
         _this.familyForm,
         {
           headers: {
@@ -260,7 +260,7 @@ export default {
     },
     editFamily () {
       var _this = this
-      axios.post('restful/family/updateFamily', _this.familyEditForm,
+      axios.post('api/v1/family/updateFamily', _this.familyEditForm,
         {
           headers: {
             'content-type': 'application/json'
@@ -296,7 +296,7 @@ export default {
           type: 'warning'
         })
 
-        axios.post('restful/family/deleteFamily', {'familyId': familyId},
+        axios.post('api/v1/family/deleteFamily', {'familyId': familyId},
           {
             headers: {
               'content-type': 'application/json'

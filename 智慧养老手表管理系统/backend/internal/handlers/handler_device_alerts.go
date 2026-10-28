@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-// POST /restful/device/handleAlarm —— 处置某老人最近一条告警（ADMIN）。
+// POST /api/v1/device/handleAlarm —— 处置某老人最近一条告警（ADMIN）。
 func (h *Handler) deviceHandleAlarm(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -247,4 +247,4 @@ func (h *Handler) findRatepreAlert(ctx context.Context, q oldQuerier, deviceID i
 	}, nil
 }
 
-// POST /restful/device/alertCounts —— 各设备未处理异常数（ADMIN，红点）。
+// POST /api/v1/device/alertCounts —— 各设备未处理异常数（ADMIN，红点）。

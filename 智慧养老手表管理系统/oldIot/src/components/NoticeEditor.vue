@@ -7,7 +7,7 @@
         <el-form-item label="公告标题" for="notice-title" prop="title"><el-input id="notice-title" v-model="form.title" maxlength="20" placeholder="用一句话说明本次提醒" :disabled="saving || loading || !!loadError"></el-input><p class="editor-counter">{{ form.title.length }} / 20 字</p></el-form-item>
         <el-form-item label="公告正文" for="notice-body" prop="textMain"><el-input id="notice-body" type="textarea" :rows="4" v-model="form.textMain" maxlength="50" placeholder="写下需要家属知悉的简要提醒" :disabled="saving || loading || !!loadError"></el-input><p class="editor-counter">{{ form.textMain.length }} / 50 字</p></el-form-item>
       </el-form>
-      <section class="editor-attachments" aria-labelledby="attachment-heading"><div class="editor-section-heading"><div><h2 id="attachment-heading">补充图片</h2><p>图片可选，请上传与本次公告直接相关的内容。</p></div></div><el-upload action="restful/image/saveImage" :headers="$uploadHeaders" :with-credentials="true" :file-list="attachments" :disabled="saving || loading || !!loadError" :limit="10" accept="image/jpeg,image/png" list-type="picture" :before-upload="beforeUpload" :on-change="filesChanged" :on-success="uploadSuccess" :on-error="uploadError" :on-remove="filesRemoved" :on-exceed="uploadExceeded"><el-button plain icon="el-icon-plus" :disabled="saving || loading || !!loadError">添加公告图片</el-button><template #tip><p  class="collection-caption">最多10张 JPG / PNG 图片，每张不超过500KB。{{ uploadsPending ? '图片仍在上传或未成功，请处理后再发布。' : '' }}</p></template></el-upload></section>
+      <section class="editor-attachments" aria-labelledby="attachment-heading"><div class="editor-section-heading"><div><h2 id="attachment-heading">补充图片</h2><p>图片可选，请上传与本次公告直接相关的内容。</p></div></div><el-upload action="api/v1/image/saveImage" :headers="$uploadHeaders" :with-credentials="true" :file-list="attachments" :disabled="saving || loading || !!loadError" :limit="10" accept="image/jpeg,image/png" list-type="picture" :before-upload="beforeUpload" :on-change="filesChanged" :on-success="uploadSuccess" :on-error="uploadError" :on-remove="filesRemoved" :on-exceed="uploadExceeded"><el-button plain icon="el-icon-plus" :disabled="saving || loading || !!loadError">添加公告图片</el-button><template #tip><p  class="collection-caption">最多10张 JPG / PNG 图片，每张不超过500KB。{{ uploadsPending ? '图片仍在上传或未成功，请处理后再发布。' : '' }}</p></template></el-upload></section>
       <p v-if="saveError" class="editor-error" role="alert">{{ saveError }}</p>
       <footer class="editor-actions"><span>确认预览内容后再{{ editing ? '保存' : '发布' }}。</span><el-button type="primary" :loading="saving" :disabled="loading || !!loadError || uploadsPending" @click="submit">{{ editing ? '保存公告' : '发布公告' }}</el-button></footer>
     </section>
@@ -38,11 +38,11 @@ export default {
       this.loading = true
       this.loadError = ''
       this.attachments = []
-      return axios.post('restful/text/selectDetail', { textId: this.$route.query.textId }, { withCredentials: true }).then((response) => {
+      return axios.post('api/v1/text/selectDetail', { textId: this.$route.query.textId }, { withCredentials: true }).then((response) => {
         if (!response.data.text || response.data.text.picId == null) throw new Error('missing notice')
         this.form = { title: response.data.text.title || '', textMain: response.data.text.textMain || '' }
         this.picId = response.data.text.picId
-        this.attachments = (response.data.pics || []).map((pic, index) => ({ uid: 'existing-' + index, name: pic.picName, url: '/restful/image/download?name=' + encodeURIComponent(pic.picName), status: 'success' }))
+        this.attachments = (response.data.pics || []).map((pic, index) => ({ uid: 'existing-' + index, name: pic.picName, url: '/api/v1/image/download?name=' + encodeURIComponent(pic.picName), status: 'success' }))
         this.baseline = this.signature
       }).catch(() => { this.loadError = '公告暂时无法加载，请重试。' }).then(() => { this.loading = false })
     },
@@ -69,7 +69,7 @@ export default {
         this.saveError = ''
         var params = { title: this.form.title.trim(), textMain: this.form.textMain.trim(), fileListName: this.successfulAttachments.map(file => file.name) }
         if (this.editing) { params.textId = this.$route.query.textId; params.picId = this.picId }
-        axios.post('restful/text/' + (this.editing ? 'update' : 'add'), params, { withCredentials: true }).then((response) => {
+        axios.post('api/v1/text/' + (this.editing ? 'update' : 'add'), params, { withCredentials: true }).then((response) => {
           if (response.data.returnCode !== '1111') throw new Error('save rejected')
           this.$message.success(this.editing ? '公告已保存' : '公告已发布')
           this.baseline = this.signature

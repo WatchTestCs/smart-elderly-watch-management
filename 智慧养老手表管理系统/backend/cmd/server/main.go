@@ -13,7 +13,6 @@ import (
 	"syscall"
 	"time"
 
-	"careold-go/internal/apidoc"
 	"careold-go/internal/config"
 	"careold-go/internal/handlers"
 	"careold-go/internal/observability"
@@ -47,7 +46,7 @@ func main() {
 	localHandlers.MountLocalLogout(mux)
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusOK) })
 	srv := &http.Server{
-		Handler:           apidoc.Rewrite(observability.Default.HTTP(service.middleware(mux))),
+		Handler:           observability.Default.HTTP(service.middleware(mux)),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       20 * time.Second,
 		WriteTimeout:      35 * time.Second,

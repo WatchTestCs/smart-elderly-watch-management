@@ -75,7 +75,7 @@ export default {
       _this.isLoading = true
       _this.loadError = ''
 
-      axios.post('restful/position/selectFamily',
+      axios.post('api/v1/position/selectFamily',
         {
           "oldId":oldId
         },

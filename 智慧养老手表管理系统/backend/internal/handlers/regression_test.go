@@ -19,7 +19,7 @@ func TestCoordinateJSONCompatibility(t *testing.T) {
 		{"numeric_coordinates", `{"lng":121.4737,"lat":31.2304}`},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			request := httptest.NewRequest("POST", "/restful/device/report", strings.NewReader(test.body))
+			request := httptest.NewRequest("POST", "/api/v1/device/report", strings.NewReader(test.body))
 			response := httptest.NewRecorder()
 			body, ok := bodyMap(response, request)
 			if !ok {
@@ -82,7 +82,7 @@ func TestImageUploadGuards(t *testing.T) {
 	if err = writer.Close(); err != nil {
 		t.Fatal(err)
 	}
-	request := httptest.NewRequest("POST", "/restful/image/saveImage", &body)
+	request := httptest.NewRequest("POST", "/api/v1/image/saveImage", &body)
 	request.Header.Set("Content-Type", writer.FormDataContentType())
 	response := httptest.NewRecorder()
 	h.imageSave(response, request)

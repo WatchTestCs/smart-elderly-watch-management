@@ -207,7 +207,7 @@ func probe() error {
 			workers.Add(1)
 			go func() {
 				defer workers.Done()
-				r := &http.Request{Method: http.MethodPost, URL: &url.URL{Path: "/restful/userLogin/login"}}
+				r := &http.Request{Method: http.MethodPost, URL: &url.URL{Path: "/api/v1/auth/login"}}
 				for {
 					n := next.Add(1)
 					if n > 100000 {

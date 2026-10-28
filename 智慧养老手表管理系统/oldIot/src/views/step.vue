@@ -115,7 +115,7 @@ export default {
       var _this = this
       var name = _this.searchText
 
-      axios.post('restful/step/selectStep',
+      axios.post('api/v1/step/selectStep',
         {
           page: _this.currentPage, pageSize: _this.pageSize,
           'name': name === '' ? '' : _this.searchText,
@@ -138,7 +138,7 @@ export default {
 		getCount(){
 
 			var _this=this
-			axios.post('restful/step/selectStepCount',
+			axios.post('api/v1/step/selectStepCount',
 				{
 					
 				},
@@ -172,7 +172,7 @@ export default {
       this.chartLoading = true
       this.chartError = ''
       this.name = curOld.name || ''
-      return axios.post('restful/step/selectStepDetail', { oldId: curOld.oldId }, { withCredentials: true }).then(response => {
+      return axios.post('api/v1/step/selectStepDetail', { oldId: curOld.oldId }, { withCredentials: true }).then(response => {
         if (!this.isShowRoleDialog) return
         this.sleep = Array.isArray(response.data.sleep) ? response.data.sleep : []; this.createTime = Array.isArray(response.data.createTime) ? response.data.createTime : [];
         if (!this.sleep.length) { this.chartError = '暂无可展示的睡眠详情。'; return }

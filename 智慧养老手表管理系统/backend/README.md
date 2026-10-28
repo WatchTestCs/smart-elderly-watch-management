@@ -1,4 +1,4 @@
-# 岁宁 Go 后端 · 2.0.6
+# 岁宁 Go 后端 · 2.1.0
 
 Go 服务负责业务 API、设备接入、会话、图片、内嵌前端、照护与通知作业，以及分析同步。**MySQL 是唯一业务主库，PostgreSQL 是异步分析库**；Windows 由 Tauri 管理 Go 生命周期，也可独立部署服务用于受控设备接入和长期值守。
 
@@ -60,7 +60,7 @@ go run ./cmd/server
 
 ## 热数据内存缓存与磁盘历史
 
-`POST /restful/health/statistics` 对重复统计结果使用进程内 LRU 缓存，最多 2,048 项、每项最多 64 KiB、入缓存后 30 秒过期。缓存按 JSON 字节数加每项 256 字节固定开销计费；这是缓存预算，不是整个 Go 进程的堆或 RSS 硬上限。完整请求哈希为固定长度键，包含老人、来源、设备、指标、语义和带报告偏移的时间范围，避免长请求字符串常驻内存。
+`POST /api/v1/health/statistics` 对重复统计结果使用进程内 LRU 缓存，最多 2,048 项、每项最多 64 KiB、入缓存后 30 秒过期。缓存按 JSON 字节数加每项 256 字节固定开销计费；这是缓存预算，不是整个 Go 进程的堆或 RSS 硬上限。完整请求哈希为固定长度键，包含老人、来源、设备、指标、语义和带报告偏移的时间范围，避免长请求字符串常驻内存。
 
 每次查询仍先鉴权，并读取 MySQL 已提交的老人修订号。任何实例通过 `health.SaveBatch` 写入、更正或删除样本后，旧结果即不能命中；未命中计算前后修订号不同则不入缓存。修订号校验失败回到数据库查询，不返回未经核验的缓存。直接绕过样本写入协议修改数据库时，必须同步更新修订号；维护导入、恢复备份后应重启应用。
 
@@ -137,7 +137,7 @@ MySQL 测试创建、清理随机测试数据库，需要相应权限；PG 测�
 ## 故障与安全边界
 
 - HTTP、静态页面和桌面就绪不等待数据库；MySQL 迁移成功后才发布业务 API，失败后后台重试。
-- `GET /healthz` 只代表进程存活；`GET /restful/service/status` 返回主库就绪及分析配置、连接状态，不暴露连接串。MySQL 未就绪时业务 API 返回 `503 DATABASE_UNAVAILABLE`；探测前正在执行的 SQL 也可能先失败。
+- `GET /healthz` 只代表进程存活；`GET /api/v1/service/status` 返回主库就绪及分析配置、连接状态，不暴露连接串。MySQL 未就绪时业务 API 返回 `503 DATABASE_UNAVAILABLE`；探测前正在执行的 SQL 也可能先失败。
 - MySQL 业务池仍为最多 20 个连接，真实就绪探测使用另一个最多 1 连接的池，部署应为每个应用副本预留探测额度。保留已有探测和业务池指标；离线设备维护每页最多 100 行，跳过忙设备，在后续周期重查。
 - MySQL 恢复后检查会话；失败业务写入不自动重放。分析队列只重试已经提交的分析事件。
 - 首位管理员必须经桌面令牌初始化，无默认账号；普通写接口校验会话、角色和 CSRF，设备接口单独鉴权。会话默认存于数据库；显式启用 `SESSION_BACKEND=memory` 时才采用单实例内存会话。
@@ -156,3 +156,7 @@ MySQL 测试创建、清理随机测试数据库，需要相应权限；PG 测�
 MySQL 业务连接默认每条物理连接缓存最多 64 个预编译语句，减少重复 SQL 解析与大参数转义；20 条连接默认最多 1280 个服务器句柄/副本，须计入服务器语句预算。`MYSQL_STMT_CACHE_SIZE=0` 恢复插值/临时 prepare 路径；可设置 0..128。冷启动与 SQL 形状抖动可能变慢，最终延迟对照见 [PR #30](https://github.com/WatchTestCs/smart-elderly-watch-management/pull/30)。
 
 业务 MySQL 连接默认 READ COMMITTED。已知 session 默认未被修改时，业务事务复用该隔离设置，减少一次往返；未知 SQL/显式会话变更后恢复每事务设置。裸 SQL() 工具如需其他隔离须显式指定。This also sets the default isolation of raw SQL() connections; tools requiring another isolation level must request it explicitly.
+
+## API 入口（破坏性变更）
+
+Go 原生路由直接公开 `/api/v1/`，拒绝 `/restful/`，不提供别名回退。`SUINING_SESSION` 是仅 HTTP 使用的服务端会话 Cookie；客户端必须按 `/api/v1/auth/session` 获取 CSRF、使用新 Cookie 重新登录。接口清单由 `scripts/generate-openapi.py` 生成，见 `internal/apidoc/openapi.json`。MySQL 主库、可选 PostgreSQL 分析副库职责不变。
