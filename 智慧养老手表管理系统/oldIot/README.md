@@ -44,4 +44,4 @@ Logo、字体和风景图在 `public/static`，当前不依赖旧 Webpack、Babe
 
 ## 不兼容旧客户端的 API v1 切换
 
-所有浏览器、桌面和手表请求使用 `/api/v1/`。Go 服务不再接受 `/restful/`；会话 Cookie 改为 `SUINING_SESSION`，旧会话必须重新登录。此变更不包含兼容代理或前端旧路径回退。
+所有浏览器、桌面和手表请求使用 `/api/v1/`。Go 服务不再接受 `/api/v1/`；会话 Cookie 改为 `SUINING_SESSION`，旧会话必须重新登录。此变更不包含兼容代理或前端旧路径回退。

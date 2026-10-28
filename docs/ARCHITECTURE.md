@@ -163,4 +163,4 @@ ADR-0001/0002/0003 记录旧 Electron、Spring 和 H2，已由 ADR-0006 取代�
 
 ## 原生 Go API v1 切换
 
-服务端直接注册 `/api/v1/`，不再暴露旧 `/restful/` 业务接口或 URL 重写别名；历史 ADR 中出现的旧路径仅为存档。Go 使用 `SUINING_SESSION` Cookie，前端及手表端需同时升级。完整不可兼容范围见 [API 切换说明](API_V1_CUTOVER.md)。
+服务端直接注册 `/api/v1/`，不再暴露旧版业务 URI 或 URL 重写别名；历史 ADR 中出现的旧路径仅为存档。Go 使用 `SUINING_SESSION` Cookie，前端及手表端需同时升级。完整不可兼容范围见 [API 切换说明](API_V1_CUTOVER.md)。

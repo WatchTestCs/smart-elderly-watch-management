@@ -159,4 +159,4 @@ MySQL 业务连接默认每条物理连接缓存最多 64 个预编译语句，�
 
 ## API 入口（破坏性变更）
 
-Go 原生路由直接公开 `/api/v1/`，拒绝 `/restful/`，不提供别名回退。`SUINING_SESSION` 是仅 HTTP 使用的服务端会话 Cookie；客户端必须按 `/api/v1/auth/session` 获取 CSRF、使用新 Cookie 重新登录。接口清单由 `scripts/generate-openapi.py` 生成，见 `internal/apidoc/openapi.json`。MySQL 主库、可选 PostgreSQL 分析副库职责不变。
+Go 原生路由直接公开 `/api/v1/`，拒绝 `/api/v1/`，不提供别名回退。`SUINING_SESSION` 是仅 HTTP 使用的服务端会话 Cookie；客户端必须按 `/api/v1/auth/session` 获取 CSRF、使用新 Cookie 重新登录。接口清单由 `scripts/generate-openapi.py` 生成，见 `internal/apidoc/openapi.json`。MySQL 主库、可选 PostgreSQL 分析副库职责不变。

@@ -70,11 +70,11 @@
 
 | 路径 | 请求字段 | 含义 |
 | --- | --- | --- |
-| `/restful/device/commandProfile` | `deviceId, wireType, protocol, enabled` | `protocol` 只允许 `suining-pull-v1`。启用前须确认固件实现本节契约，不能仅凭型号启用。修改配置取消尚未完成的队列记录 |
-| `/restful/device/command` | `deviceId, action, requestKey, ttlSeconds` | 入队；TTL 30–3600 秒。相同设备、绑定版本、键和动作/TTL 返回原记录，键复用于不同请求返回 409 |
-| `/restful/device/commands` | `deviceId, after` | 按 ID 升序查询最多 100 条；不返回设备密钥或投递令牌 |
-| `/restful/device/commandPull` | `deviceNo, secret, bindingVersion` | 原子领取一条命令，无任务时 `command=null` |
-| `/restful/device/commandAck` | 上述凭据加 `commandId, deliveryToken, result` | `result=executed/failed`；必须关联当前投递和绑定 |
+| `/api/v1/device-command-profiles` | `deviceId, wireType, protocol, enabled` | `protocol` 只允许 `suining-pull-v1`。启用前须确认固件实现本节契约，不能仅凭型号启用。修改配置取消尚未完成的队列记录 |
+| `/api/v1/device-commands` | `deviceId, action, requestKey, ttlSeconds` | 入队；TTL 30–3600 秒。相同设备、绑定版本、键和动作/TTL 返回原记录，键复用于不同请求返回 409 |
+| `/api/v1/device-commands/search` | `deviceId, after` | 按 ID 升序查询最多 100 条；不返回设备密钥或投递令牌 |
+| `/api/v1/device/commandPull` | `deviceNo, secret, bindingVersion` | 原子领取一条命令，无任务时 `command=null` |
+| `/api/v1/device/commandAck` | 上述凭据加 `commandId, deliveryToken, result` | `result=executed/failed`；必须关联当前投递和绑定 |
 
 动作：`location/restart/poweroff/restore/ring/envvoice/heart_rate`，实际允许范围由已核实的通道映射决定。它是路由范围，不是商业设备能力认证。视频、Wi-Fi 配置和自定义参数不在本次契约中，不能把未消费的参数当成已下发。
 
@@ -86,13 +86,13 @@
 
 ## B：日结果接口与一致性
 
-`POST /restful/health/daily`，请求：`oldId, source, sourceDevice, metric, semantics, day, offsetMinutes, days`。来源与指标必须明确，日期为 `yyyy-MM-dd`，UTC 偏移范围 -840 至 840 分钟，一次 1–31 天。家属身份复用现有老人归属校验；主管与家属的权限边界没有通过聚合接口绕过。
+`POST /api/v1/health/daily-query`，请求：`oldId, source, sourceDevice, metric, semantics, day, offsetMinutes, days`。来源与指标必须明确，日期为 `yyyy-MM-dd`，UTC 偏移范围 -840 至 840 分钟，一次 1–31 天。家属身份复用现有老人归属校验；主管与家属的权限边界没有通过聚合接口绕过。
 
 接口注册需要的日结果并返回逐日状态：`pending` 表示后台尚未完成，`ready` 表示结果可用，`conflict` 表示采样语义或单日容量需要处理。pending/conflict 不返回旧数值冒充最新结果。无采样返回 count=0，均值/极值不伪造为零。
 
 键包含老人、来源、来源设备、指标、采样语义、统计日、UTC 偏移，不混合来源。样本写入与修订时，在原事务内将该老人已注册的所有日结果置脏；这是保守失效，能覆盖旧日期、跨日区间和删除。重复/旧版本未改变样本时不额外失效。后台每轮最多重建 16 个已注册日期，以修订时钟锁保证重建和写入提交顺序一致；日结果不是逐次查询现算，也不是第二个原始事实源。
 
-保留现有 `Aggregate` 语义：步数日快照取最新、区间步数不容许重叠或任意分摊、睡眠区间求并集并返回分期冲突、未知历史时区拒绝强行归日。单日超过 100000 条返回明确 conflict，不截断后给出统计。原 `/restful/health/statistics` 的任意时间范围入口保持原行为。
+保留现有 `Aggregate` 语义：步数日快照取最新、区间步数不容许重叠或任意分摊、睡眠区间求并集并返回分期冲突、未知历史时区拒绝强行归日。单日超过 100000 条返回明确 conflict，不截断后给出统计。原 `/api/v1/health/statistics` 的任意时间范围入口保持原行为。
 
 算法版本为 1；若以后改变算法，升级迁移需要将存量日结果置脏。这里只采用明确的固定统计偏移，不宣称支持按 IANA 时区跨夏令时的日统计。全老人失效和重建期间的时钟锁存在吞吐成本，尚无长期负载结果。
 
@@ -100,10 +100,10 @@
 
 | 路径 | 请求 |
 | --- | --- |
-| `/restful/fence/save` | `id, deviceId, revision, name, enabled, coordinates, coordinateSystem, timezone, timeBegin, timeEnd, minPoints, dwellSeconds, maxAccuracy` |
-| `/restful/fence/list` | `deviceId` |
-| `/restful/fence/events` | `oldId, after`，最多 100 条 |
-| `/restful/device/fencePoint` | `deviceNo, secret, bindingVersion, point, coordinateSystem, accuracy, occurredAt` |
+| `/api/v1/fences` | `id, deviceId, revision, name, enabled, coordinates, coordinateSystem, timezone, timeBegin, timeEnd, minPoints, dwellSeconds, maxAccuracy` |
+| `/api/v1/fences/search` | `deviceId` |
+| `/api/v1/fence-events/search` | `oldId, after`，最多 100 条 |
+| `/api/v1/device/fencePoint` | `deviceNo, secret, bindingVersion, point, coordinateSystem, accuracy, occurredAt` |
 
 管理入口需照护主管与 CSRF。新建 id=0；修改要求返回的最新 revision，旧版本返回 409。`enabled=false` 为停用，保留历史；每个设备的每次绑定最多保留 20 个围栏。
 
@@ -119,13 +119,13 @@
 
 ## D：复核结论与历史
 
-SOS 与围栏任务继续使用 `/restful/care/transition` 的接单、处置和独立 verify 流程，不建立竞争的关闭入口。verify 可传 `verdict=confirmed/false_alarm`，结论、理由、操作者、服务端时间同事务追加到 `alert_review`；失败时状态和结论一并回滚。
+SOS 与围栏任务继续使用 `/api/v1/care/transition` 的接单、处置和独立 verify 流程，不建立竞争的关闭入口。verify 可传 `verdict=confirmed/false_alarm`，结论、理由、操作者、服务端时间同事务追加到 `alert_review`；失败时状态和结论一并回滚。
 
 旧客户端不传 verdict 时，把本次人工 verify 记为 confirmed，以保持现有关闭行为；不为既有 verified 历史补造结论。处置人不能复核自己的任务，只有主管可 verify，仍须记录理由。
 
-`POST /restful/alert/review` 只处理具体心率/血压记录，字段为 `recordId, kind(rate/pre), verdict, reason, expectedReviewId`。首次 expectedReviewId=0，此后必须匹配上次 reviewId，防止覆盖并发结论。没有活动告警或既有复核历史的普通记录不能建立首条复核。追加结论保留历史，不自动改写旧告警状态，不把“误报”与“已解除”混为一事。
+`POST /api/v1/alert-reviews` 只处理具体心率/血压记录，字段为 `recordId, kind(rate/pre), verdict, reason, expectedReviewId`。首次 expectedReviewId=0，此后必须匹配上次 reviewId，防止覆盖并发结论。没有活动告警或既有复核历史的普通记录不能建立首条复核。追加结论保留历史，不自动改写旧告警状态，不把“误报”与“已解除”混为一事。
 
-`POST /restful/alert/reviews` 接受 `entity(care/ratepre), recordId, kind, after`，按 ID 返回最多 100 条历史。两个入口均需照护主管与 CSRF。敏感读取走既有审计中间件，不保存请求体、定位或密钥。
+`POST /api/v1/alert-reviews/search` 接受 `entity(care/ratepre), recordId, kind, after`，按 ID 返回最多 100 条历史。两个入口均需照护主管与 CSRF。敏感读取走既有审计中间件，不保存请求体、定位或密钥。
 
 本次没有编造 confidence 数字，没有自动确认，没有把 `push_result` 当复核结果，没有把 Alert 提醒配置混入告警。业务客户端若要提供误报选择，需显式提交 verdict；本次后端改动没有新增操作页面。异常持续时间和独立专业事件日聚合缺少可靠事件区间口径，未从离散采样推测。
 

@@ -32,7 +32,7 @@
    TEST_MYSQL_DSN='测试专用MySQL DSN' go test -race ./internal/db ./internal/rules -count=1
    ```
    `TEST_MYSQL_DSN` 必须有 CREATE/DROP DATABASE 权限，仅用于隔离实例，绝不能指向生产实例。
-2. 读取 `/metrics`，观察 `suining_mysql_health_probe_failures_total` 和 `suining_mysql_pool_wait_total` 的增量；同时观察 `in_use` 是否逼近 `max_open_connections`。比较新旧版本在**业务池被占满但 MySQL 仍活着**时 `/restful/service/status` 和实际 HTTP 状态，确认不因探测排队产生误报 503。
+2. 读取 `/metrics`，观察 `suining_mysql_health_probe_failures_total` 和 `suining_mysql_pool_wait_total` 的增量；同时观察 `in_use` 是否逼近 `max_open_connections`。比较新旧版本在**业务池被占满但 MySQL 仍活着**时 `/api/v1/service/status` 和实际 HTTP 状态，确认不因探测排队产生误报 503。
 3. 在测试环境分别以 `RULE_DEVICE_WORKERS=1,2,4,8` 运行同一套健康数据写入、规则扫描、通知任务负载。记录请求总数、2xx/4xx/500/503、落库行数、重试/重复、MySQL 事务等待、死锁、p50/p95/p99、RSS、GC，并比对事务及告警结果一致性。
 4. 使用同样数据规模的真实负载查询执行计划：
    ```sql
