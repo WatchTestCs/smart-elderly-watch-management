@@ -14,7 +14,7 @@ New `internal/runtimeaudit` tests fail CI if a JVM artifact or Java build config
 - Existing **valid** predecessor sessions are accepted only for a transition and are reissued under the new cookie name at the authenticated session endpoint. The underlying server-side session and CSRF token do not rotate during that migration.
 - A modern session cookie, even an invalid one, takes precedence over the predecessor cookie. No silent downgrade is allowed when both are supplied.
 - Login rotation and logout invalidate both browser-session IDs; new responses expire the old browser cookie. Cookie attributes remain HttpOnly, SameSite=Lax and Secure on TLS-enabled deployments.
-- The Vue authentication client uses the already-supported `/api/v1/auth/session` and `/api/v1/auth/logout` aliases, preserving the same Go middleware and authentication checks.
+- Vue's login, setup login, session lookup and logout use the already-supported `/api/v1/auth/*` aliases, preserving the same Go middleware and authentication checks.
 - The Go response writer no longer mutates caller-owned response maps. Its legacy JSON envelope remains unchanged for currently deployed clients.
 
 ## Remaining wire compatibility, NOT Java runtime dependencies

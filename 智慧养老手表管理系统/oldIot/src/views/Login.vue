@@ -91,7 +91,7 @@ export default {
         if (!valid) return
         _this.submitting = true
         _this.errorMessage = ''
-        axios.post('restful/userLogin/login', _this.loginForm, {
+        axios.post('/api/v1/auth/login', _this.loginForm, {
           headers: { 'content-type': 'application/json' },
           withCredentials: true
         }).then(function (response) {
