@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"suining-care/internal/db"
 	"github.com/jackc/pgx/v5"
+	"suining-care/internal/db"
 )
 
 // MaxRevision is the largest revision represented exactly by JSON clients.

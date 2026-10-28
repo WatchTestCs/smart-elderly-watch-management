@@ -1,12 +1,12 @@
 package session_test
 
 import (
-	"suining-care/internal/db/dbtest"
-	"suining-care/internal/securestore"
-	"suining-care/internal/session"
 	"context"
 	"encoding/base64"
 	"strings"
+	"suining-care/internal/db/dbtest"
+	"suining-care/internal/securestore"
+	"suining-care/internal/session"
 	"testing"
 	"time"
 )

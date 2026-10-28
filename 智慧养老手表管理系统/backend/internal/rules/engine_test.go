@@ -1,13 +1,13 @@
 package rules
 
 import (
-	"suining-care/internal/db"
-	"suining-care/internal/db/dbtest"
-	"suining-care/internal/health"
 	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
+	"suining-care/internal/db"
+	"suining-care/internal/db/dbtest"
+	"suining-care/internal/health"
 	"sync"
 	"testing"
 	"time"
