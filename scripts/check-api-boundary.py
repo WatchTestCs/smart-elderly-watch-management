@@ -25,7 +25,7 @@ errors = []
 if (ROOT / '智慧养老手表管理系统/oldIot').exists():
     errors.append('historical frontend directory must not be restored')
 module = (ROOT / '智慧养老手表管理系统/backend/go.mod').read_text(encoding='utf-8')
-if not module.startswith('module suining-care\\n'.replace('\\n', '\\n')):
+if not module.splitlines() or module.splitlines()[0].strip() != 'module suining-care':
     errors.append('backend must use the native suining-care Go module')
 for name in files:
     if not name or not name.startswith(PREFIXES) or name.startswith(HISTORY):
