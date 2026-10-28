@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"careold-go/internal/config"
-	"careold-go/internal/handlers"
-	"careold-go/internal/session"
+	"suining-care/internal/config"
+	"suining-care/internal/handlers"
+	"suining-care/internal/session"
 )
 
 func TestConfigurationErrorIsVisibleWithoutBlockingApplication(t *testing.T) {

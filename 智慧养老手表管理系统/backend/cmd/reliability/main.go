@@ -19,13 +19,13 @@ import (
 	"sync/atomic"
 	"time"
 
-	"careold-go/internal/auth"
-	"careold-go/internal/blob"
-	"careold-go/internal/config"
-	"careold-go/internal/db"
-	"careold-go/internal/ratelimit"
-	"careold-go/internal/securestore"
-	"careold-go/internal/session"
+	"suining-care/internal/auth"
+	"suining-care/internal/blob"
+	"suining-care/internal/config"
+	"suining-care/internal/db"
+	"suining-care/internal/ratelimit"
+	"suining-care/internal/securestore"
+	"suining-care/internal/session"
 	"github.com/go-sql-driver/mysql"
 )
 
