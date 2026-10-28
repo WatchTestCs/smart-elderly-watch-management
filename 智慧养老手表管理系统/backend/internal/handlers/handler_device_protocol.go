@@ -242,7 +242,7 @@ func (h *Handler) deviceBind(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	// watch_info upsert 默认阈值行（心率 55–110、血压 90–140）。
-	if _, err := saveWatchProfileUpsert(ctx, tx, d.ID, 110, 55, 140, 90,
+	if _, err := saveWatchProfileUpsert(ctx, tx, tx.IsMySQL(), d.ID, 110, 55, 140, 90,
 		time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local)); err != nil {
 		rollback()
 		response.Error500(w, ref())
