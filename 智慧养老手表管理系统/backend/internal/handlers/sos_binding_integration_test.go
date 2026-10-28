@@ -171,7 +171,6 @@ func TestSOSConcurrentDuplicateRequests(t *testing.T) {
 	}
 }
 
-
 func TestSOSPersistenceRollbackLeavesNoPartialRows(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)

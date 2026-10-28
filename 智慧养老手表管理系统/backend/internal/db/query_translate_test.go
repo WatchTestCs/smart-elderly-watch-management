@@ -132,7 +132,6 @@ func TestMySQLQueryRejectsMissingArguments(t *testing.T) {
 	}
 }
 
-
 func TestMySQLQueryPreservesRepeatedAndDirectParameterModes(t *testing.T) {
 	directArgs := []any{"a", "b"}
 	sql, args, err := mysqlQuery("SELECT $1,$2", directArgs)
