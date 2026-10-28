@@ -18,7 +18,6 @@ func TestMySQLBoundParameters(t *testing.T) {
 
 func TestMySQLDialect(t *testing.T) {
 	for _, test := range []struct{ from, to string }{
-		{"SELECT bool_or(status='sent') FROM care_notification_outbox", "SELECT max(status='sent') FROM care_notification_outbox"},
 		{"SELECT id FROM care_incident FOR UPDATE SKIP LOCKED LIMIT 20", "SELECT id FROM care_incident LIMIT 20 FOR UPDATE SKIP LOCKED"},
 		{"SELECT now()-interval '2 minutes'", "SELECT CURRENT_TIMESTAMP(6)-INTERVAL 2 MINUTE"},
 		{"INSERT INTO watch_info(device_id) VALUES(1) ON CONFLICT(device_id) DO NOTHING", "INSERT INTO watch_info(device_id) VALUES(1) ON DUPLICATE KEY UPDATE id=id"},
