@@ -55,6 +55,17 @@ func TestDeviceReportDailyUpsertPreservesMissingFields(t *testing.T) {
 	}
 }
 
+func TestCareNotificationAggregateIsEngineNative(t *testing.T) {
+	mysql := careNotificationStatusExpr(true)
+	postgres := careNotificationStatusExpr(false)
+	if strings.Contains(mysql, "bool_or(") || !strings.Contains(mysql, "MAX(n.status='delivered')") {
+		t.Fatalf("MySQL care notification aggregate is not native: %s", mysql)
+	}
+	if strings.Contains(postgres, "MAX(") || !strings.Contains(postgres, "bool_or(n.status='delivered')") {
+		t.Fatalf("PostgreSQL care notification aggregate is not native: %s", postgres)
+	}
+}
+
 func TestSocialTextTableIsRepositoryOwned(t *testing.T) {
 	if got := socialTextTable(true); got != "`text`" {
 		t.Fatalf("unexpected MySQL social text table: %s", got)
