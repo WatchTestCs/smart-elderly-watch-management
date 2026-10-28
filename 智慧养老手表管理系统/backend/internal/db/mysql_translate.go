@@ -13,7 +13,6 @@ var conflictNothing = regexp.MustCompile(`(?i)ON\s+CONFLICT(?:\s*\([^)]*\))?\s+D
 var excludedColumn = regexp.MustCompile(`(?i)excluded\.([a-z_]+)`)
 var lockLimit = regexp.MustCompile(`(?i)FOR UPDATE SKIP LOCKED\s+LIMIT\s+(\d+)`)
 var dateFormat = regexp.MustCompile(`(?i)TO_CHAR\(([a-z_.]+),'(YYYY-MM-DD(?: HH24:MI:SS(?:\.MS)?)?)'\)`)
-var boolOr = regexp.MustCompile(`(?i)bool_or\(`)
 var varcharCast = regexp.MustCompile(`(?i)\bAS varchar\b`)
 
 // This covers the application's SQL vocabulary, not arbitrary PostgreSQL SQL.
@@ -72,7 +71,6 @@ func compileMySQLQuery(query string) (queryPlan, error) {
 		return "INTERVAL " + m[1] + " " + strings.TrimSuffix(strings.ToUpper(m[2]), "S")
 	})
 	query = strings.ReplaceAll(query, "now()+($3 * INTERVAL 1 SECOND)", "TIMESTAMPADD(SECOND,$3,now())")
-	query = boolOr.ReplaceAllString(query, "max(")
 	query = lockLimit.ReplaceAllString(query, "LIMIT $1 FOR UPDATE SKIP LOCKED")
 	query = conflictUpdate.ReplaceAllString(query, "ON DUPLICATE KEY UPDATE")
 	query = excludedColumn.ReplaceAllString(query, "VALUES($1)")
