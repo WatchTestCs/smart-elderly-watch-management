@@ -23,7 +23,7 @@ describe('cancelable latest read scheduler', () => {
   })
 
   it('starts the latest request without waiting for a source that never settles', async () => {
-    const read = vi.fn((page: number) => page === 1 ? new Promise<number>(() => {}) : Promise.resolve(page))
+    const read = vi.fn((page: number, _signal: AbortSignal) => page === 1 ? new Promise<number>(() => {}) : Promise.resolve(page))
     const accept = vi.fn(), busy = vi.fn()
     const queue = createLatestRead(read, accept, vi.fn(), busy)
     const old = queue.run(1)
