@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strconv"
+	dbstore "suining-care/internal/db"
 	"suining-care/internal/notify"
 	"suining-care/internal/response"
 	"time"
@@ -23,6 +25,27 @@ type textDTO struct {
 type picDTO struct {
 	PicID   *int64  `json:"picId"`
 	PicName *string `json:"picName"`
+}
+
+func pictureGroupAllocatorSQL(mysql bool) (string, string) {
+	if mysql {
+		return "INSERT INTO picture_group () VALUES ()", "SELECT LAST_INSERT_ID()"
+	}
+	return "", "SELECT nextval('picture_group')"
+}
+
+func allocatePictureGroupID(ctx context.Context, tx *dbstore.Transaction) (int64, error) {
+	insertSQL, idSQL := pictureGroupAllocatorSQL(tx.IsMySQL())
+	if insertSQL != "" {
+		if _, err := tx.Exec(ctx, insertSQL); err != nil {
+			return 0, err
+		}
+	}
+	var id int64
+	if err := tx.QueryRow(ctx, idSQL).Scan(&id); err != nil {
+		return 0, err
+	}
+	return id, nil
 }
 
 const textColumns = `text_id, title, text_main, TO_CHAR(time,'YYYY-MM-DD HH24:MI:SS.MS') AS time, pic_id`
@@ -156,11 +179,11 @@ func (h *Handler) textAdd(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer tx.Rollback(r.Context())
-	var picID int64
 	if !h.lockImages(w, r.Context(), tx, fileList) {
 		return
 	}
-	if err := tx.QueryRow(r.Context(), "SELECT nextval('picture_group')").Scan(&picID); err != nil {
+	picID, err := allocatePictureGroupID(r.Context(), tx)
+	if err != nil {
 		response.Error500(w, ref())
 		return
 	}
@@ -288,7 +311,8 @@ func (h *Handler) textUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if existing.PicID == nil {
-		if err := tx.QueryRow(r.Context(), "SELECT nextval('picture_group')").Scan(&picID); err != nil {
+		picID, err = allocatePictureGroupID(r.Context(), tx)
+		if err != nil {
 			response.Error500(w, ref())
 			return
 		}
