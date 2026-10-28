@@ -15,8 +15,16 @@ import (
 // PositionController (/api/v1/position)
 // ---------------------------------------------------------------------------
 
-const posLatest = `SELECT o.name, o.old_id, o.sex, l.lng, l.lat,
-	GREATEST(COALESCE(l.be_time, o.be_time), COALESCE(a.be_time, o.be_time)) AS be_time,
+func positionLatestTimeExpr(mysql bool) string {
+	const base = "GREATEST(COALESCE(l.be_time, o.be_time), COALESCE(a.be_time, o.be_time))"
+	if mysql {
+		return "COALESCE(" + base + ",COALESCE(l.be_time,o.be_time),COALESCE(a.be_time,o.be_time))"
+	}
+	return base
+}
+
+func positionLatestSQL(mysql bool) string {
+	return `SELECT o.name, o.old_id, o.sex, l.lng, l.lat, ` + positionLatestTimeExpr(mysql) + ` AS be_time,
 	COALESCE(a.status, '0') AS status
 	FROM oldperson o
 	LEFT JOIN (SELECT old_id, lng, lat, be_time,
@@ -25,6 +33,7 @@ const posLatest = `SELECT o.name, o.old_id, o.sex, l.lng, l.lat,
 	LEFT JOIN (SELECT old_id, status, be_time,
 		ROW_NUMBER() OVER (PARTITION BY old_id ORDER BY be_time DESC, id DESC) AS rn FROM alarm_precess) a
 		ON a.old_id = o.old_id AND a.rn = 1`
+}
 
 func scanPositionRow(box *securestore.Box, row dbstore.Row) (map[string]any, error) {
 	var name, sex, lng, lat, status *string
@@ -60,7 +69,7 @@ func (h *Handler) positionSelect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := r.Context()
-	base := posLatest + ` WHERE ($1='' OR o.name LIKE '%'||$1||'%') ORDER BY be_time DESC, o.old_id`
+	base := positionLatestSQL(h.DB.IsMySQL()) + ` WHERE ($1='' OR o.name LIKE '%'||$1||'%') ORDER BY be_time DESC, o.old_id`
 	var total int64
 	if err := h.DB.QueryRow(ctx, `SELECT COUNT(*) FROM (`+base+`) AS t`, name).Scan(&total); err != nil {
 		response.Error500(w, ref())
@@ -138,7 +147,7 @@ func (h *Handler) positionSelectFamily(w http.ResponseWriter, r *http.Request) {
 	}
 	rows, err := h.DB.Query(ctx,
 		`SELECT o.name, o.old_id, o.sex, l.lng, l.lat,
-			GREATEST(COALESCE(l.be_time, o.be_time), COALESCE(a.be_time, o.be_time)) AS be_time,
+			`+positionLatestTimeExpr(h.DB.IsMySQL())+` AS be_time,
 			COALESCE(a.status, '0') AS status
 		 FROM oldperson o
 		 LEFT JOIN (SELECT old_id, lng, lat, be_time FROM device_location WHERE old_id=$1 ORDER BY id DESC LIMIT 1) l
