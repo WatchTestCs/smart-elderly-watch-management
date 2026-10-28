@@ -1,12 +1,12 @@
 package main
 
 import (
-	dbstore "careold-go/internal/db"
+	dbstore "suining-care/internal/db"
 	"net/http"
 	"strings"
 
-	"careold-go/internal/response"
-	"careold-go/internal/session"
+	"suining-care/internal/response"
+	"suining-care/internal/session"
 )
 
 // Audit authenticated requests to endpoints that expose personal, health,

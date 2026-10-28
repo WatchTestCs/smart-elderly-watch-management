@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"careold-go/internal/db/dbtest"
+	"suining-care/internal/db/dbtest"
 )
 
 // These measurements are opt-in and use only disposable MySQL databases. The

@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"careold-go/internal/db/dbtest"
+	"suining-care/internal/db/dbtest"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
