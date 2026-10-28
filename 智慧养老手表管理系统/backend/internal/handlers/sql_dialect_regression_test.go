@@ -54,3 +54,32 @@ func TestDeviceReportDailyUpsertPreservesMissingFields(t *testing.T) {
 		t.Fatalf("daily upsert lost prior fields: rows=%d step=%d sleep=%d state=%q", rows, step, sleep, state)
 	}
 }
+
+func TestBusinessRepositoriesOwnEngineSpecificSQL(t *testing.T) {
+	mysqlPosition := positionLatestTimeExpr(true)
+	postgresPosition := positionLatestTimeExpr(false)
+	if !strings.HasPrefix(mysqlPosition, "COALESCE(GREATEST(") {
+		t.Fatalf("MySQL position expression must handle GREATEST NULL semantics locally: %s", mysqlPosition)
+	}
+	if postgresPosition != "GREATEST(COALESCE(l.be_time, o.be_time), COALESCE(a.be_time, o.be_time))" {
+		t.Fatalf("unexpected PostgreSQL position expression: %s", postgresPosition)
+	}
+
+	mysqlWatch := watchProfileInsertSQL(true)
+	postgresWatch := watchProfileInsertSQL(false)
+	if !strings.Contains(mysqlWatch, "ON DUPLICATE KEY UPDATE device_id=device_id") || strings.Contains(mysqlWatch, "ON CONFLICT") {
+		t.Fatalf("watch_info MySQL SQL is not native: %s", mysqlWatch)
+	}
+	if !strings.Contains(postgresWatch, "ON CONFLICT(device_id) DO NOTHING") || strings.Contains(postgresWatch, "ON DUPLICATE KEY") {
+		t.Fatalf("watch_info PostgreSQL SQL is not native: %s", postgresWatch)
+	}
+
+	mysqlInsert, mysqlID := pictureGroupAllocatorSQL(true)
+	postgresInsert, postgresID := pictureGroupAllocatorSQL(false)
+	if mysqlInsert != "INSERT INTO picture_group () VALUES ()" || mysqlID != "SELECT LAST_INSERT_ID()" {
+		t.Fatalf("unexpected MySQL picture-group allocation SQL: %q / %q", mysqlInsert, mysqlID)
+	}
+	if postgresInsert != "" || postgresID != "SELECT nextval('picture_group')" {
+		t.Fatalf("unexpected PostgreSQL picture-group allocation SQL: %q / %q", postgresInsert, postgresID)
+	}
+}
