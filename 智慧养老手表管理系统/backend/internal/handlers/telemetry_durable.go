@@ -9,8 +9,8 @@ import (
 	"regexp"
 	"time"
 
-	dbstore "careold-go/internal/db"
-	"careold-go/internal/securestore"
+	dbstore "suining-care/internal/db"
+	"suining-care/internal/securestore"
 	"github.com/go-sql-driver/mysql"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"

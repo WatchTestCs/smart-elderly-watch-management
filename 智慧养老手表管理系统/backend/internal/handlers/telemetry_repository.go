@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	dbstore "careold-go/internal/db"
-	"careold-go/internal/securestore"
+	dbstore "suining-care/internal/db"
+	"suining-care/internal/securestore"
 	"github.com/jackc/pgx/v5"
 )
 

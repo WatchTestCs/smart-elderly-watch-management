@@ -17,8 +17,8 @@ import (
 	"strings"
 	"time"
 
-	dbstore "careold-go/internal/db"
-	"careold-go/internal/response"
+	dbstore "suining-care/internal/db"
+	"suining-care/internal/response"
 	mysqlDriver "github.com/go-sql-driver/mysql"
 	"github.com/jackc/pgx/v5/pgconn"
 )

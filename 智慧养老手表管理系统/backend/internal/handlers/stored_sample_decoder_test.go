@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"careold-go/internal/health"
+	"suining-care/internal/health"
 	gojson "github.com/goccy/go-json"
 )
 

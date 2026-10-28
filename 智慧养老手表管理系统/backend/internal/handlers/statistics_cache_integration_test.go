@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"careold-go/internal/auth"
-	"careold-go/internal/config"
-	"careold-go/internal/health"
-	"careold-go/internal/session"
+	"suining-care/internal/auth"
+	"suining-care/internal/config"
+	"suining-care/internal/health"
+	"suining-care/internal/session"
 )
 
 func TestHealthStatisticsHotCacheConsistency(t *testing.T) {
