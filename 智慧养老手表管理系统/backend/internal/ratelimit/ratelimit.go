@@ -22,7 +22,7 @@ const (
 // 路径→10分钟内允许次数（与 Java 端一致）。
 var limits = map[string]int{
 	"/api/v1/setup":                30,
-	"/api/v1/auth/login":      30,
+	"/api/v1/auth/login":           30,
 	"/api/v1/inviteCode/join":      30,
 	"/api/v1/device/bind":          30,
 	"/api/v1/inviteCode/checkCode": 60,

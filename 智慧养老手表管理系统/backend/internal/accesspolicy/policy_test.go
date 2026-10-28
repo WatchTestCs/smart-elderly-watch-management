@@ -17,10 +17,10 @@ import (
 var publicPaths = map[string]bool{
 	"POST /api/v1/desktop/exit":         true,
 	"POST /api/v1/setup":                true,
-	"POST /api/v1/auth/login":      true,
+	"POST /api/v1/auth/login":           true,
 	"POST /api/v1/inviteCode/checkCode": true,
 	"POST /api/v1/inviteCode/join":      true,
-	"GET /api/v1/auth/session":     true,
+	"GET /api/v1/auth/session":          true,
 }
 
 // 硬件路径：公开且免 CSRF。
@@ -40,11 +40,11 @@ var hardwarePaths = map[string]bool{
 // SHARED：ADMIN 或 FAMILY 任一角色。
 var sharedPaths = map[string]bool{
 	"POST /api/v1/security/factor":             true,
-	"POST /api/v1/notifications/search":           true,
-	"POST /api/v1/health/daily-query":                true,
+	"POST /api/v1/notifications/search":        true,
+	"POST /api/v1/health/daily-query":          true,
 	"POST /api/v1/health/changes":              true,
 	"POST /api/v1/health/statistics":           true,
-	"POST /api/v1/auth/logout":            true,
+	"POST /api/v1/auth/logout":                 true,
 	"POST /api/v1/family/selectTwo":            true,
 	"POST /api/v1/family/updateTwo":            true,
 	"POST /api/v1/family/updateTouPic":         true,
