@@ -1,9 +1,9 @@
 package rules
 
 import (
-	"careold-go/internal/db"
-	"careold-go/internal/db/dbtest"
-	"careold-go/internal/health"
+	"suining-care/internal/db"
+	"suining-care/internal/db/dbtest"
+	"suining-care/internal/health"
 	"context"
 	"encoding/json"
 	"fmt"
