@@ -5,9 +5,9 @@ import (
 	"strings"
 	"time"
 
-	"careold-go/internal/commands"
-	"careold-go/internal/db"
-	"careold-go/internal/response"
+	"suining-care/internal/commands"
+	"suining-care/internal/db"
+	"suining-care/internal/response"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 )

@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"careold-go/internal/response"
+	"suining-care/internal/response"
 	"encoding/json"
 	"math"
 	"net/http"

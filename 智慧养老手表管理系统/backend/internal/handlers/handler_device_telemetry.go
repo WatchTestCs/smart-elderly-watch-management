@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"careold-go/internal/notify"
-	"careold-go/internal/response"
+	"suining-care/internal/notify"
+	"suining-care/internal/response"
 	"github.com/jackc/pgx/v5"
 	"net/http"
 	"regexp"

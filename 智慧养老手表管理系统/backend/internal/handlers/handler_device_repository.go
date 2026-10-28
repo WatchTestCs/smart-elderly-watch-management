@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	dbstore "careold-go/internal/db"
+	dbstore "suining-care/internal/db"
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
