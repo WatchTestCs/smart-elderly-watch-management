@@ -1,10 +1,10 @@
 package handlers
 
 import (
-	dbstore "suining-care/internal/db"
-	"suining-care/internal/db/dbtest"
 	"context"
 	"encoding/json"
+	dbstore "suining-care/internal/db"
+	"suining-care/internal/db/dbtest"
 
 	"fmt"
 	"net/http"
@@ -20,8 +20,8 @@ import (
 	"suining-care/internal/csrf"
 	"suining-care/internal/db"
 
-	"suining-care/internal/session"
 	"github.com/google/uuid"
+	"suining-care/internal/session"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )

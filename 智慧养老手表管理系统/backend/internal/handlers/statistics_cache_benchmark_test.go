@@ -12,12 +12,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-sql-driver/mysql"
+	"github.com/google/uuid"
 	"suining-care/internal/config"
 	"suining-care/internal/db"
 	"suining-care/internal/health"
 	"suining-care/internal/session"
-	"github.com/go-sql-driver/mysql"
-	"github.com/google/uuid"
 )
 
 // BenchmarkHealthStatisticsHybrid measures the complete statistics handler over

@@ -1,15 +1,15 @@
 package handlers
 
 import (
-	"suining-care/internal/auth"
-	"suining-care/internal/csrf"
-	"suining-care/internal/health"
-	"suining-care/internal/session"
 	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"suining-care/internal/auth"
+	"suining-care/internal/csrf"
+	"suining-care/internal/health"
+	"suining-care/internal/session"
 	"testing"
 	"time"
 )

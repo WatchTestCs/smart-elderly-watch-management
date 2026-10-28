@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"suining-care/internal/health"
 	gojson "github.com/goccy/go-json"
+	"suining-care/internal/health"
 )
 
 func storedDecoderSample(i int) health.Sample {
