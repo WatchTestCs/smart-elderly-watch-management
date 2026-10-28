@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"strings"
 
-	"suining-care/internal/db"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"suining-care/internal/db"
 )
 
 const (

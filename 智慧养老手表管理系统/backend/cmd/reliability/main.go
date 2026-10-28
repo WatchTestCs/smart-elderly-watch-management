@@ -19,6 +19,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/go-sql-driver/mysql"
 	"suining-care/internal/auth"
 	"suining-care/internal/blob"
 	"suining-care/internal/config"
@@ -26,7 +27,6 @@ import (
 	"suining-care/internal/ratelimit"
 	"suining-care/internal/securestore"
 	"suining-care/internal/session"
-	"github.com/go-sql-driver/mysql"
 )
 
 func main() {

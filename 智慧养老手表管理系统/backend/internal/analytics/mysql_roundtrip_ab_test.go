@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"suining-care/internal/db/dbtest"
 	"github.com/go-sql-driver/mysql"
+	"suining-care/internal/db/dbtest"
 )
 
 // The experiment uses one disposable MySQL schema, identical statements,

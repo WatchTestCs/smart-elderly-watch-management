@@ -1,17 +1,18 @@
 package main
 
 import (
-	"suining-care/internal/analytics"
-	dbstore "suining-care/internal/db"
 	"context"
 	"log"
 	"net/http"
 	"os"
 	"strings"
+	"suining-care/internal/analytics"
+	dbstore "suining-care/internal/db"
 	"sync"
 	"sync/atomic"
 	"time"
 
+	"crypto/subtle"
 	"suining-care/internal/apidoc"
 	"suining-care/internal/auth"
 	"suining-care/internal/care"
@@ -26,7 +27,6 @@ import (
 	"suining-care/internal/rules"
 	"suining-care/internal/securestore"
 	"suining-care/internal/session"
-	"crypto/subtle"
 )
 
 // Only fully migrated database handlers are published to HTTP requests.

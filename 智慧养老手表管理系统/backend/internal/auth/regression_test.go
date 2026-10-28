@@ -1,10 +1,10 @@
 package auth_test
 
 import (
-	"suining-care/internal/auth"
-	"suining-care/internal/session"
 	"net/http"
 	"net/http/httptest"
+	"suining-care/internal/auth"
+	"suining-care/internal/session"
 	"testing"
 	"time"
 )

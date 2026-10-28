@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"suining-care/internal/db/dbtest"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"suining-care/internal/db/dbtest"
 )
 
 // Test the actual poller rather than SyncBatch in isolation: a saturated

@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"suining-care/internal/db"
 	"github.com/jackc/pgx/v5"
+	"suining-care/internal/db"
 )
 
 // The historical default avatar is a shipped asset, available on every host.
