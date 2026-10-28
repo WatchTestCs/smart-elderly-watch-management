@@ -56,7 +56,7 @@ func TestCompileMySQLQueryRewrites(t *testing.T) {
 
 		// 9. 唯一被硬编码的时间偏移形状
 		{"硬编码的时间偏移", "SELECT now()+($3 * interval '1 second')", "SELECT TIMESTAMPADD(SECOND,?,CURRENT_TIMESTAMP(6))", []int{2}},
-		
+
 		// 10. 现存业务兼容特例；拆包阶段必须逐字保持，后续再迁回 Repository。
 		{"最新位置 NULL 兼容", "SELECT GREATEST(COALESCE(l.be_time, o.be_time), COALESCE(a.be_time, o.be_time)) FROM oldperson o", "SELECT COALESCE(GREATEST(COALESCE(l.be_time, o.be_time), COALESCE(a.be_time, o.be_time)),COALESCE(l.be_time,o.be_time),COALESCE(a.be_time,o.be_time)) FROM oldperson o", nil},
 	}
