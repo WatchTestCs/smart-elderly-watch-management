@@ -9,9 +9,9 @@ import (
 	_ "time/tzdata"
 	"unicode/utf8"
 
-	"careold-go/internal/fence"
-	"careold-go/internal/notify"
-	"careold-go/internal/response"
+	"suining-care/internal/fence"
+	"suining-care/internal/notify"
+	"suining-care/internal/response"
 	"github.com/jackc/pgx/v5"
 )
 

@@ -5,7 +5,7 @@ package handlers
 // 细节以 go-rewrite-spec/group-b.md 为准。
 
 import (
-	dbstore "careold-go/internal/db"
+	dbstore "suining-care/internal/db"
 	"context"
 
 	"github.com/jackc/pgx/v5/pgconn"

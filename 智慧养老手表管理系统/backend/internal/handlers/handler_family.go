@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"careold-go/internal/auth"
-	"careold-go/internal/response"
-	"careold-go/internal/session"
+	"suining-care/internal/auth"
+	"suining-care/internal/response"
+	"suining-care/internal/session"
 	"net/http"
 )
 

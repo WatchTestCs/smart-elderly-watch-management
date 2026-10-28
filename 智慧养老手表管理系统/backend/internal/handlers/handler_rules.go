@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"careold-go/internal/response"
-	"careold-go/internal/rules"
+	"suining-care/internal/response"
+	"suining-care/internal/rules"
 	"encoding/json"
 	"github.com/jackc/pgx/v5"
 	"net/http"

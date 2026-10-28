@@ -3,7 +3,7 @@
 package handlers
 
 import (
-	"careold-go/internal/response"
+	"suining-care/internal/response"
 	"fmt"
 	"net/http"
 	"time"
