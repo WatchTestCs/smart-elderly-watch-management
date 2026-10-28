@@ -59,10 +59,19 @@ fields = {
     "/restful/alert/review": {"recordId": "integer", "kind": "string", "verdict": "string", "reason": "string", "expectedReviewId": "integer"},
     "/restful/alert/reviews": {"entity": "string", "recordId": "integer", "kind": "string", "after": "integer"},
 }
+registered_routes = {}
 for file in sorted((backend / "internal/handlers").glob("*.go")):
     if file.name.endswith("_test.go"):
         continue
     for method, path in re.findall(r'\.HandleFunc\("(GET|POST|PUT|PATCH|DELETE) ([^" ]+)"', file.read_text(encoding="utf-8-sig")):
+        key = (method, path)
+        if key in registered_routes:
+            # Database and database-independent routers intentionally mount this
+            # same desktop shutdown handler. Do not allow any other collision.
+            if key != ("POST", "/restful/desktop/exit") or registered_routes[key] != file.name:
+                raise ValueError(f"Conflicting HTTP route registration: {method} {path} ({registered_routes[key]} and {file.name})")
+        else:
+            registered_routes[key] = file.name
         access = policies.get((method, path), ("Admin", False))[0]
         operation = {"summary": path.removeprefix("/restful/"), "deprecated": True, "tags": ["legacy"], "responses": {"200": {"description": "Legacy JSON response; payload varies by operation.", "content": {"application/json": {"schema": {"type": "object", "additionalProperties": True}}}}, "400": {"description": "Invalid request"}, "401": {"description": "Session, device credential or MFA required"}, "403": {"description": "Role, duty or CSRF denied"}, "409": {"description": "Version, binding or state conflict"}, "503": {"description": "Required storage/configuration unavailable"}}}
         operation["security"] = [] if access in {"Public", "Device"} else [{"sessionCookie": []}]
@@ -78,6 +87,8 @@ for file in sorted((backend / "internal/handlers").glob("*.go")):
 for alias, canonical in aliases.items():
     if canonical not in paths:
         raise ValueError(f"Alias target has no registered route: {canonical}")
+    if alias in paths:
+        raise ValueError(f"Versioned alias shadows a real HTTP route: {alias}")
     paths[alias] = copy.deepcopy(paths[canonical])
     for operation in paths[alias].values():
         operation["deprecated"] = False
