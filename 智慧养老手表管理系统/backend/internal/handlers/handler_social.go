@@ -131,7 +131,7 @@ func (h *Handler) saidSelectByUser(w http.ResponseWriter, r *http.Request) {
 	sql := `SELECT said_id, said, back,` +
 		` TO_CHAR(said_time,'YYYY-MM-DD HH24:MI:SS.MS') AS saidTime,` +
 		` TO_CHAR(back_time,'YYYY-MM-DD HH24:MI:SS.MS') AS backTime,` +
-		` person_name, tou_pic, title FROM said INNER JOIN text ON said.text_id=text.text_id` +
+		` person_name, tou_pic, title FROM said INNER JOIN ` + socialTextTable(h.DB.IsMySQL()) + ` ON said.text_id=` + socialTextTable(h.DB.IsMySQL()) + `.text_id` +
 		` ORDER BY said_time DESC, said_id DESC`
 	total, ok := h.pagedTotal(w, r, sql, nil)
 	if !ok {
