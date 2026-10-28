@@ -44,7 +44,6 @@ func TestCompileMySQLQueryRewrites(t *testing.T) {
 		// 6. 其余类型/函数改写
 		{"varchar 转换", "SELECT CAST(x AS varchar)", "SELECT CAST(x AS CHAR)", nil},
 		{"bool_or 聚合", "SELECT bool_or(active) FROM rule_state", "SELECT max(active) FROM rule_state", nil},
-		{"text 表加反引号", "SELECT * FROM text WHERE id=$1", "SELECT * FROM `text` WHERE id=?", []int{0}},
 
 		// 7. ON CONFLICT 家族
 		{"ON CONFLICT DO UPDATE 且 excluded 转 VALUES", "INSERT INTO t(a,b) VALUES($1,$2) ON CONFLICT(a) DO UPDATE SET b=EXCLUDED.b", "INSERT INTO t(a,b) VALUES(?,?) ON DUPLICATE KEY UPDATE b=VALUES(b)", []int{0, 1}},
@@ -142,6 +141,16 @@ func TestMySQLQueryPreservesRepeatedAndDirectParameterModes(t *testing.T) {
 	if err != nil || sql != "SELECT ?,?,?" || len(args) != 3 ||
 		args[0] != "second" || args[1] != "first" || args[2] != "second" {
 		t.Fatalf("reordered binding changed: sql=%q args=%v err=%v", sql, args, err)
+	}
+}
+
+func TestCompileMySQLQueryDoesNotKnowSocialTextTable(t *testing.T) {
+	plan, err := compileMySQLQuery("SELECT * FROM text WHERE id=$1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if plan.sql != "SELECT * FROM text WHERE id=?" {
+		t.Fatalf("social text table must be owned by its repository, got %s", plan.sql)
 	}
 }
 
