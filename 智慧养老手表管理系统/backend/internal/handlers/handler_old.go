@@ -4,8 +4,8 @@ package handlers
 // 当前 API v1 原生路由；数据库写入和设备协议由独立 Go 服务实现。
 
 import (
-	dbstore "suining-care/internal/db"
 	"context"
+	dbstore "suining-care/internal/db"
 
 	"github.com/jackc/pgx/v5/pgconn"
 	"net/http"

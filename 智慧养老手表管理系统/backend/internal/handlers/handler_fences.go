@@ -9,10 +9,10 @@ import (
 	_ "time/tzdata"
 	"unicode/utf8"
 
+	"github.com/jackc/pgx/v5"
 	"suining-care/internal/fence"
 	"suining-care/internal/notify"
 	"suining-care/internal/response"
-	"github.com/jackc/pgx/v5"
 )
 
 type fenceConfig struct {

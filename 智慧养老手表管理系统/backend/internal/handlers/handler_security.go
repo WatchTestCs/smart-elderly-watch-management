@@ -11,14 +11,14 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"suining-care/internal/auth"
 	"suining-care/internal/db"
 	"suining-care/internal/health"
 	"suining-care/internal/observability"
 	"suining-care/internal/response"
 	"suining-care/internal/securestore"
-	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
 )
 
 type factorGenerationKey struct{}

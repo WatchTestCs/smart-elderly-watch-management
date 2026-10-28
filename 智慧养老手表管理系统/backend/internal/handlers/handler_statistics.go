@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"time"
 
+	fastjson "github.com/goccy/go-json"
 	"suining-care/internal/health"
 	"suining-care/internal/observability"
 	"suining-care/internal/response"
-	fastjson "github.com/goccy/go-json"
 )
 
 func (h *Handler) healthStatistics(w http.ResponseWriter, r *http.Request) {
