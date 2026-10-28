@@ -21,7 +21,7 @@ func TestMySQLDialect(t *testing.T) {
 		{"SELECT bool_or(status='sent') FROM care_notification_outbox", "SELECT max(status='sent') FROM care_notification_outbox"},
 		{"SELECT id FROM care_incident FOR UPDATE SKIP LOCKED LIMIT 20", "SELECT id FROM care_incident LIMIT 20 FOR UPDATE SKIP LOCKED"},
 		{"SELECT now()-interval '2 minutes'", "SELECT CURRENT_TIMESTAMP(6)-INTERVAL 2 MINUTE"},
-		{"INSERT INTO watch_info(device_id) VALUES(1) ON CONFLICT(device_id) DO NOTHING", "INSERT INTO watch_info(device_id) VALUES(1) ON DUPLICATE KEY UPDATE device_id=device_id"},
+		{"INSERT INTO watch_info(device_id) VALUES(1) ON CONFLICT(device_id) DO NOTHING", "INSERT INTO watch_info(device_id) VALUES(1) ON DUPLICATE KEY UPDATE id=id"},
 		{"UPDATE care_notification_outbox SET retry_at=now()+($3 * interval '1 second')", "UPDATE care_notification_outbox SET retry_at=TIMESTAMPADD(SECOND,?,CURRENT_TIMESTAMP(6))"},
 	} {
 		q, _, err := mysqlQuery(test.from, []any{0, 0, 30})
