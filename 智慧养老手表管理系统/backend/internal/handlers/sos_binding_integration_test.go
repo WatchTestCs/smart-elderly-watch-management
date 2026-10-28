@@ -170,3 +170,37 @@ func TestSOSConcurrentDuplicateRequests(t *testing.T) {
 		t.Fatalf("incidents=%d alarms=%d", incidents, alarms)
 	}
 }
+
+
+func TestSOSPersistenceRollbackLeavesNoPartialRows(t *testing.T) {
+	pool := testDatabase(t)
+	seedDevice(t, pool)
+	ctx := context.Background()
+
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	d, err := scanOldDevice(tx.QueryRow(ctx, `SELECT `+oldDeviceCols+` FROM device WHERE device_id=1 FOR UPDATE`))
+	if err != nil {
+		_ = tx.Rollback(ctx)
+		t.Fatal(err)
+	}
+	if _, err = (telemetryRepository{}).PersistSOSIncident(ctx, tx, d, "", "", "rollback-probe", time.Now()); err != nil {
+		_ = tx.Rollback(ctx)
+		t.Fatal(err)
+	}
+	if err = tx.Rollback(ctx); err != nil {
+		t.Fatal(err)
+	}
+
+	for _, table := range []string{"alarm_precess", "care_incident", "care_incident_event"} {
+		var count int
+		if err := pool.QueryRow(ctx, "SELECT count(*) FROM "+table).Scan(&count); err != nil {
+			t.Fatal(err)
+		}
+		if count != 0 {
+			t.Fatalf("%s retained %d rows after rollback", table, count)
+		}
+	}
+}

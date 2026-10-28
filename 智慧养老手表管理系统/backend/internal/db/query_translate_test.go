@@ -56,6 +56,9 @@ func TestCompileMySQLQueryRewrites(t *testing.T) {
 
 		// 9. 唯一被硬编码的时间偏移形状
 		{"硬编码的时间偏移", "SELECT now()+($3 * interval '1 second')", "SELECT TIMESTAMPADD(SECOND,?,CURRENT_TIMESTAMP(6))", []int{2}},
+		
+		// 10. 现存业务兼容特例；拆包阶段必须逐字保持，后续再迁回 Repository。
+		{"最新位置 NULL 兼容", "SELECT GREATEST(COALESCE(l.be_time, o.be_time), COALESCE(a.be_time, o.be_time)) FROM oldperson o", "SELECT COALESCE(GREATEST(COALESCE(l.be_time, o.be_time), COALESCE(a.be_time, o.be_time)),COALESCE(l.be_time,o.be_time),COALESCE(a.be_time,o.be_time)) FROM oldperson o", nil},
 	}
 
 	for _, tc := range cases {
@@ -126,5 +129,23 @@ func TestMySQLQueryRejectsMissingArguments(t *testing.T) {
 	}
 	if _, _, err := mysqlQuery("SELECT $0", nil); err == nil {
 		t.Fatal("$0 不是合法占位符")
+	}
+}
+
+
+func TestMySQLQueryPreservesRepeatedAndDirectParameterModes(t *testing.T) {
+	directArgs := []any{"a", "b"}
+	sql, args, err := mysqlQuery("SELECT $1,$2", directArgs)
+	if err != nil || sql != "SELECT ?,?" || len(args) != 2 || args[0] != "a" || args[1] != "b" {
+		t.Fatalf("direct binding changed: sql=%q args=%v err=%v", sql, args, err)
+	}
+	if cap(args) != len(args) {
+		t.Fatalf("direct binding must not expose caller spare capacity: len=%d cap=%d", len(args), cap(args))
+	}
+
+	sql, args, err = mysqlQuery("SELECT $2,$1,$2", []any{"first", "second"})
+	if err != nil || sql != "SELECT ?,?,?" || len(args) != 3 ||
+		args[0] != "second" || args[1] != "first" || args[2] != "second" {
+		t.Fatalf("reordered binding changed: sql=%q args=%v err=%v", sql, args, err)
 	}
 }
