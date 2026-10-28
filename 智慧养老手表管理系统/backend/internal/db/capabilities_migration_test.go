@@ -57,7 +57,7 @@ func TestCapabilitiesRollbackAndReapply(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	for _, name := range []string{"mysql_0014_operational_indexes.sql", "mysql_0013_image_blob.sql", "mysql_0011_encrypt_coordinates.sql", "mysql_0010_care_recipient_key.sql", "mysql_0009_rule_baseline_cover.sql", "mysql_0008_rule_baseline_source.sql", "mysql_0007_cluster_scheduling.sql", "mysql_0006_health_performance.sql", "mysql_0005_platform.sql", "mysql_0004_device_capabilities.sql"} {
+	for _, name := range []string{"mysql_0015_device_request_nonces.sql", "mysql_0014_operational_indexes.sql", "mysql_0013_image_blob.sql", "mysql_0011_encrypt_coordinates.sql", "mysql_0010_care_recipient_key.sql", "mysql_0009_rule_baseline_cover.sql", "mysql_0008_rule_baseline_source.sql", "mysql_0007_cluster_scheduling.sql", "mysql_0006_health_performance.sql", "mysql_0005_platform.sql", "mysql_0004_device_capabilities.sql"} {
 		b, err := os.ReadFile(filepath.Join("..", "..", "migrations", "rollback", name))
 		if err != nil {
 			t.Fatal(err)
