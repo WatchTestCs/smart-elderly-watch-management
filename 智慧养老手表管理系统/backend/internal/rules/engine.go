@@ -8,11 +8,11 @@ import (
 	"sync"
 	"time"
 
-	"careold-go/internal/db"
-	"careold-go/internal/health"
-	"careold-go/internal/notify"
-	"careold-go/internal/observability"
-	"careold-go/internal/securestore"
+	"suining-care/internal/db"
+	"suining-care/internal/health"
+	"suining-care/internal/notify"
+	"suining-care/internal/observability"
+	"suining-care/internal/securestore"
 	"github.com/jackc/pgx/v5"
 	"log/slog"
 )

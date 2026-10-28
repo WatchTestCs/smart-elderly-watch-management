@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"careold-go/internal/response"
+	"suining-care/internal/response"
 )
 
 const (
