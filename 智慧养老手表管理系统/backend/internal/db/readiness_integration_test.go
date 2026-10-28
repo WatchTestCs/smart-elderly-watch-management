@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"careold-go/internal/db"
+	"suining-care/internal/db"
 	"github.com/go-sql-driver/mysql"
 	"github.com/google/uuid"
 )
