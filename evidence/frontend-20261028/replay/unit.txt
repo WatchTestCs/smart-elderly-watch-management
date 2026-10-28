@@ -1,0 +1,13 @@
+
+> suining-ui@2.1.0 test
+> vitest run
+
+
+ RUN  v5.0.5 E:/DevEco Test/smart-elderly-watch-remediation/智慧养老手表管理系统/oldIot
+
+
+ Test Files  6 passed (6)
+      Tests  21 passed (21)
+   Start at  08:05:36
+   Duration  677ms (environment 60%, import 20%, transform 17%, tests 3%, worker 1%)
+

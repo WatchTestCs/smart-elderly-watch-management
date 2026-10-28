@@ -1,0 +1,452 @@
+[
+  {
+    "route": "/login",
+    "scope": "Cumulative emitted JS/CSS requested up to list readiness, before detail action; excludes online map tiles and font/image binary files",
+    "files": [
+      {
+        "file": "assets/Login-DlreuNuY.css",
+        "raw": 5577,
+        "gzip": 1424,
+        "brotli": 1198,
+        "sha256": "fba94dc589150d0d98042ab17af0ff79b5fc2107b0afbbd20cb5d1cc31f77f1e"
+      },
+      {
+        "file": "assets/Login-cfqhAdTK.js",
+        "raw": 6604,
+        "gzip": 3161,
+        "brotli": 2557,
+        "sha256": "8cb1656021a4019b256f80ca67323ef9dbdea5aabd970210762716a83bc786be"
+      },
+      {
+        "file": "assets/_plugin-vue_export-helper-CJMv9Rw7.js",
+        "raw": 66652,
+        "gzip": 25734,
+        "brotli": 23508,
+        "sha256": "f2156d8f0bdae095e00bffe54fc39203ce23bb7845fc6544a54c08af3b6f4153"
+      },
+      {
+        "file": "assets/care-lakeside-artisan-DkJ9ugHL.js",
+        "raw": 111,
+        "gzip": 94,
+        "brotli": 79,
+        "sha256": "cb426689c469d6791491be306cb2dec0bc08e0edeef9699b72604a7624a8a25e"
+      },
+      {
+        "file": "assets/index-BDxSQ7E5.js",
+        "raw": 639046,
+        "gzip": 204979,
+        "brotli": 172850,
+        "sha256": "4f6d52c7f2b0b2ad042931af764e727b903622ce3afe762b4615adbcf525b6d5"
+      },
+      {
+        "file": "assets/index-kJ-Gl3tX.css",
+        "raw": 441326,
+        "gzip": 68147,
+        "brotli": 49430,
+        "sha256": "5eb80925e35b4b1ca94883fea5f283d7a04b1805d13c1505ea0ee3238bff08b4"
+      },
+      {
+        "file": "assets/rolldown-runtime-XKyaHtl9.js",
+        "raw": 726,
+        "gzip": 429,
+        "brotli": 382,
+        "sha256": "548d1dbf321e7d2ae804fcc158b588706a7c52f8ca175de1490c6ccb4dbe55b7"
+      },
+      {
+        "file": "assets/suining-logo-192-D8Nl0I9O.js",
+        "raw": 100,
+        "gzip": 89,
+        "brotli": 74,
+        "sha256": "b7c80f43e6b574fe3e8499873c83e5d734543b2868e1b054ee6645b144ec09c0"
+      }
+    ],
+    "totals": {
+      "raw": 1160142,
+      "gzip": 304057,
+      "brotli": 250078
+    },
+    "samples": [
+      {
+        "cache": "cold",
+        "sample": 1,
+        "jsCssTransferBytes": 307303,
+        "cachedJsCssEntries": 0
+      },
+      {
+        "cache": "warm",
+        "sample": 1,
+        "jsCssTransferBytes": 0,
+        "cachedJsCssEntries": 8
+      },
+      {
+        "cache": "cold",
+        "sample": 2,
+        "jsCssTransferBytes": 307303,
+        "cachedJsCssEntries": 0
+      },
+      {
+        "cache": "warm",
+        "sample": 2,
+        "jsCssTransferBytes": 0,
+        "cachedJsCssEntries": 8
+      },
+      {
+        "cache": "cold",
+        "sample": 3,
+        "jsCssTransferBytes": 307303,
+        "cachedJsCssEntries": 0
+      },
+      {
+        "cache": "warm",
+        "sample": 3,
+        "jsCssTransferBytes": 0,
+        "cachedJsCssEntries": 8
+      },
+      {
+        "cache": "cold",
+        "sample": 4,
+        "jsCssTransferBytes": 307303,
+        "cachedJsCssEntries": 0
+      },
+      {
+        "cache": "warm",
+        "sample": 4,
+        "jsCssTransferBytes": 0,
+        "cachedJsCssEntries": 8
+      },
+      {
+        "cache": "cold",
+        "sample": 5,
+        "jsCssTransferBytes": 307303,
+        "cachedJsCssEntries": 0
+      },
+      {
+        "cache": "warm",
+        "sample": 5,
+        "jsCssTransferBytes": 0,
+        "cachedJsCssEntries": 8
+      }
+    ]
+  },
+  {
+    "route": "/rateprefamily",
+    "scope": "Cumulative emitted JS/CSS requested up to list readiness, before detail action; excludes online map tiles and font/image binary files",
+    "files": [
+      {
+        "file": "assets/Header-C03xX-Zw.css",
+        "raw": 2473,
+        "gzip": 758,
+        "brotli": 604,
+        "sha256": "ff06f40b31da28401797d281375d618c48c2ae6ed1f52ec189dc4227650cdf36"
+      },
+      {
+        "file": "assets/Header-CL-XYFNT.js",
+        "raw": 2346,
+        "gzip": 1292,
+        "brotli": 1051,
+        "sha256": "df7a9cef4299b8a5399e63ffb3ae23a2f5df37186bd27d8d1f8942807a232ea0"
+      },
+      {
+        "file": "assets/_plugin-vue_export-helper-CJMv9Rw7.js",
+        "raw": 66652,
+        "gzip": 25734,
+        "brotli": 23508,
+        "sha256": "f2156d8f0bdae095e00bffe54fc39203ce23bb7845fc6544a54c08af3b6f4153"
+      },
+      {
+        "file": "assets/charts-CweEC4t2.js",
+        "raw": 522782,
+        "gzip": 175237,
+        "brotli": 148439,
+        "sha256": "5e0e6d36111b632e85903b2b2dcc71d3986bb7c3c210732e100d6c3b191b9e5f"
+      },
+      {
+        "file": "assets/familyHome-DGTvvvs-.css",
+        "raw": 5440,
+        "gzip": 1475,
+        "brotli": 1242,
+        "sha256": "54937cb123347681d93cf92b53b5aef8c3d4ead639193da15083a17c116156c6"
+      },
+      {
+        "file": "assets/familyHome-DfX-Mr0b.js",
+        "raw": 4170,
+        "gzip": 1857,
+        "brotli": 1521,
+        "sha256": "bfcc53bff9f73be89fb552d4163c81ea10d9038ee99aa364c1919ae8accde7f3"
+      },
+      {
+        "file": "assets/index-BDxSQ7E5.js",
+        "raw": 639046,
+        "gzip": 204979,
+        "brotli": 172850,
+        "sha256": "4f6d52c7f2b0b2ad042931af764e727b903622ce3afe762b4615adbcf525b6d5"
+      },
+      {
+        "file": "assets/index-kJ-Gl3tX.css",
+        "raw": 441326,
+        "gzip": 68147,
+        "brotli": 49430,
+        "sha256": "5eb80925e35b4b1ca94883fea5f283d7a04b1805d13c1505ea0ee3238bff08b4"
+      },
+      {
+        "file": "assets/rateprefamily-B7BwC-zt.js",
+        "raw": 5933,
+        "gzip": 2440,
+        "brotli": 2060,
+        "sha256": "b75be34fed2c184e57b353e0fca453d6b74b94d2aea736a2492673d24a3adf2d"
+      },
+      {
+        "file": "assets/rateprefamily-DIMpapJS.css",
+        "raw": 369,
+        "gzip": 233,
+        "brotli": 169,
+        "sha256": "503da6cdb64b4172d18eaba0fc30df9031f05b878e4b3ead1fe19b29b5ba02aa"
+      },
+      {
+        "file": "assets/rolldown-runtime-XKyaHtl9.js",
+        "raw": 726,
+        "gzip": 429,
+        "brotli": 382,
+        "sha256": "548d1dbf321e7d2ae804fcc158b588706a7c52f8ca175de1490c6ccb4dbe55b7"
+      },
+      {
+        "file": "assets/suining-logo-192-D8Nl0I9O.js",
+        "raw": 100,
+        "gzip": 89,
+        "brotli": 74,
+        "sha256": "b7c80f43e6b574fe3e8499873c83e5d734543b2868e1b054ee6645b144ec09c0"
+      }
+    ],
+    "totals": {
+      "raw": 1691363,
+      "gzip": 482670,
+      "brotli": 401330
+    },
+    "samples": [
+      {
+        "cache": "cold",
+        "sample": 1,
+        "jsCssTransferBytes": 487427,
+        "cachedJsCssEntries": 0
+      },
+      {
+        "cache": "warm",
+        "sample": 1,
+        "jsCssTransferBytes": 0,
+        "cachedJsCssEntries": 12
+      },
+      {
+        "cache": "cold",
+        "sample": 2,
+        "jsCssTransferBytes": 487427,
+        "cachedJsCssEntries": 0
+      },
+      {
+        "cache": "warm",
+        "sample": 2,
+        "jsCssTransferBytes": 0,
+        "cachedJsCssEntries": 12
+      },
+      {
+        "cache": "cold",
+        "sample": 3,
+        "jsCssTransferBytes": 487427,
+        "cachedJsCssEntries": 0
+      },
+      {
+        "cache": "warm",
+        "sample": 3,
+        "jsCssTransferBytes": 0,
+        "cachedJsCssEntries": 12
+      },
+      {
+        "cache": "cold",
+        "sample": 4,
+        "jsCssTransferBytes": 487427,
+        "cachedJsCssEntries": 0
+      },
+      {
+        "cache": "warm",
+        "sample": 4,
+        "jsCssTransferBytes": 0,
+        "cachedJsCssEntries": 12
+      },
+      {
+        "cache": "cold",
+        "sample": 5,
+        "jsCssTransferBytes": 487427,
+        "cachedJsCssEntries": 0
+      },
+      {
+        "cache": "warm",
+        "sample": 5,
+        "jsCssTransferBytes": 0,
+        "cachedJsCssEntries": 12
+      }
+    ]
+  },
+  {
+    "route": "/positionfamily",
+    "scope": "Cumulative emitted JS/CSS requested up to list readiness, before detail action; excludes online map tiles and font/image binary files",
+    "files": [
+      {
+        "file": "assets/Header-C03xX-Zw.css",
+        "raw": 2473,
+        "gzip": 758,
+        "brotli": 604,
+        "sha256": "ff06f40b31da28401797d281375d618c48c2ae6ed1f52ec189dc4227650cdf36"
+      },
+      {
+        "file": "assets/Header-CL-XYFNT.js",
+        "raw": 2346,
+        "gzip": 1292,
+        "brotli": 1051,
+        "sha256": "df7a9cef4299b8a5399e63ffb3ae23a2f5df37186bd27d8d1f8942807a232ea0"
+      },
+      {
+        "file": "assets/PositionMap-BlYu62eJ.css",
+        "raw": 16227,
+        "gzip": 6707,
+        "brotli": 5967,
+        "sha256": "550389ba40a2ea89065cba0b72b245aa8ead87a6e11fecc5527e72cae48c79e7"
+      },
+      {
+        "file": "assets/PositionMap-cSESNSl-.js",
+        "raw": 150795,
+        "gzip": 44101,
+        "brotli": 38386,
+        "sha256": "ff39100672d34e3dd023f3e226353b055e74280667e22dba3bc03d8aafa440a2"
+      },
+      {
+        "file": "assets/_plugin-vue_export-helper-CJMv9Rw7.js",
+        "raw": 66652,
+        "gzip": 25734,
+        "brotli": 23508,
+        "sha256": "f2156d8f0bdae095e00bffe54fc39203ce23bb7845fc6544a54c08af3b6f4153"
+      },
+      {
+        "file": "assets/familyHome-DGTvvvs-.css",
+        "raw": 5440,
+        "gzip": 1475,
+        "brotli": 1242,
+        "sha256": "54937cb123347681d93cf92b53b5aef8c3d4ead639193da15083a17c116156c6"
+      },
+      {
+        "file": "assets/familyHome-DfX-Mr0b.js",
+        "raw": 4170,
+        "gzip": 1857,
+        "brotli": 1521,
+        "sha256": "bfcc53bff9f73be89fb552d4163c81ea10d9038ee99aa364c1919ae8accde7f3"
+      },
+      {
+        "file": "assets/index-BDxSQ7E5.js",
+        "raw": 639046,
+        "gzip": 204979,
+        "brotli": 172850,
+        "sha256": "4f6d52c7f2b0b2ad042931af764e727b903622ce3afe762b4615adbcf525b6d5"
+      },
+      {
+        "file": "assets/index-kJ-Gl3tX.css",
+        "raw": 441326,
+        "gzip": 68147,
+        "brotli": 49430,
+        "sha256": "5eb80925e35b4b1ca94883fea5f283d7a04b1805d13c1505ea0ee3238bff08b4"
+      },
+      {
+        "file": "assets/positionfamily-Bzv-lv8-.js",
+        "raw": 3724,
+        "gzip": 1764,
+        "brotli": 1450,
+        "sha256": "4d26185f99285664d44fda2060f156c6ecd64aae1d123c6c8140b300369d13ec"
+      },
+      {
+        "file": "assets/positionfamily-yI47DIHL.css",
+        "raw": 95,
+        "gzip": 100,
+        "brotli": 64,
+        "sha256": "f85e942c26527f789dc891b7f7bb32e90d7dc678d7d52a0b58ce6d0cfb11b0a8"
+      },
+      {
+        "file": "assets/rolldown-runtime-XKyaHtl9.js",
+        "raw": 726,
+        "gzip": 429,
+        "brotli": 382,
+        "sha256": "548d1dbf321e7d2ae804fcc158b588706a7c52f8ca175de1490c6ccb4dbe55b7"
+      },
+      {
+        "file": "assets/suining-logo-192-D8Nl0I9O.js",
+        "raw": 100,
+        "gzip": 89,
+        "brotli": 74,
+        "sha256": "b7c80f43e6b574fe3e8499873c83e5d734543b2868e1b054ee6645b144ec09c0"
+      }
+    ],
+    "totals": {
+      "raw": 1333120,
+      "gzip": 357432,
+      "brotli": 296529
+    },
+    "samples": [
+      {
+        "cache": "cold",
+        "sample": 1,
+        "jsCssTransferBytes": 362388,
+        "cachedJsCssEntries": 0
+      },
+      {
+        "cache": "warm",
+        "sample": 1,
+        "jsCssTransferBytes": 0,
+        "cachedJsCssEntries": 13
+      },
+      {
+        "cache": "cold",
+        "sample": 2,
+        "jsCssTransferBytes": 362388,
+        "cachedJsCssEntries": 0
+      },
+      {
+        "cache": "warm",
+        "sample": 2,
+        "jsCssTransferBytes": 0,
+        "cachedJsCssEntries": 13
+      },
+      {
+        "cache": "cold",
+        "sample": 3,
+        "jsCssTransferBytes": 362388,
+        "cachedJsCssEntries": 0
+      },
+      {
+        "cache": "warm",
+        "sample": 3,
+        "jsCssTransferBytes": 0,
+        "cachedJsCssEntries": 13
+      },
+      {
+        "cache": "cold",
+        "sample": 4,
+        "jsCssTransferBytes": 362388,
+        "cachedJsCssEntries": 0
+      },
+      {
+        "cache": "warm",
+        "sample": 4,
+        "jsCssTransferBytes": 0,
+        "cachedJsCssEntries": 13
+      },
+      {
+        "cache": "cold",
+        "sample": 5,
+        "jsCssTransferBytes": 362388,
+        "cachedJsCssEntries": 0
+      },
+      {
+        "cache": "warm",
+        "sample": 5,
+        "jsCssTransferBytes": 0,
+        "cachedJsCssEntries": 13
+      }
+    ]
+  }
+]

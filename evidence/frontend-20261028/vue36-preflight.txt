@@ -1,0 +1,72 @@
+{"repeat":1,"cwd":"E:\\DevEco Test\\.reliability-lab\\vue36-preflight-20261028\\trial-1","command":["C:\\Users\\Administrator\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\bin\\node.exe","E:\\DevEco Test\\.reliability-lab\\package\\bin\\npm-cli.js","install","--package-lock-only","--ignore-scripts","--no-audit","--no-fund"],"exit":0,"seconds":6.23,"errorCode":"ERESOLVE","resultingLockSHA256":"0827c5cb67b7a3ef160eebc232cf2a6a82949af27a6acc971b6d586ff4f3d30e"}
+{"repeat":2,"cwd":"E:\\DevEco Test\\.reliability-lab\\vue36-preflight-20261028\\trial-2","command":["C:\\Users\\Administrator\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\bin\\node.exe","E:\\DevEco Test\\.reliability-lab\\package\\bin\\npm-cli.js","install","--package-lock-only","--ignore-scripts","--no-audit","--no-fund"],"exit":0,"seconds":0.653,"errorCode":"ERESOLVE","resultingLockSHA256":"0827c5cb67b7a3ef160eebc232cf2a6a82949af27a6acc971b6d586ff4f3d30e"}
+{"repeat":3,"cwd":"E:\\DevEco Test\\.reliability-lab\\vue36-preflight-20261028\\trial-3","command":["C:\\Users\\Administrator\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\bin\\node.exe","E:\\DevEco Test\\.reliability-lab\\package\\bin\\npm-cli.js","install","--package-lock-only","--ignore-scripts","--no-audit","--no-fund"],"exit":0,"seconds":0.66,"errorCode":"ERESOLVE","resultingLockSHA256":"0827c5cb67b7a3ef160eebc232cf2a6a82949af27a6acc971b6d586ff4f3d30e"}
+{
+  "dependencyResolutionAccepted": false,
+  "compatibility": [
+    {
+      "name": "vue-router",
+      "version": "4.6.4",
+      "vuePeer": "^3.5.0",
+      "targetVueAccepted": false,
+      "nodeEngine": null,
+      "nodeAccepted": null
+    },
+    {
+      "name": "element-plus",
+      "version": "2.14.7",
+      "vuePeer": "^3.3.7",
+      "targetVueAccepted": false,
+      "nodeEngine": null,
+      "nodeAccepted": null
+    },
+    {
+      "name": "@vitejs/plugin-vue",
+      "version": "6.0.10",
+      "vuePeer": "^3.2.25 || ^3.6.0-rc.10",
+      "targetVueAccepted": true,
+      "nodeEngine": "^20.19.0 || >=22.12.0",
+      "nodeAccepted": true
+    },
+    {
+      "name": "@vue/test-utils",
+      "version": "2.5.1",
+      "vuePeer": "3.x",
+      "targetVueAccepted": false,
+      "nodeEngine": null,
+      "nodeAccepted": null
+    },
+    {
+      "name": "vue-tsc",
+      "version": "3.3.13",
+      "vuePeer": null,
+      "targetVueAccepted": null,
+      "nodeEngine": null,
+      "nodeAccepted": null
+    },
+    {
+      "name": "typescript",
+      "version": "5.9.3",
+      "vuePeer": null,
+      "targetVueAccepted": null,
+      "nodeEngine": ">=14.17",
+      "nodeAccepted": true
+    },
+    {
+      "name": "vite",
+      "version": "8.3.4",
+      "vuePeer": null,
+      "targetVueAccepted": null,
+      "nodeEngine": "^20.19.0 || >=22.12.0",
+      "nodeAccepted": true
+    },
+    {
+      "name": "vitest",
+      "version": "5.0.5",
+      "vuePeer": null,
+      "targetVueAccepted": null,
+      "nodeEngine": "^22.12.0 || ^24.0.0 || >=26.0.0",
+      "nodeAccepted": true
+    }
+  ]
+}

@@ -1,0 +1,86 @@
+[
+  {
+    "name": "vue36-ci",
+    "command": [
+      "C:\\Users\\Administrator\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\bin\\node.exe",
+      "E:\\DevEco Test\\.reliability-lab\\package\\bin\\npm-cli.js",
+      "ci",
+      "--ignore-scripts"
+    ],
+    "cwd": "E:\\DevEco Test\\.reliability-lab\\vue36-preflight-20261028\\trial-1",
+    "exit": 1,
+    "seconds": 0.405
+  },
+  {
+    "name": "vue36-strict-1",
+    "command": [
+      "C:\\Users\\Administrator\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\bin\\node.exe",
+      "E:\\DevEco Test\\.reliability-lab\\package\\bin\\npm-cli.js",
+      "install",
+      "--package-lock-only",
+      "--ignore-scripts",
+      "--no-audit",
+      "--no-fund",
+      "--strict-peer-deps"
+    ],
+    "cwd": "E:\\DevEco Test\\.reliability-lab\\vue36-preflight-20261028\\strict-1",
+    "exit": 1,
+    "seconds": 0.539
+  },
+  {
+    "name": "vue36-strict-2",
+    "command": [
+      "C:\\Users\\Administrator\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\bin\\node.exe",
+      "E:\\DevEco Test\\.reliability-lab\\package\\bin\\npm-cli.js",
+      "install",
+      "--package-lock-only",
+      "--ignore-scripts",
+      "--no-audit",
+      "--no-fund",
+      "--strict-peer-deps"
+    ],
+    "cwd": "E:\\DevEco Test\\.reliability-lab\\vue36-preflight-20261028\\strict-2",
+    "exit": 1,
+    "seconds": 0.521
+  },
+  {
+    "name": "vue36-strict-3",
+    "command": [
+      "C:\\Users\\Administrator\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\bin\\node.exe",
+      "E:\\DevEco Test\\.reliability-lab\\package\\bin\\npm-cli.js",
+      "install",
+      "--package-lock-only",
+      "--ignore-scripts",
+      "--no-audit",
+      "--no-fund",
+      "--strict-peer-deps"
+    ],
+    "cwd": "E:\\DevEco Test\\.reliability-lab\\vue36-preflight-20261028\\strict-3",
+    "exit": 1,
+    "seconds": 0.526
+  },
+  {
+    "name": "rollback-vue35-ci",
+    "command": [
+      "C:\\Users\\Administrator\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\bin\\node.exe",
+      "E:\\DevEco Test\\.reliability-lab\\package\\bin\\npm-cli.js",
+      "ci"
+    ],
+    "cwd": "E:\\DevEco Test\\.reliability-lab\\vue36-preflight-20261028\\rollback-vue35",
+    "exit": 0,
+    "seconds": 33.534
+  },
+  {
+    "name": "rollback-vue35-ls",
+    "command": [
+      "C:\\Users\\Administrator\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\bin\\node.exe",
+      "E:\\DevEco Test\\.reliability-lab\\package\\bin\\npm-cli.js",
+      "ls",
+      "--all",
+      "--json"
+    ],
+    "cwd": "E:\\DevEco Test\\.reliability-lab\\vue36-preflight-20261028\\rollback-vue35",
+    "exit": 0,
+    "seconds": 0.329
+  }
+]

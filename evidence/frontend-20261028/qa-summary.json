@@ -1,0 +1,74 @@
+[
+  {
+    "file": "architecture-acceptance.json",
+    "checks": 23,
+    "failed": [],
+    "scope": "API mocks"
+  },
+  {
+    "file": "browser-acceptance.json",
+    "checks": 305,
+    "failed": [],
+    "scope": "API mocks"
+  },
+  {
+    "file": "controls-acceptance.json",
+    "checks": 656,
+    "failed": [],
+    "scope": "API mocks"
+  },
+  {
+    "file": "database-availability.json",
+    "checks": 13,
+    "failed": [],
+    "scope": "API mocks"
+  },
+  {
+    "file": "elder-delete.json",
+    "checks": 8,
+    "failed": [],
+    "scope": "API mocks"
+  },
+  {
+    "file": "forms-acceptance.json",
+    "checks": 30,
+    "failed": [],
+    "scope": "API mocks"
+  },
+  {
+    "file": "issues-acceptance.json",
+    "checks": 42,
+    "failed": [],
+    "scope": "API mocks"
+  },
+  {
+    "file": "lifecycle-acceptance.json",
+    "checks": 7,
+    "failed": [],
+    "scope": "API mocks"
+  },
+  {
+    "file": "real-backend-acceptance.json",
+    "checks": 15,
+    "failed": [],
+    "scope": "actual Go/MySQL"
+  },
+  {
+    "file": "screen-acceptance.json",
+    "checks": 169,
+    "failed": [],
+    "scope": "API mocks"
+  },
+  {
+    "file": "setup-browser-acceptance.json",
+    "checks": 10,
+    "failed": [],
+    "scope": "API mocks"
+  },
+  {
+    "file": "ui-refinement.json",
+    "checks": 123,
+    "failed": [],
+    "scope": "API mocks"
+  }
+]

@@ -1,0 +1,14 @@
+{
+  "cpu": {
+    "Name": "Intel(R) Core(TM) i5-14600KF",
+    "NumberOfCores": 14,
+    "NumberOfLogicalProcessors": 20
+  },
+  "ramBytes": 34138935296,
+  "browser": "156.0.4314.42",
+  "installedWebView2": "155.0.4283.62",
+  "nativeAcceptance": "not run; runtime detection does not imply app acceptance",
+  "originalMysqlServiceObserved": "Stopped",
+  "originalMysqlServiceAction": "none",
+  "ownedLabPorts": "33371 and 18089 stopped by owning helper after acceptance"
+}

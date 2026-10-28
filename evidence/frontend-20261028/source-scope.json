@@ -1,0 +1,22 @@
+{
+  "applicationBaseSHA": "3b79b1f90e6cde6656fc40b9cee2e6af79ff0fe9",
+  "candidateBranch": "codex/frontend-validation-20261028",
+  "applicationTrees": {
+    "智慧养老手表管理系统/oldIot": "b741592d1e87a99c007138806d4ff03362aaba96",
+    "智慧养老手表管理系统/backend": "ea8b800f5db8243fb4a7830a56ac176ed0987c95",
+    "智慧养老手表管理系统/desktop": "0aa8fac508858a1b108822544237ca459708f920",
+    "SuiningWatch": "81bbbcf13f44f6fb8d12baa834ee0b5ce170a0b8",
+    ".github/workflows": "b6caf575cfccbda9c380a94cb9f1cfa94e132599"
+  },
+  "applicationOrWorkflowDiff": "",
+  "scriptWorkingSHA256": {
+    "scripts/frontend/baseline-server.cjs": "83b834bea95d8c42a12eb59e50620f65e287b0af14cc6b1aaf8568e365532004",
+    "scripts/frontend/browser-baseline.cjs": "950a30045b4b3d8982a4c8289f564ce0cc00ceb5d31f11e0a58888233098f927",
+    "scripts/frontend/inventory.cjs": "56e532369f7b99ea3ccb3be1f1646ecee7493f59eadf7d24af27d9856e8524bd",
+    "scripts/frontend/migration-preflight.cjs": "7c6f50eda035a56a42bbdd6ee514958fad0f8912483b88affeac539264c0c3dd",
+    "scripts/frontend/query-hang-probe.mjs": "22686116a13b4820d42293c067bd9c5102328b058f507812da85077bd3dd7844",
+    "scripts/frontend/resource-sizes.cjs": "1de485ba7047e72ab06ecae669dc3762a0380f1d30ed97dc36216cd830a5c937",
+    "scripts/frontend/run-baseline.cjs": "9f8cba033e00591686732fd569288119131465b9f4e945899ce6499acc6b19c6"
+  },
+  "scope": "Tools, reports and evidence only. Application source unchanged. Final commit SHA/complete binary patch hash/CI recorded post-commit in desktop handoff to avoid self-reference."
+}

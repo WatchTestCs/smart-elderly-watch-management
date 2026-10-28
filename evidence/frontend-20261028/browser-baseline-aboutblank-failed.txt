@@ -1,0 +1,13 @@
+AssertionError [ERR_ASSERTION]: Browser errors
+
+10 !== 0
+
+    at E:\DevEco Test\smart-elderly-watch-remediation\scripts\frontend\browser-baseline.cjs:76:10
+    at async module.exports (E:\DevEco Test\smart-elderly-watch-remediation\智慧养老手表管理系统\oldIot\qa\browser-harness.cjs:93:8) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 10,
+  expected: 0,
+  operator: 'strictEqual',
+  diff: 'simple'
+}

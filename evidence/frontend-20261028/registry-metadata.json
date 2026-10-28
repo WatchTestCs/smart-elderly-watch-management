@@ -1,0 +1,215 @@
+{
+  "checkedUTC": "2026-10-27T23:51:36.3711041Z",
+  "vueTags": {
+    "csp": "1.0.28-csp",
+    "v2-latest": "2.7.16",
+    "legacy": "2.7.16",
+    "alpha": "3.6.0-alpha.7",
+    "beta": "3.6.0-beta.17",
+    "latest": "3.5.44",
+    "rc": "3.6.0-rc.13"
+  },
+  "targetPublished": "2026-10-23T08:00:56.956Z",
+  "packages": [
+    {
+      "name": "vue",
+      "version": "3.6.0-rc.13",
+      "url": "https://registry.npmjs.org/vue/3.6.0-rc.13",
+      "peerDependencies": {
+        "typescript": "*"
+      },
+      "engines": null,
+      "dependencies": {
+        "@vue/shared": "3.6.0-rc.13",
+        "@vue/runtime-dom": "3.6.0-rc.13",
+        "@vue/compiler-dom": "3.6.0-rc.13",
+        "@vue/compiler-sfc": "3.6.0-rc.13",
+        "@vue/runtime-vapor": "3.6.0-rc.13",
+        "@vue/server-renderer": "3.6.0-rc.13"
+      },
+      "distIntegrity": "sha512-NaRoO3bxLI3ZYlPEzQh2YItXeBS2l5VZxYx3N8983+DLwPpbhxXDOqrwQbvP5tol1Nlyg+ykAxLwsPjIYJHGUA=="
+    },
+    {
+      "name": "vue",
+      "version": "3.5.44",
+      "url": "https://registry.npmjs.org/vue/3.5.44",
+      "peerDependencies": {
+        "typescript": "*"
+      },
+      "engines": null,
+      "dependencies": {
+        "@vue/shared": "3.5.44",
+        "@vue/runtime-dom": "3.5.44",
+        "@vue/compiler-dom": "3.5.44",
+        "@vue/compiler-sfc": "3.5.44",
+        "@vue/server-renderer": "3.5.44"
+      },
+      "distIntegrity": "sha512-dvvmaOCG7lAMkJTPqPwWeGMsPS6DIsFsfZDUgBp9V6mHf9b3+/wyVwYR4Es+WV6uJC0FKRxp81Obcq0ZwUcGFQ=="
+    },
+    {
+      "name": "vue-router",
+      "version": "4.6.4",
+      "url": "https://registry.npmjs.org/vue-router/4.6.4",
+      "peerDependencies": {
+        "vue": "^3.5.0"
+      },
+      "engines": null,
+      "dependencies": {
+        "@vue/devtools-api": "^6.6.4"
+      },
+      "distIntegrity": "sha512-Hz9q5sa33Yhduglwz6g9skT8OBPii+4bFn88w6J+J4MfEo4KRRpmiNG/hHHkdbRFlLBOqxN8y8gf2Fb0MTUgVg=="
+    },
+    {
+      "name": "element-plus",
+      "version": "2.14.7",
+      "url": "https://registry.npmjs.org/element-plus/2.14.7",
+      "peerDependencies": {
+        "vue": "^3.3.7"
+      },
+      "engines": null,
+      "dependencies": {
+        "dayjs": "^1.11.20",
+        "lodash": "^4.18.1",
+        "lodash-es": "^4.18.1",
+        "memoize-one": "^6.0.0",
+        "@vueuse/core": "15.0.0",
+        "@types/lodash": "^4.17.24",
+        "@popperjs/core": "npm:@sxzz/popperjs-es@^2.11.8",
+        "lodash-unified": "^1.0.3",
+        "@ctrl/tinycolor": "^4.2.1",
+        "async-validator": "^4.2.5",
+        "@floating-ui/dom": "^1.8.0",
+        "@types/lodash-es": "^4.17.12",
+        "normalize-wheel-es": "^1.2.0",
+        "@element-plus/icons-vue": "^2.3.2",
+        "vue-component-type-helpers": "^3.3.11"
+      },
+      "distIntegrity": "sha512-lrG7pZyCS+mpCNVpzxxyu5r35+T6V0hzkAeIwn7HA6to772XSTHKuYCZG51OfzlqaxGbNegLxs650zAF1j43gA=="
+    },
+    {
+      "name": "@vitejs/plugin-vue",
+      "version": "6.0.10",
+      "url": "https://registry.npmjs.org/@vitejs/plugin-vue/6.0.10",
+      "peerDependencies": {
+        "vue": "^3.2.25 || ^3.6.0-rc.10",
+        "vite": "^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0"
+      },
+      "engines": {
+        "node": "^20.19.0 || >=22.12.0"
+      },
+      "dependencies": {
+        "@rolldown/pluginutils": "^1.0.1"
+      },
+      "distIntegrity": "sha512-b80aUQh3n+qEzzZm5oQp3rT2QImeCx58K6eFl/RkJ3d65KW0kTuv5lNsLRVAjbW9YRUpo/wzmvzMgV34bTAItA=="
+    },
+    {
+      "name": "@vue/test-utils",
+      "version": "2.5.1",
+      "url": "https://registry.npmjs.org/@vue/test-utils/2.5.1",
+      "peerDependencies": {
+        "vue": "3.x",
+        "@vue/compiler-dom": "3.x",
+        "@vue/server-renderer": "3.x"
+      },
+      "engines": null,
+      "dependencies": {
+        "js-beautify": "^2.0.0",
+        "vue-component-type-helpers": "^3.0.0"
+      },
+      "distIntegrity": "sha512-V/4a99odJ7hapr0bRt35XxljGk8hefq31gSOnlKTcEq2fUeoj2qb+FcpJYfQu4qfYhW9Ug+O2+CZ3QmZ7gXDzA=="
+    },
+    {
+      "name": "vue-tsc",
+      "version": "3.3.13",
+      "url": "https://registry.npmjs.org/vue-tsc/3.3.13",
+      "peerDependencies": {
+        "typescript": ">=5.0.0"
+      },
+      "engines": null,
+      "dependencies": {
+        "@volar/typescript": "2.4.28",
+        "@vue/language-core": "3.3.13"
+      },
+      "distIntegrity": "sha512-jE4/bXdOMSHVxEGgQCqNllJy+9N3Gx6tfSAsg0yhFK/MAN6eXqISihupnDEKSCt12VVnjN2gI3AqLYcqoh5x/A=="
+    },
+    {
+      "name": "typescript",
+      "version": "5.9.3",
+      "url": "https://registry.npmjs.org/typescript/5.9.3",
+      "peerDependencies": null,
+      "engines": {
+        "node": ">=14.17"
+      },
+      "dependencies": null,
+      "distIntegrity": "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="
+    },
+    {
+      "name": "vite",
+      "version": "8.3.4",
+      "url": "https://registry.npmjs.org/vite/8.3.4",
+      "peerDependencies": {
+        "tsx": "^4.8.1",
+        "jiti": ">=1.21.0",
+        "less": "^4.0.0",
+        "sass": "^1.70.0",
+        "yaml": "^2.4.2",
+        "stylus": ">=0.54.8",
+        "terser": "^5.16.0",
+        "esbuild": "^0.27.0 || ^0.28.0",
+        "sugarss": "^5.0.0",
+        "@types/node": "^20.19.0 || >=22.12.0",
+        "sass-embedded": "^1.70.0",
+        "@vitejs/devtools": "^0.7.1"
+      },
+      "engines": {
+        "node": "^20.19.0 || >=22.12.0"
+      },
+      "dependencies": {
+        "postcss": "^8.5.29",
+        "rolldown": "~1.2.12",
+        "picomatch": "^4.0.7",
+        "tinyglobby": "^0.2.17",
+        "lightningcss": "^1.33.0"
+      },
+      "distIntegrity": "sha512-IftLE8phJhdNRIGNEV4JCCvfNScoZQVfcXaN8TQropWGJtOHcu+iAB9pHcuGvmEb/kddw0LBe/jS8ztdC6xdiQ=="
+    },
+    {
+      "name": "vitest",
+      "version": "5.0.5",
+      "url": "https://registry.npmjs.org/vitest/5.0.5",
+      "peerDependencies": {
+        "vite": "^6.4.0 || ^7.0.0 || ^8.0.0",
+        "jsdom": "*",
+        "happy-dom": "*",
+        "@vitest/ui": "5.0.5",
+        "@types/node": "^22.0.0 || >=24.0.0",
+        "@edge-runtime/vm": "*",
+        "@opentelemetry/api": "^1.9.0",
+        "@vitest/coverage-v8": "5.0.5",
+        "@vitest/browser-preview": "5.0.5",
+        "@vitest/coverage-istanbul": "5.0.5",
+        "@vitest/browser-playwright": "5.0.5",
+        "@vitest/browser-webdriverio": "^5.0.0-beta.5 || >=5.0.0"
+      },
+      "engines": {
+        "node": "^22.12.0 || ^24.0.0 || >=26.0.0"
+      },
+      "dependencies": {
+        "chai": "^6.3.0",
+        "obug": "^3.0.0",
+        "std-env": "^4.3.0",
+        "tinyexec": "^1.3.1",
+        "picomatch": "^4.0.7",
+        "tinybench": "^6.2.2",
+        "tinyglobby": "^0.2.17",
+        "@types/chai": "^5.2.2",
+        "expect-type": "^1.4.0",
+        "magic-string": "^1.4.3",
+        "@vitest/mocker": "5.0.5",
+        "es-module-lexer": "^2.3.2",
+        "why-is-node-running": "3.2.1"
+      },
+      "distIntegrity": "sha512-cPODOMF8YnkiiYtDdHo6n4wWmBrOBBbOIYH2d33M4l3CdNn72h+qMmO6uXffUN6A5AZFXNND/d+krS9mgkXRfg=="
+    }
+  ]
+}

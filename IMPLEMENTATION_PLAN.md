@@ -1,3 +1,5 @@
+> 2026-10-28前端续作计划见 [docs/frontend-20261028/PLAN.md](docs/frontend-20261028/PLAN.md)。以下保留此前可靠性计划。
+
 # Reliability remediation plan (2026-10-26)
 
 ## Scope and authority

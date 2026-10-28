@@ -1,0 +1,41 @@
+{
+  "checks": 305,
+  "failed": [],
+  "screenshots": "E:\\DevEco Test\\smart-elderly-watch-remediation\\智慧养老手表管理系统\\oldIot\\qa\\artifacts\\screenshots"
+}
+{
+  "checks": 656,
+  "failed": []
+}
+{
+  "checks": 30,
+  "failed": []
+}
+{
+  "checks": 7,
+  "failed": []
+}
+{
+  "checks": 169,
+  "failed": []
+}
+[
+  { name: '320 setup page has no horizontal overflow', pass: true },
+  { name: '320 empty setup rejected before API write', pass: true },
+  { name: '390 setup page has no horizontal overflow', pass: true },
+  { name: '390 empty setup rejected before API write', pass: true },
+  { name: '768 setup page has no horizontal overflow', pass: true },
+  { name: '768 empty setup rejected before API write', pass: true },
+  { name: '1440 setup page has no horizontal overflow', pass: true },
+  { name: '1440 empty setup rejected before API write', pass: true },
+  { name: 'No setup rendering errors', pass: true },
+  { name: 'No missing setup assets', pass: true }
+]
+{"checks":42,"failed":[]}
+Elder deletion: conflict, cancel, HTTP failure, business failure and success passed.
+{"checks":13,"failed":[]}
+{
+  "checks": 123,
+  "failed": []
+}
+{"checks":23,"failed":[]}

@@ -1,0 +1,152 @@
+[
+  {
+    "name": "npm-ci",
+    "command": [
+      "C:\\Users\\Administrator\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\bin\\node.exe",
+      "E:\\DevEco Test\\.reliability-lab\\package\\bin\\npm-cli.js",
+      "ci"
+    ],
+    "cwd": "E:\\DevEco Test\\smart-elderly-watch-remediation\\智慧养老手表管理系统\\oldIot",
+    "exit": 0,
+    "seconds": 37.913
+  },
+  {
+    "name": "npm-ls",
+    "command": [
+      "C:\\Users\\Administrator\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\bin\\node.exe",
+      "E:\\DevEco Test\\.reliability-lab\\package\\bin\\npm-cli.js",
+      "ls",
+      "--all",
+      "--json"
+    ],
+    "cwd": "E:\\DevEco Test\\smart-elderly-watch-remediation\\智慧养老手表管理系统\\oldIot",
+    "exit": 0,
+    "seconds": 0.324
+  },
+  {
+    "name": "unit",
+    "command": [
+      "C:\\Users\\Administrator\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\bin\\node.exe",
+      "E:\\DevEco Test\\.reliability-lab\\package\\bin\\npm-cli.js",
+      "test"
+    ],
+    "cwd": "E:\\DevEco Test\\smart-elderly-watch-remediation\\智慧养老手表管理系统\\oldIot",
+    "exit": 0,
+    "seconds": 1.404
+  },
+  {
+    "name": "typecheck",
+    "command": [
+      "C:\\Users\\Administrator\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\bin\\node.exe",
+      "E:\\DevEco Test\\.reliability-lab\\package\\bin\\npm-cli.js",
+      "run",
+      "typecheck"
+    ],
+    "cwd": "E:\\DevEco Test\\smart-elderly-watch-remediation\\智慧养老手表管理系统\\oldIot",
+    "exit": 0,
+    "seconds": 1.52
+  },
+  {
+    "name": "build-1",
+    "command": [
+      "C:\\Users\\Administrator\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\bin\\node.exe",
+      "E:\\DevEco Test\\.reliability-lab\\package\\bin\\npm-cli.js",
+      "run",
+      "build"
+    ],
+    "cwd": "E:\\DevEco Test\\smart-elderly-watch-remediation\\智慧养老手表管理系统\\oldIot",
+    "exit": 0,
+    "seconds": 1.052
+  },
+  {
+    "name": "resource-sizes-1",
+    "command": [
+      "C:\\Users\\Administrator\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\bin\\node.exe",
+      "E:\\DevEco Test\\smart-elderly-watch-remediation\\scripts\\frontend\\resource-sizes.cjs",
+      "E:\\DevEco Test\\smart-elderly-watch-remediation\\智慧养老手表管理系统\\oldIot\\dist",
+      "E:\\DevEco Test\\smart-elderly-watch-remediation\\evidence\\frontend-20261028\\replay\\resource-sizes-1.json"
+    ],
+    "cwd": "E:\\DevEco Test\\smart-elderly-watch-remediation\\智慧养老手表管理系统\\oldIot",
+    "exit": 0,
+    "seconds": 2.271
+  },
+  {
+    "name": "build-2",
+    "command": [
+      "C:\\Users\\Administrator\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\bin\\node.exe",
+      "E:\\DevEco Test\\.reliability-lab\\package\\bin\\npm-cli.js",
+      "run",
+      "build"
+    ],
+    "cwd": "E:\\DevEco Test\\smart-elderly-watch-remediation\\智慧养老手表管理系统\\oldIot",
+    "exit": 0,
+    "seconds": 0.928
+  },
+  {
+    "name": "resource-sizes",
+    "command": [
+      "C:\\Users\\Administrator\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\bin\\node.exe",
+      "E:\\DevEco Test\\smart-elderly-watch-remediation\\scripts\\frontend\\resource-sizes.cjs",
+      "E:\\DevEco Test\\smart-elderly-watch-remediation\\智慧养老手表管理系统\\oldIot\\dist",
+      "E:\\DevEco Test\\smart-elderly-watch-remediation\\evidence\\frontend-20261028\\replay\\resource-sizes.json"
+    ],
+    "cwd": "E:\\DevEco Test\\smart-elderly-watch-remediation\\智慧养老手表管理系统\\oldIot",
+    "exit": 0,
+    "seconds": 2.26
+  },
+  {
+    "name": "audit",
+    "command": [
+      "C:\\Users\\Administrator\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\bin\\node.exe",
+      "E:\\DevEco Test\\.reliability-lab\\package\\bin\\npm-cli.js",
+      "audit",
+      "--audit-level=high",
+      "--json"
+    ],
+    "cwd": "E:\\DevEco Test\\smart-elderly-watch-remediation\\智慧养老手表管理系统\\oldIot",
+    "exit": 0,
+    "seconds": 1.101
+  },
+  {
+    "name": "qa-npm-ci",
+    "command": [
+      "C:\\Users\\Administrator\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\bin\\node.exe",
+      "E:\\DevEco Test\\.reliability-lab\\package\\bin\\npm-cli.js",
+      "ci"
+    ],
+    "cwd": "E:\\DevEco Test\\smart-elderly-watch-remediation\\智慧养老手表管理系统\\oldIot\\qa",
+    "exit": 0,
+    "seconds": 1.127
+  },
+  {
+    "name": "browser-baseline",
+    "command": [
+      "C:\\Users\\Administrator\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\bin\\node.exe",
+      "E:\\DevEco Test\\smart-elderly-watch-remediation\\scripts\\frontend\\browser-baseline.cjs"
+    ],
+    "cwd": "E:\\DevEco Test\\smart-elderly-watch-remediation",
+    "exit": 0,
+    "seconds": 30.266
+  },
+  {
+    "name": "qa-run",
+    "command": [
+      "C:\\Users\\Administrator\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\bin\\node.exe",
+      "E:\\DevEco Test\\smart-elderly-watch-remediation\\智慧养老手表管理系统\\oldIot\\qa\\run.cjs"
+    ],
+    "cwd": "E:\\DevEco Test\\smart-elderly-watch-remediation",
+    "exit": 0,
+    "seconds": 168.435
+  },
+  {
+    "name": "inventory",
+    "command": [
+      "C:\\Users\\Administrator\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\bin\\node.exe",
+      "E:\\DevEco Test\\smart-elderly-watch-remediation\\scripts\\frontend\\inventory.cjs",
+      "E:\\DevEco Test\\smart-elderly-watch-remediation\\evidence\\frontend-20261028\\replay"
+    ],
+    "cwd": "E:\\DevEco Test\\smart-elderly-watch-remediation",
+    "exit": 0,
+    "seconds": 0.134
+  }
+]

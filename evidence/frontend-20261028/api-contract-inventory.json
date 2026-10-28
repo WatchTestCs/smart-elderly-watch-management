@@ -1,0 +1,906 @@
+{
+  "pathsTotal": 123,
+  "note": "Route/authorization inventory exists. Open legacy response schemas cannot generate precise DTO/nullability contracts.",
+  "contracts": {
+    "session": [
+      {
+        "url": "/restful/userLogin/login",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "phone": {
+              "type": "string"
+            },
+            "password": {
+              "type": "string"
+            },
+            "otp": {
+              "type": "string"
+            },
+            "recoveryCode": {
+              "type": "string"
+            }
+          }
+        },
+        "explicit200Properties": [],
+        "security": []
+      },
+      {
+        "url": "/restful/userLogin/logout",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "explicit200Properties": [],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ]
+      },
+      {
+        "url": "/restful/userLogin/session",
+        "method": "get",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "explicit200Properties": [],
+        "security": []
+      }
+    ],
+    "devices": [
+      {
+        "url": "/restful/device/alertCounts",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "explicit200Properties": [],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ]
+      },
+      {
+        "url": "/restful/device/alertDetail",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "explicit200Properties": [],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ]
+      },
+      {
+        "url": "/restful/device/bind",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "explicit200Properties": [],
+        "security": []
+      },
+      {
+        "url": "/restful/device/bindCodeList",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "explicit200Properties": [],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ]
+      },
+      {
+        "url": "/restful/device/command",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "deviceId": {
+              "type": "integer"
+            },
+            "action": {
+              "type": "string"
+            },
+            "requestKey": {
+              "type": "string"
+            },
+            "ttlSeconds": {
+              "type": "integer"
+            }
+          }
+        },
+        "explicit200Properties": [],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ]
+      },
+      {
+        "url": "/restful/device/commandAck",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "explicit200Properties": [],
+        "security": []
+      },
+      {
+        "url": "/restful/device/commandProfile",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "deviceId": {
+              "type": "integer"
+            },
+            "wireType": {
+              "type": "string"
+            },
+            "protocol": {
+              "type": "string"
+            },
+            "enabled": {
+              "type": "boolean"
+            }
+          }
+        },
+        "explicit200Properties": [],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ]
+      },
+      {
+        "url": "/restful/device/commandPull",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "explicit200Properties": [],
+        "security": []
+      },
+      {
+        "url": "/restful/device/commands",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "deviceId": {
+              "type": "integer"
+            },
+            "after": {
+              "type": "integer"
+            }
+          }
+        },
+        "explicit200Properties": [],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ]
+      },
+      {
+        "url": "/restful/device/create",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "explicit200Properties": [],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ]
+      },
+      {
+        "url": "/restful/device/createBindCode",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "explicit200Properties": [],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ]
+      },
+      {
+        "url": "/restful/device/delete",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "explicit200Properties": [],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ]
+      },
+      {
+        "url": "/restful/device/deleteBindCode",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "explicit200Properties": [],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ]
+      },
+      {
+        "url": "/restful/device/fencePoint",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "explicit200Properties": [],
+        "security": []
+      },
+      {
+        "url": "/restful/device/handleAlarm",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "explicit200Properties": [],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ]
+      },
+      {
+        "url": "/restful/device/healthBatch",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "explicit200Properties": [],
+        "security": []
+      },
+      {
+        "url": "/restful/device/heartbeat",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "explicit200Properties": [],
+        "security": []
+      },
+      {
+        "url": "/restful/device/list",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "explicit200Properties": [],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ]
+      },
+      {
+        "url": "/restful/device/login",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "explicit200Properties": [],
+        "security": []
+      },
+      {
+        "url": "/restful/device/report",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "explicit200Properties": [],
+        "security": []
+      },
+      {
+        "url": "/restful/device/resetSecret",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "explicit200Properties": [],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ]
+      },
+      {
+        "url": "/restful/device/resolveAlert",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "explicit200Properties": [],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ]
+      },
+      {
+        "url": "/restful/device/sos",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "explicit200Properties": [],
+        "security": []
+      },
+      {
+        "url": "/restful/device/unbind",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "explicit200Properties": [],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ]
+      }
+    ],
+    "health": [
+      {
+        "url": "/restful/health/changes",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "explicit200Properties": [],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ]
+      },
+      {
+        "url": "/restful/health/daily",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "oldId": {
+              "type": "integer"
+            },
+            "source": {
+              "type": "string"
+            },
+            "sourceDevice": {
+              "type": "string"
+            },
+            "metric": {
+              "type": "string"
+            },
+            "semantics": {
+              "type": "string"
+            },
+            "day": {
+              "type": "string"
+            },
+            "offsetMinutes": {
+              "type": "integer"
+            },
+            "days": {
+              "type": "integer"
+            }
+          }
+        },
+        "explicit200Properties": [],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ]
+      },
+      {
+        "url": "/restful/health/statistics",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "explicit200Properties": [],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ]
+      },
+      {
+        "url": "/restful/position/select",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "explicit200Properties": [],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ]
+      },
+      {
+        "url": "/restful/position/selectFamily",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "explicit200Properties": [],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ]
+      },
+      {
+        "url": "/restful/ratepre/alertCount",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "explicit200Properties": [],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ]
+      },
+      {
+        "url": "/restful/ratepre/alertDetail",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "explicit200Properties": [],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ]
+      },
+      {
+        "url": "/restful/ratepre/resolveAlert",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "explicit200Properties": [],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ]
+      },
+      {
+        "url": "/restful/ratepre/selectRatepre",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "explicit200Properties": [],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ]
+      },
+      {
+        "url": "/restful/ratepre/selectRatepreCount",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "explicit200Properties": [],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ]
+      },
+      {
+        "url": "/restful/ratepre/selectRatepreDetail",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "explicit200Properties": [],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ]
+      },
+      {
+        "url": "/restful/ratepre/selectRatepreFamily",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "explicit200Properties": [],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ]
+      },
+      {
+        "url": "/restful/step/getAllCount",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "explicit200Properties": [],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ]
+      },
+      {
+        "url": "/restful/step/selectStep",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "explicit200Properties": [],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ]
+      },
+      {
+        "url": "/restful/step/selectStepCount",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "explicit200Properties": [],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ]
+      },
+      {
+        "url": "/restful/step/selectStepDetail",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "explicit200Properties": [],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ]
+      },
+      {
+        "url": "/restful/step/selectStepFamily",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "explicit200Properties": [],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ]
+      }
+    ],
+    "customers": [
+      {
+        "url": "/restful/customer/add",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "explicit200Properties": [],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ]
+      },
+      {
+        "url": "/restful/customer/delete",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "explicit200Properties": [],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ]
+      },
+      {
+        "url": "/restful/customer/select",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "explicit200Properties": [],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ]
+      },
+      {
+        "url": "/restful/customer/update",
+        "method": "post",
+        "response": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "explicit200Properties": [],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ]
+      }
+    ]
+  }
+}

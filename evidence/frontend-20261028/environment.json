@@ -1,0 +1,11 @@
+{
+  "sourceSHA": "3b79b1f90e6cde6656fc40b9cee2e6af79ff0fe9",
+  "branch": "codex/frontend-validation-20261028",
+  "lockSHA256Before": "1a504ef004f882ae4182b4ace4e0faff64eb4f8c27294a2722127139f6b4a683",
+  "node": "v24.22.1",
+  "npm": "11.6.2",
+  "os": "Microsoft Windows [Version 10.0.22631.4169]",
+  "timeUTC": "2026-10-27T23:50:44Z",
+  "lockSHA256After": "1a504ef004f882ae4182b4ace4e0faff64eb4f8c27294a2722127139f6b4a683",
+  "lockUnchanged": true
+}

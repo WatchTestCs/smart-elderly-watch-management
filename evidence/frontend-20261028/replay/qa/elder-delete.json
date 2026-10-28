@@ -1,0 +1,42 @@
+{
+  "environment": "Chromium / win32, production bundle, all API traffic mocked",
+  "layouts": [],
+  "checks": [
+    {
+      "name": "CSRF header restful/oldPerson/selectDetail",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/customer/select",
+      "pass": true
+    },
+    {
+      "name": "请先解除该长者名下设备绑定，再删除长者",
+      "pass": true
+    },
+    {
+      "name": "已取消删除",
+      "pass": true
+    },
+    {
+      "name": "删除失败，请稍后重试",
+      "pass": true
+    },
+    {
+      "name": "删除失败，请刷新列表后重试",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/oldPerson/selectDetail",
+      "pass": true
+    },
+    {
+      "name": "删除信息成功",
+      "pass": true
+    }
+  ],
+  "pageErrors": [],
+  "missingAssets": [],
+  "unexpectedApi": [],
+  "contrast": []
+}

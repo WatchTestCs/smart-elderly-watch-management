@@ -1,0 +1,38 @@
+
+up to date in 589ms
+npm warn ERESOLVE overriding peer dependency
+npm warn While resolving: suining-ui@2.1.0
+npm warn Found: vue@3.5.44
+npm warn node_modules/vue
+npm warn   vue@"3.6.0-rc.13" from the root project
+npm warn   7 more (@element-plus/icons-vue, @vitejs/plugin-vue, ...)
+npm warn
+npm warn Could not resolve dependency:
+npm warn peer vue@"3.x" from @vue/test-utils@2.5.1
+npm warn node_modules/@vue/test-utils
+npm warn   dev @vue/test-utils@"2.5.1" from the root project
+npm warn ERESOLVE overriding peer dependency
+npm warn While resolving: suining-ui@2.1.0
+npm warn Found: vue@3.5.44
+npm warn node_modules/vue
+npm warn   vue@"3.6.0-rc.13" from the root project
+npm warn   7 more (@element-plus/icons-vue, @vitejs/plugin-vue, ...)
+npm warn
+npm warn Could not resolve dependency:
+npm warn peer vue@"^3.3.7" from element-plus@2.14.7
+npm warn node_modules/element-plus
+npm warn   element-plus@"2.14.7" from the root project
+npm warn ERESOLVE overriding peer dependency
+npm warn While resolving: suining-ui@2.1.0
+npm warn Found: vue@3.5.44
+npm warn node_modules/vue
+npm warn   vue@"3.6.0-rc.13" from the root project
+npm warn   7 more (@element-plus/icons-vue, @vitejs/plugin-vue, ...)
+npm warn
+npm warn Could not resolve dependency:
+npm warn peer vue@"^3.5.0" from vue-router@4.6.4
+npm warn node_modules/vue-router
+npm warn   vue-router@"4.6.4" from the root project
+npm warn ERESOLVE overriding peer dependency
+npm warn ERESOLVE overriding peer dependency
+npm warn ERESOLVE overriding peer dependency

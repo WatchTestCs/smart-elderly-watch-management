@@ -1,0 +1,1883 @@
+{
+  "checks": [
+    {
+      "name": "login 360x560 standard contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          360,
+          560
+        ],
+        "page": [
+          360,
+          560
+        ],
+        "panel": {
+          "height": 560,
+          "scroll": 560
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 360x560 standard fits login content",
+      "pass": true,
+      "details": {
+        "viewport": [
+          360,
+          560
+        ],
+        "page": [
+          360,
+          560
+        ],
+        "panel": {
+          "height": 560,
+          "scroll": 560
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 360x560 standard keyboard reaches password",
+      "pass": true
+    },
+    {
+      "name": "login 360x560 standard validation stays inside page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          360,
+          560
+        ],
+        "page": [
+          360,
+          560
+        ],
+        "panel": {
+          "height": 560,
+          "scroll": 560
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 360x560 large contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          360,
+          560
+        ],
+        "page": [
+          360,
+          560
+        ],
+        "panel": {
+          "height": 560,
+          "scroll": 560
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 360x560 large fits login content",
+      "pass": true,
+      "details": {
+        "viewport": [
+          360,
+          560
+        ],
+        "page": [
+          360,
+          560
+        ],
+        "panel": {
+          "height": 560,
+          "scroll": 560
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 360x560 large keyboard reaches password",
+      "pass": true
+    },
+    {
+      "name": "login 360x560 large validation stays inside page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          360,
+          560
+        ],
+        "page": [
+          360,
+          560
+        ],
+        "panel": {
+          "height": 560,
+          "scroll": 560
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 390x844 standard contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          390,
+          844
+        ],
+        "page": [
+          390,
+          844
+        ],
+        "panel": {
+          "height": 724,
+          "scroll": 724
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 390x844 standard fits login content",
+      "pass": true,
+      "details": {
+        "viewport": [
+          390,
+          844
+        ],
+        "page": [
+          390,
+          844
+        ],
+        "panel": {
+          "height": 724,
+          "scroll": 724
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 390x844 standard keyboard reaches password",
+      "pass": true
+    },
+    {
+      "name": "login 390x844 standard validation stays inside page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          390,
+          844
+        ],
+        "page": [
+          390,
+          844
+        ],
+        "panel": {
+          "height": 724,
+          "scroll": 724
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 390x844 large contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          390,
+          844
+        ],
+        "page": [
+          390,
+          844
+        ],
+        "panel": {
+          "height": 724,
+          "scroll": 724
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 390x844 large fits login content",
+      "pass": true,
+      "details": {
+        "viewport": [
+          390,
+          844
+        ],
+        "page": [
+          390,
+          844
+        ],
+        "panel": {
+          "height": 724,
+          "scroll": 724
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 390x844 large keyboard reaches password",
+      "pass": true
+    },
+    {
+      "name": "login 390x844 large validation stays inside page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          390,
+          844
+        ],
+        "page": [
+          390,
+          844
+        ],
+        "panel": {
+          "height": 724,
+          "scroll": 724
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 760x640 standard contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          760,
+          640
+        ],
+        "page": [
+          760,
+          640
+        ],
+        "panel": {
+          "height": 640,
+          "scroll": 640
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 760x640 standard fits login content",
+      "pass": true,
+      "details": {
+        "viewport": [
+          760,
+          640
+        ],
+        "page": [
+          760,
+          640
+        ],
+        "panel": {
+          "height": 640,
+          "scroll": 640
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 760x640 standard keyboard reaches password",
+      "pass": true
+    },
+    {
+      "name": "login 760x640 standard validation stays inside page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          760,
+          640
+        ],
+        "page": [
+          760,
+          640
+        ],
+        "panel": {
+          "height": 640,
+          "scroll": 640
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 760x640 large contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          760,
+          640
+        ],
+        "page": [
+          760,
+          640
+        ],
+        "panel": {
+          "height": 640,
+          "scroll": 640
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 760x640 large fits login content",
+      "pass": true,
+      "details": {
+        "viewport": [
+          760,
+          640
+        ],
+        "page": [
+          760,
+          640
+        ],
+        "panel": {
+          "height": 640,
+          "scroll": 640
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 760x640 large keyboard reaches password",
+      "pass": true
+    },
+    {
+      "name": "login 760x640 large validation stays inside page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          760,
+          640
+        ],
+        "page": [
+          760,
+          640
+        ],
+        "panel": {
+          "height": 640,
+          "scroll": 640
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 1024x600 standard contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          1024,
+          600
+        ],
+        "page": [
+          1024,
+          600
+        ],
+        "panel": {
+          "height": 600,
+          "scroll": 600
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 1024x600 standard fits login content",
+      "pass": true,
+      "details": {
+        "viewport": [
+          1024,
+          600
+        ],
+        "page": [
+          1024,
+          600
+        ],
+        "panel": {
+          "height": 600,
+          "scroll": 600
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 1024x600 standard keyboard reaches password",
+      "pass": true
+    },
+    {
+      "name": "login 1024x600 standard validation stays inside page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          1024,
+          600
+        ],
+        "page": [
+          1024,
+          600
+        ],
+        "panel": {
+          "height": 600,
+          "scroll": 600
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 1024x600 large contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          1024,
+          600
+        ],
+        "page": [
+          1024,
+          600
+        ],
+        "panel": {
+          "height": 600,
+          "scroll": 600
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 1024x600 large fits login content",
+      "pass": true,
+      "details": {
+        "viewport": [
+          1024,
+          600
+        ],
+        "page": [
+          1024,
+          600
+        ],
+        "panel": {
+          "height": 600,
+          "scroll": 600
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 1024x600 large keyboard reaches password",
+      "pass": true
+    },
+    {
+      "name": "login 1024x600 large validation stays inside page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          1024,
+          600
+        ],
+        "page": [
+          1024,
+          600
+        ],
+        "panel": {
+          "height": 600,
+          "scroll": 600
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 1366x768 standard contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          1366,
+          768
+        ],
+        "page": [
+          1366,
+          768
+        ],
+        "panel": {
+          "height": 768,
+          "scroll": 768
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 1366x768 standard fits login content",
+      "pass": true,
+      "details": {
+        "viewport": [
+          1366,
+          768
+        ],
+        "page": [
+          1366,
+          768
+        ],
+        "panel": {
+          "height": 768,
+          "scroll": 768
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 1366x768 standard keyboard reaches password",
+      "pass": true
+    },
+    {
+      "name": "login 1366x768 standard validation stays inside page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          1366,
+          768
+        ],
+        "page": [
+          1366,
+          768
+        ],
+        "panel": {
+          "height": 768,
+          "scroll": 768
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 1366x768 large contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          1366,
+          768
+        ],
+        "page": [
+          1366,
+          768
+        ],
+        "panel": {
+          "height": 768,
+          "scroll": 768
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 1366x768 large fits login content",
+      "pass": true,
+      "details": {
+        "viewport": [
+          1366,
+          768
+        ],
+        "page": [
+          1366,
+          768
+        ],
+        "panel": {
+          "height": 768,
+          "scroll": 768
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 1366x768 large keyboard reaches password",
+      "pass": true
+    },
+    {
+      "name": "login 1366x768 large validation stays inside page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          1366,
+          768
+        ],
+        "page": [
+          1366,
+          768
+        ],
+        "panel": {
+          "height": 768,
+          "scroll": 768
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 1440x900 standard contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          1440,
+          900
+        ],
+        "page": [
+          1440,
+          900
+        ],
+        "panel": {
+          "height": 900,
+          "scroll": 900
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 1440x900 standard fits login content",
+      "pass": true,
+      "details": {
+        "viewport": [
+          1440,
+          900
+        ],
+        "page": [
+          1440,
+          900
+        ],
+        "panel": {
+          "height": 900,
+          "scroll": 900
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 1440x900 standard keyboard reaches password",
+      "pass": true
+    },
+    {
+      "name": "login 1440x900 standard validation stays inside page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          1440,
+          900
+        ],
+        "page": [
+          1440,
+          900
+        ],
+        "panel": {
+          "height": 900,
+          "scroll": 900
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 1440x900 large contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          1440,
+          900
+        ],
+        "page": [
+          1440,
+          900
+        ],
+        "panel": {
+          "height": 900,
+          "scroll": 900
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 1440x900 large fits login content",
+      "pass": true,
+      "details": {
+        "viewport": [
+          1440,
+          900
+        ],
+        "page": [
+          1440,
+          900
+        ],
+        "panel": {
+          "height": 900,
+          "scroll": 900
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 1440x900 large keyboard reaches password",
+      "pass": true
+    },
+    {
+      "name": "login 1440x900 large validation stays inside page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          1440,
+          900
+        ],
+        "page": [
+          1440,
+          900
+        ],
+        "panel": {
+          "height": 900,
+          "scroll": 900
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 1920x1080 standard contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          1920,
+          1080
+        ],
+        "page": [
+          1920,
+          1080
+        ],
+        "panel": {
+          "height": 1080,
+          "scroll": 1080
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 1920x1080 standard fits login content",
+      "pass": true,
+      "details": {
+        "viewport": [
+          1920,
+          1080
+        ],
+        "page": [
+          1920,
+          1080
+        ],
+        "panel": {
+          "height": 1080,
+          "scroll": 1080
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 1920x1080 standard keyboard reaches password",
+      "pass": true
+    },
+    {
+      "name": "login 1920x1080 standard validation stays inside page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          1920,
+          1080
+        ],
+        "page": [
+          1920,
+          1080
+        ],
+        "panel": {
+          "height": 1080,
+          "scroll": 1080
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 1920x1080 large contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          1920,
+          1080
+        ],
+        "page": [
+          1920,
+          1080
+        ],
+        "panel": {
+          "height": 1080,
+          "scroll": 1080
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 1920x1080 large fits login content",
+      "pass": true,
+      "details": {
+        "viewport": [
+          1920,
+          1080
+        ],
+        "page": [
+          1920,
+          1080
+        ],
+        "panel": {
+          "height": 1080,
+          "scroll": 1080
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 1920x1080 large keyboard reaches password",
+      "pass": true
+    },
+    {
+      "name": "login 1920x1080 large validation stays inside page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          1920,
+          1080
+        ],
+        "page": [
+          1920,
+          1080
+        ],
+        "panel": {
+          "height": 1080,
+          "scroll": 1080
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 2560x1440 standard contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          2560,
+          1440
+        ],
+        "page": [
+          2560,
+          1440
+        ],
+        "panel": {
+          "height": 1440,
+          "scroll": 1440
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 2560x1440 standard fits login content",
+      "pass": true,
+      "details": {
+        "viewport": [
+          2560,
+          1440
+        ],
+        "page": [
+          2560,
+          1440
+        ],
+        "panel": {
+          "height": 1440,
+          "scroll": 1440
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 2560x1440 standard keyboard reaches password",
+      "pass": true
+    },
+    {
+      "name": "login 2560x1440 standard validation stays inside page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          2560,
+          1440
+        ],
+        "page": [
+          2560,
+          1440
+        ],
+        "panel": {
+          "height": 1440,
+          "scroll": 1440
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 2560x1440 large contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          2560,
+          1440
+        ],
+        "page": [
+          2560,
+          1440
+        ],
+        "panel": {
+          "height": 1440,
+          "scroll": 1440
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 2560x1440 large fits login content",
+      "pass": true,
+      "details": {
+        "viewport": [
+          2560,
+          1440
+        ],
+        "page": [
+          2560,
+          1440
+        ],
+        "panel": {
+          "height": 1440,
+          "scroll": 1440
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "login 2560x1440 large keyboard reaches password",
+      "pass": true
+    },
+    {
+      "name": "login 2560x1440 large validation stays inside page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          2560,
+          1440
+        ],
+        "page": [
+          2560,
+          1440
+        ],
+        "panel": {
+          "height": 1440,
+          "scroll": 1440
+        },
+        "main": null
+      }
+    },
+    {
+      "name": "ADMIN 360x560 standard contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          360,
+          560
+        ],
+        "page": [
+          360,
+          560
+        ],
+        "panel": null,
+        "main": {
+          "height": 431,
+          "scroll": 2919
+        }
+      }
+    },
+    {
+      "name": "ADMIN 360x560 standard uses available width",
+      "pass": true
+    },
+    {
+      "name": "ADMIN 360x560 standard last content remains reachable",
+      "pass": true
+    },
+    {
+      "name": "ADMIN 360x560 large contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          360,
+          560
+        ],
+        "page": [
+          360,
+          560
+        ],
+        "panel": null,
+        "main": {
+          "height": 431,
+          "scroll": 3153
+        }
+      }
+    },
+    {
+      "name": "ADMIN 360x560 large uses available width",
+      "pass": true
+    },
+    {
+      "name": "ADMIN 360x560 large last content remains reachable",
+      "pass": true
+    },
+    {
+      "name": "ADMIN 390x844 standard contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          390,
+          844
+        ],
+        "page": [
+          390,
+          844
+        ],
+        "panel": null,
+        "main": {
+          "height": 715,
+          "scroll": 2823
+        }
+      }
+    },
+    {
+      "name": "ADMIN 390x844 standard uses available width",
+      "pass": true
+    },
+    {
+      "name": "ADMIN 390x844 standard last content remains reachable",
+      "pass": true
+    },
+    {
+      "name": "ADMIN 390x844 large contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          390,
+          844
+        ],
+        "page": [
+          390,
+          844
+        ],
+        "panel": null,
+        "main": {
+          "height": 715,
+          "scroll": 3081
+        }
+      }
+    },
+    {
+      "name": "ADMIN 390x844 large uses available width",
+      "pass": true
+    },
+    {
+      "name": "ADMIN 390x844 large last content remains reachable",
+      "pass": true
+    },
+    {
+      "name": "ADMIN 760x640 standard contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          760,
+          640
+        ],
+        "page": [
+          760,
+          640
+        ],
+        "panel": null,
+        "main": {
+          "height": 511,
+          "scroll": 2353
+        }
+      }
+    },
+    {
+      "name": "ADMIN 760x640 standard uses available width",
+      "pass": true
+    },
+    {
+      "name": "ADMIN 760x640 standard last content remains reachable",
+      "pass": true
+    },
+    {
+      "name": "ADMIN 760x640 large contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          760,
+          640
+        ],
+        "page": [
+          760,
+          640
+        ],
+        "panel": null,
+        "main": {
+          "height": 503,
+          "scroll": 2427
+        }
+      }
+    },
+    {
+      "name": "ADMIN 760x640 large uses available width",
+      "pass": true
+    },
+    {
+      "name": "ADMIN 760x640 large last content remains reachable",
+      "pass": true
+    },
+    {
+      "name": "ADMIN 1024x600 standard contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          1024,
+          600
+        ],
+        "page": [
+          1024,
+          600
+        ],
+        "panel": null,
+        "main": {
+          "height": 528,
+          "scroll": 2254
+        }
+      }
+    },
+    {
+      "name": "ADMIN 1024x600 standard uses available width",
+      "pass": true
+    },
+    {
+      "name": "ADMIN 1024x600 standard last content remains reachable",
+      "pass": true
+    },
+    {
+      "name": "ADMIN 1024x600 large contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          1024,
+          600
+        ],
+        "page": [
+          1024,
+          600
+        ],
+        "panel": null,
+        "main": {
+          "height": 520,
+          "scroll": 2322
+        }
+      }
+    },
+    {
+      "name": "ADMIN 1024x600 large uses available width",
+      "pass": true
+    },
+    {
+      "name": "ADMIN 1024x600 large last content remains reachable",
+      "pass": true
+    },
+    {
+      "name": "ADMIN 1366x768 standard contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          1366,
+          768
+        ],
+        "page": [
+          1366,
+          768
+        ],
+        "panel": null,
+        "main": {
+          "height": 696,
+          "scroll": 2013
+        }
+      }
+    },
+    {
+      "name": "ADMIN 1366x768 standard uses available width",
+      "pass": true
+    },
+    {
+      "name": "ADMIN 1366x768 standard last content remains reachable",
+      "pass": true
+    },
+    {
+      "name": "ADMIN 1366x768 large contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          1366,
+          768
+        ],
+        "page": [
+          1366,
+          768
+        ],
+        "panel": null,
+        "main": {
+          "height": 688,
+          "scroll": 2075
+        }
+      }
+    },
+    {
+      "name": "ADMIN 1366x768 large uses available width",
+      "pass": true
+    },
+    {
+      "name": "ADMIN 1366x768 large last content remains reachable",
+      "pass": true
+    },
+    {
+      "name": "ADMIN 1440x900 standard contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          1440,
+          900
+        ],
+        "page": [
+          1440,
+          900
+        ],
+        "panel": null,
+        "main": {
+          "height": 828,
+          "scroll": 2013
+        }
+      }
+    },
+    {
+      "name": "ADMIN 1440x900 standard uses available width",
+      "pass": true
+    },
+    {
+      "name": "ADMIN 1440x900 standard last content remains reachable",
+      "pass": true
+    },
+    {
+      "name": "ADMIN 1440x900 large contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          1440,
+          900
+        ],
+        "page": [
+          1440,
+          900
+        ],
+        "panel": null,
+        "main": {
+          "height": 820,
+          "scroll": 2075
+        }
+      }
+    },
+    {
+      "name": "ADMIN 1440x900 large uses available width",
+      "pass": true
+    },
+    {
+      "name": "ADMIN 1440x900 large last content remains reachable",
+      "pass": true
+    },
+    {
+      "name": "ADMIN 1920x1080 standard contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          1920,
+          1080
+        ],
+        "page": [
+          1920,
+          1080
+        ],
+        "panel": null,
+        "main": {
+          "height": 1008,
+          "scroll": 1795
+        }
+      }
+    },
+    {
+      "name": "ADMIN 1920x1080 standard uses available width",
+      "pass": true
+    },
+    {
+      "name": "ADMIN 1920x1080 standard last content remains reachable",
+      "pass": true
+    },
+    {
+      "name": "ADMIN 1920x1080 large contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          1920,
+          1080
+        ],
+        "page": [
+          1920,
+          1080
+        ],
+        "panel": null,
+        "main": {
+          "height": 1000,
+          "scroll": 1879
+        }
+      }
+    },
+    {
+      "name": "ADMIN 1920x1080 large uses available width",
+      "pass": true
+    },
+    {
+      "name": "ADMIN 1920x1080 large last content remains reachable",
+      "pass": true
+    },
+    {
+      "name": "ADMIN 2560x1440 standard contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          2560,
+          1440
+        ],
+        "page": [
+          2560,
+          1440
+        ],
+        "panel": null,
+        "main": {
+          "height": 1368,
+          "scroll": 1795
+        }
+      }
+    },
+    {
+      "name": "ADMIN 2560x1440 standard uses available width",
+      "pass": true
+    },
+    {
+      "name": "ADMIN 2560x1440 standard last content remains reachable",
+      "pass": true
+    },
+    {
+      "name": "ADMIN 2560x1440 large contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          2560,
+          1440
+        ],
+        "page": [
+          2560,
+          1440
+        ],
+        "panel": null,
+        "main": {
+          "height": 1360,
+          "scroll": 1849
+        }
+      }
+    },
+    {
+      "name": "ADMIN 2560x1440 large uses available width",
+      "pass": true
+    },
+    {
+      "name": "ADMIN 2560x1440 large last content remains reachable",
+      "pass": true
+    },
+    {
+      "name": "FAMILY 360x560 standard contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          360,
+          560
+        ],
+        "page": [
+          360,
+          560
+        ],
+        "panel": null,
+        "main": {
+          "height": 411,
+          "scroll": 1614
+        }
+      }
+    },
+    {
+      "name": "FAMILY 360x560 standard uses available width",
+      "pass": true
+    },
+    {
+      "name": "FAMILY 360x560 standard last content remains reachable",
+      "pass": true
+    },
+    {
+      "name": "FAMILY 360x560 standard navigation does not overlap content",
+      "pass": true
+    },
+    {
+      "name": "FAMILY 360x560 large contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          360,
+          560
+        ],
+        "page": [
+          360,
+          560
+        ],
+        "panel": null,
+        "main": {
+          "height": 411,
+          "scroll": 1721
+        }
+      }
+    },
+    {
+      "name": "FAMILY 360x560 large uses available width",
+      "pass": true
+    },
+    {
+      "name": "FAMILY 360x560 large last content remains reachable",
+      "pass": true
+    },
+    {
+      "name": "FAMILY 360x560 large navigation does not overlap content",
+      "pass": true
+    },
+    {
+      "name": "FAMILY 390x844 standard contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          390,
+          844
+        ],
+        "page": [
+          390,
+          844
+        ],
+        "panel": null,
+        "main": {
+          "height": 695,
+          "scroll": 1614
+        }
+      }
+    },
+    {
+      "name": "FAMILY 390x844 standard uses available width",
+      "pass": true
+    },
+    {
+      "name": "FAMILY 390x844 standard last content remains reachable",
+      "pass": true
+    },
+    {
+      "name": "FAMILY 390x844 standard navigation does not overlap content",
+      "pass": true
+    },
+    {
+      "name": "FAMILY 390x844 large contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          390,
+          844
+        ],
+        "page": [
+          390,
+          844
+        ],
+        "panel": null,
+        "main": {
+          "height": 695,
+          "scroll": 1689
+        }
+      }
+    },
+    {
+      "name": "FAMILY 390x844 large uses available width",
+      "pass": true
+    },
+    {
+      "name": "FAMILY 390x844 large last content remains reachable",
+      "pass": true
+    },
+    {
+      "name": "FAMILY 390x844 large navigation does not overlap content",
+      "pass": true
+    },
+    {
+      "name": "FAMILY 760x640 standard contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          760,
+          640
+        ],
+        "page": [
+          760,
+          640
+        ],
+        "panel": null,
+        "main": {
+          "height": 491,
+          "scroll": 1295
+        }
+      }
+    },
+    {
+      "name": "FAMILY 760x640 standard uses available width",
+      "pass": true
+    },
+    {
+      "name": "FAMILY 760x640 standard last content remains reachable",
+      "pass": true
+    },
+    {
+      "name": "FAMILY 760x640 standard navigation does not overlap content",
+      "pass": true
+    },
+    {
+      "name": "FAMILY 760x640 large contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          760,
+          640
+        ],
+        "page": [
+          760,
+          640
+        ],
+        "panel": null,
+        "main": {
+          "height": 483,
+          "scroll": 1380
+        }
+      }
+    },
+    {
+      "name": "FAMILY 760x640 large uses available width",
+      "pass": true
+    },
+    {
+      "name": "FAMILY 760x640 large last content remains reachable",
+      "pass": true
+    },
+    {
+      "name": "FAMILY 760x640 large navigation does not overlap content",
+      "pass": true
+    },
+    {
+      "name": "FAMILY 1024x600 standard contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          1024,
+          600
+        ],
+        "page": [
+          1024,
+          600
+        ],
+        "panel": null,
+        "main": {
+          "height": 528,
+          "scroll": 1295
+        }
+      }
+    },
+    {
+      "name": "FAMILY 1024x600 standard uses available width",
+      "pass": true
+    },
+    {
+      "name": "FAMILY 1024x600 standard last content remains reachable",
+      "pass": true
+    },
+    {
+      "name": "FAMILY 1024x600 large contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          1024,
+          600
+        ],
+        "page": [
+          1024,
+          600
+        ],
+        "panel": null,
+        "main": {
+          "height": 520,
+          "scroll": 1380
+        }
+      }
+    },
+    {
+      "name": "FAMILY 1024x600 large uses available width",
+      "pass": true
+    },
+    {
+      "name": "FAMILY 1024x600 large last content remains reachable",
+      "pass": true
+    },
+    {
+      "name": "FAMILY 1366x768 standard contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          1366,
+          768
+        ],
+        "page": [
+          1366,
+          768
+        ],
+        "panel": null,
+        "main": {
+          "height": 696,
+          "scroll": 702
+        }
+      }
+    },
+    {
+      "name": "FAMILY 1366x768 standard uses available width",
+      "pass": true
+    },
+    {
+      "name": "FAMILY 1366x768 standard last content remains reachable",
+      "pass": true
+    },
+    {
+      "name": "FAMILY 1366x768 large contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          1366,
+          768
+        ],
+        "page": [
+          1366,
+          768
+        ],
+        "panel": null,
+        "main": {
+          "height": 688,
+          "scroll": 766
+        }
+      }
+    },
+    {
+      "name": "FAMILY 1366x768 large uses available width",
+      "pass": true
+    },
+    {
+      "name": "FAMILY 1366x768 large last content remains reachable",
+      "pass": true
+    },
+    {
+      "name": "FAMILY 1440x900 standard contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          1440,
+          900
+        ],
+        "page": [
+          1440,
+          900
+        ],
+        "panel": null,
+        "main": {
+          "height": 828,
+          "scroll": 828
+        }
+      }
+    },
+    {
+      "name": "FAMILY 1440x900 standard uses available width",
+      "pass": true
+    },
+    {
+      "name": "FAMILY 1440x900 standard last content remains reachable",
+      "pass": true
+    },
+    {
+      "name": "FAMILY 1440x900 large contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          1440,
+          900
+        ],
+        "page": [
+          1440,
+          900
+        ],
+        "panel": null,
+        "main": {
+          "height": 820,
+          "scroll": 820
+        }
+      }
+    },
+    {
+      "name": "FAMILY 1440x900 large uses available width",
+      "pass": true
+    },
+    {
+      "name": "FAMILY 1440x900 large last content remains reachable",
+      "pass": true
+    },
+    {
+      "name": "FAMILY 1920x1080 standard contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          1920,
+          1080
+        ],
+        "page": [
+          1920,
+          1080
+        ],
+        "panel": null,
+        "main": {
+          "height": 1008,
+          "scroll": 1008
+        }
+      }
+    },
+    {
+      "name": "FAMILY 1920x1080 standard uses available width",
+      "pass": true
+    },
+    {
+      "name": "FAMILY 1920x1080 standard last content remains reachable",
+      "pass": true
+    },
+    {
+      "name": "FAMILY 1920x1080 large contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          1920,
+          1080
+        ],
+        "page": [
+          1920,
+          1080
+        ],
+        "panel": null,
+        "main": {
+          "height": 1000,
+          "scroll": 1000
+        }
+      }
+    },
+    {
+      "name": "FAMILY 1920x1080 large uses available width",
+      "pass": true
+    },
+    {
+      "name": "FAMILY 1920x1080 large last content remains reachable",
+      "pass": true
+    },
+    {
+      "name": "FAMILY 2560x1440 standard contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          2560,
+          1440
+        ],
+        "page": [
+          2560,
+          1440
+        ],
+        "panel": null,
+        "main": {
+          "height": 1368,
+          "scroll": 1368
+        }
+      }
+    },
+    {
+      "name": "FAMILY 2560x1440 standard uses available width",
+      "pass": true
+    },
+    {
+      "name": "FAMILY 2560x1440 standard last content remains reachable",
+      "pass": true
+    },
+    {
+      "name": "FAMILY 2560x1440 large contains page",
+      "pass": true,
+      "details": {
+        "viewport": [
+          2560,
+          1440
+        ],
+        "page": [
+          2560,
+          1440
+        ],
+        "panel": null,
+        "main": {
+          "height": 1360,
+          "scroll": 1360
+        }
+      }
+    },
+    {
+      "name": "FAMILY 2560x1440 large uses available width",
+      "pass": true
+    },
+    {
+      "name": "FAMILY 2560x1440 large last content remains reachable",
+      "pass": true
+    },
+    {
+      "name": "no JavaScript errors",
+      "pass": true,
+      "details": []
+    },
+    {
+      "name": "no missing assets",
+      "pass": true,
+      "details": []
+    },
+    {
+      "name": "no unexpected APIs",
+      "pass": true,
+      "details": []
+    }
+  ]
+}

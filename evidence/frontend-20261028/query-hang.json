@@ -1,0 +1,53 @@
+{
+  "scope": "Current-source risk reproduction, not a fix or production incident claim",
+  "rows": [
+    {
+      "repeat": 1,
+      "beforeRelease": {
+        "calls": [
+          "old"
+        ],
+        "busy": [
+          true
+        ],
+        "disposedPromiseSettled": false
+      },
+      "observed": "unresolved active read blocks newest read; dispose prevents writes but does not end active promise",
+      "neighborNormalRead": [
+        "ok"
+      ]
+    },
+    {
+      "repeat": 2,
+      "beforeRelease": {
+        "calls": [
+          "old"
+        ],
+        "busy": [
+          true
+        ],
+        "disposedPromiseSettled": false
+      },
+      "observed": "unresolved active read blocks newest read; dispose prevents writes but does not end active promise",
+      "neighborNormalRead": [
+        "ok"
+      ]
+    },
+    {
+      "repeat": 3,
+      "beforeRelease": {
+        "calls": [
+          "old"
+        ],
+        "busy": [
+          true
+        ],
+        "disposedPromiseSettled": false
+      },
+      "observed": "unresolved active read blocks newest read; dispose prevents writes but does not end active promise",
+      "neighborNormalRead": [
+        "ok"
+      ]
+    }
+  ]
+}

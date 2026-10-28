@@ -1,0 +1,488 @@
+{
+  "sourceSHA": "3b79b1f90e6cde6656fc40b9cee2e6af79ff0fe9",
+  "mysqlVersion": "8.0.43",
+  "schema": "qa_arch_dd6e14ed187e",
+  "exit": 0,
+  "seconds": 8.538,
+  "script": "qa/real-backend-acceptance.cjs",
+  "uiBundleFiles": [
+    {
+      "file": "assets/Header-C03xX-Zw.css",
+      "raw": 2473,
+      "gzip": 758,
+      "brotli": 604,
+      "sha256": "ff06f40b31da28401797d281375d618c48c2ae6ed1f52ec189dc4227650cdf36"
+    },
+    {
+      "file": "assets/Header-CL-XYFNT.js",
+      "raw": 2346,
+      "gzip": 1292,
+      "brotli": 1051,
+      "sha256": "df7a9cef4299b8a5399e63ffb3ae23a2f5df37186bd27d8d1f8942807a232ea0"
+    },
+    {
+      "file": "assets/Home-C4H5hIN4.js",
+      "raw": 7134,
+      "gzip": 2972,
+      "brotli": 2416,
+      "sha256": "ea450bda0406ab5cb313f8c2bd3a8b1cc231e3deb07a18795bda31823753ae8e"
+    },
+    {
+      "file": "assets/Home-C8Djf2JV.css",
+      "raw": 5245,
+      "gzip": 1417,
+      "brotli": 1192,
+      "sha256": "b3adbeb5ef35d1fa88b64059c033c0a1826d9aaf8a38588006e5b09531d814c4"
+    },
+    {
+      "file": "assets/Login-DlreuNuY.css",
+      "raw": 5577,
+      "gzip": 1424,
+      "brotli": 1198,
+      "sha256": "fba94dc589150d0d98042ab17af0ff79b5fc2107b0afbbd20cb5d1cc31f77f1e"
+    },
+    {
+      "file": "assets/Login-cfqhAdTK.js",
+      "raw": 6604,
+      "gzip": 3161,
+      "brotli": 2557,
+      "sha256": "8cb1656021a4019b256f80ca67323ef9dbdea5aabd970210762716a83bc786be"
+    },
+    {
+      "file": "assets/NoticeEditor-DSSB1ex0.js",
+      "raw": 7944,
+      "gzip": 3486,
+      "brotli": 2863,
+      "sha256": "ee6c6861a4a8027b77c6f2f2923873a7034ba414595f5db3eba30058b9049f65"
+    },
+    {
+      "file": "assets/NoticeEditor-DvGlCuPU.css",
+      "raw": 2392,
+      "gzip": 737,
+      "brotli": 585,
+      "sha256": "e2a901ce0fae2dc5ce5dccf828e5cae295d1f993e94fd70504cc95784388a5b9"
+    },
+    {
+      "file": "assets/PositionMap-BlYu62eJ.css",
+      "raw": 16227,
+      "gzip": 6707,
+      "brotli": 5967,
+      "sha256": "550389ba40a2ea89065cba0b72b245aa8ead87a6e11fecc5527e72cae48c79e7"
+    },
+    {
+      "file": "assets/PositionMap-cSESNSl-.js",
+      "raw": 150795,
+      "gzip": 44101,
+      "brotli": 38386,
+      "sha256": "ff39100672d34e3dd023f3e226353b055e74280667e22dba3bc03d8aafa440a2"
+    },
+    {
+      "file": "assets/RecordCards-CEls7rOR.js",
+      "raw": 2199,
+      "gzip": 1100,
+      "brotli": 918,
+      "sha256": "de179fb41fe139ac7fc34b96cfb521c098f1220130fee6250361cdf4fc87b1d1"
+    },
+    {
+      "file": "assets/RecordCards-DrdQ6mO5.css",
+      "raw": 1444,
+      "gzip": 512,
+      "brotli": 403,
+      "sha256": "cb9c00de664cddb651c800178d628124cce166f9f1de40b77f4f7827eb71cb7b"
+    },
+    {
+      "file": "assets/Register-B0raAO0I.css",
+      "raw": 4355,
+      "gzip": 1162,
+      "brotli": 976,
+      "sha256": "3eb4774b88e8842c69e1a7c850a54a129abf82c880ed5be4840c70875835d9bf"
+    },
+    {
+      "file": "assets/Register-B8ChQkDd.js",
+      "raw": 9629,
+      "gzip": 3433,
+      "brotli": 2807,
+      "sha256": "ff4fcc91fe3fa51ac5217a87046280b8027964b52b5eb67cfd8b88c95daee0e1"
+    },
+    {
+      "file": "assets/SecurityPanel-BzG2ac9E.css",
+      "raw": 859,
+      "gzip": 363,
+      "brotli": 270,
+      "sha256": "87ac01d6240bd96b184d4a58503798501d4d745f0f7691e8db3f99962b02116a"
+    },
+    {
+      "file": "assets/SecurityPanel-e9sgERke.js",
+      "raw": 2917,
+      "gzip": 1504,
+      "brotli": 1208,
+      "sha256": "d7a0fb130d67d23d18518eed1e8f7889094f17db14f7922ef2a5ddbc751e991f"
+    },
+    {
+      "file": "assets/Setup-C5R8dxt5.css",
+      "raw": 1709,
+      "gzip": 599,
+      "brotli": 485,
+      "sha256": "287966990933af56205c41247f903250b83d38c8b70266f2a12d4b37c9858425"
+    },
+    {
+      "file": "assets/Setup-CWd_4cS-.js",
+      "raw": 3500,
+      "gzip": 1963,
+      "brotli": 1521,
+      "sha256": "57091ddc7cb5e2b9cdf9f0f29621bce6834963f172abfc7293d3521aee4b7a3d"
+    },
+    {
+      "file": "assets/_plugin-vue_export-helper-CJMv9Rw7.js",
+      "raw": 66652,
+      "gzip": 25734,
+      "brotli": 23508,
+      "sha256": "f2156d8f0bdae095e00bffe54fc39203ce23bb7845fc6544a54c08af3b6f4153"
+    },
+    {
+      "file": "assets/annex-C_RDEg9p.css",
+      "raw": 1057,
+      "gzip": 443,
+      "brotli": 342,
+      "sha256": "09d6e20049ae106fb4ccd93701c32e4ecedc409aa83c373d6eaa7a2b25b6235a"
+    },
+    {
+      "file": "assets/annex-dpgsookd.js",
+      "raw": 950,
+      "gzip": 691,
+      "brotli": 529,
+      "sha256": "af5183fe64f27176bf72971db34cbc14f06b052f73e2724395edd207b1f81e81"
+    },
+    {
+      "file": "assets/care-announcement-empty-Cd09MsA3.js",
+      "raw": 64,
+      "gzip": 83,
+      "brotli": 68,
+      "sha256": "4a627eb5f1f9f28c238d41be9be9e54e2390b62afc5e0c5064f58fbf55739974"
+    },
+    {
+      "file": "assets/care-courtyard-CJhr71K1.js",
+      "raw": 55,
+      "gzip": 75,
+      "brotli": 58,
+      "sha256": "1a9b20ec33a63454fdf083e9fe41c50f91ae0baffb60741fdc202a866ef2b0ba"
+    },
+    {
+      "file": "assets/care-lakeside-artisan-DkJ9ugHL.js",
+      "raw": 111,
+      "gzip": 94,
+      "brotli": 79,
+      "sha256": "cb426689c469d6791491be306cb2dec0bc08e0edeef9699b72604a7624a8a25e"
+    },
+    {
+      "file": "assets/charts-CweEC4t2.js",
+      "raw": 522782,
+      "gzip": 175237,
+      "brotli": 148439,
+      "sha256": "5e0e6d36111b632e85903b2b2dcc71d3986bb7c3c210732e100d6c3b191b9e5f"
+    },
+    {
+      "file": "assets/client-CdfpwGFV.js",
+      "raw": 211,
+      "gzip": 219,
+      "brotli": 189,
+      "sha256": "2168d25a440c60aca0fb669abfb009313d922b3cfab121f2b03981b62e20eae4"
+    },
+    {
+      "file": "assets/customer-qMhYyw7c.js",
+      "raw": 10380,
+      "gzip": 3584,
+      "brotli": 2955,
+      "sha256": "5030b3d5af43dcdd121e0880477868dd9aae4270a9c6f34b9a8f3b2431a1291f"
+    },
+    {
+      "file": "assets/device-CABLwES4.js",
+      "raw": 30210,
+      "gzip": 8718,
+      "brotli": 7336,
+      "sha256": "7a82b97b303a8dc8c8eaf4f5ebe1ce1f52c52e02ca3e5f0b88a0a0a5086338dc"
+    },
+    {
+      "file": "assets/device-CXQ4-6HM.css",
+      "raw": 1150,
+      "gzip": 417,
+      "brotli": 318,
+      "sha256": "df6685330572522a6223292fbd6ed62368b7c95bf736329f52e3879c65a707f3"
+    },
+    {
+      "file": "assets/family-rq2FFAls.js",
+      "raw": 10887,
+      "gzip": 3396,
+      "brotli": 2776,
+      "sha256": "0575f6f19931f3b90d9a70d93149c0f5774dab0c067da9454e8175d538a72166"
+    },
+    {
+      "file": "assets/familyHome-DGTvvvs-.css",
+      "raw": 5440,
+      "gzip": 1475,
+      "brotli": 1242,
+      "sha256": "54937cb123347681d93cf92b53b5aef8c3d4ead639193da15083a17c116156c6"
+    },
+    {
+      "file": "assets/familyHome-DfX-Mr0b.js",
+      "raw": 4170,
+      "gzip": 1857,
+      "brotli": 1521,
+      "sha256": "bfcc53bff9f73be89fb552d4163c81ea10d9038ee99aa364c1919ae8accde7f3"
+    },
+    {
+      "file": "assets/familyMain-Bu7H5TDP.js",
+      "raw": 5855,
+      "gzip": 2479,
+      "brotli": 2023,
+      "sha256": "9f8bbaff70a18d6e47c29a8bb245275911bb25d815b47ad96c1f95bc5cae8748"
+    },
+    {
+      "file": "assets/familyMain-Vq_QiNK0.css",
+      "raw": 6465,
+      "gzip": 1570,
+      "brotli": 1321,
+      "sha256": "e9fc04f9db17e84196e57602be7ad8b134c43bff4221611ef2033bee20bf2619"
+    },
+    {
+      "file": "assets/index-BDxSQ7E5.js",
+      "raw": 639046,
+      "gzip": 204979,
+      "brotli": 172850,
+      "sha256": "4f6d52c7f2b0b2ad042931af764e727b903622ce3afe762b4615adbcf525b6d5"
+    },
+    {
+      "file": "assets/index-kJ-Gl3tX.css",
+      "raw": 441326,
+      "gzip": 68147,
+      "brotli": 49430,
+      "sha256": "5eb80925e35b4b1ca94883fea5f283d7a04b1805d13c1505ea0ee3238bff08b4"
+    },
+    {
+      "file": "assets/inviteCode-CxguqjBJ.js",
+      "raw": 12874,
+      "gzip": 4482,
+      "brotli": 3674,
+      "sha256": "f502c31ff5ed07684f3fcd6d52fd74516e5fe77b4b156556fb5481cace035609"
+    },
+    {
+      "file": "assets/inviteCode-DCzlyO6L.css",
+      "raw": 253,
+      "gzip": 178,
+      "brotli": 125,
+      "sha256": "0e45c6b54bac9ad0ace0ec24711763d99ffa71a2ee13d3877fd6d86a0720dfd2"
+    },
+    {
+      "file": "assets/latestRead-DDFr1Ks6.js",
+      "raw": 394,
+      "gzip": 259,
+      "brotli": 232,
+      "sha256": "027a633160096ee961f55f64641df46203b81651073736bbda7fdaaa9df43204"
+    },
+    {
+      "file": "assets/life-CIHRAYSh.js",
+      "raw": 3811,
+      "gzip": 1766,
+      "brotli": 1479,
+      "sha256": "e969f9e3d0c98f6afd0d028b7118b3b977a79061e0750c0d2d5dbb7caa0462f2"
+    },
+    {
+      "file": "assets/main-D-yUMLJ2.css",
+      "raw": 8207,
+      "gzip": 1954,
+      "brotli": 1650,
+      "sha256": "e945cfe35ff87931c1bb6a4006666c101abc826dc6cff7b238fcc4bbe4c0017a"
+    },
+    {
+      "file": "assets/main-DWakmJCp.js",
+      "raw": 24537,
+      "gzip": 8854,
+      "brotli": 7476,
+      "sha256": "a022ac22b2bdcd89369eeb5db93b2d5bf9655735e7d32df2dd9453058e97ce0f"
+    },
+    {
+      "file": "assets/me-BmFeO1E4.css",
+      "raw": 1986,
+      "gzip": 651,
+      "brotli": 514,
+      "sha256": "0331b2333a1767da46b42e50b87de31a80b9c11863c157797c6d1afe309e527b"
+    },
+    {
+      "file": "assets/me-DaR2KoZy.js",
+      "raw": 11980,
+      "gzip": 3601,
+      "brotli": 3012,
+      "sha256": "e2a727a97f81291d258819551b82bc00d16e05ead2ebbe2e76f5630856b6b439"
+    },
+    {
+      "file": "assets/person-DCocLMMv.js",
+      "raw": 16394,
+      "gzip": 4663,
+      "brotli": 3871,
+      "sha256": "984525f6ce0f372a6b5e56c87bf4245e1b9afc757201eb933c62487fa99c9fde"
+    },
+    {
+      "file": "assets/position-B8a8AGcN.css",
+      "raw": 80,
+      "gzip": 85,
+      "brotli": 74,
+      "sha256": "0f7e4621d04db21e5b6c6198a2bb9b64da62fd2acc008b0ec04526cfd509b604"
+    },
+    {
+      "file": "assets/position-DdQJ3AHM.js",
+      "raw": 6623,
+      "gzip": 2720,
+      "brotli": 2243,
+      "sha256": "5bc6f4c3a6901a110223cbbd36d81ac24b431ee25f1e5393c0d15538e223a3e1"
+    },
+    {
+      "file": "assets/positionfamily-Bzv-lv8-.js",
+      "raw": 3724,
+      "gzip": 1764,
+      "brotli": 1450,
+      "sha256": "4d26185f99285664d44fda2060f156c6ecd64aae1d123c6c8140b300369d13ec"
+    },
+    {
+      "file": "assets/positionfamily-yI47DIHL.css",
+      "raw": 95,
+      "gzip": 100,
+      "brotli": 64,
+      "sha256": "f85e942c26527f789dc891b7f7bb32e90d7dc678d7d52a0b58ce6d0cfb11b0a8"
+    },
+    {
+      "file": "assets/ratepre-Dl1K6k_L.js",
+      "raw": 14263,
+      "gzip": 4612,
+      "brotli": 3897,
+      "sha256": "a7161d0b285237c8588e6b3fd0b5a8f7e8e5b18f795f5f812f6fe1ca78451915"
+    },
+    {
+      "file": "assets/rateprefamily-B7BwC-zt.js",
+      "raw": 5933,
+      "gzip": 2440,
+      "brotli": 2060,
+      "sha256": "b75be34fed2c184e57b353e0fca453d6b74b94d2aea736a2492673d24a3adf2d"
+    },
+    {
+      "file": "assets/rateprefamily-DIMpapJS.css",
+      "raw": 369,
+      "gzip": 233,
+      "brotli": 169,
+      "sha256": "503da6cdb64b4172d18eaba0fc30df9031f05b878e4b3ead1fe19b29b5ba02aa"
+    },
+    {
+      "file": "assets/rolldown-runtime-XKyaHtl9.js",
+      "raw": 726,
+      "gzip": 429,
+      "brotli": 382,
+      "sha256": "548d1dbf321e7d2ae804fcc158b588706a7c52f8ca175de1490c6ccb4dbe55b7"
+    },
+    {
+      "file": "assets/saidOperation-Dlxpsbxx.js",
+      "raw": 6271,
+      "gzip": 2439,
+      "brotli": 1976,
+      "sha256": "3d0dc8da151e6bc99f9a73e6426f20467f1aec0f74564dd949b8ca7c4bd83946"
+    },
+    {
+      "file": "assets/step-D6JNMcLV.js",
+      "raw": 5900,
+      "gzip": 2496,
+      "brotli": 2085,
+      "sha256": "cc4f515aa0083305308bcfda67cc74fcdf6a1bc5aebfde13bff0e60eacf28ff9"
+    },
+    {
+      "file": "assets/stepfamily-Bj1dK7qG.css",
+      "raw": 85,
+      "gzip": 98,
+      "brotli": 70,
+      "sha256": "a144283ad4593de9019f8b3fd6ac4af784abef3d983fd0b62db206c57674c998"
+    },
+    {
+      "file": "assets/stepfamily-BjRHNDTE.js",
+      "raw": 5415,
+      "gzip": 2366,
+      "brotli": 1964,
+      "sha256": "9bf59e71c4f9867fed623a7250106ba1575ffef5a0bd43fc8136a5e291bd2932"
+    },
+    {
+      "file": "assets/suining-logo-192-D8Nl0I9O.js",
+      "raw": 100,
+      "gzip": 89,
+      "brotli": 74,
+      "sha256": "b7c80f43e6b574fe3e8499873c83e5d734543b2868e1b054ee6645b144ec09c0"
+    },
+    {
+      "file": "assets/text-Dgpqdy8h.js",
+      "raw": 430,
+      "gzip": 290,
+      "brotli": 239,
+      "sha256": "e516f18ee1b24daa99cf20724c7f067e084335b301e92448da0cd2cdabb59c03"
+    },
+    {
+      "file": "assets/textMain-BXtNqweO.js",
+      "raw": 6094,
+      "gzip": 2594,
+      "brotli": 2139,
+      "sha256": "3aea67c16d020044f5c2b62a22195e89c84a0f8ff22d86ca6c3d42cdd13017eb"
+    },
+    {
+      "file": "assets/textMain-CX_v3dRy.css",
+      "raw": 2121,
+      "gzip": 701,
+      "brotli": 546,
+      "sha256": "404c10cd0fd98e13d1995b99ba24ce2e2ef4e793ccd259a8e079c4d7edd8a675"
+    },
+    {
+      "file": "assets/textMainUser-D5UufpX5.js",
+      "raw": 3459,
+      "gzip": 1602,
+      "brotli": 1316,
+      "sha256": "22b791dcb79a712e90e31775630bc51348cceb1e05c2b82ec0eb68db085c9b79"
+    },
+    {
+      "file": "assets/textMainUser-D5huNmTW.css",
+      "raw": 1641,
+      "gzip": 597,
+      "brotli": 475,
+      "sha256": "6f8cbe2ba593bdaabc5b2d42ed03a0eb6d69e34991d9d4b4eed43b8c9004b903"
+    },
+    {
+      "file": "assets/textOpt-BDCFkzLU.js",
+      "raw": 8459,
+      "gzip": 3470,
+      "brotli": 2887,
+      "sha256": "4226f64daa9100deaad306714d01b1a054c9407e2dc42b9a3dd7bf2768897130"
+    },
+    {
+      "file": "assets/textOpt-De-1nL5c.css",
+      "raw": 1850,
+      "gzip": 618,
+      "brotli": 507,
+      "sha256": "76f942a282615fbe2f00742d5209ab5548fcf70b5c790c9750c9bbebb92e4adf"
+    },
+    {
+      "file": "assets/textTwo-CefGvNxZ.js",
+      "raw": 419,
+      "gzip": 284,
+      "brotli": 232,
+      "sha256": "4b99c261484ae6ed91eb5739327fa7fb51fafa9f274e7c47caeaaf82b7cf5237"
+    },
+    {
+      "file": "assets/watch-CH1AVsJp.js",
+      "raw": 9993,
+      "gzip": 3230,
+      "brotli": 2641,
+      "sha256": "9dcbced311f9a4d74e2187952222650beebad2b471a0c38266b43ee8abd8e515"
+    },
+    {
+      "file": "index.html",
+      "raw": 1202,
+      "gzip": 645,
+      "brotli": 418,
+      "sha256": "e2b75d341a8d51fc9146c863844d5ea760730e166eb9c5c7a6ecc4abe95cf3ff"
+    }
+  ],
+  "scope": "Existing real Go/MySQL workflow with embedded exact baseline production bundle; no mocks, providers, actual native shell or sensors",
+  "cleanup": "owned app and MySQL only; original MySQL2077 untouched"
+}

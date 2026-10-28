@@ -1,0 +1,121 @@
+{
+  "qa": [
+    {
+      "file": "architecture-acceptance.json",
+      "checks": 23,
+      "failed": 0,
+      "scope": "API mocks"
+    },
+    {
+      "file": "browser-acceptance.json",
+      "checks": 305,
+      "failed": 0,
+      "scope": "API mocks"
+    },
+    {
+      "file": "controls-acceptance.json",
+      "checks": 656,
+      "failed": 0,
+      "scope": "API mocks"
+    },
+    {
+      "file": "database-availability.json",
+      "checks": 13,
+      "failed": 0,
+      "scope": "API mocks"
+    },
+    {
+      "file": "elder-delete.json",
+      "checks": 8,
+      "failed": 0,
+      "scope": "API mocks"
+    },
+    {
+      "file": "forms-acceptance.json",
+      "checks": 30,
+      "failed": 0,
+      "scope": "API mocks"
+    },
+    {
+      "file": "issues-acceptance.json",
+      "checks": 42,
+      "failed": 0,
+      "scope": "API mocks"
+    },
+    {
+      "file": "lifecycle-acceptance.json",
+      "checks": 7,
+      "failed": 0,
+      "scope": "API mocks"
+    },
+    {
+      "file": "real-backend-acceptance.json",
+      "checks": 15,
+      "failed": 0,
+      "scope": "actual Go/MySQL"
+    },
+    {
+      "file": "screen-acceptance.json",
+      "checks": 169,
+      "failed": 0,
+      "scope": "API mocks"
+    },
+    {
+      "file": "setup-browser-acceptance.json",
+      "checks": 10,
+      "failed": 0,
+      "scope": "API mocks"
+    },
+    {
+      "file": "ui-refinement.json",
+      "checks": 123,
+      "failed": 0,
+      "scope": "API mocks"
+    }
+  ],
+  "cssCounts": [
+    {
+      "file": "src/assets/css/element-theme.css",
+      "rules": 29,
+      "important": 7
+    },
+    {
+      "file": "src/assets/css/commercial.css",
+      "rules": 155,
+      "important": 1
+    }
+  ],
+  "cssOverlaps": 2,
+  "routes": [
+    {
+      "route": "/login",
+      "totals": {
+        "raw": 1160142,
+        "gzip": 304057,
+        "brotli": 250078
+      }
+    },
+    {
+      "route": "/rateprefamily",
+      "totals": {
+        "raw": 1691363,
+        "gzip": 482670,
+        "brotli": 401330
+      }
+    },
+    {
+      "route": "/positionfamily",
+      "totals": {
+        "raw": 1333120,
+        "gzip": 357432,
+        "brotli": 296529
+      }
+    }
+  ],
+  "contractOperations": {
+    "session": 3,
+    "devices": 24,
+    "health": 17,
+    "customers": 4
+  }
+}

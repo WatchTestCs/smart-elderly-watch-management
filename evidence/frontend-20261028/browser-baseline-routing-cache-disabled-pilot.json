@@ -1,0 +1,5932 @@
+{
+  "scope": "Production bundle, browser, existing synthetic API mocks; no backend/WebView2 or performance improvement claim",
+  "cacheMethod": "cold: CDP clearBrowserCache then unique HTML query per route/sample guarantees full navigation; warm: same URL reload without clearing; server uses existing harness headers, so warm context does not guarantee cached bytes; record actual transferSize",
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "samples": [
+    {
+      "route": "/login",
+      "cache": "cold",
+      "sample": 1,
+      "readyMs": 176.56380000000001,
+      "navigation": [
+        {
+          "name": "http://127.0.0.1:12772/?baseline=%2Flogin-1#/login",
+          "entryType": "navigation",
+          "startTime": 0,
+          "duration": 86.70000000298023,
+          "navigationId": 2186,
+          "initiatorType": "navigation",
+          "deliveryType": "",
+          "nextHopProtocol": "http/1.1",
+          "renderBlockingStatus": "non-blocking",
+          "contentType": "text/html",
+          "contentEncoding": "gzip",
+          "workerStart": 0,
+          "workerRouterEvaluationStart": 0,
+          "workerCacheLookupStart": 0,
+          "workerMatchedSourceType": "",
+          "workerFinalSourceType": "",
+          "redirectStart": 0,
+          "redirectEnd": 0,
+          "fetchStart": 0.8999999910593033,
+          "domainLookupStart": 0.8999999910593033,
+          "domainLookupEnd": 0.8999999910593033,
+          "connectStart": 0.8999999910593033,
+          "secureConnectionStart": 0,
+          "connectEnd": 0.8999999910593033,
+          "requestStart": 4.700000002980232,
+          "responseStart": 8.5,
+          "firstInterimResponseStart": 0,
+          "finalResponseHeadersStart": 8.5,
+          "responseEnd": 9.099999994039536,
+          "transferSize": 945,
+          "encodedBodySize": 645,
+          "decodedBodySize": 1202,
+          "responseStatus": 200,
+          "serverTiming": [],
+          "unloadEventStart": 0,
+          "unloadEventEnd": 0,
+          "domInteractive": 15.599999994039536,
+          "domContentLoadedEventStart": 86.59999999403954,
+          "domContentLoadedEventEnd": 86.70000000298023,
+          "domComplete": 86.70000000298023,
+          "loadEventStart": 86.70000000298023,
+          "loadEventEnd": 86.70000000298023,
+          "type": "navigate",
+          "redirectCount": 0,
+          "activationStart": 0,
+          "criticalCHRestart": 0,
+          "notRestoredReasons": null,
+          "confidence": {
+            "randomizedTriggerRate": 0.4994798,
+            "value": "high"
+          }
+        }
+      ],
+      "paint": [
+        {
+          "name": "first-paint",
+          "entryType": "paint",
+          "startTime": 64,
+          "duration": 0,
+          "navigationId": 2186,
+          "paintTime": 58.3999999910593,
+          "presentationTime": 64
+        }
+      ],
+      "resources": [
+        {
+          "name": "/static/fonts/source-serif-4.woff2",
+          "initiatorType": "link",
+          "duration": 13.100000008940697,
+          "transferSize": 429400,
+          "encodedBodySize": 429100,
+          "decodedBodySize": 429100
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/ui-common.woff2",
+          "initiatorType": "link",
+          "duration": 13.799999997019768,
+          "transferSize": 304784,
+          "encodedBodySize": 304484,
+          "decodedBodySize": 304484
+        },
+        {
+          "name": "/assets/rolldown-runtime-XKyaHtl9.js",
+          "initiatorType": "other",
+          "duration": 14.299999997019768,
+          "transferSize": 729,
+          "encodedBodySize": 429,
+          "decodedBodySize": 726
+        },
+        {
+          "name": "/assets/_plugin-vue_export-helper-CJMv9Rw7.js",
+          "initiatorType": "other",
+          "duration": 15,
+          "transferSize": 26047,
+          "encodedBodySize": 25747,
+          "decodedBodySize": 66652
+        },
+        {
+          "name": "/assets/index-kJ-Gl3tX.css",
+          "initiatorType": "link",
+          "duration": 20.5,
+          "transferSize": 68976,
+          "encodedBodySize": 68676,
+          "decodedBodySize": 441326
+        },
+        {
+          "name": "/assets/index-BDxSQ7E5.js",
+          "initiatorType": "script",
+          "duration": 31.100000008940697,
+          "transferSize": 205573,
+          "encodedBodySize": 205273,
+          "decodedBodySize": 639046
+        },
+        {
+          "name": "/restful/service/status",
+          "initiatorType": "xmlhttprequest",
+          "duration": 4.0999999940395355,
+          "transferSize": 322,
+          "encodedBodySize": 22,
+          "decodedBodySize": 22
+        },
+        {
+          "name": "/restful/userLogin/session",
+          "initiatorType": "xmlhttprequest",
+          "duration": 9.099999994039536,
+          "transferSize": 470,
+          "encodedBodySize": 170,
+          "decodedBodySize": 170
+        },
+        {
+          "name": "/static/brand/suining-favicon-32.png",
+          "initiatorType": "other",
+          "duration": 8.400000005960464,
+          "transferSize": 2449,
+          "encodedBodySize": 2149,
+          "decodedBodySize": 2149
+        },
+        {
+          "name": "/assets/Login-cfqhAdTK.js",
+          "initiatorType": "script",
+          "duration": 6.299999997019768,
+          "transferSize": 3461,
+          "encodedBodySize": 3161,
+          "decodedBodySize": 6604
+        },
+        {
+          "name": "/assets/suining-logo-192-D8Nl0I9O.js",
+          "initiatorType": "script",
+          "duration": 4.799999997019768,
+          "transferSize": 389,
+          "encodedBodySize": 89,
+          "decodedBodySize": 100
+        },
+        {
+          "name": "/assets/care-lakeside-artisan-DkJ9ugHL.js",
+          "initiatorType": "script",
+          "duration": 5.0999999940395355,
+          "transferSize": 394,
+          "encodedBodySize": 94,
+          "decodedBodySize": 111
+        },
+        {
+          "name": "/assets/Login-DlreuNuY.css",
+          "initiatorType": "link",
+          "duration": 6.200000002980232,
+          "transferSize": 1734,
+          "encodedBodySize": 1434,
+          "decodedBodySize": 5577
+        },
+        {
+          "name": "/static/img/care-lakeside-artisan.webp",
+          "initiatorType": "img",
+          "duration": 2.9000000059604645,
+          "transferSize": 310364,
+          "encodedBodySize": 310064,
+          "decodedBodySize": 310064
+        },
+        {
+          "name": "/static/brand/suining-logo-96.webp",
+          "initiatorType": "img",
+          "duration": 2.1000000089406967,
+          "transferSize": 3896,
+          "encodedBodySize": 3596,
+          "decodedBodySize": 3596
+        },
+        {
+          "name": "/static/icons/element-icons.woff",
+          "initiatorType": "css",
+          "duration": 28.400000005960464,
+          "transferSize": 6464,
+          "encodedBodySize": 6164,
+          "decodedBodySize": 6164
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-027.woff2",
+          "initiatorType": "css",
+          "duration": 23,
+          "transferSize": 270392,
+          "encodedBodySize": 270092,
+          "decodedBodySize": 270092
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-022.woff2",
+          "initiatorType": "css",
+          "duration": 24,
+          "transferSize": 383324,
+          "encodedBodySize": 383024,
+          "decodedBodySize": 383024
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-021.woff2",
+          "initiatorType": "css",
+          "duration": 22.099999994039536,
+          "transferSize": 459752,
+          "encodedBodySize": 459452,
+          "decodedBodySize": 459452
+        }
+      ]
+    },
+    {
+      "route": "/login",
+      "cache": "warm",
+      "sample": 1,
+      "readyMs": 115.3161,
+      "navigation": [
+        {
+          "name": "http://127.0.0.1:12772/?baseline=%2Flogin-1#/login",
+          "entryType": "navigation",
+          "startTime": 0,
+          "duration": 55.5,
+          "navigationId": 5777,
+          "initiatorType": "navigation",
+          "deliveryType": "",
+          "nextHopProtocol": "http/1.1",
+          "renderBlockingStatus": "non-blocking",
+          "contentType": "text/html",
+          "contentEncoding": "gzip",
+          "workerStart": 0,
+          "workerRouterEvaluationStart": 0,
+          "workerCacheLookupStart": 0,
+          "workerMatchedSourceType": "",
+          "workerFinalSourceType": "",
+          "redirectStart": 0,
+          "redirectEnd": 0,
+          "fetchStart": 0.5999999940395355,
+          "domainLookupStart": 0.5999999940395355,
+          "domainLookupEnd": 0.5999999940395355,
+          "connectStart": 0.5999999940395355,
+          "secureConnectionStart": 0,
+          "connectEnd": 0.5999999940395355,
+          "requestStart": 2.5,
+          "responseStart": 3.2999999970197678,
+          "firstInterimResponseStart": 0,
+          "finalResponseHeadersStart": 3.2999999970197678,
+          "responseEnd": 3.5,
+          "transferSize": 945,
+          "encodedBodySize": 645,
+          "decodedBodySize": 1202,
+          "responseStatus": 200,
+          "serverTiming": [],
+          "unloadEventStart": 5.899999991059303,
+          "unloadEventEnd": 5.899999991059303,
+          "domInteractive": 9.199999988079071,
+          "domContentLoadedEventStart": 55.3999999910593,
+          "domContentLoadedEventEnd": 55.3999999910593,
+          "domComplete": 55.5,
+          "loadEventStart": 55.5,
+          "loadEventEnd": 55.5,
+          "type": "reload",
+          "redirectCount": 0,
+          "activationStart": 0,
+          "criticalCHRestart": 0,
+          "notRestoredReasons": null,
+          "confidence": {
+            "randomizedTriggerRate": 0.4994798,
+            "value": "high"
+          }
+        }
+      ],
+      "paint": [
+        {
+          "name": "first-paint",
+          "entryType": "paint",
+          "startTime": 52,
+          "duration": 0,
+          "navigationId": 5777,
+          "paintTime": 46.8999999910593,
+          "presentationTime": 52
+        },
+        {
+          "name": "first-contentful-paint",
+          "entryType": "paint",
+          "startTime": 96,
+          "duration": 0,
+          "navigationId": 5777,
+          "paintTime": 83.79999999701977,
+          "presentationTime": 96
+        }
+      ],
+      "resources": [
+        {
+          "name": "/static/fonts/source-serif-4.woff2",
+          "initiatorType": "link",
+          "duration": 11.799999997019768,
+          "transferSize": 429400,
+          "encodedBodySize": 429100,
+          "decodedBodySize": 429100
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/ui-common.woff2",
+          "initiatorType": "link",
+          "duration": 12.600000008940697,
+          "transferSize": 304784,
+          "encodedBodySize": 304484,
+          "decodedBodySize": 304484
+        },
+        {
+          "name": "/assets/index-BDxSQ7E5.js",
+          "initiatorType": "script",
+          "duration": 27.700000002980232,
+          "transferSize": 205573,
+          "encodedBodySize": 205273,
+          "decodedBodySize": 639046
+        },
+        {
+          "name": "/assets/rolldown-runtime-XKyaHtl9.js",
+          "initiatorType": "other",
+          "duration": 10.799999997019768,
+          "transferSize": 729,
+          "encodedBodySize": 429,
+          "decodedBodySize": 726
+        },
+        {
+          "name": "/assets/_plugin-vue_export-helper-CJMv9Rw7.js",
+          "initiatorType": "other",
+          "duration": 28.299999997019768,
+          "transferSize": 26047,
+          "encodedBodySize": 25747,
+          "decodedBodySize": 66652
+        },
+        {
+          "name": "/assets/index-kJ-Gl3tX.css",
+          "initiatorType": "link",
+          "duration": 33.3999999910593,
+          "transferSize": 68976,
+          "encodedBodySize": 68676,
+          "decodedBodySize": 441326
+        },
+        {
+          "name": "/restful/service/status",
+          "initiatorType": "xmlhttprequest",
+          "duration": 2.2999999970197678,
+          "transferSize": 322,
+          "encodedBodySize": 22,
+          "decodedBodySize": 22
+        },
+        {
+          "name": "/restful/userLogin/session",
+          "initiatorType": "xmlhttprequest",
+          "duration": 4.9000000059604645,
+          "transferSize": 470,
+          "encodedBodySize": 170,
+          "decodedBodySize": 170
+        },
+        {
+          "name": "/static/brand/suining-favicon-32.png",
+          "initiatorType": "other",
+          "duration": 5.200000002980232,
+          "transferSize": 2449,
+          "encodedBodySize": 2149,
+          "decodedBodySize": 2149
+        },
+        {
+          "name": "/assets/Login-cfqhAdTK.js",
+          "initiatorType": "script",
+          "duration": 2.7999999970197678,
+          "transferSize": 3461,
+          "encodedBodySize": 3161,
+          "decodedBodySize": 6604
+        },
+        {
+          "name": "/assets/suining-logo-192-D8Nl0I9O.js",
+          "initiatorType": "script",
+          "duration": 3.2000000029802322,
+          "transferSize": 389,
+          "encodedBodySize": 89,
+          "decodedBodySize": 100
+        },
+        {
+          "name": "/assets/care-lakeside-artisan-DkJ9ugHL.js",
+          "initiatorType": "script",
+          "duration": 3.5,
+          "transferSize": 394,
+          "encodedBodySize": 94,
+          "decodedBodySize": 111
+        },
+        {
+          "name": "/assets/Login-DlreuNuY.css",
+          "initiatorType": "link",
+          "duration": 3.6000000089406967,
+          "transferSize": 1734,
+          "encodedBodySize": 1434,
+          "decodedBodySize": 5577
+        },
+        {
+          "name": "/static/brand/suining-logo-96.webp",
+          "initiatorType": "img",
+          "duration": 3,
+          "transferSize": 3896,
+          "encodedBodySize": 3596,
+          "decodedBodySize": 3596
+        },
+        {
+          "name": "/static/img/care-lakeside-artisan.webp",
+          "initiatorType": "img",
+          "duration": 4.200000002980232,
+          "transferSize": 310364,
+          "encodedBodySize": 310064,
+          "decodedBodySize": 310064
+        },
+        {
+          "name": "/static/icons/element-icons.woff",
+          "initiatorType": "css",
+          "duration": 12.099999994039536,
+          "transferSize": 6464,
+          "encodedBodySize": 6164,
+          "decodedBodySize": 6164
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-027.woff2",
+          "initiatorType": "css",
+          "duration": 11.099999994039536,
+          "transferSize": 270392,
+          "encodedBodySize": 270092,
+          "decodedBodySize": 270092
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-022.woff2",
+          "initiatorType": "css",
+          "duration": 10.299999997019768,
+          "transferSize": 383324,
+          "encodedBodySize": 383024,
+          "decodedBodySize": 383024
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-021.woff2",
+          "initiatorType": "css",
+          "duration": 12.400000005960464,
+          "transferSize": 459752,
+          "encodedBodySize": 459452,
+          "decodedBodySize": 459452
+        }
+      ]
+    },
+    {
+      "route": "/login",
+      "cache": "cold",
+      "sample": 2,
+      "readyMs": 112.10990000000004,
+      "navigation": [
+        {
+          "name": "http://127.0.0.1:12772/?baseline=%2Flogin-2#/login",
+          "entryType": "navigation",
+          "startTime": 0,
+          "duration": 50.900000005960464,
+          "navigationId": 8079,
+          "initiatorType": "navigation",
+          "deliveryType": "",
+          "nextHopProtocol": "http/1.1",
+          "renderBlockingStatus": "non-blocking",
+          "contentType": "text/html",
+          "contentEncoding": "gzip",
+          "workerStart": 0,
+          "workerRouterEvaluationStart": 0,
+          "workerCacheLookupStart": 0,
+          "workerMatchedSourceType": "",
+          "workerFinalSourceType": "",
+          "redirectStart": 0,
+          "redirectEnd": 0,
+          "fetchStart": 0.5,
+          "domainLookupStart": 0.5,
+          "domainLookupEnd": 0.5,
+          "connectStart": 0.5,
+          "secureConnectionStart": 0,
+          "connectEnd": 0.5,
+          "requestStart": 2.300000011920929,
+          "responseStart": 2.9000000059604645,
+          "firstInterimResponseStart": 0,
+          "finalResponseHeadersStart": 2.9000000059604645,
+          "responseEnd": 3.1000000089406967,
+          "transferSize": 945,
+          "encodedBodySize": 645,
+          "decodedBodySize": 1202,
+          "responseStatus": 200,
+          "serverTiming": [],
+          "unloadEventStart": 5.9000000059604645,
+          "unloadEventEnd": 5.9000000059604645,
+          "domInteractive": 9.5,
+          "domContentLoadedEventStart": 50.70000000298023,
+          "domContentLoadedEventEnd": 50.80000001192093,
+          "domComplete": 50.80000001192093,
+          "loadEventStart": 50.900000005960464,
+          "loadEventEnd": 50.900000005960464,
+          "type": "navigate",
+          "redirectCount": 0,
+          "activationStart": 0,
+          "criticalCHRestart": 0,
+          "notRestoredReasons": null,
+          "confidence": {
+            "randomizedTriggerRate": 0.4994798,
+            "value": "high"
+          }
+        }
+      ],
+      "paint": [
+        {
+          "name": "first-paint",
+          "entryType": "paint",
+          "startTime": 56,
+          "duration": 0,
+          "navigationId": 8079,
+          "paintTime": 44.400000005960464,
+          "presentationTime": 56
+        },
+        {
+          "name": "first-contentful-paint",
+          "entryType": "paint",
+          "startTime": 88,
+          "duration": 0,
+          "navigationId": 8079,
+          "paintTime": 79.20000000298023,
+          "presentationTime": 88
+        }
+      ],
+      "resources": [
+        {
+          "name": "/static/fonts/source-serif-4.woff2",
+          "initiatorType": "link",
+          "duration": 10.200000002980232,
+          "transferSize": 429400,
+          "encodedBodySize": 429100,
+          "decodedBodySize": 429100
+        },
+        {
+          "name": "/assets/rolldown-runtime-XKyaHtl9.js",
+          "initiatorType": "other",
+          "duration": 10.600000008940697,
+          "transferSize": 729,
+          "encodedBodySize": 429,
+          "decodedBodySize": 726
+        },
+        {
+          "name": "/assets/_plugin-vue_export-helper-CJMv9Rw7.js",
+          "initiatorType": "other",
+          "duration": 11.600000008940697,
+          "transferSize": 26047,
+          "encodedBodySize": 25747,
+          "decodedBodySize": 66652
+        },
+        {
+          "name": "/assets/index-kJ-Gl3tX.css",
+          "initiatorType": "link",
+          "duration": 26.400000005960464,
+          "transferSize": 68976,
+          "encodedBodySize": 68676,
+          "decodedBodySize": 441326
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/ui-common.woff2",
+          "initiatorType": "link",
+          "duration": 11,
+          "transferSize": 304784,
+          "encodedBodySize": 304484,
+          "decodedBodySize": 304484
+        },
+        {
+          "name": "/assets/index-BDxSQ7E5.js",
+          "initiatorType": "script",
+          "duration": 21.799999997019768,
+          "transferSize": 205573,
+          "encodedBodySize": 205273,
+          "decodedBodySize": 639046
+        },
+        {
+          "name": "/restful/service/status",
+          "initiatorType": "xmlhttprequest",
+          "duration": 1.9000000059604645,
+          "transferSize": 322,
+          "encodedBodySize": 22,
+          "decodedBodySize": 22
+        },
+        {
+          "name": "/restful/userLogin/session",
+          "initiatorType": "xmlhttprequest",
+          "duration": 5.299999997019768,
+          "transferSize": 470,
+          "encodedBodySize": 170,
+          "decodedBodySize": 170
+        },
+        {
+          "name": "/static/brand/suining-favicon-32.png",
+          "initiatorType": "other",
+          "duration": 5.100000008940697,
+          "transferSize": 2449,
+          "encodedBodySize": 2149,
+          "decodedBodySize": 2149
+        },
+        {
+          "name": "/assets/Login-cfqhAdTK.js",
+          "initiatorType": "script",
+          "duration": 2.5,
+          "transferSize": 3461,
+          "encodedBodySize": 3161,
+          "decodedBodySize": 6604
+        },
+        {
+          "name": "/assets/suining-logo-192-D8Nl0I9O.js",
+          "initiatorType": "script",
+          "duration": 2.0999999940395355,
+          "transferSize": 389,
+          "encodedBodySize": 89,
+          "decodedBodySize": 100
+        },
+        {
+          "name": "/assets/care-lakeside-artisan-DkJ9ugHL.js",
+          "initiatorType": "script",
+          "duration": 2.7999999970197678,
+          "transferSize": 394,
+          "encodedBodySize": 94,
+          "decodedBodySize": 111
+        },
+        {
+          "name": "/assets/Login-DlreuNuY.css",
+          "initiatorType": "link",
+          "duration": 2.7999999970197678,
+          "transferSize": 1734,
+          "encodedBodySize": 1434,
+          "decodedBodySize": 5577
+        },
+        {
+          "name": "/static/img/care-lakeside-artisan.webp",
+          "initiatorType": "img",
+          "duration": 2,
+          "transferSize": 310364,
+          "encodedBodySize": 310064,
+          "decodedBodySize": 310064
+        },
+        {
+          "name": "/static/brand/suining-logo-96.webp",
+          "initiatorType": "img",
+          "duration": 2.5,
+          "transferSize": 3896,
+          "encodedBodySize": 3596,
+          "decodedBodySize": 3596
+        },
+        {
+          "name": "/static/icons/element-icons.woff",
+          "initiatorType": "css",
+          "duration": 10.899999991059303,
+          "transferSize": 6464,
+          "encodedBodySize": 6164,
+          "decodedBodySize": 6164
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-027.woff2",
+          "initiatorType": "css",
+          "duration": 9.299999997019768,
+          "transferSize": 270392,
+          "encodedBodySize": 270092,
+          "decodedBodySize": 270092
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-022.woff2",
+          "initiatorType": "css",
+          "duration": 10.699999988079071,
+          "transferSize": 383324,
+          "encodedBodySize": 383024,
+          "decodedBodySize": 383024
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-021.woff2",
+          "initiatorType": "css",
+          "duration": 10.700000002980232,
+          "transferSize": 459752,
+          "encodedBodySize": 459452,
+          "decodedBodySize": 459452
+        }
+      ]
+    },
+    {
+      "route": "/login",
+      "cache": "warm",
+      "sample": 2,
+      "readyMs": 109.69049999999993,
+      "navigation": [
+        {
+          "name": "http://127.0.0.1:12772/?baseline=%2Flogin-2#/login",
+          "entryType": "navigation",
+          "startTime": 0,
+          "duration": 50.20000000298023,
+          "navigationId": 776,
+          "initiatorType": "navigation",
+          "deliveryType": "",
+          "nextHopProtocol": "http/1.1",
+          "renderBlockingStatus": "non-blocking",
+          "contentType": "text/html",
+          "contentEncoding": "gzip",
+          "workerStart": 0,
+          "workerRouterEvaluationStart": 0,
+          "workerCacheLookupStart": 0,
+          "workerMatchedSourceType": "",
+          "workerFinalSourceType": "",
+          "redirectStart": 0,
+          "redirectEnd": 0,
+          "fetchStart": 0.7000000029802322,
+          "domainLookupStart": 0.7000000029802322,
+          "domainLookupEnd": 0.7000000029802322,
+          "connectStart": 0.7000000029802322,
+          "secureConnectionStart": 0,
+          "connectEnd": 0.7000000029802322,
+          "requestStart": 2.9000000059604645,
+          "responseStart": 3.5,
+          "firstInterimResponseStart": 0,
+          "finalResponseHeadersStart": 3.5,
+          "responseEnd": 3.7000000029802322,
+          "transferSize": 945,
+          "encodedBodySize": 645,
+          "decodedBodySize": 1202,
+          "responseStatus": 200,
+          "serverTiming": [],
+          "unloadEventStart": 6,
+          "unloadEventEnd": 6,
+          "domInteractive": 9.5,
+          "domContentLoadedEventStart": 50,
+          "domContentLoadedEventEnd": 50.1000000089407,
+          "domComplete": 50.20000000298023,
+          "loadEventStart": 50.20000000298023,
+          "loadEventEnd": 50.20000000298023,
+          "type": "reload",
+          "redirectCount": 0,
+          "activationStart": 0,
+          "criticalCHRestart": 0,
+          "notRestoredReasons": null,
+          "confidence": {
+            "randomizedTriggerRate": 0.4994798,
+            "value": "high"
+          }
+        }
+      ],
+      "paint": [
+        {
+          "name": "first-paint",
+          "entryType": "paint",
+          "startTime": 52,
+          "duration": 0,
+          "navigationId": 776,
+          "paintTime": 44.29999999701977,
+          "presentationTime": 52
+        },
+        {
+          "name": "first-contentful-paint",
+          "entryType": "paint",
+          "startTime": 92,
+          "duration": 0,
+          "navigationId": 776,
+          "paintTime": 78,
+          "presentationTime": 92
+        }
+      ],
+      "resources": [
+        {
+          "name": "/static/fonts/source-serif-4.woff2",
+          "initiatorType": "link",
+          "duration": 11.099999994039536,
+          "transferSize": 429400,
+          "encodedBodySize": 429100,
+          "decodedBodySize": 429100
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/ui-common.woff2",
+          "initiatorType": "link",
+          "duration": 9.900000005960464,
+          "transferSize": 304784,
+          "encodedBodySize": 304484,
+          "decodedBodySize": 304484
+        },
+        {
+          "name": "/assets/index-BDxSQ7E5.js",
+          "initiatorType": "script",
+          "duration": 20.5,
+          "transferSize": 205573,
+          "encodedBodySize": 205273,
+          "decodedBodySize": 639046
+        },
+        {
+          "name": "/assets/rolldown-runtime-XKyaHtl9.js",
+          "initiatorType": "other",
+          "duration": 10.399999991059303,
+          "transferSize": 729,
+          "encodedBodySize": 429,
+          "decodedBodySize": 726
+        },
+        {
+          "name": "/assets/_plugin-vue_export-helper-CJMv9Rw7.js",
+          "initiatorType": "other",
+          "duration": 21.200000002980232,
+          "transferSize": 26047,
+          "encodedBodySize": 25747,
+          "decodedBodySize": 66652
+        },
+        {
+          "name": "/assets/index-kJ-Gl3tX.css",
+          "initiatorType": "link",
+          "duration": 27.099999994039536,
+          "transferSize": 68976,
+          "encodedBodySize": 68676,
+          "decodedBodySize": 441326
+        },
+        {
+          "name": "/restful/service/status",
+          "initiatorType": "xmlhttprequest",
+          "duration": 2.1000000089406967,
+          "transferSize": 322,
+          "encodedBodySize": 22,
+          "decodedBodySize": 22
+        },
+        {
+          "name": "/restful/userLogin/session",
+          "initiatorType": "xmlhttprequest",
+          "duration": 5.200000002980232,
+          "transferSize": 470,
+          "encodedBodySize": 170,
+          "decodedBodySize": 170
+        },
+        {
+          "name": "/static/brand/suining-favicon-32.png",
+          "initiatorType": "other",
+          "duration": 5.4000000059604645,
+          "transferSize": 2449,
+          "encodedBodySize": 2149,
+          "decodedBodySize": 2149
+        },
+        {
+          "name": "/assets/Login-cfqhAdTK.js",
+          "initiatorType": "script",
+          "duration": 2.7000000029802322,
+          "transferSize": 3461,
+          "encodedBodySize": 3161,
+          "decodedBodySize": 6604
+        },
+        {
+          "name": "/assets/suining-logo-192-D8Nl0I9O.js",
+          "initiatorType": "script",
+          "duration": 3.1000000089406967,
+          "transferSize": 389,
+          "encodedBodySize": 89,
+          "decodedBodySize": 100
+        },
+        {
+          "name": "/assets/care-lakeside-artisan-DkJ9ugHL.js",
+          "initiatorType": "script",
+          "duration": 3.0999999940395355,
+          "transferSize": 394,
+          "encodedBodySize": 94,
+          "decodedBodySize": 111
+        },
+        {
+          "name": "/assets/Login-DlreuNuY.css",
+          "initiatorType": "link",
+          "duration": 3.5,
+          "transferSize": 1734,
+          "encodedBodySize": 1434,
+          "decodedBodySize": 5577
+        },
+        {
+          "name": "/static/img/care-lakeside-artisan.webp",
+          "initiatorType": "img",
+          "duration": 2.3999999910593033,
+          "transferSize": 310364,
+          "encodedBodySize": 310064,
+          "decodedBodySize": 310064
+        },
+        {
+          "name": "/static/brand/suining-logo-96.webp",
+          "initiatorType": "img",
+          "duration": 2.7999999970197678,
+          "transferSize": 3896,
+          "encodedBodySize": 3596,
+          "decodedBodySize": 3596
+        },
+        {
+          "name": "/static/icons/element-icons.woff",
+          "initiatorType": "css",
+          "duration": 11.799999997019768,
+          "transferSize": 6464,
+          "encodedBodySize": 6164,
+          "decodedBodySize": 6164
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-027.woff2",
+          "initiatorType": "css",
+          "duration": 10.400000005960464,
+          "transferSize": 270392,
+          "encodedBodySize": 270092,
+          "decodedBodySize": 270092
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-022.woff2",
+          "initiatorType": "css",
+          "duration": 10.600000008940697,
+          "transferSize": 383324,
+          "encodedBodySize": 383024,
+          "decodedBodySize": 383024
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-021.woff2",
+          "initiatorType": "css",
+          "duration": 12.100000008940697,
+          "transferSize": 459752,
+          "encodedBodySize": 459452,
+          "decodedBodySize": 459452
+        }
+      ]
+    },
+    {
+      "route": "/login",
+      "cache": "cold",
+      "sample": 3,
+      "readyMs": 108.54290000000015,
+      "navigation": [
+        {
+          "name": "http://127.0.0.1:12772/?baseline=%2Flogin-3#/login",
+          "entryType": "navigation",
+          "startTime": 0,
+          "duration": 50.099999994039536,
+          "navigationId": 8355,
+          "initiatorType": "navigation",
+          "deliveryType": "",
+          "nextHopProtocol": "http/1.1",
+          "renderBlockingStatus": "non-blocking",
+          "contentType": "text/html",
+          "contentEncoding": "gzip",
+          "workerStart": 0,
+          "workerRouterEvaluationStart": 0,
+          "workerCacheLookupStart": 0,
+          "workerMatchedSourceType": "",
+          "workerFinalSourceType": "",
+          "redirectStart": 0,
+          "redirectEnd": 0,
+          "fetchStart": 0.5,
+          "domainLookupStart": 0.5,
+          "domainLookupEnd": 0.5,
+          "connectStart": 0.5,
+          "secureConnectionStart": 0,
+          "connectEnd": 0.5,
+          "requestStart": 2.5999999940395355,
+          "responseStart": 3.2000000029802322,
+          "firstInterimResponseStart": 0,
+          "finalResponseHeadersStart": 3.2000000029802322,
+          "responseEnd": 3.4000000059604645,
+          "transferSize": 945,
+          "encodedBodySize": 645,
+          "decodedBodySize": 1202,
+          "responseStatus": 200,
+          "serverTiming": [],
+          "unloadEventStart": 5.5999999940395355,
+          "unloadEventEnd": 5.5999999940395355,
+          "domInteractive": 9,
+          "domContentLoadedEventStart": 50,
+          "domContentLoadedEventEnd": 50.099999994039536,
+          "domComplete": 50.099999994039536,
+          "loadEventStart": 50.099999994039536,
+          "loadEventEnd": 50.099999994039536,
+          "type": "navigate",
+          "redirectCount": 0,
+          "activationStart": 0,
+          "criticalCHRestart": 0,
+          "notRestoredReasons": null,
+          "confidence": {
+            "randomizedTriggerRate": 0.4994798,
+            "value": "high"
+          }
+        }
+      ],
+      "paint": [
+        {
+          "name": "first-paint",
+          "entryType": "paint",
+          "startTime": 52,
+          "duration": 0,
+          "navigationId": 8355,
+          "paintTime": 43.29999999701977,
+          "presentationTime": 52
+        },
+        {
+          "name": "first-contentful-paint",
+          "entryType": "paint",
+          "startTime": 92,
+          "duration": 0,
+          "navigationId": 8355,
+          "paintTime": 78.40000000596046,
+          "presentationTime": 92
+        }
+      ],
+      "resources": [
+        {
+          "name": "/static/fonts/source-serif-4.woff2",
+          "initiatorType": "link",
+          "duration": 11.700000002980232,
+          "transferSize": 429400,
+          "encodedBodySize": 429100,
+          "decodedBodySize": 429100
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/ui-common.woff2",
+          "initiatorType": "link",
+          "duration": 10.700000002980232,
+          "transferSize": 304784,
+          "encodedBodySize": 304484,
+          "decodedBodySize": 304484
+        },
+        {
+          "name": "/assets/index-BDxSQ7E5.js",
+          "initiatorType": "script",
+          "duration": 22.400000005960464,
+          "transferSize": 205573,
+          "encodedBodySize": 205273,
+          "decodedBodySize": 639046
+        },
+        {
+          "name": "/assets/rolldown-runtime-XKyaHtl9.js",
+          "initiatorType": "other",
+          "duration": 11.099999994039536,
+          "transferSize": 729,
+          "encodedBodySize": 429,
+          "decodedBodySize": 726
+        },
+        {
+          "name": "/assets/_plugin-vue_export-helper-CJMv9Rw7.js",
+          "initiatorType": "other",
+          "duration": 12.399999991059303,
+          "transferSize": 26047,
+          "encodedBodySize": 25747,
+          "decodedBodySize": 66652
+        },
+        {
+          "name": "/assets/index-kJ-Gl3tX.css",
+          "initiatorType": "link",
+          "duration": 27.599999994039536,
+          "transferSize": 68976,
+          "encodedBodySize": 68676,
+          "decodedBodySize": 441326
+        },
+        {
+          "name": "/restful/service/status",
+          "initiatorType": "xmlhttprequest",
+          "duration": 2.7999999970197678,
+          "transferSize": 322,
+          "encodedBodySize": 22,
+          "decodedBodySize": 22
+        },
+        {
+          "name": "/restful/userLogin/session",
+          "initiatorType": "xmlhttprequest",
+          "duration": 2.8999999910593033,
+          "transferSize": 470,
+          "encodedBodySize": 170,
+          "decodedBodySize": 170
+        },
+        {
+          "name": "/static/brand/suining-favicon-32.png",
+          "initiatorType": "other",
+          "duration": 5.4000000059604645,
+          "transferSize": 2449,
+          "encodedBodySize": 2149,
+          "decodedBodySize": 2149
+        },
+        {
+          "name": "/assets/Login-cfqhAdTK.js",
+          "initiatorType": "script",
+          "duration": 3.9000000059604645,
+          "transferSize": 3461,
+          "encodedBodySize": 3161,
+          "decodedBodySize": 6604
+        },
+        {
+          "name": "/assets/Login-DlreuNuY.css",
+          "initiatorType": "link",
+          "duration": 4.5,
+          "transferSize": 1734,
+          "encodedBodySize": 1434,
+          "decodedBodySize": 5577
+        },
+        {
+          "name": "/assets/suining-logo-192-D8Nl0I9O.js",
+          "initiatorType": "script",
+          "duration": 4,
+          "transferSize": 389,
+          "encodedBodySize": 89,
+          "decodedBodySize": 100
+        },
+        {
+          "name": "/assets/care-lakeside-artisan-DkJ9ugHL.js",
+          "initiatorType": "script",
+          "duration": 4.799999997019768,
+          "transferSize": 394,
+          "encodedBodySize": 94,
+          "decodedBodySize": 111
+        },
+        {
+          "name": "/static/brand/suining-logo-96.webp",
+          "initiatorType": "img",
+          "duration": 1.5,
+          "transferSize": 3896,
+          "encodedBodySize": 3596,
+          "decodedBodySize": 3596
+        },
+        {
+          "name": "/static/img/care-lakeside-artisan.webp",
+          "initiatorType": "img",
+          "duration": 2.2999999970197678,
+          "transferSize": 310364,
+          "encodedBodySize": 310064,
+          "decodedBodySize": 310064
+        },
+        {
+          "name": "/static/icons/element-icons.woff",
+          "initiatorType": "css",
+          "duration": 13.399999991059303,
+          "transferSize": 6464,
+          "encodedBodySize": 6164,
+          "decodedBodySize": 6164
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-027.woff2",
+          "initiatorType": "css",
+          "duration": 10.5,
+          "transferSize": 270392,
+          "encodedBodySize": 270092,
+          "decodedBodySize": 270092
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-022.woff2",
+          "initiatorType": "css",
+          "duration": 11.299999997019768,
+          "transferSize": 383324,
+          "encodedBodySize": 383024,
+          "decodedBodySize": 383024
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-021.woff2",
+          "initiatorType": "css",
+          "duration": 11.900000005960464,
+          "transferSize": 459752,
+          "encodedBodySize": 459452,
+          "decodedBodySize": 459452
+        }
+      ]
+    },
+    {
+      "route": "/login",
+      "cache": "warm",
+      "sample": 3,
+      "readyMs": 108.46759999999995,
+      "navigation": [
+        {
+          "name": "http://127.0.0.1:12772/?baseline=%2Flogin-3#/login",
+          "entryType": "navigation",
+          "startTime": 0,
+          "duration": 49.79999999701977,
+          "navigationId": 4619,
+          "initiatorType": "navigation",
+          "deliveryType": "",
+          "nextHopProtocol": "http/1.1",
+          "renderBlockingStatus": "non-blocking",
+          "contentType": "text/html",
+          "contentEncoding": "gzip",
+          "workerStart": 0,
+          "workerRouterEvaluationStart": 0,
+          "workerCacheLookupStart": 0,
+          "workerMatchedSourceType": "",
+          "workerFinalSourceType": "",
+          "redirectStart": 0,
+          "redirectEnd": 0,
+          "fetchStart": 0.5,
+          "domainLookupStart": 0.5,
+          "domainLookupEnd": 0.5,
+          "connectStart": 0.5,
+          "secureConnectionStart": 0,
+          "connectEnd": 0.5,
+          "requestStart": 2.5999999940395355,
+          "responseStart": 3.0999999940395355,
+          "firstInterimResponseStart": 0,
+          "finalResponseHeadersStart": 3.0999999940395355,
+          "responseEnd": 3.4000000059604645,
+          "transferSize": 945,
+          "encodedBodySize": 645,
+          "decodedBodySize": 1202,
+          "responseStatus": 200,
+          "serverTiming": [],
+          "unloadEventStart": 5.5999999940395355,
+          "unloadEventEnd": 5.5999999940395355,
+          "domInteractive": 8.700000002980232,
+          "domContentLoadedEventStart": 49.599999994039536,
+          "domContentLoadedEventEnd": 49.599999994039536,
+          "domComplete": 49.79999999701977,
+          "loadEventStart": 49.79999999701977,
+          "loadEventEnd": 49.79999999701977,
+          "type": "reload",
+          "redirectCount": 0,
+          "activationStart": 0,
+          "criticalCHRestart": 0,
+          "notRestoredReasons": null,
+          "confidence": {
+            "randomizedTriggerRate": 0.4994798,
+            "value": "low"
+          }
+        }
+      ],
+      "paint": [
+        {
+          "name": "first-paint",
+          "entryType": "paint",
+          "startTime": 52,
+          "duration": 0,
+          "navigationId": 4619,
+          "paintTime": 44.5,
+          "presentationTime": 52
+        },
+        {
+          "name": "first-contentful-paint",
+          "entryType": "paint",
+          "startTime": 92,
+          "duration": 0,
+          "navigationId": 4619,
+          "paintTime": 78.20000000298023,
+          "presentationTime": 92
+        }
+      ],
+      "resources": [
+        {
+          "name": "/static/fonts/source-serif-4.woff2",
+          "initiatorType": "link",
+          "duration": 11.299999997019768,
+          "transferSize": 429400,
+          "encodedBodySize": 429100,
+          "decodedBodySize": 429100
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/ui-common.woff2",
+          "initiatorType": "link",
+          "duration": 10.400000005960464,
+          "transferSize": 304784,
+          "encodedBodySize": 304484,
+          "decodedBodySize": 304484
+        },
+        {
+          "name": "/assets/rolldown-runtime-XKyaHtl9.js",
+          "initiatorType": "other",
+          "duration": 21.100000008940697,
+          "transferSize": 729,
+          "encodedBodySize": 429,
+          "decodedBodySize": 726
+        },
+        {
+          "name": "/assets/index-kJ-Gl3tX.css",
+          "initiatorType": "link",
+          "duration": 25.400000005960464,
+          "transferSize": 68976,
+          "encodedBodySize": 68676,
+          "decodedBodySize": 441326
+        },
+        {
+          "name": "/assets/_plugin-vue_export-helper-CJMv9Rw7.js",
+          "initiatorType": "other",
+          "duration": 27.100000008940697,
+          "transferSize": 26047,
+          "encodedBodySize": 25747,
+          "decodedBodySize": 66652
+        },
+        {
+          "name": "/assets/index-BDxSQ7E5.js",
+          "initiatorType": "script",
+          "duration": 20.900000005960464,
+          "transferSize": 205573,
+          "encodedBodySize": 205273,
+          "decodedBodySize": 639046
+        },
+        {
+          "name": "/restful/service/status",
+          "initiatorType": "xmlhttprequest",
+          "duration": 2.0999999940395355,
+          "transferSize": 322,
+          "encodedBodySize": 22,
+          "decodedBodySize": 22
+        },
+        {
+          "name": "/restful/userLogin/session",
+          "initiatorType": "xmlhttprequest",
+          "duration": 4.200000002980232,
+          "transferSize": 470,
+          "encodedBodySize": 170,
+          "decodedBodySize": 170
+        },
+        {
+          "name": "/static/brand/suining-favicon-32.png",
+          "initiatorType": "other",
+          "duration": 3,
+          "transferSize": 2449,
+          "encodedBodySize": 2149,
+          "decodedBodySize": 2149
+        },
+        {
+          "name": "/assets/Login-cfqhAdTK.js",
+          "initiatorType": "script",
+          "duration": 5,
+          "transferSize": 3461,
+          "encodedBodySize": 3161,
+          "decodedBodySize": 6604
+        },
+        {
+          "name": "/assets/suining-logo-192-D8Nl0I9O.js",
+          "initiatorType": "script",
+          "duration": 5.299999997019768,
+          "transferSize": 389,
+          "encodedBodySize": 89,
+          "decodedBodySize": 100
+        },
+        {
+          "name": "/assets/care-lakeside-artisan-DkJ9ugHL.js",
+          "initiatorType": "script",
+          "duration": 5.899999991059303,
+          "transferSize": 394,
+          "encodedBodySize": 94,
+          "decodedBodySize": 111
+        },
+        {
+          "name": "/assets/Login-DlreuNuY.css",
+          "initiatorType": "link",
+          "duration": 5.9000000059604645,
+          "transferSize": 1734,
+          "encodedBodySize": 1434,
+          "decodedBodySize": 5577
+        },
+        {
+          "name": "/static/img/care-lakeside-artisan.webp",
+          "initiatorType": "img",
+          "duration": 2.2000000029802322,
+          "transferSize": 310364,
+          "encodedBodySize": 310064,
+          "decodedBodySize": 310064
+        },
+        {
+          "name": "/static/brand/suining-logo-96.webp",
+          "initiatorType": "img",
+          "duration": 1.5,
+          "transferSize": 3896,
+          "encodedBodySize": 3596,
+          "decodedBodySize": 3596
+        },
+        {
+          "name": "/static/icons/element-icons.woff",
+          "initiatorType": "css",
+          "duration": 10.600000008940697,
+          "transferSize": 6464,
+          "encodedBodySize": 6164,
+          "decodedBodySize": 6164
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-027.woff2",
+          "initiatorType": "css",
+          "duration": 8.800000011920929,
+          "transferSize": 270392,
+          "encodedBodySize": 270092,
+          "decodedBodySize": 270092
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-022.woff2",
+          "initiatorType": "css",
+          "duration": 10.200000002980232,
+          "transferSize": 383324,
+          "encodedBodySize": 383024,
+          "decodedBodySize": 383024
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-021.woff2",
+          "initiatorType": "css",
+          "duration": 10.099999994039536,
+          "transferSize": 459752,
+          "encodedBodySize": 459452,
+          "decodedBodySize": 459452
+        }
+      ]
+    },
+    {
+      "route": "/login",
+      "cache": "cold",
+      "sample": 4,
+      "readyMs": 119.03830000000016,
+      "navigation": [
+        {
+          "name": "http://127.0.0.1:12772/?baseline=%2Flogin-4#/login",
+          "entryType": "navigation",
+          "startTime": 0,
+          "duration": 61,
+          "navigationId": 8868,
+          "initiatorType": "navigation",
+          "deliveryType": "",
+          "nextHopProtocol": "http/1.1",
+          "renderBlockingStatus": "non-blocking",
+          "contentType": "text/html",
+          "contentEncoding": "gzip",
+          "workerStart": 0,
+          "workerRouterEvaluationStart": 0,
+          "workerCacheLookupStart": 0,
+          "workerMatchedSourceType": "",
+          "workerFinalSourceType": "",
+          "redirectStart": 0,
+          "redirectEnd": 0,
+          "fetchStart": 0.7000000029802322,
+          "domainLookupStart": 0.7000000029802322,
+          "domainLookupEnd": 0.7000000029802322,
+          "connectStart": 0.7000000029802322,
+          "secureConnectionStart": 0,
+          "connectEnd": 0.7000000029802322,
+          "requestStart": 3.2000000029802322,
+          "responseStart": 3.7999999970197678,
+          "firstInterimResponseStart": 0,
+          "finalResponseHeadersStart": 3.7999999970197678,
+          "responseEnd": 4,
+          "transferSize": 945,
+          "encodedBodySize": 645,
+          "decodedBodySize": 1202,
+          "responseStatus": 200,
+          "serverTiming": [],
+          "unloadEventStart": 6.5,
+          "unloadEventEnd": 6.5,
+          "domInteractive": 10,
+          "domContentLoadedEventStart": 60.79999999701977,
+          "domContentLoadedEventEnd": 60.900000005960464,
+          "domComplete": 60.900000005960464,
+          "loadEventStart": 61,
+          "loadEventEnd": 61,
+          "type": "navigate",
+          "redirectCount": 0,
+          "activationStart": 0,
+          "criticalCHRestart": 0,
+          "notRestoredReasons": null,
+          "confidence": {
+            "randomizedTriggerRate": 0.4994798,
+            "value": "high"
+          }
+        }
+      ],
+      "paint": [
+        {
+          "name": "first-paint",
+          "entryType": "paint",
+          "startTime": 56,
+          "duration": 0,
+          "navigationId": 8868,
+          "paintTime": 44.20000000298023,
+          "presentationTime": 56
+        },
+        {
+          "name": "first-contentful-paint",
+          "entryType": "paint",
+          "startTime": 100,
+          "duration": 0,
+          "navigationId": 8868,
+          "paintTime": 88.20000000298023,
+          "presentationTime": 100
+        }
+      ],
+      "resources": [
+        {
+          "name": "/static/fonts/source-serif-4.woff2",
+          "initiatorType": "link",
+          "duration": 11.299999997019768,
+          "transferSize": 429400,
+          "encodedBodySize": 429100,
+          "decodedBodySize": 429100
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/ui-common.woff2",
+          "initiatorType": "link",
+          "duration": 12.199999988079071,
+          "transferSize": 304784,
+          "encodedBodySize": 304484,
+          "decodedBodySize": 304484
+        },
+        {
+          "name": "/assets/index-BDxSQ7E5.js",
+          "initiatorType": "script",
+          "duration": 34.099999994039536,
+          "transferSize": 205573,
+          "encodedBodySize": 205273,
+          "decodedBodySize": 639046
+        },
+        {
+          "name": "/assets/rolldown-runtime-XKyaHtl9.js",
+          "initiatorType": "other",
+          "duration": 11.700000002980232,
+          "transferSize": 729,
+          "encodedBodySize": 429,
+          "decodedBodySize": 726
+        },
+        {
+          "name": "/assets/_plugin-vue_export-helper-CJMv9Rw7.js",
+          "initiatorType": "other",
+          "duration": 13.600000008940697,
+          "transferSize": 26047,
+          "encodedBodySize": 25747,
+          "decodedBodySize": 66652
+        },
+        {
+          "name": "/assets/index-kJ-Gl3tX.css",
+          "initiatorType": "link",
+          "duration": 22.200000002980232,
+          "transferSize": 68976,
+          "encodedBodySize": 68676,
+          "decodedBodySize": 441326
+        },
+        {
+          "name": "/restful/service/status",
+          "initiatorType": "xmlhttprequest",
+          "duration": 4.799999997019768,
+          "transferSize": 322,
+          "encodedBodySize": 22,
+          "decodedBodySize": 22
+        },
+        {
+          "name": "/restful/userLogin/session",
+          "initiatorType": "xmlhttprequest",
+          "duration": 5,
+          "transferSize": 470,
+          "encodedBodySize": 170,
+          "decodedBodySize": 170
+        },
+        {
+          "name": "/static/brand/suining-favicon-32.png",
+          "initiatorType": "other",
+          "duration": 5.299999997019768,
+          "transferSize": 2449,
+          "encodedBodySize": 2149,
+          "decodedBodySize": 2149
+        },
+        {
+          "name": "/assets/Login-cfqhAdTK.js",
+          "initiatorType": "script",
+          "duration": 3,
+          "transferSize": 3461,
+          "encodedBodySize": 3161,
+          "decodedBodySize": 6604
+        },
+        {
+          "name": "/assets/suining-logo-192-D8Nl0I9O.js",
+          "initiatorType": "script",
+          "duration": 3.4000000059604645,
+          "transferSize": 389,
+          "encodedBodySize": 89,
+          "decodedBodySize": 100
+        },
+        {
+          "name": "/assets/care-lakeside-artisan-DkJ9ugHL.js",
+          "initiatorType": "script",
+          "duration": 3.2000000029802322,
+          "transferSize": 394,
+          "encodedBodySize": 94,
+          "decodedBodySize": 111
+        },
+        {
+          "name": "/assets/Login-DlreuNuY.css",
+          "initiatorType": "link",
+          "duration": 3.6000000089406967,
+          "transferSize": 1734,
+          "encodedBodySize": 1434,
+          "decodedBodySize": 5577
+        },
+        {
+          "name": "/static/img/care-lakeside-artisan.webp",
+          "initiatorType": "img",
+          "duration": 2.300000011920929,
+          "transferSize": 310364,
+          "encodedBodySize": 310064,
+          "decodedBodySize": 310064
+        },
+        {
+          "name": "/static/brand/suining-logo-96.webp",
+          "initiatorType": "img",
+          "duration": 1.5,
+          "transferSize": 3896,
+          "encodedBodySize": 3596,
+          "decodedBodySize": 3596
+        },
+        {
+          "name": "/static/icons/element-icons.woff",
+          "initiatorType": "css",
+          "duration": 10.900000005960464,
+          "transferSize": 6464,
+          "encodedBodySize": 6164,
+          "decodedBodySize": 6164
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-027.woff2",
+          "initiatorType": "css",
+          "duration": 9.700000002980232,
+          "transferSize": 270392,
+          "encodedBodySize": 270092,
+          "decodedBodySize": 270092
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-022.woff2",
+          "initiatorType": "css",
+          "duration": 9.900000005960464,
+          "transferSize": 383324,
+          "encodedBodySize": 383024,
+          "decodedBodySize": 383024
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-021.woff2",
+          "initiatorType": "css",
+          "duration": 10.900000005960464,
+          "transferSize": 459752,
+          "encodedBodySize": 459452,
+          "decodedBodySize": 459452
+        }
+      ]
+    },
+    {
+      "route": "/login",
+      "cache": "warm",
+      "sample": 4,
+      "readyMs": 109.452,
+      "navigation": [
+        {
+          "name": "http://127.0.0.1:12772/?baseline=%2Flogin-4#/login",
+          "entryType": "navigation",
+          "startTime": 0,
+          "duration": 49,
+          "navigationId": 4664,
+          "initiatorType": "navigation",
+          "deliveryType": "",
+          "nextHopProtocol": "http/1.1",
+          "renderBlockingStatus": "non-blocking",
+          "contentType": "text/html",
+          "contentEncoding": "gzip",
+          "workerStart": 0,
+          "workerRouterEvaluationStart": 0,
+          "workerCacheLookupStart": 0,
+          "workerMatchedSourceType": "",
+          "workerFinalSourceType": "",
+          "redirectStart": 0,
+          "redirectEnd": 0,
+          "fetchStart": 0.9000000059604645,
+          "domainLookupStart": 0.9000000059604645,
+          "domainLookupEnd": 0.9000000059604645,
+          "connectStart": 0.9000000059604645,
+          "secureConnectionStart": 0,
+          "connectEnd": 0.9000000059604645,
+          "requestStart": 2.7999999970197678,
+          "responseStart": 3.2999999970197678,
+          "firstInterimResponseStart": 0,
+          "finalResponseHeadersStart": 3.2999999970197678,
+          "responseEnd": 3.5999999940395355,
+          "transferSize": 945,
+          "encodedBodySize": 645,
+          "decodedBodySize": 1202,
+          "responseStatus": 200,
+          "serverTiming": [],
+          "unloadEventStart": 5.799999997019768,
+          "unloadEventEnd": 5.799999997019768,
+          "domInteractive": 9.400000005960464,
+          "domContentLoadedEventStart": 48.900000005960464,
+          "domContentLoadedEventEnd": 49,
+          "domComplete": 49,
+          "loadEventStart": 49,
+          "loadEventEnd": 49,
+          "type": "reload",
+          "redirectCount": 0,
+          "activationStart": 0,
+          "criticalCHRestart": 0,
+          "notRestoredReasons": null,
+          "confidence": {
+            "randomizedTriggerRate": 0.4994798,
+            "value": "low"
+          }
+        }
+      ],
+      "paint": [
+        {
+          "name": "first-paint",
+          "entryType": "paint",
+          "startTime": 52,
+          "duration": 0,
+          "navigationId": 4664,
+          "paintTime": 43.599999994039536,
+          "presentationTime": 52
+        },
+        {
+          "name": "first-contentful-paint",
+          "entryType": "paint",
+          "startTime": 84,
+          "duration": 0,
+          "navigationId": 4664,
+          "paintTime": 76.09999999403954,
+          "presentationTime": 84
+        }
+      ],
+      "resources": [
+        {
+          "name": "/static/fonts/source-serif-4.woff2",
+          "initiatorType": "link",
+          "duration": 9.399999991059303,
+          "transferSize": 429400,
+          "encodedBodySize": 429100,
+          "decodedBodySize": 429100
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/ui-common.woff2",
+          "initiatorType": "link",
+          "duration": 8.599999994039536,
+          "transferSize": 304784,
+          "encodedBodySize": 304484,
+          "decodedBodySize": 304484
+        },
+        {
+          "name": "/assets/index-BDxSQ7E5.js",
+          "initiatorType": "script",
+          "duration": 19.200000002980232,
+          "transferSize": 205573,
+          "encodedBodySize": 205273,
+          "decodedBodySize": 639046
+        },
+        {
+          "name": "/assets/rolldown-runtime-XKyaHtl9.js",
+          "initiatorType": "other",
+          "duration": 9.600000008940697,
+          "transferSize": 729,
+          "encodedBodySize": 429,
+          "decodedBodySize": 726
+        },
+        {
+          "name": "/assets/_plugin-vue_export-helper-CJMv9Rw7.js",
+          "initiatorType": "other",
+          "duration": 19.700000002980232,
+          "transferSize": 26047,
+          "encodedBodySize": 25747,
+          "decodedBodySize": 66652
+        },
+        {
+          "name": "/assets/index-kJ-Gl3tX.css",
+          "initiatorType": "link",
+          "duration": 25.100000008940697,
+          "transferSize": 68976,
+          "encodedBodySize": 68676,
+          "decodedBodySize": 441326
+        },
+        {
+          "name": "/restful/service/status",
+          "initiatorType": "xmlhttprequest",
+          "duration": 1.5,
+          "transferSize": 322,
+          "encodedBodySize": 22,
+          "decodedBodySize": 22
+        },
+        {
+          "name": "/restful/userLogin/session",
+          "initiatorType": "xmlhttprequest",
+          "duration": 4.399999991059303,
+          "transferSize": 470,
+          "encodedBodySize": 170,
+          "decodedBodySize": 170
+        },
+        {
+          "name": "/static/brand/suining-favicon-32.png",
+          "initiatorType": "other",
+          "duration": 4.0999999940395355,
+          "transferSize": 2449,
+          "encodedBodySize": 2149,
+          "decodedBodySize": 2149
+        },
+        {
+          "name": "/assets/Login-cfqhAdTK.js",
+          "initiatorType": "script",
+          "duration": 2.2000000029802322,
+          "transferSize": 3461,
+          "encodedBodySize": 3161,
+          "decodedBodySize": 6604
+        },
+        {
+          "name": "/assets/suining-logo-192-D8Nl0I9O.js",
+          "initiatorType": "script",
+          "duration": 2.3999999910593033,
+          "transferSize": 389,
+          "encodedBodySize": 89,
+          "decodedBodySize": 100
+        },
+        {
+          "name": "/assets/care-lakeside-artisan-DkJ9ugHL.js",
+          "initiatorType": "script",
+          "duration": 2.7999999970197678,
+          "transferSize": 394,
+          "encodedBodySize": 94,
+          "decodedBodySize": 111
+        },
+        {
+          "name": "/assets/Login-DlreuNuY.css",
+          "initiatorType": "link",
+          "duration": 2.8999999910593033,
+          "transferSize": 1734,
+          "encodedBodySize": 1434,
+          "decodedBodySize": 5577
+        },
+        {
+          "name": "/static/brand/suining-logo-96.webp",
+          "initiatorType": "img",
+          "duration": 2.9000000059604645,
+          "transferSize": 3896,
+          "encodedBodySize": 3596,
+          "decodedBodySize": 3596
+        },
+        {
+          "name": "/static/img/care-lakeside-artisan.webp",
+          "initiatorType": "img",
+          "duration": 3.7999999970197678,
+          "transferSize": 310364,
+          "encodedBodySize": 310064,
+          "decodedBodySize": 310064
+        },
+        {
+          "name": "/static/icons/element-icons.woff",
+          "initiatorType": "css",
+          "duration": 11.099999994039536,
+          "transferSize": 6464,
+          "encodedBodySize": 6164,
+          "decodedBodySize": 6164
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-027.woff2",
+          "initiatorType": "css",
+          "duration": 10.200000002980232,
+          "transferSize": 270392,
+          "encodedBodySize": 270092,
+          "decodedBodySize": 270092
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-022.woff2",
+          "initiatorType": "css",
+          "duration": 10.299999997019768,
+          "transferSize": 383324,
+          "encodedBodySize": 383024,
+          "decodedBodySize": 383024
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-021.woff2",
+          "initiatorType": "css",
+          "duration": 11.799999997019768,
+          "transferSize": 459752,
+          "encodedBodySize": 459452,
+          "decodedBodySize": 459452
+        }
+      ]
+    },
+    {
+      "route": "/login",
+      "cache": "cold",
+      "sample": 5,
+      "readyMs": 108.22499999999991,
+      "navigation": [
+        {
+          "name": "http://127.0.0.1:12772/?baseline=%2Flogin-5#/login",
+          "entryType": "navigation",
+          "startTime": 0,
+          "duration": 48.5,
+          "navigationId": 432,
+          "initiatorType": "navigation",
+          "deliveryType": "",
+          "nextHopProtocol": "http/1.1",
+          "renderBlockingStatus": "non-blocking",
+          "contentType": "text/html",
+          "contentEncoding": "gzip",
+          "workerStart": 0,
+          "workerRouterEvaluationStart": 0,
+          "workerCacheLookupStart": 0,
+          "workerMatchedSourceType": "",
+          "workerFinalSourceType": "",
+          "redirectStart": 0,
+          "redirectEnd": 0,
+          "fetchStart": 0.7000000029802322,
+          "domainLookupStart": 0.7000000029802322,
+          "domainLookupEnd": 0.7000000029802322,
+          "connectStart": 0.7000000029802322,
+          "secureConnectionStart": 0,
+          "connectEnd": 0.7000000029802322,
+          "requestStart": 2.7000000029802322,
+          "responseStart": 3.2000000029802322,
+          "firstInterimResponseStart": 0,
+          "finalResponseHeadersStart": 3.2000000029802322,
+          "responseEnd": 3.4000000059604645,
+          "transferSize": 945,
+          "encodedBodySize": 645,
+          "decodedBodySize": 1202,
+          "responseStatus": 200,
+          "serverTiming": [],
+          "unloadEventStart": 5.700000002980232,
+          "unloadEventEnd": 5.700000002980232,
+          "domInteractive": 9,
+          "domContentLoadedEventStart": 48.400000005960464,
+          "domContentLoadedEventEnd": 48.400000005960464,
+          "domComplete": 48.5,
+          "loadEventStart": 48.5,
+          "loadEventEnd": 48.5,
+          "type": "navigate",
+          "redirectCount": 0,
+          "activationStart": 0,
+          "criticalCHRestart": 0,
+          "notRestoredReasons": null,
+          "confidence": {
+            "randomizedTriggerRate": 0.4994798,
+            "value": "high"
+          }
+        }
+      ],
+      "paint": [
+        {
+          "name": "first-paint",
+          "entryType": "paint",
+          "startTime": 52,
+          "duration": 0,
+          "navigationId": 432,
+          "paintTime": 42.599999994039536,
+          "presentationTime": 52
+        },
+        {
+          "name": "first-contentful-paint",
+          "entryType": "paint",
+          "startTime": 92,
+          "duration": 0,
+          "navigationId": 432,
+          "paintTime": 77.20000000298023,
+          "presentationTime": 92
+        }
+      ],
+      "resources": [
+        {
+          "name": "/static/fonts/source-serif-4.woff2",
+          "initiatorType": "link",
+          "duration": 10.299999997019768,
+          "transferSize": 429400,
+          "encodedBodySize": 429100,
+          "decodedBodySize": 429100
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/ui-common.woff2",
+          "initiatorType": "link",
+          "duration": 11.200000002980232,
+          "transferSize": 304784,
+          "encodedBodySize": 304484,
+          "decodedBodySize": 304484
+        },
+        {
+          "name": "/assets/rolldown-runtime-XKyaHtl9.js",
+          "initiatorType": "other",
+          "duration": 12.200000002980232,
+          "transferSize": 729,
+          "encodedBodySize": 429,
+          "decodedBodySize": 726
+        },
+        {
+          "name": "/assets/_plugin-vue_export-helper-CJMv9Rw7.js",
+          "initiatorType": "other",
+          "duration": 11.900000005960464,
+          "transferSize": 26047,
+          "encodedBodySize": 25747,
+          "decodedBodySize": 66652
+        },
+        {
+          "name": "/assets/index-kJ-Gl3tX.css",
+          "initiatorType": "link",
+          "duration": 26.900000005960464,
+          "transferSize": 68976,
+          "encodedBodySize": 68676,
+          "decodedBodySize": 441326
+        },
+        {
+          "name": "/assets/index-BDxSQ7E5.js",
+          "initiatorType": "script",
+          "duration": 22.5,
+          "transferSize": 205573,
+          "encodedBodySize": 205273,
+          "decodedBodySize": 639046
+        },
+        {
+          "name": "/restful/service/status",
+          "initiatorType": "xmlhttprequest",
+          "duration": 3.5,
+          "transferSize": 322,
+          "encodedBodySize": 22,
+          "decodedBodySize": 22
+        },
+        {
+          "name": "/restful/userLogin/session",
+          "initiatorType": "xmlhttprequest",
+          "duration": 5.299999997019768,
+          "transferSize": 470,
+          "encodedBodySize": 170,
+          "decodedBodySize": 170
+        },
+        {
+          "name": "/static/brand/suining-favicon-32.png",
+          "initiatorType": "other",
+          "duration": 3.9000000059604645,
+          "transferSize": 2449,
+          "encodedBodySize": 2149,
+          "decodedBodySize": 2149
+        },
+        {
+          "name": "/assets/Login-cfqhAdTK.js",
+          "initiatorType": "script",
+          "duration": 2.5999999940395355,
+          "transferSize": 3461,
+          "encodedBodySize": 3161,
+          "decodedBodySize": 6604
+        },
+        {
+          "name": "/assets/suining-logo-192-D8Nl0I9O.js",
+          "initiatorType": "script",
+          "duration": 2.7999999970197678,
+          "transferSize": 389,
+          "encodedBodySize": 89,
+          "decodedBodySize": 100
+        },
+        {
+          "name": "/assets/care-lakeside-artisan-DkJ9ugHL.js",
+          "initiatorType": "script",
+          "duration": 3.1000000089406967,
+          "transferSize": 394,
+          "encodedBodySize": 94,
+          "decodedBodySize": 111
+        },
+        {
+          "name": "/assets/Login-DlreuNuY.css",
+          "initiatorType": "link",
+          "duration": 3.4000000059604645,
+          "transferSize": 1734,
+          "encodedBodySize": 1434,
+          "decodedBodySize": 5577
+        },
+        {
+          "name": "/static/img/care-lakeside-artisan.webp",
+          "initiatorType": "img",
+          "duration": 2.199999988079071,
+          "transferSize": 310364,
+          "encodedBodySize": 310064,
+          "decodedBodySize": 310064
+        },
+        {
+          "name": "/static/brand/suining-logo-96.webp",
+          "initiatorType": "img",
+          "duration": 2.5,
+          "transferSize": 3896,
+          "encodedBodySize": 3596,
+          "decodedBodySize": 3596
+        },
+        {
+          "name": "/static/icons/element-icons.woff",
+          "initiatorType": "css",
+          "duration": 10.5,
+          "transferSize": 6464,
+          "encodedBodySize": 6164,
+          "decodedBodySize": 6164
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-027.woff2",
+          "initiatorType": "css",
+          "duration": 8.900000005960464,
+          "transferSize": 270392,
+          "encodedBodySize": 270092,
+          "decodedBodySize": 270092
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-022.woff2",
+          "initiatorType": "css",
+          "duration": 10.200000002980232,
+          "transferSize": 383324,
+          "encodedBodySize": 383024,
+          "decodedBodySize": 383024
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-021.woff2",
+          "initiatorType": "css",
+          "duration": 10.300000011920929,
+          "transferSize": 459752,
+          "encodedBodySize": 459452,
+          "decodedBodySize": 459452
+        }
+      ]
+    },
+    {
+      "route": "/login",
+      "cache": "warm",
+      "sample": 5,
+      "readyMs": 109.55410000000006,
+      "navigation": [
+        {
+          "name": "http://127.0.0.1:12772/?baseline=%2Flogin-5#/login",
+          "entryType": "navigation",
+          "startTime": 0,
+          "duration": 50.6000000089407,
+          "navigationId": 7280,
+          "initiatorType": "navigation",
+          "deliveryType": "",
+          "nextHopProtocol": "http/1.1",
+          "renderBlockingStatus": "non-blocking",
+          "contentType": "text/html",
+          "contentEncoding": "gzip",
+          "workerStart": 0,
+          "workerRouterEvaluationStart": 0,
+          "workerCacheLookupStart": 0,
+          "workerMatchedSourceType": "",
+          "workerFinalSourceType": "",
+          "redirectStart": 0,
+          "redirectEnd": 0,
+          "fetchStart": 0.6000000089406967,
+          "domainLookupStart": 0.6000000089406967,
+          "domainLookupEnd": 0.6000000089406967,
+          "connectStart": 0.6000000089406967,
+          "secureConnectionStart": 0,
+          "connectEnd": 0.6000000089406967,
+          "requestStart": 3.300000011920929,
+          "responseStart": 3.800000011920929,
+          "firstInterimResponseStart": 0,
+          "finalResponseHeadersStart": 3.800000011920929,
+          "responseEnd": 4,
+          "transferSize": 945,
+          "encodedBodySize": 645,
+          "decodedBodySize": 1202,
+          "responseStatus": 200,
+          "serverTiming": [],
+          "unloadEventStart": 6.600000008940697,
+          "unloadEventEnd": 6.600000008940697,
+          "domInteractive": 10.200000002980232,
+          "domContentLoadedEventStart": 50.5,
+          "domContentLoadedEventEnd": 50.5,
+          "domComplete": 50.6000000089407,
+          "loadEventStart": 50.6000000089407,
+          "loadEventEnd": 50.6000000089407,
+          "type": "reload",
+          "redirectCount": 0,
+          "activationStart": 0,
+          "criticalCHRestart": 0,
+          "notRestoredReasons": null,
+          "confidence": {
+            "randomizedTriggerRate": 0.4994798,
+            "value": "low"
+          }
+        }
+      ],
+      "paint": [
+        {
+          "name": "first-paint",
+          "entryType": "paint",
+          "startTime": 52,
+          "duration": 0,
+          "navigationId": 7280,
+          "paintTime": 45.5,
+          "presentationTime": 52
+        },
+        {
+          "name": "first-contentful-paint",
+          "entryType": "paint",
+          "startTime": 92,
+          "duration": 0,
+          "navigationId": 7280,
+          "paintTime": 78.30000001192093,
+          "presentationTime": 92
+        }
+      ],
+      "resources": [
+        {
+          "name": "/static/fonts/source-serif-4.woff2",
+          "initiatorType": "link",
+          "duration": 10.399999991059303,
+          "transferSize": 429400,
+          "encodedBodySize": 429100,
+          "decodedBodySize": 429100
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/ui-common.woff2",
+          "initiatorType": "link",
+          "duration": 11.299999997019768,
+          "transferSize": 304784,
+          "encodedBodySize": 304484,
+          "decodedBodySize": 304484
+        },
+        {
+          "name": "/assets/index-BDxSQ7E5.js",
+          "initiatorType": "script",
+          "duration": 21,
+          "transferSize": 205573,
+          "encodedBodySize": 205273,
+          "decodedBodySize": 639046
+        },
+        {
+          "name": "/assets/rolldown-runtime-XKyaHtl9.js",
+          "initiatorType": "other",
+          "duration": 21.200000002980232,
+          "transferSize": 729,
+          "encodedBodySize": 429,
+          "decodedBodySize": 726
+        },
+        {
+          "name": "/assets/_plugin-vue_export-helper-CJMv9Rw7.js",
+          "initiatorType": "other",
+          "duration": 21.600000008940697,
+          "transferSize": 26047,
+          "encodedBodySize": 25747,
+          "decodedBodySize": 66652
+        },
+        {
+          "name": "/assets/index-kJ-Gl3tX.css",
+          "initiatorType": "link",
+          "duration": 26.80000001192093,
+          "transferSize": 68976,
+          "encodedBodySize": 68676,
+          "decodedBodySize": 441326
+        },
+        {
+          "name": "/restful/service/status",
+          "initiatorType": "xmlhttprequest",
+          "duration": 3,
+          "transferSize": 322,
+          "encodedBodySize": 22,
+          "decodedBodySize": 22
+        },
+        {
+          "name": "/restful/userLogin/session",
+          "initiatorType": "xmlhttprequest",
+          "duration": 4.700000002980232,
+          "transferSize": 470,
+          "encodedBodySize": 170,
+          "decodedBodySize": 170
+        },
+        {
+          "name": "/static/brand/suining-favicon-32.png",
+          "initiatorType": "other",
+          "duration": 4.299999997019768,
+          "transferSize": 2449,
+          "encodedBodySize": 2149,
+          "decodedBodySize": 2149
+        },
+        {
+          "name": "/assets/Login-cfqhAdTK.js",
+          "initiatorType": "script",
+          "duration": 3.5999999940395355,
+          "transferSize": 3461,
+          "encodedBodySize": 3161,
+          "decodedBodySize": 6604
+        },
+        {
+          "name": "/assets/suining-logo-192-D8Nl0I9O.js",
+          "initiatorType": "script",
+          "duration": 3.1000000089406967,
+          "transferSize": 389,
+          "encodedBodySize": 89,
+          "decodedBodySize": 100
+        },
+        {
+          "name": "/assets/care-lakeside-artisan-DkJ9ugHL.js",
+          "initiatorType": "script",
+          "duration": 3.7999999970197678,
+          "transferSize": 394,
+          "encodedBodySize": 94,
+          "decodedBodySize": 111
+        },
+        {
+          "name": "/assets/Login-DlreuNuY.css",
+          "initiatorType": "link",
+          "duration": 4,
+          "transferSize": 1734,
+          "encodedBodySize": 1434,
+          "decodedBodySize": 5577
+        },
+        {
+          "name": "/static/img/care-lakeside-artisan.webp",
+          "initiatorType": "img",
+          "duration": 2.7000000029802322,
+          "transferSize": 310364,
+          "encodedBodySize": 310064,
+          "decodedBodySize": 310064
+        },
+        {
+          "name": "/static/brand/suining-logo-96.webp",
+          "initiatorType": "img",
+          "duration": 2,
+          "transferSize": 3896,
+          "encodedBodySize": 3596,
+          "decodedBodySize": 3596
+        },
+        {
+          "name": "/static/icons/element-icons.woff",
+          "initiatorType": "css",
+          "duration": 10.800000011920929,
+          "transferSize": 6464,
+          "encodedBodySize": 6164,
+          "decodedBodySize": 6164
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-027.woff2",
+          "initiatorType": "css",
+          "duration": 9.200000002980232,
+          "transferSize": 270392,
+          "encodedBodySize": 270092,
+          "decodedBodySize": 270092
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-022.woff2",
+          "initiatorType": "css",
+          "duration": 10.399999991059303,
+          "transferSize": 383324,
+          "encodedBodySize": 383024,
+          "decodedBodySize": 383024
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-021.woff2",
+          "initiatorType": "css",
+          "duration": 10.399999991059303,
+          "transferSize": 459752,
+          "encodedBodySize": 459452,
+          "decodedBodySize": 459452
+        }
+      ]
+    },
+    {
+      "route": "/rateprefamily",
+      "cache": "cold",
+      "sample": 1,
+      "readyMs": 207.01700000000005,
+      "navigation": [
+        {
+          "name": "http://127.0.0.1:12772/?baseline=%2Frateprefamily-1#/rateprefamily",
+          "entryType": "navigation",
+          "startTime": 0,
+          "duration": 54.099999994039536,
+          "navigationId": 7807,
+          "initiatorType": "navigation",
+          "deliveryType": "",
+          "nextHopProtocol": "http/1.1",
+          "renderBlockingStatus": "non-blocking",
+          "contentType": "text/html",
+          "contentEncoding": "gzip",
+          "workerStart": 0,
+          "workerRouterEvaluationStart": 0,
+          "workerCacheLookupStart": 0,
+          "workerMatchedSourceType": "",
+          "workerFinalSourceType": "",
+          "redirectStart": 0,
+          "redirectEnd": 0,
+          "fetchStart": 0.5999999940395355,
+          "domainLookupStart": 0.5999999940395355,
+          "domainLookupEnd": 0.5999999940395355,
+          "connectStart": 0.5999999940395355,
+          "secureConnectionStart": 0,
+          "connectEnd": 0.5999999940395355,
+          "requestStart": 2.5,
+          "responseStart": 3,
+          "firstInterimResponseStart": 0,
+          "finalResponseHeadersStart": 3,
+          "responseEnd": 3.2999999970197678,
+          "transferSize": 945,
+          "encodedBodySize": 645,
+          "decodedBodySize": 1202,
+          "responseStatus": 200,
+          "serverTiming": [],
+          "unloadEventStart": 5.799999997019768,
+          "unloadEventEnd": 5.799999997019768,
+          "domInteractive": 9.299999997019768,
+          "domContentLoadedEventStart": 54,
+          "domContentLoadedEventEnd": 54,
+          "domComplete": 54.099999994039536,
+          "loadEventStart": 54.099999994039536,
+          "loadEventEnd": 54.099999994039536,
+          "type": "navigate",
+          "redirectCount": 0,
+          "activationStart": 0,
+          "criticalCHRestart": 0,
+          "notRestoredReasons": null,
+          "confidence": {
+            "randomizedTriggerRate": 0.4994798,
+            "value": "high"
+          }
+        }
+      ],
+      "paint": [
+        {
+          "name": "first-paint",
+          "entryType": "paint",
+          "startTime": 56,
+          "duration": 0,
+          "navigationId": 7807,
+          "paintTime": 42.5,
+          "presentationTime": 56
+        },
+        {
+          "name": "first-contentful-paint",
+          "entryType": "paint",
+          "startTime": 160,
+          "duration": 0,
+          "navigationId": 7807,
+          "paintTime": 136.8999999910593,
+          "presentationTime": 160
+        }
+      ],
+      "resources": [
+        {
+          "name": "/static/fonts/source-serif-4.woff2",
+          "initiatorType": "link",
+          "duration": 10.5,
+          "transferSize": 429400,
+          "encodedBodySize": 429100,
+          "decodedBodySize": 429100
+        },
+        {
+          "name": "/assets/rolldown-runtime-XKyaHtl9.js",
+          "initiatorType": "other",
+          "duration": 10.700000002980232,
+          "transferSize": 729,
+          "encodedBodySize": 429,
+          "decodedBodySize": 726
+        },
+        {
+          "name": "/assets/_plugin-vue_export-helper-CJMv9Rw7.js",
+          "initiatorType": "other",
+          "duration": 11.700000002980232,
+          "transferSize": 26047,
+          "encodedBodySize": 25747,
+          "decodedBodySize": 66652
+        },
+        {
+          "name": "/assets/index-kJ-Gl3tX.css",
+          "initiatorType": "link",
+          "duration": 17.700000002980232,
+          "transferSize": 68976,
+          "encodedBodySize": 68676,
+          "decodedBodySize": 441326
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/ui-common.woff2",
+          "initiatorType": "link",
+          "duration": 12.399999991059303,
+          "transferSize": 304784,
+          "encodedBodySize": 304484,
+          "decodedBodySize": 304484
+        },
+        {
+          "name": "/assets/index-BDxSQ7E5.js",
+          "initiatorType": "script",
+          "duration": 28.200000002980232,
+          "transferSize": 205573,
+          "encodedBodySize": 205273,
+          "decodedBodySize": 639046
+        },
+        {
+          "name": "/restful/service/status",
+          "initiatorType": "xmlhttprequest",
+          "duration": 2.7000000029802322,
+          "transferSize": 322,
+          "encodedBodySize": 22,
+          "decodedBodySize": 22
+        },
+        {
+          "name": "/restful/userLogin/session",
+          "initiatorType": "xmlhttprequest",
+          "duration": 4.600000008940697,
+          "transferSize": 470,
+          "encodedBodySize": 170,
+          "decodedBodySize": 170
+        },
+        {
+          "name": "/static/brand/suining-favicon-32.png",
+          "initiatorType": "other",
+          "duration": 5.5,
+          "transferSize": 2449,
+          "encodedBodySize": 2149,
+          "decodedBodySize": 2149
+        },
+        {
+          "name": "/assets/familyHome-DfX-Mr0b.js",
+          "initiatorType": "script",
+          "duration": 3.5999999940395355,
+          "transferSize": 2157,
+          "encodedBodySize": 1857,
+          "decodedBodySize": 4170
+        },
+        {
+          "name": "/assets/Header-CL-XYFNT.js",
+          "initiatorType": "script",
+          "duration": 4.0999999940395355,
+          "transferSize": 1592,
+          "encodedBodySize": 1292,
+          "decodedBodySize": 2346
+        },
+        {
+          "name": "/assets/suining-logo-192-D8Nl0I9O.js",
+          "initiatorType": "script",
+          "duration": 4.5999999940395355,
+          "transferSize": 389,
+          "encodedBodySize": 89,
+          "decodedBodySize": 100
+        },
+        {
+          "name": "/assets/Header-C03xX-Zw.css",
+          "initiatorType": "link",
+          "duration": 4.300000011920929,
+          "transferSize": 1059,
+          "encodedBodySize": 759,
+          "decodedBodySize": 2473
+        },
+        {
+          "name": "/assets/familyHome-DGTvvvs-.css",
+          "initiatorType": "link",
+          "duration": 4.5999999940395355,
+          "transferSize": 1778,
+          "encodedBodySize": 1478,
+          "decodedBodySize": 5440
+        },
+        {
+          "name": "/assets/rateprefamily-B7BwC-zt.js",
+          "initiatorType": "script",
+          "duration": 4.799999997019768,
+          "transferSize": 2740,
+          "encodedBodySize": 2440,
+          "decodedBodySize": 5933
+        },
+        {
+          "name": "/assets/charts-CweEC4t2.js",
+          "initiatorType": "script",
+          "duration": 15.400000005960464,
+          "transferSize": 175854,
+          "encodedBodySize": 175554,
+          "decodedBodySize": 522782
+        },
+        {
+          "name": "/assets/rateprefamily-DIMpapJS.css",
+          "initiatorType": "link",
+          "duration": 5.0999999940395355,
+          "transferSize": 533,
+          "encodedBodySize": 233,
+          "decodedBodySize": 369
+        },
+        {
+          "name": "/static/icons/element-icons.woff",
+          "initiatorType": "css",
+          "duration": 26.900000005960464,
+          "transferSize": 6464,
+          "encodedBodySize": 6164,
+          "decodedBodySize": 6164
+        },
+        {
+          "name": "/static/brand/suining-logo-96.webp",
+          "initiatorType": "img",
+          "duration": 25.700000002980232,
+          "transferSize": 3896,
+          "encodedBodySize": 3596,
+          "decodedBodySize": 3596
+        },
+        {
+          "name": "/static/img/care-botanical.webp",
+          "initiatorType": "img",
+          "duration": 26.299999997019768,
+          "transferSize": 77784,
+          "encodedBodySize": 77484,
+          "decodedBodySize": 77484
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-022.woff2",
+          "initiatorType": "css",
+          "duration": 27,
+          "transferSize": 383324,
+          "encodedBodySize": 383024,
+          "decodedBodySize": 383024
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-021.woff2",
+          "initiatorType": "css",
+          "duration": 25.600000008940697,
+          "transferSize": 459752,
+          "encodedBodySize": 459452,
+          "decodedBodySize": 459452
+        },
+        {
+          "name": "/restful/ratepre/selectRatepreFamily",
+          "initiatorType": "xmlhttprequest",
+          "duration": 2.800000011920929,
+          "transferSize": 400,
+          "encodedBodySize": 100,
+          "decodedBodySize": 100
+        }
+      ]
+    },
+    {
+      "route": "/rateprefamily",
+      "cache": "warm",
+      "sample": 1,
+      "readyMs": 181.7713000000001,
+      "navigation": [
+        {
+          "name": "http://127.0.0.1:12772/?baseline=%2Frateprefamily-1#/rateprefamily",
+          "entryType": "navigation",
+          "startTime": 0,
+          "duration": 47.79999999701977,
+          "navigationId": 6649,
+          "initiatorType": "navigation",
+          "deliveryType": "",
+          "nextHopProtocol": "http/1.1",
+          "renderBlockingStatus": "non-blocking",
+          "contentType": "text/html",
+          "contentEncoding": "gzip",
+          "workerStart": 0,
+          "workerRouterEvaluationStart": 0,
+          "workerCacheLookupStart": 0,
+          "workerMatchedSourceType": "",
+          "workerFinalSourceType": "",
+          "redirectStart": 0,
+          "redirectEnd": 0,
+          "fetchStart": 0.5999999940395355,
+          "domainLookupStart": 0.5999999940395355,
+          "domainLookupEnd": 0.5999999940395355,
+          "connectStart": 0.5999999940395355,
+          "secureConnectionStart": 0,
+          "connectEnd": 0.5999999940395355,
+          "requestStart": 2.8999999910593033,
+          "responseStart": 3.3999999910593033,
+          "firstInterimResponseStart": 0,
+          "finalResponseHeadersStart": 3.3999999910593033,
+          "responseEnd": 3.699999988079071,
+          "transferSize": 945,
+          "encodedBodySize": 645,
+          "decodedBodySize": 1202,
+          "responseStatus": 200,
+          "serverTiming": [],
+          "unloadEventStart": 6.0999999940395355,
+          "unloadEventEnd": 6.0999999940395355,
+          "domInteractive": 10.5,
+          "domContentLoadedEventStart": 47.69999998807907,
+          "domContentLoadedEventEnd": 47.69999998807907,
+          "domComplete": 47.79999999701977,
+          "loadEventStart": 47.79999999701977,
+          "loadEventEnd": 47.79999999701977,
+          "type": "reload",
+          "redirectCount": 0,
+          "activationStart": 0,
+          "criticalCHRestart": 0,
+          "notRestoredReasons": null,
+          "confidence": {
+            "randomizedTriggerRate": 0.4994798,
+            "value": "high"
+          }
+        }
+      ],
+      "paint": [
+        {
+          "name": "first-paint",
+          "entryType": "paint",
+          "startTime": 52,
+          "duration": 0,
+          "navigationId": 6649,
+          "paintTime": 42.79999999701977,
+          "presentationTime": 52
+        },
+        {
+          "name": "first-contentful-paint",
+          "entryType": "paint",
+          "startTime": 120,
+          "duration": 0,
+          "navigationId": 6649,
+          "paintTime": 106.59999999403954,
+          "presentationTime": 120
+        }
+      ],
+      "resources": [
+        {
+          "name": "/static/fonts/source-serif-4.woff2",
+          "initiatorType": "link",
+          "duration": 9.599999994039536,
+          "transferSize": 429400,
+          "encodedBodySize": 429100,
+          "decodedBodySize": 429100
+        },
+        {
+          "name": "/assets/rolldown-runtime-XKyaHtl9.js",
+          "initiatorType": "other",
+          "duration": 10.5,
+          "transferSize": 729,
+          "encodedBodySize": 429,
+          "decodedBodySize": 726
+        },
+        {
+          "name": "/assets/_plugin-vue_export-helper-CJMv9Rw7.js",
+          "initiatorType": "other",
+          "duration": 20.299999997019768,
+          "transferSize": 26047,
+          "encodedBodySize": 25747,
+          "decodedBodySize": 66652
+        },
+        {
+          "name": "/assets/index-kJ-Gl3tX.css",
+          "initiatorType": "link",
+          "duration": 25.200000002980232,
+          "transferSize": 68976,
+          "encodedBodySize": 68676,
+          "decodedBodySize": 441326
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/ui-common.woff2",
+          "initiatorType": "link",
+          "duration": 10.099999994039536,
+          "transferSize": 304784,
+          "encodedBodySize": 304484,
+          "decodedBodySize": 304484
+        },
+        {
+          "name": "/assets/index-BDxSQ7E5.js",
+          "initiatorType": "script",
+          "duration": 19.599999994039536,
+          "transferSize": 205573,
+          "encodedBodySize": 205273,
+          "decodedBodySize": 639046
+        },
+        {
+          "name": "/restful/service/status",
+          "initiatorType": "xmlhttprequest",
+          "duration": 1.5,
+          "transferSize": 322,
+          "encodedBodySize": 22,
+          "decodedBodySize": 22
+        },
+        {
+          "name": "/restful/userLogin/session",
+          "initiatorType": "xmlhttprequest",
+          "duration": 4.300000011920929,
+          "transferSize": 470,
+          "encodedBodySize": 170,
+          "decodedBodySize": 170
+        },
+        {
+          "name": "/static/brand/suining-favicon-32.png",
+          "initiatorType": "other",
+          "duration": 5.100000008940697,
+          "transferSize": 2449,
+          "encodedBodySize": 2149,
+          "decodedBodySize": 2149
+        },
+        {
+          "name": "/assets/familyHome-DfX-Mr0b.js",
+          "initiatorType": "script",
+          "duration": 3,
+          "transferSize": 2157,
+          "encodedBodySize": 1857,
+          "decodedBodySize": 4170
+        },
+        {
+          "name": "/assets/Header-CL-XYFNT.js",
+          "initiatorType": "script",
+          "duration": 3,
+          "transferSize": 1592,
+          "encodedBodySize": 1292,
+          "decodedBodySize": 2346
+        },
+        {
+          "name": "/assets/suining-logo-192-D8Nl0I9O.js",
+          "initiatorType": "script",
+          "duration": 3.3999999910593033,
+          "transferSize": 389,
+          "encodedBodySize": 89,
+          "decodedBodySize": 100
+        },
+        {
+          "name": "/assets/Header-C03xX-Zw.css",
+          "initiatorType": "link",
+          "duration": 3.7999999970197678,
+          "transferSize": 1059,
+          "encodedBodySize": 759,
+          "decodedBodySize": 2473
+        },
+        {
+          "name": "/assets/familyHome-DGTvvvs-.css",
+          "initiatorType": "link",
+          "duration": 4,
+          "transferSize": 1778,
+          "encodedBodySize": 1478,
+          "decodedBodySize": 5440
+        },
+        {
+          "name": "/assets/rateprefamily-B7BwC-zt.js",
+          "initiatorType": "script",
+          "duration": 3.9000000059604645,
+          "transferSize": 2740,
+          "encodedBodySize": 2440,
+          "decodedBodySize": 5933
+        },
+        {
+          "name": "/assets/charts-CweEC4t2.js",
+          "initiatorType": "script",
+          "duration": 13.299999997019768,
+          "transferSize": 175854,
+          "encodedBodySize": 175554,
+          "decodedBodySize": 522782
+        },
+        {
+          "name": "/assets/rateprefamily-DIMpapJS.css",
+          "initiatorType": "link",
+          "duration": 4.4000000059604645,
+          "transferSize": 533,
+          "encodedBodySize": 233,
+          "decodedBodySize": 369
+        },
+        {
+          "name": "/static/icons/element-icons.woff",
+          "initiatorType": "css",
+          "duration": 19.200000002980232,
+          "transferSize": 6464,
+          "encodedBodySize": 6164,
+          "decodedBodySize": 6164
+        },
+        {
+          "name": "/static/brand/suining-logo-96.webp",
+          "initiatorType": "img",
+          "duration": 19.700000002980232,
+          "transferSize": 3896,
+          "encodedBodySize": 3596,
+          "decodedBodySize": 3596
+        },
+        {
+          "name": "/static/img/care-botanical.webp",
+          "initiatorType": "img",
+          "duration": 19.799999997019768,
+          "transferSize": 77784,
+          "encodedBodySize": 77484,
+          "decodedBodySize": 77484
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-022.woff2",
+          "initiatorType": "css",
+          "duration": 19.299999997019768,
+          "transferSize": 383324,
+          "encodedBodySize": 383024,
+          "decodedBodySize": 383024
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-021.woff2",
+          "initiatorType": "css",
+          "duration": 20.599999994039536,
+          "transferSize": 459752,
+          "encodedBodySize": 459452,
+          "decodedBodySize": 459452
+        },
+        {
+          "name": "/restful/ratepre/selectRatepreFamily",
+          "initiatorType": "xmlhttprequest",
+          "duration": 2.2999999970197678,
+          "transferSize": 400,
+          "encodedBodySize": 100,
+          "decodedBodySize": 100
+        }
+      ]
+    },
+    {
+      "route": "/rateprefamily",
+      "cache": "cold",
+      "sample": 2,
+      "readyMs": 186.23610000000008,
+      "navigation": [
+        {
+          "name": "http://127.0.0.1:12772/?baseline=%2Frateprefamily-2#/rateprefamily",
+          "entryType": "navigation",
+          "startTime": 0,
+          "duration": 55.70000000298023,
+          "navigationId": 170,
+          "initiatorType": "navigation",
+          "deliveryType": "",
+          "nextHopProtocol": "http/1.1",
+          "renderBlockingStatus": "non-blocking",
+          "contentType": "text/html",
+          "contentEncoding": "gzip",
+          "workerStart": 0,
+          "workerRouterEvaluationStart": 0,
+          "workerCacheLookupStart": 0,
+          "workerMatchedSourceType": "",
+          "workerFinalSourceType": "",
+          "redirectStart": 0,
+          "redirectEnd": 0,
+          "fetchStart": 0.8999999910593033,
+          "domainLookupStart": 0.8999999910593033,
+          "domainLookupEnd": 0.8999999910593033,
+          "connectStart": 0.8999999910593033,
+          "secureConnectionStart": 0,
+          "connectEnd": 0.8999999910593033,
+          "requestStart": 3.5999999940395355,
+          "responseStart": 4,
+          "firstInterimResponseStart": 0,
+          "finalResponseHeadersStart": 4,
+          "responseEnd": 4.399999991059303,
+          "transferSize": 945,
+          "encodedBodySize": 645,
+          "decodedBodySize": 1202,
+          "responseStatus": 200,
+          "serverTiming": [],
+          "unloadEventStart": 7.299999997019768,
+          "unloadEventEnd": 7.299999997019768,
+          "domInteractive": 11.299999997019768,
+          "domContentLoadedEventStart": 55.599999994039536,
+          "domContentLoadedEventEnd": 55.599999994039536,
+          "domComplete": 55.70000000298023,
+          "loadEventStart": 55.70000000298023,
+          "loadEventEnd": 55.70000000298023,
+          "type": "navigate",
+          "redirectCount": 0,
+          "activationStart": 0,
+          "criticalCHRestart": 0,
+          "notRestoredReasons": null,
+          "confidence": {
+            "randomizedTriggerRate": 0.4994798,
+            "value": "low"
+          }
+        }
+      ],
+      "paint": [
+        {
+          "name": "first-paint",
+          "entryType": "paint",
+          "startTime": 56,
+          "duration": 0,
+          "navigationId": 170,
+          "paintTime": 45.70000000298023,
+          "presentationTime": 56
+        },
+        {
+          "name": "first-contentful-paint",
+          "entryType": "paint",
+          "startTime": 128,
+          "duration": 0,
+          "navigationId": 170,
+          "paintTime": 117,
+          "presentationTime": 128
+        }
+      ],
+      "resources": [
+        {
+          "name": "/static/fonts/source-serif-4.woff2",
+          "initiatorType": "link",
+          "duration": 10.700000002980232,
+          "transferSize": 429400,
+          "encodedBodySize": 429100,
+          "decodedBodySize": 429100
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/ui-common.woff2",
+          "initiatorType": "link",
+          "duration": 11.400000005960464,
+          "transferSize": 304784,
+          "encodedBodySize": 304484,
+          "decodedBodySize": 304484
+        },
+        {
+          "name": "/assets/index-BDxSQ7E5.js",
+          "initiatorType": "script",
+          "duration": 25.700000002980232,
+          "transferSize": 205573,
+          "encodedBodySize": 205273,
+          "decodedBodySize": 639046
+        },
+        {
+          "name": "/assets/rolldown-runtime-XKyaHtl9.js",
+          "initiatorType": "other",
+          "duration": 26.299999997019768,
+          "transferSize": 729,
+          "encodedBodySize": 429,
+          "decodedBodySize": 726
+        },
+        {
+          "name": "/assets/_plugin-vue_export-helper-CJMv9Rw7.js",
+          "initiatorType": "other",
+          "duration": 26.399999991059303,
+          "transferSize": 26047,
+          "encodedBodySize": 25747,
+          "decodedBodySize": 66652
+        },
+        {
+          "name": "/assets/index-kJ-Gl3tX.css",
+          "initiatorType": "link",
+          "duration": 15.5,
+          "transferSize": 68976,
+          "encodedBodySize": 68676,
+          "decodedBodySize": 441326
+        },
+        {
+          "name": "/restful/service/status",
+          "initiatorType": "xmlhttprequest",
+          "duration": 2.800000011920929,
+          "transferSize": 322,
+          "encodedBodySize": 22,
+          "decodedBodySize": 22
+        },
+        {
+          "name": "/restful/userLogin/session",
+          "initiatorType": "xmlhttprequest",
+          "duration": 4.899999991059303,
+          "transferSize": 470,
+          "encodedBodySize": 170,
+          "decodedBodySize": 170
+        },
+        {
+          "name": "/static/brand/suining-favicon-32.png",
+          "initiatorType": "other",
+          "duration": 5.0999999940395355,
+          "transferSize": 2449,
+          "encodedBodySize": 2149,
+          "decodedBodySize": 2149
+        },
+        {
+          "name": "/assets/Header-CL-XYFNT.js",
+          "initiatorType": "script",
+          "duration": 3.6000000089406967,
+          "transferSize": 1592,
+          "encodedBodySize": 1292,
+          "decodedBodySize": 2346
+        },
+        {
+          "name": "/assets/familyHome-DfX-Mr0b.js",
+          "initiatorType": "script",
+          "duration": 3.9000000059604645,
+          "transferSize": 2157,
+          "encodedBodySize": 1857,
+          "decodedBodySize": 4170
+        },
+        {
+          "name": "/assets/Header-C03xX-Zw.css",
+          "initiatorType": "link",
+          "duration": 4.200000002980232,
+          "transferSize": 1059,
+          "encodedBodySize": 759,
+          "decodedBodySize": 2473
+        },
+        {
+          "name": "/assets/suining-logo-192-D8Nl0I9O.js",
+          "initiatorType": "script",
+          "duration": 3.7999999970197678,
+          "transferSize": 389,
+          "encodedBodySize": 89,
+          "decodedBodySize": 100
+        },
+        {
+          "name": "/assets/familyHome-DGTvvvs-.css",
+          "initiatorType": "link",
+          "duration": 4.299999997019768,
+          "transferSize": 1778,
+          "encodedBodySize": 1478,
+          "decodedBodySize": 5440
+        },
+        {
+          "name": "/assets/rateprefamily-B7BwC-zt.js",
+          "initiatorType": "script",
+          "duration": 4.5,
+          "transferSize": 2740,
+          "encodedBodySize": 2440,
+          "decodedBodySize": 5933
+        },
+        {
+          "name": "/assets/charts-CweEC4t2.js",
+          "initiatorType": "script",
+          "duration": 14.099999994039536,
+          "transferSize": 175854,
+          "encodedBodySize": 175554,
+          "decodedBodySize": 522782
+        },
+        {
+          "name": "/assets/rateprefamily-DIMpapJS.css",
+          "initiatorType": "link",
+          "duration": 4.700000002980232,
+          "transferSize": 533,
+          "encodedBodySize": 233,
+          "decodedBodySize": 369
+        },
+        {
+          "name": "/static/icons/element-icons.woff",
+          "initiatorType": "css",
+          "duration": 17.700000002980232,
+          "transferSize": 6464,
+          "encodedBodySize": 6164,
+          "decodedBodySize": 6164
+        },
+        {
+          "name": "/static/brand/suining-logo-96.webp",
+          "initiatorType": "img",
+          "duration": 17.399999991059303,
+          "transferSize": 3896,
+          "encodedBodySize": 3596,
+          "decodedBodySize": 3596
+        },
+        {
+          "name": "/static/img/care-botanical.webp",
+          "initiatorType": "img",
+          "duration": 17.799999997019768,
+          "transferSize": 77784,
+          "encodedBodySize": 77484,
+          "decodedBodySize": 77484
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-022.woff2",
+          "initiatorType": "css",
+          "duration": 18.5,
+          "transferSize": 383324,
+          "encodedBodySize": 383024,
+          "decodedBodySize": 383024
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-021.woff2",
+          "initiatorType": "css",
+          "duration": 18.700000002980232,
+          "transferSize": 459752,
+          "encodedBodySize": 459452,
+          "decodedBodySize": 459452
+        },
+        {
+          "name": "/restful/ratepre/selectRatepreFamily",
+          "initiatorType": "xmlhttprequest",
+          "duration": 1.5999999940395355,
+          "transferSize": 400,
+          "encodedBodySize": 100,
+          "decodedBodySize": 100
+        }
+      ]
+    },
+    {
+      "route": "/rateprefamily",
+      "cache": "warm",
+      "sample": 2,
+      "readyMs": 187.0662000000002,
+      "navigation": [
+        {
+          "name": "http://127.0.0.1:12772/?baseline=%2Frateprefamily-2#/rateprefamily",
+          "entryType": "navigation",
+          "startTime": 0,
+          "duration": 50.79999999701977,
+          "navigationId": 8561,
+          "initiatorType": "navigation",
+          "deliveryType": "",
+          "nextHopProtocol": "http/1.1",
+          "renderBlockingStatus": "non-blocking",
+          "contentType": "text/html",
+          "contentEncoding": "gzip",
+          "workerStart": 0,
+          "workerRouterEvaluationStart": 0,
+          "workerCacheLookupStart": 0,
+          "workerMatchedSourceType": "",
+          "workerFinalSourceType": "",
+          "redirectStart": 0,
+          "redirectEnd": 0,
+          "fetchStart": 0.6000000089406967,
+          "domainLookupStart": 0.6000000089406967,
+          "domainLookupEnd": 0.6000000089406967,
+          "connectStart": 0.6000000089406967,
+          "secureConnectionStart": 0,
+          "connectEnd": 0.6000000089406967,
+          "requestStart": 2.7000000029802322,
+          "responseStart": 3.2999999970197678,
+          "firstInterimResponseStart": 0,
+          "finalResponseHeadersStart": 3.2999999970197678,
+          "responseEnd": 3.5,
+          "transferSize": 945,
+          "encodedBodySize": 645,
+          "decodedBodySize": 1202,
+          "responseStatus": 200,
+          "serverTiming": [],
+          "unloadEventStart": 5.9000000059604645,
+          "unloadEventEnd": 5.9000000059604645,
+          "domInteractive": 10.400000005960464,
+          "domContentLoadedEventStart": 50.5,
+          "domContentLoadedEventEnd": 50.70000000298023,
+          "domComplete": 50.79999999701977,
+          "loadEventStart": 50.79999999701977,
+          "loadEventEnd": 50.79999999701977,
+          "type": "reload",
+          "redirectCount": 0,
+          "activationStart": 0,
+          "criticalCHRestart": 0,
+          "notRestoredReasons": null,
+          "confidence": {
+            "randomizedTriggerRate": 0.4994798,
+            "value": "low"
+          }
+        }
+      ],
+      "paint": [
+        {
+          "name": "first-paint",
+          "entryType": "paint",
+          "startTime": 52,
+          "duration": 0,
+          "navigationId": 8561,
+          "paintTime": 45.6000000089407,
+          "presentationTime": 52
+        },
+        {
+          "name": "first-contentful-paint",
+          "entryType": "paint",
+          "startTime": 132,
+          "duration": 0,
+          "navigationId": 8561,
+          "paintTime": 120.1000000089407,
+          "presentationTime": 132
+        }
+      ],
+      "resources": [
+        {
+          "name": "/static/fonts/source-serif-4.woff2",
+          "initiatorType": "link",
+          "duration": 11.200000002980232,
+          "transferSize": 429400,
+          "encodedBodySize": 429100,
+          "decodedBodySize": 429100
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/ui-common.woff2",
+          "initiatorType": "link",
+          "duration": 10.199999988079071,
+          "transferSize": 304784,
+          "encodedBodySize": 304484,
+          "decodedBodySize": 304484
+        },
+        {
+          "name": "/assets/rolldown-runtime-XKyaHtl9.js",
+          "initiatorType": "other",
+          "duration": 21.899999991059303,
+          "transferSize": 729,
+          "encodedBodySize": 429,
+          "decodedBodySize": 726
+        },
+        {
+          "name": "/assets/_plugin-vue_export-helper-CJMv9Rw7.js",
+          "initiatorType": "other",
+          "duration": 22.5,
+          "transferSize": 26047,
+          "encodedBodySize": 25747,
+          "decodedBodySize": 66652
+        },
+        {
+          "name": "/assets/index-BDxSQ7E5.js",
+          "initiatorType": "script",
+          "duration": 21.19999998807907,
+          "transferSize": 205573,
+          "encodedBodySize": 205273,
+          "decodedBodySize": 639046
+        },
+        {
+          "name": "/assets/index-kJ-Gl3tX.css",
+          "initiatorType": "link",
+          "duration": 28.400000005960464,
+          "transferSize": 68976,
+          "encodedBodySize": 68676,
+          "decodedBodySize": 441326
+        },
+        {
+          "name": "/restful/service/status",
+          "initiatorType": "xmlhttprequest",
+          "duration": 4.0999999940395355,
+          "transferSize": 322,
+          "encodedBodySize": 22,
+          "decodedBodySize": 22
+        },
+        {
+          "name": "/restful/userLogin/session",
+          "initiatorType": "xmlhttprequest",
+          "duration": 4.200000002980232,
+          "transferSize": 470,
+          "encodedBodySize": 170,
+          "decodedBodySize": 170
+        },
+        {
+          "name": "/static/brand/suining-favicon-32.png",
+          "initiatorType": "other",
+          "duration": 3.3999999910593033,
+          "transferSize": 2449,
+          "encodedBodySize": 2149,
+          "decodedBodySize": 2149
+        },
+        {
+          "name": "/assets/familyHome-DfX-Mr0b.js",
+          "initiatorType": "script",
+          "duration": 3.9000000059604645,
+          "transferSize": 2157,
+          "encodedBodySize": 1857,
+          "decodedBodySize": 4170
+        },
+        {
+          "name": "/assets/Header-CL-XYFNT.js",
+          "initiatorType": "script",
+          "duration": 5.799999997019768,
+          "transferSize": 1592,
+          "encodedBodySize": 1292,
+          "decodedBodySize": 2346
+        },
+        {
+          "name": "/assets/Header-C03xX-Zw.css",
+          "initiatorType": "link",
+          "duration": 5,
+          "transferSize": 1059,
+          "encodedBodySize": 759,
+          "decodedBodySize": 2473
+        },
+        {
+          "name": "/assets/suining-logo-192-D8Nl0I9O.js",
+          "initiatorType": "script",
+          "duration": 5.799999997019768,
+          "transferSize": 389,
+          "encodedBodySize": 89,
+          "decodedBodySize": 100
+        },
+        {
+          "name": "/assets/familyHome-DGTvvvs-.css",
+          "initiatorType": "link",
+          "duration": 5.700000002980232,
+          "transferSize": 1778,
+          "encodedBodySize": 1478,
+          "decodedBodySize": 5440
+        },
+        {
+          "name": "/assets/rateprefamily-B7BwC-zt.js",
+          "initiatorType": "script",
+          "duration": 6,
+          "transferSize": 2740,
+          "encodedBodySize": 2440,
+          "decodedBodySize": 5933
+        },
+        {
+          "name": "/assets/charts-CweEC4t2.js",
+          "initiatorType": "script",
+          "duration": 21.700000002980232,
+          "transferSize": 175854,
+          "encodedBodySize": 175554,
+          "decodedBodySize": 522782
+        },
+        {
+          "name": "/assets/rateprefamily-DIMpapJS.css",
+          "initiatorType": "link",
+          "duration": 6.299999997019768,
+          "transferSize": 533,
+          "encodedBodySize": 233,
+          "decodedBodySize": 369
+        },
+        {
+          "name": "/static/icons/element-icons.woff",
+          "initiatorType": "css",
+          "duration": 19,
+          "transferSize": 6464,
+          "encodedBodySize": 6164,
+          "decodedBodySize": 6164
+        },
+        {
+          "name": "/static/brand/suining-logo-96.webp",
+          "initiatorType": "img",
+          "duration": 19.099999994039536,
+          "transferSize": 3896,
+          "encodedBodySize": 3596,
+          "decodedBodySize": 3596
+        },
+        {
+          "name": "/static/img/care-botanical.webp",
+          "initiatorType": "img",
+          "duration": 21.299999997019768,
+          "transferSize": 77784,
+          "encodedBodySize": 77484,
+          "decodedBodySize": 77484
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-022.woff2",
+          "initiatorType": "css",
+          "duration": 19.599999994039536,
+          "transferSize": 383324,
+          "encodedBodySize": 383024,
+          "decodedBodySize": 383024
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-021.woff2",
+          "initiatorType": "css",
+          "duration": 18.599999994039536,
+          "transferSize": 459752,
+          "encodedBodySize": 459452,
+          "decodedBodySize": 459452
+        },
+        {
+          "name": "/restful/ratepre/selectRatepreFamily",
+          "initiatorType": "xmlhttprequest",
+          "duration": 2.1000000089406967,
+          "transferSize": 400,
+          "encodedBodySize": 100,
+          "decodedBodySize": 100
+        }
+      ]
+    },
+    {
+      "route": "/rateprefamily",
+      "cache": "cold",
+      "sample": 3,
+      "readyMs": 197.94569999999976,
+      "navigation": [
+        {
+          "name": "http://127.0.0.1:12772/?baseline=%2Frateprefamily-3#/rateprefamily",
+          "entryType": "navigation",
+          "startTime": 0,
+          "duration": 56.70000000298023,
+          "navigationId": 842,
+          "initiatorType": "navigation",
+          "deliveryType": "",
+          "nextHopProtocol": "http/1.1",
+          "renderBlockingStatus": "non-blocking",
+          "contentType": "text/html",
+          "contentEncoding": "gzip",
+          "workerStart": 0,
+          "workerRouterEvaluationStart": 0,
+          "workerCacheLookupStart": 0,
+          "workerMatchedSourceType": "",
+          "workerFinalSourceType": "",
+          "redirectStart": 0,
+          "redirectEnd": 0,
+          "fetchStart": 0.7000000029802322,
+          "domainLookupStart": 0.7000000029802322,
+          "domainLookupEnd": 0.7000000029802322,
+          "connectStart": 0.7000000029802322,
+          "secureConnectionStart": 0,
+          "connectEnd": 0.7000000029802322,
+          "requestStart": 3.0999999940395355,
+          "responseStart": 3.9000000059604645,
+          "firstInterimResponseStart": 0,
+          "finalResponseHeadersStart": 3.9000000059604645,
+          "responseEnd": 4.200000002980232,
+          "transferSize": 945,
+          "encodedBodySize": 645,
+          "decodedBodySize": 1202,
+          "responseStatus": 200,
+          "serverTiming": [],
+          "unloadEventStart": 8.299999997019768,
+          "unloadEventEnd": 8.299999997019768,
+          "domInteractive": 13.299999997019768,
+          "domContentLoadedEventStart": 56.5,
+          "domContentLoadedEventEnd": 56.5,
+          "domComplete": 56.70000000298023,
+          "loadEventStart": 56.70000000298023,
+          "loadEventEnd": 56.70000000298023,
+          "type": "navigate",
+          "redirectCount": 0,
+          "activationStart": 0,
+          "criticalCHRestart": 0,
+          "notRestoredReasons": null,
+          "confidence": {
+            "randomizedTriggerRate": 0.4994798,
+            "value": "low"
+          }
+        }
+      ],
+      "paint": [
+        {
+          "name": "first-paint",
+          "entryType": "paint",
+          "startTime": 60,
+          "duration": 0,
+          "navigationId": 842,
+          "paintTime": 51.20000000298023,
+          "presentationTime": 60
+        },
+        {
+          "name": "first-contentful-paint",
+          "entryType": "paint",
+          "startTime": 128,
+          "duration": 0,
+          "navigationId": 842,
+          "paintTime": 119.20000000298023,
+          "presentationTime": 128
+        }
+      ],
+      "resources": [
+        {
+          "name": "/static/fonts/source-serif-4.woff2",
+          "initiatorType": "link",
+          "duration": 12.400000005960464,
+          "transferSize": 429400,
+          "encodedBodySize": 429100,
+          "decodedBodySize": 429100
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/ui-common.woff2",
+          "initiatorType": "link",
+          "duration": 13.199999988079071,
+          "transferSize": 304784,
+          "encodedBodySize": 304484,
+          "decodedBodySize": 304484
+        },
+        {
+          "name": "/assets/rolldown-runtime-XKyaHtl9.js",
+          "initiatorType": "other",
+          "duration": 10.700000002980232,
+          "transferSize": 729,
+          "encodedBodySize": 429,
+          "decodedBodySize": 726
+        },
+        {
+          "name": "/assets/_plugin-vue_export-helper-CJMv9Rw7.js",
+          "initiatorType": "other",
+          "duration": 23.900000005960464,
+          "transferSize": 26047,
+          "encodedBodySize": 25747,
+          "decodedBodySize": 66652
+        },
+        {
+          "name": "/assets/index-kJ-Gl3tX.css",
+          "initiatorType": "link",
+          "duration": 29.799999997019768,
+          "transferSize": 68976,
+          "encodedBodySize": 68676,
+          "decodedBodySize": 441326
+        },
+        {
+          "name": "/assets/index-BDxSQ7E5.js",
+          "initiatorType": "script",
+          "duration": 23,
+          "transferSize": 205573,
+          "encodedBodySize": 205273,
+          "decodedBodySize": 639046
+        },
+        {
+          "name": "/restful/service/status",
+          "initiatorType": "xmlhttprequest",
+          "duration": 1.5,
+          "transferSize": 322,
+          "encodedBodySize": 22,
+          "decodedBodySize": 22
+        },
+        {
+          "name": "/restful/userLogin/session",
+          "initiatorType": "xmlhttprequest",
+          "duration": 4.5,
+          "transferSize": 470,
+          "encodedBodySize": 170,
+          "decodedBodySize": 170
+        },
+        {
+          "name": "/static/brand/suining-favicon-32.png",
+          "initiatorType": "other",
+          "duration": 4.9000000059604645,
+          "transferSize": 2449,
+          "encodedBodySize": 2149,
+          "decodedBodySize": 2149
+        },
+        {
+          "name": "/assets/familyHome-DfX-Mr0b.js",
+          "initiatorType": "script",
+          "duration": 2.9000000059604645,
+          "transferSize": 2157,
+          "encodedBodySize": 1857,
+          "decodedBodySize": 4170
+        },
+        {
+          "name": "/assets/Header-CL-XYFNT.js",
+          "initiatorType": "script",
+          "duration": 3.300000011920929,
+          "transferSize": 1592,
+          "encodedBodySize": 1292,
+          "decodedBodySize": 2346
+        },
+        {
+          "name": "/assets/suining-logo-192-D8Nl0I9O.js",
+          "initiatorType": "script",
+          "duration": 3.3999999910593033,
+          "transferSize": 389,
+          "encodedBodySize": 89,
+          "decodedBodySize": 100
+        },
+        {
+          "name": "/assets/Header-C03xX-Zw.css",
+          "initiatorType": "link",
+          "duration": 3.7000000029802322,
+          "transferSize": 1059,
+          "encodedBodySize": 759,
+          "decodedBodySize": 2473
+        },
+        {
+          "name": "/assets/familyHome-DGTvvvs-.css",
+          "initiatorType": "link",
+          "duration": 3.699999988079071,
+          "transferSize": 1778,
+          "encodedBodySize": 1478,
+          "decodedBodySize": 5440
+        },
+        {
+          "name": "/assets/rateprefamily-B7BwC-zt.js",
+          "initiatorType": "script",
+          "duration": 3.8999999910593033,
+          "transferSize": 2740,
+          "encodedBodySize": 2440,
+          "decodedBodySize": 5933
+        },
+        {
+          "name": "/assets/rateprefamily-DIMpapJS.css",
+          "initiatorType": "link",
+          "duration": 4.299999997019768,
+          "transferSize": 533,
+          "encodedBodySize": 233,
+          "decodedBodySize": 369
+        },
+        {
+          "name": "/assets/charts-CweEC4t2.js",
+          "initiatorType": "script",
+          "duration": 13.900000005960464,
+          "transferSize": 175854,
+          "encodedBodySize": 175554,
+          "decodedBodySize": 522782
+        },
+        {
+          "name": "/static/icons/element-icons.woff",
+          "initiatorType": "css",
+          "duration": 18.299999997019768,
+          "transferSize": 6464,
+          "encodedBodySize": 6164,
+          "decodedBodySize": 6164
+        },
+        {
+          "name": "/static/img/care-botanical.webp",
+          "initiatorType": "img",
+          "duration": 18.200000002980232,
+          "transferSize": 77784,
+          "encodedBodySize": 77484,
+          "decodedBodySize": 77484
+        },
+        {
+          "name": "/static/brand/suining-logo-96.webp",
+          "initiatorType": "img",
+          "duration": 18.100000008940697,
+          "transferSize": 3896,
+          "encodedBodySize": 3596,
+          "decodedBodySize": 3596
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-022.woff2",
+          "initiatorType": "css",
+          "duration": 18.5,
+          "transferSize": 383324,
+          "encodedBodySize": 383024,
+          "decodedBodySize": 383024
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-021.woff2",
+          "initiatorType": "css",
+          "duration": 19.600000008940697,
+          "transferSize": 459752,
+          "encodedBodySize": 459452,
+          "decodedBodySize": 459452
+        },
+        {
+          "name": "/restful/ratepre/selectRatepreFamily",
+          "initiatorType": "xmlhttprequest",
+          "duration": 1.4000000059604645,
+          "transferSize": 400,
+          "encodedBodySize": 100,
+          "decodedBodySize": 100
+        }
+      ]
+    },
+    {
+      "route": "/rateprefamily",
+      "cache": "warm",
+      "sample": 3,
+      "readyMs": 180.4703999999997,
+      "navigation": [
+        {
+          "name": "http://127.0.0.1:12772/?baseline=%2Frateprefamily-3#/rateprefamily",
+          "entryType": "navigation",
+          "startTime": 0,
+          "duration": 53.20000000298023,
+          "navigationId": 9842,
+          "initiatorType": "navigation",
+          "deliveryType": "",
+          "nextHopProtocol": "http/1.1",
+          "renderBlockingStatus": "non-blocking",
+          "contentType": "text/html",
+          "contentEncoding": "gzip",
+          "workerStart": 0,
+          "workerRouterEvaluationStart": 0,
+          "workerCacheLookupStart": 0,
+          "workerMatchedSourceType": "",
+          "workerFinalSourceType": "",
+          "redirectStart": 0,
+          "redirectEnd": 0,
+          "fetchStart": 0.5999999940395355,
+          "domainLookupStart": 0.5999999940395355,
+          "domainLookupEnd": 0.5999999940395355,
+          "connectStart": 0.5999999940395355,
+          "secureConnectionStart": 0,
+          "connectEnd": 0.5999999940395355,
+          "requestStart": 3,
+          "responseStart": 3.7999999970197678,
+          "firstInterimResponseStart": 0,
+          "finalResponseHeadersStart": 3.7999999970197678,
+          "responseEnd": 4.0999999940395355,
+          "transferSize": 945,
+          "encodedBodySize": 645,
+          "decodedBodySize": 1202,
+          "responseStatus": 200,
+          "serverTiming": [],
+          "unloadEventStart": 6.9000000059604645,
+          "unloadEventEnd": 6.9000000059604645,
+          "domInteractive": 10.200000002980232,
+          "domContentLoadedEventStart": 53.099999994039536,
+          "domContentLoadedEventEnd": 53.099999994039536,
+          "domComplete": 53.20000000298023,
+          "loadEventStart": 53.20000000298023,
+          "loadEventEnd": 53.20000000298023,
+          "type": "reload",
+          "redirectCount": 0,
+          "activationStart": 0,
+          "criticalCHRestart": 0,
+          "notRestoredReasons": null,
+          "confidence": {
+            "randomizedTriggerRate": 0.4994798,
+            "value": "low"
+          }
+        }
+      ],
+      "paint": [
+        {
+          "name": "first-paint",
+          "entryType": "paint",
+          "startTime": 56,
+          "duration": 0,
+          "navigationId": 9842,
+          "paintTime": 47.599999994039536,
+          "presentationTime": 56
+        },
+        {
+          "name": "first-contentful-paint",
+          "entryType": "paint",
+          "startTime": 128,
+          "duration": 0,
+          "navigationId": 9842,
+          "paintTime": 116.79999999701977,
+          "presentationTime": 128
+        }
+      ],
+      "resources": [
+        {
+          "name": "/static/fonts/source-serif-4.woff2",
+          "initiatorType": "link",
+          "duration": 12.299999997019768,
+          "transferSize": 429400,
+          "encodedBodySize": 429100,
+          "decodedBodySize": 429100
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/ui-common.woff2",
+          "initiatorType": "link",
+          "duration": 11.299999997019768,
+          "transferSize": 304784,
+          "encodedBodySize": 304484,
+          "decodedBodySize": 304484
+        },
+        {
+          "name": "/assets/index-BDxSQ7E5.js",
+          "initiatorType": "script",
+          "duration": 23.299999997019768,
+          "transferSize": 205573,
+          "encodedBodySize": 205273,
+          "decodedBodySize": 639046
+        },
+        {
+          "name": "/assets/rolldown-runtime-XKyaHtl9.js",
+          "initiatorType": "other",
+          "duration": 10.299999997019768,
+          "transferSize": 729,
+          "encodedBodySize": 429,
+          "decodedBodySize": 726
+        },
+        {
+          "name": "/assets/_plugin-vue_export-helper-CJMv9Rw7.js",
+          "initiatorType": "other",
+          "duration": 12.599999994039536,
+          "transferSize": 26047,
+          "encodedBodySize": 25747,
+          "decodedBodySize": 66652
+        },
+        {
+          "name": "/assets/index-kJ-Gl3tX.css",
+          "initiatorType": "link",
+          "duration": 27.799999997019768,
+          "transferSize": 68976,
+          "encodedBodySize": 68676,
+          "decodedBodySize": 441326
+        },
+        {
+          "name": "/restful/service/status",
+          "initiatorType": "xmlhttprequest",
+          "duration": 1.6000000089406967,
+          "transferSize": 322,
+          "encodedBodySize": 22,
+          "decodedBodySize": 22
+        },
+        {
+          "name": "/restful/userLogin/session",
+          "initiatorType": "xmlhttprequest",
+          "duration": 4.5999999940395355,
+          "transferSize": 470,
+          "encodedBodySize": 170,
+          "decodedBodySize": 170
+        },
+        {
+          "name": "/static/brand/suining-favicon-32.png",
+          "initiatorType": "other",
+          "duration": 4.5999999940395355,
+          "transferSize": 2449,
+          "encodedBodySize": 2149,
+          "decodedBodySize": 2149
+        },
+        {
+          "name": "/assets/familyHome-DfX-Mr0b.js",
+          "initiatorType": "script",
+          "duration": 2.800000011920929,
+          "transferSize": 2157,
+          "encodedBodySize": 1857,
+          "decodedBodySize": 4170
+        },
+        {
+          "name": "/assets/Header-CL-XYFNT.js",
+          "initiatorType": "script",
+          "duration": 3.8999999910593033,
+          "transferSize": 1592,
+          "encodedBodySize": 1292,
+          "decodedBodySize": 2346
+        },
+        {
+          "name": "/assets/suining-logo-192-D8Nl0I9O.js",
+          "initiatorType": "script",
+          "duration": 4.799999997019768,
+          "transferSize": 389,
+          "encodedBodySize": 89,
+          "decodedBodySize": 100
+        },
+        {
+          "name": "/assets/familyHome-DGTvvvs-.css",
+          "initiatorType": "link",
+          "duration": 5.0999999940395355,
+          "transferSize": 1778,
+          "encodedBodySize": 1478,
+          "decodedBodySize": 5440
+        },
+        {
+          "name": "/assets/Header-C03xX-Zw.css",
+          "initiatorType": "link",
+          "duration": 5.0999999940395355,
+          "transferSize": 1059,
+          "encodedBodySize": 759,
+          "decodedBodySize": 2473
+        },
+        {
+          "name": "/assets/rateprefamily-B7BwC-zt.js",
+          "initiatorType": "script",
+          "duration": 5.0999999940395355,
+          "transferSize": 2740,
+          "encodedBodySize": 2440,
+          "decodedBodySize": 5933
+        },
+        {
+          "name": "/assets/rateprefamily-DIMpapJS.css",
+          "initiatorType": "link",
+          "duration": 5.0999999940395355,
+          "transferSize": 533,
+          "encodedBodySize": 233,
+          "decodedBodySize": 369
+        },
+        {
+          "name": "/assets/charts-CweEC4t2.js",
+          "initiatorType": "script",
+          "duration": 14.5,
+          "transferSize": 175854,
+          "encodedBodySize": 175554,
+          "decodedBodySize": 522782
+        },
+        {
+          "name": "/static/icons/element-icons.woff",
+          "initiatorType": "css",
+          "duration": 19.400000005960464,
+          "transferSize": 6464,
+          "encodedBodySize": 6164,
+          "decodedBodySize": 6164
+        },
+        {
+          "name": "/static/brand/suining-logo-96.webp",
+          "initiatorType": "img",
+          "duration": 19.099999994039536,
+          "transferSize": 3896,
+          "encodedBodySize": 3596,
+          "decodedBodySize": 3596
+        },
+        {
+          "name": "/static/img/care-botanical.webp",
+          "initiatorType": "img",
+          "duration": 19.400000005960464,
+          "transferSize": 77784,
+          "encodedBodySize": 77484,
+          "decodedBodySize": 77484
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-022.woff2",
+          "initiatorType": "css",
+          "duration": 19.700000002980232,
+          "transferSize": 383324,
+          "encodedBodySize": 383024,
+          "decodedBodySize": 383024
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-021.woff2",
+          "initiatorType": "css",
+          "duration": 19.899999991059303,
+          "transferSize": 459752,
+          "encodedBodySize": 459452,
+          "decodedBodySize": 459452
+        },
+        {
+          "name": "/restful/ratepre/selectRatepreFamily",
+          "initiatorType": "xmlhttprequest",
+          "duration": 1.5,
+          "transferSize": 400,
+          "encodedBodySize": 100,
+          "decodedBodySize": 100
+        }
+      ]
+    },
+    {
+      "route": "/rateprefamily",
+      "cache": "cold",
+      "sample": 4,
+      "readyMs": 180.38890000000038,
+      "navigation": [
+        {
+          "name": "http://127.0.0.1:12772/?baseline=%2Frateprefamily-4#/rateprefamily",
+          "entryType": "navigation",
+          "startTime": 0,
+          "duration": 52.8999999910593,
+          "navigationId": 8164,
+          "initiatorType": "navigation",
+          "deliveryType": "",
+          "nextHopProtocol": "http/1.1",
+          "renderBlockingStatus": "non-blocking",
+          "contentType": "text/html",
+          "contentEncoding": "gzip",
+          "workerStart": 0,
+          "workerRouterEvaluationStart": 0,
+          "workerCacheLookupStart": 0,
+          "workerMatchedSourceType": "",
+          "workerFinalSourceType": "",
+          "redirectStart": 0,
+          "redirectEnd": 0,
+          "fetchStart": 0.7999999970197678,
+          "domainLookupStart": 0.7999999970197678,
+          "domainLookupEnd": 0.7999999970197678,
+          "connectStart": 0.7999999970197678,
+          "secureConnectionStart": 0,
+          "connectEnd": 0.7999999970197678,
+          "requestStart": 2.699999988079071,
+          "responseStart": 3.199999988079071,
+          "firstInterimResponseStart": 0,
+          "finalResponseHeadersStart": 3.199999988079071,
+          "responseEnd": 3.5,
+          "transferSize": 945,
+          "encodedBodySize": 645,
+          "decodedBodySize": 1202,
+          "responseStatus": 200,
+          "serverTiming": [],
+          "unloadEventStart": 6.299999997019768,
+          "unloadEventEnd": 6.299999997019768,
+          "domInteractive": 9.699999988079071,
+          "domContentLoadedEventStart": 52.69999998807907,
+          "domContentLoadedEventEnd": 52.69999998807907,
+          "domComplete": 52.8999999910593,
+          "loadEventStart": 52.8999999910593,
+          "loadEventEnd": 52.8999999910593,
+          "type": "navigate",
+          "redirectCount": 0,
+          "activationStart": 0,
+          "criticalCHRestart": 0,
+          "notRestoredReasons": null,
+          "confidence": {
+            "randomizedTriggerRate": 0.4994798,
+            "value": "low"
+          }
+        }
+      ],
+      "paint": [
+        {
+          "name": "first-paint",
+          "entryType": "paint",
+          "startTime": 56,
+          "duration": 0,
+          "navigationId": 8164,
+          "paintTime": 46.19999998807907,
+          "presentationTime": 56
+        },
+        {
+          "name": "first-contentful-paint",
+          "entryType": "paint",
+          "startTime": 124,
+          "duration": 0,
+          "navigationId": 8164,
+          "paintTime": 114.3999999910593,
+          "presentationTime": 124
+        }
+      ],
+      "resources": [
+        {
+          "name": "/static/fonts/source-serif-4.woff2",
+          "initiatorType": "link",
+          "duration": 11.900000005960464,
+          "transferSize": 429400,
+          "encodedBodySize": 429100,
+          "decodedBodySize": 429100
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/ui-common.woff2",
+          "initiatorType": "link",
+          "duration": 10.900000005960464,
+          "transferSize": 304784,
+          "encodedBodySize": 304484,
+          "decodedBodySize": 304484
+        },
+        {
+          "name": "/assets/rolldown-runtime-XKyaHtl9.js",
+          "initiatorType": "other",
+          "duration": 25.900000005960464,
+          "transferSize": 729,
+          "encodedBodySize": 429,
+          "decodedBodySize": 726
+        },
+        {
+          "name": "/assets/index-BDxSQ7E5.js",
+          "initiatorType": "script",
+          "duration": 24.900000005960464,
+          "transferSize": 205573,
+          "encodedBodySize": 205273,
+          "decodedBodySize": 639046
+        },
+        {
+          "name": "/assets/_plugin-vue_export-helper-CJMv9Rw7.js",
+          "initiatorType": "other",
+          "duration": 30.299999997019768,
+          "transferSize": 26047,
+          "encodedBodySize": 25747,
+          "decodedBodySize": 66652
+        },
+        {
+          "name": "/assets/index-kJ-Gl3tX.css",
+          "initiatorType": "link",
+          "duration": 29.099999994039536,
+          "transferSize": 68976,
+          "encodedBodySize": 68676,
+          "decodedBodySize": 441326
+        },
+        {
+          "name": "/restful/service/status",
+          "initiatorType": "xmlhttprequest",
+          "duration": 1.2999999970197678,
+          "transferSize": 322,
+          "encodedBodySize": 22,
+          "decodedBodySize": 22
+        },
+        {
+          "name": "/restful/userLogin/session",
+          "initiatorType": "xmlhttprequest",
+          "duration": 4.300000011920929,
+          "transferSize": 470,
+          "encodedBodySize": 170,
+          "decodedBodySize": 170
+        },
+        {
+          "name": "/static/brand/suining-favicon-32.png",
+          "initiatorType": "other",
+          "duration": 4.5,
+          "transferSize": 2449,
+          "encodedBodySize": 2149,
+          "decodedBodySize": 2149
+        },
+        {
+          "name": "/assets/familyHome-DfX-Mr0b.js",
+          "initiatorType": "script",
+          "duration": 2.699999988079071,
+          "transferSize": 2157,
+          "encodedBodySize": 1857,
+          "decodedBodySize": 4170
+        },
+        {
+          "name": "/assets/Header-CL-XYFNT.js",
+          "initiatorType": "script",
+          "duration": 3,
+          "transferSize": 1592,
+          "encodedBodySize": 1292,
+          "decodedBodySize": 2346
+        },
+        {
+          "name": "/assets/suining-logo-192-D8Nl0I9O.js",
+          "initiatorType": "script",
+          "duration": 3.2000000029802322,
+          "transferSize": 389,
+          "encodedBodySize": 89,
+          "decodedBodySize": 100
+        },
+        {
+          "name": "/assets/Header-C03xX-Zw.css",
+          "initiatorType": "link",
+          "duration": 3.800000011920929,
+          "transferSize": 1059,
+          "encodedBodySize": 759,
+          "decodedBodySize": 2473
+        },
+        {
+          "name": "/assets/familyHome-DGTvvvs-.css",
+          "initiatorType": "link",
+          "duration": 3.7999999970197678,
+          "transferSize": 1778,
+          "encodedBodySize": 1478,
+          "decodedBodySize": 5440
+        },
+        {
+          "name": "/assets/rateprefamily-B7BwC-zt.js",
+          "initiatorType": "script",
+          "duration": 4.0999999940395355,
+          "transferSize": 2740,
+          "encodedBodySize": 2440,
+          "decodedBodySize": 5933
+        },
+        {
+          "name": "/assets/charts-CweEC4t2.js",
+          "initiatorType": "script",
+          "duration": 13.599999994039536,
+          "transferSize": 175854,
+          "encodedBodySize": 175554,
+          "decodedBodySize": 522782
+        },
+        {
+          "name": "/assets/rateprefamily-DIMpapJS.css",
+          "initiatorType": "link",
+          "duration": 4.5,
+          "transferSize": 533,
+          "encodedBodySize": 233,
+          "decodedBodySize": 369
+        },
+        {
+          "name": "/static/icons/element-icons.woff",
+          "initiatorType": "css",
+          "duration": 18.599999994039536,
+          "transferSize": 6464,
+          "encodedBodySize": 6164,
+          "decodedBodySize": 6164
+        },
+        {
+          "name": "/static/brand/suining-logo-96.webp",
+          "initiatorType": "img",
+          "duration": 18.600000008940697,
+          "transferSize": 3896,
+          "encodedBodySize": 3596,
+          "decodedBodySize": 3596
+        },
+        {
+          "name": "/static/img/care-botanical.webp",
+          "initiatorType": "img",
+          "duration": 18.599999994039536,
+          "transferSize": 77784,
+          "encodedBodySize": 77484,
+          "decodedBodySize": 77484
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-022.woff2",
+          "initiatorType": "css",
+          "duration": 19.200000002980232,
+          "transferSize": 383324,
+          "encodedBodySize": 383024,
+          "decodedBodySize": 383024
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-021.woff2",
+          "initiatorType": "css",
+          "duration": 19.099999994039536,
+          "transferSize": 459752,
+          "encodedBodySize": 459452,
+          "decodedBodySize": 459452
+        },
+        {
+          "name": "/restful/ratepre/selectRatepreFamily",
+          "initiatorType": "xmlhttprequest",
+          "duration": 1.7000000029802322,
+          "transferSize": 400,
+          "encodedBodySize": 100,
+          "decodedBodySize": 100
+        }
+      ]
+    },
+    {
+      "route": "/rateprefamily",
+      "cache": "warm",
+      "sample": 4,
+      "readyMs": 186.4760000000001,
+      "navigation": [
+        {
+          "name": "http://127.0.0.1:12772/?baseline=%2Frateprefamily-4#/rateprefamily",
+          "entryType": "navigation",
+          "startTime": 0,
+          "duration": 49.5,
+          "navigationId": 1666,
+          "initiatorType": "navigation",
+          "deliveryType": "",
+          "nextHopProtocol": "http/1.1",
+          "renderBlockingStatus": "non-blocking",
+          "contentType": "text/html",
+          "contentEncoding": "gzip",
+          "workerStart": 0,
+          "workerRouterEvaluationStart": 0,
+          "workerCacheLookupStart": 0,
+          "workerMatchedSourceType": "",
+          "workerFinalSourceType": "",
+          "redirectStart": 0,
+          "redirectEnd": 0,
+          "fetchStart": 0.8999999910593033,
+          "domainLookupStart": 0.8999999910593033,
+          "domainLookupEnd": 0.8999999910593033,
+          "connectStart": 0.8999999910593033,
+          "secureConnectionStart": 0,
+          "connectEnd": 0.8999999910593033,
+          "requestStart": 3.2000000029802322,
+          "responseStart": 4.0999999940395355,
+          "firstInterimResponseStart": 0,
+          "finalResponseHeadersStart": 4.0999999940395355,
+          "responseEnd": 4.399999991059303,
+          "transferSize": 945,
+          "encodedBodySize": 645,
+          "decodedBodySize": 1202,
+          "responseStatus": 200,
+          "serverTiming": [],
+          "unloadEventStart": 7,
+          "unloadEventEnd": 7,
+          "domInteractive": 10.200000002980232,
+          "domContentLoadedEventStart": 49.3999999910593,
+          "domContentLoadedEventEnd": 49.3999999910593,
+          "domComplete": 49.5,
+          "loadEventStart": 49.5,
+          "loadEventEnd": 49.5,
+          "type": "reload",
+          "redirectCount": 0,
+          "activationStart": 0,
+          "criticalCHRestart": 0,
+          "notRestoredReasons": null,
+          "confidence": {
+            "randomizedTriggerRate": 0.4994798,
+            "value": "low"
+          }
+        }
+      ],
+      "paint": [
+        {
+          "name": "first-paint",
+          "entryType": "paint",
+          "startTime": 52,
+          "duration": 0,
+          "navigationId": 1666,
+          "paintTime": 44.099999994039536,
+          "presentationTime": 52
+        },
+        {
+          "name": "first-contentful-paint",
+          "entryType": "paint",
+          "startTime": 132,
+          "duration": 0,
+          "navigationId": 1666,
+          "paintTime": 118.20000000298023,
+          "presentationTime": 132
+        }
+      ],
+      "resources": [
+        {
+          "name": "/static/fonts/source-serif-4.woff2",
+          "initiatorType": "link",
+          "duration": 8.900000005960464,
+          "transferSize": 429400,
+          "encodedBodySize": 429100,
+          "decodedBodySize": 429100
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/ui-common.woff2",
+          "initiatorType": "link",
+          "duration": 9.799999997019768,
+          "transferSize": 304784,
+          "encodedBodySize": 304484,
+          "decodedBodySize": 304484
+        },
+        {
+          "name": "/assets/index-BDxSQ7E5.js",
+          "initiatorType": "script",
+          "duration": 19.099999994039536,
+          "transferSize": 205573,
+          "encodedBodySize": 205273,
+          "decodedBodySize": 639046
+        },
+        {
+          "name": "/assets/rolldown-runtime-XKyaHtl9.js",
+          "initiatorType": "other",
+          "duration": 9.799999997019768,
+          "transferSize": 729,
+          "encodedBodySize": 429,
+          "decodedBodySize": 726
+        },
+        {
+          "name": "/assets/_plugin-vue_export-helper-CJMv9Rw7.js",
+          "initiatorType": "other",
+          "duration": 19.700000002980232,
+          "transferSize": 26047,
+          "encodedBodySize": 25747,
+          "decodedBodySize": 66652
+        },
+        {
+          "name": "/assets/index-kJ-Gl3tX.css",
+          "initiatorType": "link",
+          "duration": 24.5,
+          "transferSize": 68976,
+          "encodedBodySize": 68676,
+          "decodedBodySize": 441326
+        },
+        {
+          "name": "/restful/service/status",
+          "initiatorType": "xmlhttprequest",
+          "duration": 1.3999999910593033,
+          "transferSize": 322,
+          "encodedBodySize": 22,
+          "decodedBodySize": 22
+        },
+        {
+          "name": "/restful/userLogin/session",
+          "initiatorType": "xmlhttprequest",
+          "duration": 7.4000000059604645,
+          "transferSize": 470,
+          "encodedBodySize": 170,
+          "decodedBodySize": 170
+        },
+        {
+          "name": "/static/brand/suining-favicon-32.png",
+          "initiatorType": "other",
+          "duration": 10.400000005960464,
+          "transferSize": 2449,
+          "encodedBodySize": 2149,
+          "decodedBodySize": 2149
+        },
+        {
+          "name": "/assets/familyHome-DfX-Mr0b.js",
+          "initiatorType": "script",
+          "duration": 4.5,
+          "transferSize": 2157,
+          "encodedBodySize": 1857,
+          "decodedBodySize": 4170
+        },
+        {
+          "name": "/assets/Header-CL-XYFNT.js",
+          "initiatorType": "script",
+          "duration": 4.800000011920929,
+          "transferSize": 1592,
+          "encodedBodySize": 1292,
+          "decodedBodySize": 2346
+        },
+        {
+          "name": "/assets/suining-logo-192-D8Nl0I9O.js",
+          "initiatorType": "script",
+          "duration": 5.299999997019768,
+          "transferSize": 389,
+          "encodedBodySize": 89,
+          "decodedBodySize": 100
+        },
+        {
+          "name": "/assets/Header-C03xX-Zw.css",
+          "initiatorType": "link",
+          "duration": 5.5,
+          "transferSize": 1059,
+          "encodedBodySize": 759,
+          "decodedBodySize": 2473
+        },
+        {
+          "name": "/assets/familyHome-DGTvvvs-.css",
+          "initiatorType": "link",
+          "duration": 5.4000000059604645,
+          "transferSize": 1778,
+          "encodedBodySize": 1478,
+          "decodedBodySize": 5440
+        },
+        {
+          "name": "/assets/rateprefamily-B7BwC-zt.js",
+          "initiatorType": "script",
+          "duration": 5.699999988079071,
+          "transferSize": 2740,
+          "encodedBodySize": 2440,
+          "decodedBodySize": 5933
+        },
+        {
+          "name": "/assets/charts-CweEC4t2.js",
+          "initiatorType": "script",
+          "duration": 16.399999991059303,
+          "transferSize": 175854,
+          "encodedBodySize": 175554,
+          "decodedBodySize": 522782
+        },
+        {
+          "name": "/assets/rateprefamily-DIMpapJS.css",
+          "initiatorType": "link",
+          "duration": 6,
+          "transferSize": 533,
+          "encodedBodySize": 233,
+          "decodedBodySize": 369
+        },
+        {
+          "name": "/static/icons/element-icons.woff",
+          "initiatorType": "css",
+          "duration": 19.900000005960464,
+          "transferSize": 6464,
+          "encodedBodySize": 6164,
+          "decodedBodySize": 6164
+        },
+        {
+          "name": "/static/brand/suining-logo-96.webp",
+          "initiatorType": "img",
+          "duration": 19.299999997019768,
+          "transferSize": 3896,
+          "encodedBodySize": 3596,
+          "decodedBodySize": 3596
+        },
+        {
+          "name": "/static/img/care-botanical.webp",
+          "initiatorType": "img",
+          "duration": 20.099999994039536,
+          "transferSize": 77784,
+          "encodedBodySize": 77484,
+          "decodedBodySize": 77484
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-022.woff2",
+          "initiatorType": "css",
+          "duration": 19.5,
+          "transferSize": 383324,
+          "encodedBodySize": 383024,
+          "decodedBodySize": 383024
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-021.woff2",
+          "initiatorType": "css",
+          "duration": 20.399999991059303,
+          "transferSize": 459752,
+          "encodedBodySize": 459452,
+          "decodedBodySize": 459452
+        },
+        {
+          "name": "/restful/ratepre/selectRatepreFamily",
+          "initiatorType": "xmlhttprequest",
+          "duration": 1.800000011920929,
+          "transferSize": 400,
+          "encodedBodySize": 100,
+          "decodedBodySize": 100
+        }
+      ]
+    },
+    {
+      "route": "/rateprefamily",
+      "cache": "cold",
+      "sample": 5,
+      "readyMs": 199.3429000000001,
+      "navigation": [
+        {
+          "name": "http://127.0.0.1:12772/?baseline=%2Frateprefamily-5#/rateprefamily",
+          "entryType": "navigation",
+          "startTime": 0,
+          "duration": 57.5,
+          "navigationId": 9185,
+          "initiatorType": "navigation",
+          "deliveryType": "",
+          "nextHopProtocol": "http/1.1",
+          "renderBlockingStatus": "non-blocking",
+          "contentType": "text/html",
+          "contentEncoding": "gzip",
+          "workerStart": 0,
+          "workerRouterEvaluationStart": 0,
+          "workerCacheLookupStart": 0,
+          "workerMatchedSourceType": "",
+          "workerFinalSourceType": "",
+          "redirectStart": 0,
+          "redirectEnd": 0,
+          "fetchStart": 1,
+          "domainLookupStart": 1,
+          "domainLookupEnd": 1,
+          "connectStart": 1,
+          "secureConnectionStart": 0,
+          "connectEnd": 1,
+          "requestStart": 2.7999999970197678,
+          "responseStart": 3.2999999970197678,
+          "firstInterimResponseStart": 0,
+          "finalResponseHeadersStart": 3.2999999970197678,
+          "responseEnd": 3.5999999940395355,
+          "transferSize": 945,
+          "encodedBodySize": 645,
+          "decodedBodySize": 1202,
+          "responseStatus": 200,
+          "serverTiming": [],
+          "unloadEventStart": 6.200000002980232,
+          "unloadEventEnd": 6.200000002980232,
+          "domInteractive": 9.5,
+          "domContentLoadedEventStart": 57.29999999701977,
+          "domContentLoadedEventEnd": 57.29999999701977,
+          "domComplete": 57.400000005960464,
+          "loadEventStart": 57.5,
+          "loadEventEnd": 57.5,
+          "type": "navigate",
+          "redirectCount": 0,
+          "activationStart": 0,
+          "criticalCHRestart": 0,
+          "notRestoredReasons": null,
+          "confidence": {
+            "randomizedTriggerRate": 0.4994798,
+            "value": "low"
+          }
+        }
+      ],
+      "paint": [
+        {
+          "name": "first-paint",
+          "entryType": "paint",
+          "startTime": 56,
+          "duration": 0,
+          "navigationId": 9185,
+          "paintTime": 46.70000000298023,
+          "presentationTime": 56
+        },
+        {
+          "name": "first-contentful-paint",
+          "entryType": "paint",
+          "startTime": 136,
+          "duration": 0,
+          "navigationId": 9185,
+          "paintTime": 120.90000000596046,
+          "presentationTime": 136
+        }
+      ],
+      "resources": [
+        {
+          "name": "/static/fonts/source-serif-4.woff2",
+          "initiatorType": "link",
+          "duration": 14,
+          "transferSize": 429400,
+          "encodedBodySize": 429100,
+          "decodedBodySize": 429100
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/ui-common.woff2",
+          "initiatorType": "link",
+          "duration": 12.199999988079071,
+          "transferSize": 304784,
+          "encodedBodySize": 304484,
+          "decodedBodySize": 304484
+        },
+        {
+          "name": "/assets/index-BDxSQ7E5.js",
+          "initiatorType": "script",
+          "duration": 30,
+          "transferSize": 205573,
+          "encodedBodySize": 205273,
+          "decodedBodySize": 639046
+        },
+        {
+          "name": "/assets/rolldown-runtime-XKyaHtl9.js",
+          "initiatorType": "other",
+          "duration": 11.200000002980232,
+          "transferSize": 729,
+          "encodedBodySize": 429,
+          "decodedBodySize": 726
+        },
+        {
+          "name": "/assets/_plugin-vue_export-helper-CJMv9Rw7.js",
+          "initiatorType": "other",
+          "duration": 12.900000005960464,
+          "transferSize": 26047,
+          "encodedBodySize": 25747,
+          "decodedBodySize": 66652
+        },
+        {
+          "name": "/assets/index-kJ-Gl3tX.css",
+          "initiatorType": "link",
+          "duration": 18.900000005960464,
+          "transferSize": 68976,
+          "encodedBodySize": 68676,
+          "decodedBodySize": 441326
+        },
+        {
+          "name": "/restful/service/status",
+          "initiatorType": "xmlhttprequest",
+          "duration": 1.2999999970197678,
+          "transferSize": 322,
+          "encodedBodySize": 22,
+          "decodedBodySize": 22
+        },
+        {
+          "name": "/restful/userLogin/session",
+          "initiatorType": "xmlhttprequest",
+          "duration": 4.399999991059303,
+          "transferSize": 470,
+          "encodedBodySize": 170,
+          "decodedBodySize": 170
+        },
+        {
+          "name": "/static/brand/suining-favicon-32.png",
+          "initiatorType": "other",
+          "duration": 5.100000008940697,
+          "transferSize": 2449,
+          "encodedBodySize": 2149,
+          "decodedBodySize": 2149
+        },
+        {
+          "name": "/assets/familyHome-DfX-Mr0b.js",
+          "initiatorType": "script",
+          "duration": 2.800000011920929,
+          "transferSize": 2157,
+          "encodedBodySize": 1857,
+          "decodedBodySize": 4170
+        },
+        {
+          "name": "/assets/Header-CL-XYFNT.js",
+          "initiatorType": "script",
+          "duration": 3.0999999940395355,
+          "transferSize": 1592,
+          "encodedBodySize": 1292,
+          "decodedBodySize": 2346
+        },
+        {
+          "name": "/assets/suining-logo-192-D8Nl0I9O.js",
+          "initiatorType": "script",
+          "duration": 3.2000000029802322,
+          "transferSize": 389,
+          "encodedBodySize": 89,
+          "decodedBodySize": 100
+        },
+        {
+          "name": "/assets/Header-C03xX-Zw.css",
+          "initiatorType": "link",
+          "duration": 3.6000000089406967,
+          "transferSize": 1059,
+          "encodedBodySize": 759,
+          "decodedBodySize": 2473
+        },
+        {
+          "name": "/assets/familyHome-DGTvvvs-.css",
+          "initiatorType": "link",
+          "duration": 3.7999999970197678,
+          "transferSize": 1778,
+          "encodedBodySize": 1478,
+          "decodedBodySize": 5440
+        },
+        {
+          "name": "/assets/rateprefamily-DIMpapJS.css",
+          "initiatorType": "link",
+          "duration": 4.700000002980232,
+          "transferSize": 533,
+          "encodedBodySize": 233,
+          "decodedBodySize": 369
+        },
+        {
+          "name": "/assets/rateprefamily-B7BwC-zt.js",
+          "initiatorType": "script",
+          "duration": 4,
+          "transferSize": 2740,
+          "encodedBodySize": 2440,
+          "decodedBodySize": 5933
+        },
+        {
+          "name": "/assets/charts-CweEC4t2.js",
+          "initiatorType": "script",
+          "duration": 14.099999994039536,
+          "transferSize": 175854,
+          "encodedBodySize": 175554,
+          "decodedBodySize": 522782
+        },
+        {
+          "name": "/static/icons/element-icons.woff",
+          "initiatorType": "css",
+          "duration": 17.799999997019768,
+          "transferSize": 6464,
+          "encodedBodySize": 6164,
+          "decodedBodySize": 6164
+        },
+        {
+          "name": "/static/brand/suining-logo-96.webp",
+          "initiatorType": "img",
+          "duration": 17.599999994039536,
+          "transferSize": 3896,
+          "encodedBodySize": 3596,
+          "decodedBodySize": 3596
+        },
+        {
+          "name": "/static/img/care-botanical.webp",
+          "initiatorType": "img",
+          "duration": 17.900000005960464,
+          "transferSize": 77784,
+          "encodedBodySize": 77484,
+          "decodedBodySize": 77484
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-021.woff2",
+          "initiatorType": "css",
+          "duration": 17.5,
+          "transferSize": 459752,
+          "encodedBodySize": 459452,
+          "decodedBodySize": 459452
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-022.woff2",
+          "initiatorType": "css",
+          "duration": 18.69999998807907,
+          "transferSize": 383324,
+          "encodedBodySize": 383024,
+          "decodedBodySize": 383024
+        },
+        {
+          "name": "/restful/ratepre/selectRatepreFamily",
+          "initiatorType": "xmlhttprequest",
+          "duration": 1.4000000059604645,
+          "transferSize": 400,
+          "encodedBodySize": 100,
+          "decodedBodySize": 100
+        }
+      ]
+    },
+    {
+      "route": "/rateprefamily",
+      "cache": "warm",
+      "sample": 5,
+      "readyMs": 179.36299999999983,
+      "navigation": [
+        {
+          "name": "http://127.0.0.1:12772/?baseline=%2Frateprefamily-5#/rateprefamily",
+          "entryType": "navigation",
+          "startTime": 0,
+          "duration": 50.5,
+          "navigationId": 1537,
+          "initiatorType": "navigation",
+          "deliveryType": "",
+          "nextHopProtocol": "http/1.1",
+          "renderBlockingStatus": "non-blocking",
+          "contentType": "text/html",
+          "contentEncoding": "gzip",
+          "workerStart": 0,
+          "workerRouterEvaluationStart": 0,
+          "workerCacheLookupStart": 0,
+          "workerMatchedSourceType": "",
+          "workerFinalSourceType": "",
+          "redirectStart": 0,
+          "redirectEnd": 0,
+          "fetchStart": 0.7000000029802322,
+          "domainLookupStart": 0.7000000029802322,
+          "domainLookupEnd": 0.7000000029802322,
+          "connectStart": 0.7000000029802322,
+          "secureConnectionStart": 0,
+          "connectEnd": 0.7000000029802322,
+          "requestStart": 2.7000000029802322,
+          "responseStart": 3.300000011920929,
+          "firstInterimResponseStart": 0,
+          "finalResponseHeadersStart": 3.300000011920929,
+          "responseEnd": 3.7000000029802322,
+          "transferSize": 945,
+          "encodedBodySize": 645,
+          "decodedBodySize": 1202,
+          "responseStatus": 200,
+          "serverTiming": [],
+          "unloadEventStart": 7.100000008940697,
+          "unloadEventEnd": 7.100000008940697,
+          "domInteractive": 10.5,
+          "domContentLoadedEventStart": 50.400000005960464,
+          "domContentLoadedEventEnd": 50.400000005960464,
+          "domComplete": 50.5,
+          "loadEventStart": 50.5,
+          "loadEventEnd": 50.5,
+          "type": "reload",
+          "redirectCount": 0,
+          "activationStart": 0,
+          "criticalCHRestart": 0,
+          "notRestoredReasons": null,
+          "confidence": {
+            "randomizedTriggerRate": 0.4994798,
+            "value": "low"
+          }
+        }
+      ],
+      "paint": [
+        {
+          "name": "first-paint",
+          "entryType": "paint",
+          "startTime": 56,
+          "duration": 0,
+          "navigationId": 1537,
+          "paintTime": 44.1000000089407,
+          "presentationTime": 56
+        },
+        {
+          "name": "first-contentful-paint",
+          "entryType": "paint",
+          "startTime": 128,
+          "duration": 0,
+          "navigationId": 1537,
+          "paintTime": 115.1000000089407,
+          "presentationTime": 128
+        }
+      ],
+      "resources": [
+        {
+          "name": "/static/fonts/source-serif-4.woff2",
+          "initiatorType": "link",
+          "duration": 9.700000002980232,
+          "transferSize": 429400,
+          "encodedBodySize": 429100,
+          "decodedBodySize": 429100
+        },
+        {
+          "name": "/assets/rolldown-runtime-XKyaHtl9.js",
+          "initiatorType": "other",
+          "duration": 11.099999994039536,
+          "transferSize": 729,
+          "encodedBodySize": 429,
+          "decodedBodySize": 726
+        },
+        {
+          "name": "/assets/_plugin-vue_export-helper-CJMv9Rw7.js",
+          "initiatorType": "other",
+          "duration": 10.799999997019768,
+          "transferSize": 26047,
+          "encodedBodySize": 25747,
+          "decodedBodySize": 66652
+        },
+        {
+          "name": "/assets/index-kJ-Gl3tX.css",
+          "initiatorType": "link",
+          "duration": 26,
+          "transferSize": 68976,
+          "encodedBodySize": 68676,
+          "decodedBodySize": 441326
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/ui-common.woff2",
+          "initiatorType": "link",
+          "duration": 11.599999994039536,
+          "transferSize": 304784,
+          "encodedBodySize": 304484,
+          "decodedBodySize": 304484
+        },
+        {
+          "name": "/assets/index-BDxSQ7E5.js",
+          "initiatorType": "script",
+          "duration": 21.5,
+          "transferSize": 205573,
+          "encodedBodySize": 205273,
+          "decodedBodySize": 639046
+        },
+        {
+          "name": "/restful/service/status",
+          "initiatorType": "xmlhttprequest",
+          "duration": 1.5,
+          "transferSize": 322,
+          "encodedBodySize": 22,
+          "decodedBodySize": 22
+        },
+        {
+          "name": "/restful/userLogin/session",
+          "initiatorType": "xmlhttprequest",
+          "duration": 5,
+          "transferSize": 470,
+          "encodedBodySize": 170,
+          "decodedBodySize": 170
+        },
+        {
+          "name": "/static/brand/suining-favicon-32.png",
+          "initiatorType": "other",
+          "duration": 4.9000000059604645,
+          "transferSize": 2449,
+          "encodedBodySize": 2149,
+          "decodedBodySize": 2149
+        },
+        {
+          "name": "/assets/familyHome-DfX-Mr0b.js",
+          "initiatorType": "script",
+          "duration": 3.0999999940395355,
+          "transferSize": 2157,
+          "encodedBodySize": 1857,
+          "decodedBodySize": 4170
+        },
+        {
+          "name": "/assets/Header-CL-XYFNT.js",
+          "initiatorType": "script",
+          "duration": 2.800000011920929,
+          "transferSize": 1592,
+          "encodedBodySize": 1292,
+          "decodedBodySize": 2346
+        },
+        {
+          "name": "/assets/suining-logo-192-D8Nl0I9O.js",
+          "initiatorType": "script",
+          "duration": 3.300000011920929,
+          "transferSize": 389,
+          "encodedBodySize": 89,
+          "decodedBodySize": 100
+        },
+        {
+          "name": "/assets/Header-C03xX-Zw.css",
+          "initiatorType": "link",
+          "duration": 3.5999999940395355,
+          "transferSize": 1059,
+          "encodedBodySize": 759,
+          "decodedBodySize": 2473
+        },
+        {
+          "name": "/assets/familyHome-DGTvvvs-.css",
+          "initiatorType": "link",
+          "duration": 3.8999999910593033,
+          "transferSize": 1778,
+          "encodedBodySize": 1478,
+          "decodedBodySize": 5440
+        },
+        {
+          "name": "/assets/rateprefamily-DIMpapJS.css",
+          "initiatorType": "link",
+          "duration": 4.399999991059303,
+          "transferSize": 533,
+          "encodedBodySize": 233,
+          "decodedBodySize": 369
+        },
+        {
+          "name": "/assets/rateprefamily-B7BwC-zt.js",
+          "initiatorType": "script",
+          "duration": 4.0999999940395355,
+          "transferSize": 2740,
+          "encodedBodySize": 2440,
+          "decodedBodySize": 5933
+        },
+        {
+          "name": "/assets/charts-CweEC4t2.js",
+          "initiatorType": "script",
+          "duration": 13.899999991059303,
+          "transferSize": 175854,
+          "encodedBodySize": 175554,
+          "decodedBodySize": 522782
+        },
+        {
+          "name": "/static/icons/element-icons.woff",
+          "initiatorType": "css",
+          "duration": 19.599999994039536,
+          "transferSize": 6464,
+          "encodedBodySize": 6164,
+          "decodedBodySize": 6164
+        },
+        {
+          "name": "/static/brand/suining-logo-96.webp",
+          "initiatorType": "img",
+          "duration": 19.5,
+          "transferSize": 3896,
+          "encodedBodySize": 3596,
+          "decodedBodySize": 3596
+        },
+        {
+          "name": "/static/img/care-botanical.webp",
+          "initiatorType": "img",
+          "duration": 19.799999997019768,
+          "transferSize": 77784,
+          "encodedBodySize": 77484,
+          "decodedBodySize": 77484
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-022.woff2",
+          "initiatorType": "css",
+          "duration": 19.700000002980232,
+          "transferSize": 383324,
+          "encodedBodySize": 383024,
+          "decodedBodySize": 383024
+        },
+        {
+          "name": "/static/fonts/source-han-serif-sc/characters-021.woff2",
+          "initiatorType": "css",
+          "duration": 20.600000008940697,
+          "transferSize": 459752,
+          "encodedBodySize": 459452,
+          "decodedBodySize": 459452
+        },
+        {
+          "name": "/restful/ratepre/selectRatepreFamily",
+          "initiatorType": "xmlhttprequest",
+          "duration": 1.9000000059604645,
+          "transferSize": 400,
+          "encodedBodySize": 100,
+          "decodedBodySize": 100
+        }
+      ]
+    }
+  ],
+  "chartCycles": [
+    {
+      "cycle": 1,
+      "openReadyMs": 381.7970999999998,
+      "opened": {
+        "point": "opened",
+        "metrics": {
+          "JSHeapUsedSize": 8449228,
+          "JSHeapTotalSize": 9314304,
+          "Nodes": 403,
+          "Documents": 1,
+          "JSEventListeners": 153
+        },
+        "dom": {
+          "documents": 1,
+          "nodes": 403,
+          "jsEventListeners": 153
+        },
+        "chart": {
+          "canvases": 2,
+          "instanceMarkers": 2
+        }
+      },
+      "closed": {
+        "point": "closed",
+        "metrics": {
+          "JSHeapUsedSize": 8081368,
+          "JSHeapTotalSize": 9052160,
+          "Nodes": 403,
+          "Documents": 1,
+          "JSEventListeners": 127
+        },
+        "dom": {
+          "documents": 1,
+          "nodes": 403,
+          "jsEventListeners": 127
+        },
+        "chart": {
+          "canvases": 0,
+          "instanceMarkers": 0
+        }
+      }
+    },
+    {
+      "cycle": 2,
+      "openReadyMs": 42.310600000000704,
+      "opened": {
+        "point": "opened",
+        "metrics": {
+          "JSHeapUsedSize": 8861144,
+          "JSHeapTotalSize": 9576448,
+          "Nodes": 407,
+          "Documents": 1,
+          "JSEventListeners": 153
+        },
+        "dom": {
+          "documents": 1,
+          "nodes": 407,
+          "jsEventListeners": 153
+        },
+        "chart": {
+          "canvases": 2,
+          "instanceMarkers": 2
+        }
+      },
+      "closed": {
+        "point": "closed",
+        "metrics": {
+          "JSHeapUsedSize": 8540800,
+          "JSHeapTotalSize": 9314304,
+          "Nodes": 403,
+          "Documents": 1,
+          "JSEventListeners": 127
+        },
+        "dom": {
+          "documents": 1,
+          "nodes": 403,
+          "jsEventListeners": 127
+        },
+        "chart": {
+          "canvases": 0,
+          "instanceMarkers": 0
+        }
+      }
+    },
+    {
+      "cycle": 3,
+      "openReadyMs": 37.842099999999846,
+      "opened": {
+        "point": "opened",
+        "metrics": {
+          "JSHeapUsedSize": 9095492,
+          "JSHeapTotalSize": 10100736,
+          "Nodes": 407,
+          "Documents": 1,
+          "JSEventListeners": 153
+        },
+        "dom": {
+          "documents": 1,
+          "nodes": 407,
+          "jsEventListeners": 153
+        },
+        "chart": {
+          "canvases": 2,
+          "instanceMarkers": 2
+        }
+      },
+      "closed": {
+        "point": "closed",
+        "metrics": {
+          "JSHeapUsedSize": 8711332,
+          "JSHeapTotalSize": 9838592,
+          "Nodes": 403,
+          "Documents": 1,
+          "JSEventListeners": 127
+        },
+        "dom": {
+          "documents": 1,
+          "nodes": 403,
+          "jsEventListeners": 127
+        },
+        "chart": {
+          "canvases": 0,
+          "instanceMarkers": 0
+        }
+      }
+    },
+    {
+      "cycle": 4,
+      "openReadyMs": 37.994299999999384,
+      "opened": {
+        "point": "opened",
+        "metrics": {
+          "JSHeapUsedSize": 9224548,
+          "JSHeapTotalSize": 10100736,
+          "Nodes": 407,
+          "Documents": 1,
+          "JSEventListeners": 153
+        },
+        "dom": {
+          "documents": 1,
+          "nodes": 407,
+          "jsEventListeners": 153
+        },
+        "chart": {
+          "canvases": 2,
+          "instanceMarkers": 2
+        }
+      },
+      "closed": {
+        "point": "closed",
+        "metrics": {
+          "JSHeapUsedSize": 8844580,
+          "JSHeapTotalSize": 9838592,
+          "Nodes": 403,
+          "Documents": 1,
+          "JSEventListeners": 127
+        },
+        "dom": {
+          "documents": 1,
+          "nodes": 403,
+          "jsEventListeners": 127
+        },
+        "chart": {
+          "canvases": 0,
+          "instanceMarkers": 0
+        }
+      }
+    },
+    {
+      "cycle": 5,
+      "openReadyMs": 42.74719999999979,
+      "opened": {
+        "point": "opened",
+        "metrics": {
+          "JSHeapUsedSize": 9558132,
+          "JSHeapTotalSize": 10362880,
+          "Nodes": 407,
+          "Documents": 1,
+          "JSEventListeners": 153
+        },
+        "dom": {
+          "documents": 1,
+          "nodes": 407,
+          "jsEventListeners": 153
+        },
+        "chart": {
+          "canvases": 2,
+          "instanceMarkers": 2
+        }
+      },
+      "closed": {
+        "point": "closed",
+        "metrics": {
+          "JSHeapUsedSize": 9170600,
+          "JSHeapTotalSize": 10100736,
+          "Nodes": 403,
+          "Documents": 1,
+          "JSEventListeners": 127
+        },
+        "dom": {
+          "documents": 1,
+          "nodes": 403,
+          "jsEventListeners": 127
+        },
+        "chart": {
+          "canvases": 0,
+          "instanceMarkers": 0
+        }
+      }
+    },
+    {
+      "cycle": 6,
+      "openReadyMs": 38.00680000000011,
+      "opened": {
+        "point": "opened",
+        "metrics": {
+          "JSHeapUsedSize": 9645048,
+          "JSHeapTotalSize": 11149312,
+          "Nodes": 407,
+          "Documents": 1,
+          "JSEventListeners": 153
+        },
+        "dom": {
+          "documents": 1,
+          "nodes": 407,
+          "jsEventListeners": 153
+        },
+        "chart": {
+          "canvases": 2,
+          "instanceMarkers": 2
+        }
+      },
+      "closed": {
+        "point": "closed",
+        "metrics": {
+          "JSHeapUsedSize": 9219780,
+          "JSHeapTotalSize": 10100736,
+          "Nodes": 403,
+          "Documents": 1,
+          "JSEventListeners": 127
+        },
+        "dom": {
+          "documents": 1,
+          "nodes": 403,
+          "jsEventListeners": 127
+        },
+        "chart": {
+          "canvases": 0,
+          "instanceMarkers": 0
+        }
+      }
+    },
+    {
+      "cycle": 7,
+      "openReadyMs": 37.67169999999987,
+      "opened": {
+        "point": "opened",
+        "metrics": {
+          "JSHeapUsedSize": 9666940,
+          "JSHeapTotalSize": 10362880,
+          "Nodes": 407,
+          "Documents": 1,
+          "JSEventListeners": 153
+        },
+        "dom": {
+          "documents": 1,
+          "nodes": 407,
+          "jsEventListeners": 153
+        },
+        "chart": {
+          "canvases": 2,
+          "instanceMarkers": 2
+        }
+      },
+      "closed": {
+        "point": "closed",
+        "metrics": {
+          "JSHeapUsedSize": 9258232,
+          "JSHeapTotalSize": 10100736,
+          "Nodes": 403,
+          "Documents": 1,
+          "JSEventListeners": 127
+        },
+        "dom": {
+          "documents": 1,
+          "nodes": 403,
+          "jsEventListeners": 127
+        },
+        "chart": {
+          "canvases": 0,
+          "instanceMarkers": 0
+        }
+      }
+    },
+    {
+      "cycle": 8,
+      "openReadyMs": 53.318200000001525,
+      "opened": {
+        "point": "opened",
+        "metrics": {
+          "JSHeapUsedSize": 9730504,
+          "JSHeapTotalSize": 10625024,
+          "Nodes": 407,
+          "Documents": 1,
+          "JSEventListeners": 153
+        },
+        "dom": {
+          "documents": 1,
+          "nodes": 407,
+          "jsEventListeners": 153
+        },
+        "chart": {
+          "canvases": 2,
+          "instanceMarkers": 2
+        }
+      },
+      "closed": {
+        "point": "closed",
+        "metrics": {
+          "JSHeapUsedSize": 9342780,
+          "JSHeapTotalSize": 10100736,
+          "Nodes": 403,
+          "Documents": 1,
+          "JSEventListeners": 127
+        },
+        "dom": {
+          "documents": 1,
+          "nodes": 403,
+          "jsEventListeners": 127
+        },
+        "chart": {
+          "canvases": 0,
+          "instanceMarkers": 0
+        }
+      }
+    },
+    {
+      "cycle": 9,
+      "openReadyMs": 54.237199999999575,
+      "opened": {
+        "point": "opened",
+        "metrics": {
+          "JSHeapUsedSize": 9809940,
+          "JSHeapTotalSize": 10625024,
+          "Nodes": 407,
+          "Documents": 1,
+          "JSEventListeners": 153
+        },
+        "dom": {
+          "documents": 1,
+          "nodes": 407,
+          "jsEventListeners": 153
+        },
+        "chart": {
+          "canvases": 2,
+          "instanceMarkers": 2
+        }
+      },
+      "closed": {
+        "point": "closed",
+        "metrics": {
+          "JSHeapUsedSize": 9444304,
+          "JSHeapTotalSize": 10362880,
+          "Nodes": 403,
+          "Documents": 1,
+          "JSEventListeners": 127
+        },
+        "dom": {
+          "documents": 1,
+          "nodes": 403,
+          "jsEventListeners": 127
+        },
+        "chart": {
+          "canvases": 0,
+          "instanceMarkers": 0
+        }
+      }
+    },
+    {
+      "cycle": 10,
+      "openReadyMs": 53.87089999999989,
+      "opened": {
+        "point": "opened",
+        "metrics": {
+          "JSHeapUsedSize": 9879464,
+          "JSHeapTotalSize": 10625024,
+          "Nodes": 407,
+          "Documents": 1,
+          "JSEventListeners": 153
+        },
+        "dom": {
+          "documents": 1,
+          "nodes": 407,
+          "jsEventListeners": 153
+        },
+        "chart": {
+          "canvases": 2,
+          "instanceMarkers": 2
+        }
+      },
+      "closed": {
+        "point": "closed",
+        "metrics": {
+          "JSHeapUsedSize": 9473372,
+          "JSHeapTotalSize": 10362880,
+          "Nodes": 403,
+          "Documents": 1,
+          "JSEventListeners": 127
+        },
+        "dom": {
+          "documents": 1,
+          "nodes": 403,
+          "jsEventListeners": 127
+        },
+        "chart": {
+          "canvases": 0,
+          "instanceMarkers": 0
+        }
+      }
+    },
+    {
+      "cycle": 11,
+      "openReadyMs": 48.268599999999424,
+      "opened": {
+        "point": "opened",
+        "metrics": {
+          "JSHeapUsedSize": 9898136,
+          "JSHeapTotalSize": 10625024,
+          "Nodes": 407,
+          "Documents": 1,
+          "JSEventListeners": 153
+        },
+        "dom": {
+          "documents": 1,
+          "nodes": 407,
+          "jsEventListeners": 153
+        },
+        "chart": {
+          "canvases": 2,
+          "instanceMarkers": 2
+        }
+      },
+      "closed": {
+        "point": "closed",
+        "metrics": {
+          "JSHeapUsedSize": 9490824,
+          "JSHeapTotalSize": 10362880,
+          "Nodes": 403,
+          "Documents": 1,
+          "JSEventListeners": 127
+        },
+        "dom": {
+          "documents": 1,
+          "nodes": 403,
+          "jsEventListeners": 127
+        },
+        "chart": {
+          "canvases": 0,
+          "instanceMarkers": 0
+        }
+      }
+    },
+    {
+      "cycle": 12,
+      "openReadyMs": 59.60519999999997,
+      "opened": {
+        "point": "opened",
+        "metrics": {
+          "JSHeapUsedSize": 9889800,
+          "JSHeapTotalSize": 10887168,
+          "Nodes": 407,
+          "Documents": 1,
+          "JSEventListeners": 153
+        },
+        "dom": {
+          "documents": 1,
+          "nodes": 407,
+          "jsEventListeners": 153
+        },
+        "chart": {
+          "canvases": 2,
+          "instanceMarkers": 2
+        }
+      },
+      "closed": {
+        "point": "closed",
+        "metrics": {
+          "JSHeapUsedSize": 9506620,
+          "JSHeapTotalSize": 10362880,
+          "Nodes": 403,
+          "Documents": 1,
+          "JSEventListeners": 127
+        },
+        "dom": {
+          "documents": 1,
+          "nodes": 403,
+          "jsEventListeners": 127
+        },
+        "chart": {
+          "canvases": 0,
+          "instanceMarkers": 0
+        }
+      }
+    },
+    {
+      "cycle": 13,
+      "openReadyMs": 57.4419999999991,
+      "opened": {
+        "point": "opened",
+        "metrics": {
+          "JSHeapUsedSize": 9947832,
+          "JSHeapTotalSize": 10887168,
+          "Nodes": 407,
+          "Documents": 1,
+          "JSEventListeners": 153
+        },
+        "dom": {
+          "documents": 1,
+          "nodes": 407,
+          "jsEventListeners": 153
+        },
+        "chart": {
+          "canvases": 2,
+          "instanceMarkers": 2
+        }
+      },
+      "closed": {
+        "point": "closed",
+        "metrics": {
+          "JSHeapUsedSize": 9537796,
+          "JSHeapTotalSize": 10362880,
+          "Nodes": 403,
+          "Documents": 1,
+          "JSEventListeners": 127
+        },
+        "dom": {
+          "documents": 1,
+          "nodes": 403,
+          "jsEventListeners": 127
+        },
+        "chart": {
+          "canvases": 0,
+          "instanceMarkers": 0
+        }
+      }
+    },
+    {
+      "cycle": 14,
+      "openReadyMs": 54.42460000000028,
+      "opened": {
+        "point": "opened",
+        "metrics": {
+          "JSHeapUsedSize": 9965880,
+          "JSHeapTotalSize": 10625024,
+          "Nodes": 407,
+          "Documents": 1,
+          "JSEventListeners": 153
+        },
+        "dom": {
+          "documents": 1,
+          "nodes": 407,
+          "jsEventListeners": 153
+        },
+        "chart": {
+          "canvases": 2,
+          "instanceMarkers": 2
+        }
+      },
+      "closed": {
+        "point": "closed",
+        "metrics": {
+          "JSHeapUsedSize": 9560860,
+          "JSHeapTotalSize": 10362880,
+          "Nodes": 403,
+          "Documents": 1,
+          "JSEventListeners": 127
+        },
+        "dom": {
+          "documents": 1,
+          "nodes": 403,
+          "jsEventListeners": 127
+        },
+        "chart": {
+          "canvases": 0,
+          "instanceMarkers": 0
+        }
+      }
+    },
+    {
+      "cycle": 15,
+      "openReadyMs": 79.79149999999936,
+      "opened": {
+        "point": "opened",
+        "metrics": {
+          "JSHeapUsedSize": 10001400,
+          "JSHeapTotalSize": 10625024,
+          "Nodes": 407,
+          "Documents": 1,
+          "JSEventListeners": 153
+        },
+        "dom": {
+          "documents": 1,
+          "nodes": 407,
+          "jsEventListeners": 153
+        },
+        "chart": {
+          "canvases": 2,
+          "instanceMarkers": 2
+        }
+      },
+      "closed": {
+        "point": "closed",
+        "metrics": {
+          "JSHeapUsedSize": 9595016,
+          "JSHeapTotalSize": 10362880,
+          "Nodes": 403,
+          "Documents": 1,
+          "JSEventListeners": 127
+        },
+        "dom": {
+          "documents": 1,
+          "nodes": 403,
+          "jsEventListeners": 127
+        },
+        "chart": {
+          "canvases": 0,
+          "instanceMarkers": 0
+        }
+      }
+    },
+    {
+      "cycle": 16,
+      "openReadyMs": 54.375700000000506,
+      "opened": {
+        "point": "opened",
+        "metrics": {
+          "JSHeapUsedSize": 10035752,
+          "JSHeapTotalSize": 10625024,
+          "Nodes": 407,
+          "Documents": 1,
+          "JSEventListeners": 153
+        },
+        "dom": {
+          "documents": 1,
+          "nodes": 407,
+          "jsEventListeners": 153
+        },
+        "chart": {
+          "canvases": 2,
+          "instanceMarkers": 2
+        }
+      },
+      "closed": {
+        "point": "closed",
+        "metrics": {
+          "JSHeapUsedSize": 9617012,
+          "JSHeapTotalSize": 10362880,
+          "Nodes": 403,
+          "Documents": 1,
+          "JSEventListeners": 127
+        },
+        "dom": {
+          "documents": 1,
+          "nodes": 403,
+          "jsEventListeners": 127
+        },
+        "chart": {
+          "canvases": 0,
+          "instanceMarkers": 0
+        }
+      }
+    },
+    {
+      "cycle": 17,
+      "openReadyMs": 71.61859999999979,
+      "opened": {
+        "point": "opened",
+        "metrics": {
+          "JSHeapUsedSize": 10042052,
+          "JSHeapTotalSize": 10887168,
+          "Nodes": 407,
+          "Documents": 1,
+          "JSEventListeners": 153
+        },
+        "dom": {
+          "documents": 1,
+          "nodes": 407,
+          "jsEventListeners": 153
+        },
+        "chart": {
+          "canvases": 2,
+          "instanceMarkers": 2
+        }
+      },
+      "closed": {
+        "point": "closed",
+        "metrics": {
+          "JSHeapUsedSize": 9648212,
+          "JSHeapTotalSize": 10362880,
+          "Nodes": 403,
+          "Documents": 1,
+          "JSEventListeners": 127
+        },
+        "dom": {
+          "documents": 1,
+          "nodes": 403,
+          "jsEventListeners": 127
+        },
+        "chart": {
+          "canvases": 0,
+          "instanceMarkers": 0
+        }
+      }
+    },
+    {
+      "cycle": 18,
+      "openReadyMs": 60.07469999999921,
+      "opened": {
+        "point": "opened",
+        "metrics": {
+          "JSHeapUsedSize": 10080752,
+          "JSHeapTotalSize": 10887168,
+          "Nodes": 407,
+          "Documents": 1,
+          "JSEventListeners": 153
+        },
+        "dom": {
+          "documents": 1,
+          "nodes": 407,
+          "jsEventListeners": 153
+        },
+        "chart": {
+          "canvases": 2,
+          "instanceMarkers": 2
+        }
+      },
+      "closed": {
+        "point": "closed",
+        "metrics": {
+          "JSHeapUsedSize": 9661716,
+          "JSHeapTotalSize": 10625024,
+          "Nodes": 403,
+          "Documents": 1,
+          "JSEventListeners": 127
+        },
+        "dom": {
+          "documents": 1,
+          "nodes": 403,
+          "jsEventListeners": 127
+        },
+        "chart": {
+          "canvases": 0,
+          "instanceMarkers": 0
+        }
+      }
+    },
+    {
+      "cycle": 19,
+      "openReadyMs": 58.74250000000029,
+      "opened": {
+        "point": "opened",
+        "metrics": {
+          "JSHeapUsedSize": 10088776,
+          "JSHeapTotalSize": 11149312,
+          "Nodes": 407,
+          "Documents": 1,
+          "JSEventListeners": 153
+        },
+        "dom": {
+          "documents": 1,
+          "nodes": 407,
+          "jsEventListeners": 153
+        },
+        "chart": {
+          "canvases": 2,
+          "instanceMarkers": 2
+        }
+      },
+      "closed": {
+        "point": "closed",
+        "metrics": {
+          "JSHeapUsedSize": 9678252,
+          "JSHeapTotalSize": 10625024,
+          "Nodes": 403,
+          "Documents": 1,
+          "JSEventListeners": 127
+        },
+        "dom": {
+          "documents": 1,
+          "nodes": 403,
+          "jsEventListeners": 127
+        },
+        "chart": {
+          "canvases": 0,
+          "instanceMarkers": 0
+        }
+      }
+    },
+    {
+      "cycle": 20,
+      "openReadyMs": 64.04379999999946,
+      "opened": {
+        "point": "opened",
+        "metrics": {
+          "JSHeapUsedSize": 10117380,
+          "JSHeapTotalSize": 11149312,
+          "Nodes": 407,
+          "Documents": 1,
+          "JSEventListeners": 153
+        },
+        "dom": {
+          "documents": 1,
+          "nodes": 407,
+          "jsEventListeners": 153
+        },
+        "chart": {
+          "canvases": 2,
+          "instanceMarkers": 2
+        }
+      },
+      "closed": {
+        "point": "closed",
+        "metrics": {
+          "JSHeapUsedSize": 9700356,
+          "JSHeapTotalSize": 10887168,
+          "Nodes": 403,
+          "Documents": 1,
+          "JSEventListeners": 127
+        },
+        "dom": {
+          "documents": 1,
+          "nodes": 403,
+          "jsEventListeners": 127
+        },
+        "chart": {
+          "canvases": 0,
+          "instanceMarkers": 0
+        }
+      }
+    }
+  ],
+  "errors": [],
+  "browser": "156.0.4314.42",
+  "chartStart": {
+    "point": "before first open",
+    "metrics": {
+      "JSHeapUsedSize": 5916996,
+      "JSHeapTotalSize": 7147520,
+      "Nodes": 368,
+      "Documents": 1,
+      "JSEventListeners": 109
+    },
+    "dom": {
+      "documents": 1,
+      "nodes": 368,
+      "jsEventListeners": 109
+    },
+    "chart": {
+      "canvases": 0,
+      "instanceMarkers": 0
+    }
+  },
+  "missingAssets": [],
+  "unexpectedApi": [],
+  "summary": {
+    "/login:cold": {
+      "n": 5,
+      "median": 112.10990000000004,
+      "min": 108.22499999999991,
+      "max": 176.56380000000001
+    },
+    "/login:warm": {
+      "n": 5,
+      "median": 109.55410000000006,
+      "min": 108.46759999999995,
+      "max": 115.3161
+    },
+    "/rateprefamily:cold": {
+      "n": 5,
+      "median": 197.94569999999976,
+      "min": 180.38890000000038,
+      "max": 207.01700000000005
+    },
+    "/rateprefamily:warm": {
+      "n": 5,
+      "median": 181.7713000000001,
+      "min": 179.36299999999983,
+      "max": 187.0662000000002
+    }
+  },
+  "chartSummary": {
+    "openReadyMs": {
+      "n": 20,
+      "median": 54.30645000000004,
+      "min": 37.67169999999987,
+      "max": 381.7970999999998
+    },
+    "closedHeapBytes": {
+      "n": 20,
+      "median": 9482098,
+      "min": 8081368,
+      "max": 9700356
+    },
+    "closedListeners": {
+      "n": 20,
+      "median": 127,
+      "min": 127,
+      "max": 127
+    }
+  }
+}

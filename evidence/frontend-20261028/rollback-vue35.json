@@ -1,0 +1,6 @@
+{
+  "scope": "package-level clean install/tree only; no Vue36 application acceptance claimed",
+  "beforeLockSHA256": "1a504ef004f882ae4182b4ace4e0faff64eb4f8c27294a2722127139f6b4a683",
+  "afterLockSHA256": "1a504ef004f882ae4182b4ace4e0faff64eb4f8c27294a2722127139f6b4a683",
+  "projectPackageFilesUnchanged": true
+}

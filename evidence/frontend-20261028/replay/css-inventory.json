@@ -1,0 +1,61 @@
+{
+  "note": "Same-selector/property overlaps across files; responsive overrides can be intentional. This is not proof of a UI defect.",
+  "counts": [
+    {
+      "file": "src/assets/css/element-theme.css",
+      "rules": 29,
+      "important": 7
+    },
+    {
+      "file": "src/assets/css/commercial.css",
+      "rules": 155,
+      "important": 1
+    }
+  ],
+  "overlaps": [
+    {
+      "first": {
+        "file": "src/assets/css/element-theme.css",
+        "line": 92,
+        "selector": "#app .care-app .el-dialog__body",
+        "property": "padding",
+        "value": "24px 28px",
+        "important": false,
+        "media": []
+      },
+      "second": {
+        "file": "src/assets/css/commercial.css",
+        "line": 94,
+        "selector": "#app .care-app .el-dialog__body",
+        "property": "padding",
+        "value": "20px",
+        "important": false,
+        "media": [
+          "@media (max-width:600px)"
+        ]
+      }
+    },
+    {
+      "first": {
+        "file": "src/assets/css/element-theme.css",
+        "line": 98,
+        "selector": "#app .care-app .el-dialog__footer",
+        "property": "padding",
+        "value": "18px 28px",
+        "important": false,
+        "media": []
+      },
+      "second": {
+        "file": "src/assets/css/commercial.css",
+        "line": 95,
+        "selector": "#app .care-app .el-dialog__footer",
+        "property": "padding",
+        "value": "16px 20px",
+        "important": false,
+        "media": [
+          "@media (max-width:600px)"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "sourceSHA": "3b79b1f90e6cde6656fc40b9cee2e6af79ff0fe9",
+  "sourceStatus": "?? docs/frontend-20261028/\n?? evidence/frontend-20261028/\n?? scripts/frontend/",
+  "lockSHA256Before": "1a504ef004f882ae4182b4ace4e0faff64eb4f8c27294a2722127139f6b4a683",
+  "node": "v24.22.1",
+  "npm": "11.6.2",
+  "platform": "win32",
+  "arch": "x64",
+  "timeUTC": "2026-10-28T00:04:57.423Z",
+  "buildFilesIdentical": true,
+  "lockSHA256After": "1a504ef004f882ae4182b4ace4e0faff64eb4f8c27294a2722127139f6b4a683",
+  "lockUnchanged": true
+}

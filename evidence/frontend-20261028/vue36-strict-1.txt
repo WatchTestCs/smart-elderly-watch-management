@@ -1,0 +1,65 @@
+npm warn ERESOLVE overriding peer dependency
+npm warn While resolving: suining-ui@2.1.0
+npm warn Found: vue@3.5.44
+npm warn node_modules/vue
+npm warn   vue@"3.6.0-rc.13" from the root project
+npm warn   7 more (@element-plus/icons-vue, @vitejs/plugin-vue, ...)
+npm warn
+npm warn Could not resolve dependency:
+npm warn peer vue@"3.x" from @vue/test-utils@2.5.1
+npm warn node_modules/@vue/test-utils
+npm warn   dev @vue/test-utils@"2.5.1" from the root project
+npm warn ERESOLVE overriding peer dependency
+npm warn While resolving: suining-ui@2.1.0
+npm warn Found: vue@3.5.44
+npm warn node_modules/vue
+npm warn   vue@"3.6.0-rc.13" from the root project
+npm warn   7 more (@element-plus/icons-vue, @vitejs/plugin-vue, ...)
+npm warn
+npm warn Could not resolve dependency:
+npm warn peer vue@"^3.3.7" from element-plus@2.14.7
+npm warn node_modules/element-plus
+npm warn   element-plus@"2.14.7" from the root project
+npm warn ERESOLVE overriding peer dependency
+npm warn While resolving: suining-ui@2.1.0
+npm warn Found: vue@3.5.44
+npm warn node_modules/vue
+npm warn   vue@"3.6.0-rc.13" from the root project
+npm warn   7 more (@element-plus/icons-vue, @vitejs/plugin-vue, ...)
+npm warn
+npm warn Could not resolve dependency:
+npm warn peer vue@"^3.5.0" from vue-router@4.6.4
+npm warn node_modules/vue-router
+npm warn   vue-router@"4.6.4" from the root project
+npm error code ERESOLVE
+npm error ERESOLVE could not resolve
+npm error
+npm error While resolving: element-plus@2.14.7
+npm error Found: vue@3.6.0-rc.13
+npm error node_modules/vue
+npm error   vue@"3.6.0-rc.13" from the root project
+npm error   peer vue@"^3.2.25 || ^3.6.0-rc.10" from @vitejs/plugin-vue@6.0.10
+npm error   node_modules/@vitejs/plugin-vue
+npm error     dev @vitejs/plugin-vue@"6.0.10" from the root project
+npm error
+npm error Could not resolve dependency:
+npm error @element-plus/icons-vue@"^2.3.2" from element-plus@2.14.7
+npm error node_modules/element-plus
+npm error   element-plus@"2.14.7" from the root project
+npm error
+npm error Conflicting peer dependency: vue@3.5.44
+npm error node_modules/vue
+npm error   peer vue@"^3.2.0" from @element-plus/icons-vue@2.3.2
+npm error   node_modules/@element-plus/icons-vue
+npm error     @element-plus/icons-vue@"^2.3.2" from element-plus@2.14.7
+npm error     node_modules/element-plus
+npm error       element-plus@"2.14.7" from the root project
+npm error
+npm error Fix the upstream dependency conflict, or retry
+npm error this command with --no-strict-peer-deps, --force, or --legacy-peer-deps
+npm error to accept an incorrect (and potentially broken) dependency resolution.
+npm error
+npm error
+npm error For a full report see:
+npm error C:\Users\Administrator\AppData\Local\npm-cache\_logs\2026-10-27T23_55_35_834Z-eresolve-report.txt
+npm error A complete log of this run can be found in: C:\Users\Administrator\AppData\Local\npm-cache\_logs\2026-10-27T23_55_35_834Z-debug-0.log

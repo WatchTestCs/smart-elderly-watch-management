@@ -1,3 +1,13 @@
+﻿## 2026-10-28 前端接续（当前状态）
+
+新分支 `codex/frontend-validation-20261028` 从当前 preview `3b79b1f90e6cde6656fc40b9cee2e6af79ff0fe9` 创建，包含此前网页与手表。本轮已完成本机浏览器基线、既有 QA/真实后端验收及依赖预检；Vue 3.6 RC 因 peer 冲突无法通过干净安装，仍保持 Vue 3.5.44，后续优化未越过迁移门槛。清单只部分完成，不准予合并。
+
+接续入口：[计划](frontend-20261028/PLAN.md) · [结果与复跑](frontend-20261028/RESULT.md) · [任务/M01–M08](frontend-20261028/TASKS.md) · [覆盖/模块盘点](frontend-20261028/INVENTORY.md) · [原始证据](../evidence/frontend-20261028)。
+
+下文为2026-10-26可靠性/手表交接历史快照，不代表当前前端清单已全部完成或旧 SHA 的 CI 可替代新候选。
+
+---
+
 # 可靠性修复后问题与任务交接文档
 
 **项目**：WatchTestCs/smart-elderly-watch-management

@@ -1,0 +1,1587 @@
+{
+  "environment": "Chromium / win32, production bundle, all API traffic mocked",
+  "layouts": [],
+  "checks": [
+    {
+      "name": "390 /login: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=1#/login"
+    },
+    {
+      "name": "390 /login: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 390,
+        "scrollWidth": 390,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "390 /login: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "390 /login: new page title",
+      "pass": true
+    },
+    {
+      "name": "390 /register: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=2#/register"
+    },
+    {
+      "name": "390 /register: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 390,
+        "scrollWidth": 390,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "390 /register: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "390 /register: new page title",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/text/select",
+      "pass": true
+    },
+    {
+      "name": "390 /familyMain: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=3#/familyMain"
+    },
+    {
+      "name": "390 /familyMain: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 390,
+        "scrollWidth": 390,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "390 /familyMain: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "390 /familyMain: new page title",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/ratepre/selectRatepreFamily",
+      "pass": true
+    },
+    {
+      "name": "390 /rateprefamily: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=4#/rateprefamily"
+    },
+    {
+      "name": "390 /rateprefamily: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 390,
+        "scrollWidth": 390,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "390 /rateprefamily: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "390 /rateprefamily: new page title",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/step/selectStepFamily",
+      "pass": true
+    },
+    {
+      "name": "390 /stepfamily: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=5#/stepfamily"
+    },
+    {
+      "name": "390 /stepfamily: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 390,
+        "scrollWidth": 390,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "390 /stepfamily: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "390 /stepfamily: new page title",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/position/selectFamily",
+      "pass": true
+    },
+    {
+      "name": "390 /positionfamily: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=6#/positionfamily"
+    },
+    {
+      "name": "390 /positionfamily: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 390,
+        "scrollWidth": 390,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "390 /positionfamily: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "390 /positionfamily: new page title",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/family/selectTwo",
+      "pass": true
+    },
+    {
+      "name": "390 /me: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=7#/me"
+    },
+    {
+      "name": "390 /me: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 390,
+        "scrollWidth": 390,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "390 /me: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "390 /me: new page title",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/text/selectDetail",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/said/select",
+      "pass": true
+    },
+    {
+      "name": "390 /textMain?textId=1: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=8#/textMain?textId=1"
+    },
+    {
+      "name": "390 /textMain?textId=1: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 390,
+        "scrollWidth": 390,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "390 /textMain?textId=1: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "390 /textMain?textId=1: new page title",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/text/select",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/ratepre/selectRatepreCount",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/step/selectStepCount",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/position/select",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/care/diagnostics",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/care/incidents",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/care/staff",
+      "pass": true
+    },
+    {
+      "name": "390 /main: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=9#/main"
+    },
+    {
+      "name": "390 /main: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 390,
+        "scrollWidth": 390,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "390 /main: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "390 /main: new page title",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/ratepre/selectRatepre",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/ratepre/selectRatepreCount",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/ratepre/alertCount",
+      "pass": true
+    },
+    {
+      "name": "390 /ratepre: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=10#/ratepre"
+    },
+    {
+      "name": "390 /ratepre: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 390,
+        "scrollWidth": 390,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "390 /ratepre: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "390 /ratepre: new page title",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/step/selectStep",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/step/selectStepCount",
+      "pass": true
+    },
+    {
+      "name": "390 /step: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=11#/step"
+    },
+    {
+      "name": "390 /step: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 390,
+        "scrollWidth": 390,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "390 /step: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "390 /step: new page title",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/position/select",
+      "pass": true
+    },
+    {
+      "name": "390 /position: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=12#/position"
+    },
+    {
+      "name": "390 /position: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 390,
+        "scrollWidth": 390,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "390 /position: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "390 /position: new page title",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/oldPerson/select",
+      "pass": true
+    },
+    {
+      "name": "390 /life: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=13#/life"
+    },
+    {
+      "name": "390 /life: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 390,
+        "scrollWidth": 390,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "390 /life: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "390 /life: new page title",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/watchInfo/select",
+      "pass": true
+    },
+    {
+      "name": "390 /watch: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=14#/watch"
+    },
+    {
+      "name": "390 /watch: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 390,
+        "scrollWidth": 390,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "390 /watch: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "390 /watch: new page title",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/oldPerson/selectDetail",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/customer/select",
+      "pass": true
+    },
+    {
+      "name": "390 /person: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=15#/person"
+    },
+    {
+      "name": "390 /person: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 390,
+        "scrollWidth": 390,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "390 /person: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "390 /person: new page title",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/customer/select",
+      "pass": true
+    },
+    {
+      "name": "390 /customer: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=16#/customer"
+    },
+    {
+      "name": "390 /customer: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 390,
+        "scrollWidth": 390,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "390 /customer: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "390 /customer: new page title",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/text/selectDetail",
+      "pass": true
+    },
+    {
+      "name": "390 /text?textId=1: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=17#/text?textId=1"
+    },
+    {
+      "name": "390 /text?textId=1: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 390,
+        "scrollWidth": 390,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "390 /text?textId=1: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "390 /text?textId=1: new page title",
+      "pass": true
+    },
+    {
+      "name": "390 /textTwo: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=18#/textTwo"
+    },
+    {
+      "name": "390 /textTwo: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 390,
+        "scrollWidth": 390,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "390 /textTwo: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "390 /textTwo: new page title",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/text/selectDetail",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/said/select",
+      "pass": true
+    },
+    {
+      "name": "390 /textMainUser?textId=1: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=19#/textMainUser?textId=1"
+    },
+    {
+      "name": "390 /textMainUser?textId=1: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 390,
+        "scrollWidth": 390,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "390 /textMainUser?textId=1: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "390 /textMainUser?textId=1: new page title",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/text/select",
+      "pass": true
+    },
+    {
+      "name": "390 /textOpt: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=20#/textOpt"
+    },
+    {
+      "name": "390 /textOpt: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 390,
+        "scrollWidth": 390,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "390 /textOpt: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "390 /textOpt: new page title",
+      "pass": true
+    },
+    {
+      "name": "390 /annex: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=21#/annex"
+    },
+    {
+      "name": "390 /annex: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 390,
+        "scrollWidth": 390,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "390 /annex: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "390 /annex: new page title",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/family/select",
+      "pass": true
+    },
+    {
+      "name": "390 /family: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=22#/family"
+    },
+    {
+      "name": "390 /family: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 390,
+        "scrollWidth": 390,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "390 /family: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "390 /family: new page title",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/said/selectByUser",
+      "pass": true
+    },
+    {
+      "name": "390 /saidOperation: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=23#/saidOperation"
+    },
+    {
+      "name": "390 /saidOperation: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 390,
+        "scrollWidth": 390,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "390 /saidOperation: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "390 /saidOperation: new page title",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/inviteCode/list",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/inviteCode/oldPersonList",
+      "pass": true
+    },
+    {
+      "name": "390 /inviteCode: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=24#/inviteCode"
+    },
+    {
+      "name": "390 /inviteCode: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 390,
+        "scrollWidth": 390,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "390 /inviteCode: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "390 /inviteCode: new page title",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/device/list",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/device/alertCounts",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/inviteCode/oldPersonList",
+      "pass": true
+    },
+    {
+      "name": "390 /device: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=25#/device"
+    },
+    {
+      "name": "390 /device: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 390,
+        "scrollWidth": 390,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "390 /device: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "390 /device: new page title",
+      "pass": true
+    },
+    {
+      "name": "1440 /login: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=26#/login"
+    },
+    {
+      "name": "1440 /login: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "1440 /login: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "1440 /login: new page title",
+      "pass": true
+    },
+    {
+      "name": "1440 /register: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=27#/register"
+    },
+    {
+      "name": "1440 /register: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "1440 /register: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "1440 /register: new page title",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/text/select",
+      "pass": true
+    },
+    {
+      "name": "1440 /familyMain: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=28#/familyMain"
+    },
+    {
+      "name": "1440 /familyMain: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "1440 /familyMain: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "1440 /familyMain: new page title",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/ratepre/selectRatepreFamily",
+      "pass": true
+    },
+    {
+      "name": "1440 /rateprefamily: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=29#/rateprefamily"
+    },
+    {
+      "name": "1440 /rateprefamily: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "1440 /rateprefamily: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "1440 /rateprefamily: new page title",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/step/selectStepFamily",
+      "pass": true
+    },
+    {
+      "name": "1440 /stepfamily: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=30#/stepfamily"
+    },
+    {
+      "name": "1440 /stepfamily: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "1440 /stepfamily: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "1440 /stepfamily: new page title",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/position/selectFamily",
+      "pass": true
+    },
+    {
+      "name": "1440 /positionfamily: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=31#/positionfamily"
+    },
+    {
+      "name": "1440 /positionfamily: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "1440 /positionfamily: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "1440 /positionfamily: new page title",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/family/selectTwo",
+      "pass": true
+    },
+    {
+      "name": "1440 /me: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=32#/me"
+    },
+    {
+      "name": "1440 /me: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "1440 /me: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "1440 /me: new page title",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/text/selectDetail",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/said/select",
+      "pass": true
+    },
+    {
+      "name": "1440 /textMain?textId=1: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=33#/textMain?textId=1"
+    },
+    {
+      "name": "1440 /textMain?textId=1: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "1440 /textMain?textId=1: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "1440 /textMain?textId=1: new page title",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/text/select",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/ratepre/selectRatepreCount",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/step/selectStepCount",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/position/select",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/care/diagnostics",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/care/incidents",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/care/staff",
+      "pass": true
+    },
+    {
+      "name": "1440 /main: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=34#/main"
+    },
+    {
+      "name": "1440 /main: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "1440 /main: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "1440 /main: new page title",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/ratepre/selectRatepre",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/ratepre/selectRatepreCount",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/ratepre/alertCount",
+      "pass": true
+    },
+    {
+      "name": "1440 /ratepre: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=35#/ratepre"
+    },
+    {
+      "name": "1440 /ratepre: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "1440 /ratepre: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "1440 /ratepre: new page title",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/step/selectStep",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/step/selectStepCount",
+      "pass": true
+    },
+    {
+      "name": "1440 /step: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=36#/step"
+    },
+    {
+      "name": "1440 /step: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "1440 /step: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "1440 /step: new page title",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/position/select",
+      "pass": true
+    },
+    {
+      "name": "1440 /position: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=37#/position"
+    },
+    {
+      "name": "1440 /position: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "1440 /position: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "1440 /position: new page title",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/oldPerson/select",
+      "pass": true
+    },
+    {
+      "name": "1440 /life: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=38#/life"
+    },
+    {
+      "name": "1440 /life: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "1440 /life: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "1440 /life: new page title",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/watchInfo/select",
+      "pass": true
+    },
+    {
+      "name": "1440 /watch: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=39#/watch"
+    },
+    {
+      "name": "1440 /watch: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "1440 /watch: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "1440 /watch: new page title",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/oldPerson/selectDetail",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/customer/select",
+      "pass": true
+    },
+    {
+      "name": "1440 /person: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=40#/person"
+    },
+    {
+      "name": "1440 /person: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "1440 /person: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "1440 /person: new page title",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/customer/select",
+      "pass": true
+    },
+    {
+      "name": "1440 /customer: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=41#/customer"
+    },
+    {
+      "name": "1440 /customer: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "1440 /customer: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "1440 /customer: new page title",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/text/selectDetail",
+      "pass": true
+    },
+    {
+      "name": "1440 /text?textId=1: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=42#/text?textId=1"
+    },
+    {
+      "name": "1440 /text?textId=1: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "1440 /text?textId=1: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "1440 /text?textId=1: new page title",
+      "pass": true
+    },
+    {
+      "name": "1440 /textTwo: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=43#/textTwo"
+    },
+    {
+      "name": "1440 /textTwo: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "1440 /textTwo: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "1440 /textTwo: new page title",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/text/selectDetail",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/said/select",
+      "pass": true
+    },
+    {
+      "name": "1440 /textMainUser?textId=1: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=44#/textMainUser?textId=1"
+    },
+    {
+      "name": "1440 /textMainUser?textId=1: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "1440 /textMainUser?textId=1: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "1440 /textMainUser?textId=1: new page title",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/text/select",
+      "pass": true
+    },
+    {
+      "name": "1440 /textOpt: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=45#/textOpt"
+    },
+    {
+      "name": "1440 /textOpt: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "1440 /textOpt: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "1440 /textOpt: new page title",
+      "pass": true
+    },
+    {
+      "name": "1440 /annex: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=46#/annex"
+    },
+    {
+      "name": "1440 /annex: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "1440 /annex: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "1440 /annex: new page title",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/family/select",
+      "pass": true
+    },
+    {
+      "name": "1440 /family: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=47#/family"
+    },
+    {
+      "name": "1440 /family: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "1440 /family: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "1440 /family: new page title",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/said/selectByUser",
+      "pass": true
+    },
+    {
+      "name": "1440 /saidOperation: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=48#/saidOperation"
+    },
+    {
+      "name": "1440 /saidOperation: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "1440 /saidOperation: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "1440 /saidOperation: new page title",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/inviteCode/list",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/inviteCode/oldPersonList",
+      "pass": true
+    },
+    {
+      "name": "1440 /inviteCode: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=49#/inviteCode"
+    },
+    {
+      "name": "1440 /inviteCode: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "1440 /inviteCode: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "1440 /inviteCode: new page title",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/device/list",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/device/alertCounts",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/inviteCode/oldPersonList",
+      "pass": true
+    },
+    {
+      "name": "1440 /device: requested route reached",
+      "pass": true,
+      "details": "http://127.0.0.1:9382/?review=50#/device"
+    },
+    {
+      "name": "1440 /device: no horizontal overflow",
+      "pass": true,
+      "details": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "title": "岁宁 · 智慧养老管理平台",
+        "logo": true
+      }
+    },
+    {
+      "name": "1440 /device: brand image loaded",
+      "pass": true
+    },
+    {
+      "name": "1440 /device: new page title",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/text/select",
+      "pass": true
+    },
+    {
+      "name": "320 large text: no horizontal overflow",
+      "pass": true
+    },
+    {
+      "name": "320 brand returns to family home",
+      "pass": true
+    },
+    {
+      "name": "320 brand keyboard focus",
+      "pass": true
+    },
+    {
+      "name": "320 brand visible keyboard focus",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/text/select",
+      "pass": true
+    },
+    {
+      "name": "768 large text: no horizontal overflow",
+      "pass": true
+    },
+    {
+      "name": "768 brand returns to family home",
+      "pass": true
+    },
+    {
+      "name": "768 brand keyboard focus",
+      "pass": true
+    },
+    {
+      "name": "768 brand visible keyboard focus",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/ratepre/selectRatepreFamily",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/ratepre/selectRatepreDetail",
+      "pass": true
+    },
+    {
+      "name": "Updated chart library renders Canvas",
+      "pass": true
+    },
+    {
+      "name": "Chart retains accessible text description",
+      "pass": true
+    },
+    {
+      "name": "Chart disposal on close",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/family/selectTwo",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/image/saveImage",
+      "pass": true
+    },
+    {
+      "name": "Native avatar XHR sends CSRF header",
+      "pass": true
+    },
+    {
+      "name": "Avatar update uses server generated filename",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/family/updateTouPic",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/family/selectTwo",
+      "pass": true
+    },
+    {
+      "name": "Forged localStorage token cannot open administration",
+      "pass": true
+    },
+    {
+      "name": "Family navigation cannot enter administrator routes",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/text/select",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/userLogin/login",
+      "pass": true
+    },
+    {
+      "name": "Login refreshes server session before navigation",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/text/select",
+      "pass": true
+    },
+    {
+      "name": "CSRF header restful/userLogin/logout",
+      "pass": true
+    },
+    {
+      "name": "Logout calls server and clears local display cache",
+      "pass": true
+    },
+    {
+      "name": "All existing font files unchanged",
+      "pass": true,
+      "details": {
+        "count": 93,
+        "changedFonts": []
+      }
+    },
+    {
+      "name": "No browser JavaScript errors",
+      "pass": true,
+      "details": []
+    },
+    {
+      "name": "No missing static resources",
+      "pass": true,
+      "details": []
+    },
+    {
+      "name": "No unexpected API calls",
+      "pass": true,
+      "details": []
+    }
+  ],
+  "pageErrors": [],
+  "missingAssets": [],
+  "unexpectedApi": [],
+  "contrast": []
+}

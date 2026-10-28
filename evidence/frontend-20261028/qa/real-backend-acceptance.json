@@ -1,0 +1,65 @@
+{
+  "environment": "Production UI + actual Go process + isolated MySQL primary, no API mocks",
+  "checks": [
+    {
+      "name": "real login establishes a server session",
+      "pass": true
+    },
+    {
+      "name": "elder can be created in the real UI before a watch exists",
+      "pass": true
+    },
+    {
+      "name": "real stored diet and medication keep their field meanings",
+      "pass": true
+    },
+    {
+      "name": "binding keeps both inventory and elder references consistent",
+      "pass": true
+    },
+    {
+      "name": "real threshold API supplies the editable device identifier",
+      "pass": true
+    },
+    {
+      "name": "real UI threshold editing persists to MySQL",
+      "pass": true
+    },
+    {
+      "name": "real heart-rate-only upload leaves blood pressure unknown",
+      "pass": true
+    },
+    {
+      "name": "real SOS proceeds through acknowledge, start and resolution",
+      "pass": true
+    },
+    {
+      "name": "resolving operator cannot self-verify in the UI",
+      "pass": true
+    },
+    {
+      "name": "independent verification closes the durable case and linked fall alarm",
+      "pass": true
+    },
+    {
+      "name": "verification also refreshes the visible fall summary",
+      "pass": true
+    },
+    {
+      "name": "completed cases remain reachable in the real UI",
+      "pass": true
+    },
+    {
+      "name": "independent reviewer can retrieve the complete persisted care history",
+      "pass": true
+    },
+    {
+      "name": "MySQL core workflow completes while PG is offline",
+      "pass": true
+    },
+    {
+      "name": "no JavaScript errors with real responses",
+      "pass": true
+    }
+  ]
+}
