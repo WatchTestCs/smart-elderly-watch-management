@@ -121,7 +121,7 @@ func (h *Handler) deviceCreate(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local)
-		if _, err := saveWatchProfileUpsert(ctx, tx, deviceID, 110, 55, 140, 90, today); err != nil {
+		if _, err := saveWatchProfileUpsert(ctx, tx, tx.IsMySQL(), deviceID, 110, 55, 140, 90, today); err != nil {
 			rollback()
 			response.Error500(w, ref())
 			return
