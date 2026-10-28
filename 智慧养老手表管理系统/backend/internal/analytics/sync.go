@@ -6,6 +6,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"log"
 	"sync"
 	"time"
 
@@ -31,10 +32,58 @@ func (s *State) Snapshot() Snapshot { s.mu.RLock(); defer s.mu.RUnlock(); return
 // projection work must never depend on the success of that diagnostic query.
 const pendingSampleInterval = 30 * time.Second
 
+// PostgreSQL is an independent analytics secondary. Limit its connections
+// and connection-establishment time rather than competing with MySQL traffic.
+const analyticsMaxConnections = 2
+const analyticsConnectTimeout = 3 * time.Second
+const analyticsMaxRetryDelay = 30 * time.Second
+
+func analyticsPoolConfig(url string) (*pgxpool.Config, error) {
+	cfg, err := pgxpool.ParseConfig(url)
+	if err != nil {
+		return nil, err
+	}
+	cfg.MaxConns = analyticsMaxConnections
+	cfg.MinConns = 0
+	cfg.MaxConnIdleTime = time.Minute
+	cfg.ConnConfig.ConnectTimeout = analyticsConnectTimeout
+	return cfg, nil
+}
+
+// Retry PG failures with bounded exponential backoff, but continue draining
+// a healthy saturated outbox with the existing fast ten-millisecond cadence.
+func analyticsPollDelay(failures int, saturated bool) time.Duration {
+	if failures <= 0 {
+		if saturated {
+			return 10 * time.Millisecond
+		}
+		return 2 * time.Second
+	}
+	delay := 2 * time.Second
+	for i := 1; i < failures; i++ {
+		if delay >= analyticsMaxRetryDelay/2 {
+			return analyticsMaxRetryDelay
+		}
+		delay *= 2
+	}
+	return delay
+}
+
 func Run(ctx context.Context, primary *db.Database, url string, state *State) {
 	state.mu.Lock()
 	state.value.Configured = url != ""
+	state.value.Ready = false
+	state.value.Pending = nil
 	state.mu.Unlock()
+	if url == "" {
+		// Analytics is optional: no PG workers and no MySQL queue-count scans.
+		return
+	}
+	poolConfig, err := analyticsPoolConfig(url)
+	if err != nil {
+		log.Print("invalid PG_ANALYTICS_URL; analytics worker disabled (connection string withheld)")
+		return
+	}
 	var pg *pgxpool.Pool
 	defer func() {
 		if pg != nil {
@@ -43,6 +92,7 @@ func Run(ctx context.Context, primary *db.Database, url string, state *State) {
 	}()
 	var pending *int64
 	var nextPendingSample time.Time
+	failures := 0
 
 	for ctx.Err() == nil {
 		cycle, cancel := context.WithTimeout(ctx, 15*time.Second)
@@ -71,7 +121,7 @@ func Run(ctx context.Context, primary *db.Database, url string, state *State) {
 		if url != "" {
 			if pg == nil {
 				var err error
-				pg, err = pgxpool.New(cycle, url)
+				pg, err = pgxpool.NewWithConfig(cycle, poolConfig)
 				if err == nil {
 					err = Migrate(cycle, pg)
 				}
@@ -112,18 +162,21 @@ func Run(ctx context.Context, primary *db.Database, url string, state *State) {
 				}
 			}
 		}
+		if ready {
+			failures = 0
+		} else {
+			failures++
+		}
 		state.mu.Lock()
-		state.value.Configured = url != ""
+		state.value.Configured = true
 		state.value.Ready = ready
 		state.value.Pending = pending
 		state.mu.Unlock()
 		cancel()
 
-		delay := 2 * time.Second
-		if saturated {
-			// Yield the scheduler without throttling a proven backlog.
-			delay = 10 * time.Millisecond
-		}
+		// The PG outage must not cause a retry storm. The MySQL outbox is
+		// retained until a successful secondary write and acknowledgement.
+		delay := analyticsPollDelay(failures, saturated)
 		timer := time.NewTimer(delay)
 		select {
 		case <-ctx.Done():
