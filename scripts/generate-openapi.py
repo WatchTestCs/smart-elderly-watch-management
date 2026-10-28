@@ -4,6 +4,7 @@ Legacy operations with unknown DTO shapes are labelled as such instead of
 inventing contracts. --check fails if the committed document drifts from routes.
 """
 import copy
+import difflib
 import json
 from pathlib import Path
 import re
@@ -88,6 +89,10 @@ data = (json.dumps(spec, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
 target = folder / "openapi.json"
 if "--check" in sys.argv:
     if not target.exists() or target.read_bytes() != data:
+        expected = data.decode("utf-8").splitlines(keepends=True)
+        actual = target.read_text(encoding="utf-8").splitlines(keepends=True) if target.exists() else []
+        diff = difflib.unified_diff(actual, expected, fromfile="committed openapi.json", tofile="generated Go routes")
+        print("".join(list(diff)[:120]), file=sys.stderr)
         raise SystemExit("OpenAPI is stale; run scripts/generate-openapi.py")
 else:
     target.write_bytes(data)
