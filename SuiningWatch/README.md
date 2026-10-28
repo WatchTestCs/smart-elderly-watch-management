@@ -42,7 +42,7 @@ HAP 输出：`entry/build/default/outputs/default/entry-default-unsigned.hap`。
 
 ## 与管理平台联调
 
-1. 确认新版 Go 服务已运行，`http://127.0.0.1:8796/restful/service/status` 中 databaseReady 为 true。
+1. 确认新版 Go 服务已运行，`http://127.0.0.1:8796/api/v1/service/status` 中 databaseReady 为 true。
 2. 在管理平台先建立一个明确命名的测试长者，再在设备管理登记模拟手表。保管创建时仅返回一次的设备密钥。
 3. 在手表“设置”填写地址 `http://127.0.0.1:18796`、后台分配的设备号和设备密钥。密钥不是管理员登录密码。
 4. 点击“保存地址并认证”。未绑定时，填写后台生成的**设备绑定码**，不要使用家属注册邀请码。

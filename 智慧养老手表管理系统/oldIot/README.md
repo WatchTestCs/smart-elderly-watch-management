@@ -25,7 +25,7 @@ npm run dev
 npm run build
 ```
 
-Vite 仅绑定本机，`/restful` 代理到 `http://127.0.0.1:8795`。后端设置 `ADDR=127.0.0.1:8795`，配置 `MYSQL_DSN` 与可选 `PG_ANALYTICS_URL` 后启动。纯浏览器模式没有 Tauri 初始化能力，首次管理员初始化需原生桌面链路。
+Vite 仅绑定本机，`/api/v1` 代理到 `http://127.0.0.1:8795`。后端设置 `ADDR=127.0.0.1:8795`，配置 `MYSQL_DSN` 与可选 `PG_ANALYTICS_URL` 后启动。纯浏览器模式没有 Tauri 初始化能力，首次管理员初始化需原生桌面链路。
 
 生产构建以 Chrome 120 为目标，关闭 source map，输出分割 CSS。桌面完整构建由 `desktop/build.ps1` 将 `dist` 复制到 Go 内嵌目录再编译；`vite preview` 只用于检查前端产物，不提供真实业务后端。
 
