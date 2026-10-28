@@ -48,7 +48,7 @@ export function installHttpSecurity (router, app) {
   } })
   axios.interceptors.request.use(config => {
     const url = new URL(config.url, window.location.href)
-    if (config.skipSession || url.origin !== window.location.origin || !(url.pathname.startsWith('/api/v1/') || url.pathname.startsWith('/api/v1/'))) return config
+    if (config.skipSession || url.origin !== window.location.origin || !(url.pathname.startsWith('/api/v1/'))) return config
     if (['get', 'head', 'options'].includes((config.method || 'get').toLowerCase())) return config
     return loadSession().then(() => {
       config.headers[authState.csrfHeader] = authState.csrfToken

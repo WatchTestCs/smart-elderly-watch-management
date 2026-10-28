@@ -15,8 +15,8 @@ jobs:
         with:
           node-version: '24'
       - run: npm ci && npm run build
-        working-directory: 智慧养老手表管理系统/oldIot
+        working-directory: 智慧养老手表管理系统/frontend
       - run: npm ci && npx playwright install --with-deps chromium && npm test
-        working-directory: 智慧养老手表管理系统/oldIot/qa
+        working-directory: 智慧养老手表管理系统/frontend/qa
       - run: node --test watch-sim/watch-sim.test.cjs
         working-directory: 智慧养老手表管理系统

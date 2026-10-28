@@ -16,7 +16,7 @@ HISTORY = ("docs/decisions/", "docs/releases/", "docs/performance/",
            "docs/patch-review/", "docs/refactoring/", "evidence/")
 PREFIXES = ("README.md", "README.en.md", "docs/",
             "智慧养老手表管理系统/backend/",
-            "智慧养老手表管理系统/oldIot/",
+            "智慧养老手表管理系统/frontend/",
             "智慧养老手表管理系统/desktop/",
             "智慧养老手表管理系统/watch-sim/",
             "SuiningWatch/", ".github/workflows/", "deploy/", "tests/", "scripts/")

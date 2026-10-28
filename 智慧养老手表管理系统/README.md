@@ -11,10 +11,10 @@
 | `desktop` | 原生窗口、单实例、受限初始化、Go 哈希校验与生命周期 | `src/main.rs`、`capabilities`、`build.ps1` |
 | `backend` | 业务 API、设备接入、会话、照护与分析作业 | `cmd/server`、`internal/handlers`、`internal/care`、`internal/analytics` |
 | `backend/migrations` | MySQL 业务与旧 PG 迁移、PG 分析 schema | 内嵌 SQL 与版本校验 |
-| `oldIot` | Vue 路由、管理与家属页面、字体、地图、QA | `src`、`vite.config.js`、`qa` |
+| `frontend` | Vue 路由、管理与家属页面、字体、地图、QA | `src`、`vite.config.js`、`qa` |
 | `watch-sim` | 手表接口与运行端口发现模拟 | 工具及测试文件 |
 
-Rust 启动 Go，Vue 从 Go 获取内嵌生产资源并调用同源 API；首次初始化走受限原生 IPC。Go 所有业务读写都使用 MySQL，分析作业将已提交 outbox 事件写入 PG，失败时保留队列。`oldIot` 和模块名 `careold-go` 是历史命名，当前不需要 Java、Electron、H2 或旧 Webpack 工具链。
+Rust 启动 Go，Vue 从 Go 获取内嵌生产资源并调用同源 API；首次初始化走受限原生 IPC。Go 所有业务读写都使用 MySQL，分析作业将已提交 outbox 事件写入 PG，失败时保留队列。`frontend` 是现行 Vue 工程；生产环境使用 Go + MySQL，PostgreSQL 仅承担可选分析任务。
 
 ## Windows 完整构建
 
@@ -42,7 +42,7 @@ $env:ADDR='127.0.0.1:8795'
 go run ./cmd/server
 ```
 
-另一个终端进入 `oldIot`：
+另一个终端进入 `frontend`：
 
 ```powershell
 npm ci
@@ -56,7 +56,7 @@ Vite 将 `/restful` 代理到 `127.0.0.1:8795`。纯 API 模式可直接开发�
 ## 测试、数据与迁移
 
 - [后端 README](backend/README.md)：Go 测试、专用 MySQL / PG 集成环境、离线导入与分析回填。
-- [前端 README](oldIot/README.md)：生产构建、Playwright QA、会话与响应式页面。
+- [前端 README](frontend/README.md)：生产构建、Playwright QA、会话与响应式页面。
 - [双库指南](../docs/DUAL_DATABASES.md)：Compose、权限、事件重试、旧 PG 到空 MySQL 的迁移。安装不会自动迁移数据库；图片另行复制，旧 Java/H2 不直接支持。
 - [照护部署](../docs/CARE_SERVICE_DEPLOYMENT.md)：长期值守、通知网关、送达回执与人工响应。桌面关闭后本地 Go 随之退出，不能替代常驻值守服务。
 
