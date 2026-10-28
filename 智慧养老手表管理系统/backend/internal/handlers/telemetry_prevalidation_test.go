@@ -11,7 +11,7 @@ import (
 // be rejected without acquiring a transaction or requiring either database.
 func TestDeviceReportInvalidPayloadNeverOpensDatabase(t *testing.T) {
 	cases := []struct {
-		name string
+		name  string
 		field string
 		value any
 	}{
@@ -29,8 +29,8 @@ func TestDeviceReportInvalidPayloadNeverOpensDatabase(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			payload := map[string]any{
 				"deviceNo": "WATCH001",
-				"secret": "existing-device-secret",
-				tc.field: tc.value,
+				"secret":   "existing-device-secret",
+				tc.field:   tc.value,
 			}
 			response := callAPI((&Handler{}).deviceReport, payload)
 			if response.Code != http.StatusBadRequest {
@@ -57,7 +57,7 @@ func TestParseDeviceTelemetryRetainsLegacyFields(t *testing.T) {
 	w := httptest.NewRecorder()
 	parsed, ok := parseDeviceTelemetryPayload(w, map[string]any{
 		"beTime": "2026-10-27 08:09:10",
-		"hr": "0", "bp": "120", "step": "0", "sleep": "8",
+		"hr":     "0", "bp": "120", "step": "0", "sleep": "8",
 		"sleepState": "1", "source": "gps", "battery": "85",
 		"lng": "105.5", "lat": "30.5", "alarm": "fall",
 	}, now)
