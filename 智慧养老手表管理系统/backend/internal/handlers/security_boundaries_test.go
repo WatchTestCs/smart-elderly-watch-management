@@ -9,9 +9,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"careold-go/internal/config"
-	"careold-go/internal/ratelimit"
-	"careold-go/internal/securestore"
+	"suining-care/internal/config"
+	"suining-care/internal/ratelimit"
+	"suining-care/internal/securestore"
 )
 
 func TestLoginAuditBoundarySharedAcrossReplicasAndIPs(t *testing.T) {

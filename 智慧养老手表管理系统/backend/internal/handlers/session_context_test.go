@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"careold-go/internal/config"
-	"careold-go/internal/session"
+	"suining-care/internal/config"
+	"suining-care/internal/session"
 )
 
 // The same fixture runs against preview@50b9cc0 to reproduce the writes that

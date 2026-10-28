@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"careold-go/internal/response"
+	"suining-care/internal/response"
 )
 
 func TestJSONParserPolicyCharacterization(t *testing.T) {
