@@ -52,7 +52,7 @@ run(async ({ page, context, base, report, setRole, setSignedIn, setMode }) => {
   await visit('/me', 'FAMILY');
   const uploadResponse=page.waitForResponse(response => response.url().includes('/api/v1/image/saveImage'));
   const profileUpdate=page.waitForRequest(request => request.url().includes('/api/v1/family/updateTouPic'));
-  const [uploaded,updated]=await Promise.all([uploadResponse,profileUpdate,page.locator('.avatar-uploader input[type="file"]').setInputFiles({name:'avatar.png',mimeType:'image/png',buffer:fs.readFileSync(path.join(root,'oldIot/public/static/brand/suining-apple-touch-180.png'))})]);
+  const [uploaded,updated]=await Promise.all([uploadResponse,profileUpdate,page.locator('.avatar-uploader input[type="file"]').setInputFiles({name:'avatar.png',mimeType:'image/png',buffer:fs.readFileSync(path.join(root,'frontend/public/static/brand/suining-apple-touch-180.png'))})]);
   check(report, 'Native avatar XHR sends CSRF header', uploaded.request().headers()['x-csrf-token']==='mock-csrf-token');
   check(report, 'Avatar update uses server generated filename', updated.postDataJSON().familyTouPic==='saved-image.png');
   // 篡改 localStorage 无法替代服务器登录状态。

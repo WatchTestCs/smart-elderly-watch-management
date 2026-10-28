@@ -3,7 +3,7 @@ const http = require('http');
 const path = require('path');
 let playwright;
 playwright = require('playwright');
-const dist = process.env.CARE_DIST ? path.resolve(process.env.CARE_DIST) : path.resolve(__dirname, '../../oldIot/dist');
+const dist = process.env.CARE_DIST ? path.resolve(process.env.CARE_DIST) : path.resolve(__dirname, '../../frontend/dist');
 const output = path.join(__dirname,'artifacts');
 fs.mkdirSync(path.join(output,'screenshots'),{recursive:true});
 const mime = {'.html':'text/html','.js':'application/javascript','.css':'text/css','.webp':'image/webp','.png':'image/png','.jpg':'image/jpeg','.svg':'image/svg+xml','.ttf':'font/ttf','.woff':'font/woff','.woff2':'font/woff2'};
