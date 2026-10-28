@@ -72,12 +72,23 @@ export function createLatestRead<P, T>(
     return active
   }
 
-  function dispose() {
-    disposed = true
+  function cancel() {
+    if (disposed) return
     pending = undefined
     revision++
     controller?.abort()
   }
 
-  return { run, dispose }
+  function dispose() {
+    if (disposed) return
+    disposed = true
+    pending = undefined
+    revision++
+    controller?.abort()
+    // Scoped consumers can still observe their loading state after disposal.
+    // Do not leave it stuck merely because the transport ignores AbortSignal.
+    if (active) busy(false)
+  }
+
+  return { run, cancel, dispose }
 }
