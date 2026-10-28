@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	dbstore "careold-go/internal/db"
-	"careold-go/internal/health"
+	dbstore "suining-care/internal/db"
+	"suining-care/internal/health"
 )
 
 func holdHealthOwnerClock(t *testing.T, ctx context.Context, pool *dbstore.Database) func() {

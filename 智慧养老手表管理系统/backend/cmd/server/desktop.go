@@ -1,6 +1,6 @@
-// 桌面端（Electron）内嵌模式协议：与 Java 版 DesktopReady 对齐。
+// Tauri/Rust 桌面进程与 Go sidecar 之间的本地进程协议。
 //
-// main.cjs 以环境变量启动后端：
+// Rust 主进程通过环境变量启动后端：
 //
 //	SUINING_PORT / SUINING_BIND_ADDRESS  监听地址（PORT=0 表示随机端口）
 //	SUINING_READY_FILE                   就绪后原子写入 {"port":N,"pid":M}
@@ -37,7 +37,7 @@ func applyDesktopEnv(addr, imageDir string) (newAddr, newImageDir, readyFile str
 	return newAddr, newImageDir, readyFile, parentPid
 }
 
-// writeReadyFile 原子写入就绪文件（同目录临时文件 + rename），格式与 Java 端一致。
+// writeReadyFile 使用同目录临时文件和 rename 发布就绪信息。
 func writeReadyFile(path string, port int) {
 	if path == "" {
 		return
@@ -65,7 +65,7 @@ func writeReadyFile(path string, port int) {
 	}
 }
 
-// watchParent 父进程退出时关闭服务器（对齐 Java DesktopReady 的 daemon 看护线程）。
+// watchParent 在桌面父进程退出后关闭 Go 服务。
 func watchParent(parentPid int, shutdown func()) {
 	if parentPid <= 0 || parentPid == os.Getpid() {
 		return

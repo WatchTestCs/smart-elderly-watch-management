@@ -17,11 +17,11 @@ import (
 	"testing"
 	"time"
 
-	"careold-go/internal/auth"
-	"careold-go/internal/care"
-	"careold-go/internal/config"
-	"careold-go/internal/csrf"
-	"careold-go/internal/session"
+	"suining-care/internal/auth"
+	"suining-care/internal/care"
+	"suining-care/internal/config"
+	"suining-care/internal/csrf"
+	"suining-care/internal/session"
 )
 
 // A real TLS gateway completes processing after the dispatcher's 12s timeout.

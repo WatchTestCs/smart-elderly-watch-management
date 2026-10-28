@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"careold-go/internal/auth"
-	"careold-go/internal/session"
+	"suining-care/internal/auth"
+	"suining-care/internal/session"
 )
 
 func elderPayload() map[string]any {

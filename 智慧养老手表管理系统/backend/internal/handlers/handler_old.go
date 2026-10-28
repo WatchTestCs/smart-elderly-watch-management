@@ -1,12 +1,11 @@
 package handlers
 
 // Group B：老人 / 设备 / 手表信息 / 位置 / 告警处置（共 29 个 endpoint）。
-// 行为严格复刻 careold Java 端（preview 经 optimize 分支修复后的状态），
-// 细节以 go-rewrite-spec/group-b.md 为准。
+// 当前 API v1 原生路由；数据库写入和设备协议由独立 Go 服务实现。
 
 import (
-	dbstore "careold-go/internal/db"
 	"context"
+	dbstore "suining-care/internal/db"
 
 	"github.com/jackc/pgx/v5/pgconn"
 	"net/http"

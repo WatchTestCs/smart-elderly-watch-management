@@ -1,10 +1,10 @@
 package auth_test
 
 import (
-	"careold-go/internal/auth"
-	"careold-go/internal/session"
 	"net/http"
 	"net/http/httptest"
+	"suining-care/internal/auth"
+	"suining-care/internal/session"
 	"testing"
 	"time"
 )

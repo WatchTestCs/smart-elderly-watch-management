@@ -7,7 +7,7 @@ package handlers
 import (
 	"strings"
 
-	"careold-go/internal/securestore"
+	"suining-care/internal/securestore"
 )
 
 const coordinateScope = "location"

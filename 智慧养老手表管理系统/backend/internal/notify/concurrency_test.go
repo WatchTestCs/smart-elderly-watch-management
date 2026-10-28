@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"careold-go/internal/db/dbtest"
+	"suining-care/internal/db/dbtest"
 )
 
 func TestDrainConcurrencyIsBounded(t *testing.T) {

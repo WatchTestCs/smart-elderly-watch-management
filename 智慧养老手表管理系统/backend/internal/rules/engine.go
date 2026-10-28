@@ -8,13 +8,13 @@ import (
 	"sync"
 	"time"
 
-	"careold-go/internal/db"
-	"careold-go/internal/health"
-	"careold-go/internal/notify"
-	"careold-go/internal/observability"
-	"careold-go/internal/securestore"
 	"github.com/jackc/pgx/v5"
 	"log/slog"
+	"suining-care/internal/db"
+	"suining-care/internal/health"
+	"suining-care/internal/notify"
+	"suining-care/internal/observability"
+	"suining-care/internal/securestore"
 )
 
 const latestSampleSQL = `SELECT sample_id,revision,payload FROM health_sample WHERE old_id=$1 AND device_id=$2 AND epoch=$3 AND metric=$4 AND NOT deleted AND sample_start>=$5 AND sample_start<=$6 ORDER BY sample_start DESC,revision DESC LIMIT 1`

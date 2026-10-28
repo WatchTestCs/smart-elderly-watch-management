@@ -1,15 +1,15 @@
 package handlers
 
 import (
-	"careold-go/internal/auth"
-	"careold-go/internal/csrf"
-	"careold-go/internal/health"
-	"careold-go/internal/session"
 	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"suining-care/internal/auth"
+	"suining-care/internal/csrf"
+	"suining-care/internal/health"
+	"suining-care/internal/session"
 	"testing"
 	"time"
 )

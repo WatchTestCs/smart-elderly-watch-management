@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"careold-go/internal/db"
 	"github.com/jackc/pgx/v5"
+	"suining-care/internal/db"
 )
 
 // Fixed reporting offsets match the existing statistics API. No implicit local

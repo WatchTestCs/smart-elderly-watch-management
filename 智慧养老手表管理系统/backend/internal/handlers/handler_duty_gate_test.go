@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"careold-go/internal/auth"
-	"careold-go/internal/session"
+	"suining-care/internal/auth"
+	"suining-care/internal/session"
 )
 
 func TestAdminDutyGateRestrictsLegacyRoutes(t *testing.T) {

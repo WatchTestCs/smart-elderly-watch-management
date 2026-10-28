@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	dbstore "careold-go/internal/db"
-	"careold-go/internal/response"
 	"context"
+	dbstore "suining-care/internal/db"
+	"suining-care/internal/response"
 
 	"net/http"
 	"strings"

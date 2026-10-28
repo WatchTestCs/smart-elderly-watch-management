@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"careold-go/internal/db/dbtest"
-	"careold-go/internal/session"
+	"suining-care/internal/db/dbtest"
+	"suining-care/internal/session"
 )
 
 func TestCapabilityReadsAreAudited(t *testing.T) {

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="智慧养老手表管理系统/oldIot/public/static/brand/suining-logo-192.webp" width="88" height="88" alt="Suining logo">
+  <img src="智慧养老手表管理系统/frontend/public/static/brand/suining-logo-192.webp" width="88" height="88" alt="Suining logo">
 </p>
 
 <h1 align="center">Suining · Elderly Care Management</h1>
@@ -132,7 +132,7 @@ cd smart-elderly-watch-management
 智慧养老手表管理系统/
 ├── desktop/     Tauri / Rust, native permissions and Windows packaging
 ├── backend/     Go API, migrations, care and analytics workers
-├── oldIot/      Vue 3 / Vite, interface and browser QA
+├── frontend/      Vue 3 / Vite, interface and browser QA
 └── watch-sim/   Watch protocol simulator
 deploy/         Containers, databases and operations configuration
 scripts/        Platform startup, API generation and performance tools
@@ -149,7 +149,7 @@ cd 智慧养老手表管理系统
 ./desktop/build.ps1
 ```
 
-Build order: **Vue assets → embedded Go service → sidecar SHA-256 → Tauri → NSIS**. Output is under the project directory at `outputs/v2.1.0-preview`. `desktop/package-release.ps1` prepares portable/source packages and provenance. See the [project guide](智慧养老手表管理系统/README.md) for UI/API development and the [file index](docs/FILES.md) for responsibilities. `oldIot` and `careold-go` retain historical names.
+Build order: **Vue assets → embedded Go service → sidecar SHA-256 → Tauri → NSIS**. Output is under the project directory at `outputs/v2.1.0-preview`. `desktop/package-release.ps1` prepares portable/source packages and provenance. See the [project guide](智慧养老手表管理系统/README.md) for UI/API development and the [file index](docs/FILES.md) for responsibilities. `frontend` and `careold-go` retain historical names.
 
 ## Validation and performance
 
@@ -193,7 +193,7 @@ Real watches, external notification gateways, production migration, remote TLS a
 | Installation, versions and upgrades | [Downloads](docs/DOWNLOADS.md) · [2.1.0 notes](docs/releases/2.1.0.md) · [Changelog](CHANGELOG.md) |
 | Databases, migration and backups | [Dual databases](docs/DUAL_DATABASES.md) · [Backup and restore](docs/runbooks/backup-restore.md) |
 | Devices and care operations | [Care deployment](docs/CARE_SERVICE_DEPLOYMENT.md) · [Support](docs/SUPPORT.md) |
-| Development and API | [Project](智慧养老手表管理系统/README.md) · [Frontend](智慧养老手表管理系统/oldIot/README.md) · [Backend](智慧养老手表管理系统/backend/README.md) · [Build](docs/BUILD.md) |
+| Development and API | [Project](智慧养老手表管理系统/README.md) · [Frontend](智慧养老手表管理系统/frontend/README.md) · [Backend](智慧养老手表管理系统/backend/README.md) · [Build](docs/BUILD.md) |
 | Architecture and validation | [Overview](docs/architecture/overview.md) · [Historical decisions](docs/decisions/README.md) · [Testing](docs/TESTING.md) · [File index](docs/FILES.md) |
 
 When reporting an [issue](https://github.com/WatchTestCs/smart-elderly-watch-management/issues), include the version or commit, OS and redacted reproduction steps. Base contributions on `preview` and follow the [contribution guide](CONTRIBUTING.md). Report vulnerabilities privately under the [security policy](.github/SECURITY.md); do not publish personal records, connection strings or keys.

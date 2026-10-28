@@ -10,9 +10,9 @@ import (
 	"sync"
 	"time"
 
-	"careold-go/internal/db"
-	"careold-go/migrations"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"suining-care/internal/db"
+	"suining-care/migrations"
 )
 
 type Snapshot struct {

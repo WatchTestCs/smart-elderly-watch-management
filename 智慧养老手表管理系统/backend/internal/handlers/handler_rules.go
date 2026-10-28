@@ -1,11 +1,11 @@
 package handlers
 
 import (
-	"careold-go/internal/response"
-	"careold-go/internal/rules"
 	"encoding/json"
 	"github.com/jackc/pgx/v5"
 	"net/http"
+	"suining-care/internal/response"
+	"suining-care/internal/rules"
 )
 
 func (h *Handler) rulePolicy(w http.ResponseWriter, r *http.Request) {

@@ -5,9 +5,9 @@ import (
 	"strings"
 	"time"
 
-	dbstore "careold-go/internal/db"
-	"careold-go/internal/securestore"
 	"github.com/jackc/pgx/v5"
+	dbstore "suining-care/internal/db"
+	"suining-care/internal/securestore"
 )
 
 // telemetryRepository owns SQL for the existing device report contract.

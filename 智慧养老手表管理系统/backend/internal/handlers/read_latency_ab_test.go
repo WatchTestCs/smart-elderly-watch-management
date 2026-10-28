@@ -20,13 +20,13 @@ import (
 	"testing"
 	"time"
 
-	"careold-go/internal/auth"
-	"careold-go/internal/config"
-	"careold-go/internal/csrf"
-	"careold-go/internal/health"
-	"careold-go/internal/observability"
-	"careold-go/internal/ratelimit"
-	"careold-go/internal/session"
+	"suining-care/internal/auth"
+	"suining-care/internal/config"
+	"suining-care/internal/csrf"
+	"suining-care/internal/health"
+	"suining-care/internal/observability"
+	"suining-care/internal/ratelimit"
+	"suining-care/internal/session"
 )
 
 // Audit fixture only. It leaves production source unchanged, uses dbtest's

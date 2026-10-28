@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"careold-go/internal/response"
+	"suining-care/internal/response"
 )
 
 // routeUser 注册 UserController / CustomerController 路由。

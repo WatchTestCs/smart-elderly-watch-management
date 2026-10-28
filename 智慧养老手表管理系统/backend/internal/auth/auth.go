@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"strings"
 
-	"careold-go/internal/accesspolicy"
-	"careold-go/internal/response"
-	"careold-go/internal/session"
+	"suining-care/internal/accesspolicy"
+	"suining-care/internal/response"
+	"suining-care/internal/session"
 )
 
 const (

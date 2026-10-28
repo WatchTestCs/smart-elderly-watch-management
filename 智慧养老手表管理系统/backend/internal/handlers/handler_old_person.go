@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	dbstore "careold-go/internal/db"
-	"careold-go/internal/response"
+	dbstore "suining-care/internal/db"
+	"suining-care/internal/response"
 
 	"github.com/jackc/pgx/v5"
 
@@ -12,7 +12,7 @@ import (
 )
 
 // ---------------------------------------------------------------------------
-// OldPersonController (/api/v1/oldPerson)
+// Elder record endpoints (/api/v1/oldPerson)
 // ---------------------------------------------------------------------------
 
 const oldPersonCols = `old_id, name, age, sex, phone, room, illness, warn, food_like,

@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"careold-go/internal/db"
-	"careold-go/internal/observability"
+	"suining-care/internal/db"
+	"suining-care/internal/observability"
 )
 
 func sampleCareQueue(ctx context.Context, pool *db.Database) {

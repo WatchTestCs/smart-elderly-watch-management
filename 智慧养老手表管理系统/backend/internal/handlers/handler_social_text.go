@@ -1,11 +1,11 @@
 package handlers
 
 import (
-	"careold-go/internal/notify"
-	"careold-go/internal/response"
 	"fmt"
 	"net/http"
 	"strconv"
+	"suining-care/internal/notify"
+	"suining-care/internal/response"
 	"time"
 )
 

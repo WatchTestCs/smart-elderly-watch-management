@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: 智慧养老手表管理系统/oldIot
+        working-directory: 智慧养老手表管理系统/frontend
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -25,7 +25,7 @@ jobs:
         with:
           node-version: "24"
           cache: npm
-          cache-dependency-path: 智慧养老手表管理系统/oldIot/package-lock.json
+          cache-dependency-path: 智慧养老手表管理系统/frontend/package-lock.json
 
       - name: Enforce native Go API boundary
         run: python3 ../../scripts/check-api-boundary.py

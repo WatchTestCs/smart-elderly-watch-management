@@ -1,12 +1,12 @@
 package handlers
 
 import (
-	"careold-go/internal/response"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"net/http"
 	"strconv"
 	"strings"
+	"suining-care/internal/response"
 	"time"
 )
 

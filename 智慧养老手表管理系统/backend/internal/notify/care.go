@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"strings"
 
-	"careold-go/internal/db"
-	"careold-go/internal/securestore"
+	"suining-care/internal/db"
+	"suining-care/internal/securestore"
 )
 
 const recipientScope = "care-notification-recipient"

@@ -1,4 +1,4 @@
-// Command server 启动 careold-go 后端：HTTP API（复刻 preview 分支 careold）。
+// Command server starts the native Suining Go API and background workers.
 package main
 
 import (
@@ -13,11 +13,11 @@ import (
 	"syscall"
 	"time"
 
-	"careold-go/internal/config"
-	"careold-go/internal/handlers"
-	"careold-go/internal/observability"
-	"careold-go/internal/runtuning"
-	"careold-go/internal/session"
+	"suining-care/internal/config"
+	"suining-care/internal/handlers"
+	"suining-care/internal/observability"
+	"suining-care/internal/runtuning"
+	"suining-care/internal/session"
 )
 
 func main() {
@@ -83,13 +83,13 @@ func main() {
 	}
 
 	go func() {
-		log.Printf("careold-go listening on %s", ln.Addr())
+		log.Printf("suining-care listening on %s", ln.Addr())
 		if err := srv.Serve(ln); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("serve: %v", err)
 		}
 	}()
 
-	// 桌面端内嵌模式：写就绪文件 + 看护父进程（对齐 Java DesktopReady）。
+	// Desktop sidecar: publish readiness and watch the owning process.
 	writeReadyFile(readyFile, actualPort)
 	watchParent(parentPid, shutdown)
 

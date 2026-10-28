@@ -4,7 +4,6 @@ package care
 
 import (
 	"bytes"
-	dbstore "careold-go/internal/db"
 	"context"
 	"encoding/json"
 	"errors"
@@ -16,12 +15,13 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	dbstore "suining-care/internal/db"
 	"time"
 
-	"careold-go/internal/notify"
-	"careold-go/internal/observability"
-	"careold-go/internal/securestore"
 	"github.com/jackc/pgx/v5"
+	"suining-care/internal/notify"
+	"suining-care/internal/observability"
+	"suining-care/internal/securestore"
 )
 
 type dispatcher struct {

@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"careold-go/internal/securestore"
+	"suining-care/internal/securestore"
 )
 
 const CookieName = "SUINING_SESSION"

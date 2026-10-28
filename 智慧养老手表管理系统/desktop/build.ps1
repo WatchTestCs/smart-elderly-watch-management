@@ -10,7 +10,7 @@ if($env:CARGO_TARGET_DIR){
 $meta=Get-Content (Join-Path $PSScriptRoot 'version.json') -Raw|ConvertFrom-Json
 $out=Join-Path $project ("outputs/v{0}-{1}" -f $meta.version,$meta.channel)
 New-Item -ItemType Directory -Force -Path $out | Out-Null
-Push-Location (Join-Path $project 'oldIot')
+Push-Location (Join-Path $project 'frontend')
 try {
  npm ci
  if($LASTEXITCODE -ne 0){throw 'Frontend dependency installation failed'}
@@ -18,7 +18,7 @@ try {
  if($LASTEXITCODE -ne 0){throw 'Frontend production build failed'}
 } finally { Pop-Location }
 $web=Join-Path $project 'backend/internal/handlers/web'
-Copy-Item -Recurse -Force (Join-Path $project 'oldIot/dist/*') $web
+Copy-Item -Recurse -Force (Join-Path $project 'frontend/dist/*') $web
 $bin=Join-Path $PSScriptRoot 'binaries/suining-server-x86_64-pc-windows-msvc.exe'
 New-Item -ItemType Directory -Force (Split-Path $bin -Parent)|Out-Null
 Push-Location (Join-Path $project 'backend')

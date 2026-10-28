@@ -5,11 +5,11 @@ import (
 	"strings"
 	"time"
 
-	"careold-go/internal/commands"
-	"careold-go/internal/db"
-	"careold-go/internal/response"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"suining-care/internal/commands"
+	"suining-care/internal/db"
+	"suining-care/internal/response"
 )
 
 func (h *Handler) routeCapabilities(mux *http.ServeMux) {

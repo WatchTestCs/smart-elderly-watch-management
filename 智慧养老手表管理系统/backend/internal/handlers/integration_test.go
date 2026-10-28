@@ -1,10 +1,10 @@
 package handlers
 
 import (
-	dbstore "careold-go/internal/db"
-	"careold-go/internal/db/dbtest"
 	"context"
 	"encoding/json"
+	dbstore "suining-care/internal/db"
+	"suining-care/internal/db/dbtest"
 
 	"fmt"
 	"net/http"
@@ -15,13 +15,13 @@ import (
 	"testing"
 	"time"
 
-	"careold-go/internal/auth"
-	"careold-go/internal/config"
-	"careold-go/internal/csrf"
-	"careold-go/internal/db"
+	"suining-care/internal/auth"
+	"suining-care/internal/config"
+	"suining-care/internal/csrf"
+	"suining-care/internal/db"
 
-	"careold-go/internal/session"
 	"github.com/google/uuid"
+	"suining-care/internal/session"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )

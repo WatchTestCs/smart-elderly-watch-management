@@ -1,7 +1,7 @@
 package rules
 
 import (
-	"careold-go/internal/health"
+	"suining-care/internal/health"
 	"testing"
 	"time"
 )

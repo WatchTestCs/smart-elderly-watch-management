@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"careold-go/internal/securestore"
+	"suining-care/internal/securestore"
 )
 
 // Bulk is explicitly configured and never silently replaces Tencent's adapter.

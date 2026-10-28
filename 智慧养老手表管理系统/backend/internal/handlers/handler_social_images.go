@@ -2,8 +2,6 @@ package handlers
 
 import (
 	"bytes"
-	"careold-go/internal/blob"
-	"careold-go/internal/response"
 	"encoding/binary"
 	"errors"
 	"github.com/google/uuid"
@@ -16,6 +14,8 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"suining-care/internal/blob"
+	"suining-care/internal/response"
 	"time"
 )
 

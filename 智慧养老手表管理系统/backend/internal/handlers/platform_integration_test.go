@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
-	"careold-go/internal/auth"
-	"careold-go/internal/config"
-	"careold-go/internal/db/dbtest"
-	"careold-go/internal/securestore"
-	"careold-go/internal/session"
+	"suining-care/internal/auth"
+	"suining-care/internal/config"
+	"suining-care/internal/db/dbtest"
+	"suining-care/internal/securestore"
+	"suining-care/internal/session"
 )
 
 func secureHandler(t *testing.T) *Handler {

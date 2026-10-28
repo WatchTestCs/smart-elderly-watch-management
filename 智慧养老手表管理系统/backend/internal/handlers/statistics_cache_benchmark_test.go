@@ -12,12 +12,12 @@ import (
 	"testing"
 	"time"
 
-	"careold-go/internal/config"
-	"careold-go/internal/db"
-	"careold-go/internal/health"
-	"careold-go/internal/session"
 	"github.com/go-sql-driver/mysql"
 	"github.com/google/uuid"
+	"suining-care/internal/config"
+	"suining-care/internal/db"
+	"suining-care/internal/health"
+	"suining-care/internal/session"
 )
 
 // BenchmarkHealthStatisticsHybrid measures the complete statistics handler over

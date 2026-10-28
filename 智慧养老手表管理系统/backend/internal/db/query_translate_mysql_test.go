@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"careold-go/internal/db/dbtest"
+	"suining-care/internal/db/dbtest"
 )
 
 func TestMySQLQueryTranslationPreservesLiteralsAndRegex(t *testing.T) {

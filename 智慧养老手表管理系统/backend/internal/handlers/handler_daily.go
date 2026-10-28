@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"careold-go/internal/health"
-	"careold-go/internal/response"
+	"suining-care/internal/health"
+	"suining-care/internal/response"
 )
 
 func (h *Handler) healthDaily(w http.ResponseWriter, r *http.Request) {

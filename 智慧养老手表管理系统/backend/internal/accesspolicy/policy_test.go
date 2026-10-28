@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"careold-go/internal/accesspolicy"
-	"careold-go/internal/auth"
-	"careold-go/internal/csrf"
-	"careold-go/internal/session"
+	"suining-care/internal/accesspolicy"
+	"suining-care/internal/auth"
+	"suining-care/internal/csrf"
+	"suining-care/internal/session"
 )
 
 // Frozen preview@50b9cc0 access/CSRF tables, used to characterize this migration.

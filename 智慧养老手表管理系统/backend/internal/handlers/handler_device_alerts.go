@@ -1,13 +1,13 @@
 package handlers
 
 import (
-	dbstore "careold-go/internal/db"
-	"careold-go/internal/response"
 	"context"
 	"github.com/jackc/pgx/v5"
 	"net/http"
 	"strconv"
 	"strings"
+	dbstore "suining-care/internal/db"
+	"suining-care/internal/response"
 	"time"
 )
 

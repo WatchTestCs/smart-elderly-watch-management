@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"careold-go/internal/blob"
-	"careold-go/internal/ratelimit"
-	"careold-go/internal/securestore"
+	"suining-care/internal/blob"
+	"suining-care/internal/ratelimit"
+	"suining-care/internal/securestore"
 )
 
 type Config struct {

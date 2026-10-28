@@ -17,7 +17,7 @@ import (
 	"testing"
 	"time"
 
-	"careold-go/internal/health"
+	"suining-care/internal/health"
 )
 
 // Copy this fixture unchanged into 60be581 for the A/B baseline. This includes

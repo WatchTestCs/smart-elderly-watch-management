@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"careold-go/internal/db/dbtest"
+	"suining-care/internal/db/dbtest"
 )
 
 // This fixture must also compile unchanged at 60be581. It measures the real

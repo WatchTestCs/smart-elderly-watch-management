@@ -1,10 +1,10 @@
 package handlers
 
 import (
-	"careold-go/internal/auth"
-	"careold-go/internal/response"
-	"careold-go/internal/session"
 	"net/http"
+	"suining-care/internal/auth"
+	"suining-care/internal/response"
+	"suining-care/internal/session"
 )
 
 // routeFamily 注册 FamilyController / InviteCodeController 路由。

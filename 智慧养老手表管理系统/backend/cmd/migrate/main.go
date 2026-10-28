@@ -8,7 +8,7 @@ import (
 	"os"
 	"time"
 
-	"careold-go/internal/db"
+	"suining-care/internal/db"
 )
 
 func main() {

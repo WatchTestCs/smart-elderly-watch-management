@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"careold-go/internal/securestore"
+	"suining-care/internal/securestore"
 )
 
 // Exercise database/sql's context propagation without network timing or a live

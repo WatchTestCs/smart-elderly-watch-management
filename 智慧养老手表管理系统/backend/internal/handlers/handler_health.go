@@ -7,8 +7,8 @@ import (
 	"os"
 	"time"
 
-	"careold-go/internal/health"
-	"careold-go/internal/response"
+	"suining-care/internal/health"
+	"suining-care/internal/response"
 )
 
 func (h *Handler) routeHealth(mux *http.ServeMux) {

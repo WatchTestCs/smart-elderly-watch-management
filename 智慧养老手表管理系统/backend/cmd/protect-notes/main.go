@@ -9,9 +9,9 @@ import (
 	"log"
 	"strings"
 
-	"careold-go/internal/config"
-	"careold-go/internal/db"
-	"careold-go/internal/securestore"
+	"suining-care/internal/config"
+	"suining-care/internal/db"
+	"suining-care/internal/securestore"
 )
 
 func main() {

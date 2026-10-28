@@ -1,9 +1,9 @@
 package session_test
 
 import (
-	"careold-go/internal/session"
 	"net/http"
 	"net/http/httptest"
+	"suining-care/internal/session"
 	"testing"
 	"time"
 )

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="智慧养老手表管理系统/oldIot/public/static/brand/suining-logo-192.webp" width="88" height="88" alt="岁宁标志">
+  <img src="智慧养老手表管理系统/frontend/public/static/brand/suining-logo-192.webp" width="88" height="88" alt="岁宁标志">
 </p>
 
 <h1 align="center">岁宁 · 智慧养老管理</h1>
@@ -136,7 +136,7 @@ cd smart-elderly-watch-management
 智慧养老手表管理系统/
 ├── desktop/     Tauri / Rust、原生权限与 Windows 打包
 ├── backend/     Go API、数据库迁移、照护与分析作业
-├── oldIot/      Vue 3 / Vite、界面与浏览器 QA
+├── frontend/      Vue 3 / Vite、界面与浏览器 QA
 └── watch-sim/   手表协议模拟器
 deploy/         容器、数据库与运维配置
 scripts/        平台启动、接口生成与性能工具
@@ -153,7 +153,7 @@ cd 智慧养老手表管理系统
 ./desktop/build.ps1
 ```
 
-构建顺序：**Vue 资源 → Go 内嵌服务 → sidecar SHA-256 → Tauri → NSIS**。产物位于工程目录 `outputs/v2.1.0-preview`；`desktop/package-release.ps1` 用于生成免安装包、源码与来源清单。前后端联调见[工程说明](智慧养老手表管理系统/README.md)，逐文件职责见[文件索引](docs/FILES.md)。`oldIot` 与 `careold-go` 为历史命名。
+构建顺序：**Vue 资源 → Go 内嵌服务 → sidecar SHA-256 → Tauri → NSIS**。产物位于工程目录 `outputs/v2.1.0-preview`；`desktop/package-release.ps1` 用于生成免安装包、源码与来源清单。前后端联调见[工程说明](智慧养老手表管理系统/README.md)，逐文件职责见[文件索引](docs/FILES.md)。`frontend` 与 `careold-go` 为历史命名。
 
 ## 验证与性能
 
@@ -197,7 +197,7 @@ go vet ./...
 | 安装、版本与升级 | [下载索引](docs/DOWNLOADS.md) · [2.1.0 说明](docs/releases/2.1.0.md) · [更新日志](CHANGELOG.md) |
 | 数据库、迁移与备份 | [双库指南](docs/DUAL_DATABASES.md) · [备份恢复](docs/runbooks/backup-restore.md) |
 | 设备与照护运维 | [照护部署](docs/CARE_SERVICE_DEPLOYMENT.md) · [支持与排查](docs/SUPPORT.md) |
-| 开发与接口 | [工程](智慧养老手表管理系统/README.md) · [前端](智慧养老手表管理系统/oldIot/README.md) · [后端](智慧养老手表管理系统/backend/README.md) · [构建](docs/BUILD.md) |
+| 开发与接口 | [工程](智慧养老手表管理系统/README.md) · [前端](智慧养老手表管理系统/frontend/README.md) · [后端](智慧养老手表管理系统/backend/README.md) · [构建](docs/BUILD.md) |
 | 架构与验证 | [架构总览](docs/architecture/overview.md) · [历史决定](docs/decisions/README.md) · [测试](docs/TESTING.md) · [文件索引](docs/FILES.md) |
 
 通过 [Issues](https://github.com/WatchTestCs/smart-elderly-watch-management/issues) 反馈问题时，请提供版本或提交、操作系统与脱敏复现步骤。贡献请基于 `preview`，遵循[贡献指南](CONTRIBUTING.md)；漏洞按[安全策略](.github/SECURITY.md)私下报告，不公开人员数据、连接串或密钥。
