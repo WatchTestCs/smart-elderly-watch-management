@@ -11,14 +11,20 @@ import (
 	"unicode/utf8"
 )
 
+// Fixed list avoids constructing a new map on every high-frequency device report.
+var telemetryTextLimits = [...]struct {
+	field string
+	limit int
+}{
+	{"hr", 12}, {"bp", 12}, {"step", 12}, {"sleep", 12},
+	{"sleepState", 1}, {"lng", 20}, {"lat", 20},
+	{"source", 20}, {"beTime", 19}, {"battery", 3},
+	{"appVersion", 20},
+}
+
 func checkTelemetry(w http.ResponseWriter, m map[string]any) bool {
-	limits := map[string]int{
-		"hr": 12, "bp": 12, "step": 12, "sleep": 12, "sleepState": 1,
-		"lng": 20, "lat": 20, "source": 20, "beTime": 19, "battery": 3,
-		"appVersion": 20,
-	}
-	for k, max := range limits {
-		if s, present := vstr(m, k); present && s != "" && utf8.RuneCountInString(s) > max {
+	for _, field := range telemetryTextLimits {
+		if s, present := vstr(m, field.field); present && s != "" && utf8.RuneCountInString(s) > field.limit {
 			writeValidation400(w)
 			return false
 		}
@@ -32,6 +38,80 @@ func checkTelemetry(w http.ResponseWriter, m map[string]any) bool {
 	return true
 }
 
+// parsedDeviceTelemetry holds values already checked before opening a database
+// transaction. The existing watch wire format and response schema are retained.
+type parsedDeviceTelemetry struct {
+	now, beTime, day            time.Time
+	hr, bp, step, sleep, battery *int
+	sleepState, appVersion      *string
+	lng, lat, sourceStr, alarm  string
+}
+
+func parseDeviceTelemetryPayload(w http.ResponseWriter, m map[string]any, now time.Time) (parsedDeviceTelemetry, bool) {
+	out := parsedDeviceTelemetry{now: now, sourceStr: "gps"}
+	beTimeStr, _ := vstr(m, "beTime")
+	if beTimeStr == "" {
+		beTimeStr = now.Format(tsLayout)
+	}
+	var valid bool
+	out.beTime, valid = parseReportTimeStrict(beTimeStr)
+	if !valid {
+		write400(w, "beTime 格式应为 yyyy-MM-dd HH:mm:ss")
+		return parsedDeviceTelemetry{}, false
+	}
+	out.day, _ = time.Parse("2006-01-02", beTimeStr[:10])
+
+	var msg string
+	if out.hr, msg = parseMetric(m, "hr", 20, 250); msg != "" {
+		write400(w, msg)
+		return parsedDeviceTelemetry{}, false
+	}
+	if out.bp, msg = parseMetric(m, "bp", 40, 300); msg != "" {
+		write400(w, msg)
+		return parsedDeviceTelemetry{}, false
+	}
+	if out.step, msg = parseMetric(m, "step", 0, 200000); msg != "" {
+		write400(w, msg)
+		return parsedDeviceTelemetry{}, false
+	}
+	if out.sleep, msg = parseMetric(m, "sleep", 0, 24); msg != "" {
+		write400(w, msg)
+		return parsedDeviceTelemetry{}, false
+	}
+	if out.sleepState, msg = parseText(m, "sleepState", 1); msg != "" {
+		write400(w, msg)
+		return parsedDeviceTelemetry{}, false
+	}
+	if out.sleepState != nil && *out.sleepState != "0" && *out.sleepState != "1" {
+		write400(w, "sleepState 应为 0 或 1")
+		return parsedDeviceTelemetry{}, false
+	}
+	out.lng, _ = vstr(m, "lng")
+	out.lat, _ = vstr(m, "lat")
+	if msg := checkPosition(out.lng, out.lat); msg != "" {
+		write400(w, msg)
+		return parsedDeviceTelemetry{}, false
+	}
+	source, msg := parseText(m, "source", 20)
+	if msg != "" {
+		write400(w, msg)
+		return parsedDeviceTelemetry{}, false
+	}
+	if source != nil {
+		out.sourceStr = *source
+	}
+	if out.battery, msg = parseMetric(m, "battery", 0, 100); msg != "" {
+		write400(w, msg)
+		return parsedDeviceTelemetry{}, false
+	}
+	if out.appVersion, msg = parseText(m, "appVersion", 20); msg != "" {
+		write400(w, msg)
+		return parsedDeviceTelemetry{}, false
+	}
+	out.alarm, _ = vstr(m, "alarm")
+	return out, true
+}
+
 // POST /restful/device/report —— 设备数据上报（公开，事务）。
 func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
@@ -43,6 +123,11 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !checkTelemetry(w, m) {
+		return
+	}
+	// Reject bad measurements and timestamps before taking a DB connection.
+	parsed, ok := parseDeviceTelemetryPayload(w, m, time.Now())
+	if !ok {
 		return
 	}
 	ctx := r.Context()
@@ -69,84 +154,10 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	oldID := *d.OldID
-	now := time.Now()
-	beTimeStr, _ := vstr(m, "beTime")
-	if beTimeStr == "" {
-		beTimeStr = now.Format(tsLayout)
-	}
-	beTime, valid := parseReportTimeStrict(beTimeStr)
-	if !valid {
-		rollback()
-		write400(w, "beTime 格式应为 yyyy-MM-dd HH:mm:ss")
-		return
-	}
-	day, _ := time.Parse("2006-01-02", beTimeStr[:10])
-
-	hr, emsg := parseMetric(m, "hr", 20, 250)
-	if emsg != "" {
-		rollback()
-		write400(w, emsg)
-		return
-	}
-	bp, emsg := parseMetric(m, "bp", 40, 300)
-	if emsg != "" {
-		rollback()
-		write400(w, emsg)
-		return
-	}
-	step, emsg := parseMetric(m, "step", 0, 200000)
-	if emsg != "" {
-		rollback()
-		write400(w, emsg)
-		return
-	}
-	sleep, emsg := parseMetric(m, "sleep", 0, 24)
-	if emsg != "" {
-		rollback()
-		write400(w, emsg)
-		return
-	}
-	sleepState, emsg := parseText(m, "sleepState", 1)
-	if emsg != "" {
-		rollback()
-		write400(w, emsg)
-		return
-	}
-	if sleepState != nil && *sleepState != "0" && *sleepState != "1" {
-		rollback()
-		write400(w, "sleepState 应为 0 或 1")
-		return
-	}
-	lng, _ := vstr(m, "lng")
-	lat, _ := vstr(m, "lat")
-	if msg := checkPosition(lng, lat); msg != "" {
-		rollback()
-		write400(w, msg)
-		return
-	}
-	source, emsg := parseText(m, "source", 20)
-	if emsg != "" {
-		rollback()
-		write400(w, emsg)
-		return
-	}
-	sourceStr := "gps"
-	if source != nil {
-		sourceStr = *source
-	}
-	battery, emsg := parseMetric(m, "battery", 0, 100)
-	if emsg != "" {
-		rollback()
-		write400(w, emsg)
-		return
-	}
-	appVersion, emsg := parseText(m, "appVersion", 20)
-	if emsg != "" {
-		rollback()
-		write400(w, emsg)
-		return
-	}
-	alarm, _ := vstr(m, "alarm")
+	now, beTime, day := parsed.now, parsed.beTime, parsed.day
+	hr, bp, step, sleep := parsed.hr, parsed.bp, parsed.step, parsed.sleep
+	sleepState, battery, appVersion := parsed.sleepState, parsed.battery, parsed.appVersion
+	lng, lat, sourceStr, alarm := parsed.lng, parsed.lat, parsed.sourceStr, parsed.alarm
 
 	hrv, bpv := 0, 0
 	if hr != nil {
@@ -288,6 +299,12 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	// SOS retry identifiers must be checked before opening a DB transaction.
+	requestID, _ := vstr(m, "requestId")
+	if requestID != "" && (len(requestID) > 64 || !sosRequestIDOK(requestID)) {
+		writeValidation400(w)
+		return
+	}
 	ctx := r.Context()
 	tx, err := h.DB.Begin(ctx)
 	if err != nil {
@@ -355,13 +372,7 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 	d = locked
 	// A device should reuse a stable requestId when retrying the same SOS on
 	// weak networks; each new press must use a new ID.
-	requestID, _ := vstr(m, "requestId")
 	if requestID != "" {
-		if len(requestID) > 64 || !sosRequestIDOK(requestID) {
-			rollback()
-			writeValidation400(w)
-			return
-		}
 		var priorID, priorOwner int64
 		var priorState, priorNotification string
 		err := tx.QueryRow(ctx, `SELECT i.id,i.old_id,i.state,
