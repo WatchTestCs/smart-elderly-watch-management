@@ -7,8 +7,8 @@ run(async ({ page, context, base }) => {
   let writes = 0
   const checks = []
   const check = (name, pass) => { checks.push({ name, pass }); if (!pass) throw new Error(name) }
-  await context.route('**/restful/**', async route => {
-    const endpoint = new URL(route.request().url()).pathname
+  await context.route(/\/(?:restful|api\/v1\/auth)\//, async route => {
+    const endpoint = new URL(route.request().url()).pathname.replace(/^\/api\/v1\/auth\/(session|login|logout)$/, '/restful/userLogin/$1')
     if (endpoint === '/restful/service/status') return route.fulfill({ json: { databaseReady: available } })
     if (!available) return route.fulfill({ status: 503, json: { code: 'DATABASE_UNAVAILABLE', message: '数据库尚未连接' } })
     if (endpoint === '/restful/userLogin/session') return route.fulfill({ json: { authenticated, account: authenticated ? { role: 'ADMIN', id: 1, displayName: '管理员' } : null, setupRequired: false, csrfToken: 'mock-csrf-token' } })

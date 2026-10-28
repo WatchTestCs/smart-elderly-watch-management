@@ -23,8 +23,8 @@ module.exports = async function (run) {
  let writes=[], generated=false, passwordRequests=[], mode='normal', loginMode='failure', counter=0, comments=[];
  const context=await browser.newContext({viewport:{width:1440,height:1000},deviceScaleFactor:Number(process.env.CARE_DPR||1)});
  await context.addInitScript(()=>{localStorage.setItem('token','review-token');localStorage.setItem('user_name','小明');localStorage.setItem('oldIdfamily','1');localStorage.setItem('familyPhone','13000000000');const large=new URLSearchParams(location.search).get('large');if(large!==null)localStorage.setItem('large_text',large==='1'?'true':'false');});
- await context.route('**/restful/**',async route=>{
-  const url=new URL(route.request().url());const endpoint=url.pathname.replace(/^\//,'');
+ await context.route(/\/(?:restful|api\/v1\/auth)\//,async route=>{
+  const url=new URL(route.request().url());const endpoint=url.pathname.replace(/^\//,'').replace(/^api\/v1\/auth\/(session|login|logout)$/,'restful/userLogin/$1');
   if(endpoint==='restful/family/updatePassword')passwordRequests.push(route.request().postDataJSON());
   if(/\/(create|add|update|delete)$/.test(endpoint))writes.push({endpoint,data:route.request().postDataJSON()});
   const unknown=mode==='unknown';
@@ -88,7 +88,7 @@ module.exports = async function (run) {
  });
  const page=await context.newPage();
  page.on('pageerror',error=>report.pageErrors.push(error.message));
- page.on('response',r=>{if(r.status()>=400 && !r.url().includes('/restful/'))report.missingAssets.push(r.url());});
+ page.on('response',r=>{if(r.status()>=400 && !r.url().includes('/restful/') && !r.url().includes('/api/v1/auth/'))report.missingAssets.push(r.url());});
 
  try { await run({page,context,browser,base,report,setMode:value=>{mode=value},setRole:value=>{role=value},setSignedIn:value=>{signedIn=value}}) } finally {await browser.close();await new Promise(resolve=>server.close(resolve));}
 };
