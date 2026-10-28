@@ -38,7 +38,7 @@ func TestDeviceReportDailyUpsertPreservesMissingFields(t *testing.T) {
 	})
 	api(t, h.deviceReport, map[string]any{
 		"deviceNo": "WATCH001", "secret": testSecret,
-		"step": 250,
+		"step":   250,
 		"beTime": "2026-10-28 20:00:00",
 	})
 
