@@ -13,10 +13,10 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 
-	"careold-go/internal/auth"
-	"careold-go/internal/csrf"
-	"careold-go/internal/response"
-	"careold-go/internal/session"
+	"suining-care/internal/auth"
+	"suining-care/internal/csrf"
+	"suining-care/internal/response"
+	"suining-care/internal/session"
 )
 
 func (h *Handler) routeAuth(mux *http.ServeMux) {

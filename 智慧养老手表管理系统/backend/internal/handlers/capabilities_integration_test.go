@@ -10,11 +10,11 @@ import (
 	"testing"
 	"time"
 
-	"careold-go/internal/auth"
-	"careold-go/internal/csrf"
-	"careold-go/internal/db/dbtest"
-	"careold-go/internal/health"
-	"careold-go/internal/session"
+	"suining-care/internal/auth"
+	"suining-care/internal/csrf"
+	"suining-care/internal/db/dbtest"
+	"suining-care/internal/health"
+	"suining-care/internal/session"
 )
 
 func capabilityAdmin(h *Handler, f http.HandlerFunc) http.HandlerFunc {

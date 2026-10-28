@@ -6,7 +6,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"careold-go/internal/response"
+	"suining-care/internal/response"
 	"github.com/jackc/pgx/v5"
 )
 
