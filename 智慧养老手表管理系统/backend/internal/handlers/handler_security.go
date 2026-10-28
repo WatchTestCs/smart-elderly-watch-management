@@ -58,7 +58,7 @@ func (h *Handler) loginAuditTx(r *http.Request, phone, role string, id int64, ou
 		_, err := tx.Exec(r.Context(), q, args...)
 		return err
 	}
-	_, err := h.DB.Exec(r.Context(), q, args...)
+	_, err = h.DB.Exec(r.Context(), q, args...)
 	return err
 }
 func (h *Handler) loginAllowed(w http.ResponseWriter, r *http.Request, phone string) bool {
