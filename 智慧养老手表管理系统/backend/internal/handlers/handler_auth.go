@@ -100,7 +100,7 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 	phone := str(m, "phone")
 	password := str(m, "password")
 	if !auth.ValidPhone(phone) || password == "" || len(password) > 72 {
-		response.Fail(w, "请输入手机号和密码")
+		response.JSON(w, http.StatusBadRequest, map[string]any{"code": "INVALID_LOGIN_INPUT", "message": "请输入有效手机号和密码"})
 		return
 	}
 
@@ -114,12 +114,11 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 		uid    int64
 		uName  pgtype.Text
 		uPass  pgtype.Text
-		uRole  pgtype.Text
 		uPhone pgtype.Text
 	)
 	err := h.DB.QueryRow(ctx,
-		`SELECT user_id, user_name, password, role, user_phone FROM users WHERE user_phone=$1`,
-		phone).Scan(&uid, &uName, &uPass, &uRole, &uPhone)
+		`SELECT user_id, user_name, password, user_phone FROM users WHERE user_phone=$1`,
+		phone).Scan(&uid, &uName, &uPass, &uPhone)
 	if err != nil && !isNotFound(err) {
 		response.Error500(w, ref())
 		return
@@ -135,12 +134,7 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 		}) {
 			return
 		}
-		response.OK(w, map[string]any{
-			"users1": map[string]any{
-				"userId": uid, "userName": uName.String, "userPhone": uPhone.String,
-				"role": uRole.String, "password": nil,
-			},
-		})
+		response.JSON(w, http.StatusOK, map[string]any{"authenticated": true})
 		return
 	}
 
@@ -148,22 +142,16 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 	var (
 		fid     int64
 		fName   pgtype.Text
-		fRel    pgtype.Text
 		fPhone  pgtype.Text
-		fSex    pgtype.Text
-		fAddr   pgtype.Text
-		fTouPic pgtype.Text
 		fPass   pgtype.Text
 		oldID   pgtype.Int8
-		oldName pgtype.Text
 	)
 	err = h.DB.QueryRow(ctx, `
-		SELECT f.family_id, f.family_name, f.family_relation, f.family_phone, f.family_sex,
-		       f.family_address, f.family_tou_pic, f.family_password, o.old_id, o.name
+		SELECT f.family_id, f.family_name, f.family_phone, f.family_password, o.old_id
 		FROM family f LEFT JOIN oldperson o ON o.family_id = f.family_id
 		WHERE f.family_phone=$1
 		ORDER BY o.old_id LIMIT 1`, phone).
-		Scan(&fid, &fName, &fRel, &fPhone, &fSex, &fAddr, &fTouPic, &fPass, &oldID, &oldName)
+		Scan(&fid, &fName, &fPhone, &fPass, &oldID)
 	if err != nil && !isNotFound(err) {
 		response.Error500(w, ref())
 		return
@@ -173,7 +161,7 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 	}
 	if err == nil && auth.Matches(password, fPass.String) {
 		if !oldID.Valid {
-			response.Fail(w, "该家属账号尚未关联老人，请联系管理员")
+			response.JSON(w, http.StatusForbidden, map[string]any{"code": "ACCOUNT_UNLINKED", "message": "该家属账号尚未关联老人，请联系管理员"})
 			return
 		}
 		if !h.factorLogin(w, r, m, auth.RoleFamily, fid, phone) {
@@ -185,14 +173,7 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 		}) {
 			return
 		}
-		response.OK(w, map[string]any{
-			"family": map[string]any{
-				"oldId": oldID.Int64, "name": oldName.String,
-				"familyId": fid, "familyName": fName.String, "familyRelation": fRel.String,
-				"familyPhone": fPhone.String, "familySex": fSex.String,
-				"familyAddress": fAddr.String, "familyTouPic": fTouPic.String,
-			},
-		})
+		response.JSON(w, http.StatusOK, map[string]any{"authenticated": true})
 		return
 	}
 
@@ -204,7 +185,7 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 		response.Error500(w, ref())
 		return
 	}
-	response.Fail(w, "手机号或密码不正确")
+	response.JSON(w, http.StatusUnauthorized, map[string]any{"code": "INVALID_CREDENTIALS", "message": "手机号或密码不正确"})
 }
 
 // renewSession 登录建会话：销毁请求 cookie 带来的旧会话（防 session fixation），建新会话并写 cookie。
