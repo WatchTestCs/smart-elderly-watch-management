@@ -123,9 +123,10 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 		response.Error500(w, ref())
 		return
 	}
-	compared := false
+	// Track whether any actual password hash was checked. An existing admin
+	// account with a wrong password must not trigger an extra dummy bcrypt call.
+	compared := err == nil
 	if err == nil && auth.Matches(password, uPass.String) {
-		compared = true
 		if !h.factorLogin(w, r, m, auth.RoleAdmin, uid, phone) {
 			return
 		}
