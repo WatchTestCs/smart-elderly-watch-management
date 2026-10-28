@@ -109,9 +109,13 @@ describe('guardian data flow', () => {
     expect(state.customerList.value[0]?.customerName).toBe('新数据')
     expect(state.isLoading.value).toBe(false)
   })
-  it('waits for a read started after a confirmed write before save completes', async () => {
+  it('waits for the replacement read after a confirmed write before save completes', async () => {
     let first!: (value: unknown) => void
-    const post = vi.fn().mockReturnValueOnce(new Promise(resolve => { first = resolve })).mockResolvedValueOnce({ data: { returnCode: '1111' } }).mockResolvedValueOnce({ data: { customers: [], total: 0 } })
+    let refreshed!: (value: unknown) => void
+    const post = vi.fn()
+      .mockReturnValueOnce(new Promise(resolve => { first = resolve }))
+      .mockResolvedValueOnce({ data: { returnCode: '1111' } })
+      .mockReturnValueOnce(new Promise(resolve => { refreshed = resolve }))
     const state = useCustomers({ post } as PostClient)
     state.searchCustomers()
     await flushPromises()
@@ -119,8 +123,11 @@ describe('guardian data flow', () => {
     const saved = state.save()
     await flushPromises()
     expect(state.saving.value).toBe(true)
-    first({ data: { customers: [{ customerName: '过期数据' }], total: 1 } })
+    expect(post.mock.calls[0][2].signal.aborted).toBe(true)
+    refreshed({ data: { customers: [], total: 0 } })
     expect(await saved).toBe(true)
+    first({ data: { customers: [{ customerName: '过期数据' }], total: 1 } })
+    await flushPromises()
     expect(post.mock.calls.map(([path]) => path)).toEqual(['restful/customer/select', 'restful/customer/add', 'restful/customer/select'])
     expect(state.customerList.value).toEqual([])
     expect(state.saving.value).toBe(false)
