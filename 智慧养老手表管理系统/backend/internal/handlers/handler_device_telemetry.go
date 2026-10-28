@@ -114,6 +114,10 @@ func parseDeviceTelemetryPayload(w http.ResponseWriter, m map[string]any, now ti
 
 // POST /restful/device/report —— 设备数据上报（公开，事务）。
 func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
+	r, signedOK := prepareSignedDeviceRequest(w, r)
+	if !signedOK {
+		return
+	}
 	m, ok := bodyMap(w, r)
 	if !ok {
 		return
@@ -151,6 +155,10 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 	if d.OldID == nil {
 		rollback()
 		hwFail(w, "0005", "设备还未绑定老人，请先在手表上输入绑定码")
+		return
+	}
+	if !acceptSignedDeviceNonce(w, ctx, tx, d.ID) {
+		rollback()
 		return
 	}
 	oldID := *d.OldID
@@ -278,6 +286,10 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 
 // POST /restful/device/sos —— SOS 一键呼叫（公开，事务）。
 func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
+	r, signedOK := prepareSignedDeviceRequest(w, r)
+	if !signedOK {
+		return
+	}
 	m, ok := bodyMap(w, r)
 	if !ok {
 		return
@@ -396,6 +408,12 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 			response.Error500(w, ref())
 			return
 		}
+	}
+	// Only new incidents reserve a nonce: identical weak-network SOS retries
+	// still receive their original idempotent acknowledgement.
+	if !acceptSignedDeviceNonce(w, ctx, tx, d.ID) {
+		rollback()
+		return
 	}
 	lng, _ := vstr(m, "lng")
 	lat, _ := vstr(m, "lat")
