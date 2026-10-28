@@ -67,8 +67,8 @@ for file in sorted((backend / "internal/handlers").glob("*.go")):
         key = (method, path)
         if key in registered_routes:
             # Database and database-independent routers intentionally mount this
-            # same desktop shutdown handler. Do not allow any other collision.
-            if key != ("POST", "/restful/desktop/exit") or registered_routes[key] != file.name:
+            # same desktop shutdown or local logout handler. Reject all other collisions.
+            if key not in {("POST", "/restful/desktop/exit"), ("POST", "/restful/userLogin/logout")} or registered_routes[key] != file.name:
                 raise ValueError(f"Conflicting HTTP route registration: {method} {path} ({registered_routes[key]} and {file.name})")
         else:
             registered_routes[key] = file.name
