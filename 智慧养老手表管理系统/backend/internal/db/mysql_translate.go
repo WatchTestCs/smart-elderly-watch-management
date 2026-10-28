@@ -12,7 +12,6 @@ var conflictUpdate = regexp.MustCompile(`(?i)ON\s+CONFLICT\s*\([^)]*\)\s+DO\s+UP
 var conflictNothing = regexp.MustCompile(`(?i)ON\s+CONFLICT(?:\s*\([^)]*\))?\s+DO\s+NOTHING`)
 var excludedColumn = regexp.MustCompile(`(?i)excluded\.([a-z_]+)`)
 var lockLimit = regexp.MustCompile(`(?i)FOR UPDATE SKIP LOCKED\s+LIMIT\s+(\d+)`)
-var textTable = regexp.MustCompile("(?i)\\b(FROM|JOIN|UPDATE|INTO)\\s+text\\b")
 var dateFormat = regexp.MustCompile(`(?i)TO_CHAR\(([a-z_.]+),'(YYYY-MM-DD(?: HH24:MI:SS(?:\.MS)?)?)'\)`)
 var boolOr = regexp.MustCompile(`(?i)bool_or\(`)
 var varcharCast = regexp.MustCompile(`(?i)\bAS varchar\b`)
@@ -78,7 +77,6 @@ func compileMySQLQuery(query string) (queryPlan, error) {
 	query = conflictUpdate.ReplaceAllString(query, "ON DUPLICATE KEY UPDATE")
 	query = excludedColumn.ReplaceAllString(query, "VALUES($1)")
 	query = conflictNothing.ReplaceAllString(query, "ON DUPLICATE KEY UPDATE id=id")
-	query = textTable.ReplaceAllString(query, "$1 `text`")
 	// REGEXP 与 now() 交给分词器处理：它们必须只在引号之外生效。
 	// 用 ReplaceAll 直接改整串会把字符串字面量里的内容一起改掉。
 	out := make([]byte, 0, len(query)+32)
