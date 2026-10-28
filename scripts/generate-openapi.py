@@ -89,6 +89,13 @@ data = (json.dumps(spec, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
 target = folder / "openapi.json"
 if "--check" in sys.argv:
     if not target.exists() or target.read_bytes() != data:
+        committed = json.loads(target.read_text(encoding="utf-8")) if target.exists() else {"paths": {}}
+        actual_paths = committed.get("paths", {})
+        generated_paths = spec["paths"]
+        print("committed paths:", len(actual_paths), "generated paths:", len(generated_paths), file=sys.stderr)
+        print("committed-only:", sorted(set(actual_paths) - set(generated_paths)), file=sys.stderr)
+        print("generated-only:", sorted(set(generated_paths) - set(actual_paths)), file=sys.stderr)
+        print("changed values:", [p for p in generated_paths if p in actual_paths and generated_paths[p] != actual_paths[p]][:12], file=sys.stderr)
         expected = data.decode("utf-8").splitlines(keepends=True)
         actual = target.read_text(encoding="utf-8").splitlines(keepends=True) if target.exists() else []
         diff = difflib.unified_diff(actual, expected, fromfile="committed openapi.json", tofile="generated Go routes")
