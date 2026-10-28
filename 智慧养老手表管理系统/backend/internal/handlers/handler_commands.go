@@ -5,11 +5,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"suining-care/internal/commands"
 	"suining-care/internal/db"
 	"suining-care/internal/response"
-	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
 )
 
 func (h *Handler) routeCapabilities(mux *http.ServeMux) {

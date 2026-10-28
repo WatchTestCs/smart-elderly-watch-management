@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	dbstore "suining-care/internal/db"
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
@@ -9,6 +8,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"github.com/jackc/pgx/v5"
+	dbstore "suining-care/internal/db"
 	"time"
 )
 

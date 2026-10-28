@@ -4,9 +4,9 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/jackc/pgx/v5"
 	"suining-care/internal/auth"
 	"suining-care/internal/response"
-	"github.com/jackc/pgx/v5"
 )
 
 // EnforceAdminDuty closes the legacy ADMIN route gap: a caregiver or auditor
