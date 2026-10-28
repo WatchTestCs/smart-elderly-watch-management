@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"careold-go/internal/securestore"
+	"suining-care/internal/securestore"
 )
 
 const operationTimeout = 3 * time.Second

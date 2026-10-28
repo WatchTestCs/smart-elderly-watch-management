@@ -1,7 +1,7 @@
 package session_test
 
 import (
-	"careold-go/internal/session"
+	"suining-care/internal/session"
 	"net/http"
 	"net/http/httptest"
 	"testing"

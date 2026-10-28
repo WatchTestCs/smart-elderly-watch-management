@@ -1,9 +1,9 @@
 package session_test
 
 import (
-	"careold-go/internal/db/dbtest"
-	"careold-go/internal/securestore"
-	"careold-go/internal/session"
+	"suining-care/internal/db/dbtest"
+	"suining-care/internal/securestore"
+	"suining-care/internal/session"
 	"context"
 	"encoding/base64"
 	"strings"
