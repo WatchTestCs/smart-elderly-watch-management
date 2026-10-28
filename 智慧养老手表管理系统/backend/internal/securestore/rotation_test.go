@@ -40,8 +40,10 @@ func TestKeyRotationAndRetirementFailClosed(t *testing.T) {
 	if _, err := retired.Open(old, "care-note"); err == nil {
 		t.Fatal("retired key was silently substituted")
 	}
-	if first.Index("recipient", "13800000001") != retired.Index("recipient", "13800000001") {
-		t.Fatal("encryption rotation changed deduplication index")
+	firstIndex, firstErr := first.Index("recipient", "13800000001")
+	retiredIndex, retiredErr := retired.Index("recipient", "13800000001")
+	if firstErr != nil || retiredErr != nil || firstIndex != retiredIndex {
+		t.Fatal("encryption rotation changed deduplication index", firstErr, retiredErr)
 	}
 	if _, err := retired.Open(newValue, "other-scope"); err == nil {
 		t.Fatal("scope authentication bypass")

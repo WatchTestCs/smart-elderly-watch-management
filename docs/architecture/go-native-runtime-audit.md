@@ -27,3 +27,9 @@ New `internal/runtimeaudit` tests fail CI if a JVM artifact or Java build config
 ## Scope and verification
 
 No database migrations, SOS delivery changes, MySQL/PostgreSQL role changes, hardware payload changes, or new Java binaries are introduced. Verify with the full Go 1.26/1.27 CI matrix, real MySQL/PostgreSQL integration tests, Go race/build/vet/gofmt, frontend Vitest/typecheck, static device protocol tests, and deployment/security workflows. A complete removal of legacy HTTP schemas requires a planned firmware and frontend cutover with monitoring and rollbacks.
+
+## CodeQL security finding fixed
+
+A PR CodeQL annotation identified `securestore/box.go`'s prior nil-Box SHA-256 blind-index fallback as high risk for low-entropy values. `Box.Index` now requires a configured keyed HMAC and returns an error otherwise. Login audit, account/IP brute-force controls and care-notification recipients explicitly reject missing keys; no new plaintext/digest fallback is emitted. Historical plaintext notification records may still be read during data migration, but newly encrypted recipient writes require the configured key. Test fixtures create a dedicated ephemeral test-only key rather than relying on the former insecure nil fallback.
+
+The baseline CodeQL comparison retains an obsolete `/language:java-kotlin` category from earlier history even though `security.yml` on `preview` already scans Go and JavaScript/TypeScript only. This is scanning metadata, not evidence of Java runtime in the current branch.

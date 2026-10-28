@@ -131,3 +131,12 @@ func TestStaleLeaseCannotScheduleSpuriousFallback(t *testing.T) {
 		t.Fatal(state, fallback)
 	}
 }
+
+// Missing keys must not silently insert cleartext care recipients and
+// low-entropy, brute-forceable indices into the durable notification outbox.
+func TestCareRecipientWithoutKeyCannotBeSealed(t *testing.T) {
+	value, index, err := SealNotificationRecipient(nil, "13800000001")
+	if err == nil || value != "" || index != "" {
+		t.Fatalf("unkeyed recipient accepted: value=%q index=%q err=%v", value, index, err)
+	}
+}

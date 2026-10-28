@@ -6,6 +6,7 @@ package notify
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -16,17 +17,21 @@ import (
 const recipientScope = "care-notification-recipient"
 
 // SealNotificationRecipient 返回收件人的存储形态与去重键。
-// 未配置密钥（config.Validate 已在生产环境阻断该组合）时回退明文 +
-// SHA-256 摘要，与迁移回填的历史行保持一致，保证去重语义不变。
+// A missing lookup/encryption key is an error, never a plaintext recipient
+// or an unsalted digest of a low-entropy phone number.
 func SealNotificationRecipient(box *securestore.Box, phone string) (string, string, error) {
-	if box != nil {
-		sealed, err := box.Seal(phone, recipientScope)
-		if err != nil {
-			return "", "", err
-		}
-		return sealed, box.Index(recipientScope, phone), nil
+	if box == nil {
+		return "", "", errors.New("notification encryption and lookup keys are not configured")
 	}
-	return phone, box.Index(recipientScope, phone), nil
+	key, err := box.Index(recipientScope, phone)
+	if err != nil {
+		return "", "", err
+	}
+	sealed, err := box.Seal(phone, recipientScope)
+	if err != nil {
+		return "", "", err
+	}
+	return sealed, key, nil
 }
 
 // OpenNotificationRecipient 还原收件人明文；无密文前缀的历史明文行原样返回。
