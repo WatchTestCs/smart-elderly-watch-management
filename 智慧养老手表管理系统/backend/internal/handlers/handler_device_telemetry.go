@@ -161,115 +161,31 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 		rollback()
 		return
 	}
-	oldID := *d.OldID
-	now, beTime, day := parsed.now, parsed.beTime, parsed.day
-	hr, bp, step, sleep := parsed.hr, parsed.bp, parsed.step, parsed.sleep
-	sleepState, battery, appVersion := parsed.sleepState, parsed.battery, parsed.appVersion
-	lng, lat, sourceStr, alarm := parsed.lng, parsed.lat, parsed.sourceStr, parsed.alarm
-
-	hrv, bpv := 0, 0
-	if hr != nil {
-		hrv = *hr
-	}
-	if bp != nil {
-		bpv = *bp
-	}
-	// 读阈值（兼容旧数据上下限写反，取 min/max）；无档案行用默认 55–110 / 90–140。
-	hrLow, hrHigh, bpLow, bpHigh := 55, 110, 90, 140
-	if hrv > 0 || bpv > 0 {
-		var hrf, hrl, bpf, bpl *int
-		if err := tx.QueryRow(ctx,
-			`SELECT hrf, hrl, bpf, bpl FROM watch_info WHERE device_id=$1`, d.ID).
-			Scan(&hrf, &hrl, &bpf, &bpl); err != nil && err != pgx.ErrNoRows {
+	if requestID, present := vstr(m, "requestId"); present &&
+		durableTelemetryEligible(parsed, requestID, h.Box) {
+		err := (telemetryRepository{box: h.Box}).QueueDurableReport(ctx, tx, d, parsed, requestID)
+		if err != nil {
 			rollback()
-			response.Error500(w, ref())
-			return
-		} else if err == nil {
-			if hrf != nil && hrl != nil {
-				hrLow, hrHigh = min(*hrf, *hrl), max(*hrf, *hrl)
+			if durableQueueDuplicate(err) {
+				conflict409(w, "设备上报编号已存在，请勿重复生成")
+			} else {
+				response.Error500(w, ref())
 			}
-			if bpf != nil && bpl != nil {
-				bpLow, bpHigh = min(*bpf, *bpl), max(*bpf, *bpl)
-			}
+			return
 		}
-	}
-	var rateState, preState any
-	if hr != nil {
-		rateState = "0"
-		if hrv < hrLow || hrv > hrHigh {
-			rateState = "1"
-		}
-	}
-	if bp != nil {
-		preState = "0"
-		if bpv < bpLow || bpv > bpHigh {
-			preState = "1"
-		}
-	}
-
-	if hrv > 0 || bpv > 0 {
-		if _, err := tx.Exec(ctx,
-			`INSERT INTO ratepre(device_id,old_id,rate_state,pre_state,create_time,hr,bp)
-			 VALUES($1,$2,$3,$4,$5,$6,$7)`,
-			d.ID, oldID, rateState, preState, beTime, hr, bp); err != nil {
-			rollback()
+		if err := tx.Commit(ctx); err != nil {
 			response.Error500(w, ref())
 			return
 		}
+		response.OK(w, map[string]any{
+			"rateState": nil, "preState": nil, "queued": true,
+			"message":    "设备数据已持久接收，等待后台处理",
+			"serverTime": parsed.now.Format(tsLayout),
+		})
+		return
 	}
-	if step != nil || sleep != nil || sleepState != nil {
-		var stepAny, sleepAny, stateAny any
-		if step != nil {
-			stepAny = *step
-		}
-		if sleep != nil {
-			sleepAny = *sleep
-		}
-		if sleepState != nil {
-			stateAny = *sleepState
-		}
-		if _, err := tx.Exec(ctx,
-			`INSERT INTO watch_day_info(device_id, sleep, step, sleep_sate, create_time)
-			 VALUES($1, $2, $3, $4, $5)
-			 ON CONFLICT (device_id, create_time) DO UPDATE SET
-				sleep = COALESCE($2, watch_day_info.sleep),
-				step = COALESCE($3, watch_day_info.step),
-				sleep_sate = COALESCE($4, watch_day_info.sleep_sate)`,
-			d.ID, sleepAny, stepAny, stateAny, day); err != nil {
-			rollback()
-			response.Error500(w, ref())
-			return
-		}
-	}
-	if lng != "" && lat != "" {
-		if _, err := tx.Exec(ctx,
-			`INSERT INTO device_location(device_id, old_id, lng, lat, source, be_time, create_time)
-			 VALUES($1,$2,$3,$4,$5,$6,now())`,
-			d.ID, oldID, sealCoordinate(h.Box, lng), sealCoordinate(h.Box, lat), sourceStr, beTime); err != nil {
-			rollback()
-			response.Error500(w, ref())
-			return
-		}
-		if _, err := tx.Exec(ctx, `UPDATE device SET last_lng=$1, last_lat=$2 WHERE device_id=$3`,
-			sealCoordinate(h.Box, lng), sealCoordinate(h.Box, lat), d.ID); err != nil {
-			rollback()
-			response.Error500(w, ref())
-			return
-		}
-	}
-	if alarm == "1" || strings.EqualFold(alarm, "fall") {
-		alarmLng := coordinateArg(h.Box, lng, d.LastLng)
-		alarmLat := coordinateArg(h.Box, lat, d.LastLat)
-		if _, err := tx.Exec(ctx,
-			`INSERT INTO alarm_precess(status, old_id, device_id, be_time, lng, lat)
-			 VALUES('1',$1,$2,$3,$4,$5)`,
-			oldID, d.ID, beTime, alarmLng, alarmLat); err != nil {
-			rollback()
-			response.Error500(w, ref())
-			return
-		}
-	}
-	if err := touchDevice(ctx, tx, d.ID, battery, appVersion, now); err != nil {
+	persisted, err := (telemetryRepository{box: h.Box}).PersistDeviceReport(ctx, tx, d, parsed)
+	if err != nil {
 		rollback()
 		response.Error500(w, ref())
 		return
@@ -279,8 +195,8 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	response.OK(w, map[string]any{
-		"rateState": rateState, "preState": preState,
-		"serverTime": now.Format(tsLayout),
+		"rateState": persisted.rateState, "preState": persisted.preState,
+		"serverTime": parsed.now.Format(tsLayout),
 	})
 }
 
@@ -428,54 +344,12 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 		write400(w, msg)
 		return
 	}
-	now := time.Now()
-	var alarmID int64
-	if err := tx.QueryRow(ctx,
-		`INSERT INTO alarm_precess(status, old_id, device_id, be_time, lng, lat)
-		 VALUES('1',$1,$2,$3,$4,$5) RETURNING id`,
-		*d.OldID, d.ID, now, coordinateArg(h.Box, lng, nil), coordinateArg(h.Box, lat, nil)).Scan(&alarmID); err != nil {
+	incidentID, err := (telemetryRepository{box: h.Box}).PersistSOSIncident(ctx, tx, d, lng, lat, requestID, time.Now())
+	if err != nil {
 		rollback()
 		response.Error500(w, ref())
 		return
 	}
-	if lng != "" && lat != "" {
-		if _, err := tx.Exec(ctx,
-			`INSERT INTO device_location(device_id, old_id, lng, lat, source, be_time, create_time)
-			 VALUES($1,$2,$3,$4,'sos',$5,now())`,
-			d.ID, *d.OldID, sealCoordinate(h.Box, lng), sealCoordinate(h.Box, lat), now); err != nil {
-			rollback()
-			response.Error500(w, ref())
-			return
-		}
-	}
-	if err := touchDevice(ctx, tx, d.ID, nil, nil, now); err != nil {
-		rollback()
-		response.Error500(w, ref())
-		return
-	}
-	var incidentID int64
-	var requestValue any
-	if requestID != "" {
-		requestValue = requestID
-	}
-	if err := tx.QueryRow(ctx,
-		`INSERT INTO care_incident(source_alarm_id, old_id, device_id, request_id)
-		 VALUES($1,$2,$3,$4) RETURNING id`,
-		alarmID, *d.OldID, d.ID, requestValue).Scan(&incidentID); err != nil {
-		rollback()
-		response.Error500(w, ref())
-		return
-	}
-	if _, err := tx.Exec(ctx,
-		`INSERT INTO care_incident_event(incident_id, actor, action, note)
-		 VALUES($1,'device','received','SOS 已持久化，尚无通知送达或人工接单确认')`,
-		incidentID); err != nil {
-		rollback()
-		response.Error500(w, ref())
-		return
-	}
-	// Persist possible family SMS attempts in the same transaction as the SOS.
-	// This creates a pending task, NOT a claim of dispatch or delivery.
 	queued, err := notify.QueueCareSMS(ctx, tx, h.Box, incidentID, *d.OldID)
 	if err != nil {
 		rollback()
