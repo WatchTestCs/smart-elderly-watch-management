@@ -1,12 +1,15 @@
 package handlers
 
 import (
+	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"net/http"
 	"testing"
 
 	"suining-care/internal/auth"
 	"suining-care/internal/session"
+	"suining-care/internal/securestore"
 )
 
 // The login response is a status, not a duplicate account profile. Clients
@@ -14,6 +17,11 @@ import (
 func TestNativeLoginResponseDoesNotExposeAccountDTOs(t *testing.T) {
 	pool := testDatabase(t)
 	h := testHandler(t, pool)
+	box, err := securestore.New(base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{0x42}, 32)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	h.Box = box
 	password := "TestPassword123!"
 	hash, err := auth.Hash(password)
 	if err != nil {
