@@ -22,8 +22,8 @@ import (
 	"careold-go/internal/csrf"
 	"careold-go/internal/db"
 
-	"careold-go/internal/session"
 	"careold-go/internal/securestore"
+	"careold-go/internal/session"
 	"github.com/google/uuid"
 
 	"github.com/jackc/pgx/v5/pgxpool"
