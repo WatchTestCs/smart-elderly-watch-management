@@ -63,7 +63,7 @@ func TestTOTPEnrollmentRecoveryAndCrossReplicaRevocation(t *testing.T) {
 	credentials["otp"] = ""
 	credentials["recoveryCode"] = codes[0]
 	login := callAPI(h.login, credentials)
-	if login.Code != 200 || !strings.Contains(login.Body.String(), "users1") {
+	if login.Code != http.StatusOK || strings.TrimSpace(login.Body.String()) != `{"authenticated":true}` {
 		t.Fatal(login.Code, login.Body.String())
 	}
 	if w := callAPI(h.login, credentials); w.Code != 401 {
