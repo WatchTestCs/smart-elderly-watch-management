@@ -59,6 +59,22 @@ func (k DailyKey) Bounds() (time.Time, time.Time, error) {
 	return from, from.AddDate(0, 0, 1), nil
 }
 
+func dailyCacheSelectSQL(mysql bool) string {
+	if mysql {
+		return `SELECT old_id,source,source_device,metric,semantics,CAST(record_day AS CHAR),offset_minutes,dirty FROM metric_daily WHERE cache_key=$1 FOR UPDATE`
+	}
+	return `SELECT old_id,source,source_device,metric,semantics,CAST(record_day AS varchar),offset_minutes,dirty FROM metric_daily WHERE cache_key=$1 FOR UPDATE`
+}
+
+func dailySamplesSQL(mysql bool) string {
+	if mysql {
+		return `SELECT payload FROM health_sample WHERE old_id=$1 AND BINARY source=BINARY $2 AND BINARY source_device=BINARY $3 AND BINARY metric=BINARY $4 AND BINARY semantics=BINARY $5 AND NOT deleted
+ AND sample_start<$7 AND (sample_start>=$6 OR ($5='interval' AND sample_end>$6)) ORDER BY revision LIMIT 100001`
+	}
+	return `SELECT payload FROM health_sample WHERE old_id=$1 AND source=$2 AND source_device=$3 AND metric=$4 AND semantics=$5 AND NOT deleted
+ AND sample_start<$7 AND (sample_start>=$6 OR ($5='interval' AND sample_end>$6)) ORDER BY revision LIMIT 100001`
+}
+
 // RefreshDaily is serialized with Save's owner clock, so a completed result
 // cannot overwrite a concurrent invalidation. Error results are explicit, never 0.
 func RefreshDaily(ctx context.Context, pool *db.Database, id string) error {
@@ -81,7 +97,7 @@ func RefreshDaily(ctx context.Context, pool *db.Database, id string) error {
 	}
 	var k DailyKey
 	var dirty bool
-	err = tx.QueryRow(ctx, `SELECT old_id,source,source_device,metric,semantics,CAST(record_day AS CHAR),offset_minutes,dirty FROM metric_daily WHERE cache_key=$1 FOR UPDATE`, id).Scan(&k.OldID, &k.Source, &k.SourceDevice, &k.Metric, &k.Semantics, &k.Day, &k.OffsetMinutes, &dirty)
+	err = tx.QueryRow(ctx, dailyCacheSelectSQL(tx.IsMySQL()), id).Scan(&k.OldID, &k.Source, &k.SourceDevice, &k.Metric, &k.Semantics, &k.Day, &k.OffsetMinutes, &dirty)
 	if err == pgx.ErrNoRows {
 		return nil
 	}
@@ -95,8 +111,7 @@ func RefreshDaily(ctx context.Context, pool *db.Database, id string) error {
 	if err != nil {
 		return err
 	}
-	rows, err := tx.Query(ctx, `SELECT payload FROM health_sample WHERE old_id=$1 AND BINARY source=BINARY $2 AND BINARY source_device=BINARY $3 AND BINARY metric=BINARY $4 AND BINARY semantics=BINARY $5 AND NOT deleted
- AND sample_start<$7 AND (sample_start>=$6 OR ($5='interval' AND sample_end>$6)) ORDER BY revision LIMIT 100001`, k.OldID, k.Source, k.SourceDevice, k.Metric, k.Semantics, from.UnixMicro(), to.UnixMicro())
+	rows, err := tx.Query(ctx, dailySamplesSQL(tx.IsMySQL()), k.OldID, k.Source, k.SourceDevice, k.Metric, k.Semantics, from.UnixMicro(), to.UnixMicro())
 	if err != nil {
 		return err
 	}

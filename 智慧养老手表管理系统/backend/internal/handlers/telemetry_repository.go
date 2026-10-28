@@ -11,7 +11,7 @@ import (
 )
 
 // telemetryRepository owns SQL for the existing device report contract.
-// Database.Transaction translates placeholders and upsert syntax per engine.
+// Call sites select native SQL for engine-specific upserts; placeholders remain portable.
 type telemetryRepository struct {
 	box *securestore.Box
 }
@@ -19,6 +19,23 @@ type telemetryRepository struct {
 type telemetryPersisted struct {
 	rateState any
 	preState  any
+}
+
+func watchDayUpsertSQL(mysql bool) string {
+	if mysql {
+		return `INSERT INTO watch_day_info(device_id, sleep, step, sleep_sate, create_time)
+		 VALUES($1, $2, $3, $4, $5)
+		 ON DUPLICATE KEY UPDATE
+			sleep = COALESCE(VALUES(sleep), watch_day_info.sleep),
+			step = COALESCE(VALUES(step), watch_day_info.step),
+			sleep_sate = COALESCE(VALUES(sleep_sate), watch_day_info.sleep_sate)`
+	}
+	return `INSERT INTO watch_day_info(device_id, sleep, step, sleep_sate, create_time)
+	 VALUES($1, $2, $3, $4, $5)
+	 ON CONFLICT (device_id, create_time) DO UPDATE SET
+		sleep = COALESCE(EXCLUDED.sleep, watch_day_info.sleep),
+		step = COALESCE(EXCLUDED.step, watch_day_info.step),
+		sleep_sate = COALESCE(EXCLUDED.sleep_sate, watch_day_info.sleep_sate)`
 }
 
 func (repo telemetryRepository) PersistDeviceReport(ctx context.Context, tx *dbstore.Transaction, d *oldDevice, parsed parsedDeviceTelemetry) (telemetryPersisted, error) {
@@ -85,13 +102,7 @@ func (repo telemetryRepository) PersistDeviceReport(ctx context.Context, tx *dbs
 		if sleepState != nil {
 			stateAny = *sleepState
 		}
-		if _, err := tx.Exec(ctx,
-			`INSERT INTO watch_day_info(device_id, sleep, step, sleep_sate, create_time)
-			 VALUES($1, $2, $3, $4, $5)
-			 ON CONFLICT (device_id, create_time) DO UPDATE SET
-				sleep = COALESCE($2, watch_day_info.sleep),
-				step = COALESCE($3, watch_day_info.step),
-				sleep_sate = COALESCE($4, watch_day_info.sleep_sate)`,
+		if _, err := tx.Exec(ctx, watchDayUpsertSQL(tx.IsMySQL()),
 			d.ID, sleepAny, stepAny, stateAny, day); err != nil {
 			return telemetryPersisted{}, err
 		}
