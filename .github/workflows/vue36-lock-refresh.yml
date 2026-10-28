@@ -1,0 +1,39 @@
+name: Vue 3.6 lock refresh
+
+on:
+  push:
+    branches: [preview]
+    paths:
+      - "智慧养老手表管理系统/oldIot/package.json"
+      - ".github/workflows/vue36-lock-refresh.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  lock:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: 智慧养老手表管理系统/oldIot
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: 智慧养老手表管理系统/oldIot/package-lock.json
+      - name: Refresh lockfile for Vue 3.6 RC
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - name: Verify resolved Vue version
+        run: |
+          node -e "const l=require('./package-lock.json'); const v=l.packages['node_modules/vue']?.version; if(v!=='3.6.0-rc.13') throw new Error('resolved '+v)"
+          npm ls vue --package-lock-only
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: vue36-package-lock
+          path: 智慧养老手表管理系统/oldIot/package-lock.json
+          if-no-files-found: error
+          retention-days: 1
