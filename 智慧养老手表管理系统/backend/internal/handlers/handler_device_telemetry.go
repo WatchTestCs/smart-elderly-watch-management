@@ -327,54 +327,12 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 		write400(w, msg)
 		return
 	}
-	now := time.Now()
-	var alarmID int64
-	if err := tx.QueryRow(ctx,
-		`INSERT INTO alarm_precess(status, old_id, device_id, be_time, lng, lat)
-		 VALUES('1',$1,$2,$3,$4,$5) RETURNING id`,
-		*d.OldID, d.ID, now, coordinateArg(h.Box, lng, nil), coordinateArg(h.Box, lat, nil)).Scan(&alarmID); err != nil {
+	incidentID, err := (telemetryRepository{box: h.Box}).PersistSOSIncident(ctx, tx, d, lng, lat, requestID, time.Now())
+	if err != nil {
 		rollback()
 		response.Error500(w, ref())
 		return
 	}
-	if lng != "" && lat != "" {
-		if _, err := tx.Exec(ctx,
-			`INSERT INTO device_location(device_id, old_id, lng, lat, source, be_time, create_time)
-			 VALUES($1,$2,$3,$4,'sos',$5,now())`,
-			d.ID, *d.OldID, sealCoordinate(h.Box, lng), sealCoordinate(h.Box, lat), now); err != nil {
-			rollback()
-			response.Error500(w, ref())
-			return
-		}
-	}
-	if err := touchDevice(ctx, tx, d.ID, nil, nil, now); err != nil {
-		rollback()
-		response.Error500(w, ref())
-		return
-	}
-	var incidentID int64
-	var requestValue any
-	if requestID != "" {
-		requestValue = requestID
-	}
-	if err := tx.QueryRow(ctx,
-		`INSERT INTO care_incident(source_alarm_id, old_id, device_id, request_id)
-		 VALUES($1,$2,$3,$4) RETURNING id`,
-		alarmID, *d.OldID, d.ID, requestValue).Scan(&incidentID); err != nil {
-		rollback()
-		response.Error500(w, ref())
-		return
-	}
-	if _, err := tx.Exec(ctx,
-		`INSERT INTO care_incident_event(incident_id, actor, action, note)
-		 VALUES($1,'device','received','SOS 已持久化，尚无通知送达或人工接单确认')`,
-		incidentID); err != nil {
-		rollback()
-		response.Error500(w, ref())
-		return
-	}
-	// Persist possible family SMS attempts in the same transaction as the SOS.
-	// This creates a pending task, NOT a claim of dispatch or delivery.
 	queued, err := notify.QueueCareSMS(ctx, tx, h.Box, incidentID, *d.OldID)
 	if err != nil {
 		rollback()

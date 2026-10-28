@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"time"
 	"strings"
 
 	dbstore "careold-go/internal/db"
@@ -121,4 +122,47 @@ func (repo telemetryRepository) PersistDeviceReport(ctx context.Context, tx *dbs
 		return telemetryPersisted{}, err
 	}
 	return telemetryPersisted{rateState: rateState, preState: preState}, nil
+}
+
+// PersistSOSIncident only persists the incident; callers must insert SMS/outbox
+// records and commit *the same transaction* before acknowledging the device.
+func (repo telemetryRepository) PersistSOSIncident(ctx context.Context, tx *dbstore.Transaction, d *oldDevice, lng, lat, requestID string, now time.Time) (int64, error) {
+	var alarmID int64
+	if err := tx.QueryRow(ctx,
+		`INSERT INTO alarm_precess(status, old_id, device_id, be_time, lng, lat)
+		 VALUES('1',$1,$2,$3,$4,$5) RETURNING id`,
+		*d.OldID, d.ID, now, coordinateArg(repo.box, lng, nil), coordinateArg(repo.box, lat, nil)).Scan(&alarmID); err != nil {
+		return 0, err
+	}
+	if lng != "" && lat != "" {
+		if _, err := tx.Exec(ctx,
+			`INSERT INTO device_location(device_id, old_id, lng, lat, source, be_time, create_time)
+			 VALUES($1,$2,$3,$4,'sos',$5,now())`,
+			d.ID, *d.OldID, sealCoordinate(repo.box, lng), sealCoordinate(repo.box, lat), now); err != nil {
+			return 0, err
+		}
+	}
+	if err := touchDevice(ctx, tx, d.ID, nil, nil, now); err != nil {
+		return 0, err
+	}
+	var incidentID int64
+	var requestValue any
+	if requestID != "" {
+		requestValue = requestID
+	}
+	if err := tx.QueryRow(ctx,
+		`INSERT INTO care_incident(source_alarm_id, old_id, device_id, request_id)
+		 VALUES($1,$2,$3,$4) RETURNING id`,
+		alarmID, *d.OldID, d.ID, requestValue).Scan(&incidentID); err != nil {
+		return 0, err
+	}
+	if _, err := tx.Exec(ctx,
+		`INSERT INTO care_incident_event(incident_id, actor, action, note)
+		 VALUES($1,'device','received','SOS 已持久化，尚无通知送达或人工接单确认')`,
+		incidentID); err != nil {
+		return 0, err
+	}
+	// Persist possible family SMS attempts in the same transaction as the SOS.
+	// This creates a pending task, NOT a claim of dispatch or delivery.
+	return incidentID, nil
 }
