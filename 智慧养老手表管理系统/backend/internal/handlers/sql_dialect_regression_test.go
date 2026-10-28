@@ -55,6 +55,15 @@ func TestDeviceReportDailyUpsertPreservesMissingFields(t *testing.T) {
 	}
 }
 
+func TestSocialTextTableIsRepositoryOwned(t *testing.T) {
+	if got := socialTextTable(true); got != "`text`" {
+		t.Fatalf("unexpected MySQL social text table: %s", got)
+	}
+	if got := socialTextTable(false); got != "text" {
+		t.Fatalf("unexpected PostgreSQL social text table: %s", got)
+	}
+}
+
 func TestBusinessRepositoriesOwnEngineSpecificSQL(t *testing.T) {
 	mysqlPosition := positionLatestTimeExpr(true)
 	postgresPosition := positionLatestTimeExpr(false)
