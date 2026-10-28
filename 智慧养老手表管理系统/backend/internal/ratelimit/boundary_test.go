@@ -33,7 +33,7 @@ func TestTrustedProxyBoundary(t *testing.T) {
 		{"long chain", "10.0.0.1:42", strings.Repeat("192.0.2.1,", 33), "", "10.0.0.1"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			r := httptest.NewRequest(http.MethodPost, "/restful/userLogin/login", nil)
+			r := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", nil)
 			r.RemoteAddr = tc.peer
 			if tc.xff != "" {
 				r.Header.Set("X-Forwarded-For", tc.xff)
@@ -68,7 +68,7 @@ func TestHighCardinalityHardCaps256Clients(t *testing.T) {
 				if i > 100000 {
 					return
 				}
-				r := httptest.NewRequest(http.MethodPost, "/restful/setup", nil)
+				r := httptest.NewRequest(http.MethodPost, "/api/v1/setup", nil)
 				if i%2 == 0 {
 					r.RemoteAddr = fmt.Sprintf("[2001:db8::%x]:42", i)
 				} else {
@@ -116,7 +116,7 @@ func TestSlotBudgetAndQuotaCannotBeResetByEviction(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(l.Close)
-	r := httptest.NewRequest(http.MethodPost, "/restful/setup", nil)
+	r := httptest.NewRequest(http.MethodPost, "/api/v1/setup", nil)
 	r.RemoteAddr = "192.0.2.1:42"
 	if !l.Allow(r) || l.Allow(r) {
 		t.Fatal("timestamp budget not enforced")
@@ -142,7 +142,7 @@ func TestSlotBudgetAndQuotaCannotBeResetByEviction(t *testing.T) {
 func TestNATHardwareQuotaAndProxyForgery(t *testing.T) {
 	l := New()
 	t.Cleanup(l.Close)
-	r := httptest.NewRequest(http.MethodPost, "/restful/device/report", nil)
+	r := httptest.NewRequest(http.MethodPost, "/api/v1/device/report", nil)
 	r.RemoteAddr = "192.0.2.77:42"
 	for i := 0; i < 1800; i++ {
 		if !l.Allow(r) {

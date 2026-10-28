@@ -20,7 +20,7 @@ func BenchmarkLimiterSaturated(b *testing.B) {
 			}
 			requests := make([]*http.Request, clients)
 			for i := range requests {
-				r := httptest.NewRequest(http.MethodPost, "/restful/device/login", nil)
+				r := httptest.NewRequest(http.MethodPost, "/api/v1/device/login", nil)
 				r.RemoteAddr = fmt.Sprintf("192.0.2.%d:12345", i)
 				requests[i] = r
 				for range 60 {

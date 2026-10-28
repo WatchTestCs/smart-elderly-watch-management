@@ -82,7 +82,7 @@ func TestSlidingWindowSparseCapacityAndWrappedGrowth(t *testing.T) {
 func TestLimiterConcurrentQuotaAndIsolation(t *testing.T) {
 	l := New()
 	t.Cleanup(l.Close)
-	r := httptest.NewRequest(http.MethodPost, "/restful/userLogin/login", nil)
+	r := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", nil)
 	r.RemoteAddr = "[2001:db8::1]:12345"
 	var accepted atomic.Int64
 	var workers sync.WaitGroup
@@ -107,10 +107,10 @@ func TestLimiterConcurrentQuotaAndIsolation(t *testing.T) {
 		t.Fatalf("accepted %d; want 30", accepted.Load())
 	}
 	for _, tc := range []struct{ method, path, ip string }{
-		{http.MethodPost, "/restful/userLogin/login", "[2001:db8::2]:12345"},
-		{http.MethodPost, "/restful/device/login", r.RemoteAddr},
-		{http.MethodGet, "/restful/userLogin/login", r.RemoteAddr},
-		{http.MethodPost, "/restful/device/sos", r.RemoteAddr},
+		{http.MethodPost, "/api/v1/auth/login", "[2001:db8::2]:12345"},
+		{http.MethodPost, "/api/v1/device/login", r.RemoteAddr},
+		{http.MethodGet, "/api/v1/auth/login", r.RemoteAddr},
+		{http.MethodPost, "/api/v1/device/sos", r.RemoteAddr},
 	} {
 		other := httptest.NewRequest(tc.method, tc.path, nil)
 		other.RemoteAddr = tc.ip

@@ -101,7 +101,7 @@ func oldExempt(path string) bool {
 	return false
 }
 func contractPaths() []string {
-	paths := map[string]bool{"/api/v1/unknown": true, "/RESTFUL/device/sos": true, "/api/v1/device/sos/": true, "/bad": true}
+	paths := map[string]bool{"/api/v1/unknown": true, "/API/v1/device/sos": true, "/api/v1/device/sos/": true, "/bad": true}
 	for _, table := range []map[string]bool{publicPaths, hardwarePaths, sharedPaths} {
 		for key := range table {
 			for i, c := range key {
@@ -152,7 +152,7 @@ func TestMiddlewareRoleAndCSRFMatrix(t *testing.T) {
 					gate.ServeHTTP(response, request)
 					want := 204
 					access := oldAccess(method, path)
-					if path == "/bad" || path == "/RESTFUL/device/sos" {
+					if path == "/bad" || path == "/API/v1/device/sos" {
 						want = 403
 					} else if access != accesspolicy.Public && access != accesspolicy.Device {
 						if !actor.cookie {
