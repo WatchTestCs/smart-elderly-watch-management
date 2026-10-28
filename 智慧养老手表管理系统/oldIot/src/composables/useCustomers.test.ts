@@ -14,7 +14,7 @@ describe('guardian data flow', () => {
     const state = scope.run(() => useCustomers(api))!
     let settled = false
     state.searchCustomers().then(() => { settled = true })
-    await Promise.resolve()
+    await flushPromises()
     const config = post.mock.calls[0][2]!
     expect(config.withCredentials).toBe(true)
     expect(config.signal?.aborted).toBe(false)
@@ -77,7 +77,7 @@ describe('guardian data flow', () => {
     const post = vi.fn().mockReturnValueOnce(new Promise(resolve => { first = resolve })).mockReturnValueOnce(new Promise(resolve => { last = resolve }))
     const state = useCustomers({ post } as PostClient)
     const pending = state.searchCustomers()
-    await Promise.resolve()
+    await flushPromises()
     state.changePage(2)
     state.changePage(3)
     state.searchText.value = '新查询'
@@ -114,7 +114,7 @@ describe('guardian data flow', () => {
     const post = vi.fn().mockReturnValueOnce(new Promise(resolve => { first = resolve })).mockResolvedValueOnce({ data: { returnCode: '1111' } }).mockResolvedValueOnce({ data: { customers: [], total: 0 } })
     const state = useCustomers({ post } as PostClient)
     state.searchCustomers()
-    await Promise.resolve()
+    await flushPromises()
     Object.assign(state.customerForm, { customerName: '姓名', customerPhone: '19912345678', customerAge: 70 })
     const saved = state.save()
     await flushPromises()
