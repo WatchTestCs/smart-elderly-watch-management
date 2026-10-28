@@ -91,13 +91,17 @@ func (h *Handler) runDurableTelemetryOnce(ctx context.Context) (bool, error) {
 	var reason string
 	var elderID int64
 	err = tx.QueryRow(ctx, `SELECT old_id FROM oldperson WHERE old_id=$1 FOR UPDATE`, oldID).Scan(&elderID)
-	if err != nil {
+	if errors.Is(err, pgx.ErrNoRows) {
 		reason = "elder_missing"
+	} else if err != nil {
+		return true, err
 	} else {
 		var currentOwner *int64
 		err = tx.QueryRow(ctx, `SELECT old_id FROM device WHERE device_id=$1 FOR UPDATE`, deviceID).Scan(&currentOwner)
-		if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
 			reason = "device_missing"
+		} else if err != nil {
+			return true, err
 		} else if currentOwner == nil || *currentOwner != oldID {
 			reason = "binding_changed"
 		}
