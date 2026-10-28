@@ -330,7 +330,7 @@ func TestCapabilityMiddlewareBoundaries(t *testing.T) {
 			t.Fatal(path, w.Code, w.Body.String())
 		}
 	}
-	for _, path := range []string{"/api/v1/device-commandsPull", "/api/v1/device-commandsAck", "/api/v1/device/fencePoint"} {
+	for _, path := range []string{"/api/v1/device/commandPull", "/api/v1/device/commandAck", "/api/v1/device/fencePoint"} {
 		// Hardware routes must use body authentication rather than cookie authority.
 		body := map[string]any{}
 		if strings.HasSuffix(path, "commandAck") {

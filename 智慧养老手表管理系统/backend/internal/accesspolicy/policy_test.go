@@ -25,8 +25,8 @@ var publicPaths = map[string]bool{
 
 // 硬件路径：公开且免 CSRF。
 var hardwarePaths = map[string]bool{
-	"POST /api/v1/device-commandsPull": true,
-	"POST /api/v1/device-commandsAck":  true,
+	"POST /api/v1/device/commandPull": true,
+	"POST /api/v1/device/commandAck":  true,
 	"POST /api/v1/device/fencePoint":  true,
 	"POST /api/v1/device/healthBatch": true,
 	"POST /api/v1/device/login":       true,
@@ -65,8 +65,8 @@ var sharedPaths = map[string]bool{
 }
 
 var exemptPaths = []string{
-	"/api/v1/device-commandsPull",
-	"/api/v1/device-commandsAck",
+	"/api/v1/device/commandPull",
+	"/api/v1/device/commandAck",
 	"/api/v1/device/fencePoint",
 	"/api/v1/setup",
 	"/api/v1/device/login",
