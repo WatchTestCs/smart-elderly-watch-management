@@ -4,7 +4,6 @@ package care
 
 import (
 	"bytes"
-	dbstore "suining-care/internal/db"
 	"context"
 	"encoding/json"
 	"errors"
@@ -16,12 +15,13 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	dbstore "suining-care/internal/db"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"suining-care/internal/notify"
 	"suining-care/internal/observability"
 	"suining-care/internal/securestore"
-	"github.com/jackc/pgx/v5"
 )
 
 type dispatcher struct {

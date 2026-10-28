@@ -7,9 +7,9 @@ import (
 	"os"
 	"testing"
 
-	"suining-care/internal/db"
 	"github.com/go-sql-driver/mysql"
 	"github.com/google/uuid"
+	"suining-care/internal/db"
 )
 
 func MySQL(t *testing.T) *db.Database {

@@ -7,9 +7,9 @@ import (
 	"io/fs"
 	"strings"
 
-	"suining-care/migrations"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"suining-care/migrations"
 )
 
 // Open 建连接池。

@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"strings"
 
-	"suining-care/migrations"
 	"github.com/go-sql-driver/mysql"
+	"suining-care/migrations"
 )
 
 // MySQL DDL commits implicitly. Each statement is restartable; a checksum is
