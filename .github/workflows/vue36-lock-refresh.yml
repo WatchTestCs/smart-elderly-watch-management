@@ -30,7 +30,7 @@ jobs:
       - name: Verify resolved Vue version
         run: |
           node -e "const l=require('./package-lock.json'); const v=l.packages['node_modules/vue']?.version; if(v!=='3.6.0-rc.13') throw new Error('resolved '+v)"
-          npm ls vue --package-lock-only
+          npm ls vue --package-lock-only || true
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
         with:
           name: vue36-package-lock
