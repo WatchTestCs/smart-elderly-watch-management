@@ -11,8 +11,11 @@ ROOT = Path(__file__).resolve().parents[1]
 OBSOLETE = ("rest" + "ful", "J" + "SESSIONID")
 SUFFIXES = {".go", ".rs", ".js", ".cjs", ".mjs", ".ts", ".ets", ".vue",
             ".html", ".json", ".json5", ".yml", ".yaml", ".toml",
-            ".py", ".ps1", ".sh"}
-PREFIXES = ("智慧养老手表管理系统/backend/",
+            ".py", ".ps1", ".sh", ".md", ".txt"}
+HISTORY = ("docs/decisions/", "docs/releases/", "docs/performance/",
+           "docs/patch-review/", "docs/refactoring/", "evidence/")
+PREFIXES = ("README.md", "README.en.md", "docs/",
+            "智慧养老手表管理系统/backend/",
             "智慧养老手表管理系统/oldIot/",
             "智慧养老手表管理系统/desktop/",
             "智慧养老手表管理系统/watch-sim/",
@@ -20,7 +23,7 @@ PREFIXES = ("智慧养老手表管理系统/backend/",
 files = subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT).decode("utf-8").split("\0")
 errors = []
 for name in files:
-    if not name or not name.startswith(PREFIXES):
+    if not name or not name.startswith(PREFIXES) or name.startswith(HISTORY):
         continue
     if name.endswith(".lock") or "/public/static/" in name:
         continue
