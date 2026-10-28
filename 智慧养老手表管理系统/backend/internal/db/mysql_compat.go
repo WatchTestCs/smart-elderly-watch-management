@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
-	"strings"
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/jackc/pgx/v5"
@@ -18,9 +17,6 @@ var insertReturning = regexp.MustCompile(`(?is)^\s*(INSERT\s+INTO\b.*)\s+RETURNI
 func (e executor) QueryRow(ctx context.Context, query string, args ...any) Row {
 	if e.pg != nil {
 		return e.pg.QueryRow(ctx, query, args...)
-	}
-	if strings.TrimSpace(query) == "SELECT nextval('picture_group')" {
-		query = "INSERT INTO picture_group () VALUES () RETURNING id"
 	}
 	if match := insertReturning.FindStringSubmatch(query); match != nil {
 		q, a, err := mysqlQuery(match[1], args)
