@@ -19,10 +19,10 @@ import (
 type queuedTelemetry struct {
 	ReceivedAt time.Time `json:"receivedAt"`
 	ReportedAt time.Time `json:"reportedAt"`
-	Day time.Time `json:"day"`
-	Steps *int `json:"steps,omitempty"`
-	Sleep *int `json:"sleep,omitempty"`
-	SleepState *string `json:"sleepState,omitempty"`
+	Day        time.Time `json:"day"`
+	Steps      *int      `json:"steps,omitempty"`
+	Sleep      *int      `json:"sleep,omitempty"`
+	SleepState *string   `json:"sleepState,omitempty"`
 }
 
 func eligibleForDurableTelemetry(p parsedDeviceTelemetry) bool {
@@ -156,7 +156,8 @@ func (h *Handler) runDurableTelemetryOnce(ctx context.Context) (bool, error) {
 // RunDurableTelemetry drains committed records after process restarts. Queue
 // rows are never held only in memory and remain intact when the service stops.
 func (h *Handler) RunDurableTelemetry(ctx context.Context) {
-	if os.Getenv("CAREOLD_DURABLE_TELEMETRY") != "1" {
+	// Always drain already committed rows, even if new enqueues are disabled.
+	if h == nil || h.Box == nil {
 		return
 	}
 	ticker := time.NewTicker(250 * time.Millisecond)
