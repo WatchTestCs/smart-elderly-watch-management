@@ -113,7 +113,7 @@ describe('cancelable latest read scheduler', () => {
     const accept = vi.fn(), fail = vi.fn(), busy = vi.fn()
     const queue = createLatestRead(read, accept, fail, busy)
     const pending = queue.run(1)
-    await Promise.resolve()
+    await flushPromises()
     const signal = read.mock.calls[0]?.[1]
     queue.cancel()
     await pending
