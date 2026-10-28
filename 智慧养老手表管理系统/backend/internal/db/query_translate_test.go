@@ -178,3 +178,25 @@ func TestCompileMySQLQueryHasNoBusinessTableSpecialCases(t *testing.T) {
 		t.Fatalf("watch_info must use only generic DO NOTHING translation now: %s", plan.sql)
 	}
 }
+
+func TestCompileMySQLQueryPreservesSQLComments(t *testing.T) {
+	cases := []struct {
+		name, query, want string
+	}{
+		{"line", "SELECT $1 -- $9 ~ now()\n", "SELECT ? -- $9 ~ now()\n"},
+		{"hash", "SELECT $1 # $9 ~ now()\n", "SELECT ? # $9 ~ now()\n"},
+		{"block", "SELECT /* $9 ~ now() */ $1", "SELECT /* $9 ~ now() */ ?"},
+		{"operator", "SELECT $1 /* ~~ ~* */", "SELECT ? /* ~~ ~* */"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := compileMySQLQuery(tc.query)
+			if err != nil || got.sql != tc.want || len(got.positions) != 1 {
+				t.Fatalf("sql=%q positions=%v err=%v; want %q", got.sql, got.positions, err, tc.want)
+			}
+		})
+	}
+	if _, err := compileMySQLQuery("SELECT 1 /* unfinished"); err == nil {
+		t.Fatal("unterminated block comment must fail")
+	}
+}
