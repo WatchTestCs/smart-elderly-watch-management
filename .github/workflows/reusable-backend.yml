@@ -49,6 +49,9 @@ jobs:
           go-version: ${{ matrix.go-version }}
           cache-dependency-path: 智慧养老手表管理系统/backend/go.sum
 
+      - name: Enforce native Go API boundary
+        run: python3 scripts/check-api-boundary.py
+
       - name: Check generated OpenAPI contract
         run: python3 scripts/generate-openapi.py --check
 
