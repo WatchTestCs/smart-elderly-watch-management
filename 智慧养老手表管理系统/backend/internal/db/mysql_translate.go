@@ -68,8 +68,6 @@ func compileMySQLQuery(query string) (queryPlan, error) {
 		return "DATE_FORMAT(" + m[1] + ",'" + format + "')"
 	})
 	query = varcharCast.ReplaceAllString(query, "AS CHAR")
-	const latestPosition = "GREATEST(COALESCE(l.be_time, o.be_time), COALESCE(a.be_time, o.be_time))"
-	query = strings.ReplaceAll(query, latestPosition, "COALESCE("+latestPosition+",COALESCE(l.be_time,o.be_time),COALESCE(a.be_time,o.be_time))")
 	query = intervals.ReplaceAllStringFunc(query, func(s string) string {
 		m := intervals.FindStringSubmatch(s)
 		return "INTERVAL " + m[1] + " " + strings.TrimSuffix(strings.ToUpper(m[2]), "S")
@@ -79,13 +77,7 @@ func compileMySQLQuery(query string) (queryPlan, error) {
 	query = lockLimit.ReplaceAllString(query, "LIMIT $1 FOR UPDATE SKIP LOCKED")
 	query = conflictUpdate.ReplaceAllString(query, "ON DUPLICATE KEY UPDATE")
 	query = excludedColumn.ReplaceAllString(query, "VALUES($1)")
-	if conflictNothing.MatchString(query) {
-		key := "id"
-		if strings.Contains(query, "INSERT INTO watch_info") {
-			key = "device_id"
-		}
-		query = conflictNothing.ReplaceAllString(query, "ON DUPLICATE KEY UPDATE "+key+"="+key)
-	}
+	query = conflictNothing.ReplaceAllString(query, "ON DUPLICATE KEY UPDATE id=id")
 	query = textTable.ReplaceAllString(query, "$1 `text`")
 	// REGEXP 与 now() 交给分词器处理：它们必须只在引号之外生效。
 	// 用 ReplaceAll 直接改整串会把字符串字面量里的内容一起改掉。
