@@ -100,11 +100,6 @@ func (s *databaseService) middleware(local http.Handler) http.Handler {
 			return
 		}
 		api := s.api.Load()
-		// Retired Java-style REST entry points are not routed to the SPA or APIs.
-		if r.URL.Path == "/restful" || strings.HasPrefix(r.URL.Path, "/restful/") {
-			http.NotFound(w, r)
-			return
-		}
 		if r.URL.Path == "/api/v1/service/status" && r.Method == http.MethodGet {
 			w.Header().Set("Cache-Control", "no-store")
 			snapshot := s.analytics.Snapshot()

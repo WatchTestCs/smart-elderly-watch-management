@@ -17,7 +17,7 @@ func sensitiveCareAudit(pool *dbstore.Database, next http.Handler) http.Handler 
 		"/api/v1/oldPerson/", "/api/v1/family/", "/api/v1/position/",
 		"/api/v1/ratepre/", "/api/v1/step/", "/api/v1/device/",
 		"/api/v1/watchInfo/", "/api/v1/image/download",
-		"/api/v1/fence/", "/api/v1/alert/", "/api/v1/health/daily-query",
+		"/api/v1/fence/", "/api/v1/fence-events/", "/api/v1/alert/", "/api/v1/alert-reviews/", "/api/v1/health/daily-query",
 		"/api/v1/security/",
 		"/api/v1/notification/",
 	}
