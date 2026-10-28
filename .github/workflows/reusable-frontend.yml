@@ -31,15 +31,22 @@ jobs:
         run: npm ci
 
       - name: Unit tests and incremental TypeScript checks
+        shell: bash
         run: |
           mkdir -p ../../evidence/ci/frontend
           git rev-parse HEAD > ../../evidence/ci/frontend/source-sha.txt
           node --version > ../../evidence/ci/frontend/node-version.txt
-          npm test 2>&1 | tee ../../evidence/ci/frontend/test.txt
-          npm run typecheck 2>&1 | tee ../../evidence/ci/frontend/typecheck.txt
+          set -o pipefail
+          status=0
+          npm test 2>&1 | tee ../../evidence/ci/frontend/test.txt || status=1
+          npm run typecheck 2>&1 | tee ../../evidence/ci/frontend/typecheck.txt || status=1
+          exit "$status"
 
       - name: Build production frontend
-        run: npm run build 2>&1 | tee ../../evidence/ci/frontend/build.txt
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run build 2>&1 | tee ../../evidence/ci/frontend/build.txt
 
       - name: Audit production dependencies
         run: npm audit --audit-level=high --json > ../../evidence/ci/frontend/npm-audit.json
