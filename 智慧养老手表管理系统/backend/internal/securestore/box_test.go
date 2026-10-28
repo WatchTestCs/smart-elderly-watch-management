@@ -22,7 +22,19 @@ func TestAuthenticatedEnvelope(t *testing.T) {
 	if _, err = b.Open(a, "session"); err == nil {
 		t.Fatal("scope substitution accepted")
 	}
+	// Raw base64 can otherwise admit alternate text for the same trailing byte.
+	// Require canonical encoding and separately flip a real ciphertext byte.
 	if _, err = b.Open(a[:len(a)-2]+"xx", "note"); err == nil {
-		t.Fatal("tampering accepted")
+		t.Fatal("non-canonical envelope encoding accepted")
+	}
+	encoded := strings.TrimPrefix(a, Prefix)
+	payload, err := base64.RawStdEncoding.DecodeString(encoded)
+	if err != nil {
+		t.Fatal(err)
+	}
+	payload[len(payload)-1] ^= 1
+	tampered := Prefix + base64.RawStdEncoding.EncodeToString(payload)
+	if _, err = b.Open(tampered, "note"); err == nil {
+		t.Fatal("ciphertext tampering accepted")
 	}
 }
