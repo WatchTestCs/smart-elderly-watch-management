@@ -1,9 +1,76 @@
-import { describe, it, expect, vi } from 'vitest'
+import { afterEach, describe, it, expect, vi } from 'vitest'
+import { effectScope } from 'vue'
+import axios from 'axios'
 import { useCustomers, validAge, validPhone } from './useCustomers'
-import type { PostClient } from '../api/client'
+import { api, type PostClient } from '../api/client'
 import { flushPromises } from '@vue/test-utils'
 
 describe('guardian data flow', () => {
+  afterEach(() => { vi.useRealTimers() })
+
+  it('passes cancellation through the real API client and aborts on scope disposal', async () => {
+    const post = vi.spyOn(axios, 'post').mockReturnValue(new Promise(() => {}))
+    const scope = effectScope()
+    const state = scope.run(() => useCustomers(api))!
+    let settled = false
+    state.searchCustomers().then(() => { settled = true })
+    await Promise.resolve()
+    const config = post.mock.calls[0][2]!
+    expect(config.withCredentials).toBe(true)
+    expect(config.signal?.aborted).toBe(false)
+    scope.stop()
+    await flushPromises()
+    expect(config.signal?.aborted).toBe(true)
+    expect(settled).toBe(true)
+    expect(state.isLoading.value).toBe(false)
+    expect(state.loadError.value).toBe('')
+    await state.searchCustomers()
+    expect(post).toHaveBeenCalledTimes(1)
+  })
+
+  it('ends loading on timeout, then recovers with a new list request', async () => {
+    vi.useFakeTimers()
+    const post = vi.fn().mockReturnValueOnce(new Promise(() => {})).mockResolvedValueOnce({ data: { customers: [], total: 0 } })
+    const state = useCustomers({ post } as PostClient)
+    const pending = state.searchCustomers()
+    await vi.advanceTimersByTimeAsync(10000)
+    expect(state.isLoading.value).toBe(false)
+    expect(state.loadError.value).not.toBe('')
+    expect(post.mock.calls[0][2].signal.aborted).toBe(true)
+    await pending
+    await state.searchCustomers()
+    expect(state.loadError.value).toBe('')
+    expect(state.customerList.value).toEqual([])
+  })
+
+  it('preserves an unconfirmed write and never aborts or replays it when reads time out or scope stops', async () => {
+    vi.useFakeTimers()
+    let rejectWrite!: (error: Error) => void
+    const post = vi.fn((path: string) => path.endsWith('/select')
+      ? new Promise(() => {})
+      : new Promise((_resolve, reject) => { rejectWrite = reject }))
+    const scope = effectScope()
+    const state = scope.run(() => useCustomers({ post } as PostClient))!
+    const form = { customerName: '姓名', customerPhone: '19912345678', customerAge: 70 }
+    Object.assign(state.customerForm, form)
+    state.customerDialogVisible.value = true
+    const pendingRead = state.searchCustomers()
+    const saved = state.save()
+    await vi.advanceTimersByTimeAsync(10000)
+    await pendingRead
+    expect(state.saving.value).toBe(true)
+    const write = post.mock.calls.find(([path]) => path.endsWith('/add'))!
+    expect(write).toHaveLength(2)
+    scope.stop()
+    rejectWrite(new Error('response lost; verify result before retry'))
+    expect(await saved).toBe(false)
+    await vi.advanceTimersByTimeAsync(30000)
+    expect(state.customerForm).toMatchObject(form)
+    expect(state.customerDialogVisible.value).toBe(true)
+    expect(state.mutationError.value).toContain('response lost')
+    expect(post.mock.calls.filter(([path]) => path.endsWith('/add'))).toHaveLength(1)
+  })
+
   it('loads the latest page and search after changes during an active read', async () => {
     let first!: (value: unknown) => void
     let last!: (value: unknown) => void
