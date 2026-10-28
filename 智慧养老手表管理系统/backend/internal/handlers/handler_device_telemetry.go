@@ -161,12 +161,29 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 		rollback()
 		return
 	}
-	oldID := *d.OldID
-	now, beTime, day := parsed.now, parsed.beTime, parsed.day
-	hr, bp, step, sleep := parsed.hr, parsed.bp, parsed.step, parsed.sleep
-	sleepState, battery, appVersion := parsed.sleepState, parsed.battery, parsed.appVersion
-	lng, lat, sourceStr, alarm := parsed.lng, parsed.lat, parsed.sourceStr, parsed.alarm
-
+	if requestID, present := vstr(m, "requestId"); present &&
+		durableTelemetryEligible(parsed, requestID, h.Box) {
+		err := (telemetryRepository{box: h.Box}).QueueDurableReport(ctx, tx, d, parsed, requestID)
+		if err != nil {
+			rollback()
+			if durableQueueDuplicate(err) {
+				conflict409(w, "设备上报编号已存在，请勿重复生成")
+			} else {
+				response.Error500(w, ref())
+			}
+			return
+		}
+		if err := tx.Commit(ctx); err != nil {
+			response.Error500(w, ref())
+			return
+		}
+		response.OK(w, map[string]any{
+			"rateState": nil, "preState": nil, "queued": true,
+			"message": "设备数据已持久接收，等待后台处理",
+			"serverTime": parsed.now.Format(tsLayout),
+		})
+		return
+	}
 	persisted, err := (telemetryRepository{box: h.Box}).PersistDeviceReport(ctx, tx, d, parsed)
 	if err != nil {
 		rollback()
@@ -179,7 +196,7 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 	}
 	response.OK(w, map[string]any{
 		"rateState": persisted.rateState, "preState": persisted.preState,
-		"serverTime": now.Format(tsLayout),
+		"serverTime": parsed.now.Format(tsLayout),
 	})
 }
 
