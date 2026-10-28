@@ -204,4 +204,4 @@ go vet ./...
 
 [MIT License](LICENSE)。字体、地图和其他第三方组件遵循各自许可证。
 
-> **Breaking API update:** `preview` only serves `/api/v1/`, and browser sessions use `SUINING_SESSION`. Older `/restful/` clients require upgrading; see [API cutover](docs/API_V1_CUTOVER.md).
+> **Breaking API update:** `preview` only serves `/api/v1/`, and browser sessions use `SUINING_SESSION`. Unversioned clients require upgrading; see [API cutover](docs/API_V1_CUTOVER.md).
