@@ -99,7 +99,7 @@ func (b *Box) Open(text, scope string) (string, error) {
 }
 
 func openEnvelope(aead cipher.AEAD, encoded, scope string) (string, error) {
-	data, err := base64.RawStdEncoding.DecodeString(encoded)
+	data, err := base64.RawStdEncoding.Strict().DecodeString(encoded)
 	if err != nil || len(data) < aead.NonceSize() {
 		return "", errors.New("invalid encrypted value")
 	}
