@@ -7,9 +7,10 @@ import (
 	"crypto/subtle"
 	"encoding/base64"
 	"errors"
+	"time"
+
 	"github.com/jackc/pgx/v5"
 	dbstore "suining-care/internal/db"
-	"time"
 )
 
 func secretHash(clear string) (string, error) {
