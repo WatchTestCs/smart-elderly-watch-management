@@ -168,8 +168,9 @@ func touchDevice(ctx context.Context, q oldQuerier, deviceID int64, battery *int
 		aAny = *appVersion
 	}
 	_, err := q.Exec(ctx,
-		`UPDATE device SET last_time=$1, battery=COALESCE($2,battery),
-		 app_version=COALESCE($3,app_version), last_online_at=$1 WHERE device_id=$4`,
+		`UPDATE device SET last_time=GREATEST(COALESCE(last_time,$1),$1),
+		 battery=COALESCE($2,battery), app_version=COALESCE($3,app_version),
+		 last_online_at=GREATEST(COALESCE(last_online_at,$1),$1) WHERE device_id=$4`,
 		now, bAny, aAny, deviceID)
 	return err
 }

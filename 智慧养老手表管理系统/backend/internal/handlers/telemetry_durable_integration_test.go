@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"careold-go/internal/securestore"
 )
@@ -85,5 +86,27 @@ func TestDurableTelemetryRetainsCorruptQueuePayload(t *testing.T) {
 	var status string
 	if err := pool.QueryRow(context.Background(), "SELECT status,attempts FROM telemetry_inbox WHERE request_id='corrupt-encrypted-payload'").Scan(&status, &attempts); err != nil || status != "pending" || attempts != 1 {
 		t.Fatalf("corrupt item was lost: status=%s attempts=%d err=%v", status, attempts, err)
+	}
+}
+
+// Delayed inbox processing must never regress the device's last online time
+// after a newer synchronous heartbeat.
+func TestTouchDeviceTimeNeverRegresses(t *testing.T) {
+	pool := testDatabase(t)
+	seedDevice(t, pool)
+	ctx := context.Background()
+	now := time.Now().UTC().Truncate(time.Second)
+	if err := touchDevice(ctx, pool, 1, nil, nil, now); err != nil {
+		t.Fatal(err)
+	}
+	if err := touchDevice(ctx, pool, 1, nil, nil, now.Add(-time.Hour)); err != nil {
+		t.Fatal(err)
+	}
+	var stored time.Time
+	if err := pool.QueryRow(ctx, "SELECT last_time FROM device WHERE device_id=$1", 1).Scan(&stored); err != nil {
+		t.Fatal(err)
+	}
+	if !stored.Equal(now) {
+		t.Fatalf("device time regressed: got %v, want %v", stored, now)
 	}
 }

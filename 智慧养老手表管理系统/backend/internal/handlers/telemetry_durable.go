@@ -37,7 +37,8 @@ func durableTelemetryEligible(parsed parsedDeviceTelemetry, requestID string, bo
 		box != nil && durableRequestIDPattern.MatchString(requestID) &&
 		parsed.hr == nil && parsed.bp == nil && parsed.alarm == "" &&
 		parsed.lng == "" && parsed.lat == "" &&
-		(parsed.step != nil || parsed.sleep != nil || parsed.sleepState != nil || parsed.battery != nil || parsed.appVersion != nil)
+		parsed.battery == nil && parsed.appVersion == nil &&
+		(parsed.step != nil || parsed.sleep != nil || parsed.sleepState != nil)
 }
 
 // QueueDurableReport is invoked in the authenticated device transaction.
@@ -76,6 +77,7 @@ func durableQueueDuplicate(err error) bool {
 type durableQueueRow struct {
 	id, deviceID, elderID, bindingEpoch int64
 	payload                            string
+	nextRetryAt                        time.Time
 	attempts                           int
 }
 
@@ -140,16 +142,16 @@ func DrainDurableTelemetryBatch(ctx context.Context, db *dbstore.Database, box *
 	if err != nil {
 		return 0, err
 	}
-	rows, err := tx.Query(ctx, `SELECT id,device_id,elder_id,binding_epoch,payload,attempts
-		FROM telemetry_inbox WHERE status='pending' AND next_retry_at <= $1
-		ORDER BY id LIMIT 32 FOR UPDATE SKIP LOCKED`, time.Now().UTC())
+	rows, err := tx.Query(ctx, `SELECT id,device_id,elder_id,binding_epoch,payload,next_retry_at,attempts
+		FROM telemetry_inbox WHERE status='pending'
+		ORDER BY id LIMIT 32 FOR UPDATE SKIP LOCKED`)
 	if err != nil {
 		return 0, err
 	}
 	items := make([]durableQueueRow, 0, telemetryDurableBatchSize)
 	for rows.Next() {
 		var item durableQueueRow
-		if err := rows.Scan(&item.id, &item.deviceID, &item.elderID, &item.bindingEpoch, &item.payload, &item.attempts); err != nil {
+		if err := rows.Scan(&item.id, &item.deviceID, &item.elderID, &item.bindingEpoch, &item.payload, &item.nextRetryAt, &item.attempts); err != nil {
 			rows.Close()
 			return 0, err
 		}
@@ -165,7 +167,15 @@ func DrainDurableTelemetryBatch(ctx context.Context, db *dbstore.Database, box *
 	}
 
 	repo := telemetryRepository{box: box}
+	processed := 0
+	now := time.Now().UTC()
 	for _, item := range items {
+		// A failed older item must not allow a newer daily-state update to
+		// overtake it. A poison entry eventually becomes a retained dead letter.
+		if item.nextRetryAt.After(now) {
+			break
+		}
+		processed++
 		if _, err := tx.Exec(ctx, `SAVEPOINT telemetry_inbox_item`); err != nil {
 			return 0, err
 		}
@@ -185,7 +195,7 @@ func DrainDurableTelemetryBatch(ctx context.Context, db *dbstore.Database, box *
 	if err := tx.Commit(ctx); err != nil {
 		return 0, err
 	}
-	return len(items), nil
+	return processed, nil
 }
 
 func processDurableQueueItem(ctx context.Context, tx *dbstore.Transaction, repo telemetryRepository, item durableQueueRow) error {
