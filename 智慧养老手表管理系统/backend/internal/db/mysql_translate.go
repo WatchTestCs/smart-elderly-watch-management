@@ -104,26 +104,10 @@ func compileMySQLQuery(query string) (queryPlan, error) {
 			}
 			continue
 		}
-		// PostgreSQL 的正则匹配操作符。MySQL 用 REGEXP，间距不敏感；
-		// 唯一的静默错误来源是 x~'...'（无空格）——旧实现只替换 " ~ "，
-		// 这种写法会被 MySQL 当成按位取反，不报错但结果是错的。
+		// PostgreSQL regex operators are domain-owned. Reject a leaked operator
+		// instead of silently producing MySQL with different semantics.
 		if query[i] == '~' {
-			if i+1 < len(query) && (query[i+1] == '~' || query[i+1] == '*') {
-				return queryPlan{}, errors.New("不支持的 PostgreSQL 正则操作符（~~ 或 ~*），请改写为 REGEXP")
-			}
-			out = trimRightSpace(out)
-			if len(out) > 0 {
-				out = append(out, ' ')
-			}
-			out = append(out, "REGEXP"...)
-			i++
-			for i < len(query) && query[i] == ' ' {
-				i++
-			}
-			if i < len(query) {
-				out = append(out, ' ')
-			}
-			continue
+			return queryPlan{}, errors.New("PostgreSQL regex operator must be selected at the call site")
 		}
 		// now()：只在标识符边界处替换，避免动到 snow() 这类名字；
 		// 同时因为已经进入分词循环，字符串字面量里的 now() 不会被改写。
@@ -157,14 +141,6 @@ func compileMySQLQuery(query string) (queryPlan, error) {
 		}
 	}
 	return queryPlan{sql: string(out), positions: positions, parameters: len(positions), direct: direct}, nil
-}
-
-// trimRightSpace 去掉尾部空格，让 REGEXP 的输出保持单一空格分隔。
-func trimRightSpace(b []byte) []byte {
-	for len(b) > 0 && b[len(b)-1] == ' ' {
-		b = b[:len(b)-1]
-	}
-	return b
 }
 
 // identifierByte 判断 c 是否可以作为标识符的一部分，用于避免替换到
