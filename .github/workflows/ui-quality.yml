@@ -171,6 +171,7 @@ jobs:
           name: ui-quality-evidence
           path: |
             tests/ui/artifacts/
+            智慧养老手表管理系统/oldIot/qa/artifacts/f02-acceptance.json
             /tmp/suining-vite.log
             /tmp/suining-chrome.log
           if-no-files-found: warn

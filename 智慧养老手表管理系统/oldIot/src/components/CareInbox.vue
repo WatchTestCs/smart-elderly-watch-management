@@ -1,10 +1,11 @@
 <template>
-  <section class="care-inbox" aria-labelledby="care-inbox-title" v-loading="loading" element-loading-text="正在读取照护任务…" :aria-busy="String(loading)">
+  <section class="care-inbox" aria-labelledby="care-inbox-title" :aria-busy="String(loading)">
     <div class="care-inbox-heading">
       <div><h2 id="care-inbox-title">{{ scope === 'verified' ? '已复核的照护任务' : '需要接手的照护任务' }}</h2><p>求助已接收不等于通知送达；只有人工接单及复核才会结束任务。</p></div>
       <div class="care-inbox-tools"><label for="care-task-scope">任务范围</label><el-select id="care-task-scope" v-model="scope" :disabled="saving" @change="changeScope"><el-option label="待复核任务" value="active"/><el-option label="已复核任务" value="verified"/></el-select><el-button plain :disabled="saving" @click="load">刷新任务</el-button></div>
     </div>
     <CareOperationsPanel />
+    <p v-if="loading" role="status" class="care-loading">正在读取照护任务…（可继续刷新或切换分页）</p>
     <p v-if="error" role="alert" class="care-error">{{ error }}</p>
     <p v-else-if="!loading && !tasks.length" class="care-empty">{{ scope === 'verified' ? '当前没有已复核任务。' : '当前没有查询到待处理任务。请继续检查设备与服务状态。' }}</p>
     <p v-if="duty === 'auditor'" class="care-empty">当前为审计员岗位，可查看任务与履历。</p>
@@ -187,6 +188,7 @@ onBeforeUnmount(() => { clearInterval(timer); reads.dispose(); historyRequest++;
 .care-next-step{font-weight:600;color:#235442!important}
 .care-task-main span,.care-task-main small{color:#53645c}
 .care-task-actions{display:flex;gap:8px;flex-wrap:wrap}
+.care-loading{margin:10px 0;color:#53645c;font-size:14px}
 .care-error{color:#a4262c}
 .care-history{list-style:decimal;padding-left:24px}
 .care-history li{padding:10px 0;border-bottom:1px solid #e5ebe7}
