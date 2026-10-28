@@ -1,17 +1,16 @@
-name: Vue dependency lock refresh
+name: Vue 3.6 upgrade gate
 
 on:
   push:
     branches: [preview]
     paths:
-      - "智慧养老手表管理系统/oldIot/package.json"
       - ".github/workflows/vue36-lock-refresh.yml"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  lock:
+  upgrade:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -19,28 +18,32 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          persist-credentials: false
+          persist-credentials: true
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
         with:
           node-version: "24"
           cache: npm
           cache-dependency-path: 智慧养老手表管理系统/oldIot/package-lock.json
-      - name: Refresh lockfile for declared Vue version
-        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-      - name: Verify lockfile Vue matches package manifest
+      - name: Stage Vue 3.6 RC and refresh lock
         run: |
-          node -e "const p=require('./package.json'); const l=require('./package-lock.json'); const v=l.packages['node_modules/vue']?.version; if(v!==p.dependencies.vue) throw new Error('resolved '+v+', manifest '+p.dependencies.vue)"
-          npm ls vue --package-lock-only || true
-      - name: Cold-install and compatibility smoke
+          npm pkg set dependencies.vue=3.6.0-rc.13
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          node -e "const p=require('./package.json'); const l=require('./package-lock.json'); if(p.dependencies.vue!=='3.6.0-rc.13'||l.packages['node_modules/vue']?.version!=='3.6.0-rc.13') process.exit(1)"
+      - name: Cold install without peer-dependency bypasses
         run: |
           rm -rf node_modules
           npm ci
-          npm test
-          npm run typecheck
-          npm run build
-      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
-        with:
-          name: vue-package-lock
-          path: 智慧养老手表管理系统/oldIot/package-lock.json
-          if-no-files-found: error
-          retention-days: 1
+      - name: Unit tests
+        run: npm test
+      - name: Type check
+        run: npm run typecheck
+      - name: Production build
+        run: npm run build
+      - name: Commit validated Vue upgrade
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          git diff --cached --check
+          git commit -m "chore(frontend): upgrade Vue to 3.6.0-rc.13"
+          git push origin HEAD:preview
