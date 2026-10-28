@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"careold-go/internal/db"
+	"suining-care/internal/db"
 	"github.com/jackc/pgx/v5"
 )
 
