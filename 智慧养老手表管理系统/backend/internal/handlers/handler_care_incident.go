@@ -35,6 +35,21 @@ func careAdmin(w http.ResponseWriter, r *http.Request) (string, bool) {
 	return strconv.FormatInt(p.ID, 10), true
 }
 
+func careNotificationStatusExpr(mysql bool) string {
+	agg := "bool_or"
+	if mysql {
+		agg = "MAX"
+	}
+	return `(SELECT CASE
+            WHEN ` + agg + `(n.status='delivered') THEN 'delivered'
+            WHEN ` + agg + `(n.status='failed') THEN 'failed'
+            WHEN ` + agg + `(n.status='sending') THEN 'sending'
+            WHEN ` + agg + `(n.status='pending') THEN 'pending'
+            WHEN ` + agg + `(n.status='sent') THEN 'sent'
+            ELSE 'no_recipient' END
+           FROM care_notification_outbox n WHERE n.incident_id=i.id)`
+}
+
 func (h *Handler) careIncidents(w http.ResponseWriter, r *http.Request) {
 	actor, ok := careAdmin(w, r)
 	if !ok || !h.auditCareAccess(w, r, actor, "incident_list", nil) {
@@ -69,14 +84,7 @@ func (h *Handler) careIncidents(w http.ResponseWriter, r *http.Request) {
 		`SELECT i.id,i.old_id,i.device_id,i.kind,i.state,i.severity,i.created_at,i.due_at,
           i.acknowledged_by,i.acknowledged_at,i.resolved_by,i.resolved_at,i.verified_by,i.verified_at,
           o.name,
-          (SELECT CASE
-            WHEN bool_or(n.status='delivered') THEN 'delivered'
-            WHEN bool_or(n.status='failed') THEN 'failed'
-            WHEN bool_or(n.status='sending') THEN 'sending'
-            WHEN bool_or(n.status='pending') THEN 'pending'
-            WHEN bool_or(n.status='sent') THEN 'sent'
-            ELSE 'no_recipient' END
-           FROM care_notification_outbox n WHERE n.incident_id=i.id)
+          `+careNotificationStatusExpr(h.DB.IsMySQL())+`
      FROM care_incident i LEFT JOIN oldperson o ON o.old_id=i.old_id
      WHERE (i.state='verified')=$1 ORDER BY i.due_at ASC, i.id DESC
      LIMIT $2 OFFSET $3`, state == "verified", ps, (page-1)*ps)
