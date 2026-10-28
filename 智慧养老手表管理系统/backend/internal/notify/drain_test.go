@@ -1,7 +1,7 @@
 package notify
 
 import (
-	"careold-go/internal/db/dbtest"
+	"suining-care/internal/db/dbtest"
 	"context"
 	"net/http"
 	"net/http/httptest"

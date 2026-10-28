@@ -1,8 +1,8 @@
 package notify
 
 import (
-	"careold-go/internal/db/dbtest"
-	"careold-go/internal/securestore"
+	"suining-care/internal/db/dbtest"
+	"suining-care/internal/securestore"
 	"context"
 	"encoding/base64"
 	"net/http"

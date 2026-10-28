@@ -14,9 +14,9 @@ import (
 	"sync"
 	"time"
 
-	"careold-go/internal/db"
-	"careold-go/internal/observability"
-	"careold-go/internal/securestore"
+	"suining-care/internal/db"
+	"suining-care/internal/observability"
+	"suining-care/internal/securestore"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"log/slog"
