@@ -164,6 +164,10 @@ jobs:
           npm ci --prefix qa
           CARE_CHROME_PATH="$CHROME" node qa/f02-acceptance.cjs
 
+      - name: Guardian and lifecycle cancellation regression
+        shell: bash
+        run: CARE_CHROME_PATH="$CHROME" node qa/lifecycle-acceptance.cjs
+
       - name: Upload UI evidence
         if: ${{ always() }}
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
@@ -172,6 +176,7 @@ jobs:
           path: |
             tests/ui/artifacts/
             智慧养老手表管理系统/oldIot/qa/artifacts/f02-acceptance.json
+            智慧养老手表管理系统/oldIot/qa/artifacts/lifecycle-acceptance.json
             /tmp/suining-vite.log
             /tmp/suining-chrome.log
           if-no-files-found: warn
