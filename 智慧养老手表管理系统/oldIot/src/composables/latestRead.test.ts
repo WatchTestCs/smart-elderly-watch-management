@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { afterEach, describe, it, expect, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { createLatestRead } from './latestRead'
 
@@ -10,6 +10,8 @@ function deferred<T>() {
 }
 
 describe('cancelable latest read scheduler', () => {
+  afterEach(() => { vi.useRealTimers() })
+
   it('coalesces a synchronous burst before starting the first request', async () => {
     const read = vi.fn(async (page: number) => page)
     const accept = vi.fn(), fail = vi.fn(), busy = vi.fn()
@@ -100,6 +102,41 @@ describe('cancelable latest read scheduler', () => {
     } finally {
       vi.useRealTimers()
     }
+  })
+
+  it('cancels a read silently, clears busy state and can load again', async () => {
+    vi.useFakeTimers()
+    const first = deferred<number>()
+    const read = vi.fn((_page: number, _signal: AbortSignal) => first.promise)
+      .mockReturnValueOnce(first.promise)
+      .mockResolvedValueOnce(2)
+    const accept = vi.fn(), fail = vi.fn(), busy = vi.fn()
+    const queue = createLatestRead(read, accept, fail, busy)
+    const pending = queue.run(1)
+    await Promise.resolve()
+    const signal = read.mock.calls[0]?.[1]
+    queue.cancel()
+    await pending
+    expect(signal?.aborted).toBe(true)
+    expect(fail).not.toHaveBeenCalled()
+    expect(busy.mock.calls).toEqual([[true], [false]])
+    await queue.run(2)
+    first.resolve(1)
+    await vi.advanceTimersByTimeAsync(10_000)
+    expect(accept.mock.calls).toEqual([[2, 2]])
+    expect(fail).not.toHaveBeenCalled()
+    expect(vi.getTimerCount()).toBe(0)
+  })
+
+  it('does not start a read when disposed before the scheduled drain', async () => {
+    const read = vi.fn(), busy = vi.fn()
+    const queue = createLatestRead(read, vi.fn(), vi.fn(), busy)
+    const pending = queue.run(1)
+    queue.dispose()
+    queue.dispose()
+    await pending
+    expect(read).not.toHaveBeenCalled()
+    expect(busy.mock.calls).toEqual([[true], [false]])
   })
 
   it('settles a waiting run on disposal without accepting late responses', async () => {
