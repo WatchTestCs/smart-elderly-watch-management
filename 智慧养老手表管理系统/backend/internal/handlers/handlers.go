@@ -2,16 +2,16 @@
 package handlers
 
 import (
-	"careold-go/internal/analytics"
-	"careold-go/internal/blob"
-	dbstore "careold-go/internal/db"
-	"careold-go/internal/ratelimit"
+	"suining-care/internal/analytics"
+	"suining-care/internal/blob"
+	dbstore "suining-care/internal/db"
+	"suining-care/internal/ratelimit"
 	"net/http"
 	"sync"
 
-	"careold-go/internal/config"
-	"careold-go/internal/securestore"
-	"careold-go/internal/session"
+	"suining-care/internal/config"
+	"suining-care/internal/securestore"
+	"suining-care/internal/session"
 )
 
 // Handler 聚合依赖，各组 endpoint 实现在 handler_*.go 中。

@@ -4,10 +4,10 @@ package handlers
 
 import (
 	"bytes"
-	"careold-go/internal/auth"
-	dbstore "careold-go/internal/db"
-	"careold-go/internal/response"
-	"careold-go/internal/session"
+	"suining-care/internal/auth"
+	dbstore "suining-care/internal/db"
+	"suining-care/internal/response"
+	"suining-care/internal/session"
 	"encoding/json"
 
 	"io"

@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"time"
 
-	"careold-go/internal/health"
-	"careold-go/internal/observability"
-	"careold-go/internal/response"
+	"suining-care/internal/health"
+	"suining-care/internal/observability"
+	"suining-care/internal/response"
 	fastjson "github.com/goccy/go-json"
 )
 
