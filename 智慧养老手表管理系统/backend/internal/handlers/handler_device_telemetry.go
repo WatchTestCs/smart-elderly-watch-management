@@ -41,10 +41,10 @@ func checkTelemetry(w http.ResponseWriter, m map[string]any) bool {
 // parsedDeviceTelemetry holds values already checked before opening a database
 // transaction. The existing watch wire format and response schema are retained.
 type parsedDeviceTelemetry struct {
-	now, beTime, day            time.Time
+	now, beTime, day             time.Time
 	hr, bp, step, sleep, battery *int
-	sleepState, appVersion      *string
-	lng, lat, sourceStr, alarm  string
+	sleepState, appVersion       *string
+	lng, lat, sourceStr, alarm   string
 }
 
 func parseDeviceTelemetryPayload(w http.ResponseWriter, m map[string]any, now time.Time) (parsedDeviceTelemetry, bool) {
