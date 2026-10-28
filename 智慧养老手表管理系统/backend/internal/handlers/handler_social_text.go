@@ -27,6 +27,13 @@ type picDTO struct {
 	PicName *string `json:"picName"`
 }
 
+func socialTextTable(mysql bool) string {
+	if mysql {
+		return "`text`"
+	}
+	return "text"
+}
+
 func pictureGroupAllocatorSQL(mysql bool) (string, string) {
 	if mysql {
 		return "INSERT INTO picture_group () VALUES ()", "SELECT LAST_INSERT_ID()"
@@ -61,8 +68,8 @@ func (h *Handler) textSelect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	title := str(m, "title")
-	const filter = " FROM text WHERE ($1='' OR title LIKE $2)"
-	const countSQL = "SELECT COUNT(*) AS total" + filter
+	filter := " FROM " + socialTextTable(h.DB.IsMySQL()) + " WHERE ($1='' OR title LIKE $2)"
+	countSQL := "SELECT COUNT(*) AS total" + filter
 	sql := "SELECT " + textColumns + filter + " ORDER BY time DESC, text_id DESC"
 	args := []any{title, "%" + title + "%"}
 	var total int64
@@ -108,7 +115,7 @@ func (h *Handler) textSelectDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var t textDTO
-	err := h.DB.QueryRow(r.Context(), "SELECT "+textColumns+" FROM text WHERE text_id=$1", textID).Scan(
+	err := h.DB.QueryRow(r.Context(), "SELECT "+textColumns+" FROM "+socialTextTable(h.DB.IsMySQL())+" WHERE text_id=$1", textID).Scan(
 		&t.TextID, &t.Title, &t.TextMain, &t.Time, &t.PicID)
 	if err != nil {
 		// 复刻源码：公告不存在时后续解引用抛 500。
@@ -195,7 +202,7 @@ func (h *Handler) textAdd(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	var textID int64
-	err = tx.QueryRow(r.Context(), "INSERT INTO text(title,text_main,time,pic_id) VALUES($1,$2,$3,$4) RETURNING text_id",
+	err = tx.QueryRow(r.Context(), "INSERT INTO "+socialTextTable(tx.IsMySQL())+"(title,text_main,time,pic_id) VALUES($1,$2,$3,$4) RETURNING text_id",
 		title, textMain, time.Now(), picID).Scan(&textID)
 	if err != nil {
 		response.Error500(w, ref())
@@ -234,7 +241,7 @@ func (h *Handler) textDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var existing textDTO
-	err := h.DB.QueryRow(r.Context(), "SELECT "+textColumns+" FROM text WHERE text_id=$1", textID).Scan(
+	err := h.DB.QueryRow(r.Context(), "SELECT "+textColumns+" FROM "+socialTextTable(h.DB.IsMySQL())+" WHERE text_id=$1", textID).Scan(
 		&existing.TextID, &existing.Title, &existing.TextMain, &existing.Time, &existing.PicID)
 	if isNotFound(err) {
 		writeCode(w, false)
@@ -250,7 +257,7 @@ func (h *Handler) textDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer tx.Rollback(r.Context())
-	ct, err := tx.Exec(r.Context(), "DELETE FROM text WHERE text_id=$1", textID)
+	ct, err := tx.Exec(r.Context(), "DELETE FROM "+socialTextTable(tx.IsMySQL())+" WHERE text_id=$1", textID)
 	if err != nil {
 		response.Error500(w, ref())
 		return
@@ -286,7 +293,7 @@ func (h *Handler) textUpdate(w http.ResponseWriter, r *http.Request) {
 	title := str(m, "title")
 	textMain := str(m, "textMain")
 	var existing textDTO
-	err := h.DB.QueryRow(r.Context(), "SELECT "+textColumns+" FROM text WHERE text_id=$1", textID).Scan(
+	err := h.DB.QueryRow(r.Context(), "SELECT "+textColumns+" FROM "+socialTextTable(h.DB.IsMySQL())+" WHERE text_id=$1", textID).Scan(
 		&existing.TextID, &existing.Title, &existing.TextMain, &existing.Time, &existing.PicID)
 	if isNotFound(err) {
 		writeCode(w, false)
@@ -330,7 +337,7 @@ func (h *Handler) textUpdate(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	ct, err := tx.Exec(r.Context(), "UPDATE text SET title=$1, text_main=$2, time=$3, pic_id=$4 WHERE text_id=$5",
+	ct, err := tx.Exec(r.Context(), "UPDATE "+socialTextTable(tx.IsMySQL())+" SET title=$1, text_main=$2, time=$3, pic_id=$4 WHERE text_id=$5",
 		title, textMain, time.Now(), picID, textID)
 	if err != nil {
 		response.Error500(w, ref())
