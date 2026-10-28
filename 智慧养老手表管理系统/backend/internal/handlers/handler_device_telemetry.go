@@ -179,7 +179,7 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 		}
 		response.OK(w, map[string]any{
 			"rateState": nil, "preState": nil, "queued": true,
-			"message": "设备数据已持久接收，等待后台处理",
+			"message":    "设备数据已持久接收，等待后台处理",
 			"serverTime": parsed.now.Format(tsLayout),
 		})
 		return

@@ -76,9 +76,9 @@ func durableQueueDuplicate(err error) bool {
 
 type durableQueueRow struct {
 	id, deviceID, elderID, bindingEpoch int64
-	payload                            string
-	nextRetryAt                        time.Time
-	attempts                           int
+	payload                             string
+	nextRetryAt                         time.Time
+	attempts                            int
 }
 
 func decodeQueuedTelemetry(box *securestore.Box, raw string) (parsedDeviceTelemetry, error) {
@@ -99,7 +99,7 @@ func decodeQueuedTelemetry(box *securestore.Box, raw string) (parsedDeviceTeleme
 	day := payload.ReportedAt.UTC()
 	return parsedDeviceTelemetry{
 		now: payload.ReceivedAt, beTime: payload.ReportedAt,
-		day: time.Date(day.Year(), day.Month(), day.Day(), 0, 0, 0, 0, time.UTC),
+		day:  time.Date(day.Year(), day.Month(), day.Day(), 0, 0, 0, 0, time.UTC),
 		step: payload.Step, sleep: payload.Sleep, sleepState: payload.SleepState,
 		battery: payload.Battery, appVersion: payload.AppVersion,
 		sourceStr: "gps",
