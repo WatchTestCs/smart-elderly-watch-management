@@ -1,9 +1,11 @@
 package care
 
 import (
+	"bytes"
 	dbstore "careold-go/internal/db"
 	"careold-go/internal/db/dbtest"
 	"context"
+	"encoding/base64"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -14,6 +16,7 @@ import (
 	"time"
 
 	"careold-go/internal/db"
+	"careold-go/internal/securestore"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -111,7 +114,13 @@ func TestOverdueSOSCreatesEscalationAuditAndFallback(t *testing.T) {
 	if _, err := pool.Exec(ctx, "UPDATE care_incident SET due_at=now()-interval '1 minute' WHERE id=1"); err != nil {
 		t.Fatal(err)
 	}
-	d := &dispatcher{db: pool, escalationPhone: "13800000002"}
+	// Production refuses to persist a sensitive recipient without a key.
+	// Exercise escalation with a dedicated test-only encryption key.
+	box, err := securestore.New(base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{2}, 32)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	d := &dispatcher{db: pool, box: box, escalationPhone: "13800000002"}
 	if err := d.escalate(ctx); err != nil {
 		t.Fatal(err)
 	}

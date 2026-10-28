@@ -23,6 +23,7 @@ import (
 	"careold-go/internal/db"
 
 	"careold-go/internal/session"
+	"careold-go/internal/securestore"
 	"github.com/google/uuid"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -228,9 +229,23 @@ func TestIntegrationCoordinatesAndSOS(t *testing.T) {
 			t.Fatal(out)
 		}
 	}
+	// Coordinates are now encrypted at rest because this integration fixture
+	// correctly configures its own test-only key. Check the decrypted Go
+	// response contract rather than asserting plaintext in the database.
 	var count int
-	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM device_location WHERE lng='121.4737' AND lat='31.2304'").Scan(&count); err != nil || count != 2 {
-		t.Fatalf("numeric coordinates persisted=%d err=%v", count, err)
+	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM device_location").Scan(&count); err != nil || count != 2 {
+		t.Fatalf("expected both coordinate samples, count=%d err=%v", count, err)
+	}
+	var encryptedLng, encryptedLat string
+	if err := pool.QueryRow(context.Background(), "SELECT lng,lat FROM device_location ORDER BY id LIMIT 1").Scan(&encryptedLng, &encryptedLat); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasPrefix(encryptedLng, securestore.Prefix) || !strings.HasPrefix(encryptedLat, securestore.Prefix) {
+		t.Fatal("device coordinates persisted as plaintext")
+	}
+	plaintextLng, plaintextLat, err := openCoordinates(h.Box, &encryptedLng, &encryptedLat)
+	if err != nil || plaintextLng == nil || plaintextLat == nil || *plaintextLng != "121.4737" || *plaintextLat != "31.2304" {
+		t.Fatalf("encrypted coordinate roundtrip failed: lng=%v lat=%v err=%v", plaintextLng, plaintextLat, err)
 	}
 	bad := callAPI(h.deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "lng": 181, "lat": 31.2})
 	if bad.Code != 400 {
