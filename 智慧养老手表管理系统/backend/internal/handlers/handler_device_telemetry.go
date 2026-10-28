@@ -167,6 +167,24 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 	sleepState, battery, appVersion := parsed.sleepState, parsed.battery, parsed.appVersion
 	lng, lat, sourceStr, alarm := parsed.lng, parsed.lat, parsed.sourceStr, parsed.alarm
 
+	// Only non-urgent step/sleep reports may use the durable queue.
+	// A successful enqueue is committed before any acknowledgement is sent.
+	if attempted, queued := h.maybeQueueDurableTelemetry(w, ctx, tx, d, parsed); attempted {
+		if !queued {
+			rollback()
+			response.Error500(w, ref())
+			return
+		}
+		if err := tx.Commit(ctx); err != nil {
+			response.Error500(w, ref())
+			return
+		}
+		response.OK(w, map[string]any{
+			"rateState": nil, "preState": nil,
+			"serverTime": parsed.now.Format(tsLayout), "queued": true,
+		})
+		return
+	}
 	// The repository owns both SQL dialects; this handler only owns the
 	// authenticated transaction and the legacy wire response.
 	rateState, preState, err := NewTelemetryRepository(h).Persist(ctx, tx, d, oldID, parsed, true)

@@ -196,13 +196,14 @@ func watchDatabase(ctx context.Context, cfg config.Config, sessions *session.Sto
 				go func() {
 					defer close(done)
 					var jobs sync.WaitGroup
-					jobs.Add(6)
+					jobs.Add(7)
 					go func() { defer jobs.Done(); rules.Run(ctx, pool, h.Box) }()
 					go func() { defer jobs.Done(); notify.Run(ctx, pool, h.Box) }()
 					go func() { defer jobs.Done(); h.RunCapabilities(ctx) }()
 					go func() { defer jobs.Done(); care.Run(ctx, pool, h.Box) }()
 					go func() { defer jobs.Done(); analytics.Run(ctx, pool, cfg.PGAnalyticsURL, &service.analytics) }()
 					go func() { defer jobs.Done(); handlers.RunSignedDeviceNonceCleanup(ctx, pool) }()
+					go func() { defer jobs.Done(); h.RunDurableTelemetry(ctx) }()
 					jobs.Wait()
 				}()
 				api = limiter.Middleware(csrf.Middleware(sessions, auth.Middleware(sessions, h.EnforceAdminDuty(sensitiveCareAudit(pool, mux)))))
