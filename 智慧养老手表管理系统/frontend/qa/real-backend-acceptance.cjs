@@ -67,6 +67,7 @@ async function main () {
     const device = await post('device/create', { alias: '测试手表', model: 'QA', oldId: '' })
     const code = await post('device/createBindCode', { oldId: details.oldId, expireDays: '1' })
     await post('device/bind', { deviceNo: device.deviceNo, secret: device.secret, code: code.code })
+    const deviceSession = await post('device/login', { deviceNo: device.deviceNo, secret: device.secret })
     const bound = (await post('device/list', {})).devices[0]
     const linked = (await post('oldPerson/selectDetail', { name: '测试长者' })).oldPersonDetails[0]
     check('binding keeps both inventory and elder references consistent', bound.oldId === details.oldId && linked.deviceId === device.deviceId)
@@ -81,7 +82,7 @@ async function main () {
     await post('device/report', { deviceNo: device.deviceNo, secret: device.secret, hr: 72 })
     const metric = (await post('ratepre/selectRatepre', {})).ratepreDtoList[0]
     check('real heart-rate-only upload leaves blood pressure unknown', metric.hr === 72 && metric.bp === null && metric.preState === null)
-    await post('device/sos', { deviceNo: device.deviceNo, secret: device.secret, requestId: 'qa-press-1' })
+    await post('device/sos', { deviceNo: device.deviceNo, secret: device.secret, requestId: 'qa-press-1', bindingVersion: deviceSession.bindingVersion })
     await page.goto(base + '/#/main')
     await page.locator('.care-task').first().waitFor()
     for (const [button, title, note] of [['接单', '确认接单', ''], ['开始处置', '开始处置', ''], ['登记处置', '登记处置措施', '护理记录'.repeat(300)]]) {

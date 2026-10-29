@@ -217,19 +217,14 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 	if !checkTelemetry(w, m) {
 		return
 	}
-	var bindingVersion int64
-	_, hasBindingVersion := m["bindingVersion"]
-	if hasBindingVersion {
-		var valid bool
-		bindingVersion, valid = int64Val(m, "bindingVersion")
-		if !valid || bindingVersion < 1 {
-			writeValidation400(w)
-			return
-		}
+	bindingVersion, valid := int64Val(m, "bindingVersion")
+	if !valid || bindingVersion < 1 {
+		writeValidation400(w)
+		return
 	}
 	// SOS retry identifiers must be checked before opening a DB transaction.
 	requestID, _ := vstr(m, "requestId")
-	if requestID != "" && (len(requestID) > 64 || !sosRequestIDOK(requestID)) {
+	if requestID == "" || len(requestID) > 64 || !sosRequestIDOK(requestID) {
 		writeValidation400(w)
 		return
 	}
@@ -286,7 +281,7 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 		hwFail(w, "0004", "设备号或密钥不正确")
 		return
 	}
-	if locked.OldID == nil || *locked.OldID != expectedOwner || (hasBindingVersion && locked.HealthEpoch != bindingVersion) {
+	if locked.OldID == nil || *locked.OldID != expectedOwner || locked.HealthEpoch != bindingVersion {
 		rollback()
 		conflict409(w, "绑定已变化，请重新登录；旧绑定求助不能归入新老人")
 		return

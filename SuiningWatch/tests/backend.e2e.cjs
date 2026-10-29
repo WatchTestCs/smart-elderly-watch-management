@@ -66,6 +66,8 @@ async function main() {
   assert.equal(changes.changes.length, 2);
   checks.push('two simulated samples persisted; retry acknowledged two duplicates without extra changes');
   const sos = { ...credentials, requestId: 'watch-sim-e2e-same-press', bindingVersion: live.version };
+  await request('/api/v1/device/sos', { ...credentials, requestId: 'missing-binding-version' }, {}, 400);
+  await request('/api/v1/device/sos', { ...credentials, bindingVersion: live.version }, {}, 400);
   const first = await request('/api/v1/device/sos', sos);
   const retry = await request('/api/v1/device/sos', sos);
   assert.equal(retry.incidentId, first.incidentId);

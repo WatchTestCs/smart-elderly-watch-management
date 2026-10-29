@@ -108,7 +108,7 @@ func TestImageS3TwoInstancesAndRealRestore(t *testing.T) {
 	if code := post(a.URL, "/api/v1/family/updateTouPic", map[string]any{"familyPhone": "13800000001", "familyTouPic": key}); code != 200 {
 		t.Fatalf("image reference HTTP %d", code)
 	}
-	if code := post(a.URL, "/api/v1/device/sos", map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "requestId": "restore-pending-sos"}); code != 200 {
+	if code := post(a.URL, "/api/v1/device/sos", map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "requestId": "restore-pending-sos", "bindingVersion": 1}); code != 200 {
 		t.Fatalf("durable SOS fixture HTTP %d", code)
 	}
 	read := func(server string) []byte {

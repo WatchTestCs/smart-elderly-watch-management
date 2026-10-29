@@ -280,7 +280,7 @@ func TestCareVerdictAndVitalReviewAudit(t *testing.T) {
 	pool := dbtest.MySQL(t)
 	seedDevice(t, pool)
 	h := testHandler(t, pool)
-	sos := api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret})
+	sos := api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "requestId": "test-press", "bindingVersion": 1})
 	id := sos["incidentId"]
 	for _, step := range []struct {
 		action string

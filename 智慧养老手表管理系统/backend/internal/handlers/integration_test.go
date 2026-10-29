@@ -208,7 +208,7 @@ func TestIntegrationCoordinatesAndSOS(t *testing.T) {
 	h := testHandler(t, pool)
 	seedDevice(t, pool)
 	// No current or historical location must still create an actionable SOS.
-	out := api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret})
+	out := api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "requestId": "test-press", "bindingVersion": 1})
 	if out["returnCode"] != "1111" {
 		t.Fatal(out)
 	}
@@ -218,7 +218,7 @@ func TestIntegrationCoordinatesAndSOS(t *testing.T) {
 	}
 	// Real handlers must accept numeric decimal coordinates for reports and SOS.
 	for _, handler := range []http.HandlerFunc{h.deviceReport, h.deviceSos} {
-		out = api(t, handler, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "lng": 121.4737, "lat": 31.2304, "hr": 75, "step": 120})
+		out = api(t, handler, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "lng": 121.4737, "lat": 31.2304, "hr": 75, "step": 120, "requestId": "coordinate-press", "bindingVersion": 1})
 		if out["returnCode"] != "1111" {
 			t.Fatal(out)
 		}

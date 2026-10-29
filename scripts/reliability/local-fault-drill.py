@@ -145,7 +145,7 @@ def main():
         return body
 
     def sos(request_id):
-        code, body = http("/api/v1/device/sos", {"deviceNo": "LAB-WATCH", "secret": device_secret, "requestId": request_id})
+        code, body = http("/api/v1/device/sos", {"deviceNo": "LAB-WATCH", "secret": device_secret, "requestId": request_id, "bindingVersion": binding_version})
         data = json.loads(body)
         if code != 200 or data.get("returnCode") != "1111":
             raise AssertionError("SOS did not commit successfully: "+str(code))
@@ -264,6 +264,11 @@ def main():
         manifest["mysql_durability"]=json.loads(sql("SELECT JSON_OBJECT('version',@@version,'innodb_flush_log_at_trx_commit',@@innodb_flush_log_at_trx_commit,'datadir',@@datadir)"))
         manifest["postgres_version"]=run([pg_bin/"postgres.exe","--version"])
         (output/"environment.json").write_text(json.dumps(manifest,indent=2),encoding="utf-8")
+        login_code, login_body = http("/api/v1/device/login", {"deviceNo": "LAB-WATCH", "secret": device_secret})
+        login_data = json.loads(login_body)
+        if login_code != 200 or login_data.get("returnCode") != "1111" or not login_data.get("bindingVersion"):
+            raise AssertionError("device authentication did not return a binding version")
+        binding_version = login_data["bindingVersion"]
         initial = sos("initial-duplicate-test")
         assert sos("initial-duplicate-test") == initial
         wait("initial signed delivery", lambda: notification(initial)["status"] == "delivered", 20)
@@ -327,7 +332,7 @@ def main():
 
         since = time.time(); stop_mysql()
         wait("business API withdraws on actual MySQL loss", lambda: status().get("databaseReady") is False, 20)
-        code, _ = http("/api/v1/device/sos", {"deviceNo": "LAB-WATCH", "secret": device_secret, "requestId": "must-not-fake-success"})
+        code, _ = http("/api/v1/device/sos", {"deviceNo": "LAB-WATCH", "secret": device_secret, "requestId": "must-not-fake-success", "bindingVersion": binding_version})
         assert code == 503
         alert("SuiningBusinessDatabaseUnavailable", since, 100)
         record("MySQL down critical + SOS unavailable", sos_http=code, healthz_http=http("/healthz")[0], prometheus_alive=children["prometheus"].poll() is None)

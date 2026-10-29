@@ -88,7 +88,7 @@ func TestCareFullHTTPChainAfterRealGatewayTimeout(t *testing.T) {
 	defer func() { http.DefaultTransport = transport }()
 	t.Setenv("CARE_NOTIFY_WEBHOOK_URL", gateway.URL)
 	t.Setenv("CARE_NOTIFY_WEBHOOK_TOKEN", "synthetic-gateway-token")
-	press := map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "requestId": "full-chain-real-timeout"}
+	press := map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "requestId": "full-chain-real-timeout", "bindingVersion": 1}
 	first := api(t, h.deviceSos, press)
 	duplicate := api(t, h.deviceSos, press)
 	if first["incidentId"] != duplicate["incidentId"] || duplicate["duplicate"] != true {

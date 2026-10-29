@@ -32,6 +32,15 @@ func TestSOSRejectsStaleBinding(t *testing.T) {
 	if incidents != 0 || alarms != 0 {
 		t.Fatalf("stale request created incidents=%d alarms=%d", incidents, alarms)
 	}
+	response = callAPI(h.deviceSos, map[string]any{
+		"deviceNo": "WATCH001", "secret": testSecret, "requestId": "missing-version-after-rebind",
+	})
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("unversioned SOS after rebind: HTTP %d, want 400", response.Code)
+	}
+	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM care_incident").Scan(&incidents); err != nil || incidents != 0 {
+		t.Fatalf("unversioned request created incidents=%d err=%v", incidents, err)
+	}
 }
 
 func TestSOSConcurrentRebind(t *testing.T) {
@@ -96,7 +105,7 @@ func TestSOSConcurrentRebind(t *testing.T) {
 	}
 }
 
-func TestSOSVersionedRetryAndLegacyCompatibility(t *testing.T) {
+func TestSOSVersionedRetryAndRequiredIdentity(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
 	h := testHandler(t, pool)
@@ -106,12 +115,17 @@ func TestSOSVersionedRetryAndLegacyCompatibility(t *testing.T) {
 	if first["incidentId"] != again["incidentId"] || again["duplicate"] != true {
 		t.Fatalf("retry: first=%v again=%v", first, again)
 	}
-	legacy := api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "requestId": "legacy"})
-	if legacy["returnCode"] != "1111" {
-		t.Fatalf("legacy SOS: %v", legacy)
+	for _, invalid := range []map[string]any{
+		{"deviceNo": "WATCH001", "secret": testSecret, "requestId": "missing-version"},
+		{"deviceNo": "WATCH001", "secret": testSecret, "bindingVersion": 1},
+	} {
+		response := callAPI(h.deviceSos, invalid)
+		if response.Code != http.StatusBadRequest {
+			t.Fatalf("missing identity: HTTP %d, want 400: %s", response.Code, response.Body.String())
+		}
 	}
 	for _, invalid := range []any{nil, 0, -1, 1.5, "bad"} {
-		response := callAPI(h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "bindingVersion": invalid})
+		response := callAPI(h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "bindingVersion": invalid, "requestId": "invalid-version"})
 		if response.Code != http.StatusBadRequest {
 			t.Fatalf("bindingVersion %v: HTTP %d", invalid, response.Code)
 		}

@@ -44,7 +44,7 @@ func TestSOSInvalidRequestIDNeverOpensDatabase(t *testing.T) {
 	for _, requestID := range []string{"invalid request ID", "bad/identifier", "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789too-long"} {
 		response := callAPI((&Handler{}).deviceSos, map[string]any{
 			"deviceNo": "WATCH001", "secret": "existing-device-secret",
-			"requestId": requestID,
+			"requestId": requestID, "bindingVersion": 1,
 		})
 		if response.Code != http.StatusBadRequest {
 			t.Fatalf("requestID %q: HTTP %d, want 400: %s", requestID, response.Code, response.Body.String())
