@@ -71,7 +71,7 @@ module.exports = async function (run) {
    'api/v1/ratepre/selectRatepreCount':{rates:[{}],pres:[]},
    'api/v1/ratepre/alertCount':{rateTotal:1,preTotal:0},
    'api/v1/family/updatePassword':{returnCode:mode==='password-success'?'1111':'0000',message:'手机号或原密码不正确'},
-   'api/v1/auth/login':loginMode==='success'?{family:{familyName:'小明',oldId:1,familyPhone:'13000000000'}}:{message:'手机号或密码不正确，请重试'},
+   'api/v1/auth/login':loginMode==='success'?{authenticated:true}:{code:'INVALID_CREDENTIALS',message:'手机号或密码不正确，请重试'},
    'api/v1/inviteCode/checkCode':{returnCode:'0000',message:'邀请码无效'},
    'api/v1/said/insert':{returnCode:mode==='comment-failure'?'0000':'1111'},
    'api/v1/said/goodCount':{returnCode:'1111'}
@@ -82,9 +82,9 @@ module.exports = async function (run) {
   if(endpoint==='api/v1/said/insert' && mode!=='comment-failure'){const data=route.request().postDataJSON();comments.push({saidId:1,personName:data.personName,said:data.said,niceCount:0,good:0});}
   if(endpoint==='api/v1/said/goodCount' && comments[0]){comments[0].good=comments[0].good?0:1;comments[0].niceCount=comments[0].good;}
   if (endpoint==='api/v1/auth/logout') signedIn=false;
-  if (endpoint==='api/v1/auth/login' && mode==='login-success') { signedIn=true; fixtures[endpoint]={returnCode:'1111',family:{familyName:'小明',oldId:1,familyPhone:'13000000000'}}; }
+  if (endpoint==='api/v1/auth/login' && mode==='login-success') { signedIn=true; fixtures[endpoint]={authenticated:true}; }
   if (route.request().method()==='POST') report.checks.push({name:'CSRF header '+endpoint,pass:route.request().headers()['x-csrf-token']==='mock-csrf-token'});
-  await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(fixtures[endpoint])});
+  await route.fulfill({status:endpoint==='api/v1/auth/login' && loginMode!=='success' && mode!=='login-success' ? 401 : 200,contentType:'application/json',body:JSON.stringify(fixtures[endpoint])});
  });
  const page=await context.newPage();
  page.on('pageerror',error=>report.pageErrors.push(error.message));

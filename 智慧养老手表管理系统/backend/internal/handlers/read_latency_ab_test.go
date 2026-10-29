@@ -284,7 +284,7 @@ func TestReadLatencyAudit(t *testing.T) {
 		data, e := io.ReadAll(resp.Body)
 		resp.Body.Close()
 		elapsed := time.Since(start)
-		if e != nil || resp.StatusCode != 200 || !bytes.Contains(data, []byte(`"users1"`)) {
+		if e != nil || resp.StatusCode != 200 || !bytes.Contains(data, []byte(`"authenticated":true`)) {
 			t.Fatalf("login: %d %s %v", resp.StatusCode, data, e)
 		}
 		var next *session.Session

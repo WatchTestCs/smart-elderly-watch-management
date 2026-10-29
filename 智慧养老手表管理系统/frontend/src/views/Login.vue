@@ -91,12 +91,12 @@ export default {
         if (!valid) return
         _this.submitting = true
         _this.errorMessage = ''
-        axios.post('api/v1/auth/login', _this.loginForm, {
+        axios.post('/api/v1/auth/login', _this.loginForm, {
           headers: { 'content-type': 'application/json' },
           withCredentials: true
         }).then(function (response) {
           var data = response.data || {}
-          if (data.users1 || data.family) {
+          if (data.authenticated === true) {
             return loadSession(true).then(account => {
               if (!account) throw new Error('Login session not established')
               _this.$router.push({ path: account.role === 'ADMIN' ? '/home' : '/familyHome' })
@@ -106,6 +106,7 @@ export default {
 
         }).catch(function (error) {
           if (error.response?.data?.code === 'MFA_REQUIRED') { _this.mfaRequired = true; _this.errorMessage = error.response.data.message; return }
+          if (['INVALID_CREDENTIALS', 'INVALID_LOGIN_INPUT', 'ACCOUNT_UNLINKED'].includes(error.response?.data?.code)) { _this.errorMessage = error.response.data.message; return }
           _this.errorMessage = error.response?.data?.code === 'DATABASE_UNAVAILABLE' ? '登录需要连接数据库，正在自动连接，请恢复后重试。' : '暂时无法登录，请稍后重试'
         }).then(function () {
           _this.submitting = false
