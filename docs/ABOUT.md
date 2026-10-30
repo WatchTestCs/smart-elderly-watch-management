@@ -1,39 +1,31 @@
-# 岁宁 · About 文案与项目定位
+# 岁宁 · 仓库简介与项目定位
 
-本文件维护 `preview` 的项目简介、主页与 Topics 建议，供 README 和仓库 About 使用。About 用一句话说明服务对象与核心用途；版本、技术栈、安装和验证细节由项目首页及专门文档维护。修改本文件本身不会自动更改 GitHub 仓库级设置。
+本文件汇总岁宁项目的简短介绍、推荐主页链接与 GitHub Topics 标签，方便在仓库设置与对外文档中保持一致。
 
 ## 中文简介
 
-岁宁｜面向照护机构与家属的开源养老管理平台，连接智能手表、健康记录与照护协作。
+岁宁：面向照护机构与家属的开源养老管理平台，连接智能手表、健康记录与照护协作。
 
 ## English description
 
-Suining is an open-source elder-care platform for care organizations and families, connecting smart watches, health records and coordinated care.
+Suining is an open-source elder-care platform for care organizations and families, connecting smart watches, health records, and coordinated care.
 
-## 主页
+## 仓库主页与 Topics
 
-[preview 项目首页](https://github.com/WatchTestCs/smart-elderly-watch-management/tree/preview)
+- 推荐主页链接：`https://github.com/WatchTestCs/smart-elderly-watch-management/tree/preview`
+- 推荐 Topics：`elder-care`、`tauri`、`rust`、`golang`、`vue3`、`vite`、`mysql`、`postgresql`、`desktop-app`、`windows`、`iot`、`health-monitoring`
 
-当前开发源码和文档在 `preview`；2.1.0 安装版、免安装版、固定源码及历史附件见 [下载索引](DOWNLOADS.md)。主页指向 `preview` 不意味着改动默认分支。
+## 产品定位说明
 
-## Topics
+岁宁将长者、监护人与家属档案、手表设备绑定、健康与位置记录、SOS 求助告警、照护工单履历和公告互动整合在同一工作空间内。主管、护理员和审计员在照护模块内按各自岗位权限完成接单处置与独立复核留痕。
 
-`elder-care`、`tauri`、`rust`、`golang`、`vue3`、`vite`、`mysql`、`postgresql`、`desktop-app`、`windows`、`iot`、`health-data`
+Windows 桌面端采用 Tauri 2、Rust 与 WebView2 构建，由 Vue 3 负责前端交互，Go 提供内嵌静态资源、业务 API、设备鉴权与后台作业。MySQL 承担全部实时业务读写，PostgreSQL 异步接收事件投影以支持离线报表与趋势分析。
 
-## 更完整的产品说明
+## 版本与交付物说明
 
-岁宁将长者、监护人与家属档案、设备绑定、健康及位置记录、求助告警、照护履历和公告互动放在同一工作空间。主管、护理员和审计员在照护模块内承担不同职责；另一名主管独立复核后关闭任务，家属访问关联家人的记录。
-
-桌面采用 Tauri 2、Rust 和 Windows WebView2，Vue 负责页面交互，Go 提供内嵌静态资源、业务 API、设备鉴权与后台作业。MySQL 承担全部核心事务和持久化队列，PG 接收可重建的分析投影；PG 故障不切换业务主库。前端不直连数据库，不持有数据库凭据或桌面初始化令牌。
-
-## 对外描述的版本边界
-
-| 内容 | 准确表述 |
+| 交付物类型 | 对应范围 |
 | --- | --- |
-| 当前源码 | `preview` 持续维护；MySQL 主库＋PG 异步分析，含发布后的配置诊断和 SQL 翻译修复 |
-| 公开源码附件 | v2.1.0 固定发布快照，与同版 Windows 程序对应，不等于持续更新的分支源码 |
-| 公开 Windows 二进制 | v2.1.0 安装版及免安装版，未签名；实际检查以随包来源清单为准 |
-| Linux 软件与管理工具 | 历史独立附件，未确认与当前源码、迁移和修复一致 |
-| 长期值守 | 需要常驻后台、通知网关与人工响应流程；本地桌面关闭会停止其 Go 子进程 |
-
-About 不写固定版本号或堆叠技术名词，避免简介随发布失效；技术架构见[项目首页](../README.md#系统架构)。已有 Go、浏览器和打包检查不能替代真实手表、短信网关、生产迁移或完整原生窗口交互验收。当前发布证据见 [2.1.0 说明](releases/2.1.0.md)与随包 `release-manifest.json`。
+| `preview` 分支源码 | 当前持续演进的开发分支，采用 MySQL 主库 + PostgreSQL 异步分析双库架构 |
+| v2.1.0 源码归档 (`Source ZIP`) | 对应 v2.1.0 发布标签的固定源码快照，与同版本 Windows 安装包完全匹配 |
+| v2.1.0 Windows 客户端 | 提供安装版（Setup）与免安装版（Portable ZIP），当前未附带商业代码签名 |
+| 历史 Linux 附件 | 早期版本留存的独立辅助工具归档，不包含在当前源码的持续构建矩阵中 |

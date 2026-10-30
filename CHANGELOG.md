@@ -1,26 +1,24 @@
 # Changelog / 更新日志
 
-This is a concise user-facing history, not a complete commit log. Release notes and artifact manifests retain version-specific validation details. / 本文件记录主要变化，完整验收与附件来源以相应 Release 为准。
+本文件按版本记录面向用户与运维人员的主要变更。各版本的详细测试清单与构建哈希见对应的 Release 页面。
 
-## 2.1.0 — Windows 完整交付与后端改进
+## 2.1.0：Windows 完整交付与后端改进
 
-[发布与升级说明](docs/releases/2.1.0.md)
+[2.1.0 发布与升级说明](docs/releases/2.1.0.md)
 
-- 同一 preview 提交生成 Windows x64 安装、免安装和完整源码包，产品版本统一为 2.1.0，附 SHA-256 和来源清单。
-- 整合 2.0.6 之后的 Go 1.23 适配与后端修复，以及 PR #24 的持续排空、队列诊断采样和日缓存写入优化。
-- PR #25 默认保留 20 个 MySQL 空闲连接，增加受限配置与回退方式；微基准收益不外推为 HTTP 端到端性能。
-- 打包流程增加隔离目录中的安装、免安装启动及卸载保留资料检查；真实硬件与生产验收边界保留。
+- 基于同一 `preview` 提交构建 Windows x64 安装版、免安装版与源码包，统一产品版本号为 2.1.0，并提供 SHA-256 校验清单。
+- 合入 2.0.6 之后的 Go 后端修复，包括队列持续排空、诊断采样与按日缓存写入优化（PR #24）。
+- 将 MySQL 业务连接池默认最大空闲连接数调整为 20（PR #25），并提供环境变量回退配置。
+- 在打包流程中新增隔离目录安装、免安装版启动及卸载保留用户数据检查。
 
-## 2.0.6 — UI、照护闭环与双库整合
+## 2.0.6：界面统一、照护闭环与双库架构
 
-[改进与升级说明](docs/releases/2.0.6.md)
+[2.0.6 改进与升级说明](docs/releases/2.0.6.md)
 
-- 统一导航与标题，按当前路由折叠菜单，补齐窄屏卡片、加载与失败重试，优化总览宽屏布局。
-- 修正建档/设备绑定依赖、归属一致性、阈值保留、饮食药物字段错位及缺测虚假正常。
-- 打通 SOS 接单、处置、独立复核、关联告警关闭、总览刷新和分页履历。
-- MySQL 承担业务事务，PG 接收可靠异步分析；附双库部署、旧库导入及投影回填工具。
-- 保留远程健康采样、绑定版本、增量游标与统计，适配 MySQL；离线导入兼容 PG 0006／0007／0008。验证与安装包边界见 [整合记录](docs/INTEGRATION_2.0.6.md)。
-- 统一应用、后端、前端及锁文件产品版本为 2.0.6。本文记录本地交付，未创建远程 Release 或移动标签。
+- 统一导航栏与页面标题，支持按当前路由自动展开菜单分组，补齐窄屏资料卡片、加载提示与失败重试交互，优化宽屏总览栅格布局。
+- 修正建档与设备绑定先后依赖、设备归属一致性、监测阈值保留、饮食与用药字段对齐，以及未上报指标误显示为正常的问题。
+- 打通 SOS 紧急求助从接单、处置登记、另一名主管独立复核到关联告警关闭、总览刷新及分页履历查询的完整闭环。
+- 切换为 MySQL 业务主库加 PostgreSQL 异步分析库的双库架构，配套提供 Docker Compose 模板、旧版 PG 离线导入工具与分析投影回填命令，详见[整合说明](docs/INTEGRATION_2.0.6.md)。
 
 ## Unreleased — documentation on preview
 
@@ -29,29 +27,25 @@ This is a concise user-facing history, not a complete commit log. Release notes 
 - Use static license and preview-version badges; do not imply successful CI, audit certification, or a support SLA.
 - Documentation-only: no binary rebuild, new application version, or movement of existing release tags.
 
-## 2.0.2 — Tauri / Go and independent PostgreSQL
+## 2.0.2：切换至 Tauri / Go 与独立数据库
 
 [Release: v2.0.2-preview.1](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.2-preview.1)
 
-- Replace the Windows Electron/Java stack with Tauri 2 / Rust and a Go sidecar, retaining Vue 3 / Vite.
-- Keep PostgreSQL independently deployed. Open the UI without a database; show local reminders, reconnect in the background, preserve active input, and never replay failed writes automatically.
-- Keep authenticated logout available without PostgreSQL while retaining session and CSRF checks.
-- Replace the originally published Windows bundle with a lightweight Setup at the user's explicit request, retaining version 2.0.2. Reuse system WebView2 and silently install it only when missing.
-- Add Windows portable and exact-commit source ZIPs. Add user-supplied Linux application and database-manager attachments with explicit provenance and runtime-validation limits.
-- Legacy H2 data is not converted automatically. Windows binaries are locally self-signed, without public CA trust.
+- 将桌面端架构从 Electron + Java 迁移至 Tauri 2 (Rust) + Go sidecar，前端保持 Vue 3 + Vite。
+- 数据库改为外部独立部署；支持在未连接数据库时打开桌面界面并提示连接状态，后台自动重连。
+- 在数据库离线时仍允许执行本地登出，同时保留会话与 CSRF 校验。
+- 提供轻量级 Windows Setup 安装包、Portable 免安装归档与对应提交的源码包。
 
-## 2.0.1 — historical Windows preview
+## 2.0.1：早期 Windows 预览版加固
 
-[Release: v2.0.1-preview.1](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.1-preview.1) · [Archived notes](docs/releases/2.0.1.md)
+[Release: v2.0.1-preview.1](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.1-preview.1)
 
-- Strengthen device-secret storage, relational integrity, deletion handling, and regression coverage.
-- This release belongs to the earlier Java desktop architecture; its build and validation claims must not be reused as evidence for the current Tauri / Go implementation.
+- 加固设备密钥存储、外键关联完整性与删除处理逻辑，扩充回归测试覆盖。
+- 重构数据库连接管理、密码哈希与日志输出。
 
-## 2.0.0 — historical Windows preview and later Linux attachment
+## 2.0.0：桌面端基础架构
 
 [Release: v2.0.0-preview.1](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.0-preview.1)
 
-- Historical Windows delivery used Electron, Java, and H2, with the Vue 3 / Vite frontend.
-- A user-provided Linux desktop DEB was later attached unchanged. Maintainer familiarity is limited; it may contain bugs, errors, or compatibility issues and has not undergone installation or runtime validation.
-
-Older implementation descriptions are preserved as history and are not current setup instructions. / 旧架构仅作历史，不作为当前部署依据。
+- 建立 Tauri 2 桌面壳、Vue Web 界面与 Go sidecar 的基础工程结构。
+- 实现基础长者档案管理、手表登记、位置告警与首版发布文档。
