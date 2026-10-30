@@ -44,6 +44,9 @@ func (k DailyKey) Bounds() (time.Time, time.Time, error) {
 		s.Unit = "kg"
 	case "steps":
 		s.Unit = "count"
+		if k.Semantics == "interval" {
+			s.End = from.Add(time.Minute)
+		}
 	case "sleep_stage":
 		s.Unit = "min"
 		s.Stage = "asleep"
@@ -69,10 +72,10 @@ func dailyCacheSelectSQL(mysql bool) string {
 func dailySamplesSQL(mysql bool) string {
 	if mysql {
 		return `SELECT payload FROM health_sample WHERE old_id=$1 AND BINARY source=BINARY $2 AND BINARY source_device=BINARY $3 AND BINARY metric=BINARY $4 AND BINARY semantics=BINARY $5 AND NOT deleted
- AND sample_start<$7 AND (sample_start>=$6 OR ($5='interval' AND sample_end>$6)) ORDER BY revision LIMIT 100001`
+ AND sample_start<$7 AND (sample_start>=$6 OR ($5='interval' AND sample_end>=$6)) ORDER BY revision LIMIT 100001`
 	}
 	return `SELECT payload FROM health_sample WHERE old_id=$1 AND source=$2 AND source_device=$3 AND metric=$4 AND semantics=$5 AND NOT deleted
- AND sample_start<$7 AND (sample_start>=$6 OR ($5='interval' AND sample_end>$6)) ORDER BY revision LIMIT 100001`
+ AND sample_start<$7 AND (sample_start>=$6 OR ($5='interval' AND sample_end>=$6)) ORDER BY revision LIMIT 100001`
 }
 
 // RefreshDaily is serialized with Save's owner clock, so a completed result
@@ -116,7 +119,9 @@ func RefreshDaily(ctx context.Context, pool *db.Database, id string) error {
 		return err
 	}
 	samples := []Sample{}
+	candidates := 0
 	for rows.Next() {
+		candidates++
 		var b []byte
 		var s Sample
 		if err = rows.Scan(&b); err == nil {
@@ -126,7 +131,9 @@ func RefreshDaily(ctx context.Context, pool *db.Database, id string) error {
 			rows.Close()
 			return err
 		}
-		samples = append(samples, s)
+		if s.InWindow(from, to) {
+			samples = append(samples, s)
+		}
 	}
 	err = rows.Err()
 	rows.Close()
@@ -135,8 +142,8 @@ func RefreshDaily(ctx context.Context, pool *db.Database, id string) error {
 	}
 	var result Statistics
 	var computation error
-	if len(samples) > 100000 {
-		computation = fmt.Errorf("单日采样超过 100000 条，须离线处理")
+	if candidates > 100000 {
+		computation = fmt.Errorf("单日候选采样超过 100000 条，须离线处理")
 	} else {
 		result, computation = Aggregate(samples, from, to)
 	}

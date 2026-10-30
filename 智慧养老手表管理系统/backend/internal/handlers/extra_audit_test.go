@@ -108,7 +108,7 @@ func TestExtraAuditOutOfOrderTelemetry(t *testing.T) {
 		at    string
 		steps int
 		lng   string
-	}{{"2026-10-30 10:00:00", 5000, "120"}, {"2026-10-30 09:00:00", 1000, "119"}} {
+	}{{"2026-10-20 10:00:00", 5000, "120"}, {"2026-10-20 09:00:00", 1000, "119"}} {
 		out := api(t, h.deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "step": v.steps, "lng": v.lng, "lat": "30", "beTime": v.at})
 		if out["returnCode"] != "1111" {
 			t.Fatal(out)
@@ -124,7 +124,7 @@ func TestExtraAuditOutOfOrderTelemetry(t *testing.T) {
 		t.Fatal("late older snapshot replaced the newer daily steps")
 	}
 	item := pos["positionDtos"].([]any)[0].(map[string]any)
-	if item["lng"] != "120" || item["beTime"] != "2026-10-30 10:00:00" {
+	if item["lng"] != "120" || item["beTime"] != "2026-10-20 10:00:00" {
 		t.Fatal("late older report replaced current location")
 	}
 	var sealed string
@@ -136,9 +136,9 @@ func TestExtraAuditOutOfOrderTelemetry(t *testing.T) {
 		t.Fatalf("device last coordinate regressed: %s %v", lng, err)
 	}
 	// A newer correction may lower the count; missing steps must not advance its clock.
-	api(t, h.deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "step": 4000, "beTime": "2026-10-30 11:00:00"})
-	api(t, h.deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "sleep": 8, "beTime": "2026-10-30 12:00:00"})
-	api(t, h.deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "step": 4500, "beTime": "2026-10-30 11:30:00"})
+	api(t, h.deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "step": 4000, "beTime": "2026-10-20 11:00:00"})
+	api(t, h.deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "sleep": 8, "beTime": "2026-10-20 12:00:00"})
+	api(t, h.deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "step": 4500, "beTime": "2026-10-20 11:30:00"})
 	if err := p.QueryRow(context.Background(), "SELECT step FROM watch_day_info WHERE device_id=1").Scan(&steps); err != nil {
 		t.Fatal(err)
 	}
@@ -151,15 +151,15 @@ func TestExtraAuditPositionTimestamp(t *testing.T) {
 	h := extraAuditHandler(t)
 	p := h.DB
 	seedDevice(t, p)
-	out := api(t, h.deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "lng": "120", "lat": "30", "beTime": "2026-10-30 08:00:00"})
+	out := api(t, h.deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "lng": "120", "lat": "30", "beTime": "2026-10-20 08:00:00"})
 	if out["returnCode"] != "1111" {
 		t.Fatal(out)
 	}
-	mustExec(t, p, "INSERT INTO alarm_precess(old_id,device_id,status,be_time) VALUES(1,1,'1',$1)", time.Date(2026, 10, 30, 10, 0, 0, 0, time.UTC))
+	mustExec(t, p, "INSERT INTO alarm_precess(old_id,device_id,status,be_time) VALUES(1,1,'1',$1)", time.Date(2026, 10, 20, 10, 0, 0, 0, time.UTC))
 	pos := api(t, h.positionSelect, map[string]any{"name": ""})
 	item := pos["positionDtos"].([]any)[0].(map[string]any)
 	t.Logf("location sampled at 08:00; newer alarm at 10:00; displayed=%v", item)
-	if item["beTime"] != "2026-10-30 08:00:00" {
+	if item["beTime"] != "2026-10-20 08:00:00" {
 		t.Fatal("location timestamp was replaced by unrelated alarm time")
 	}
 }

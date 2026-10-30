@@ -29,6 +29,15 @@ type Sample struct {
 
 func Number(v float64) *float64 { return &v }
 
+// InWindow uses exact payload times. Microsecond SQL indexes only select
+// candidates; instants belong to [from,to), intervals must overlap that window.
+func (s Sample) InWindow(from, to time.Time) bool {
+	if s.Semantics == "interval" {
+		return s.Start.Before(to) && s.End.After(from)
+	}
+	return !s.Start.Before(from) && s.Start.Before(to)
+}
+
 func (s Sample) Normalize() (Sample, error) {
 	if len(s.Metadata) > 64 {
 		return s, fmt.Errorf("too many metadata fields")

@@ -5,10 +5,12 @@ import (
 	"net/http"
 	"testing"
 	"time"
+
+	"suining-care/internal/db/dbtest"
 )
 
 func TestContinuousFencePointPresence(t *testing.T) {
-	pool := testDatabase(t)
+	pool := dbtest.MySQL(t)
 	h := testHandler(t, pool)
 	seedDevice(t, pool)
 	for _, point := range []any{"absent", nil, []any{nil, 30}} {

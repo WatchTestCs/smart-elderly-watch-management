@@ -81,18 +81,24 @@ func (h *Handler) healthStatistics(w http.ResponseWriter, r *http.Request) {
 		// identities and the daily-statistics query compare the complete bytes.
 		sourceFilter = "BINARY source=BINARY $2 AND BINARY source_device=BINARY $3 AND BINARY metric=BINARY $4 AND BINARY semantics=BINARY $5"
 	}
+	upper := req.To.UnixMicro()
+	if req.To.Nanosecond()%1000 != 0 {
+		upper++
+	}
 	rows, err := h.DB.Query(r.Context(), `SELECT payload FROM health_sample
 	 WHERE old_id=$1 AND `+sourceFilter+` AND NOT deleted
 	 AND sample_start<$7
-	 AND (sample_start>=$6 OR ($5='interval' AND sample_end>$6))
-	 ORDER BY revision LIMIT 10001`, oldID, req.Source, req.SourceDevice, req.Metric, req.Semantics, req.From.UnixMicro(), req.To.UnixMicro())
+	 AND (sample_start>=$6 OR ($5='interval' AND sample_end>=$6))
+	 ORDER BY revision LIMIT 10001`, oldID, req.Source, req.SourceDevice, req.Metric, req.Semantics, req.From.UnixMicro(), upper)
 	if err != nil {
 		response.Error500(w, ref())
 		return
 	}
 	defer rows.Close()
 	samples := []health.Sample{}
+	candidates := 0
 	for rows.Next() {
+		candidates++
 		var b []byte
 		var s health.Sample
 		if err = rows.Scan(&b); err != nil {
@@ -105,14 +111,16 @@ func (h *Handler) healthStatistics(w http.ResponseWriter, r *http.Request) {
 			response.Error500(w, ref())
 			return
 		}
-		samples = append(samples, s)
+		if s.InWindow(req.From, req.To) {
+			samples = append(samples, s)
+		}
 	}
 	if !rowsOK(w, rows) {
 		return
 	}
 	rows.Close()
-	if len(samples) > 10000 {
-		response.JSON(w, 413, map[string]any{"returnCode": "0000", "message": "采样超过 10000 条，请缩短统计范围"})
+	if candidates > 10000 {
+		response.JSON(w, 413, map[string]any{"returnCode": "0000", "message": "候选采样超过 10000 条，请缩短统计范围"})
 		return
 	}
 	out, err := health.Aggregate(samples, req.From, req.To)
