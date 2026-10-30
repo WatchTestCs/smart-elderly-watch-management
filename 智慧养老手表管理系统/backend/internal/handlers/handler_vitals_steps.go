@@ -174,7 +174,7 @@ func (h *Handler) stepSelectDetail(w http.ResponseWriter, r *http.Request) {
 			ct = *d.CreateTime
 		}
 		sleep = append(sleep, d.Sleep)
-		createTime = append(createTime, safeSub(ct, 8, 10))
+		createTime = append(createTime, ct)
 	}
 	response.JSON(w, http.StatusOK, map[string]any{
 		"stepDtos": items, "sleep": sleep, "createTime": createTime,
