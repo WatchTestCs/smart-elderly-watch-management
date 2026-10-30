@@ -191,7 +191,7 @@ func (h *Handler) inviteCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	now := time.Now()
-	codes := make([]string, 0, count)
+	codes := make([]string, 0, 50)
 	failed := false
 	for i := int64(0); i < count && !failed; i++ {
 		code := ""

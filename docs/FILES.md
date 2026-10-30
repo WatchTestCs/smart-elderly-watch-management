@@ -6,6 +6,7 @@
 
 | 文件 | 职责 |
 | --- | --- |
+| [智慧养老手表管理系统/backend/internal/handlers/core_integer_validation_test.go](../智慧养老手表管理系统/backend/internal/handlers/core_integer_validation_test.go) | 设备分页整数解析、原生整数溢出和合法边界回归 |
 | [evidence/core-bugs-20261030/code-expiry.txt](../evidence/core-bugs-20261030/code-expiry.txt) | 第七批绑定码与邀请码有效期、双数据库关键路径验收 |
 | [智慧养老手表管理系统/backend/internal/handlers/core_code_expiry_regression_test.go](../智慧养老手表管理系统/backend/internal/handlers/core_code_expiry_regression_test.go) | 绑定码缺省有效期、非法天数拒绝及邀请码长期有效边界回归 |
 | [evidence/core-bugs-20261030/daily-ownership.txt](../evidence/core-bugs-20261030/daily-ownership.txt) | 第六批日记录换绑隔离、双数据库关键路径及保留数据重应用结果 |

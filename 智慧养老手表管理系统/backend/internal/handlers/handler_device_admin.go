@@ -23,34 +23,30 @@ func intOr400(w http.ResponseWriter, m map[string]any, key string, def, min, max
 	if !present || v == nil {
 		return def, true
 	}
-	var n int64
+	var raw string
 	switch t := v.(type) {
 	case float64:
 		if math.Trunc(t) != t {
 			writeValidation400(w)
 			return 0, false
 		}
-		n = int64(t)
+		raw = strconv.FormatFloat(t, 'f', -1, 64)
 	case string:
 		s := strings.TrimSpace(t)
 		if s == "" {
 			return def, true
 		}
-		x, err := strconv.ParseInt(s, 10, 64)
-		if err != nil {
-			writeValidation400(w)
-			return 0, false
-		}
-		n = x
+		raw = s
 	default:
 		writeValidation400(w)
 		return 0, false
 	}
-	if n < int64(min) || n > int64(max) {
+	n, err := strconv.Atoi(raw)
+	if err != nil || n < min || n > max {
 		writeValidation400(w)
 		return 0, false
 	}
-	return int(n), true
+	return n, true
 }
 
 // POST /api/v1/device/list —— 设备列表（ADMIN，分页+在线状态）。
