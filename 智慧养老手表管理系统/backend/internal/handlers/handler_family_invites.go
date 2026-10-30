@@ -3,6 +3,7 @@ package handlers
 import (
 	"crypto/rand"
 	"net/http"
+	"strconv"
 	"strings"
 	"suining-care/internal/response"
 	"time"
@@ -155,12 +156,19 @@ func (h *Handler) inviteCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var expire *time.Time
-	if d, ok := int64Val(m, "expireDays"); ok && d > 0 {
+	if expiry, _ := vstr(m, "expireDays"); expiry != "" {
+		d, err := strconv.ParseInt(expiry, 10, 64)
+		if err != nil || d < 0 {
+			write400(w, "有效天数必须为非负整数，留空或 0 表示长期有效")
+			return
+		}
 		if d > 3650 {
 			d = 3650
 		}
-		t := time.Now().Add(time.Duration(d) * 24 * time.Hour)
-		expire = &t
+		if d > 0 {
+			t := time.Now().Add(time.Duration(d) * 24 * time.Hour)
+			expire = &t
+		}
 	}
 	count := int64(1)
 	if c, ok := int64Val(m, "count"); ok {
@@ -183,7 +191,7 @@ func (h *Handler) inviteCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	now := time.Now()
-	codes := make([]string, 0, count)
+	codes := make([]string, 0, 50)
 	failed := false
 	for i := int64(0); i < count && !failed; i++ {
 		code := ""

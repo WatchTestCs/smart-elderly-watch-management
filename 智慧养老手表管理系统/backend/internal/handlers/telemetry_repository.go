@@ -23,18 +23,20 @@ type telemetryPersisted struct {
 
 func watchDayUpsertSQL(mysql bool) string {
 	if mysql {
-		return `INSERT INTO watch_day_info(device_id, sleep, step, sleep_sate, create_time)
-		 VALUES($1, $2, $3, $4, $5)
+		return `INSERT INTO watch_day_info(device_id, sleep, step, sleep_sate, create_time, step_observed_at, old_id, binding_epoch)
+		 VALUES($1, $2, $3, $4, $5, $6, $7, $8)
 		 ON DUPLICATE KEY UPDATE
 			sleep = COALESCE(VALUES(sleep), watch_day_info.sleep),
-			step = COALESCE(VALUES(step), watch_day_info.step),
+			step = CASE WHEN VALUES(step_observed_at) IS NOT NULL AND (step_observed_at IS NULL OR VALUES(step_observed_at)>=step_observed_at) THEN VALUES(step) ELSE step END,
+			step_observed_at = COALESCE(GREATEST(step_observed_at,VALUES(step_observed_at)),step_observed_at,VALUES(step_observed_at)),
 			sleep_sate = COALESCE(VALUES(sleep_sate), watch_day_info.sleep_sate)`
 	}
-	return `INSERT INTO watch_day_info(device_id, sleep, step, sleep_sate, create_time)
-	 VALUES($1, $2, $3, $4, $5)
+	return `INSERT INTO watch_day_info(device_id, sleep, step, sleep_sate, create_time, step_observed_at, old_id, binding_epoch)
+	 VALUES($1, $2, $3, $4, $5, $6, $7, $8)
 	 ON CONFLICT (device_id, create_time) DO UPDATE SET
 		sleep = COALESCE(EXCLUDED.sleep, watch_day_info.sleep),
-		step = COALESCE(EXCLUDED.step, watch_day_info.step),
+		step = CASE WHEN EXCLUDED.step_observed_at IS NOT NULL AND (watch_day_info.step_observed_at IS NULL OR EXCLUDED.step_observed_at>=watch_day_info.step_observed_at) THEN EXCLUDED.step ELSE watch_day_info.step END,
+		step_observed_at = GREATEST(watch_day_info.step_observed_at,EXCLUDED.step_observed_at),
 		sleep_sate = COALESCE(EXCLUDED.sleep_sate, watch_day_info.sleep_sate)`
 }
 
@@ -42,6 +44,14 @@ func (repo telemetryRepository) PersistDeviceReport(ctx context.Context, tx *dbs
 	oldID := *d.OldID
 	now, beTime, day := parsed.now, parsed.beTime, parsed.day
 	hr, bp, step, sleep := parsed.hr, parsed.bp, parsed.step, parsed.sleep
+	// Zero vital signs are legacy "not measured" sentinels. Keep raw parsing
+	// compatible, but never persist or classify them as actual measurements.
+	if hr != nil && *hr == 0 {
+		hr = nil
+	}
+	if bp != nil && *bp == 0 {
+		bp = nil
+	}
 	sleepState, battery, appVersion := parsed.sleepState, parsed.battery, parsed.appVersion
 	lng, lat, sourceStr, alarm := parsed.lng, parsed.lat, parsed.sourceStr, parsed.alarm
 
@@ -92,9 +102,30 @@ func (repo telemetryRepository) PersistDeviceReport(ctx context.Context, tx *dbs
 		}
 	}
 	if step != nil || sleep != nil || sleepState != nil {
-		var stepAny, sleepAny, stateAny any
+		var rowID, epoch int64
+		var owner *int64
+		err := tx.QueryRow(ctx, `SELECT id,old_id,binding_epoch FROM watch_day_info
+		 WHERE device_id=$1 AND create_time=$2 FOR UPDATE`, d.ID, day).Scan(&rowID, &owner, &epoch)
+		if err != nil && err != pgx.ErrNoRows {
+			return telemetryPersisted{}, err
+		}
+		if err == nil && (owner == nil || *owner != oldID || epoch != d.HealthEpoch) {
+			// Preserve the previous binding's snapshot before starting an empty one.
+			if _, err = tx.Exec(ctx, `INSERT INTO watch_day_info_archive
+			 (device_id,sleep,step,sleep_sate,create_time,step_observed_at,old_id,binding_epoch)
+			 SELECT device_id,sleep,step,sleep_sate,create_time,step_observed_at,old_id,binding_epoch
+			 FROM watch_day_info WHERE id=$1`, rowID); err != nil {
+				return telemetryPersisted{}, err
+			}
+			if _, err = tx.Exec(ctx, `UPDATE watch_day_info SET sleep=NULL,step=NULL,sleep_sate=NULL,
+			 step_observed_at=NULL,old_id=$1,binding_epoch=$2 WHERE id=$3`, oldID, d.HealthEpoch, rowID); err != nil {
+				return telemetryPersisted{}, err
+			}
+		}
+		var stepAny, sleepAny, stateAny, stepObservedAt any
 		if step != nil {
 			stepAny = *step
+			stepObservedAt = beTime
 		}
 		if sleep != nil {
 			sleepAny = *sleep
@@ -103,7 +134,7 @@ func (repo telemetryRepository) PersistDeviceReport(ctx context.Context, tx *dbs
 			stateAny = *sleepState
 		}
 		if _, err := tx.Exec(ctx, watchDayUpsertSQL(tx.IsMySQL()),
-			d.ID, sleepAny, stepAny, stateAny, day); err != nil {
+			d.ID, sleepAny, stepAny, stateAny, day, stepObservedAt, oldID, d.HealthEpoch); err != nil {
 			return telemetryPersisted{}, err
 		}
 	}
@@ -114,8 +145,9 @@ func (repo telemetryRepository) PersistDeviceReport(ctx context.Context, tx *dbs
 			d.ID, oldID, sealCoordinate(repo.box, lng), sealCoordinate(repo.box, lat), sourceStr, beTime); err != nil {
 			return telemetryPersisted{}, err
 		}
-		if _, err := tx.Exec(ctx, `UPDATE device SET last_lng=$1, last_lat=$2 WHERE device_id=$3`,
-			sealCoordinate(repo.box, lng), sealCoordinate(repo.box, lat), d.ID); err != nil {
+		if _, err := tx.Exec(ctx, `UPDATE device SET last_lng=$1, last_lat=$2 WHERE device_id=$3
+		 AND NOT EXISTS(SELECT 1 FROM device_location WHERE device_id=$3 AND be_time>$4)`,
+			sealCoordinate(repo.box, lng), sealCoordinate(repo.box, lat), d.ID, beTime); err != nil {
 			return telemetryPersisted{}, err
 		}
 	}

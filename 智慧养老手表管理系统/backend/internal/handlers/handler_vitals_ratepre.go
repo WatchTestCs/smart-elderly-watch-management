@@ -84,6 +84,8 @@ type alertRow struct {
 	PreDone       bool
 	CreateTime    *string
 	OldPersonName *string
+	HrHigh, HrLow *int
+	BpHigh, BpLow *int
 }
 
 // POST /api/v1/ratepre/alertDetail —— 查看一条异常记录的原因。
@@ -126,22 +128,33 @@ func (h *Handler) ratepreAlertDetail(w http.ResponseWriter, r *http.Request) {
 	}
 	rateBad := a.RateState != nil && *a.RateState == "1" && !a.RateDone
 	preBad := a.PreState != nil && *a.PreState == "1" && !a.PreDone
+	hrLow, hrHigh, bpLow, bpHigh := 55, 110, 90, 140
+	if a.HrHigh != nil && a.HrLow != nil {
+		hrLow, hrHigh = min(*a.HrHigh, *a.HrLow), max(*a.HrHigh, *a.HrLow)
+	}
+	if a.BpHigh != nil && a.BpLow != nil {
+		bpLow, bpHigh = min(*a.BpHigh, *a.BpLow), max(*a.BpHigh, *a.BpLow)
+	}
 	var reasons, details []string
 	if rateBad {
-		if hr > 110 {
+		if hr > hrHigh {
 			reasons = append(reasons, "心率偏高")
-		} else {
+		} else if hr < hrLow {
 			reasons = append(reasons, "心率偏低")
+		} else {
+			reasons = append(reasons, "历史心率异常")
 		}
-		details = append(details, "心率正常范围 55-110 次/分，本次测量 "+strconv.Itoa(hr)+" 次/分。")
+		details = append(details, "心率当前档案范围 "+strconv.Itoa(hrLow)+"-"+strconv.Itoa(hrHigh)+" 次/分，本次测量 "+strconv.Itoa(hr)+" 次/分。")
 	}
 	if preBad {
-		if bp > 140 {
+		if bp > bpHigh {
 			reasons = append(reasons, "血压偏高")
-		} else {
+		} else if bp < bpLow {
 			reasons = append(reasons, "血压偏低")
+		} else {
+			reasons = append(reasons, "历史血压异常")
 		}
-		details = append(details, "血压正常范围 90-140 mmHg，本次测量 "+strconv.Itoa(bp)+" mmHg。")
+		details = append(details, "血压当前档案范围 "+strconv.Itoa(bpLow)+"-"+strconv.Itoa(bpHigh)+" mmHg，本次测量 "+strconv.Itoa(bp)+" mmHg。")
 	}
 	if len(reasons) == 0 {
 		response.OK(w, map[string]any{"hasAlert": 0, "message": "该记录已处理，没有待处理的红点"})
@@ -177,10 +190,11 @@ func (h *Handler) findAlertRecord(r *http.Request, id int64) (alertRow, bool, er
 	err := h.DB.QueryRow(r.Context(), `SELECT r.device_id, r.old_id, r.hr, r.bp, r.rate_state, r.pre_state,
 		COALESCE((r.rate_handled_at IS NOT NULL AND r.create_time <= r.rate_handled_at), false),
 		COALESCE((r.pre_handled_at IS NOT NULL AND r.create_time <= r.pre_handled_at), false),
-		TO_CHAR(r.create_time,'YYYY-MM-DD HH24:MI:SS'), o.name
-		FROM ratepre r LEFT JOIN oldperson o ON o.old_id=r.old_id WHERE r.id=$1`, id).
+		TO_CHAR(r.create_time,'YYYY-MM-DD HH24:MI:SS'), o.name, w.hrf, w.hrl, w.bpf, w.bpl
+		FROM ratepre r LEFT JOIN oldperson o ON o.old_id=r.old_id
+		LEFT JOIN watch_info w ON w.device_id=r.device_id WHERE r.id=$1`, id).
 		Scan(&a.DeviceID, &a.OldID, &a.Hr, &a.Bp, &a.RateState, &a.PreState,
-			&a.RateDone, &a.PreDone, &a.CreateTime, &a.OldPersonName)
+			&a.RateDone, &a.PreDone, &a.CreateTime, &a.OldPersonName, &a.HrHigh, &a.HrLow, &a.BpHigh, &a.BpLow)
 	if isNotFound(err) {
 		return a, false, nil
 	}
@@ -197,10 +211,11 @@ func (h *Handler) findLatestPending(r *http.Request, oldID int64, kind string) (
 	}
 	var a alertRow
 	err := h.DB.QueryRow(r.Context(), `SELECT r.id, r.device_id, r.old_id, r.hr, r.bp, r.rate_state, r.pre_state,
-		TO_CHAR(r.create_time,'YYYY-MM-DD HH24:MI:SS'), o.name
+		TO_CHAR(r.create_time,'YYYY-MM-DD HH24:MI:SS'), o.name, w.hrf, w.hrl, w.bpf, w.bpl
 		FROM ratepre r LEFT JOIN oldperson o ON o.old_id=r.old_id
+		LEFT JOIN watch_info w ON w.device_id=r.device_id
 		WHERE r.old_id=$1 AND `+cond+` ORDER BY r.create_time DESC, r.id DESC LIMIT 1`, oldID).
-		Scan(&a.ID, &a.DeviceID, &a.OldID, &a.Hr, &a.Bp, &a.RateState, &a.PreState, &a.CreateTime, &a.OldPersonName)
+		Scan(&a.ID, &a.DeviceID, &a.OldID, &a.Hr, &a.Bp, &a.RateState, &a.PreState, &a.CreateTime, &a.OldPersonName, &a.HrHigh, &a.HrLow, &a.BpHigh, &a.BpLow)
 	if isNotFound(err) {
 		return a, false, nil
 	}

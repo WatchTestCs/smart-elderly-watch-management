@@ -16,11 +16,7 @@ import (
 // ---------------------------------------------------------------------------
 
 func positionLatestTimeExpr(mysql bool) string {
-	const base = "GREATEST(COALESCE(l.be_time, o.be_time), COALESCE(a.be_time, o.be_time))"
-	if mysql {
-		return "COALESCE(" + base + ",COALESCE(l.be_time,o.be_time),COALESCE(a.be_time,o.be_time))"
-	}
-	return base
+	return "l.be_time"
 }
 
 func positionLatestSQL(mysql bool) string {
@@ -28,7 +24,7 @@ func positionLatestSQL(mysql bool) string {
 	COALESCE(a.status, '0') AS status
 	FROM oldperson o
 	LEFT JOIN (SELECT old_id, lng, lat, be_time,
-		ROW_NUMBER() OVER (PARTITION BY old_id ORDER BY id DESC) AS rn FROM device_location) l
+		ROW_NUMBER() OVER (PARTITION BY old_id ORDER BY be_time DESC, id DESC) AS rn FROM device_location) l
 		ON l.old_id = o.old_id AND l.rn = 1
 	LEFT JOIN (SELECT old_id, status, be_time,
 		ROW_NUMBER() OVER (PARTITION BY old_id ORDER BY be_time DESC, id DESC) AS rn FROM alarm_precess) a
@@ -150,7 +146,7 @@ func (h *Handler) positionSelectFamily(w http.ResponseWriter, r *http.Request) {
 			`+positionLatestTimeExpr(h.DB.IsMySQL())+` AS be_time,
 			COALESCE(a.status, '0') AS status
 		 FROM oldperson o
-		 LEFT JOIN (SELECT old_id, lng, lat, be_time FROM device_location WHERE old_id=$1 ORDER BY id DESC LIMIT 1) l
+		 LEFT JOIN (SELECT old_id, lng, lat, be_time FROM device_location WHERE old_id=$1 ORDER BY be_time DESC, id DESC LIMIT 1) l
 			ON l.old_id = o.old_id
 		 LEFT JOIN (SELECT old_id, status, be_time FROM alarm_precess WHERE old_id=$2 ORDER BY be_time DESC, id DESC LIMIT 1) a
 			ON a.old_id = o.old_id

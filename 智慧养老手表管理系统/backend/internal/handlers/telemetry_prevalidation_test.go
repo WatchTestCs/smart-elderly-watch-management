@@ -23,6 +23,7 @@ func TestDeviceReportInvalidPayloadNeverOpensDatabase(t *testing.T) {
 		{"battery", "battery", 101},
 		{"unpaired coordinates", "lng", "120.5"},
 		{"invalid timestamp", "beTime", "2026-02-31 13:00:00"},
+		{"future timestamp", "beTime", "2099-01-01 00:00:00"},
 		{"long app version", "appVersion", "this-version-name-is-far-too-long"},
 	}
 	for _, tc := range cases {

@@ -47,7 +47,7 @@ func TestArchitectureFormattedRecordsAcrossDatabases(t *testing.T) {
 	seedDevice(t, pool)
 	mustExec(t, pool, "UPDATE oldperson SET device_id=1 WHERE old_id=1")
 	mustExec(t, pool, "INSERT INTO ratepre(old_id,device_id,hr,rate_state,create_time) VALUES(1,1,72,'1',now())")
-	mustExec(t, pool, "INSERT INTO watch_day_info(device_id,step,create_time) VALUES(1,100,'2026-10-19')")
+	mustExec(t, pool, "INSERT INTO watch_day_info(device_id,step,create_time,old_id,binding_epoch) VALUES(1,100,'2026-10-19',1,1)")
 	mustExec(t, pool, "INSERT INTO text(title,text_main,time) VALUES('公告','内容','2026-10-19 08:01:02.123')")
 	mustExec(t, pool, "INSERT INTO said(said,said_time) VALUES('评论','2026-10-19 08:01:02.123')")
 	h := testHandler(t, pool)

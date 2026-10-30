@@ -50,6 +50,14 @@ func familyPhoneOK(p *session.Principal, phone string) bool {
 	return p.Role == auth.RoleFamily && phone != "" && phone == p.Phone
 }
 
+// Zero leaves the administrator's explicit phone lookup unrestricted.
+func familySelfID(p *session.Principal) int64 {
+	if p != nil && p.Role == auth.RoleFamily {
+		return p.ID
+	}
+	return 0
+}
+
 // POST /api/v1/family/select —— 分页模糊查询家属（管理员视角，ADMIN）。
 func (h *Handler) familySelect(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
@@ -152,15 +160,48 @@ func (h *Handler) familyAdd(w http.ResponseWriter, r *http.Request) {
 		response.Error500(w, ref())
 		return
 	}
-	// 2. 按老人手机号反查 old_id（查不到 → 500 回滚）
+	// 2. 锁定唯一匹配的老人，拒绝共享手机号导致的歧义绑定。
 	var oldID int64
-	if err := tx.QueryRow(ctx, `SELECT old_id FROM oldperson WHERE phone=$1`, oldPhone).Scan(&oldID); err != nil {
+	var boundFamilyID *int64
+	rows, err := tx.Query(ctx, `SELECT old_id,family_id FROM oldperson WHERE phone=$1 ORDER BY old_id LIMIT 2 FOR UPDATE`, oldPhone)
+	if err != nil {
 		_ = tx.Rollback(ctx)
 		response.Error500(w, ref())
 		return
 	}
+	count := 0
+	for rows.Next() {
+		count++
+		if err = rows.Scan(&oldID, &boundFamilyID); err != nil {
+			break
+		}
+	}
+	if err == nil {
+		err = rows.Err()
+	}
+	rows.Close()
+	if err != nil {
+		_ = tx.Rollback(ctx)
+		response.Error500(w, ref())
+		return
+	}
+	if count == 0 {
+		_ = tx.Rollback(ctx)
+		response.Fail(w, "未找到唯一长者档案，请核对老人手机号")
+		return
+	}
+	if count > 1 {
+		_ = tx.Rollback(ctx)
+		conflict409(w, "该手机号对应多份长者档案，请通过指定老人的邀请码绑定")
+		return
+	}
+	if boundFamilyID != nil {
+		_ = tx.Rollback(ctx)
+		conflict409(w, "该老人已绑定家属，请先处理原绑定")
+		return
+	}
 	// 3. 绑定老人
-	ct, err := tx.Exec(ctx, `UPDATE oldperson SET family_id=$1 WHERE old_id=$2`, familyID, oldID)
+	ct, err := tx.Exec(ctx, `UPDATE oldperson SET family_id=$1 WHERE old_id=$2 AND family_id IS NULL`, familyID, oldID)
 	if err != nil || ct.RowsAffected() != 1 {
 		_ = tx.Rollback(ctx)
 		response.Error500(w, ref())
@@ -267,7 +308,7 @@ func (h *Handler) familySelectTwo(w http.ResponseWriter, r *http.Request) {
 	var name, sex, addr, pic *string
 	err := h.DB.QueryRow(r.Context(),
 		`SELECT family_id,family_name,family_sex,family_address,family_tou_pic
-		 FROM family WHERE family_phone=$1`, phone).Scan(&id, &name, &sex, &addr, &pic)
+		 FROM family WHERE family_phone=$1 AND ($2=0 OR family_id=$2)`, phone, familySelfID(auth.Principal(r))).Scan(&id, &name, &sex, &addr, &pic)
 	if err != nil {
 		if isNotFound(err) {
 			response.JSON(w, http.StatusOK, map[string]any{"familyDto2": nil})
@@ -343,7 +384,7 @@ func (h *Handler) familyUpdateTouPic(w http.ResponseWriter, r *http.Request) {
 	if !h.lockImages(w, r.Context(), tx, []string{pic}) {
 		return
 	}
-	ct, err := tx.Exec(r.Context(), `UPDATE family SET family_tou_pic=$1 WHERE family_phone=$2`, pic, phone)
+	ct, err := tx.Exec(r.Context(), `UPDATE family SET family_tou_pic=$1 WHERE family_phone=$2 AND ($3=0 OR family_id=$3)`, pic, phone, familySelfID(auth.Principal(r)))
 	if err != nil {
 		response.Error500(w, ref())
 		return
@@ -382,7 +423,7 @@ func (h *Handler) familyUpdatePassword(w http.ResponseWriter, r *http.Request) {
 	}
 	var hashed *string
 	err := h.DB.QueryRow(r.Context(),
-		`SELECT family_password FROM family WHERE family_phone=$1`, phone).Scan(&hashed)
+		`SELECT family_password FROM family WHERE family_phone=$1 AND ($2=0 OR family_id=$2)`, phone, familySelfID(auth.Principal(r))).Scan(&hashed)
 	if err != nil {
 		if isNotFound(err) {
 			response.Fail(w, "手机号或原密码不正确")
@@ -401,7 +442,7 @@ func (h *Handler) familyUpdatePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if _, err := h.DB.Exec(r.Context(),
-		`UPDATE family SET family_password=$1 WHERE family_phone=$2`, nh, phone); err != nil {
+		`UPDATE family SET family_password=$1 WHERE family_phone=$2 AND ($3=0 OR family_id=$3)`, nh, phone, familySelfID(auth.Principal(r))); err != nil {
 		response.Error500(w, ref())
 		return
 	}

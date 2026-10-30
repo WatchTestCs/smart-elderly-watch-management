@@ -29,6 +29,15 @@ type Sample struct {
 
 func Number(v float64) *float64 { return &v }
 
+// InWindow uses exact payload times. Microsecond SQL indexes only select
+// candidates; instants belong to [from,to), intervals must overlap that window.
+func (s Sample) InWindow(from, to time.Time) bool {
+	if s.Semantics == "interval" {
+		return s.Start.Before(to) && s.End.After(from)
+	}
+	return !s.Start.Before(from) && s.Start.Before(to)
+}
+
 func (s Sample) Normalize() (Sample, error) {
 	if len(s.Metadata) > 64 {
 		return s, fmt.Errorf("too many metadata fields")
@@ -131,8 +140,8 @@ func (s Sample) Normalize() (Sample, error) {
 	if math.IsNaN(v) || math.IsInf(v, 0) || v < 0 {
 		return s, fmt.Errorf("normalized measurement must be finite and nonnegative")
 	}
-	if s.Metric == "steps" && v != math.Trunc(v) {
-		return s, fmt.Errorf("steps must be an integer")
+	if s.Metric == "steps" && (v != math.Trunc(v) || v > 9007199254740991) {
+		return s, fmt.Errorf("steps must be an exact nonnegative JSON integer")
 	}
 	if s.Metric == "oxygen_saturation" && v > 100 {
 		return s, fmt.Errorf("oxygen saturation exceeds 100 percent")

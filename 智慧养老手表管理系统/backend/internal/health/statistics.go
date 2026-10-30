@@ -162,6 +162,9 @@ func Aggregate(samples []Sample, from, to time.Time) (Statistics, error) {
 	for _, s := range filtered {
 		v := *s.Value
 		total += v
+		if first.Metric == "steps" && total > 9007199254740991 {
+			return out, fmt.Errorf("step total exceeds exact integer range")
+		}
 		if v < low {
 			low = v
 		}
