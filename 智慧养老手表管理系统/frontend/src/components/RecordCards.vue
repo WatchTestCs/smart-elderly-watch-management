@@ -23,9 +23,9 @@ export default {
     valueOf (row, field) {
       var value = row[field.key]
       if (field.state) {
-        if (value === 1 || value === '1') return field.state === 'fall' ? '摔倒告警' : '异常'
+        if (value === 1 || value === '1') return field.state === 'fall' ? '紧急告警' : '异常'
         if (field.handled && (row[field.handled] === 1 || row[field.handled] === '1')) return '已处理'
-        if (value === 0 || value === '0') return field.state === 'fall' ? '未发现摔倒告警' : '正常'
+        if (value === 0 || value === '0') return field.state === 'fall' ? '未告警/已处理' : '正常'
         return '暂无状态'
       }
       return value == null || value === '' ? '暂未提供' : value

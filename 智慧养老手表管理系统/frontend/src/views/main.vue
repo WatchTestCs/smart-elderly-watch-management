@@ -14,8 +14,8 @@
       </article>
       <article class="overview-card fall-card" v-loading="positionLoading" :aria-busy="String(positionLoading)">
         <div class="metric-icon rose"><i class="el-icon-warning"></i></div>
-        <div class="metric-copy"><span>摔倒告警</span><strong v-if="!positionError">{{ num == null ? '—' : num }}</strong><strong v-else class="metric-error" role="status">{{ positionError }}</strong><small v-if="positionTotal != null">{{ positionTotal ? num + ' / ' + positionTotal + ' 位长者有摔倒告警' : '暂无长者位置记录' }}</small><small>根据最近上报的位置记录统计</small></div>
-        <el-button v-if="positionError" link @click="searchposition">重新加载摔倒统计</el-button><el-button v-else link @click="$router.push('/position')">查看位置 <i class="el-icon-arrow-right"></i></el-button>
+        <div class="metric-copy"><span>紧急告警</span><strong v-if="!positionError">{{ num == null ? '—' : num }}</strong><strong v-else class="metric-error" role="status">{{ positionError }}</strong><small v-if="positionTotal != null">{{ positionTotal ? num + ' / ' + positionTotal + ' 位长者有紧急告警' : '暂无长者位置记录' }}</small><small>根据最近告警记录统计</small></div>
+        <el-button v-if="positionError" link @click="searchposition">重新加载告警统计</el-button><el-button v-else link @click="$router.push('/position')">查看位置 <i class="el-icon-arrow-right"></i></el-button>
       </article>
       <article class="overview-note">
         <span class="note-icon"><i class="el-icon-info"></i></span>
@@ -160,7 +160,7 @@ export default {
         this.num = falls
         this.positionTotal = total
       } catch (_) {
-        this.positionError = '摔倒统计暂时无法加载'
+        this.positionError = '告警统计暂时无法加载'
       } finally {
         this.positionLoading = false
       }

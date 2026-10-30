@@ -6,6 +6,10 @@
 
 | 文件 | 职责 |
 | --- | --- |
+| [docs/patch-review/2026-10-30-position-alarm-context.md](../docs/patch-review/2026-10-30-position-alarm-context.md) | 定位与告警快照分离、SOS 坐标及紧急告警标签的设计与验收 |
+| [evidence/core-bugs-20261030/position-alarm-context.txt](../evidence/core-bugs-20261030/position-alarm-context.txt) | 双数据库各七条定位及求助路径、前端三条用例与构建输出 |
+| [智慧养老手表管理系统/backend/internal/handlers/core_position_alarm_context_test.go](../智慧养老手表管理系统/backend/internal/handlers/core_position_alarm_context_test.go) | 告警独立快照、缺失及半组 SOS 坐标不伪造定位回归 |
+| [智慧养老手表管理系统/frontend/src/views/position.alerts.test.ts](../智慧养老手表管理系统/frontend/src/views/position.alerts.test.ts) | 告警弹窗事件上下文与共用紧急状态标签回归 |
 | [docs/patch-review/2026-10-30-family-phone-validation.md](../docs/patch-review/2026-10-30-family-phone-validation.md) | 家属新增/编辑手机号格式、跨账号冲突与合法改号登录的修复说明 |
 | [evidence/core-bugs-20261030/family-phone-validation.txt](../evidence/core-bugs-20261030/family-phone-validation.txt) | 双数据库各六条账号与家属绑定相关路径验收输出 |
 | [智慧养老手表管理系统/backend/internal/handlers/core_family_phone_validation_test.go](../智慧养老手表管理系统/backend/internal/handlers/core_family_phone_validation_test.go) | 无效号码不写入、已有账号冲突及合法改号保留身份回归 |

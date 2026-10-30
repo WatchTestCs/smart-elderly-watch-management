@@ -10,8 +10,8 @@
 	  <el-table-column prop="name" label="长者" width="150" align="center"></el-table-column>
 	  <el-table-column prop="status" label="安全状态" width="200" align="center">
 		  <template #default="scope" >
-		    <el-tag v-if="scope.row.status == 1" type="danger" size="small">摔倒告警</el-tag>
-		    <el-tag v-else-if="scope.row.status == 0" type="success" size="small">未发现摔倒告警</el-tag>
+		    <el-tag v-if="scope.row.status == 1" type="danger" size="small">紧急告警</el-tag>
+		    <el-tag v-else-if="scope.row.status == 0" type="success" size="small">未告警/已处理</el-tag>
         <span v-else class="unknown-state">状态未知</span>
 		  </template>
 	  </el-table-column>
@@ -31,7 +31,7 @@
         <h2>{{ item.name || '位置记录' }}</h2>
         <dl>
           <dt>安全状态</dt>
-          <dd :class="item.status == 1 ? 'status-danger' : item.status == 0 ? 'status-normal' : ''">{{ item.status == 1 ? '摔倒告警，请及时确认' : item.status == 0 ? '未发现摔倒告警' : '状态未知' }}</dd>
+          <dd :class="item.status == 1 ? 'status-danger' : item.status == 0 ? 'status-normal' : ''">{{ item.status == 1 ? '紧急告警，请及时确认' : item.status == 0 ? '未告警/已处理' : '状态未知' }}</dd>
           <dt>记录时间</dt><dd>{{ item.beTime || '暂无时间信息' }}</dd>
           <dt>位置坐标</dt><dd>{{ item.lng }}, {{ item.lat }}</dd>
         </dl>
