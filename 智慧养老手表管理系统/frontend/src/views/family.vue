@@ -242,17 +242,20 @@ export default {
           _this.searchfamily()
           _this.$message({
             type: 'success',
-            message: '添加监护人成功'
+            message: '家属已添加，请生成该老人的邀请码，由家属注册并设置登录密码。'
           })
         } else {
           _this.$message({
             type: 'error',
-            message: '添加监护人失败'
+            message: response.data.message || '添加监护人失败'
           })
         }
       })
         .catch(function (error) {
-          console.log(error)
+          _this.$message({
+            type: 'error',
+            message: error.response?.data?.message || '添加家属失败，请检查服务连接后重试。'
+          })
         })
     },
     closeRoleAddDialog () {

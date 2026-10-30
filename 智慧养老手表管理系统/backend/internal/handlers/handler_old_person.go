@@ -18,6 +18,25 @@ import (
 const oldPersonCols = `old_id, name, age, sex, phone, room, illness, warn, food_like,
 	food_hate, drag, family_id, customer_id, be_time, bothdate, device_id`
 
+func ageOn(birth, at time.Time) int {
+	age := at.Year() - birth.Year()
+	if at.Month() < birth.Month() || (at.Month() == birth.Month() && at.Day() < birth.Day()) {
+		age--
+	}
+	return age
+}
+
+func currentPersonAge(birth *time.Time, stored *int, at time.Time) *int {
+	if birth == nil {
+		return stored
+	}
+	age := ageOn(*birth, at)
+	if birth.Year() < 1 || age < 0 {
+		return nil
+	}
+	return &age
+}
+
 func scanOldPersonRow(row dbstore.Row) (map[string]any, error) {
 	var id int64
 	var name, sex, phone, room, illness, warn, drag, foodLike, foodHate *string
@@ -29,7 +48,7 @@ func scanOldPersonRow(row dbstore.Row) (map[string]any, error) {
 		return nil, err
 	}
 	return map[string]any{
-		"oldId": id, "name": name, "age": age, "sex": sex, "phone": phone,
+		"oldId": id, "name": name, "age": currentPersonAge(bothdate, age, time.Now()), "sex": sex, "phone": phone,
 		"room": room, "illness": illness, "warn": warn, "drag": drag,
 		"foodLike": foodLike, "foodHate": foodHate, "familyId": familyID,
 		"customerId": customerID, "beTime": dateOrNil(beTime),
@@ -109,18 +128,14 @@ func (h *Handler) oldPersonAdd(w http.ResponseWriter, r *http.Request) {
 		write400(w, "请求参数不完整")
 		return
 	}
-	if len(vals["bothdate"]) < 4 {
-		write400(w, "请求参数不完整")
-		return
-	}
-	birthYear, err := strconv.Atoi(vals["bothdate"][:4])
-	if err != nil {
-		write400(w, "请求参数不完整")
+	now := time.Now()
+	birth, err := time.Parse("2006-01-02", vals["bothdate"])
+	age := ageOn(birth, now)
+	if err != nil || birth.Year() < 1 || age < 0 {
+		write400(w, "出生日期须为有效的 yyyy-MM-dd，且不能晚于今天")
 		return
 	}
 	ctx := r.Context()
-	now := time.Now()
-	age := now.Year() - birthYear
 	ct, err := h.DB.Exec(ctx,
 		`INSERT INTO oldperson(name,age,sex,phone,room,illness,warn,food_like,food_hate,drag,
 		 customer_id,be_time,bothdate) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
@@ -171,16 +186,12 @@ func (h *Handler) oldPersonUpdate(w http.ResponseWriter, r *http.Request) {
 		write400(w, "请求参数不完整")
 		return
 	}
-	if len(vals["bothdate"]) < 4 {
-		write400(w, "请求参数不完整")
+	birth, err := time.Parse("2006-01-02", vals["bothdate"])
+	age := ageOn(birth, time.Now())
+	if err != nil || birth.Year() < 1 || age < 0 {
+		write400(w, "出生日期须为有效的 yyyy-MM-dd，且不能晚于今天")
 		return
 	}
-	birthYear, err := strconv.Atoi(vals["bothdate"][:4])
-	if err != nil {
-		write400(w, "请求参数不完整")
-		return
-	}
-	age := time.Now().Year() - birthYear
 	ctx := r.Context()
 	tx, err := h.DB.Begin(ctx)
 	if err != nil {
@@ -348,7 +359,7 @@ func (h *Handler) oldPersonSelectDetail(w http.ResponseWriter, r *http.Request) 
 			return
 		}
 		list = append(list, map[string]any{
-			"oldId": id, "name": name, "age": age, "sex": sex, "phone": phone,
+			"oldId": id, "name": name, "age": currentPersonAge(bothdate, age, time.Now()), "sex": sex, "phone": phone,
 			"room": room, "illness": illness, "warn": warn, "drag": drag,
 			"foodLike": foodLike, "foodHate": foodHate, "familyId": familyID,
 			"customerId": customerID, "beTime": dateOrNil(beTime),

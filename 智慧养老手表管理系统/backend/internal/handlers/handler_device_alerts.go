@@ -142,7 +142,7 @@ func describePersonAlert(pr *personRow, now time.Time) map[string]any {
 			}
 		}
 	}
-	if pr.battery != nil && *pr.battery > 0 && *pr.battery < 20 {
+	if pr.battery != nil && *pr.battery >= 0 && *pr.battery < 20 {
 		reasons = append(reasons, "电量低（"+strconv.Itoa(*pr.battery)+"%）")
 		details = append(details, "电量低于 20%，需要提醒老人充电。")
 	}

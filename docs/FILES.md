@@ -6,6 +6,18 @@
 
 | 文件 | 职责 |
 | --- | --- |
+| [docs/patch-review/2026-10-30-core-bug-batches.md](patch-review/2026-10-30-core-bug-batches.md) | 八项清单外核心缺陷、分批实现与统一验收说明 |
+| [evidence/core-bugs-20261030/targeted.txt](../evidence/core-bugs-20261030/targeted.txt) | 23 个顶层关键路径用例的最终原始输出 |
+| [智慧养老手表管理系统/backend/internal/handlers/core_alert_statistics_regression_test.go](../智慧养老手表管理系统/backend/internal/handlers/core_alert_statistics_regression_test.go) | 零电量、自定义阈值解释与精确来源统计回归 |
+| [智慧养老手表管理系统/backend/internal/handlers/core_binding_profile_regression_test.go](../智慧养老手表管理系统/backend/internal/handlers/core_binding_profile_regression_test.go) | 歧义手机号绑定、出生日期与当前周岁回归 |
+| [智慧养老手表管理系统/backend/internal/handlers/core_fence_vitals_regression_test.go](../智慧养老手表管理系统/backend/internal/handlers/core_fence_vitals_regression_test.go) | 缺失/null 围栏点与零体征缺测回归 |
+| [智慧养老手表管理系统/backend/internal/health/step_precision_regression_test.go](../智慧养老手表管理系统/backend/internal/health/step_precision_regression_test.go) | 单次步数与日累计精确整数边界回归 |
+| [docs/patch-review/2026-10-30-family-telemetry.md](patch-review/2026-10-30-family-telemetry.md) | 家属归属、首次设密、绑定及乱序上报修复的变更与验证边界 |
+| [智慧养老手表管理系统/backend/internal/handlers/extra_audit_test.go](../智慧养老手表管理系统/backend/internal/handlers/extra_audit_test.go) | 五项具体缺陷的定向数据库回归 |
+| [智慧养老手表管理系统/backend/migrations/mysql/0017_telemetry_observation_time.sql](../智慧养老手表管理系统/backend/migrations/mysql/0017_telemetry_observation_time.sql) | 增加步数观测时间及位置时间索引，保留遗留值 |
+| [智慧养老手表管理系统/backend/migrations/0015_telemetry_observation_time.sql](../智慧养老手表管理系统/backend/migrations/0015_telemetry_observation_time.sql) | PostgreSQL 兼容模式对应的观测时间和位置索引迁移 |
+| [智慧养老手表管理系统/backend/migrations/rollback/mysql_0017_telemetry_observation_time.sql](../智慧养老手表管理系统/backend/migrations/rollback/mysql_0017_telemetry_observation_time.sql) | 撤销迁移登记，保留观测时间与索引以便重新应用 |
+| [智慧养老手表管理系统/backend/migrations/rollback/postgres_0015_telemetry_observation_time.sql](../智慧养老手表管理系统/backend/migrations/rollback/postgres_0015_telemetry_observation_time.sql) | PostgreSQL 对应的保留数据回滚脚本 |
 | [智慧养老手表管理系统/backend/internal/handlers/sos_binding_integration_test.go](../智慧养老手表管理系统/backend/internal/handlers/sos_binding_integration_test.go) | 真实双库验证 SOS 绑定版本、并发重绑定和重复求助幂等 |
 | [智慧养老手表管理系统/backend/internal/session/lifecycle_audit_test.go](../智慧养老手表管理系统/backend/internal/session/lifecycle_audit_test.go) | 同一夹具测量基线与本轮的会话维护协程保留数 |
 | [智慧养老手表管理系统/backend/internal/session/http.go](../智慧养老手表管理系统/backend/internal/session/http.go) | Cookie 生命周期、请求内已验证会话缓存及取消检查 |

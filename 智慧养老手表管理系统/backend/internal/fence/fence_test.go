@@ -7,7 +7,7 @@ import (
 )
 
 func TestCoordinateArity(t *testing.T) {
-	for _, raw := range []string{`[120]`, `[120,30,99]`, `null`} {
+	for _, raw := range []string{`[120]`, `[120,30,99]`, `null`, `[null,30]`, `[120,null]`, `[null,null]`} {
 		var p Point
 		if json.Unmarshal([]byte(raw), &p) == nil {
 			t.Fatal("accepted malformed coordinate", raw)

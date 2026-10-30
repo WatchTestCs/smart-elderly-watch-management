@@ -78,10 +78,10 @@ func TestSocialTextTableIsRepositoryOwned(t *testing.T) {
 func TestBusinessRepositoriesOwnEngineSpecificSQL(t *testing.T) {
 	mysqlPosition := positionLatestTimeExpr(true)
 	postgresPosition := positionLatestTimeExpr(false)
-	if !strings.HasPrefix(mysqlPosition, "COALESCE(GREATEST(") {
-		t.Fatalf("MySQL position expression must handle GREATEST NULL semantics locally: %s", mysqlPosition)
+	if mysqlPosition != "l.be_time" {
+		t.Fatalf("MySQL position time must belong to the coordinates: %s", mysqlPosition)
 	}
-	if postgresPosition != "GREATEST(COALESCE(l.be_time, o.be_time), COALESCE(a.be_time, o.be_time))" {
+	if postgresPosition != "l.be_time" {
 		t.Fatalf("unexpected PostgreSQL position expression: %s", postgresPosition)
 	}
 

@@ -172,12 +172,6 @@ func (h *Handler) inviteJoin(w http.ResponseWriter, r *http.Request) {
 		response.Error500(w, ref())
 		return
 	}
-	if dup {
-		_ = tx.Rollback(ctx)
-		// 不直接提示"已注册"：本接口公开，统一文案避免被用于枚举注册手机号。
-		response.Fail(w, "注册失败，请核对邀请码与信息后重试")
-		return
-	}
 	// 邀请码绑定的老人须存在
 	var oldName *string
 	var boundFamilyID *int64
@@ -195,10 +189,25 @@ func (h *Handler) inviteJoin(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	// P0 安全修复（对齐 optimize 分支）：老人已有家属绑定时，禁止邀请码注册覆盖（绑定劫持）。
+	// An invitation may activate only the same elder's pre-created, passwordless
+	// family record. It must never reset an active account or replace a binding.
+	var familyID int64
 	if boundFamilyID != nil {
+		err = tx.QueryRow(ctx, `SELECT family_id FROM family
+		 WHERE family_id=$1 AND family_phone=$2 AND family_password IS NULL
+		 AND NOT EXISTS(SELECT 1 FROM users WHERE user_phone=$2) FOR UPDATE`, *boundFamilyID, familyPhone).Scan(&familyID)
+		if err != nil {
+			_ = tx.Rollback(ctx)
+			if isNotFound(err) {
+				response.Fail(w, "注册失败，请核对邀请码与信息后重试")
+			} else {
+				response.Error500(w, ref())
+			}
+			return
+		}
+	} else if dup {
 		_ = tx.Rollback(ctx)
-		response.Fail(w, "该老人已绑定家属，请联系管理员处理")
+		response.Fail(w, "注册失败，请核对邀请码与信息后重试")
 		return
 	}
 	// 建 family 账号（密码 BCrypt 哈希）
@@ -208,24 +217,32 @@ func (h *Handler) inviteJoin(w http.ResponseWriter, r *http.Request) {
 		response.Error500(w, ref())
 		return
 	}
-	var familyID int64
-	if err := tx.QueryRow(ctx,
-		`INSERT INTO family(family_name,family_phone,family_password,family_relation,family_sex,family_address)
+	if boundFamilyID == nil {
+		err = tx.QueryRow(ctx,
+			`INSERT INTO family(family_name,family_phone,family_password,family_relation,family_sex,family_address)
 		 VALUES($1,$2,$3,$4,$5,$6) RETURNING family_id`,
-		familyName, familyPhone, hash, familyRelation, familySex, familyAddress).Scan(&familyID); err != nil {
+			familyName, familyPhone, hash, familyRelation, familySex, familyAddress).Scan(&familyID)
+	} else {
+		_, err = tx.Exec(ctx, `UPDATE family SET family_name=$1,family_password=$2,
+		 family_relation=$3,family_sex=$4,family_address=$5 WHERE family_id=$6 AND family_password IS NULL`,
+			familyName, hash, familyRelation, familySex, familyAddress, familyID)
+	}
+	if err != nil {
 		_ = tx.Rollback(ctx)
 		conflict409(w, "注册失败，请重试")
 		return
 	}
 	// 绑定老人
-	ct, err := tx.Exec(ctx, `UPDATE oldperson SET family_id=$1 WHERE old_id=$2 AND family_id IS NULL`, familyID, *invOldID)
-	if err != nil || ct.RowsAffected() != 1 {
-		_ = tx.Rollback(ctx)
-		conflict409(w, "注册失败，请重试")
-		return
+	if boundFamilyID == nil {
+		ct, err := tx.Exec(ctx, `UPDATE oldperson SET family_id=$1 WHERE old_id=$2 AND family_id IS NULL`, familyID, *invOldID)
+		if err != nil || ct.RowsAffected() != 1 {
+			_ = tx.Rollback(ctx)
+			conflict409(w, "注册失败，请重试")
+			return
+		}
 	}
 	// 原子占用邀请码（防并发）
-	ct, err = tx.Exec(ctx,
+	ct, err := tx.Exec(ctx,
 		`UPDATE invite_code SET used=1,used_family_id=$1,used_time=$2 WHERE id=$3 AND used=0`,
 		familyID, time.Now(), invID)
 	if err != nil || ct.RowsAffected() != 1 {
