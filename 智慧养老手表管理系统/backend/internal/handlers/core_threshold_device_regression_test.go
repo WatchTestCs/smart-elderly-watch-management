@@ -2,8 +2,28 @@ package handlers
 
 import (
 	"context"
+	"net/http/httptest"
 	"testing"
 )
+
+func TestContinuousThresholdValidationBounds(t *testing.T) {
+	for _, bad := range []struct {
+		field string
+		value any
+	}{{"deviceId", "9223372036854775808"}, {"hrf", 251}, {"hrl", 19}, {"bpf", 301}, {"bpl", 39}, {"hrf", 100.5}} {
+		body := map[string]any{"deviceId": 1, "hrf": 100, "hrl": 60, "bpf": 150, "bpl": 90}
+		body[bad.field] = bad.value
+		w := httptest.NewRecorder()
+		if _, _, _, _, _, ok := watchProfileParams(w, body); ok || w.Code != 400 {
+			t.Errorf("invalid %s=%v accepted: ok=%v HTTP=%d", bad.field, bad.value, ok, w.Code)
+		}
+	}
+	w := httptest.NewRecorder()
+	deviceID, hrf, hrl, bpf, bpl, ok := watchProfileParams(w, map[string]any{"deviceId": "2147483647", "hrf": 250, "hrl": 20, "bpf": 300, "bpl": 40})
+	if !ok || deviceID != 2147483647 || hrf != 250 || hrl != 20 || bpf != 300 || bpl != 40 {
+		t.Fatalf("valid threshold boundaries rejected: device=%d hrf=%d hrl=%d bpf=%d bpl=%d ok=%v", deviceID, hrf, hrl, bpf, bpl, ok)
+	}
+}
 
 func TestContinuousThresholdSearchIncludesSecondaryDevice(t *testing.T) {
 	pool := testDatabase(t)

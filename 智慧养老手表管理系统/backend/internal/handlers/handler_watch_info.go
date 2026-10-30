@@ -14,40 +14,39 @@ import (
 // watchProfileParams 阈值校验（add/update 共用）：缺失/超范围 → 400"<key> 缺失或超出允许范围"；
 // 低值 >= 高值 → 400"低值必须小于高值"。
 func watchProfileParams(w http.ResponseWriter, m map[string]any) (deviceID int64, hrf, hrl, bpf, bpl int, ok bool) {
-	num := func(key string, min, max int) (int64, string) {
+	num := func(key string, min, max int) (int, string) {
 		s, present := vstr(m, key)
 		if !present || s == "" {
 			return 0, key + " 缺失或超出允许范围"
 		}
-		n, err := strconv.ParseInt(s, 10, 64)
-		if err != nil || n < int64(min) || n > int64(max) {
+		n, err := strconv.Atoi(s)
+		if err != nil || n < min || n > max {
 			return 0, key + " 缺失或超出允许范围"
 		}
 		return n, ""
 	}
-	var msg string
-	if deviceID, msg = num("deviceId", 1, 2147483647); msg != "" {
+	id, msg := num("deviceId", 1, 2147483647)
+	if msg != "" {
 		write400(w, msg)
 		return 0, 0, 0, 0, 0, false
 	}
-	var hrf64, hrl64, bpf64, bpl64 int64
-	if hrf64, msg = num("hrf", 20, 250); msg != "" {
+	deviceID = int64(id)
+	if hrf, msg = num("hrf", 20, 250); msg != "" {
 		write400(w, msg)
 		return 0, 0, 0, 0, 0, false
 	}
-	if hrl64, msg = num("hrl", 20, 250); msg != "" {
+	if hrl, msg = num("hrl", 20, 250); msg != "" {
 		write400(w, msg)
 		return 0, 0, 0, 0, 0, false
 	}
-	if bpf64, msg = num("bpf", 40, 300); msg != "" {
+	if bpf, msg = num("bpf", 40, 300); msg != "" {
 		write400(w, msg)
 		return 0, 0, 0, 0, 0, false
 	}
-	if bpl64, msg = num("bpl", 40, 300); msg != "" {
+	if bpl, msg = num("bpl", 40, 300); msg != "" {
 		write400(w, msg)
 		return 0, 0, 0, 0, 0, false
 	}
-	hrf, hrl, bpf, bpl = int(hrf64), int(hrl64), int(bpf64), int(bpl64)
 	if hrl >= hrf || bpl >= bpf {
 		write400(w, "低值必须小于高值")
 		return 0, 0, 0, 0, 0, false
