@@ -72,7 +72,8 @@ func (h *Handler) watchInfoSelect(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx := r.Context()
 	base := `SELECT w.device_id, w.op_time, w.hrf, w.bpf, w.hrl, w.bpl, o.name
-		FROM watch_info w LEFT JOIN oldperson o ON w.device_id=o.device_id
+		FROM watch_info w LEFT JOIN device d ON d.device_id=w.device_id
+		LEFT JOIN oldperson o ON o.old_id=d.old_id
 		WHERE ($1='' OR o.name LIKE '%'||$1||'%') ORDER BY w.device_id`
 	var total int64
 	if err := h.DB.QueryRow(ctx, `SELECT COUNT(*) FROM (`+base+`) AS t`, oldName).Scan(&total); err != nil {
@@ -132,7 +133,8 @@ func (h *Handler) watchInfoAdd(w http.ResponseWriter, r *http.Request) {
 	}
 	now := time.Now()
 	ct, err := h.DB.Exec(ctx,
-		`INSERT INTO watch_info(device_id,op_time,bpf,bpl,hrl,hrf) VALUES($1,$2,$3,$4,$5,$6)`,
+		`INSERT INTO watch_info(device_id,op_time,bpf,bpl,hrl,hrf)
+		 SELECT $1,$2,$3,$4,$5,$6 FROM device WHERE device_id=$1`,
 		deviceID, time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local),
 		bpf, bpl, hrl, hrf)
 	if err != nil {
@@ -143,7 +145,7 @@ func (h *Handler) watchInfoAdd(w http.ResponseWriter, r *http.Request) {
 		response.OK(w, nil)
 		return
 	}
-	failCodeOnly(w)
+	response.Fail(w, "设备不存在，请先登记设备")
 }
 
 // POST /api/v1/watchInfo/update —— 更新手表阈值档案（ADMIN）。
