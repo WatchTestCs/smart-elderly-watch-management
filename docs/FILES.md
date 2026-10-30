@@ -6,6 +6,9 @@
 
 | 文件 | 职责 |
 | --- | --- |
+| [docs/patch-review/2026-10-30-family-phone-validation.md](../docs/patch-review/2026-10-30-family-phone-validation.md) | 家属新增/编辑手机号格式、跨账号冲突与合法改号登录的修复说明 |
+| [evidence/core-bugs-20261030/family-phone-validation.txt](../evidence/core-bugs-20261030/family-phone-validation.txt) | 双数据库各六条账号与家属绑定相关路径验收输出 |
+| [智慧养老手表管理系统/backend/internal/handlers/core_family_phone_validation_test.go](../智慧养老手表管理系统/backend/internal/handlers/core_family_phone_validation_test.go) | 无效号码不写入、已有账号冲突及合法改号保留身份回归 |
 | [docs/patch-review/2026-10-30-history-time-labels.md](../docs/patch-review/2026-10-30-history-time-labels.md) | 体征跨小时/日期与睡眠跨月/年标签修复的设计和验证边界 |
 | [evidence/core-bugs-20261030/history-time-labels.txt](../evidence/core-bugs-20261030/history-time-labels.txt) | 双数据库各六条历史图表及相关路径验收输出 |
 | [智慧养老手表管理系统/backend/internal/handlers/core_history_time_labels_test.go](../智慧养老手表管理系统/backend/internal/handlers/core_history_time_labels_test.go) | 管理员与家属的完整时间标签、日期范围、缺测值对齐回归 |

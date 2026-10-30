@@ -129,6 +129,10 @@ func (h *Handler) familyAdd(w http.ResponseWriter, r *http.Request) {
 		response.Fail(w, "参数不完整")
 		return
 	}
+	if !auth.ValidPhone(phone) {
+		response.Fail(w, "请输入正确的11位手机号")
+		return
+	}
 	ctx := r.Context()
 	tx, err := h.DB.Begin(ctx)
 	if err != nil {
@@ -234,7 +238,23 @@ func (h *Handler) familyUpdate(w http.ResponseWriter, r *http.Request) {
 		response.Fail(w, "参数不完整")
 		return
 	}
-	ct, err := h.DB.Exec(r.Context(),
+	if !auth.ValidPhone(phone) {
+		response.Fail(w, "请输入正确的11位手机号")
+		return
+	}
+	ctx := r.Context()
+	var dup bool
+	if err := h.DB.QueryRow(ctx,
+		`SELECT EXISTS(SELECT 1 FROM users WHERE user_phone=$1)
+		 OR EXISTS(SELECT 1 FROM family WHERE family_phone=$1 AND family_id<>$2)`, phone, id).Scan(&dup); err != nil {
+		response.Error500(w, ref())
+		return
+	}
+	if dup {
+		response.Fail(w, "该手机号已被使用，请更换手机号")
+		return
+	}
+	ct, err := h.DB.Exec(ctx,
 		`UPDATE family SET family_name=$1,family_relation=$2,family_sex=$3,
 		 family_phone=$4,family_address=$5 WHERE family_id=$6`,
 		name, relation, sex, phone, addr, id)
