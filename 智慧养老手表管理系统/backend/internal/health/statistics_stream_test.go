@@ -107,8 +107,8 @@ func BenchmarkAggregateLarge(b *testing.B) {
 	}
 }
 
-// Fixed preview@8c22299 implementation, retained as an independent differential
-// oracle for input ordering, errors, clipping and floating-point results.
+// Based on preview@8c22299, with daily timestamp conflicts checked pairwise.
+// This oracle remains independent of the production observation map.
 func referenceAggregate(samples []Sample, from, to time.Time) (Statistics, error) {
 	out := Statistics{}
 	type calendarDay struct {
@@ -133,11 +133,16 @@ func referenceAggregate(samples []Sample, from, to time.Time) (Statistics, error
 			}
 		}
 		if s.Semantics == "daily_total" {
+			// Check all earlier observations independently of which snapshot
+			// currently leads its day. Equal instants can use different offsets.
+			for j := 0; j < i; j++ {
+				previous := &samples[j]
+				if !previous.Deleted && previous.Value != nil && s.Start.Equal(previous.Start) && *s.Value != *previous.Value {
+					return out, fmt.Errorf("conflicting daily totals at the same observation time")
+				}
+			}
 			year, month, day := s.Start.In(from.Location()).Date()
 			key := calendarDay{year, month, day}
-			if old, ok := daily[key]; ok && s.Start.Equal(old.Start) && *s.Value != *old.Value {
-				return out, fmt.Errorf("conflicting daily totals at the same observation time")
-			}
 			if old, ok := daily[key]; !ok || s.Start.After(old.Start) {
 				daily[key] = s
 			}

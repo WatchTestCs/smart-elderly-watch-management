@@ -1,0 +1,61 @@
+Health / 8 related cases
+=== RUN   TestAlgorithmMultiDayTotals
+--- PASS: TestAlgorithmMultiDayTotals (0.00s)
+=== RUN   TestAlgorithmConflictingDailyTimestamp
+--- PASS: TestAlgorithmConflictingDailyTimestamp (0.00s)
+=== RUN   TestContinuousDailyConflictsIndependentOfInputOrder
+--- PASS: TestContinuousDailyConflictsIndependentOfInputOrder (0.00s)
+=== RUN   TestContinuousFiniteScalarMeanSurvivesSumOverflow
+--- PASS: TestContinuousFiniteScalarMeanSurvivesSumOverflow (0.00s)
+=== RUN   TestAggregateStreamingDifferential
+--- PASS: TestAggregateStreamingDifferential (0.04s)
+=== RUN   TestAggregateDailyCalendarEquivalent
+--- PASS: TestAggregateDailyCalendarEquivalent (0.00s)
+=== RUN   TestAggregatePreservesCallerSamples
+--- PASS: TestAggregatePreservesCallerSamples (0.00s)
+=== RUN   TestStepsDoNotMixCumulativeOrOverlappingIntervals
+--- PASS: TestStepsDoNotMixCumulativeOrOverlappingIntervals (0.00s)
+PASS
+ok  	suining-care/internal/health	0.870s
+
+
+MySQL / 5 statistics and cache cases
+=== RUN   TestContinuousDailyConflictSurvivesLaterSnapshot
+--- PASS: TestContinuousDailyConflictSurvivesLaterSnapshot (5.91s)
+=== RUN   TestContinuousStatisticsLargeFiniteMean
+--- PASS: TestContinuousStatisticsLargeFiniteMean (5.34s)
+=== RUN   TestHealthStatisticsHotCacheConsistency
+--- PASS: TestHealthStatisticsHotCacheConsistency (5.23s)
+=== RUN   TestHealthStatisticsHotCacheAuthorizationAndIdentity
+--- PASS: TestHealthStatisticsHotCacheAuthorizationAndIdentity (3.15s)
+=== RUN   TestHealthStatisticsHotCacheOverflowResultConsistency
+--- PASS: TestHealthStatisticsHotCacheOverflowResultConsistency (3.18s)
+PASS
+ok  	suining-care/internal/handlers	22.994s
+
+
+PostgreSQL / 4 statistics and cache cases
+=== RUN   TestContinuousStatisticsLargeFiniteMean
+--- PASS: TestContinuousStatisticsLargeFiniteMean (0.50s)
+=== RUN   TestHealthStatisticsHotCacheConsistency
+--- PASS: TestHealthStatisticsHotCacheConsistency (0.39s)
+=== RUN   TestHealthStatisticsHotCacheAuthorizationAndIdentity
+--- PASS: TestHealthStatisticsHotCacheAuthorizationAndIdentity (0.48s)
+=== RUN   TestHealthStatisticsHotCacheOverflowResultConsistency
+--- PASS: TestHealthStatisticsHotCacheOverflowResultConsistency (0.46s)
+PASS
+ok  	suining-care/internal/handlers	1.999s
+
+
+MySQL / 3 cases after daily cache version correction
+=== RUN   TestContinuousDailyConflictSurvivesLaterSnapshot
+--- PASS: TestContinuousDailyConflictSurvivesLaterSnapshot (3.38s)
+=== RUN   TestContinuousDailySubmicrosecondInterval
+--- PASS: TestContinuousDailySubmicrosecondInterval (3.27s)
+=== RUN   TestHealthStatisticsHotCacheReportingOffset
+--- PASS: TestHealthStatisticsHotCacheReportingOffset (3.25s)
+PASS
+ok  	suining-care/internal/handlers	10.016s
+
+Final targeted go vet: health, handlers PASS
+No full local suite, performance run, or frontend build.

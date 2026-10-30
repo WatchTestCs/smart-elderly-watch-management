@@ -6,6 +6,10 @@
 
 | 文件 | 职责 |
 | --- | --- |
+| [docs/patch-review/2026-10-30-statistics-conflicts-mean.md](../docs/patch-review/2026-10-30-statistics-conflicts-mean.md) | 日累计同时间冲突、有限平均值溢出及旧缓存隔离的设计和验收 |
+| [evidence/core-bugs-20261030/statistics-conflicts-mean.txt](../evidence/core-bugs-20261030/statistics-conflicts-mean.txt) | 健康逻辑、双数据库统计和日缓存版本衔接的定向结果 |
+| [智慧养老手表管理系统/backend/internal/health/statistics_numeric_regression_test.go](../智慧养老手表管理系统/backend/internal/health/statistics_numeric_regression_test.go) | 日累计输入顺序、相同时刻偏移及有限平均值溢出回归 |
+| [智慧养老手表管理系统/backend/internal/handlers/core_statistics_numeric_test.go](../智慧养老手表管理系统/backend/internal/handlers/core_statistics_numeric_test.go) | 有限平均值真实写入与冷热缓存、旧日缓存重算和冲突展示回归 |
 | [docs/patch-review/2026-10-30-sleep-location-order.md](../docs/patch-review/2026-10-30-sleep-location-order.md) | 睡眠字段乱序及跨老人位置快照的两项缺陷、设计和定向验收 |
 | [evidence/core-bugs-20261030/sleep-location-order.txt](../evidence/core-bugs-20261030/sleep-location-order.txt) | 双数据库九条相关路径及归档观测时间保留的验收输出 |
 | [智慧养老手表管理系统/backend/internal/handlers/core_sleep_location_order_test.go](../智慧养老手表管理系统/backend/internal/handlers/core_sleep_location_order_test.go) | 睡眠独立时钟、乱序保护、零时长及换绑告警定位回归 |
