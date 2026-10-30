@@ -10,8 +10,8 @@ func TestContinuousThresholdValidationBounds(t *testing.T) {
 	for _, bad := range []struct {
 		field string
 		value any
-	}{{"deviceId", "9223372036854775808"}, {"hrf", 251}, {"hrl", 19}, {"bpf", 301}, {"bpl", 39}, {"hrf", 100.5}} {
-		body := map[string]any{"deviceId": 1, "hrf": 100, "hrl": 60, "bpf": 150, "bpl": 90}
+	}{{"deviceId", "9223372036854775808"}, {"hrf", 251.0}, {"hrl", 19.0}, {"bpf", 301.0}, {"bpl", 39.0}, {"hrf", 100.5}} {
+		body := map[string]any{"deviceId": 1.0, "hrf": 100.0, "hrl": 60.0, "bpf": 150.0, "bpl": 90.0}
 		body[bad.field] = bad.value
 		w := httptest.NewRecorder()
 		if _, _, _, _, _, ok := watchProfileParams(w, body); ok || w.Code != 400 {
@@ -19,7 +19,7 @@ func TestContinuousThresholdValidationBounds(t *testing.T) {
 		}
 	}
 	w := httptest.NewRecorder()
-	deviceID, hrf, hrl, bpf, bpl, ok := watchProfileParams(w, map[string]any{"deviceId": "2147483647", "hrf": 250, "hrl": 20, "bpf": 300, "bpl": 40})
+	deviceID, hrf, hrl, bpf, bpl, ok := watchProfileParams(w, map[string]any{"deviceId": "2147483647", "hrf": 250.0, "hrl": 20.0, "bpf": 300.0, "bpl": 40.0})
 	if !ok || deviceID != 2147483647 || hrf != 250 || hrl != 20 || bpf != 300 || bpl != 40 {
 		t.Fatalf("valid threshold boundaries rejected: device=%d hrf=%d hrl=%d bpf=%d bpl=%d ok=%v", deviceID, hrf, hrl, bpf, bpl, ok)
 	}

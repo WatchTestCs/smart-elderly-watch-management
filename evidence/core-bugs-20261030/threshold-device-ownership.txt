@@ -31,15 +31,11 @@ Targeted go vet: handlers PASS
 No full local suite, frontend build, or performance run.
 
 PostgreSQL two key paths after native integer parsing + input bounds
-=== RUN   TestContinuousThresholdSearchIncludesSecondaryDevice
---- PASS: TestContinuousThresholdSearchIncludesSecondaryDevice (0.26s)
-=== RUN   TestContinuousThresholdCreationRequiresRegisteredDevice
---- PASS: TestContinuousThresholdCreationRequiresRegisteredDevice (0.24s)
-PASS
-ok  	suining-care/internal/handlers	0.628s
 === RUN   TestContinuousThresholdValidationBounds
-    core_threshold_device_regression_test.go:24: valid threshold boundaries rejected: device=0 hrf=0 hrl=0 bpf=0 bpl=0 ok=false
---- FAIL: TestContinuousThresholdValidationBounds (0.00s)
-FAIL
-FAIL	suining-care/internal/handlers	0.125s
-FAIL
+--- PASS: TestContinuousThresholdValidationBounds (0.00s)
+=== RUN   TestContinuousThresholdSearchIncludesSecondaryDevice
+--- PASS: TestContinuousThresholdSearchIncludesSecondaryDevice (0.38s)
+=== RUN   TestContinuousThresholdCreationRequiresRegisteredDevice
+--- PASS: TestContinuousThresholdCreationRequiresRegisteredDevice (0.23s)
+PASS
+ok  	suining-care/internal/handlers	0.740s
