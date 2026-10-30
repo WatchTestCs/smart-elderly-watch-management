@@ -200,6 +200,14 @@ func (h *Handler) deviceCreateBindCode(w http.ResponseWriter, r *http.Request) {
 		writeValidation400(w)
 		return
 	}
+	expireDays := 1
+	if expireDaysStr != "" {
+		expireDays = toIntRanged(expireDaysStr, 1, 30)
+		if expireDays == 0 {
+			write400(w, "有效天数必须为 1 至 30 的整数")
+			return
+		}
+	}
 	oldID, _ := strconv.ParseInt(oldIDStr, 10, 64)
 	ctx := r.Context()
 	var oldName *string
@@ -211,7 +219,6 @@ func (h *Handler) deviceCreateBindCode(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	expireDays := toIntRanged(expireDaysStr, 1, 30)
 	createUser, _ := vstr(m, "createUser")
 	if createUser == "" {
 		createUser = "管理员"
