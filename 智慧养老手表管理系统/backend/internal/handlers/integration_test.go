@@ -415,9 +415,9 @@ func migrateTestDB(ctx context.Context, pool *db.Database) error {
 }
 func expectedMigrations(pool *db.Database) int {
 	if pool.IsMySQL() {
-		return 17
+		return 18
 	}
-	return 16
+	return 17
 }
 
 func lockWaitQuery(pool *dbstore.Database, deleting bool) string {

@@ -64,6 +64,11 @@ func TestContinuousRebindDailySnapshotIsSeparate(t *testing.T) {
 	if oldSteps != 5000 || oldSleep != 8 || owner != 1 {
 		t.Fatalf("previous daily snapshot not preserved: steps=%d sleep=%d owner=%d", oldSteps, oldSleep, owner)
 	}
+	api(t, h.deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "sleep": 6, "sleepState": "0", "beTime": "2026-10-20 07:30:00"})
+	var currentSleep int
+	if err := h.DB.QueryRow(context.Background(), "SELECT sleep FROM watch_day_info WHERE device_id=1").Scan(&currentSleep); err != nil || currentSleep != 6 {
+		t.Fatalf("new binding inherited previous sleep clock: sleep=%d err=%v", currentSleep, err)
+	}
 	// Returning to the first elder exposes only that elder's archived day,
 	// then replaces it with the new binding's independent snapshot.
 	api(t, h.deviceUnbind, map[string]any{"deviceId": 1})
@@ -79,6 +84,10 @@ func TestContinuousRebindDailySnapshotIsSeparate(t *testing.T) {
 	current := api(t, withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 1}, h.stepSelectDetail), map[string]any{"oldId": 1})["stepDtos"].([]any)
 	if len(current) != 1 || current[0].(map[string]any)["step"] != float64(20) || current[0].(map[string]any)["sleep"] != nil {
 		t.Fatalf("repeated binding did not start a distinct daily snapshot: %v", current)
+	}
+	api(t, h.deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "sleep": 4, "beTime": "2026-10-20 07:00:00"})
+	if err := h.DB.QueryRow(context.Background(), "SELECT sleep FROM watch_day_info WHERE device_id=1").Scan(&currentSleep); err != nil || currentSleep != 4 {
+		t.Fatalf("returning binding inherited archived sleep clock: sleep=%d err=%v", currentSleep, err)
 	}
 	var count int
 	if err := h.DB.QueryRow(context.Background(), "SELECT count(*) FROM watch_day_info_archive WHERE device_id=1").Scan(&count); err != nil || count != 2 {

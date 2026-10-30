@@ -6,6 +6,13 @@
 
 | 文件 | 职责 |
 | --- | --- |
+| [docs/patch-review/2026-10-30-sleep-location-order.md](../docs/patch-review/2026-10-30-sleep-location-order.md) | 睡眠字段乱序及跨老人位置快照的两项缺陷、设计和定向验收 |
+| [evidence/core-bugs-20261030/sleep-location-order.txt](../evidence/core-bugs-20261030/sleep-location-order.txt) | 双数据库九条相关路径及归档观测时间保留的验收输出 |
+| [智慧养老手表管理系统/backend/internal/handlers/core_sleep_location_order_test.go](../智慧养老手表管理系统/backend/internal/handlers/core_sleep_location_order_test.go) | 睡眠独立时钟、乱序保护、零时长及换绑告警定位回归 |
+| [智慧养老手表管理系统/backend/migrations/mysql/0019_sleep_observation_time.sql](../智慧养老手表管理系统/backend/migrations/mysql/0019_sleep_observation_time.sql) | 日记录及归档的独立睡眠时长和状态观测时间 |
+| [智慧养老手表管理系统/backend/migrations/0017_sleep_observation_time.sql](../智慧养老手表管理系统/backend/migrations/0017_sleep_observation_time.sql) | PostgreSQL 日记录和归档睡眠观测时间列 |
+| [智慧养老手表管理系统/backend/migrations/rollback/mysql_0019_sleep_observation_time.sql](../智慧养老手表管理系统/backend/migrations/rollback/mysql_0019_sleep_observation_time.sql) | 保留睡眠观测时间，撤销 MySQL 迁移登记 |
+| [智慧养老手表管理系统/backend/migrations/rollback/postgres_0017_sleep_observation_time.sql](../智慧养老手表管理系统/backend/migrations/rollback/postgres_0017_sleep_observation_time.sql) | 保留睡眠观测时间，撤销 PostgreSQL 迁移登记 |
 | [智慧养老手表管理系统/backend/internal/handlers/core_integer_validation_test.go](../智慧养老手表管理系统/backend/internal/handlers/core_integer_validation_test.go) | 设备分页整数解析、原生整数溢出和合法边界回归 |
 | [evidence/core-bugs-20261030/code-expiry.txt](../evidence/core-bugs-20261030/code-expiry.txt) | 第七批绑定码与邀请码有效期、双数据库关键路径验收 |
 | [智慧养老手表管理系统/backend/internal/handlers/core_code_expiry_regression_test.go](../智慧养老手表管理系统/backend/internal/handlers/core_code_expiry_regression_test.go) | 绑定码缺省有效期、非法天数拒绝及邀请码长期有效边界回归 |
