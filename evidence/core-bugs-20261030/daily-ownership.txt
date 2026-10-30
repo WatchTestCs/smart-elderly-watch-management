@@ -1,0 +1,57 @@
+MySQL / 8 key-path cases
+=== RUN   TestArchitectureFormattedRecordsAcrossDatabases
+--- PASS: TestArchitectureFormattedRecordsAcrossDatabases (4.02s)
+=== RUN   TestContinuousRebindCannotReadPreviousDailyData
+--- PASS: TestContinuousRebindCannotReadPreviousDailyData (2.92s)
+=== RUN   TestContinuousRebindDailySnapshotIsSeparate
+--- PASS: TestContinuousRebindDailySnapshotIsSeparate (2.87s)
+=== RUN   TestContinuousSleepCountUsesLatestDay
+--- PASS: TestContinuousSleepCountUsesLatestDay (2.82s)
+=== RUN   TestExtraAuditOutOfOrderTelemetry
+    extra_audit_test.go:125: steps after 10:00 then 09:00=5000; position=map[page:1 pageSize:20 positionDtos:[map[beTime:2026-10-20 10:00:00 lat:30 lng:120 name:长者 oldId:1 sex:<nil> status:0]] returnCode:1111 total:1]
+--- PASS: TestExtraAuditOutOfOrderTelemetry (2.87s)
+=== RUN   TestIntegrationMigrationsAndBindingConstraint
+--- PASS: TestIntegrationMigrationsAndBindingConstraint (2.87s)
+=== RUN   TestDeviceReportDailyUpsertPreservesMissingFields
+--- PASS: TestDeviceReportDailyUpsertPreservesMissingFields (2.88s)
+=== RUN   TestDurableTelemetryPersistsBeforeAckAndReplaysSafely
+--- PASS: TestDurableTelemetryPersistsBeforeAckAndReplaysSafely (2.77s)
+PASS
+ok  	suining-care/internal/handlers	26.083s
+
+
+PostgreSQL / 10 key-path cases
+=== RUN   TestArchitectureFormattedRecordsAcrossDatabases
+--- PASS: TestArchitectureFormattedRecordsAcrossDatabases (0.24s)
+=== RUN   TestArchitectureMissingMetricRemainsUnknown
+--- PASS: TestArchitectureMissingMetricRemainsUnknown (0.25s)
+=== RUN   TestContinuousRebindCannotReadPreviousDailyData
+--- PASS: TestContinuousRebindCannotReadPreviousDailyData (0.25s)
+=== RUN   TestContinuousRebindDailySnapshotIsSeparate
+--- PASS: TestContinuousRebindDailySnapshotIsSeparate (0.24s)
+=== RUN   TestContinuousSleepCountUsesLatestDay
+--- PASS: TestContinuousSleepCountUsesLatestDay (0.24s)
+=== RUN   TestExtraAuditFamilyOverwrite
+    extra_audit_test.go:96: add HTTP=409; original familyId=1; now familyId=1
+--- PASS: TestExtraAuditFamilyOverwrite (0.25s)
+=== RUN   TestExtraAuditOutOfOrderTelemetry
+    extra_audit_test.go:125: steps after 10:00 then 09:00=5000; position=map[page:1 pageSize:20 positionDtos:[map[beTime:2026-10-20 10:00:00 lat:30 lng:120 name:长者 oldId:1 sex:<nil> status:0]] returnCode:1111 total:1]
+--- PASS: TestExtraAuditOutOfOrderTelemetry (0.25s)
+=== RUN   TestIntegrationCoordinatesAndSOS
+--- PASS: TestIntegrationCoordinatesAndSOS (0.50s)
+=== RUN   TestDeviceReportDailyUpsertPreservesMissingFields
+--- PASS: TestDeviceReportDailyUpsertPreservesMissingFields (0.23s)
+=== RUN   TestDurableTelemetryPersistsBeforeAckAndReplaysSafely
+--- PASS: TestDurableTelemetryPersistsBeforeAckAndReplaysSafely (0.24s)
+PASS
+ok  	suining-care/internal/handlers	4.501s
+
+
+MySQL retained-data rollback and replay
+=== RUN   TestCapabilitiesRollbackAndReapply
+--- PASS: TestCapabilitiesRollbackAndReapply (5.58s)
+PASS
+ok  	suining-care/internal/db	6.660s
+
+Targeted go vet: handlers, db PASS
+No full local suite or repeated frontend build.

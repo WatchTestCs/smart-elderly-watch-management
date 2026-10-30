@@ -84,6 +84,9 @@ func TestExtraAuditFamilyOverwrite(t *testing.T) {
 	h := extraAuditHandler(t)
 	p := h.DB
 	mustExec(t, p, "INSERT INTO family(family_id,family_name,family_phone) VALUES(1,'原家属','13800000002')")
+	if !p.IsMySQL() {
+		mustExec(t, p, "SELECT setval(pg_get_serial_sequence('family','family_id'),1)")
+	}
 	mustExec(t, p, "INSERT INTO oldperson(old_id,name,phone,family_id) VALUES(1,'老人','13800000001',1)")
 	out := callAPI(h.familyAdd, map[string]any{"familyName": "新家属", "familyRelation": "子女", "familySex": "女", "familyPhone": "13800000003", "oldPhone": "13800000001", "familyAddress": "测试"})
 	var bound int64

@@ -23,13 +23,19 @@ type stepDTO struct {
 	CreateTime *string `json:"createTime"`
 }
 
-// 每台设备最新一条日记录（Java LATEST_SELECT 的 PostgreSQL 版）。
+// Keep one snapshot per owner/day, including preserved snapshots from old bindings.
+const ownedDailyRecords = `(SELECT * FROM (SELECT daily.*,
+	ROW_NUMBER() OVER (PARTITION BY device_id,old_id,create_time ORDER BY binding_epoch DESC,id DESC) AS day_rank
+	FROM (SELECT * FROM watch_day_info UNION ALL SELECT * FROM watch_day_info_archive) daily
+	WHERE old_id IS NOT NULL) ranked WHERE day_rank=1)`
+
+// 每位老人当前主设备的最新日记录。
 const stepLatestSelect = `SELECT o.name AS name, o.old_id AS oldId, o.sex AS sex,` +
 	` w.step AS step, w.sleep AS sleep, w.sleep_sate AS sleepSate,` +
 	` TO_CHAR(w.create_time,'YYYY-MM-DD') AS createTime` +
 	` FROM oldperson o` +
-	` INNER JOIN (SELECT *, ROW_NUMBER() OVER (PARTITION BY device_id ORDER BY create_time DESC, id DESC) AS rn FROM watch_day_info) w` +
-	` ON w.device_id=o.device_id AND w.rn=1`
+	` INNER JOIN (SELECT *, ROW_NUMBER() OVER (PARTITION BY device_id,old_id ORDER BY create_time DESC, id DESC) AS rn FROM ` + ownedDailyRecords + ` daily) w` +
+	` ON w.device_id=o.device_id AND w.old_id=o.old_id AND w.rn=1`
 
 func scanStepDTO(rows dbstore.Rows) (stepDTO, error) {
 	var d stepDTO
@@ -102,7 +108,7 @@ func (h *Handler) stepSelectFamily(w http.ResponseWriter, r *http.Request) {
 	}
 	rows, err := h.DB.Query(r.Context(), `SELECT o.name AS name, o.old_id AS oldId, o.sex AS sex,`+
 		` w.step AS step, w.sleep AS sleep, w.sleep_sate AS sleepSate, TO_CHAR(w.create_time,'YYYY-MM-DD') AS createTime`+
-		` FROM oldperson o INNER JOIN watch_day_info w ON w.device_id=o.device_id`+
+		` FROM oldperson o INNER JOIN `+ownedDailyRecords+` w ON w.device_id=o.device_id AND w.old_id=o.old_id`+
 		` WHERE o.old_id=$1 ORDER BY w.create_time DESC, w.id DESC LIMIT 1`, oldID)
 	if err != nil {
 		response.Error500(w, ref())
@@ -139,7 +145,7 @@ func (h *Handler) stepSelectDetail(w http.ResponseWriter, r *http.Request) {
 		` TO_CHAR(r.create_time,'YYYY-MM-DD') AS createTime FROM (`+
 		` SELECT o.name AS name, o.old_id AS oldId, o.sex AS sex, w.step AS step, w.sleep AS sleep,`+
 		` w.sleep_sate AS sleepSate, w.create_time, w.id`+
-		` FROM oldperson o INNER JOIN watch_day_info w ON w.device_id=o.device_id`+
+		` FROM oldperson o INNER JOIN `+ownedDailyRecords+` w ON w.device_id=o.device_id AND w.old_id=o.old_id`+
 		` WHERE o.old_id=$1 ORDER BY w.create_time DESC, w.id DESC LIMIT 7) r`+
 		` ORDER BY r.create_time ASC, r.id ASC`, oldID)
 	if err != nil {

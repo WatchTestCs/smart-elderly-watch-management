@@ -6,7 +6,13 @@
 
 | 文件 | 职责 |
 | --- | --- |
-| [docs/patch-review/2026-10-30-core-bug-batches.md](patch-review/2026-10-30-core-bug-batches.md) | 十三项清单外核心缺陷、分批实现与统一验收说明 |
+| [evidence/core-bugs-20261030/daily-ownership.txt](../evidence/core-bugs-20261030/daily-ownership.txt) | 第六批日记录换绑隔离、双数据库关键路径及保留数据重应用结果 |
+| [智慧养老手表管理系统/backend/internal/handlers/core_day_ownership_regression_test.go](../智慧养老手表管理系统/backend/internal/handlers/core_day_ownership_regression_test.go) | 跨老人换绑读取隔离、同日快照拆分与历史保留回归 |
+| [智慧养老手表管理系统/backend/migrations/mysql/0018_daily_ownership.sql](../智慧养老手表管理系统/backend/migrations/mysql/0018_daily_ownership.sql) | 日记录老人及绑定归属、归档观测时间和查询索引 |
+| [智慧养老手表管理系统/backend/migrations/0016_daily_ownership.sql](../智慧养老手表管理系统/backend/migrations/0016_daily_ownership.sql) | PostgreSQL 日记录归属与归档列增量 |
+| [智慧养老手表管理系统/backend/migrations/rollback/mysql_0018_daily_ownership.sql](../智慧养老手表管理系统/backend/migrations/rollback/mysql_0018_daily_ownership.sql) | 保留日记录归属及归档数据，撤销 MySQL 迁移登记 |
+| [智慧养老手表管理系统/backend/migrations/rollback/postgres_0016_daily_ownership.sql](../智慧养老手表管理系统/backend/migrations/rollback/postgres_0016_daily_ownership.sql) | 保留日记录归属及归档数据，撤销 PostgreSQL 迁移登记 |
+| [docs/patch-review/2026-10-30-core-bug-batches.md](patch-review/2026-10-30-core-bug-batches.md) | 十五项清单外核心缺陷、分批实现与统一验收说明 |
 | [evidence/core-bugs-20261030/window-precision.txt](../evidence/core-bugs-20261030/window-precision.txt) | 第五批统计时间窗口、日投影及相关路径的七项验收输出 |
 | [智慧养老手表管理系统/backend/internal/handlers/core_window_precision_regression_test.go](../智慧养老手表管理系统/backend/internal/handlers/core_window_precision_regression_test.go) | 不足微秒窗口、冷热缓存及跨午夜区间日统计回归 |
 | [evidence/core-bugs-20261030/reporting-time.txt](../evidence/core-bugs-20261030/reporting-time.txt) | 第四批设备时间与睡眠异常汇总的六项定向验收输出 |
