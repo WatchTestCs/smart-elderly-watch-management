@@ -22,7 +22,15 @@ type DailyKey struct {
 	OffsetMinutes int    `json:"offsetMinutes"`
 }
 
-func (k DailyKey) ID() string { b, _ := json.Marshal(k); return Digest(b) }
+const DailyAlgorithmVersion = 2
+
+func (k DailyKey) ID() string {
+	b, _ := json.Marshal(struct {
+		DailyKey
+		AlgorithmVersion int `json:"algorithmVersion"`
+	}{k, DailyAlgorithmVersion})
+	return Digest(b)
+}
 func (k DailyKey) Bounds() (time.Time, time.Time, error) {
 	if k.OldID < 1 || k.Source == "" || len(k.Source) > 256 || k.SourceDevice == "" || len(k.SourceDevice) > 4096 || len(k.Metric) > 64 || k.OffsetMinutes < -840 || k.OffsetMinutes > 840 {
 		return time.Time{}, time.Time{}, fmt.Errorf("日统计身份或偏移无效")

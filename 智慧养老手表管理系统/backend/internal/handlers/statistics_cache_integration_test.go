@@ -183,7 +183,7 @@ func TestHealthStatisticsHotCacheUnencodableTime(t *testing.T) {
 	}
 }
 
-func TestHealthStatisticsHotCacheUnserializableResult(t *testing.T) {
+func TestHealthStatisticsHotCacheOverflowResultConsistency(t *testing.T) {
 	pool := testDatabase(t)
 	h := New(pool, session.NewStore(time.Hour), config.Config{HealthCacheBytes: 1 << 20})
 	t.Cleanup(h.Sessions.Close)
@@ -197,8 +197,8 @@ func TestHealthStatisticsHotCacheUnserializableResult(t *testing.T) {
 	admin := withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin}, h.healthStatistics)
 	uncached := testHandler(t, pool)
 	plain := withHealthPrincipal(uncached, session.Principal{Role: auth.RoleAdmin}, uncached.healthStatistics)
-	// Existing aggregation can overflow its sum despite finite samples. The
-	// cache must not change a failed encoding into a successful null result.
+	// Previously overflowing finite sums now have a representable mean.
+	// The cache must return the same result as the uncached aggregation.
 	want := callAPI(plain, query)
 	for range 2 {
 		got := callAPI(admin, query)
