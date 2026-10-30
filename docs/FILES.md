@@ -6,6 +6,9 @@
 
 | 文件 | 职责 |
 | --- | --- |
+| [docs/patch-review/2026-10-30-threshold-device-ownership.md](../docs/patch-review/2026-10-30-threshold-device-ownership.md) | 次设备阈值检索及未登记设备新增校验的设计与验收 |
+| [evidence/core-bugs-20261030/threshold-device-ownership.txt](../evidence/core-bugs-20261030/threshold-device-ownership.txt) | 双数据库各五条阈值配置相关路径验收结果 |
+| [智慧养老手表管理系统/backend/internal/handlers/core_threshold_device_regression_test.go](../智慧养老手表管理系统/backend/internal/handlers/core_threshold_device_regression_test.go) | 次设备按姓名查阈值、编辑后实际生效和不存在设备不落库回归 |
 | [docs/patch-review/2026-10-30-statistics-conflicts-mean.md](../docs/patch-review/2026-10-30-statistics-conflicts-mean.md) | 日累计同时间冲突、有限平均值溢出及旧缓存隔离的设计和验收 |
 | [evidence/core-bugs-20261030/statistics-conflicts-mean.txt](../evidence/core-bugs-20261030/statistics-conflicts-mean.txt) | 健康逻辑、双数据库统计和日缓存版本衔接的定向结果 |
 | [智慧养老手表管理系统/backend/internal/health/statistics_numeric_regression_test.go](../智慧养老手表管理系统/backend/internal/health/statistics_numeric_regression_test.go) | 日累计输入顺序、相同时刻偏移及有限平均值溢出回归 |
