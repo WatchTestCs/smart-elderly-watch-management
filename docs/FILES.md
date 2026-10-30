@@ -6,6 +6,9 @@
 
 | 文件 | 职责 |
 | --- | --- |
+| [docs/patch-review/2026-10-30-history-time-labels.md](../docs/patch-review/2026-10-30-history-time-labels.md) | 体征跨小时/日期与睡眠跨月/年标签修复的设计和验证边界 |
+| [evidence/core-bugs-20261030/history-time-labels.txt](../evidence/core-bugs-20261030/history-time-labels.txt) | 双数据库各六条历史图表及相关路径验收输出 |
+| [智慧养老手表管理系统/backend/internal/handlers/core_history_time_labels_test.go](../智慧养老手表管理系统/backend/internal/handlers/core_history_time_labels_test.go) | 管理员与家属的完整时间标签、日期范围、缺测值对齐回归 |
 | [docs/patch-review/2026-10-30-threshold-device-ownership.md](../docs/patch-review/2026-10-30-threshold-device-ownership.md) | 次设备阈值检索及未登记设备新增校验的设计与验收 |
 | [evidence/core-bugs-20261030/threshold-device-ownership.txt](../evidence/core-bugs-20261030/threshold-device-ownership.txt) | 双数据库各五条阈值配置相关路径验收结果 |
 | [智慧养老手表管理系统/backend/internal/handlers/core_threshold_device_regression_test.go](../智慧养老手表管理系统/backend/internal/handlers/core_threshold_device_regression_test.go) | 次设备按姓名查阈值、编辑后实际生效和不存在设备不落库回归 |

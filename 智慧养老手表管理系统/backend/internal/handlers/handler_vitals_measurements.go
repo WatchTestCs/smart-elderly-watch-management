@@ -137,6 +137,7 @@ func (h *Handler) ratepreSelectDetail(w http.ResponseWriter, r *http.Request) {
 	}
 	// 记录为空时返回空列表而不是 500（复刻 P1-3 修复意图，按规格信封）。
 	timeStr := ""
+	lastDay := ""
 	hrs := []*int64{}
 	bps := []*int64{}
 	createTimes := []string{}
@@ -146,11 +147,17 @@ func (h *Handler) ratepreSelectDetail(w http.ResponseWriter, r *http.Request) {
 			ct = *d.CreateTime
 		}
 		if timeStr == "" {
-			timeStr = safeSub(ct, 0, 13)
+			timeStr = safeSub(ct, 0, 10)
+		}
+		if ct != "" {
+			lastDay = safeSub(ct, 0, 10)
 		}
 		hrs = append(hrs, d.Hr)
 		bps = append(bps, d.Bp)
-		createTimes = append(createTimes, safeSub(ct, 14, 16))
+		createTimes = append(createTimes, ct)
+	}
+	if lastDay != "" && lastDay != timeStr {
+		timeStr += " 至 " + lastDay
 	}
 	dtos := []map[string]any{}
 	for _, d := range list {
