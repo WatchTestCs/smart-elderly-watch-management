@@ -59,6 +59,13 @@ func parseDeviceTelemetryPayload(w http.ResponseWriter, m map[string]any, now ti
 		write400(w, "beTime 格式应为 yyyy-MM-dd HH:mm:ss")
 		return parsedDeviceTelemetry{}, false
 	}
+	// Legacy timestamps use server wall time without a zone. Compare in the
+	// same representation so a non-UTC server does not reject its own default.
+	wallNow, _ := parseReportTimeStrict(now.Format(tsLayout))
+	if out.beTime.After(wallNow.Add(5 * time.Minute)) {
+		write400(w, "beTime 不能晚于服务器时间 5 分钟，请检查设备时钟")
+		return parsedDeviceTelemetry{}, false
+	}
 	out.day, _ = time.Parse("2006-01-02", beTimeStr[:10])
 
 	var msg string

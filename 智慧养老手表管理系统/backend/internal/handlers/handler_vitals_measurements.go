@@ -183,8 +183,13 @@ func (h *Handler) ratepreSelectCount(w http.ResponseWriter, r *http.Request) {
 
 // deviceIDList 查某状态为 '1' 的设备 id 列表（字符串形态，复刻 queryForList(String.class)）。
 func (h *Handler) deviceIDList(w http.ResponseWriter, r *http.Request, table, stateCol string) ([]*string, bool) {
-	rows, err := h.DB.Query(r.Context(),
-		"SELECT CAST(device_id AS varchar) FROM "+table+" WHERE "+stateCol+"='1' GROUP BY device_id")
+	query := "SELECT CAST(device_id AS varchar) FROM " + table + " WHERE " + stateCol + "='1' GROUP BY device_id"
+	if table == "watch_day_info" {
+		query = `SELECT CAST(device_id AS varchar) FROM (
+		 SELECT device_id,sleep_sate,ROW_NUMBER() OVER (PARTITION BY device_id ORDER BY create_time DESC,id DESC) AS rn
+		 FROM watch_day_info) latest WHERE rn=1 AND sleep_sate='1' AND device_id IS NOT NULL`
+	}
+	rows, err := h.DB.Query(r.Context(), query)
 	if err != nil {
 		response.Error500(w, ref())
 		return nil, false

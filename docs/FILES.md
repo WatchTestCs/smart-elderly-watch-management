@@ -6,7 +6,9 @@
 
 | 文件 | 职责 |
 | --- | --- |
-| [docs/patch-review/2026-10-30-core-bug-batches.md](patch-review/2026-10-30-core-bug-batches.md) | 八项清单外核心缺陷、分批实现与统一验收说明 |
+| [docs/patch-review/2026-10-30-core-bug-batches.md](patch-review/2026-10-30-core-bug-batches.md) | 十项清单外核心缺陷、分批实现与统一验收说明 |
+| [evidence/core-bugs-20261030/reporting-time.txt](../evidence/core-bugs-20261030/reporting-time.txt) | 第四批设备时间与睡眠异常汇总的六项定向验收输出 |
+| [智慧养老手表管理系统/backend/internal/handlers/core_reporting_time_regression_test.go](../智慧养老手表管理系统/backend/internal/handlers/core_reporting_time_regression_test.go) | 设备时间超前保护、非 UTC 服务器与最新睡眠异常汇总回归 |
 | [evidence/core-bugs-20261030/targeted.txt](../evidence/core-bugs-20261030/targeted.txt) | 23 个顶层关键路径用例的最终原始输出 |
 | [智慧养老手表管理系统/backend/internal/handlers/core_alert_statistics_regression_test.go](../智慧养老手表管理系统/backend/internal/handlers/core_alert_statistics_regression_test.go) | 零电量、自定义阈值解释与精确来源统计回归 |
 | [智慧养老手表管理系统/backend/internal/handlers/core_binding_profile_regression_test.go](../智慧养老手表管理系统/backend/internal/handlers/core_binding_profile_regression_test.go) | 歧义手机号绑定、出生日期与当前周岁回归 |
