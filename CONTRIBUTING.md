@@ -2,50 +2,49 @@
 
 [中文项目介绍](README.md) · [English overview](README.en.md) · [Support / 问题反馈](docs/SUPPORT.md)
 
-Contributions can improve documentation, translations, accessibility, reproducible bug reports, or focused code fixes. Chinese and English are both welcome. Please communicate respectfully and discuss the behavior being changed rather than the person making the change.
+We welcome pull requests that improve documentation, translations, accessibility, reproducible bug reports, or targeted code fixes in either Chinese or English. Please keep discussions focused on technical behavior and user impact.
 
-欢迎改进文档、翻译、可访问性和具体缺陷。请保持改动聚焦，使用可复现证据，并尊重参与者。
+欢迎提交文档改进、双语翻译、无障碍优化、可复现的缺陷报告或聚焦的代码修复。中英文交流均可，讨论请聚焦于具体功能行为与技术方案。
 
-## Target preview / 目标分支
+## Target branch / 目标分支
 
-Base contributions on `preview` and select `preview` as the pull request base. Do not target `main` or modify release tags as part of an ordinary change. A documentation PR is not authorization to publish binaries or run release workflows.
+Base your work on `preview` and open pull requests against `preview`. Release tags and binary attachments are managed separately by maintainers during formal releases.
 
-本项目当前维护入口是 `preview`。提交前核对 PR 目标；普通文档或修复不应移动发布标签、上传替代包或修改仓库设置。
+日常开发与维护均在 `preview` 分支进行，提交 PR 时请将目标分支选为 `preview`。
 
-## Before changing code / 开始前
+## Before changing code / 开始前准备
 
-1. Read the [architecture overview](docs/architecture/overview.md), the affected implementation, and related [ADRs](docs/decisions/README.md).
-2. Check existing issues and use the [reporting templates](docs/SUPPORT.md). Discuss substantial changes to deployment, database ownership, or trust boundaries before implementing them.
-3. Keep unrelated refactors, dependency upgrades, formatting, and generated files out of the change.
+1. Read the [architecture overview](docs/architecture/overview.md), the relevant module README, and related [Architecture Decision Records (ADRs)](docs/decisions/README.md).
+2. Check existing issues and follow the [issue templates](docs/SUPPORT.md). If you plan to change deployment topology, database responsibilities, or authentication boundaries, open an issue to discuss the design first.
+3. Keep each pull request focused. Avoid bundling unrelated refactors, dependency upgrades, or formatting sweeps.
 
-Preserve the product constraints: independently deployed MySQL primary and asynchronous PostgreSQL analytics; UI startup without a database; no global connection wall; no automatic replay of failed business writes; no credentials or desktop token in page code. Do not describe user-supplied Linux binaries as verified builds of the Windows source.
+Please preserve the core architectural invariants: MySQL handles authoritative business transactions while PostgreSQL receives asynchronous analytics projections; the desktop UI starts cleanly even when databases are unreachable; failed user writes preserve form input instead of replaying automatically; and frontend code never holds database credentials or desktop initialization tokens.
 
-## Validation proportional to the change / 按改动选择验证
+## Verification requirements / 验证要求
 
-| Change | Appropriate evidence |
+| Change scope | Expected verification |
 | --- | --- |
-| Documentation or translation | Valid local links, accurate commands and version/platform descriptions; no full runtime suite needed |
-| Frontend behavior | Production build and relevant browser checks, including error/empty states and narrow layouts |
-| Backend behavior | Relevant Go tests and static checks; transactional behavior uses isolated real MySQL, with PostgreSQL for analytics and legacy compatibility |
-| Native lifecycle or packaging | Relevant native launch, close, or installer checks; compilation alone is insufficient |
+| Documentation or translation | Verify local markdown links, command accuracy, and version/platform descriptions |
+| Frontend UI | Run a production build (`npm run build`) and relevant Playwright checks, covering empty/error states and narrow viewports |
+| Go backend | Run unit tests and `go vet`; test transactional changes against an isolated MySQL instance and analytics changes against PostgreSQL |
+| Desktop shell or packaging | Verify native window launch, graceful shutdown, and installer behavior in addition to compiling |
 
-Follow [BUILD](docs/BUILD.md) and [TESTING](docs/TESTING.md). Never run automated tests against production data. Tests that skip because `TEST_MYSQL_DSN` or `TEST_DATABASE_URL` is unset are not proof of the corresponding database integration. Record what ran, what failed, what was skipped, and what remains unverified; do not repeat unrelated full suites for a small documentation change.
+See [BUILD](docs/BUILD.md) and [TESTING](docs/TESTING.md) for environment setup. Always run automated tests against disposable test databases rather than production data.
 
-验证应与改动风险匹配。模拟 API 的浏览器检查不能代替真实数据库或原生窗口验收；未运行的测试不能填写为通过。
+验证范围应与改动影响面相匹配：涉及数据库事务的改动需在真实测试库上验证，涉及桌面生命周期的改动需验证原生窗口启动与退出。
 
-## Pull request checklist / 提交说明
+## Pull request checklist / 提交清单
 
-- Describe the observable problem and resulting behavior.
-- Link a reproduction or issue where relevant; explain scope and tradeoffs.
-- Include concise validation evidence and relevant screenshots for UI changes.
-- Update Chinese and English README sections together when changing public behavior, package names, or platform support. Detailed translated engineering docs can be added incrementally.
-- Update file descriptions when adding or removing tracked files. Use the existing PR template where available, and report unavailable checks honestly.
-- Keep databases, health records, tokens, connection strings, signing keys, build caches, and release binaries out of Git.
+- State the problem clearly and describe the updated behavior.
+- Link the related issue or reproduction steps, and note any design trade-offs.
+- Attach test output, and include screenshots for visual or layout changes.
+- Update both `README.md` and `README.en.md` whenever changing user-facing behavior, configuration variables, or build steps.
+- Never commit database dumps, real resident records, tokens, connection strings, signing keys, build caches, or compiled binaries.
 
-请写清问题、修改后的行为、验证与限制。不要提交真实照护数据，也不要为了让检查通过而清空设备归属或删除遗留数据。
+请在 PR 中说明问题背景、修改方案与验证结果，切勿在代码或测试截图中包含真实人员资料与敏感凭据。
 
-## Security and licensing / 安全与许可
+## Security and licensing / 安全与开源许可
 
-Use the [private security reporting guidance](.github/SECURITY.md) for exploitable vulnerabilities; do not post the exploit or sensitive data in a public issue. Do not invent a public contact address or response-time guarantee.
+Report exploitable security vulnerabilities privately according to [.github/SECURITY.md](.github/SECURITY.md) rather than in public issues.
 
-Respect the project [MIT license](LICENSE) and third-party notices. Include attribution required by any new asset or dependency, and explain why a new runtime dependency is needed.
+All contributions are licensed under the [MIT License](LICENSE). If you introduce third-party assets or libraries, ensure their licenses are compatible and properly attributed.
