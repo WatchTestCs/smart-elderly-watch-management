@@ -1,0 +1,49 @@
+MySQL / 6 related cases
+=== RUN   TestNativeLoginResponseDoesNotExposeAccountDTOs
+=== RUN   TestNativeLoginResponseDoesNotExposeAccountDTOs/administrator
+=== RUN   TestNativeLoginResponseDoesNotExposeAccountDTOs/family
+--- PASS: TestNativeLoginResponseDoesNotExposeAccountDTOs (4.89s)
+    --- PASS: TestNativeLoginResponseDoesNotExposeAccountDTOs/administrator (0.17s)
+    --- PASS: TestNativeLoginResponseDoesNotExposeAccountDTOs/family (0.17s)
+=== RUN   TestContinuousFamilyPhoneFormatValidation
+--- PASS: TestContinuousFamilyPhoneFormatValidation (4.03s)
+=== RUN   TestContinuousFamilyPhoneEditRejectsOtherAccounts
+--- PASS: TestContinuousFamilyPhoneEditRejectsOtherAccounts (3.97s)
+=== RUN   TestExtraAuditFamilyOnboarding
+    extra_audit_test.go:43: admin add=map[returnCode:1111]; passwordNULL=false; login HTTP=200; join=map[familyId:1 familyName:家属 oldPersonName:老人 returnCode:1111]
+--- PASS: TestExtraAuditFamilyOnboarding (4.04s)
+=== RUN   TestExtraAuditPhoneReuse
+    extra_audit_test.go:77: old actor ID=1; selected=map[familyDto2:<nil>]
+--- PASS: TestExtraAuditPhoneReuse (3.51s)
+=== RUN   TestExtraAuditFamilyOverwrite
+    extra_audit_test.go:96: add HTTP=409; original familyId=1; now familyId=1
+--- PASS: TestExtraAuditFamilyOverwrite (3.56s)
+PASS
+ok  	suining-care/internal/handlers	24.144s
+
+
+PostgreSQL / 6 related cases
+=== RUN   TestNativeLoginResponseDoesNotExposeAccountDTOs
+=== RUN   TestNativeLoginResponseDoesNotExposeAccountDTOs/administrator
+=== RUN   TestNativeLoginResponseDoesNotExposeAccountDTOs/family
+--- PASS: TestNativeLoginResponseDoesNotExposeAccountDTOs (1.08s)
+    --- PASS: TestNativeLoginResponseDoesNotExposeAccountDTOs/administrator (0.16s)
+    --- PASS: TestNativeLoginResponseDoesNotExposeAccountDTOs/family (0.18s)
+=== RUN   TestContinuousFamilyPhoneFormatValidation
+--- PASS: TestContinuousFamilyPhoneFormatValidation (0.53s)
+=== RUN   TestContinuousFamilyPhoneEditRejectsOtherAccounts
+--- PASS: TestContinuousFamilyPhoneEditRejectsOtherAccounts (0.69s)
+=== RUN   TestExtraAuditFamilyOnboarding
+    extra_audit_test.go:43: admin add=map[returnCode:1111]; passwordNULL=false; login HTTP=200; join=map[familyId:1 familyName:家属 oldPersonName:老人 returnCode:1111]
+--- PASS: TestExtraAuditFamilyOnboarding (0.60s)
+=== RUN   TestExtraAuditPhoneReuse
+    extra_audit_test.go:77: old actor ID=1; selected=map[familyDto2:<nil>]
+--- PASS: TestExtraAuditPhoneReuse (0.26s)
+=== RUN   TestExtraAuditFamilyOverwrite
+    extra_audit_test.go:96: add HTTP=409; original familyId=1; now familyId=1
+--- PASS: TestExtraAuditFamilyOverwrite (0.26s)
+PASS
+ok  	suining-care/internal/handlers	3.583s
+
+Targeted go vet: handlers PASS
+No full local suite, frontend build, performance run, or new concurrency suite.
