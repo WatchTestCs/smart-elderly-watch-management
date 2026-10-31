@@ -482,10 +482,15 @@ func (h *Handler) familyUpdatePassword(w http.ResponseWriter, r *http.Request) {
 	}
 	defer tx.Rollback(ctx)
 	var familyID int64
+	var currentHash *string
 	if err := tx.QueryRow(ctx,
-		"SELECT family_id FROM family WHERE family_phone=$1 AND ($2=0 OR family_id=$2) FOR UPDATE",
-		phone, familySelfID(auth.Principal(r))).Scan(&familyID); err != nil {
+		"SELECT family_id,family_password FROM family WHERE family_phone=$1 AND ($2=0 OR family_id=$2) FOR UPDATE",
+		phone, familySelfID(auth.Principal(r))).Scan(&familyID, &currentHash); err != nil {
 		response.Error500(w, ref())
+		return
+	}
+	if currentHash == nil || *currentHash != *hashed {
+		conflict409(w, "密码已被其他请求修改，请重新验证")
 		return
 	}
 	if _, err := tx.Exec(ctx,

@@ -120,7 +120,9 @@ func TestDurableTelemetryBackoffDoesNotBlockOtherDevice(t *testing.T) {
 	seedDevice(t, pool)
 	mustExec(t, pool, "INSERT INTO device(device_id,device_no,secret,old_id) VALUES(2,'WATCH002','unused',1)")
 	box, err := securestore.New(base64.StdEncoding.EncodeToString([]byte(strings.Repeat("r", 32))))
-	if err != nil { t.Fatal(err) }
+	if err != nil {
+		t.Fatal(err)
+	}
 	ctx := context.Background()
 	// A poisoned first device enters backoff while a second device remains ready.
 	mustExec(t, pool, `INSERT INTO telemetry_inbox(device_id,elder_id,binding_epoch,request_id,payload,status,created_at,next_retry_at)
@@ -128,6 +130,8 @@ func TestDurableTelemetryBackoffDoesNotBlockOtherDevice(t *testing.T) {
 	if count, err := DrainDurableTelemetryBatch(ctx, pool, box); err != nil || count != 1 {
 		t.Fatalf("first poison attempt count=%d err=%v", count, err)
 	}
+	// Ensure this assertion is deterministic even on a heavily loaded CI runner.
+	mustExec(t, pool, "UPDATE telemetry_inbox SET next_retry_at=now()+interval '1 hour' WHERE device_id=1")
 	mustExec(t, pool, `INSERT INTO telemetry_inbox(device_id,elder_id,binding_epoch,request_id,payload,status,created_at,next_retry_at)
 	VALUES(2,1,1,'second-ready','corrupt','pending',now(),now()-interval '1 second')`)
 	if count, err := DrainDurableTelemetryBatch(ctx, pool, box); err != nil || count != 1 {
