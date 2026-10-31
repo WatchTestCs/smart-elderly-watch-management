@@ -46,14 +46,11 @@ func openCoordinates(box *securestore.Box, lng, lat *string) (*string, *string, 
 	return lng, lat, nil
 }
 
-// coordinateArg 供 INSERT 使用：优先取本次上报坐标，否则取设备最近坐标（已解密），
-// 两者皆无时写入 NULL，与原 nullableCoordinate 语义一致。
-func coordinateArg(box *securestore.Box, v string, fallback *string) any {
-	if v != "" {
-		return sealCoordinate(box, v)
-	}
-	if fallback == nil || *fallback == "" {
+// coordinateArg stores only this request's coordinate. Historical device points
+// belong to the independent location snapshot, never the alarm's scene.
+func coordinateArg(box *securestore.Box, v string) any {
+	if v == "" {
 		return nil
 	}
-	return sealCoordinate(box, *fallback)
+	return sealCoordinate(box, v)
 }

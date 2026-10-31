@@ -1,0 +1,11 @@
+{
+  "changedVersions": [
+    {
+      "name": "node_modules/follow-redirects",
+      "before": "1.16.1",
+      "after": "1.16.2"
+    }
+  ],
+  "directDependenciesUnchanged": true,
+  "note": "npm11 also refreshed peer flags on unchanged dependencies; no overrides, force or manual lock generation"
+}

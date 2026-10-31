@@ -158,8 +158,8 @@ func (repo telemetryRepository) PersistDeviceReport(ctx context.Context, tx *dbs
 		}
 	}
 	if alarm == "1" || strings.EqualFold(alarm, "fall") {
-		alarmLng := coordinateArg(repo.box, lng, d.LastLng)
-		alarmLat := coordinateArg(repo.box, lat, d.LastLat)
+		alarmLng := coordinateArg(repo.box, lng)
+		alarmLat := coordinateArg(repo.box, lat)
 		if _, err := tx.Exec(ctx,
 			`INSERT INTO alarm_precess(status, old_id, device_id, be_time, lng, lat)
 			 VALUES('1',$1,$2,$3,$4,$5)`,
@@ -180,7 +180,7 @@ func (repo telemetryRepository) PersistSOSIncident(ctx context.Context, tx *dbst
 	if err := tx.QueryRow(ctx,
 		`INSERT INTO alarm_precess(status, old_id, device_id, be_time, lng, lat)
 		 VALUES('1',$1,$2,$3,$4,$5) RETURNING id`,
-		*d.OldID, d.ID, now, coordinateArg(repo.box, lng, nil), coordinateArg(repo.box, lat, nil)).Scan(&alarmID); err != nil {
+		*d.OldID, d.ID, now, coordinateArg(repo.box, lng), coordinateArg(repo.box, lat)).Scan(&alarmID); err != nil {
 		return 0, err
 	}
 	if lng != "" && lat != "" {

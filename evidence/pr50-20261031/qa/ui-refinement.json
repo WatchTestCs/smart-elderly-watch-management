@@ -1,0 +1,532 @@
+{
+  "environment": "Chromium / win32, production bundle, all API traffic mocked",
+  "checks": [
+    {
+      "name": "/main route title matches navigation",
+      "pass": true
+    },
+    {
+      "name": "/main opens only its navigation group",
+      "pass": true,
+      "details": []
+    },
+    {
+      "name": "/ratepre route title matches navigation",
+      "pass": true
+    },
+    {
+      "name": "/ratepre opens only its navigation group",
+      "pass": true,
+      "details": [
+        "health"
+      ]
+    },
+    {
+      "name": "/step route title matches navigation",
+      "pass": true
+    },
+    {
+      "name": "/step opens only its navigation group",
+      "pass": true,
+      "details": [
+        "health"
+      ]
+    },
+    {
+      "name": "/position route title matches navigation",
+      "pass": true
+    },
+    {
+      "name": "/position opens only its navigation group",
+      "pass": true,
+      "details": [
+        "health"
+      ]
+    },
+    {
+      "name": "/person route title matches navigation",
+      "pass": true
+    },
+    {
+      "name": "/person opens only its navigation group",
+      "pass": true,
+      "details": [
+        "records"
+      ]
+    },
+    {
+      "name": "/watch route title matches navigation",
+      "pass": true
+    },
+    {
+      "name": "/watch opens only its navigation group",
+      "pass": true,
+      "details": [
+        "records"
+      ]
+    },
+    {
+      "name": "/family route title matches navigation",
+      "pass": true
+    },
+    {
+      "name": "/family opens only its navigation group",
+      "pass": true,
+      "details": [
+        "records"
+      ]
+    },
+    {
+      "name": "/inviteCode route title matches navigation",
+      "pass": true
+    },
+    {
+      "name": "/inviteCode opens only its navigation group",
+      "pass": true,
+      "details": [
+        "records"
+      ]
+    },
+    {
+      "name": "/saidOperation route title matches navigation",
+      "pass": true
+    },
+    {
+      "name": "/saidOperation opens only its navigation group",
+      "pass": true,
+      "details": [
+        "service"
+      ]
+    },
+    {
+      "name": "/device route title matches navigation",
+      "pass": true
+    },
+    {
+      "name": "/device opens only its navigation group",
+      "pass": true,
+      "details": []
+    },
+    {
+      "name": "manually opening another group closes the previous one",
+      "pass": true
+    },
+    {
+      "name": "navigation back to overview closes all groups",
+      "pass": true
+    },
+    {
+      "name": "browser back restores the route group",
+      "pass": true
+    },
+    {
+      "name": "/person 390 exposes loading",
+      "pass": true
+    },
+    {
+      "name": "/person 390 clears loading after success",
+      "pass": true
+    },
+    {
+      "name": "/person 390 distinguishes errors from empty data",
+      "pass": true
+    },
+    {
+      "name": "/person 390 clears loading after failure",
+      "pass": true
+    },
+    {
+      "name": "/person 390 recovers using retry",
+      "pass": true
+    },
+    {
+      "name": "/customer 390 exposes loading",
+      "pass": true
+    },
+    {
+      "name": "/customer 390 clears loading after success",
+      "pass": true
+    },
+    {
+      "name": "/customer 390 distinguishes errors from empty data",
+      "pass": true
+    },
+    {
+      "name": "/customer 390 clears loading after failure",
+      "pass": true
+    },
+    {
+      "name": "/customer 390 recovers using retry",
+      "pass": true
+    },
+    {
+      "name": "/family 390 exposes loading",
+      "pass": true
+    },
+    {
+      "name": "/family 390 clears loading after success",
+      "pass": true
+    },
+    {
+      "name": "/family 390 distinguishes errors from empty data",
+      "pass": true
+    },
+    {
+      "name": "/family 390 clears loading after failure",
+      "pass": true
+    },
+    {
+      "name": "/family 390 recovers using retry",
+      "pass": true
+    },
+    {
+      "name": "/watch 390 exposes loading",
+      "pass": true
+    },
+    {
+      "name": "/watch 390 clears loading after success",
+      "pass": true
+    },
+    {
+      "name": "/watch 390 distinguishes errors from empty data",
+      "pass": true
+    },
+    {
+      "name": "/watch 390 clears loading after failure",
+      "pass": true
+    },
+    {
+      "name": "/watch 390 recovers using retry",
+      "pass": true
+    },
+    {
+      "name": "/saidOperation 390 exposes loading",
+      "pass": true
+    },
+    {
+      "name": "/saidOperation 390 clears loading after success",
+      "pass": true
+    },
+    {
+      "name": "/saidOperation 390 distinguishes errors from empty data",
+      "pass": true
+    },
+    {
+      "name": "/saidOperation 390 clears loading after failure",
+      "pass": true
+    },
+    {
+      "name": "/saidOperation 390 recovers using retry",
+      "pass": true
+    },
+    {
+      "name": "/person 1440 exposes loading",
+      "pass": true
+    },
+    {
+      "name": "/person 1440 clears loading after success",
+      "pass": true
+    },
+    {
+      "name": "/person 1440 distinguishes errors from empty data",
+      "pass": true
+    },
+    {
+      "name": "/person 1440 clears loading after failure",
+      "pass": true
+    },
+    {
+      "name": "/person 1440 recovers using retry",
+      "pass": true
+    },
+    {
+      "name": "/customer 1440 exposes loading",
+      "pass": true
+    },
+    {
+      "name": "/customer 1440 clears loading after success",
+      "pass": true
+    },
+    {
+      "name": "/customer 1440 distinguishes errors from empty data",
+      "pass": true
+    },
+    {
+      "name": "/customer 1440 clears loading after failure",
+      "pass": true
+    },
+    {
+      "name": "/customer 1440 recovers using retry",
+      "pass": true
+    },
+    {
+      "name": "/family 1440 exposes loading",
+      "pass": true
+    },
+    {
+      "name": "/family 1440 clears loading after success",
+      "pass": true
+    },
+    {
+      "name": "/family 1440 distinguishes errors from empty data",
+      "pass": true
+    },
+    {
+      "name": "/family 1440 clears loading after failure",
+      "pass": true
+    },
+    {
+      "name": "/family 1440 recovers using retry",
+      "pass": true
+    },
+    {
+      "name": "/watch 1440 exposes loading",
+      "pass": true
+    },
+    {
+      "name": "/watch 1440 clears loading after success",
+      "pass": true
+    },
+    {
+      "name": "/watch 1440 distinguishes errors from empty data",
+      "pass": true
+    },
+    {
+      "name": "/watch 1440 clears loading after failure",
+      "pass": true
+    },
+    {
+      "name": "/watch 1440 recovers using retry",
+      "pass": true
+    },
+    {
+      "name": "/saidOperation 1440 exposes loading",
+      "pass": true
+    },
+    {
+      "name": "/saidOperation 1440 clears loading after success",
+      "pass": true
+    },
+    {
+      "name": "/saidOperation 1440 distinguishes errors from empty data",
+      "pass": true
+    },
+    {
+      "name": "/saidOperation 1440 clears loading after failure",
+      "pass": true
+    },
+    {
+      "name": "/saidOperation 1440 recovers using retry",
+      "pass": true
+    },
+    {
+      "name": "/person invalid response ends in recoverable error",
+      "pass": true
+    },
+    {
+      "name": "/person successful empty response stays distinct from failure",
+      "pass": true
+    },
+    {
+      "name": "/customer invalid response ends in recoverable error",
+      "pass": true
+    },
+    {
+      "name": "/customer successful empty response stays distinct from failure",
+      "pass": true
+    },
+    {
+      "name": "/family invalid response ends in recoverable error",
+      "pass": true
+    },
+    {
+      "name": "/family successful empty response stays distinct from failure",
+      "pass": true
+    },
+    {
+      "name": "/watch invalid response ends in recoverable error",
+      "pass": true
+    },
+    {
+      "name": "/watch successful empty response stays distinct from failure",
+      "pass": true
+    },
+    {
+      "name": "/saidOperation invalid response ends in recoverable error",
+      "pass": true
+    },
+    {
+      "name": "/saidOperation successful empty response stays distinct from failure",
+      "pass": true
+    },
+    {
+      "name": "failed search clears the previous record and its actions",
+      "pass": true
+    },
+    {
+      "name": "person 360 large=false retains all details",
+      "pass": true
+    },
+    {
+      "name": "person 360 large=false retains edit and delete",
+      "pass": true
+    },
+    {
+      "name": "person 360 large=false has no horizontal overflow",
+      "pass": true
+    },
+    {
+      "name": "person 390 large=false retains all details",
+      "pass": true
+    },
+    {
+      "name": "person 390 large=false retains edit and delete",
+      "pass": true
+    },
+    {
+      "name": "person 390 large=false has no horizontal overflow",
+      "pass": true
+    },
+    {
+      "name": "mobile edit opens the correct record",
+      "pass": true
+    },
+    {
+      "name": "person 1024 large=false has no horizontal overflow",
+      "pass": true
+    },
+    {
+      "name": "person 1920 large=false has no horizontal overflow",
+      "pass": true
+    },
+    {
+      "name": "person 360 large=true retains all details",
+      "pass": true
+    },
+    {
+      "name": "person 360 large=true retains edit and delete",
+      "pass": true
+    },
+    {
+      "name": "person 360 large=true has no horizontal overflow",
+      "pass": true
+    },
+    {
+      "name": "person 390 large=true retains all details",
+      "pass": true
+    },
+    {
+      "name": "person 390 large=true retains edit and delete",
+      "pass": true
+    },
+    {
+      "name": "person 390 large=true has no horizontal overflow",
+      "pass": true
+    },
+    {
+      "name": "person 1024 large=true has no horizontal overflow",
+      "pass": true
+    },
+    {
+      "name": "person 1920 large=true has no horizontal overflow",
+      "pass": true
+    },
+    {
+      "name": "overview 390 compares real categories",
+      "pass": true
+    },
+    {
+      "name": "overview 390 counts all pages",
+      "pass": true
+    },
+    {
+      "name": "overview 390 has no horizontal overflow",
+      "pass": true
+    },
+    {
+      "name": "overview 390 uses the intended grid",
+      "pass": true
+    },
+    {
+      "name": "overview 1440 compares real categories",
+      "pass": true
+    },
+    {
+      "name": "overview 1440 counts all pages",
+      "pass": true
+    },
+    {
+      "name": "overview 1440 has no horizontal overflow",
+      "pass": true
+    },
+    {
+      "name": "overview 1440 uses the intended grid",
+      "pass": true
+    },
+    {
+      "name": "overview 1920 compares real categories",
+      "pass": true
+    },
+    {
+      "name": "overview 1920 counts all pages",
+      "pass": true
+    },
+    {
+      "name": "overview 1920 has no horizontal overflow",
+      "pass": true
+    },
+    {
+      "name": "overview 1920 uses the intended grid",
+      "pass": true
+    },
+    {
+      "name": "overview 2560 compares real categories",
+      "pass": true
+    },
+    {
+      "name": "overview 2560 counts all pages",
+      "pass": true
+    },
+    {
+      "name": "overview 2560 has no horizontal overflow",
+      "pass": true
+    },
+    {
+      "name": "overview 2560 uses the intended grid",
+      "pass": true
+    },
+    {
+      "name": "partial and malformed statistics show errors, not totals",
+      "pass": true
+    },
+    {
+      "name": "Shared alarm flag is labelled as an emergency, not a confirmed fall",
+      "pass": true
+    },
+    {
+      "name": "statistic retries recover both comparisons",
+      "pass": true
+    },
+    {
+      "name": "password uses a visible lock",
+      "pass": true
+    },
+    {
+      "name": "password visibility still works",
+      "pass": true
+    },
+    {
+      "name": "no JavaScript errors",
+      "pass": true,
+      "details": []
+    },
+    {
+      "name": "no unexpected APIs or missing assets",
+      "pass": true,
+      "details": {
+        "apis": [],
+        "assets": []
+      }
+    }
+  ]
+}

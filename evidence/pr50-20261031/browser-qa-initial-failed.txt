@@ -1,0 +1,45 @@
+{
+  "checks": 305,
+  "failed": [],
+  "screenshots": "E:\\DevEco Test\\pr50-acceptance-20261031\\智慧养老手表管理系统\\frontend\\qa\\artifacts\\screenshots"
+}
+{
+  "checks": 656,
+  "failed": []
+}
+{
+  "checks": 30,
+  "failed": []
+}
+{
+  "checks": 15,
+  "failed": []
+}
+{
+  "checks": 169,
+  "failed": []
+}
+[
+  { name: '320 setup page has no horizontal overflow', pass: true },
+  { name: '320 empty setup rejected before API write', pass: true },
+  { name: '390 setup page has no horizontal overflow', pass: true },
+  { name: '390 empty setup rejected before API write', pass: true },
+  { name: '768 setup page has no horizontal overflow', pass: true },
+  { name: '768 empty setup rejected before API write', pass: true },
+  { name: '1440 setup page has no horizontal overflow', pass: true },
+  { name: '1440 empty setup rejected before API write', pass: true },
+  { name: 'No setup rendering errors', pass: true },
+  { name: 'No missing setup assets', pass: true }
+]
+{"checks":42,"failed":[]}
+Elder deletion: conflict, cancel, HTTP failure, business failure and success passed.
+{"checks":13,"failed":[]}
+locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for getByRole('button', { name: '重新加载摔倒统计' })
+
+    at E:\DevEco Test\pr50-acceptance-20261031\智慧养老手表管理系统\frontend\qa\ui-refinement-acceptance.cjs:150:56
+    at async module.exports (E:\DevEco Test\pr50-acceptance-20261031\智慧养老手表管理系统\frontend\qa\browser-harness.cjs:93:8) {
+  log: [ "  - waiting for getByRole('button', { name: '重新加载摔倒统计' })" ],
+  name: 'TimeoutError'
+}

@@ -6,6 +6,11 @@
 
 | 文件 | 职责 |
 | --- | --- |
+| [docs/patch-review/2026-10-31-pr50-alarm-snapshot.md](../docs/patch-review/2026-10-31-pr50-alarm-snapshot.md) | PR50告警现场快照的实施前设计、门槛与回退 |
+| [docs/patch-review/2026-10-31-pr50-handoff.md](../docs/patch-review/2026-10-31-pr50-handoff.md) | PR50标准13项接续交接、结果与剩余风险 |
+| [智慧养老手表管理系统/backend/internal/handlers/alarm_snapshot_http_test.go](../智慧养老手表管理系统/backend/internal/handlers/alarm_snapshot_http_test.go) | 回环HTTP及真实数据库验证无GPS/零点/单边/重试快照 |
+| [evidence/pr50-20261031/README.md](../evidence/pr50-20261031/README.md) | PR50原始证据口径和失败记录索引 |
+| [evidence/pr50-20261031/SHA256SUMS.json](../evidence/pr50-20261031/SHA256SUMS.json) | PR50冻结原始证据的SHA-256摘要 |
 | [docs/patch-review/2026-10-30-position-alarm-context.md](../docs/patch-review/2026-10-30-position-alarm-context.md) | 定位与告警快照分离、SOS 坐标及紧急告警标签的设计与验收 |
 | [evidence/core-bugs-20261030/position-alarm-context.txt](../evidence/core-bugs-20261030/position-alarm-context.txt) | 双数据库各七条定位及求助路径、前端三条用例与构建输出 |
 | [智慧养老手表管理系统/backend/internal/handlers/core_position_alarm_context_test.go](../智慧养老手表管理系统/backend/internal/handlers/core_position_alarm_context_test.go) | 告警独立快照、缺失及半组 SOS 坐标不伪造定位回归 |

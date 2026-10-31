@@ -1,0 +1,4 @@
+
+> suining-ui@2.1.0 typecheck
+> vue-tsc --noEmit
+

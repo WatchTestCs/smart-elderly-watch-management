@@ -147,7 +147,9 @@ run(async ({ page, context, base, report, setRole, setSignedIn }) => {
   check('partial and malformed statistics show errors, not totals', await page.locator('.overview-card .metric-error').count() === 2 && !(await page.locator('.fall-card').textContent()).includes('101 位长者'))
   failCounts = false; failSecondPage = false
   await page.getByRole('button', { name: '重新加载设备统计' }).click()
-  await page.getByRole('button', { name: '重新加载摔倒统计' }).click()
+  const alarmCopy = await page.locator('.fall-card').innerText()
+  check('Shared alarm flag is labelled as an emergency, not a confirmed fall', alarmCopy.includes('紧急告警') && !alarmCopy.includes('摔倒'))
+  await page.getByRole('button', { name: '重新加载告警统计', exact: true }).click()
   await page.waitForFunction(() => !document.querySelector('.overview-card .el-loading-mask'))
   check('statistic retries recover both comparisons', await page.locator('.metric-error').count() === 0 && await page.locator('.fall-card strong').first().textContent() === '2')
 

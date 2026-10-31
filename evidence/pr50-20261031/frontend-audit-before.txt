@@ -1,0 +1,183 @@
+{
+  "auditReportVersion": 2,
+  "vulnerabilities": {
+    "@vue/test-utils": {
+      "name": "@vue/test-utils",
+      "severity": "moderate",
+      "isDirect": true,
+      "via": [
+        "js-beautify"
+      ],
+      "effects": [],
+      "range": ">=2.5.0",
+      "nodes": [
+        "node_modules/@vue/test-utils"
+      ],
+      "fixAvailable": {
+        "name": "@vue/test-utils",
+        "version": "2.4.11",
+        "isSemVerMajor": true
+      }
+    },
+    "editorconfig": {
+      "name": "editorconfig",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "minimatch"
+      ],
+      "effects": [
+        "js-beautify"
+      ],
+      "range": ">=1.0.0",
+      "nodes": [
+        "node_modules/editorconfig"
+      ],
+      "fixAvailable": {
+        "name": "@vue/test-utils",
+        "version": "2.4.11",
+        "isSemVerMajor": true
+      }
+    },
+    "follow-redirects": {
+      "name": "follow-redirects",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1244003,
+          "name": "follow-redirects",
+          "dependency": "follow-redirects",
+          "title": "follow-redirects: Cross-realm sensitiveHeaders arrays are discarded and custom credentials can follow redirects",
+          "url": "https://github.com/advisories/GHSA-mrwp-f3q8-3g9p",
+          "severity": "high",
+          "cwe": [
+            "CWE-201"
+          ],
+          "cvss": {
+            "score": 5.9,
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:N/A:N"
+          },
+          "range": ">=1.16.0 <=1.16.1"
+        }
+      ],
+      "effects": [],
+      "range": "1.16.0 - 1.16.1",
+      "nodes": [
+        "node_modules/follow-redirects"
+      ],
+      "fixAvailable": true
+    },
+    "glob": {
+      "name": "glob",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1244013,
+          "name": "glob",
+          "dependency": "glob",
+          "title": "Glob: AbortSignal cancellation bypass allows post-timeout filesystem traversal",
+          "url": "https://github.com/advisories/GHSA-3g3m-2fjr-6pw4",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-400"
+          ],
+          "cvss": {
+            "score": 0,
+            "vectorString": null
+          },
+          "range": ">=9.0.0 <=14.0.1"
+        },
+        "minimatch"
+      ],
+      "effects": [
+        "js-beautify"
+      ],
+      "range": "3.0.0 - 14.0.1",
+      "nodes": [
+        "node_modules/glob"
+      ],
+      "fixAvailable": {
+        "name": "@vue/test-utils",
+        "version": "2.4.11",
+        "isSemVerMajor": true
+      }
+    },
+    "js-beautify": {
+      "name": "js-beautify",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "editorconfig",
+        "glob"
+      ],
+      "effects": [
+        "@vue/test-utils"
+      ],
+      "range": ">=1.14.9",
+      "nodes": [
+        "node_modules/js-beautify"
+      ],
+      "fixAvailable": {
+        "name": "@vue/test-utils",
+        "version": "2.4.11",
+        "isSemVerMajor": true
+      }
+    },
+    "minimatch": {
+      "name": "minimatch",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1244012,
+          "name": "minimatch",
+          "dependency": "minimatch",
+          "title": "minimatch has potential denial of service via globparts amplification",
+          "url": "https://github.com/advisories/GHSA-g3hv-75wg-m249",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-405"
+          ],
+          "cvss": {
+            "score": 0,
+            "vectorString": null
+          },
+          "range": "<11.0.1"
+        }
+      ],
+      "effects": [
+        "editorconfig",
+        "glob"
+      ],
+      "range": "<11.0.1",
+      "nodes": [
+        "node_modules/minimatch"
+      ],
+      "fixAvailable": {
+        "name": "@vue/test-utils",
+        "version": "2.4.11",
+        "isSemVerMajor": true
+      }
+    }
+  },
+  "metadata": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 0,
+      "moderate": 5,
+      "high": 1,
+      "critical": 0,
+      "total": 6
+    },
+    "dependencies": {
+      "prod": 81,
+      "dev": 94,
+      "optional": 27,
+      "peer": 0,
+      "peerOptional": 0,
+      "total": 174
+    }
+  }
+}

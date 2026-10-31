@@ -1,0 +1,50 @@
+[
+  {
+    "name": "after-mysql",
+    "mode": "after",
+    "command": [
+      "go",
+      "test",
+      "-json",
+      "-race",
+      "-count=3",
+      "-timeout=600s",
+      "-run",
+      "^(TestAlarmSnapshotHTTPNeverBorrowsHistory|TestContinuousPositionKeepsAlarmAndLocationSnapshotsSeparate|TestContinuousSOSWithoutCoordinatesDoesNotBorrowLatestLocation|TestContinuousRebindLocationSnapshotUsesCurrentOwner|TestSOS.*|TestCareSOSRequestIDPreventsDuplicateAlerts|TestIntegrationCoordinatesAndSOS|TestExtraAuditOutOfOrderTelemetry|TestExtraAuditPositionTimestamp)$",
+      "./internal/handlers"
+    ],
+    "exit": 0,
+    "seconds": 291.867,
+    "counts": {
+      "pass": 48,
+      "fail": 0,
+      "skip": 0
+    },
+    "failed": [],
+    "skipped": []
+  },
+  {
+    "name": "after-postgres",
+    "mode": "after",
+    "command": [
+      "go",
+      "test",
+      "-json",
+      "-race",
+      "-count=3",
+      "-timeout=600s",
+      "-run",
+      "^(TestAlarmSnapshotHTTPNeverBorrowsHistory|TestContinuousPositionKeepsAlarmAndLocationSnapshotsSeparate|TestContinuousSOSWithoutCoordinatesDoesNotBorrowLatestLocation|TestContinuousRebindLocationSnapshotUsesCurrentOwner|TestSOS.*|TestCareSOSRequestIDPreventsDuplicateAlerts|TestIntegrationCoordinatesAndSOS|TestExtraAuditOutOfOrderTelemetry|TestExtraAuditPositionTimestamp)$",
+      "./internal/handlers"
+    ],
+    "exit": 0,
+    "seconds": 52.638,
+    "counts": {
+      "pass": 48,
+      "fail": 0,
+      "skip": 0
+    },
+    "failed": [],
+    "skipped": []
+  }
+]
