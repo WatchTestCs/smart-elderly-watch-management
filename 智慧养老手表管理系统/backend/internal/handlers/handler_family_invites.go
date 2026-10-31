@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"context"
 	"crypto/rand"
 	"net/http"
 	"strconv"
 	"strings"
+	"suining-care/internal/db"
 	"suining-care/internal/response"
 	"time"
 )
@@ -155,20 +157,10 @@ func (h *Handler) inviteCreate(w http.ResponseWriter, r *http.Request) {
 		response.Error500(w, ref())
 		return
 	}
-	var expire *time.Time
-	if expiry, _ := vstr(m, "expireDays"); expiry != "" {
-		d, err := strconv.ParseInt(expiry, 10, 64)
-		if err != nil || d < 0 {
-			write400(w, "有效天数必须为非负整数，留空或 0 表示长期有效")
-			return
-		}
-		if d > 3650 {
-			d = 3650
-		}
-		if d > 0 {
-			t := time.Now().Add(time.Duration(d) * 24 * time.Hour)
-			expire = &t
-		}
+	expire, validExpiry := parseInvitationExpiry(m)
+	if !validExpiry {
+		write400(w, "有效天数必须为非负整数，留空或 0 表示长期有效")
+		return
 	}
 	count := int64(1)
 	if c, ok := int64Val(m, "count"); ok {
@@ -194,25 +186,8 @@ func (h *Handler) inviteCreate(w http.ResponseWriter, r *http.Request) {
 	codes := make([]string, 0, 50)
 	failed := false
 	for i := int64(0); i < count && !failed; i++ {
-		code := ""
-		for a := 0; a < 20; a++ { // 最多 20 次重试保唯一
-			c, err := genInviteCode()
-			if err != nil {
-				failed = true
-				break
-			}
-			var exists bool
-			if err := tx.QueryRow(ctx,
-				`SELECT EXISTS(SELECT 1 FROM invite_code WHERE code=$1)`, c).Scan(&exists); err != nil {
-				failed = true
-				break
-			}
-			if !exists {
-				code = c
-				break
-			}
-		}
-		if failed || code == "" {
+		code, err := unusedInvitationCode(ctx, tx)
+		if err != nil || code == "" {
 			failed = true
 			break
 		}
@@ -270,4 +245,40 @@ func (h *Handler) inviteDelete(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// POST /api/v1/inviteCode/oldPersonList —— 老人下拉列表（ADMIN）。
+func parseInvitationExpiry(m map[string]any) (*time.Time, bool) {
+	var expire *time.Time
+	if expiry, _ := vstr(m, "expireDays"); expiry != "" {
+		d, err := strconv.ParseInt(expiry, 10, 64)
+		if err != nil || d < 0 {
+			return nil, false
+		}
+		if d > 3650 {
+			d = 3650
+		}
+		if d > 0 {
+			t := time.Now().Add(time.Duration(d) * 24 * time.Hour)
+			expire = &t
+		}
+	}
+	return expire, true
+}
+
+func unusedInvitationCode(ctx context.Context, tx *db.Transaction) (string, error) {
+	code := ""
+	for a := 0; a < 20; a++ { // 最多 20 次重试保唯一
+		c, err := genInviteCode()
+		if err != nil {
+			return "", err
+		}
+		var exists bool
+		if err := tx.QueryRow(ctx,
+			`SELECT EXISTS(SELECT 1 FROM invite_code WHERE code=$1)`, c).Scan(&exists); err != nil {
+			return "", err
+		}
+		if !exists {
+			code = c
+			break
+		}
+	}
+	return code, nil
+}

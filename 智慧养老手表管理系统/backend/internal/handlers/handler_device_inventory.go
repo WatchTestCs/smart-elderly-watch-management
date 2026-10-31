@@ -33,27 +33,10 @@ func (h *Handler) deviceCreate(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	alias, _ := vstr(m, "alias")
-	if alias == "" {
-		alias = "新手表"
-	}
-	model, _ := vstr(m, "model")
-	if model == "" {
-		model = "HarmonyOS-Wear"
-	}
-	if utf8.RuneCountInString(alias) > 32 || utf8.RuneCountInString(model) > 32 {
+	alias, model, oldID, ok := parseDeviceRegistration(m)
+	if !ok {
 		writeValidation400(w)
 		return
-	}
-	oldIDStr, _ := vstr(m, "oldId")
-	var oldID *int64
-	if oldIDStr != "" {
-		if !validID(oldIDStr) {
-			writeValidation400(w)
-			return
-		}
-		n, _ := strconv.ParseInt(oldIDStr, 10, 64)
-		oldID = &n
 	}
 	ctx := r.Context()
 	tx, err := h.DB.Begin(ctx)
@@ -270,4 +253,28 @@ func (h *Handler) deviceDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	response.OK(w, nil)
+}
+
+func parseDeviceRegistration(m map[string]any) (string, string, *int64, bool) {
+	alias, _ := vstr(m, "alias")
+	if alias == "" {
+		alias = "新手表"
+	}
+	model, _ := vstr(m, "model")
+	if model == "" {
+		model = "HarmonyOS-Wear"
+	}
+	if utf8.RuneCountInString(alias) > 32 || utf8.RuneCountInString(model) > 32 {
+		return "", "", nil, false
+	}
+	oldIDStr, _ := vstr(m, "oldId")
+	var oldID *int64
+	if oldIDStr != "" {
+		if !validID(oldIDStr) {
+			return "", "", nil, false
+		}
+		n, _ := strconv.ParseInt(oldIDStr, 10, 64)
+		oldID = &n
+	}
+	return alias, model, oldID, true
 }

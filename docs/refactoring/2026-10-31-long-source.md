@@ -132,16 +132,48 @@ restored and rechecked. No review issue remains open.
 Frontend entry reachability still accounts for all 72 production source files;
 the reviewed images, fonts and font-check fixtures have live consumers. This pass
 does not delete referenced resources merely because they are outside the runtime
-entry point. CI and minimal post-CI smoke are still required for this cleanup head.
+entry point. PR #57 completed 25 checks (23 successful, one neutral, one skipped)
+and three post-CI smoke checks. It was merged as
+`fadd93416d1609a19163fa99a1b6fdab05faa216`, matching the tested head's tree.
+
+## Handler decomposition
+
+Six more initially inventoried functions now separate their domain steps inside
+the existing source files:
+
+- Device registration delegates defaults and input validation to its parser.
+- Family creation delegates the locked, at-most-two-elders read to a target
+  loader. It still inserts the account before that read and rolls back on zero,
+  ambiguous or already-bound matches.
+- Invitation registration parses and validates one input record, then delegates
+  account creation/activation and conditional elder linking to one persistence
+  step. The parent retains the original locks, password hashing, invitation
+  consumption, failure responses and transaction commit/rollback ownership.
+- Invitation generation separates expiration calculation and bounded uniqueness
+  retries. Elder existence is still checked before expiration parsing.
+- Device listing delegates row projection, coordinate decryption and online
+  calculation, using the same captured timestamp for every row.
+- Vital-alert detail delegates response presentation after the unchanged lookup.
+
+Seven focused MySQL regressions passed: existing family onboarding, overwrite
+rejection, ambiguous elder phone, concurrent invitation registration, invitation
+expiry and configured threshold explanation tests, plus one registration/list
+contract test added to the existing device validation test file. The latter covers
+defaults, owner/profile linkage, stored-secret separation, filtered online counts,
+decrypted coordinates and rejected input without extra records. No new source or
+test file is added. Handler vet, OpenAPI consistency and independent behavior and
+standards review passed. This batch still requires final-head CI and smoke.
 
 ## Remaining scope
 
 This batch addresses all 12 inventoried long files, and leaves no file above the
 inventory thresholds. It is not a claim that all long functions are resolved.
 The initial function inventory contained 30 functions of at least 90 lines.
-After both batches, 24 original functions remain for responsibility review.
+After the batches above, 18 original functions remain for responsibility review.
 The 94-line evidence encoding sequence has been reviewed and retained as one
 cohesive operation after extracting eligibility checks; the review threshold is
-not a requirement to fragment a single encoding sequence. Next priorities are invitation joining, SOS and device binding,
+not a requirement to fragment a single encoding sequence. The decomposed 124-line
+invitation registration and 91-line device registration retain their transaction
+coordinator bodies to keep failure, commit and rollback ordering explicit. Next priorities are SOS and device binding,
 legacy transfer, alert resolution and telemetry persistence. Their transaction
 boundaries must remain intact while validation and business steps are separated.

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"suining-care/internal/db"
 	"suining-care/internal/response"
 	"time"
 	"unicode/utf8"
@@ -106,42 +107,12 @@ func (h *Handler) deviceList(w http.ResponseWriter, r *http.Request) {
 	now := time.Now()
 	list := []map[string]any{}
 	for rows.Next() {
-		var id int64
-		var no string
-		var alias, model, appVersion, oldName, oldPhone, lastLng, lastLat *string
-		var battery *int
-		var oldID *int64
-		var bindTime, lastTime *time.Time
-		var status *int
-		var personHandled, rateHandled, preHandled int
-		if err := rows.Scan(&id, &no, &alias, &model, &appVersion, &battery, &oldID,
-			&oldName, &oldPhone, &bindTime, &lastTime, &lastLng, &lastLat, &status,
-			&personHandled, &rateHandled, &preHandled); err != nil {
-			response.Error500(w, ref())
-			return
-		}
-		name := "（未绑定）"
-		if oldName != nil {
-			name = *oldName
-		}
-		online := 0
-		if lastTime != nil && now.Sub(*lastTime) <= 60*time.Second {
-			online = 1
-		}
-		lastLng, lastLat, err = openCoordinates(h.Box, lastLng, lastLat)
+		item, err := h.scanAdminDevice(rows, now)
 		if err != nil {
 			response.Error500(w, ref())
 			return
 		}
-		list = append(list, map[string]any{
-			"deviceId": id, "deviceNo": no, "alias": alias, "model": model,
-			"appVersion": appVersion, "battery": battery, "oldId": oldID,
-			"oldPersonName": name, "oldPersonPhone": oldPhone,
-			"bindTime": tsOrNil(bindTime), "lastTime": tsOrNil(lastTime),
-			"lastLng": lastLng, "lastLat": lastLat, "status": status,
-			"online": online, "personHandled": personHandled,
-			"rateHandled": rateHandled, "preHandled": preHandled,
-		})
+		list = append(list, item)
 	}
 	if err := rows.Err(); err != nil {
 		response.Error500(w, ref())
@@ -315,3 +286,40 @@ func (h *Handler) deviceDeleteBindCode(w http.ResponseWriter, r *http.Request) {
 }
 
 // genDeviceNo 生成唯一设备号（W + 8 位，重试 30 次，兜底时间戳）。
+
+func (h *Handler) scanAdminDevice(row db.Row, now time.Time) (map[string]any, error) {
+	var id int64
+	var no string
+	var alias, model, appVersion, oldName, oldPhone, lastLng, lastLat *string
+	var battery *int
+	var oldID *int64
+	var bindTime, lastTime *time.Time
+	var status *int
+	var personHandled, rateHandled, preHandled int
+	if err := row.Scan(&id, &no, &alias, &model, &appVersion, &battery, &oldID,
+		&oldName, &oldPhone, &bindTime, &lastTime, &lastLng, &lastLat, &status,
+		&personHandled, &rateHandled, &preHandled); err != nil {
+		return nil, err
+	}
+	name := "（未绑定）"
+	if oldName != nil {
+		name = *oldName
+	}
+	online := 0
+	if lastTime != nil && now.Sub(*lastTime) <= 60*time.Second {
+		online = 1
+	}
+	lastLng, lastLat, err := openCoordinates(h.Box, lastLng, lastLat)
+	if err != nil {
+		return nil, err
+	}
+	return map[string]any{
+		"deviceId": id, "deviceNo": no, "alias": alias, "model": model,
+		"appVersion": appVersion, "battery": battery, "oldId": oldID,
+		"oldPersonName": name, "oldPersonPhone": oldPhone,
+		"bindTime": tsOrNil(bindTime), "lastTime": tsOrNil(lastTime),
+		"lastLng": lastLng, "lastLat": lastLat, "status": status,
+		"online": online, "personHandled": personHandled,
+		"rateHandled": rateHandled, "preHandled": preHandled,
+	}, nil
+}
