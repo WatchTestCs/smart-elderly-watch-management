@@ -44,8 +44,12 @@ func TestDurableTelemetryPersistsBeforeAckAndReplaysSafely(t *testing.T) {
 		t.Fatalf("projection occurred before queue flush: %d: %v", projected, err)
 	}
 	replay := callAPI(h.deviceReport, payload)
-	if replay.Code != http.StatusConflict {
-		t.Fatalf("duplicate request not rejected: %d %s", replay.Code, replay.Body.String())
+	if replay.Code != http.StatusOK {
+		t.Fatalf("duplicate request was not idempotently acknowledged: %d %s", replay.Code, replay.Body.String())
+	}
+	var replayed map[string]any
+	if err := json.Unmarshal(replay.Body.Bytes(), &replayed); err != nil || replayed["duplicate"] != true || replayed["queued"] != true {
+		t.Fatalf("durable duplicate response: %v err=%v", replayed, err)
 	}
 	count, err := DrainDurableTelemetryBatch(ctx, pool, h.Box)
 	if err != nil || count != 1 {

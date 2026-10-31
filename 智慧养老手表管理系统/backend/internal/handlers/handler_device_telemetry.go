@@ -1,6 +1,10 @@
 package handlers
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+
 	"github.com/jackc/pgx/v5"
 	"net/http"
 	"regexp"
@@ -219,12 +223,54 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	d = locked
-	// An alarm retried with the same requestId must not create another care task.
-	if parsed.alarm != "" && requestID != "" {
-		var priorID int64
-		err := tx.QueryRow(ctx, "SELECT id FROM care_incident WHERE device_id=$1 AND request_id=$2", d.ID, requestID).Scan(&priorID)
+	// Deduplicate every versioned request, not just the asynchronous queue.
+	// The payload digest prevents accidental reuse of an ID for different data.
+	var payloadDigest string
+	if requestID != "" {
+		canonical, marshalErr := json.Marshal(m)
+		if marshalErr != nil {
+			rollback()
+			writeValidation400(w)
+			return
+		}
+		hash := sha256.Sum256(canonical)
+		payloadDigest = hex.EncodeToString(hash[:])
+		var previousDigest, previousResponse string
+		err := tx.QueryRow(ctx, `SELECT payload_digest,result_json FROM device_report_receipt
+			WHERE device_id=$1 AND binding_epoch=$2 AND request_id=$3`,
+			d.ID, d.HealthEpoch, requestID).Scan(&previousDigest, &previousResponse)
 		if err == nil {
 			rollback()
+			if previousDigest != payloadDigest {
+				conflict409(w, "同一请求编号对应不同上报内容")
+				return
+			}
+			var previous map[string]any
+			if err := json.Unmarshal([]byte(previousResponse), &previous); err != nil {
+				response.Error500(w, ref())
+				return
+			}
+			previous["duplicate"] = true
+			response.OK(w, previous)
+			return
+		}
+		if err != pgx.ErrNoRows {
+			rollback()
+			response.Error500(w, ref())
+			return
+		}
+	}
+	// Protect against IDs received before report receipts were introduced.
+	if (parsed.alarm == "1" || strings.EqualFold(parsed.alarm, "fall")) && requestID != "" {
+		var priorID, priorOwner int64
+		err := tx.QueryRow(ctx, "SELECT id,old_id FROM care_incident WHERE device_id=$1 AND request_id=$2",
+			d.ID, requestID).Scan(&priorID, &priorOwner)
+		if err == nil {
+			rollback()
+			if priorOwner != *d.OldID {
+				conflict409(w, "上报编号属于其他绑定")
+				return
+			}
 			response.OK(w, map[string]any{"duplicate": true, "incidentId": priorID, "message": "异常已接收（重复请求）"})
 			return
 		}
@@ -249,24 +295,26 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 			}
 			return
 		}
+		queuedResult := map[string]any{
+			"rateState": nil, "preState": nil, "queued": true,
+			"message": "设备数据已持久接收，等待后台处理",
+			"serverTime": parsed.now.Format(tsLayout),
+		}
+		if err := recordDeviceReportReceipt(ctx, tx, d, requestID, payloadDigest, queuedResult); err != nil {
+			rollback()
+			response.Error500(w, ref())
+			return
+		}
 		if err := tx.Commit(ctx); err != nil {
 			response.Error500(w, ref())
 			return
 		}
-		response.OK(w, map[string]any{
-			"rateState": nil, "preState": nil, "queued": true,
-			"message":    "设备数据已持久接收，等待后台处理",
-			"serverTime": parsed.now.Format(tsLayout),
-		})
+		response.OK(w, queuedResult)
 		return
 	}
 	persisted, err := (telemetryRepository{box: h.Box}).PersistDeviceReport(ctx, tx, d, parsed)
 	if err != nil {
 		rollback()
-		response.Error500(w, ref())
-		return
-	}
-	if err := tx.Commit(ctx); err != nil {
 		response.Error500(w, ref())
 		return
 	}
@@ -277,6 +325,15 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 	if persisted.careIncidentID != 0 {
 		result["incidentId"] = persisted.careIncidentID
 		result["incidentState"] = "received"
+	}
+	if err := recordDeviceReportReceipt(ctx, tx, d, requestID, payloadDigest, result); err != nil {
+		rollback()
+		response.Error500(w, ref())
+		return
+	}
+	if err := tx.Commit(ctx); err != nil {
+		response.Error500(w, ref())
+		return
 	}
 	response.OK(w, result)
 }

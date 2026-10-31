@@ -110,9 +110,9 @@ func (repo telemetryRepository) PersistDeviceReport(ctx context.Context, tx *dbs
 
 	if hrv > 0 || bpv > 0 {
 		if _, err := tx.Exec(ctx,
-			`INSERT INTO ratepre(device_id,old_id,rate_state,pre_state,create_time,hr,bp)
-			 VALUES($1,$2,$3,$4,$5,$6,$7)`,
-			d.ID, oldID, rateState, preState, beTime, hr, bp); err != nil {
+			`INSERT INTO ratepre(device_id,old_id,binding_epoch,rate_state,pre_state,create_time,hr,bp)
+			 VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,
+			d.ID, oldID, d.HealthEpoch, rateState, preState, beTime, hr, bp); err != nil {
 			return telemetryPersisted{}, err
 		}
 	}
