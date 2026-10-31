@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 	"suining-care/internal/auth"
+	"suining-care/internal/db"
 	"suining-care/internal/response"
 )
 
@@ -58,47 +60,29 @@ func (h *Handler) familyAdd(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// 2. 锁定唯一匹配的老人，拒绝共享手机号导致的歧义绑定。
-	var oldID int64
-	var boundFamilyID *int64
-	rows, err := tx.Query(ctx, `SELECT old_id,family_id FROM oldperson WHERE phone=$1 ORDER BY old_id LIMIT 2 FOR UPDATE`, oldPhone)
+	target, err := loadFamilyBindingTarget(ctx, tx, oldPhone)
 	if err != nil {
 		_ = tx.Rollback(ctx)
 		response.Error500(w, ref())
 		return
 	}
-	count := 0
-	for rows.Next() {
-		count++
-		if err = rows.Scan(&oldID, &boundFamilyID); err != nil {
-			break
-		}
-	}
-	if err == nil {
-		err = rows.Err()
-	}
-	rows.Close()
-	if err != nil {
-		_ = tx.Rollback(ctx)
-		response.Error500(w, ref())
-		return
-	}
-	if count == 0 {
+	if target.matches == 0 {
 		_ = tx.Rollback(ctx)
 		response.Fail(w, "未找到唯一长者档案，请核对老人手机号")
 		return
 	}
-	if count > 1 {
+	if target.matches > 1 {
 		_ = tx.Rollback(ctx)
 		conflict409(w, "该手机号对应多份长者档案，请通过指定老人的邀请码绑定")
 		return
 	}
-	if boundFamilyID != nil {
+	if target.familyID != nil {
 		_ = tx.Rollback(ctx)
 		conflict409(w, "该老人已绑定家属，请先处理原绑定")
 		return
 	}
 	// 3. 绑定老人
-	ct, err := tx.Exec(ctx, `UPDATE oldperson SET family_id=$1 WHERE old_id=$2 AND family_id IS NULL`, familyID, oldID)
+	ct, err := tx.Exec(ctx, `UPDATE oldperson SET family_id=$1 WHERE old_id=$2 AND family_id IS NULL`, familyID, target.oldID)
 	if err != nil || ct.RowsAffected() != 1 {
 		_ = tx.Rollback(ctx)
 		response.Error500(w, ref())
@@ -200,4 +184,30 @@ func (h *Handler) familyDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	response.OK(w, nil)
+}
+
+type familyBindingTarget struct {
+	oldID    int64
+	familyID *int64
+	matches  int
+}
+
+func loadFamilyBindingTarget(ctx context.Context, tx *db.Transaction, phone string) (familyBindingTarget, error) {
+	target := familyBindingTarget{}
+	rows, err := tx.Query(ctx, `SELECT old_id,family_id FROM oldperson WHERE phone=$1 ORDER BY old_id LIMIT 2 FOR UPDATE`, phone)
+	if err != nil {
+		return target, err
+	}
+
+	for rows.Next() {
+		target.matches++
+		if err = rows.Scan(&target.oldID, &target.familyID); err != nil {
+			break
+		}
+	}
+	if err == nil {
+		err = rows.Err()
+	}
+	rows.Close()
+	return target, err
 }

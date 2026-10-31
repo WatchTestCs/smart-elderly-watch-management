@@ -119,6 +119,10 @@ func (h *Handler) ratepreAlertDetail(w http.ResponseWriter, r *http.Request) {
 		response.OK(w, map[string]any{"hasAlert": 0, "message": "该老人当前没有待处理的心率/血压异常"})
 		return
 	}
+	response.OK(w, describeRatepreAlert(a))
+}
+
+func describeRatepreAlert(a alertRow) map[string]any {
 	hr, bp := 0, 0
 	if a.Hr != nil {
 		hr = int(*a.Hr)
@@ -157,8 +161,7 @@ func (h *Handler) ratepreAlertDetail(w http.ResponseWriter, r *http.Request) {
 		details = append(details, "血压当前档案范围 "+strconv.Itoa(bpLow)+"-"+strconv.Itoa(bpHigh)+" mmHg，本次测量 "+strconv.Itoa(bp)+" mmHg。")
 	}
 	if len(reasons) == 0 {
-		response.OK(w, map[string]any{"hasAlert": 0, "message": "该记录已处理，没有待处理的红点"})
-		return
+		return map[string]any{"hasAlert": 0, "message": "该记录已处理，没有待处理的红点"}
 	}
 	rb, pb := 0, 0
 	if rateBad {
@@ -167,7 +170,7 @@ func (h *Handler) ratepreAlertDetail(w http.ResponseWriter, r *http.Request) {
 	if preBad {
 		pb = 1
 	}
-	response.OK(w, map[string]any{
+	return map[string]any{
 		"hasAlert":      1,
 		"recordId":      a.ID,
 		"deviceId":      a.DeviceID,
@@ -181,7 +184,7 @@ func (h *Handler) ratepreAlertDetail(w http.ResponseWriter, r *http.Request) {
 		"reason":        strings.Join(reasons, "；"),
 		"detail":        strings.Join(details, "；"),
 		"advice":        "① 先联系家属确认老人身体状况；② 持续异常建议就医；③ 若是阈值设置不合理，到「基础管理-手表信息」调整心率/血压上下限；④ 确认无误后点「标记已处理」消除红点。",
-	})
+	}
 }
 
 func (h *Handler) findAlertRecord(r *http.Request, id int64) (alertRow, bool, error) {
