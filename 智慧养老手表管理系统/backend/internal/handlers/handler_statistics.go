@@ -7,39 +7,20 @@ import (
 	"net/http"
 	"time"
 
-	"careold-go/internal/health"
-	"careold-go/internal/observability"
-	"careold-go/internal/response"
 	fastjson "github.com/goccy/go-json"
+	"suining-care/internal/health"
+	"suining-care/internal/observability"
+	"suining-care/internal/response"
 )
 
 func (h *Handler) healthStatistics(w http.ResponseWriter, r *http.Request) {
-	var req struct {
-		OldID        int64     `json:"oldId"`
-		Source       string    `json:"source"`
-		SourceDevice string    `json:"sourceDevice"`
-		Metric       string    `json:"metric"`
-		Semantics    string    `json:"semantics"`
-		From         time.Time `json:"from"`
-		To           time.Time `json:"to"`
-	}
+	var req healthStatisticsRequest
 	if !decodeHealth(w, r, &req) {
 		return
 	}
-	if req.Source == "" || req.SourceDevice == "" || req.Metric == "" || req.Semantics == "" || req.From.IsZero() || !req.To.After(req.From) || req.To.Sub(req.From) > 366*24*time.Hour {
-		write400(w, "请明确来源、设备、指标、采样语义及不超过 366 天的时间范围")
+	if message := req.validationMessage(); message != "" {
+		write400(w, message)
 		return
-	}
-	if req.Semantics == "daily_total" {
-		isMidnight := func(t time.Time) bool {
-			return t.Hour() == 0 && t.Minute() == 0 && t.Second() == 0 && t.Nanosecond() == 0
-		}
-		_, fromOffset := req.From.Zone()
-		_, toOffset := req.To.Zone()
-		if !isMidnight(req.From) || !isMidnight(req.To) || fromOffset != toOffset {
-			write400(w, "日累计统计须使用相同 UTC 偏移的完整自然日")
-			return
-		}
 	}
 	m := map[string]any{}
 	if req.OldID != 0 {
@@ -75,39 +56,13 @@ func (h *Handler) healthStatistics(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	observability.Default.Add("suining_health_statistics_db_loads_total", 1)
-	rows, err := h.DB.Query(r.Context(), `SELECT payload FROM health_sample
-	 WHERE old_id=$1 AND source=$2 AND source_device=$3
-	 AND metric=$4 AND semantics=$5 AND NOT deleted
-	 AND sample_start<$7
-	 AND (sample_start>=$6 OR ($5='interval' AND sample_end>$6))
-	 ORDER BY revision LIMIT 10001`, oldID, req.Source, req.SourceDevice, req.Metric, req.Semantics, req.From.UnixMicro(), req.To.UnixMicro())
+	samples, candidates, err := h.loadStatisticsSamples(r.Context(), oldID, req)
 	if err != nil {
 		response.Error500(w, ref())
 		return
 	}
-	defer rows.Close()
-	samples := []health.Sample{}
-	for rows.Next() {
-		var b []byte
-		var s health.Sample
-		if err = rows.Scan(&b); err != nil {
-			response.Error500(w, ref())
-			return
-		}
-		// Stored samples use the compatible decoder; request validation and
-		// canonical/cache encoding retain encoding/json.
-		if err = fastjson.Unmarshal(b, &s); err != nil {
-			response.Error500(w, ref())
-			return
-		}
-		samples = append(samples, s)
-	}
-	if !rowsOK(w, rows) {
-		return
-	}
-	rows.Close()
-	if len(samples) > 10000 {
-		response.JSON(w, 413, map[string]any{"returnCode": "0000", "message": "采样超过 10000 条，请缩短统计范围"})
+	if candidates > 10000 {
+		response.JSON(w, 413, map[string]any{"returnCode": "0000", "message": "候选采样超过 10000 条，请缩短统计范围"})
 		return
 	}
 	out, err := health.Aggregate(samples, req.From, req.To)
@@ -141,4 +96,76 @@ func (h *Handler) statisticsRevision(ctx context.Context, oldID int64) (int64, e
 	}
 	err := h.DB.QueryRow(ctx, query, args...).Scan(&revision)
 	return revision, err
+}
+
+type healthStatisticsRequest struct {
+	OldID        int64     `json:"oldId"`
+	Source       string    `json:"source"`
+	SourceDevice string    `json:"sourceDevice"`
+	Metric       string    `json:"metric"`
+	Semantics    string    `json:"semantics"`
+	From         time.Time `json:"from"`
+	To           time.Time `json:"to"`
+}
+
+func (req healthStatisticsRequest) validationMessage() string {
+	if req.Source == "" || req.SourceDevice == "" || req.Metric == "" || req.Semantics == "" || req.From.IsZero() || !req.To.After(req.From) || req.To.Sub(req.From) > 366*24*time.Hour {
+		return "请明确来源、设备、指标、采样语义及不超过 366 天的时间范围"
+	}
+	if req.Semantics == "daily_total" {
+		isMidnight := func(t time.Time) bool {
+			return t.Hour() == 0 && t.Minute() == 0 && t.Second() == 0 && t.Nanosecond() == 0
+		}
+		_, fromOffset := req.From.Zone()
+		_, toOffset := req.To.Zone()
+		if !isMidnight(req.From) || !isMidnight(req.To) || fromOffset != toOffset {
+			return "日累计统计须使用相同 UTC 偏移的完整自然日"
+		}
+	}
+	return ""
+}
+
+func (h *Handler) loadStatisticsSamples(ctx context.Context, oldID int64, req healthStatisticsRequest) ([]health.Sample, int, error) {
+	sourceFilter := "source=$2 AND source_device=$3 AND metric=$4 AND semantics=$5"
+	if h.DB.IsMySQL() {
+		// MySQL binary collations can still ignore trailing spaces. Sampling
+		// identities and the daily-statistics query compare the complete bytes.
+		sourceFilter = "BINARY source=BINARY $2 AND BINARY source_device=BINARY $3 AND BINARY metric=BINARY $4 AND BINARY semantics=BINARY $5"
+	}
+	upper := req.To.UnixMicro()
+	if req.To.Nanosecond()%1000 != 0 {
+		upper++
+	}
+	rows, err := h.DB.Query(ctx, `SELECT payload FROM health_sample
+	 WHERE old_id=$1 AND `+sourceFilter+` AND NOT deleted
+	 AND sample_start<$7
+	 AND (sample_start>=$6 OR ($5='interval' AND sample_end>=$6))
+	 ORDER BY revision LIMIT 10001`, oldID, req.Source, req.SourceDevice, req.Metric, req.Semantics, req.From.UnixMicro(), upper)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+	samples := []health.Sample{}
+	candidates := 0
+	for rows.Next() {
+		candidates++
+		var b []byte
+		var s health.Sample
+		if err = rows.Scan(&b); err != nil {
+			return nil, 0, err
+		}
+		// Stored samples use the compatible decoder; request validation and
+		// canonical/cache encoding retain encoding/json.
+		if err = fastjson.Unmarshal(b, &s); err != nil {
+			return nil, 0, err
+		}
+		if s.InWindow(req.From, req.To) {
+			samples = append(samples, s)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, err
+	}
+	rows.Close()
+	return samples, candidates, nil
 }

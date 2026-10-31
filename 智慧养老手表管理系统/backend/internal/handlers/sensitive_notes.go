@@ -1,7 +1,7 @@
 package handlers
 
 import "strings"
-import "careold-go/internal/securestore"
+import "suining-care/internal/securestore"
 
 func (h *Handler) sealNote(note string) (string, error) {
 	if h.Box == nil {

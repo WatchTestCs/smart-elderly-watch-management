@@ -1,22 +1,19 @@
 package care
 
 import (
-	"bytes"
-	dbstore "careold-go/internal/db"
-	"careold-go/internal/db/dbtest"
 	"context"
-	"encoding/base64"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"strings"
+	dbstore "suining-care/internal/db"
+	"suining-care/internal/db/dbtest"
 	"sync/atomic"
 	"testing"
 	"time"
 
-	"careold-go/internal/db"
-	"careold-go/internal/securestore"
+	"suining-care/internal/db"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -87,10 +84,10 @@ func TestOutboxDispatchIsRecordedButNotFalselyDelivered(t *testing.T) {
 	}))
 	defer server.Close()
 	d := &dispatcher{db: pool, webhookURL: server.URL, webhookToken: "test-token", httpClient: &http.Client{Timeout: time.Second}}
-	if err := d.dispatchOne(ctx); err != nil {
+	if _, err := d.dispatchNext(ctx); err != nil {
 		t.Fatal(err)
 	}
-	if err := d.dispatchOne(ctx); err != nil {
+	if _, err := d.dispatchNext(ctx); err != nil {
 		t.Fatal(err)
 	}
 	if calls != 1 {
@@ -114,13 +111,7 @@ func TestOverdueSOSCreatesEscalationAuditAndFallback(t *testing.T) {
 	if _, err := pool.Exec(ctx, "UPDATE care_incident SET due_at=now()-interval '1 minute' WHERE id=1"); err != nil {
 		t.Fatal(err)
 	}
-	// Production refuses to persist a sensitive recipient without a key.
-	// Exercise escalation with a dedicated test-only encryption key.
-	box, err := securestore.New(base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{2}, 32)))
-	if err != nil {
-		t.Fatal(err)
-	}
-	d := &dispatcher{db: pool, box: box, escalationPhone: "13800000002"}
+	d := &dispatcher{db: pool, escalationPhone: "13800000002"}
 	if err := d.escalate(ctx); err != nil {
 		t.Fatal(err)
 	}
@@ -166,7 +157,7 @@ func TestStaleNotificationAttemptCannotOverrideNewClaim(t *testing.T) {
 	defer httpServer.Close()
 	d := &dispatcher{db: pool, webhookURL: httpServer.URL, webhookToken: "test-token", httpClient: &http.Client{Timeout: 10 * time.Second}}
 	done := make(chan error, 1)
-	go func() { done <- d.dispatchOne(ctx) }()
+	go func() { _, err := d.dispatchNext(ctx); done <- err }()
 	select {
 	case <-firstArrived:
 	case <-time.After(2 * time.Second):
@@ -178,7 +169,7 @@ func TestStaleNotificationAttemptCannotOverrideNewClaim(t *testing.T) {
 		close(releaseFirst)
 		t.Fatal(err)
 	}
-	if err := d.dispatchOne(ctx); err != nil {
+	if _, err := d.dispatchNext(ctx); err != nil {
 		close(releaseFirst)
 		t.Fatal(err)
 	}

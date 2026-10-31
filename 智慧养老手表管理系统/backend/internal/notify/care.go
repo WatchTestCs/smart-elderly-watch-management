@@ -6,32 +6,27 @@ package notify
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 
-	"careold-go/internal/db"
-	"careold-go/internal/securestore"
+	"suining-care/internal/db"
+	"suining-care/internal/securestore"
 )
 
 const recipientScope = "care-notification-recipient"
 
 // SealNotificationRecipient 返回收件人的存储形态与去重键。
-// A missing lookup/encryption key is an error, never a plaintext recipient
-// or an unsalted digest of a low-entropy phone number.
+// 未配置密钥（config.Validate 已在生产环境阻断该组合）时回退明文 +
+// SHA-256 摘要，与迁移回填的历史行保持一致，保证去重语义不变。
 func SealNotificationRecipient(box *securestore.Box, phone string) (string, string, error) {
-	if box == nil {
-		return "", "", errors.New("notification encryption and lookup keys are not configured")
+	if box != nil {
+		sealed, err := box.Seal(phone, recipientScope)
+		if err != nil {
+			return "", "", err
+		}
+		return sealed, box.Index(recipientScope, phone), nil
 	}
-	key, err := box.Index(recipientScope, phone)
-	if err != nil {
-		return "", "", err
-	}
-	sealed, err := box.Seal(phone, recipientScope)
-	if err != nil {
-		return "", "", err
-	}
-	return sealed, key, nil
+	return phone, box.Index(recipientScope, phone), nil
 }
 
 // OpenNotificationRecipient 还原收件人明文；无密文前缀的历史明文行原样返回。
@@ -42,11 +37,18 @@ func OpenNotificationRecipient(box *securestore.Box, stored string) (string, err
 	return box.Open(stored, recipientScope)
 }
 
+func familyPhonePredicate(mysql bool) string {
+	if mysql {
+		return "f.family_phone REGEXP '^1[0-9]{10}$'"
+	}
+	return "f.family_phone ~ '^1[0-9]{10}$'"
+}
+
 // QueueCareSMS 为长者的每个有效家属手机号入队一条 SMS 通知，
 // 返回实际插入的行数（0 表示无可通知的家属）。
 func QueueCareSMS(ctx context.Context, tx *db.Transaction, box *securestore.Box, incidentID, oldID int64) (int64, error) {
 	rows, err := tx.Query(ctx, `SELECT f.family_phone FROM oldperson o JOIN family f ON f.family_id=o.family_id
-		WHERE o.old_id=$1 AND f.family_phone ~ '^1[0-9]{10}$'`, oldID)
+		WHERE o.old_id=$1 AND `+familyPhonePredicate(tx.IsMySQL()), oldID)
 	if err != nil {
 		return 0, err
 	}

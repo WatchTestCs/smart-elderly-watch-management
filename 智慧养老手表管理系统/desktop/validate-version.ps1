@@ -5,11 +5,11 @@ $values=@(
  [string](Get-Content (Join-Path $project 'backend/internal/apidoc/openapi.json') -Raw|ConvertFrom-Json).info.version,
  [string](Get-Content (Join-Path $PSScriptRoot 'tauri.conf.json') -Raw|ConvertFrom-Json).version,
  [string](Get-Content (Join-Path $PSScriptRoot 'package.json') -Raw|ConvertFrom-Json).version,
- [string](Get-Content (Join-Path $project 'oldIot/package.json') -Raw|ConvertFrom-Json).version,
- [string](Get-Content (Join-Path $project 'oldIot/package-lock.json') -Raw|ConvertFrom-Json -AsHashtable).version,
+ [string](Get-Content (Join-Path $project 'frontend/package.json') -Raw|ConvertFrom-Json).version,
+ [string](Get-Content (Join-Path $project 'frontend/package-lock.json') -Raw|ConvertFrom-Json -AsHashtable).version,
  [string](Get-Content (Join-Path $PSScriptRoot 'package-lock.json') -Raw|ConvertFrom-Json -AsHashtable).version,
  [string](Get-Content (Join-Path $PSScriptRoot 'package-lock.json') -Raw|ConvertFrom-Json -AsHashtable).packages[''].version,
- [string](Get-Content (Join-Path $project 'oldIot/package-lock.json') -Raw|ConvertFrom-Json -AsHashtable).packages[''].version,
+ [string](Get-Content (Join-Path $project 'frontend/package-lock.json') -Raw|ConvertFrom-Json -AsHashtable).packages[''].version,
  (Get-Content (Join-Path $project 'backend/VERSION') -Raw).Trim(),
  [regex]::Match((Get-Content (Join-Path $PSScriptRoot 'Cargo.toml') -Raw),'(?m)^version = "([^"]+)"').Groups[1].Value
 )

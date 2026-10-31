@@ -5,14 +5,14 @@ on:
   pull_request:
     branches: [preview]
     paths:
-      - "智慧养老手表管理系统/oldIot/**"
+      - "智慧养老手表管理系统/frontend/**"
       - "tests/ui/**"
       - "docs/screenshots/login-desktop.png"
       - ".github/workflows/ui-quality.yml"
   push:
     branches: [preview]
     paths:
-      - "智慧养老手表管理系统/oldIot/**"
+      - "智慧养老手表管理系统/frontend/**"
       - "tests/ui/**"
       - "docs/screenshots/login-desktop.png"
       - ".github/workflows/ui-quality.yml"
@@ -32,7 +32,7 @@ jobs:
     timeout-minutes: 15
     defaults:
       run:
-        working-directory: 智慧养老手表管理系统/oldIot
+        working-directory: 智慧养老手表管理系统/frontend
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -44,7 +44,7 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: 智慧养老手表管理系统/oldIot/package-lock.json
+          cache-dependency-path: 智慧养老手表管理系统/frontend/package-lock.json
 
       - name: Install locked frontend dependencies
         run: npm ci
@@ -175,8 +175,8 @@ jobs:
           name: ui-quality-evidence
           path: |
             tests/ui/artifacts/
-            智慧养老手表管理系统/oldIot/qa/artifacts/f02-acceptance.json
-            智慧养老手表管理系统/oldIot/qa/artifacts/lifecycle-acceptance.json
+            智慧养老手表管理系统/frontend/qa/artifacts/f02-acceptance.json
+            智慧养老手表管理系统/frontend/qa/artifacts/lifecycle-acceptance.json
             /tmp/suining-vite.log
             /tmp/suining-chrome.log
           if-no-files-found: warn

@@ -7,76 +7,76 @@ import (
 	"testing"
 	"time"
 
-	"careold-go/internal/accesspolicy"
-	"careold-go/internal/auth"
-	"careold-go/internal/csrf"
-	"careold-go/internal/session"
+	"suining-care/internal/accesspolicy"
+	"suining-care/internal/auth"
+	"suining-care/internal/csrf"
+	"suining-care/internal/session"
 )
 
 // Frozen preview@50b9cc0 access/CSRF tables, used to characterize this migration.
 var publicPaths = map[string]bool{
-	"POST /restful/desktop/exit":         true,
-	"POST /restful/setup":                true,
-	"POST /restful/userLogin/login":      true,
-	"POST /restful/inviteCode/checkCode": true,
-	"POST /restful/inviteCode/join":      true,
-	"GET /restful/userLogin/session":     true,
+	"POST /api/v1/desktop/exit":         true,
+	"POST /api/v1/setup":                true,
+	"POST /api/v1/auth/login":           true,
+	"POST /api/v1/inviteCode/checkCode": true,
+	"POST /api/v1/inviteCode/join":      true,
+	"GET /api/v1/auth/session":          true,
 }
 
 // 硬件路径：公开且免 CSRF。
 var hardwarePaths = map[string]bool{
-	"POST /restful/device/commandPull": true,
-	"POST /restful/device/commandAck":  true,
-	"POST /restful/device/fencePoint":  true,
-	"POST /restful/device/healthBatch": true,
-	"POST /restful/device/login":       true,
-	"POST /restful/device/bind":        true,
-	"POST /restful/device/heartbeat":   true,
-	"POST /restful/device/report":      true,
-	"POST /restful/device/sos":         true,
-	"POST /restful/care/receipt":       true,
+	"POST /api/v1/device/commandPull": true,
+	"POST /api/v1/device/commandAck":  true,
+	"POST /api/v1/device/fencePoint":  true,
+	"POST /api/v1/device/healthBatch": true,
+	"POST /api/v1/device/login":       true,
+	"POST /api/v1/device/bind":        true,
+	"POST /api/v1/device/heartbeat":   true,
+	"POST /api/v1/device/report":      true,
+	"POST /api/v1/device/sos":         true,
+	"POST /api/v1/care/receipt":       true,
 }
 
 // SHARED：ADMIN 或 FAMILY 任一角色。
 var sharedPaths = map[string]bool{
-	"POST /restful/security/factor":             true,
-	"POST /restful/notification/list":           true,
-	"POST /restful/health/daily":                true,
-	"POST /restful/health/changes":              true,
-	"POST /restful/health/statistics":           true,
-	"POST /restful/userLogin/logout":            true,
-	"POST /restful/family/selectTwo":            true,
-	"POST /restful/family/updateTwo":            true,
-	"POST /restful/family/updateTouPic":         true,
-	"POST /restful/family/updatePassword":       true,
-	"POST /restful/ratepre/selectRatepreFamily": true,
-	"POST /restful/ratepre/selectRatepreDetail": true,
-	"POST /restful/step/selectStepFamily":       true,
-	"POST /restful/step/selectStepDetail":       true,
-	"POST /restful/position/selectFamily":       true,
-	"POST /restful/text/select":                 true,
-	"POST /restful/text/selectDetail":           true,
-	"POST /restful/picshow/select":              true,
-	"POST /restful/said/select":                 true,
-	"POST /restful/said/insert":                 true,
-	"POST /restful/said/goodCount":              true,
-	"POST /restful/image/saveImage":             true,
-	"GET /restful/image/download":               true,
+	"POST /api/v1/security/factor":             true,
+	"POST /api/v1/notifications/search":        true,
+	"POST /api/v1/health/daily-query":          true,
+	"POST /api/v1/health/changes":              true,
+	"POST /api/v1/health/statistics":           true,
+	"POST /api/v1/auth/logout":                 true,
+	"POST /api/v1/family/selectTwo":            true,
+	"POST /api/v1/family/updateTwo":            true,
+	"POST /api/v1/family/updateTouPic":         true,
+	"POST /api/v1/family/updatePassword":       true,
+	"POST /api/v1/ratepre/selectRatepreFamily": true,
+	"POST /api/v1/ratepre/selectRatepreDetail": true,
+	"POST /api/v1/step/selectStepFamily":       true,
+	"POST /api/v1/step/selectStepDetail":       true,
+	"POST /api/v1/position/selectFamily":       true,
+	"POST /api/v1/text/select":                 true,
+	"POST /api/v1/text/selectDetail":           true,
+	"POST /api/v1/picshow/select":              true,
+	"POST /api/v1/said/select":                 true,
+	"POST /api/v1/said/insert":                 true,
+	"POST /api/v1/said/goodCount":              true,
+	"POST /api/v1/image/saveImage":             true,
+	"GET /api/v1/image/download":               true,
 }
 
 var exemptPaths = []string{
-	"/restful/device/commandPull",
-	"/restful/device/commandAck",
-	"/restful/device/fencePoint",
-	"/restful/setup",
-	"/restful/device/login",
-	"/restful/device/bind",
-	"/restful/device/heartbeat",
-	"/restful/device/report",
-	"/restful/device/healthBatch",
-	"/restful/device/sos",
-	"/restful/care/receipt",
-	"/restful/desktop/exit",
+	"/api/v1/device/commandPull",
+	"/api/v1/device/commandAck",
+	"/api/v1/device/fencePoint",
+	"/api/v1/setup",
+	"/api/v1/device/login",
+	"/api/v1/device/bind",
+	"/api/v1/device/heartbeat",
+	"/api/v1/device/report",
+	"/api/v1/device/healthBatch",
+	"/api/v1/device/sos",
+	"/api/v1/care/receipt",
+	"/api/v1/desktop/exit",
 }
 
 func oldAccess(method, path string) accesspolicy.Access {
@@ -101,7 +101,7 @@ func oldExempt(path string) bool {
 	return false
 }
 func contractPaths() []string {
-	paths := map[string]bool{"/restful/unknown": true, "/RESTFUL/device/sos": true, "/restful/device/sos/": true, "/bad": true}
+	paths := map[string]bool{"/api/v1/unknown": true, "/API/v1/device/sos": true, "/api/v1/device/sos/": true, "/bad": true}
 	for _, table := range []map[string]bool{publicPaths, hardwarePaths, sharedPaths} {
 		for key := range table {
 			for i, c := range key {
@@ -152,7 +152,7 @@ func TestMiddlewareRoleAndCSRFMatrix(t *testing.T) {
 					gate.ServeHTTP(response, request)
 					want := 204
 					access := oldAccess(method, path)
-					if path == "/bad" || path == "/RESTFUL/device/sos" {
+					if path == "/bad" || path == "/API/v1/device/sos" {
 						want = 403
 					} else if access != accesspolicy.Public && access != accesspolicy.Device {
 						if !actor.cookie {

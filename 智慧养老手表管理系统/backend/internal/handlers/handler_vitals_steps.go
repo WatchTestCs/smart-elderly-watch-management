@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	dbstore "careold-go/internal/db"
-	"careold-go/internal/response"
+	dbstore "suining-care/internal/db"
+	"suining-care/internal/response"
 
 	"net/http"
 	"strconv"
@@ -23,13 +23,19 @@ type stepDTO struct {
 	CreateTime *string `json:"createTime"`
 }
 
-// 每台设备最新一条日记录（Java LATEST_SELECT 的 PostgreSQL 版）。
+// Keep one snapshot per owner/day, including preserved snapshots from old bindings.
+const ownedDailyRecords = `(SELECT * FROM (SELECT daily.*,
+	ROW_NUMBER() OVER (PARTITION BY device_id,old_id,create_time ORDER BY binding_epoch DESC,id DESC) AS day_rank
+	FROM (SELECT * FROM watch_day_info UNION ALL SELECT * FROM watch_day_info_archive) daily
+	WHERE old_id IS NOT NULL) ranked WHERE day_rank=1)`
+
+// 每位老人当前主设备的最新日记录。
 const stepLatestSelect = `SELECT o.name AS name, o.old_id AS oldId, o.sex AS sex,` +
 	` w.step AS step, w.sleep AS sleep, w.sleep_sate AS sleepSate,` +
 	` TO_CHAR(w.create_time,'YYYY-MM-DD') AS createTime` +
 	` FROM oldperson o` +
-	` INNER JOIN (SELECT *, ROW_NUMBER() OVER (PARTITION BY device_id ORDER BY create_time DESC, id DESC) AS rn FROM watch_day_info) w` +
-	` ON w.device_id=o.device_id AND w.rn=1`
+	` INNER JOIN (SELECT *, ROW_NUMBER() OVER (PARTITION BY device_id,old_id ORDER BY create_time DESC, id DESC) AS rn FROM ` + ownedDailyRecords + ` daily) w` +
+	` ON w.device_id=o.device_id AND w.old_id=o.old_id AND w.rn=1`
 
 func scanStepDTO(rows dbstore.Rows) (stepDTO, error) {
 	var d stepDTO
@@ -37,7 +43,7 @@ func scanStepDTO(rows dbstore.Rows) (stepDTO, error) {
 	return d, err
 }
 
-// POST /restful/step/selectStep —— 按姓名+时间范围分页查询睡眠步数。
+// POST /api/v1/step/selectStep —— 按姓名+时间范围分页查询睡眠步数。
 func (h *Handler) stepSelect(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -90,7 +96,7 @@ func (h *Handler) stepSelect(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// POST /restful/step/selectStepFamily —— 家属查询老人睡眠步数列表。
+// POST /api/v1/step/selectStepFamily —— 家属查询老人睡眠步数列表。
 func (h *Handler) stepSelectFamily(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -102,7 +108,7 @@ func (h *Handler) stepSelectFamily(w http.ResponseWriter, r *http.Request) {
 	}
 	rows, err := h.DB.Query(r.Context(), `SELECT o.name AS name, o.old_id AS oldId, o.sex AS sex,`+
 		` w.step AS step, w.sleep AS sleep, w.sleep_sate AS sleepSate, TO_CHAR(w.create_time,'YYYY-MM-DD') AS createTime`+
-		` FROM oldperson o INNER JOIN watch_day_info w ON w.device_id=o.device_id`+
+		` FROM oldperson o INNER JOIN `+ownedDailyRecords+` w ON w.device_id=o.device_id AND w.old_id=o.old_id`+
 		` WHERE o.old_id=$1 ORDER BY w.create_time DESC, w.id DESC LIMIT 1`, oldID)
 	if err != nil {
 		response.Error500(w, ref())
@@ -125,7 +131,7 @@ func (h *Handler) stepSelectFamily(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, map[string]any{"stepDtos": items})
 }
 
-// POST /restful/step/selectStepDetail —— 家属查询老人睡眠明细（图表用）。
+// POST /api/v1/step/selectStepDetail —— 家属查询老人睡眠明细（图表用）。
 func (h *Handler) stepSelectDetail(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -139,7 +145,7 @@ func (h *Handler) stepSelectDetail(w http.ResponseWriter, r *http.Request) {
 		` TO_CHAR(r.create_time,'YYYY-MM-DD') AS createTime FROM (`+
 		` SELECT o.name AS name, o.old_id AS oldId, o.sex AS sex, w.step AS step, w.sleep AS sleep,`+
 		` w.sleep_sate AS sleepSate, w.create_time, w.id`+
-		` FROM oldperson o INNER JOIN watch_day_info w ON w.device_id=o.device_id`+
+		` FROM oldperson o INNER JOIN `+ownedDailyRecords+` w ON w.device_id=o.device_id AND w.old_id=o.old_id`+
 		` WHERE o.old_id=$1 ORDER BY w.create_time DESC, w.id DESC LIMIT 7) r`+
 		` ORDER BY r.create_time ASC, r.id ASC`, oldID)
 	if err != nil {
@@ -168,14 +174,14 @@ func (h *Handler) stepSelectDetail(w http.ResponseWriter, r *http.Request) {
 			ct = *d.CreateTime
 		}
 		sleep = append(sleep, d.Sleep)
-		createTime = append(createTime, safeSub(ct, 8, 10))
+		createTime = append(createTime, ct)
 	}
 	response.JSON(w, http.StatusOK, map[string]any{
 		"stepDtos": items, "sleep": sleep, "createTime": createTime,
 	})
 }
 
-// POST /restful/step/selectStepCount —— 睡眠异常设备 ID 列表。
+// POST /api/v1/step/selectStepCount —— 睡眠异常设备 ID 列表。
 func (h *Handler) stepSelectCount(w http.ResponseWriter, r *http.Request) {
 	if _, ok := optBody(w, r); !ok {
 		return
@@ -187,7 +193,7 @@ func (h *Handler) stepSelectCount(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, map[string]any{"deviceIdList": list})
 }
 
-// POST /restful/step/getAllCount —— 异常总数汇总（心率+血压+睡眠），字符串形态。
+// POST /api/v1/step/getAllCount —— 异常总数汇总（心率+血压+睡眠），字符串形态。
 func (h *Handler) stepGetAllCount(w http.ResponseWriter, r *http.Request) {
 	if _, ok := optBody(w, r); !ok {
 		return

@@ -56,7 +56,7 @@ flowchart TD
 ### 安全默认值与行为兼容
 
 - **必须提供** `DATABASE_URL`（直接启动 Go）或 `SUINING_DATABASE_URL`（Tauri 桌面传给 Go），不再尝试源码内置 `careold/careold` 明文凭据。
-- 未配置数据库时，Go HTTP 进程仍可提供界面和 `GET /restful/service/status`；数据库业务 API 将继续返回 `503 DATABASE_UNAVAILABLE`。
+- 未配置数据库时，Go HTTP 进程仍可提供界面和 `GET /api/v1/service/status`；数据库业务 API 将继续返回 `503 DATABASE_UNAVAILABLE`。
 - `ADDR` 默认改为 `127.0.0.1:8080`。要接受手表通过其他主机远程访问，运维人员必须明确设置监听地址，并配置可信网关、认证与防火墙。仅改变 `ADDR` 不提供 TLS 或公网部署安全保障。
 - 通用 JSON 接口最大请求体为 1 MiB；图片上传另走原有 multipart 和文件尺寸限制，不使用通用 JSON 限额。
 - 存量记录、迁移文件、数据库表定义、设备鉴权协议及前端界面均未修改。

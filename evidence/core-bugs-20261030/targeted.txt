@@ -1,0 +1,75 @@
+=== RUN   TestArchitectureElderEditCannotRewriteBinding
+--- PASS: TestArchitectureElderEditCannotRewriteBinding (3.10s)
+=== RUN   TestFenceDebounceEventsAndCareLink
+--- PASS: TestFenceDebounceEventsAndCareLink (4.31s)
+=== RUN   TestContinuousZeroBatteryAlert
+--- PASS: TestContinuousZeroBatteryAlert (0.00s)
+=== RUN   TestContinuousConfiguredThresholdExplanation
+--- PASS: TestContinuousConfiguredThresholdExplanation (4.82s)
+=== RUN   TestContinuousStatisticsExactSource
+--- PASS: TestContinuousStatisticsExactSource (4.83s)
+=== RUN   TestContinuousAmbiguousElderPhone
+--- PASS: TestContinuousAmbiguousElderPhone (5.00s)
+=== RUN   TestContinuousElderBirthdateAndAge
+--- PASS: TestContinuousElderBirthdateAndAge (4.58s)
+=== RUN   TestContinuousFencePointPresence
+--- PASS: TestContinuousFencePointPresence (4.78s)
+=== RUN   TestContinuousZeroVitalsAreMissing
+--- PASS: TestContinuousZeroVitalsAreMissing (4.87s)
+=== RUN   TestExtraAuditFamilyOnboarding
+    extra_audit_test.go:43: admin add=map[returnCode:1111]; passwordNULL=false; login HTTP=200; join=map[familyId:1 familyName:家属 oldPersonName:老人 returnCode:1111]
+--- PASS: TestExtraAuditFamilyOnboarding (5.35s)
+=== RUN   TestExtraAuditPhoneReuse
+    extra_audit_test.go:77: old actor ID=1; selected=map[familyDto2:<nil>]
+--- PASS: TestExtraAuditPhoneReuse (4.69s)
+=== RUN   TestExtraAuditFamilyOverwrite
+    extra_audit_test.go:93: add HTTP=409; original familyId=1; now familyId=1
+--- PASS: TestExtraAuditFamilyOverwrite (4.97s)
+=== RUN   TestExtraAuditOutOfOrderTelemetry
+    extra_audit_test.go:122: steps after 10:00 then 09:00=5000; position=map[page:1 pageSize:20 positionDtos:[map[beTime:2026-10-30 10:00:00 lat:30 lng:120 name:长者 oldId:1 sex:<nil> status:0]] returnCode:1111 total:1]
+--- PASS: TestExtraAuditOutOfOrderTelemetry (4.88s)
+=== RUN   TestExtraAuditPositionTimestamp
+    extra_audit_test.go:161: location sampled at 08:00; newer alarm at 10:00; displayed=map[beTime:2026-10-30 08:00:00 lat:30 lng:120 name:长者 oldId:1 sex:<nil> status:1]
+--- PASS: TestExtraAuditPositionTimestamp (6.68s)
+=== RUN   TestIntegrationDistinctInvitesCannotOverwriteFamily
+--- PASS: TestIntegrationDistinctInvitesCannotOverwriteFamily (4.96s)
+=== RUN   TestDeviceReportDailyUpsertPreservesMissingFields
+--- PASS: TestDeviceReportDailyUpsertPreservesMissingFields (4.95s)
+=== RUN   TestHealthStatisticsHotCacheConsistency
+--- PASS: TestHealthStatisticsHotCacheConsistency (5.03s)
+=== RUN   TestDeviceReportInvalidPayloadNeverOpensDatabase
+=== RUN   TestDeviceReportInvalidPayloadNeverOpensDatabase/heart_rate
+=== RUN   TestDeviceReportInvalidPayloadNeverOpensDatabase/blood_pressure
+=== RUN   TestDeviceReportInvalidPayloadNeverOpensDatabase/steps
+=== RUN   TestDeviceReportInvalidPayloadNeverOpensDatabase/sleep
+=== RUN   TestDeviceReportInvalidPayloadNeverOpensDatabase/sleep_state
+=== RUN   TestDeviceReportInvalidPayloadNeverOpensDatabase/battery
+=== RUN   TestDeviceReportInvalidPayloadNeverOpensDatabase/unpaired_coordinates
+=== RUN   TestDeviceReportInvalidPayloadNeverOpensDatabase/invalid_timestamp
+=== RUN   TestDeviceReportInvalidPayloadNeverOpensDatabase/long_app_version
+--- PASS: TestDeviceReportInvalidPayloadNeverOpensDatabase (0.00s)
+    --- PASS: TestDeviceReportInvalidPayloadNeverOpensDatabase/heart_rate (0.00s)
+    --- PASS: TestDeviceReportInvalidPayloadNeverOpensDatabase/blood_pressure (0.00s)
+    --- PASS: TestDeviceReportInvalidPayloadNeverOpensDatabase/steps (0.00s)
+    --- PASS: TestDeviceReportInvalidPayloadNeverOpensDatabase/sleep (0.00s)
+    --- PASS: TestDeviceReportInvalidPayloadNeverOpensDatabase/sleep_state (0.00s)
+    --- PASS: TestDeviceReportInvalidPayloadNeverOpensDatabase/battery (0.00s)
+    --- PASS: TestDeviceReportInvalidPayloadNeverOpensDatabase/unpaired_coordinates (0.00s)
+    --- PASS: TestDeviceReportInvalidPayloadNeverOpensDatabase/invalid_timestamp (0.00s)
+    --- PASS: TestDeviceReportInvalidPayloadNeverOpensDatabase/long_app_version (0.00s)
+=== RUN   TestParseDeviceTelemetryRetainsLegacyFields
+--- PASS: TestParseDeviceTelemetryRetainsLegacyFields (0.00s)
+PASS
+ok  	suining-care/internal/handlers	79.745s
+=== RUN   TestContinuousStepExactIntegerBounds
+--- PASS: TestContinuousStepExactIntegerBounds (0.00s)
+=== RUN   TestContinuousDailyStepTotalOverflow
+--- PASS: TestContinuousDailyStepTotalOverflow (0.00s)
+PASS
+ok  	suining-care/internal/health	0.628s
+=== RUN   TestCoordinateArity
+--- PASS: TestCoordinateArity (0.00s)
+=== RUN   TestGeometryAndDebounce
+--- PASS: TestGeometryAndDebounce (0.00s)
+PASS
+ok  	suining-care/internal/fence	0.365s

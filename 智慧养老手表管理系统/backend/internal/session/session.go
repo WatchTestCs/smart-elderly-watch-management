@@ -9,15 +9,10 @@ import (
 	"sync"
 	"time"
 
-	"careold-go/internal/securestore"
+	"suining-care/internal/securestore"
 )
 
-// CookieName is the canonical cookie emitted by the native Go server.
 const CookieName = "SUINING_SESSION"
-
-// LegacyCookieName is read only to migrate authenticated browser sessions
-// created before the Go-native cookie rollout. No Java runtime is required.
-const LegacyCookieName = "JSESSIONID"
 
 type Principal struct {
 	Role             string // ADMIN or FAMILY; empty for an anonymous session.

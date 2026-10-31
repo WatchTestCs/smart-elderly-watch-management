@@ -13,7 +13,7 @@ func TestCareDutyPermissionsAndSensitiveAudit(t *testing.T) {
 	mustExec(t, pool, "INSERT INTO users(user_id,user_name) VALUES(1,'主管'),(2,'护理员'),(3,'审计员')")
 	mustExec(t, pool, "INSERT INTO care_staff_permission(admin_id,duty,assigned_by) VALUES(2,'caregiver',1),(3,'auditor',1)")
 	h := testHandler(t, pool)
-	req := httptest.NewRequest("POST", "/restful/care/transition", nil)
+	req := httptest.NewRequest("POST", "/api/v1/care/transition", nil)
 	for _, tc := range []struct {
 		actor, action string
 		want          bool

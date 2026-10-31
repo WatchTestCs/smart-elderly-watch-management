@@ -6,6 +6,75 @@
 
 | 文件 | 职责 |
 | --- | --- |
+| [docs/patch-review/2026-10-31-pr50-position-context.md](../docs/patch-review/2026-10-31-pr50-position-context.md) | PR50 元数据与明确类型接续设计、验收和未关闭范围 |
+| [evidence/pr50-context-20261031/acceptance.txt](../evidence/pr50-context-20261031/acceptance.txt) | 元数据旧版失败、首次接线失败及定向验证原始输出 |
+| [智慧养老手表管理系统/backend/docs/position-context.md](../智慧养老手表管理系统/backend/docs/position-context.md) | 位置采样、精度、来源、有效性与事件类型增量 API 契约 |
+| [智慧养老手表管理系统/backend/internal/handlers/position_metadata.go](../智慧养老手表管理系统/backend/internal/handlers/position_metadata.go) | 设备声明元数据校验、版本化加密和解码 |
+| [智慧养老手表管理系统/backend/internal/handlers/pr50_context_regression_test.go](../智慧养老手表管理系统/backend/internal/handlers/pr50_context_regression_test.go) | 元数据独立、无坐标/旧数据未知及非法输入不落库回归 |
+| [智慧养老手表管理系统/backend/migrations/mysql/0020_position_metadata.sql](../智慧养老手表管理系统/backend/migrations/mysql/0020_position_metadata.sql) | MySQL 增量位置元数据和独立告警类型列 |
+| [智慧养老手表管理系统/backend/migrations/0018_position_metadata.sql](../智慧养老手表管理系统/backend/migrations/0018_position_metadata.sql) | 现有 PG 回归环境的元数据结构增量 |
+| [智慧养老手表管理系统/backend/migrations/rollback/mysql_0020_position_metadata.sql](../智慧养老手表管理系统/backend/migrations/rollback/mysql_0020_position_metadata.sql) | 回退迁移登记并保留事件上下文数据 |
+| [智慧养老手表管理系统/frontend/src/utils/positionContext.ts](../智慧养老手表管理系统/frontend/src/utils/positionContext.ts) | 自报、未知与历史采样上下文的统一显示逻辑 |
+| [docs/patch-review/2026-10-31-guardian-integrity.md](../docs/patch-review/2026-10-31-guardian-integrity.md) | 监护人引用完整性、事务协调及年龄范围的设计和验证边界 |
+| [evidence/core-bugs-20261030/guardian-integrity.txt](../evidence/core-bugs-20261030/guardian-integrity.txt) | 监护人引用与年龄修复前失败、八条关键路径及一次并行请求输出 |
+| [智慧养老手表管理系统/backend/internal/handlers/core_guardian_integrity_test.go](../智慧养老手表管理系统/backend/internal/handlers/core_guardian_integrity_test.go) | 失效监护人不写入、关联删除保护、年龄边界和同时请求回归 |
+| [docs/patch-review/2026-10-31-vitals-resolution.md](../docs/patch-review/2026-10-31-vitals-resolution.md) | 体征异常非法类型拒绝及指定记录原因归属的设计与验证边界 |
+| [evidence/core-bugs-20261030/vitals-resolution.txt](../evidence/core-bugs-20261030/vitals-resolution.txt) | 体征处置修复前失败、关键路径通过及最终补充验证输出 |
+| [智慧养老手表管理系统/backend/internal/handlers/core_vitals_resolution_test.go](../智慧养老手表管理系统/backend/internal/handlers/core_vitals_resolution_test.go) | 非法处置类型不落库、单类与双类处理及原因匹配指定记录回归 |
+| [docs/patch-review/2026-10-31-pr50-alarm-snapshot.md](../docs/patch-review/2026-10-31-pr50-alarm-snapshot.md) | PR50告警现场快照的实施前设计、门槛与回退 |
+| [docs/patch-review/2026-10-31-pr50-handoff.md](../docs/patch-review/2026-10-31-pr50-handoff.md) | PR50标准13项接续交接、结果与剩余风险 |
+| [智慧养老手表管理系统/backend/internal/handlers/alarm_snapshot_http_test.go](../智慧养老手表管理系统/backend/internal/handlers/alarm_snapshot_http_test.go) | 回环HTTP及真实数据库验证无GPS/零点/单边/重试快照 |
+| [evidence/pr50-20261031/README.md](../evidence/pr50-20261031/README.md) | PR50原始证据口径和失败记录索引 |
+| [evidence/pr50-20261031/SHA256SUMS.json](../evidence/pr50-20261031/SHA256SUMS.json) | PR50冻结原始证据的SHA-256摘要 |
+| [docs/patch-review/2026-10-30-position-alarm-context.md](../docs/patch-review/2026-10-30-position-alarm-context.md) | 定位与告警快照分离、SOS 坐标及紧急告警标签的设计与验收 |
+| [evidence/core-bugs-20261030/position-alarm-context.txt](../evidence/core-bugs-20261030/position-alarm-context.txt) | 双数据库各七条定位及求助路径、前端三条用例与构建输出 |
+| [智慧养老手表管理系统/backend/internal/handlers/core_position_alarm_context_test.go](../智慧养老手表管理系统/backend/internal/handlers/core_position_alarm_context_test.go) | 告警独立快照、缺失及半组 SOS 坐标不伪造定位回归 |
+| [智慧养老手表管理系统/frontend/src/views/position.alerts.test.ts](../智慧养老手表管理系统/frontend/src/views/position.alerts.test.ts) | 告警弹窗事件上下文与共用紧急状态标签回归 |
+| [docs/patch-review/2026-10-30-family-phone-validation.md](../docs/patch-review/2026-10-30-family-phone-validation.md) | 家属新增/编辑手机号格式、跨账号冲突与合法改号登录的修复说明 |
+| [evidence/core-bugs-20261030/family-phone-validation.txt](../evidence/core-bugs-20261030/family-phone-validation.txt) | 双数据库各六条账号与家属绑定相关路径验收输出 |
+| [智慧养老手表管理系统/backend/internal/handlers/core_family_phone_validation_test.go](../智慧养老手表管理系统/backend/internal/handlers/core_family_phone_validation_test.go) | 无效号码不写入、已有账号冲突及合法改号保留身份回归 |
+| [docs/patch-review/2026-10-30-history-time-labels.md](../docs/patch-review/2026-10-30-history-time-labels.md) | 体征跨小时/日期与睡眠跨月/年标签修复的设计和验证边界 |
+| [evidence/core-bugs-20261030/history-time-labels.txt](../evidence/core-bugs-20261030/history-time-labels.txt) | 双数据库各六条历史图表及相关路径验收输出 |
+| [智慧养老手表管理系统/backend/internal/handlers/core_history_time_labels_test.go](../智慧养老手表管理系统/backend/internal/handlers/core_history_time_labels_test.go) | 管理员与家属的完整时间标签、日期范围、缺测值对齐回归 |
+| [docs/patch-review/2026-10-30-threshold-device-ownership.md](../docs/patch-review/2026-10-30-threshold-device-ownership.md) | 次设备阈值检索及未登记设备新增校验的设计与验收 |
+| [evidence/core-bugs-20261030/threshold-device-ownership.txt](../evidence/core-bugs-20261030/threshold-device-ownership.txt) | 双数据库各五条阈值配置相关路径验收结果 |
+| [智慧养老手表管理系统/backend/internal/handlers/core_threshold_device_regression_test.go](../智慧养老手表管理系统/backend/internal/handlers/core_threshold_device_regression_test.go) | 次设备按姓名查阈值、编辑后实际生效和不存在设备不落库回归 |
+| [docs/patch-review/2026-10-30-statistics-conflicts-mean.md](../docs/patch-review/2026-10-30-statistics-conflicts-mean.md) | 日累计同时间冲突、有限平均值溢出及旧缓存隔离的设计和验收 |
+| [evidence/core-bugs-20261030/statistics-conflicts-mean.txt](../evidence/core-bugs-20261030/statistics-conflicts-mean.txt) | 健康逻辑、双数据库统计和日缓存版本衔接的定向结果 |
+| [智慧养老手表管理系统/backend/internal/health/statistics_numeric_regression_test.go](../智慧养老手表管理系统/backend/internal/health/statistics_numeric_regression_test.go) | 日累计输入顺序、相同时刻偏移及有限平均值溢出回归 |
+| [智慧养老手表管理系统/backend/internal/handlers/core_statistics_numeric_test.go](../智慧养老手表管理系统/backend/internal/handlers/core_statistics_numeric_test.go) | 有限平均值真实写入与冷热缓存、旧日缓存重算和冲突展示回归 |
+| [docs/patch-review/2026-10-30-sleep-location-order.md](../docs/patch-review/2026-10-30-sleep-location-order.md) | 睡眠字段乱序及跨老人位置快照的两项缺陷、设计和定向验收 |
+| [evidence/core-bugs-20261030/sleep-location-order.txt](../evidence/core-bugs-20261030/sleep-location-order.txt) | 双数据库九条相关路径及归档观测时间保留的验收输出 |
+| [智慧养老手表管理系统/backend/internal/handlers/core_sleep_location_order_test.go](../智慧养老手表管理系统/backend/internal/handlers/core_sleep_location_order_test.go) | 睡眠独立时钟、乱序保护、零时长及换绑告警定位回归 |
+| [智慧养老手表管理系统/backend/migrations/mysql/0019_sleep_observation_time.sql](../智慧养老手表管理系统/backend/migrations/mysql/0019_sleep_observation_time.sql) | 日记录及归档的独立睡眠时长和状态观测时间 |
+| [智慧养老手表管理系统/backend/migrations/0017_sleep_observation_time.sql](../智慧养老手表管理系统/backend/migrations/0017_sleep_observation_time.sql) | PostgreSQL 日记录和归档睡眠观测时间列 |
+| [智慧养老手表管理系统/backend/migrations/rollback/mysql_0019_sleep_observation_time.sql](../智慧养老手表管理系统/backend/migrations/rollback/mysql_0019_sleep_observation_time.sql) | 保留睡眠观测时间，撤销 MySQL 迁移登记 |
+| [智慧养老手表管理系统/backend/migrations/rollback/postgres_0017_sleep_observation_time.sql](../智慧养老手表管理系统/backend/migrations/rollback/postgres_0017_sleep_observation_time.sql) | 保留睡眠观测时间，撤销 PostgreSQL 迁移登记 |
+| [智慧养老手表管理系统/backend/internal/handlers/core_integer_validation_test.go](../智慧养老手表管理系统/backend/internal/handlers/core_integer_validation_test.go) | 设备分页整数解析、原生整数溢出和合法边界回归 |
+| [evidence/core-bugs-20261030/code-expiry.txt](../evidence/core-bugs-20261030/code-expiry.txt) | 第七批绑定码与邀请码有效期、双数据库关键路径验收 |
+| [智慧养老手表管理系统/backend/internal/handlers/core_code_expiry_regression_test.go](../智慧养老手表管理系统/backend/internal/handlers/core_code_expiry_regression_test.go) | 绑定码缺省有效期、非法天数拒绝及邀请码长期有效边界回归 |
+| [evidence/core-bugs-20261030/daily-ownership.txt](../evidence/core-bugs-20261030/daily-ownership.txt) | 第六批日记录换绑隔离、双数据库关键路径及保留数据重应用结果 |
+| [智慧养老手表管理系统/backend/internal/handlers/core_day_ownership_regression_test.go](../智慧养老手表管理系统/backend/internal/handlers/core_day_ownership_regression_test.go) | 跨老人换绑读取隔离、同日快照拆分与历史保留回归 |
+| [智慧养老手表管理系统/backend/migrations/mysql/0018_daily_ownership.sql](../智慧养老手表管理系统/backend/migrations/mysql/0018_daily_ownership.sql) | 日记录老人及绑定归属、归档观测时间和查询索引 |
+| [智慧养老手表管理系统/backend/migrations/0016_daily_ownership.sql](../智慧养老手表管理系统/backend/migrations/0016_daily_ownership.sql) | PostgreSQL 日记录归属与归档列增量 |
+| [智慧养老手表管理系统/backend/migrations/rollback/mysql_0018_daily_ownership.sql](../智慧养老手表管理系统/backend/migrations/rollback/mysql_0018_daily_ownership.sql) | 保留日记录归属及归档数据，撤销 MySQL 迁移登记 |
+| [智慧养老手表管理系统/backend/migrations/rollback/postgres_0016_daily_ownership.sql](../智慧养老手表管理系统/backend/migrations/rollback/postgres_0016_daily_ownership.sql) | 保留日记录归属及归档数据，撤销 PostgreSQL 迁移登记 |
+| [docs/patch-review/2026-10-30-core-bug-batches.md](patch-review/2026-10-30-core-bug-batches.md) | 十七项清单外核心缺陷、分批实现与统一验收说明 |
+| [evidence/core-bugs-20261030/window-precision.txt](../evidence/core-bugs-20261030/window-precision.txt) | 第五批统计时间窗口、日投影及相关路径的七项验收输出 |
+| [智慧养老手表管理系统/backend/internal/handlers/core_window_precision_regression_test.go](../智慧养老手表管理系统/backend/internal/handlers/core_window_precision_regression_test.go) | 不足微秒窗口、冷热缓存及跨午夜区间日统计回归 |
+| [evidence/core-bugs-20261030/reporting-time.txt](../evidence/core-bugs-20261030/reporting-time.txt) | 第四批设备时间与睡眠异常汇总的六项定向验收输出 |
+| [智慧养老手表管理系统/backend/internal/handlers/core_reporting_time_regression_test.go](../智慧养老手表管理系统/backend/internal/handlers/core_reporting_time_regression_test.go) | 设备时间超前保护、非 UTC 服务器与最新睡眠异常汇总回归 |
+| [evidence/core-bugs-20261030/targeted.txt](../evidence/core-bugs-20261030/targeted.txt) | 23 个顶层关键路径用例的最终原始输出 |
+| [智慧养老手表管理系统/backend/internal/handlers/core_alert_statistics_regression_test.go](../智慧养老手表管理系统/backend/internal/handlers/core_alert_statistics_regression_test.go) | 零电量、自定义阈值解释与精确来源统计回归 |
+| [智慧养老手表管理系统/backend/internal/handlers/core_binding_profile_regression_test.go](../智慧养老手表管理系统/backend/internal/handlers/core_binding_profile_regression_test.go) | 歧义手机号绑定、出生日期与当前周岁回归 |
+| [智慧养老手表管理系统/backend/internal/handlers/core_fence_vitals_regression_test.go](../智慧养老手表管理系统/backend/internal/handlers/core_fence_vitals_regression_test.go) | 缺失/null 围栏点与零体征缺测回归 |
+| [智慧养老手表管理系统/backend/internal/health/step_precision_regression_test.go](../智慧养老手表管理系统/backend/internal/health/step_precision_regression_test.go) | 单次步数与日累计精确整数边界回归 |
+| [docs/patch-review/2026-10-30-family-telemetry.md](patch-review/2026-10-30-family-telemetry.md) | 家属归属、首次设密、绑定及乱序上报修复的变更与验证边界 |
+| [智慧养老手表管理系统/backend/internal/handlers/extra_audit_test.go](../智慧养老手表管理系统/backend/internal/handlers/extra_audit_test.go) | 五项具体缺陷的定向数据库回归 |
+| [智慧养老手表管理系统/backend/migrations/mysql/0017_telemetry_observation_time.sql](../智慧养老手表管理系统/backend/migrations/mysql/0017_telemetry_observation_time.sql) | 增加步数观测时间及位置时间索引，保留遗留值 |
+| [智慧养老手表管理系统/backend/migrations/0015_telemetry_observation_time.sql](../智慧养老手表管理系统/backend/migrations/0015_telemetry_observation_time.sql) | PostgreSQL 兼容模式对应的观测时间和位置索引迁移 |
+| [智慧养老手表管理系统/backend/migrations/rollback/mysql_0017_telemetry_observation_time.sql](../智慧养老手表管理系统/backend/migrations/rollback/mysql_0017_telemetry_observation_time.sql) | 撤销迁移登记，保留观测时间与索引以便重新应用 |
+| [智慧养老手表管理系统/backend/migrations/rollback/postgres_0015_telemetry_observation_time.sql](../智慧养老手表管理系统/backend/migrations/rollback/postgres_0015_telemetry_observation_time.sql) | PostgreSQL 对应的保留数据回滚脚本 |
 | [智慧养老手表管理系统/backend/internal/handlers/sos_binding_integration_test.go](../智慧养老手表管理系统/backend/internal/handlers/sos_binding_integration_test.go) | 真实双库验证 SOS 绑定版本、并发重绑定和重复求助幂等 |
 | [智慧养老手表管理系统/backend/internal/session/lifecycle_audit_test.go](../智慧养老手表管理系统/backend/internal/session/lifecycle_audit_test.go) | 同一夹具测量基线与本轮的会话维护协程保留数 |
 | [智慧养老手表管理系统/backend/internal/session/http.go](../智慧养老手表管理系统/backend/internal/session/http.go) | Cookie 生命周期、请求内已验证会话缓存及取消检查 |
@@ -436,8 +505,6 @@
 | [智慧养老手表管理系统/backend/internal/handlers/web.go](../智慧养老手表管理系统/backend/internal/handlers/web.go) | 内嵌 Vue 静态资源挂载及浏览器安全响应头（智慧养老手表管理系统/backend/internal/handlers/web.go） |
 | [智慧养老手表管理系统/backend/internal/handlers/web/.gitignore](../智慧养老手表管理系统/backend/internal/handlers/web/.gitignore) | 防止生成的 Vue 构建内容被误认为手工维护的嵌入资源。 |
 | [智慧养老手表管理系统/backend/internal/handlers/web/.gitkeep](../智慧养老手表管理系统/backend/internal/handlers/web/.gitkeep) | 仅保留内嵌前端目录，桌面构建时填入真实 Vue 产物（智慧养老手表管理系统/backend/internal/handlers/web/.gitkeep） |
-| [智慧养老手表管理系统/backend/internal/health/batch_sql.go](../智慧养老手表管理系统/backend/internal/health/batch_sql.go) | 有界缓存健康批量写入与身份查询的 SQL 占位符模板。 |
-| [智慧养老手表管理系统/backend/internal/health/batch_sql_test.go](../智慧养老手表管理系统/backend/internal/health/batch_sql_test.go) | 验证批量占位符边界、回退与并发等价。 |
 | [智慧养老手表管理系统/backend/internal/health/batch_test.go](../智慧养老手表管理系统/backend/internal/health/batch_test.go) | 验证后端 batch／test 的行为、边界或回归 |
 | [智慧养老手表管理系统/backend/internal/health/clock.go](../智慧养老手表管理系统/backend/internal/health/clock.go) | Go 后端模块：clock |
 | [智慧养老手表管理系统/backend/internal/health/clock_test.go](../智慧养老手表管理系统/backend/internal/health/clock_test.go) | 验证后端 clock／test 的行为、边界或回归 |

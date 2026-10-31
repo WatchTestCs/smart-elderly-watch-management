@@ -6,49 +6,15 @@ import (
 	"time"
 )
 
-// marshalEvidenceFast uses a byte builder only for simple, validated payloads.
-// Complex strings, non-finite numbers and unusual timezone offsets use the
-// canonical encoding/json implementation, preserving old evidence semantics.
-func (c CompactCandidate) marshalEvidenceFast(streak int, owner int64, at time.Time) ([]byte, error) {
-	return c.appendEvidenceFast(nil, streak, owner, at)
-}
-
 // appendEvidenceFast reuses caller-owned bytes for the common evidence format.
 // The returned slice aliases dst; consumers must finish using it before
 // reusing dst. Fallbacks return independent encoding/json allocations.
 // Never put this borrowed buffer in an asynchronous queue or retain it.
 func (c CompactCandidate) appendEvidenceFast(dst []byte, streak int, owner int64, at time.Time) ([]byte, error) {
 	e := c.evidence
-	if !fastJSONTime(at) {
+	if !e.canUseFastJSON(at) {
 		return c.marshalEvidence(streak, owner, at)
 	}
-	switch e.kind {
-	case evidenceThreshold:
-		if !fastJSONTime(e.observedAt) || !fastJSONString(e.source) || !fastJSONString(e.device) ||
-			!finite(e.value) || !finite(e.low) || !finite(e.high) {
-			return c.marshalEvidence(streak, owner, at)
-		}
-	case evidenceBaseline:
-		if !fastJSONTime(e.observedAt) || !fastJSONString(e.source) || !fastJSONString(e.device) ||
-			!finite(e.value) || !finite(e.mean) || !finite(e.deviation) || !finite(e.threshold) {
-			return c.marshalEvidence(streak, owner, at)
-		}
-	case evidenceBattery:
-		if !finite(e.value) || !finite(e.threshold) {
-			return c.marshalEvidence(streak, owner, at)
-		}
-	case evidenceOffline:
-		if !fastJSONTime(e.lastReport) {
-			return c.marshalEvidence(streak, owner, at)
-		}
-	case evidenceActivity:
-		if !fastJSONString(e.source) || !fastJSONString(e.device) || !finite(e.value) || !finite(e.threshold) {
-			return c.marshalEvidence(streak, owner, at)
-		}
-	default:
-		return c.marshalEvidence(streak, owner, at)
-	}
-
 	capacity := 192
 	if e.kind == evidenceThreshold || e.kind == evidenceBaseline {
 		capacity = 256
@@ -137,6 +103,40 @@ func (c CompactCandidate) appendEvidenceFast(dst []byte, streak int, owner int64
 		return c.marshalEvidence(streak, owner, at)
 	}
 	return append(b, '}'), nil
+}
+
+func (e *evidenceValue) canUseFastJSON(at time.Time) bool {
+	if !fastJSONTime(at) {
+		return false
+	}
+	switch e.kind {
+	case evidenceThreshold:
+		if !fastJSONTime(e.observedAt) || !fastJSONString(e.source) || !fastJSONString(e.device) ||
+			!finite(e.value) || !finite(e.low) || !finite(e.high) {
+			return false
+		}
+	case evidenceBaseline:
+		if !fastJSONTime(e.observedAt) || !fastJSONString(e.source) || !fastJSONString(e.device) ||
+			!finite(e.value) || !finite(e.mean) || !finite(e.deviation) || !finite(e.threshold) {
+			return false
+		}
+	case evidenceBattery:
+		if !finite(e.value) || !finite(e.threshold) {
+			return false
+		}
+	case evidenceOffline:
+		if !fastJSONTime(e.lastReport) {
+			return false
+		}
+	case evidenceActivity:
+		if !fastJSONString(e.source) || !fastJSONString(e.device) || !finite(e.value) || !finite(e.threshold) {
+			return false
+		}
+	default:
+		return false
+	}
+
+	return true
 }
 
 func finite(v float64) bool { return !math.IsNaN(v) && !math.IsInf(v, 0) }

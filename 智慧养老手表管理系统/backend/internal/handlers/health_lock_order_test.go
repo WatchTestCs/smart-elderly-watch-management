@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	dbstore "careold-go/internal/db"
-	"careold-go/internal/health"
+	dbstore "suining-care/internal/db"
+	"suining-care/internal/health"
 )
 
 func holdHealthOwnerClock(t *testing.T, ctx context.Context, pool *dbstore.Database) func() {
@@ -304,7 +304,7 @@ func TestHealthSingleAndBulkFitOneConnectionPool(t *testing.T) {
 			t.Fatal(err)
 		}
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		req := httptest.NewRequest(http.MethodPost, "/restful/device/healthBatch", bytes.NewReader(encoded)).WithContext(ctx)
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/device/healthBatch", bytes.NewReader(encoded)).WithContext(ctx)
 		result := httptest.NewRecorder()
 		h.healthBatch(result, req)
 		cancel()
@@ -365,7 +365,7 @@ func TestBulkPreparationRevalidatesConcurrentDeviceChanges(t *testing.T) {
 			}
 			result := make(chan *httptest.ResponseRecorder, 1)
 			go func() {
-				req := httptest.NewRequest(http.MethodPost, "/restful/device/healthBatch", bytes.NewReader(encoded)).WithContext(ctx)
+				req := httptest.NewRequest(http.MethodPost, "/api/v1/device/healthBatch", bytes.NewReader(encoded)).WithContext(ctx)
 				w := httptest.NewRecorder()
 				h.healthBatch(w, req)
 				result <- w

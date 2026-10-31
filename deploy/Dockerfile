@@ -1,8 +1,8 @@
 FROM node:24-bookworm-slim AS frontend
 WORKDIR /ui
-COPY ["智慧养老手表管理系统/oldIot/package.json", "智慧养老手表管理系统/oldIot/package-lock.json", "./"]
+COPY ["智慧养老手表管理系统/frontend/package.json", "智慧养老手表管理系统/frontend/package-lock.json", "./"]
 RUN npm ci --no-audit --no-fund
-COPY ["智慧养老手表管理系统/oldIot/", "./"]
+COPY ["智慧养老手表管理系统/frontend/", "./"]
 RUN npm run test && npm run typecheck && npm run build
 
 FROM golang:1.27.2-bookworm AS backend

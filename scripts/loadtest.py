@@ -51,7 +51,7 @@ def worker(index):
             "start": now, "end": now, "version": 1} for sample in range(a.batch_size)]})
         at = time.perf_counter()
         try:
-            connection.request("POST", u.path.rstrip("/") + "/restful/device/healthBatch", body, {"Content-Type": "application/json"})
+            connection.request("POST", u.path.rstrip("/") + "/api/v1/device/healthBatch", body, {"Content-Type": "application/json"})
             response = connection.getresponse()
             payload = json.loads(response.read())
             statuses[str(response.status)] = statuses.get(str(response.status), 0) + 1

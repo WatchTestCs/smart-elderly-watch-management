@@ -4,9 +4,9 @@ import (
 	"errors"
 	"net/http"
 
-	"careold-go/internal/auth"
-	"careold-go/internal/response"
 	"github.com/jackc/pgx/v5"
+	"suining-care/internal/auth"
+	"suining-care/internal/response"
 )
 
 // EnforceAdminDuty closes the legacy ADMIN route gap: a caregiver or auditor
@@ -46,7 +46,7 @@ func (h *Handler) EnforceAdminDuty(next http.Handler) http.Handler {
 			// remain fail-closed.
 			if _, err := h.DB.Exec(r.Context(), `INSERT INTO care_sensitive_access_audit
 				(actor_id,actor_role,resource,method) VALUES($1,$2,$3,$4)`,
-				principal.ID, principal.Role, "/restful/legacy-admin-denied", r.Method); err != nil {
+				principal.ID, principal.Role, "/api/v1/legacy-admin-denied", r.Method); err != nil {
 				response.JSON(w, http.StatusServiceUnavailable, map[string]any{
 					"returnCode": "0000", "code": "AUTHZ_AUDIT_UNAVAILABLE",
 					"message": "权限审计不可用，请稍后再试",
@@ -65,20 +65,20 @@ func (h *Handler) EnforceAdminDuty(next http.Handler) http.Handler {
 
 // Every care endpoint below performs its own fine-grained duty checks.
 // MFA setup is self-service and must remain available to restricted staff.
-// Do not permit arbitrary /restful/care/* here: new routes require review.
+// Do not permit arbitrary /api/v1/care/* here: new routes require review.
 func restrictedAdminRouteAllowed(r *http.Request) bool {
 	if r.Method != http.MethodPost {
 		return false
 	}
 	switch r.URL.Path {
-	case "/restful/security/factor",
-		"/restful/care/incidents",
-		"/restful/care/transition",
-		"/restful/care/events",
-		"/restful/care/diagnostics",
-		"/restful/care/staff",
-		"/restful/care/assignDuty",
-		"/restful/care/accessAudit":
+	case "/api/v1/security/factor",
+		"/api/v1/care/incidents",
+		"/api/v1/care/transition",
+		"/api/v1/care/events",
+		"/api/v1/care/diagnostics",
+		"/api/v1/care/staff",
+		"/api/v1/care/assignDuty",
+		"/api/v1/care/accessAudit":
 		return true
 	default:
 		return false

@@ -1,4 +1,4 @@
-// Command server starts the standalone Go HTTP API and background workers.
+// Command server starts the native Suining Go API and background workers.
 package main
 
 import (
@@ -13,12 +13,11 @@ import (
 	"syscall"
 	"time"
 
-	"careold-go/internal/apidoc"
-	"careold-go/internal/config"
-	"careold-go/internal/handlers"
-	"careold-go/internal/observability"
-	"careold-go/internal/runtuning"
-	"careold-go/internal/session"
+	"suining-care/internal/config"
+	"suining-care/internal/handlers"
+	"suining-care/internal/observability"
+	"suining-care/internal/runtuning"
+	"suining-care/internal/session"
 )
 
 func main() {
@@ -47,7 +46,7 @@ func main() {
 	localHandlers.MountLocalLogout(mux)
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusOK) })
 	srv := &http.Server{
-		Handler:           apidoc.Rewrite(observability.Default.HTTP(service.middleware(mux))),
+		Handler:           observability.Default.HTTP(service.middleware(mux)),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       20 * time.Second,
 		WriteTimeout:      35 * time.Second,
@@ -84,13 +83,13 @@ func main() {
 	}
 
 	go func() {
-		log.Printf("careold-go listening on %s", ln.Addr())
+		log.Printf("suining-care listening on %s", ln.Addr())
 		if err := srv.Serve(ln); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("serve: %v", err)
 		}
 	}()
 
-	// 桌面端内嵌模式：写就绪文件并看护 Tauri 父进程。
+	// Desktop sidecar: publish readiness and watch the owning process.
 	writeReadyFile(readyFile, actualPort)
 	watchParent(parentPid, shutdown)
 

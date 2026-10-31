@@ -9,11 +9,11 @@ import (
 	"regexp"
 	"time"
 
-	dbstore "careold-go/internal/db"
-	"careold-go/internal/securestore"
 	"github.com/go-sql-driver/mysql"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	dbstore "suining-care/internal/db"
+	"suining-care/internal/securestore"
 )
 
 const telemetryDurableBatchSize = 32
@@ -59,10 +59,14 @@ func (repo telemetryRepository) QueueDurableReport(ctx context.Context, tx *dbst
 	if err != nil {
 		return err
 	}
-	_, err = tx.Exec(ctx, `INSERT INTO telemetry_inbox(device_id,elder_id,binding_epoch,request_id,payload,status,created_at,next_retry_at)
+	if _, err = tx.Exec(ctx, `INSERT INTO telemetry_inbox(device_id,elder_id,binding_epoch,request_id,payload,status,created_at,next_retry_at)
 		VALUES($1,$2,$3,$4,$5,'pending',$6,$6)`,
-		d.ID, *d.OldID, d.HealthEpoch, requestID, sealed, parsed.now.UTC())
-	return err
+		d.ID, *d.OldID, d.HealthEpoch, requestID, sealed, parsed.now.UTC()); err != nil {
+		return err
+	}
+	// A durable acknowledgement is also a real heartbeat. Update last-seen in
+	// the ingest transaction rather than waiting for a potentially delayed worker.
+	return touchDevice(ctx, tx, d.ID, parsed.battery, parsed.appVersion, parsed.now)
 }
 
 func durableQueueDuplicate(err error) bool {

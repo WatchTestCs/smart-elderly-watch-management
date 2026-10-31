@@ -23,7 +23,7 @@ func TestJSONBodyBoundary(t *testing.T) {
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			w := httptest.NewRecorder()
-			_, ok := bodyMap(w, httptest.NewRequest(http.MethodPost, "/restful/test", strings.NewReader(tt.body)))
+			_, ok := bodyMap(w, httptest.NewRequest(http.MethodPost, "/api/v1/test", strings.NewReader(tt.body)))
 			if ok != tt.valid {
 				t.Fatalf("ok=%v wanted %v, HTTP %d", ok, tt.valid, w.Code)
 			}
@@ -36,7 +36,7 @@ func TestJSONBodyBoundary(t *testing.T) {
 
 func TestOptionalDeviceBody(t *testing.T) {
 	w := httptest.NewRecorder()
-	m, ok := bodyMapOrEmpty(w, httptest.NewRequest(http.MethodPost, "/restful/device/list", bytes.NewReader(nil)))
+	m, ok := bodyMapOrEmpty(w, httptest.NewRequest(http.MethodPost, "/api/v1/device/list", bytes.NewReader(nil)))
 	if !ok || len(m) != 0 {
 		t.Fatalf("empty optional device body was rejected: %d", w.Code)
 	}

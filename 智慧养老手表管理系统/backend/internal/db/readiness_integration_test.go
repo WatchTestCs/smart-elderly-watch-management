@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"careold-go/internal/db"
 	"github.com/go-sql-driver/mysql"
 	"github.com/google/uuid"
+	"suining-care/internal/db"
 )
 
 // The server withdraws all business routes when this probe fails. A busy

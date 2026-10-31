@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"careold-go/internal/auth"
-	"careold-go/internal/session"
+	"suining-care/internal/auth"
+	"suining-care/internal/session"
 )
 
 func TestAdminDutyGateRestrictsLegacyRoutes(t *testing.T) {
@@ -39,41 +39,41 @@ func TestAdminDutyGateRestrictsLegacyRoutes(t *testing.T) {
 	}
 	for _, duty := range []string{"caregiver", "auditor"} {
 		mustExec(t, pool, "UPDATE care_staff_permission SET duty=$1 WHERE admin_id=$2", duty, adminID)
-		check("/restful/customer/delete", http.StatusForbidden)
-		check("/restful/device/list", http.StatusForbidden)
-		check("/restful/health/statistics", http.StatusForbidden)
-		check("/restful/care/transition", http.StatusNoContent)
-		check("/restful/security/factor", http.StatusNoContent)
+		check("/api/v1/customer/delete", http.StatusForbidden)
+		check("/api/v1/device/list", http.StatusForbidden)
+		check("/api/v1/health/statistics", http.StatusForbidden)
+		check("/api/v1/care/transition", http.StatusNoContent)
+		check("/api/v1/security/factor", http.StatusNoContent)
 	}
 	var deniedAuditCount int
 	if err := pool.QueryRow(
 		context.Background(),
-		"SELECT count(*) FROM care_sensitive_access_audit WHERE actor_id=$1 AND resource='/restful/legacy-admin-denied'",
+		"SELECT count(*) FROM care_sensitive_access_audit WHERE actor_id=$1 AND resource='/api/v1/legacy-admin-denied'",
 		adminID,
 	).Scan(&deniedAuditCount); err != nil || deniedAuditCount != 6 {
 		t.Fatalf("expected one privacy-safe access audit for each denied request, got %d: %v", deniedAuditCount, err)
 	}
 	mustExec(t, pool, "UPDATE care_staff_permission SET duty='supervisor' WHERE admin_id=$1", adminID)
-	check("/restful/customer/delete", http.StatusNoContent)
+	check("/api/v1/customer/delete", http.StatusNoContent)
 
 	// Migration compatibility is intentional until each legacy ADMIN has a duty.
 	mustExec(t, pool, "DELETE FROM care_staff_permission WHERE admin_id=$1", adminID)
-	check("/restful/device/list", http.StatusNoContent)
+	check("/api/v1/device/list", http.StatusNoContent)
 }
 
 func TestRestrictedAdminRouteAllowlist(t *testing.T) {
 	for _, path := range []string{
-		"/restful/care/receipt",
-		"/restful/care/newPrivilegedAction",
-		"/restful/customer/delete",
-		"/restful/notification/list",
+		"/api/v1/care/receipt",
+		"/api/v1/care/newPrivilegedAction",
+		"/api/v1/customer/delete",
+		"/api/v1/notifications/search",
 	} {
 		req := httptest.NewRequest(http.MethodPost, path, nil)
 		if restrictedAdminRouteAllowed(req) {
 			t.Fatalf("unexpected allowlist entry: %s", path)
 		}
 	}
-	req := httptest.NewRequest(http.MethodGet, "/restful/care/incidents", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/care/incidents", nil)
 	if restrictedAdminRouteAllowed(req) {
 		t.Fatal("wrong HTTP method bypassed duty gate")
 	}
@@ -95,7 +95,7 @@ func TestRestrictedAdminGateFailsClosedWithoutAuditStore(t *testing.T) {
 			w.WriteHeader(http.StatusNoContent)
 		},
 	)))
-	req := httptest.NewRequest(http.MethodPost, "/restful/customer/delete", nil)
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/customer/delete", nil)
 	req.AddCookie(&http.Cookie{Name: session.CookieName, Value: sess.ID})
 	rec := httptest.NewRecorder()
 	gate.ServeHTTP(rec, req)

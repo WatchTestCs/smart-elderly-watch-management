@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"careold-go/internal/db"
+	"suining-care/internal/db"
 )
 
 var ErrConflict = errors.New("same source record version has different content")

@@ -1,0 +1,18 @@
+=== RUN   TestDailyRebuildCorrectionsDeletionAndIsolation
+--- PASS: TestDailyRebuildCorrectionsDeletionAndIsolation (3.11s)
+=== RUN   TestContinuousSleepCountUsesLatestDay
+--- PASS: TestContinuousSleepCountUsesLatestDay (3.64s)
+=== RUN   TestContinuousStatisticsSubmicrosecondWindow
+--- PASS: TestContinuousStatisticsSubmicrosecondWindow (4.78s)
+=== RUN   TestContinuousDailySubmicrosecondInterval
+--- PASS: TestContinuousDailySubmicrosecondInterval (4.99s)
+=== RUN   TestExtraAuditOutOfOrderTelemetry
+    extra_audit_test.go:122: steps after 10:00 then 09:00=5000; position=map[page:1 pageSize:20 positionDtos:[map[beTime:2026-10-20 10:00:00 lat:30 lng:120 name:长者 oldId:1 sex:<nil> status:0]] returnCode:1111 total:1]
+--- PASS: TestExtraAuditOutOfOrderTelemetry (4.91s)
+=== RUN   TestExtraAuditPositionTimestamp
+    extra_audit_test.go:161: location sampled at 08:00; newer alarm at 10:00; displayed=map[beTime:2026-10-20 08:00:00 lat:30 lng:120 name:长者 oldId:1 sex:<nil> status:1]
+--- PASS: TestExtraAuditPositionTimestamp (4.82s)
+=== RUN   TestHealthStatisticsHotCacheConsistency
+--- PASS: TestHealthStatisticsHotCacheConsistency (4.72s)
+PASS
+ok  	suining-care/internal/handlers	32.852s

@@ -9,10 +9,10 @@ import (
 	_ "time/tzdata"
 	"unicode/utf8"
 
-	"careold-go/internal/fence"
-	"careold-go/internal/notify"
-	"careold-go/internal/response"
 	"github.com/jackc/pgx/v5"
+	"suining-care/internal/fence"
+	"suining-care/internal/notify"
+	"suining-care/internal/response"
 )
 
 type fenceConfig struct {
@@ -160,15 +160,15 @@ func (h *Handler) fenceList(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) fencePoint(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		capabilityCredentials
-		Point            fence.Point `json:"point"`
-		CoordinateSystem string      `json:"coordinateSystem"`
-		Accuracy         float64     `json:"accuracy"`
-		OccurredAt       time.Time   `json:"occurredAt"`
+		Point            *fence.Point `json:"point"`
+		CoordinateSystem string       `json:"coordinateSystem"`
+		Accuracy         float64      `json:"accuracy"`
+		OccurredAt       time.Time    `json:"occurredAt"`
 	}
 	if !decodeCapability(w, r, &req) {
 		return
 	}
-	if req.CoordinateSystem != "WGS84" || !fence.ValidPoint(req.Point) || req.Accuracy <= 0 || req.Accuracy > 1000 || math.IsNaN(req.Accuracy) || time.Since(req.OccurredAt) > 5*time.Minute || time.Until(req.OccurredAt) > time.Minute {
+	if req.CoordinateSystem != "WGS84" || req.Point == nil || !fence.ValidPoint(*req.Point) || req.Accuracy <= 0 || req.Accuracy > 1000 || math.IsNaN(req.Accuracy) || time.Since(req.OccurredAt) > 5*time.Minute || time.Until(req.OccurredAt) > time.Minute {
 		write400(w, "须提供明确的 WGS84 定位、精度和最近 5 分钟内的时间")
 		return
 	}
@@ -238,12 +238,12 @@ func (h *Handler) fencePoint(w http.ResponseWriter, r *http.Request) {
 		direction := ""
 		if !fence.Active(second, f.TimeBegin, f.TimeEnd) {
 			state = fence.State{Last: at}
-		} else if req.Accuracy > f.MaxAccuracy || fence.BoundaryDistance(f.Coordinates, req.Point) <= req.Accuracy {
+		} else if req.Accuracy > f.MaxAccuracy || fence.BoundaryDistance(f.Coordinates, *req.Point) <= req.Accuracy {
 			state.Count = 0
 			state.Since = time.Time{}
 			state.Last = at
 		} else {
-			direction = state.Observe(fence.Contains(f.Coordinates, req.Point), at, f.MinPoints, time.Duration(f.DwellSeconds)*time.Second)
+			direction = state.Observe(fence.Contains(f.Coordinates, *req.Point), at, f.MinPoints, time.Duration(f.DwellSeconds)*time.Second)
 		}
 		b, _ = json.Marshal(state)
 		_, err = tx.Exec(ctx, `INSERT INTO fence_state(fence_id,revision,payload) VALUES($1,$2,$3) ON CONFLICT(fence_id) DO UPDATE SET revision=EXCLUDED.revision,payload=EXCLUDED.payload`, f.ID, f.Revision, json.RawMessage(b))

@@ -5,9 +5,9 @@ import (
 	"errors"
 	"net/http"
 
-	"careold-go/internal/blob"
-	"careold-go/internal/db"
-	"careold-go/internal/response"
+	"suining-care/internal/blob"
+	"suining-care/internal/db"
+	"suining-care/internal/response"
 )
 
 func (h *Handler) images() (*blob.Manager, error) {

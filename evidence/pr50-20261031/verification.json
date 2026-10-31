@@ -1,0 +1,93 @@
+{
+  "previewSHA": "7b9766df5612d54c26c3e9f75cb21fb39b598a3d",
+  "startingPRHead": "36c4dbcee58764622ddf084af5496d2552b22484",
+  "pr": 50,
+  "branch": "codex/reliability-validation-20261026",
+  "newBranchesCreated": false,
+  "sourceFileSHA256": {
+    "智慧养老手表管理系统/backend/internal/handlers/coordinate.go": "116974cc755cae1d15264d991c1f3b5a0e0b42ecdee1f630af582a41ef564bde",
+    "智慧养老手表管理系统/backend/internal/handlers/telemetry_repository.go": "c3ee0b59f288cd605203cbc1d0403dc3f46c500795d3f83e37bc0a06a986b04a",
+    "智慧养老手表管理系统/backend/internal/handlers/core_sleep_location_order_test.go": "edff9067d62d481a867deea30ccf0a844c3f8f6c5f2bc2405ae0157842ea5578",
+    "智慧养老手表管理系统/backend/internal/handlers/alarm_snapshot_http_test.go": "a353dd4ded31f4b7ab82a95c3e795ef0f0b95c919c17d2a9216869d4712682d8",
+    "智慧养老手表管理系统/frontend/qa/ui-refinement-acceptance.cjs": "6a0aa750aad7b3d9f796f15f9cf93748930576d4eff6d448afdec678643ae809",
+    "智慧养老手表管理系统/frontend/package-lock.json": "4fef04a65c14f70ff7cd5dda64d0c0b56b99c9d9c2b5c9340217310556448c51"
+  },
+  "targetedDatabaseChecks": [
+    {
+      "name": "after-mysql",
+      "mode": "after",
+      "command": [
+        "go",
+        "test",
+        "-json",
+        "-race",
+        "-count=3",
+        "-timeout=600s",
+        "-run",
+        "^(TestAlarmSnapshotHTTPNeverBorrowsHistory|TestContinuousPositionKeepsAlarmAndLocationSnapshotsSeparate|TestContinuousSOSWithoutCoordinatesDoesNotBorrowLatestLocation|TestContinuousRebindLocationSnapshotUsesCurrentOwner|TestSOS.*|TestCareSOSRequestIDPreventsDuplicateAlerts|TestIntegrationCoordinatesAndSOS|TestExtraAuditOutOfOrderTelemetry|TestExtraAuditPositionTimestamp)$",
+        "./internal/handlers"
+      ],
+      "exit": 0,
+      "seconds": 291.867,
+      "counts": {
+        "pass": 48,
+        "fail": 0,
+        "skip": 0
+      },
+      "failed": [],
+      "skipped": []
+    },
+    {
+      "name": "after-postgres",
+      "mode": "after",
+      "command": [
+        "go",
+        "test",
+        "-json",
+        "-race",
+        "-count=3",
+        "-timeout=600s",
+        "-run",
+        "^(TestAlarmSnapshotHTTPNeverBorrowsHistory|TestContinuousPositionKeepsAlarmAndLocationSnapshotsSeparate|TestContinuousSOSWithoutCoordinatesDoesNotBorrowLatestLocation|TestContinuousRebindLocationSnapshotUsesCurrentOwner|TestSOS.*|TestCareSOSRequestIDPreventsDuplicateAlerts|TestIntegrationCoordinatesAndSOS|TestExtraAuditOutOfOrderTelemetry|TestExtraAuditPositionTimestamp)$",
+        "./internal/handlers"
+      ],
+      "exit": 0,
+      "seconds": 52.638,
+      "counts": {
+        "pass": 48,
+        "fail": 0,
+        "skip": 0
+      },
+      "failed": [],
+      "skipped": []
+    }
+  ],
+  "frontendUnitTests": 38,
+  "browserMockScripts": 11,
+  "browserMockAssertions": 1395,
+  "auditAfter": {
+    "info": 0,
+    "low": 0,
+    "moderate": 5,
+    "high": 0,
+    "critical": 0,
+    "total": 5
+  },
+  "nativeAndProductionAcceptance": false,
+  "scope": "Targeted success before delivery; supplemental full handlers and exact final CI are recorded post-commit separately.",
+  "sourceWorkingFileSHA256": {
+    "智慧养老手表管理系统/backend/internal/handlers/coordinate.go": "116974cc755cae1d15264d991c1f3b5a0e0b42ecdee1f630af582a41ef564bde",
+    "智慧养老手表管理系统/backend/internal/handlers/telemetry_repository.go": "c3ee0b59f288cd605203cbc1d0403dc3f46c500795d3f83e37bc0a06a986b04a",
+    "智慧养老手表管理系统/backend/internal/handlers/core_sleep_location_order_test.go": "edff9067d62d481a867deea30ccf0a844c3f8f6c5f2bc2405ae0157842ea5578",
+    "智慧养老手表管理系统/backend/internal/handlers/alarm_snapshot_http_test.go": "a353dd4ded31f4b7ab82a95c3e795ef0f0b95c919c17d2a9216869d4712682d8",
+    "智慧养老手表管理系统/frontend/qa/ui-refinement-acceptance.cjs": "9cff104442fa6d7a0c4db72ba1a793f776df7baecec712170ac6635c310d4fad",
+    "智慧养老手表管理系统/frontend/package-lock.json": "ce8167892891b9b12f36dcac024f433dd0a32b346615388f440c54f14ea8deb3"
+  },
+  "sourceEOLNormalization": {
+    "files": [
+      "智慧养老手表管理系统/frontend/qa/ui-refinement-acceptance.cjs",
+      "智慧养老手表管理系统/frontend/package-lock.json"
+    ],
+    "note": "Git LF normalization only; sourceFileSHA256 binds canonical staged bytes, sourceWorkingFileSHA256 preserves tested Windows bytes; normalized content checked identical."
+  }
+}

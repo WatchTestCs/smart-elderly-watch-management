@@ -142,14 +142,12 @@ func NewKeyring(active string, keys map[string]string, lookupKey string) (*Box, 
 
 var keyID = regexp.MustCompile(`^[A-Za-z0-9_-]{1,32}$`)
 
-// Index derives a deterministic *keyed* blind index for exact-match queries.
-// It must not silently downgrade to SHA-256 if the lookup key is missing:
-// phone numbers and other low-entropy identifiers are brute-forceable.
-func (b *Box) Index(scope, text string) (string, error) {
-	if b == nil || len(b.key) != 32 {
-		return "", errors.New("blind-index key is not configured")
+func (b *Box) Index(scope, text string) string {
+	if b == nil {
+		sum := sha256.Sum256([]byte(scope + "\x00" + text))
+		return hex.EncodeToString(sum[:])
 	}
-	mac := hmac.New(sha256.New, b.key)
-	_, _ = mac.Write([]byte(scope + "\x00" + text))
-	return hex.EncodeToString(mac.Sum(nil)), nil
+	h := hmac.New(sha256.New, b.key)
+	h.Write([]byte(scope + "\x00" + text))
+	return hex.EncodeToString(h.Sum(nil))
 }

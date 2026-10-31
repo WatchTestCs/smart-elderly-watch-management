@@ -19,14 +19,14 @@ import (
 	"testing"
 	"time"
 
-	"careold-go/internal/auth"
-	"careold-go/internal/blob"
-	"careold-go/internal/config"
-	"careold-go/internal/csrf"
-	"careold-go/internal/db"
-	"careold-go/internal/securestore"
-	"careold-go/internal/session"
 	"github.com/go-sql-driver/mysql"
+	"suining-care/internal/auth"
+	"suining-care/internal/blob"
+	"suining-care/internal/config"
+	"suining-care/internal/csrf"
+	"suining-care/internal/db"
+	"suining-care/internal/securestore"
+	"suining-care/internal/session"
 )
 
 // Real S3-compatible server + real mysqldump/mysql restore. No mock object store
@@ -74,7 +74,7 @@ func TestImageS3TwoInstancesAndRealRestore(t *testing.T) {
 	if err = writer.Close(); err != nil {
 		t.Fatal(err)
 	}
-	request, _ := http.NewRequest(http.MethodPost, a.URL+"/restful/image/saveImage", &form)
+	request, _ := http.NewRequest(http.MethodPost, a.URL+"/api/v1/image/saveImage", &form)
 	request.Header.Set("Content-Type", writer.FormDataContentType())
 	request.Header.Set(csrf.HeaderName, sess.CSRFToken)
 	request.AddCookie(&http.Cookie{Name: session.CookieName, Value: sess.ID})
@@ -105,14 +105,14 @@ func TestImageS3TwoInstancesAndRealRestore(t *testing.T) {
 		resp.Body.Close()
 		return resp.StatusCode
 	}
-	if code := post(a.URL, "/restful/family/updateTouPic", map[string]any{"familyPhone": "13800000001", "familyTouPic": key}); code != 200 {
+	if code := post(a.URL, "/api/v1/family/updateTouPic", map[string]any{"familyPhone": "13800000001", "familyTouPic": key}); code != 200 {
 		t.Fatalf("image reference HTTP %d", code)
 	}
-	if code := post(a.URL, "/restful/device/sos", map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "requestId": "restore-pending-sos"}); code != 200 {
+	if code := post(a.URL, "/api/v1/device/sos", map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "requestId": "restore-pending-sos", "bindingVersion": 1}); code != 200 {
 		t.Fatalf("durable SOS fixture HTTP %d", code)
 	}
 	read := func(server string) []byte {
-		req, _ := http.NewRequest(http.MethodGet, server+"/restful/image/download?name="+key, nil)
+		req, _ := http.NewRequest(http.MethodGet, server+"/api/v1/image/download?name="+key, nil)
 		req.AddCookie(&http.Cookie{Name: session.CookieName, Value: sess.ID})
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {

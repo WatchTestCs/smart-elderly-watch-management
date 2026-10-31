@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"careold-go/internal/config"
-	"careold-go/internal/handlers"
-	"careold-go/internal/session"
+	"suining-care/internal/config"
+	"suining-care/internal/handlers"
+	"suining-care/internal/session"
 )
 
 func TestConfigurationErrorIsVisibleWithoutBlockingApplication(t *testing.T) {
@@ -25,7 +25,7 @@ func TestConfigurationErrorIsVisibleWithoutBlockingApplication(t *testing.T) {
 		want    string
 	}{
 		{"connection outage", &databaseService{}, ""},
-		// /restful/service/status 公开可读，只回固定文案，不透出具体配置细节。
+		// /api/v1/service/status 公开可读，只回固定文案，不透出具体配置细节。
 		{"configuration error", &databaseService{configErr: err},
 			"服务端配置有误，依赖数据库的功能不可用，自动重连不会恢复；请检查环境变量配置后重启服务"},
 	} {
@@ -34,7 +34,7 @@ func TestConfigurationErrorIsVisibleWithoutBlockingApplication(t *testing.T) {
 			local.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("application")) })
 			app := test.service.middleware(local)
 			status := httptest.NewRecorder()
-			app.ServeHTTP(status, httptest.NewRequest("GET", "/restful/service/status", nil))
+			app.ServeHTTP(status, httptest.NewRequest("GET", "/api/v1/service/status", nil))
 			var body struct {
 				DatabaseReady bool   `json:"databaseReady"`
 				ConfigError   string `json:"configError"`
@@ -54,7 +54,7 @@ func TestConfigurationErrorIsVisibleWithoutBlockingApplication(t *testing.T) {
 				t.Fatal("configuration error blocked the local application")
 			}
 			business := httptest.NewRecorder()
-			app.ServeHTTP(business, httptest.NewRequest("POST", "/restful/device/sos", nil))
+			app.ServeHTTP(business, httptest.NewRequest("POST", "/api/v1/device/sos", nil))
 			if business.Code != http.StatusServiceUnavailable || !strings.Contains(business.Body.String(), "DATABASE_UNAVAILABLE") {
 				t.Fatal("unavailable business request did not retain its explicit failure")
 			}
@@ -74,11 +74,11 @@ func TestDatabaseUnavailableDoesNotBlockApplication(t *testing.T) {
 		body         string
 	}{
 		{"GET", "/", 200, "application"},
-		{"GET", "/restful/service/status", 200, `"databaseReady":false`},
+		{"GET", "/api/v1/service/status", 200, `"databaseReady":false`},
 		{"GET", "/openapi.json", 401, "需要授权"},
-		{"GET", "/restful/userLogin/session", 503, "DATABASE_UNAVAILABLE"},
-		{"POST", "/restful/device/sos", 503, "DATABASE_UNAVAILABLE"},
-		{"POST", "/restful/desktop/exit", 403, ""},
+		{"GET", "/api/v1/auth/session", 503, "DATABASE_UNAVAILABLE"},
+		{"POST", "/api/v1/device/sos", 503, "DATABASE_UNAVAILABLE"},
+		{"POST", "/api/v1/desktop/exit", 403, ""},
 	} {
 		t.Run(test.method+test.path, func(t *testing.T) {
 			w := httptest.NewRecorder()
@@ -93,13 +93,13 @@ func TestDatabaseUnavailableDoesNotBlockApplication(t *testing.T) {
 	var api http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { calls++; w.WriteHeader(204) })
 	service.api.Store(&api)
 	w := httptest.NewRecorder()
-	app.ServeHTTP(w, httptest.NewRequest("POST", "/restful/test", nil))
+	app.ServeHTTP(w, httptest.NewRequest("POST", "/api/v1/test", nil))
 	if w.Code != 204 || calls != 1 {
 		t.Fatal("database recovery did not activate API")
 	}
 	service.api.Store(nil)
 	w = httptest.NewRecorder()
-	app.ServeHTTP(w, httptest.NewRequest("POST", "/restful/test", nil))
+	app.ServeHTTP(w, httptest.NewRequest("POST", "/api/v1/test", nil))
 	if w.Code != 503 || calls != 1 {
 		t.Fatal("unavailable database accepted a business operation")
 	}
@@ -112,7 +112,7 @@ func TestLogoutDoesNotRequireDatabase(t *testing.T) {
 	local := http.NewServeMux()
 	handlers.New(nil, store, config.Config{}).MountLocalLogout(local)
 	app := (&databaseService{}).middleware(local)
-	request := httptest.NewRequest("POST", "/restful/userLogin/logout", nil)
+	request := httptest.NewRequest("POST", "/api/v1/auth/logout", nil)
 	request.AddCookie(&http.Cookie{Name: session.CookieName, Value: account.ID})
 	request.Header.Set("X-CSRF-TOKEN", account.CSRFToken)
 	result := httptest.NewRecorder()

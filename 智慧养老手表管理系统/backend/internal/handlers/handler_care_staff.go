@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"careold-go/internal/response"
+	"suining-care/internal/response"
 )
 
 // A legacy ADMIN with no duty assignment is supervisor until migrated.

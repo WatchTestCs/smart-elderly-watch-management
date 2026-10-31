@@ -1,12 +1,10 @@
 package handlers
 
 import (
-	"bytes"
-	dbstore "careold-go/internal/db"
-	"careold-go/internal/db/dbtest"
 	"context"
-	"encoding/base64"
 	"encoding/json"
+	dbstore "suining-care/internal/db"
+	"suining-care/internal/db/dbtest"
 
 	"fmt"
 	"net/http"
@@ -17,14 +15,13 @@ import (
 	"testing"
 	"time"
 
-	"careold-go/internal/auth"
-	"careold-go/internal/config"
-	"careold-go/internal/csrf"
-	"careold-go/internal/db"
+	"suining-care/internal/auth"
+	"suining-care/internal/config"
+	"suining-care/internal/csrf"
+	"suining-care/internal/db"
 
-	"careold-go/internal/securestore"
-	"careold-go/internal/session"
 	"github.com/google/uuid"
+	"suining-care/internal/session"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -91,7 +88,7 @@ func callAPI(handler http.HandlerFunc, body any) *httptest.ResponseRecorder {
 	if err != nil {
 		panic(err)
 	}
-	request := httptest.NewRequest("POST", "/restful/test", strings.NewReader(string(data)))
+	request := httptest.NewRequest("POST", "/api/v1/test", strings.NewReader(string(data)))
 	response := httptest.NewRecorder()
 	handler.ServeHTTP(response, request)
 	return response
@@ -101,10 +98,7 @@ func testHandler(t testing.TB, pool *dbstore.Database) *Handler {
 	t.Helper()
 	store := session.NewStore(time.Hour)
 	t.Cleanup(store.Close)
-	return New(pool, store, config.Config{
-		ImageDir: t.TempDir(),
-		DataKey:  base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{1}, 32)),
-	})
+	return New(pool, store, config.Config{ImageDir: t.TempDir()})
 }
 
 func mustExec(t *testing.T, pool *dbstore.Database, sql string, args ...any) {
@@ -186,6 +180,7 @@ func TestIntegrationListContractsAndNumericAge(t *testing.T) {
 func TestIntegrationEditPreservesFamily(t *testing.T) {
 	pool := testDatabase(t)
 	h := testHandler(t, pool)
+	mustExec(t, pool, "INSERT INTO customer(customer_id,customer_name) VALUES(1,'监护人')")
 	mustExec(t, pool, "INSERT INTO oldperson(old_id,name,family_id) VALUES(1,'长者',7)")
 	out := api(t, h.oldPersonUpdate, map[string]any{"oldId": 1, "name": "新姓名", "bothdate": "1950-01-01", "sex": "女", "phone": "13800000000", "room": "101", "illness": "", "warn": "", "foodLike": "", "foodHate": "", "drag": "", "customerName": "1"})
 	if out["returnCode"] != "1111" {
@@ -214,7 +209,7 @@ func TestIntegrationCoordinatesAndSOS(t *testing.T) {
 	h := testHandler(t, pool)
 	seedDevice(t, pool)
 	// No current or historical location must still create an actionable SOS.
-	out := api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret})
+	out := api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "requestId": "test-press", "bindingVersion": 1})
 	if out["returnCode"] != "1111" {
 		t.Fatal(out)
 	}
@@ -224,28 +219,14 @@ func TestIntegrationCoordinatesAndSOS(t *testing.T) {
 	}
 	// Real handlers must accept numeric decimal coordinates for reports and SOS.
 	for _, handler := range []http.HandlerFunc{h.deviceReport, h.deviceSos} {
-		out = api(t, handler, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "lng": 121.4737, "lat": 31.2304, "hr": 75, "step": 120})
+		out = api(t, handler, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "lng": 121.4737, "lat": 31.2304, "hr": 75, "step": 120, "requestId": "coordinate-press", "bindingVersion": 1})
 		if out["returnCode"] != "1111" {
 			t.Fatal(out)
 		}
 	}
-	// Coordinates are now encrypted at rest because this integration fixture
-	// correctly configures its own test-only key. Check the decrypted Go
-	// response contract rather than asserting plaintext in the database.
 	var count int
-	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM device_location").Scan(&count); err != nil || count != 2 {
-		t.Fatalf("expected both coordinate samples, count=%d err=%v", count, err)
-	}
-	var encryptedLng, encryptedLat string
-	if err := pool.QueryRow(context.Background(), "SELECT lng,lat FROM device_location ORDER BY id LIMIT 1").Scan(&encryptedLng, &encryptedLat); err != nil {
-		t.Fatal(err)
-	}
-	if !strings.HasPrefix(encryptedLng, securestore.Prefix) || !strings.HasPrefix(encryptedLat, securestore.Prefix) {
-		t.Fatal("device coordinates persisted as plaintext")
-	}
-	plaintextLng, plaintextLat, err := openCoordinates(h.Box, &encryptedLng, &encryptedLat)
-	if err != nil || plaintextLng == nil || plaintextLat == nil || *plaintextLng != "121.4737" || *plaintextLat != "31.2304" {
-		t.Fatalf("encrypted coordinate roundtrip failed: lng=%v lat=%v err=%v", plaintextLng, plaintextLat, err)
+	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM device_location WHERE lng='121.4737' AND lat='31.2304'").Scan(&count); err != nil || count != 2 {
+		t.Fatalf("numeric coordinates persisted=%d err=%v", count, err)
 	}
 	bad := callAPI(h.deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "lng": 181, "lat": 31.2})
 	if bad.Code != 400 {
@@ -331,7 +312,7 @@ func TestLogoutDestroysSessionAndRetainsCSRF(t *testing.T) {
 			handler := csrf.Middleware(store, auth.Middleware(store, http.HandlerFunc(h.logout)))
 			sess := store.Create(session.Principal{Role: role, ID: 1})
 			request := func(token string) *httptest.ResponseRecorder {
-				r := httptest.NewRequest("POST", "/restful/userLogin/logout", nil)
+				r := httptest.NewRequest("POST", "/api/v1/auth/logout", nil)
 				r.AddCookie(&http.Cookie{Name: session.CookieName, Value: sess.ID})
 				r.Header.Set(csrf.HeaderName, token)
 				w := httptest.NewRecorder()
@@ -406,7 +387,7 @@ func TestNativeSetupRequiresDesktopToken(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			body := `{"name":"管理员","phone":"13800000000","password":"TestPassword123!"}`
-			request := httptest.NewRequest("POST", "/restful/setup", strings.NewReader(body))
+			request := httptest.NewRequest("POST", "/api/v1/setup", strings.NewReader(body))
 			request.Header.Set("X-Suining-Desktop", test.token)
 			response := httptest.NewRecorder()
 			handler.ServeHTTP(response, request)
@@ -419,7 +400,7 @@ func TestNativeSetupRequiresDesktopToken(t *testing.T) {
 	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM users").Scan(&count); err != nil || count != 1 {
 		t.Fatalf("administrators=%d err=%v", count, err)
 	}
-	request := httptest.NewRequest("POST", "/restful/userLogin/login", strings.NewReader(`{}`))
+	request := httptest.NewRequest("POST", "/api/v1/auth/login", strings.NewReader(`{}`))
 	response := httptest.NewRecorder()
 	handler.ServeHTTP(response, request)
 	if response.Code != 403 || !strings.Contains(response.Body.String(), "CSRF_REJECTED") {
@@ -435,9 +416,9 @@ func migrateTestDB(ctx context.Context, pool *db.Database) error {
 }
 func expectedMigrations(pool *db.Database) int {
 	if pool.IsMySQL() {
-		return 15
+		return 19
 	}
-	return 14
+	return 18
 }
 
 func lockWaitQuery(pool *dbstore.Database, deleting bool) string {

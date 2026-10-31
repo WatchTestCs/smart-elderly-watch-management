@@ -1,0 +1,66 @@
+[
+  {
+    "name": "before-mysql",
+    "mode": "before",
+    "command": [
+      "go",
+      "test",
+      "-json",
+      "-race",
+      "-count=3",
+      "-timeout=600s",
+      "-run",
+      "^TestAlarmSnapshotHTTPNeverBorrowsHistory$",
+      "./internal/handlers"
+    ],
+    "exit": 1,
+    "seconds": 68.027,
+    "counts": {
+      "pass": 3,
+      "fail": 6,
+      "skip": 0
+    },
+    "failed": [
+      "TestAlarmSnapshotHTTPNeverBorrowsHistory/with_history",
+      "TestAlarmSnapshotHTTPNeverBorrowsHistory",
+      "TestAlarmSnapshotHTTPNeverBorrowsHistory/with_history",
+      "TestAlarmSnapshotHTTPNeverBorrowsHistory",
+      "TestAlarmSnapshotHTTPNeverBorrowsHistory/with_history",
+      "TestAlarmSnapshotHTTPNeverBorrowsHistory",
+      "suining-care/internal/handlers"
+    ],
+    "skipped": []
+  },
+  {
+    "name": "before-postgres",
+    "mode": "before",
+    "command": [
+      "go",
+      "test",
+      "-json",
+      "-race",
+      "-count=3",
+      "-timeout=600s",
+      "-run",
+      "^TestAlarmSnapshotHTTPNeverBorrowsHistory$",
+      "./internal/handlers"
+    ],
+    "exit": 1,
+    "seconds": 9.002,
+    "counts": {
+      "pass": 3,
+      "fail": 6,
+      "skip": 0
+    },
+    "failed": [
+      "TestAlarmSnapshotHTTPNeverBorrowsHistory/with_history",
+      "TestAlarmSnapshotHTTPNeverBorrowsHistory",
+      "TestAlarmSnapshotHTTPNeverBorrowsHistory/with_history",
+      "TestAlarmSnapshotHTTPNeverBorrowsHistory",
+      "TestAlarmSnapshotHTTPNeverBorrowsHistory/with_history",
+      "TestAlarmSnapshotHTTPNeverBorrowsHistory",
+      "suining-care/internal/handlers"
+    ],
+    "skipped": []
+  }
+]

@@ -28,33 +28,26 @@ func TestCompileMySQLQueryRewrites(t *testing.T) {
 		{"字面量里的 now 不动", "SELECT 'now()'", "SELECT 'now()'", nil},
 		{"标识符里的 now 不动", "SELECT snow() FROM t", "SELECT snow() FROM t", nil},
 
-		// 3. PostgreSQL 正则操作符 ~ → REGEXP（间距不敏感，这是曾经的静默错误）
-		{"正则操作符带空格", "SELECT 1 FROM family f WHERE f.family_phone ~ '^1[0-9]{10}$'", "SELECT 1 FROM family f WHERE f.family_phone REGEXP '^1[0-9]{10}$'", nil},
-		{"正则操作符无空格", "SELECT 1 FROM family f WHERE f.family_phone~'^1'", "SELECT 1 FROM family f WHERE f.family_phone REGEXP '^1'", nil},
-
-		// 4. interval 'N unit' → INTERVAL N UNIT
+		// 3. interval 'N unit' → INTERVAL N UNIT
 		{"interval 单位去复数", "SELECT now() - interval '3 days'", "SELECT CURRENT_TIMESTAMP(6) - INTERVAL 3 DAY", nil},
 		{"interval 秒", "SELECT now() - interval '30 seconds'", "SELECT CURRENT_TIMESTAMP(6) - INTERVAL 30 SECOND", nil},
 
-		// 5. TO_CHAR → DATE_FORMAT（三种精度）
+		// 4. TO_CHAR → DATE_FORMAT（三种精度）
 		{"TO_CHAR 日期", "SELECT TO_CHAR(create_time,'YYYY-MM-DD') FROM t", "SELECT DATE_FORMAT(create_time,'%Y-%m-%d') FROM t", nil},
 		{"TO_CHAR 时间戳", "SELECT TO_CHAR(t,'YYYY-MM-DD HH24:MI:SS')", "SELECT DATE_FORMAT(t,'%Y-%m-%d %H:%i:%s')", nil},
 		{"TO_CHAR 毫秒", "SELECT TO_CHAR(t,'YYYY-MM-DD HH24:MI:SS.MS')", "SELECT LEFT(DATE_FORMAT(t,'%Y-%m-%d %H:%i:%s.%f'),23)", nil},
 
-		// 6. 其余类型/函数改写
+		// 5. 其余类型/函数改写
 		{"varchar 转换", "SELECT CAST(x AS varchar)", "SELECT CAST(x AS CHAR)", nil},
-		{"bool_or 聚合", "SELECT bool_or(active) FROM rule_state", "SELECT max(active) FROM rule_state", nil},
-		{"text 表加反引号", "SELECT * FROM text WHERE id=$1", "SELECT * FROM `text` WHERE id=?", []int{0}},
 
-		// 7. ON CONFLICT 家族
+		// 6. ON CONFLICT 家族
 		{"ON CONFLICT DO UPDATE 且 excluded 转 VALUES", "INSERT INTO t(a,b) VALUES($1,$2) ON CONFLICT(a) DO UPDATE SET b=EXCLUDED.b", "INSERT INTO t(a,b) VALUES(?,?) ON DUPLICATE KEY UPDATE b=VALUES(b)", []int{0, 1}},
 		{"DO NOTHING 默认用主键 id", "INSERT INTO care_notification_outbox(a) VALUES($1) ON CONFLICT DO NOTHING", "INSERT INTO care_notification_outbox(a) VALUES(?) ON DUPLICATE KEY UPDATE id=id", []int{0}},
-		{"watch_info 的 DO NOTHING 用 device_id", "INSERT INTO watch_info(a) VALUES($1) ON CONFLICT DO NOTHING", "INSERT INTO watch_info(a) VALUES(?) ON DUPLICATE KEY UPDATE device_id=device_id", []int{0}},
 
-		// 8. 行锁语法次序
+		// 7. 行锁语法次序
 		{"SKIP LOCKED 的 LIMIT 前移", "SELECT id FROM message_outbox WHERE status='pending' ORDER BY id FOR UPDATE SKIP LOCKED LIMIT 20", "SELECT id FROM message_outbox WHERE status='pending' ORDER BY id LIMIT 20 FOR UPDATE SKIP LOCKED", nil},
 
-		// 9. 唯一被硬编码的时间偏移形状
+		// 8. 唯一被硬编码的时间偏移形状
 		{"硬编码的时间偏移", "SELECT now()+($3 * interval '1 second')", "SELECT TIMESTAMPADD(SECOND,?,CURRENT_TIMESTAMP(6))", []int{2}},
 	}
 
@@ -80,14 +73,17 @@ func TestCompileMySQLQueryRewrites(t *testing.T) {
 	}
 }
 
-// 未支持的 PostgreSQL 操作符必须报错，而不是生成一条"能跑但算错"的 MySQL。
-func TestCompileMySQLQueryRejectsUnsupportedOperators(t *testing.T) {
+// PostgreSQL regex syntax is no longer translated globally. Any leaked
+// operator outside a quoted literal must fail before reaching MySQL.
+func TestCompileMySQLQueryRejectsPostgresRegexOperators(t *testing.T) {
 	for _, query := range []string{
+		"SELECT 1 FROM t WHERE a ~ 'x'",
+		"SELECT 1 FROM t WHERE a~'x'",
 		"SELECT 1 FROM t WHERE a ~~ 'x'",
 		"SELECT 1 FROM t WHERE a ~* 'x'",
 	} {
 		if _, err := compileMySQLQuery(query); err == nil {
-			t.Fatalf("%q 应被拒绝，否则会静默产生错误结果", query)
+			t.Fatalf("%q must be selected at the call site", query)
 		}
 	}
 }
@@ -126,5 +122,81 @@ func TestMySQLQueryRejectsMissingArguments(t *testing.T) {
 	}
 	if _, _, err := mysqlQuery("SELECT $0", nil); err == nil {
 		t.Fatal("$0 不是合法占位符")
+	}
+}
+
+func TestMySQLQueryPreservesRepeatedAndDirectParameterModes(t *testing.T) {
+	directArgs := []any{"a", "b"}
+	sql, args, err := mysqlQuery("SELECT $1,$2", directArgs)
+	if err != nil || sql != "SELECT ?,?" || len(args) != 2 || args[0] != "a" || args[1] != "b" {
+		t.Fatalf("direct binding changed: sql=%q args=%v err=%v", sql, args, err)
+	}
+	if cap(args) != len(args) {
+		t.Fatalf("direct binding must not expose caller spare capacity: len=%d cap=%d", len(args), cap(args))
+	}
+
+	sql, args, err = mysqlQuery("SELECT $2,$1,$2", []any{"first", "second"})
+	if err != nil || sql != "SELECT ?,?,?" || len(args) != 3 ||
+		args[0] != "second" || args[1] != "first" || args[2] != "second" {
+		t.Fatalf("reordered binding changed: sql=%q args=%v err=%v", sql, args, err)
+	}
+}
+
+func TestCompileMySQLQueryDoesNotRewriteBoolOr(t *testing.T) {
+	query := "SELECT bool_or(active) FROM rule_state"
+	plan, err := compileMySQLQuery(query)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if plan.sql != query {
+		t.Fatalf("bool_or must be owned by the calling domain, got %s", plan.sql)
+	}
+}
+
+func TestCompileMySQLQueryDoesNotKnowSocialTextTable(t *testing.T) {
+	plan, err := compileMySQLQuery("SELECT * FROM text WHERE id=$1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if plan.sql != "SELECT * FROM text WHERE id=?" {
+		t.Fatalf("social text table must be owned by its repository, got %s", plan.sql)
+	}
+}
+
+func TestCompileMySQLQueryHasNoBusinessTableSpecialCases(t *testing.T) {
+	position := "SELECT GREATEST(COALESCE(l.be_time, o.be_time), COALESCE(a.be_time, o.be_time)) FROM oldperson o"
+	plan, err := compileMySQLQuery(position)
+	if err != nil || plan.sql != position {
+		t.Fatalf("position SQL must no longer be table-special-cased: sql=%q err=%v", plan.sql, err)
+	}
+
+	plan, err = compileMySQLQuery("INSERT INTO watch_info(a) VALUES($1) ON CONFLICT DO NOTHING")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if plan.sql != "INSERT INTO watch_info(a) VALUES(?) ON DUPLICATE KEY UPDATE id=id" {
+		t.Fatalf("watch_info must use only generic DO NOTHING translation now: %s", plan.sql)
+	}
+}
+
+func TestCompileMySQLQueryPreservesSQLComments(t *testing.T) {
+	cases := []struct {
+		name, query, want string
+	}{
+		{"line", "SELECT $1 -- $9 ~ now()\n", "SELECT ? -- $9 ~ now()\n"},
+		{"hash", "SELECT $1 # $9 ~ now()\n", "SELECT ? # $9 ~ now()\n"},
+		{"block", "SELECT /* $9 ~ now() */ $1", "SELECT /* $9 ~ now() */ ?"},
+		{"operator", "SELECT $1 /* ~~ ~* */", "SELECT ? /* ~~ ~* */"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := compileMySQLQuery(tc.query)
+			if err != nil || got.sql != tc.want || len(got.positions) != 1 {
+				t.Fatalf("sql=%q positions=%v err=%v; want %q", got.sql, got.positions, err, tc.want)
+			}
+		})
+	}
+	if _, err := compileMySQLQuery("SELECT 1 /* unfinished"); err == nil {
+		t.Fatal("unterminated block comment must fail")
 	}
 }

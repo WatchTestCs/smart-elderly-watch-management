@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"careold-go/internal/db/dbtest"
-	"careold-go/internal/session"
+	"suining-care/internal/db/dbtest"
+	"suining-care/internal/session"
 )
 
 func TestCapabilityReadsAreAudited(t *testing.T) {
@@ -19,7 +19,7 @@ func TestCapabilityReadsAreAudited(t *testing.T) {
 	sess := store.Create(session.Principal{Role: "ADMIN", ID: 1})
 	calls := 0
 	h := sensitiveCareAudit(pool, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { calls++; w.WriteHeader(http.StatusOK) }))
-	for _, path := range []string{"/restful/fence/events", "/restful/alert/reviews", "/restful/health/daily"} {
+	for _, path := range []string{"/api/v1/fence-events/search", "/api/v1/alert-reviews/search", "/api/v1/health/daily-query"} {
 		r := httptest.NewRequest("POST", path, strings.NewReader(`{"secret":"must-not-be-audited"}`))
 		r = session.WithContext(r, sess)
 		w := httptest.NewRecorder()
@@ -33,7 +33,7 @@ func TestCapabilityReadsAreAudited(t *testing.T) {
 		t.Fatal(count, calls, err)
 	}
 	pool.Close()
-	r := session.WithContext(httptest.NewRequest("POST", "/restful/fence/events", nil), sess)
+	r := session.WithContext(httptest.NewRequest("POST", "/api/v1/fence-events/search", nil), sess)
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, r)
 	if w.Code != 503 || calls != 3 {

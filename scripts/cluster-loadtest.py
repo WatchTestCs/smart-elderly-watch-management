@@ -38,11 +38,11 @@ def generate(process, config, run, start, duration, threads, batch):
                 body = {'deviceNo': device['deviceNo'], 'secret': device['secret'], 'bindingVersion': device.get('bindingVersion', 1),
                         'samples': [{'recordId': f'{identity}-{i}', 'source': 'cluster-benchmark', 'sourceDevice': device['deviceNo'],
                                      'metric': 'heart_rate', 'unit': 'count/min', 'value': 72, 'start': now, 'end': now, 'version': 1} for i in range(batch)]}
-                path = '/restful/device/healthBatch'
+                path = '/api/v1/device/healthBatch'
                 headers = {'Content-Type': 'application/json'}
             else:
                 body = {'title': f'cl-{identity}', 'textMain': 'Synthetic cluster benchmark', 'fileListName': []}
-                path = '/restful/text/add'
+                path = '/api/v1/text/add'
                 headers = {'Content-Type': 'application/json', 'Cookie': config['cookie'], 'X-CSRF-TOKEN': config['csrf']}
             body = json.dumps(body, separators=(',', ':'))
             endpoint = (process*threads+index+sequence) % len(urls)

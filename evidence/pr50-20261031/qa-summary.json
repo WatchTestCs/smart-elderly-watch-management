@@ -1,0 +1,68 @@
+[
+  {
+    "file": "architecture-acceptance.json",
+    "checks": 23,
+    "failed": 0,
+    "scope": "API mocks, production browser build"
+  },
+  {
+    "file": "browser-acceptance.json",
+    "checks": 305,
+    "failed": 0,
+    "scope": "API mocks, production browser build"
+  },
+  {
+    "file": "controls-acceptance.json",
+    "checks": 656,
+    "failed": 0,
+    "scope": "API mocks, production browser build"
+  },
+  {
+    "file": "database-availability.json",
+    "checks": 13,
+    "failed": 0,
+    "scope": "API mocks, production browser build"
+  },
+  {
+    "file": "elder-delete.json",
+    "checks": 8,
+    "failed": 0,
+    "scope": "API mocks, production browser build"
+  },
+  {
+    "file": "forms-acceptance.json",
+    "checks": 30,
+    "failed": 0,
+    "scope": "API mocks, production browser build"
+  },
+  {
+    "file": "issues-acceptance.json",
+    "checks": 42,
+    "failed": 0,
+    "scope": "API mocks, production browser build"
+  },
+  {
+    "file": "lifecycle-acceptance.json",
+    "checks": 15,
+    "failed": 0,
+    "scope": "API mocks, production browser build"
+  },
+  {
+    "file": "screen-acceptance.json",
+    "checks": 169,
+    "failed": 0,
+    "scope": "API mocks, production browser build"
+  },
+  {
+    "file": "setup-browser-acceptance.json",
+    "checks": 10,
+    "failed": 0,
+    "scope": "API mocks, production browser build"
+  },
+  {
+    "file": "ui-refinement.json",
+    "checks": 124,
+    "failed": 0,
+    "scope": "API mocks, production browser build"
+  }
+]

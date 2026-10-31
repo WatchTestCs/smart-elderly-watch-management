@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"careold-go/internal/db/dbtest"
-	"careold-go/internal/securestore"
+	"suining-care/internal/db/dbtest"
+	"suining-care/internal/securestore"
 )
 
 func TestBatchEnqueueBoundariesIdempotenceAndRollback(t *testing.T) {

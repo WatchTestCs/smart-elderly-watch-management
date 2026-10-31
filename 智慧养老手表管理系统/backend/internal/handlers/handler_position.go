@@ -1,10 +1,10 @@
 package handlers
 
 import (
-	"careold-go/internal/auth"
-	dbstore "careold-go/internal/db"
-	"careold-go/internal/response"
-	"careold-go/internal/securestore"
+	"suining-care/internal/auth"
+	dbstore "suining-care/internal/db"
+	"suining-care/internal/response"
+	"suining-care/internal/securestore"
 
 	"net/http"
 	"strconv"
@@ -12,28 +12,49 @@ import (
 )
 
 // ---------------------------------------------------------------------------
-// PositionController (/restful/position)
+// PositionController (/api/v1/position)
 // ---------------------------------------------------------------------------
 
-const posLatest = `SELECT o.name, o.old_id, o.sex, l.lng, l.lat,
-	GREATEST(COALESCE(l.be_time, o.be_time), COALESCE(a.be_time, o.be_time)) AS be_time,
-	COALESCE(a.status, '0') AS status
+func positionLatestTimeExpr(mysql bool) string {
+	return "l.be_time"
+}
+
+func positionLatestSQL(mysql bool) string {
+	return `SELECT o.name, o.old_id, o.sex, l.lng, l.lat, ` + positionLatestTimeExpr(mysql) + ` AS be_time,
+	COALESCE(a.status, '0') AS status, a.be_time AS alarm_time, a.lng AS alarm_lng, a.lat AS alarm_lat,
+	l.position_metadata AS location_metadata, a.position_metadata AS alarm_metadata, COALESCE(a.kind,'unknown') AS alarm_kind
 	FROM oldperson o
-	LEFT JOIN (SELECT old_id, lng, lat, be_time,
-		ROW_NUMBER() OVER (PARTITION BY old_id ORDER BY id DESC) AS rn FROM device_location) l
+	LEFT JOIN (SELECT old_id, lng, lat, be_time, position_metadata,
+		ROW_NUMBER() OVER (PARTITION BY old_id ORDER BY be_time DESC, id DESC) AS rn FROM device_location) l
 		ON l.old_id = o.old_id AND l.rn = 1
-	LEFT JOIN (SELECT old_id, status, be_time,
+	LEFT JOIN (SELECT old_id, status, be_time, lng, lat, kind, position_metadata,
 		ROW_NUMBER() OVER (PARTITION BY old_id ORDER BY be_time DESC, id DESC) AS rn FROM alarm_precess) a
 		ON a.old_id = o.old_id AND a.rn = 1`
+}
 
 func scanPositionRow(box *securestore.Box, row dbstore.Row) (map[string]any, error) {
 	var name, sex, lng, lat, status *string
+	var alarmLng, alarmLat *string
+	var positionRaw, alarmRaw *string
+	var alarmKind string
 	var oldID int64
-	var beTime *time.Time
-	if err := row.Scan(&name, &oldID, &sex, &lng, &lat, &beTime, &status); err != nil {
+	var beTime, alarmTime *time.Time
+	if err := row.Scan(&name, &oldID, &sex, &lng, &lat, &beTime, &status, &alarmTime, &alarmLng, &alarmLat, &positionRaw, &alarmRaw, &alarmKind); err != nil {
 		return nil, err
 	}
 	lng, lat, err := openCoordinates(box, lng, lat)
+	if err != nil {
+		return nil, err
+	}
+	alarmLng, alarmLat, err = openCoordinates(box, alarmLng, alarmLat)
+	if err != nil {
+		return nil, err
+	}
+	position, err := openPositionMetadata(box, positionRaw)
+	if err != nil {
+		return nil, err
+	}
+	alarm, err := openPositionMetadata(box, alarmRaw)
 	if err != nil {
 		return nil, err
 	}
@@ -41,10 +62,13 @@ func scanPositionRow(box *securestore.Box, row dbstore.Row) (map[string]any, err
 		"name": name, "oldId": oldID, "sex": sex,
 		"lng": lng, "lat": lat,
 		"beTime": tsOrNil(beTime), "status": status,
+		"alarmTime": tsOrNil(alarmTime), "alarmLng": alarmLng, "alarmLat": alarmLat,
+		"alarmKind": alarmKind, "alarmSource": alarm.Source, "alarmSampledAt": metadataSampleTime(alarm.SampledAt), "alarmAccuracy": alarm.Accuracy, "alarmValidity": alarm.Validity,
+		"positionSource": position.Source, "positionSampledAt": metadataSampleTime(position.SampledAt), "positionAccuracy": position.Accuracy, "positionValidity": position.Validity,
 	}, nil
 }
 
-// POST /restful/position/select —— 全部老人最新位置分页查询（ADMIN）。
+// POST /api/v1/position/select —— 全部老人最新位置分页查询（ADMIN）。
 func (h *Handler) positionSelect(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -60,7 +84,7 @@ func (h *Handler) positionSelect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := r.Context()
-	base := posLatest + ` WHERE ($1='' OR o.name LIKE '%'||$1||'%') ORDER BY be_time DESC, o.old_id`
+	base := positionLatestSQL(h.DB.IsMySQL()) + ` WHERE ($1='' OR o.name LIKE '%'||$1||'%') ORDER BY be_time DESC, o.old_id`
 	var total int64
 	if err := h.DB.QueryRow(ctx, `SELECT COUNT(*) FROM (`+base+`) AS t`, name).Scan(&total); err != nil {
 		response.Error500(w, ref())
@@ -90,7 +114,7 @@ func (h *Handler) positionSelect(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// POST /restful/position/selectFamily —— 家属查自己老人的最新位置（ADMIN 或 FAMILY）。
+// POST /api/v1/position/selectFamily —— 家属查自己老人的最新位置（ADMIN 或 FAMILY）。
 func (h *Handler) positionSelectFamily(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -138,12 +162,13 @@ func (h *Handler) positionSelectFamily(w http.ResponseWriter, r *http.Request) {
 	}
 	rows, err := h.DB.Query(ctx,
 		`SELECT o.name, o.old_id, o.sex, l.lng, l.lat,
-			GREATEST(COALESCE(l.be_time, o.be_time), COALESCE(a.be_time, o.be_time)) AS be_time,
-			COALESCE(a.status, '0') AS status
+			`+positionLatestTimeExpr(h.DB.IsMySQL())+` AS be_time,
+			COALESCE(a.status, '0') AS status, a.be_time AS alarm_time, a.lng AS alarm_lng, a.lat AS alarm_lat,
+			l.position_metadata AS location_metadata, a.position_metadata AS alarm_metadata, COALESCE(a.kind,'unknown') AS alarm_kind
 		 FROM oldperson o
-		 LEFT JOIN (SELECT old_id, lng, lat, be_time FROM device_location WHERE old_id=$1 ORDER BY id DESC LIMIT 1) l
+		 LEFT JOIN (SELECT old_id, lng, lat, be_time, position_metadata FROM device_location WHERE old_id=$1 ORDER BY be_time DESC, id DESC LIMIT 1) l
 			ON l.old_id = o.old_id
-		 LEFT JOIN (SELECT old_id, status, be_time FROM alarm_precess WHERE old_id=$2 ORDER BY be_time DESC, id DESC LIMIT 1) a
+		 LEFT JOIN (SELECT old_id, status, be_time, lng, lat, kind, position_metadata FROM alarm_precess WHERE old_id=$2 ORDER BY be_time DESC, id DESC LIMIT 1) a
 			ON a.old_id = o.old_id
 		 WHERE o.old_id=$3`, oldID, oldID, oldID)
 	if err != nil {

@@ -1,0 +1,239 @@
+
+=== before ===
+=== RUN   TestPR50AlarmContextRetainsDeclaredMetadataAndKind
+    pr50_context_regression_test.go:15: declared alarm metadata was lost or invented: map[alarmLat:30 alarmLng:120 alarmTime:2026-10-20 10:00:00 beTime:2026-10-20 10:00:00 lat:30 lng:120 name:长者 oldId:1 sex:<nil> status:1]
+    pr50_context_regression_test.go:24: later positioning changed the alarm context or lost its own metadata: map[alarmLat:30 alarmLng:120 alarmTime:2026-10-20 10:00:00 beTime:2026-10-20 11:00:00 lat:31 lng:121 name:长者 oldId:1 sex:<nil> status:1]
+    pr50_context_regression_test.go:29: SOS without location must not inherit context from positioning: map[alarmLat:<nil> alarmLng:<nil> alarmTime:2026-10-31 05:58:06 beTime:2026-10-20 11:00:00 lat:31 lng:121 name:长者 oldId:1 sex:<nil> status:1]
+--- FAIL: TestPR50AlarmContextRetainsDeclaredMetadataAndKind (3.31s)
+FAIL
+FAIL	suining-care/internal/handlers	3.429s
+FAIL
+
+=== after-first ===
+=== RUN   TestPR50AlarmContextRetainsDeclaredMetadataAndKind
+    pr50_context_regression_test.go:8: HTTP 500: {"message":"操作未完成，请重试；如仍失败，请提供此编号以便排查","reference":"f6cb91ec-6b1d-4361-9d4e-2fe5bd1d9c03","returnCode":"0000"}
+--- FAIL: TestPR50AlarmContextRetainsDeclaredMetadataAndKind (2.99s)
+FAIL
+FAIL	suining-care/internal/handlers	3.131s
+FAIL
+
+=== after ===
+=== RUN   TestPR50AlarmContextRetainsDeclaredMetadataAndKind
+--- PASS: TestPR50AlarmContextRetainsDeclaredMetadataAndKind (3.10s)
+PASS
+ok  	suining-care/internal/handlers	3.232s
+
+=== mysql ===
+=== RUN   TestAlarmSnapshotHTTPNeverBorrowsHistory
+=== RUN   TestAlarmSnapshotHTTPNeverBorrowsHistory/without_history
+=== RUN   TestAlarmSnapshotHTTPNeverBorrowsHistory/with_history
+--- PASS: TestAlarmSnapshotHTTPNeverBorrowsHistory (10.67s)
+    --- PASS: TestAlarmSnapshotHTTPNeverBorrowsHistory/without_history (5.23s)
+    --- PASS: TestAlarmSnapshotHTTPNeverBorrowsHistory/with_history (5.44s)
+=== RUN   TestCareSOSRequestIDPreventsDuplicateAlerts
+--- PASS: TestCareSOSRequestIDPreventsDuplicateAlerts (5.51s)
+=== RUN   TestContinuousPositionKeepsAlarmAndLocationSnapshotsSeparate
+--- PASS: TestContinuousPositionKeepsAlarmAndLocationSnapshotsSeparate (5.54s)
+=== RUN   TestContinuousSOSWithoutCoordinatesDoesNotBorrowLatestLocation
+--- PASS: TestContinuousSOSWithoutCoordinatesDoesNotBorrowLatestLocation (5.44s)
+=== RUN   TestContinuousRebindLocationSnapshotUsesCurrentOwner
+--- PASS: TestContinuousRebindLocationSnapshotUsesCurrentOwner (6.07s)
+=== RUN   TestPR50AlarmContextRetainsDeclaredMetadataAndKind
+--- PASS: TestPR50AlarmContextRetainsDeclaredMetadataAndKind (6.73s)
+=== RUN   TestPR50InvalidPositionMetadataDoesNotWriteEvents
+--- PASS: TestPR50InvalidPositionMetadataDoesNotWriteEvents (5.48s)
+=== RUN   TestPR50HistoricalMetadataAndGenericAlarmRemainUnknown
+--- PASS: TestPR50HistoricalMetadataAndGenericAlarmRemainUnknown (5.63s)
+PASS
+ok  	suining-care/internal/handlers	51.191s
+
+=== postgres ===
+=== RUN   TestContinuousPositionKeepsAlarmAndLocationSnapshotsSeparate
+--- PASS: TestContinuousPositionKeepsAlarmAndLocationSnapshotsSeparate (0.28s)
+=== RUN   TestContinuousSOSWithoutCoordinatesDoesNotBorrowLatestLocation
+--- PASS: TestContinuousSOSWithoutCoordinatesDoesNotBorrowLatestLocation (0.25s)
+=== RUN   TestPR50AlarmContextRetainsDeclaredMetadataAndKind
+--- PASS: TestPR50AlarmContextRetainsDeclaredMetadataAndKind (0.25s)
+=== RUN   TestPR50InvalidPositionMetadataDoesNotWriteEvents
+--- PASS: TestPR50InvalidPositionMetadataDoesNotWriteEvents (0.25s)
+=== RUN   TestPR50HistoricalMetadataAndGenericAlarmRemainUnknown
+--- PASS: TestPR50HistoricalMetadataAndGenericAlarmRemainUnknown (0.25s)
+=== RUN   TestSOSRejectsStaleBinding
+--- PASS: TestSOSRejectsStaleBinding (0.36s)
+=== RUN   TestSOSPersistenceRollbackLeavesNoPartialRows
+--- PASS: TestSOSPersistenceRollbackLeavesNoPartialRows (0.24s)
+PASS
+ok  	suining-care/internal/handlers	1.994s
+
+=== migrations ===
+=== RUN   TestCapabilitiesRollbackAndReapply
+--- PASS: TestCapabilitiesRollbackAndReapply (8.18s)
+PASS
+ok  	suining-care/internal/db	8.301s
+
+=== final-mysql ===
+=== RUN   TestCapabilitiesRollbackAndReapply
+--- PASS: TestCapabilitiesRollbackAndReapply (7.94s)
+PASS
+ok  	suining-care/internal/db	8.080s
+=== RUN   TestPR50AlarmContextRetainsDeclaredMetadataAndKind
+--- PASS: TestPR50AlarmContextRetainsDeclaredMetadataAndKind (5.56s)
+=== RUN   TestSOSRejectsStaleBinding
+--- PASS: TestSOSRejectsStaleBinding (3.71s)
+=== RUN   TestSOSPersistenceRollbackLeavesNoPartialRows
+--- PASS: TestSOSPersistenceRollbackLeavesNoPartialRows (3.37s)
+PASS
+ok  	suining-care/internal/handlers	12.780s
+
+=== final-snapshot ===
+=== RUN   TestPR50AlarmContextRetainsDeclaredMetadataAndKind
+--- PASS: TestPR50AlarmContextRetainsDeclaredMetadataAndKind (3.06s)
+PASS
+ok  	suining-care/internal/handlers	3.195s
+
+=== frontend ===
+
+> suining-ui@2.1.0 test
+> vitest run src/views/position.alerts.test.ts
+
+
+ RUN  v5.0.5 D:/Codex存储文件夹/2026-10-30/https-github-com-watchtestcs-smart-elderly/work/repo/智慧养老手表管理系统/frontend
+
+
+ Test Files  1 passed (1)
+      Tests  5 passed (5)
+   Start at  14:08:19
+   Duration  8.37s (environment 72%, import 23%, transform 5%)
+
+
+=== typecheck ===
+
+> suining-ui@2.1.0 typecheck
+> vue-tsc --noEmit
+
+
+=== build ===
+
+> suining-ui@2.1.0 build
+> vite build
+
+vite v8.3.4 building client environment for production...
+transforming...
+✓ 2345 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                      1.20 kB │ gzip:   0.64 kB
+dist/assets/stepfamily-BHZ9BiY7.css                  0.08 kB │ gzip:   0.09 kB
+dist/assets/positionfamily-TzNXCJ4c.css              0.09 kB │ gzip:   0.10 kB
+dist/assets/position-BZnDXdEn.css                    0.17 kB │ gzip:   0.14 kB
+dist/assets/inviteCode-Whvxs2Ui.css                  0.25 kB │ gzip:   0.17 kB
+dist/assets/rateprefamily-C-CID0Kg.css               0.36 kB │ gzip:   0.23 kB
+dist/assets/SecurityPanel-BzG2ac9E.css               0.85 kB │ gzip:   0.36 kB
+dist/assets/annex-C_RDEg9p.css                       1.05 kB │ gzip:   0.44 kB
+dist/assets/device-CXQ4-6HM.css                      1.15 kB │ gzip:   0.42 kB
+dist/assets/RecordCards-D91VBnFE.css                 1.44 kB │ gzip:   0.51 kB
+dist/assets/textMainUser-45AST9pH.css                1.64 kB │ gzip:   0.60 kB
+dist/assets/Setup-BGutqjO0.css                       1.70 kB │ gzip:   0.60 kB
+dist/assets/textOpt-1cexkNA_.css                     1.85 kB │ gzip:   0.62 kB
+dist/assets/me-D26Iys2P.css                          1.98 kB │ gzip:   0.65 kB
+dist/assets/textMain-DavtMOw8.css                    2.12 kB │ gzip:   0.70 kB
+dist/assets/NoticeEditor-B7OHsaKv.css                2.39 kB │ gzip:   0.74 kB
+dist/assets/Header-C03xX-Zw.css                      2.47 kB │ gzip:   0.76 kB
+dist/assets/Register-Ccb0YjHX.css                    4.35 kB │ gzip:   1.16 kB
+dist/assets/Home-C8Djf2JV.css                        5.24 kB │ gzip:   1.42 kB
+dist/assets/familyHome-DGTvvvs-.css                  5.44 kB │ gzip:   1.48 kB
+dist/assets/Login-D8Wc_-Y6.css                       5.57 kB │ gzip:   1.43 kB
+dist/assets/familyMain-czyefYN-.css                  6.46 kB │ gzip:   1.57 kB
+dist/assets/main--8nC6IUL.css                        8.28 kB │ gzip:   1.97 kB
+dist/assets/PositionMap-CP1j3sch.css                16.22 kB │ gzip:   6.70 kB
+dist/assets/index-kJ-Gl3tX.css                     441.32 kB │ gzip:  69.41 kB
+dist/assets/care-courtyard-CJhr71K1.js               0.05 kB │ gzip:   0.07 kB
+dist/assets/care-announcement-empty-Cd09MsA3.js      0.06 kB │ gzip:   0.08 kB
+dist/assets/suining-logo-192-D8Nl0I9O.js             0.10 kB │ gzip:   0.08 kB
+dist/assets/care-lakeside-artisan-DkJ9ugHL.js        0.11 kB │ gzip:   0.09 kB
+dist/assets/client-Bg12BKmj.js                       0.23 kB │ gzip:   0.23 kB
+dist/assets/textTwo-B7eLDvYC.js                      0.41 kB │ gzip:   0.28 kB
+dist/assets/text-CGPwRcIy.js                         0.43 kB │ gzip:   0.28 kB
+dist/assets/rolldown-runtime-XKyaHtl9.js             0.72 kB │ gzip:   0.42 kB
+dist/assets/annex-dpgsookd.js                        0.95 kB │ gzip:   0.69 kB
+dist/assets/latestRead-BcmbRZkH.js                   1.04 kB │ gzip:   0.56 kB
+dist/assets/RecordCards-D_yWqQka.js                  2.19 kB │ gzip:   1.09 kB
+dist/assets/Header-VRMJgF6r.js                       2.34 kB │ gzip:   1.29 kB
+dist/assets/SecurityPanel-DtpgYR0N.js                2.91 kB │ gzip:   1.51 kB
+dist/assets/textMainUser-CSTVaJsI.js                 3.45 kB │ gzip:   1.60 kB
+dist/assets/Setup-DV3HyPlw.js                        3.49 kB │ gzip:   1.95 kB
+dist/assets/life-BOf9W9R1.js                         3.81 kB │ gzip:   1.77 kB
+dist/assets/positionfamily-DFLD2XLC.js               3.95 kB │ gzip:   1.84 kB
+dist/assets/familyHome-DMOkO-i-.js                   4.17 kB │ gzip:   1.86 kB
+dist/assets/stepfamily-CHRQBGq9.js                   5.41 kB │ gzip:   2.37 kB
+dist/assets/familyMain-DbCBroUC.js                   5.85 kB │ gzip:   2.47 kB
+dist/assets/step-D9Tp1ZT2.js                         5.89 kB │ gzip:   2.50 kB
+dist/assets/rateprefamily-BZOBU6QZ.js                5.93 kB │ gzip:   2.44 kB
+dist/assets/textMain-AbZa9aZo.js                     6.08 kB │ gzip:   2.59 kB
+dist/assets/saidOperation-DyBnkx1T.js                6.26 kB │ gzip:   2.44 kB
+dist/assets/Login-CmkCT3z-.js                        6.72 kB │ gzip:   3.24 kB
+dist/assets/Home-kuOfy_ac.js                         7.13 kB │ gzip:   2.98 kB
+dist/assets/position-75o_vlcy.js                     7.21 kB │ gzip:   2.98 kB
+dist/assets/NoticeEditor-f4TfYoCI.js                 7.94 kB │ gzip:   3.49 kB
+dist/assets/textOpt-Bbn1b7rH.js                      8.45 kB │ gzip:   3.48 kB
+dist/assets/Register-DJkAE_0T.js                     9.62 kB │ gzip:   3.43 kB
+dist/assets/watch-BiCgs3-5.js                        9.98 kB │ gzip:   3.24 kB
+dist/assets/customer-QaJJRvVF.js                    10.39 kB │ gzip:   3.60 kB
+dist/assets/family-DQHS-2FO.js                      11.08 kB │ gzip:   3.51 kB
+dist/assets/me-D-je_yN5.js                          11.97 kB │ gzip:   3.61 kB
+dist/assets/inviteCode-CTqCArxN.js                  12.87 kB │ gzip:   4.50 kB
+dist/assets/ratepre-XeDZgD9T.js                     14.25 kB │ gzip:   4.62 kB
+dist/assets/person-BbHqOX1z.js                      16.38 kB │ gzip:   4.67 kB
+dist/assets/main-C0bRA07w.js                        24.68 kB │ gzip:   8.89 kB
+dist/assets/device-Bplc6wC6.js                      30.20 kB │ gzip:   8.76 kB
+dist/assets/_plugin-vue_export-helper-CJMv9Rw7.js   66.65 kB │ gzip:  26.07 kB
+dist/assets/PositionMap-piiP5a59.js                151.72 kB │ gzip:  45.17 kB
+dist/assets/charts-CweEC4t2.js                     522.78 kB │ gzip: 177.11 kB
+dist/assets/index-DWM16BiP.js                      638.99 kB │ gzip: 207.04 kB
+
+✓ built in 6.62s
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+[PLUGIN_TIMINGS] JavaScript callbacks ran for 1.4s of this 6.6s build (21%).
+1 callback is listed without a time. Its calls overlapped, so the time inside one call includes work from other calls. To find its cost, profile the build with `node --cpu-prof`:
+  - plugin vite:vue transform (72 calls)
+See https://rolldown.rs/reference/InputOptions.checks#bundlertimings for more details.
+
+
+=== review-mysql ===
+=== RUN   TestPR50InvalidPositionMetadataDoesNotWriteEvents
+--- PASS: TestPR50InvalidPositionMetadataDoesNotWriteEvents (3.34s)
+PASS
+ok  	suining-care/internal/handlers	3.467s
+
+=== review-postgres ===
+=== RUN   TestPR50InvalidPositionMetadataDoesNotWriteEvents
+--- PASS: TestPR50InvalidPositionMetadataDoesNotWriteEvents (0.32s)
+PASS
+ok  	suining-care/internal/handlers	0.452s
+
+=== contract-check ===
+/api/v1/device/report: existing telemetry fields remain open; metadata constraints match OpenAPI 3.1
+/api/v1/device/sos: existing telemetry fields remain open; metadata constraints match OpenAPI 3.1
+
+=== CI head 77e0d92 / run 41176414763 / artifact 13033062907: sole failing test ===
+{"Time":"2026-10-31T06:27:47.814665182Z","Action":"run","Package":"suining-care/internal/handlers","Test":"TestIntegrationMigrationsAndBindingConstraint"}
+{"Time":"2026-10-31T06:27:47.814669208Z","Action":"output","Package":"suining-care/internal/handlers","Test":"TestIntegrationMigrationsAndBindingConstraint","Output":"=== RUN   TestIntegrationMigrationsAndBindingConstraint\n"}
+{"Time":"2026-10-31T06:27:48.560244254Z","Action":"output","Package":"suining-care/internal/handlers","Test":"TestIntegrationMigrationsAndBindingConstraint","Output":"    integration_test.go:130: migrations=19 err=\u003cnil\u003e\n"}
+{"Time":"2026-10-31T06:27:48.643330204Z","Action":"output","Package":"suining-care/internal/handlers","Test":"TestIntegrationMigrationsAndBindingConstraint","Output":"--- FAIL: TestIntegrationMigrationsAndBindingConstraint (0.83s)\n"}
+{"Time":"2026-10-31T06:27:48.643371476Z","Action":"fail","Package":"suining-care/internal/handlers","Test":"TestIntegrationMigrationsAndBindingConstraint","Elapsed":0.83}
+
+=== ci-fix-mysql ===
+=== RUN   TestIntegrationMigrationsAndBindingConstraint
+--- PASS: TestIntegrationMigrationsAndBindingConstraint (3.12s)
+PASS
+ok  	suining-care/internal/handlers	3.265s
+
+=== ci-fix-postgres ===
+=== RUN   TestIntegrationMigrationsAndBindingConstraint
+--- PASS: TestIntegrationMigrationsAndBindingConstraint (0.32s)
+PASS
+ok  	suining-care/internal/handlers	0.463s

@@ -1,53 +1,52 @@
 package handlers
 
 import (
-	"careold-go/internal/response"
 	"net/http"
 	"strconv"
+	"suining-care/internal/response"
 	"time"
 )
 
 // ---------------------------------------------------------------------------
-// WatchInfoController (/restful/watchInfo)
+// WatchInfoController (/api/v1/watchInfo)
 // ---------------------------------------------------------------------------
 
 // watchProfileParams 阈值校验（add/update 共用）：缺失/超范围 → 400"<key> 缺失或超出允许范围"；
 // 低值 >= 高值 → 400"低值必须小于高值"。
 func watchProfileParams(w http.ResponseWriter, m map[string]any) (deviceID int64, hrf, hrl, bpf, bpl int, ok bool) {
-	num := func(key string, min, max int) (int64, string) {
+	num := func(key string, min, max int) (int, string) {
 		s, present := vstr(m, key)
 		if !present || s == "" {
 			return 0, key + " 缺失或超出允许范围"
 		}
-		n, err := strconv.ParseInt(s, 10, 64)
-		if err != nil || n < int64(min) || n > int64(max) {
+		n, err := strconv.Atoi(s)
+		if err != nil || n < min || n > max {
 			return 0, key + " 缺失或超出允许范围"
 		}
 		return n, ""
 	}
-	var msg string
-	if deviceID, msg = num("deviceId", 1, 2147483647); msg != "" {
+	id, msg := num("deviceId", 1, 2147483647)
+	if msg != "" {
 		write400(w, msg)
 		return 0, 0, 0, 0, 0, false
 	}
-	var hrf64, hrl64, bpf64, bpl64 int64
-	if hrf64, msg = num("hrf", 20, 250); msg != "" {
+	deviceID = int64(id)
+	if hrf, msg = num("hrf", 20, 250); msg != "" {
 		write400(w, msg)
 		return 0, 0, 0, 0, 0, false
 	}
-	if hrl64, msg = num("hrl", 20, 250); msg != "" {
+	if hrl, msg = num("hrl", 20, 250); msg != "" {
 		write400(w, msg)
 		return 0, 0, 0, 0, 0, false
 	}
-	if bpf64, msg = num("bpf", 40, 300); msg != "" {
+	if bpf, msg = num("bpf", 40, 300); msg != "" {
 		write400(w, msg)
 		return 0, 0, 0, 0, 0, false
 	}
-	if bpl64, msg = num("bpl", 40, 300); msg != "" {
+	if bpl, msg = num("bpl", 40, 300); msg != "" {
 		write400(w, msg)
 		return 0, 0, 0, 0, 0, false
 	}
-	hrf, hrl, bpf, bpl = int(hrf64), int(hrl64), int(bpf64), int(bpl64)
 	if hrl >= hrf || bpl >= bpf {
 		write400(w, "低值必须小于高值")
 		return 0, 0, 0, 0, 0, false
@@ -55,7 +54,7 @@ func watchProfileParams(w http.ResponseWriter, m map[string]any) (deviceID int64
 	return deviceID, hrf, hrl, bpf, bpl, true
 }
 
-// POST /restful/watchInfo/select —— 手表阈值档案分页查询（ADMIN）。
+// POST /api/v1/watchInfo/select —— 手表阈值档案分页查询（ADMIN）。
 func (h *Handler) watchInfoSelect(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -72,7 +71,8 @@ func (h *Handler) watchInfoSelect(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx := r.Context()
 	base := `SELECT w.device_id, w.op_time, w.hrf, w.bpf, w.hrl, w.bpl, o.name
-		FROM watch_info w LEFT JOIN oldperson o ON w.device_id=o.device_id
+		FROM watch_info w LEFT JOIN device d ON d.device_id=w.device_id
+		LEFT JOIN oldperson o ON o.old_id=d.old_id
 		WHERE ($1='' OR o.name LIKE '%'||$1||'%') ORDER BY w.device_id`
 	var total int64
 	if err := h.DB.QueryRow(ctx, `SELECT COUNT(*) FROM (`+base+`) AS t`, oldName).Scan(&total); err != nil {
@@ -110,7 +110,7 @@ func (h *Handler) watchInfoSelect(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// POST /restful/watchInfo/add —— 新增手表阈值档案（ADMIN）。
+// POST /api/v1/watchInfo/add —— 新增手表阈值档案（ADMIN）。
 func (h *Handler) watchInfoAdd(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -132,7 +132,8 @@ func (h *Handler) watchInfoAdd(w http.ResponseWriter, r *http.Request) {
 	}
 	now := time.Now()
 	ct, err := h.DB.Exec(ctx,
-		`INSERT INTO watch_info(device_id,op_time,bpf,bpl,hrl,hrf) VALUES($1,$2,$3,$4,$5,$6)`,
+		`INSERT INTO watch_info(device_id,op_time,bpf,bpl,hrl,hrf)
+		 SELECT $1,$2,$3,$4,$5,$6 FROM device WHERE device_id=$1`,
 		deviceID, time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local),
 		bpf, bpl, hrl, hrf)
 	if err != nil {
@@ -143,10 +144,10 @@ func (h *Handler) watchInfoAdd(w http.ResponseWriter, r *http.Request) {
 		response.OK(w, nil)
 		return
 	}
-	failCodeOnly(w)
+	response.Fail(w, "设备不存在，请先登记设备")
 }
 
-// POST /restful/watchInfo/update —— 更新手表阈值档案（ADMIN）。
+// POST /api/v1/watchInfo/update —— 更新手表阈值档案（ADMIN）。
 func (h *Handler) watchInfoUpdate(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -170,7 +171,7 @@ func (h *Handler) watchInfoUpdate(w http.ResponseWriter, r *http.Request) {
 	failCodeOnly(w)
 }
 
-// POST /restful/watchInfo/delete —— 删除手表阈值档案（ADMIN）。
+// POST /api/v1/watchInfo/delete —— 删除手表阈值档案（ADMIN）。
 func (h *Handler) watchInfoDelete(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {

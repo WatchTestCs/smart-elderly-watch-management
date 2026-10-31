@@ -7,9 +7,9 @@ import (
 	"io/fs"
 	"strings"
 
-	"careold-go/migrations"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"suining-care/migrations"
 )
 
 // Open 建连接池。

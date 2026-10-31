@@ -17,11 +17,11 @@ import (
 	"testing"
 	"time"
 
-	"careold-go/internal/auth"
-	"careold-go/internal/care"
-	"careold-go/internal/config"
-	"careold-go/internal/csrf"
-	"careold-go/internal/session"
+	"suining-care/internal/auth"
+	"suining-care/internal/care"
+	"suining-care/internal/config"
+	"suining-care/internal/csrf"
+	"suining-care/internal/session"
 )
 
 // A real TLS gateway completes processing after the dispatcher's 12s timeout.
@@ -88,7 +88,7 @@ func TestCareFullHTTPChainAfterRealGatewayTimeout(t *testing.T) {
 	defer func() { http.DefaultTransport = transport }()
 	t.Setenv("CARE_NOTIFY_WEBHOOK_URL", gateway.URL)
 	t.Setenv("CARE_NOTIFY_WEBHOOK_TOKEN", "synthetic-gateway-token")
-	press := map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "requestId": "full-chain-real-timeout"}
+	press := map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "requestId": "full-chain-real-timeout", "bindingVersion": 1}
 	first := api(t, h.deviceSos, press)
 	duplicate := api(t, h.deviceSos, press)
 	if first["incidentId"] != duplicate["incidentId"] || duplicate["duplicate"] != true {
@@ -140,7 +140,7 @@ func TestCareFullHTTPChainAfterRealGatewayTimeout(t *testing.T) {
 	act := func(actor int64, action string) int {
 		sess := store.Create(session.Principal{Role: auth.RoleAdmin, ID: actor})
 		body, _ := json.Marshal(map[string]any{"id": strconv.FormatInt(id, 10), "action": action, "note": "synthetic acceptance exercise"})
-		r := httptest.NewRequest(http.MethodPost, "/restful/care/transition", bytes.NewReader(body))
+		r := httptest.NewRequest(http.MethodPost, "/api/v1/care/transition", bytes.NewReader(body))
 		r.AddCookie(&http.Cookie{Name: session.CookieName, Value: sess.ID})
 		r.Header.Set(csrf.HeaderName, sess.CSRFToken)
 		w := httptest.NewRecorder()

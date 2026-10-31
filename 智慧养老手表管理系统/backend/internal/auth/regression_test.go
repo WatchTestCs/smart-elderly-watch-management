@@ -1,10 +1,10 @@
 package auth_test
 
 import (
-	"careold-go/internal/auth"
-	"careold-go/internal/session"
 	"net/http"
 	"net/http/httptest"
+	"suining-care/internal/auth"
+	"suining-care/internal/session"
 	"testing"
 	"time"
 )
@@ -15,7 +15,7 @@ func TestLogoutRoleAccess(t *testing.T) {
 			store := session.NewStore(time.Hour)
 			t.Cleanup(store.Close)
 			sess := store.Create(session.Principal{Role: role, ID: 1})
-			request := httptest.NewRequest(http.MethodPost, "/restful/userLogin/logout", nil)
+			request := httptest.NewRequest(http.MethodPost, "/api/v1/auth/logout", nil)
 			request.AddCookie(&http.Cookie{Name: session.CookieName, Value: sess.ID})
 			response := httptest.NewRecorder()
 			auth.Middleware(store, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(204) })).ServeHTTP(response, request)
@@ -31,7 +31,7 @@ func TestContextPrincipalDoesNotReplaceSessionValidation(t *testing.T) {
 	t.Cleanup(store.Close)
 	sess := store.Create(session.Principal{Role: auth.RoleAdmin, ID: 1})
 	store.Destroy(sess.ID)
-	r := httptest.NewRequest(http.MethodPost, "/restful/userLogin/logout", nil)
+	r := httptest.NewRequest(http.MethodPost, "/api/v1/auth/logout", nil)
 	r.AddCookie(&http.Cookie{Name: session.CookieName, Value: sess.ID})
 	r = session.WithContext(r, sess)
 	w := httptest.NewRecorder()

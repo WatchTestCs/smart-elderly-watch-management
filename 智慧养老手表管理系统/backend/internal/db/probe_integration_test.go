@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"careold-go/internal/db/dbtest"
+	"suining-care/internal/db/dbtest"
 )
 
 // A busy request pool must not cause the liveness probe to report an outage.

@@ -1,21 +1,21 @@
 package handlers
 
 import (
-	dbstore "careold-go/internal/db"
-	"careold-go/internal/response"
 	"context"
 	"github.com/jackc/pgx/v5"
 	"net/http"
 	"strings"
+	dbstore "suining-care/internal/db"
+	"suining-care/internal/response"
 	"time"
 	"unicode/utf8"
 )
 
 // ---------------------------------------------------------------------------
-// Go device protocol handlers: public endpoints authenticated by device key.
+// DeviceController —— 硬件公开接口（设备密钥鉴权）
 // ---------------------------------------------------------------------------
 
-// checkDeviceCredentials 使用 Go 原生校验限制设备号和密钥长度。
+// checkDeviceCredentials 校验 deviceNo/secret 必填与长度（复刻 @Valid Credentials）。
 func checkDeviceCredentials(w http.ResponseWriter, m map[string]any) (string, string, bool) {
 	deviceNo, okNo := vstr(m, "deviceNo")
 	secret, okSecret := vstr(m, "secret")
@@ -32,7 +32,7 @@ func hwFail(w http.ResponseWriter, code, msg string) {
 	response.JSON(w, http.StatusOK, map[string]any{"returnCode": code, "message": msg})
 }
 
-// POST /restful/device/login —— 设备登录（公开；限流由全局中间件处理）。
+// POST /api/v1/device/login —— 设备登录（公开；限流由全局中间件处理）。
 func (h *Handler) deviceLogin(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -114,7 +114,7 @@ func (h *Handler) findBindCode(ctx context.Context, q oldQuerier, code string) (
 	return b, nil
 }
 
-// POST /restful/device/bind —— 设备绑定老人（公开，事务）。
+// POST /api/v1/device/bind —— 设备绑定老人（公开，事务）。
 func (h *Handler) deviceBind(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -242,7 +242,7 @@ func (h *Handler) deviceBind(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	// watch_info upsert 默认阈值行（心率 55–110、血压 90–140）。
-	if _, err := saveWatchProfileUpsert(ctx, tx, d.ID, 110, 55, 140, 90,
+	if _, err := saveWatchProfileUpsert(ctx, tx, tx.IsMySQL(), d.ID, 110, 55, 140, 90,
 		time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local)); err != nil {
 		rollback()
 		response.Error500(w, ref())
@@ -273,7 +273,7 @@ func (h *Handler) deviceBind(w http.ResponseWriter, r *http.Request) {
 	response.OK(w, map[string]any{"oldId": *bc.OldID, "oldPersonName": nm})
 }
 
-// POST /restful/device/heartbeat —— 设备心跳（公开）。
+// POST /api/v1/device/heartbeat —— 设备心跳（公开）。
 func (h *Handler) deviceHeartbeat(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -318,4 +318,4 @@ func (h *Handler) deviceHeartbeat(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// checkTelemetry 在 Go Handler 内限制遥测字段长度。
+// checkTelemetry 校验上报类接口的字段长度（复刻 @Valid Telemetry）。

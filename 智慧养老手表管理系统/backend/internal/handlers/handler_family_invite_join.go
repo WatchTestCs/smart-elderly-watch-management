@@ -1,9 +1,11 @@
 package handlers
 
 import (
-	"careold-go/internal/auth"
-	"careold-go/internal/response"
+	"context"
 	"net/http"
+	"suining-care/internal/auth"
+	"suining-care/internal/db"
+	"suining-care/internal/response"
 	"time"
 	"unicode/utf8"
 )
@@ -32,7 +34,7 @@ func (h *Handler) inviteOldPersonList(w http.ResponseWriter, r *http.Request) {
 	response.OK(w, map[string]any{"oldPeople": list})
 }
 
-// POST /restful/inviteCode/checkCode —— 校验邀请码（公开）。
+// POST /api/v1/inviteCode/checkCode —— 校验邀请码（公开）。
 func (h *Handler) inviteCheckCode(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -83,53 +85,17 @@ func (h *Handler) inviteCheckCode(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// POST /restful/inviteCode/join —— 家属凭邀请码注册（公开，事务）。
+// POST /api/v1/inviteCode/join —— 家属凭邀请码注册（公开，事务）。
 func (h *Handler) inviteJoin(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
 		return
 	}
-	code := normalizeCode(str(m, "code"))
-	familyName := str(m, "familyName")
-	familyPhone := str(m, "familyPhone")
-	familyPassword := str(m, "familyPassword")
-	familyRelation := str(m, "familyRelation")
-	familySex := str(m, "familySex")
-	familyAddress := str(m, "familyAddress")
-
-	if code == "" {
-		response.Fail(w, "请输入邀请码")
+	registration := parseInvitationRegistration(m)
+	if message := registration.validationMessage(); message != "" {
+		response.Fail(w, message)
 		return
 	}
-	if familyName == "" {
-		response.Fail(w, "请输入姓名")
-		return
-	}
-	if utf8.RuneCountInString(familyName) > 10 {
-		response.Fail(w, "姓名长度不能超过10个字符")
-		return
-	}
-	if !auth.ValidPhone(familyPhone) {
-		response.Fail(w, "请输入正确的11位手机号")
-		return
-	}
-	if !auth.ValidNewPassword(familyPassword) {
-		response.Fail(w, "密码须为12–20位且包含字母和数字")
-		return
-	}
-	if utf8.RuneCountInString(familyRelation) > 10 {
-		response.Fail(w, "与老人关系长度不能超过10个字符")
-		return
-	}
-	if familySex != "男" && familySex != "女" {
-		response.Fail(w, "请选择性别")
-		return
-	}
-	if utf8.RuneCountInString(familyAddress) > 20 {
-		response.Fail(w, "地址长度不能超过20个字符")
-		return
-	}
-
 	ctx := r.Context()
 	tx, err := h.DB.Begin(ctx)
 	if err != nil {
@@ -142,7 +108,7 @@ func (h *Handler) inviteJoin(w http.ResponseWriter, r *http.Request) {
 	var used int16
 	var expire *time.Time
 	err = tx.QueryRow(ctx,
-		`SELECT id,old_id,used,expire_time FROM invite_code WHERE code=$1 FOR UPDATE`, code).
+		`SELECT id,old_id,used,expire_time FROM invite_code WHERE code=$1 FOR UPDATE`, registration.code).
 		Scan(&invID, &invOldID, &used, &expire)
 	if err != nil {
 		_ = tx.Rollback(ctx)
@@ -167,15 +133,9 @@ func (h *Handler) inviteJoin(w http.ResponseWriter, r *http.Request) {
 	var dup bool
 	if err := tx.QueryRow(ctx,
 		`SELECT EXISTS(SELECT 1 FROM users WHERE user_phone=$1)
-		      OR EXISTS(SELECT 1 FROM family WHERE family_phone=$1)`, familyPhone).Scan(&dup); err != nil {
+		      OR EXISTS(SELECT 1 FROM family WHERE family_phone=$1)`, registration.familyPhone).Scan(&dup); err != nil {
 		_ = tx.Rollback(ctx)
 		response.Error500(w, ref())
-		return
-	}
-	if dup {
-		_ = tx.Rollback(ctx)
-		// 不直接提示"已注册"：本接口公开，统一文案避免被用于枚举注册手机号。
-		response.Fail(w, "注册失败，请核对邀请码与信息后重试")
 		return
 	}
 	// 邀请码绑定的老人须存在
@@ -195,37 +155,42 @@ func (h *Handler) inviteJoin(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	// P0 安全修复（对齐 optimize 分支）：老人已有家属绑定时，禁止邀请码注册覆盖（绑定劫持）。
+	// An invitation may activate only the same elder's pre-created, passwordless
+	// family record. It must never reset an active account or replace a binding.
+	var familyID int64
 	if boundFamilyID != nil {
+		err = tx.QueryRow(ctx, `SELECT family_id FROM family
+		 WHERE family_id=$1 AND family_phone=$2 AND family_password IS NULL
+		 AND NOT EXISTS(SELECT 1 FROM users WHERE user_phone=$2) FOR UPDATE`, *boundFamilyID, registration.familyPhone).Scan(&familyID)
+		if err != nil {
+			_ = tx.Rollback(ctx)
+			if isNotFound(err) {
+				response.Fail(w, "注册失败，请核对邀请码与信息后重试")
+			} else {
+				response.Error500(w, ref())
+			}
+			return
+		}
+	} else if dup {
 		_ = tx.Rollback(ctx)
-		response.Fail(w, "该老人已绑定家属，请联系管理员处理")
+		response.Fail(w, "注册失败，请核对邀请码与信息后重试")
 		return
 	}
 	// 建 family 账号（密码 BCrypt 哈希）
-	hash, err := auth.Hash(familyPassword)
+	hash, err := auth.Hash(registration.familyPassword)
 	if err != nil {
 		_ = tx.Rollback(ctx)
 		response.Error500(w, ref())
 		return
 	}
-	var familyID int64
-	if err := tx.QueryRow(ctx,
-		`INSERT INTO family(family_name,family_phone,family_password,family_relation,family_sex,family_address)
-		 VALUES($1,$2,$3,$4,$5,$6) RETURNING family_id`,
-		familyName, familyPhone, hash, familyRelation, familySex, familyAddress).Scan(&familyID); err != nil {
-		_ = tx.Rollback(ctx)
-		conflict409(w, "注册失败，请重试")
-		return
-	}
-	// 绑定老人
-	ct, err := tx.Exec(ctx, `UPDATE oldperson SET family_id=$1 WHERE old_id=$2 AND family_id IS NULL`, familyID, *invOldID)
-	if err != nil || ct.RowsAffected() != 1 {
+	familyID, applied, err := saveInvitedFamily(ctx, tx, &registration, hash, boundFamilyID, familyID, *invOldID)
+	if err != nil || !applied {
 		_ = tx.Rollback(ctx)
 		conflict409(w, "注册失败，请重试")
 		return
 	}
 	// 原子占用邀请码（防并发）
-	ct, err = tx.Exec(ctx,
+	ct, err := tx.Exec(ctx,
 		`UPDATE invite_code SET used=1,used_family_id=$1,used_time=$2 WHERE id=$3 AND used=0`,
 		familyID, time.Now(), invID)
 	if err != nil || ct.RowsAffected() != 1 {
@@ -242,6 +207,82 @@ func (h *Handler) inviteJoin(w http.ResponseWriter, r *http.Request) {
 		nm = *oldName
 	}
 	response.OK(w, map[string]any{
-		"familyId": familyID, "familyName": familyName, "oldPersonName": nm,
+		"familyId": familyID, "familyName": registration.familyName, "oldPersonName": nm,
 	})
+}
+
+type invitationRegistration struct {
+	code           string
+	familyName     string
+	familyPhone    string
+	familyPassword string
+	familyRelation string
+	familySex      string
+	familyAddress  string
+}
+
+func parseInvitationRegistration(m map[string]any) invitationRegistration {
+	return invitationRegistration{
+		code:           normalizeCode(str(m, "code")),
+		familyName:     str(m, "familyName"),
+		familyPhone:    str(m, "familyPhone"),
+		familyPassword: str(m, "familyPassword"),
+		familyRelation: str(m, "familyRelation"),
+		familySex:      str(m, "familySex"),
+		familyAddress:  str(m, "familyAddress"),
+	}
+}
+
+func (registration *invitationRegistration) validationMessage() string {
+	if registration.code == "" {
+		return "请输入邀请码"
+	}
+	if registration.familyName == "" {
+		return "请输入姓名"
+	}
+	if utf8.RuneCountInString(registration.familyName) > 10 {
+		return "姓名长度不能超过10个字符"
+	}
+	if !auth.ValidPhone(registration.familyPhone) {
+		return "请输入正确的11位手机号"
+	}
+	if !auth.ValidNewPassword(registration.familyPassword) {
+		return "密码须为12–20位且包含字母和数字"
+	}
+	if utf8.RuneCountInString(registration.familyRelation) > 10 {
+		return "与老人关系长度不能超过10个字符"
+	}
+	if registration.familySex != "男" && registration.familySex != "女" {
+		return "请选择性别"
+	}
+	if utf8.RuneCountInString(registration.familyAddress) > 20 {
+		return "地址长度不能超过20个字符"
+	}
+
+	return ""
+}
+
+func saveInvitedFamily(ctx context.Context, tx *db.Transaction, registration *invitationRegistration, hash string, boundFamilyID *int64, familyID, oldID int64) (int64, bool, error) {
+	var err error
+	if boundFamilyID == nil {
+		err = tx.QueryRow(ctx,
+			`INSERT INTO family(family_name,family_phone,family_password,family_relation,family_sex,family_address)
+		 VALUES($1,$2,$3,$4,$5,$6) RETURNING family_id`,
+			registration.familyName, registration.familyPhone, hash, registration.familyRelation, registration.familySex, registration.familyAddress).Scan(&familyID)
+	} else {
+		_, err = tx.Exec(ctx, `UPDATE family SET family_name=$1,family_password=$2,
+		 family_relation=$3,family_sex=$4,family_address=$5 WHERE family_id=$6 AND family_password IS NULL`,
+			registration.familyName, hash, registration.familyRelation, registration.familySex, registration.familyAddress, familyID)
+	}
+	if err != nil {
+		return familyID, false, err
+	}
+	// 绑定老人
+	if boundFamilyID == nil {
+		ct, err := tx.Exec(ctx, `UPDATE oldperson SET family_id=$1 WHERE old_id=$2 AND family_id IS NULL`, familyID, oldID)
+		if err != nil || ct.RowsAffected() != 1 {
+			return familyID, false, err
+		}
+	}
+	return familyID, true, nil
 }

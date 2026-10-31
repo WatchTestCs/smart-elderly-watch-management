@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"careold-go/internal/session"
+	"suining-care/internal/session"
 )
 
 func maintenanceWorkers(t *testing.T) int {
@@ -17,7 +17,7 @@ func maintenanceWorkers(t *testing.T) int {
 	if err := pprof.Lookup("goroutine").WriteTo(&stacks, 2); err != nil {
 		t.Fatal(err)
 	}
-	return strings.Count(stacks.String(), "created by careold-go/internal/session.NewStore")
+	return strings.Count(stacks.String(), "created by suining-care/internal/session.NewStore")
 }
 
 // This exact fixture also runs on preview@50b9cc0. Its absent Close API is

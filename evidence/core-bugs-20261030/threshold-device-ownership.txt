@@ -1,0 +1,41 @@
+MySQL / 5 related cases
+=== RUN   TestArchitectureWatchProfileContract
+--- PASS: TestArchitectureWatchProfileContract (4.06s)
+=== RUN   TestArchitectureBindingKeepsCustomizedThresholds
+--- PASS: TestArchitectureBindingKeepsCustomizedThresholds (3.64s)
+=== RUN   TestContinuousConfiguredThresholdExplanation
+--- PASS: TestContinuousConfiguredThresholdExplanation (3.62s)
+=== RUN   TestContinuousThresholdSearchIncludesSecondaryDevice
+--- PASS: TestContinuousThresholdSearchIncludesSecondaryDevice (3.53s)
+=== RUN   TestContinuousThresholdCreationRequiresRegisteredDevice
+--- PASS: TestContinuousThresholdCreationRequiresRegisteredDevice (3.50s)
+PASS
+ok  	suining-care/internal/handlers	18.500s
+
+
+PostgreSQL / 5 related cases
+=== RUN   TestArchitectureWatchProfileContract
+--- PASS: TestArchitectureWatchProfileContract (0.28s)
+=== RUN   TestArchitectureBindingKeepsCustomizedThresholds
+--- PASS: TestArchitectureBindingKeepsCustomizedThresholds (0.34s)
+=== RUN   TestContinuousConfiguredThresholdExplanation
+--- PASS: TestContinuousConfiguredThresholdExplanation (0.27s)
+=== RUN   TestContinuousThresholdSearchIncludesSecondaryDevice
+--- PASS: TestContinuousThresholdSearchIncludesSecondaryDevice (0.27s)
+=== RUN   TestContinuousThresholdCreationRequiresRegisteredDevice
+--- PASS: TestContinuousThresholdCreationRequiresRegisteredDevice (0.27s)
+PASS
+ok  	suining-care/internal/handlers	1.578s
+
+Targeted go vet: handlers PASS
+No full local suite, frontend build, or performance run.
+
+PostgreSQL two key paths after native integer parsing + input bounds
+=== RUN   TestContinuousThresholdValidationBounds
+--- PASS: TestContinuousThresholdValidationBounds (0.00s)
+=== RUN   TestContinuousThresholdSearchIncludesSecondaryDevice
+--- PASS: TestContinuousThresholdSearchIncludesSecondaryDevice (0.38s)
+=== RUN   TestContinuousThresholdCreationRequiresRegisteredDevice
+--- PASS: TestContinuousThresholdCreationRequiresRegisteredDevice (0.23s)
+PASS
+ok  	suining-care/internal/handlers	0.740s

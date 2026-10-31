@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"careold-go/internal/response"
 	"context"
 	"errors"
 	"github.com/jackc/pgx/v5"
@@ -9,6 +8,8 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"suining-care/internal/db"
+	"suining-care/internal/response"
 	"time"
 	"unicode/utf8"
 )
@@ -23,37 +24,33 @@ func intOr400(w http.ResponseWriter, m map[string]any, key string, def, min, max
 	if !present || v == nil {
 		return def, true
 	}
-	var n int64
+	var raw string
 	switch t := v.(type) {
 	case float64:
 		if math.Trunc(t) != t {
 			writeValidation400(w)
 			return 0, false
 		}
-		n = int64(t)
+		raw = strconv.FormatFloat(t, 'f', -1, 64)
 	case string:
 		s := strings.TrimSpace(t)
 		if s == "" {
 			return def, true
 		}
-		x, err := strconv.ParseInt(s, 10, 64)
-		if err != nil {
-			writeValidation400(w)
-			return 0, false
-		}
-		n = x
+		raw = s
 	default:
 		writeValidation400(w)
 		return 0, false
 	}
-	if n < int64(min) || n > int64(max) {
+	n, err := strconv.Atoi(raw)
+	if err != nil || n < min || n > max {
 		writeValidation400(w)
 		return 0, false
 	}
-	return int(n), true
+	return n, true
 }
 
-// POST /restful/device/list —— 设备列表（ADMIN，分页+在线状态）。
+// POST /api/v1/device/list —— 设备列表（ADMIN，分页+在线状态）。
 func (h *Handler) deviceList(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMapOrEmpty(w, r)
 	if !ok {
@@ -110,42 +107,12 @@ func (h *Handler) deviceList(w http.ResponseWriter, r *http.Request) {
 	now := time.Now()
 	list := []map[string]any{}
 	for rows.Next() {
-		var id int64
-		var no string
-		var alias, model, appVersion, oldName, oldPhone, lastLng, lastLat *string
-		var battery *int
-		var oldID *int64
-		var bindTime, lastTime *time.Time
-		var status *int
-		var personHandled, rateHandled, preHandled int
-		if err := rows.Scan(&id, &no, &alias, &model, &appVersion, &battery, &oldID,
-			&oldName, &oldPhone, &bindTime, &lastTime, &lastLng, &lastLat, &status,
-			&personHandled, &rateHandled, &preHandled); err != nil {
-			response.Error500(w, ref())
-			return
-		}
-		name := "（未绑定）"
-		if oldName != nil {
-			name = *oldName
-		}
-		online := 0
-		if lastTime != nil && now.Sub(*lastTime) <= 60*time.Second {
-			online = 1
-		}
-		lastLng, lastLat, err = openCoordinates(h.Box, lastLng, lastLat)
+		item, err := h.scanAdminDevice(rows, now)
 		if err != nil {
 			response.Error500(w, ref())
 			return
 		}
-		list = append(list, map[string]any{
-			"deviceId": id, "deviceNo": no, "alias": alias, "model": model,
-			"appVersion": appVersion, "battery": battery, "oldId": oldID,
-			"oldPersonName": name, "oldPersonPhone": oldPhone,
-			"bindTime": tsOrNil(bindTime), "lastTime": tsOrNil(lastTime),
-			"lastLng": lastLng, "lastLat": lastLat, "status": status,
-			"online": online, "personHandled": personHandled,
-			"rateHandled": rateHandled, "preHandled": preHandled,
-		})
+		list = append(list, item)
 	}
 	if err := rows.Err(); err != nil {
 		response.Error500(w, ref())
@@ -184,7 +151,7 @@ func (h *Handler) genBindCode(ctx context.Context, q oldQuerier) (string, error)
 	return "", errors.New("无法生成唯一绑定码")
 }
 
-// POST /restful/device/createBindCode —— 生成绑定码（ADMIN）。
+// POST /api/v1/device/createBindCode —— 生成绑定码（ADMIN）。
 func (h *Handler) deviceCreateBindCode(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -200,6 +167,14 @@ func (h *Handler) deviceCreateBindCode(w http.ResponseWriter, r *http.Request) {
 		writeValidation400(w)
 		return
 	}
+	expireDays := 1
+	if expireDaysStr != "" {
+		expireDays = toIntRanged(expireDaysStr, 1, 30)
+		if expireDays == 0 {
+			write400(w, "有效天数必须为 1 至 30 的整数")
+			return
+		}
+	}
 	oldID, _ := strconv.ParseInt(oldIDStr, 10, 64)
 	ctx := r.Context()
 	var oldName *string
@@ -211,7 +186,6 @@ func (h *Handler) deviceCreateBindCode(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	expireDays := toIntRanged(expireDaysStr, 1, 30)
 	createUser, _ := vstr(m, "createUser")
 	if createUser == "" {
 		createUser = "管理员"
@@ -245,7 +219,7 @@ func (h *Handler) deviceCreateBindCode(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// POST /restful/device/bindCodeList —— 某老人的绑定码列表（ADMIN）。
+// POST /api/v1/device/bindCodeList —— 某老人的绑定码列表（ADMIN）。
 func (h *Handler) deviceBindCodeList(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -287,7 +261,7 @@ func (h *Handler) deviceBindCodeList(w http.ResponseWriter, r *http.Request) {
 	response.OK(w, map[string]any{"bindCodes": list})
 }
 
-// POST /restful/device/deleteBindCode —— 作废未使用的绑定码（ADMIN）。
+// POST /api/v1/device/deleteBindCode —— 作废未使用的绑定码（ADMIN）。
 func (h *Handler) deviceDeleteBindCode(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -312,3 +286,40 @@ func (h *Handler) deviceDeleteBindCode(w http.ResponseWriter, r *http.Request) {
 }
 
 // genDeviceNo 生成唯一设备号（W + 8 位，重试 30 次，兜底时间戳）。
+
+func (h *Handler) scanAdminDevice(row db.Row, now time.Time) (map[string]any, error) {
+	var id int64
+	var no string
+	var alias, model, appVersion, oldName, oldPhone, lastLng, lastLat *string
+	var battery *int
+	var oldID *int64
+	var bindTime, lastTime *time.Time
+	var status *int
+	var personHandled, rateHandled, preHandled int
+	if err := row.Scan(&id, &no, &alias, &model, &appVersion, &battery, &oldID,
+		&oldName, &oldPhone, &bindTime, &lastTime, &lastLng, &lastLat, &status,
+		&personHandled, &rateHandled, &preHandled); err != nil {
+		return nil, err
+	}
+	name := "（未绑定）"
+	if oldName != nil {
+		name = *oldName
+	}
+	online := 0
+	if lastTime != nil && now.Sub(*lastTime) <= 60*time.Second {
+		online = 1
+	}
+	lastLng, lastLat, err := openCoordinates(h.Box, lastLng, lastLat)
+	if err != nil {
+		return nil, err
+	}
+	return map[string]any{
+		"deviceId": id, "deviceNo": no, "alias": alias, "model": model,
+		"appVersion": appVersion, "battery": battery, "oldId": oldID,
+		"oldPersonName": name, "oldPersonPhone": oldPhone,
+		"bindTime": tsOrNil(bindTime), "lastTime": tsOrNil(lastTime),
+		"lastLng": lastLng, "lastLat": lastLat, "status": status,
+		"online": online, "personHandled": personHandled,
+		"rateHandled": rateHandled, "preHandled": preHandled,
+	}, nil
+}

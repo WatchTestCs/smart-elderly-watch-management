@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"careold-go/internal/db"
 	"github.com/jackc/pgx/v5"
+	"suining-care/internal/db"
 )
 
 // Fixed reporting offsets match the existing statistics API. No implicit local
@@ -22,7 +22,15 @@ type DailyKey struct {
 	OffsetMinutes int    `json:"offsetMinutes"`
 }
 
-func (k DailyKey) ID() string { b, _ := json.Marshal(k); return Digest(b) }
+const DailyAlgorithmVersion = 2
+
+func (k DailyKey) ID() string {
+	b, _ := json.Marshal(struct {
+		DailyKey
+		AlgorithmVersion int `json:"algorithmVersion"`
+	}{k, DailyAlgorithmVersion})
+	return Digest(b)
+}
 func (k DailyKey) Bounds() (time.Time, time.Time, error) {
 	if k.OldID < 1 || k.Source == "" || len(k.Source) > 256 || k.SourceDevice == "" || len(k.SourceDevice) > 4096 || len(k.Metric) > 64 || k.OffsetMinutes < -840 || k.OffsetMinutes > 840 {
 		return time.Time{}, time.Time{}, fmt.Errorf("日统计身份或偏移无效")
@@ -44,6 +52,9 @@ func (k DailyKey) Bounds() (time.Time, time.Time, error) {
 		s.Unit = "kg"
 	case "steps":
 		s.Unit = "count"
+		if k.Semantics == "interval" {
+			s.End = from.Add(time.Minute)
+		}
 	case "sleep_stage":
 		s.Unit = "min"
 		s.Stage = "asleep"
@@ -57,6 +68,22 @@ func (k DailyKey) Bounds() (time.Time, time.Time, error) {
 		return from, from, fmt.Errorf("指标与采样语义不匹配")
 	}
 	return from, from.AddDate(0, 0, 1), nil
+}
+
+func dailyCacheSelectSQL(mysql bool) string {
+	if mysql {
+		return `SELECT old_id,source,source_device,metric,semantics,CAST(record_day AS CHAR),offset_minutes,dirty FROM metric_daily WHERE cache_key=$1 FOR UPDATE`
+	}
+	return `SELECT old_id,source,source_device,metric,semantics,CAST(record_day AS varchar),offset_minutes,dirty FROM metric_daily WHERE cache_key=$1 FOR UPDATE`
+}
+
+func dailySamplesSQL(mysql bool) string {
+	if mysql {
+		return `SELECT payload FROM health_sample WHERE old_id=$1 AND BINARY source=BINARY $2 AND BINARY source_device=BINARY $3 AND BINARY metric=BINARY $4 AND BINARY semantics=BINARY $5 AND NOT deleted
+ AND sample_start<$7 AND (sample_start>=$6 OR ($5='interval' AND sample_end>=$6)) ORDER BY revision LIMIT 100001`
+	}
+	return `SELECT payload FROM health_sample WHERE old_id=$1 AND source=$2 AND source_device=$3 AND metric=$4 AND semantics=$5 AND NOT deleted
+ AND sample_start<$7 AND (sample_start>=$6 OR ($5='interval' AND sample_end>=$6)) ORDER BY revision LIMIT 100001`
 }
 
 // RefreshDaily is serialized with Save's owner clock, so a completed result
@@ -81,7 +108,7 @@ func RefreshDaily(ctx context.Context, pool *db.Database, id string) error {
 	}
 	var k DailyKey
 	var dirty bool
-	err = tx.QueryRow(ctx, `SELECT old_id,source,source_device,metric,semantics,CAST(record_day AS CHAR),offset_minutes,dirty FROM metric_daily WHERE cache_key=$1 FOR UPDATE`, id).Scan(&k.OldID, &k.Source, &k.SourceDevice, &k.Metric, &k.Semantics, &k.Day, &k.OffsetMinutes, &dirty)
+	err = tx.QueryRow(ctx, dailyCacheSelectSQL(tx.IsMySQL()), id).Scan(&k.OldID, &k.Source, &k.SourceDevice, &k.Metric, &k.Semantics, &k.Day, &k.OffsetMinutes, &dirty)
 	if err == pgx.ErrNoRows {
 		return nil
 	}
@@ -95,13 +122,14 @@ func RefreshDaily(ctx context.Context, pool *db.Database, id string) error {
 	if err != nil {
 		return err
 	}
-	rows, err := tx.Query(ctx, `SELECT payload FROM health_sample WHERE old_id=$1 AND BINARY source=BINARY $2 AND BINARY source_device=BINARY $3 AND BINARY metric=BINARY $4 AND BINARY semantics=BINARY $5 AND NOT deleted
- AND sample_start<$7 AND (sample_start>=$6 OR ($5='interval' AND sample_end>$6)) ORDER BY revision LIMIT 100001`, k.OldID, k.Source, k.SourceDevice, k.Metric, k.Semantics, from.UnixMicro(), to.UnixMicro())
+	rows, err := tx.Query(ctx, dailySamplesSQL(tx.IsMySQL()), k.OldID, k.Source, k.SourceDevice, k.Metric, k.Semantics, from.UnixMicro(), to.UnixMicro())
 	if err != nil {
 		return err
 	}
 	samples := []Sample{}
+	candidates := 0
 	for rows.Next() {
+		candidates++
 		var b []byte
 		var s Sample
 		if err = rows.Scan(&b); err == nil {
@@ -111,7 +139,9 @@ func RefreshDaily(ctx context.Context, pool *db.Database, id string) error {
 			rows.Close()
 			return err
 		}
-		samples = append(samples, s)
+		if s.InWindow(from, to) {
+			samples = append(samples, s)
+		}
 	}
 	err = rows.Err()
 	rows.Close()
@@ -120,8 +150,8 @@ func RefreshDaily(ctx context.Context, pool *db.Database, id string) error {
 	}
 	var result Statistics
 	var computation error
-	if len(samples) > 100000 {
-		computation = fmt.Errorf("单日采样超过 100000 条，须离线处理")
+	if candidates > 100000 {
+		computation = fmt.Errorf("单日候选采样超过 100000 条，须离线处理")
 	} else {
 		result, computation = Aggregate(samples, from, to)
 	}

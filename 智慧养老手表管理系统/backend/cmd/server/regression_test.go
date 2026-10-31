@@ -1,7 +1,7 @@
 package main
 
 import (
-	"careold-go/internal/config"
+	"suining-care/internal/config"
 	"testing"
 )
 

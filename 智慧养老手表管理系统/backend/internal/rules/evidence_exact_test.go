@@ -37,7 +37,7 @@ func TestFastEvidenceByteExact(t *testing.T) {
 		in.Activity.At = at
 		in.Battery.At = at
 		for _, c := range EvaluateCompact(p, in) {
-			fast, errFast := c.marshalEvidenceFast(i%20, int64(i), at)
+			fast, errFast := c.appendEvidenceFast(nil, i%20, int64(i), at)
 			canonical, errCanon := c.marshalEvidence(i%20, int64(i), at)
 			if (errFast == nil) != (errCanon == nil) || !bytes.Equal(fast, canonical) {
 				t.Fatalf("case=%d kind=%s fast=%q err=%v canon=%q err=%v", i, c.Kind, fast, errFast, canonical, errCanon)

@@ -9,7 +9,7 @@ INTERNAL=ROOT/'智慧养老手表管理系统'/'backend'/'internal'
 FIXTURES=ROOT/'scripts'/'fixtures'/'go123-perf-polish'
 CASES={
  'rules':('evaluate.go','compact.go','evidence_fast.go','evaluate_test.go','performance_test.go','compact_test.go','evidence_fast_test.go','evidence_exact_test.go','evidence_buffer_test.go','throughput_test.go','reference_evaluate_test.go'),
- 'health':('sample.go','sample_fast.go','identity.go','batch_sql.go','sample_test.go','sample_fast_test.go','throughput_test.go','validation_test.go','identity_test.go','batch_sql_test.go'),
+ 'health':('sample.go','sample_fast.go','identity.go','sample_test.go','sample_fast_test.go','throughput_test.go','validation_test.go','identity_test.go',),
 }
 
 def main():

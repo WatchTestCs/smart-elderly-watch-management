@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"careold-go/internal/securestore"
+	"suining-care/internal/securestore"
 )
 
 func TestLocalEncryptedImmutabilityAndIntegrity(t *testing.T) {

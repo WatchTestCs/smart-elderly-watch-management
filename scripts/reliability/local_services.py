@@ -42,7 +42,7 @@ def main():
                     body = json.dumps({"notificationId": job_id, "status": "delivered"}, separators=(",", ":")).encode()
                     stamp = str(int(time.time()))
                     signature = hmac.new(cfg["receipt_secret"].encode(), stamp.encode()+b"."+body, hashlib.sha256).hexdigest()
-                    request = urllib.request.Request(cfg["app_url"]+"/restful/care/receipt", body, headers={"Content-Type": "application/json", "X-Care-Timestamp": stamp, "X-Care-Signature": signature})
+                    request = urllib.request.Request(cfg["app_url"]+"/api/v1/care/receipt", body, headers={"Content-Type": "application/json", "X-Care-Timestamp": stamp, "X-Care-Signature": signature})
                     try:
                         with urllib.request.urlopen(request, timeout=3) as response:
                             code = response.status

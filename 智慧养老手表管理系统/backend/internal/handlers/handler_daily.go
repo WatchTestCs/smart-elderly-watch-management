@@ -5,9 +5,16 @@ import (
 	"net/http"
 	"time"
 
-	"careold-go/internal/health"
-	"careold-go/internal/response"
+	"suining-care/internal/health"
+	"suining-care/internal/response"
 )
+
+func metricDailyEnsureSQL(mysql bool) string {
+	if mysql {
+		return `INSERT INTO metric_daily(cache_key,old_id,source,source_device,metric,semantics,record_day,offset_minutes) VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON DUPLICATE KEY UPDATE cache_key=cache_key`
+	}
+	return `INSERT INTO metric_daily(cache_key,old_id,source,source_device,metric,semantics,record_day,offset_minutes) VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT(cache_key) DO NOTHING`
+}
 
 func (h *Handler) healthDaily(w http.ResponseWriter, r *http.Request) {
 	var req struct {
@@ -52,7 +59,7 @@ func (h *Handler) healthDaily(w http.ResponseWriter, r *http.Request) {
 		k := req.DailyKey
 		k.Day = from.AddDate(0, 0, n).Format("2006-01-02")
 		id := k.ID()
-		_, err = tx.Exec(ctx, `INSERT INTO metric_daily(cache_key,old_id,source,source_device,metric,semantics,record_day,offset_minutes) VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON DUPLICATE KEY UPDATE cache_key=cache_key`, id, k.OldID, k.Source, k.SourceDevice, k.Metric, k.Semantics, k.Day, k.OffsetMinutes)
+		_, err = tx.Exec(ctx, metricDailyEnsureSQL(tx.IsMySQL()), id, k.OldID, k.Source, k.SourceDevice, k.Metric, k.Semantics, k.Day, k.OffsetMinutes)
 		if err != nil {
 			response.Error500(w, ref())
 			return
@@ -83,5 +90,5 @@ func (h *Handler) healthDaily(w http.ResponseWriter, r *http.Request) {
 		response.Error500(w, ref())
 		return
 	}
-	response.OK(w, map[string]any{"items": items, "source": req.Source, "sourceDevice": req.SourceDevice, "metric": req.Metric, "semantics": req.Semantics, "offsetMinutes": req.OffsetMinutes, "algorithmVersion": 1})
+	response.OK(w, map[string]any{"items": items, "source": req.Source, "sourceDevice": req.SourceDevice, "metric": req.Metric, "semantics": req.Semantics, "offsetMinutes": req.OffsetMinutes, "algorithmVersion": health.DailyAlgorithmVersion})
 }

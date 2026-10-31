@@ -2,16 +2,16 @@
 package handlers
 
 import (
-	"careold-go/internal/analytics"
-	"careold-go/internal/blob"
-	dbstore "careold-go/internal/db"
-	"careold-go/internal/ratelimit"
 	"net/http"
+	"suining-care/internal/analytics"
+	"suining-care/internal/blob"
+	dbstore "suining-care/internal/db"
+	"suining-care/internal/ratelimit"
 	"sync"
 
-	"careold-go/internal/config"
-	"careold-go/internal/securestore"
-	"careold-go/internal/session"
+	"suining-care/internal/config"
+	"suining-care/internal/securestore"
+	"suining-care/internal/session"
 )
 
 // Handler 聚合依赖，各组 endpoint 实现在 handler_*.go 中。
@@ -49,8 +49,8 @@ func (h *Handler) Routes(mux *http.ServeMux) {
 	h.routeHealth(mux)
 	h.routeCare(mux) // 照护事件队列、接单及审核状态
 	h.routeCapabilities(mux)
-	mux.HandleFunc("POST /restful/security/factor", h.securityFactor)
-	mux.HandleFunc("POST /restful/security/loginAudit", h.securityLoginAudit)
-	mux.HandleFunc("POST /restful/notification/list", h.notifications)
-	mux.HandleFunc("POST /restful/rules/policy", h.rulePolicy)
+	mux.HandleFunc("POST /api/v1/security/factor", h.securityFactor)
+	mux.HandleFunc("POST /api/v1/security/login-audit", h.securityLoginAudit)
+	mux.HandleFunc("POST /api/v1/notifications/search", h.notifications)
+	mux.HandleFunc("POST /api/v1/rule-policies", h.rulePolicy)
 }

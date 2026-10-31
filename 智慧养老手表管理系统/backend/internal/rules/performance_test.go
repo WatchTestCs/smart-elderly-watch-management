@@ -1,12 +1,10 @@
 package rules
 
 import (
-	"runtime"
 	"testing"
 	"time"
 )
 
-var benchmarkCandidates []Candidate
 var benchmarkNight bool
 
 func benchmarkInput() Input {
@@ -20,34 +18,12 @@ func benchmarkInput() Input {
 	}
 }
 
-// Evaluate benchmarks measure in-memory candidate creation, not persisted
-// incidents, outbox records, or delivered notifications.
-func BenchmarkEvaluate(b *testing.B) {
-	p, in := Default(), benchmarkInput()
-	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
-		benchmarkCandidates = Evaluate(p, in)
-	}
-}
-
 func BenchmarkNight(b *testing.B) {
 	p, now := Default(), benchmarkInput().Now
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		benchmarkNight = p.Night(now)
 	}
-}
-
-func BenchmarkEvaluateParallel(b *testing.B) {
-	p, in := Default(), benchmarkInput()
-	b.ReportAllocs()
-	b.RunParallel(func(pb *testing.PB) {
-		var candidates []Candidate
-		for pb.Next() {
-			candidates = Evaluate(p, in)
-		}
-		runtime.KeepAlive(candidates)
-	})
 }
 
 func TestNightBoundariesAndDST(t *testing.T) {
@@ -95,7 +71,7 @@ func TestEvaluateThresholdAndFreshnessBoundaries(t *testing.T) {
 		{100, -time.Minute, 1, false}, {100, -time.Minute - 1, 0, false},
 	} {
 		in.Heart.Value, in.Heart.At = tc.value, in.Now.Add(-tc.age)
-		got := Evaluate(p, in)
+		got := EvaluateCompact(p, in)
 		if len(got) != tc.count || len(got) > 0 && (got[0].Breach != tc.breach || got[0].Required != p.Consecutive || got[0].Severity != "critical") {
 			t.Fatalf("value=%v age=%s: %+v", tc.value, tc.age, got)
 		}

@@ -23,6 +23,7 @@ func TestDeviceReportInvalidPayloadNeverOpensDatabase(t *testing.T) {
 		{"battery", "battery", 101},
 		{"unpaired coordinates", "lng", "120.5"},
 		{"invalid timestamp", "beTime", "2026-02-31 13:00:00"},
+		{"future timestamp", "beTime", "2099-01-01 00:00:00"},
 		{"long app version", "appVersion", "this-version-name-is-far-too-long"},
 	}
 	for _, tc := range cases {
@@ -44,7 +45,7 @@ func TestSOSInvalidRequestIDNeverOpensDatabase(t *testing.T) {
 	for _, requestID := range []string{"invalid request ID", "bad/identifier", "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789too-long"} {
 		response := callAPI((&Handler{}).deviceSos, map[string]any{
 			"deviceNo": "WATCH001", "secret": "existing-device-secret",
-			"requestId": requestID,
+			"requestId": requestID, "bindingVersion": 1,
 		})
 		if response.Code != http.StatusBadRequest {
 			t.Fatalf("requestID %q: HTTP %d, want 400: %s", requestID, response.Code, response.Body.String())

@@ -1,10 +1,10 @@
 package handlers
 
 import (
-	"careold-go/internal/response"
 	"context"
 	"net/http"
 	"strconv"
+	"suining-care/internal/response"
 	"time"
 	"unicode/utf8"
 )
@@ -27,33 +27,16 @@ func (h *Handler) genDeviceNo(ctx context.Context) (string, error) {
 	return "W" + time.Now().Format("20060102150405"), nil
 }
 
-// POST /restful/device/create —— 后台登记新手表（ADMIN，事务）。
+// POST /api/v1/device/create —— 后台登记新手表（ADMIN，事务）。
 func (h *Handler) deviceCreate(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
 		return
 	}
-	alias, _ := vstr(m, "alias")
-	if alias == "" {
-		alias = "新手表"
-	}
-	model, _ := vstr(m, "model")
-	if model == "" {
-		model = "HarmonyOS-Wear"
-	}
-	if utf8.RuneCountInString(alias) > 32 || utf8.RuneCountInString(model) > 32 {
+	alias, model, oldID, ok := parseDeviceRegistration(m)
+	if !ok {
 		writeValidation400(w)
 		return
-	}
-	oldIDStr, _ := vstr(m, "oldId")
-	var oldID *int64
-	if oldIDStr != "" {
-		if !validID(oldIDStr) {
-			writeValidation400(w)
-			return
-		}
-		n, _ := strconv.ParseInt(oldIDStr, 10, 64)
-		oldID = &n
 	}
 	ctx := r.Context()
 	tx, err := h.DB.Begin(ctx)
@@ -121,7 +104,7 @@ func (h *Handler) deviceCreate(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local)
-		if _, err := saveWatchProfileUpsert(ctx, tx, deviceID, 110, 55, 140, 90, today); err != nil {
+		if _, err := saveWatchProfileUpsert(ctx, tx, tx.IsMySQL(), deviceID, 110, 55, 140, 90, today); err != nil {
 			rollback()
 			response.Error500(w, ref())
 			return
@@ -137,7 +120,7 @@ func (h *Handler) deviceCreate(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// POST /restful/device/resetSecret —— 重置设备密钥（ADMIN）。
+// POST /api/v1/device/resetSecret —— 重置设备密钥（ADMIN）。
 func (h *Handler) deviceResetSecret(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -181,7 +164,7 @@ func (h *Handler) deviceResetSecret(w http.ResponseWriter, r *http.Request) {
 	response.OK(w, map[string]any{"secret": clearSecret})
 }
 
-// POST /restful/device/unbind —— 解除设备绑定（ADMIN，事务）。
+// POST /api/v1/device/unbind —— 解除设备绑定（ADMIN，事务）。
 func (h *Handler) deviceUnbind(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -225,7 +208,7 @@ func (h *Handler) deviceUnbind(w http.ResponseWriter, r *http.Request) {
 	response.OK(w, nil)
 }
 
-// POST /restful/device/delete —— 删除设备（ADMIN，事务）。
+// POST /api/v1/device/delete —— 删除设备（ADMIN，事务）。
 func (h *Handler) deviceDelete(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -270,4 +253,28 @@ func (h *Handler) deviceDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	response.OK(w, nil)
+}
+
+func parseDeviceRegistration(m map[string]any) (string, string, *int64, bool) {
+	alias, _ := vstr(m, "alias")
+	if alias == "" {
+		alias = "新手表"
+	}
+	model, _ := vstr(m, "model")
+	if model == "" {
+		model = "HarmonyOS-Wear"
+	}
+	if utf8.RuneCountInString(alias) > 32 || utf8.RuneCountInString(model) > 32 {
+		return "", "", nil, false
+	}
+	oldIDStr, _ := vstr(m, "oldId")
+	var oldID *int64
+	if oldIDStr != "" {
+		if !validID(oldIDStr) {
+			return "", "", nil, false
+		}
+		n, _ := strconv.ParseInt(oldIDStr, 10, 64)
+		oldID = &n
+	}
+	return alias, model, oldID, true
 }

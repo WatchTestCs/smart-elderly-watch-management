@@ -11,7 +11,7 @@ import (
 
 func TestHTTPHistogramLongTailAndCumulativeBuckets(t *testing.T) {
 	r := New()
-	labels := `route="/restful/device/healthBatch",method="POST",status="200"`
+	labels := `route="/api/v1/device/healthBatch",method="POST",status="200"`
 	r.observeHTTP(labels, 14.841)
 	r.observeHTTP(labels, 0.02)
 	w := httptest.NewRecorder()
@@ -64,7 +64,7 @@ func TestHTTPHistogramConcurrentUpdates(t *testing.T) {
 
 func BenchmarkRegistryObserveHTTP(b *testing.B) {
 	r := New()
-	labels := `route="/restful/device/healthBatch",method="POST",status="200"`
+	labels := `route="/api/v1/device/healthBatch",method="POST",status="200"`
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			r.observeHTTP(labels, 0.125)

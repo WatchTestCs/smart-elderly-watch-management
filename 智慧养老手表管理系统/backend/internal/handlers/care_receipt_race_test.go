@@ -20,7 +20,7 @@ func TestCareImmediateSignedReceiptDuringSending(t *testing.T) {
 	mustExec(t, pool, "INSERT INTO family(family_id,family_name,family_phone) VALUES(1,'家属','13800000001')")
 	mustExec(t, pool, "UPDATE oldperson SET family_id=1 WHERE old_id=1")
 	h := testHandler(t, pool)
-	api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret})
+	api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "requestId": "test-press", "bindingVersion": 1})
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	var id int64
@@ -35,7 +35,7 @@ func TestCareImmediateSignedReceiptDuringSending(t *testing.T) {
 	mac := hmac.New(sha256.New, []byte(secret))
 	mac.Write([]byte(stamp + "."))
 	mac.Write(body)
-	req := httptest.NewRequest(http.MethodPost, "/restful/care/receipt", bytes.NewReader(body))
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/care/receipt", bytes.NewReader(body))
 	req.Header.Set("X-Care-Timestamp", stamp)
 	req.Header.Set("X-Care-Signature", hex.EncodeToString(mac.Sum(nil)))
 	rec := httptest.NewRecorder()

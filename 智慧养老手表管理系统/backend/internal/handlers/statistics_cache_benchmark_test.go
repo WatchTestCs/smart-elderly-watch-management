@@ -12,12 +12,12 @@ import (
 	"testing"
 	"time"
 
-	"careold-go/internal/config"
-	"careold-go/internal/db"
-	"careold-go/internal/health"
-	"careold-go/internal/session"
 	"github.com/go-sql-driver/mysql"
 	"github.com/google/uuid"
+	"suining-care/internal/config"
+	"suining-care/internal/db"
+	"suining-care/internal/health"
+	"suining-care/internal/session"
 )
 
 // BenchmarkHealthStatisticsHybrid measures the complete statistics handler over
@@ -73,7 +73,7 @@ func BenchmarkHealthStatisticsHybrid(b *testing.B) {
 			b.Cleanup(h.Sessions.Close)
 			handler := withHealthPrincipal(h, session.Principal{Role: "ADMIN"}, h.healthStatistics)
 			request := func() *httptest.ResponseRecorder {
-				r := httptest.NewRequest(http.MethodPost, "/restful/health/statistics", bytes.NewReader(query))
+				r := httptest.NewRequest(http.MethodPost, "/api/v1/health/statistics", bytes.NewReader(query))
 				w := httptest.NewRecorder()
 				handler.ServeHTTP(w, r)
 				return w

@@ -6,20 +6,19 @@ import (
 	"encoding/base32"
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"net/url"
 	"strconv"
 	"time"
 
-	"careold-go/internal/auth"
-	"careold-go/internal/db"
-	"careold-go/internal/health"
-	"careold-go/internal/observability"
-	"careold-go/internal/response"
-	"careold-go/internal/securestore"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"suining-care/internal/auth"
+	"suining-care/internal/db"
+	"suining-care/internal/health"
+	"suining-care/internal/observability"
+	"suining-care/internal/response"
+	"suining-care/internal/securestore"
 )
 
 type factorGenerationKey struct{}
@@ -35,57 +34,32 @@ func (h *Handler) loginAuditTx(r *http.Request, phone, role string, id int64, ou
 	if !h.DB.IsMySQL() {
 		return nil
 	}
-	if h.Box == nil {
-		return errors.New("login audit requires the configured blind-index key")
-	}
 	ip := h.clientIP(r)
-	accountIndex, err := h.Box.Index("account", phone)
-	if err != nil {
-		return err
-	}
-	ipIndex, err := h.Box.Index("ip", ip)
-	if err != nil {
-		return err
-	}
 	q := "INSERT INTO login_audit(account_hash,ip_hash,role,actor_id,outcome,request_id) VALUES($1,$2,$3,$4,$5,$6)"
 	// X-Request-ID 是客户端可控的请求头，截断到列宽，防止超长值导致审计写入失败。
 	requestID := r.Header.Get("X-Request-ID")
 	if len(requestID) > 64 {
 		requestID = requestID[:64]
 	}
-	args := []any{accountIndex, ipIndex, role, id, outcome, requestID}
+	args := []any{h.Box.Index("account", phone), h.Box.Index("ip", ip), role, id, outcome, requestID}
 	if tx != nil {
 		_, err := tx.Exec(r.Context(), q, args...)
 		return err
 	}
-	_, err = h.DB.Exec(r.Context(), q, args...)
+	_, err := h.DB.Exec(r.Context(), q, args...)
 	return err
 }
 func (h *Handler) loginAllowed(w http.ResponseWriter, r *http.Request, phone string) bool {
 	if !h.DB.IsMySQL() {
 		return true
 	}
-	if h.Box == nil {
-		response.JSON(w, http.StatusServiceUnavailable, map[string]any{"message": "安全密钥不可用"})
-		return false
-	}
 	ip := h.clientIP(r)
-	accountIndex, err := h.Box.Index("account", phone)
-	if err != nil {
-		response.Error500(w, ref())
-		return false
-	}
-	ipIndex, err := h.Box.Index("ip", ip)
-	if err != nil {
-		response.Error500(w, ref())
-		return false
-	}
 	var failures, accountFailures int
 	// Shared durable audits apply across app replicas and rotating client IPs.
 	// Bounded subqueries avoid counting an unbounded audit history on each login.
-	err = h.DB.QueryRow(r.Context(), `SELECT
+	err := h.DB.QueryRow(r.Context(), `SELECT
  (SELECT count(*) FROM (SELECT 1 FROM login_audit WHERE account_hash=$1 AND ip_hash=$2 AND outcome IN ('invalid_credentials','factor_required') AND created_at>$3 LIMIT 10) pair_attempts),
- (SELECT count(*) FROM (SELECT 1 FROM login_audit WHERE account_hash=$1 AND outcome IN ('invalid_credentials','factor_required') AND created_at>$3 LIMIT 30) account_attempts)`, accountIndex, ipIndex, time.Now().Add(-15*time.Minute)).Scan(&failures, &accountFailures)
+ (SELECT count(*) FROM (SELECT 1 FROM login_audit WHERE account_hash=$1 AND outcome IN ('invalid_credentials','factor_required') AND created_at>$3 LIMIT 30) account_attempts)`, h.Box.Index("account", phone), h.Box.Index("ip", ip), time.Now().Add(-15*time.Minute)).Scan(&failures, &accountFailures)
 	if err != nil {
 		response.Error500(w, ref())
 		return false
