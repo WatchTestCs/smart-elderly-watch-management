@@ -60,7 +60,19 @@ func TransferLegacy(ctx context.Context, source *pgxpool.Pool, target *Database,
 			return nil, err
 		}
 		if existing != 0 && table != "health_clock" {
-			return nil, fmt.Errorf("target table %s is not empty; import refused", table)
+			if table != "app_metadata" {
+				return nil, fmt.Errorf("target table %s is not empty; import refused", table)
+			}
+			// A freshly migrated target has exactly one bootstrap metadata row.
+			// Do not mistake that row for imported business data.
+			var bootstrap int64
+			if err = write.myTx.QueryRowContext(ctx,
+				"SELECT count(*) FROM app_metadata WHERE id=1 AND schema_version=1").Scan(&bootstrap); err != nil {
+				return nil, err
+			}
+			if existing != 1 || bootstrap != 1 {
+				return nil, fmt.Errorf("target app_metadata is not the untouched bootstrap row; import refused")
+			}
 		}
 		var count int64
 		if err = read.QueryRow(ctx, "SELECT count(*) FROM \""+table+"\"").Scan(&count); err != nil {
@@ -75,6 +87,11 @@ func TransferLegacy(ctx context.Context, source *pgxpool.Pool, target *Database,
 		if _, err = write.myTx.ExecContext(ctx, "DELETE FROM health_clock"); err != nil {
 			return nil, err
 		}
+	}
+	// Replace only the verified bootstrap row with the source snapshot. This
+	// remains inside the same transaction as every other imported table.
+	if _, err = write.myTx.ExecContext(ctx, "DELETE FROM app_metadata"); err != nil {
+		return nil, err
 	}
 	for _, table := range tables {
 		rows, err := read.Query(ctx, "SELECT * FROM \""+table+"\"")

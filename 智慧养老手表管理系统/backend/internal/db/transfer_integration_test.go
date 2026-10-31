@@ -109,6 +109,10 @@ func testLegacyTransfer(t *testing.T, version int) {
 	if err = target.QueryRow(ctx, "SELECT count(*) FROM users").Scan(&count); err != nil || count != 0 {
 		t.Fatal("preflight wrote data")
 	}
+	var bootstrapVersion int
+	if err = target.QueryRow(ctx, "SELECT schema_version FROM app_metadata WHERE id=1").Scan(&bootstrapVersion); err != nil || bootstrapVersion != 1 {
+		t.Fatalf("preflight changed target bootstrap metadata: version=%d err=%v", bootstrapVersion, err)
+	}
 	if _, err = db.TransferLegacy(ctx, source, target, true); err != nil {
 		t.Fatal(err)
 	}
@@ -184,5 +188,8 @@ func testLegacyTransfer(t *testing.T, version int) {
 		if err = failed.QueryRow(ctx, "SELECT count(*) FROM "+table).Scan(&count); err != nil || count != 0 {
 			t.Fatalf("partial import leaked into %s: %d %v", table, count, err)
 		}
+	}
+	if err = failed.QueryRow(ctx, "SELECT schema_version FROM app_metadata WHERE id=1").Scan(&bootstrapVersion); err != nil || bootstrapVersion != 1 {
+		t.Fatalf("failed import did not restore bootstrap metadata: version=%d err=%v", bootstrapVersion, err)
 	}
 }
