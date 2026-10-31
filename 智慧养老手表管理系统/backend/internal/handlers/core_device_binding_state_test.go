@@ -12,10 +12,11 @@ func TestNewDeviceWithoutHeartbeatShowsNeverReportedAlert(t *testing.T) {
 	pool := testDatabase(t)
 	h := testHandler(t, pool)
 	created := api(t, h.deviceCreate, map[string]any{})
-	deviceID := strconv.FormatInt(int64(created["deviceId"].(float64)), 10)
+	deviceIDValue := int64(created["deviceId"].(float64))
+	deviceID := strconv.FormatInt(deviceIDValue, 10)
 
 	var handledSeq int64
-	if err := pool.QueryRow(context.Background(), "SELECT handled_seq FROM device WHERE device_id=$1", deviceID).Scan(&handledSeq); err != nil {
+	if err := pool.QueryRow(context.Background(), "SELECT handled_seq FROM device WHERE device_id=$1", deviceIDValue).Scan(&handledSeq); err != nil {
 		t.Fatal(err)
 	}
 	if handledSeq != -1 {
@@ -31,6 +32,13 @@ func TestNewDeviceWithoutHeartbeatShowsNeverReportedAlert(t *testing.T) {
 func TestBindingAlertMigrationRepairsLegacyNeverAcknowledgedRows(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
+	var initialHandledSeq int64
+	if err := pool.QueryRow(context.Background(), "SELECT handled_seq FROM device WHERE device_id=1").Scan(&initialHandledSeq); err != nil {
+		t.Fatal(err)
+	}
+	if initialHandledSeq != -1 {
+		t.Fatalf("database default handled_seq=%d; want -1", initialHandledSeq)
+	}
 	mustExec(t, pool, "UPDATE device SET handled_seq=0,boot_seq=0,person_handled=0 WHERE device_id=1")
 	migration := "0021_device_binding_alert_reset.sql"
 	if pool.IsMySQL() {
