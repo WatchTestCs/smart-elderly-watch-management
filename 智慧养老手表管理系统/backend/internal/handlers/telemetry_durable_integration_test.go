@@ -131,7 +131,7 @@ func TestDurableTelemetryBackoffDoesNotBlockOtherDevice(t *testing.T) {
 		t.Fatalf("first poison attempt count=%d err=%v", count, err)
 	}
 	// Ensure this assertion is deterministic even on a heavily loaded CI runner.
-	mustExec(t, pool, "UPDATE telemetry_inbox SET next_retry_at=now()+interval '1 hour' WHERE device_id=1")
+	mustExec(t, pool, "UPDATE telemetry_inbox SET next_retry_at=$1 WHERE device_id=1", time.Now().UTC().Add(time.Hour))
 	mustExec(t, pool, `INSERT INTO telemetry_inbox(device_id,elder_id,binding_epoch,request_id,payload,status,created_at,next_retry_at)
 	VALUES(2,1,1,'second-ready','corrupt','pending',now(),now()-interval '1 second')`)
 	if count, err := DrainDurableTelemetryBatch(ctx, pool, box); err != nil || count != 1 {

@@ -270,6 +270,14 @@ func (h *Handler) deviceBind(w http.ResponseWriter, r *http.Request) {
 		conflict409(w, "该绑定码已被使用")
 		return
 	}
+	// The first bind may itself increment health_epoch. Return the committed
+	// version so the device can immediately send versioned telemetry.
+	var boundVersion int64
+	if err := tx.QueryRow(ctx, "SELECT health_epoch FROM device WHERE device_id=$1", d.ID).Scan(&boundVersion); err != nil {
+		rollback()
+		response.Error500(w, ref())
+		return
+	}
 	if err := tx.Commit(ctx); err != nil {
 		response.Error500(w, ref())
 		return
@@ -278,7 +286,7 @@ func (h *Handler) deviceBind(w http.ResponseWriter, r *http.Request) {
 	if oldName != nil {
 		nm = *oldName
 	}
-	response.OK(w, map[string]any{"oldId": *bc.OldID, "oldPersonName": nm})
+	response.OK(w, map[string]any{"oldId": *bc.OldID, "oldPersonName": nm, "bindingVersion": boundVersion})
 }
 
 // POST /api/v1/device/heartbeat —— 设备心跳（公开）。

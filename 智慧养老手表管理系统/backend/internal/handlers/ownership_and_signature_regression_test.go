@@ -100,3 +100,38 @@ func TestSignedDeviceGateProtectsHeartbeatWithoutSession(t *testing.T) {
 		t.Fatalf("replay accepted: %d %s", second.Code, second.Body.String())
 	}
 }
+
+func TestDeviceBindReturnsCurrentEpoch(t *testing.T) {
+	db := testDatabase(t)
+	seedDevice(t, db)
+	h := testHandler(t, db)
+	mustExec(t, db, "UPDATE device SET old_id=NULL WHERE device_id=1")
+	mustExec(t, db, "INSERT INTO bind_code(code,old_id,used) VALUES('UNIQUE',1,0)")
+	out := api(t, h.deviceBind, map[string]any{
+		"deviceNo": "WATCH001", "secret": testSecret, "code": "UNIQUE",
+	})
+	var epoch int64
+	if err := db.QueryRow(context.Background(), "SELECT health_epoch FROM device WHERE device_id=1").Scan(&epoch); err != nil {
+		t.Fatal(err)
+	}
+	if out["bindingVersion"] != float64(epoch) {
+		t.Fatalf("bind did not provide current epoch: %+v stored=%d", out, epoch)
+	}
+}
+
+func TestLegacyHandleAlarmSkipsAlreadyProcessedAlarm(t *testing.T) {
+	db := testDatabase(t)
+	seedDevice(t, db)
+	h := testHandler(t, db)
+	mustExec(t, db, `INSERT INTO alarm_precess(old_id,device_id,status,be_time,kind)
+		VALUES(1,1,'1',now()-interval '1 day','unknown'),
+		(1,1,'0',now(),'unknown')`)
+	result := api(t, h.deviceHandleAlarm, map[string]any{"oldId": 1})
+	if result["returnCode"] != "1111" {
+		t.Fatal(result)
+	}
+	var pending int
+	if err := db.QueryRow(context.Background(), "SELECT count(*) FROM alarm_precess WHERE status='1'").Scan(&pending); err != nil || pending != 0 {
+		t.Fatalf("old pending alarm not closed: %d err=%v", pending, err)
+	}
+}
