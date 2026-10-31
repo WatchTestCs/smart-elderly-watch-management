@@ -218,3 +218,22 @@ ok  	suining-care/internal/handlers	0.452s
 === contract-check ===
 /api/v1/device/report: existing telemetry fields remain open; metadata constraints match OpenAPI 3.1
 /api/v1/device/sos: existing telemetry fields remain open; metadata constraints match OpenAPI 3.1
+
+=== CI head 77e0d92 / run 41176414763 / artifact 13033062907: sole failing test ===
+{"Time":"2026-10-31T06:27:47.814665182Z","Action":"run","Package":"suining-care/internal/handlers","Test":"TestIntegrationMigrationsAndBindingConstraint"}
+{"Time":"2026-10-31T06:27:47.814669208Z","Action":"output","Package":"suining-care/internal/handlers","Test":"TestIntegrationMigrationsAndBindingConstraint","Output":"=== RUN   TestIntegrationMigrationsAndBindingConstraint\n"}
+{"Time":"2026-10-31T06:27:48.560244254Z","Action":"output","Package":"suining-care/internal/handlers","Test":"TestIntegrationMigrationsAndBindingConstraint","Output":"    integration_test.go:130: migrations=19 err=\u003cnil\u003e\n"}
+{"Time":"2026-10-31T06:27:48.643330204Z","Action":"output","Package":"suining-care/internal/handlers","Test":"TestIntegrationMigrationsAndBindingConstraint","Output":"--- FAIL: TestIntegrationMigrationsAndBindingConstraint (0.83s)\n"}
+{"Time":"2026-10-31T06:27:48.643371476Z","Action":"fail","Package":"suining-care/internal/handlers","Test":"TestIntegrationMigrationsAndBindingConstraint","Elapsed":0.83}
+
+=== ci-fix-mysql ===
+=== RUN   TestIntegrationMigrationsAndBindingConstraint
+--- PASS: TestIntegrationMigrationsAndBindingConstraint (3.12s)
+PASS
+ok  	suining-care/internal/handlers	3.265s
+
+=== ci-fix-postgres ===
+=== RUN   TestIntegrationMigrationsAndBindingConstraint
+--- PASS: TestIntegrationMigrationsAndBindingConstraint (0.32s)
+PASS
+ok  	suining-care/internal/handlers	0.463s

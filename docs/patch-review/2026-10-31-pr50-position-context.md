@@ -33,3 +33,7 @@ MySQL 新增 0020、PG 回归新增 0018；注册 MySQL 执行列表，并扩展
 生成契约另以只读断言确认两路 additionalProperties=true、RFC3339 格式和 OpenAPI 3.1 数值 exclusiveMinimum。生产代码不需要为这两项审查发现增加新机制。
 
 规范轴 0 项阻断；需求轴发现的 P1 契约和 P2 测试隔离问题均已修正，待对修正差异定向复核。
+
+## CI 首轮失败修正
+
+head 77e0d92 的 CI 后端输出中唯一失败用例为 TestIntegrationMigrationsAndBindingConstraint：实际 MySQL 迁移为 19，旧期望仍为 18。新增迁移后同步更新严格期望为 MySQL 19、PG 18，原并发重放与外键检查保留不变。只在两库各定向复验该用例，均通过；没有重跑本地全量。失败摘录及修复后输出已补录，完整下载产物留在本地工作目录。以随后最新 head 的 CI 结果作为合并依据，不把旧 head 的失败改写为通过。
