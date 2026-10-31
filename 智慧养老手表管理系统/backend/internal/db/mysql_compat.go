@@ -6,19 +6,64 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"strings"
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-var insertReturning = regexp.MustCompile(`(?is)^\s*(INSERT\s+INTO\b.*)\s+RETURNING\s+[a-z_]+\s*$`)
+var insertReturning = regexp.MustCompile("(?is)^\\s*(INSERT\\s+INTO\\s+(?:`([^`]+)`|([a-z_][a-z0-9_]*))(?:\\s|\\().*)\\s+RETURNING\\s+([a-z_][a-z0-9_]*)\\s*$")
+
+var mysqlReturningColumns = map[string]string{
+	"alarm_precess":  "id",
+	"alert_review":   "id",
+	"bind_code":      "id",
+	"care_incident":  "id",
+	"device":         "device_id",
+	"device_command": "id",
+	"device_fence":   "id",
+	"family":         "family_id",
+	"fence_event":    "id",
+	"text":           "text_id",
+}
+
+func mysqlReturningColumnSupported(table, column string) bool {
+	return mysqlReturningColumns[table] == column
+}
+
+func validateMySQLReturning(table, column, insertSQL string) error {
+	hasConflict, err := containsSQLCodePattern(insertSQL, conflictNothing)
+	if err != nil {
+		return err
+	}
+	if !hasConflict {
+		hasConflict, err = containsSQLCodePattern(insertSQL, conflictUpdate)
+		if err != nil {
+			return err
+		}
+	}
+	if hasConflict {
+		return errors.New("MySQL INSERT RETURNING cannot preserve PostgreSQL ON CONFLICT row-return semantics")
+	}
+	if !mysqlReturningColumnSupported(strings.ToLower(table), strings.ToLower(column)) {
+		return fmt.Errorf("MySQL INSERT RETURNING is unsupported for %s.%s", table, column)
+	}
+	return nil
+}
 
 func (e executor) QueryRow(ctx context.Context, query string, args ...any) Row {
 	if e.pg != nil {
 		return e.pg.QueryRow(ctx, query, args...)
 	}
 	if match := insertReturning.FindStringSubmatch(query); match != nil {
+		table := match[2]
+		if table == "" {
+			table = match[3]
+		}
+		if err := validateMySQLReturning(table, match[4], match[1]); err != nil {
+			return idRow{err: err}
+		}
 		q, a, err := mysqlQuery(match[1], args)
 		if err != nil {
 			return idRow{err: err}
