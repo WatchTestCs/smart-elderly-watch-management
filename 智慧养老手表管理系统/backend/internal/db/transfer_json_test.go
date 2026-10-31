@@ -29,3 +29,22 @@ func TestTransferJSONValuePreservesRawJSONRepresentations(t *testing.T) {
 		t.Fatal("invalid JSON must fail closed")
 	}
 }
+
+
+func TestValidateSourceAppMetadataRequiresOneBootstrapRow(t *testing.T) {
+	for _, tc := range []struct {
+		count int64
+		id    int64
+		want  bool
+	}{
+		{count: 1, id: 1, want: true},
+		{count: 0, id: 0, want: false},
+		{count: 2, id: 1, want: false},
+		{count: 1, id: 2, want: false},
+	} {
+		err := validateSourceAppMetadata(tc.count, tc.id)
+		if (err == nil) != tc.want {
+			t.Fatalf("count=%d id=%d err=%v", tc.count, tc.id, err)
+		}
+	}
+}

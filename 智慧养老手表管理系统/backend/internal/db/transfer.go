@@ -78,6 +78,15 @@ func TransferLegacy(ctx context.Context, source *pgxpool.Pool, target *Database,
 		if err = read.QueryRow(ctx, "SELECT count(*) FROM \""+table+"\"").Scan(&count); err != nil {
 			return nil, err
 		}
+		if table == "app_metadata" {
+			var metadataID int64
+			if err = read.QueryRow(ctx, "SELECT id FROM \"app_metadata\"").Scan(&metadataID); err != nil {
+				return nil, err
+			}
+			if err = validateSourceAppMetadata(count, metadataID); err != nil {
+				return nil, err
+			}
+		}
 		counts[table] = count
 	}
 	if !apply {
@@ -228,4 +237,12 @@ func transferJSONValue(value any) (json.RawMessage, error) {
 		return nil, fmt.Errorf("source value is not valid JSON")
 	}
 	return json.RawMessage(payload), nil
+}
+
+
+func validateSourceAppMetadata(count, id int64) error {
+	if count != 1 || id != 1 {
+		return fmt.Errorf("source app_metadata must contain exactly one bootstrap row with id=1; count=%d id=%d", count, id)
+	}
+	return nil
 }
