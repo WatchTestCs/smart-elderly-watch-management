@@ -15,20 +15,6 @@ import (
 
 var insertReturning = regexp.MustCompile(`(?is)^\s*(INSERT\s+INTO\s+([a-z_][a-z0-9_]*)\b.*)\s+RETURNING\s+([a-z_][a-z0-9_]*)\s*$`)
 
-import (
-	"context"
-	"database/sql"
-	"errors"
-	"fmt"
-	"regexp"
-
-	"github.com/go-sql-driver/mysql"
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
-)
-
-)
-
 var mysqlReturningColumns = map[string]string{
 	"alert_review":  "id",
 	"bind_code":     "id",
