@@ -54,3 +54,9 @@ PASS
 ok  	suining-care/internal/handlers	3.429s
 
 handlers go vet PASS; generated OpenAPI check PASS (107 paths); diff check PASS.
+
+=== concurrent final: reject unexpected server errors ===
+=== RUN   TestContinuousGuardianCreateAndDeleteKeepReferencesValid
+--- PASS: TestContinuousGuardianCreateAndDeleteKeepReferencesValid (3.06s)
+PASS
+ok  	suining-care/internal/handlers	3.199s

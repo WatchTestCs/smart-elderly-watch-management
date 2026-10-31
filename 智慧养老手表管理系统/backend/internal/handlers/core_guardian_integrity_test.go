@@ -113,7 +113,11 @@ func TestContinuousGuardianCreateAndDeleteKeepReferencesValid(t *testing.T) {
 		deleted <- callAPI(h.customerDelete, map[string]any{"customerId": 1})
 	}()
 	close(start)
-	createResult, deleteResult := architectureBody(t, <-created), architectureBody(t, <-deleted)
+	createResponse, deleteResponse := <-created, <-deleted
+	if createResponse.Code != 200 || deleteResponse.Code != 200 {
+		t.Fatalf("concurrent requests must finish without server errors: create=%d %s delete=%d %s", createResponse.Code, createResponse.Body.String(), deleteResponse.Code, deleteResponse.Body.String())
+	}
+	createResult, deleteResult := architectureBody(t, createResponse), architectureBody(t, deleteResponse)
 	createOK, deleteOK := createResult["returnCode"] == "1111", deleteResult["returnCode"] == "1111"
 	if createOK == deleteOK {
 		t.Fatalf("assignment and parent deletion must have exactly one winner: create=%v delete=%v", createResult, deleteResult)
