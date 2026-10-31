@@ -60,7 +60,7 @@ func testLegacyTransfer(t *testing.T, version int) {
 	}
 	for _, query := range []string{
 		"INSERT INTO users(user_id,user_name) VALUES(7,'主管')",
-		"INSERT INTO app_metadata(id,schema_version) VALUES(1,8)",
+		"UPDATE app_metadata SET schema_version=8 WHERE id=1",
 		"INSERT INTO oldperson(old_id,name) VALUES(11,'长者')",
 		"INSERT INTO device(device_id,device_no,secret,old_id) VALUES(5,'IMPORT','hashed-secret',11)",
 		"UPDATE oldperson SET device_id=5 WHERE old_id=11",
