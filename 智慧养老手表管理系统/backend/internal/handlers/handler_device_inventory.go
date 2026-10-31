@@ -101,8 +101,8 @@ func (h *Handler) deviceCreate(w http.ResponseWriter, r *http.Request) {
 	}
 	var deviceID int64
 	if err := tx.QueryRow(ctx,
-		`INSERT INTO device(device_no, secret, alias, model, old_id, status, bind_time, create_time)
-		 VALUES($1,$2,$3,$4,$5,1,$6,$7) RETURNING device_id`,
+		`INSERT INTO device(device_no, secret, alias, model, old_id, status, bind_time, create_time, handled_seq)
+		 VALUES($1,$2,$3,$4,$5,1,$6,$7,-1) RETURNING device_id`,
 		deviceNo, hashed, alias, model, oldIDAny, bindTimeAny, now).Scan(&deviceID); err != nil {
 		rollback()
 		response.Error500(w, ref())

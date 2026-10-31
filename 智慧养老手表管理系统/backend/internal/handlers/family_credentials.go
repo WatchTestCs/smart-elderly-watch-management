@@ -47,9 +47,42 @@ func (h *Handler) familyUpdatePassword(w http.ResponseWriter, r *http.Request) {
 		response.Error500(w, ref())
 		return
 	}
-	if _, err := h.DB.Exec(r.Context(),
-		`UPDATE family SET family_password=$1 WHERE family_phone=$2 AND ($3=0 OR family_id=$3)`, nh, phone, familySelfID(auth.Principal(r))); err != nil {
+	ctx := r.Context()
+	tx, err := h.DB.Begin(ctx)
+	if err != nil {
 		response.Error500(w, ref())
+		return
+	}
+	defer tx.Rollback(ctx)
+	var familyID int64
+	var currentHash *string
+	if err := tx.QueryRow(ctx,
+		"SELECT family_id,family_password FROM family WHERE family_phone=$1 AND ($2=0 OR family_id=$2) FOR UPDATE",
+		phone, familySelfID(auth.Principal(r))).Scan(&familyID, &currentHash); err != nil {
+		response.Error500(w, ref())
+		return
+	}
+	if currentHash == nil || *currentHash != *hashed {
+		conflict409(w, "密码已被其他请求修改，请重新验证")
+		return
+	}
+	if _, err := tx.Exec(ctx,
+		`UPDATE family SET family_password=$1 WHERE family_id=$2`, nh, familyID); err != nil {
+		response.Error500(w, ref())
+		return
+	}
+	if tx.IsMySQL() {
+		if _, err := tx.Exec(ctx, "DELETE FROM web_session WHERE role='FAMILY' AND actor_id=$1", familyID); err != nil {
+			response.Error500(w, ref())
+			return
+		}
+	}
+	if err := tx.Commit(ctx); err != nil {
+		response.Error500(w, ref())
+		return
+	}
+	if err := h.Sessions.RevokeContext(ctx, auth.RoleFamily, familyID); err != nil {
+		response.JSON(w, http.StatusServiceUnavailable, map[string]any{"message": "密码已修改，但会话撤销确认失败"})
 		return
 	}
 	response.OK(w, nil)

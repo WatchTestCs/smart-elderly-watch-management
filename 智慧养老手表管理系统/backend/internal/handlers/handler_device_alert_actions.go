@@ -14,9 +14,9 @@ func (h *Handler) deviceAlertCounts(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	rows, err := h.DB.Query(ctx,
 		`SELECT `+personCols+`,
-			(SELECT COUNT(1) FROM ratepre r WHERE r.device_id = d.device_id AND r.rate_state='1'
+			(SELECT COUNT(1) FROM ratepre r WHERE r.device_id = d.device_id AND r.old_id=d.old_id AND r.binding_epoch=d.health_epoch AND r.rate_state='1'
 				AND (r.rate_handled_at IS NULL OR r.create_time > r.rate_handled_at)) AS rate_count,
-			(SELECT COUNT(1) FROM ratepre r WHERE r.device_id = d.device_id AND r.pre_state='1'
+			(SELECT COUNT(1) FROM ratepre r WHERE r.device_id = d.device_id AND r.old_id=d.old_id AND r.binding_epoch=d.health_epoch AND r.pre_state='1'
 				AND (r.pre_handled_at IS NULL OR r.create_time > r.pre_handled_at)) AS pre_count
 		 `+personFrom+` WHERE d.status = 1 ORDER BY d.device_id`)
 	if err != nil {
@@ -216,11 +216,14 @@ func (h *Handler) deviceResolveAlert(w http.ResponseWriter, r *http.Request) {
 			// 按 recordId 处置必须校验记录归属该设备。
 			ct, err = tx.Exec(ctx,
 				`UPDATE ratepre SET `+handledCol+`=1, `+hatCol+`=now(), `+stateCol+`='0'
-				 WHERE id=$1 AND device_id=$2`, *recordID, deviceID)
+				 WHERE id=$1 AND device_id=$2
+				   AND old_id=(SELECT old_id FROM device WHERE device_id=$2)
+				   AND binding_epoch=(SELECT health_epoch FROM device WHERE device_id=$2)`, *recordID, deviceID)
 		} else {
 			ct, err = tx.Exec(ctx,
 				`UPDATE ratepre SET `+handledCol+`=1, `+hatCol+`=now(), `+stateCol+`='0'
-				 WHERE device_id=$1 AND `+stateCol+`='1'
+				 WHERE device_id=$1 AND old_id=(SELECT old_id FROM device WHERE device_id=$1)
+				   AND binding_epoch=(SELECT health_epoch FROM device WHERE device_id=$1) AND `+stateCol+`='1'
 				   AND (`+hatCol+` IS NULL OR create_time > `+hatCol+`)`, deviceID)
 		}
 		if err != nil {

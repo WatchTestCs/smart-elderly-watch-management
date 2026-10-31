@@ -62,7 +62,7 @@ func TestCapabilitiesRollbackAndReapply(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	for _, name := range []string{"mysql_0020_position_metadata.sql", "mysql_0019_sleep_observation_time.sql", "mysql_0018_daily_ownership.sql", "mysql_0017_telemetry_observation_time.sql", "mysql_0016_durable_telemetry_inbox.sql", "mysql_0015_device_request_nonces.sql", "mysql_0014_operational_indexes.sql", "mysql_0013_image_blob.sql", "mysql_0011_encrypt_coordinates.sql", "mysql_0010_care_recipient_key.sql", "mysql_0009_rule_baseline_cover.sql", "mysql_0008_rule_baseline_source.sql", "mysql_0007_cluster_scheduling.sql", "mysql_0006_health_performance.sql", "mysql_0005_platform.sql", "mysql_0004_device_capabilities.sql"} {
+	for _, name := range []string{"mysql_0023_device_binding_alert_reset.sql", "mysql_0022_telemetry_binding_order.sql", "mysql_0021_report_binding_receipts.sql", "mysql_0020_position_metadata.sql", "mysql_0019_sleep_observation_time.sql", "mysql_0018_daily_ownership.sql", "mysql_0017_telemetry_observation_time.sql", "mysql_0016_durable_telemetry_inbox.sql", "mysql_0015_device_request_nonces.sql", "mysql_0014_operational_indexes.sql", "mysql_0013_image_blob.sql", "mysql_0011_encrypt_coordinates.sql", "mysql_0010_care_recipient_key.sql", "mysql_0009_rule_baseline_cover.sql", "mysql_0008_rule_baseline_source.sql", "mysql_0007_cluster_scheduling.sql", "mysql_0006_health_performance.sql", "mysql_0005_platform.sql", "mysql_0004_device_capabilities.sql"} {
 		b, err := os.ReadFile(filepath.Join("..", "..", "migrations", "rollback", name))
 		if err != nil {
 			t.Fatal(err)

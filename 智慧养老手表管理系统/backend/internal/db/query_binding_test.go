@@ -30,10 +30,11 @@ func TestMySQLBindingMatchesPositions(t *testing.T) {
 				want = append(want, args[pos])
 			}
 			sql, got, err := mysqlQuery(query, args)
-			if (err != nil) != missing {
-				t.Fatalf("%s argc=%d error=%v", query, count, err)
+			extra := len(args) > plan.requiredArgs
+			if (err != nil) != (missing || extra) {
+				t.Fatalf("%s argc=%d required=%d error=%v", query, count, plan.requiredArgs, err)
 			}
-			if !missing && (sql != plan.sql || !reflect.DeepEqual(got, want)) {
+			if !missing && !extra && (sql != plan.sql || !reflect.DeepEqual(got, want)) {
 				t.Fatalf("%s got %v want %v", query, got, want)
 			}
 			if !reflect.DeepEqual(before, args) {

@@ -195,8 +195,21 @@ func (h *Handler) familyDelete(w http.ResponseWriter, r *http.Request) {
 		failBare0000(w)
 		return
 	}
+	// Revoke persisted sessions atomically with account deletion.
+	if tx.IsMySQL() {
+		if _, err := tx.Exec(ctx, "DELETE FROM web_session WHERE role='FAMILY' AND actor_id=$1", id); err != nil {
+			_ = tx.Rollback(ctx)
+			response.Error500(w, ref())
+			return
+		}
+	}
 	if err := tx.Commit(ctx); err != nil {
 		response.Error500(w, ref())
+		return
+	}
+	// Also invalidate a session store running in local-only mode.
+	if err := h.Sessions.RevokeContext(ctx, auth.RoleFamily, id); err != nil {
+		response.JSON(w, http.StatusServiceUnavailable, map[string]any{"message": "账号已删除，但会话撤销确认失败"})
 		return
 	}
 	response.OK(w, nil)

@@ -32,8 +32,8 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// SOS retry identifiers must be checked before opening a DB transaction.
-	requestID, _ := vstr(m, "requestId")
-	if requestID == "" || len(requestID) > 64 || !sosRequestIDOK(requestID) {
+	requestID, validRequestID := deviceRequestID(m, true)
+	if !validRequestID {
 		writeValidation400(w)
 		return
 	}
@@ -179,3 +179,15 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 var sosRequestIDPattern = regexp.MustCompile(`^[A-Za-z0-9_.:-]{1,64}$`)
 
 func sosRequestIDOK(id string) bool { return sosRequestIDPattern.MatchString(id) }
+
+func deviceRequestID(body map[string]any, required bool) (string, bool) {
+	raw, present := body["requestId"]
+	if !present {
+		return "", !required
+	}
+	value, ok := raw.(string)
+	if !ok || value == "" || !sosRequestIDOK(value) {
+		return "", false
+	}
+	return value, true
+}

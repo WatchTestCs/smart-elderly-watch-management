@@ -206,7 +206,7 @@ func watchDatabase(ctx context.Context, cfg config.Config, sessions *session.Sto
 					go func() { defer jobs.Done(); handlers.RunDurableTelemetry(ctx, pool, h.Box) }()
 					jobs.Wait()
 				}()
-				api = limiter.Middleware(csrf.Middleware(sessions, auth.Middleware(sessions, h.EnforceAdminDuty(sensitiveCareAudit(pool, mux)))))
+				api = limiter.Middleware(csrf.Middleware(sessions, auth.Middleware(sessions, h.EnforceAdminDuty(h.EnforceDeviceSignatures(sensitiveCareAudit(pool, mux))))))
 			}
 		}
 		if err == nil {

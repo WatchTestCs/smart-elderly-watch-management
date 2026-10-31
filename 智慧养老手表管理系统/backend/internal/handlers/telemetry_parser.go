@@ -12,6 +12,7 @@ type parsedDeviceTelemetry struct {
 	hr, bp, step, sleep, battery *int
 	sleepState, appVersion       *string
 	lng, lat, sourceStr, alarm   string
+	requestID                    string
 	position                     positionMetadata
 }
 

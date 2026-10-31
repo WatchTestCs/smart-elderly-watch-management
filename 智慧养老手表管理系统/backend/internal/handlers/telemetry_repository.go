@@ -7,6 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	dbstore "suining-care/internal/db"
+	"suining-care/internal/notify"
 	"suining-care/internal/securestore"
 )
 
@@ -17,8 +18,9 @@ type telemetryRepository struct {
 }
 
 type telemetryPersisted struct {
-	rateState any
-	preState  any
+	rateState      any
+	preState       any
+	careIncidentID int64
 }
 
 func watchDayUpsertSQL(mysql bool) string {
@@ -58,6 +60,7 @@ func (repo telemetryRepository) PersistDeviceReport(ctx context.Context, tx *dbs
 	}
 	sleepState, battery, appVersion := parsed.sleepState, parsed.battery, parsed.appVersion
 	lng, lat, sourceStr, alarm := parsed.lng, parsed.lat, parsed.sourceStr, parsed.alarm
+	var careIncidentID int64
 	var position string
 	if lng != "" || alarm == "1" || strings.EqualFold(alarm, "fall") {
 		var err error
@@ -107,9 +110,9 @@ func (repo telemetryRepository) PersistDeviceReport(ctx context.Context, tx *dbs
 
 	if hrv > 0 || bpv > 0 {
 		if _, err := tx.Exec(ctx,
-			`INSERT INTO ratepre(device_id,old_id,rate_state,pre_state,create_time,hr,bp)
-			 VALUES($1,$2,$3,$4,$5,$6,$7)`,
-			d.ID, oldID, rateState, preState, beTime, hr, bp); err != nil {
+			`INSERT INTO ratepre(device_id,old_id,binding_epoch,rate_state,pre_state,create_time,hr,bp)
+			 VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,
+			d.ID, oldID, d.HealthEpoch, rateState, preState, beTime, hr, bp); err != nil {
 			return telemetryPersisted{}, err
 		}
 	}
@@ -172,17 +175,43 @@ func (repo telemetryRepository) PersistDeviceReport(ctx context.Context, tx *dbs
 		if strings.EqualFold(alarm, "fall") {
 			kind = "fall"
 		}
-		if _, err := tx.Exec(ctx,
+		var alarmID int64
+		if err := tx.QueryRow(ctx,
 			`INSERT INTO alarm_precess(status, old_id, device_id, be_time, lng, lat, kind, position_metadata)
-			 VALUES('1',$1,$2,$3,$4,$5,$6,$7)`,
-			oldID, d.ID, beTime, alarmLng, alarmLat, kind, position); err != nil {
+			 VALUES('1',$1,$2,$3,$4,$5,$6,$7) RETURNING id`,
+			oldID, d.ID, beTime, alarmLng, alarmLat, kind, position).Scan(&alarmID); err != nil {
+			return telemetryPersisted{}, err
+		}
+		incidentKind := "device_alarm"
+		if kind == "fall" {
+			incidentKind = "fall"
+		}
+		var requestValue any
+		if parsed.requestID != "" {
+			requestValue = parsed.requestID
+		}
+		if err := tx.QueryRow(ctx,
+			`INSERT INTO care_incident(source_alarm_id,old_id,device_id,kind,request_id)
+			 VALUES($1,$2,$3,$4,$5) RETURNING id`,
+			alarmID, oldID, d.ID, incidentKind, requestValue).Scan(&careIncidentID); err != nil {
+			return telemetryPersisted{}, err
+		}
+		if _, err := tx.Exec(ctx,
+			`INSERT INTO care_incident_event(incident_id,actor,action,note)
+			 VALUES($1,'device','received','设备异常已持久化；等待通知及人工处置')`, careIncidentID); err != nil {
+			return telemetryPersisted{}, err
+		}
+		if _, err := notify.QueueCareSMS(ctx, tx, repo.box, careIncidentID, oldID); err != nil {
+			return telemetryPersisted{}, err
+		}
+		if err := notify.CareInbox(ctx, tx, repo.box, oldID, careIncidentID); err != nil {
 			return telemetryPersisted{}, err
 		}
 	}
 	if err := touchDevice(ctx, tx, d.ID, battery, appVersion, now); err != nil {
 		return telemetryPersisted{}, err
 	}
-	return telemetryPersisted{rateState: rateState, preState: preState}, nil
+	return telemetryPersisted{rateState: rateState, preState: preState, careIncidentID: careIncidentID}, nil
 }
 
 // PersistSOSIncident only persists the incident; callers must insert SMS/outbox

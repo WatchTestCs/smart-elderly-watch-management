@@ -59,10 +59,14 @@ func (repo telemetryRepository) QueueDurableReport(ctx context.Context, tx *dbst
 	if err != nil {
 		return err
 	}
-	_, err = tx.Exec(ctx, `INSERT INTO telemetry_inbox(device_id,elder_id,binding_epoch,request_id,payload,status,created_at,next_retry_at)
+	if _, err = tx.Exec(ctx, `INSERT INTO telemetry_inbox(device_id,elder_id,binding_epoch,request_id,payload,status,created_at,next_retry_at)
 		VALUES($1,$2,$3,$4,$5,'pending',$6,$6)`,
-		d.ID, *d.OldID, d.HealthEpoch, requestID, sealed, parsed.now.UTC())
-	return err
+		d.ID, *d.OldID, d.HealthEpoch, requestID, sealed, parsed.now.UTC()); err != nil {
+		return err
+	}
+	// A durable acknowledgement is also a real heartbeat. Update last-seen in
+	// the ingest transaction rather than waiting for a potentially delayed worker.
+	return touchDevice(ctx, tx, d.ID, parsed.battery, parsed.appVersion, parsed.now)
 }
 
 func durableQueueDuplicate(err error) bool {
@@ -112,13 +116,20 @@ func durableQueueItemFailure(ctx context.Context, tx *dbstore.Transaction, item 
 	if len(reason) > 500 {
 		reason = reason[:500]
 	}
-	next := time.Now().UTC().Add(time.Duration(1<<min(item.attempts, 7)) * time.Second)
+	attempts := item.attempts
+	if attempts < 0 {
+		attempts = 0
+	}
+	if attempts > 11 {
+		attempts = 11
+	}
+	next := time.Now().UTC().Add(time.Duration(1<<min(attempts, 7)) * time.Second)
 	status := "pending"
-	if item.attempts >= 11 {
+	if attempts >= 11 {
 		status = "failed"
 	}
 	_, err := tx.Exec(ctx, `UPDATE telemetry_inbox SET attempts=$1,status=$2,next_retry_at=$3,last_error=$4 WHERE id=$5`,
-		item.attempts+1, status, next, reason, item.id)
+		attempts+1, status, next, reason, item.id)
 	return err
 }
 
@@ -142,9 +153,15 @@ func DrainDurableTelemetryBatch(ctx context.Context, db *dbstore.Database, box *
 	if err != nil {
 		return 0, err
 	}
-	rows, err := tx.Query(ctx, `SELECT id,device_id,elder_id,binding_epoch,payload,next_retry_at,attempts
-		FROM telemetry_inbox WHERE status='pending'
-		ORDER BY id LIMIT 32 FOR UPDATE SKIP LOCKED`)
+	// Retry backoff is per device, not global. Newer messages for that
+	// same device wait behind earlier pending messages; unrelated devices
+	// must remain eligible when one device has a poison message.
+	rows, err := tx.Query(ctx, `SELECT q.id,q.device_id,q.elder_id,q.binding_epoch,q.payload,q.next_retry_at,q.attempts
+		FROM telemetry_inbox q WHERE q.status='pending' AND q.next_retry_at<=now()
+		AND NOT EXISTS (SELECT 1 FROM telemetry_inbox older
+		    WHERE older.device_id=q.device_id AND older.elder_id=q.elder_id
+		      AND older.binding_epoch=q.binding_epoch AND older.status='pending' AND older.id<q.id)
+		ORDER BY q.id LIMIT 32 FOR UPDATE SKIP LOCKED`)
 	if err != nil {
 		return 0, err
 	}
@@ -168,13 +185,7 @@ func DrainDurableTelemetryBatch(ctx context.Context, db *dbstore.Database, box *
 
 	repo := telemetryRepository{box: box}
 	processed := 0
-	now := time.Now().UTC()
 	for _, item := range items {
-		// A failed older item must not allow a newer daily-state update to
-		// overtake it. A poison entry eventually becomes a retained dead letter.
-		if item.nextRetryAt.After(now) {
-			break
-		}
 		processed++
 		if _, err := tx.Exec(ctx, `SAVEPOINT telemetry_inbox_item`); err != nil {
 			return 0, err

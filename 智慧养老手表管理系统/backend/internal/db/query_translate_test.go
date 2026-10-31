@@ -42,7 +42,7 @@ func TestCompileMySQLQueryRewrites(t *testing.T) {
 
 		// 6. ON CONFLICT 家族
 		{"ON CONFLICT DO UPDATE 且 excluded 转 VALUES", "INSERT INTO t(a,b) VALUES($1,$2) ON CONFLICT(a) DO UPDATE SET b=EXCLUDED.b", "INSERT INTO t(a,b) VALUES(?,?) ON DUPLICATE KEY UPDATE b=VALUES(b)", []int{0, 1}},
-		{"DO NOTHING 默认用主键 id", "INSERT INTO care_notification_outbox(a) VALUES($1) ON CONFLICT DO NOTHING", "INSERT INTO care_notification_outbox(a) VALUES(?) ON DUPLICATE KEY UPDATE id=id", []int{0}},
+		{"DO NOTHING 默认用主键 id", "INSERT INTO care_notification_outbox(a) VALUES($1) ON CONFLICT DO NOTHING", "INSERT INTO care_notification_outbox(a) VALUES(?) ON DUPLICATE KEY UPDATE `a`=`a`", []int{0}},
 
 		// 7. 行锁语法次序
 		{"SKIP LOCKED 的 LIMIT 前移", "SELECT id FROM message_outbox WHERE status='pending' ORDER BY id FOR UPDATE SKIP LOCKED LIMIT 20", "SELECT id FROM message_outbox WHERE status='pending' ORDER BY id LIMIT 20 FOR UPDATE SKIP LOCKED", nil},
@@ -174,7 +174,7 @@ func TestCompileMySQLQueryHasNoBusinessTableSpecialCases(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if plan.sql != "INSERT INTO watch_info(a) VALUES(?) ON DUPLICATE KEY UPDATE id=id" {
+	if plan.sql != "INSERT INTO watch_info(a) VALUES(?) ON DUPLICATE KEY UPDATE `a`=`a`" {
 		t.Fatalf("watch_info must use only generic DO NOTHING translation now: %s", plan.sql)
 	}
 }
@@ -198,5 +198,83 @@ func TestCompileMySQLQueryPreservesSQLComments(t *testing.T) {
 	}
 	if _, err := compileMySQLQuery("SELECT 1 /* unfinished"); err == nil {
 		t.Fatal("unterminated block comment must fail")
+	}
+}
+
+func TestDoNothingUsesActualInsertColumnAndDoesNotRewriteLiterals(t *testing.T) {
+	plan, err := compileMySQLQuery("INSERT INTO watch_info(device_id) VALUES($1) ON CONFLICT(device_id) DO NOTHING")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "INSERT INTO watch_info(device_id) VALUES(?) ON DUPLICATE KEY UPDATE `device_id`=`device_id`"
+	if plan.sql != want {
+		t.Fatalf("wrong no-op conflict translation: got %q want %q", plan.sql, want)
+	}
+	plan, err = compileMySQLQuery(`SELECT 'ON CONFLICT DO NOTHING EXCLUDED.value AS varchar INTERVAL ''3 days'''`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want = `SELECT 'ON CONFLICT DO NOTHING EXCLUDED.value AS varchar INTERVAL ''3 days'''`
+	if plan.sql != want {
+		t.Fatalf("literal changed by dialect rewrite: got %q want %q", plan.sql, want)
+	}
+	if _, err := compileMySQLQuery("INSERT INTO t VALUES($1) ON CONFLICT DO NOTHING"); err == nil {
+		t.Fatal("ambiguous insert without column list must fail closed")
+	}
+}
+
+func TestDialectRewritesDoNotTouchQuotedIdentifiersOrComments(t *testing.T) {
+	query := "SELECT \"TO_CHAR(create_time,'YYYY-MM-DD')\", \"INTERVAL '3 days'\" -- TO_CHAR(create_time,'YYYY-MM-DD') INTERVAL '3 days'\n"
+	plan, err := compileMySQLQuery(query)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if plan.sql != query {
+		t.Fatalf("dialect rewrite changed quoted identifier or comment: got %q want %q", plan.sql, query)
+	}
+}
+
+func TestMySQLQueryRejectsExtraArguments(t *testing.T) {
+	cases := []struct {
+		query string
+		args  []any
+	}{
+		{"SELECT $1", []any{1, 2}},
+		{"SELECT $2,$1,$2", []any{"a", "b", "unused"}},
+		{"SELECT 1", []any{1}},
+	}
+	for _, tc := range cases {
+		if _, _, err := mysqlQuery(tc.query, tc.args); err == nil {
+			t.Fatalf("extra arguments silently ignored: query=%q args=%v", tc.query, tc.args)
+		}
+	}
+	if _, args, err := mysqlQuery("SELECT $2,$1,$2", []any{"first", "second"}); err != nil ||
+		len(args) != 3 || args[0] != "second" || args[1] != "first" || args[2] != "second" {
+		t.Fatalf("sparse/repeated positional binding changed: args=%v err=%v", args, err)
+	}
+}
+
+func TestMySQLReturningOnlySupportsKnownGeneratedKeys(t *testing.T) {
+	for _, tc := range []struct{ table, column string }{
+		{"alert_review", "id"}, {"bind_code", "id"}, {"care_incident", "id"},
+		{"device", "device_id"}, {"device_command", "id"}, {"device_fence", "id"},
+		{"family", "family_id"}, {"fence_event", "id"}, {"text", "text_id"},
+	} {
+		if err := validateMySQLReturning(tc.table, tc.column, "INSERT INTO "+tc.table+"(x) VALUES($1)"); err != nil {
+			t.Fatalf("%s.%s should be supported: %v", tc.table, tc.column, err)
+		}
+	}
+	for _, tc := range []struct{ table, column, sql string }{
+		{"device", "device_no", "INSERT INTO device(device_no) VALUES($1)"},
+		{"family", "id", "INSERT INTO family(family_name) VALUES($1)"},
+		{"care_incident", "id", "INSERT INTO care_incident(old_id) VALUES($1) ON CONFLICT DO NOTHING"},
+		{"care_incident", "id", "INSERT INTO care_incident(old_id) VALUES($1) ON CONFLICT(old_id) DO UPDATE SET old_id=EXCLUDED.old_id"},
+	} {
+		if err := validateMySQLReturning(tc.table, tc.column, tc.sql); err == nil {
+			t.Fatalf("unsupported RETURNING shape accepted: %s.%s %s", tc.table, tc.column, tc.sql)
+		}
+	}
+	if err := validateMySQLReturning("care_incident", "id", "INSERT INTO care_incident(note) VALUES('ON CONFLICT DO NOTHING')"); err != nil {
+		t.Fatalf("conflict-like text literal must not be treated as a clause: %v", err)
 	}
 }

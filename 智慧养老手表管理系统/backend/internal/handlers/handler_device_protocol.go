@@ -195,27 +195,40 @@ func (h *Handler) deviceBind(w http.ResponseWriter, r *http.Request) {
 	// Lock the elder before the device, matching unbind/delete lock order.
 	// Changing owners requires an explicit unbind so the old primary reference
 	// cannot be left pointing at a device that now reports for someone else.
-	if err := tx.QueryRow(ctx, `SELECT old_id FROM device WHERE device_id=$1 FOR UPDATE`, d.ID).Scan(&d.OldID); err != nil {
+	locked, err := scanOldDevice(tx.QueryRow(ctx, `SELECT `+oldDeviceCols+` FROM device WHERE device_id=$1 FOR UPDATE`, d.ID))
+	if err != nil {
 		rollback()
 		response.Error500(w, ref())
 		return
 	}
+	locked, code, msg, err = checkDeviceAuth(locked, secret, "设备已停用")
+	if err != nil {
+		rollback()
+		response.Error500(w, ref())
+		return
+	}
+	if locked == nil || locked.No != deviceNo {
+		rollback()
+		hwFail(w, "0004", "设备号或密钥不正确，或设备已停用")
+		return
+	}
+	d = locked
 	if d.OldID != nil && *d.OldID != *bc.OldID {
 		rollback()
 		conflict409(w, "设备已绑定其他长者，请先在设备管理解除绑定")
 		return
 	}
 	now := time.Now()
-	status := 1
-	if d.Status != nil {
-		status = *d.Status
+	// Binding is not a heartbeat. Keep the last real observation and clear
+	// acknowledgements only when the device acquires a different owner.
+	bindingChanged := d.OldID == nil || *d.OldID != *bc.OldID
+	updateSQL := `UPDATE device SET old_id=$1, family_id=$2, bind_time=$3 WHERE device_id=$4`
+	if bindingChanged {
+		updateSQL = `UPDATE device SET old_id=$1, family_id=$2, bind_time=$3,
+			person_handled=0, person_handled_at=NULL, rate_handled=0, pre_handled=0,
+			handled_seq=-1 WHERE device_id=$4`
 	}
-	ct, err := tx.Exec(ctx,
-		`UPDATE device SET alias=$1, model=$2, old_id=$3, family_id=$4, status=$5,
-		 bind_time=$6, last_time=$6, last_lng=$7, last_lat=$8, battery=$9, app_version=$10
-		 WHERE device_id=$11`,
-		d.Alias, d.Model, *bc.OldID, bc.FamilyID, status, now,
-		d.LastLng, d.LastLat, d.Battery, d.AppVersion, d.ID)
+	ct, err := tx.Exec(ctx, updateSQL, *bc.OldID, bc.FamilyID, now, d.ID)
 	if err != nil {
 		rollback()
 		response.Error500(w, ref())
@@ -262,6 +275,14 @@ func (h *Handler) deviceBind(w http.ResponseWriter, r *http.Request) {
 		conflict409(w, "该绑定码已被使用")
 		return
 	}
+	// The first bind may itself increment health_epoch. Return the committed
+	// version so the device can immediately send versioned telemetry.
+	var boundVersion int64
+	if err := tx.QueryRow(ctx, "SELECT health_epoch FROM device WHERE device_id=$1", d.ID).Scan(&boundVersion); err != nil {
+		rollback()
+		response.Error500(w, ref())
+		return
+	}
 	if err := tx.Commit(ctx); err != nil {
 		response.Error500(w, ref())
 		return
@@ -270,7 +291,7 @@ func (h *Handler) deviceBind(w http.ResponseWriter, r *http.Request) {
 	if oldName != nil {
 		nm = *oldName
 	}
-	response.OK(w, map[string]any{"oldId": *bc.OldID, "oldPersonName": nm})
+	response.OK(w, map[string]any{"oldId": *bc.OldID, "oldPersonName": nm, "bindingVersion": boundVersion})
 }
 
 // POST /api/v1/device/heartbeat —— 设备心跳（公开）。
