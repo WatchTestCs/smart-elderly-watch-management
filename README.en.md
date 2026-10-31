@@ -153,6 +153,8 @@ cd 智慧养老手表管理系统
 
 The build script compiles the Vue frontend, embeds the assets into the Go binary, generates the sidecar SHA-256 manifest, builds the Tauri shell, and packages the NSIS installer into `outputs/v2.1.0-preview`.
 
+Vital-alert resolution rejects invalid `kind` values to prevent clearing both heart-rate and blood-pressure alerts by mistake. When resolving a specific record, the returned reason belongs to that record. See the [fix and validation scope](docs/patch-review/2026-10-31-vitals-resolution.md).
+
 ## Validation and performance
 
 | Area | Documentation and scope |

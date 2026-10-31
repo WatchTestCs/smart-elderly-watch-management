@@ -109,7 +109,7 @@ func (h *Handler) deviceAlertDetail(w http.ResponseWriter, r *http.Request) {
 		}
 		alert = describePersonAlert(pr, time.Now())
 	} else {
-		alert, err = h.findRatepreAlert(ctx, h.DB, deviceID, kind)
+		alert, err = h.findRatepreAlert(ctx, h.DB, deviceID, kind, nil)
 		if err != nil {
 			response.Error500(w, ref())
 			return
@@ -194,7 +194,7 @@ func (h *Handler) deviceResolveAlert(w http.ResponseWriter, r *http.Request) {
 			before, _ = a["reason"].(string)
 		}
 	} else if kind == "rate" || kind == "pre" {
-		a, err := h.findRatepreAlert(ctx, tx, deviceID, kind)
+		a, err := h.findRatepreAlert(ctx, tx, deviceID, kind, recordID)
 		if err != nil {
 			rollback()
 			response.Error500(w, ref())
@@ -230,7 +230,7 @@ func (h *Handler) deviceResolveAlert(w http.ResponseWriter, r *http.Request) {
 		}
 		rows = ct.RowsAffected()
 		// 该类已无未处理异常 → 设备层面的标记也置上，红点彻底消失。
-		if a, err := h.findRatepreAlert(ctx, tx, deviceID, kind); err != nil {
+		if a, err := h.findRatepreAlert(ctx, tx, deviceID, kind, nil); err != nil {
 			rollback()
 			response.Error500(w, ref())
 			return

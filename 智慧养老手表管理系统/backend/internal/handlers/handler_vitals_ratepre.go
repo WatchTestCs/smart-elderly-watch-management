@@ -230,6 +230,12 @@ func (h *Handler) ratepreResolveAlert(w http.ResponseWriter, r *http.Request) {
 	}
 	recordIDStr := strID(m, "recordId")
 	kind := strings.ToLower(str(m, "kind"))
+	if raw, present := m["kind"]; present && raw != nil {
+		if _, isString := raw.(string); !isString || (kind != "" && kind != "rate" && kind != "pre") {
+			write400(w, "kind 应为 rate、pre 或空字符串")
+			return
+		}
+	}
 	if !isDigits(recordIDStr) {
 		response.Fail(w, "参数不正确")
 		return
