@@ -1,0 +1,56 @@
+MySQL / 9 related cases
+=== RUN   TestContinuousRebindDailySnapshotIsSeparate
+--- PASS: TestContinuousRebindDailySnapshotIsSeparate (3.79s)
+=== RUN   TestContinuousSleepCountUsesLatestDay
+--- PASS: TestContinuousSleepCountUsesLatestDay (3.00s)
+=== RUN   TestContinuousSleepFieldsKeepObservationOrder
+--- PASS: TestContinuousSleepFieldsKeepObservationOrder (3.10s)
+=== RUN   TestContinuousRebindLocationSnapshotUsesCurrentOwner
+--- PASS: TestContinuousRebindLocationSnapshotUsesCurrentOwner (3.09s)
+=== RUN   TestExtraAuditOutOfOrderTelemetry
+    extra_audit_test.go:125: steps after 10:00 then 09:00=5000; position=map[page:1 pageSize:20 positionDtos:[map[beTime:2026-10-20 10:00:00 lat:30 lng:120 name:长者 oldId:1 sex:<nil> status:0]] returnCode:1111 total:1]
+--- PASS: TestExtraAuditOutOfOrderTelemetry (3.00s)
+=== RUN   TestIntegrationMigrationsAndBindingConstraint
+--- PASS: TestIntegrationMigrationsAndBindingConstraint (2.96s)
+=== RUN   TestNativeEngineSpecificUpserts
+--- PASS: TestNativeEngineSpecificUpserts (0.00s)
+=== RUN   TestDeviceReportDailyUpsertPreservesMissingFields
+--- PASS: TestDeviceReportDailyUpsertPreservesMissingFields (2.96s)
+=== RUN   TestDurableTelemetryPersistsBeforeAckAndReplaysSafely
+--- PASS: TestDurableTelemetryPersistsBeforeAckAndReplaysSafely (3.41s)
+PASS
+ok  	suining-care/internal/handlers	25.468s
+
+
+PostgreSQL / 9 related cases
+=== RUN   TestContinuousRebindDailySnapshotIsSeparate
+--- PASS: TestContinuousRebindDailySnapshotIsSeparate (0.60s)
+=== RUN   TestContinuousSleepCountUsesLatestDay
+--- PASS: TestContinuousSleepCountUsesLatestDay (0.36s)
+=== RUN   TestContinuousSleepFieldsKeepObservationOrder
+--- PASS: TestContinuousSleepFieldsKeepObservationOrder (0.45s)
+=== RUN   TestContinuousRebindLocationSnapshotUsesCurrentOwner
+--- PASS: TestContinuousRebindLocationSnapshotUsesCurrentOwner (0.32s)
+=== RUN   TestExtraAuditOutOfOrderTelemetry
+    extra_audit_test.go:125: steps after 10:00 then 09:00=5000; position=map[page:1 pageSize:20 positionDtos:[map[beTime:2026-10-20 10:00:00 lat:30 lng:120 name:长者 oldId:1 sex:<nil> status:0]] returnCode:1111 total:1]
+--- PASS: TestExtraAuditOutOfOrderTelemetry (0.32s)
+=== RUN   TestIntegrationMigrationsAndBindingConstraint
+--- PASS: TestIntegrationMigrationsAndBindingConstraint (0.51s)
+=== RUN   TestNativeEngineSpecificUpserts
+--- PASS: TestNativeEngineSpecificUpserts (0.00s)
+=== RUN   TestDeviceReportDailyUpsertPreservesMissingFields
+--- PASS: TestDeviceReportDailyUpsertPreservesMissingFields (0.41s)
+=== RUN   TestDurableTelemetryPersistsBeforeAckAndReplaysSafely
+--- PASS: TestDurableTelemetryPersistsBeforeAckAndReplaysSafely (0.46s)
+PASS
+ok  	suining-care/internal/handlers	3.598s
+
+
+MySQL / retained observations, rollback and reapply
+=== RUN   TestCapabilitiesRollbackAndReapply
+--- PASS: TestCapabilitiesRollbackAndReapply (8.14s)
+PASS
+ok  	suining-care/internal/db	8.281s
+
+Targeted go vet: handlers, db PASS
+No full local suite, performance run, or repeated frontend build.

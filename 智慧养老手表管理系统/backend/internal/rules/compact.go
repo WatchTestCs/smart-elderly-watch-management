@@ -43,23 +43,6 @@ func (e evidenceValue) sourceValue() any {
 	return nil
 }
 
-func (e evidenceValue) asMap() map[string]any {
-	switch e.kind {
-	case evidenceThreshold:
-		return map[string]any{"value": e.value, "low": e.low, "high": e.high, "source": e.source, "sourceDevice": e.device, "observedAt": e.observedAt, "night": e.night}
-	case evidenceBaseline:
-		return map[string]any{"value": e.value, "mean": e.mean, "deviation": e.deviation, "count": e.count, "threshold": e.threshold, "days": e.days, "source": e.source, "sourceDevice": e.device, "observedAt": e.observedAt}
-	case evidenceBattery:
-		return map[string]any{"value": e.value, "threshold": e.threshold}
-	case evidenceOffline:
-		return map[string]any{"lastReport": e.lastReport, "thresholdSeconds": e.offlineSeconds}
-	case evidenceActivity:
-		return map[string]any{"steps": e.value, "threshold": e.threshold, "windowMinutes": e.windowMinutes, "source": e.source, "sourceDevice": e.device}
-	default:
-		return nil
-	}
-}
-
 type evidenceState struct {
 	Breach   bool      `json:"breach"`
 	Streak   int       `json:"streak"`

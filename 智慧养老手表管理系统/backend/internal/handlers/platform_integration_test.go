@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
-	"careold-go/internal/auth"
-	"careold-go/internal/config"
-	"careold-go/internal/db/dbtest"
-	"careold-go/internal/securestore"
-	"careold-go/internal/session"
+	"suining-care/internal/auth"
+	"suining-care/internal/config"
+	"suining-care/internal/db/dbtest"
+	"suining-care/internal/securestore"
+	"suining-care/internal/session"
 )
 
 func secureHandler(t *testing.T) *Handler {
@@ -63,7 +63,7 @@ func TestTOTPEnrollmentRecoveryAndCrossReplicaRevocation(t *testing.T) {
 	credentials["otp"] = ""
 	credentials["recoveryCode"] = codes[0]
 	login := callAPI(h.login, credentials)
-	if login.Code != 200 || !strings.Contains(login.Body.String(), "users1") {
+	if login.Code != http.StatusOK || strings.TrimSpace(login.Body.String()) != `{"authenticated":true}` {
 		t.Fatal(login.Code, login.Body.String())
 	}
 	if w := callAPI(h.login, credentials); w.Code != 401 {
@@ -95,7 +95,7 @@ func TestTOTPEnrollmentRecoveryAndCrossReplicaRevocation(t *testing.T) {
 func TestCareNotesAreEncryptedAndReadableThroughAuthorizedAPI(t *testing.T) {
 	h := secureHandler(t)
 	seedDevice(t, h.DB)
-	id := api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret})["incidentId"]
+	id := api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "requestId": "test-press", "bindingVersion": 1})["incidentId"]
 	note := "现场医疗情况只向授权人员展示"
 	for _, action := range []string{"acknowledge", "start", "resolve"} {
 		api(t, withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 1}, h.careTransition), map[string]any{"id": id, "action": action, "note": note})

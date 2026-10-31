@@ -1,0 +1,96 @@
+{
+  "checks": [
+    {
+      "name": "overview registers care and requests its complete contract",
+      "pass": true
+    },
+    {
+      "name": "unconfigured gateway is explicit",
+      "pass": true
+    },
+    {
+      "name": "missing receipt verification is explicit",
+      "pass": true
+    },
+    {
+      "name": "PG failure explains retained events and independent MySQL core",
+      "pass": true
+    },
+    {
+      "name": "every task is reachable beyond the first 50",
+      "pass": true
+    },
+    {
+      "name": "history starts at its first page",
+      "pass": true
+    },
+    {
+      "name": "history requests later records",
+      "pass": true
+    },
+    {
+      "name": "auditor can read history without writes",
+      "pass": true
+    },
+    {
+      "name": "caregiver cannot verify or reopen",
+      "pass": true
+    },
+    {
+      "name": "resolver cannot verify own case",
+      "pass": true
+    },
+    {
+      "name": "independent supervisor can verify",
+      "pass": true
+    },
+    {
+      "name": "note validation is visible inside the dialog",
+      "pass": true
+    },
+    {
+      "name": "write failure preserves the note and task",
+      "pass": true
+    },
+    {
+      "name": "successful transition refreshes its task",
+      "pass": true
+    },
+    {
+      "name": "failed refresh removes stale task actions",
+      "pass": true
+    },
+    {
+      "name": "task refresh recovers",
+      "pass": true
+    },
+    {
+      "name": "heartbeat updates without reopening the page",
+      "pass": true
+    },
+    {
+      "name": "PG recovery updates queue diagnostics without reopening",
+      "pass": true
+    },
+    {
+      "name": "queue fits 390px large=false",
+      "pass": true
+    },
+    {
+      "name": "queue fits 390px large=true",
+      "pass": true
+    },
+    {
+      "name": "failed guardian page does not expose a partial list",
+      "pass": true
+    },
+    {
+      "name": "elder creation can select guardians beyond the first page",
+      "pass": true
+    },
+    {
+      "name": "no JavaScript errors or unexpected APIs",
+      "pass": true
+    }
+  ]
+}

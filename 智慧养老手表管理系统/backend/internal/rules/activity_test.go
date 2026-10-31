@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"careold-go/internal/health"
+	"suining-care/internal/health"
 )
 
 // Reference preserves the previous slice-and-Aggregate implementation so the

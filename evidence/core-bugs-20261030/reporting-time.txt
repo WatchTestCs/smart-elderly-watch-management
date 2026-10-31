@@ -1,0 +1,35 @@
+=== RUN   TestContinuousReportFutureClock
+--- PASS: TestContinuousReportFutureClock (0.00s)
+=== RUN   TestContinuousSleepCountUsesLatestDay
+--- PASS: TestContinuousSleepCountUsesLatestDay (2.99s)
+=== RUN   TestExtraAuditOutOfOrderTelemetry
+    extra_audit_test.go:122: steps after 10:00 then 09:00=5000; position=map[page:1 pageSize:20 positionDtos:[map[beTime:2026-10-30 10:00:00 lat:30 lng:120 name:长者 oldId:1 sex:<nil> status:0]] returnCode:1111 total:1]
+--- PASS: TestExtraAuditOutOfOrderTelemetry (2.84s)
+=== RUN   TestDeviceReportDailyUpsertPreservesMissingFields
+--- PASS: TestDeviceReportDailyUpsertPreservesMissingFields (2.78s)
+=== RUN   TestDeviceReportInvalidPayloadNeverOpensDatabase
+=== RUN   TestDeviceReportInvalidPayloadNeverOpensDatabase/heart_rate
+=== RUN   TestDeviceReportInvalidPayloadNeverOpensDatabase/blood_pressure
+=== RUN   TestDeviceReportInvalidPayloadNeverOpensDatabase/steps
+=== RUN   TestDeviceReportInvalidPayloadNeverOpensDatabase/sleep
+=== RUN   TestDeviceReportInvalidPayloadNeverOpensDatabase/sleep_state
+=== RUN   TestDeviceReportInvalidPayloadNeverOpensDatabase/battery
+=== RUN   TestDeviceReportInvalidPayloadNeverOpensDatabase/unpaired_coordinates
+=== RUN   TestDeviceReportInvalidPayloadNeverOpensDatabase/invalid_timestamp
+=== RUN   TestDeviceReportInvalidPayloadNeverOpensDatabase/future_timestamp
+=== RUN   TestDeviceReportInvalidPayloadNeverOpensDatabase/long_app_version
+--- PASS: TestDeviceReportInvalidPayloadNeverOpensDatabase (0.00s)
+    --- PASS: TestDeviceReportInvalidPayloadNeverOpensDatabase/heart_rate (0.00s)
+    --- PASS: TestDeviceReportInvalidPayloadNeverOpensDatabase/blood_pressure (0.00s)
+    --- PASS: TestDeviceReportInvalidPayloadNeverOpensDatabase/steps (0.00s)
+    --- PASS: TestDeviceReportInvalidPayloadNeverOpensDatabase/sleep (0.00s)
+    --- PASS: TestDeviceReportInvalidPayloadNeverOpensDatabase/sleep_state (0.00s)
+    --- PASS: TestDeviceReportInvalidPayloadNeverOpensDatabase/battery (0.00s)
+    --- PASS: TestDeviceReportInvalidPayloadNeverOpensDatabase/unpaired_coordinates (0.00s)
+    --- PASS: TestDeviceReportInvalidPayloadNeverOpensDatabase/invalid_timestamp (0.00s)
+    --- PASS: TestDeviceReportInvalidPayloadNeverOpensDatabase/future_timestamp (0.00s)
+    --- PASS: TestDeviceReportInvalidPayloadNeverOpensDatabase/long_app_version (0.00s)
+=== RUN   TestParseDeviceTelemetryRetainsLegacyFields
+--- PASS: TestParseDeviceTelemetryRetainsLegacyFields (0.00s)
+PASS
+ok  	suining-care/internal/handlers	10.374s

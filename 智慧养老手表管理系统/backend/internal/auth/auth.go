@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"strings"
 
-	"careold-go/internal/accesspolicy"
-	"careold-go/internal/response"
-	"careold-go/internal/session"
+	"suining-care/internal/accesspolicy"
+	"suining-care/internal/response"
+	"suining-care/internal/session"
 )
 
 const (
@@ -34,7 +34,7 @@ func Middleware(store *session.Store, next http.Handler) http.Handler {
 			return
 		}
 
-		if !strings.HasPrefix(r.URL.Path, "/restful/") {
+		if !strings.HasPrefix(r.URL.Path, "/api/v1/") {
 			forbidden(w)
 			return
 		}

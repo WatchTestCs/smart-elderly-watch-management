@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"careold-go/internal/db/dbtest"
 	"github.com/go-sql-driver/mysql"
+	"suining-care/internal/db/dbtest"
 )
 
 func TestMySQLParameterTransportRoundTripsAndFallback(t *testing.T) {

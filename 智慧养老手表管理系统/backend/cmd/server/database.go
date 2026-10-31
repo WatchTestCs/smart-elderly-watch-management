@@ -1,32 +1,32 @@
 package main
 
 import (
-	"careold-go/internal/analytics"
-	dbstore "careold-go/internal/db"
 	"context"
 	"log"
 	"net/http"
 	"os"
 	"strings"
+	"suining-care/internal/analytics"
+	dbstore "suining-care/internal/db"
 	"sync"
 	"sync/atomic"
 	"time"
 
-	"careold-go/internal/apidoc"
-	"careold-go/internal/auth"
-	"careold-go/internal/care"
-	"careold-go/internal/config"
-	"careold-go/internal/csrf"
-	"careold-go/internal/db"
-	"careold-go/internal/handlers"
-	"careold-go/internal/notify"
-	"careold-go/internal/observability"
-	"careold-go/internal/ratelimit"
-	"careold-go/internal/response"
-	"careold-go/internal/rules"
-	"careold-go/internal/securestore"
-	"careold-go/internal/session"
 	"crypto/subtle"
+	"suining-care/internal/apidoc"
+	"suining-care/internal/auth"
+	"suining-care/internal/care"
+	"suining-care/internal/config"
+	"suining-care/internal/csrf"
+	"suining-care/internal/db"
+	"suining-care/internal/handlers"
+	"suining-care/internal/notify"
+	"suining-care/internal/observability"
+	"suining-care/internal/ratelimit"
+	"suining-care/internal/response"
+	"suining-care/internal/rules"
+	"suining-care/internal/securestore"
+	"suining-care/internal/session"
 )
 
 // Only fully migrated database handlers are published to HTTP requests.
@@ -41,7 +41,7 @@ type databaseService struct {
 	configErr error
 }
 
-// configErrorText 返回可序列化的配置错误说明。/restful/service/status 公开可读，
+// configErrorText 返回可序列化的配置错误说明。/api/v1/service/status 公开可读，
 // 只回固定文案，不透出环境变量等部署细节（细节已由启动日志完整记录）。
 func (s *databaseService) configErrorText() string {
 	if s.configErr == nil {
@@ -100,7 +100,7 @@ func (s *databaseService) middleware(local http.Handler) http.Handler {
 			return
 		}
 		api := s.api.Load()
-		if r.URL.Path == "/restful/service/status" && r.Method == http.MethodGet {
+		if r.URL.Path == "/api/v1/service/status" && r.Method == http.MethodGet {
 			w.Header().Set("Cache-Control", "no-store")
 			snapshot := s.analytics.Snapshot()
 			response.JSON(w, http.StatusOK, map[string]any{
@@ -112,8 +112,8 @@ func (s *databaseService) middleware(local http.Handler) http.Handler {
 			})
 			return
 		}
-		if !strings.HasPrefix(r.URL.Path, "/restful/") ||
-			((r.URL.Path == "/restful/desktop/exit" || r.URL.Path == "/restful/userLogin/logout") && r.Method == http.MethodPost) {
+		if !strings.HasPrefix(r.URL.Path, "/api/v1/") ||
+			((r.URL.Path == "/api/v1/desktop/exit" || r.URL.Path == "/api/v1/auth/logout") && r.Method == http.MethodPost) {
 			local.ServeHTTP(w, r)
 			return
 		}
@@ -196,13 +196,14 @@ func watchDatabase(ctx context.Context, cfg config.Config, sessions *session.Sto
 				go func() {
 					defer close(done)
 					var jobs sync.WaitGroup
-					jobs.Add(6)
+					jobs.Add(7)
 					go func() { defer jobs.Done(); rules.Run(ctx, pool, h.Box) }()
 					go func() { defer jobs.Done(); notify.Run(ctx, pool, h.Box) }()
 					go func() { defer jobs.Done(); h.RunCapabilities(ctx) }()
 					go func() { defer jobs.Done(); care.Run(ctx, pool, h.Box) }()
 					go func() { defer jobs.Done(); analytics.Run(ctx, pool, cfg.PGAnalyticsURL, &service.analytics) }()
 					go func() { defer jobs.Done(); handlers.RunSignedDeviceNonceCleanup(ctx, pool) }()
+					go func() { defer jobs.Done(); handlers.RunDurableTelemetry(ctx, pool, h.Box) }()
 					jobs.Wait()
 				}()
 				api = limiter.Middleware(csrf.Middleware(sessions, auth.Middleware(sessions, h.EnforceAdminDuty(sensitiveCareAudit(pool, mux)))))

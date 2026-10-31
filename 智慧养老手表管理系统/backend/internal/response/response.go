@@ -1,6 +1,6 @@
-// Package response 复刻 Java 端的响应包络：
+// Package response implements the native Go HTTP result envelope.
 // 成功 {"returnCode":"1111", ...}，业务失败 {"returnCode":"0000","message":...}。
-// 注意：部分纯查询接口按源码行为不带 returnCode，用 JSON 直接写。
+// 部分查询接口直接返回数据对象，客户端契约应按具体端点解析。
 package response
 
 import (
@@ -22,11 +22,12 @@ func JSON(w http.ResponseWriter, status int, v any) {
 
 // OK 写成功包络，可附带业务字段。
 func OK(w http.ResponseWriter, fields map[string]any) {
-	if fields == nil {
-		fields = map[string]any{}
+	envelope := make(map[string]any, len(fields)+1)
+	for key, value := range fields {
+		envelope[key] = value
 	}
-	fields["returnCode"] = CodeOK
-	JSON(w, http.StatusOK, fields)
+	envelope["returnCode"] = CodeOK
+	JSON(w, http.StatusOK, envelope)
 }
 
 // Fail 写业务失败包络（HTTP 200，returnCode=0000）。
@@ -34,7 +35,7 @@ func Fail(w http.ResponseWriter, message string) {
 	JSON(w, http.StatusOK, map[string]any{"returnCode": CodeFail, "message": message})
 }
 
-// Error500 映射 DataAccessException/IllegalStateException：500 + reference UUID。
+// Error500 返回内部错误及用于排查的请求引用编号。
 func Error500(w http.ResponseWriter, reference string) {
 	JSON(w, http.StatusInternalServerError, map[string]any{
 		"returnCode": CodeFail,

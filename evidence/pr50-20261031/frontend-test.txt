@@ -1,0 +1,13 @@
+
+> suining-ui@2.1.0 test
+> vitest run
+
+
+ RUN  v5.0.5 E:/DevEco Test/pr50-acceptance-20261031/智慧养老手表管理系统/frontend
+
+
+ Test Files  7 passed (7)
+      Tests  38 passed (38)
+   Start at  10:48:36
+   Duration  3.15s (environment 59%, import 27%, transform 11%, tests 2%, worker 1%)
+

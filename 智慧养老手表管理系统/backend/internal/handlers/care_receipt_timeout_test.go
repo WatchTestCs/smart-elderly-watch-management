@@ -23,7 +23,7 @@ func TestCareDelayedReceiptAfterGatewayTimeout(t *testing.T) {
 	mustExec(t, pool, "INSERT INTO family(family_id,family_name,family_phone) VALUES(1,'家属','13800000001')")
 	mustExec(t, pool, "UPDATE oldperson SET family_id=1 WHERE old_id=1")
 	h := testHandler(t, pool)
-	api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret})
+	api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "requestId": "test-press", "bindingVersion": 1})
 	ctx := context.Background()
 	var id int64
 	if err := pool.QueryRow(ctx, "SELECT id FROM care_notification_outbox").Scan(&id); err != nil {
@@ -37,7 +37,7 @@ func TestCareDelayedReceiptAfterGatewayTimeout(t *testing.T) {
 	mac.Write([]byte(stamp + "."))
 	mac.Write(body)
 	send := func() *httptest.ResponseRecorder {
-		req := httptest.NewRequest(http.MethodPost, "/restful/care/receipt", bytes.NewReader(body))
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/care/receipt", bytes.NewReader(body))
 		req.Header.Set("X-Care-Timestamp", stamp)
 		req.Header.Set("X-Care-Signature", hex.EncodeToString(mac.Sum(nil)))
 		w := httptest.NewRecorder()

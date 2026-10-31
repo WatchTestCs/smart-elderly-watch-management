@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"careold-go/internal/auth"
-	"careold-go/internal/session"
+	"suining-care/internal/auth"
+	"suining-care/internal/session"
 )
 
 func elderPayload() map[string]any {
@@ -24,7 +24,7 @@ func careRequest(t *testing.T, h *Handler, handler http.HandlerFunc, actor int64
 	if err != nil {
 		t.Fatal(err)
 	}
-	req := httptest.NewRequest("POST", "/restful/care/test", bytes.NewReader(data))
+	req := httptest.NewRequest("POST", "/api/v1/care/test", bytes.NewReader(data))
 	sess := h.Sessions.Create(session.Principal{Role: auth.RoleAdmin, ID: actor})
 	req = session.WithContext(req, sess)
 	w := httptest.NewRecorder()
@@ -47,7 +47,7 @@ func TestArchitectureFormattedRecordsAcrossDatabases(t *testing.T) {
 	seedDevice(t, pool)
 	mustExec(t, pool, "UPDATE oldperson SET device_id=1 WHERE old_id=1")
 	mustExec(t, pool, "INSERT INTO ratepre(old_id,device_id,hr,rate_state,create_time) VALUES(1,1,72,'1',now())")
-	mustExec(t, pool, "INSERT INTO watch_day_info(device_id,step,create_time) VALUES(1,100,'2026-10-19')")
+	mustExec(t, pool, "INSERT INTO watch_day_info(device_id,step,create_time,old_id,binding_epoch) VALUES(1,100,'2026-10-19',1,1)")
 	mustExec(t, pool, "INSERT INTO text(title,text_main,time) VALUES('公告','内容','2026-10-19 08:01:02.123')")
 	mustExec(t, pool, "INSERT INTO said(said,said_time) VALUES('评论','2026-10-19 08:01:02.123')")
 	h := testHandler(t, pool)
@@ -101,6 +101,7 @@ func architectureBody(t *testing.T, recorder *httptest.ResponseRecorder) map[str
 
 func TestArchitectureElderEditCannotRewriteBinding(t *testing.T) {
 	pool := testDatabase(t)
+	mustExec(t, pool, "INSERT INTO customer(customer_id,customer_name) VALUES(1,'监护人')")
 	seedDevice(t, pool)
 	mustExec(t, pool, "INSERT INTO oldperson(old_id,name,device_id) VALUES(2,'另一长者',2)")
 	mustExec(t, pool, "INSERT INTO device(device_id,device_no,secret,old_id) VALUES(2,'OTHER','unused',2)")

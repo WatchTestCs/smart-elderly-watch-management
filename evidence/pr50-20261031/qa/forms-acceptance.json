@@ -1,0 +1,433 @@
+{
+  "checks": [
+    {
+      "name": "390 /person: active add form still opens",
+      "pass": true
+    },
+    {
+      "name": "390 /person: no horizontal overflow",
+      "pass": true
+    },
+    {
+      "name": "390 /person: rendered icons retain glyph styles",
+      "pass": true,
+      "details": [
+        {
+          "icon": "el-icon-menu",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-arrow-down",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-arrow-right",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-search",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-edit",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-delete",
+          "content": "\"\"",
+          "font": "element-icons"
+        }
+      ]
+    },
+    {
+      "name": "390 /customer: active add form still opens",
+      "pass": true
+    },
+    {
+      "name": "390 /customer: no horizontal overflow",
+      "pass": true
+    },
+    {
+      "name": "390 /customer: rendered icons retain glyph styles",
+      "pass": true,
+      "details": [
+        {
+          "icon": "el-icon-menu",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-arrow-down",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-arrow-right",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-search",
+          "content": "\"\"",
+          "font": "element-icons"
+        }
+      ]
+    },
+    {
+      "name": "390 /watch: active add form still opens",
+      "pass": true
+    },
+    {
+      "name": "390 /watch: no horizontal overflow",
+      "pass": true
+    },
+    {
+      "name": "390 /watch: rendered icons retain glyph styles",
+      "pass": true,
+      "details": [
+        {
+          "icon": "el-icon-menu",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-arrow-down",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-arrow-right",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-search",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-edit",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-delete",
+          "content": "\"\"",
+          "font": "element-icons"
+        }
+      ]
+    },
+    {
+      "name": "390 /family: active add form still opens",
+      "pass": true
+    },
+    {
+      "name": "390 /family: no horizontal overflow",
+      "pass": true
+    },
+    {
+      "name": "390 /family: rendered icons retain glyph styles",
+      "pass": true,
+      "details": [
+        {
+          "icon": "el-icon-menu",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-arrow-down",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-arrow-right",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-search",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-edit",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-delete",
+          "content": "\"\"",
+          "font": "element-icons"
+        }
+      ]
+    },
+    {
+      "name": "1440 /person: active add form still opens",
+      "pass": true
+    },
+    {
+      "name": "1440 /person: no horizontal overflow",
+      "pass": true
+    },
+    {
+      "name": "1440 /person: rendered icons retain glyph styles",
+      "pass": true,
+      "details": [
+        {
+          "icon": "el-icon-menu",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-time",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-document",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-service",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-message",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-arrow-right",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-search",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-edit",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-delete",
+          "content": "\"\"",
+          "font": "element-icons"
+        }
+      ]
+    },
+    {
+      "name": "1440 /customer: active add form still opens",
+      "pass": true
+    },
+    {
+      "name": "1440 /customer: no horizontal overflow",
+      "pass": true
+    },
+    {
+      "name": "1440 /customer: rendered icons retain glyph styles",
+      "pass": true,
+      "details": [
+        {
+          "icon": "el-icon-menu",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-time",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-document",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-service",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-message",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-arrow-right",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-search",
+          "content": "\"\"",
+          "font": "element-icons"
+        }
+      ]
+    },
+    {
+      "name": "1440 /watch: active add form still opens",
+      "pass": true
+    },
+    {
+      "name": "1440 /watch: no horizontal overflow",
+      "pass": true
+    },
+    {
+      "name": "1440 /watch: rendered icons retain glyph styles",
+      "pass": true,
+      "details": [
+        {
+          "icon": "el-icon-menu",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-time",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-document",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-service",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-message",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-arrow-right",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-search",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-edit",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-delete",
+          "content": "\"\"",
+          "font": "element-icons"
+        }
+      ]
+    },
+    {
+      "name": "1440 /family: active add form still opens",
+      "pass": true
+    },
+    {
+      "name": "1440 /family: no horizontal overflow",
+      "pass": true
+    },
+    {
+      "name": "1440 /family: rendered icons retain glyph styles",
+      "pass": true,
+      "details": [
+        {
+          "icon": "el-icon-menu",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-time",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-document",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-service",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-message",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-arrow-right",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-search",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-edit",
+          "content": "\"\"",
+          "font": "element-icons"
+        },
+        {
+          "icon": "el-icon-delete",
+          "content": "\"\"",
+          "font": "element-icons"
+        }
+      ]
+    },
+    {
+      "name": "Family edit loads the selected family row",
+      "pass": true
+    },
+    {
+      "name": "Family edit retains CSRF protection",
+      "pass": true
+    },
+    {
+      "name": "Family edit sends family fields and identifier without obsolete customer defaults",
+      "pass": true,
+      "details": {
+        "familyId": 1,
+        "familyName": "家属测试",
+        "familyRelation": "子女",
+        "familySex": "男",
+        "familyPhone": "13000000000",
+        "familyAddress": "示例地址",
+        "name": "李奶奶",
+        "oldId": 1
+      }
+    },
+    {
+      "name": "No form JavaScript errors",
+      "pass": true,
+      "details": []
+    },
+    {
+      "name": "No missing form assets",
+      "pass": true,
+      "details": []
+    },
+    {
+      "name": "No unexpected form API calls",
+      "pass": true,
+      "details": []
+    }
+  ]
+}

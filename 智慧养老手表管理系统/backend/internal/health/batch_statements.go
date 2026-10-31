@@ -24,8 +24,6 @@ const batchChangesPrefix = `INSERT INTO health_change(revision,old_id,sample_id,
 // Cache complete immutable statements, not just VALUES fragments. This avoids
 // rebuilding/re-hashing multi-kilobyte SQL on every batch. The bounded cache
 // contains no argument values, identifiers or patient data.
-// Build VALUES directly on a miss so we do not keep a second cached copy of
-// these fragments in batchValueTemplates as part of the production write path.
 var batchStatements [3][201]atomic.Pointer[string]
 
 func buildBatchSQL(kind batchSQLKind, rows int) string {
@@ -66,4 +64,25 @@ func batchSQL(kind batchSQLKind, rows int) string {
 		return query
 	}
 	return *slot.Load()
+}
+
+func buildValueRows(rows, columns int) string {
+	var out strings.Builder
+	out.Grow(rows * (columns*6 + 3))
+	var digits [20]byte
+	for i := 0; i < rows; i++ {
+		if i > 0 {
+			out.WriteByte(',')
+		}
+		out.WriteByte('(')
+		for j := 0; j < columns; j++ {
+			if j > 0 {
+				out.WriteByte(',')
+			}
+			out.WriteByte('$')
+			out.Write(strconv.AppendInt(digits[:0], int64(i*columns+j+1), 10))
+		}
+		out.WriteByte(')')
+	}
+	return out.String()
 }

@@ -1,13 +1,13 @@
 package handlers
 
 import (
-	"careold-go/internal/response"
 	"net/http"
 	"strconv"
 	"strings"
+	"suining-care/internal/response"
 )
 
-// POST /restful/ratepre/selectRatepre —— 按姓名+时间范围分页查询。
+// POST /api/v1/ratepre/selectRatepre —— 按姓名+时间范围分页查询。
 func (h *Handler) ratepreSelect(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -60,7 +60,7 @@ func (h *Handler) ratepreSelect(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// POST /restful/ratepre/selectRatepreFamily —— 家属查询自己老人的心率血压列表。
+// POST /api/v1/ratepre/selectRatepreFamily —— 家属查询自己老人的心率血压列表。
 func (h *Handler) ratepreSelectFamily(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -99,7 +99,7 @@ func (h *Handler) ratepreSelectFamily(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, map[string]any{"ratepreDtoList": items})
 }
 
-// POST /restful/ratepre/selectRatepreDetail —— 家属查询老人心率血压明细（图表用）。
+// POST /api/v1/ratepre/selectRatepreDetail —— 家属查询老人心率血压明细（图表用）。
 func (h *Handler) ratepreSelectDetail(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -137,6 +137,7 @@ func (h *Handler) ratepreSelectDetail(w http.ResponseWriter, r *http.Request) {
 	}
 	// 记录为空时返回空列表而不是 500（复刻 P1-3 修复意图，按规格信封）。
 	timeStr := ""
+	lastDay := ""
 	hrs := []*int64{}
 	bps := []*int64{}
 	createTimes := []string{}
@@ -146,11 +147,17 @@ func (h *Handler) ratepreSelectDetail(w http.ResponseWriter, r *http.Request) {
 			ct = *d.CreateTime
 		}
 		if timeStr == "" {
-			timeStr = safeSub(ct, 0, 13)
+			timeStr = safeSub(ct, 0, 10)
+		}
+		if ct != "" {
+			lastDay = safeSub(ct, 0, 10)
 		}
 		hrs = append(hrs, d.Hr)
 		bps = append(bps, d.Bp)
-		createTimes = append(createTimes, safeSub(ct, 14, 16))
+		createTimes = append(createTimes, ct)
+	}
+	if lastDay != "" && lastDay != timeStr {
+		timeStr += " 至 " + lastDay
 	}
 	dtos := []map[string]any{}
 	for _, d := range list {
@@ -165,7 +172,7 @@ func (h *Handler) ratepreSelectDetail(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// POST /restful/ratepre/selectRatepreCount —— 心率/血压异常计数。
+// POST /api/v1/ratepre/selectRatepreCount —— 心率/血压异常计数。
 func (h *Handler) ratepreSelectCount(w http.ResponseWriter, r *http.Request) {
 	if _, ok := optBody(w, r); !ok {
 		return
@@ -183,8 +190,14 @@ func (h *Handler) ratepreSelectCount(w http.ResponseWriter, r *http.Request) {
 
 // deviceIDList 查某状态为 '1' 的设备 id 列表（字符串形态，复刻 queryForList(String.class)）。
 func (h *Handler) deviceIDList(w http.ResponseWriter, r *http.Request, table, stateCol string) ([]*string, bool) {
-	rows, err := h.DB.Query(r.Context(),
-		"SELECT CAST(device_id AS varchar) FROM "+table+" WHERE "+stateCol+"='1' GROUP BY device_id")
+	query := "SELECT CAST(device_id AS varchar) FROM " + table + " WHERE " + stateCol + "='1' GROUP BY device_id"
+	if table == "watch_day_info" {
+		query = `SELECT CAST(device_id AS varchar) FROM (
+		 SELECT w.device_id,w.sleep_sate,ROW_NUMBER() OVER (PARTITION BY w.device_id ORDER BY w.create_time DESC,w.id DESC) AS rn
+		 FROM watch_day_info w INNER JOIN device d ON d.device_id=w.device_id
+		 AND d.old_id=w.old_id AND d.health_epoch=w.binding_epoch) latest WHERE rn=1 AND sleep_sate='1' AND device_id IS NOT NULL`
+	}
+	rows, err := h.DB.Query(r.Context(), query)
 	if err != nil {
 		response.Error500(w, ref())
 		return nil, false

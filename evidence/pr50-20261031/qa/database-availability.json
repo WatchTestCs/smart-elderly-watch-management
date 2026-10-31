@@ -1,0 +1,56 @@
+{
+  "checks": [
+    {
+      "name": "Database outage does not replace login with a connection wall",
+      "pass": true
+    },
+    {
+      "name": "Offline login has no horizontal overflow at 320px",
+      "pass": true
+    },
+    {
+      "name": "Offline login action stays visible on a short screen",
+      "pass": true
+    },
+    {
+      "name": "Local text-size control works offline",
+      "pass": true
+    },
+    {
+      "name": "Unavailable login explains its database requirement without navigating",
+      "pass": true
+    },
+    {
+      "name": "Database outage never bypasses authentication",
+      "pass": true
+    },
+    {
+      "name": "Online event reconnects without clearing an unfinished login",
+      "pass": true
+    },
+    {
+      "name": "Authenticated workspace remains visible during an outage",
+      "pass": true
+    },
+    {
+      "name": "Authenticated navigation is retained while database features show errors",
+      "pass": true
+    },
+    {
+      "name": "Recovery preserves local input",
+      "pass": true
+    },
+    {
+      "name": "Recovery preserves the current feature route",
+      "pass": true
+    },
+    {
+      "name": "Recovery never replays failed writes",
+      "pass": true
+    },
+    {
+      "name": "Expired session is not treated as authenticated after recovery",
+      "pass": true
+    }
+  ]
+}

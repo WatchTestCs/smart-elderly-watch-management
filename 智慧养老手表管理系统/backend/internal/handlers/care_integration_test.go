@@ -14,10 +14,10 @@ import (
 	"testing"
 	"time"
 
-	"careold-go/internal/auth"
-	"careold-go/internal/config"
-	"careold-go/internal/csrf"
-	"careold-go/internal/session"
+	"suining-care/internal/auth"
+	"suining-care/internal/config"
+	"suining-care/internal/csrf"
+	"suining-care/internal/session"
 )
 
 func TestCareSOSOutboxAuditAndState(t *testing.T) {
@@ -26,7 +26,7 @@ func TestCareSOSOutboxAuditAndState(t *testing.T) {
 	mustExec(t, pool, "INSERT INTO family(family_id,family_name,family_phone) VALUES(1,'家属','13800000001')")
 	mustExec(t, pool, "UPDATE oldperson SET family_id=1 WHERE old_id=1")
 	h := testHandler(t, pool)
-	out := api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret})
+	out := api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "requestId": "test-press", "bindingVersion": 1})
 	if out["returnCode"] != "1111" || out["notificationState"] != "pending" || out["incidentState"] != "received" {
 		t.Fatalf("SOS falsely acknowledged: %+v", out)
 	}
@@ -51,7 +51,7 @@ func TestCareAdminTransitionsAndFamilyIsolation(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
 	h := testHandler(t, pool)
-	out := api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret})
+	out := api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "requestId": "test-press", "bindingVersion": 1})
 	id := int64(out["incidentId"].(float64))
 	store := session.NewStore(time.Hour)
 	t.Cleanup(store.Close)
@@ -60,7 +60,7 @@ func TestCareAdminTransitionsAndFamilyIsolation(t *testing.T) {
 	call := func(role string, actor int64, action, note string) *httptest.ResponseRecorder {
 		sess := store.Create(session.Principal{Role: role, ID: actor})
 		data, _ := json.Marshal(map[string]any{"id": strconv.FormatInt(id, 10), "action": action, "note": note})
-		req := httptest.NewRequest("POST", "/restful/care/transition", bytes.NewReader(data))
+		req := httptest.NewRequest("POST", "/api/v1/care/transition", bytes.NewReader(data))
 		req.AddCookie(&http.Cookie{Name: session.CookieName, Value: sess.ID})
 		req.Header.Set(csrf.HeaderName, sess.CSRFToken)
 		w := httptest.NewRecorder()
@@ -99,7 +99,7 @@ func TestCareReceiptRequiresTrustedGatewaySignature(t *testing.T) {
 	mustExec(t, pool, "INSERT INTO family(family_id,family_name,family_phone) VALUES(1,'家属','13800000001')")
 	mustExec(t, pool, "UPDATE oldperson SET family_id=1 WHERE old_id=1")
 	h := testHandler(t, pool)
-	api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret})
+	api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "requestId": "test-press", "bindingVersion": 1})
 	var id int64
 	mustExec(t, pool, "UPDATE care_notification_outbox SET status='sent'")
 	if err := pool.QueryRow(context.Background(), "SELECT id FROM care_notification_outbox").Scan(&id); err != nil {
@@ -113,7 +113,7 @@ func TestCareReceiptRequiresTrustedGatewaySignature(t *testing.T) {
 	mac.Write(body)
 	signature := hex.EncodeToString(mac.Sum(nil))
 	send := func(sig string) *httptest.ResponseRecorder {
-		req := httptest.NewRequest("POST", "/restful/care/receipt", bytes.NewReader(body))
+		req := httptest.NewRequest("POST", "/api/v1/care/receipt", bytes.NewReader(body))
 		req.Header.Set("X-Care-Timestamp", stamp)
 		req.Header.Set("X-Care-Signature", sig)
 		rec := httptest.NewRecorder()
@@ -147,7 +147,7 @@ func TestCareSOSRequestIDPreventsDuplicateAlerts(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
 	h := testHandler(t, pool)
-	payload := map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "requestId": "press-123"}
+	payload := map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "requestId": "press-123", "bindingVersion": 1}
 	first := api(t, h.deviceSos, payload)
 	repeated := api(t, h.deviceSos, payload)
 	if first["incidentId"] != repeated["incidentId"] || repeated["duplicate"] != true {
@@ -157,7 +157,7 @@ func TestCareSOSRequestIDPreventsDuplicateAlerts(t *testing.T) {
 	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM alarm_precess").Scan(&count); err != nil || count != 1 {
 		t.Fatalf("duplicate alert inserted count=%d err=%v", count, err)
 	}
-	fresh := api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "requestId": "press-124"})
+	fresh := api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "requestId": "press-124", "bindingVersion": 1})
 	if fresh["incidentId"] == first["incidentId"] {
 		t.Fatal("new SOS press incorrectly deduplicated")
 	}

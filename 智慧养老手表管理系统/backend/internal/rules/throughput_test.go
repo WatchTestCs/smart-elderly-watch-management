@@ -15,7 +15,7 @@ func BenchmarkEvaluateFastParallel(b *testing.B) {
 		used := 0
 		for pb.Next() {
 			for _, c := range EvaluateCompactInto(storage[:0], p, in) {
-				body, err := c.marshalEvidenceFast(2, 1234, in.Now)
+				body, err := c.appendEvidenceFast(nil, 2, 1234, in.Now)
 				if err != nil {
 					panic(err)
 				}

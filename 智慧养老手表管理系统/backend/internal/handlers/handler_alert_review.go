@@ -6,8 +6,8 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"careold-go/internal/response"
 	"github.com/jackc/pgx/v5"
+	"suining-care/internal/response"
 )
 
 func reviewVerdict(value string) bool { return value == "confirmed" || value == "false_alarm" }

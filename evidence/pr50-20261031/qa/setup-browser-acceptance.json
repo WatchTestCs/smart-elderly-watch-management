@@ -1,0 +1,46 @@
+{
+  "checks": [
+    {
+      "name": "320 setup page has no horizontal overflow",
+      "pass": true
+    },
+    {
+      "name": "320 empty setup rejected before API write",
+      "pass": true
+    },
+    {
+      "name": "390 setup page has no horizontal overflow",
+      "pass": true
+    },
+    {
+      "name": "390 empty setup rejected before API write",
+      "pass": true
+    },
+    {
+      "name": "768 setup page has no horizontal overflow",
+      "pass": true
+    },
+    {
+      "name": "768 empty setup rejected before API write",
+      "pass": true
+    },
+    {
+      "name": "1440 setup page has no horizontal overflow",
+      "pass": true
+    },
+    {
+      "name": "1440 empty setup rejected before API write",
+      "pass": true
+    },
+    {
+      "name": "No setup rendering errors",
+      "pass": true
+    },
+    {
+      "name": "No missing setup assets",
+      "pass": true
+    }
+  ],
+  "errors": [],
+  "missingAssets": []
+}

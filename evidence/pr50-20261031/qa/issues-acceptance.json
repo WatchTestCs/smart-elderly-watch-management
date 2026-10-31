@@ -1,0 +1,172 @@
+{
+  "checks": [
+    {
+      "name": "/position accepts zero coordinates",
+      "pass": true
+    },
+    {
+      "name": "/position escapes marker labels",
+      "pass": true
+    },
+    {
+      "name": "/position makes no tile request without consent",
+      "pass": true
+    },
+    {
+      "name": "/position renders local Leaflet with keyless tiles",
+      "pass": true
+    },
+    {
+      "name": "/position keeps provider attribution visible",
+      "pass": true
+    },
+    {
+      "name": "/position sends an origin Referer",
+      "pass": true
+    },
+    {
+      "name": "/position removes online tiles",
+      "pass": true
+    },
+    {
+      "name": "/positionfamily accepts zero coordinates",
+      "pass": true
+    },
+    {
+      "name": "/positionfamily escapes marker labels",
+      "pass": true
+    },
+    {
+      "name": "/positionfamily makes no tile request without consent",
+      "pass": true
+    },
+    {
+      "name": "/positionfamily renders local Leaflet with keyless tiles",
+      "pass": true
+    },
+    {
+      "name": "/positionfamily keeps provider attribution visible",
+      "pass": true
+    },
+    {
+      "name": "/positionfamily sends an origin Referer",
+      "pass": true
+    },
+    {
+      "name": "/positionfamily removes online tiles",
+      "pass": true
+    },
+    {
+      "name": "tile failures retain the marker and coordinates",
+      "pass": true
+    },
+    {
+      "name": "map cleanup survives navigation and resize",
+      "pass": true
+    },
+    {
+      "name": "/step sends page 2 to the server",
+      "pass": true
+    },
+    {
+      "name": "/step resets page on search",
+      "pass": true
+    },
+    {
+      "name": "/ratepre sends page 2 to the server",
+      "pass": true
+    },
+    {
+      "name": "/ratepre resets page on search",
+      "pass": true
+    },
+    {
+      "name": "/position sends page 2 to the server",
+      "pass": true
+    },
+    {
+      "name": "/position resets page on search",
+      "pass": true
+    },
+    {
+      "name": "/device sends page 2 to the server",
+      "pass": true
+    },
+    {
+      "name": "/life sends page 2 to the server",
+      "pass": true
+    },
+    {
+      "name": "/life resets page on search",
+      "pass": true
+    },
+    {
+      "name": "/person sends page 2 to the server",
+      "pass": true
+    },
+    {
+      "name": "/person resets page on search",
+      "pass": true
+    },
+    {
+      "name": "/watch sends page 2 to the server",
+      "pass": true
+    },
+    {
+      "name": "/watch resets page on search",
+      "pass": true
+    },
+    {
+      "name": "/customer sends page 2 to the server",
+      "pass": true
+    },
+    {
+      "name": "/customer resets page on search",
+      "pass": true
+    },
+    {
+      "name": "/family sends page 2 to the server",
+      "pass": true
+    },
+    {
+      "name": "/family resets page on search",
+      "pass": true
+    },
+    {
+      "name": "/main sends page 2 to the server",
+      "pass": true
+    },
+    {
+      "name": "/main resets page on search",
+      "pass": true
+    },
+    {
+      "name": "/textOpt sends page 2 to the server",
+      "pass": true
+    },
+    {
+      "name": "/textOpt resets page on search",
+      "pass": true
+    },
+    {
+      "name": "/inviteCode sends page 2 to the server",
+      "pass": true
+    },
+    {
+      "name": "/saidOperation sends page 2 to the server",
+      "pass": true
+    },
+    {
+      "name": "/familyMain sends page 2 to the server",
+      "pass": true
+    },
+    {
+      "name": "no runtime errors in new interactions",
+      "pass": true
+    },
+    {
+      "name": "production JavaScript strips console.log",
+      "pass": true
+    }
+  ]
+}

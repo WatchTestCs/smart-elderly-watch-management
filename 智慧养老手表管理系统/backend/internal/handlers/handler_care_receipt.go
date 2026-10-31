@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"careold-go/internal/response"
 	"github.com/jackc/pgx/v5"
+	"suining-care/internal/response"
 )
 
 // This endpoint only accepts cryptographically authenticated delivery receipts

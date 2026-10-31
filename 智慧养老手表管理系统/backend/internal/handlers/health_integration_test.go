@@ -1,15 +1,15 @@
 package handlers
 
 import (
-	"careold-go/internal/auth"
-	"careold-go/internal/csrf"
-	"careold-go/internal/health"
-	"careold-go/internal/session"
 	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"suining-care/internal/auth"
+	"suining-care/internal/csrf"
+	"suining-care/internal/health"
+	"suining-care/internal/session"
 	"testing"
 	"time"
 )
@@ -150,7 +150,7 @@ func TestHealthRoutesKeepAuthenticationAndCSRF(t *testing.T) {
 	h.routeHealth(mux)
 	app := csrf.Middleware(h.Sessions, auth.Middleware(h.Sessions, mux))
 	for _, path := range []string{"changes", "statistics"} {
-		r := httptest.NewRequest("POST", "/restful/health/"+path, strings.NewReader(`{}`))
+		r := httptest.NewRequest("POST", "/api/v1/health/"+path, strings.NewReader(`{}`))
 		w := httptest.NewRecorder()
 		app.ServeHTTP(w, r)
 		if w.Code != 403 {
@@ -160,7 +160,7 @@ func TestHealthRoutesKeepAuthenticationAndCSRF(t *testing.T) {
 	tm := time.Now().UTC()
 	s := health.Sample{RecordID: "hardware", Source: "watch", SourceDevice: "WATCH001", Metric: "heart_rate", Unit: "count/min", Value: health.Number(72), Start: tm, End: tm, Version: 1}
 	b, _ := json.Marshal(map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "bindingVersion": 1, "samples": []health.Sample{s}})
-	r := httptest.NewRequest("POST", "/restful/device/healthBatch", strings.NewReader(string(b)))
+	r := httptest.NewRequest("POST", "/api/v1/device/healthBatch", strings.NewReader(string(b)))
 	w := httptest.NewRecorder()
 	app.ServeHTTP(w, r)
 	if w.Code != 200 || !strings.Contains(w.Body.String(), `"1111"`) {
@@ -220,7 +220,7 @@ func TestHealthBadSecretDoesNotWaitForClock(t *testing.T) {
 	at := time.Now().UTC()
 	s := health.Sample{RecordID: "point", Source: "watch", SourceDevice: "WATCH001", Metric: "heart_rate", Unit: "count/min", Value: health.Number(72), Start: at, End: at, Version: 1}
 	b, _ := json.Marshal(map[string]any{"deviceNo": "WATCH001", "secret": "incorrect", "bindingVersion": 1, "samples": []health.Sample{s}})
-	r := httptest.NewRequest("POST", "/restful/device/healthBatch", strings.NewReader(string(b))).WithContext(ctx)
+	r := httptest.NewRequest("POST", "/api/v1/device/healthBatch", strings.NewReader(string(b))).WithContext(ctx)
 	w := httptest.NewRecorder()
 	h.healthBatch(w, r)
 	if ctx.Err() != nil || !strings.Contains(w.Body.String(), `"0004"`) {

@@ -8,7 +8,7 @@ export class WatchApi {
     body: Credentials | BindRequest | HeartbeatRequest | BatchRequest | SOSRequest): Promise<DeviceReply> {
     const request = http.createHttp();
     try {
-      const response = await request.request(config.server + '/restful/device/' + path, {
+      const response = await request.request(config.server + '/api/v1/device/' + path, {
         method: http.RequestMethod.POST,
         header: { 'Content-Type': 'application/json' },
         extraData: JSON.stringify(body),

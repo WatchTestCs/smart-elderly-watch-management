@@ -3,21 +3,17 @@ package apidoc
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
-func TestAliasKeepsMethodBodyAndAuthenticationPath(t *testing.T) {
-	h := Rewrite(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/restful/device/command" || r.Method != "POST" || r.Header.Get("X-CSRF-TOKEN") != "present" {
-			t.Fatal(r)
-		}
-		w.WriteHeader(201)
-	}))
-	r := httptest.NewRequest("POST", "/api/v1/device-commands", nil)
-	r.Header.Set("X-CSRF-TOKEN", "present")
+func TestContractPublishesNativeGoRoutes(t *testing.T) {
 	w := httptest.NewRecorder()
-	h.ServeHTTP(w, r)
-	if w.Code != 201 || r.URL.Path != "/api/v1/device-commands" {
-		t.Fatal(w.Code, r.URL.Path)
+	ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/openapi.json", nil))
+	if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), "/api/v1/auth/login") {
+		t.Fatalf("missing Go v1 contract: %d", w.Code)
+	}
+	if !strings.Contains(w.Body.String(), "SUINING_SESSION") {
+		t.Fatal("missing native Go session cookie definition")
 	}
 }

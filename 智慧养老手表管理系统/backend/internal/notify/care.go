@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"strings"
 
-	"careold-go/internal/db"
-	"careold-go/internal/securestore"
+	"suining-care/internal/db"
+	"suining-care/internal/securestore"
 )
 
 const recipientScope = "care-notification-recipient"
@@ -37,11 +37,18 @@ func OpenNotificationRecipient(box *securestore.Box, stored string) (string, err
 	return box.Open(stored, recipientScope)
 }
 
+func familyPhonePredicate(mysql bool) string {
+	if mysql {
+		return "f.family_phone REGEXP '^1[0-9]{10}$'"
+	}
+	return "f.family_phone ~ '^1[0-9]{10}$'"
+}
+
 // QueueCareSMS 为长者的每个有效家属手机号入队一条 SMS 通知，
 // 返回实际插入的行数（0 表示无可通知的家属）。
 func QueueCareSMS(ctx context.Context, tx *db.Transaction, box *securestore.Box, incidentID, oldID int64) (int64, error) {
 	rows, err := tx.Query(ctx, `SELECT f.family_phone FROM oldperson o JOIN family f ON f.family_id=o.family_id
-		WHERE o.old_id=$1 AND f.family_phone ~ '^1[0-9]{10}$'`, oldID)
+		WHERE o.old_id=$1 AND `+familyPhonePredicate(tx.IsMySQL()), oldID)
 	if err != nil {
 		return 0, err
 	}

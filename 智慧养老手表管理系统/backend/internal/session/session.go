@@ -9,10 +9,10 @@ import (
 	"sync"
 	"time"
 
-	"careold-go/internal/securestore"
+	"suining-care/internal/securestore"
 )
 
-const CookieName = "JSESSIONID"
+const CookieName = "SUINING_SESSION"
 
 type Principal struct {
 	Role             string // ADMIN or FAMILY; empty for an anonymous session.

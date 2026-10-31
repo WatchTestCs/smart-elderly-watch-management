@@ -5,8 +5,8 @@ import (
 	"log"
 	"time"
 
-	"careold-go/internal/health"
-	"careold-go/internal/observability"
+	"suining-care/internal/health"
+	"suining-care/internal/observability"
 )
 
 // CapabilityTick performs no external I/O and is safe with concurrent instances.

@@ -1,18 +1,18 @@
 package handlers
 
 import (
-	dbstore "careold-go/internal/db"
-	"careold-go/internal/response"
+	dbstore "suining-care/internal/db"
+	"suining-care/internal/response"
 
 	"net/http"
 	"time"
 )
 
 // ---------------------------------------------------------------------------
-// AlarmProcessController (/restful/alarmProcess)
+// AlarmProcessController (/api/v1/alarmProcess)
 // ---------------------------------------------------------------------------
 
-// POST /restful/alarmProcess/select —— 查询告警处置记录（ADMIN）。
+// POST /api/v1/alarmProcess/select —— 查询告警处置记录（ADMIN）。
 // 注意表名是 alarm_process（与设备上报写入的 alarm_precess 是两张不同的表，原样保留）。
 func (h *Handler) alarmProcessSelect(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)

@@ -33,7 +33,7 @@ func TestSlidingWindowDifferential(t *testing.T) {
 				kept = append(kept, now)
 			}
 			reference = kept
-			if got := queue.allow(now); got != want || queue.size != len(reference) {
+			if got := queue.allowBudget(now, queue.limit); got != want || queue.size != len(reference) {
 				t.Fatalf("limit=%d at=%d got=%v want=%v size=%d wantSize=%d", limit, i, got, want, queue.size, len(reference))
 			}
 			for j, at := range reference {
@@ -48,7 +48,7 @@ func TestSlidingWindowDifferential(t *testing.T) {
 func TestSlidingWindowExactBoundary(t *testing.T) {
 	w := hitWindow{limit: 2}
 	now := time.Now()
-	if !w.allow(now) || !w.allow(now.Add(time.Minute)) || w.allow(now.Add(window-time.Nanosecond)) || !w.allow(now.Add(window)) || w.allow(now.Add(window)) || !w.allow(now.Add(window+time.Minute)) {
+	if !w.allowBudget(now, w.limit) || !w.allowBudget(now.Add(time.Minute), w.limit) || w.allowBudget(now.Add(window-time.Nanosecond), w.limit) || !w.allowBudget(now.Add(window), w.limit) || w.allowBudget(now.Add(window), w.limit) || !w.allowBudget(now.Add(window+time.Minute), w.limit) {
 		t.Fatal("sliding boundary or denied-hit accounting changed")
 	}
 }
@@ -56,25 +56,25 @@ func TestSlidingWindowExactBoundary(t *testing.T) {
 func TestSlidingWindowSparseCapacityAndWrappedGrowth(t *testing.T) {
 	now := time.Now()
 	w := hitWindow{limit: 60}
-	if !w.allow(now) || len(w.times) != 1 {
+	if !w.allowBudget(now, w.limit) || len(w.times) != 1 {
 		t.Fatal("one-shot client allocated a full quota")
 	}
-	if !w.allow(now.Add(time.Minute)) || len(w.times) != 2 {
+	if !w.allowBudget(now.Add(time.Minute), w.limit) || len(w.times) != 2 {
 		t.Fatal("unexpected initial growth")
 	}
 	// Expire the first hit, wrap into its slot, then grow the full wrapped ring.
-	if !w.allow(now.Add(window)) || w.head != 1 {
+	if !w.allowBudget(now.Add(window), w.limit) || w.head != 1 {
 		t.Fatal("fixture did not wrap")
 	}
-	if !w.allow(now.Add(window)) || len(w.times) != 4 || w.head != 0 || !w.times[0].Equal(now.Add(time.Minute)) {
+	if !w.allowBudget(now.Add(window), w.limit) || len(w.times) != 4 || w.head != 0 || !w.times[0].Equal(now.Add(time.Minute)) {
 		t.Fatal("wrapped growth lost chronological order")
 	}
 	for i := w.size; i < 60; i++ {
-		if !w.allow(now.Add(window)) {
+		if !w.allowBudget(now.Add(window), w.limit) {
 			t.Fatal("premature denial")
 		}
 	}
-	if len(w.times) != 60 || w.allow(now.Add(window)) {
+	if len(w.times) != 60 || w.allowBudget(now.Add(window), w.limit) {
 		t.Fatal("capacity exceeded quota")
 	}
 }
@@ -82,7 +82,7 @@ func TestSlidingWindowSparseCapacityAndWrappedGrowth(t *testing.T) {
 func TestLimiterConcurrentQuotaAndIsolation(t *testing.T) {
 	l := New()
 	t.Cleanup(l.Close)
-	r := httptest.NewRequest(http.MethodPost, "/restful/userLogin/login", nil)
+	r := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", nil)
 	r.RemoteAddr = "[2001:db8::1]:12345"
 	var accepted atomic.Int64
 	var workers sync.WaitGroup
@@ -107,10 +107,10 @@ func TestLimiterConcurrentQuotaAndIsolation(t *testing.T) {
 		t.Fatalf("accepted %d; want 30", accepted.Load())
 	}
 	for _, tc := range []struct{ method, path, ip string }{
-		{http.MethodPost, "/restful/userLogin/login", "[2001:db8::2]:12345"},
-		{http.MethodPost, "/restful/device/login", r.RemoteAddr},
-		{http.MethodGet, "/restful/userLogin/login", r.RemoteAddr},
-		{http.MethodPost, "/restful/device/sos", r.RemoteAddr},
+		{http.MethodPost, "/api/v1/auth/login", "[2001:db8::2]:12345"},
+		{http.MethodPost, "/api/v1/device/login", r.RemoteAddr},
+		{http.MethodGet, "/api/v1/auth/login", r.RemoteAddr},
+		{http.MethodPost, "/api/v1/device/sos", r.RemoteAddr},
 	} {
 		other := httptest.NewRequest(tc.method, tc.path, nil)
 		other.RemoteAddr = tc.ip

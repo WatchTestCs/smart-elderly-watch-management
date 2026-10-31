@@ -1,13 +1,13 @@
 package notify
 
 import (
-	"careold-go/internal/db/dbtest"
-	"careold-go/internal/securestore"
 	"context"
 	"encoding/base64"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
+	"suining-care/internal/db/dbtest"
+	"suining-care/internal/securestore"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -22,7 +22,7 @@ func TestQueueHasNoHundredMessageDropAndRollsBack(t *testing.T) {
 		t.Fatal(err)
 	}
 	for i := 0; i < 120; i++ {
-		if err = Enqueue(ctx, tx, box, "announcement", strconv.Itoa(i), 1, "13800000001"); err != nil {
+		if err = EnqueueChannels(ctx, tx, box, "announcement", strconv.Itoa(i), 1, "13800000001", []string{"sms", "in_app"}); err != nil {
 			tx.Rollback(ctx)
 			t.Fatal(err)
 		}
@@ -35,7 +35,7 @@ func TestQueueHasNoHundredMessageDropAndRollsBack(t *testing.T) {
 		t.Fatal(count, err)
 	}
 	tx, _ = pool.Begin(ctx)
-	Enqueue(ctx, tx, box, "announcement", "rollback", 1, "13800000001")
+	EnqueueChannels(ctx, tx, box, "announcement", "rollback", 1, "13800000001", []string{"sms", "in_app"})
 	tx.Rollback(ctx)
 	if err = pool.QueryRow(ctx, "SELECT count(*) FROM message_outbox WHERE source_key='rollback'").Scan(&count); err != nil || count != 0 {
 		t.Fatal("rolled-back announcement leaked notification", count, err)

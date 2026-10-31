@@ -19,14 +19,14 @@ import (
 	"sync/atomic"
 	"time"
 
-	"careold-go/internal/auth"
-	"careold-go/internal/blob"
-	"careold-go/internal/config"
-	"careold-go/internal/db"
-	"careold-go/internal/ratelimit"
-	"careold-go/internal/securestore"
-	"careold-go/internal/session"
 	"github.com/go-sql-driver/mysql"
+	"suining-care/internal/auth"
+	"suining-care/internal/blob"
+	"suining-care/internal/config"
+	"suining-care/internal/db"
+	"suining-care/internal/ratelimit"
+	"suining-care/internal/securestore"
+	"suining-care/internal/session"
 )
 
 func main() {
@@ -207,7 +207,7 @@ func probe() error {
 			workers.Add(1)
 			go func() {
 				defer workers.Done()
-				r := &http.Request{Method: http.MethodPost, URL: &url.URL{Path: "/restful/userLogin/login"}}
+				r := &http.Request{Method: http.MethodPost, URL: &url.URL{Path: "/api/v1/auth/login"}}
 				for {
 					n := next.Add(1)
 					if n > 100000 {

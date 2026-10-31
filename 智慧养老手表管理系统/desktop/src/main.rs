@@ -36,7 +36,7 @@ impl Backend {
                         TcpStream::connect_timeout(&addr, Duration::from_secs(1))
                     {
                         let _ = socket.set_write_timeout(Some(Duration::from_secs(1)));
-                        let _ = write!(socket, "POST /restful/desktop/exit HTTP/1.1\r\nHost: {addr}\r\nX-Suining-Desktop: {}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n", self.token);
+                        let _ = write!(socket, "POST /api/v1/desktop/exit HTTP/1.1\r\nHost: {addr}\r\nX-Suining-Desktop: {}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n", self.token);
                     }
                 }
                 let until = Instant::now() + Duration::from_secs(3);
@@ -82,7 +82,7 @@ async fn setup_admin(
         .build()
         .map_err(|_| "无法创建连接")?;
     let response = client
-        .post(format!("{}/restful/setup", state.origin))
+        .post(format!("{}/api/v1/setup", state.origin))
         .header("X-Suining-Desktop", &state.token)
         .json(&account)
         .send()

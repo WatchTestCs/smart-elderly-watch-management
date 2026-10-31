@@ -11,14 +11,14 @@ import (
 	"strconv"
 	"time"
 
-	"careold-go/internal/auth"
-	"careold-go/internal/db"
-	"careold-go/internal/health"
-	"careold-go/internal/observability"
-	"careold-go/internal/response"
-	"careold-go/internal/securestore"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"suining-care/internal/auth"
+	"suining-care/internal/db"
+	"suining-care/internal/health"
+	"suining-care/internal/observability"
+	"suining-care/internal/response"
+	"suining-care/internal/securestore"
 )
 
 type factorGenerationKey struct{}

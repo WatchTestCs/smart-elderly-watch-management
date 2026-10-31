@@ -1,14 +1,14 @@
 package handlers
 
 import (
-	"careold-go/internal/care"
 	"net/http"
 	"os"
 	"strconv"
+	"suining-care/internal/care"
 	"time"
 
-	"careold-go/internal/response"
 	"github.com/jackc/pgx/v5"
+	"suining-care/internal/response"
 )
 
 // A missing assignment preserves legacy administrator privileges until a

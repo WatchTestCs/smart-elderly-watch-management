@@ -1,0 +1,10 @@
+{
+  "pr": 50,
+  "previewSHA": "7b9766df5612d54c26c3e9f75cb21fb39b598a3d",
+  "startingHead": "36c4dbcee58764622ddf084af5496d2552b22484",
+  "mysqlVersion": "8.0.43",
+  "pgVersion": "PostgreSQL 16.15, compiled by Visual C++ build 1944, 64-bit",
+  "goVersion": "go version go1.26.10 windows/amd64",
+  "mode": "after",
+  "scope": "Loopback HTTP into real handlers with synthetic records and disposable MySQL databases/PG schemas. PG is existing CI regression coverage, not a production business-primary change. No external notification/human/device acceptance."
+}

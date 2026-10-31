@@ -4,16 +4,17 @@ import (
 	"net/http"
 	"strconv"
 
-	"careold-go/internal/response"
+	dbstore "suining-care/internal/db"
+	"suining-care/internal/response"
 )
 
 // routeUser 注册 UserController / CustomerController 路由。
 func (h *Handler) routeUser(mux *http.ServeMux) {
-	mux.HandleFunc("POST /restful/user/select", h.userSelect)
-	mux.HandleFunc("POST /restful/customer/select", h.customerSelect)
-	mux.HandleFunc("POST /restful/customer/add", h.customerAdd)
-	mux.HandleFunc("POST /restful/customer/update", h.customerUpdate)
-	mux.HandleFunc("POST /restful/customer/delete", h.customerDelete)
+	mux.HandleFunc("POST /api/v1/user/select", h.userSelect)
+	mux.HandleFunc("POST /api/v1/customer/select", h.customerSelect)
+	mux.HandleFunc("POST /api/v1/customer/add", h.customerAdd)
+	mux.HandleFunc("POST /api/v1/customer/update", h.customerUpdate)
+	mux.HandleFunc("POST /api/v1/customer/delete", h.customerDelete)
 }
 
 // failBare0000 写无 message 的业务失败包络 {"returnCode":"0000"}。
@@ -21,7 +22,7 @@ func failBare0000(w http.ResponseWriter) {
 	response.JSON(w, http.StatusOK, map[string]any{"returnCode": response.CodeFail})
 }
 
-// POST /restful/user/select —— 按手机号查管理员账号（ADMIN）。
+// POST /api/v1/user/select —— 按手机号查管理员账号（ADMIN）。
 func (h *Handler) userSelect(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -59,7 +60,7 @@ func (h *Handler) userSelect(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, map[string]any{"usersByPhone2": list})
 }
 
-// POST /restful/customer/select —— 分页模糊查询客户（ADMIN）。
+// POST /api/v1/customer/select —— 分页模糊查询客户（ADMIN）。
 func (h *Handler) customerSelect(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -109,7 +110,7 @@ func (h *Handler) customerSelect(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// POST /restful/customer/add —— 新增客户（ADMIN）。
+// POST /api/v1/customer/add —— 新增客户（ADMIN）。
 func (h *Handler) customerAdd(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -124,9 +125,9 @@ func (h *Handler) customerAdd(w http.ResponseWriter, r *http.Request) {
 		response.Fail(w, "参数不完整")
 		return
 	}
-	age, err := strconv.Atoi(ageStr) // 非数字 → 500（复刻 Java parseInt 行为）
-	if err != nil {
-		response.Error500(w, ref())
+	age, err := strconv.Atoi(ageStr)
+	if err != nil || age < 0 || age > 150 {
+		write400(w, "年龄须为 0–150 岁的整数")
 		return
 	}
 	ct, err := h.DB.Exec(r.Context(),
@@ -143,7 +144,7 @@ func (h *Handler) customerAdd(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// POST /restful/customer/update —— 更新客户（ADMIN）。
+// POST /api/v1/customer/update —— 更新客户（ADMIN）。
 func (h *Handler) customerUpdate(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -163,9 +164,9 @@ func (h *Handler) customerUpdate(w http.ResponseWriter, r *http.Request) {
 		response.Fail(w, "参数不完整")
 		return
 	}
-	age, err := strconv.Atoi(ageStr) // 非数字 → 500
-	if err != nil {
-		response.Error500(w, ref())
+	age, err := strconv.Atoi(ageStr)
+	if err != nil || age < 0 || age > 150 {
+		write400(w, "年龄须为 0–150 岁的整数")
 		return
 	}
 	ct, err := h.DB.Exec(r.Context(),
@@ -183,7 +184,7 @@ func (h *Handler) customerUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// POST /restful/customer/delete —— 删除客户（ADMIN）。
+// POST /api/v1/customer/delete —— 删除客户（ADMIN）。
 func (h *Handler) customerDelete(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -194,14 +195,51 @@ func (h *Handler) customerDelete(w http.ResponseWriter, r *http.Request) {
 		response.Error500(w, ref())
 		return
 	}
-	ct, err := h.DB.Exec(r.Context(), `DELETE FROM customer WHERE customer_id=$1`, id)
+	ctx := r.Context()
+	tx, err := h.DB.Begin(ctx)
+	if err != nil {
+		response.Error500(w, ref())
+		return
+	}
+	defer tx.Rollback(ctx)
+	if !lockCustomer(w, r, tx, id) {
+		return
+	}
+	var assigned bool
+	if err := tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM oldperson WHERE customer_id=$1)", id).Scan(&assigned); err != nil {
+		response.Error500(w, ref())
+		return
+	}
+	if assigned {
+		response.Fail(w, "该监护人仍关联长者，请先调整长者档案")
+		return
+	}
+	ct, err := tx.Exec(ctx, `DELETE FROM customer WHERE customer_id=$1`, id)
 	if err != nil {
 		response.Error500(w, ref())
 		return
 	}
 	if ct.RowsAffected() == 1 {
+		if err := tx.Commit(ctx); err != nil {
+			response.Error500(w, ref())
+			return
+		}
 		response.OK(w, nil)
 	} else {
 		failBare0000(w)
 	}
+}
+
+// Profile assignment and guardian deletion lock the same parent before changing references.
+func lockCustomer(w http.ResponseWriter, r *http.Request, tx *dbstore.Transaction, id int64) bool {
+	var found int64
+	if err := tx.QueryRow(r.Context(), "SELECT customer_id FROM customer WHERE customer_id=$1 FOR UPDATE", id).Scan(&found); err != nil {
+		if isNotFound(err) {
+			response.Fail(w, "监护人不存在，请刷新后重新选择")
+		} else {
+			response.Error500(w, ref())
+		}
+		return false
+	}
+	return true
 }

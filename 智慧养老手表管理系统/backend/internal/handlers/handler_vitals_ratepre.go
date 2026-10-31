@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	dbstore "careold-go/internal/db"
-	"careold-go/internal/response"
+	dbstore "suining-care/internal/db"
+	"suining-care/internal/response"
 
 	"net/http"
 	"strconv"
@@ -42,7 +42,7 @@ func scanRatepreDTO(rows dbstore.Rows) (ratepreDTO, error) {
 	return d, err
 }
 
-// POST /restful/ratepre/alertCount —— 未处置的心率/血压异常数量。
+// POST /api/v1/ratepre/alertCount —— 未处置的心率/血压异常数量。
 func (h *Handler) ratepreAlertCount(w http.ResponseWriter, r *http.Request) {
 	if _, ok := optBody(w, r); !ok {
 		return
@@ -84,9 +84,11 @@ type alertRow struct {
 	PreDone       bool
 	CreateTime    *string
 	OldPersonName *string
+	HrHigh, HrLow *int
+	BpHigh, BpLow *int
 }
 
-// POST /restful/ratepre/alertDetail —— 查看一条异常记录的原因。
+// POST /api/v1/ratepre/alertDetail —— 查看一条异常记录的原因。
 func (h *Handler) ratepreAlertDetail(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -117,6 +119,10 @@ func (h *Handler) ratepreAlertDetail(w http.ResponseWriter, r *http.Request) {
 		response.OK(w, map[string]any{"hasAlert": 0, "message": "该老人当前没有待处理的心率/血压异常"})
 		return
 	}
+	response.OK(w, describeRatepreAlert(a))
+}
+
+func describeRatepreAlert(a alertRow) map[string]any {
 	hr, bp := 0, 0
 	if a.Hr != nil {
 		hr = int(*a.Hr)
@@ -126,26 +132,36 @@ func (h *Handler) ratepreAlertDetail(w http.ResponseWriter, r *http.Request) {
 	}
 	rateBad := a.RateState != nil && *a.RateState == "1" && !a.RateDone
 	preBad := a.PreState != nil && *a.PreState == "1" && !a.PreDone
+	hrLow, hrHigh, bpLow, bpHigh := 55, 110, 90, 140
+	if a.HrHigh != nil && a.HrLow != nil {
+		hrLow, hrHigh = min(*a.HrHigh, *a.HrLow), max(*a.HrHigh, *a.HrLow)
+	}
+	if a.BpHigh != nil && a.BpLow != nil {
+		bpLow, bpHigh = min(*a.BpHigh, *a.BpLow), max(*a.BpHigh, *a.BpLow)
+	}
 	var reasons, details []string
 	if rateBad {
-		if hr > 110 {
+		if hr > hrHigh {
 			reasons = append(reasons, "心率偏高")
-		} else {
+		} else if hr < hrLow {
 			reasons = append(reasons, "心率偏低")
+		} else {
+			reasons = append(reasons, "历史心率异常")
 		}
-		details = append(details, "心率正常范围 55-110 次/分，本次测量 "+strconv.Itoa(hr)+" 次/分。")
+		details = append(details, "心率当前档案范围 "+strconv.Itoa(hrLow)+"-"+strconv.Itoa(hrHigh)+" 次/分，本次测量 "+strconv.Itoa(hr)+" 次/分。")
 	}
 	if preBad {
-		if bp > 140 {
+		if bp > bpHigh {
 			reasons = append(reasons, "血压偏高")
-		} else {
+		} else if bp < bpLow {
 			reasons = append(reasons, "血压偏低")
+		} else {
+			reasons = append(reasons, "历史血压异常")
 		}
-		details = append(details, "血压正常范围 90-140 mmHg，本次测量 "+strconv.Itoa(bp)+" mmHg。")
+		details = append(details, "血压当前档案范围 "+strconv.Itoa(bpLow)+"-"+strconv.Itoa(bpHigh)+" mmHg，本次测量 "+strconv.Itoa(bp)+" mmHg。")
 	}
 	if len(reasons) == 0 {
-		response.OK(w, map[string]any{"hasAlert": 0, "message": "该记录已处理，没有待处理的红点"})
-		return
+		return map[string]any{"hasAlert": 0, "message": "该记录已处理，没有待处理的红点"}
 	}
 	rb, pb := 0, 0
 	if rateBad {
@@ -154,7 +170,7 @@ func (h *Handler) ratepreAlertDetail(w http.ResponseWriter, r *http.Request) {
 	if preBad {
 		pb = 1
 	}
-	response.OK(w, map[string]any{
+	return map[string]any{
 		"hasAlert":      1,
 		"recordId":      a.ID,
 		"deviceId":      a.DeviceID,
@@ -168,7 +184,7 @@ func (h *Handler) ratepreAlertDetail(w http.ResponseWriter, r *http.Request) {
 		"reason":        strings.Join(reasons, "；"),
 		"detail":        strings.Join(details, "；"),
 		"advice":        "① 先联系家属确认老人身体状况；② 持续异常建议就医；③ 若是阈值设置不合理，到「基础管理-手表信息」调整心率/血压上下限；④ 确认无误后点「标记已处理」消除红点。",
-	})
+	}
 }
 
 func (h *Handler) findAlertRecord(r *http.Request, id int64) (alertRow, bool, error) {
@@ -177,10 +193,11 @@ func (h *Handler) findAlertRecord(r *http.Request, id int64) (alertRow, bool, er
 	err := h.DB.QueryRow(r.Context(), `SELECT r.device_id, r.old_id, r.hr, r.bp, r.rate_state, r.pre_state,
 		COALESCE((r.rate_handled_at IS NOT NULL AND r.create_time <= r.rate_handled_at), false),
 		COALESCE((r.pre_handled_at IS NOT NULL AND r.create_time <= r.pre_handled_at), false),
-		TO_CHAR(r.create_time,'YYYY-MM-DD HH24:MI:SS'), o.name
-		FROM ratepre r LEFT JOIN oldperson o ON o.old_id=r.old_id WHERE r.id=$1`, id).
+		TO_CHAR(r.create_time,'YYYY-MM-DD HH24:MI:SS'), o.name, w.hrf, w.hrl, w.bpf, w.bpl
+		FROM ratepre r LEFT JOIN oldperson o ON o.old_id=r.old_id
+		LEFT JOIN watch_info w ON w.device_id=r.device_id WHERE r.id=$1`, id).
 		Scan(&a.DeviceID, &a.OldID, &a.Hr, &a.Bp, &a.RateState, &a.PreState,
-			&a.RateDone, &a.PreDone, &a.CreateTime, &a.OldPersonName)
+			&a.RateDone, &a.PreDone, &a.CreateTime, &a.OldPersonName, &a.HrHigh, &a.HrLow, &a.BpHigh, &a.BpLow)
 	if isNotFound(err) {
 		return a, false, nil
 	}
@@ -197,17 +214,18 @@ func (h *Handler) findLatestPending(r *http.Request, oldID int64, kind string) (
 	}
 	var a alertRow
 	err := h.DB.QueryRow(r.Context(), `SELECT r.id, r.device_id, r.old_id, r.hr, r.bp, r.rate_state, r.pre_state,
-		TO_CHAR(r.create_time,'YYYY-MM-DD HH24:MI:SS'), o.name
+		TO_CHAR(r.create_time,'YYYY-MM-DD HH24:MI:SS'), o.name, w.hrf, w.hrl, w.bpf, w.bpl
 		FROM ratepre r LEFT JOIN oldperson o ON o.old_id=r.old_id
+		LEFT JOIN watch_info w ON w.device_id=r.device_id
 		WHERE r.old_id=$1 AND `+cond+` ORDER BY r.create_time DESC, r.id DESC LIMIT 1`, oldID).
-		Scan(&a.ID, &a.DeviceID, &a.OldID, &a.Hr, &a.Bp, &a.RateState, &a.PreState, &a.CreateTime, &a.OldPersonName)
+		Scan(&a.ID, &a.DeviceID, &a.OldID, &a.Hr, &a.Bp, &a.RateState, &a.PreState, &a.CreateTime, &a.OldPersonName, &a.HrHigh, &a.HrLow, &a.BpHigh, &a.BpLow)
 	if isNotFound(err) {
 		return a, false, nil
 	}
 	return a, err == nil, err
 }
 
-// POST /restful/ratepre/resolveAlert —— 处置异常（消除红点），事务内执行。
+// POST /api/v1/ratepre/resolveAlert —— 处置异常（消除红点），事务内执行。
 func (h *Handler) ratepreResolveAlert(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -215,6 +233,12 @@ func (h *Handler) ratepreResolveAlert(w http.ResponseWriter, r *http.Request) {
 	}
 	recordIDStr := strID(m, "recordId")
 	kind := strings.ToLower(str(m, "kind"))
+	if raw, present := m["kind"]; present && raw != nil {
+		if _, isString := raw.(string); !isString || (kind != "" && kind != "rate" && kind != "pre") {
+			write400(w, "kind 应为 rate、pre 或空字符串")
+			return
+		}
+	}
 	if !isDigits(recordIDStr) {
 		response.Fail(w, "参数不正确")
 		return

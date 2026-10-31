@@ -51,10 +51,6 @@ func TestCompactMatchesLegacyResultsAndEvidence(t *testing.T) {
 			}
 		}
 		want := referenceEvaluate(p, in)
-		got := Evaluate(p, in)
-		if !reflect.DeepEqual(got, want) {
-			t.Fatalf("case %d: Evaluate differs\nwant %#v\ngot  %#v", i, want, got)
-		}
 		compact := EvaluateCompact(p, in)
 		if len(compact) != len(want) {
 			t.Fatalf("case %d: compact count=%d want %d", i, len(compact), len(want))

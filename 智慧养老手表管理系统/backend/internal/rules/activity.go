@@ -3,7 +3,7 @@ package rules
 import (
 	"time"
 
-	"careold-go/internal/health"
+	"suining-care/internal/health"
 )
 
 // Samples arrive in sample_start,revision order from the bounded SQL window.

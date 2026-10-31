@@ -4,11 +4,11 @@ package handlers
 
 import (
 	"bytes"
-	"careold-go/internal/auth"
-	dbstore "careold-go/internal/db"
-	"careold-go/internal/response"
-	"careold-go/internal/session"
 	"encoding/json"
+	"suining-care/internal/auth"
+	dbstore "suining-care/internal/db"
+	"suining-care/internal/response"
+	"suining-care/internal/session"
 
 	"io"
 	"math"
@@ -18,18 +18,18 @@ import (
 )
 
 func (h *Handler) routeVitals(mux *http.ServeMux) {
-	mux.HandleFunc("POST /restful/ratepre/alertCount", h.ratepreAlertCount)
-	mux.HandleFunc("POST /restful/ratepre/alertDetail", h.ratepreAlertDetail)
-	mux.HandleFunc("POST /restful/ratepre/resolveAlert", h.ratepreResolveAlert)
-	mux.HandleFunc("POST /restful/ratepre/selectRatepre", h.ratepreSelect)
-	mux.HandleFunc("POST /restful/ratepre/selectRatepreFamily", h.ratepreSelectFamily)
-	mux.HandleFunc("POST /restful/ratepre/selectRatepreDetail", h.ratepreSelectDetail)
-	mux.HandleFunc("POST /restful/ratepre/selectRatepreCount", h.ratepreSelectCount)
-	mux.HandleFunc("POST /restful/step/selectStep", h.stepSelect)
-	mux.HandleFunc("POST /restful/step/selectStepFamily", h.stepSelectFamily)
-	mux.HandleFunc("POST /restful/step/selectStepDetail", h.stepSelectDetail)
-	mux.HandleFunc("POST /restful/step/selectStepCount", h.stepSelectCount)
-	mux.HandleFunc("POST /restful/step/getAllCount", h.stepGetAllCount)
+	mux.HandleFunc("POST /api/v1/ratepre/alertCount", h.ratepreAlertCount)
+	mux.HandleFunc("POST /api/v1/ratepre/alertDetail", h.ratepreAlertDetail)
+	mux.HandleFunc("POST /api/v1/ratepre/resolveAlert", h.ratepreResolveAlert)
+	mux.HandleFunc("POST /api/v1/ratepre/selectRatepre", h.ratepreSelect)
+	mux.HandleFunc("POST /api/v1/ratepre/selectRatepreFamily", h.ratepreSelectFamily)
+	mux.HandleFunc("POST /api/v1/ratepre/selectRatepreDetail", h.ratepreSelectDetail)
+	mux.HandleFunc("POST /api/v1/ratepre/selectRatepreCount", h.ratepreSelectCount)
+	mux.HandleFunc("POST /api/v1/step/selectStep", h.stepSelect)
+	mux.HandleFunc("POST /api/v1/step/selectStepFamily", h.stepSelectFamily)
+	mux.HandleFunc("POST /api/v1/step/selectStepDetail", h.stepSelectDetail)
+	mux.HandleFunc("POST /api/v1/step/selectStepCount", h.stepSelectCount)
+	mux.HandleFunc("POST /api/v1/step/getAllCount", h.stepGetAllCount)
 }
 
 // ---------------------------------------------------------------------------

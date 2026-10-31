@@ -1,0 +1,27 @@
+MySQL / 4 key-path cases
+=== RUN   TestArchitectureBindingKeepsCustomizedThresholds
+--- PASS: TestArchitectureBindingKeepsCustomizedThresholds (5.14s)
+=== RUN   TestContinuousBindingCodeExpiry
+--- PASS: TestContinuousBindingCodeExpiry (5.03s)
+=== RUN   TestContinuousInviteCodeExpiry
+--- PASS: TestContinuousInviteCodeExpiry (5.04s)
+=== RUN   TestIntegrationDistinctInvitesCannotOverwriteFamily
+--- PASS: TestIntegrationDistinctInvitesCannotOverwriteFamily (5.12s)
+PASS
+ok  	suining-care/internal/handlers	22.219s
+
+
+PostgreSQL / 4 key-path cases
+=== RUN   TestArchitectureBindingKeepsCustomizedThresholds
+--- PASS: TestArchitectureBindingKeepsCustomizedThresholds (0.26s)
+=== RUN   TestContinuousBindingCodeExpiry
+--- PASS: TestContinuousBindingCodeExpiry (0.24s)
+=== RUN   TestContinuousInviteCodeExpiry
+--- PASS: TestContinuousInviteCodeExpiry (0.25s)
+=== RUN   TestIntegrationDistinctInvitesCannotOverwriteFamily
+--- PASS: TestIntegrationDistinctInvitesCannotOverwriteFamily (0.44s)
+PASS
+ok  	suining-care/internal/handlers	3.088s
+
+Targeted go vet: handlers PASS
+No full local suite.

@@ -17,7 +17,7 @@ import (
 	"testing"
 	"time"
 
-	"careold-go/internal/rules"
+	"suining-care/internal/rules"
 )
 
 // Opt-in: runs ONLY with SOAK_MYSQL=1 against a disposable TEST_MYSQL_DSN.

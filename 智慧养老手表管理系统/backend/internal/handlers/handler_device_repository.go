@@ -1,15 +1,16 @@
 package handlers
 
 import (
-	dbstore "careold-go/internal/db"
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/base64"
 	"errors"
-	"github.com/jackc/pgx/v5"
 	"time"
+
+	"github.com/jackc/pgx/v5"
+	dbstore "suining-care/internal/db"
 )
 
 func secretHash(clear string) (string, error) {
@@ -168,18 +169,26 @@ func touchDevice(ctx context.Context, q oldQuerier, deviceID int64, battery *int
 		aAny = *appVersion
 	}
 	_, err := q.Exec(ctx,
-		`UPDATE device SET last_time=$1, battery=COALESCE($2,battery),
-		 app_version=COALESCE($3,app_version), last_online_at=$1 WHERE device_id=$4`,
+		`UPDATE device SET last_time=GREATEST(COALESCE(last_time,$1),$1),
+		 battery=COALESCE($2,battery), app_version=COALESCE($3,app_version),
+		 last_online_at=GREATEST(COALESCE(last_online_at,$1),$1) WHERE device_id=$4`,
 		now, bAny, aAny, deviceID)
 	return err
 }
 
+func watchProfileInsertSQL(mysql bool) string {
+	if mysql {
+		return `INSERT INTO watch_info(device_id, op_time, bpf, bpl, hrf, hrl) VALUES($1,$2,$3,$4,$5,$6)
+		 ON DUPLICATE KEY UPDATE device_id=device_id`
+	}
+	return `INSERT INTO watch_info(device_id, op_time, bpf, bpl, hrf, hrl) VALUES($1,$2,$3,$4,$5,$6)
+		 ON CONFLICT(device_id) DO NOTHING`
+}
+
 // saveWatchProfileUpsert fills a missing default profile without replacing a
 // caregiver's customized thresholds during device registration or binding.
-func saveWatchProfileUpsert(ctx context.Context, q oldQuerier, deviceID int64, hrf, hrl, bpf, bpl int, opTime time.Time) (int64, error) {
-	ct, err := q.Exec(ctx,
-		`INSERT INTO watch_info(device_id, op_time, bpf, bpl, hrf, hrl) VALUES($1,$2,$3,$4,$5,$6)
-		 ON CONFLICT(device_id) DO NOTHING`,
+func saveWatchProfileUpsert(ctx context.Context, q oldQuerier, mysql bool, deviceID int64, hrf, hrl, bpf, bpl int, opTime time.Time) (int64, error) {
+	ct, err := q.Exec(ctx, watchProfileInsertSQL(mysql),
 		deviceID, opTime, bpf, bpl, hrf, hrl)
 	if err != nil {
 		return 0, err

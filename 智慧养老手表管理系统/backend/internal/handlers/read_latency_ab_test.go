@@ -20,13 +20,13 @@ import (
 	"testing"
 	"time"
 
-	"careold-go/internal/auth"
-	"careold-go/internal/config"
-	"careold-go/internal/csrf"
-	"careold-go/internal/health"
-	"careold-go/internal/observability"
-	"careold-go/internal/ratelimit"
-	"careold-go/internal/session"
+	"suining-care/internal/auth"
+	"suining-care/internal/config"
+	"suining-care/internal/csrf"
+	"suining-care/internal/health"
+	"suining-care/internal/observability"
+	"suining-care/internal/ratelimit"
+	"suining-care/internal/session"
 )
 
 // Audit fixture only. It leaves production source unchanged, uses dbtest's
@@ -104,7 +104,7 @@ func TestReadLatencyAudit(t *testing.T) {
 	}
 	mux := http.NewServeMux()
 	h.Routes(mux)
-	mux.HandleFunc("POST /restful/audit/probe", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("POST /api/v1/audit/probe", func(w http.ResponseWriter, r *http.Request) {
 		if auth.Principal(r) == nil {
 			t.Error("missing principal")
 		}
@@ -162,16 +162,16 @@ func TestReadLatencyAudit(t *testing.T) {
 	page := map[string]any{"page": 1, "pageSize": 20, "name": ""}
 	stats := map[string]any{"oldId": 1, "source": "watch", "sourceDevice": "AUDIT", "metric": "heart_rate", "semantics": "instant", "from": from, "to": from.Add(24 * time.Hour)}
 	endpoints := []endpoint{
-		{"authenticated_probe", "/restful/audit/probe", map[string]any{}, "", 0, false},
-		{"text/select", "/restful/text/select", page, "texts", 20, false},
-		{"customer/select", "/restful/customer/select", page, "customers", 20, false},
-		{"oldPerson/select", "/restful/oldPerson/select", page, "oldPeople", 20, false},
-		{"family/select", "/restful/family/select", page, "familyDtos", 20, false},
-		{"device/list", "/restful/device/list", page, "devices", 20, false},
-		{"notification/list", "/restful/notification/list", map[string]any{"familyId": 1}, "items", 100, false},
-		{"health/changes", "/restful/health/changes", map[string]any{"oldId": 1, "limit": 100}, "changes", 100, false},
-		{"statistics_hot", "/restful/health/statistics", stats, "statistics", 10000, false},
-		{"statistics_uncached", "/restful/health/statistics", stats, "statistics", 10000, true},
+		{"authenticated_probe", "/api/v1/audit/probe", map[string]any{}, "", 0, false},
+		{"text/select", "/api/v1/text/select", page, "texts", 20, false},
+		{"customer/select", "/api/v1/customer/select", page, "customers", 20, false},
+		{"oldPerson/select", "/api/v1/oldPerson/select", page, "oldPeople", 20, false},
+		{"family/select", "/api/v1/family/select", page, "familyDtos", 20, false},
+		{"device/list", "/api/v1/device/list", page, "devices", 20, false},
+		{"notification/list", "/api/v1/notifications/search", map[string]any{"familyId": 1}, "items", 100, false},
+		{"health/changes", "/api/v1/health/changes", map[string]any{"oldId": 1, "limit": 100}, "changes", 100, false},
+		{"statistics_hot", "/api/v1/health/statistics", stats, "statistics", 10000, false},
+		{"statistics_uncached", "/api/v1/health/statistics", stats, "statistics", 10000, true},
 	}
 	for _, ep := range endpoints {
 		body, e := json.Marshal(ep.body)
@@ -272,7 +272,7 @@ func TestReadLatencyAudit(t *testing.T) {
 	}
 	loginBody, _ := json.Marshal(map[string]any{"phone": "13800000001", "password": password})
 	measure("login", "loopback_http", 1, 20, func() time.Duration {
-		req, _ := http.NewRequest(http.MethodPost, server.URL+"/restful/userLogin/login", bytes.NewReader(loginBody))
+		req, _ := http.NewRequest(http.MethodPost, server.URL+"/api/v1/auth/login", bytes.NewReader(loginBody))
 		req.Header.Set("Content-Type", "application/json")
 		req.AddCookie(&http.Cookie{Name: session.CookieName, Value: sess.ID})
 		req.Header.Set(csrf.HeaderName, sess.CSRFToken)
@@ -284,7 +284,7 @@ func TestReadLatencyAudit(t *testing.T) {
 		data, e := io.ReadAll(resp.Body)
 		resp.Body.Close()
 		elapsed := time.Since(start)
-		if e != nil || resp.StatusCode != 200 || !bytes.Contains(data, []byte(`"users1"`)) {
+		if e != nil || resp.StatusCode != 200 || !bytes.Contains(data, []byte(`"authenticated":true`)) {
 			t.Fatalf("login: %d %s %v", resp.StatusCode, data, e)
 		}
 		var next *session.Session
@@ -325,7 +325,7 @@ func TestReadLatencyAudit(t *testing.T) {
 	if !peer.Destroy(sess.ID) || store.Get(sess.ID) != nil {
 		t.Fatal("cross-replica revoke failed")
 	}
-	req := httptest.NewRequest(http.MethodPost, "/restful/text/select", bytes.NewReader([]byte(`{}`)))
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/text/select", bytes.NewReader([]byte(`{}`)))
 	req.AddCookie(&http.Cookie{Name: session.CookieName, Value: sess.ID})
 	req.Header.Set(csrf.HeaderName, sess.CSRFToken)
 	w := httptest.NewRecorder()

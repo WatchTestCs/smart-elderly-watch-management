@@ -11,14 +11,14 @@ import (
 type Point [2]float64 // longitude, latitude
 
 func (p *Point) UnmarshalJSON(b []byte) error {
-	var values []float64
+	var values []*float64
 	if err := json.Unmarshal(b, &values); err != nil {
 		return err
 	}
-	if len(values) != 2 {
+	if len(values) != 2 || values[0] == nil || values[1] == nil {
 		return fmt.Errorf("坐标必须恰好包含经度、纬度两个数值")
 	}
-	*p = Point{values[0], values[1]}
+	*p = Point{*values[0], *values[1]}
 	return nil
 }
 

@@ -14,7 +14,7 @@
 | 部署、观测 | 本地运行、有限诊断 | 容器、整套 Compose、JSON 日志、授权 metrics、模拟写入压测脚本 |
 | 权限 | 主管/照护员/审计员及职责管理界面 | 复用 `CareOperationsPanel.vue`，增加自助 TOTP、恢复码、登录审计与部分字段加密 |
 | 前端 | Vue/JS，外置 logic 脚本 | Vitest；客户页与安全面板增量 TypeScript；取消 5 个视图的外置 logic 拼接 |
-| 接口 | `/restful/*` | 保留兼容，新增 16 个 `/api/v1/*` 别名及可检查的 OpenAPI 路由清单 |
+| 接口 | 历史旧路由 | 当前 `preview` 统一为 `/api/v1/*` 原生 Go 入口（不兼容旧路由） |
 
 没有改 DeviceType 传值映射，没有同步转发下行指令，没有把 Alert 提醒表当成照护告警。
 

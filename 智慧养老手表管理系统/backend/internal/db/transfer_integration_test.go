@@ -7,10 +7,10 @@ import (
 	"strings"
 	"testing"
 
-	"careold-go/internal/db"
-	"careold-go/internal/db/dbtest"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"suining-care/internal/db"
+	"suining-care/internal/db/dbtest"
 )
 
 func TestLegacyTransferIsCheckedAndAtomic(t *testing.T) {

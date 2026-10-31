@@ -12,7 +12,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"careold-go/internal/securestore"
+	"suining-care/internal/securestore"
 )
 
 const MaxPlainBytes = 5 << 20

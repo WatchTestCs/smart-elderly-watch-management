@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"careold-go/internal/db/dbtest"
+	"suining-care/internal/db/dbtest"
 )
 
 func TestIndexedBatchPersistsAllVersionsAndTombstones(t *testing.T) {

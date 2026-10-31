@@ -1,10 +1,10 @@
 package handlers
 
 import (
-	dbstore "careold-go/internal/db"
-	"careold-go/internal/db/dbtest"
 	"context"
 	"encoding/json"
+	dbstore "suining-care/internal/db"
+	"suining-care/internal/db/dbtest"
 
 	"fmt"
 	"net/http"
@@ -15,13 +15,13 @@ import (
 	"testing"
 	"time"
 
-	"careold-go/internal/auth"
-	"careold-go/internal/config"
-	"careold-go/internal/csrf"
-	"careold-go/internal/db"
+	"suining-care/internal/auth"
+	"suining-care/internal/config"
+	"suining-care/internal/csrf"
+	"suining-care/internal/db"
 
-	"careold-go/internal/session"
 	"github.com/google/uuid"
+	"suining-care/internal/session"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -88,7 +88,7 @@ func callAPI(handler http.HandlerFunc, body any) *httptest.ResponseRecorder {
 	if err != nil {
 		panic(err)
 	}
-	request := httptest.NewRequest("POST", "/restful/test", strings.NewReader(string(data)))
+	request := httptest.NewRequest("POST", "/api/v1/test", strings.NewReader(string(data)))
 	response := httptest.NewRecorder()
 	handler.ServeHTTP(response, request)
 	return response
@@ -180,6 +180,7 @@ func TestIntegrationListContractsAndNumericAge(t *testing.T) {
 func TestIntegrationEditPreservesFamily(t *testing.T) {
 	pool := testDatabase(t)
 	h := testHandler(t, pool)
+	mustExec(t, pool, "INSERT INTO customer(customer_id,customer_name) VALUES(1,'监护人')")
 	mustExec(t, pool, "INSERT INTO oldperson(old_id,name,family_id) VALUES(1,'长者',7)")
 	out := api(t, h.oldPersonUpdate, map[string]any{"oldId": 1, "name": "新姓名", "bothdate": "1950-01-01", "sex": "女", "phone": "13800000000", "room": "101", "illness": "", "warn": "", "foodLike": "", "foodHate": "", "drag": "", "customerName": "1"})
 	if out["returnCode"] != "1111" {
@@ -208,7 +209,7 @@ func TestIntegrationCoordinatesAndSOS(t *testing.T) {
 	h := testHandler(t, pool)
 	seedDevice(t, pool)
 	// No current or historical location must still create an actionable SOS.
-	out := api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret})
+	out := api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "requestId": "test-press", "bindingVersion": 1})
 	if out["returnCode"] != "1111" {
 		t.Fatal(out)
 	}
@@ -218,7 +219,7 @@ func TestIntegrationCoordinatesAndSOS(t *testing.T) {
 	}
 	// Real handlers must accept numeric decimal coordinates for reports and SOS.
 	for _, handler := range []http.HandlerFunc{h.deviceReport, h.deviceSos} {
-		out = api(t, handler, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "lng": 121.4737, "lat": 31.2304, "hr": 75, "step": 120})
+		out = api(t, handler, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "lng": 121.4737, "lat": 31.2304, "hr": 75, "step": 120, "requestId": "coordinate-press", "bindingVersion": 1})
 		if out["returnCode"] != "1111" {
 			t.Fatal(out)
 		}
@@ -311,7 +312,7 @@ func TestLogoutDestroysSessionAndRetainsCSRF(t *testing.T) {
 			handler := csrf.Middleware(store, auth.Middleware(store, http.HandlerFunc(h.logout)))
 			sess := store.Create(session.Principal{Role: role, ID: 1})
 			request := func(token string) *httptest.ResponseRecorder {
-				r := httptest.NewRequest("POST", "/restful/userLogin/logout", nil)
+				r := httptest.NewRequest("POST", "/api/v1/auth/logout", nil)
 				r.AddCookie(&http.Cookie{Name: session.CookieName, Value: sess.ID})
 				r.Header.Set(csrf.HeaderName, token)
 				w := httptest.NewRecorder()
@@ -386,7 +387,7 @@ func TestNativeSetupRequiresDesktopToken(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			body := `{"name":"管理员","phone":"13800000000","password":"TestPassword123!"}`
-			request := httptest.NewRequest("POST", "/restful/setup", strings.NewReader(body))
+			request := httptest.NewRequest("POST", "/api/v1/setup", strings.NewReader(body))
 			request.Header.Set("X-Suining-Desktop", test.token)
 			response := httptest.NewRecorder()
 			handler.ServeHTTP(response, request)
@@ -399,7 +400,7 @@ func TestNativeSetupRequiresDesktopToken(t *testing.T) {
 	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM users").Scan(&count); err != nil || count != 1 {
 		t.Fatalf("administrators=%d err=%v", count, err)
 	}
-	request := httptest.NewRequest("POST", "/restful/userLogin/login", strings.NewReader(`{}`))
+	request := httptest.NewRequest("POST", "/api/v1/auth/login", strings.NewReader(`{}`))
 	response := httptest.NewRecorder()
 	handler.ServeHTTP(response, request)
 	if response.Code != 403 || !strings.Contains(response.Body.String(), "CSRF_REJECTED") {
@@ -415,9 +416,9 @@ func migrateTestDB(ctx context.Context, pool *db.Database) error {
 }
 func expectedMigrations(pool *db.Database) int {
 	if pool.IsMySQL() {
-		return 14
+		return 19
 	}
-	return 13
+	return 18
 }
 
 func lockWaitQuery(pool *dbstore.Database, deleting bool) string {

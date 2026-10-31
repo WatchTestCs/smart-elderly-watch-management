@@ -1,0 +1,35 @@
+MySQL / 6 related cases
+=== RUN   TestArchitectureFormattedRecordsAcrossDatabases
+--- PASS: TestArchitectureFormattedRecordsAcrossDatabases (5.98s)
+=== RUN   TestArchitectureMissingMetricRemainsUnknown
+--- PASS: TestArchitectureMissingMetricRemainsUnknown (5.53s)
+=== RUN   TestContinuousRebindCannotReadPreviousDailyData
+--- PASS: TestContinuousRebindCannotReadPreviousDailyData (5.57s)
+=== RUN   TestContinuousRebindDailySnapshotIsSeparate
+--- PASS: TestContinuousRebindDailySnapshotIsSeparate (5.36s)
+=== RUN   TestContinuousVitalHistoryLabelsKeepFullObservationTime
+--- PASS: TestContinuousVitalHistoryLabelsKeepFullObservationTime (5.48s)
+=== RUN   TestContinuousSleepHistoryLabelsKeepFullCalendarDate
+--- PASS: TestContinuousSleepHistoryLabelsKeepFullCalendarDate (5.60s)
+PASS
+ok  	suining-care/internal/handlers	33.683s
+
+
+PostgreSQL / 6 related cases
+=== RUN   TestArchitectureFormattedRecordsAcrossDatabases
+--- PASS: TestArchitectureFormattedRecordsAcrossDatabases (0.31s)
+=== RUN   TestArchitectureMissingMetricRemainsUnknown
+--- PASS: TestArchitectureMissingMetricRemainsUnknown (0.30s)
+=== RUN   TestContinuousRebindCannotReadPreviousDailyData
+--- PASS: TestContinuousRebindCannotReadPreviousDailyData (0.33s)
+=== RUN   TestContinuousRebindDailySnapshotIsSeparate
+--- PASS: TestContinuousRebindDailySnapshotIsSeparate (0.42s)
+=== RUN   TestContinuousVitalHistoryLabelsKeepFullObservationTime
+--- PASS: TestContinuousVitalHistoryLabelsKeepFullObservationTime (0.36s)
+=== RUN   TestContinuousSleepHistoryLabelsKeepFullCalendarDate
+--- PASS: TestContinuousSleepHistoryLabelsKeepFullCalendarDate (0.37s)
+PASS
+ok  	suining-care/internal/handlers	2.243s
+
+Targeted go vet: handlers PASS
+No full local suite, browser E2E, frontend build, or performance run.

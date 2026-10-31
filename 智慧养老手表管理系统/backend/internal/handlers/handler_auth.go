@@ -1,4 +1,4 @@
-// 登录 / session / 初始化 / 桌面端：LoginController、SetupController、DesktopController。
+// 会话、登录、初始化和桌面端控制接口。
 package handlers
 
 import (
@@ -13,18 +13,18 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 
-	"careold-go/internal/auth"
-	"careold-go/internal/csrf"
-	"careold-go/internal/response"
-	"careold-go/internal/session"
+	"suining-care/internal/auth"
+	"suining-care/internal/csrf"
+	"suining-care/internal/response"
+	"suining-care/internal/session"
 )
 
 func (h *Handler) routeAuth(mux *http.ServeMux) {
-	mux.HandleFunc("GET /restful/userLogin/session", h.sessionInfo)
-	mux.HandleFunc("POST /restful/userLogin/login", h.login)
-	mux.HandleFunc("POST /restful/userLogin/logout", h.logout)
-	mux.HandleFunc("POST /restful/setup", h.setup)
-	mux.HandleFunc("POST /restful/desktop/exit", h.desktopExit)
+	mux.HandleFunc("GET /api/v1/auth/session", h.sessionInfo)
+	mux.HandleFunc("POST /api/v1/auth/login", h.login)
+	mux.HandleFunc("POST /api/v1/auth/logout", h.logout)
+	mux.HandleFunc("POST /api/v1/setup", h.setup)
+	mux.HandleFunc("POST /api/v1/desktop/exit", h.desktopExit)
 }
 
 // timingDummyHash 是一条与本哈希同 cost（12）的无效 bcrypt 记录：手机号在
@@ -34,17 +34,17 @@ const timingDummyHash = "$2a$12$S1k/y1BsWtNAy/eeN.zaleT.hNjDpyRQ/1S7MCXu5Y8GN61E
 
 // MountDesktopExit allows closing the desktop even before the database is ready.
 func (h *Handler) MountDesktopExit(mux *http.ServeMux) {
-	mux.HandleFunc("POST /restful/desktop/exit", h.desktopExit)
+	mux.HandleFunc("POST /api/v1/desktop/exit", h.desktopExit)
 }
 
 // MountLocalLogout keeps session cleanup available without a database.
 func (h *Handler) MountLocalLogout(mux *http.ServeMux) {
 	local := http.NewServeMux()
-	local.HandleFunc("POST /restful/userLogin/logout", h.logout)
-	mux.Handle("POST /restful/userLogin/logout", csrf.Middleware(h.Sessions, auth.Middleware(h.Sessions, local)))
+	local.HandleFunc("POST /api/v1/auth/logout", h.logout)
+	mux.Handle("POST /api/v1/auth/logout", csrf.Middleware(h.Sessions, auth.Middleware(h.Sessions, local)))
 }
 
-// sessionInfo 复刻 GET /restful/userLogin/session：公开；无会话则建匿名会话。
+// sessionInfo 处理 GET /api/v1/auth/session：公开；无会话则建匿名会话。
 func (h *Handler) sessionInfo(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	var count int64
@@ -91,7 +91,7 @@ func (h *Handler) sessionInfo(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// login 复刻 POST /restful/userLogin/login：公开；先查 users（管理员），再查 family（家属）。
+// login 处理 POST /api/v1/auth/login：公开；先查 users（管理员），再查 family（家属）。
 func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -100,7 +100,7 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 	phone := str(m, "phone")
 	password := str(m, "password")
 	if !auth.ValidPhone(phone) || password == "" || len(password) > 72 {
-		response.Fail(w, "请输入手机号和密码")
+		response.JSON(w, http.StatusBadRequest, map[string]any{"code": "INVALID_LOGIN_INPUT", "message": "请输入有效手机号和密码"})
 		return
 	}
 
@@ -114,19 +114,19 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 		uid    int64
 		uName  pgtype.Text
 		uPass  pgtype.Text
-		uRole  pgtype.Text
 		uPhone pgtype.Text
 	)
 	err := h.DB.QueryRow(ctx,
-		`SELECT user_id, user_name, password, role, user_phone FROM users WHERE user_phone=$1`,
-		phone).Scan(&uid, &uName, &uPass, &uRole, &uPhone)
+		`SELECT user_id, user_name, password, user_phone FROM users WHERE user_phone=$1`,
+		phone).Scan(&uid, &uName, &uPass, &uPhone)
 	if err != nil && !isNotFound(err) {
 		response.Error500(w, ref())
 		return
 	}
-	compared := false
+	// Track whether any actual password hash was checked. An existing admin
+	// account with a wrong password must not trigger an extra dummy bcrypt call.
+	compared := err == nil
 	if err == nil && auth.Matches(password, uPass.String) {
-		compared = true
 		if !h.factorLogin(w, r, m, auth.RoleAdmin, uid, phone) {
 			return
 		}
@@ -135,35 +135,24 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 		}) {
 			return
 		}
-		response.OK(w, map[string]any{
-			"users1": map[string]any{
-				"userId": uid, "userName": uName.String, "userPhone": uPhone.String,
-				"role": uRole.String, "password": nil,
-			},
-		})
+		response.JSON(w, http.StatusOK, map[string]any{"authenticated": true})
 		return
 	}
 
 	// 2. family 表（家属）
 	var (
-		fid     int64
-		fName   pgtype.Text
-		fRel    pgtype.Text
-		fPhone  pgtype.Text
-		fSex    pgtype.Text
-		fAddr   pgtype.Text
-		fTouPic pgtype.Text
-		fPass   pgtype.Text
-		oldID   pgtype.Int8
-		oldName pgtype.Text
+		fid    int64
+		fName  pgtype.Text
+		fPhone pgtype.Text
+		fPass  pgtype.Text
+		oldID  pgtype.Int8
 	)
 	err = h.DB.QueryRow(ctx, `
-		SELECT f.family_id, f.family_name, f.family_relation, f.family_phone, f.family_sex,
-		       f.family_address, f.family_tou_pic, f.family_password, o.old_id, o.name
+		SELECT f.family_id, f.family_name, f.family_phone, f.family_password, o.old_id
 		FROM family f LEFT JOIN oldperson o ON o.family_id = f.family_id
 		WHERE f.family_phone=$1
 		ORDER BY o.old_id LIMIT 1`, phone).
-		Scan(&fid, &fName, &fRel, &fPhone, &fSex, &fAddr, &fTouPic, &fPass, &oldID, &oldName)
+		Scan(&fid, &fName, &fPhone, &fPass, &oldID)
 	if err != nil && !isNotFound(err) {
 		response.Error500(w, ref())
 		return
@@ -173,7 +162,7 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 	}
 	if err == nil && auth.Matches(password, fPass.String) {
 		if !oldID.Valid {
-			response.Fail(w, "该家属账号尚未关联老人，请联系管理员")
+			response.JSON(w, http.StatusForbidden, map[string]any{"code": "ACCOUNT_UNLINKED", "message": "该家属账号尚未关联老人，请联系管理员"})
 			return
 		}
 		if !h.factorLogin(w, r, m, auth.RoleFamily, fid, phone) {
@@ -185,14 +174,7 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 		}) {
 			return
 		}
-		response.OK(w, map[string]any{
-			"family": map[string]any{
-				"oldId": oldID.Int64, "name": oldName.String,
-				"familyId": fid, "familyName": fName.String, "familyRelation": fRel.String,
-				"familyPhone": fPhone.String, "familySex": fSex.String,
-				"familyAddress": fAddr.String, "familyTouPic": fTouPic.String,
-			},
-		})
+		response.JSON(w, http.StatusOK, map[string]any{"authenticated": true})
 		return
 	}
 
@@ -204,7 +186,7 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 		response.Error500(w, ref())
 		return
 	}
-	response.Fail(w, "手机号或密码不正确")
+	response.JSON(w, http.StatusUnauthorized, map[string]any{"code": "INVALID_CREDENTIALS", "message": "手机号或密码不正确"})
 }
 
 // renewSession 登录建会话：销毁请求 cookie 带来的旧会话（防 session fixation），建新会话并写 cookie。
@@ -232,7 +214,7 @@ func (h *Handler) renewSession(w http.ResponseWriter, r *http.Request, p session
 	return true
 }
 
-// logout 复刻 POST /restful/userLogin/logout：需登录（中间件鉴权），销毁会话并清 cookie。
+// logout 处理 POST /api/v1/auth/logout：需登录（中间件鉴权），销毁会话并清 cookie。
 func (h *Handler) logout(w http.ResponseWriter, r *http.Request) {
 	sess := session.FromContext(r)
 	if sess == nil {
@@ -248,7 +230,7 @@ func (h *Handler) logout(w http.ResponseWriter, r *http.Request) {
 	response.OK(w, nil)
 }
 
-// setup 复刻 POST /restful/setup：公开 + 桌面 token；一次性初始化管理员账号。
+// setup 处理 POST /api/v1/setup：公开 + 桌面 token；一次性初始化管理员账号。
 func (h *Handler) setup(w http.ResponseWriter, r *http.Request) {
 	if !h.checkDesktopToken(w, r) {
 		return
@@ -307,7 +289,7 @@ func (h *Handler) setup(w http.ResponseWriter, r *http.Request) {
 	response.OK(w, nil)
 }
 
-// desktopExit 复刻 POST /restful/desktop/exit：公开 + 桌面 token；通过后延迟退出进程。
+// desktopExit 处理 POST /api/v1/desktop/exit：公开 + 桌面 token；通过后延迟退出进程。
 func (h *Handler) desktopExit(w http.ResponseWriter, r *http.Request) {
 	if !h.checkDesktopToken(w, r) {
 		return

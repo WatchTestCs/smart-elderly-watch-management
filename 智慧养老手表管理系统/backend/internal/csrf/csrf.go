@@ -1,5 +1,5 @@
 // Package csrf 实现基于会话的 CSRF token 校验：
-//   - GET /restful/userLogin/session 建立会话并下发 token；
+//   - GET /api/v1/auth/session 建立会话并下发 token；
 //   - 所有 POST/PUT/DELETE/PATCH（除豁免路径）必须带 X-CSRF-TOKEN 头且与会话 token 一致，
 //     无会话或 token 不对 → 403 CSRF_REJECTED；
 //   - 硬件接口使用设备鉴权，setup 与 desktop/exit 使用桌面令牌，不依赖浏览器 CSRF。
@@ -11,9 +11,9 @@ import (
 	"crypto/subtle"
 	"net/http"
 
-	"careold-go/internal/accesspolicy"
-	"careold-go/internal/response"
-	"careold-go/internal/session"
+	"suining-care/internal/accesspolicy"
+	"suining-care/internal/response"
+	"suining-care/internal/session"
 )
 
 const HeaderName = "X-CSRF-TOKEN"
