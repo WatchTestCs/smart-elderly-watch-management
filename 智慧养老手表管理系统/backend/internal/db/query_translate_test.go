@@ -233,3 +233,23 @@ func TestDialectRewritesDoNotTouchQuotedIdentifiersOrComments(t *testing.T) {
 		t.Fatalf("dialect rewrite changed quoted identifier or comment: got %q want %q", plan.sql, query)
 	}
 }
+
+func TestMySQLQueryRejectsExtraArguments(t *testing.T) {
+	cases := []struct {
+		query string
+		args  []any
+	}{
+		{"SELECT $1", []any{1, 2}},
+		{"SELECT $2,$1,$2", []any{"a", "b", "unused"}},
+		{"SELECT 1", []any{1}},
+	}
+	for _, tc := range cases {
+		if _, _, err := mysqlQuery(tc.query, tc.args); err == nil {
+			t.Fatalf("extra arguments silently ignored: query=%q args=%v", tc.query, tc.args)
+		}
+	}
+	if _, args, err := mysqlQuery("SELECT $2,$1,$2", []any{"first", "second"}); err != nil ||
+		len(args) != 3 || args[0] != "second" || args[1] != "first" || args[2] != "second" {
+		t.Fatalf("sparse/repeated positional binding changed: args=%v err=%v", args, err)
+	}
+}
