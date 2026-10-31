@@ -6,6 +6,9 @@
 
 | 文件 | 职责 |
 | --- | --- |
+| [docs/patch-review/2026-10-31-guardian-integrity.md](../docs/patch-review/2026-10-31-guardian-integrity.md) | 监护人引用完整性、事务协调及年龄范围的设计和验证边界 |
+| [evidence/core-bugs-20261030/guardian-integrity.txt](../evidence/core-bugs-20261030/guardian-integrity.txt) | 监护人引用与年龄修复前失败、八条关键路径及一次并行请求输出 |
+| [智慧养老手表管理系统/backend/internal/handlers/core_guardian_integrity_test.go](../智慧养老手表管理系统/backend/internal/handlers/core_guardian_integrity_test.go) | 失效监护人不写入、关联删除保护、年龄边界和同时请求回归 |
 | [docs/patch-review/2026-10-31-vitals-resolution.md](../docs/patch-review/2026-10-31-vitals-resolution.md) | 体征异常非法类型拒绝及指定记录原因归属的设计与验证边界 |
 | [evidence/core-bugs-20261030/vitals-resolution.txt](../evidence/core-bugs-20261030/vitals-resolution.txt) | 体征处置修复前失败、关键路径通过及最终补充验证输出 |
 | [智慧养老手表管理系统/backend/internal/handlers/core_vitals_resolution_test.go](../智慧养老手表管理系统/backend/internal/handlers/core_vitals_resolution_test.go) | 非法处置类型不落库、单类与双类处理及原因匹配指定记录回归 |

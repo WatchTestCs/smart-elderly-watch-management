@@ -136,7 +136,16 @@ func (h *Handler) oldPersonAdd(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := r.Context()
-	ct, err := h.DB.Exec(ctx,
+	tx, err := h.DB.Begin(ctx)
+	if err != nil {
+		response.Error500(w, ref())
+		return
+	}
+	defer tx.Rollback(ctx)
+	if !lockCustomer(w, r, tx, customerID) {
+		return
+	}
+	ct, err := tx.Exec(ctx,
 		`INSERT INTO oldperson(name,age,sex,phone,room,illness,warn,food_like,food_hate,drag,
 		 customer_id,be_time,bothdate) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
 		vals["name"], age, vals["sex"], vals["phone"], vals["room"], vals["illness"],
@@ -148,6 +157,10 @@ func (h *Handler) oldPersonAdd(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if ct.RowsAffected() == 1 {
+		if err := tx.Commit(ctx); err != nil {
+			response.Error500(w, ref())
+			return
+		}
 		response.OK(w, nil)
 		return
 	}
@@ -199,6 +212,9 @@ func (h *Handler) oldPersonUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer tx.Rollback(ctx)
+	if !lockCustomer(w, r, tx, customerID) {
+		return
+	}
 	var currentDevice *int64
 	if err := tx.QueryRow(ctx, `SELECT device_id FROM oldperson WHERE old_id=$1 FOR UPDATE`, oldID).Scan(&currentDevice); err != nil {
 		if err == pgx.ErrNoRows {

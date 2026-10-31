@@ -43,7 +43,7 @@ The packages do not bundle a database server. End users do not need Go, Rust, or
 
 | Area | What it covers |
 | --- | --- |
-| Residents and families | Manage resident, guardian, and family profiles; invite family members with registration codes |
+| Residents and families | Manage resident, guardian, and family profiles; validate guardian references and guardian ages (integers from 0 to 150); protect assigned guardians from deletion; invite family members with registration codes |
 | Watch devices | Register and bind watches, verify device secrets, check online status, and set alert thresholds |
 | Health and daily life | View heart rate, single-value blood pressure, sleep phases, step counts, and daily care logs |
 | Location and alerts | Check the latest reported location, out-of-range readings, SOS requests, and incident history |

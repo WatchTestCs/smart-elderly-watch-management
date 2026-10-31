@@ -101,6 +101,7 @@ func architectureBody(t *testing.T, recorder *httptest.ResponseRecorder) map[str
 
 func TestArchitectureElderEditCannotRewriteBinding(t *testing.T) {
 	pool := testDatabase(t)
+	mustExec(t, pool, "INSERT INTO customer(customer_id,customer_name) VALUES(1,'监护人')")
 	seedDevice(t, pool)
 	mustExec(t, pool, "INSERT INTO oldperson(old_id,name,device_id) VALUES(2,'另一长者',2)")
 	mustExec(t, pool, "INSERT INTO device(device_id,device_no,secret,old_id) VALUES(2,'OTHER','unused',2)")
