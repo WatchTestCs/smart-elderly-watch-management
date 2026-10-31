@@ -44,7 +44,7 @@ type parsedDeviceTelemetry struct {
 	now, beTime, day             time.Time
 	hr, bp, step, sleep, battery *int
 	sleepState, appVersion       *string
-	lng, lat, sourceStr, alarm   string
+	lng, lat, sourceStr, alarm, requestID string
 	position                     positionMetadata
 }
 
@@ -148,6 +148,20 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	// A missing version is tolerated only on the first binding epoch.
+	// After any unbind/rebind it must be supplied, so old buffered reports
+	// cannot silently be attributed to the next elder.
+	bindingVersion, versionPresent := int64Val(m, "bindingVersion")
+	if raw, supplied := m["bindingVersion"]; supplied && (raw == nil || !versionPresent || bindingVersion < 1) {
+		writeValidation400(w)
+		return
+	}
+	requestID, idPresent := vstr(m, "requestId")
+	if idPresent && requestID != "" && !sosRequestIDOK(requestID) {
+		writeValidation400(w)
+		return
+	}
+	parsed.requestID = requestID
 	ctx := r.Context()
 	tx, err := h.DB.Begin(ctx)
 	if err != nil {
@@ -171,12 +185,60 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 		hwFail(w, "0005", "设备还未绑定老人，请先在手表上输入绑定码")
 		return
 	}
+	// Read the binding under the elder->device lock order shared with SOS.
+	// Authentication and owner metadata read before this lock can be stale.
+	owner := *d.OldID
+	var lockedOwner int64
+	if err := tx.QueryRow(ctx, "SELECT old_id FROM oldperson WHERE old_id=$1 FOR UPDATE", owner).Scan(&lockedOwner); err != nil {
+		rollback()
+		response.Error500(w, ref())
+		return
+	}
+	locked, err := scanOldDevice(tx.QueryRow(ctx, "SELECT "+oldDeviceCols+" FROM device WHERE device_id=$1 FOR UPDATE", d.ID))
+	if err != nil {
+		rollback()
+		response.Error500(w, ref())
+		return
+	}
+	locked, code, msg, err = checkDeviceAuth(locked, secret, "设备已停用")
+	if err != nil {
+		rollback()
+		response.Error500(w, ref())
+		return
+	}
+	if locked == nil || locked.No != deviceNo {
+		rollback()
+		hwFail(w, "0004", "设备号或密钥不正确，或设备已停用")
+		return
+	}
+	if locked.OldID == nil || *locked.OldID != owner ||
+		(versionPresent && locked.HealthEpoch != bindingVersion) ||
+		(!versionPresent && locked.HealthEpoch != 1) {
+		rollback()
+		conflict409(w, "绑定版本已变化，请重新登录；旧设备缓存数据不能归入新长者")
+		return
+	}
+	d = locked
+	// An alarm retried with the same requestId must not create another care task.
+	if parsed.alarm != "" && requestID != "" {
+		var priorID int64
+		err := tx.QueryRow(ctx, "SELECT id FROM care_incident WHERE device_id=$1 AND request_id=$2", d.ID, requestID).Scan(&priorID)
+		if err == nil {
+			rollback()
+			response.OK(w, map[string]any{"duplicate": true, "incidentId": priorID, "message": "异常已接收（重复请求）"})
+			return
+		}
+		if err != pgx.ErrNoRows {
+			rollback()
+			response.Error500(w, ref())
+			return
+		}
+	}
 	if !acceptSignedDeviceNonce(w, ctx, tx, d.ID) {
 		rollback()
 		return
 	}
-	if requestID, present := vstr(m, "requestId"); present &&
-		durableTelemetryEligible(parsed, requestID, h.Box) {
+	if requestID != "" && durableTelemetryEligible(parsed, requestID, h.Box) {
 		err := (telemetryRepository{box: h.Box}).QueueDurableReport(ctx, tx, d, parsed, requestID)
 		if err != nil {
 			rollback()
@@ -208,10 +270,15 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 		response.Error500(w, ref())
 		return
 	}
-	response.OK(w, map[string]any{
+	result := map[string]any{
 		"rateState": persisted.rateState, "preState": persisted.preState,
 		"serverTime": parsed.now.Format(tsLayout),
-	})
+	}
+	if persisted.careIncidentID != 0 {
+		result["incidentId"] = persisted.careIncidentID
+		result["incidentState"] = "received"
+	}
+	response.OK(w, result)
 }
 
 // POST /api/v1/device/sos —— SOS 一键呼叫（公开，事务）。

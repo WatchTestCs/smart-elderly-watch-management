@@ -110,3 +110,27 @@ func TestTouchDeviceTimeNeverRegresses(t *testing.T) {
 		t.Fatalf("device time regressed: got %v, want %v", stored, now)
 	}
 }
+
+func TestDurableTelemetryBackoffDoesNotBlockOtherDevice(t *testing.T) {
+	pool := testDatabase(t)
+	seedDevice(t, pool)
+	mustExec(t, pool, "INSERT INTO device(device_id,device_no,secret,old_id) VALUES(2,'WATCH002','unused',1)")
+	box, err := securestore.New(base64.StdEncoding.EncodeToString([]byte(strings.Repeat("r", 32))))
+	if err != nil { t.Fatal(err) }
+	ctx := context.Background()
+	// A poisoned first device enters backoff while a second device remains ready.
+	mustExec(t, pool, `INSERT INTO telemetry_inbox(device_id,elder_id,binding_epoch,request_id,payload,status,created_at,next_retry_at)
+	VALUES(1,1,1,'poison-first','corrupt','pending',now(),now()-interval '1 second')`)
+	if count, err := DrainDurableTelemetryBatch(ctx, pool, box); err != nil || count != 1 {
+		t.Fatalf("first poison attempt count=%d err=%v", count, err)
+	}
+	mustExec(t, pool, `INSERT INTO telemetry_inbox(device_id,elder_id,binding_epoch,request_id,payload,status,created_at,next_retry_at)
+	VALUES(2,1,1,'second-ready','corrupt','pending',now(),now()-interval '1 second')`)
+	if count, err := DrainDurableTelemetryBatch(ctx, pool, box); err != nil || count != 1 {
+		t.Fatalf("another device was blocked count=%d err=%v", count, err)
+	}
+	var attempted int
+	if err := pool.QueryRow(ctx, "SELECT attempts FROM telemetry_inbox WHERE device_id=2").Scan(&attempted); err != nil || attempted != 1 {
+		t.Fatalf("second device not processed attempts=%d err=%v", attempted, err)
+	}
+}

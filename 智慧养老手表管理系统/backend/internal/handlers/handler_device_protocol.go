@@ -195,27 +195,35 @@ func (h *Handler) deviceBind(w http.ResponseWriter, r *http.Request) {
 	// Lock the elder before the device, matching unbind/delete lock order.
 	// Changing owners requires an explicit unbind so the old primary reference
 	// cannot be left pointing at a device that now reports for someone else.
-	if err := tx.QueryRow(ctx, `SELECT old_id FROM device WHERE device_id=$1 FOR UPDATE`, d.ID).Scan(&d.OldID); err != nil {
+	locked, err := scanOldDevice(tx.QueryRow(ctx, `SELECT `+oldDeviceCols+` FROM device WHERE device_id=$1 FOR UPDATE`, d.ID))
+	if err != nil {
 		rollback()
 		response.Error500(w, ref())
 		return
 	}
+	locked, code, msg, err = checkDeviceAuth(locked, secret, "设备已停用")
+	if err != nil {
+		rollback()
+		response.Error500(w, ref())
+		return
+	}
+	if locked == nil || locked.No != deviceNo {
+		rollback()
+		hwFail(w, "0004", "设备号或密钥不正确，或设备已停用")
+		return
+	}
+	d = locked
 	if d.OldID != nil && *d.OldID != *bc.OldID {
 		rollback()
 		conflict409(w, "设备已绑定其他长者，请先在设备管理解除绑定")
 		return
 	}
 	now := time.Now()
-	status := 1
-	if d.Status != nil {
-		status = *d.Status
-	}
+	// Binding must not restore a stale status, credential or metadata snapshot.
 	ct, err := tx.Exec(ctx,
-		`UPDATE device SET alias=$1, model=$2, old_id=$3, family_id=$4, status=$5,
-		 bind_time=$6, last_time=$6, last_lng=$7, last_lat=$8, battery=$9, app_version=$10
-		 WHERE device_id=$11`,
-		d.Alias, d.Model, *bc.OldID, bc.FamilyID, status, now,
-		d.LastLng, d.LastLat, d.Battery, d.AppVersion, d.ID)
+		`UPDATE device SET old_id=$1, family_id=$2, bind_time=$3,
+		 last_time=GREATEST(COALESCE(last_time,$3),$3) WHERE device_id=$4`,
+		*bc.OldID, bc.FamilyID, now, d.ID)
 	if err != nil {
 		rollback()
 		response.Error500(w, ref())

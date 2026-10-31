@@ -26,7 +26,9 @@ func (h *Handler) deviceHandleAlarm(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	var alarmID int64
 	err := h.DB.QueryRow(ctx,
-		`SELECT id FROM alarm_precess WHERE old_id=$1 ORDER BY be_time DESC, id DESC LIMIT 1`,
+		`SELECT a.id FROM alarm_precess a WHERE a.old_id=$1 AND a.status='1'
+			AND NOT EXISTS (SELECT 1 FROM care_incident c WHERE c.source_alarm_id=a.id AND c.state<>'verified')
+			ORDER BY a.be_time DESC, a.id DESC LIMIT 1`,
 		oldID).Scan(&alarmID)
 	if err != nil {
 		if err == pgx.ErrNoRows {
@@ -36,7 +38,7 @@ func (h *Handler) deviceHandleAlarm(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	if _, err := h.DB.Exec(ctx, `UPDATE alarm_precess SET status='0' WHERE id=$1`, alarmID); err != nil {
+	if _, err := h.DB.Exec(ctx, `UPDATE alarm_precess SET status='0' WHERE id=$1 AND status='1'`, alarmID); err != nil {
 		response.Error500(w, ref())
 		return
 	}
@@ -193,7 +195,7 @@ func (h *Handler) findRatepreAlert(ctx context.Context, q oldQuerier, deviceID i
 	err := q.QueryRow(ctx,
 		`SELECT r.id, r.hr, r.bp, r.create_time, r.old_id, w.hrf, w.hrl, w.bpf, w.bpl
 		 FROM ratepre r LEFT JOIN watch_info w ON w.device_id = r.device_id
-		 WHERE r.device_id=$1 AND r.`+stateCol+`='1'
+		 WHERE r.device_id=$1 AND r.old_id=(SELECT old_id FROM device WHERE device_id=$1) AND r.`+stateCol+`='1'
 		   AND (r.`+hatCol+` IS NULL OR r.create_time > r.`+hatCol+`)`+recordFilter+`
 		 ORDER BY r.create_time DESC, r.id DESC LIMIT 1`, args...).
 		Scan(&id, &hr, &bp, &createTime, &oldID, &hrf, &hrl, &bpf, &bpl)

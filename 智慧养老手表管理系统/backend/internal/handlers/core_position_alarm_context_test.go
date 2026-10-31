@@ -70,3 +70,36 @@ func TestContinuousSOSWithoutCoordinatesDoesNotBorrowLatestLocation(t *testing.T
 		}
 	}
 }
+
+func TestFallReportCreatesCareIncidentAndEventAtomically(t *testing.T) {
+	h := extraAuditHandler(t)
+	seedDevice(t, h.DB)
+	result := api(t, h.deviceReport, map[string]any{
+		"deviceNo": "WATCH001", "secret": testSecret,
+		"alarm": "fall", "requestId": "fall-care-bridge-1", "bindingVersion": 1,
+		"lng": "120", "lat": "30", "beTime": "2026-10-20 10:00:00",
+	})
+	if result["incidentState"] != "received" {
+		t.Fatalf("fall report did not acknowledge care incident: %v", result)
+	}
+	var alarms, incidents, events int
+	ctx := context.Background()
+	for _, entry := range []struct{ query string; target *int }{
+		{"SELECT count(*) FROM alarm_precess WHERE kind='fall'", &alarms},
+		{"SELECT count(*) FROM care_incident WHERE kind='fall'", &incidents},
+		{"SELECT count(*) FROM care_incident_event WHERE action='received'", &events},
+	} {
+		if err := h.DB.QueryRow(ctx, entry.query).Scan(entry.target); err != nil { t.Fatal(err) }
+	}
+	if alarms != 1 || incidents != 1 || events != 1 {
+		t.Fatalf("fall chain alarm=%d incident=%d events=%d", alarms, incidents, events)
+	}
+	second := api(t, h.deviceReport, map[string]any{
+		"deviceNo": "WATCH001", "secret": testSecret,
+		"alarm": "fall", "requestId": "fall-care-bridge-1", "bindingVersion": 1,
+		"lng": "120", "lat": "30", "beTime": "2026-10-20 10:00:00",
+	})
+	if second["duplicate"] != true {
+		t.Fatalf("replayed fall must not insert another incident: %v", second)
+	}
+}
