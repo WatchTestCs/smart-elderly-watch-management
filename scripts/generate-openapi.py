@@ -47,8 +47,8 @@ def route_policies():
 policies = route_policies()
 csrf_exempt = {path for (_, path), (access, bootstrap) in policies.items() if access == "Device" or bootstrap}
 fields = {
-    "/api/v1/device/report": {"deviceNo": "string", "secret": "string", "lng": "string", "lat": "string", "alarm": "string", "positionSource": "string", "positionSampledAt": "string", "positionAccuracy": "number"},
-    "/api/v1/device/sos": {"deviceNo": "string", "secret": "string", "bindingVersion": "integer", "requestId": "string", "lng": "string", "lat": "string", "positionSource": "string", "positionSampledAt": "string", "positionAccuracy": "number"},
+    "/api/v1/device/report": {"positionSource": "string", "positionSampledAt": "string", "positionAccuracy": "number"},
+    "/api/v1/device/sos": {"positionSource": "string", "positionSampledAt": "string", "positionAccuracy": "number"},
     "/api/v1/auth/login": {"phone": "string", "password": "string", "otp": "string", "recoveryCode": "string"},
     "/api/v1/security/factor": {"action": "string", "password": "string", "otp": "string"},
     "/api/v1/security/login-audit": {"after": "integer"},

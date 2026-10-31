@@ -2427,21 +2427,6 @@
                 "type": "object",
                 "additionalProperties": true,
                 "properties": {
-                  "deviceNo": {
-                    "type": "string"
-                  },
-                  "secret": {
-                    "type": "string"
-                  },
-                  "lng": {
-                    "type": "string"
-                  },
-                  "lat": {
-                    "type": "string"
-                  },
-                  "alarm": {
-                    "type": "string"
-                  },
                   "positionSource": {
                     "type": "string",
                     "enum": [
@@ -2642,24 +2627,6 @@
                 "type": "object",
                 "additionalProperties": true,
                 "properties": {
-                  "deviceNo": {
-                    "type": "string"
-                  },
-                  "secret": {
-                    "type": "string"
-                  },
-                  "bindingVersion": {
-                    "type": "integer"
-                  },
-                  "requestId": {
-                    "type": "string"
-                  },
-                  "lng": {
-                    "type": "string"
-                  },
-                  "lat": {
-                    "type": "string"
-                  },
                   "positionSource": {
                     "type": "string",
                     "enum": [
