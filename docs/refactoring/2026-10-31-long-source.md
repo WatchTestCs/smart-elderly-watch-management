@@ -1,4 +1,4 @@
-# Long source decomposition, first batch
+# Long source decomposition
 
 Baseline: `3bd4375d5aafab32948f145f7535d5ef6670ef67`.
 
@@ -59,14 +59,52 @@ There are no database migrations or dependency updates in this batch.
 - OpenAPI consistency and native API boundary checks passed.
 - Independent standards and behavior reviews found no blocking issue.
 
-CI and post-CI smoke must still pass on the submitted head before merging.
+PR #55 completed 26 checks (23 successful, two neutral, one skipped). Two
+post-CI MySQL regressions and eight component-path checks passed. It was merged
+as `77b1cf487b1c8ccf026620e04296326157c2ac18`; the merge tree matched the
+tested head `6675f05c748cc3935cb38d3867095ffd5e13c81f` exactly.
+
+## Second batch: normalization, aggregation and statistics reads
+
+The next batch separates four additional long functions into domain steps:
+
+- `Sample.Normalize`: record validation, metric/unit contract, and measurement
+  normalization. Private helpers operate on the public method's local copy;
+  partial normalized values returned with errors remain unchanged. A duplicate
+  interval-duration guard is removed: its earlier identical check already rejects
+  invalid intervals, and the time fields cannot change between those checks.
+- `Aggregate`: sample selection remains in the entry point, while interval step
+  allocation and total reduction have named helpers. Sorting, accumulation order,
+  overflow checks and partial statistics on errors are retained.
+- `healthStatistics`: request-range validation and bounded SQL sample loading
+  have separate helpers. Authorization precedes cache reads; the revision checks,
+  candidate limit, byte-exact source predicates and window filtering are retained.
+  The named request type preserves the original JSON field order for cache keys.
+- `appendEvidenceFast`: eligibility checks move to the evidence value, with a
+  pointer receiver to avoid copying the candidate. The encoding sequence remains
+  together, including byte order, canonical fallbacks and borrowed-buffer lifetime.
+
+Ten distinct existing regressions passed across normalization, aggregation,
+evidence encoding, MySQL cache identity/consistency and submicrosecond windows.
+Affected-package vet and OpenAPI consistency passed. Independent review found no
+behavior issue; its suggestion to avoid new Sample value copies was applied and
+the resulting local-copy/error semantics were reviewed again.
+
+A bounded baseline/candidate benchmark of three changed hot paths found the same
+allocation counts: evidence buffer 1, 1000 interval samples 16, and 1000 daily
+samples 26 allocations per operation. These short measurements do not establish
+a speed improvement. No frontend work or dependency changes are included here.
+
+This second batch still requires CI and minimal post-CI smoke on its final head.
 
 ## Remaining scope
 
 This batch addresses all 12 inventoried long files, and leaves no file above the
 inventory thresholds. It is not a claim that all long functions are resolved.
-The initial function inventory contained 30 functions of at least 90 lines;
-28 original functions remain for responsibility review after the two orchestration
-functions above. Next priorities are invitation joining, SOS and device binding,
+The initial function inventory contained 30 functions of at least 90 lines.
+After both batches, 24 original functions remain for responsibility review.
+The 94-line evidence encoding sequence has been reviewed and retained as one
+cohesive operation after extracting eligibility checks; the review threshold is
+not a requirement to fragment a single encoding sequence. Next priorities are invitation joining, SOS and device binding,
 legacy transfer, alert resolution and telemetry persistence. Their transaction
 boundaries must remain intact while validation and business steps are separated.
