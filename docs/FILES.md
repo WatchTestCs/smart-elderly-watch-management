@@ -6,6 +6,9 @@
 
 | 文件 | 职责 |
 | --- | --- |
+| [docs/patch-review/2026-10-31-vitals-resolution.md](../docs/patch-review/2026-10-31-vitals-resolution.md) | 体征异常非法类型拒绝及指定记录原因归属的设计与验证边界 |
+| [evidence/core-bugs-20261030/vitals-resolution.txt](../evidence/core-bugs-20261030/vitals-resolution.txt) | 体征处置修复前失败、关键路径通过及最终补充验证输出 |
+| [智慧养老手表管理系统/backend/internal/handlers/core_vitals_resolution_test.go](../智慧养老手表管理系统/backend/internal/handlers/core_vitals_resolution_test.go) | 非法处置类型不落库、单类与双类处理及原因匹配指定记录回归 |
 | [docs/patch-review/2026-10-31-pr50-alarm-snapshot.md](../docs/patch-review/2026-10-31-pr50-alarm-snapshot.md) | PR50告警现场快照的实施前设计、门槛与回退 |
 | [docs/patch-review/2026-10-31-pr50-handoff.md](../docs/patch-review/2026-10-31-pr50-handoff.md) | PR50标准13项接续交接、结果与剩余风险 |
 | [智慧养老手表管理系统/backend/internal/handlers/alarm_snapshot_http_test.go](../智慧养老手表管理系统/backend/internal/handlers/alarm_snapshot_http_test.go) | 回环HTTP及真实数据库验证无GPS/零点/单边/重试快照 |

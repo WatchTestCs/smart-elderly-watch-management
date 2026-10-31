@@ -172,8 +172,8 @@ func describePersonAlert(pr *personRow, now time.Time) map[string]any {
 	}
 }
 
-// findRatepreAlert 复刻 findRatepreAlert：取该设备"上次处理时间之后"最新一条异常。
-func (h *Handler) findRatepreAlert(ctx context.Context, q oldQuerier, deviceID int64, kind string) (map[string]any, error) {
+// findRatepreAlert returns the selected pending record, or the latest when recordID is nil.
+func (h *Handler) findRatepreAlert(ctx context.Context, q oldQuerier, deviceID int64, kind string, recordID *int64) (map[string]any, error) {
 	isRate := kind == "rate"
 	stateCol, hatCol := "rate_state", "rate_handled_at"
 	if !isRate {
@@ -184,12 +184,18 @@ func (h *Handler) findRatepreAlert(ctx context.Context, q oldQuerier, deviceID i
 	var createTime *time.Time
 	var oldID *int64
 	var hrf, hrl, bpf, bpl *int
+	recordFilter := ""
+	args := []any{deviceID}
+	if recordID != nil {
+		recordFilter = " AND r.id=$2"
+		args = append(args, *recordID)
+	}
 	err := q.QueryRow(ctx,
 		`SELECT r.id, r.hr, r.bp, r.create_time, r.old_id, w.hrf, w.hrl, w.bpf, w.bpl
 		 FROM ratepre r LEFT JOIN watch_info w ON w.device_id = r.device_id
 		 WHERE r.device_id=$1 AND r.`+stateCol+`='1'
-		   AND (r.`+hatCol+` IS NULL OR r.create_time > r.`+hatCol+`)
-		 ORDER BY r.create_time DESC, r.id DESC LIMIT 1`, deviceID).
+		   AND (r.`+hatCol+` IS NULL OR r.create_time > r.`+hatCol+`)`+recordFilter+`
+		 ORDER BY r.create_time DESC, r.id DESC LIMIT 1`, args...).
 		Scan(&id, &hr, &bp, &createTime, &oldID, &hrf, &hrl, &bpf, &bpl)
 	if err != nil {
 		if err == pgx.ErrNoRows {

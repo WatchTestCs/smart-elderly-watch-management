@@ -1,0 +1,42 @@
+
+=== before ===
+=== RUN   TestContinuousVitalsResolutionRejectsUnknownKind
+    core_vitals_resolution_test.go:15: unknown kind rat accepted: HTTP 200 {"message":"已处置，红点已消除","returnCode":"1111"}
+    core_vitals_resolution_test.go:23: invalid kind rat cleared alerts: rate=0 pre=0 untouchedTimes=false/false
+    core_vitals_resolution_test.go:15: unknown kind all accepted: HTTP 200 {"message":"已处置，红点已消除","returnCode":"1111"}
+    core_vitals_resolution_test.go:23: invalid kind all cleared alerts: rate=0 pre=0 untouchedTimes=false/false
+    core_vitals_resolution_test.go:15: unknown kind 1 accepted: HTTP 200 {"message":"已处置，红点已消除","returnCode":"1111"}
+    core_vitals_resolution_test.go:23: invalid kind 1 cleared alerts: rate=0 pre=0 untouchedTimes=false/false
+    core_vitals_resolution_test.go:15: unknown kind map[kind:rate] accepted: HTTP 200 {"message":"已处置，红点已消除","returnCode":"1111"}
+    core_vitals_resolution_test.go:23: invalid kind map[kind:rate] cleared alerts: rate=0 pre=0 untouchedTimes=false/false
+    core_vitals_resolution_test.go:34: heart-rate resolution changed pressure: pre=0 err=<nil>
+--- FAIL: TestContinuousVitalsResolutionRejectsUnknownKind (3.07s)
+=== RUN   TestContinuousVitalsResolutionReasonMatchesSelectedRecord
+    core_vitals_resolution_test.go:56: rate selected high record but returned latest low record's reason: map[handledReason:心率偏低 message:已处置，红点已消除 returnCode:1111]
+    core_vitals_resolution_test.go:56: pre selected high record but returned latest low record's reason: map[handledReason:血压偏低 message:已处置，红点已消除 returnCode:1111]
+--- FAIL: TestContinuousVitalsResolutionReasonMatchesSelectedRecord (4.13s)
+FAIL
+FAIL	suining-care/internal/handlers	7.331s
+FAIL
+
+=== after ===
+=== RUN   TestContinuousConfiguredThresholdExplanation
+--- PASS: TestContinuousConfiguredThresholdExplanation (5.17s)
+=== RUN   TestContinuousZeroVitalsAreMissing
+--- PASS: TestContinuousZeroVitalsAreMissing (5.14s)
+=== RUN   TestContinuousVitalsResolutionRejectsUnknownKind
+--- PASS: TestContinuousVitalsResolutionRejectsUnknownKind (5.32s)
+=== RUN   TestContinuousVitalsResolutionReasonMatchesSelectedRecord
+--- PASS: TestContinuousVitalsResolutionReasonMatchesSelectedRecord (5.19s)
+PASS
+ok  	suining-care/internal/handlers	20.935s
+
+=== final ===
+=== RUN   TestContinuousVitalsResolutionRejectsUnknownKind
+--- PASS: TestContinuousVitalsResolutionRejectsUnknownKind (5.97s)
+=== RUN   TestContinuousVitalsResolutionReasonMatchesSelectedRecord
+--- PASS: TestContinuousVitalsResolutionReasonMatchesSelectedRecord (5.51s)
+PASS
+ok  	suining-care/internal/handlers	11.631s
+
+handlers go vet PASS; OpenAPI generated check PASS (107 paths); no full local suite.
