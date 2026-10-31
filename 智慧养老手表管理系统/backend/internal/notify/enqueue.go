@@ -9,10 +9,6 @@ import (
 	"suining-care/internal/securestore"
 )
 
-func Enqueue(ctx context.Context, tx *db.Transaction, box *securestore.Box, topic, key string, familyID int64, phone string) error {
-	return EnqueueChannels(ctx, tx, box, topic, key, familyID, phone, []string{"sms", "in_app"})
-}
-
 func EnqueueChannels(ctx context.Context, tx *db.Transaction, box *securestore.Box, topic, key string, familyID int64, phone string, channels []string) error {
 	return EnqueueBatch(ctx, tx, box, []Message{{Topic: topic, Key: key, FamilyID: familyID, Phone: phone, Channels: channels}})
 }

@@ -100,25 +100,3 @@ type Input struct {
 	Heart, Blood, Battery, Activity *Value
 	Baselines                       map[string]Baseline
 }
-type Candidate struct {
-	Kind, Key, Severity string
-	Breach              bool
-	Required            int
-	Evidence            map[string]any
-}
-
-// Evaluate returns independent evidence maps for callers that need the original API.
-// The production device engine uses EvaluateCompact to avoid allocating maps
-// only to immediately encode them as JSON.
-func Evaluate(p Policy, in Input) []Candidate {
-	compact := EvaluateCompact(p, in)
-	if !p.Enabled {
-		return nil
-	}
-	out := make([]Candidate, 0, len(compact))
-	for _, c := range compact {
-		out = append(out, Candidate{Kind: c.Kind, Key: c.Key, Severity: c.Severity,
-			Breach: c.Breach, Required: c.Required, Evidence: c.evidence.asMap()})
-	}
-	return out
-}

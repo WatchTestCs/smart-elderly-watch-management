@@ -2,7 +2,9 @@ package analytics
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"os"
 	"strings"
 	"testing"
@@ -10,6 +12,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"suining-care/internal/db"
 	"suining-care/internal/db/dbtest"
 )
 
@@ -80,7 +83,7 @@ func TestAnalyticsConsumerAB(t *testing.T) {
 		var acknowledged int
 		for {
 			if mode == "single" {
-				ok, err := SyncOne(ctx, primary, pg)
+				ok, err := syncOneReference(ctx, primary, pg)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -127,4 +130,45 @@ func TestAnalyticsConsumerAB(t *testing.T) {
 		})
 		t.Logf("ANALYTICS_DB_AB %s", out)
 	}
+}
+
+// Commit PG first and acknowledge MySQL second. A crash between them replays
+// the event; last_event_id prevents duplicates and stale resurrection. A failed
+// PG write leaves the outbox intact. No cross-database transaction is claimed.
+func syncOneReference(ctx context.Context, primary *db.Database, pg *pgxpool.Pool) (bool, error) {
+	tx, err := primary.SQL().BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	if err != nil {
+		return false, err
+	}
+	defer tx.Rollback()
+	var id, entityID int64
+	var source, entity string
+	var payload []byte
+	var deleted bool
+	err = tx.QueryRowContext(ctx, `SELECT o.id,s.source_id,o.entity,o.entity_id,o.payload,o.deleted
+      FROM analytics_outbox o CROSS JOIN analytics_source s WHERE s.singleton=1
+      ORDER BY o.id LIMIT 1 FOR UPDATE SKIP LOCKED`).Scan(&id, &source, &entity, &entityID, &payload, &deleted)
+	if errors.Is(err, sql.ErrNoRows) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	var value any
+	if payload != nil {
+		value = string(payload)
+	}
+	_, err = pg.Exec(ctx, `INSERT INTO suining_analytics.record(source_id,entity,entity_id,last_event_id,payload,deleted)
+      VALUES($1,$2,$3,$4,$5::jsonb,$6)
+      ON CONFLICT(source_id,entity,entity_id) DO UPDATE SET
+      last_event_id=EXCLUDED.last_event_id,payload=EXCLUDED.payload,
+      deleted=EXCLUDED.deleted,synced_at=now()
+      WHERE suining_analytics.record.last_event_id<EXCLUDED.last_event_id`, source, entity, entityID, id, value, deleted)
+	if err != nil {
+		return false, err
+	}
+	if _, err = tx.ExecContext(ctx, "DELETE FROM analytics_outbox WHERE id=?", id); err != nil {
+		return false, err
+	}
+	return true, tx.Commit()
 }

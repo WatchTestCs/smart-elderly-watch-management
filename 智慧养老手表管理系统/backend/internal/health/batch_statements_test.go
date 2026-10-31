@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 )
 
@@ -68,4 +69,34 @@ func expectedLookupSQL(rows int) string {
 		parameters[i] = fmt.Sprintf("$%d", i+2)
 	}
 	return batchLookupPrefix + "$1" + batchLookupSuffix + "(" + strings.Join(parameters, ",") + ")"
+}
+
+// BenchmarkCompleteBatchSQL compares this retired fragment cache with complete statements.
+var batchValueTemplates [4][201]atomic.Pointer[string]
+
+func valueRows(rows, columns int) string {
+	var slot *atomic.Pointer[string]
+	if rows == 1 && columns > 0 && columns <= 200 {
+		slot = &batchValueTemplates[3][columns]
+	} else if rows > 0 && rows <= 200 {
+		switch columns {
+		case 1:
+			slot = &batchValueTemplates[0][rows]
+		case 4:
+			slot = &batchValueTemplates[1][rows]
+		case 14:
+			slot = &batchValueTemplates[2][rows]
+		}
+	}
+	if slot == nil {
+		return buildValueRows(rows, columns)
+	}
+	if cached := slot.Load(); cached != nil {
+		return *cached
+	}
+	value := buildValueRows(rows, columns)
+	if slot.CompareAndSwap(nil, &value) {
+		return value
+	}
+	return *slot.Load()
 }

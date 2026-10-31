@@ -84,10 +84,10 @@ func TestOutboxDispatchIsRecordedButNotFalselyDelivered(t *testing.T) {
 	}))
 	defer server.Close()
 	d := &dispatcher{db: pool, webhookURL: server.URL, webhookToken: "test-token", httpClient: &http.Client{Timeout: time.Second}}
-	if err := d.dispatchOne(ctx); err != nil {
+	if _, err := d.dispatchNext(ctx); err != nil {
 		t.Fatal(err)
 	}
-	if err := d.dispatchOne(ctx); err != nil {
+	if _, err := d.dispatchNext(ctx); err != nil {
 		t.Fatal(err)
 	}
 	if calls != 1 {
@@ -157,7 +157,7 @@ func TestStaleNotificationAttemptCannotOverrideNewClaim(t *testing.T) {
 	defer httpServer.Close()
 	d := &dispatcher{db: pool, webhookURL: httpServer.URL, webhookToken: "test-token", httpClient: &http.Client{Timeout: 10 * time.Second}}
 	done := make(chan error, 1)
-	go func() { done <- d.dispatchOne(ctx) }()
+	go func() { _, err := d.dispatchNext(ctx); done <- err }()
 	select {
 	case <-firstArrived:
 	case <-time.After(2 * time.Second):
@@ -169,7 +169,7 @@ func TestStaleNotificationAttemptCannotOverrideNewClaim(t *testing.T) {
 		close(releaseFirst)
 		t.Fatal(err)
 	}
-	if err := d.dispatchOne(ctx); err != nil {
+	if _, err := d.dispatchNext(ctx); err != nil {
 		close(releaseFirst)
 		t.Fatal(err)
 	}

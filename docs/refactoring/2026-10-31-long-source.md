@@ -95,7 +95,44 @@ allocation counts: evidence buffer 1, 1000 interval samples 16, and 1000 daily
 samples 26 allocations per operation. These short measurements do not establish
 a speed improvement. No frontend work or dependency changes are included here.
 
-This second batch still requires CI and minimal post-CI smoke on its final head.
+PR #56 completed 25 checks (23 successful, one neutral, one skipped). Three
+post-CI checks passed for MySQL cache authorization, normalization and byte-exact
+evidence. It was merged as `ab0699421684781f23f6ec979b7b04a1504912b9`, with the
+same tree as tested head `718b2279c23f2f5c7a4521d4dbb5c73bdbc0c188`.
+
+## Dead-code cleanup
+
+Production-call searches and the complete command dependency graph identified
+retired adapters alongside live test infrastructure. This cleanup removes the
+production `Evaluate`, `marshalEvidenceFast`, `dispatchOne`, `hitWindow.allow`,
+`Enqueue`, `SyncOne` and fragment-cache `valueRows` entry points. Their ordinary
+regressions now call the active compact evaluator, buffer encoder, dispatcher,
+budget limiter, channel enqueueing and batch projection paths directly.
+
+The independent map-shaped rule oracle, single-event projection implementation
+and fragment cache remain only in existing reference/A-B test files where they
+provide comparison baselines. No new test files or test suites are introduced.
+Cross-package test infrastructure (`db.Postgres`, `dbtest.MySQL`, `health.Save`)
+is retained: those consumers are valid dependencies, not dead references.
+
+`health/batch_sql.go` and its retired-cache test file are deleted. The live
+`buildValueRows` implementation moves unchanged beside its sole production caller
+in `batch_statements.go`. Its literal and maximum-size boundary assertions remain
+in `TestBuildValueRows`. The two offline benchmark source lists and file indexes
+are updated to remove references to deleted files; historical result manifests
+retain their original source hashes.
+
+All production commands build. Eleven distinct focused regressions passed for
+rule/evidence equivalence, SQL construction, dual-database recovery/replay,
+notification rollback, stale notification leases and sliding-window boundaries.
+Affected-package vet, OpenAPI consistency and updated Python/index parsing passed.
+Independent review caught omitted SQL-builder boundary assertions; those were
+restored and rechecked. No review issue remains open.
+
+Frontend entry reachability still accounts for all 72 production source files;
+the reviewed images, fonts and font-check fixtures have live consumers. This pass
+does not delete referenced resources merely because they are outside the runtime
+entry point. CI and minimal post-CI smoke are still required for this cleanup head.
 
 ## Remaining scope
 

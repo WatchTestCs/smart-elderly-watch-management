@@ -6,13 +6,6 @@ import (
 	"time"
 )
 
-// marshalEvidenceFast uses a byte builder only for simple, validated payloads.
-// Complex strings, non-finite numbers and unusual timezone offsets use the
-// canonical encoding/json implementation, preserving old evidence semantics.
-func (c CompactCandidate) marshalEvidenceFast(streak int, owner int64, at time.Time) ([]byte, error) {
-	return c.appendEvidenceFast(nil, streak, owner, at)
-}
-
 // appendEvidenceFast reuses caller-owned bytes for the common evidence format.
 // The returned slice aliases dst; consumers must finish using it before
 // reusing dst. Fallbacks return independent encoding/json allocations.

@@ -66,10 +66,6 @@ type hitWindow struct {
 	limit      int
 }
 
-func (w *hitWindow) allow(now time.Time) bool {
-	return w.allowBudget(now, w.limit)
-}
-
 func (w *hitWindow) allowBudget(now time.Time, available int) bool {
 	for w.size > 0 && now.Sub(w.times[w.head]) >= window {
 		w.head = (w.head + 1) % len(w.times)

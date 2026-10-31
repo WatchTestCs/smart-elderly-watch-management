@@ -22,11 +22,6 @@ type delivery struct {
 	kind       string
 }
 
-func (d *dispatcher) dispatchOne(ctx context.Context) error {
-	_, err := d.dispatchNext(ctx)
-	return err
-}
-
 func (d *dispatcher) dispatchNext(ctx context.Context) (bool, error) {
 	// Atomic database claim; SKIP LOCKED supports multiple service replicas.
 	var job delivery
