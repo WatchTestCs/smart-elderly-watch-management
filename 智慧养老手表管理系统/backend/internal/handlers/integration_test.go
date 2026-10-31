@@ -180,6 +180,7 @@ func TestIntegrationListContractsAndNumericAge(t *testing.T) {
 func TestIntegrationEditPreservesFamily(t *testing.T) {
 	pool := testDatabase(t)
 	h := testHandler(t, pool)
+	mustExec(t, pool, "INSERT INTO customer(customer_id,customer_name) VALUES(1,'监护人')")
 	mustExec(t, pool, "INSERT INTO oldperson(old_id,name,family_id) VALUES(1,'长者',7)")
 	out := api(t, h.oldPersonUpdate, map[string]any{"oldId": 1, "name": "新姓名", "bothdate": "1950-01-01", "sex": "女", "phone": "13800000000", "room": "101", "illness": "", "warn": "", "foodLike": "", "foodHate": "", "drag": "", "customerName": "1"})
 	if out["returnCode"] != "1111" {
