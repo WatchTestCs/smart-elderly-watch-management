@@ -8,6 +8,15 @@ import (
 	"suining-care/internal/session"
 )
 
+func currentDeviceBindingVersion(t *testing.T, h *Handler) int64 {
+	t.Helper()
+	var version int64
+	if err := h.DB.QueryRow(context.Background(), "SELECT health_epoch FROM device WHERE device_id=1").Scan(&version); err != nil {
+		t.Fatal(err)
+	}
+	return version
+}
+
 func dayOwnershipSetup(t *testing.T) *Handler {
 	pool := testDatabase(t)
 	h := testHandler(t, pool)
