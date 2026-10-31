@@ -30,7 +30,6 @@ func TestTransferJSONValuePreservesRawJSONRepresentations(t *testing.T) {
 	}
 }
 
-
 func TestValidateSourceAppMetadataRequiresOneBootstrapRow(t *testing.T) {
 	for _, tc := range []struct {
 		count int64

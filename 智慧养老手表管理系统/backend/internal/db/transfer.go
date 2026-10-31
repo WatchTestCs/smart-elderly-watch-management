@@ -239,7 +239,6 @@ func transferJSONValue(value any) (json.RawMessage, error) {
 	return json.RawMessage(payload), nil
 }
 
-
 func validateSourceAppMetadata(count, id int64) error {
 	if count != 1 || id != 1 {
 		return fmt.Errorf("source app_metadata must contain exactly one bootstrap row with id=1; count=%d id=%d", count, id)
