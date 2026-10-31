@@ -1,5 +1,10 @@
 -- Additive: keep retired device epochs separate from the current alert view.
 ALTER TABLE ratepre ADD COLUMN binding_epoch bigint NOT NULL DEFAULT 1;
+-- Only observations within the currently recorded binding may be promoted
+-- into the active alert epoch. Pre-binding history remains historical.
+UPDATE ratepre r INNER JOIN device d ON d.device_id=r.device_id
+SET r.binding_epoch=d.health_epoch
+WHERE r.old_id=d.old_id AND d.bind_time IS NOT NULL AND r.create_time>=d.bind_time;
 CREATE INDEX idx_ratepre_binding_current ON ratepre(device_id,binding_epoch,old_id,create_time);
 -- Atomic acknowledgements for all numbered reports, including vitals and falls.
 CREATE TABLE IF NOT EXISTS device_report_receipt (

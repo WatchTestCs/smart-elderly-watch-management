@@ -1,5 +1,9 @@
 -- PostgreSQL integration-compatible representation; MySQL remains primary.
 ALTER TABLE ratepre ADD COLUMN binding_epoch bigint NOT NULL DEFAULT 1;
+-- Historical association before the most recent bind is not reconstructible.
+UPDATE ratepre r SET binding_epoch=d.health_epoch FROM device d
+WHERE d.device_id=r.device_id AND r.old_id=d.old_id
+  AND d.bind_time IS NOT NULL AND r.create_time>=d.bind_time;
 CREATE INDEX idx_ratepre_binding_current ON ratepre(device_id,binding_epoch,old_id,create_time);
 CREATE TABLE IF NOT EXISTS device_report_receipt (
   device_id bigint NOT NULL,
