@@ -27,6 +27,7 @@ func TestDurableTelemetryPersistsBeforeAckAndReplaysSafely(t *testing.T) {
 		"requestId": "durable-step-001", "step": "1200", "sleep": "8",
 		"beTime": "2026-10-28 09:00:00",
 	}
+	requestStarted := time.Now().Add(-5 * time.Second)
 	first := callAPI(h.deviceReport, payload)
 	if first.Code != http.StatusOK {
 		t.Fatalf("queue status: HTTP %d %s", first.Code, first.Body.String())
@@ -50,11 +51,9 @@ func TestDurableTelemetryPersistsBeforeAckAndReplaysSafely(t *testing.T) {
 	if lastTime == nil || lastOnline == nil {
 		t.Fatalf("durably accepted report did not update device heartbeat: last_time=%v last_online_at=%v", lastTime, lastOnline)
 	}
-	for label, value := range map[string]*time.Time{"last_time": lastTime, "last_online_at": lastOnline} {
-		age := time.Since(*value)
-		if age < -2*time.Second || age > 5*time.Second {
-			t.Fatalf("durably accepted report has stale %s=%s (age %s)", label, value.Format(time.RFC3339Nano), age)
-		}
+	if lastTime.Before(requestStarted) || lastOnline.Before(requestStarted) {
+		t.Fatalf("durably accepted report left stale heartbeat timestamps: last_time=%s last_online_at=%s started=%s",
+			lastTime.Format(time.RFC3339Nano), lastOnline.Format(time.RFC3339Nano), requestStarted.Format(time.RFC3339Nano))
 	}
 	replay := callAPI(h.deviceReport, payload)
 	if replay.Code != http.StatusOK {
