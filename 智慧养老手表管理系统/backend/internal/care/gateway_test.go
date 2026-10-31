@@ -44,10 +44,10 @@ func TestGatewayRetryAfterAndFailureClasses(t *testing.T) {
 				client = &http.Client{Transport: failingTransport{}}
 			}
 			d := &dispatcher{db: pool, webhookURL: server.URL, webhookToken: "synthetic-token-not-in-error-record", httpClient: client}
-			if err := d.dispatchOne(ctx); err != nil {
+			if _, err := d.dispatchNext(ctx); err != nil {
 				t.Fatal(err)
 			}
-			if err := d.dispatchOne(ctx); err != nil {
+			if _, err := d.dispatchNext(ctx); err != nil {
 				t.Fatal(err)
 			}
 			var status, lastError string

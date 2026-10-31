@@ -505,8 +505,6 @@
 | [智慧养老手表管理系统/backend/internal/handlers/web.go](../智慧养老手表管理系统/backend/internal/handlers/web.go) | 内嵌 Vue 静态资源挂载及浏览器安全响应头（智慧养老手表管理系统/backend/internal/handlers/web.go） |
 | [智慧养老手表管理系统/backend/internal/handlers/web/.gitignore](../智慧养老手表管理系统/backend/internal/handlers/web/.gitignore) | 防止生成的 Vue 构建内容被误认为手工维护的嵌入资源。 |
 | [智慧养老手表管理系统/backend/internal/handlers/web/.gitkeep](../智慧养老手表管理系统/backend/internal/handlers/web/.gitkeep) | 仅保留内嵌前端目录，桌面构建时填入真实 Vue 产物（智慧养老手表管理系统/backend/internal/handlers/web/.gitkeep） |
-| [智慧养老手表管理系统/backend/internal/health/batch_sql.go](../智慧养老手表管理系统/backend/internal/health/batch_sql.go) | 有界缓存健康批量写入与身份查询的 SQL 占位符模板。 |
-| [智慧养老手表管理系统/backend/internal/health/batch_sql_test.go](../智慧养老手表管理系统/backend/internal/health/batch_sql_test.go) | 验证批量占位符边界、回退与并发等价。 |
 | [智慧养老手表管理系统/backend/internal/health/batch_test.go](../智慧养老手表管理系统/backend/internal/health/batch_test.go) | 验证后端 batch／test 的行为、边界或回归 |
 | [智慧养老手表管理系统/backend/internal/health/clock.go](../智慧养老手表管理系统/backend/internal/health/clock.go) | Go 后端模块：clock |
 | [智慧养老手表管理系统/backend/internal/health/clock_test.go](../智慧养老手表管理系统/backend/internal/health/clock_test.go) | 验证后端 clock／test 的行为、边界或回归 |

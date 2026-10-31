@@ -19,7 +19,7 @@ func TestFastEvidenceEquivalentToCanonical(t *testing.T) {
 		in.Blood.Value = in.Heart.Value
 		now := in.Now.Add(time.Duration(r.Intn(3600)) * time.Second)
 		for _, c := range EvaluateCompact(p, in) {
-			fast, err := c.marshalEvidenceFast(i%20, int64(i+1), now)
+			fast, err := c.appendEvidenceFast(nil, i%20, int64(i+1), now)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -46,7 +46,7 @@ func BenchmarkEvaluateCompactIntoFastJSON(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		for _, c := range EvaluateCompactInto(buf[:0], p, in) {
-			out, err := c.marshalEvidenceFast(2, 1234, in.Now)
+			out, err := c.appendEvidenceFast(nil, 2, 1234, in.Now)
 			if err != nil || len(out) == 0 {
 				b.Fatal(err)
 			}

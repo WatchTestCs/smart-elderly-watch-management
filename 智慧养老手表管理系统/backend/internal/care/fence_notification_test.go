@@ -30,7 +30,7 @@ func TestFenceNotificationPreservesIncidentKind(t *testing.T) {
 	}))
 	defer server.Close()
 	d := &dispatcher{db: pool, webhookURL: server.URL, webhookToken: "test-token", httpClient: &http.Client{Timeout: time.Second}}
-	if err := d.dispatchOne(ctx); err != nil {
+	if _, err := d.dispatchNext(ctx); err != nil {
 		t.Fatal(err)
 	}
 	var state string

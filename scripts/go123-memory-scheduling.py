@@ -22,9 +22,9 @@ CASES = {
               'evidence_fast_test.go', 'evidence_exact_test.go',
               'evidence_buffer_test.go', 'throughput_test.go',
               'reference_evaluate_test.go'),
-    'health': ('sample.go', 'sample_fast.go', 'identity.go', 'batch_sql.go',
+    'health': ('sample.go', 'sample_fast.go', 'identity.go',
                'sample_test.go', 'sample_fast_test.go', 'throughput_test.go',
-               'validation_test.go', 'identity_test.go', 'batch_sql_test.go'),
+               'validation_test.go', 'identity_test.go'),
 }
 BENCHES = {
     'rules': ('BenchmarkEvaluateFastParallel', 'BenchmarkEvaluateFastReusableBufferParallel'),
