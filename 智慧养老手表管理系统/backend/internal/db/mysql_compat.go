@@ -45,16 +45,33 @@ func mysqlReturningColumnSupported(table, column string) bool {
 	return mysqlReturningColumns[table] == column
 }
 
+func validateMySQLReturning(table, column, insertSQL string) error {
+	hasConflict, err := containsSQLCodePattern(insertSQL, conflictNothing)
+	if err != nil {
+		return err
+	}
+	if !hasConflict {
+		hasConflict, err = containsSQLCodePattern(insertSQL, conflictUpdate)
+		if err != nil {
+			return err
+		}
+	}
+	if hasConflict {
+		return errors.New("MySQL INSERT RETURNING cannot preserve PostgreSQL ON CONFLICT row-return semantics")
+	}
+	if !mysqlReturningColumnSupported(strings.ToLower(table), strings.ToLower(column)) {
+		return fmt.Errorf("MySQL INSERT RETURNING is unsupported for %s.%s", table, column)
+	}
+	return nil
+}
+
 func (e executor) QueryRow(ctx context.Context, query string, args ...any) Row {
 	if e.pg != nil {
 		return e.pg.QueryRow(ctx, query, args...)
 	}
 	if match := insertReturning.FindStringSubmatch(query); match != nil {
-		if conflictNothing.MatchString(match[1]) || conflictUpdate.MatchString(match[1]) {
-			return idRow{err: errors.New("MySQL INSERT RETURNING cannot preserve PostgreSQL ON CONFLICT row-return semantics")}
-		}
-		if !mysqlReturningColumnSupported(strings.ToLower(match[2]), strings.ToLower(match[3])) {
-			return idRow{err: fmt.Errorf("MySQL INSERT RETURNING is unsupported for %s.%s", match[2], match[3])}
+		if err := validateMySQLReturning(match[2], match[3], match[1]); err != nil {
+			return idRow{err: err}
 		}
 		q, a, err := mysqlQuery(match[1], args)
 		if err != nil {
