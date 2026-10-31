@@ -13,9 +13,10 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-var insertReturning = regexp.MustCompile(`(?is)^\s*(INSERT\s+INTO\s+([a-z_][a-z0-9_]*)\b.*)\s+RETURNING\s+([a-z_][a-z0-9_]*)\s*$`)
+var insertReturning = regexp.MustCompile("(?is)^\\s*(INSERT\\s+INTO\\s+(?:`([^`]+)`|([a-z_][a-z0-9_]*))(?:\\s|\\().*)\\s+RETURNING\\s+([a-z_][a-z0-9_]*)\\s*$")
 
 var mysqlReturningColumns = map[string]string{
+	"alarm_precess": "id",
 	"alert_review":  "id",
 	"bind_code":     "id",
 	"care_incident": "id",
@@ -56,7 +57,11 @@ func (e executor) QueryRow(ctx context.Context, query string, args ...any) Row {
 		return e.pg.QueryRow(ctx, query, args...)
 	}
 	if match := insertReturning.FindStringSubmatch(query); match != nil {
-		if err := validateMySQLReturning(match[2], match[3], match[1]); err != nil {
+		table := match[2]
+		if table == "" {
+			table = match[3]
+		}
+		if err := validateMySQLReturning(table, match[4], match[1]); err != nil {
 			return idRow{err: err}
 		}
 		q, a, err := mysqlQuery(match[1], args)

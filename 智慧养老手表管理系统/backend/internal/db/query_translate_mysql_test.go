@@ -37,3 +37,16 @@ func TestMySQLDoNothingWorksForTableWithoutIDColumn(t *testing.T) {
 		t.Fatalf("DO NOTHING was not idempotent: count=%d err=%v", count, err)
 	}
 }
+
+func TestMySQLInsertReturningSupportsAlarmAndQuotedText(t *testing.T) {
+	pool := dbtest.MySQL(t)
+	ctx := context.Background()
+	var alarmID, textID int64
+	if err := pool.QueryRow(ctx, "INSERT INTO alarm_precess(status) VALUES($1) RETURNING id", "1").Scan(&alarmID); err != nil || alarmID <= 0 {
+		t.Fatalf("alarm INSERT RETURNING failed: id=%d err=%v", alarmID, err)
+	}
+	if err := pool.QueryRow(ctx, "INSERT INTO `text`(title,text_main,time) VALUES($1,$2,$3) RETURNING text_id",
+		"compatibility test", "body", time.Now()).Scan(&textID); err != nil || textID <= 0 {
+		t.Fatalf("quoted reserved-table INSERT RETURNING failed: id=%d err=%v", textID, err)
+	}
+}

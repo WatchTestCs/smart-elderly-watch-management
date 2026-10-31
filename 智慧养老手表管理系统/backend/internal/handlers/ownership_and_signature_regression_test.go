@@ -147,3 +147,19 @@ func TestReportRejectsNonStringRequestID(t *testing.T) {
 		t.Fatalf("numeric requestId must be rejected instead of bypassing idempotency: %d %s", response.Code, response.Body.String())
 	}
 }
+
+func TestSOSRejectsNonStringRequestID(t *testing.T) {
+	pool := testDatabase(t)
+	seedDevice(t, pool)
+	h := testHandler(t, pool)
+	response := callAPI(h.deviceSos, map[string]any{
+		"deviceNo": "WATCH001", "secret": testSecret, "bindingVersion": 1, "requestId": 123,
+	})
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("numeric SOS requestId must be rejected: %d %s", response.Code, response.Body.String())
+	}
+	var incidents int
+	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM care_incident").Scan(&incidents); err != nil || incidents != 0 {
+		t.Fatalf("invalid SOS request created %d incidents: %v", incidents, err)
+	}
+}
