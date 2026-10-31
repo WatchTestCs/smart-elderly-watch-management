@@ -19,7 +19,7 @@
         </div>
         
 				<el-badge :value="this.num" class="item">
-				  <el-button size="small">摔倒</el-button>
+				  <el-button size="small">紧急告警</el-button>
 				</el-badge>
 				
       </form>
@@ -33,10 +33,10 @@
       <el-table-column  width="100" type="index" align="center"></el-table-column>
       <el-table-column prop="name" label="姓名" width="140" align="center"></el-table-column>
       <el-table-column prop="sex" label="性别" width="100" align="center"></el-table-column>
-	  <el-table-column prop="status" label="是否摔倒" width="150" align="center">
+	  <el-table-column prop="status" label="告警状态" width="150" align="center">
 		  <template #default="scope" >
-		    <el-tag v-if="scope.row.status == 1" type="danger" size="small">摔倒告警</el-tag>
-		    <el-tag v-else-if="scope.row.status == 0" type="success" size="small">未发现摔倒告警</el-tag>
+		    <el-tag v-if="scope.row.status == 1" type="danger" size="small">紧急告警</el-tag>
+		    <el-tag v-else-if="scope.row.status == 0" type="success" size="small">未告警/已处理</el-tag>
         <span v-else class="unknown-state">状态未知</span>
 		  </template>
 	  </el-table-column>
@@ -46,7 +46,7 @@
       <el-table-column label="操作" align="center">
       	<template #default="scope" >
       		<el-button v-if="scope.row.status==1" size="small" plain type="danger" icon="el-icon-warning"
-      		           @click="showFallReason(scope.row)">摔倒原因与处理</el-button>
+                       @click="showFallReason(scope.row)">告警记录与处理</el-button>
       		<el-button v-if="scope.row.status==1" size="small" plain type="primary" icon="el-icon-check"
       		           @click="handleFall(scope.row)">标记已处理</el-button>
       		<el-button size="small" plain type="success" icon="el-icon-check" @click="showRoleDialog(scope.row)">
@@ -55,9 +55,9 @@
       	</template>
       </el-table-column>
     </el-table>
-    <record-cards :records="positionList" :fields='[{"key":"sex","label":"性别"},{"key":"status","label":"是否摔倒","state":"fall"},{"key":"lng","label":"经度"},{"key":"lat","label":"纬度"}]' label="位置与告警记录" title-key="name" key-field="oldId" time-key="beTime">
+    <record-cards :records="positionList" :fields='[{"key":"sex","label":"性别"},{"key":"status","label":"告警状态","state":"fall"},{"key":"lng","label":"经度"},{"key":"lat","label":"纬度"}]' label="位置与告警记录" title-key="name" key-field="oldId" time-key="beTime">
       <template #actions="scope"  ><el-button v-if="scope.row.status==1" size="small" plain type="danger" icon="el-icon-warning"
-      		           @click="showFallReason(scope.row)">摔倒原因与处理</el-button>
+                       @click="showFallReason(scope.row)">告警记录与处理</el-button>
 <el-button v-if="scope.row.status==1" size="small" plain type="primary" icon="el-icon-check"
       		           @click="handleFall(scope.row)">标记已处理</el-button>
 <el-button size="small" plain type="success" icon="el-icon-check" @click="showRoleDialog(scope.row)">
@@ -149,24 +149,27 @@ export default {
           _this.isLoading = false
         })
     },
-    // 摔倒原因与处理办法（红点点进来就是这个）
+    // 告警记录与处理办法（红点点进来就是这个）
     showFallReason (row) {
+      var alarmPosition = row.alarmLng != null && row.alarmLat != null && row.alarmLng !== '' && row.alarmLat !== ''
+        ? '经度 ' + row.alarmLng + '，纬度 ' + row.alarmLat
+        : '未提供告警坐标（最新定位仅供参考）'
       this.$alert(
         '老人：' + row.name + '\n'
-        + '发生时间：' + row.beTime + '\n'
-        + '位置：经度 ' + row.lng + '，纬度 ' + row.lat + '\n\n'
+        + '告警时间：' + (row.alarmTime || '未提供告警时间') + '\n'
+        + '告警附带坐标：' + alarmPosition + '\n\n'
         + '怎么处理：\n'
-        + '① 立即电话联系老人或家属确认是否受伤；\n'
-        + '② 无人应答时按位置上门查看，必要时拨打 120；\n'
-        + '③ 确认处理后点「标记已处理」，右上角摔倒红点数量会减少。',
-        '摔倒告警 · 原因与处理',
+        + '① 立即电话联系老人或家属确认情况；\n'
+        + '② 结合告警附带坐标核实位置，必要时请求现场协助；\n'
+        + '③ 确认处理后点「标记已处理」，右上角告警红点数量会减少。',
+        '紧急告警 · 原因与处理',
         { confirmButtonText: '知道了', callback: function () {} }
       )
     },
-    // 处置：消除摔倒红点
+    // 处置：消除告警红点
     handleFall (row) {
       var _this = this
-      this.$confirm('确认该摔倒告警已经处理（联系过老人/家属）？处理后会从红点统计里移除。', '提示', {
+      this.$confirm('确认该紧急告警已经处理（联系过老人/家属）？处理后会从红点统计里移除。', '提示', {
         confirmButtonText: '确定已处理',
         cancelButtonText: '取消',
         type: 'warning'
@@ -177,7 +180,7 @@ export default {
             withCredentials: true
           }).then(function (response) {
           if (response.data.returnCode === '1111') {
-            _this.$message({type: 'success', message: '已处理，摔倒红点已消除'})
+            _this.$message({type: 'success', message: '已处理，告警红点已消除'})
           } else {
             _this.$message({type: 'error', message: response.data.message || '处理失败'})
           }

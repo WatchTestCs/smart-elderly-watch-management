@@ -1,0 +1,1 @@
+Native Go API purity check passed (1058 tracked paths examined)

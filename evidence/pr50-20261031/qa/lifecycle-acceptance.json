@@ -1,0 +1,69 @@
+{
+  "checks": [
+    {
+      "name": "New guardian query aborts a hung XHR and displays its own result",
+      "pass": true
+    },
+    {
+      "name": "Read cancellation preserves the CSRF header",
+      "pass": true
+    },
+    {
+      "name": "Guardian timeout aborts XHR and ends loading",
+      "pass": true
+    },
+    {
+      "name": "A fresh query recovers after timeout",
+      "pass": true
+    },
+    {
+      "name": "A current HTTP failure ends loading and remains visible",
+      "pass": true
+    },
+    {
+      "name": "Navigation aborts the guardian read without starting a replacement",
+      "pass": true
+    },
+    {
+      "name": "Closing history aborts its hung XHR",
+      "pass": true
+    },
+    {
+      "name": "History can reopen and is aborted when leaving the page",
+      "pass": true
+    },
+    {
+      "name": "Pending device refresh cannot restart polling after leaving the page",
+      "pass": true,
+      "details": {
+        "requests": 1
+      }
+    },
+    {
+      "name": "/ratepre: delayed chart result does not recreate a chart after navigation",
+      "pass": true
+    },
+    {
+      "name": "/step: delayed chart result does not recreate a chart after navigation",
+      "pass": true
+    },
+    {
+      "name": "/rateprefamily: delayed chart result does not recreate a chart after navigation",
+      "pass": true
+    },
+    {
+      "name": "/stepfamily: delayed chart result does not recreate a chart after navigation",
+      "pass": true
+    },
+    {
+      "name": "No lifecycle JavaScript errors",
+      "pass": true,
+      "details": []
+    },
+    {
+      "name": "No missing lifecycle assets",
+      "pass": true,
+      "details": []
+    }
+  ]
+}

@@ -293,12 +293,6 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 		conflict409(w, "绑定已变化，请重新登录；旧绑定求助不能归入新老人")
 		return
 	}
-	locked.LastLng, locked.LastLat, err = openCoordinates(h.Box, locked.LastLng, locked.LastLat)
-	if err != nil {
-		rollback()
-		response.Error500(w, ref())
-		return
-	}
 	d = locked
 	// A device should reuse a stable requestId when retrying the same SOS on
 	// weak networks; each new press must use a new ID.
@@ -335,12 +329,6 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 	}
 	lng, _ := vstr(m, "lng")
 	lat, _ := vstr(m, "lat")
-	if lng == "" && d.LastLng != nil {
-		lng = *d.LastLng
-	}
-	if lat == "" && d.LastLat != nil {
-		lat = *d.LastLat
-	}
 	if msg := checkPosition(lng, lat); msg != "" {
 		rollback()
 		write400(w, msg)
