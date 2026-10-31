@@ -162,6 +162,10 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	requestID, idPresent := vstr(m, "requestId")
+	if _, supplied := m["requestId"]; supplied && !idPresent {
+		writeValidation400(w)
+		return
+	}
 	if idPresent && requestID != "" && !sosRequestIDOK(requestID) {
 		writeValidation400(w)
 		return
@@ -241,16 +245,53 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 			WHERE device_id=$1 AND binding_epoch=$2 AND request_id=$3`,
 			d.ID, d.HealthEpoch, requestID).Scan(&previousDigest, &previousResponse)
 		if err == nil {
-			rollback()
 			if previousDigest != payloadDigest {
+				rollback()
 				conflict409(w, "同一请求编号对应不同上报内容")
 				return
 			}
 			var previous map[string]any
 			if err := json.Unmarshal([]byte(previousResponse), &previous); err != nil {
+				rollback()
 				response.Error500(w, ref())
 				return
 			}
+			if queued, _ := previous["queued"].(bool); queued {
+				var queueStatus string
+				queueErr := tx.QueryRow(ctx, `SELECT status FROM telemetry_inbox
+					WHERE device_id=$1 AND binding_epoch=$2 AND request_id=$3`,
+					d.ID, d.HealthEpoch, requestID).Scan(&queueStatus)
+				if queueErr != nil {
+					rollback()
+					if queueErr == pgx.ErrNoRows {
+						response.JSON(w, http.StatusServiceUnavailable, map[string]any{
+							"message": "持久化回执存在，但遥测队列记录缺失；需要人工核查",
+							"requestId": requestID, "queueStatus": "missing",
+						})
+					} else {
+						response.Error500(w, ref())
+					}
+					return
+				}
+				previous["queueStatus"] = queueStatus
+				switch queueStatus {
+				case "done":
+					previous["queued"] = false
+					previous["processed"] = true
+				case "stale":
+					rollback()
+					conflict409(w, "该上报所属绑定已失效，数据未处理")
+					return
+				case "failed":
+					rollback()
+					response.JSON(w, http.StatusServiceUnavailable, map[string]any{
+						"message": "遥测队列处理失败，数据已保留待恢复",
+						"requestId": requestID, "queueStatus": "failed", "retryable": false,
+					})
+					return
+				}
+			}
+			rollback()
 			previous["duplicate"] = true
 			response.OK(w, previous)
 			return
