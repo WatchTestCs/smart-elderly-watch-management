@@ -86,7 +86,8 @@ for file in sorted((backend / "internal/handlers").glob("*.go")):
                     schema["properties"]["positionSource"]["enum"] = ["gps", "network", "fused", "manual", "simulated", "unknown"]
                     schema["properties"]["positionSampledAt"]["format"] = "date-time"
                     schema["properties"]["positionAccuracy"]["exclusiveMinimum"] = 0
-                schema["additionalProperties"] = path == "/api/v1/auth/login"
+                # Device fields are incremental; existing telemetry stays an open object.
+                schema["additionalProperties"] = path in {"/api/v1/auth/login", "/api/v1/device/report", "/api/v1/device/sos"}
             operation["requestBody"] = {"required": True, "content": {"application/json": {"schema": schema}}}
         operation["description"] = f"Implementation: {file.relative_to(root).as_posix()}. " + ("Device body authentication or signed gateway receipt; not anonymous access." if access == "Device" else "Go API DTOs without explicit schemas remain open objects; consult implementation.")
         paths.setdefault(path, {})[method.lower()] = operation

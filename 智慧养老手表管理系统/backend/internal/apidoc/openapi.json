@@ -2425,7 +2425,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "additionalProperties": false,
+                "additionalProperties": true,
                 "properties": {
                   "deviceNo": {
                     "type": "string"
@@ -2640,7 +2640,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "additionalProperties": false,
+                "additionalProperties": true,
                 "properties": {
                   "deviceNo": {
                     "type": "string"

@@ -202,3 +202,19 @@ dist/assets/index-DWM16BiP.js                      638.99 kB │ gzip: 207.04 kB
   - plugin vite:vue transform (72 calls)
 See https://rolldown.rs/reference/InputOptions.checks#bundlertimings for more details.
 
+
+=== review-mysql ===
+=== RUN   TestPR50InvalidPositionMetadataDoesNotWriteEvents
+--- PASS: TestPR50InvalidPositionMetadataDoesNotWriteEvents (3.34s)
+PASS
+ok  	suining-care/internal/handlers	3.467s
+
+=== review-postgres ===
+=== RUN   TestPR50InvalidPositionMetadataDoesNotWriteEvents
+--- PASS: TestPR50InvalidPositionMetadataDoesNotWriteEvents (0.32s)
+PASS
+ok  	suining-care/internal/handlers	0.452s
+
+=== contract-check ===
+/api/v1/device/report: existing telemetry fields remain open; metadata constraints match OpenAPI 3.1
+/api/v1/device/sos: existing telemetry fields remain open; metadata constraints match OpenAPI 3.1

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -58,15 +59,15 @@ func TestPR50AlarmContextRetainsDeclaredMetadataAndKind(t *testing.T) {
 func TestPR50InvalidPositionMetadataDoesNotWriteEvents(t *testing.T) {
 	h := extraAuditHandler(t)
 	seedDevice(t, h.DB)
-	for _, tc := range []struct {
+	for i, tc := range []struct {
 		key   string
 		value any
 	}{{"positionSource", "sos"}, {"positionSampledAt", "2026-10-20 02:00:00"}, {"positionAccuracy", 0}, {"positionAccuracy", -1}, {"positionAccuracy", "5"}} {
-		body := map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "bindingVersion": 1, "alarm": "fall", "lng": "120", "lat": "30", "beTime": "2026-10-20 10:00:00", tc.key: tc.value}
-		if out := callAPI(h.deviceReport, body); out.Code != 400 {
+		body := map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "bindingVersion": 1, "requestId": "pr50-invalid-" + strconv.Itoa(i), "alarm": "fall", "lng": "120", "lat": "30", "beTime": "2026-10-20 10:00:00", tc.key: tc.value}
+		if out := callAPI(h.deviceReport, body); out.Code != 400 || !strings.Contains(out.Body.String(), tc.key) {
 			t.Errorf("report accepted %s=%v: HTTP %d %s", tc.key, tc.value, out.Code, out.Body.String())
 		}
-		if out := callAPI(h.deviceSos, body); out.Code != 400 {
+		if out := callAPI(h.deviceSos, body); out.Code != 400 || !strings.Contains(out.Body.String(), tc.key) {
 			t.Errorf("SOS accepted %s=%v: HTTP %d %s", tc.key, tc.value, out.Code, out.Body.String())
 		}
 	}
