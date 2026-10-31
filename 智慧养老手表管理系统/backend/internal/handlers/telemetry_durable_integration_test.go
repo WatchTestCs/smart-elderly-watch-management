@@ -43,6 +43,19 @@ func TestDurableTelemetryPersistsBeforeAckAndReplaysSafely(t *testing.T) {
 	if err := pool.QueryRow(ctx, "SELECT count(*) FROM watch_day_info").Scan(&projected); err != nil || projected != 0 {
 		t.Fatalf("projection occurred before queue flush: %d: %v", projected, err)
 	}
+	var lastTime, lastOnline *time.Time
+	if err := pool.QueryRow(ctx, "SELECT last_time,last_online_at FROM device WHERE device_id=1").Scan(&lastTime, &lastOnline); err != nil {
+		t.Fatal(err)
+	}
+	if lastTime == nil || lastOnline == nil {
+		t.Fatalf("durably accepted report did not update device heartbeat: last_time=%v last_online_at=%v", lastTime, lastOnline)
+	}
+	for label, value := range map[string]*time.Time{"last_time": lastTime, "last_online_at": lastOnline} {
+		age := time.Since(*value)
+		if age < -2*time.Second || age > 5*time.Second {
+			t.Fatalf("durably accepted report has stale %s=%s (age %s)", label, value.Format(time.RFC3339Nano), age)
+		}
+	}
 	replay := callAPI(h.deviceReport, payload)
 	if replay.Code != http.StatusOK {
 		t.Fatalf("duplicate request was not idempotently acknowledged: %d %s", replay.Code, replay.Body.String())
