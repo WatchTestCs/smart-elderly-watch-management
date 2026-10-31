@@ -28,29 +28,7 @@
       v-model="customerDialogVisible"
       @close="closeRoleAddDialog"
       width="92%" custom-class="admin-record-dialog">
-      <el-form label-width="80px" :model="familyForm" :rules="rules" class="demo-ruleForm"  ref="addfamilyFormRef">
-        <el-form-item label="姓名" prop="familyName">
-          <el-input v-model="familyForm.familyName"></el-input>
-        </el-form-item>
-        <el-form-item label="关系" prop="familyRelation">
-          <el-input v-model="familyForm.familyRelation"></el-input>
-        </el-form-item>
-		<el-form-item label="性别" prop="familySex">
-		<el-radio-group v-model="familyForm.familySex">
-		  <el-radio value="男">男</el-radio>
-		  <el-radio value="女">女</el-radio>
-		</el-radio-group>
-		</el-form-item>
-		<el-form-item label="电话" prop="familyPhone">
-		<el-input v-model="familyForm.familyPhone"></el-input>
-		</el-form-item>
-		<el-form-item label="地址" prop="familyAddress">
-		<el-input v-model="familyForm.familyAddress"></el-input>
-		</el-form-item>
-		<el-form-item label="老人电话" prop="oldPhone">
-		<el-input v-model="familyForm.oldPhone"></el-input>
-		</el-form-item>
-      </el-form>
+      <FamilyCreateForm :draft="familyForm" :rules="rules" ref="addfamilyFormRef" />
       <template #footer><span  class="dialog-footer">
       <el-button @click="customerDialogVisible = false">取 消</el-button>
       <el-button type="primary" @click="addFamily('addfamilyFormRef')">确 定</el-button>
@@ -61,29 +39,7 @@
       title="家属编辑"
       v-model="oldEditDialogVisible"
       width="92%" custom-class="admin-record-dialog">
-      <el-form label-width="80px" :rules="rules" :model="familyEditForm">
-        <el-form-item label="姓名" prop="familyName">
-        <el-input v-model="familyEditForm.familyName"></el-input>
-        </el-form-item>
-		<el-form-item label="姓名" prop="familyId" style="display: none;">
-		<el-input v-model="familyEditForm.familyId"></el-input>
-		</el-form-item>		
-        <el-form-item label="关系" prop="familyRelation">
-        <el-input v-model="familyEditForm.familyRelation"></el-input>
-        </el-form-item>
-        <el-form-item label="性别" prop="familySex">
-        <el-radio-group v-model="familyEditForm.familySex">
-        <el-radio value="男">男</el-radio>
-        <el-radio value="女">女</el-radio>
-        </el-radio-group>
-        </el-form-item>
-        <el-form-item label="电话" prop="familyPhone">
-        <el-input v-model="familyEditForm.familyPhone"></el-input>
-        </el-form-item>
-        <el-form-item label="地址" prop="familyAddress">
-        <el-input v-model="familyEditForm.familyAddress"></el-input>
-        </el-form-item>
-      </el-form>
+      <FamilyEditForm :draft="familyEditForm" :rules="rules" />
       <template #footer><span  class="dialog-footer">
       <el-button @click="oldEditDialogVisible = false">取 消</el-button>
       <el-button type="primary" @click="editFamily">确 定</el-button>
@@ -139,9 +95,11 @@
 <script>
 import axios from 'axios'
 import RecordCards from '@/components/RecordCards.vue'
+import FamilyCreateForm from '@/components/records/FamilyCreateForm.vue'
+import FamilyEditForm from '@/components/records/FamilyEditForm.vue'
 
 export default {
-  components: { RecordCards },
+  components: { RecordCards, FamilyCreateForm, FamilyEditForm },
   data () {
     var checkPhone = (rule, value, callback) => {
     const phoneReg = /^1[3|4|5|7|8][0-9]{9}$/

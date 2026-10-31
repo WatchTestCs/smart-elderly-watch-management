@@ -27,24 +27,7 @@
       v-model="watchDialogVisible"
       @close="closeRoleAddDialog"
       width="30%">
-      <el-form label-width="80px" :model="watchForm" :rules="rules"  ref="addwatchFormRef">
-
-        <el-form-item label="手表Id" prop="deviceId">
-          <el-input v-model="watchForm.deviceId"></el-input>
-        </el-form-item>
-		<el-form-item label="血压高值" prop="bpf">
-		<el-input v-model="watchForm.bpf"></el-input>
-		</el-form-item>
-		<el-form-item label="血压低值" prop="bpl">
-		<el-input v-model="watchForm.bpl"></el-input>
-		</el-form-item>
-		<el-form-item label="心率高值" prop="hrf">
-		<el-input v-model="watchForm.hrf"></el-input>
-		</el-form-item>
-		<el-form-item label="心率低值" prop="hrl">
-		<el-input v-model="watchForm.hrl"></el-input>
-		</el-form-item>
-      </el-form>
+      <ThresholdCreateForm :draft="watchForm" :rules="rules" ref="addwatchFormRef" />
       <template #footer><span  class="dialog-footer">
       <el-button @click="watchDialogVisible = false">取 消</el-button>
       <el-button type="primary" @click="addWatchs('addwatchFormRef')">确 定</el-button>
@@ -55,24 +38,7 @@
       title="设备编辑"
       v-model="watchEditDialogVisible"
       width="30%">
-      <el-form label-width="80px" :model="watchEditForm" :rules="rules" ref="editwatchFormRef">
-
-        <el-form-item label="手表Id" prop="deviceId">
-        <el-input v-model="watchEditForm.deviceId" disabled="disabled"></el-input>
-        </el-form-item>
-        <el-form-item label="血压高值" prop="bpf">
-        <el-input v-model="watchEditForm.bpf"></el-input>
-        </el-form-item>
-        <el-form-item label="血压低值" prop="bpl">
-        <el-input v-model="watchEditForm.bpl"></el-input>
-        </el-form-item>
-        <el-form-item label="心率高值" prop="hrf">
-        <el-input v-model="watchEditForm.hrf"></el-input>
-        </el-form-item>
-        <el-form-item label="心率低值" prop="hrl">
-        <el-input v-model="watchEditForm.hrl"></el-input>
-        </el-form-item>
-      </el-form>
+      <ThresholdEditForm :draft="watchEditForm" :rules="rules" ref="editwatchFormRef" />
       <template #footer><span  class="dialog-footer">
       <el-button @click="watchEditDialogVisible = false">取 消</el-button>
       <el-button type="primary" @click="editWatch">确 定</el-button>
@@ -127,22 +93,14 @@
 
 <script>
 import axios from 'axios'
+import { checkThreshold } from './watch.validation'
 import RecordCards from '@/components/RecordCards.vue'
+import ThresholdCreateForm from '@/components/records/ThresholdCreateForm.vue'
+import ThresholdEditForm from '@/components/records/ThresholdEditForm.vue'
 
 export default {
-  components: { RecordCards },
+  components: { RecordCards, ThresholdCreateForm, ThresholdEditForm },
   data () {
-    // 监测阈值为整数（血压/心率），此前表单无数值与范围校验
-    var checkThreshold = (rule, value, callback) => {
-      if (value === '' || value === null || value === undefined) {
-        return callback(new Error('请输入阈值'))
-      }
-      var n = Number(value)
-      if (!Number.isInteger(n) || n < 1 || n > 300) {
-        return callback(new Error('阈值须为1-300的整数'))
-      }
-      callback()
-    }
     return {
       searchText: '', // 角色查询内容
       watchDialogVisible: false,
