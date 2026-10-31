@@ -2,6 +2,7 @@ package db
 
 import (
 	"errors"
+	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -15,15 +16,16 @@ var conflictNothing = regexp.MustCompile(`(?i)ON\s+CONFLICT(?:\s*\([^)]*\))?\s+D
 var excludedColumn = regexp.MustCompile(`(?i)excluded\.([a-z][a-z0-9_]*)`)
 var firstInsertColumn = regexp.MustCompile(`(?is)^\s*INSERT\s+INTO\s+(?:\x60[^\x60]+\x60|"[^"]+"|[a-z_][a-z0-9_]*)(?:\s*\.\s*(?:\x60[^\x60]+\x60|"[^"]+"|[a-z_][a-z0-9_]*))?\s*\(\s*(\x60[^\x60]+\x60|"[^"]+"|[a-z_][a-z0-9_]*)`)
 var lockLimit = regexp.MustCompile(`(?i)FOR UPDATE SKIP LOCKED\s+LIMIT\s+(\d+)`)
-var dateFormat = regexp.MustCompile(`(?i)TO_CHAR\(([a-z_.]+),'(YYYY-MM-DD(?: HH24:MI:SS(?:\.MS)?)?)'\)`)
+var dateFormat = regexp.MustCompile(`(?i)^TO_CHAR\(([a-z_.]+),'(YYYY-MM-DD(?: HH24:MI:SS(?:\.MS)?)?)'\)`)
 var varcharCast = regexp.MustCompile(`(?i)\bAS varchar\b`)
 
 // This covers the application's SQL vocabulary, not arbitrary PostgreSQL SQL.
 // Keep parameters bound (including repeated/out-of-order $n) and never interpolate values.
 type queryPlan struct {
-	sql        string
-	positions  []int
-	parameters int
+	sql           string
+	positions     []int
+	parameters    int
+	requiredArgs  int
 	// direct means placeholders are exactly $1,$2,... in occurrence order.
 	direct bool
 }
@@ -36,11 +38,11 @@ func mysqlQuery(query string, args []any) (string, []any, error) {
 	if err != nil {
 		return "", nil, err
 	}
+	if len(args) != plan.requiredArgs {
+		return "", nil, fmt.Errorf("SQL argument count mismatch: query requires %d arguments, got %d", plan.requiredArgs, len(args))
+	}
 	if plan.direct {
 		n := plan.parameters
-		if n > len(args) {
-			return "", nil, errors.New("SQL parameter out of range")
-		}
 		// Executors consume these arguments synchronously and never mutate
 		// them. Limit capacity so appending cannot overwrite caller arguments.
 		// No request values are retained in the shared SQL structure cache.
@@ -87,6 +89,7 @@ func compileMySQLQuery(query string) (queryPlan, error) {
 	// 用 ReplaceAll 直接改整串会把字符串字面量里的内容一起改掉。
 	out := make([]byte, 0, len(query)+32)
 	var positions []int
+	requiredArgs := 0
 	for i := 0; i < len(query); {
 		// SQL comments must not bind parameters or rewrite operators.
 		if strings.HasPrefix(query[i:], "--") || query[i] == '#' {
@@ -156,6 +159,9 @@ func compileMySQLQuery(query string) (queryPlan, error) {
 			}
 			out = append(out, '?')
 			positions = append(positions, n-1)
+			if n > requiredArgs {
+				requiredArgs = n
+			}
 			i = j
 			continue
 		}
@@ -169,7 +175,7 @@ func compileMySQLQuery(query string) (queryPlan, error) {
 			break
 		}
 	}
-	return queryPlan{sql: string(out), positions: positions, parameters: len(positions), direct: direct}, nil
+	return queryPlan{sql: string(out), positions: positions, parameters: len(positions), requiredArgs: requiredArgs, direct: direct}, nil
 }
 
 // identifierByte 判断 c 是否可以作为标识符的一部分，用于避免替换到
