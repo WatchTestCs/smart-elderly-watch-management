@@ -210,11 +210,11 @@ func TestDoNothingUsesActualInsertColumnAndDoesNotRewriteLiterals(t *testing.T) 
 	if plan.sql != want {
 		t.Fatalf("wrong no-op conflict translation: got %q want %q", plan.sql, want)
 	}
-	plan, err = compileMySQLQuery("SELECT 'ON CONFLICT DO NOTHING EXCLUDED.value AS varchar INTERVAL \'3 days\''")
+	plan, err = compileMySQLQuery(`SELECT 'ON CONFLICT DO NOTHING EXCLUDED.value AS varchar INTERVAL ''3 days'''`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	want = "SELECT 'ON CONFLICT DO NOTHING EXCLUDED.value AS varchar INTERVAL \'3 days\''"
+	want = `SELECT 'ON CONFLICT DO NOTHING EXCLUDED.value AS varchar INTERVAL ''3 days'''`
 	if plan.sql != want {
 		t.Fatalf("literal changed by dialect rewrite: got %q want %q", plan.sql, want)
 	}
