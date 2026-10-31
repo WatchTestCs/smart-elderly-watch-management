@@ -2,7 +2,7 @@
 <el-form ref="form" label-width="80px" :model="draft" :rules="rules" >
 
         <el-form-item label="手表Id" prop="deviceId">
-          <el-input v-model="draft.deviceId"></el-input>
+          <el-input v-model="draft.deviceId" :disabled="editing"></el-input>
         </el-form-item>
     <el-form-item label="血压高值" prop="bpf">
     <el-input v-model="draft.bpf"></el-input>
@@ -20,9 +20,8 @@
 </template>
 
 <script>
-// The page owns the draft and requests; this component owns form validation.
 export default {
-  props: { draft: { type: Object, required: true }, rules: Object },
+  props: { draft: { type: Object, required: true }, rules: Object, editing: Boolean },
   methods: {
     validate (...args) { return this.$refs.form.validate(...args) },
     resetFields (...args) { return this.$refs.form.resetFields(...args) }

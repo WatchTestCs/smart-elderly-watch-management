@@ -3,6 +3,9 @@
         <el-form-item label="姓名" prop="name">
           <el-input v-model="draft.name"></el-input>
         </el-form-item>
+<el-form-item v-if="editing" label="年龄" prop="oldId" style="display: none;">
+              <el-input v-model="draft.oldId"></el-input>
+            </el-form-item>
 
     <el-form-item label="性别" prop="sex">
     <el-radio-group v-model="draft.sex">
@@ -49,14 +52,17 @@
 
 
     </el-form-item>
-        <p>建档后可在设备管理中关联手表。</p>
+        <p v-if="!editing">建档后可在设备管理中关联手表。</p>
+<el-form-item v-if="editing" label="手表编号" prop="deviceId">
+          <el-input :model-value="draft.deviceId || '尚未关联'" readonly></el-input>
+          <span>设备关联请在设备管理中修改。</span>
+        </el-form-item>
       </el-form>
 </template>
 
 <script>
-// The page owns the draft and requests; this component owns form validation.
 export default {
-  props: { draft: { type: Object, required: true }, rules: Object, options: Array, customerLoading: Boolean, customerError: String },
+  props: { draft: { type: Object, required: true }, rules: Object, editing: Boolean, options: Array, customerLoading: Boolean, customerError: String },
   emits: ['retry-guardians'],
   methods: {
     validate (...args) { return this.$refs.form.validate(...args) },

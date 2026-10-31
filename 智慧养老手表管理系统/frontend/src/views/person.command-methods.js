@@ -4,7 +4,6 @@ import axios from 'axios'
 export const residentCommandMethods = {
     addOldPersons () {
       var _this = this
-      // 提交前执行表单校验（手机号格式等），此前规则定义了但从未被调用
       this.$refs.addoldFormRef.validate(function (valid) {
         if (!valid) return
         var param = _this.oldForm

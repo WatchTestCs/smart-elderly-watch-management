@@ -28,7 +28,7 @@
       v-model="customerDialogVisible"
       @close="closeRoleAddDialog"
       width="92%" custom-class="admin-record-dialog">
-      <FamilyCreateForm :draft="familyForm" :rules="rules" ref="addfamilyFormRef" />
+      <FamilyForm :draft="familyForm" :rules="rules" ref="addfamilyFormRef" />
       <template #footer><span  class="dialog-footer">
       <el-button @click="customerDialogVisible = false">取 消</el-button>
       <el-button type="primary" @click="addFamily('addfamilyFormRef')">确 定</el-button>
@@ -39,7 +39,7 @@
       title="家属编辑"
       v-model="oldEditDialogVisible"
       width="92%" custom-class="admin-record-dialog">
-      <FamilyEditForm :draft="familyEditForm" :rules="rules" />
+      <FamilyForm editing :draft="familyEditForm" :rules="rules" />
       <template #footer><span  class="dialog-footer">
       <el-button @click="oldEditDialogVisible = false">取 消</el-button>
       <el-button type="primary" @click="editFamily">确 定</el-button>
@@ -95,11 +95,10 @@
 <script>
 import axios from 'axios'
 import RecordCards from '@/components/RecordCards.vue'
-import FamilyCreateForm from '@/components/records/FamilyCreateForm.vue'
-import FamilyEditForm from '@/components/records/FamilyEditForm.vue'
+import FamilyForm from '@/components/records/FamilyForm.vue'
 
 export default {
-  components: { RecordCards, FamilyCreateForm, FamilyEditForm },
+  components: { RecordCards, FamilyForm },
   data () {
     var checkPhone = (rule, value, callback) => {
     const phoneReg = /^1[3|4|5|7|8][0-9]{9}$/

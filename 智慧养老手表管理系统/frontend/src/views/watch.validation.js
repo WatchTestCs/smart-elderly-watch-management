@@ -1,4 +1,3 @@
-// Monitoring thresholds remain integers in the existing 1–300 range.
 export function checkThreshold (rule, value, callback) {
   if (value === '' || value === null || value === undefined) {
     return callback(new Error('请输入阈值'))

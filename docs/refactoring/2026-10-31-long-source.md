@@ -27,6 +27,14 @@ components preserve validation callbacks and reset behavior through parent refs.
 Resident writes and health alert methods follow the existing Options API method
 module pattern. The health alert dialog emits the original resolution kind.
 
+Following the redundant-source cleanup request, create/edit fields share three
+domain components rather than six duplicated forms. Explicit `editing` props retain
+hidden identifiers, create-only elder phone input, read-only bound devices and
+disabled threshold device identifiers. Six duplicate component files are removed.
+An unreferenced `nullableCoordinate` helper and orphaned/repeated comments are also
+removed. Frontend import reachability found no unused production source file;
+the images and font resources reviewed still have live references.
+
 OpenAPI regeneration changes only 12 implementation-file descriptions following
 the capability route move. HTTP paths, methods, authentication and DTOs are unchanged.
 There are no database migrations or dependency updates in this batch.
@@ -45,7 +53,7 @@ There are no database migrations or dependency updates in this batch.
   signed telemetry replay and atomic SOS rollback.
 - Frontend type checking and production build passed. The existing large-bundle
   advisory remains; this source-structure change does not optimize bundle size.
-- Existing Chromium forms acceptance: 30 checks passed. Six focused production
+- Existing Chromium forms acceptance: 30 checks passed. Eight focused production
   bundle checks also passed for validation/reset, threshold limits, alert display
   and resolution identity. HTTP responses in these browser checks were mocked.
 - OpenAPI consistency and native API boundary checks passed.

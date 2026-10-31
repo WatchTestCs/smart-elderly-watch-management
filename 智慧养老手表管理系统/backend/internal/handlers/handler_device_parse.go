@@ -169,13 +169,6 @@ func checkPosition(lng, lat string) string {
 	return ""
 }
 
-func nullableCoordinate(value string) any {
-	if value == "" {
-		return nil
-	}
-	return value
-}
-
 // parseReportTimeStrict 严格解析 "yyyy-MM-dd HH:mm:ss"（复刻 STRICT 解析）。
 func parseReportTimeStrict(s string) (time.Time, bool) {
 	if !reportTimeRe.MatchString(s) {
@@ -199,9 +192,3 @@ func bodyMapOrEmpty(w http.ResponseWriter, r *http.Request) (map[string]any, boo
 	}
 	return m, true
 }
-
-// ---------------------------------------------------------------------------
-// DeviceSecretCodec（必须与 Java 端逐字节一致）
-// 算法：SHA-256("suining-device-secret-v1" + 0x00 + 明文UTF-8)，
-// Base64-URL 无填充，前缀 "sha256$"。比对用常量时间比较。
-// ---------------------------------------------------------------------------

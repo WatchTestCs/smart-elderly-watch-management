@@ -27,7 +27,7 @@
       v-model="watchDialogVisible"
       @close="closeRoleAddDialog"
       width="30%">
-      <ThresholdCreateForm :draft="watchForm" :rules="rules" ref="addwatchFormRef" />
+      <ThresholdForm :draft="watchForm" :rules="rules" ref="addwatchFormRef" />
       <template #footer><span  class="dialog-footer">
       <el-button @click="watchDialogVisible = false">取 消</el-button>
       <el-button type="primary" @click="addWatchs('addwatchFormRef')">确 定</el-button>
@@ -38,7 +38,7 @@
       title="设备编辑"
       v-model="watchEditDialogVisible"
       width="30%">
-      <ThresholdEditForm :draft="watchEditForm" :rules="rules" ref="editwatchFormRef" />
+      <ThresholdForm editing :draft="watchEditForm" :rules="rules" ref="editwatchFormRef" />
       <template #footer><span  class="dialog-footer">
       <el-button @click="watchEditDialogVisible = false">取 消</el-button>
       <el-button type="primary" @click="editWatch">确 定</el-button>
@@ -95,11 +95,10 @@
 import axios from 'axios'
 import { checkThreshold } from './watch.validation'
 import RecordCards from '@/components/RecordCards.vue'
-import ThresholdCreateForm from '@/components/records/ThresholdCreateForm.vue'
-import ThresholdEditForm from '@/components/records/ThresholdEditForm.vue'
+import ThresholdForm from '@/components/records/ThresholdForm.vue'
 
 export default {
-  components: { RecordCards, ThresholdCreateForm, ThresholdEditForm },
+  components: { RecordCards, ThresholdForm },
   data () {
     return {
       searchText: '', // 角色查询内容

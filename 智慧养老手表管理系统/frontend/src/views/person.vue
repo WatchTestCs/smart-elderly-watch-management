@@ -28,7 +28,7 @@
       v-model="oldDialogVisible"
       @close="closeRoleAddDialog"
       width="30%">
-      <ResidentCreateForm :draft="oldForm" :rules="rules" ref="addoldFormRef" :options="options" :customer-loading="customerLoading" :customer-error="customerError" @retry-guardians="addCustomerList" />
+      <ResidentForm :draft="oldForm" :rules="rules" ref="addoldFormRef" :options="options" :customer-loading="customerLoading" :customer-error="customerError" @retry-guardians="addCustomerList" />
       <template #footer><span  class="dialog-footer">
       <el-button @click="oldDialogVisible = false">取 消</el-button>
       <el-button type="primary" @click="addOldPersons('addoldFormRef')">确 定</el-button>
@@ -39,7 +39,7 @@
       title="角色编辑"
       v-model="oldEditDialogVisible"
       width="30%">
-      <ResidentEditForm :draft="oldEditForm" :rules="rules" ref="editoldFormRef" :options="options" :customer-loading="customerLoading" :customer-error="customerError" @retry-guardians="addCustomerList" />
+      <ResidentForm editing :draft="oldEditForm" :rules="rules" ref="editoldFormRef" :options="options" :customer-loading="customerLoading" :customer-error="customerError" @retry-guardians="addCustomerList" />
       <template #footer><span  class="dialog-footer">
       <el-button @click="oldEditDialogVisible = false">取 消</el-button>
       <el-button type="primary" @click="editOldPerson">确 定</el-button>
@@ -111,11 +111,10 @@
 import axios from 'axios'
 import { residentCommandMethods } from './person.command-methods'
 import RecordCards from '@/components/RecordCards.vue'
-import ResidentCreateForm from '@/components/records/ResidentCreateForm.vue'
-import ResidentEditForm from '@/components/records/ResidentEditForm.vue'
+import ResidentForm from '@/components/records/ResidentForm.vue'
 
 export default {
-  components: { RecordCards, ResidentCreateForm, ResidentEditForm },
+  components: { RecordCards, ResidentForm },
   data () {
     var checkPhone = (rule, value, callback) => {
       const phoneReg = /^1[3|4|5|7|8][0-9]{9}$/
