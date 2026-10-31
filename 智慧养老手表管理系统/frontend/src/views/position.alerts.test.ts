@@ -2,9 +2,29 @@ import { mount } from '@vue/test-utils'
 import { expect, it, vi } from 'vitest'
 import Position from './position.vue'
 import RecordCards from '../components/RecordCards.vue'
+import { describePositionContext } from '../utils/positionContext'
 
 type AlertView = { methods: { showFallReason(this: { $alert: ReturnType<typeof vi.fn> }, row: Record<string, unknown>): void } }
 const showReason = (Position as unknown as AlertView).methods.showFallReason
+
+it('marks historical sampling and keeps unprovided context unknown', () => {
+  const now = Date.parse('2026-10-31T10:00:00Z')
+  const unknown = describePositionContext({}, false, now)
+  expect(unknown).toContain('不能判定为实时')
+  expect(unknown).not.toContain('GPS')
+  const historical = describePositionContext({ alarmSource: 'gps', alarmSampledAt: '2026-10-20T02:00:00Z', alarmAccuracy: 12.5, alarmValidity: 'reported' }, true, now)
+  expect(historical).toContain('历史位置')
+  expect(historical).toContain('12.5 米')
+  expect(historical).toContain('未经独立核验')
+})
+
+it('shows an explicit SOS type without classifying it as a fall', () => {
+  const alert = vi.fn()
+  showReason.call({ $alert: alert }, { name: '长者', alarmKind: 'sos', alarmValidity: 'missing' })
+  expect(alert.mock.calls[0][0]).toContain('事件类型：SOS 求助')
+  expect(alert.mock.calls[0][0]).toContain('本次未提供坐标')
+  expect(alert.mock.calls[0][0]).not.toContain('设备上报摔倒')
+})
 
 it('shows the incident snapshot rather than the later location in the alarm dialog', () => {
   const alert = vi.fn()

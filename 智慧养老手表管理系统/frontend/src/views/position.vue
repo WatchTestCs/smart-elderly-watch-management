@@ -42,7 +42,8 @@
 	  </el-table-column>
 	  <el-table-column prop="lng" label="经度" width="160" align="center"></el-table-column>
 	  <el-table-column prop="lat" label="纬度" width="160" align="center"></el-table-column>
-	  <el-table-column prop="beTime" label="时间" width="auto" align="center"></el-table-column>
+      <el-table-column label="定位来源与采样" width="240" align="left"><template #default="scope"><span class="position-context">{{ describePositionContext(scope.row) }}</span></template></el-table-column>
+	  <el-table-column prop="beTime" label="上报时间" width="auto" align="center"></el-table-column>
       <el-table-column label="操作" align="center">
       	<template #default="scope" >
       		<el-button v-if="scope.row.status==1" size="small" plain type="danger" icon="el-icon-warning"
@@ -56,7 +57,7 @@
       </el-table-column>
     </el-table>
     <record-cards :records="positionList" :fields='[{"key":"sex","label":"性别"},{"key":"status","label":"告警状态","state":"fall"},{"key":"lng","label":"经度"},{"key":"lat","label":"纬度"}]' label="位置与告警记录" title-key="name" key-field="oldId" time-key="beTime">
-      <template #actions="scope"  ><el-button v-if="scope.row.status==1" size="small" plain type="danger" icon="el-icon-warning"
+      <template #actions="scope"  ><span class="position-context">{{ describePositionContext(scope.row) }}</span><el-button v-if="scope.row.status==1" size="small" plain type="danger" icon="el-icon-warning"
                        @click="showFallReason(scope.row)">告警记录与处理</el-button>
 <el-button v-if="scope.row.status==1" size="small" plain type="primary" icon="el-icon-check"
       		           @click="handleFall(scope.row)">标记已处理</el-button>
@@ -84,6 +85,7 @@
 import axios from 'axios'
 import PositionMap from '@/components/PositionMap.vue'
 import RecordCards from '@/components/RecordCards.vue'
+import { describePositionContext } from '../utils/positionContext'
 
 export default {
   components: { RecordCards, PositionMap },
@@ -107,6 +109,7 @@ export default {
 
   },
   methods: {
+    describePositionContext,
     searchposition (keepPage = false) {
       if (keepPage !== true) this.currentPage = 1
       var _this = this
@@ -157,7 +160,9 @@ export default {
       this.$alert(
         '老人：' + row.name + '\n'
         + '告警时间：' + (row.alarmTime || '未提供告警时间') + '\n'
-        + '告警附带坐标：' + alarmPosition + '\n\n'
+        + '告警附带坐标：' + alarmPosition + '\n'
+        + '事件类型：' + ({ sos: 'SOS 求助', fall: '设备上报摔倒', unknown: '未知' }[row.alarmKind] || '未知') + '\n'
+        + describePositionContext(row, true) + '\n\n'
         + '怎么处理：\n'
         + '① 立即电话联系老人或家属确认情况；\n'
         + '② 结合告警附带坐标核实位置，必要时请求现场协助；\n'
@@ -213,6 +218,7 @@ export default {
 </script>
 
 <style scoped>
+  .position-context { display: block; width: 100%; line-height: 1.6; font-size: 12px; }
   .position-empty, .unknown-state { color: #71808c; }
 
 </style>

@@ -2425,7 +2425,43 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "additionalProperties": true
+                "additionalProperties": false,
+                "properties": {
+                  "deviceNo": {
+                    "type": "string"
+                  },
+                  "secret": {
+                    "type": "string"
+                  },
+                  "lng": {
+                    "type": "string"
+                  },
+                  "lat": {
+                    "type": "string"
+                  },
+                  "alarm": {
+                    "type": "string"
+                  },
+                  "positionSource": {
+                    "type": "string",
+                    "enum": [
+                      "gps",
+                      "network",
+                      "fused",
+                      "manual",
+                      "simulated",
+                      "unknown"
+                    ]
+                  },
+                  "positionSampledAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "positionAccuracy": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  }
+                }
               }
             }
           }
@@ -2604,7 +2640,46 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "additionalProperties": true
+                "additionalProperties": false,
+                "properties": {
+                  "deviceNo": {
+                    "type": "string"
+                  },
+                  "secret": {
+                    "type": "string"
+                  },
+                  "bindingVersion": {
+                    "type": "integer"
+                  },
+                  "requestId": {
+                    "type": "string"
+                  },
+                  "lng": {
+                    "type": "string"
+                  },
+                  "lat": {
+                    "type": "string"
+                  },
+                  "positionSource": {
+                    "type": "string",
+                    "enum": [
+                      "gps",
+                      "network",
+                      "fused",
+                      "manual",
+                      "simulated",
+                      "unknown"
+                    ]
+                  },
+                  "positionSampledAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "positionAccuracy": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  }
+                }
               }
             }
           }

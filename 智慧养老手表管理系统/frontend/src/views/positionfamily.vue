@@ -16,6 +16,7 @@
 		  </template>
 	  </el-table-column>
 	  <el-table-column label="位置坐标" width="220" align="center"><template #default="scope" >{{ scope.row.lng }}，{{ scope.row.lat }}</template></el-table-column>
+      <el-table-column label="定位来源与采样" width="240"><template #default="scope">{{ describePositionContext(scope.row) }}</template></el-table-column>
 	  <el-table-column prop="beTime" label="记录时间" width="190" align="center"></el-table-column>
       <el-table-column label="查看" width="170" align="center">
       	<template #default="scope" >
@@ -34,6 +35,7 @@
           <dd :class="item.status == 1 ? 'status-danger' : item.status == 0 ? 'status-normal' : ''">{{ item.status == 1 ? '紧急告警，请及时确认' : item.status == 0 ? '未告警/已处理' : '状态未知' }}</dd>
           <dt>记录时间</dt><dd>{{ item.beTime || '暂无时间信息' }}</dd>
           <dt>位置坐标</dt><dd>{{ item.lng }}, {{ item.lat }}</dd>
+          <dt>定位来源与采样</dt><dd>{{ describePositionContext(item) }}</dd>
         </dl>
         <el-button type="primary" @click="showLocation(item)">在地图中查看位置</el-button>
       </article>
@@ -48,6 +50,7 @@
 
 import axios from 'axios'
 import PositionMap from '@/components/PositionMap.vue'
+import { describePositionContext } from '../utils/positionContext'
 
 export default {
   components: { PositionMap },
@@ -68,6 +71,7 @@ export default {
 
   },
   methods: {
+    describePositionContext,
 
     searchposition () {
       var _this = this

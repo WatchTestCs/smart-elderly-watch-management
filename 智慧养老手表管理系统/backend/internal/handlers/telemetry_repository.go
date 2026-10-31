@@ -58,6 +58,14 @@ func (repo telemetryRepository) PersistDeviceReport(ctx context.Context, tx *dbs
 	}
 	sleepState, battery, appVersion := parsed.sleepState, parsed.battery, parsed.appVersion
 	lng, lat, sourceStr, alarm := parsed.lng, parsed.lat, parsed.sourceStr, parsed.alarm
+	var position string
+	if lng != "" || alarm == "1" || strings.EqualFold(alarm, "fall") {
+		var err error
+		position, err = sealPositionMetadata(repo.box, parsed.position)
+		if err != nil {
+			return telemetryPersisted{}, err
+		}
+	}
 
 	hrv, bpv := 0, 0
 	if hr != nil {
@@ -146,9 +154,9 @@ func (repo telemetryRepository) PersistDeviceReport(ctx context.Context, tx *dbs
 	}
 	if lng != "" && lat != "" {
 		if _, err := tx.Exec(ctx,
-			`INSERT INTO device_location(device_id, old_id, lng, lat, source, be_time, create_time)
-			 VALUES($1,$2,$3,$4,$5,$6,now())`,
-			d.ID, oldID, sealCoordinate(repo.box, lng), sealCoordinate(repo.box, lat), sourceStr, beTime); err != nil {
+			`INSERT INTO device_location(device_id, old_id, lng, lat, source, be_time, create_time, position_metadata)
+			 VALUES($1,$2,$3,$4,$5,$6,now(),$7)`,
+			d.ID, oldID, sealCoordinate(repo.box, lng), sealCoordinate(repo.box, lat), sourceStr, beTime, position); err != nil {
 			return telemetryPersisted{}, err
 		}
 		if _, err := tx.Exec(ctx, `UPDATE device SET last_lng=$1, last_lat=$2 WHERE device_id=$3
@@ -160,10 +168,14 @@ func (repo telemetryRepository) PersistDeviceReport(ctx context.Context, tx *dbs
 	if alarm == "1" || strings.EqualFold(alarm, "fall") {
 		alarmLng := coordinateArg(repo.box, lng)
 		alarmLat := coordinateArg(repo.box, lat)
+		kind := "unknown"
+		if strings.EqualFold(alarm, "fall") {
+			kind = "fall"
+		}
 		if _, err := tx.Exec(ctx,
-			`INSERT INTO alarm_precess(status, old_id, device_id, be_time, lng, lat)
-			 VALUES('1',$1,$2,$3,$4,$5)`,
-			oldID, d.ID, beTime, alarmLng, alarmLat); err != nil {
+			`INSERT INTO alarm_precess(status, old_id, device_id, be_time, lng, lat, kind, position_metadata)
+			 VALUES('1',$1,$2,$3,$4,$5,$6,$7)`,
+			oldID, d.ID, beTime, alarmLng, alarmLat, kind, position); err != nil {
 			return telemetryPersisted{}, err
 		}
 	}
@@ -175,19 +187,23 @@ func (repo telemetryRepository) PersistDeviceReport(ctx context.Context, tx *dbs
 
 // PersistSOSIncident only persists the incident; callers must insert SMS/outbox
 // records and commit *the same transaction* before acknowledging the device.
-func (repo telemetryRepository) PersistSOSIncident(ctx context.Context, tx *dbstore.Transaction, d *oldDevice, lng, lat, requestID string, now time.Time) (int64, error) {
+func (repo telemetryRepository) PersistSOSIncident(ctx context.Context, tx *dbstore.Transaction, d *oldDevice, lng, lat, requestID string, meta positionMetadata, now time.Time) (int64, error) {
+	position, err := sealPositionMetadata(repo.box, meta)
+	if err != nil {
+		return 0, err
+	}
 	var alarmID int64
 	if err := tx.QueryRow(ctx,
-		`INSERT INTO alarm_precess(status, old_id, device_id, be_time, lng, lat)
-		 VALUES('1',$1,$2,$3,$4,$5) RETURNING id`,
-		*d.OldID, d.ID, now, coordinateArg(repo.box, lng), coordinateArg(repo.box, lat)).Scan(&alarmID); err != nil {
+		`INSERT INTO alarm_precess(status, old_id, device_id, be_time, lng, lat, kind, position_metadata)
+		 VALUES('1',$1,$2,$3,$4,$5,'sos',$6) RETURNING id`,
+		*d.OldID, d.ID, now, coordinateArg(repo.box, lng), coordinateArg(repo.box, lat), position).Scan(&alarmID); err != nil {
 		return 0, err
 	}
 	if lng != "" && lat != "" {
 		if _, err := tx.Exec(ctx,
-			`INSERT INTO device_location(device_id, old_id, lng, lat, source, be_time, create_time)
-			 VALUES($1,$2,$3,$4,'sos',$5,now())`,
-			d.ID, *d.OldID, sealCoordinate(repo.box, lng), sealCoordinate(repo.box, lat), now); err != nil {
+			`INSERT INTO device_location(device_id, old_id, lng, lat, source, be_time, create_time, position_metadata)
+			 VALUES($1,$2,$3,$4,'sos',$5,now(),$6)`,
+			d.ID, *d.OldID, sealCoordinate(repo.box, lng), sealCoordinate(repo.box, lat), now, position); err != nil {
 			return 0, err
 		}
 	}

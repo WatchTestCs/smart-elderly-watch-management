@@ -47,6 +47,8 @@ def route_policies():
 policies = route_policies()
 csrf_exempt = {path for (_, path), (access, bootstrap) in policies.items() if access == "Device" or bootstrap}
 fields = {
+    "/api/v1/device/report": {"deviceNo": "string", "secret": "string", "lng": "string", "lat": "string", "alarm": "string", "positionSource": "string", "positionSampledAt": "string", "positionAccuracy": "number"},
+    "/api/v1/device/sos": {"deviceNo": "string", "secret": "string", "bindingVersion": "integer", "requestId": "string", "lng": "string", "lat": "string", "positionSource": "string", "positionSampledAt": "string", "positionAccuracy": "number"},
     "/api/v1/auth/login": {"phone": "string", "password": "string", "otp": "string", "recoveryCode": "string"},
     "/api/v1/security/factor": {"action": "string", "password": "string", "otp": "string"},
     "/api/v1/security/login-audit": {"after": "integer"},
@@ -80,6 +82,10 @@ for file in sorted((backend / "internal/handlers").glob("*.go")):
             schema = {"type": "object", "additionalProperties": True}
             if path in fields:
                 schema["properties"] = {key: {"type": kind} for key, kind in fields[path].items()}
+                if path in {"/api/v1/device/report", "/api/v1/device/sos"}:
+                    schema["properties"]["positionSource"]["enum"] = ["gps", "network", "fused", "manual", "simulated", "unknown"]
+                    schema["properties"]["positionSampledAt"]["format"] = "date-time"
+                    schema["properties"]["positionAccuracy"]["exclusiveMinimum"] = 0
                 schema["additionalProperties"] = path == "/api/v1/auth/login"
             operation["requestBody"] = {"required": True, "content": {"application/json": {"schema": schema}}}
         operation["description"] = f"Implementation: {file.relative_to(root).as_posix()}. " + ("Device body authentication or signed gateway receipt; not anonymous access." if access == "Device" else "Go API DTOs without explicit schemas remain open objects; consult implementation.")
