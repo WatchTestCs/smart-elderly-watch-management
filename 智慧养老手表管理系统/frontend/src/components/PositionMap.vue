@@ -6,6 +6,7 @@
       <el-button v-if="online" link @click="disableTiles">关闭在线地图</el-button>
     </div>
     <div ref="canvas" class="position-map-canvas" :class="{ 'has-location': valid }" role="region" aria-label="可缩放的位置地图"></div>
+    <p v-if="valid" class="position-map-note">{{ describePositionContext(selection) }}</p>
     <p class="position-map-note" role="status">{{ message }}</p>
   </section>
 </template>
@@ -14,6 +15,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import { describePositionContext } from '../utils/positionContext'
 
 const props = defineProps({ selection: { type: Object, default: null } })
 const canvas = ref(null)
@@ -25,7 +27,7 @@ const valid = computed(() => {
     Number.isFinite(Number(value.lng)) && Number.isFinite(Number(value.lat)) && Math.abs(Number(value.lng)) <= 180 && Math.abs(Number(value.lat)) <= 90
 })
 const message = computed(() => !valid.value ? '暂无可用坐标。' : failed.value ? '在线地图加载失败；位置标记与原始坐标仍可查看。' :
-  online.value ? '坐标以设备上报为准，地图仅作参考。' : '当前位置已标记。在线底图按需加载，需要网络连接。')
+  online.value ? '坐标以设备上报为准，地图仅作参考。' : '所选上报坐标已标记。在线底图按需加载，需要网络连接。')
 let map, marker, tiles, observer
 function updateLocation () {
   if (!map) return

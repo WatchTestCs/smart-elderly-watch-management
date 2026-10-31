@@ -45,6 +45,7 @@ type parsedDeviceTelemetry struct {
 	hr, bp, step, sleep, battery *int
 	sleepState, appVersion       *string
 	lng, lat, sourceStr, alarm   string
+	position                     positionMetadata
 }
 
 func parseDeviceTelemetryPayload(w http.ResponseWriter, m map[string]any, now time.Time) (parsedDeviceTelemetry, bool) {
@@ -97,6 +98,12 @@ func parseDeviceTelemetryPayload(w http.ResponseWriter, m map[string]any, now ti
 	out.lat, _ = vstr(m, "lat")
 	if msg := checkPosition(out.lng, out.lat); msg != "" {
 		write400(w, msg)
+		return parsedDeviceTelemetry{}, false
+	}
+	var positionErr error
+	out.position, positionErr = parsePositionMetadata(m, out.lng, out.lat, now)
+	if positionErr != nil {
+		write400(w, positionErr.Error())
 		return parsedDeviceTelemetry{}, false
 	}
 	source, msg := parseText(m, "source", 20)
@@ -334,7 +341,14 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 		write400(w, msg)
 		return
 	}
-	incidentID, err := (telemetryRepository{box: h.Box}).PersistSOSIncident(ctx, tx, d, lng, lat, requestID, time.Now())
+	now := time.Now()
+	position, err := parsePositionMetadata(m, lng, lat, now)
+	if err != nil {
+		rollback()
+		write400(w, err.Error())
+		return
+	}
+	incidentID, err := (telemetryRepository{box: h.Box}).PersistSOSIncident(ctx, tx, d, lng, lat, requestID, position, now)
 	if err != nil {
 		rollback()
 		response.Error500(w, ref())

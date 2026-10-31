@@ -199,7 +199,7 @@ func TestSOSPersistenceRollbackLeavesNoPartialRows(t *testing.T) {
 		_ = tx.Rollback(ctx)
 		t.Fatal(err)
 	}
-	if _, err = (telemetryRepository{}).PersistSOSIncident(ctx, tx, d, "", "", "rollback-probe", time.Now()); err != nil {
+	if _, err = (telemetryRepository{}).PersistSOSIncident(ctx, tx, d, "", "", "rollback-probe", positionMetadata{Version: 1, Validity: "missing"}, time.Now()); err != nil {
 		_ = tx.Rollback(ctx)
 		t.Fatal(err)
 	}

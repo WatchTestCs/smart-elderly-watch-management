@@ -2425,7 +2425,28 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "additionalProperties": true
+                "additionalProperties": true,
+                "properties": {
+                  "positionSource": {
+                    "type": "string",
+                    "enum": [
+                      "gps",
+                      "network",
+                      "fused",
+                      "manual",
+                      "simulated",
+                      "unknown"
+                    ]
+                  },
+                  "positionSampledAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "positionAccuracy": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  }
+                }
               }
             }
           }
@@ -2604,7 +2625,28 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "additionalProperties": true
+                "additionalProperties": true,
+                "properties": {
+                  "positionSource": {
+                    "type": "string",
+                    "enum": [
+                      "gps",
+                      "network",
+                      "fused",
+                      "manual",
+                      "simulated",
+                      "unknown"
+                    ]
+                  },
+                  "positionSampledAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "positionAccuracy": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  }
+                }
               }
             }
           }

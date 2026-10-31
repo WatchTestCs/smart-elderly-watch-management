@@ -46,7 +46,7 @@ The packages do not bundle a database server. End users do not need Go, Rust, or
 | Residents and families | Manage resident, guardian, and family profiles; validate guardian references and guardian ages (integers from 0 to 150); protect assigned guardians from deletion; invite family members with registration codes |
 | Watch devices | Register and bind watches, verify device secrets, check online status, and set alert thresholds |
 | Health and daily life | View heart rate, single-value blood pressure, sleep phases, step counts, and daily care logs |
-| Location and alerts | Check the latest reported location, out-of-range readings, SOS requests, and incident history |
+| Location and alerts | View reported locations, SOS and explicit fall types; show independent sampling context and mark unknown or historical positions |
 | Care coordination | Claim alert tasks, log interventions, and require a second supervisor to verify resolution |
 | Announcements | Publish illustrated notices and moderate comments across administrator and family views |
 | Desktop accessibility | Toggle large-text mode, navigate by keyboard, use `F11` fullscreen, and adapt to narrow screens |

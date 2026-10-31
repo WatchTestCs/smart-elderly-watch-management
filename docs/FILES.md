@@ -6,6 +6,15 @@
 
 | 文件 | 职责 |
 | --- | --- |
+| [docs/patch-review/2026-10-31-pr50-position-context.md](../docs/patch-review/2026-10-31-pr50-position-context.md) | PR50 元数据与明确类型接续设计、验收和未关闭范围 |
+| [evidence/pr50-context-20261031/acceptance.txt](../evidence/pr50-context-20261031/acceptance.txt) | 元数据旧版失败、首次接线失败及定向验证原始输出 |
+| [智慧养老手表管理系统/backend/docs/position-context.md](../智慧养老手表管理系统/backend/docs/position-context.md) | 位置采样、精度、来源、有效性与事件类型增量 API 契约 |
+| [智慧养老手表管理系统/backend/internal/handlers/position_metadata.go](../智慧养老手表管理系统/backend/internal/handlers/position_metadata.go) | 设备声明元数据校验、版本化加密和解码 |
+| [智慧养老手表管理系统/backend/internal/handlers/pr50_context_regression_test.go](../智慧养老手表管理系统/backend/internal/handlers/pr50_context_regression_test.go) | 元数据独立、无坐标/旧数据未知及非法输入不落库回归 |
+| [智慧养老手表管理系统/backend/migrations/mysql/0020_position_metadata.sql](../智慧养老手表管理系统/backend/migrations/mysql/0020_position_metadata.sql) | MySQL 增量位置元数据和独立告警类型列 |
+| [智慧养老手表管理系统/backend/migrations/0018_position_metadata.sql](../智慧养老手表管理系统/backend/migrations/0018_position_metadata.sql) | 现有 PG 回归环境的元数据结构增量 |
+| [智慧养老手表管理系统/backend/migrations/rollback/mysql_0020_position_metadata.sql](../智慧养老手表管理系统/backend/migrations/rollback/mysql_0020_position_metadata.sql) | 回退迁移登记并保留事件上下文数据 |
+| [智慧养老手表管理系统/frontend/src/utils/positionContext.ts](../智慧养老手表管理系统/frontend/src/utils/positionContext.ts) | 自报、未知与历史采样上下文的统一显示逻辑 |
 | [docs/patch-review/2026-10-31-guardian-integrity.md](../docs/patch-review/2026-10-31-guardian-integrity.md) | 监护人引用完整性、事务协调及年龄范围的设计和验证边界 |
 | [evidence/core-bugs-20261030/guardian-integrity.txt](../evidence/core-bugs-20261030/guardian-integrity.txt) | 监护人引用与年龄修复前失败、八条关键路径及一次并行请求输出 |
 | [智慧养老手表管理系统/backend/internal/handlers/core_guardian_integrity_test.go](../智慧养老手表管理系统/backend/internal/handlers/core_guardian_integrity_test.go) | 失效监护人不写入、关联删除保护、年龄边界和同时请求回归 |
