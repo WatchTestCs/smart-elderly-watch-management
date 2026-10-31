@@ -2,6 +2,7 @@ package db_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -57,7 +58,18 @@ func testLegacyTransfer(t *testing.T, version int) {
 			t.Fatal(err)
 		}
 	}
-	for _, query := range []string{"INSERT INTO users(user_id,user_name) VALUES(7,'主管')", "INSERT INTO oldperson(old_id,name) VALUES(11,'长者')", "INSERT INTO device(device_id,device_no,secret,old_id) VALUES(5,'IMPORT','hashed-secret',11)", "UPDATE oldperson SET device_id=5 WHERE old_id=11", "INSERT INTO ratepre(id,device_id,old_id,hr,bp) VALUES(9,5,11,72,NULL)"} {
+	for _, query := range []string{
+		"INSERT INTO users(user_id,user_name) VALUES(7,'主管')",
+		"INSERT INTO app_metadata(id,schema_version) VALUES(1,8)",
+		"INSERT INTO oldperson(old_id,name) VALUES(11,'长者')",
+		"INSERT INTO device(device_id,device_no,secret,old_id) VALUES(5,'IMPORT','hashed-secret',11)",
+		"UPDATE oldperson SET device_id=5 WHERE old_id=11",
+		"INSERT INTO ratepre(id,device_id,old_id,hr,bp) VALUES(9,5,11,72,NULL)",
+		"INSERT INTO image_blob(name,content_sha256,size_bytes,state) VALUES('elder/avatar.png',repeat('a',64),128,'ready')",
+		"INSERT INTO device_request_nonces(device_id,nonce_digest,expires_at) VALUES(5,decode(repeat('ab',32),'hex'),now()+interval '10 minutes')",
+		"INSERT INTO telemetry_inbox(device_id,elder_id,binding_epoch,request_id,payload,status,attempts,next_retry_at,created_at) VALUES(5,11,1,'queued-import','sealed-payload','pending',2,now()+interval '30 seconds',now())",
+		"INSERT INTO device_report_receipt(device_id,binding_epoch,request_id,payload_digest,result_json) VALUES(5,1,'report-import',repeat('b',64),'{\"queued\":true}')",
+	} {
 		if _, err = source.Exec(ctx, query); err != nil {
 			t.Fatal(err)
 		}
@@ -80,7 +92,9 @@ func testLegacyTransfer(t *testing.T, version int) {
 		}
 	}
 	counts, err := db.TransferLegacy(ctx, source, target, false)
-	if err != nil || counts["ratepre"] != 1 {
+	if err != nil || counts["ratepre"] != 1 || counts["app_metadata"] != 1 ||
+		counts["image_blob"] != 1 || counts["device_request_nonces"] != 1 ||
+		counts["telemetry_inbox"] != 1 || counts["device_report_receipt"] != 1 {
 		t.Fatalf("preflight: %v %v", counts, err)
 	}
 	var count int
@@ -105,12 +119,48 @@ func testLegacyTransfer(t *testing.T, version int) {
 		if err = target.QueryRow(ctx, "SELECT sample_start,source FROM health_sample").Scan(&start, &sourceName); err != nil || start != 1792371600000000 || sourceName != "watch" {
 			t.Fatalf("sample query fields lost: %d %s %v", start, sourceName, err)
 		}
+		var samplePayload []byte
+		if err = target.QueryRow(ctx, "SELECT payload FROM health_sample").Scan(&samplePayload); err != nil {
+			t.Fatal(err)
+		}
+		var sample map[string]any
+		if err = json.Unmarshal(samplePayload, &sample); err != nil || sample["recordId"] != "imported" || sample["sourceDevice"] != "IMPORT" {
+			t.Fatalf("health_sample JSON payload corrupted: %s %v", samplePayload, err)
+		}
+		var changePayload []byte
+		if err = target.QueryRow(ctx, "SELECT payload FROM health_change").Scan(&changePayload); err != nil {
+			t.Fatal(err)
+		}
+		var change map[string]any
+		if err = json.Unmarshal(changePayload, &change); err != nil || change["recordId"] != "imported" {
+			t.Fatalf("health_change JSON payload corrupted: %s %v", changePayload, err)
+		}
 		if err = target.QueryRow(ctx, "SELECT revision FROM health_clock WHERE id=1").Scan(&revision); err != nil || revision != 4 {
 			t.Fatalf("clock lost: %d %v", revision, err)
 		}
 		if err = target.QueryRow(ctx, "SELECT health_epoch FROM device WHERE device_id=5").Scan(&epoch); err != nil || epoch != 3 {
 			t.Fatalf("binding epoch lost: %d %v", epoch, err)
 		}
+	}
+	var metadataVersion int
+	if err = target.QueryRow(ctx, "SELECT schema_version FROM app_metadata WHERE id=1").Scan(&metadataVersion); err != nil || metadataVersion != 8 {
+		t.Fatalf("app metadata lost: %d %v", metadataVersion, err)
+	}
+	var imageName string
+	if err = target.QueryRow(ctx, "SELECT name FROM image_blob WHERE name='elder/avatar.png'").Scan(&imageName); err != nil || imageName != "elder/avatar.png" {
+		t.Fatalf("image blob metadata lost: %s %v", imageName, err)
+	}
+	var nonce []byte
+	if err = target.QueryRow(ctx, "SELECT nonce_digest FROM device_request_nonces WHERE device_id=5").Scan(&nonce); err != nil || len(nonce) != 32 {
+		t.Fatalf("device replay state lost: %d %v", len(nonce), err)
+	}
+	var queuePayload, queueStatus string
+	if err = target.QueryRow(ctx, "SELECT payload,status FROM telemetry_inbox WHERE request_id='queued-import'").Scan(&queuePayload, &queueStatus); err != nil || queuePayload != "sealed-payload" || queueStatus != "pending" {
+		t.Fatalf("durable telemetry inbox lost: %s %s %v", queuePayload, queueStatus, err)
+	}
+	var receipt string
+	if err = target.QueryRow(ctx, "SELECT result_json FROM device_report_receipt WHERE request_id='report-import'").Scan(&receipt); err != nil || receipt != "{\"queued\":true}" {
+		t.Fatalf("report idempotency receipt lost: %s %v", receipt, err)
 	}
 	if _, err = db.TransferLegacy(ctx, source, target, true); err == nil {
 		t.Fatal("nonempty target accepted")
