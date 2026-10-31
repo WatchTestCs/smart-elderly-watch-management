@@ -16,16 +16,16 @@ import (
 var insertReturning = regexp.MustCompile("(?is)^\\s*(INSERT\\s+INTO\\s+(?:`([^`]+)`|([a-z_][a-z0-9_]*))(?:\\s|\\().*)\\s+RETURNING\\s+([a-z_][a-z0-9_]*)\\s*$")
 
 var mysqlReturningColumns = map[string]string{
-	"alarm_precess": "id",
-	"alert_review":  "id",
-	"bind_code":     "id",
-	"care_incident": "id",
-	"device":        "device_id",
-	"device_command":"id",
-	"device_fence":  "id",
-	"family":        "family_id",
-	"fence_event":   "id",
-	"text":          "text_id",
+	"alarm_precess":  "id",
+	"alert_review":   "id",
+	"bind_code":      "id",
+	"care_incident":  "id",
+	"device":         "device_id",
+	"device_command": "id",
+	"device_fence":   "id",
+	"family":         "family_id",
+	"fence_event":    "id",
+	"text":           "text_id",
 }
 
 func mysqlReturningColumnSupported(table, column string) bool {

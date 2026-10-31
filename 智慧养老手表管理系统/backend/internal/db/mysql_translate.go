@@ -22,10 +22,10 @@ var varcharCast = regexp.MustCompile(`(?i)\bAS varchar\b`)
 // This covers the application's SQL vocabulary, not arbitrary PostgreSQL SQL.
 // Keep parameters bound (including repeated/out-of-order $n) and never interpolate values.
 type queryPlan struct {
-	sql           string
-	positions     []int
-	parameters    int
-	requiredArgs  int
+	sql          string
+	positions    []int
+	parameters   int
+	requiredArgs int
 	// direct means placeholders are exactly $1,$2,... in occurrence order.
 	direct bool
 }

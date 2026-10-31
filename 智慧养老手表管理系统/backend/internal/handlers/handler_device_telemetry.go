@@ -141,7 +141,7 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 					rollback()
 					if queueErr == pgx.ErrNoRows {
 						response.JSON(w, http.StatusServiceUnavailable, map[string]any{
-							"message": "持久化回执存在，但遥测队列记录缺失；需要人工核查",
+							"message":   "持久化回执存在，但遥测队列记录缺失；需要人工核查",
 							"requestId": requestID, "queueStatus": "missing",
 						})
 					} else {
@@ -161,7 +161,7 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 				case "failed":
 					rollback()
 					response.JSON(w, http.StatusServiceUnavailable, map[string]any{
-						"message": "遥测队列处理失败，数据已保留待恢复",
+						"message":   "遥测队列处理失败，数据已保留待恢复",
 						"requestId": requestID, "queueStatus": "failed", "retryable": false,
 					})
 					return
@@ -215,7 +215,7 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 		}
 		queuedResult := map[string]any{
 			"rateState": nil, "preState": nil, "queued": true,
-			"message": "设备数据已持久接收，等待后台处理",
+			"message":    "设备数据已持久接收，等待后台处理",
 			"serverTime": parsed.now.Format(tsLayout),
 		}
 		if err := recordDeviceReportReceipt(ctx, tx, d, requestID, payloadDigest, queuedResult); err != nil {
