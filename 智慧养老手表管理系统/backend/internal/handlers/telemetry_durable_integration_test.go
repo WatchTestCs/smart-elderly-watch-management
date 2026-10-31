@@ -61,6 +61,17 @@ func TestDurableTelemetryPersistsBeforeAckAndReplaysSafely(t *testing.T) {
 	if err := pool.QueryRow(ctx, "SELECT count(*) FROM watch_day_info").Scan(&projected); err != nil || projected != 1 {
 		t.Fatalf("daily projection missing: %d: %v", projected, err)
 	}
+	doneReplay := callAPI(h.deviceReport, payload)
+	var doneAck map[string]any
+	if doneReplay.Code != http.StatusOK || json.Unmarshal(doneReplay.Body.Bytes(), &doneAck) != nil ||
+		doneAck["queueStatus"] != "done" || doneAck["processed"] != true || doneAck["queued"] != false {
+		t.Fatalf("completed queue replay must report current status: %d %v %s", doneReplay.Code, doneAck, doneReplay.Body.String())
+	}
+	mustExec(t, pool, "UPDATE telemetry_inbox SET status='failed' WHERE request_id='durable-step-001'")
+	failedReplay := callAPI(h.deviceReport, payload)
+	if failedReplay.Code != http.StatusServiceUnavailable {
+		t.Fatalf("failed queue replay must not return success: %d %s", failedReplay.Code, failedReplay.Body.String())
+	}
 	count, err = DrainDurableTelemetryBatch(ctx, pool, h.Box)
 	if err != nil || count != 0 {
 		t.Fatalf("second drain must be idempotent: %d: %v", count, err)

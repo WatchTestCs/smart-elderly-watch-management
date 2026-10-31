@@ -135,3 +135,15 @@ func TestLegacyHandleAlarmSkipsAlreadyProcessedAlarm(t *testing.T) {
 		t.Fatalf("old pending alarm not closed: %d err=%v", pending, err)
 	}
 }
+
+func TestReportRejectsNonStringRequestID(t *testing.T) {
+	pool := testDatabase(t)
+	seedDevice(t, pool)
+	h := testHandler(t, pool)
+	response := callAPI(h.deviceReport, map[string]any{
+		"deviceNo": "WATCH001", "secret": testSecret, "hr": "72", "requestId": 123,
+	})
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("numeric requestId must be rejected instead of bypassing idempotency: %d %s", response.Code, response.Body.String())
+	}
+}
