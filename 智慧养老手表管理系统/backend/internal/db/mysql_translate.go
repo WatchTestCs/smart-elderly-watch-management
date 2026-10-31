@@ -342,3 +342,14 @@ func rewriteDialectExpressions(query string) (string, error) {
 	}
 	return out.String(), nil
 }
+
+func containsSQLCodePattern(query string, pattern *regexp.Regexp) (bool, error) {
+	found := false
+	_, err := rewriteSQLCodeSegments(query, func(code string) (string, error) {
+		if pattern.MatchString(code) {
+			found = true
+		}
+		return code, nil
+	})
+	return found, err
+}
