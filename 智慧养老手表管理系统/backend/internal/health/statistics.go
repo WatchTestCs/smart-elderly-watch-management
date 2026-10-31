@@ -138,32 +138,40 @@ func Aggregate(samples []Sample, from, to time.Time) (Statistics, error) {
 		return out, nil
 	}
 	if first.Metric == "steps" && first.Semantics == "interval" {
-		sort.Slice(filtered, func(i, j int) bool { return filtered[i].Start.Before(filtered[j].Start) })
-		total, low, high := 0.0, math.Inf(1), math.Inf(-1)
-		out.Count = 0
-		for i, s := range filtered {
-			if i > 0 && s.Start.Before(filtered[i-1].End) {
-				return out, fmt.Errorf("overlapping step intervals require source review")
-			}
-			v, err := IntervalSteps(*s, from, to)
-			if err != nil {
-				return out, err
-			}
-			if !s.End.After(from) || !s.Start.Before(to) {
-				continue
-			}
-			total += v
-			if total > 9007199254740991 {
-				return out, fmt.Errorf("step total exceeds exact integer range")
-			}
-			low, high = math.Min(low, v), math.Max(high, v)
-			out.Count++
-		}
-		if out.Count > 0 {
-			out.Total, out.Min, out.Max = Number(total), Number(low), Number(high)
-		}
-		return out, nil
+		return aggregateStepIntervals(filtered, out, from, to)
 	}
+	return aggregateTotals(filtered, first, out)
+}
+
+func aggregateStepIntervals(filtered []*Sample, out Statistics, from, to time.Time) (Statistics, error) {
+	sort.Slice(filtered, func(i, j int) bool { return filtered[i].Start.Before(filtered[j].Start) })
+	total, low, high := 0.0, math.Inf(1), math.Inf(-1)
+	out.Count = 0
+	for i, s := range filtered {
+		if i > 0 && s.Start.Before(filtered[i-1].End) {
+			return out, fmt.Errorf("overlapping step intervals require source review")
+		}
+		v, err := IntervalSteps(*s, from, to)
+		if err != nil {
+			return out, err
+		}
+		if !s.End.After(from) || !s.Start.Before(to) {
+			continue
+		}
+		total += v
+		if total > 9007199254740991 {
+			return out, fmt.Errorf("step total exceeds exact integer range")
+		}
+		low, high = math.Min(low, v), math.Max(high, v)
+		out.Count++
+	}
+	if out.Count > 0 {
+		out.Total, out.Min, out.Max = Number(total), Number(low), Number(high)
+	}
+	return out, nil
+}
+
+func aggregateTotals(filtered []*Sample, first *Sample, out Statistics) (Statistics, error) {
 	total, low, high := 0.0, *filtered[0].Value, *filtered[0].Value
 	for _, s := range filtered {
 		v := *s.Value
