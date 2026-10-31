@@ -27,6 +27,7 @@ func TestDurableTelemetryPersistsBeforeAckAndReplaysSafely(t *testing.T) {
 		"requestId": "durable-step-001", "step": "1200", "sleep": "8",
 		"beTime": "2026-10-28 09:00:00",
 	}
+	requestStarted := time.Now().Add(-5 * time.Second)
 	first := callAPI(h.deviceReport, payload)
 	if first.Code != http.StatusOK {
 		t.Fatalf("queue status: HTTP %d %s", first.Code, first.Body.String())
@@ -42,6 +43,17 @@ func TestDurableTelemetryPersistsBeforeAckAndReplaysSafely(t *testing.T) {
 	}
 	if err := pool.QueryRow(ctx, "SELECT count(*) FROM watch_day_info").Scan(&projected); err != nil || projected != 0 {
 		t.Fatalf("projection occurred before queue flush: %d: %v", projected, err)
+	}
+	var lastTime, lastOnline *time.Time
+	if err := pool.QueryRow(ctx, "SELECT last_time,last_online_at FROM device WHERE device_id=1").Scan(&lastTime, &lastOnline); err != nil {
+		t.Fatal(err)
+	}
+	if lastTime == nil || lastOnline == nil {
+		t.Fatalf("durably accepted report did not update device heartbeat: last_time=%v last_online_at=%v", lastTime, lastOnline)
+	}
+	if lastTime.Before(requestStarted) || lastOnline.Before(requestStarted) {
+		t.Fatalf("durably accepted report left stale heartbeat timestamps: last_time=%s last_online_at=%s started=%s",
+			lastTime.Format(time.RFC3339Nano), lastOnline.Format(time.RFC3339Nano), requestStarted.Format(time.RFC3339Nano))
 	}
 	replay := callAPI(h.deviceReport, payload)
 	if replay.Code != http.StatusConflict {
