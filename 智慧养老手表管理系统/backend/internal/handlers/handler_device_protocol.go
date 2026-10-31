@@ -219,11 +219,16 @@ func (h *Handler) deviceBind(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	now := time.Now()
-	// Binding must not restore a stale status, credential or metadata snapshot.
-	ct, err := tx.Exec(ctx,
-		`UPDATE device SET old_id=$1, family_id=$2, bind_time=$3,
-		 last_time=GREATEST(COALESCE(last_time,$3),$3) WHERE device_id=$4`,
-		*bc.OldID, bc.FamilyID, now, d.ID)
+	// Binding is not a heartbeat. Keep the last real observation and clear
+	// acknowledgements only when the device acquires a different owner.
+	bindingChanged := d.OldID == nil || *d.OldID != *bc.OldID
+	updateSQL := `UPDATE device SET old_id=$1, family_id=$2, bind_time=$3 WHERE device_id=$4`
+	if bindingChanged {
+		updateSQL = `UPDATE device SET old_id=$1, family_id=$2, bind_time=$3,
+			person_handled=0, person_handled_at=NULL, rate_handled=0, pre_handled=0,
+			handled_seq=-1 WHERE device_id=$4`
+	}
+	ct, err := tx.Exec(ctx, updateSQL, *bc.OldID, bc.FamilyID, now, d.ID)
 	if err != nil {
 		rollback()
 		response.Error500(w, ref())
