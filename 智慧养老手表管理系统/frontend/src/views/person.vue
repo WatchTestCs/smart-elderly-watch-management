@@ -28,58 +28,7 @@
       v-model="oldDialogVisible"
       @close="closeRoleAddDialog"
       width="30%">
-      <el-form label-width="80px" :model="oldForm" :rules="rules"  ref="addoldFormRef">
-        <el-form-item label="姓名" prop="name">
-          <el-input v-model="oldForm.name"></el-input>
-        </el-form-item>
-        
-		<el-form-item label="性别" prop="sex">
-		<el-radio-group v-model="oldForm.sex">
-		  <el-radio value="男">男</el-radio>
-		  <el-radio value="女">女</el-radio>
-		</el-radio-group>
-		</el-form-item>
-		<el-form-item label="电话" prop="phone">
-		<el-input v-model="oldForm.phone"></el-input>
-		</el-form-item>
-		<el-form-item label="房间" prop="room">
-		<el-input v-model="oldForm.room"></el-input>
-		</el-form-item>
-		<el-form-item label="病史" prop="illness">
-		<el-input v-model="oldForm.illness"></el-input>
-		</el-form-item>
-		<el-form-item label="过敏药物" prop="warn">
-		<el-input v-model="oldForm.warn"></el-input>
-		</el-form-item>
-		<el-form-item label="喜好食物" prop="foodLike">
-		<el-input v-model="oldForm.foodLike"></el-input>
-		</el-form-item>
-		<el-form-item label="忌口食物" prop="foodHate">
-		<el-input v-model="oldForm.foodHate"></el-input>
-		</el-form-item>
-		<el-form-item label="常用药物" prop="drag">
-		<el-input v-model="oldForm.drag"></el-input>
-		</el-form-item>
-		<el-form-item label="出生日期" prop="bothdate">
-
-		  <el-date-picker type="date" placeholder="选择日期" value-format="YYYY-MM-DD" v-model="oldForm.bothdate" style="width: 100%;"></el-date-picker>
-
-		</el-form-item>
-		<el-form-item label="监护人" prop="customerId">
-
-				<el-select class="guardian-select" v-model="oldForm.customerId" placeholder="请选择监护人" :loading="customerLoading" :aria-busy="String(customerLoading)">
-				<el-option v-for="item in options"
-      :key="item.customerId"
-      :label="item.customerName"
-      :value="item.customerId">
-			</el-option>
-			</el-select>
-          <p v-if="customerError" role="alert">{{ customerError }} <el-button plain :loading="customerLoading" @click="addCustomerList">重新加载监护人</el-button></p>			
-
-		
-		</el-form-item>
-        <p>建档后可在设备管理中关联手表。</p>
-      </el-form>
+      <ResidentForm :draft="oldForm" :rules="rules" ref="addoldFormRef" :options="options" :customer-loading="customerLoading" :customer-error="customerError" @retry-guardians="addCustomerList" />
       <template #footer><span  class="dialog-footer">
       <el-button @click="oldDialogVisible = false">取 消</el-button>
       <el-button type="primary" @click="addOldPersons('addoldFormRef')">确 定</el-button>
@@ -90,64 +39,7 @@
       title="角色编辑"
       v-model="oldEditDialogVisible"
       width="30%">
-      <el-form label-width="80px" :rules="rules" :model="oldEditForm" ref="editoldFormRef">
-        		<el-form-item label="姓名" prop="name">
-        			<el-input v-model="oldEditForm.name"></el-input>
-        		</el-form-item>
-        		<el-form-item label="年龄" prop="oldId" style="display: none;">
-        			<el-input v-model="oldEditForm.oldId"></el-input>
-        		</el-form-item>
-        <el-form-item label="性别" prop="sex">
-        <el-radio-group v-model="oldEditForm.sex">
-        	<el-radio value="男">男</el-radio>
-        	<el-radio value="女">女</el-radio>
-        </el-radio-group>
-        </el-form-item>
-        <el-form-item label="电话" prop="phone">
-        <el-input v-model="oldEditForm.phone"></el-input>
-        </el-form-item>
-        <el-form-item label="房间" prop="room">
-        <el-input v-model="oldEditForm.room"></el-input>
-        </el-form-item>
-        <el-form-item label="病史" prop="illness">
-        <el-input v-model="oldEditForm.illness"></el-input>
-        </el-form-item>
-        <el-form-item label="过敏药物" prop="warn">
-        <el-input v-model="oldEditForm.warn"></el-input>
-        </el-form-item>
-        <el-form-item label="喜好食物" prop="foodLike">
-        <el-input v-model="oldEditForm.foodLike"></el-input>
-        </el-form-item>
-        <el-form-item label="忌口食物" prop="foodHate">
-        <el-input v-model="oldEditForm.foodHate"></el-input>
-        </el-form-item>
-        <el-form-item label="常用药物" prop="drag">
-        <el-input v-model="oldEditForm.drag"></el-input>
-        </el-form-item>
-        <el-form-item label="出生日期" prop="bothdate">
-
-        	<el-date-picker type="date" placeholder="选择日期" value-format="YYYY-MM-DD" v-model="oldEditForm.bothdate" style="width: 100%;"></el-date-picker>
-
-        </el-form-item>
-        <el-form-item label="监护人" prop="customerId">
-
-        		<el-select class="guardian-select" v-model="oldEditForm.customerId" placeholder="请选择监护人" :loading="customerLoading" :aria-busy="String(customerLoading)">
-        		<el-option v-for="item in options"
-      :key="item.customerId"
-      :label="item.customerName"
-      :value="item.customerId">
-			</el-option>
-        		
-        	</el-select>
-          <p v-if="customerError" role="alert">{{ customerError }} <el-button plain :loading="customerLoading" @click="addCustomerList">重新加载监护人</el-button></p>			
-
-        
-        </el-form-item>
-				<el-form-item label="手表编号" prop="deviceId">
-					<el-input :model-value="oldEditForm.deviceId || '尚未关联'" readonly></el-input>
-					<span>设备关联请在设备管理中修改。</span>
-				</el-form-item>
-      </el-form>
+      <ResidentForm editing :draft="oldEditForm" :rules="rules" ref="editoldFormRef" :options="options" :customer-loading="customerLoading" :customer-error="customerError" @retry-guardians="addCustomerList" />
       <template #footer><span  class="dialog-footer">
       <el-button @click="oldEditDialogVisible = false">取 消</el-button>
       <el-button type="primary" @click="editOldPerson">确 定</el-button>
@@ -217,10 +109,12 @@
 
 <script>
 import axios from 'axios'
+import { residentCommandMethods } from './person.command-methods'
 import RecordCards from '@/components/RecordCards.vue'
+import ResidentForm from '@/components/records/ResidentForm.vue'
 
 export default {
-  components: { RecordCards },
+  components: { RecordCards, ResidentForm },
   data () {
     var checkPhone = (rule, value, callback) => {
       const phoneReg = /^1[3|4|5|7|8][0-9]{9}$/
@@ -300,6 +194,7 @@ export default {
     this.addCustomerList()
   },
   methods: {
+    ...residentCommandMethods,
     searchOldPersons (keepPage = false) {
       if (this.isLoading) return
       this.isLoading = true
@@ -330,75 +225,6 @@ export default {
         }).finally(function () { _this.isLoading = false })
 
     },
-    addOldPersons () {
-      var _this = this
-      // 提交前执行表单校验（手机号格式等），此前规则定义了但从未被调用
-      this.$refs.addoldFormRef.validate(function (valid) {
-        if (!valid) return
-        var param = _this.oldForm
-        axios.post('api/v1/oldPerson/add',
-          param,
-          {
-            headers: {
-              'content-type': 'application/json'
-            },
-            withCredentials: true
-          }).then(function (response) {
-
-          if (response.data.returnCode === '1111') {
-            _this.oldDialogVisible = false
-            _this.searchOldPersons()
-            _this.$message({
-              type: 'success',
-              message: '添加老人成功'
-            })
-          } else {
-            _this.$message({
-              type: 'error',
-              message: '添加老人失败'
-            })
-          }
-        })
-          .catch(function (error) {
-            console.log(error)
-          })
-      })
-    },
-    closeRoleAddDialog () {
-      this.$refs.addoldFormRef.resetFields()
-    },
-    editOldPerson () {
-      this.addCustomerList()
-      var _this = this
-      this.$refs.editoldFormRef.validate(function (valid) {
-        if (!valid) return
-        axios.post('api/v1/oldPerson/update', _this.oldEditForm,
-          {
-            headers: {
-              'content-type': 'application/json'
-            },
-            withCredentials: true
-          }).then(function (response) {
-
-          if (response.data.returnCode === '1111') {
-            _this.oldEditDialogVisible = false
-            _this.$message({
-              type: 'success',
-              message: '编辑老人信息成功'
-            })
-            _this.searchOldPersons()
-          } else {
-            _this.$message({
-              type: 'error',
-              message: '编辑老人信息失败，请检查填写内容后重试'
-            })
-          }
-        })
-          .catch(function (error) {
-            console.log(error)
-          })
-      })
-    },
     async addCustomerList () {
       if (this.customerLoading) return
       this.customerLoading = true
@@ -419,38 +245,6 @@ export default {
         this.options = []
         this.customerError = '监护人选项暂时无法加载，请重试。'
       } finally { this.customerLoading = false }
-    },
-    async deleteOldPerson (oldId) {
-      try {
-        await this.$confirm('此操作将永久删除该长者信息，是否继续？', '提示', {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          type: 'warning'
-        })
-      } catch (err) {
-        this.$message({ type: 'info', message: '已取消删除' })
-        return
-      }
-
-      try {
-        const response = await axios.post('api/v1/oldPerson/delete', { oldId }, {
-          headers: { 'content-type': 'application/json' },
-          withCredentials: true
-        })
-        if (response.data.returnCode !== '1111') {
-          this.$message({ type: 'error', message: '删除失败，请刷新列表后重试' })
-          return
-        }
-        this.$message({ type: 'success', message: '删除信息成功' })
-        this.searchOldPersons()
-      } catch (error) {
-        this.$message({
-          type: 'error',
-          message: error.response?.status === 409
-            ? '请先解除该长者名下设备绑定，再删除长者'
-            : '删除失败，请稍后重试'
-        })
-      }
     },
     handleeditOldPerson (index, row) {
       this.oldEditDialogVisible = true
