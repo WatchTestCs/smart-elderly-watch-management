@@ -42,7 +42,7 @@ func TestCompileMySQLQueryRewrites(t *testing.T) {
 
 		// 6. ON CONFLICT 家族
 		{"ON CONFLICT DO UPDATE 且 excluded 转 VALUES", "INSERT INTO t(a,b) VALUES($1,$2) ON CONFLICT(a) DO UPDATE SET b=EXCLUDED.b", "INSERT INTO t(a,b) VALUES(?,?) ON DUPLICATE KEY UPDATE b=VALUES(b)", []int{0, 1}},
-		{"DO NOTHING 默认用主键 id", "INSERT INTO care_notification_outbox(a) VALUES($1) ON CONFLICT DO NOTHING", "INSERT INTO care_notification_outbox(a) VALUES(?) ON DUPLICATE KEY UPDATE id=id", []int{0}},
+		{"DO NOTHING 默认用主键 id", "INSERT INTO care_notification_outbox(a) VALUES($1) ON CONFLICT DO NOTHING", "INSERT INTO care_notification_outbox(a) VALUES(?) ON DUPLICATE KEY UPDATE `a`=`a`", []int{0}},
 
 		// 7. 行锁语法次序
 		{"SKIP LOCKED 的 LIMIT 前移", "SELECT id FROM message_outbox WHERE status='pending' ORDER BY id FOR UPDATE SKIP LOCKED LIMIT 20", "SELECT id FROM message_outbox WHERE status='pending' ORDER BY id LIMIT 20 FOR UPDATE SKIP LOCKED", nil},
@@ -174,7 +174,7 @@ func TestCompileMySQLQueryHasNoBusinessTableSpecialCases(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if plan.sql != "INSERT INTO watch_info(a) VALUES(?) ON DUPLICATE KEY UPDATE id=id" {
+	if plan.sql != "INSERT INTO watch_info(a) VALUES(?) ON DUPLICATE KEY UPDATE `a`=`a`" {
 		t.Fatalf("watch_info must use only generic DO NOTHING translation now: %s", plan.sql)
 	}
 }
@@ -198,5 +198,38 @@ func TestCompileMySQLQueryPreservesSQLComments(t *testing.T) {
 	}
 	if _, err := compileMySQLQuery("SELECT 1 /* unfinished"); err == nil {
 		t.Fatal("unterminated block comment must fail")
+	}
+}
+
+func TestDoNothingUsesActualInsertColumnAndDoesNotRewriteLiterals(t *testing.T) {
+	plan, err := compileMySQLQuery("INSERT INTO watch_info(device_id) VALUES($1) ON CONFLICT(device_id) DO NOTHING")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "INSERT INTO watch_info(device_id) VALUES(?) ON DUPLICATE KEY UPDATE `device_id`=`device_id`"
+	if plan.sql != want {
+		t.Fatalf("wrong no-op conflict translation: got %q want %q", plan.sql, want)
+	}
+	plan, err = compileMySQLQuery("SELECT 'ON CONFLICT DO NOTHING EXCLUDED.value AS varchar INTERVAL \'3 days\''")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want = "SELECT 'ON CONFLICT DO NOTHING EXCLUDED.value AS varchar INTERVAL \'3 days\''"
+	if plan.sql != want {
+		t.Fatalf("literal changed by dialect rewrite: got %q want %q", plan.sql, want)
+	}
+	if _, err := compileMySQLQuery("INSERT INTO t VALUES($1) ON CONFLICT DO NOTHING"); err == nil {
+		t.Fatal("ambiguous insert without column list must fail closed")
+	}
+}
+
+func TestDialectRewritesDoNotTouchQuotedIdentifiersOrComments(t *testing.T) {
+	query := "SELECT \"TO_CHAR(create_time,'YYYY-MM-DD')\", \"INTERVAL '3 days'\" -- TO_CHAR(create_time,'YYYY-MM-DD') INTERVAL '3 days'\n"
+	plan, err := compileMySQLQuery(query)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if plan.sql != query {
+		t.Fatalf("dialect rewrite changed quoted identifier or comment: got %q want %q", plan.sql, query)
 	}
 }

@@ -67,8 +67,6 @@ func testLegacyTransfer(t *testing.T, version int) {
 		"INSERT INTO ratepre(id,device_id,old_id,hr,bp) VALUES(9,5,11,72,NULL)",
 		"INSERT INTO image_blob(name,content_sha256,size_bytes,state) VALUES('elder/avatar.png',repeat('a',64),128,'ready')",
 		"INSERT INTO device_request_nonces(device_id,nonce_digest,expires_at) VALUES(5,decode(repeat('ab',32),'hex'),now()+interval '10 minutes')",
-		"INSERT INTO telemetry_inbox(device_id,elder_id,binding_epoch,request_id,payload,status,attempts,next_retry_at,created_at) VALUES(5,11,1,'queued-import','sealed-payload','pending',2,now()+interval '30 seconds',now())",
-		"INSERT INTO device_report_receipt(device_id,binding_epoch,request_id,payload_digest,result_json) VALUES(5,1,'report-import',repeat('b',64),'{\"queued\":true}')",
 	} {
 		if _, err = source.Exec(ctx, query); err != nil {
 			t.Fatal(err)
@@ -90,6 +88,16 @@ func testLegacyTransfer(t *testing.T, version int) {
 		if _, err = source.Exec(ctx, "INSERT INTO health_change VALUES(4,11,$1,$2)", id, payload); err != nil {
 			t.Fatal(err)
 		}
+	}
+	bindingEpoch := int64(1)
+	if version >= 7 {
+		bindingEpoch = 3
+	}
+	if _, err = source.Exec(ctx, "INSERT INTO telemetry_inbox(device_id,elder_id,binding_epoch,request_id,payload,status,attempts,next_retry_at,created_at) VALUES(5,11,$1,'queued-import','sealed-payload','pending',2,now()+interval '30 seconds',now())", bindingEpoch); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = source.Exec(ctx, "INSERT INTO device_report_receipt(device_id,binding_epoch,request_id,payload_digest,result_json) VALUES(5,$1,'report-import',repeat('b',64),'{\"queued\":true}')", bindingEpoch); err != nil {
+		t.Fatal(err)
 	}
 	counts, err := db.TransferLegacy(ctx, source, target, false)
 	if err != nil || counts["ratepre"] != 1 || counts["app_metadata"] != 1 ||
