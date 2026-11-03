@@ -38,9 +38,11 @@ def audit(path, mode):
                 failures.append({"package": key[0], "test": key[1], "error": "unapproved skip"})
     if counts["pass"] < 100:
         failures.append({"error": "missing or truncated test stream (<100 passing tests)"})
-    required = {"TestCareSOSOutboxAuditAndState", "TestCareAdminTransitionsAndFamilyIsolation", "TestCareReceiptRequiresTrustedGatewaySignature"}
+    required = {"TestCareSOSOutboxAuditAndState", "TestCareAdminTransitionsAndFamilyIsolation", "TestCareReceiptRequiresTrustedGatewaySignature", "TestProtectedAdministratorHTTP"}
     if mode == "mysql":
-        required |= {"TestCapabilitiesRollbackAndReapply", "TestHighCardinalityHardCaps256Clients", "TestKeyRotationAndRetirementFailClosed", "TestImageS3TwoInstancesAndRealRestore", "TestCareFullHTTPChainAfterRealGatewayTimeout"}
+        required |= {"TestCapabilitiesRollbackAndReapply", "TestUserPhoneExpansionRestart", "TestMySQLMigrationLineEndingsAndTampering", "TestAdministratorPhoneMySQL", "TestProtectUserPhonesCommandMySQL", "TestHighCardinalityHardCaps256Clients", "TestKeyRotationAndRetirementFailClosed", "TestRekeyMySQL", "TestProjectionRekeyCommandUsesMySQLSource", "TestImageS3TwoInstancesAndRealRestore", "TestCareFullHTTPChainAfterRealGatewayTimeout"}
+    else:
+        required.add("TestProjectionRekeyPostgres")
     for name in sorted(required - passed):
         failures.append({"test": name, "error": "required test did not pass"})
     return {"mode": mode, "counts": dict(counts), "skips": skips, "failures": failures, "accepted": not failures}

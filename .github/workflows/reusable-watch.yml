@@ -45,6 +45,9 @@ jobs:
             }
           }
           'Preflight contract passed; native compilation has not run.' | Set-Content (Join-Path $evidence 'result.txt')
+      - name: Verify SDK version and archive rejection contracts
+        shell: pwsh
+        run: ./SuiningWatch/scripts/test-sdk.ps1
       - if: always()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
         with:
@@ -54,14 +57,28 @@ jobs:
 
   native:
     name: HarmonyOS SDK compile (no hardware)
-    if: ${{ inputs.sdk_url != '' || inputs.sdk_sha256 != '' }}
     runs-on: windows-latest
-    timeout-minutes: 20
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Record the reviewed SDK lock
+        id: sdk
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          . ./SuiningWatch/scripts/check-sdk.ps1
+          $lock = Get-SuiningSdkLock
+          "sha256=$($lock.archiveSha256)" >> $env:GITHUB_OUTPUT
+          New-Item -ItemType Directory -Path evidence/ci/watch-native -Force | Out-Null
+          Copy-Item -LiteralPath SuiningWatch/scripts/sdk-lock.json -Destination evidence/ci/watch-native/sdk-lock.json
+      - name: Cache the pinned archive (always verify before use)
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
+        with:
+          path: ${{ runner.temp }}/watch-commandline.zip
+          key: watch-commandline-windows-${{ steps.sdk.outputs.sha256 }}
       - name: Acquire versioned SDK and compile unsigned wearable HAP
         shell: pwsh
         env:
@@ -72,16 +89,21 @@ jobs:
           $evidence = Join-Path $PWD 'evidence/ci/watch-native'
           New-Item -ItemType Directory -Path $evidence -Force | Out-Null
           git rev-parse HEAD | Set-Content (Join-Path $evidence 'source-sha.txt')
+          . ./SuiningWatch/scripts/check-sdk.ps1
+          $lock = Get-SuiningSdkLock
           $url = $env:SDK_ARCHIVE_URL
+          if (!$url) { $url = $lock.archiveUrl }
           $uri = [Uri]$url
           if ($uri.Scheme -ne 'https' -or $uri.UserInfo) { throw 'SDK must use an HTTPS URL without embedded credentials' }
-          if ($env:SDK_ARCHIVE_SHA256 -notmatch '^[a-fA-F0-9]{64}$') { throw 'An expected SDK SHA-256 is required before executing downloaded tools' }
+          if ($env:SDK_ARCHIVE_SHA256 -and $env:SDK_ARCHIVE_SHA256 -ine $lock.archiveSha256) { throw 'SDK checksum override differs from the reviewed lock' }
           $uri.GetLeftPart([UriPartial]::Path) | Set-Content (Join-Path $evidence 'sdk-source.txt')
-          $archive = Join-Path $env:RUNNER_TEMP 'watch-commandline-6.1.1.280.zip'
-          curl.exe --fail --location --connect-timeout 20 --max-time 600 --retry 1 --output $archive $url
-          if ($LASTEXITCODE -ne 0) { throw 'SDK download failed; native compilation has not run' }
+          $archive = Join-Path $env:RUNNER_TEMP 'watch-commandline.zip'
+          if (!(Test-Path -LiteralPath $archive)) {
+            curl.exe --fail --location --globoff --connect-timeout 20 --max-time 600 --retry 1 --output $archive --url $url
+            if ($LASTEXITCODE -ne 0) { throw 'SDK download failed; native compilation has not run' }
+          }
+          Assert-SuiningSdkArchive -Archive $archive -ExpectedSha256 $env:SDK_ARCHIVE_SHA256
           Get-FileHash -LiteralPath $archive -Algorithm SHA256 | ConvertTo-Json | Set-Content (Join-Path $evidence 'sdk-sha256.json')
-          if ((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash -ine $env:SDK_ARCHIVE_SHA256) { throw 'SDK checksum mismatch; archive will not be extracted or executed' }
           $toolDirectory = Join-Path $env:RUNNER_TEMP 'watch-sdk'
           Expand-Archive -LiteralPath $archive -DestinationPath $toolDirectory
           $toolRoot = Join-Path $toolDirectory 'command-line-tools'

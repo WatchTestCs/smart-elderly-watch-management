@@ -1,16 +1,22 @@
 package db_test
 
 import (
+	"bytes"
 	"context"
+	"encoding/base64"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"suining-care/internal/db"
 	"suining-care/internal/db/dbtest"
+	"suining-care/internal/securestore"
+	"suining-care/internal/userphone"
 )
 
 func TestLegacyTransferIsCheckedAndAtomic(t *testing.T) {
@@ -48,6 +54,11 @@ func testLegacyTransfer(t *testing.T, version int) {
 		t.Fatal(err)
 	}
 	if version < 8 {
+		if _, err = source.Exec(ctx, "DROP TABLE account_phone_key_state; ALTER TABLE users DROP CONSTRAINT ck_users_phone_storage, DROP COLUMN user_phone_cipher,DROP COLUMN user_phone_lookup,DROP COLUMN user_phone_protected"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if version < 8 {
 		if _, err = source.Exec(ctx, "ALTER TABLE health_sample DROP COLUMN source,DROP COLUMN source_device,DROP COLUMN metric,DROP COLUMN semantics,DROP COLUMN sample_start,DROP COLUMN sample_end,DROP COLUMN deleted"); err != nil {
 			t.Fatal(err)
 		}
@@ -59,6 +70,37 @@ func testLegacyTransfer(t *testing.T, version int) {
 	}
 	for _, query := range []string{"INSERT INTO users(user_id,user_name) VALUES(7,'主管')", "INSERT INTO oldperson(old_id,name) VALUES(11,'长者')", "INSERT INTO device(device_id,device_no,secret,old_id) VALUES(5,'IMPORT','hashed-secret',11)", "UPDATE oldperson SET device_id=5 WHERE old_id=11", "INSERT INTO ratepre(id,device_id,old_id,hr,bp) VALUES(9,5,11,72,NULL)"} {
 		if _, err = source.Exec(ctx, query); err != nil {
+			t.Fatal(err)
+		}
+	}
+	var phoneBox *securestore.Box
+	const administratorPhone = "13800000007"
+	if version == 8 {
+		phoneBox, err = securestore.New(base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{17}, 32)))
+		if err != nil {
+			t.Fatal(err)
+		}
+		phone := administratorPhone
+		protected, err := userphone.Seal(phoneBox, 7, &phone)
+		if err != nil {
+			t.Fatal(err)
+		}
+		tx, err := db.Postgres(source).Begin(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer func() {
+			if err := tx.Rollback(ctx); err != nil && !errors.Is(err, pgx.ErrTxClosed) {
+				t.Error(err)
+			}
+		}()
+		if err := userphone.BindLookupKey(ctx, tx, phoneBox); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := tx.Exec(ctx, "UPDATE users SET user_phone_cipher=$1,user_phone_lookup=$2,user_phone_protected=true WHERE user_id=7", protected.Cipher, protected.Lookup); err != nil {
+			t.Fatal(err)
+		}
+		if err := tx.Commit(ctx); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -89,6 +131,18 @@ func testLegacyTransfer(t *testing.T, version int) {
 	}
 	if _, err = db.TransferLegacy(ctx, source, target, true); err != nil {
 		t.Fatal(err)
+	}
+	if phoneBox != nil {
+		var protected userphone.Record
+		if err := target.QueryRow(ctx, "SELECT user_phone,user_phone_cipher,user_phone_lookup,user_phone_protected FROM users WHERE user_id=7").Scan(&protected.Legacy, &protected.Cipher, &protected.Lookup, &protected.Protected); err != nil {
+			t.Fatal(err)
+		}
+		if phone, err := protected.Open(phoneBox, 7); err != nil || phone == nil || *phone != administratorPhone || protected.Legacy != nil {
+			t.Fatal("import changed administrator phone authentication or left plaintext", err)
+		}
+		if index, err := userphone.SearchIndex(ctx, target, phoneBox, administratorPhone); err != nil || protected.Lookup == nil || index != *protected.Lookup {
+			t.Fatal("import omitted administrator lookup-key binding", err)
+		}
 	}
 	var nameRead string
 	var hr int
@@ -122,7 +176,7 @@ func testLegacyTransfer(t *testing.T, version int) {
 	if _, err = db.TransferLegacy(ctx, source, failed, true); err == nil {
 		t.Fatal("failed import reported success")
 	}
-	for _, table := range []string{"users", "device", "analytics_outbox"} {
+	for _, table := range []string{"users", "device", "analytics_outbox", "account_phone_key_state"} {
 		if err = failed.QueryRow(ctx, "SELECT count(*) FROM "+table).Scan(&count); err != nil || count != 0 {
 			t.Fatalf("partial import leaked into %s: %d %v", table, count, err)
 		}

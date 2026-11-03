@@ -52,6 +52,15 @@ jobs:
       - name: Enforce native Go API boundary
         run: python3 scripts/check-api-boundary.py
 
+      - name: Prepare locked modules with bounded network retries
+        shell: bash
+        run: |
+          mkdir -p evidence/ci/backend-${{ matrix.go-version }}
+          git rev-parse HEAD > evidence/ci/backend-${{ matrix.go-version }}/source-sha.txt
+          python3 scripts/reliability/prepare-go-modules.py \
+            --backend 智慧养老手表管理系统/backend \
+            --output evidence/ci/backend-${{ matrix.go-version }}
+
       - name: Check generated OpenAPI contract
         run: python3 scripts/generate-openapi.py --check
 
@@ -75,6 +84,8 @@ jobs:
       - name: Run backend tests, build and vet
         working-directory: 智慧养老手表管理系统/backend
         env:
+          GOPROXY: 'off'
+          GOSUMDB: 'off'
           TEST_MYSQL_DSN: root:ci_root_only@tcp(localhost:3306)/suining_test
           TEST_DATABASE_URL: postgres://careold:careold@localhost:5432/careold_test?sslmode=disable
           TEST_S3_ENDPOINT: http://127.0.0.1:8333
@@ -93,9 +104,9 @@ jobs:
           PGPASSWORD=careold psql -h 127.0.0.1 -U careold -d careold_test -Atc 'SELECT version(); SHOW fsync;' > "$evidence/postgres-environment.txt"
           docker inspect --format '{{.Config.Image}} {{.Image}}' '${{ job.services.mysql.id }}' '${{ job.services.postgres.id }}' > "$evidence/database-images.txt"
           go list -m -json all > "$evidence/modules.jsonl"
-          go test -json -race -count=1 -timeout 600s ./... > "$evidence/mysql.jsonl" 2>&1
+          go test -json -race -count=1 -timeout 900s ./... > "$evidence/mysql.jsonl" 2>&1
           python3 ../../scripts/reliability/audit-go-results.py "$evidence/mysql.jsonl" --mode mysql --output "$evidence/mysql-summary.json"
-          TEST_MYSQL_DSN= go test -json -race -count=1 -timeout 600s ./internal/db ./internal/handlers ./internal/care ./internal/analytics > "$evidence/postgres.jsonl" 2>&1
+          TEST_MYSQL_DSN= go test -json -race -count=1 -timeout 900s ./internal/db ./internal/handlers ./internal/care ./internal/analytics ./internal/rekey ./internal/userphone > "$evidence/postgres.jsonl" 2>&1
           python3 ../../scripts/reliability/audit-go-results.py "$evidence/postgres.jsonl" --mode postgres --output "$evidence/postgres-summary.json"
           go build ./... > "$evidence/build.txt" 2>&1
           go vet ./... > "$evidence/vet.txt" 2>&1

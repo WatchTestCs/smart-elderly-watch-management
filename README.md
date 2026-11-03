@@ -155,12 +155,15 @@ cd 智慧养老手表管理系统
 
 ## 验证与性能
 
+UI Quality 和固定 SDK 的原生 HAP 编译随每次 Preview CI 执行。`Core CI / required` 仅表示基础检查通过；正式候选还需实际 Windows 安装包测试和同一 SHA 的完整证据，操作、SDK 来源与失败条件见[发布门禁](docs/reliability/release-governance.md)。
+
 | 验证维度 | 当前依据 |
 | --- | --- |
 | 分支自动化检查 | [Preview CI](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/workflows/ci.yml) |
 | 当前版本发布信息 | [2.1.0 版本说明](docs/releases/2.1.0.md)及发行附件中的 manifest |
 | 后端回归 | 在 `智慧养老手表管理系统/backend` 中执行 `go test -count=1 ./...` 与 `go vet ./...` |
 | 前端构建 | 在 `智慧养老手表管理系统/frontend` 中执行 `npm ci` 与 `npm run build` |
+| API 类型 | 同目录执行 `npm run api:check` 与 `npm run test:api-drift`，需要 Go 在 PATH；生成及覆盖边界见 [API 类型说明](docs/quality/api-type-generation.md) |
 | 手表协议 | 在 `SuiningWatch` 中执行 `npm ci` 与 `npm test`；这不等同于 DevEco 原生编译或真机验收 |
 
 如需运行完整数据库集成与竞态测试，请先配置专用测试库环境变量 `TEST_MYSQL_DSN` 与 `TEST_DATABASE_URL`，再执行 `go test -race -count=1 -timeout 600s ./...`（未配置时数据库集成用例会自动跳过）。

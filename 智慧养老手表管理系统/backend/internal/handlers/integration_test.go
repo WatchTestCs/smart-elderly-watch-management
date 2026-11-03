@@ -375,6 +375,7 @@ func TestIntegrationBindDeleteRace(t *testing.T) {
 func TestNativeSetupRequiresDesktopToken(t *testing.T) {
 	pool := testDatabase(t)
 	h := testHandler(t, pool)
+	h.Box = adminPhoneTestBox(t)
 	h.Cfg.DesktopToken = "test-only-bootstrap-token"
 	mux := http.NewServeMux()
 	h.routeAuth(mux)
@@ -416,9 +417,9 @@ func migrateTestDB(ctx context.Context, pool *db.Database) error {
 }
 func expectedMigrations(pool *db.Database) int {
 	if pool.IsMySQL() {
-		return 19
+		return 20
 	}
-	return 18
+	return 19
 }
 
 func lockWaitQuery(pool *dbstore.Database, deleting bool) string {

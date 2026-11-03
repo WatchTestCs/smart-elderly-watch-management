@@ -20,6 +20,12 @@ jobs:
           persist-credentials: false
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
+      - name: Record exact frontend source
+        shell: bash
+        run: |
+          mkdir -p ../../evidence/ci/frontend
+          git rev-parse HEAD > ../../evidence/ci/frontend/source-sha.txt
+
       - name: Set up Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -30,14 +36,31 @@ jobs:
       - name: Enforce native Go API boundary
         run: python3 ../../scripts/check-api-boundary.py
 
+      - name: Set up Go for the published OpenAPI export
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
+        with:
+          go-version: '1.26.10'
+          cache-dependency-path: 智慧养老手表管理系统/backend/go.sum
+
       - name: Install locked dependencies
         run: npm ci
+
+      - name: Prepare locked Go modules for contract generation
+        run: python3 ../../scripts/reliability/prepare-go-modules.py --backend ../backend --output ../../evidence/ci/frontend
+
+      - name: Check generated API types against the published Go document
+        env:
+          GOPROXY: 'off'
+          GOSUMDB: 'off'
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run api:check 2>&1 | tee ../../evidence/ci/frontend/api-types.txt
+          npm run test:api-drift 2>&1 | tee ../../evidence/ci/frontend/api-drift.txt
 
       - name: Unit tests and incremental TypeScript checks
         shell: bash
         run: |
-          mkdir -p ../../evidence/ci/frontend
-          git rev-parse HEAD > ../../evidence/ci/frontend/source-sha.txt
           node --version > ../../evidence/ci/frontend/node-version.txt
           set -o pipefail
           status=0

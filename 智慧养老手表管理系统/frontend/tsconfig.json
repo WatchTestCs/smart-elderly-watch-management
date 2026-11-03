@@ -6,5 +6,5 @@
     "lib": ["ES2022", "DOM"], "types": ["vite/client", "vitest/globals"],
     "baseUrl": ".", "paths": { "@/*": ["src/*"] }, "noEmit": true
   },
-  "include": ["src/router.ts", "src/element.ts", "src/store.ts", "src/api/**/*.ts", "src/composables/**/*.ts", "src/components/SecurityPanel.vue", "src/components/LatestHealthPanel.vue", "src/components/HarmonyWatchSetup.vue", "src/views/Guardians.vue", "src/env.d.ts"]
+  "include": ["src/router.ts", "src/element.ts", "src/store.ts", "src/api/**/*.ts", "src/composables/**/*.ts", "src/components/SecurityPanel.vue", "src/components/LatestHealthPanel.vue", "src/components/HarmonyWatchSetup.vue", "src/components/RecordCards.vue", "src/components/RecordCards.test.ts", "src/views/Guardians.vue", "src/env.d.ts"]
 }

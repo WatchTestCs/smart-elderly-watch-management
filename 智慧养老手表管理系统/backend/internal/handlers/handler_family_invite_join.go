@@ -6,6 +6,7 @@ import (
 	"suining-care/internal/auth"
 	"suining-care/internal/db"
 	"suining-care/internal/response"
+	"suining-care/internal/userphone"
 	"time"
 	"unicode/utf8"
 )
@@ -112,10 +113,16 @@ func (h *Handler) inviteJoin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// 手机号是否已注册
+	lookup, err := userphone.SearchIndex(ctx, tx, h.Box, registration.familyPhone)
+	if err != nil {
+		_ = tx.Rollback(ctx)
+		response.Error500(w, ref())
+		return
+	}
 	var dup bool
 	if err := tx.QueryRow(ctx,
-		`SELECT EXISTS(SELECT 1 FROM users WHERE user_phone=$1)
-		      OR EXISTS(SELECT 1 FROM family WHERE family_phone=$1)`, registration.familyPhone).Scan(&dup); err != nil {
+		`SELECT EXISTS(SELECT 1 FROM users WHERE (user_phone_protected=false AND user_phone=$1) OR (user_phone_protected=true AND user_phone_lookup=$2))
+		      OR EXISTS(SELECT 1 FROM family WHERE family_phone=$1)`, registration.familyPhone, lookup).Scan(&dup); err != nil {
 		_ = tx.Rollback(ctx)
 		response.Error500(w, ref())
 		return
@@ -143,7 +150,7 @@ func (h *Handler) inviteJoin(w http.ResponseWriter, r *http.Request) {
 	if boundFamilyID != nil {
 		err = tx.QueryRow(ctx, `SELECT family_id FROM family
 		 WHERE family_id=$1 AND family_phone=$2 AND family_password IS NULL
-		 AND NOT EXISTS(SELECT 1 FROM users WHERE user_phone=$2) FOR UPDATE`, *boundFamilyID, registration.familyPhone).Scan(&familyID)
+		 AND NOT EXISTS(SELECT 1 FROM users WHERE (user_phone_protected=false AND user_phone=$2) OR (user_phone_protected=true AND user_phone_lookup=$3)) FOR UPDATE`, *boundFamilyID, registration.familyPhone, lookup).Scan(&familyID)
 		if err != nil {
 			_ = tx.Rollback(ctx)
 			if isNotFound(err) {

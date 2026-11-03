@@ -28,6 +28,13 @@ func TransferLegacy(ctx context.Context, source *pgxpool.Pool, target *Database,
 	if hasHealth {
 		tables = append(tables, "health_clock", "health_sample", "health_change")
 	}
+	var hasPhoneBinding bool
+	if err = read.QueryRow(ctx, "SELECT to_regclass('account_phone_key_state') IS NOT NULL").Scan(&hasPhoneBinding); err != nil {
+		return nil, err
+	}
+	if hasPhoneBinding {
+		tables = append(tables, "account_phone_key_state")
+	}
 	write, err := target.Begin(ctx)
 	if err != nil {
 		return nil, err

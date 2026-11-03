@@ -259,6 +259,7 @@ func TestMySQLReturningOnlySupportsKnownGeneratedKeys(t *testing.T) {
 		{"alert_review", "id"}, {"bind_code", "id"}, {"care_incident", "id"},
 		{"device", "device_id"}, {"device_command", "id"}, {"device_fence", "id"},
 		{"family", "family_id"}, {"fence_event", "id"}, {"text", "text_id"},
+		{"users", "user_id"},
 	} {
 		if err := validateMySQLReturning(tc.table, tc.column, "INSERT INTO "+tc.table+"(x) VALUES($1)"); err != nil {
 			t.Fatalf("%s.%s should be supported: %v", tc.table, tc.column, err)
@@ -267,6 +268,7 @@ func TestMySQLReturningOnlySupportsKnownGeneratedKeys(t *testing.T) {
 	for _, tc := range []struct{ table, column, sql string }{
 		{"device", "device_no", "INSERT INTO device(device_no) VALUES($1)"},
 		{"family", "id", "INSERT INTO family(family_name) VALUES($1)"},
+		{"users", "phone", "INSERT INTO users(user_name) VALUES($1)"},
 		{"care_incident", "id", "INSERT INTO care_incident(old_id) VALUES($1) ON CONFLICT DO NOTHING"},
 		{"care_incident", "id", "INSERT INTO care_incident(old_id) VALUES($1) ON CONFLICT(old_id) DO UPDATE SET old_id=EXCLUDED.old_id"},
 	} {

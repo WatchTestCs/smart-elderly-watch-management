@@ -8,6 +8,7 @@ import (
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
+	"crypto/subtle"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -24,6 +25,20 @@ type Box struct {
 	key     []byte
 	active  string
 	readers map[string]cipher.AEAD
+}
+
+// ActiveKeyID is empty for the legacy, unversioned single-key format.
+func (b *Box) ActiveKeyID() string {
+	if b == nil {
+		return ""
+	}
+	return b.active
+}
+
+// SameLookupKey checks rotation compatibility without exposing key material.
+// Encryption rotation must not silently change recipient or audit indexes.
+func (b *Box) SameLookupKey(previous *Box) bool {
+	return b != nil && previous != nil && subtle.ConstantTimeCompare(b.key, previous.key) == 1
 }
 
 func New(encoded string) (*Box, error) {

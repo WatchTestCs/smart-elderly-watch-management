@@ -9,13 +9,15 @@ $projectRoot = Split-Path $PSScriptRoot -Parent
 if (!$ReportPath) { $ReportPath = Join-Path $projectRoot 'artifacts\native-build.json' }
 $ReportPath = [IO.Path]::GetFullPath($ReportPath)
 New-Item -ItemType Directory -Path (Split-Path $ReportPath -Parent) -Force | Out-Null
-$report = [ordered]@{ status = 'blocked'; source = ''; dirty = $false; toolchain = ''; sdk = ''; artifact = $null; error = ''; startedAt = [DateTime]::UtcNow.ToString('o') }
+$report = [ordered]@{ status = 'blocked'; source = ''; dirty = $false; toolchain = ''; toolchainVersion = ''; sdk = ''; sdkApi = ''; etsVersion = ''; artifact = $null; error = ''; startedAt = [DateTime]::UtcNow.ToString('o') }
 $savedEnvironment = @{}
 foreach ($name in @('NODE_PATH', 'DEVECO_SDK_HOME', 'JAVA_HOME', 'PATH')) {
   $savedEnvironment[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
 }
 Push-Location $projectRoot
 try {
+  . (Join-Path $PSScriptRoot 'check-sdk.ps1')
+  $sdkLock = Get-SuiningSdkLock
   $report.source = (& git rev-parse HEAD).Trim()
   $report.dirty = [bool](& git status --porcelain -- .)
   if ($CommandLineHome -and $DevEcoHome) { throw '请仅指定 CommandLineHome 或 DevEcoHome，避免混用工具链' }
@@ -28,6 +30,9 @@ try {
   } else {
     if (!$DevEcoHome) { $DevEcoHome = 'D:\Huawei\DevEco Studio' }
     $toolRoot = [IO.Path]::GetFullPath($DevEcoHome)
+    $productInfo = Get-Content -LiteralPath (Join-Path $toolRoot 'product-info.json') -Raw | ConvertFrom-Json
+    if ($productInfo.version -cne $sdkLock.toolchainVersion) { throw "DevEco version differs from the lock: $($sdkLock.toolchainVersion) required" }
+    $report.toolchainVersion = $productInfo.version
     $runner = Join-Path $toolRoot 'tools\node\node.exe'
     $hvigor = Join-Path $toolRoot 'tools\hvigor\hvigor\bin\hvigor.js'
     $java = Join-Path $toolRoot 'jbr'
@@ -56,6 +61,9 @@ try {
   if (!$SdkHome) { $SdkHome = Join-Path $toolRoot 'sdk' }
   if (!(Test-Path -LiteralPath (Join-Path $SdkHome 'default\openharmony\ets') -PathType Container)) { throw "缺少 SDK ETS 编译组件：$SdkHome" }
   $env:DEVECO_SDK_HOME = [IO.Path]::GetFullPath($SdkHome)
+  $metadata = Assert-SuiningSdk -SdkHome $env:DEVECO_SDK_HOME
+  $report.sdkApi = $metadata.apiVersion
+  $report.etsVersion = $metadata.version
   $report.toolchain = $toolRoot
   $report.sdk = $env:DEVECO_SDK_HOME
   $report.status = 'failed'

@@ -16,6 +16,7 @@ import (
 	"suining-care/internal/csrf"
 	"suining-care/internal/response"
 	"suining-care/internal/session"
+	"suining-care/internal/userphone"
 )
 
 func (h *Handler) routeAuth(mux *http.ServeMux) {
@@ -87,8 +88,9 @@ func (h *Handler) sessionInfo(w http.ResponseWriter, r *http.Request) {
 
 // Try the administrator account first when both roles share a phone number.
 var loginAccounts = [...]struct{ role, query string }{
-	{auth.RoleAdmin, `SELECT user_id, user_name, user_phone, password, NULL FROM users WHERE user_phone=$1`},
-	{auth.RoleFamily, `SELECT f.family_id, f.family_name, f.family_phone, f.family_password, o.old_id
+	{auth.RoleAdmin, `SELECT user_id, user_name, user_phone, password, NULL, user_phone_cipher,user_phone_lookup,user_phone_protected FROM users
+  WHERE (user_phone_protected=false AND user_phone=$1) OR (user_phone_protected=true AND user_phone_lookup=$2)`},
+	{auth.RoleFamily, `SELECT f.family_id, f.family_name, f.family_phone, f.family_password, o.old_id, NULL, NULL, false
   FROM family f LEFT JOIN oldperson o ON o.family_id=f.family_id
   WHERE f.family_phone=$1 ORDER BY o.old_id LIMIT 1`},
 }
@@ -109,17 +111,39 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 	if !h.loginAllowed(w, r, phone) {
 		return
 	}
+	lookup, err := userphone.SearchIndex(r.Context(), h.DB, h.Box, phone)
+	if internalError(w, err) {
+		return
+	}
 	compared := false
 	for _, account := range loginAccounts {
 		var id int64
 		var name, storedPhone, hash pgtype.Text
 		var oldID pgtype.Int8
-		err := h.DB.QueryRow(r.Context(), account.query, phone).Scan(&id, &name, &storedPhone, &hash, &oldID)
+		var protected userphone.Record
+		args := []any{phone}
+		if account.role == auth.RoleAdmin {
+			args = append(args, lookup)
+		}
+		err := h.DB.QueryRow(r.Context(), account.query, args...).Scan(&id, &name, &storedPhone, &hash, &oldID, &protected.Cipher, &protected.Lookup, &protected.Protected)
 		if isNotFound(err) {
 			continue
 		}
 		if internalError(w, err) {
 			return
+		}
+		if account.role == auth.RoleAdmin {
+			if storedPhone.Valid {
+				protected.Legacy = &storedPhone.String
+			}
+			opened, err := protected.Open(h.Box, id)
+			if internalError(w, err) {
+				return
+			}
+			storedPhone = pgtype.Text{}
+			if opened != nil {
+				storedPhone = pgtype.Text{String: *opened, Valid: true}
+			}
 		}
 		compared = true
 		if !auth.Matches(password, hash.String) {
@@ -228,10 +252,23 @@ func (h *Handler) setup(w http.ResponseWriter, r *http.Request) {
 	if internalError(w, err) {
 		return
 	}
-	if _, err := tx.Exec(ctx,
-		"INSERT INTO users(user_name,user_phone,password,role) VALUES($1,$2,$3,'1')",
-		name, phone, hashed); err != nil {
+	// Obtain the row identity inside this transaction before binding ciphertext
+	// to it. No plaintext phone is ever inserted by this writer.
+	var id int64
+	if err := tx.QueryRow(ctx,
+		"INSERT INTO users(user_name,password,role) VALUES($1,$2,'1') RETURNING user_id",
+		name, hashed).Scan(&id); err != nil {
 		response.Error500(w, ref())
+		return
+	}
+	protected, err := userphone.Seal(h.Box, id, &phone)
+	if internalError(w, err) {
+		return
+	}
+	if internalError(w, userphone.BindLookupKey(ctx, tx, h.Box)) {
+		return
+	}
+	if _, err := tx.Exec(ctx, `UPDATE users SET user_phone_cipher=$1,user_phone_lookup=$2,user_phone_protected=true WHERE user_id=$3`, protected.Cipher, protected.Lookup, id); internalError(w, err) {
 		return
 	}
 	if internalError(w, tx.Commit(ctx)) {

@@ -19,7 +19,7 @@
 
 原生构建现支持 `scripts/build.ps1 -CommandLineHome <command-line-tools根目录>`，
 也支持原有 `-DevEcoHome`。脚本生成带状态、源码 SHA 和 HAP 哈希的构建报告；
-CI 强制执行真实 Go/MySQL 断网恢复；独立 Windows SDK 编译入口需提供工具包地址与预期哈希，结果须查看对应运行。
+CI 强制执行真实 Go/MySQL 断网恢复及独立 Windows SDK 编译。工具包版本、API、ETS 编译器、完整大小与 SHA-256 由 `scripts/sdk-lock.json` 固定；默认从 SDL 镜像获取，缓存命中仍先校验，实际结果须查看对应 SHA 的运行。协议检查不代替原生 HAP 编译。
 详见[开发与验收说明](../docs/WATCH_INTEGRATION.md#开发与验收)。
 
 在 PowerShell 7 中执行构建脚本：

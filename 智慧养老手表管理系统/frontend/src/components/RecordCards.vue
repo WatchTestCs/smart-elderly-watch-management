@@ -1,8 +1,8 @@
 <template>
   <section class="admin-record-list" :aria-label="label">
     <div v-if="!records.length" class="care-empty-state" role="status"><strong>{{ emptyTitle }}</strong><span>记录会显示在这里，可调整搜索条件后重试。</span></div>
-    <article v-for="(row, index) in records" :key="row[keyField] == null ? index : row[keyField]" class="admin-record">
-      <header><h2>{{ row[titleKey] || '记录' }}</h2><span v-if="timeKey && row[timeKey]">{{ row[timeKey] }}</span></header>
+    <article v-for="(row, index) in records" :key="recordKey(row, index)" class="admin-record">
+      <header><h2>{{ valueAt(row, titleKey) || '记录' }}</h2><span v-if="timeKey && valueAt(row, timeKey)">{{ valueAt(row, timeKey) }}</span></header>
       <dl><template v-for="field in primaryFields" :key="field.key"><dt>{{ field.label }}</dt><dd :class="stateClass(row, field)">{{ valueOf(row, field) }}</dd></template></dl>
       <details v-if="extraFields.length" class="record-more"><summary>更多资料</summary><dl><template v-for="field in extraFields" :key="field.key"><dt>{{ field.label }}</dt><dd :class="stateClass(row, field)">{{ valueOf(row, field) }}</dd></template></dl></details>
       <div v-if="$slots.actions" class="record-actions"><slot name="actions" v-bind="{ row: row, $index: index }"></slot></div>
@@ -10,37 +10,55 @@
   </section>
 </template>
 
-<script>
-export default {
-  name: 'RecordCards',
-  props: {
-    records: { type: Array, required: true }, fields: { type: Array, required: true },
-    label: { type: String, required: true }, emptyTitle: { type: String, default: '暂无记录' },
-    titleKey: { type: String, default: 'name' }, keyField: { type: String, default: 'oldId' },
-    timeKey: { type: String, default: '' }
-  },
-  computed: {
-    primaryFields () { return this.fields.slice(0, 4) },
-    extraFields () { return this.fields.slice(4) }
-  },
-  methods: {
-    valueOf (row, field) {
-      var value = row[field.key]
-      if (field.state) {
-        if (value === 1 || value === '1') return field.state === 'fall' ? '紧急告警' : '异常'
-        if (field.handled && (row[field.handled] === 1 || row[field.handled] === '1')) return '已处理'
-        if (value === 0 || value === '0') return field.state === 'fall' ? '未告警/已处理' : '正常'
-        return '暂无状态'
-      }
-      return value == null || value === '' ? '暂未提供' : value
-    },
-    stateClass (row, field) {
-      if (!field.state) return ''
-      if (row[field.key] === 1 || row[field.key] === '1') return 'status-danger'
-      if (field.handled && (row[field.handled] === 1 || row[field.handled] === '1')) return 'status-handled'
-      return row[field.key] === 0 || row[field.key] === '0' ? 'status-normal' : 'status-unknown'
-    }
+<script setup lang="ts" generic="Row extends object">
+import { computed } from 'vue'
+
+interface RecordField {
+  key: string
+  label: string
+  state?: string
+  handled?: string
+}
+
+const props = withDefaults(defineProps<{
+  records: Row[]
+  fields: RecordField[]
+  label: string
+  emptyTitle?: string
+  titleKey?: string
+  keyField?: string
+  timeKey?: string
+}>(), { emptyTitle: '暂无记录', titleKey: 'name', keyField: 'oldId', timeKey: '' })
+
+defineSlots<{ actions(props: { row: Row; $index: number }): unknown }>()
+const primaryFields = computed(() => props.fields.slice(0, 4))
+const extraFields = computed(() => props.fields.slice(4))
+
+// The column names are supplied by each page; keep their values unknown until
+// a display or state branch explicitly handles them, without casting the row.
+function valueAt(row: Row, key: string): unknown { return Reflect.get(row, key) }
+function recordKey(row: Row, index: number): PropertyKey {
+  const value = valueAt(row, props.keyField)
+  return typeof value === 'string' || typeof value === 'number' || typeof value === 'symbol' ? value : index
+}
+function valueOf(row: Row, field: RecordField): unknown {
+  const value = valueAt(row, field.key)
+  if (field.state) {
+    if (value === 1 || value === '1') return field.state === 'fall' ? '紧急告警' : '异常'
+    const handled = field.handled ? valueAt(row, field.handled) : undefined
+    if (handled === 1 || handled === '1') return '已处理'
+    if (value === 0 || value === '0') return field.state === 'fall' ? '未告警/已处理' : '正常'
+    return '暂无状态'
   }
+  return value == null || value === '' ? '暂未提供' : value
+}
+function stateClass(row: Row, field: RecordField): string {
+  if (!field.state) return ''
+  const value = valueAt(row, field.key)
+  if (value === 1 || value === '1') return 'status-danger'
+  const handled = field.handled ? valueAt(row, field.handled) : undefined
+  if (handled === 1 || handled === '1') return 'status-handled'
+  return value === 0 || value === '0' ? 'status-normal' : 'status-unknown'
 }
 </script>
 

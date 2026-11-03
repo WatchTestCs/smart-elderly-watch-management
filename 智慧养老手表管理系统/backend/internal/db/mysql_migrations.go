@@ -40,7 +40,7 @@ func MigrateMySQL(ctx context.Context, database *Database) error {
 	if _, err = conn.ExecContext(ctx, "CREATE TABLE IF NOT EXISTS schema_migrations(name varchar(191) PRIMARY KEY,checksum char(64) NOT NULL,applied_at datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)) ENGINE=InnoDB"); err != nil {
 		return err
 	}
-	for _, name := range []string{"mysql/0001_core.sql", "mysql/0002_analytics.sql", "mysql/0003_health_samples.sql", "mysql/0004_device_capabilities.sql", "mysql/0005_platform.sql", "mysql/0006_health_performance.sql", "mysql/0007_cluster_scheduling.sql", "mysql/0008_rule_baseline_source.sql", "mysql/0009_rule_baseline_cover.sql", "mysql/0010_care_recipient_key.sql", "mysql/0011_encrypt_coordinates.sql", "mysql/0013_image_blob.sql", "mysql/0014_operational_indexes.sql", "mysql/0015_device_request_nonces.sql", "mysql/0016_durable_telemetry_inbox.sql", "mysql/0017_telemetry_observation_time.sql", "mysql/0018_daily_ownership.sql", "mysql/0019_sleep_observation_time.sql", "mysql/0020_position_metadata.sql"} {
+	for _, name := range []string{"mysql/0001_core.sql", "mysql/0002_analytics.sql", "mysql/0003_health_samples.sql", "mysql/0004_device_capabilities.sql", "mysql/0005_platform.sql", "mysql/0006_health_performance.sql", "mysql/0007_cluster_scheduling.sql", "mysql/0008_rule_baseline_source.sql", "mysql/0009_rule_baseline_cover.sql", "mysql/0010_care_recipient_key.sql", "mysql/0011_encrypt_coordinates.sql", "mysql/0013_image_blob.sql", "mysql/0014_operational_indexes.sql", "mysql/0015_device_request_nonces.sql", "mysql/0016_durable_telemetry_inbox.sql", "mysql/0017_telemetry_observation_time.sql", "mysql/0018_daily_ownership.sql", "mysql/0019_sleep_observation_time.sql", "mysql/0020_position_metadata.sql", "mysql/0021_user_phone_protection.sql"} {
 		data, err := migrations.Files.ReadFile(name)
 		if err != nil {
 			return err
@@ -49,7 +49,11 @@ func MigrateMySQL(ctx context.Context, database *Database) error {
 		var applied string
 		err = conn.QueryRowContext(ctx, "SELECT checksum FROM schema_migrations WHERE name=?", name).Scan(&applied)
 		if err == nil {
-			if applied != sum {
+			matches, checkErr := migrationChecksumMatches(data, applied)
+			if checkErr != nil {
+				return fmt.Errorf("cannot validate MySQL migration SQL: %s: %w", name, checkErr)
+			}
+			if !matches {
 				return fmt.Errorf("migration checksum changed: %s", name)
 			}
 			continue
@@ -58,8 +62,14 @@ func MigrateMySQL(ctx context.Context, database *Database) error {
 			return err
 		}
 		// Trigger statements use a single SET body, so no compound delimiters.
-		for _, statement := range strings.Split(string(data), ";") {
+		for index, statement := range strings.Split(string(data), ";") {
 			if strings.TrimSpace(statement) == "" {
+				continue
+			}
+			if name == "mysql/0021_user_phone_protection.sql" && index == 0 {
+				if err := ensureUserPhoneExpansion(ctx, conn, statement); err != nil {
+					return fmt.Errorf("MySQL migration %s: %w", name, err)
+				}
 				continue
 			}
 			if _, err = conn.ExecContext(ctx, statement); err != nil {

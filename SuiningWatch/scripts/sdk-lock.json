@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "toolchainVersion": "6.1.1.280",
+  "sdkApiVersion": "24",
+  "etsVersion": "6.1.1.125",
+  "archiveName": "commandline-tools-windows-x64-6.1.1.280.zip",
+  "archiveBytes": 2601671927,
+  "archiveUrl": "https://libsdl.org/harmonyos-devtools/commandline-tools-windows-x64-6.1.1.280.zip",
+  "archiveSha256": "829554008df4f0b48a080f920175d562a4ebc4823e914b92ef45387dc7e7d628",
+  "upstream": "https://developer.huawei.com/consumer/cn/download/",
+  "mirror": "SDL HarmonyOS development tools mirror; not a Huawei download host",
+  "checksumSource": "https://github.com/ErBWs/ohos-sdk/releases/tag/6.1.1.280",
+  "checksumAssetId": 436042192,
+  "checksumAssetSha256": "932774a57c8e2152da35749fdad45aa972b1c1cf7cc0126b1eca2ccae6abd289"
+}

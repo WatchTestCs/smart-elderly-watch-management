@@ -157,12 +157,15 @@ The build script compiles the Vue frontend, embeds the assets into the Go binary
 
 ## Validation
 
+UI Quality and native HAP compilation with the pinned SDK run with every Preview CI. `Core CI / required` covers the core checks; a formal candidate also requires actual Windows distribution tests and complete evidence for the same SHA. See the [release gates](docs/reliability/release-governance.md) for inputs, SDK provenance, and rejection conditions. The SDK archive is checksum-pinned and obtained from the SDL mirror, which is not a Huawei download host.
+
 | Area | Current reference |
 | --- | --- |
 | Preview branch automation | [Preview CI](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/workflows/ci.yml) |
 | Current release notes | [Version 2.1.0](docs/releases/2.1.0.md) and the release manifest |
 | Backend regression | Run `go test -count=1 ./...` and `go vet ./...` in `智慧养老手表管理系统/backend` |
 | Frontend build | Run `npm ci` and `npm run build` in `智慧养老手表管理系统/frontend` |
+| API types | In the same directory, run `npm run api:check` and `npm run test:api-drift` with Go on PATH; see [generation and coverage boundaries](docs/quality/api-type-generation.md) |
 | Watch protocol | Run `npm ci` and `npm test` in `SuiningWatch`; this does not replace native DevEco or physical-device validation |
 
 Database integration and race tests require dedicated disposable test databases configured through `TEST_MYSQL_DSN` and `TEST_DATABASE_URL`. Tests must never target production databases. CI results must be read from the workflow run for the exact commit being assessed.
