@@ -39,6 +39,22 @@ jobs:
     name: Backend
     uses: ./.github/workflows/reusable-backend.yml
 
+  simulator:
+    name: Watch simulator
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: '24'
+      - name: Verify simulator state machine, SOS retry and device signing
+        run: node --test watch-sim/watch-sim.test.cjs
+        working-directory: 智慧养老手表管理系统
+
   windows:
     name: Windows sidecar contract
     uses: ./.github/workflows/reusable-windows-package.yml
@@ -77,7 +93,7 @@ jobs:
   required:
     name: Release gate / required
     if: ${{ always() }}
-    needs: [frontend, watch, backend, windows, deployment, security-scan]
+    needs: [frontend, watch, simulator, backend, windows, deployment, security-scan]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -91,6 +107,7 @@ jobs:
         run: |
           test "${{ needs.frontend.result }}" = "success"
           test "${{ needs.watch.result }}" = "success"
+          test "${{ needs.simulator.result }}" = "success"
           test "${{ needs.backend.result }}" = "success"
           test "${{ needs.windows.result }}" = "success"
           test "${{ needs.deployment.result }}" = "success"
