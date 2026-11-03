@@ -190,16 +190,18 @@ function buildPayload(config, state) {
   if (state.phase !== 'fall') state.fallIssued = false;
   if (state.phase === 'sos' && !state.sosIssued) {
     state.sosIssued = true;
-    state.pendingSOS = {
-      requestId: crypto.randomBytes(16).toString('hex'), lng: state.lng, lat: state.lat
-    };
+    if (!state.pendingSOS) {
+      state.pendingSOS = {
+        requestId: crypto.randomBytes(16).toString('hex'), lng: state.lng, lat: state.lat
+      };
+    }
   }
   state.step += randomInt(3, 15);
 
   const payload = {
     deviceNo: config.deviceNo,
     secret: config.secret,
-    beTime: nowText(),
+    // The backend assigns received wall-time. Local simulator TZ may differ from the server;
     step: state.step,
     sleep: state.sleepHours,
     sleepState: state.sleepHours >= 7 ? '0' : '1',
