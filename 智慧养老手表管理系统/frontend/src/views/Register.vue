@@ -1,14 +1,14 @@
 <template>
   <div class="register-page">
     <section class="register-story">
-      <img src="/static/img/care-lakeside-artisan.webp" alt="晨光中的湖面与绿树步道" width="1536" height="1024" srcset="/static/img/care-lakeside-artisan-640.webp 640w, /static/img/care-lakeside-artisan.webp 1536w" sizes="(max-width: 760px) 100vw, 54vw" fetchpriority="high" decoding="async">
+      <img :src="heroImage" alt="晨光中的湖面与绿树步道" width="1536" height="1024" :srcset="heroImageSrcset" sizes="(max-width: 760px) 100vw, 54vw" fetchpriority="high" decoding="async">
       <div class="register-story-shade"></div>
       <div class="register-story-copy"><span>让关爱，成为日常</span><h1>把牵挂<br>变成安心的陪伴</h1><p>使用管理员提供的邀请码，连接家人的照护信息。</p></div>
     </section>
     <main class="register-panel">
       <div class="register-card">
         <div class="register-title">
-          <div class="register-brand-row"><div class="register-brand"><img class="register-mark" src="/static/brand/suining-logo-96.webp" srcset="/static/brand/suining-logo-96.webp 96w, /static/brand/suining-logo-192.webp 192w" sizes="64px" width="64" height="64" alt="" aria-hidden="true" decoding="async"><span>岁宁</span></div><el-button class="register-text-toggle" link :aria-label="largeText ? '切换为标准字号' : '切换为更大字号'" :aria-pressed="String(largeText)" @click="toggleTextSize">{{ largeText ? '标准字' : '大字' }}</el-button></div>
+          <div class="register-brand-row"><div class="register-brand"><img class="register-mark" :src="brandLogo" :srcset="brandLogoSrcset" sizes="64px" width="64" height="64" alt="" aria-hidden="true" decoding="async"><span>岁宁</span></div><el-button class="register-text-toggle" link :aria-label="largeText ? '切换为标准字号' : '切换为更大字号'" :aria-pressed="String(largeText)" @click="toggleTextSize">{{ largeText ? '标准字' : '大字' }}</el-button></div>
           <div class="register-sub">创建家属账号 · 需要管理员发放的邀请码</div>
         </div>
 
@@ -110,6 +110,10 @@ export default {
       callback()
     }
     return {
+      heroImage: '/static/img/care-lakeside-artisan.webp',
+      heroImageSrcset: '/static/img/care-lakeside-artisan-640.webp 640w, /static/img/care-lakeside-artisan.webp 1536w',
+      brandLogo: '/static/brand/suining-logo-96.webp',
+      brandLogoSrcset: '/static/brand/suining-logo-96.webp 96w, /static/brand/suining-logo-192.webp 192w',
       submitting: false,
       showPassword: false,
       showConfirmPassword: false,
