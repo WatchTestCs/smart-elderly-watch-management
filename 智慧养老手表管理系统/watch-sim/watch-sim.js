@@ -224,6 +224,7 @@ function buildPayload(config, state) {
   if (state.phase === 'fall') {
     if (!state.fallIssued) {
       payload.alarm = 'fall'; // 一次跌倒仅生成一次告警，而非每次心跳重复报警
+      payload.requestId = crypto.randomBytes(16).toString('hex');
       state.fallIssued = true;
     }
     payload.hr = randomInt(95, 120);
@@ -356,9 +357,14 @@ async function main() {
       return;
     }
     const payload = buildPayload(config, state);
-    if (payload.alarm && !enableSOS) {
-      line('模拟跌倒告警：默认未上报真实照护事件；使用 --enable-sos 可开启');
-      delete payload.alarm;
+    if (payload.alarm) {
+      if (!enableSOS) {
+        line('模拟跌倒告警：默认未上报真实照护事件；使用 --enable-sos 可开启');
+        delete payload.alarm;
+        delete payload.requestId;
+      } else {
+        payload.bindingVersion = bindingVersion;
+      }
     }
     try {
       const r = await postJson(config.server, 'api/v1/device/report', payload);
