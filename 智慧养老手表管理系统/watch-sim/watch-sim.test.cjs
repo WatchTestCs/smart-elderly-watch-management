@@ -65,7 +65,7 @@ test('stale discovery fails clearly instead of contacting an unrelated port', as
 
 
 const crypto = require('node:crypto')
-const { createState, buildPayload, postJson, submitPendingSOS } = require('./watch-sim.js')
+const { createState, buildPayload, postJson, submitPendingSOS, acknowledgeFall } = require('./watch-sim.js')
 
 test('demo visits fall and SOS, with exactly one pending SOS per phase', () => {
   const config = { startPoint: { lng: 113.0625, lat: 28.1975 }, scenario: 'demo', deviceNo: 'WATCH001', secret: 'a'.repeat(32) }
@@ -79,8 +79,15 @@ test('demo visits fall and SOS, with exactly one pending SOS per phase', () => {
     assert.equal(payload.positionSource, 'simulated')
     if (state.phase === 'fall') {
       assert.equal(payload.alarm, 'fall')
+      const id = payload.requestId
+      state.phaseLeft = 3
+      const retry = buildPayload(config, state)
+      assert.equal(retry.alarm, 'fall', 'unacknowledged fall must be retried')
+      assert.equal(retry.requestId, id, 'retry must preserve the idempotency key')
+      assert.equal(state.pendingFalls.length, 1, 'a single fall cannot create duplicate incident IDs')
+      assert.equal(acknowledgeFall(state, retry, { returnCode: '1111' }), true)
       const later = buildPayload(config, state)
-      assert.equal(later.alarm, undefined, 'one physical fall must not emit an alert each tick')
+      assert.equal(later.alarm, undefined, 'acknowledged fall must not be reported again')
     }
     if (state.phase === 'sos') {
       assert.ok(state.pendingSOS)
@@ -92,6 +99,42 @@ test('demo visits fall and SOS, with exactly one pending SOS per phase', () => {
   }
   assert.deepEqual(phases, ['highHr', 'recovery', 'fall', 'sos', 'normal'])
   assert.equal(state.pendingSOS.requestId, incident, 'unacknowledged SOS survives phase change')
+})
+
+test('fall alarm survives rejection, lost acknowledgement, and phase changes without changing its ID', () => {
+  const config = { startPoint: { lng: 113.0625, lat: 28.1975 }, scenario: 'demo', deviceNo: 'WATCH001', secret: 'a'.repeat(32) }
+  const state = createState(config)
+  state.phase = 'fall'
+  state.phaseLeft = 4
+  const first = buildPayload(config, state)
+  assert.equal(first.alarm, 'fall')
+  assert.match(first.requestId, /^[0-9a-f]{32}$/)
+  assert.equal(acknowledgeFall(state, first, { returnCode: '0000' }), false)
+  const retry = buildPayload(config, state)
+  assert.equal(retry.requestId, first.requestId)
+  assert.equal(retry.lng, first.lng)
+  assert.equal(retry.lat, first.lat)
+
+  state.phase = 'normal'
+  state.phaseLeft = 4
+  const late = buildPayload(config, state)
+  assert.equal(late.alarm, 'fall', 'outstanding alarm must survive a return to normal phase')
+  assert.equal(late.requestId, first.requestId)
+
+  state.phase = 'fall'
+  state.phaseLeft = 4
+  const nextFall = buildPayload(config, state)
+  assert.equal(nextFall.requestId, first.requestId, 'FIFO retries the oldest alarm first')
+  assert.equal(state.pendingFalls.length, 2, 'separate falls must not be conflated')
+  assert.notEqual(state.pendingFalls[1].requestId, first.requestId)
+  assert.equal(acknowledgeFall(state, { ...first, requestId: 'wrong-id' }, { returnCode: '1111' }), false)
+  assert.equal(acknowledgeFall(state, nextFall, { returnCode: '1111' }), true)
+  const second = buildPayload(config, state)
+  assert.equal(second.requestId, state.pendingFalls[0].requestId)
+  assert.notEqual(second.requestId, first.requestId)
+  assert.equal(acknowledgeFall(state, second, { returnCode: '1111' }), true)
+  assert.equal(state.pendingFalls.length, 0)
+  assert.equal(buildPayload(config, state).alarm, undefined)
 })
 
 test('SOS retries with the same requestId until the backend acknowledges it', async () => {
