@@ -7,6 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	dbstore "suining-care/internal/db"
+	"suining-care/internal/notify"
 	"suining-care/internal/securestore"
 )
 
@@ -17,8 +18,9 @@ type telemetryRepository struct {
 }
 
 type telemetryPersisted struct {
-	rateState any
-	preState  any
+	rateState      any
+	preState       any
+	careIncidentID int64
 }
 
 func watchDayUpsertSQL(mysql bool) string {
@@ -61,9 +63,11 @@ func (repo telemetryRepository) PersistDeviceReport(ctx context.Context, tx *dbs
 	if err := repo.persistReportDay(ctx, tx, d, oldID, &parsed); err != nil {
 		return telemetryPersisted{}, err
 	}
-	if err := repo.persistReportPositionAndAlarm(ctx, tx, d, oldID, &parsed, position); err != nil {
+	incidentID, err := repo.persistReportPositionAndAlarm(ctx, tx, d, oldID, &parsed, position)
+	if err != nil {
 		return telemetryPersisted{}, err
 	}
+	result.careIncidentID = incidentID
 	if err := touchDevice(ctx, tx, d.ID, parsed.battery, parsed.appVersion, parsed.now); err != nil {
 		return telemetryPersisted{}, err
 	}
@@ -168,16 +172,16 @@ func (repo telemetryRepository) insertDeviceLocation(ctx context.Context, tx *db
 const insertTelemetryAlarm = `INSERT INTO alarm_precess(status, old_id, device_id, be_time, lng, lat, kind, position_metadata)
  VALUES('1',$1,$2,$3,$4,$5,$6,$7)`
 
-func (repo telemetryRepository) persistReportPositionAndAlarm(ctx context.Context, tx *dbstore.Transaction, d *deviceRecord, oldID int64, parsed *parsedDeviceTelemetry, position string) error {
+func (repo telemetryRepository) persistReportPositionAndAlarm(ctx context.Context, tx *dbstore.Transaction, d *deviceRecord, oldID int64, parsed *parsedDeviceTelemetry, position string) (int64, error) {
 	lng, lat, sourceStr, alarm, beTime := parsed.lng, parsed.lat, parsed.sourceStr, parsed.alarm, parsed.beTime
 	if lng != "" && lat != "" {
 		if err := repo.insertDeviceLocation(ctx, tx, d.ID, oldID, lng, lat, sourceStr, beTime, position); err != nil {
-			return err
+			return 0, err
 		}
 		if _, err := tx.Exec(ctx, `UPDATE device SET last_lng=$1, last_lat=$2 WHERE device_id=$3
 		 AND NOT EXISTS(SELECT 1 FROM device_location WHERE device_id=$3 AND old_id=$5 AND be_time>$4)`,
 			sealCoordinate(repo.box, lng), sealCoordinate(repo.box, lat), d.ID, beTime, oldID); err != nil {
-			return err
+			return 0, err
 		}
 	}
 	if alarm == "1" || strings.EqualFold(alarm, "fall") {
@@ -187,13 +191,38 @@ func (repo telemetryRepository) persistReportPositionAndAlarm(ctx context.Contex
 		if strings.EqualFold(alarm, "fall") {
 			kind = "fall"
 		}
-		if _, err := tx.Exec(ctx,
-			insertTelemetryAlarm,
-			oldID, d.ID, beTime, alarmLng, alarmLat, kind, position); err != nil {
-			return err
+		var alarmID, incidentID int64
+		if err := tx.QueryRow(ctx, insertTelemetryAlarm+" RETURNING id",
+			oldID, d.ID, beTime, alarmLng, alarmLat, kind, position).Scan(&alarmID); err != nil {
+			return 0, err
 		}
+		incidentKind := "device_alarm"
+		if kind == "fall" {
+			incidentKind = "fall"
+		}
+		var requestValue any
+		if parsed.requestID != "" {
+			requestValue = parsed.requestID
+		}
+		if err := tx.QueryRow(ctx,
+			`INSERT INTO care_incident(source_alarm_id,old_id,device_id,kind,request_id)
+			 VALUES($1,$2,$3,$4,$5) RETURNING id`,
+			alarmID, oldID, d.ID, incidentKind, requestValue).Scan(&incidentID); err != nil {
+			return 0, err
+		}
+		if _, err := tx.Exec(ctx, `INSERT INTO care_incident_event(incident_id,actor,action,note)
+			VALUES($1,'device','received','设备异常已持久化；等待通知和人工处置')`, incidentID); err != nil {
+			return 0, err
+		}
+		if _, err := notify.QueueCareSMS(ctx, tx, repo.box, incidentID, oldID); err != nil {
+			return 0, err
+		}
+		if err := notify.CareInbox(ctx, tx, repo.box, oldID, incidentID); err != nil {
+			return 0, err
+		}
+		return incidentID, nil
 	}
-	return nil
+	return 0, nil
 }
 
 // PersistSOSIncident only persists the incident; callers must insert SMS/outbox
