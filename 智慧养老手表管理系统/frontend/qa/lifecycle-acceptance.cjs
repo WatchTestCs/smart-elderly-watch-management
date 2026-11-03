@@ -1,6 +1,7 @@
 const fs=require('fs'),path=require('path'),run=require('./browser-harness.cjs');
 run(async({page,base,report,setRole,setSignedIn})=>{
  const checks=[];const check=(name,pass,details)=>checks.push({name,pass:Boolean(pass),details});
+ const withTimeout=(promise,ms,message)=>Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error(message)),ms))]);
  const visit=async(route,role)=>{setRole(role);setSignedIn(true);await page.goto(base+'/?lifecycle='+Date.now()+'#'+route);await page.locator('.care-app').waitFor();};
  // Exercise real Axios/XHR cancellation against held mock responses.
  let customerMode='normal';const customerRequests=[];
@@ -74,15 +75,15 @@ run(async({page,base,report,setRole,setSignedIn})=>{
  check('Pending device refresh cannot restart polling after leaving the page',requests===1,{requests});
  await page.unroute('**/api/v1/device/list');
  for(const [route,role,endpoint,button,home,body]of[
-  ['/operations/vitals','ADMIN','ratepre/selectRatepreDetail','查看健康详情','/operations/overview',{hrs:[72],bps:[120],createTimes:['08:00'],time:'2026-10-16'}],
-  ['/operations/activity','ADMIN','step/selectStepDetail','查看睡眠详情','/operations/overview',{sleep:[7],createTime:['10-16']}],
-  ['/family-portal/vitals','FAMILY','ratepre/selectRatepreDetail',/详情|详细|趋势/,'/family-portal/overview',{hrs:[72],bps:[120],createTimes:['08:00'],time:'2026-10-16'}],
-  ['/family-portal/activity','FAMILY','step/selectStepDetail',/详情|详细|趋势/,'/family-portal/overview',{sleep:[7],createTime:['10-16']}]
+  ['/operations/vitals','ADMIN','vitals/chart','查看健康详情','/operations/overview',{hrs:[72],bps:[120],createTimes:['08:00'],time:'2026-10-16'}],
+  ['/operations/activity','ADMIN','activity/chart','查看睡眠详情','/operations/overview',{sleep:[7],createTime:['10-16']}],
+  ['/family-portal/vitals','FAMILY','vitals/chart',/详情|详细|趋势/,'/family-portal/overview',{hrs:[72],bps:[120],createTimes:['08:00'],time:'2026-10-16'}],
+  ['/family-portal/activity','FAMILY','activity/chart',/详情|详细|趋势/,'/family-portal/overview',{sleep:[7],createTime:['10-16']}]
  ]){
   await visit(route,role);await page.waitForTimeout(200);
   let resume,arrived;const hold=new Promise(r=>{resume=r}),request=new Promise(r=>{arrived=r});
   await page.route('**/api/v1/'+endpoint,async r=>{arrived();await hold;await r.fulfill({contentType:'application/json',body:JSON.stringify({returnCode:'1111',...body})});});
-  await page.getByRole('button',{name:button}).first().click();await request;
+  await page.getByRole('button',{name:button}).first().click();await withTimeout(request,8000,route+': detail request was not issued');
   await page.evaluate(hash=>{location.hash=hash},home);
   await page.waitForURL(url=>url.hash==='#'+home);await page.locator('.el-dialog:visible').waitFor({state:'hidden'});
   resume();await page.waitForTimeout(350);
