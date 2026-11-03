@@ -1,0 +1,1 @@
+Temporary software acceptance probe: this branch verifies that missing and failing GitHub Actions checks block a merge into an isolated validation branch. It is not application test evidence and must never be merged into preview or main.
