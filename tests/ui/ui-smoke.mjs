@@ -9,6 +9,13 @@ if (!targetUrl || !widthRaw || !heightRaw || !outputPath) {
 
 const width = Number(widthRaw)
 const height = Number(heightRaw)
+// The target URL already tells us which route must survive bootstrap redirects.
+// Deriving it here keeps the assertion from drifting when routes are renamed.
+const expectedHash = new URL(targetUrl).hash
+if (!expectedHash) {
+  console.error('Target URL must contain a hash route, for example http://127.0.0.1:4173/#/sign-in')
+  process.exit(2)
+}
 const port = Number(process.env.CDP_PORT || 9222)
 const endpoint = `http://127.0.0.1:${port}`
 
@@ -187,8 +194,8 @@ async function main () {
       expression: 'location.href',
       returnByValue: true
     })
-    if (!String(location.result?.value || '').includes('#/login')) {
-      throw new Error(`Expected login route, got ${location.result?.value}`)
+    if (!String(location.result?.value || '').endsWith(expectedHash)) {
+      throw new Error(`Expected ${expectedHash} route, got ${location.result?.value}`)
     }
 
     const tree = await client.send('Accessibility.getFullAXTree')
