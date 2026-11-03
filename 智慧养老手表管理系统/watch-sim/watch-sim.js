@@ -34,7 +34,7 @@ const HELP = [
   '  --interval <秒>      上报间隔，默认 3 秒',
   '  --scenario <模式>    normal=只报正常数据；demo=循环演示异常（默认 demo）',
   '  --bind <绑定码>      启动时先执行一次绑定（6 位码，可在系统里生成）',
-  '  --enable-sos         明确允许发送真实 SOS 事件（可能触发照护通知）',
+  '  --enable-sos         允许发送真实跌倒告警和 SOS（可能触发照护通知）',
   '  --once               只上报一次后退出（用于联调）',
   '  --help               显示本帮助',
   ''
@@ -158,6 +158,7 @@ function createState(config) {
     phase: 'normal',
     phaseLeft: 8,
     sosIssued: false,
+    fallIssued: false,
     pendingSOS: null
   };
 }
@@ -186,6 +187,7 @@ function buildPayload(config, state) {
 
   walk(state);
   if (state.phase !== 'sos') state.sosIssued = false;
+  if (state.phase !== 'fall') state.fallIssued = false;
   if (state.phase === 'sos' && !state.sosIssued) {
     state.sosIssued = true;
     state.pendingSOS = {
@@ -218,7 +220,10 @@ function buildPayload(config, state) {
   }
 
   if (state.phase === 'fall') {
-    payload.alarm = '1';                   // 摔倒告警
+    if (!state.fallIssued) {
+      payload.alarm = 'fall'; // 一次跌倒仅生成一次告警，而非每次心跳重复报警
+      state.fallIssued = true;
+    }
     payload.hr = randomInt(95, 120);
   }
   return payload;
@@ -349,6 +354,10 @@ async function main() {
       return;
     }
     const payload = buildPayload(config, state);
+    if (payload.alarm && !enableSOS) {
+      line('模拟跌倒告警：默认未上报真实照护事件；使用 --enable-sos 可开启');
+      delete payload.alarm;
+    }
     try {
       const r = await postJson(config.server, 'api/v1/device/report', payload);
       if (r.returnCode === '1111') {
