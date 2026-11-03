@@ -119,7 +119,7 @@ func (h *Handler) createMonitoringProfile(w http.ResponseWriter, r *http.Request
 	ct, err := h.DB.Exec(ctx,
 		`INSERT INTO watch_info(device_id,op_time,bpf,bpl,hrl,hrf)
 		 SELECT $1,$2,$3,$4,$5,$6 FROM device WHERE device_id=$1`,
-		deviceID, time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local),
+		deviceID, siteDay(now),
 		bpf, bpl, hrl, hrf)
 	if internalError(w, err) {
 		return

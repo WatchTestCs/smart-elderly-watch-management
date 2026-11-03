@@ -105,7 +105,7 @@ func (h *Handler) saveResident(w http.ResponseWriter, r *http.Request, update bo
    food_like=$8,food_hate=$9,drag=$10,customer_id=$11,bothdate=$12 WHERE old_id=$13`
 		args = append(args, oldID)
 	} else {
-		day := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local)
+		day := siteDay(now)
 		args = append(args, day)
 	}
 	result, err := tx.Exec(ctx, query, args...)

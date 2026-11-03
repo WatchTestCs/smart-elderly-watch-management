@@ -197,7 +197,7 @@ func watchProfileInsertSQL(mysql bool) string {
 // saveDefaultWatchProfile fills a missing default profile without replacing a
 // caregiver's customized thresholds during device registration or binding.
 func saveDefaultWatchProfile(ctx context.Context, tx *dbstore.Transaction, deviceID int64, now time.Time) error {
-	day := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local)
+	day := siteDay(now)
 	_, err := tx.Exec(ctx, watchProfileInsertSQL(tx.IsMySQL()), deviceID, day, 140, 90, 110, 55)
 	return err
 }
