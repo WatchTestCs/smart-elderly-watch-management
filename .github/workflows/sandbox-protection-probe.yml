@@ -1,0 +1,16 @@
+name: Sandbox branch protection validation
+on:
+  push:
+    branches: [validation/preview-rules-probe-20261103]
+permissions:
+  contents: read
+jobs:
+  fail-on-purpose:
+    name: Sandbox protection check
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Intentionally fail the isolated protection probe
+        run: |
+          echo 'Synthetic protection acceptance probe; this is not an application test.'
+          exit 1
