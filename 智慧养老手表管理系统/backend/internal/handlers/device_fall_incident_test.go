@@ -66,13 +66,16 @@ func TestFallReportCreatesActionableCareIncidentWithoutDuplicateNotifications(t 
 		t.Fatalf("duplicate care effects: incidents=%d notifications=%d", incidents, notifications)
 	}
 
-	mustExec(t, pool, "UPDATE device SET health_epoch=2 WHERE device_id=1")
+	// MySQL/PostgreSQL triggers own health_epoch: manually assigning it is
+	// intentionally ignored. A real owner change must increment the epoch.
+	mustExec(t, pool, "UPDATE device SET old_id=NULL WHERE device_id=1")
+	mustExec(t, pool, "UPDATE device SET old_id=1 WHERE device_id=1")
 	var recordedEpoch int64
-	if err := pool.QueryRow(ctx, "SELECT health_epoch FROM device WHERE device_id=1").Scan(&recordedEpoch); err != nil || recordedEpoch != 2 {
-		t.Fatalf("epoch update was not persisted: got=%d err=%v", recordedEpoch, err)
+	if err := pool.QueryRow(ctx, "SELECT health_epoch FROM device WHERE device_id=1").Scan(&recordedEpoch); err != nil || recordedEpoch != 3 {
+		t.Fatalf("owner changes did not increment binding epoch: got=%d err=%v", recordedEpoch, err)
 	}
 	device, _, _, err := h.hwAuth(ctx, pool, "WATCH001", testSecret, "设备已停用")
-	if err != nil || device == nil || device.HealthEpoch != 2 {
+	if err != nil || device == nil || device.HealthEpoch != recordedEpoch {
 		t.Fatalf("authenticated report read stale binding: device=%+v err=%v", device, err)
 	}
 	rejected := callAPI(h.deviceReport, map[string]any{
