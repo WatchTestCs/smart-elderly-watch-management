@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"testing"
 )
@@ -42,12 +43,11 @@ func TestFallReportCreatesActionableCareIncidentWithoutDuplicateNotifications(t 
 		t.Fatalf("expected one durable received event, got %d", events)
 	}
 	if pool.IsMySQL() {
-		if err := pool.QueryRow(ctx, "SELECT count(*) FROM message_outbox WHERE topic='care' AND source_key=$1", "fall-event-001").Scan(&inbox); err != nil {
+		if err := pool.QueryRow(ctx, "SELECT count(*) FROM message_outbox WHERE topic='care' AND source_key=$1 AND channel='in_app'", fmt.Sprint(incidentID)).Scan(&inbox); err != nil {
 			t.Fatal(err)
 		}
-		// The family inbox key is the persisted incident ID, not the device request ID.
-		if inbox != 0 {
-			t.Fatalf("unexpected inbox key: %d", inbox)
+		if inbox != 1 {
+			t.Fatalf("missing family inbox: %d", inbox)
 		}
 	}
 
