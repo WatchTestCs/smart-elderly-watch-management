@@ -159,7 +159,8 @@ function createState(config) {
     phaseLeft: 8,
     sosIssued: false,
     fallIssued: false,
-    pendingSOS: null
+    pendingSOS: null,
+    pendingFalls: []
   };
 }
 
@@ -196,6 +197,11 @@ function buildPayload(config, state) {
       };
     }
   }
+  // One ID per physical fall; keep queued events until their acknowledgements arrive.
+  if (state.phase === 'fall' && !state.fallIssued) {
+    state.pendingFalls.push({ requestId: crypto.randomBytes(16).toString('hex'), lng: state.lng, lat: state.lat });
+    state.fallIssued = true;
+  }
   state.step += randomInt(3, 15);
 
   const payload = {
@@ -221,15 +227,24 @@ function buildPayload(config, state) {
     payload.bp = randomInt(105, 132);
   }
 
-  if (state.phase === 'fall') {
-    if (!state.fallIssued) {
-      payload.alarm = 'fall'; // 一次跌倒仅生成一次告警，而非每次心跳重复报警
-      payload.requestId = crypto.randomBytes(16).toString('hex');
-      state.fallIssued = true;
-    }
-    payload.hr = randomInt(95, 120);
+  if (state.phase === 'fall') payload.hr = randomInt(95, 120);
+  const pendingFall = state.pendingFalls[0];
+  if (pendingFall) {
+    payload.alarm = 'fall';
+    payload.requestId = pendingFall.requestId;
+    // Retry the original event location while the simulated wearer keeps moving.
+    payload.lng = pendingFall.lng;
+    payload.lat = pendingFall.lat;
   }
   return payload;
+}
+
+// Advance the FIFO only when the server acknowledges the matching fall event.
+function acknowledgeFall(state, payload, response) {
+  if (!payload || payload.alarm !== 'fall' || !response || response.returnCode !== '1111') return false;
+  if (!state.pendingFalls.length || state.pendingFalls[0].requestId !== payload.requestId) return false;
+  state.pendingFalls.shift();
+  return true;
 }
 
 // Resend the same requestId after a network error or lost acknowledgement.
@@ -362,6 +377,7 @@ async function main() {
         line('模拟跌倒告警：默认未上报真实照护事件；使用 --enable-sos 可开启');
         delete payload.alarm;
         delete payload.requestId;
+        state.pendingFalls.length = 0; // No real alert work is retained without opt-in.
       } else {
         payload.bindingVersion = bindingVersion;
       }
@@ -369,6 +385,7 @@ async function main() {
     try {
       const r = await postJson(config.server, 'api/v1/device/report', payload);
       if (r.returnCode === '1111') {
+        acknowledgeFall(state, payload, r);
         const flag = [];
         if (payload.alarm) { flag.push('摔倒告警'); }
         if (r.rateState === '1') { flag.push('心率异常'); }
@@ -417,4 +434,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { createState, buildPayload, nextPhase, postJson, submitPendingSOS };
+module.exports = { createState, buildPayload, nextPhase, postJson, submitPendingSOS, acknowledgeFall };
