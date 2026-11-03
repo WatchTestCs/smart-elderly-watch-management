@@ -77,7 +77,11 @@ test('demo visits fall and SOS, with exactly one pending SOS per phase', () => {
     const payload = buildPayload(config, state)
     phases.push(state.phase)
     assert.equal(payload.positionSource, 'simulated')
-    if (state.phase === 'fall') assert.equal(payload.alarm, '1')
+    if (state.phase === 'fall') {
+      assert.equal(payload.alarm, 'fall')
+      const later = buildPayload(config, state)
+      assert.equal(later.alarm, undefined, 'one physical fall must not emit an alert each tick')
+    }
     if (state.phase === 'sos') {
       assert.ok(state.pendingSOS)
       incident = state.pendingSOS.requestId
