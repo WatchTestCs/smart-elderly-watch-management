@@ -18,6 +18,7 @@
 
 const http = require('http');
 const https = require('https');
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const url = require('url');
@@ -33,6 +34,7 @@ const HELP = [
   '  --interval <秒>      上报间隔，默认 3 秒',
   '  --scenario <模式>    normal=只报正常数据；demo=循环演示异常（默认 demo）',
   '  --bind <绑定码>      启动时先执行一次绑定（6 位码，可在系统里生成）',
+  '  --enable-sos         明确允许发送真实 SOS 事件（可能触发照护通知）',
   '  --once               只上报一次后退出（用于联调）',
   '  --help               显示本帮助',
   ''
@@ -86,15 +88,28 @@ function postJson(baseUrl, apiPath, body) {
     const payload = Buffer.from(JSON.stringify(body), 'utf8');
     const parsed = url.parse(target);
     const lib = parsed.protocol === 'https:' ? https : http;
+    const headers = {
+      'Content-Type': 'application/json;charset=UTF-8',
+      'Content-Length': payload.length
+    };
+    // Report and SOS use the backend's HMAC-SHA256 wire contract.
+    // Generate a fresh nonce for every attempt, including retries.
+    if (/^api\/v1\/device\/(report|sos)$/.test(apiPath)) {
+      const timestamp = String(Math.floor(Date.now() / 1000));
+      const nonce = crypto.randomBytes(16).toString('hex');
+      const digest = crypto.createHash('sha256').update(payload).digest('hex');
+      const deviceNo = String(body.deviceNo || '').trim().toUpperCase();
+      headers['X-Device-Timestamp'] = timestamp;
+      headers['X-Device-Nonce'] = nonce;
+      headers['X-Device-Signature'] = crypto.createHmac('sha256', String(body.secret || ''))
+        .update(deviceNo + ':' + timestamp + ':' + nonce + ':' + digest).digest('hex');
+    }
     const req = lib.request({
       hostname: parsed.hostname,
       port: parsed.port || (parsed.protocol === 'https:' ? 443 : 80),
       path: parsed.path,
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json;charset=UTF-8',
-        'Content-Length': payload.length
-      },
+      headers,
       timeout: 10000
     }, function (res) {
       let raw = '';
@@ -141,7 +156,9 @@ function createState(config) {
     lat: config.startPoint.lat,
     reportNo: 0,
     phase: 'normal',
-    phaseLeft: 8
+    phaseLeft: 8,
+    sosIssued: false,
+    pendingSOS: null
   };
 }
 
@@ -150,21 +167,9 @@ function walk(state) {
   state.lat = +(state.lat + (Math.random() - 0.5) * 0.0006).toFixed(6);
 }
 
-/** 演示模式：正常 -> 心率偏高 -> 恢复正常 -> 摔倒 -> SAN -> 正常 ... */
+/** 演示模式：正常 -> 心率偏高 -> 恢复正常 -> 摔倒 -> SOS -> 正常。 */
 function nextPhase(state) {
-  if (state.phase === 'normal') {
-    return 'highHr';
-  }
-  if (state.phase === 'highHr') {
-    return 'normal';
-  }
-  if (state.phase === 'fall') {
-    return 'sos';
-  }
-  if (state.phase === 'sos') {
-    return 'normal';
-  }
-  return 'normal';
+  return { normal: 'highHr', highHr: 'recovery', recovery: 'fall', fall: 'sos', sos: 'normal' }[state.phase] || 'normal';
 }
 
 function buildPayload(config, state) {
@@ -173,13 +178,20 @@ function buildPayload(config, state) {
   state.phaseLeft--;
   if (state.phaseLeft <= 0) {
     state.phase = scenario === 'normal' ? 'normal' : nextPhase(state);
-    state.phaseLeft = state.phase === 'normal' ? randomInt(6, 10) : randomInt(2, 4);
+    state.phaseLeft = state.phase === 'normal' || state.phase === 'recovery' ? randomInt(6, 10) : randomInt(2, 4);
   }
   if (scenario === 'normal') {
     state.phase = 'normal';
   }
 
   walk(state);
+  if (state.phase !== 'sos') state.sosIssued = false;
+  if (state.phase === 'sos' && !state.sosIssued) {
+    state.sosIssued = true;
+    state.pendingSOS = {
+      requestId: crypto.randomBytes(16).toString('hex'), lng: state.lng, lat: state.lat
+    };
+  }
   state.step += randomInt(3, 15);
 
   const payload = {
@@ -192,6 +204,7 @@ function buildPayload(config, state) {
     lng: state.lng,
     lat: state.lat,
     source: 'gps',
+    positionSource: 'simulated',
     battery: randomInt(60, 100),
     appVersion: config.appVersion
   };
@@ -209,6 +222,25 @@ function buildPayload(config, state) {
     payload.hr = randomInt(95, 120);
   }
   return payload;
+}
+
+// Resend the same requestId after a network error or lost acknowledgement.
+async function submitPendingSOS(config, state, bindingVersion, post = postJson) {
+  if (!state.pendingSOS) return null;
+  if (!Number.isSafeInteger(bindingVersion) || bindingVersion < 1) {
+    throw new Error('无法取得有效的设备绑定版本，请重新登录');
+  }
+  const result = await post(config.server, 'api/v1/device/sos', {
+    deviceNo: config.deviceNo,
+    secret: config.secret,
+    bindingVersion,
+    requestId: state.pendingSOS.requestId,
+    lng: state.pendingSOS.lng,
+    lat: state.pendingSOS.lat,
+    positionSource: 'simulated'
+  });
+  if (result.returnCode === '1111') state.pendingSOS = null;
+  return result;
 }
 
 // ---------------- 主流程 ----------------
@@ -251,6 +283,7 @@ async function main() {
   }
   const state = createState(config);
   const once = !!args.once;
+  const enableSOS = !!args['enable-sos'];
 
   line('模拟手表启动：' + config.deviceNo + ' -> ' + config.server
     + '（间隔 ' + config.intervalSeconds + 's，模式 ' + config.scenario + '）');
@@ -301,6 +334,7 @@ async function main() {
   } else {
     line('心跳失败：' + (hb.message || JSON.stringify(hb)));
   }
+  const bindingVersion = Number(hb.returnCode === '1111' ? hb.bindingVersion : res.bindingVersion);
 
   // 4. 循环上报
   let running = true;
@@ -331,6 +365,23 @@ async function main() {
     } catch (e) {
       line('上报失败：' + e.message + '（检查后端是否启动、地址是否为局域网 IP）');
     }
+    if (state.pendingSOS) {
+      if (!enableSOS) {
+        line('模拟 SOS 已生成但未发送；使用 --enable-sos 才会创建真实求助事件');
+        state.pendingSOS = null;
+      } else {
+        try {
+          const sos = await submitPendingSOS(config, state, bindingVersion);
+          if (sos.returnCode === '1111') {
+            line('SOS 已接收，事件编号=' + sos.incidentId);
+          } else {
+            line('SOS 未被接收，将使用相同 requestId 重试：' + (sos.message || JSON.stringify(sos)));
+          }
+        } catch (e) {
+          line('SOS 网络失败，保留 requestId 重试：' + e.message);
+        }
+      }
+    }
     if (!once && running) {
       setTimeout(tick, config.intervalSeconds * 1000);
     } else {
@@ -342,7 +393,11 @@ async function main() {
   tick();
 }
 
-main().catch(function (e) {
-  console.log('运行出错：' + (e && e.message ? e.message : e));
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch(function (e) {
+    console.log('运行出错：' + (e && e.message ? e.message : e));
+    process.exit(1);
+  });
+}
+
+module.exports = { createState, buildPayload, nextPhase, postJson, submitPendingSOS };
