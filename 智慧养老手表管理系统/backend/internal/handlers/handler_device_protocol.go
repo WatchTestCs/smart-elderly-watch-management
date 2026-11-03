@@ -192,7 +192,22 @@ func (h *Handler) deviceBind(w http.ResponseWriter, r *http.Request) {
 	// Lock the elder before the device, matching unbind/delete lock order.
 	// Changing owners requires an explicit unbind so the old primary reference
 	// cannot be left pointing at a device that now reports for someone else.
-	if err := tx.QueryRow(ctx, `SELECT old_id FROM device WHERE device_id=$1 FOR UPDATE`, d.ID).Scan(&d.OldID); rollbackOnError(w, rollback, err) {
+	locked, err := scanDeviceRecord(tx.QueryRow(ctx,
+		`SELECT `+deviceRecordColumns+` FROM device WHERE device_id=$1 FOR UPDATE`, d.ID))
+	if rollbackOnError(w, rollback, err) {
+		return
+	}
+	d, code, msg, err = checkDeviceAuth(locked, secret, "设备已停用")
+	if rollbackOnError(w, rollback, err) {
+		return
+	}
+	if d == nil || d.No != deviceNo {
+		rollback()
+		if d != nil {
+			hwFail(w, "DEVICE_AUTH_FAILED", "设备号或密钥不正确")
+		} else {
+			hwFail(w, code, msg)
+		}
 		return
 	}
 	if d.OldID != nil && *d.OldID != *bc.OldID {
@@ -201,16 +216,12 @@ func (h *Handler) deviceBind(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	now := time.Now()
-	status := 1
-	if d.Status != nil {
-		status = *d.Status
-	}
+	// The locked row is authoritative: never restore stale admin settings,
+	// location, telemetry, or disabled status from the initial auth snapshot.
 	ct, err := tx.Exec(ctx,
-		`UPDATE device SET alias=$1, model=$2, old_id=$3, family_id=$4, status=$5,
-		 bind_time=$6, last_time=$6, last_lng=$7, last_lat=$8, battery=$9, app_version=$10
-		 WHERE device_id=$11`,
-		d.Alias, d.Model, *bc.OldID, bc.FamilyID, status, now,
-		d.LastLng, d.LastLat, d.Battery, d.AppVersion, d.ID)
+		`UPDATE device SET old_id=$1, family_id=$2, bind_time=$3,
+		 last_time=GREATEST(COALESCE(last_time,$3),$3) WHERE device_id=$4`,
+		*bc.OldID, bc.FamilyID, now, d.ID)
 	if rollbackOnError(w, rollback, err) {
 		return
 	}
