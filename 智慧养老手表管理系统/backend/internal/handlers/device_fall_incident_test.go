@@ -67,6 +67,14 @@ func TestFallReportCreatesActionableCareIncidentWithoutDuplicateNotifications(t 
 	}
 
 	mustExec(t, pool, "UPDATE device SET health_epoch=2 WHERE device_id=1")
+	var recordedEpoch int64
+	if err := pool.QueryRow(ctx, "SELECT health_epoch FROM device WHERE device_id=1").Scan(&recordedEpoch); err != nil || recordedEpoch != 2 {
+		t.Fatalf("epoch update was not persisted: got=%d err=%v", recordedEpoch, err)
+	}
+	device, _, _, err := h.hwAuth(ctx, pool, "WATCH001", testSecret, "设备已停用")
+	if err != nil || device == nil || device.HealthEpoch != 2 {
+		t.Fatalf("authenticated report read stale binding: device=%+v err=%v", device, err)
+	}
 	rejected := callAPI(h.deviceReport, map[string]any{
 		"deviceNo": "WATCH001", "secret": testSecret,
 		"alarm": "fall", "requestId": "fall-after-rebind",
