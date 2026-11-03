@@ -2,8 +2,11 @@ package handlers
 
 import (
 	"net/http"
-	"suining-care/internal/response"
+	"strings"
 	"time"
+
+	"github.com/jackc/pgx/v5"
+	"suining-care/internal/response"
 )
 
 // POST /api/v1/device/report —— 设备数据上报（公开，事务）。
@@ -28,6 +31,23 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	isAlarm := parsed.alarm == "1" || strings.EqualFold(parsed.alarm, "fall")
+	var requestID string
+	var bindingVersion int64
+	var versionValid bool
+	if isAlarm {
+		requestID, _ = vstr(m, "requestId")
+		if requestID != "" && !sosRequestIDOK(requestID) {
+			writeValidation400(w)
+			return
+		}
+		bindingVersion, versionValid = int64Val(m, "bindingVersion")
+		if _, supplied := m["bindingVersion"]; supplied && (!versionValid || bindingVersion < 1) {
+			writeValidation400(w)
+			return
+		}
+		parsed.requestID = requestID
+	}
 	ctx := r.Context()
 	tx, err := h.DB.Begin(ctx)
 	if internalError(w, err) {
@@ -47,6 +67,60 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 		rollback()
 		hwFail(w, "DEVICE_NOT_BOUND", "设备还未绑定老人，请先在手表上输入绑定码")
 		return
+	}
+	if isAlarm {
+		// Care alarms must not be attributed using a stale owner or secret.
+		// Unversioned legacy reports are accepted only at binding epoch 1.
+		if !versionValid {
+			if d.HealthEpoch != 1 {
+				rollback()
+				conflict409(w, "绑定版本已变化，请重新登录")
+				return
+			}
+			bindingVersion = 1
+		}
+		locked, lockedCode, lockedMsg, lockErr := h.lockSOSDevice(ctx, tx, deviceNo, secret, bindingVersion)
+		if rollbackOnError(w, rollback, lockErr) {
+			return
+		}
+		if locked == nil {
+			rollback()
+			if lockedCode == "409" {
+				conflict409(w, lockedMsg)
+			} else {
+				hwFail(w, lockedCode, lockedMsg)
+			}
+			return
+		}
+		d = locked
+		if requestID != "" {
+			var priorID, priorOwner int64
+			var priorKind, priorState string
+			err := tx.QueryRow(ctx, `SELECT id,old_id,kind,state FROM care_incident
+				WHERE device_id=$1 AND request_id=$2 FOR UPDATE`, d.ID, requestID).
+				Scan(&priorID, &priorOwner, &priorKind, &priorState)
+			if err == nil {
+				rollback()
+				kind := "device_alarm"
+				if strings.EqualFold(parsed.alarm, "fall") {
+					kind = "fall"
+				}
+				if priorOwner != *d.OldID || priorKind != kind {
+					conflict409(w, "设备上报编号已被其他事件或绑定使用")
+					return
+				}
+				response.OK(w, map[string]any{
+					"incidentId": priorID, "incidentState": priorState,
+					"duplicate": true, "message": "设备告警已接收（重复请求）",
+				})
+				return
+			}
+			if err != pgx.ErrNoRows {
+				rollback()
+				response.Error500(w, ref())
+				return
+			}
+		}
 	}
 	if !acceptSignedDeviceNonce(w, ctx, tx, d.ID) {
 		rollback()
@@ -81,8 +155,13 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 	if internalError(w, tx.Commit(ctx)) {
 		return
 	}
-	response.OK(w, map[string]any{
+	result := map[string]any{
 		"rateState": persisted.rateState, "preState": persisted.preState,
 		"serverTime": parsed.now.Format(tsLayout),
-	})
+	}
+	if persisted.careIncidentID != 0 {
+		result["incidentId"] = persisted.careIncidentID
+		result["incidentState"] = "received"
+	}
+	response.OK(w, result)
 }
