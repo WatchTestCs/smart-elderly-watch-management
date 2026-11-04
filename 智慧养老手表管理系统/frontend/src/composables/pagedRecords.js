@@ -1,8 +1,9 @@
 import { api } from '../api/client'
 import { apiErrorMessage } from '../api/httpContract'
 import { createLatestRead } from './latestRead'
+import { downloadCsv } from '../utils/csv'
 
-export function pagedRecords({ path, responseKey, recordsKey, searchKey, load, failure, trim, filters }) {
+export function pagedRecords({ path, responseKey, recordsKey, searchKey, load, failure, trim, filters, exportColumns, exportName }) {
   return {
     data () {
       return { [recordsKey]: [], isLoading: false, loadError: '', total: 0, pageSize: 10, currentPage: 1 }
@@ -39,7 +40,11 @@ export function pagedRecords({ path, responseKey, recordsKey, searchKey, load, f
         return this._recordReads.run(query)
       },
       handleSizeChange (size) { this.pageSize = size; this[load]() },
-      changePage (page) { this.currentPage = page; this[load](true) }
+      changePage (page) { this.currentPage = page; this[load](true) },
+      exportCurrentPage () {
+        if (!exportColumns || !this[recordsKey].length) { this.$message.warning('当前没有可导出的数据'); return }
+        downloadCsv(`${exportName}-${new Date().toISOString().slice(0, 10)}.csv`, exportColumns, this[recordsKey])
+      }
     }
   }
 }

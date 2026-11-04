@@ -17,6 +17,7 @@
           </el-input>
         </div>
         <div class="toolbar-actions">
+          <el-button plain @click="exportCurrentPage">导出本页</el-button>
           <el-button plain @click="customerDialogVisible = true">添加监护人</el-button>
         </div>
 		
@@ -137,6 +138,7 @@ import { onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
 import RecordCards from '@/components/RecordCards.vue'
 import { api } from '../api/client'
+import { downloadCsv } from '../utils/csv'
 import { useCustomers, validAge, validPhone } from '../composables/useCustomers'
 const mobileLayout = useCollectionLayout(900)
 const state = useCustomers(api)
@@ -159,6 +161,10 @@ async function deleteRole(id: number | string | undefined) {
  if (id === undefined) return
  try { await ElMessageBox.confirm('确认删除该监护人？', '删除监护人', { type: 'warning' }) } catch { return }
  if (await state.remove(id)) ElMessage.success('删除监护人成功')
+}
+function exportCurrentPage () {
+  if (!customerList.value.length) { ElMessage.warning('当前没有可导出的数据'); return }
+  downloadCsv(`监护人-${new Date().toISOString().slice(0, 10)}.csv`, [{ key: 'customerName', label: '姓名' }, { key: 'customerAge', label: '年龄' }, { key: 'customerSex', label: '性别' }, { key: 'customerPhone', label: '电话' }, { key: 'customerAddress', label: '地址' }], customerList.value)
 }
 onMounted(() => searchCustomers())
 </script>

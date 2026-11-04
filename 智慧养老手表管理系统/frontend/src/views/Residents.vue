@@ -17,6 +17,7 @@
           </el-input>
         </div>
         <div class="toolbar-actions">
+          <el-button plain @click="exportCurrentPage">导出本页</el-button>
           <el-button plain @click="oldDialogVisible = true">添加老人</el-button>
         </div>
 		
@@ -118,7 +119,7 @@ import RecordCards from '@/components/RecordCards.vue'
 import ResidentForm from '@/components/records/ResidentForm.vue'
 
 export default {
-  mixins: [pagedRecords({ path: "api/v1/residents/details", responseKey: "oldPersonDetails", recordsKey: "personDetailList", searchKey: "name", load: "searchOldPersons", failure: "老人档案暂时无法加载，请检查服务连接后重试。" })],
+  mixins: [pagedRecords({ path: "api/v1/residents/details", responseKey: "oldPersonDetails", recordsKey: "personDetailList", searchKey: "name", load: "searchOldPersons", failure: "老人档案暂时无法加载，请检查服务连接后重试。" , exportName: "老人档案", exportColumns: [{key:"name",label:"姓名"},{key:"bothdate",label:"出生日期"},{key:"sex",label:"性别"},{key:"phone",label:"电话"},{key:"room",label:"房间"},{key:"beTime",label:"入院时间"},{key:"customerName",label:"监护人"},{key:"deviceId",label:"手表编号"}] })],
   setup () { return { mobileLayout: useCollectionLayout(900) } },
   components: { RecordCards, ResidentForm },
   data () {

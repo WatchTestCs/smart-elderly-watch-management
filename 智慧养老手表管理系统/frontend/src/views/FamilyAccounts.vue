@@ -17,6 +17,7 @@
           </el-input>
         </div>
         <div class="toolbar-actions">
+          <el-button plain @click="exportCurrentPage">导出本页</el-button>
           <el-button plain @click="customerDialogVisible = true">添加家属</el-button>
         </div>
 		
@@ -99,7 +100,7 @@ import RecordCards from '@/components/RecordCards.vue'
 import FamilyForm from '@/components/records/FamilyForm.vue'
 
 export default {
-  mixins: [pagedRecords({ path: "api/v1/family/select", responseKey: "familyDtos", recordsKey: "familyList", searchKey: "familyName", load: "searchfamily", failure: "家属账号暂时无法加载，请检查服务连接后重试。" })],
+  mixins: [pagedRecords({ path: "api/v1/family/select", responseKey: "familyDtos", recordsKey: "familyList", searchKey: "familyName", load: "searchfamily", failure: "家属账号暂时无法加载，请检查服务连接后重试。" , exportName: "家属账号", exportColumns: [{key:"name",label:"老人姓名"},{key:"oldId",label:"老人编号"},{key:"familyName",label:"家属姓名"},{key:"familyRelation",label:"关系"},{key:"familySex",label:"性别"},{key:"familyPhone",label:"电话"},{key:"familyAddress",label:"地址"}] })],
   setup () { return { mobileLayout: useCollectionLayout(900) } },
   components: { RecordCards, FamilyForm },
   data () {
