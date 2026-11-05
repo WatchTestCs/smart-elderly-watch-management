@@ -4,7 +4,7 @@ export interface CsvColumn { key: string; label: string }
 function cell(value: unknown): string {
   let text = value === null || value === undefined ? '' : String(value)
   // 以 = + - @ 制表符/回车开头的单元格会被 Excel 当作公式执行。
-  if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`
+  if (/^[\s\uFEFF]*[=+\-@]/u.test(text) || /^[\t\r\n]/.test(text)) text = `'${text}`
   return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text
 }
 
