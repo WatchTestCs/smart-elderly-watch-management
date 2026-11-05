@@ -1,0 +1,35 @@
+# 已加密 MySQL 字段的分批轮换
+
+`backend/cmd/rekey-data` 只处理现有 AEAD 字段，不会把姓名、电话或健康 JSON 等历史明文字段自动变成密文，也不改变 HMAC 索引。它是 P0-07 的部分实现，不能作为全库保护或旧密钥退役的证明。
+
+## 覆盖和前置条件
+
+固定清单位于 `internal/rekey/targets.go`，覆盖 19 个列：照护备注与事件、告警复核理由、两类通知收件人、设备最近坐标、位置历史、两张告警表的坐标、已存在的位置元数据、数据库会话、按角色/账号认证的 TOTP、规则证据的 JSON 密文包装和遥测 inbox。清单包含复合主键与字符串主键，不接受命令行拼接表名或字段名。
+
+先备份数据库与旧密钥，并验证备份可恢复。所有读实例和 worker 必须先能读 A+B，再把各写实例切到 active B；旧密钥 A 与原有 lookupKey C 继续保留。命令比较当前配置和 `--previous-key-file` 的 lookupKey，发生变化立即拒绝。单 key 旧配置的 lookupKey 实际就是旧 key；该部署仍须沿用它，独立 lookupKey 的索引迁移另行实施。
+
+当前 `DATA_ENCRYPTION_KEY_FILE` 指向私有的新 keyring 文件，`MYSQL_DSN_FILE` 指向明确选择的数据库。命令不会生成密钥，不会运行 schema migration，不会切换正在运行的服务配置，也不会删除 reader。不要把配置内容写入命令行或验收制品。
+
+## 执行与恢复
+
+在后端模块目录构建 `go build -o rekey-data ./cmd/rekey-data`，然后执行：
+
+```text
+rekey-data --previous-key-file <私有旧配置文件> > before.json
+rekey-data --previous-key-file <私有旧配置文件> --apply --batch-size 100 > apply.json
+rekey-data --previous-key-file <私有旧配置文件> > after.json
+```
+
+默认只读。`--apply` 先完整验证清单内所有密文，包括已经使用 active key 的密文；缺失 reader、错误 scope、损坏密文、异常 JSON 包装或超大字段都会阻止首次写入。旧明文仅计数，不自动转换或重建索引。
+
+实际处理使用主键游标和每列高水位，默认每页 100 行、最多 1000 行，并限制页面/单字段字节数、总行数及总时间。读取页面后释放结果集，再逐行提交字节级 compare-and-swap；不长时间锁住整张表。若原值已被修改或行已被删除，保留并发结果并计入冲突。TOTP scope、规则 JSON 的其他属性、recipient_key、业务状态与绑定版本保持原值；现有数据库触发器照常执行，因此轮换可能新增不含备注原文的分析事件。
+
+程序中断不会回滚已经提交的其他行。保留 A+B 后再次从头执行即可：active 密文先认证再跳过，旧密文继续处理，失败值不被替换。遇到任一冲突、认证错误、残留明文、超时或预算耗尽，apply 返回非零。CLI stdout 始终只输出聚合计数，stderr 使用固定错误说明，不输出行主键、密文、明文、DSN 或 key 内容。
+
+`before`、`applied`、`after` 分别记录预检、实际更新和新扫描。`complete` 表示该列完成了本次高水位扫描；`encrypted_columns_clean` 仅表示本次扫描未发现清单内残留。MySQL `analytics_outbox.payload` 的历史坐标事件仍可能含嵌套的 A 密文，清单扫描不会将其当作已轮换；真实测试明确保留并验证这一残留。扫描期间的插入、旧实例继续写 A、对象、PG、副本、WAL、历史备份和回滚程序也不能由此推断安全，因此 `retirement_authorized` 始终为 `false`。最终停用 A 仍需独立的写版本屏障、全部资产残留盘点、最旧备份恢复和审查。
+
+## 验证边界
+
+`TestRekeyMySQL` 在全新迁移的真实 InnoDB 库中覆盖全部 19 列：只读预检、单行分页/数字顺序/字符串与复合主键、28 份历史密文 A→B、只保留 B 后读取、HMAC 与业务状态不变、规则 JSON 保留、末列损坏阻止前列写入、legacy 恢复重跑、行数耗尽、明文残留、超大字段、取消、并发更新和删除。即使列使用忽略大小写及尾空格的 collation，CAS 也不得覆盖并发值。该测试被双 Go 的 MySQL 结果审计列为必需，缺失、失败或意外 skip 不能通过门禁。
+
+这不包含对象重写、历史索引迁移、PG 重建或协调备份恢复；内存保留的旧密文读取断言不等于真实备份恢复测试。原 `protect-notes` 仍是需要停写的独立明文迁移/离线回退工具，不能替代上述流程。

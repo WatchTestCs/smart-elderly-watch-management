@@ -1,0 +1,221 @@
+package rekey
+
+import (
+	"context"
+	"encoding/json"
+	"strings"
+	"testing"
+	"time"
+
+	"suining-care/internal/db/dbtest"
+)
+
+// This uses a disposable, fully migrated InnoDB database. Node adapters and
+// crypto-only tests cannot establish the pagination or CAS guarantees here.
+func TestRekeyMySQL(t *testing.T) {
+	pool := dbtest.MySQL(t)
+	database := pool.SQL()
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
+	defer cancel()
+	old, current, retired, legacy := boxes(t)
+	exec := func(query string, args ...any) {
+		t.Helper()
+		if _, err := database.ExecContext(ctx, query, args...); err != nil {
+			t.Fatal(err)
+		}
+	}
+	get := func(query string, args ...any) string {
+		t.Helper()
+		var value string
+		if err := database.QueryRowContext(ctx, query, args...).Scan(&value); err != nil {
+			t.Fatal(err)
+		}
+		return value
+	}
+	s := func(scope string) string { return sealed(t, old, "synthetic protected value", scope) }
+	exec("INSERT INTO oldperson(old_id,name) VALUES(1,'synthetic')")
+	exec("INSERT INTO device(device_id,device_no,secret,old_id,last_lng,last_lat) VALUES(1,'REKEY-LAB',?,1,?,?)", strings.Repeat("x", 48), s("location"), s("location"))
+	exec("INSERT INTO care_incident(id,old_id,device_id,resolution_note) VALUES(1,1,1,?)", s("care-text"))
+	for _, id := range []int{1, 2, 10, 100} {
+		exec("INSERT INTO care_incident_event(id,incident_id,actor,action,note) VALUES(?,1,'synthetic','received',?)", id, s("care-text"))
+	}
+	exec("INSERT INTO alert_review(id,entity,record_id,kind,verdict,reason,actor_id) VALUES(1,'care',1,'sos','confirmed',?,1)", s("care-text"))
+	lookup := old.Index("care-notification-recipient", "13800000001")
+	exec("INSERT INTO care_notification_outbox(id,incident_id,channel,recipient,recipient_key) VALUES(1,1,'sms',?,?)", sealed(t, old, "13800000001", "care-notification-recipient"), lookup)
+	exec("INSERT INTO message_outbox(id,topic,source_key,family_id,channel,recipient) VALUES(1,'care','1',1,'sms',?)", s("notification-recipient"))
+	exec("INSERT INTO device_location(id,device_id,old_id,lng,lat,position_metadata) VALUES(1,1,1,?,?,?)", s("location"), s("location"), s("location"))
+	exec("INSERT INTO alarm_precess(id,old_id,device_id,lng,lat,position_metadata) VALUES(1,1,1,?,?,?)", s("location"), s("location"), s("location"))
+	exec("INSERT INTO alarm_process(id,old_id,device_id,lng,lat) VALUES(1,1,1,?,?)", s("location"), s("location"))
+	for _, hash := range []string{strings.Repeat("1", 64), strings.Repeat("a", 64), strings.Repeat("z", 64)} {
+		exec("INSERT INTO web_session(id_hash,role,actor_id,payload,expires_at) VALUES(?,'ADMIN',1,?,UTC_TIMESTAMP(6)+INTERVAL 1 HOUR)", hash, s("session"))
+	}
+	for _, role := range []string{"ADMIN", "FAMILY"} {
+		for _, id := range []int{1, 10} {
+			scope := target{table: "auth_factor"}.fieldScope([]any{role, id})
+			exec("INSERT INTO auth_factor(role,actor_id,secret,generation,pending_until,recovery_hashes) VALUES(?,?,?,'00000000-0000-0000-0000-000000000000',UTC_TIMESTAMP(6),'[]')", role, id, s(scope))
+		}
+	}
+	for _, kind := range []string{"heart_rate", "inactivity"} {
+		wrapper, _ := json.Marshal(map[string]any{"encrypted": s("rule-evidence"), "future": 7})
+		exec("INSERT INTO rule_state(device_id,epoch,kind,observation_key,streak,active,evidence,updated_at) VALUES(1,1,?,'synthetic',1,false,?,UTC_TIMESTAMP(6))", kind, string(wrapper))
+	}
+	exec("INSERT INTO telemetry_inbox(id,device_id,elder_id,binding_epoch,request_id,payload,next_retry_at,created_at) VALUES(1,1,1,1,'synthetic',?,UTC_TIMESTAMP(6),UTC_TIMESTAMP(6))", s("telemetry-inbox"))
+	options := Options{BatchSize: 1, MaxRowsPerColumn: 1000}
+	beforeBusiness := get("SELECT CONCAT(health_epoch,':',old_id,':',device_no) FROM device WHERE device_id=1")
+	beforeIncident := get("SELECT CONCAT(state,':',updated_at) FROM care_incident WHERE id=1")
+	beforeNote := get("SELECT resolution_note FROM care_incident WHERE id=1")
+
+	t.Run("scan is readonly and covers all actual columns", func(t *testing.T) {
+		report, err := Run(ctx, database, current, old, options)
+		if err != nil || len(report.Before) != 19 || report.Stage != "complete" || report.EncryptedColumnsClean || report.RetirementAuthorized {
+			t.Fatalf("unexpected report: %+v err=%v", report, err)
+		}
+		for _, column := range report.Before {
+			if !column.Complete || column.OldKey < 1 || column.Invalid != 0 || column.Plaintext != 0 {
+				t.Fatalf("missing actual-column coverage: %+v", column)
+			}
+		}
+		if get("SELECT resolution_note FROM care_incident WHERE id=1") != beforeNote {
+			t.Fatal("scan mutated data")
+		}
+	})
+	t.Run("bounded composite numeric and string pagination with retirement read", func(t *testing.T) {
+		options.Apply = true
+		report, err := Run(ctx, database, current, old, options)
+		if err != nil || !report.EncryptedColumnsClean || report.Stage != "complete" || report.RetirementAuthorized {
+			t.Fatalf("apply failed: %+v err=%v", report, err)
+		}
+		var rewrites int64
+		for _, column := range report.Applied {
+			rewrites += column.Rewritten
+			if column.Conflicts != 0 || !column.Complete {
+				t.Fatal("incomplete apply")
+			}
+		}
+		if rewrites != 28 {
+			t.Fatalf("pagination lost rows: rewrites=%d", rewrites)
+		}
+		options.Apply = false
+		check, err := Run(ctx, database, retired, old, options)
+		if err != nil || !check.EncryptedColumnsClean {
+			t.Fatal("old key still needed for current fields", err)
+		}
+		if get("SELECT recipient_key FROM care_notification_outbox WHERE id=1") != lookup || current.Index("care-notification-recipient", "13800000001") != lookup {
+			t.Fatal("HMAC index changed")
+		}
+		if get("SELECT CONCAT(health_epoch,':',old_id,':',device_no) FROM device WHERE device_id=1") != beforeBusiness || get("SELECT CONCAT(state,':',updated_at) FROM care_incident WHERE id=1") != beforeIncident {
+			t.Fatal("business state changed")
+		}
+		if get("SELECT JSON_EXTRACT(evidence,'$.future') FROM rule_state LIMIT 1") != "7" {
+			t.Fatal("JSON wrapper metadata lost")
+		}
+		if get("SELECT COUNT(*) FROM analytics_outbox WHERE CAST(payload AS CHAR) LIKE '%sne1:v2:A:%'") == "0" || report.RetirementAuthorized {
+			t.Fatal("subset scan was treated as retirement approval despite historical outbox ciphertext")
+		}
+		// The preserved old ciphertext is backup-like historical input, not a
+		// claim of a coordinated backup restore. Only an A reader can open it.
+		if _, err := retired.Open(beforeNote, "care-text"); err == nil {
+			t.Fatal("retired reader opened A")
+		}
+		if got, err := old.Open(beforeNote, "care-text"); err != nil || got != "synthetic protected value" {
+			t.Fatal("historical ciphertext cannot be restored with retained key")
+		}
+	})
+	t.Run("authentication failure prevents every write", func(t *testing.T) {
+		valid := sealed(t, old, "valid old note", "care-text")
+		goodQueue := get("SELECT payload FROM telemetry_inbox WHERE id=1")
+		exec("UPDATE care_incident SET resolution_note=? WHERE id=1", valid)
+		exec("UPDATE telemetry_inbox SET payload='sne1:v2:MISSING:AAAA' WHERE id=1")
+		options.Apply = true
+		report, err := Run(ctx, database, current, old, options)
+		if err == nil || report.Stage != "preflight" || len(report.Applied) != 0 || report.Before[len(report.Before)-1].Invalid != 1 {
+			t.Fatal("invalid late column did not fail before mutations")
+		}
+		if get("SELECT resolution_note FROM care_incident WHERE id=1") != valid {
+			t.Fatal("valid earlier column was modified before preflight finished")
+		}
+		exec("UPDATE telemetry_inbox SET payload=? WHERE id=1", goodQueue)
+	})
+	t.Run("legacy envelope resumability and idempotent rerun", func(t *testing.T) {
+		value := sealed(t, legacy, "legacy synthetic note", "care-text")
+		exec("UPDATE care_incident SET resolution_note=? WHERE id=1", value)
+		options.Apply = true
+		report, err := Run(ctx, database, current, old, options)
+		if err != nil || report.Before[0].Legacy != 1 || report.Applied[0].Rewritten != 1 || !report.EncryptedColumnsClean {
+			t.Fatal("legacy resume failed", err)
+		}
+		report, err = Run(ctx, database, current, old, options)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, column := range report.Applied {
+			if column.Rewritten != 0 {
+				t.Fatal("idempotent rerun rewrote active data")
+			}
+		}
+	})
+	t.Run("row budget fails incomplete before writes", func(t *testing.T) {
+		limited := options
+		limited.MaxRowsPerColumn = 1
+		report, err := Run(ctx, database, current, old, limited)
+		if err == nil || report.Stage != "preflight" || len(report.Applied) != 0 || report.Before[len(report.Before)-1].Complete {
+			t.Fatal("truncated inventory accepted")
+		}
+	})
+	t.Run("plaintext is reported without silent migration", func(t *testing.T) {
+		original := get("SELECT reason FROM alert_review WHERE id=1")
+		exec("UPDATE alert_review SET reason='synthetic legacy plaintext' WHERE id=1")
+		report, err := Run(ctx, database, current, old, options)
+		if err == nil || report.EncryptedColumnsClean || report.After[2].Plaintext != 1 || get("SELECT reason FROM alert_review WHERE id=1") != "synthetic legacy plaintext" {
+			t.Fatal("plaintext was silently migrated or accepted")
+		}
+		encoded, _ := json.Marshal(report)
+		if strings.Contains(string(encoded), "synthetic legacy plaintext") || strings.Contains(string(encoded), beforeNote) {
+			t.Fatal("report leaked payload")
+		}
+		exec("UPDATE alert_review SET reason=? WHERE id=1", original)
+	})
+	t.Run("oversize value is rejected without loading it", func(t *testing.T) {
+		original := get("SELECT payload FROM telemetry_inbox WHERE id=1")
+		exec("UPDATE telemetry_inbox SET payload=REPEAT('x',?) WHERE id=1", maxFieldBytes+1)
+		report, err := Run(ctx, database, current, old, options)
+		if err == nil || len(report.Applied) != 0 || report.Before[len(report.Before)-1].Invalid != 1 {
+			t.Fatal("oversize value accepted")
+		}
+		exec("UPDATE telemetry_inbox SET payload=? WHERE id=1", original)
+	})
+	t.Run("binary CAS preserves concurrent writer including case and spaces", func(t *testing.T) {
+		exec("ALTER TABLE alert_review MODIFY reason TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL")
+		target := targets()[2]
+		for _, concurrent := range []string{"SAME", "same "} {
+			exec("UPDATE alert_review SET reason='same' WHERE id=1")
+			stale := get("SELECT reason FROM alert_review WHERE id=1")
+			done := make(chan error, 1)
+			go func() {
+				_, err := database.ExecContext(ctx, "UPDATE alert_review SET reason=? WHERE id=1", concurrent)
+				done <- err
+			}()
+			if err := <-done; err != nil {
+				t.Fatal(err)
+			}
+			changed, err := compareSwap(ctx, database, target, []any{int64(1)}, stale, "must not win")
+			if err != nil || changed || get("SELECT reason FROM alert_review WHERE id=1") != concurrent {
+				t.Fatal("CAS overwrote concurrent update", err)
+			}
+		}
+		// Deletion cannot be resurrected by a stale candidate.
+		exec("DELETE FROM alert_review WHERE id=1")
+		changed, err := compareSwap(ctx, database, target, []any{int64(1)}, "same ", "must not resurrect")
+		if err != nil || changed {
+			t.Fatal("deleted row was rewritten", err)
+		}
+	})
+	t.Run("cancelled operation is incomplete", func(t *testing.T) {
+		cancelled, stop := context.WithCancel(ctx)
+		stop()
+		report, err := Run(cancelled, database, current, old, Options{BatchSize: 1, MaxRowsPerColumn: 1000})
+		if err == nil || report.EncryptedColumnsClean || report.Stage == "complete" {
+			t.Fatal("cancelled scan was successful")
+		}
+	})
+}
