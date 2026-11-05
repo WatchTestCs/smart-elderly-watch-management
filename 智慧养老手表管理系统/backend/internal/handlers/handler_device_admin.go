@@ -172,10 +172,7 @@ func (h *Handler) deviceCreateBindCode(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	createUser, _ := vstr(m, "createUser")
-	if createUser == "" {
-		createUser = "管理员"
-	}
+	createUser := creatorName(r)
 	now := time.Now()
 	expireTime := now.AddDate(0, 0, expireDays)
 	code, err := h.genBindCode(ctx, h.DB)
