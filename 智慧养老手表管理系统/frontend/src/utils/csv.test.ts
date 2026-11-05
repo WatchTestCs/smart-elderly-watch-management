@@ -10,7 +10,7 @@ describe('toCsv', () => {
   })
 
   it('neutralises formulas preceded by whitespace', () => {
-    expect(toCsv(columns, [{ name: '  =1+1', note: 'ok' }])).toContain("\\r\\n'  =1+1,ok")
+    expect(toCsv(columns, [{ name: '  =1+1', note: 'ok' }])).toContain("\r\n'  =1+1,ok")
   })
 
   it('neutralises spreadsheet formulas and tolerates missing values', () => {
