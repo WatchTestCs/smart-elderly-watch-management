@@ -70,13 +70,14 @@ router.beforeEach(async to => {
     if (to.path === '/setup') return '/sign-in'
     if (publicPage) return
     if (!account) return '/sign-in'
+    if (to.name === 'not-found') return
     if (isOtherPortal(account)) return portalHome(account)
     if (account.role === 'ADMIN' && (account.duty === 'caregiver' || account.duty === 'auditor') && !['/operations/overview', '/operations'].includes(to.path)) return '/operations/overview'
   } catch (error) {
     const unavailable = (error as { response?: { data?: { code?: string } } } | null)?.response?.data?.code === 'DATABASE_UNAVAILABLE'
     const account = authState.account as SessionAccount | null
     if (unavailable && account) {
-      if (!publicPage && to.path !== '/setup' && isOtherPortal(account)) return portalHome(account)
+      if (!publicPage && to.name !== 'not-found' && to.path !== '/setup' && isOtherPortal(account)) return portalHome(account)
       return to.path === '/setup' ? '/sign-in' : undefined
     }
     return publicPage || (to.path === '/setup' && unavailable) ? undefined : '/sign-in'
