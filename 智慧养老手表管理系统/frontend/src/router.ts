@@ -1,6 +1,7 @@
 import type { Component } from 'vue'
 import { createRouter, createWebHashHistory, type RouteRecordRaw } from 'vue-router'
 import { loadSession, authState } from './auth'
+import { documentTitle, recoverFromChunkError } from './appGuards'
 
 const NoticeEditor = () => import('./components/NoticeEditor.vue')
 type Page = [path: string, title: string, component: () => Promise<{ default: Component }>, props?: Record<string, boolean>]
@@ -50,7 +51,8 @@ const router = createRouter({
         ['/operations/invitations', '家属注册邀请码', () => import('./views/FamilyInvitations.vue')],
         ['/operations/devices', '设备管理', () => import('./views/DeviceManagement.vue')]
       ] satisfies Page[]).map(page)
-    }
+    },
+    { path: '/:pathMatch(.*)*', name: 'not-found', meta: { title: '页面不存在' }, component: () => import('./views/NotFound.vue') }
   ]
 })
 
@@ -80,5 +82,8 @@ router.beforeEach(async to => {
     return publicPage || (to.path === '/setup' && unavailable) ? undefined : '/sign-in'
   }
 })
+
+router.afterEach(to => { document.title = documentTitle(to.meta.title) })
+router.onError(error => { recoverFromChunkError(error) })
 
 export default router
