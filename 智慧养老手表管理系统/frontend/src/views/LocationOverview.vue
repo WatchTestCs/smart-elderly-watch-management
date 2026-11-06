@@ -13,7 +13,7 @@
             class="input-with-select">
             <template #append><el-button aria-label="查询长者姓名"
               
-              icon="el-icon-search"
+              :icon="Search"
               native-type="submit"></el-button></template>
           </el-input>
         </div>
@@ -46,22 +46,22 @@
 	  <el-table-column prop="beTime" label="上报时间" width="auto" align="center"></el-table-column>
       <el-table-column label="操作" align="center">
       	<template #default="scope" >
-      		<el-button v-if="scope.row.status==1" size="small" plain type="danger" icon="el-icon-warning"
+      		<el-button v-if="scope.row.status==1" size="small" plain type="danger" :icon="WarningFilled"
                        @click="showFallReason(scope.row)">告警记录与处理</el-button>
-      		<el-button v-if="scope.row.status==1" size="small" plain type="primary" icon="el-icon-check"
+      		<el-button v-if="scope.row.status==1" size="small" plain type="primary" :icon="Check"
       		           @click="handleFall(scope.row)">标记已处理</el-button>
-      		<el-button size="small" plain type="success" icon="el-icon-check" @click="showRoleDialog(scope.row)">
+      		<el-button size="small" plain type="success" :icon="Check" @click="showRoleDialog(scope.row)">
       			详细情况
       		</el-button>
       	</template>
       </el-table-column>
     </el-table>
     <record-cards v-if="mobileLayout" :records="positionList" :fields='[{"key":"sex","label":"性别"},{"key":"status","label":"告警状态","state":"fall"},{"key":"lng","label":"经度"},{"key":"lat","label":"纬度"}]' label="位置与告警记录" title-key="name" key-field="oldId" time-key="beTime">
-      <template #actions="scope"  ><span class="position-context">{{ describePositionContext(scope.row) }}</span><el-button v-if="scope.row.status==1" size="small" plain type="danger" icon="el-icon-warning"
+      <template #actions="scope"  ><span class="position-context">{{ describePositionContext(scope.row) }}</span><el-button v-if="scope.row.status==1" size="small" plain type="danger" :icon="WarningFilled"
                        @click="showFallReason(scope.row)">告警记录与处理</el-button>
-<el-button v-if="scope.row.status==1" size="small" plain type="primary" icon="el-icon-check"
+<el-button v-if="scope.row.status==1" size="small" plain type="primary" :icon="Check"
       		           @click="handleFall(scope.row)">标记已处理</el-button>
-<el-button size="small" plain type="success" icon="el-icon-check" @click="showRoleDialog(scope.row)">
+<el-button size="small" plain type="success" :icon="Check" @click="showRoleDialog(scope.row)">
       			详细情况
       		</el-button></template>
     </record-cards>
@@ -80,6 +80,7 @@
 </template>
 
 <script setup lang="ts">
+import { Check, Search, WarningFilled } from '@element-plus/icons-vue'
 import { computed, ref, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { usePagedRecords } from '@/composables/usePagedRecords'

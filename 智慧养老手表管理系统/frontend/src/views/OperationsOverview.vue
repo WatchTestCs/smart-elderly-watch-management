@@ -2,30 +2,30 @@
   <div class="dashboard">
     <div class="page-heading">
       <div><h1>{{ isRestricted ? '照护工作台' : '运营总览' }}</h1><p class="page-subtitle">{{ isRestricted ? '按职责接单、处置和复核，不展示无权限的后台统计。' : '查看设备异常与平台公告，及时跟进照护事项。' }}</p></div>
-      <el-button v-if="!isRestricted" type="primary" icon="el-icon-plus" @click="addtext">发布公告</el-button>
+      <el-button v-if="!isRestricted" type="primary" :icon="Plus" @click="addtext">发布公告</el-button>
     </div>
     <care-inbox />
     <div v-if="!isRestricted" class="dashboard-panels">
     <section class="overview-grid" aria-label="设备告警摘要">
       <article class="overview-card alert-card" v-loading="countLoading" :aria-busy="countLoading">
-        <div class="metric-icon amber"><i class="el-icon-warning"></i></div>
+        <div class="metric-icon amber"><el-icon><WarningFilled /></el-icon></div>
         <div class="metric-copy"><span>设备异常类别计数</span><strong v-if="!countError">{{ allCount == null ? '—' : allCount }}</strong><strong v-else class="metric-error" role="status">{{ countError }}</strong><small v-if="categoryCounts">心率 {{ categoryCounts.rate }} · 血压 {{ categoryCounts.pressure }} · 睡眠 {{ categoryCounts.sleep }}</small><small>同一设备可能对应多类异常</small></div>
-        <el-button v-if="countError" link @click="getCount">重新加载设备统计</el-button><el-button v-else link @click="$router.push('/operations/devices')">查看设备 <i class="el-icon-arrow-right"></i></el-button>
+        <el-button v-if="countError" link @click="getCount">重新加载设备统计</el-button><el-button v-else link @click="$router.push('/operations/devices')">查看设备 <el-icon><ArrowRight /></el-icon></el-button>
       </article>
       <article class="overview-card fall-card" v-loading="positionLoading" :aria-busy="positionLoading">
-        <div class="metric-icon rose"><i class="el-icon-warning"></i></div>
+        <div class="metric-icon rose"><el-icon><WarningFilled /></el-icon></div>
         <div class="metric-copy"><span>紧急告警</span><strong v-if="!positionError">{{ num == null ? '—' : num }}</strong><strong v-else class="metric-error" role="status">{{ positionError }}</strong><small v-if="positionTotal != null">{{ positionTotal ? num + ' / ' + positionTotal + ' 位长者有紧急告警' : '暂无长者位置记录' }}</small><small>根据最近告警记录统计</small></div>
-        <el-button v-if="positionError" link @click="searchposition">重新加载告警统计</el-button><el-button v-else link @click="$router.push('/operations/locations')">查看位置 <i class="el-icon-arrow-right"></i></el-button>
+        <el-button v-if="positionError" link @click="searchposition">重新加载告警统计</el-button><el-button v-else link @click="$router.push('/operations/locations')">查看位置 <el-icon><ArrowRight /></el-icon></el-button>
       </article>
       <article class="overview-note">
-        <span class="note-icon"><i class="el-icon-info"></i></span>
+        <span class="note-icon"><el-icon><InfoFilled /></el-icon></span>
         <div><strong>数据说明</strong><p>健康与位置数据取决于手表最近一次上报。页面不会将未上报的数据标记为正常。</p></div>
       </article>
     </section>
     <section class="announcement-panel">
       <div class="panel-heading">
         <div><h2>平台公告 <span v-if="!isLoading && !loadError" class="notice-count" :aria-label="'共 ' + total + ' 条公告'">{{ total }}</span></h2><p>面向家属发布的服务与照护信息</p></div>
-        <form class="search-box" role="search" @submit.prevent="searchOlds()"><label class="search-label" for="admin-notice-search">按标题查找公告</label><el-input id="admin-notice-search" v-model="searchText" placeholder="搜索公告标题" :disabled="isLoading" clearable @clear="searchOlds"><template #append><el-button  icon="el-icon-search" aria-label="搜索公告" :loading="isLoading" native-type="submit"></el-button></template></el-input></form>
+        <form class="search-box" role="search" @submit.prevent="searchOlds()"><label class="search-label" for="admin-notice-search">按标题查找公告</label><el-input id="admin-notice-search" v-model="searchText" placeholder="搜索公告标题" :disabled="isLoading" clearable @clear="searchOlds"><template #append><el-button  :icon="Search" aria-label="搜索公告" :loading="isLoading" native-type="submit"></el-button></template></el-input></form>
       </div>
       <el-table class="desktop-announcements" v-loading="isLoading" :data="tableData" @row-click="getDetail" row-class-name="clickable-row">
         <el-table-column type="index" label="序号" width="64" align="center"></el-table-column>
@@ -33,12 +33,12 @@
           <template #default="scope" ><span class="announcement-title">{{ scope.row.title || '未命名公告' }}</span></template>
         </el-table-column>
         <el-table-column prop="time" label="发布时间" width="175"></el-table-column>
-        <el-table-column label="查看" width="110" align="right"><template #default="scope" ><el-button link @click.stop="getDetail(scope.row)">查看详情 <i class="el-icon-arrow-right"></i></el-button></template></el-table-column>
+        <el-table-column label="查看" width="110" align="right"><template #default="scope" ><el-button link @click.stop="getDetail(scope.row)">查看详情 <el-icon><ArrowRight /></el-icon></el-button></template></el-table-column>
         <template #empty><div  class="table-empty" role="status"><img v-if="!loadError && !appliedSearch" src="/static/img/care-announcement-empty.webp" alt="" width="160" height="160"><strong>{{ emptyTitle }}</strong><span>{{ emptyDescription }}</span><el-button v-if="loadError" plain @click="searchOlds">重新加载</el-button><el-button v-else-if="appliedSearch" plain @click="clearSearch">清除搜索条件</el-button></div></template>
       </el-table>
       <div class="mobile-announcements" v-loading="isLoading">
         <div v-if="!tableData.length" class="table-empty" role="status"><img v-if="!loadError && !appliedSearch" src="/static/img/care-announcement-empty.webp" alt="" width="160" height="160"><strong>{{ emptyTitle }}</strong><span>{{ emptyDescription }}</span><el-button v-if="loadError" plain @click="searchOlds">重新加载</el-button><el-button v-else-if="appliedSearch" plain @click="clearSearch">清除搜索条件</el-button></div>
-        <button v-for="notice in tableData" :key="notice.textId" type="button" class="mobile-notice" :aria-label="'查看详情：' + (notice.title || '未命名公告')" @click="getDetail(notice)"><span><strong>{{ notice.title || '未命名公告' }}</strong><time>{{ notice.time || '暂无发布时间' }}</time></span><i class="el-icon-arrow-right" aria-hidden="true"></i></button>
+        <button v-for="notice in tableData" :key="notice.textId" type="button" class="mobile-notice" :aria-label="'查看详情：' + (notice.title || '未命名公告')" @click="getDetail(notice)"><span><strong>{{ notice.title || '未命名公告' }}</strong><time>{{ notice.time || '暂无发布时间' }}</time></span><el-icon aria-hidden="true"><ArrowRight /></el-icon></button>
       </div>
       <div class="pagination-wrap" v-if="total > pageSize"><el-pagination @size-change="handleSizeChange" @current-change="changePage" v-model:current-page="currentPage" :page-size="pageSize" layout="total, sizes, prev, pager, next" :total="total"></el-pagination></div>
     </section>
@@ -96,6 +96,7 @@
 @media (max-width: 760px) { .overview-card { padding: 22px 18px; } .alert-card { border-right: 0; border-bottom: 1px solid #e2e9e1; } .overview-note { padding: 18px; } .desktop-announcements { display: none; } .mobile-announcements { display: block; } .page-heading { align-items: flex-start; flex-direction: column; } .page-heading h1 { font-size: 25px; } .overview-grid { grid-template-columns: 1fr; } .overview-note { grid-column: auto; } .panel-heading { align-items: flex-start; flex-direction: column; } .search-box { width: 100%; } .announcement-panel { padding: 18px 14px; } .pagination-wrap { justify-content: center; overflow-x: auto; } }
 </style>
 <script setup lang="ts">
+import { ArrowRight, InfoFilled, Plus, Search, WarningFilled } from '@element-plus/icons-vue'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '../api/client'

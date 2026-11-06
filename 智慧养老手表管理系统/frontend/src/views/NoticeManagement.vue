@@ -5,9 +5,9 @@
         <div><h2>公告动态</h2><p>查看、检索并维护已发布的公告。</p></div>
         <div class="announcement-actions">
           <form class="announcement-query" role="search" @submit.prevent="searchOlds()"><label class="table-search-label" for="manage-notice-search">按标题查找</label><el-input id="manage-notice-search" v-model="searchText" placeholder="搜索公告标题" clearable @clear="searchOlds">
-            <template #append><el-button  icon="el-icon-search" aria-label="搜索公告" native-type="submit"></el-button></template>
+            <template #append><el-button  :icon="Search" aria-label="搜索公告" native-type="submit"></el-button></template>
           </el-input></form>
-          <el-button type="primary" icon="el-icon-plus" @click="addtext">添加公告</el-button>
+          <el-button type="primary" :icon="Plus" @click="addtext">添加公告</el-button>
         </div>
       </header>
       <div v-if="loadError" class="collection-feedback" role="alert">{{ loadError }}<el-button plain @click="searchOlds">重新加载公告</el-button></div>
@@ -33,7 +33,7 @@
     <details class="upload-panel"><summary class="image-maintenance-summary">更多展示图片设置<span>公告附图请在公告编辑中添加</span></summary><div class="image-maintenance-body">
       <div class="upload-heading"><div><h2>公告图片</h2><p>维护独立的展示图片，JPG 格式，单张不超过8MB。</p></div></div>
       <el-upload ref="galleryUpload" class="upload-demo" :disabled="gallerySaving" :on-change="galleryChanged" :on-error="galleryError" action="api/v1/image/saveImage" :with-credentials="true" :headers="uploadHeaders" :on-preview="handlePreview" :on-remove="handleRemove" :on-success="handleAvatarSuccess" :before-upload="beforeAvatarUpload" multiple :limit="10" :file-list="fileList2" list-type="picture">
-        <el-button size="small" type="primary" icon="el-icon-upload2">选择图片</el-button>
+        <el-button size="small" type="primary" :icon="UploadFilled">选择图片</el-button>
         <template #tip><div  class="el-upload__tip">最多上传 10 张图片。</div></template>
       </el-upload>
       <div class="upload-footer"><el-button type="primary" :loading="gallerySaving" :disabled="!fileList2.length || fileList2.some(file => file.status !== 'success')" @click="picShow">提交图片</el-button></div>
@@ -58,6 +58,7 @@
 @media (max-width: 480px) { .announcement-actions { align-items: stretch; flex-direction: column; } .announcement-actions .el-input { width: 100%; } }
 </style>
 <script setup lang="ts">
+import { Plus, Search, UploadFilled } from '@element-plus/icons-vue'
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'

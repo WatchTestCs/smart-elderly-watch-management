@@ -12,7 +12,7 @@
             class="input-with-select">
             <template #append><el-button aria-label="查询长者姓名"
               
-              icon="el-icon-search"
+              :icon="Search"
               native-type="submit"></el-button></template>
           </el-input>
         </div>
@@ -78,20 +78,20 @@
 
       <el-table-column label="操作" width="200" align="center" fixed="right">
         <template #default="scope" >
-          <el-button size="small" plain type="primary" icon="el-icon-edit"
+          <el-button size="small" plain type="primary" :icon="Edit"
                      @click="handleeditOldPerson(scope.$index, scope.row)">编辑
           </el-button>
-          <el-button size="small" plain type="danger" icon="el-icon-delete" @click="deleteOldPerson(scope.row.oldId)">删除
+          <el-button size="small" plain type="danger" :icon="Delete" @click="deleteOldPerson(scope.row.oldId)">删除
           </el-button>
           
         </template>
       </el-table-column>
     </el-table>
     <record-cards v-if="mobileLayout && !loadError" :records="personDetailList" :fields='[{"key":"bothdate","label":"出生日期"},{"key":"sex","label":"性别"},{"key":"phone","label":"电话"},{"key":"room","label":"房间"},{"key":"beTime","label":"入院时间"},{"key":"familyName","label":"家属姓名"},{"key":"familyRelation","label":"关系"},{"key":"familyPhone","label":"家属电话"},{"key":"familyAddress","label":"家属地址"},{"key":"familySex","label":"家属性别"},{"key":"customerName","label":"监护人"},{"key":"deviceId","label":"手表编号"},{"key":"illness","label":"病史"},{"key":"warn","label":"过敏"},{"key":"foodLike","label":"喜好食物"},{"key":"foodHate","label":"忌口食物"},{"key":"drag","label":"常用药物"}]' label="老人档案" empty-title="暂无老人档案" title-key="name" key-field="oldId">
-      <template #actions="scope"  ><el-button size="small" plain type="primary" icon="el-icon-edit"
+      <template #actions="scope"  ><el-button size="small" plain type="primary" :icon="Edit"
                      @click="handleeditOldPerson(scope.$index, scope.row)">编辑
           </el-button>
-<el-button size="small" plain type="danger" icon="el-icon-delete" @click="deleteOldPerson(scope.row.oldId)">删除
+<el-button size="small" plain type="danger" :icon="Delete" @click="deleteOldPerson(scope.row.oldId)">删除
           </el-button></template>
     </record-cards>
     
@@ -107,6 +107,7 @@
 
 </template>
 <script setup>
+import { Delete, Edit, Search } from '@element-plus/icons-vue'
 import { reactive, ref } from 'vue'
 import { usePagedRecords } from '@/composables/usePagedRecords'
 import { useCollectionLayout } from '@/composables/useCollectionLayout'

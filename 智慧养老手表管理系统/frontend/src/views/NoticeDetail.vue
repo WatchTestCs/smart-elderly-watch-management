@@ -1,6 +1,6 @@
 <template>
   <div class="admin-notice">
-    <el-button plain icon="el-icon-arrow-left" @click="$router.push('/operations/overview')">返回运营总览</el-button>
+    <el-button plain :icon="ArrowLeft" @click="$router.push('/operations/overview')">返回运营总览</el-button>
     <article v-loading="loading" class="notice-panel">
       <div v-if="error" role="alert" class="notice-feedback"><p>{{ error }}</p><el-button plain @click="loadNotice">重新加载公告</el-button></div>
       <template v-else-if="notice">
@@ -19,6 +19,7 @@
 </template>
 
 <script setup lang="ts">
+import { ArrowLeft } from '@element-plus/icons-vue'
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { api } from '../api/client'

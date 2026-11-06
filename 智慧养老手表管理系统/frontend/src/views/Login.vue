@@ -20,12 +20,12 @@
         <el-form label-position="top" ref="loginFormRef" :model="loginForm" :rules="rules" class="login-form" @submit.prevent="submitForm">
           <el-form-item label="手机号" prop="phone" for="login-phone">
             <el-input id="login-phone" aria-label="手机号" v-model="loginForm.phone" placeholder="请输入登录手机号" autocomplete="username" inputmode="tel" maxlength="11" clearable>
-              <template #prefix><i  class="el-input__icon el-icon-mobile-phone"></i></template>
+              <template #prefix><el-icon class="el-input__icon "><Iphone /></el-icon></template>
             </el-input>
           </el-form-item>
           <el-form-item label="密码" prop="password" for="login-password">
             <el-input id="login-password" aria-label="密码" v-model="loginForm.password" :type="showPassword ? 'text' : 'password'" placeholder="请输入密码" autocomplete="current-password" @keyup.enter="submitForm">
-              <template #prefix><svg class="el-input__icon password-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 4v3"/></svg></template><template #suffix><button  type="button" class="password-visibility" :aria-label="showPassword ? '隐藏密码' : '显示密码'" :aria-pressed="String(showPassword)" @click="showPassword = !showPassword"><i class="el-icon-view" aria-hidden="true"></i></button></template>
+              <template #prefix><svg class="el-input__icon password-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 4v3"/></svg></template><template #suffix><button  type="button" class="password-visibility" :aria-label="showPassword ? '隐藏密码' : '显示密码'" :aria-pressed="String(showPassword)" @click="showPassword = !showPassword"><el-icon aria-hidden="true"><View /></el-icon></button></template>
             </el-input>
           </el-form-item>
           <el-form-item v-if="mfaRequired" label="动态验证码或恢复码"><el-input v-model="loginForm.otp" aria-label="动态验证码" autocomplete="one-time-code" inputmode="numeric" maxlength="6" placeholder="6 位动态验证码" /><el-input v-model="loginForm.recoveryCode" aria-label="一次性恢复码" autocomplete="off" placeholder="无法使用验证器时填写恢复码" /></el-form-item>
@@ -33,7 +33,7 @@
           <el-button type="primary" class="submit-button" :loading="submitting" @click="submitForm">登录</el-button>
         </el-form>
         <div class="auth-register"><span>首次使用？</span><el-button link @click="goRegister">使用邀请码注册</el-button></div>
-        <p class="auth-footnote"><i class="el-icon-setting"></i> 账号信息仅用于本系统登录</p>
+        <p class="auth-footnote"><el-icon><Setting /></el-icon> 账号信息仅用于本系统登录</p>
       </div>
       <footer class="auth-footer">岁宁 · 让关怀始终在线</footer>
     </main>
@@ -41,6 +41,7 @@
 </template>
 
 <script setup>
+import { Iphone, Setting, View } from '@element-plus/icons-vue'
 import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { apiErrorMessage } from '../api/httpContract'

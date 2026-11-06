@@ -12,7 +12,7 @@
             class="input-with-select">
             <template #append><el-button aria-label="查询长者姓名"
               
-              icon="el-icon-search"
+              :icon="Search"
               native-type="submit"></el-button></template>
           </el-input>
         </div>
@@ -60,20 +60,20 @@
 	  
       <el-table-column label="操作" align="center">
         <template #default="scope" >
-          <el-button size="small" plain type="primary" icon="el-icon-edit"
+          <el-button size="small" plain type="primary" :icon="Edit"
                      @click="handleEditwatch(scope.$index, scope.row)">编辑
           </el-button>
-          <el-button size="small" plain type="danger" icon="el-icon-delete" @click="deleteRole(scope.row.deviceId)">删除
+          <el-button size="small" plain type="danger" :icon="Delete" @click="deleteRole(scope.row.deviceId)">删除
           </el-button>
           
         </template>
       </el-table-column>
     </el-table>
     <record-cards v-if="mobileLayout && !loadError" :records="watchsList" :fields='[{"key":"deviceId","label":"手表ID"},{"key":"bpf","label":"血压高值"},{"key":"bpl","label":"血压低值"},{"key":"hrf","label":"心率高值"},{"key":"hrl","label":"心率低值"}]' label="监测阈值档案" title-key="name" key-field="deviceId" time-key="opTime">
-      <template #actions="scope"  ><el-button size="small" plain type="primary" icon="el-icon-edit"
+      <template #actions="scope"  ><el-button size="small" plain type="primary" :icon="Edit"
                      @click="handleEditwatch(scope.$index, scope.row)">编辑
           </el-button>
-<el-button size="small" plain type="danger" icon="el-icon-delete" @click="deleteRole(scope.row.deviceId)">删除
+<el-button size="small" plain type="danger" :icon="Delete" @click="deleteRole(scope.row.deviceId)">删除
           </el-button></template>
     </record-cards>
     
@@ -90,6 +90,7 @@
 </template>
 
 <script setup lang="ts">
+import { Delete, Edit, Search } from '@element-plus/icons-vue'
 import { ref } from 'vue'
 import { usePagedRecords } from '@/composables/usePagedRecords'
 import { writeRecord, deleteRecord } from '@/composables/recordActions'

@@ -15,7 +15,7 @@
             class="input-with-select">
             <template #append><el-button aria-label="查询长者姓名"
               
-              icon="el-icon-search"
+              :icon="Search"
               native-type="submit"></el-button></template>
           </el-input>
         </div>
@@ -52,6 +52,7 @@
 </template>
 
 <script setup lang="ts">
+import { Search } from '@element-plus/icons-vue'
 import { ref } from 'vue'
 import { usePagedRecords } from '@/composables/usePagedRecords'
 import { useCollectionLayout } from '@/composables/useCollectionLayout'

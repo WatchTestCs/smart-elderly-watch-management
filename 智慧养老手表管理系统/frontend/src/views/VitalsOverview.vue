@@ -12,7 +12,7 @@
             class="input-with-select">
             <template #append><el-button aria-label="查询长者姓名"
               
-              icon="el-icon-search"
+              :icon="Search"
               native-type="submit"></el-button></template>
           </el-input>
         </div>
@@ -53,12 +53,12 @@
       <el-table-column label="操作" align="center">
         <template #default="scope" >
           <el-button v-if="scope.row.rateState==1 || scope.row.preState==1"
-                     size="small" plain type="danger" icon="el-icon-warning"
+                     size="small" plain type="danger" :icon="WarningFilled"
                      @click="showAlertRow(scope.row)">查看原因</el-button>
           <el-button v-if="scope.row.rateState==1 || scope.row.preState==1"
-                     size="small" plain type="primary" icon="el-icon-check"
+                     size="small" plain type="primary" :icon="Check"
                      @click="resolveRow(scope.row)">标记已处理</el-button>
-          <el-button size="small" plain type="success" icon="el-icon-check" aria-label="查看健康详情" @click="showRoleDialog(scope.row)">
+          <el-button size="small" plain type="success" :icon="Check" aria-label="查看健康详情" @click="showRoleDialog(scope.row)">
             查看健康详情
           </el-button>
         </template>
@@ -66,12 +66,12 @@
     </el-table>
     <record-cards v-if="mobileLayout" :records="oldsList" :fields='[{"key":"preState","label":"血压状态","state":"health","handled":"preHandled"},{"key":"rateState","label":"心率状态","state":"health","handled":"rateHandled"},{"key":"oldId","label":"长者编号"},{"key":"sex","label":"性别"}]' label="心率与血压记录" title-key="name" key-field="oldId" time-key="createTime">
       <template #actions="scope"  ><el-button v-if="scope.row.rateState==1 || scope.row.preState==1"
-                     size="small" plain type="danger" icon="el-icon-warning"
+                     size="small" plain type="danger" :icon="WarningFilled"
                      @click="showAlertRow(scope.row)">查看原因</el-button>
 <el-button v-if="scope.row.rateState==1 || scope.row.preState==1"
-                     size="small" plain type="primary" icon="el-icon-check"
+                     size="small" plain type="primary" :icon="Check"
                      @click="resolveRow(scope.row)">标记已处理</el-button>
-<el-button size="small" plain type="success" icon="el-icon-check" aria-label="查看健康详情" @click="showRoleDialog(scope.row)">
+<el-button size="small" plain type="success" :icon="Check" aria-label="查看健康详情" @click="showRoleDialog(scope.row)">
             查看健康详情
           </el-button></template>
     </record-cards>
@@ -97,6 +97,7 @@
 </template>
 
 <script setup lang="ts">
+import { Check, Search, WarningFilled } from '@element-plus/icons-vue'
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { usePagedRecords } from '@/composables/usePagedRecords'

@@ -15,7 +15,7 @@
         <el-form-item label="设置密码" prop="password"><el-input v-model="account.password" type="password" show-password autocomplete="new-password" /></el-form-item>
         <p class="setup-hint">12–20 位，包含英文字母与数字。请妥善保管，软件不设通用密码。</p>
         <p v-if="error" role="alert" class="setup-error">{{ error }}</p>
-        <el-button type="primary" native-type="submit" :loading="busy">创建账号，开始使用 <i class="el-icon-arrow-right" aria-hidden="true" /></el-button>
+        <el-button type="primary" native-type="submit" :loading="busy">创建账号，开始使用 <el-icon aria-hidden="true"><ArrowRight /></el-icon></el-button>
       </el-form>
       <p class="setup-footnote">您的健康与照护记录，始终由您掌握。</p>
     </section>
@@ -23,6 +23,7 @@
 </template>
 
 <script setup>
+import { ArrowRight } from '@element-plus/icons-vue'
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { apiErrorMessage } from '../api/httpContract'
