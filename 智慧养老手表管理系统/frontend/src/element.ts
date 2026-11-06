@@ -1,7 +1,7 @@
 import { defineComponent, h, type App } from 'vue'
 import {
   ElAlert, ElBadge, ElButton, ElConfigProvider, ElDatePicker, ElDialog, ElDropdown, ElDropdownItem, ElDropdownMenu,
-  ElForm, ElFormItem, ElInput, ElInputNumber, ElLoading, ElMenu, ElMenuItem, ElMessage, ElMessageBox, ElOption,
+  ElForm, ElFormItem, ElInput, ElInputNumber, ElLoading, ElMenu, ElMenuItem, ElOption,
   ElPagination, ElRadio, ElRadioGroup, ElSelect, ElSubMenu, ElSwitch, ElTabPane, ElTable, ElTableColumn, ElTabs, ElTag, ElUpload
 } from 'element-plus'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
@@ -27,7 +27,4 @@ export default function installElement (app: App) {
   app.directive('loading', ElLoading.directive)
   app.component('CareConfig', CareConfig)
   iconNames.forEach(name => app.component(name, { render: () => h('i', { class: name, 'aria-hidden': 'true' }) }))
-  app.config.globalProperties.$message = ElMessage
-  app.config.globalProperties.$alert = ElMessageBox.alert
-  app.config.globalProperties.$confirm = ElMessageBox.confirm
 }

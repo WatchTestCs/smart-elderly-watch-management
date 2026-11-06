@@ -1,5 +1,6 @@
 import { reactive } from 'vue'
 import axios from 'axios'
+import { ElMessage } from 'element-plus'
 import { apiErrorMessage, assertApiResponse } from './api/httpContract'
 import store from './store'
 
@@ -51,11 +52,8 @@ export function endSession () {
   })
 }
 
-export function installHttpSecurity (router, app) {
+export function installHttpSecurity (router) {
   axios.defaults.withCredentials = true
-  Object.defineProperty(app.config.globalProperties, '$uploadHeaders', { get () {
-    return { [authState.csrfHeader]: authState.csrfToken }
-  } })
   axios.interceptors.request.use(config => {
     const url = new URL(config.url, window.location.href)
     if (config.skipSession || url.origin !== window.location.origin || !(url.pathname.startsWith('/api/v1/'))) return config
@@ -70,7 +68,7 @@ export function installHttpSecurity (router, app) {
     if (error.response?.data?.code === 'DATABASE_UNAVAILABLE') {
       loaded = false
       authState.databaseReady = false
-      if (!error.config?.skipSession) app.config.globalProperties.$message.warning({ message: authState.configError
+      if (!error.config?.skipSession) ElMessage.warning({ message: authState.configError
         ? '服务端配置有误，依赖数据库的功能不可用，请联系管理员修正后重启。'
         : '此功能需要连接数据库，正在自动连接。恢复后请重试。', grouping: true })
     }

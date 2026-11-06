@@ -4,7 +4,6 @@ import DatabaseNotice from './components/DatabaseNotice.vue'
 import PagerBar from './components/PagerBar.vue'
 import { installDesktopKeys } from './desktop'
 import router from './router'
-import store from './store'
 import installElement from './element'
 import { installHttpSecurity } from './auth'
 import 'element-plus/dist/index.css'
@@ -19,9 +18,8 @@ import '@/assets/css/commercial.css'
 const app = createApp(App)
 app.component('database-notice', DatabaseNotice)
 app.component('pager-bar', PagerBar)
-app.config.globalProperties.$store = store
 installElement(app)
-installHttpSecurity(router, app)
+installHttpSecurity(router)
 app.use(router)
 app.mount('#app')
 installDesktopKeys()
