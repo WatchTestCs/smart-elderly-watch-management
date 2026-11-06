@@ -113,7 +113,7 @@
       </span></template>
     </el-dialog>
 
-    <el-dialog title="设备绑定码" v-model="bindCodeDialogVisible" width="560px">
+    <el-dialog :close-on-click-modal="false" title="设备绑定码" v-model="bindCodeDialogVisible" width="560px">
       <HarmonyWatchSetup v-if="currentDevice" :device-no="currentDevice.deviceNo" />
       <div v-if="currentDevice" class="tip">
         设备：{{ currentDevice.deviceNo }}（{{ currentDevice.alias }}）；

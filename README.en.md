@@ -157,6 +157,8 @@ The build script compiles the Vue frontend, embeds the assets into the Go binary
 
 ## Validation
 
+UI Quality runs with every Preview CI. `Core CI / required` covers the core checks; a formal candidate also requires native HAP compilation, actual Windows distribution tests, and complete evidence for the same SHA. See the [release gates](docs/reliability/release-governance.md) for inputs and rejection conditions.
+
 | Area | Current reference |
 | --- | --- |
 | Preview branch automation | [Preview CI](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/workflows/ci.yml) |

@@ -14,6 +14,13 @@ export function pagedRecords({ path, responseKey, recordsKey, searchKey, load, f
           const records = data[responseKey]
           const total = data.total ?? records?.length
           if (!Array.isArray(records) || !Number.isSafeInteger(total) || total < 0) throw new Error('invalid records')
+          // 删除了末页最后一条时当前页会变空：回退到新的最后一页，而不是停在空白页。
+          const lastPage = Math.max(1, Math.ceil(total / this.pageSize))
+          if (!records.length && total > 0 && lastPage < this.currentPage) {
+            this.currentPage = lastPage
+            this.$nextTick(() => this[load](true))
+            return
+          }
           this[recordsKey] = records
           this.total = total
         },

@@ -23,7 +23,7 @@
       </form>
     </div>
     
-    <el-dialog
+    <el-dialog :close-on-click-modal="false"
       title="家属添加"
       v-model="customerDialogVisible"
       @close="closeRoleAddDialog"
@@ -35,7 +35,7 @@
     </span></template>
     </el-dialog>
 
-    <el-dialog
+    <el-dialog :close-on-click-modal="false"
       title="家属编辑"
       v-model="oldEditDialogVisible"
       width="92%" custom-class="admin-record-dialog">
@@ -161,11 +161,11 @@ export default {
       const body = Object.fromEntries(fields.map(key => [key, this.familyEditForm[key]]))
       return writeRecord(this, 'api/v1/family/updateFamily', body, '家属信息已保存', () => {
         this.oldEditDialogVisible = false
-        this.searchfamily()
+        this.searchfamily(true)
       })
     },
     deleteFamily (familyId) {
-      return deleteRecord(this, 'api/v1/family/deleteFamily', { familyId }, '确认删除该家属账号？', () => this.searchfamily())
+      return deleteRecord(this, 'api/v1/family/deleteFamily', { familyId }, '确认删除该家属账号？', () => this.searchfamily(true))
     },
     handleeditFamily (index, row) {
       this.oldEditDialogVisible = true

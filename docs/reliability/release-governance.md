@@ -15,6 +15,27 @@ CodeQL 或依赖审查因 fork 权限、配置缺失而未运行时，应由维�
 
 ## 当前发布门槛
 
+`Core CI / required` 是日常合并的基础检查，不表示已经通过正式发布验收。
+UI Quality 由 Preview CI 在每个候选提交上调用，不再按前端路径过滤；复用工作流明确
+检出 PR head SHA，UI 日志与图片归入 `ui-quality-<SHA>`，不自动更新视觉基线。
+
+正式候选需在当前 `preview` SHA 上手动运行 Preview CI，启用 `require_native` 与
+`build_desktop`。原生构建读取显式 SDK URL / SHA-256，或仓库变量 `HARMONY_SDK_URL` /
+`HARMONY_SDK_SHA256`。缺少配置必须失败；普通 PR 的可选原生 job 被跳过时，只能声明
+基础检查通过。SDK 工具链版本为 Command Line Tools 6.1.1.280 / HarmonyOS API 24，
+URL 必须为 HTTPS，并在解压和执行前核对预期归档 SHA-256。
+
+`scripts/reliability/release-gate.py` 对正式候选独立检查 UI、两版 Go、手表协议与真实
+后端联调、原生 HAP、模拟器协议、Windows sidecar、实际 Tauri 构建和安装/卸载测试、
+部署合同及漏洞扫描。另查两项 CodeQL 结果。每项必需 job 必须在最新运行 attempt 中
+明确完成且成功，不能由聚合 job 的绿色状态代替，也不接受 skipped/cancelled。
+源码相同但来自其他分支或 PR 事件的运行不用于正式发布认证。
+
+必需 artifact 包括 `ui-quality-`、`watch-native-`、`watch-integration-`、
+`windows-desktop-` 等 SHA 命名前缀。运行、job 与 artifact 均遍历分页；缺失、重复、
+过期、空归档、摘要不合法或来源不一致都会阻断。普通 CI 绿色但没有完整软件证据时，
+`preview-candidate` 仍会在打包前被拒绝。这是阻断状态，不是发布已通过。
+
 Preview CI 与 Security 工作流分别验证当前提交的后端、数据库、race、迁移与恢复、S3、
 OpenAPI、前端 test/typecheck/build/audit、Windows sidecar 及漏洞扫描。具体执行范围以当前
 workflow 文件和对应 commit 的 job 结果为准；未配置的数据库测试、跳过的原生 SDK 编译、
