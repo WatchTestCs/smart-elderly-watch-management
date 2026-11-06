@@ -71,7 +71,8 @@
 </template>
 
 <script>
-import { pagedRecords } from '@/composables/pagedRecords'
+import { usePagedRecords } from '@/composables/usePagedRecords'
+import { ref } from 'vue'
 import { api as requestClient } from '../api/client'
 import { useCollectionLayout } from '@/composables/useCollectionLayout'
 import { apiErrorMessage } from '../api/httpContract'
@@ -81,12 +82,33 @@ import RecordCards from '@/components/RecordCards.vue'
 import { useRecordCharts } from '@/composables/useRecordCharts'
 
 export default {
-  setup () { return { mobileLayout: useCollectionLayout(900), ...useRecordCharts() } },
+  setup () {
+    const searchText = ref('')
+    const paging = usePagedRecords({
+      path: 'api/v1/activity/latest',
+      responseKey: 'activityRecords',
+      buildQuery: () => ({ name: searchText.value, timeFirst: '', timeLast: '' })
+    })
+    return {
+      mobileLayout: useCollectionLayout(900),
+      ...useRecordCharts(),
+      searchText,
+      stepList: paging.records,
+      isLoading: paging.isLoading,
+      loadError: paging.loadError,
+      total: paging.total,
+      pageSize: paging.pageSize,
+      currentPage: paging.currentPage,
+      searchStep: paging.load,
+      handleSizeChange: paging.handleSizeChange,
+      changePage: paging.changePage
+    }
+  },
   components: { RecordCards },
-  mixins: [pagedRecords({ path: "api/v1/activity/latest", responseKey: "activityRecords", recordsKey: "stepList", searchKey: "name", load: "searchStep", filters: {"timeFirst":"","timeLast":""} })],
+
   data () {
     return {
-      searchText: '',
+
 
 
 			stepCount:''
@@ -94,7 +116,7 @@ export default {
   },
   created () {
 
-    this.searchStep()
+    
 		this.getCount()
 
   },

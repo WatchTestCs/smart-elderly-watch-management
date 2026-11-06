@@ -108,7 +108,8 @@
 </template>
 
 <script>
-import { pagedRecords } from '@/composables/pagedRecords'
+import { usePagedRecords } from '@/composables/usePagedRecords'
+import { ref } from 'vue'
 import { api as requestClient } from '../api/client'
 import { useCollectionLayout } from '@/composables/useCollectionLayout'
 import { apiErrorMessage } from '../api/httpContract'
@@ -118,8 +119,30 @@ import RecordCards from '@/components/RecordCards.vue'
 import ResidentForm from '@/components/records/ResidentForm.vue'
 
 export default {
-  mixins: [pagedRecords({ path: "api/v1/residents/details", responseKey: "oldPersonDetails", recordsKey: "personDetailList", searchKey: "name", load: "searchOldPersons", failure: "老人档案暂时无法加载，请检查服务连接后重试。" })],
-  setup () { return { mobileLayout: useCollectionLayout(900) } },
+
+
+  setup () {
+    const searchText = ref('')
+    const paging = usePagedRecords({
+      path: 'api/v1/residents/details',
+      responseKey: 'oldPersonDetails',
+      buildQuery: () => ({ name: searchText.value }),
+      failure: '老人档案暂时无法加载，请检查服务连接后重试。'
+    })
+    return {
+      mobileLayout: useCollectionLayout(900),
+      searchText,
+      personDetailList: paging.records,
+      isLoading: paging.isLoading,
+      loadError: paging.loadError,
+      total: paging.total,
+      pageSize: paging.pageSize,
+      currentPage: paging.currentPage,
+      searchOldPersons: paging.load,
+      handleSizeChange: paging.handleSizeChange,
+      changePage: paging.changePage
+    }
+  },
   components: { RecordCards, ResidentForm },
   data () {
     var checkPhone = (rule, value, callback) => {
@@ -138,7 +161,8 @@ export default {
       }
     }
     return {
-      searchText: '', // 角色查询内容
+
+
       oldDialogVisible: false,
       oldEditDialogVisible: false,
       oldForm: {
@@ -187,7 +211,7 @@ export default {
     }
   },
   created () {
-    this.searchOldPersons()
+    
   },
   methods: {
     ...residentCommandMethods,

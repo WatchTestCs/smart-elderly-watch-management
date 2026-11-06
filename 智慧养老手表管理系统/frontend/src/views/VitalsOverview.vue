@@ -97,7 +97,8 @@
 </template>
 
 <script>
-import { pagedRecords } from '@/composables/pagedRecords'
+import { usePagedRecords } from '@/composables/usePagedRecords'
+import { ref } from 'vue'
 import { api as requestClient } from '../api/client'
 import { useCollectionLayout } from '@/composables/useCollectionLayout'
 import { apiErrorMessage } from '../api/httpContract'
@@ -109,12 +110,33 @@ import { healthAlertMethods } from './vitals.alert-methods'
 import { useRecordCharts } from '@/composables/useRecordCharts'
 
 export default {
-  setup () { return { mobileLayout: useCollectionLayout(900), ...useRecordCharts() } },
+  setup () {
+    const searchText = ref('')
+    const paging = usePagedRecords({
+      path: 'api/v1/vitals/latest',
+      responseKey: 'vitalRecords',
+      buildQuery: () => ({ name: searchText.value, timeFirst: '', timeLast: '' })
+    })
+    return {
+      mobileLayout: useCollectionLayout(900),
+      ...useRecordCharts(),
+      searchText,
+      oldsList: paging.records,
+      isLoading: paging.isLoading,
+      loadError: paging.loadError,
+      total: paging.total,
+      pageSize: paging.pageSize,
+      currentPage: paging.currentPage,
+      searchOlds: paging.load,
+      handleSizeChange: paging.handleSizeChange,
+      changePage: paging.changePage
+    }
+  },
   components: { RecordCards, HealthAlertDialog },
-  mixins: [pagedRecords({ path: "api/v1/vitals/latest", responseKey: "vitalRecords", recordsKey: "oldsList", searchKey: "name", load: "searchOlds", filters: {"timeFirst":"","timeLast":""} })],
+
   data () {
     return {
-      searchText: '',
+
 
       rateCount: '',
       preCount: '',
@@ -141,7 +163,7 @@ export default {
   },
   created () {
 
-    this.searchOlds()
+    
     this.getCount()
 
   },
