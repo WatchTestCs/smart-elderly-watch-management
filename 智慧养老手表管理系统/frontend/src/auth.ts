@@ -1,17 +1,35 @@
 import { reactive } from 'vue'
+import type { Router } from 'vue-router'
+import type { InternalAxiosRequestConfig } from 'axios'
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
 import { apiErrorMessage, assertApiResponse } from './api/httpContract'
 import store from './store'
 
-/** @typedef {{ role: 'ADMIN'|'FAMILY'; duty?: string; displayName?: string; oldId?: number|string; phone?: string }} SessionAccount */
-/** @typedef {{ account: SessionAccount|null; csrfToken: string; csrfHeader: string; setupRequired: boolean; databaseReady: boolean|null; configError: string }} SessionState */
-export const authState = reactive(/** @type {SessionState} */ ({
+export interface SessionAccount {
+  role: 'ADMIN' | 'FAMILY'
+  duty?: 'supervisor' | 'caregiver' | 'auditor' | string
+  displayName?: string
+  oldId?: number | string
+  phone?: string
+}
+export interface SessionState {
+  account: SessionAccount | null
+  csrfToken: string
+  csrfHeader: string
+  setupRequired: boolean
+  databaseReady: boolean | null
+  configError: string
+}
+declare module 'axios' {
+  interface AxiosRequestConfig { skipSession?: boolean }
+}
+export const authState = reactive<SessionState>({
   account: null, csrfToken: '', csrfHeader: 'X-CSRF-TOKEN',
   setupRequired: false, databaseReady: null, configError: ''
-}))
+})
 let loaded = false
-let pending = null
+let pending: Promise<SessionAccount | null> | null = null
 const profileKeys = ['token', 'user_name', 'oldIdfamily', 'familyPhone', 'familyTouPic']
 
 function clearProfile () {
@@ -20,7 +38,7 @@ function clearProfile () {
   }
 }
 
-export function loadSession (refresh) {
+export function loadSession (refresh = false): Promise<SessionAccount | null> {
   if (!refresh && loaded) return Promise.resolve(authState.account)
   if (pending) return pending
   pending = axios.get('/api/v1/auth/session', { skipSession: true, timeout: 5000 }).then(response => {
@@ -37,7 +55,7 @@ export function loadSession (refresh) {
       try {
         localStorage.setItem('user_name', authState.account.displayName || '用户')
         if (authState.account.role === 'FAMILY') {
-          if (authState.account.oldId != null) localStorage.setItem('oldIdfamily', authState.account.oldId)
+          if (authState.account.oldId != null) localStorage.setItem('oldIdfamily', String(authState.account.oldId))
           if (authState.account.phone != null) localStorage.setItem('familyPhone', authState.account.phone)
         }
       } catch (_) { /* A blocked storage write must not invalidate a valid session. */ }
@@ -57,18 +75,18 @@ export function endSession () {
   })
 }
 
-export function installHttpSecurity (router) {
+export function installHttpSecurity (router: Pick<Router, 'currentRoute' | 'replace'>) {
   axios.defaults.withCredentials = true
   axios.interceptors.request.use(config => {
-    const url = new URL(config.url, window.location.href)
+    const url = new URL(config.url || '', window.location.href)
     if (config.skipSession || url.origin !== window.location.origin || !(url.pathname.startsWith('/api/v1/'))) return config
     if (['get', 'head', 'options'].includes((config.method || 'get').toLowerCase())) return config
     return loadSession().then(() => {
-      config.headers[authState.csrfHeader] = authState.csrfToken
+      config.headers.set(authState.csrfHeader, authState.csrfToken)
       return config
     })
   })
-  axios.interceptors.response.use(assertApiResponse, error => {
+  axios.interceptors.response.use(assertApiResponse, (error: any) => {
     error.message = apiErrorMessage(error, error.message || '连接中断')
     if (error.response?.data?.code === 'DATABASE_UNAVAILABLE') {
       loaded = false
@@ -106,11 +124,11 @@ export function installHttpSecurity (router) {
 
 
 // Shared service probe: back off while offline and never replay mutations.
-export function monitorDatabase (router) {
+export function monitorDatabase (router: Pick<Router, 'currentRoute' | 'replace'>) {
   let active = true
   let checking = false
   let failures = 0
-  let timer
+  let timer: ReturnType<typeof setTimeout> | undefined
 
   async function check () {
     if (!active || checking || document.hidden) return
@@ -119,7 +137,7 @@ export function monitorDatabase (router) {
     const previous = authState.databaseReady
     let ready = false
     try {
-      const { data } = await axios.get('/api/v1/service/status', { skipSession: true, timeout: 5000 })
+      const { data } = await axios.get<{ databaseReady: boolean; configError?: string }>('/api/v1/service/status', { skipSession: true, timeout: 5000 })
       if (!active) return
       if (typeof data.databaseReady !== 'boolean') throw new Error('Invalid database status')
       authState.databaseReady = data.databaseReady
