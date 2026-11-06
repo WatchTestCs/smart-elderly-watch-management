@@ -2,7 +2,7 @@ import { computed, onBeforeUnmount, onMounted, reactive, toRefs, watch } from 'v
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import axios from 'axios'
-import { accepted } from '../api/client'
+import { accepted, type Envelope } from '../api/client'
 import { apiErrorMessage } from '../api/httpContract'
 import { copyText } from '../utils/clipboard'
 
@@ -70,7 +70,7 @@ interface DeviceState {
 
 
 // Keep writes explicit: retrying administrative mutations could repeat a completed action.
-const post = (path: string, params: Record<string, unknown> = {}) => axios.post<Record<string, any>>('api/v1/device/' + path, params)
+const post = (path: string, params: Record<string, unknown> = {}) => axios.post<Envelope & Record<string, any>>('api/v1/device/' + path, params)
 
 function emptyAlert(): DeviceAlert {
   return {
@@ -280,7 +280,7 @@ export function useDevices() {
     stopTimer()
     if (!state.autoRefresh || document.hidden || disposed) return
     refreshTimer = setTimeout(async () => {
-      refreshTimer = null
+      refreshTimer = undefined
       try { await loadDevices() } finally { startTimer() }
     }, 5000)
   }
@@ -319,7 +319,7 @@ export function useDevices() {
     state.bindExpireDays = '1'
     state.newBindCode = null
     state.bindCodeDialogVisible = true
-    void loadBindCodes(row.oldId)
+    void loadBindCodes(row.oldId ?? '')
   }
   async function loadBindCodes(oldId: DeviceId | '') {
     if (!oldId) {
