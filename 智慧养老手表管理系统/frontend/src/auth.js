@@ -4,7 +4,12 @@ import { ElMessage } from 'element-plus'
 import { apiErrorMessage, assertApiResponse } from './api/httpContract'
 import store from './store'
 
-export const authState = reactive({ account: null, csrfToken: '', csrfHeader: 'X-CSRF-TOKEN', setupRequired: false, databaseReady: null, configError: '' })
+/** @typedef {{ role: 'ADMIN'|'FAMILY'; duty?: string; displayName?: string; oldId?: number|string; phone?: string }} SessionAccount */
+/** @typedef {{ account: SessionAccount|null; csrfToken: string; csrfHeader: string; setupRequired: boolean; databaseReady: boolean|null; configError: string }} SessionState */
+export const authState = reactive(/** @type {SessionState} */ ({
+  account: null, csrfToken: '', csrfHeader: 'X-CSRF-TOKEN',
+  setupRequired: false, databaseReady: null, configError: ''
+}))
 let loaded = false
 let pending = null
 const profileKeys = ['token', 'user_name', 'oldIdfamily', 'familyPhone', 'familyTouPic']

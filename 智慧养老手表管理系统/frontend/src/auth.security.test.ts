@@ -8,7 +8,7 @@ import { authState, installHttpSecurity } from './auth'
 
 it('adds CSRF to versioned mutations without leaking it to another origin', async () => {
   mock.get.mockResolvedValue({ data: { csrfToken: 'session-csrf', authenticated: false } })
-  installHttpSecurity({ currentRoute: { value: { path: '/sign-in' } } }, { config: { globalProperties: {} } })
+  installHttpSecurity({ currentRoute: { value: { path: '/sign-in' } } })
   const request = { url: '/api/v1/security/factor', method: 'post', headers: {} as Record<string, string> }
   await mock.request(request)
   expect(request.headers['X-CSRF-TOKEN']).toBe('session-csrf')
@@ -19,12 +19,11 @@ it('adds CSRF to versioned mutations without leaking it to another origin', asyn
 
 it('refreshes a downgraded ADMIN duty on forbidden response without replaying the write', async () => {
   const router = { currentRoute: { value: { path: '/operations/guardians' } }, replace: vi.fn() }
-  const app = { config: { globalProperties: {} } }
   authState.account = { role: 'ADMIN', duty: 'supervisor' } as any
   mock.get.mockResolvedValue({
     data: { csrfToken: 'rotated', authenticated: true, account: { role: 'ADMIN', duty: 'caregiver' } }
   })
-  installHttpSecurity(router, app)
+  installHttpSecurity(router)
   const denied = { response: { status: 403, data: { code: 'ACCESS_DENIED' } } }
   await expect(mock.responseError(denied)).rejects.toBe(denied)
   await vi.waitFor(() => expect(router.replace).toHaveBeenCalledWith('/operations/overview'))
