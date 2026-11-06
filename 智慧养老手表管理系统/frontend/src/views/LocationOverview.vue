@@ -79,115 +79,80 @@
 	
 </template>
 
-<script>
+<script setup lang="ts">
+import { computed, ref, watch } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { usePagedRecords } from '@/composables/usePagedRecords'
-import { ref } from 'vue'
-import { api as requestClient } from '../api/client'
 import { useCollectionLayout } from '@/composables/useCollectionLayout'
-
+import { api, accepted, type Envelope } from '../api/client'
+import { apiErrorMessage } from '../api/httpContract'
+import store from '@/store'
 import PositionMap from '@/components/PositionMap.vue'
 import RecordCards from '@/components/RecordCards.vue'
 import { describePositionContext } from '../utils/positionContext'
 
-export default {
-  computed: {
-    num () { return this.positionList.filter(row => row.status === 1 || row.status === "1").length },
-    alertRevision () { return this.$store.state.alertRevision }
-  },
-  watch: {
-    alertRevision () { this.searchposition(true) },
-    positionList (rows) {
-      const id = this.$store.state.selectedResidentId
-      const selected = id == null ? null : rows.find(row => String(row.oldId) === id)
-      if (selected) this.selectedLocation = { ...selected }
-    }
-  },
+type PositionRow = Record<string, any>
+const searchText = ref('')
+const mobileLayout = useCollectionLayout(900)
+const {
+  records: positionList, isLoading, loadError, total,
+  pageSize, currentPage, load: searchposition,
+  handleSizeChange, changePage
+} = usePagedRecords<PositionRow, { name: string }>({
+  path: 'api/v1/position/select',
+  responseKey: 'positionDtos',
+  buildQuery: () => ({ name: searchText.value }),
+  failure: '位置数据暂时无法加载，请检查服务连接后重试。'
+})
+const selectedLocation = ref<PositionRow | null>(null)
+const num = computed(() => positionList.value.filter(row => row.status === 1 || row.status === '1').length)
 
-  setup () {
-    const searchText = ref('')
-    const paging = usePagedRecords({
-      path: 'api/v1/position/select',
-      responseKey: 'positionDtos',
-      buildQuery: () => ({ name: searchText.value }),
-      failure: '位置数据暂时无法加载，请检查服务连接后重试。'
-    })
-    return {
-      mobileLayout: useCollectionLayout(900),
-      searchText,
-      positionList: paging.records,
-      isLoading: paging.isLoading,
-      loadError: paging.loadError,
-      total: paging.total,
-      pageSize: paging.pageSize,
-      currentPage: paging.currentPage,
-      searchposition: paging.load,
-      handleSizeChange: paging.handleSizeChange,
-      changePage: paging.changePage
-    }
-  },
-  components: { RecordCards, PositionMap },
-  data () {
-    return {
-
-
-			selectedLocation: null,
-    }
-  },
-  created () {
-
-    
-
-  },
-  methods: {
-    describePositionContext,
-    // 告警记录与处理办法（红点点进来就是这个）
-    showFallReason (row) {
-      var alarmPosition = row.alarmLng != null && row.alarmLat != null && row.alarmLng !== '' && row.alarmLat !== ''
-        ? '经度 ' + row.alarmLng + '，纬度 ' + row.alarmLat
-        : '未提供告警坐标（最新定位仅供参考）'
-      this.$alert(
-        '老人：' + row.name + '\n'
-        + '告警时间：' + (row.alarmTime || '未提供告警时间') + '\n'
-        + '告警附带坐标：' + alarmPosition + '\n'
-        + '事件类型：' + ({ sos: 'SOS 求助', fall: '设备上报摔倒', unknown: '未知' }[row.alarmKind] || '未知') + '\n'
-        + describePositionContext(row, true) + '\n\n'
-        + '怎么处理：\n'
-        + '① 立即电话联系老人或家属确认情况；\n'
-        + '② 结合告警附带坐标核实位置，必要时请求现场协助；\n'
-        + '③ 确认处理后点「标记已处理」，右上角告警红点数量会减少。',
-        '紧急告警 · 原因与处理',
-        { confirmButtonText: '知道了', callback: function () {} }
-      )
-    },
-    // 处置：消除告警红点
-    handleFall (row) {
-      var _this = this
-      this.$confirm('确认该紧急告警已经处理（联系过老人/家属）？处理后会从红点统计里移除。', '提示', {
-        confirmButtonText: '确定已处理',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }).then(function () {
-        requestClient.post('api/v1/locations/alerts/resolve-latest', {'oldId': row.oldId}).then(function (response) {
-          if (response.data.returnCode === '1111') {
-            _this.$message({type: 'success', message: '已处理，告警红点已消除'})
-            _this.$store.notifyAlertsChanged()
-          } else {
-            _this.$message({type: 'error', message: response.data.message || '处理失败'})
-          }
-        }).catch(function (error) {
-          _this.$message({type: 'error', message: '处理失败'})
-        })
-      }).catch(function () {})
-    },
-
-    showRoleDialog (curRole) {
-      this.selectedLocation = { ...curRole }
-      this.$store.selectResident(curRole.oldId)
-    }
-
+watch(() => store.state.alertRevision, () => { void searchposition(true) })
+watch(positionList, rows => {
+  const id = store.state.selectedResidentId
+  const selected = id == null ? null : rows.find(row => String(row.oldId) === id)
+  if (selected) selectedLocation.value = { ...selected }
+})
+function showFallReason(row: PositionRow) {
+  const alarmPosition = row.alarmLng != null && row.alarmLat != null &&
+    row.alarmLng !== '' && row.alarmLat !== ''
+    ? '经度 ' + row.alarmLng + '，纬度 ' + row.alarmLat
+    : '未提供告警坐标（最新定位仅供参考）'
+  const content = [
+    '老人：' + row.name,
+    '告警时间：' + (row.alarmTime || '未提供告警时间'),
+    '告警附带坐标：' + alarmPosition,
+    '事件类型：' + ({ sos: 'SOS 求助', fall: '设备上报摔倒', unknown: '未知' } as Record<string, string>)[row.alarmKind] || '未知',
+    describePositionContext(row, true),
+    '',
+    '怎么处理：',
+    '① 立即电话联系老人或家属确认情况；',
+    '② 结合告警附带坐标核实位置，必要时请求现场协助；',
+    '③ 确认处理后点「标记已处理」，右上角告警红点数量会减少。'
+  ].join('\n')
+  return ElMessageBox.alert(content, '紧急告警 · 原因与处理', { confirmButtonText: '知道了' })
+}
+async function handleFall(row: PositionRow) {
+  try {
+    await ElMessageBox.confirm(
+      '确认该紧急告警已经处理（联系过老人/家属）？处理后会从红点统计里移除。',
+      '提示',
+      { confirmButtonText: '确定已处理', cancelButtonText: '取消', type: 'warning' }
+    )
+  } catch { return }
+  try {
+    const { data } = await api.post<Envelope>('api/v1/locations/alerts/resolve-latest', { oldId: row.oldId })
+    accepted(data)
+    ElMessage({ type: 'success', message: '已处理，告警红点已消除' })
+    store.notifyAlertsChanged()
+  } catch (error) {
+    ElMessage({ type: 'error', message: apiErrorMessage(error, '处理失败') })
   }
 }
-
+function showRoleDialog(row: PositionRow) {
+  selectedLocation.value = { ...row }
+  store.selectResident(row.oldId)
+}
 </script>
 
 <style scoped>
