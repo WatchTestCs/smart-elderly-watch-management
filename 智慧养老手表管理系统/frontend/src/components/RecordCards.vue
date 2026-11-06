@@ -10,22 +10,35 @@
   </section>
 </template>
 
-<script setup>
+<script setup lang="ts" generic="TRecord extends Record<string, any>">
 import { computed, useSlots } from 'vue'
 
-const props = defineProps({
-  records: { type: Array, required: true },
-  fields: { type: Array, required: true },
-  label: { type: String, required: true },
-  emptyTitle: { type: String, default: '暂无记录' },
-  titleKey: { type: String, default: 'name' },
-  keyField: { type: String, default: 'oldId' },
-  timeKey: { type: String, default: '' }
+interface RecordField {
+  key: string
+  label: string
+  state?: string
+  handled?: string
+}
+
+const props = withDefaults(defineProps<{
+  records: TRecord[]
+  fields: RecordField[]
+  label: string
+  emptyTitle?: string
+  titleKey?: string
+  keyField?: string
+  timeKey?: string
+}>(), {
+  emptyTitle: '暂无记录',
+  titleKey: 'name',
+  keyField: 'oldId',
+  timeKey: ''
 })
+defineSlots<{ actions(props: { row: TRecord; $index: number }): any }>()
 const slots = useSlots()
 const primaryFields = computed(() => props.fields.slice(0, 4))
 const extraFields = computed(() => props.fields.slice(4))
-function valueOf(row, field) {
+function valueOf(row: TRecord, field: RecordField): unknown {
   const value = row[field.key]
   if (field.state) {
     if (value === 1 || value === '1') return field.state === 'fall' ? '紧急告警' : '异常'
@@ -35,7 +48,7 @@ function valueOf(row, field) {
   }
   return value == null || value === '' ? '暂未提供' : value
 }
-function stateClass(row, field) {
+function stateClass(row: TRecord, field: RecordField): string {
   if (!field.state) return ''
   if (row[field.key] === 1 || row[field.key] === '1') return 'status-danger'
   if (field.handled && (row[field.handled] === 1 || row[field.handled] === '1')) return 'status-handled'
