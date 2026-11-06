@@ -30,7 +30,7 @@ A useful report includes:
 - user data is not stored in the installation directory.
 - ordinary PR/CI jobs do not receive signing private keys.
 
-See `docs/ARCHITECTURE.md` and `docs/decisions/` for the full invariants.
+See `docs/ARCHITECTURE.md` for the full invariants.
 
 ## Scope notes
 

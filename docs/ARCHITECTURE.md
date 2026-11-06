@@ -56,7 +56,7 @@ Vue Setup → 受限 `setup_admin` IPC → Rust 核对主窗口标签与实际 o
 
 Tauri 能力配置限定主窗口、本机页面和必要命令；原生命令会再次核对实际 origin，而不只依赖 URL 通配能力配置。
 
-实现位置：[permissions/setup.toml](../智慧养老手表管理系统/desktop/permissions/setup.toml)、[capabilities/desktop.json](../智慧养老手表管理系统/desktop/capabilities/desktop.json)、[前端原生桥](../智慧养老手表管理系统/frontend/src/desktop.js)。
+实现位置：[permissions/setup.toml](../智慧养老手表管理系统/desktop/permissions/setup.toml)、[capabilities/desktop.json](../智慧养老手表管理系统/desktop/capabilities/desktop.json)、[前端原生桥](../智慧养老手表管理系统/frontend/src/desktop.ts)。
 
 ### 业务请求
 
@@ -74,7 +74,7 @@ Tauri 能力配置限定主窗口、本机页面和必要命令；原生命令�
 
 ## 数据库连接与故障恢复
 
-实现入口：[cmd/server/database.go](../智慧养老手表管理系统/backend/cmd/server/database.go)、[前端 auth.js](../智慧养老手表管理系统/frontend/src/auth.js)。
+实现入口：[cmd/server/database.go](../智慧养老手表管理系统/backend/cmd/server/database.go)、[前端 auth.ts](../智慧养老手表管理系统/frontend/src/auth.ts)。
 
 Go 的主库连接任务在后台运行；PG 分析同步独立重试，不决定业务 API 是否就绪。一次连接或 Ping 探测最长 5 秒，成功后的迁移有独立 2 分钟期限；一轮结束后间隔 3 秒继续检查。连接与迁移全部成功后才通过原子指针发布业务处理器，检测到连接失败时撤下它。
 
