@@ -152,12 +152,12 @@ export default {
         return writeRecord(this, path, body, '监测档案已保存', () => {
           if (editing) this.watchEditDialogVisible = false
           else this.watchDialogVisible = false
-          this.searchWatchs()
+          this.searchWatchs(Boolean(editing))
         })
       })
     },
     deleteRole (deviceId) {
-      return deleteRecord(this, 'api/v1/monitoring-profiles/delete', { deviceId }, '确认删除该监测档案？', () => this.searchWatchs())
+      return deleteRecord(this, 'api/v1/monitoring-profiles/delete', { deviceId }, '确认删除该监测档案？', () => this.searchWatchs(true))
     },
     handleEditwatch (index, row) {
       this.watchEditDialogVisible = true

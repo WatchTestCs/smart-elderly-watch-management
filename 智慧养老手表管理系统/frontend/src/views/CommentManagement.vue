@@ -100,11 +100,11 @@ export default {
     editSaid () {
       return writeRecord(this, 'api/v1/notice-comments/reply', this.saidEditForm, '回复已保存', () => {
         this.watchEditDialogVisible = false
-        this.searchSaid()
+        this.searchSaid(true)
       })
     },
     deleteSaid (saidId) {
-      return deleteRecord(this, 'api/v1/notice-comments/delete', { saidId }, '确认删除该评论？', () => this.searchSaid())
+      return deleteRecord(this, 'api/v1/notice-comments/delete', { saidId }, '确认删除该评论？', () => this.searchSaid(true))
     },
     handleeditSaid (index, row) {
       this.watchEditDialogVisible = true
