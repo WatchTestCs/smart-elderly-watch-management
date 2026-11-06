@@ -19,10 +19,10 @@
         </table>
         <div style="margin-top:14px;">
           <el-button v-if="dialog.rateBad === 1" type="primary" :loading="dialog.resolving"
-                     @click="$emit('resolve', 'rate')">标记心率已处理</el-button>
+                     @click="emit('resolve', 'rate')">标记心率已处理</el-button>
           <el-button v-if="dialog.preBad === 1" type="primary" :loading="dialog.resolving"
-                     @click="$emit('resolve', 'pre')">标记血压已处理</el-button>
-          <el-button plain @click="$router.push({ path: '/operations/devices' })">去设备管理看该手表</el-button>
+                     @click="emit('resolve', 'pre')">标记血压已处理</el-button>
+          <el-button plain @click="router.push('/operations/devices')">去设备管理看该手表</el-button>
         </div>
         <div class="tip-small">
           处理后这条记录会从「异常」变成「已处理」，红点消失，历史记录与曲线仍然保留。
@@ -35,9 +35,9 @@
     </el-dialog>
 </template>
 
-<script>
-export default {
-  props: { dialog: { type: Object, required: true } },
-  emits: ['resolve']
-}
+<script setup>
+import { useRouter } from 'vue-router'
+defineProps({ dialog: { type: Object, required: true } })
+const emit = defineEmits(['resolve'])
+const router = useRouter()
 </script>
