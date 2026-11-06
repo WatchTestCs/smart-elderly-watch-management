@@ -13,7 +13,7 @@
       <article v-for="task in tasks" :key="task.id" class="care-task" :class="{ overdue: task.state !== 'verified' && isOverdue(task), urgent: priorityLabel(task) === 'P0 紧急' }">
         <div class="care-task-main">
           <strong>求助 #{{ task.id }} · {{ task.oldPersonName || '长者编号 ' + task.oldId }}</strong>
-          <span><strong class="care-priority">{{ priorityLabel(task) }}</strong> · 设备 {{ task.deviceId }} · {{ stateLabel(task.state) }}</span>
+          <span><strong class="care-priority" :class="priorityClass(task)">{{ priorityLabel(task) }}</strong> · 设备 {{ task.deviceId }} · {{ stateLabel(task.state) }}</span>
           <small>接收于 {{ localTime(task.createdAt) }} · {{ task.state === 'verified' ? '复核于：' + localTime(task.verifiedAt) : isOverdue(task) ? '已超出当前处理期限' : '处理期限：' + localTime(task.dueAt) }}</small>
           <small>责任人：{{ task.acknowledgedBy || '尚未接单' }} · 通知状态：{{ deliveryLabel(task.notificationState) }}</small>
           <small class="care-next-step">下一步：{{ nextStep(task) }}</small>
@@ -84,6 +84,7 @@ const priorityLabel = task => {
   if (task.severity === 'low' || task.severity === 'normal') return 'P2 常规'
   return '待分级'
 }
+const priorityClass = task => priorityLabel(task).startsWith('P0') ? 'priority-p0' : priorityLabel(task).startsWith('P1') ? 'priority-p1' : 'priority-normal'
 const localTime = value => value ? new Date(value).toLocaleString('zh-CN') : '未知'
 const isOverdue = task => Boolean(task.dueAt && Date.now() > new Date(task.dueAt).getTime())
 const nextStep = task => ({received:'值班人员立即接单并核实长者状况',notifying:'值班人员立即接单，不等待渠道回执',notified:'照护人员接单并到场核实',acknowledged:'开始现场处置并记录措施',in_progress:'完成现场处置并登记结果',resolved:'由另一名主管独立复核',escalated:'升级联系值班主管，优先接单',review_overdue:'主管立即复核或重新开启',verified:'可查看完整处置履历'})[task.state] || '核对任务状态'
@@ -172,7 +173,10 @@ onBeforeUnmount(() => { clearInterval(timer); reads.dispose(); historyReads.disp
 .care-task-list{display:grid;gap:10px}
 .care-task{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:15px 18px;background:#f7f9f5;border:1px solid #dfe5df;border-radius:10px}
 .care-task.overdue,.care-task.urgent{border-left:4px solid var(--care-danger)}
-.care-priority{font-weight:650;color:var(--care-danger);font-variant-numeric:tabular-nums}
+.care-priority{font-weight:650;font-variant-numeric:tabular-nums}
+.care-priority.priority-p0{color:var(--care-danger)}
+.care-priority.priority-p1{color:#91651c}
+.care-priority.priority-normal{color:var(--care-text-muted)}
 .care-task-main{display:grid;gap:4px;min-width:0}
 .care-task-main strong{color:var(--care-text)}
 .care-next-step{font-weight:600;color:var(--care-primary)!important}
