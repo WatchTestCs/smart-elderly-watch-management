@@ -17,50 +17,39 @@
   </header>
 </template>
 
-<script>
+<script setup>
+import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { authState, endSession } from '../auth'
-export default {
-  name: 'NavTop',
-  data () {
-    return {
-      login_username: localStorage.getItem('user_name') || '',
-      largeText: localStorage.getItem('large_text') === 'true'
-    }
-  },
-  computed: {
-    isFamily () {
-      return Boolean(authState.account && authState.account.role === 'FAMILY')
-    },
-    userInitial () {
-      return (this.login_username || '用').slice(0, 1)
-    }
-  },
-  mounted () {
-    this.applyTextSize()
-  },
-  methods: {
-    applyTextSize () {
-      document.documentElement.classList.toggle('large-text', this.largeText)
-    },
-    toggleTextSize () {
-      this.largeText = !this.largeText
-      localStorage.setItem('large_text', String(this.largeText))
-      this.applyTextSize()
-    },
-    logout () {
-      this.$confirm('退出后需要重新登录，确定退出吗？', '退出登录', {
-        confirmButtonText: '退出',
-        cancelButtonText: '继续使用',
-        type: 'warning'
-      }).then(() => {
-        return endSession().then(() => {
-          this.$store.clearTabs()
-          this.$router.push('/sign-in')
-        }).catch(() => { this.$message.error('退出未能完成，请检查网络后重试') })
-      }).catch(() => {})
-    }
+
+const router = useRouter()
+const login_username = ref(localStorage.getItem('user_name') || '')
+const largeText = ref(localStorage.getItem('large_text') === 'true')
+const isFamily = computed(() => authState.account?.role === 'FAMILY')
+const userInitial = computed(() => (login_username.value || '用').slice(0, 1))
+function applyTextSize() {
+  document.documentElement.classList.toggle('large-text', largeText.value)
+}
+function toggleTextSize() {
+  largeText.value = !largeText.value
+  localStorage.setItem('large_text', String(largeText.value))
+  applyTextSize()
+}
+async function logout() {
+  try {
+    await ElMessageBox.confirm('退出后需要重新登录，确定退出吗？', '退出登录', {
+      confirmButtonText: '退出', cancelButtonText: '继续使用', type: 'warning'
+    })
+  } catch { return }
+  try {
+    await endSession()
+    await router.push('/sign-in')
+  } catch {
+    ElMessage.error('退出未能完成，请检查网络后重试')
   }
 }
+onMounted(applyTextSize)
 </script>
 
 <style scoped>

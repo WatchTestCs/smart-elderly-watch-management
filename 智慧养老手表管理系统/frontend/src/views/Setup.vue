@@ -15,46 +15,46 @@
         <el-form-item label="设置密码" prop="password"><el-input v-model="account.password" type="password" show-password autocomplete="new-password" /></el-form-item>
         <p class="setup-hint">12–20 位，包含英文字母与数字。请妥善保管，软件不设通用密码。</p>
         <p v-if="error" role="alert" class="setup-error">{{ error }}</p>
-        <el-button type="primary" native-type="submit" :loading="busy">创建账号，开始使用 <i class="el-icon-arrow-right" aria-hidden="true" /></el-button>
+        <el-button type="primary" native-type="submit" :loading="busy">创建账号，开始使用 <el-icon aria-hidden="true"><ArrowRight /></el-icon></el-button>
       </el-form>
       <p class="setup-footnote">您的健康与照护记录，始终由您掌握。</p>
     </section>
   </main>
 </template>
 
-<script>
+<script setup>
+import { ArrowRight } from '@element-plus/icons-vue'
+import { reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { apiErrorMessage } from '../api/httpContract'
 import axios from 'axios'
 import { loadSession } from '../auth'
 import { createAdministrator } from '../desktop'
-export default {
-  data () {
-    return {
-      account: { name: '', phone: '', password: '' }, busy: false, error: '',
-      rules: {
-        name: [{ required: true, message: '请输入称呼', trigger: 'blur' }],
-        phone: [{ pattern: /^1\d{10}$/, required: true, message: '请输入有效的 11 位手机号', trigger: 'blur' }],
-        password: [{ pattern: /^(?=.*[A-Za-z])(?=.*\d).{12,20}$/, required: true, message: '请设置 12–20 位含字母和数字的密码', trigger: 'blur' }]
-      }
-    }
-  },
-  methods: {
-    async submit () {
-      if (this.busy || !await this.$refs.form.validate().catch(() => false)) return
-      this.busy = true
-      this.error = ''
-      try {
-        await createAdministrator({ ...this.account })
-        await axios.post('/api/v1/auth/login', { phone: this.account.phone, password: this.account.password })
-        this.account.password = ''
-        const account = await loadSession(true)
-        if (!account) throw new Error('Session missing')
-        this.$router.replace('/operations/overview')
-      } catch (e) {
-        this.error = apiErrorMessage(e, '暂时无法创建，请检查填写的信息后重试。')
-      } finally { this.busy = false }
-    }
-  }
+
+const router = useRouter()
+const form = ref(null)
+const account = reactive({ name: '', phone: '', password: '' })
+const busy = ref(false)
+const error = ref('')
+const rules = {
+  name: [{ required: true, message: '请输入称呼', trigger: 'blur' }],
+  phone: [{ pattern: /^1\d{10}$/, required: true, message: '请输入有效的 11 位手机号', trigger: 'blur' }],
+  password: [{ pattern: /^(?=.*[A-Za-z])(?=.*\d).{12,20}$/, required: true, message: '请设置 12–20 位含字母和数字的密码', trigger: 'blur' }]
+}
+async function submit() {
+  if (busy.value || !await form.value?.validate().catch(() => false)) return
+  busy.value = true
+  error.value = ''
+  try {
+    await createAdministrator({ ...account })
+    await axios.post('/api/v1/auth/login', { phone: account.phone, password: account.password })
+    account.password = ''
+    const loggedIn = await loadSession(true)
+    if (!loggedIn) throw new Error('Session missing')
+    await router.replace('/operations/overview')
+  } catch (cause) {
+    error.value = apiErrorMessage(cause, '暂时无法创建，请检查填写的信息后重试。')
+  } finally { busy.value = false }
 }
 </script>
 

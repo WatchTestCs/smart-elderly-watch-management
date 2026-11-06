@@ -17,15 +17,15 @@
         <p class="auth-eyebrow">智慧养老管理平台</p>
         <h2>欢迎回来</h2>
         <database-notice><p class="auth-intro">登录后查看设备状态与家人近况</p></database-notice>
-        <el-form label-position="top" ref="loginForm" :model="loginForm" :rules="rules" class="login-form" @submit.prevent="submitForm">
+        <el-form label-position="top" ref="loginFormRef" :model="loginForm" :rules="rules" class="login-form" @submit.prevent="submitForm">
           <el-form-item label="手机号" prop="phone" for="login-phone">
             <el-input id="login-phone" aria-label="手机号" v-model="loginForm.phone" placeholder="请输入登录手机号" autocomplete="username" inputmode="tel" maxlength="11" clearable>
-              <template #prefix><i  class="el-input__icon el-icon-mobile-phone"></i></template>
+              <template #prefix><el-icon class="el-input__icon "><Iphone /></el-icon></template>
             </el-input>
           </el-form-item>
           <el-form-item label="密码" prop="password" for="login-password">
             <el-input id="login-password" aria-label="密码" v-model="loginForm.password" :type="showPassword ? 'text' : 'password'" placeholder="请输入密码" autocomplete="current-password" @keyup.enter="submitForm">
-              <template #prefix><svg class="el-input__icon password-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 4v3"/></svg></template><template #suffix><button  type="button" class="password-visibility" :aria-label="showPassword ? '隐藏密码' : '显示密码'" :aria-pressed="String(showPassword)" @click="showPassword = !showPassword"><i class="el-icon-view" aria-hidden="true"></i></button></template>
+              <template #prefix><svg class="el-input__icon password-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 4v3"/></svg></template><template #suffix><button  type="button" class="password-visibility" :aria-label="showPassword ? '隐藏密码' : '显示密码'" :aria-pressed="String(showPassword)" @click="showPassword = !showPassword"><el-icon aria-hidden="true"><View /></el-icon></button></template>
             </el-input>
           </el-form-item>
           <el-form-item v-if="mfaRequired" label="动态验证码或恢复码"><el-input v-model="loginForm.otp" aria-label="动态验证码" autocomplete="one-time-code" inputmode="numeric" maxlength="6" placeholder="6 位动态验证码" /><el-input v-model="loginForm.recoveryCode" aria-label="一次性恢复码" autocomplete="off" placeholder="无法使用验证器时填写恢复码" /></el-form-item>
@@ -33,86 +33,81 @@
           <el-button type="primary" class="submit-button" :loading="submitting" @click="submitForm">登录</el-button>
         </el-form>
         <div class="auth-register"><span>首次使用？</span><el-button link @click="goRegister">使用邀请码注册</el-button></div>
-        <p class="auth-footnote"><i class="el-icon-setting"></i> 账号信息仅用于本系统登录</p>
+        <p class="auth-footnote"><el-icon><Setting /></el-icon> 账号信息仅用于本系统登录</p>
       </div>
       <footer class="auth-footer">岁宁 · 让关怀始终在线</footer>
     </main>
   </div>
 </template>
 
-<script>
+<script setup>
+import { Iphone, Setting, View } from '@element-plus/icons-vue'
+import { onMounted, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { apiErrorMessage } from '../api/httpContract'
 import axios from 'axios'
 import { loadSession } from '../auth'
 
-export default {
-  data () {
-    const registeredPhone = localStorage.getItem('login_phone') || ''
-    localStorage.removeItem('login_phone')
-    return {
-      heroImage: '/static/img/care-lakeside-artisan.webp',
-      submitting: false,
-      showPassword: false,
-      mfaRequired: false,
-      errorMessage: '',
-      largeText: localStorage.getItem('large_text') === 'true',
-      loginForm: {
-        phone: registeredPhone,
-        password: '', otp: '', recoveryCode: ''
-      },
-      rules: {
-        phone: [
-          { required: true, message: '请输入手机号', trigger: 'blur' },
-          { pattern: /^1\d{10}$/, message: '请输入有效的 11 位手机号', trigger: 'blur' }
-        ],
-        password: [
-          { required: true, message: '请输入密码', trigger: 'blur' },
-          { validator: (rule, value, done) => done(new TextEncoder().encode(value || '').length <= 72 ? undefined : new Error('密码不能超过 72 个字节')), trigger: 'blur' }
-        ]
-      }
-    }
-  },
-  mounted () {
-    this.applyTextSize()
-  },
-  methods: {
-    applyTextSize () {
-      document.documentElement.classList.toggle('large-text', this.largeText)
-    },
-    toggleTextSize () {
-      this.largeText = !this.largeText
-      localStorage.setItem('large_text', String(this.largeText))
-      this.applyTextSize()
-    },
-    goRegister () { this.$router.push({ path: '/join-family' }) },
-    submitForm () {
-      var _this = this
-      if (_this.submitting) return
-      _this.$refs.loginForm.validate(function (valid) {
-        if (!valid) return
-        _this.submitting = true
-        _this.errorMessage = ''
-        axios.post('/api/v1/auth/login', _this.loginForm).then(function (response) {
-          var data = response.data || {}
-          if (data.authenticated === true) {
-            return loadSession(true).then(account => {
-              if (!account) throw new Error('Login session not established')
-              _this.$router.push({ path: account.role === 'ADMIN' ? '/operations' : '/family-portal' })
-            })
-          }
-          _this.errorMessage = data.message || '手机号或密码不正确，请重试'
-
-        }).catch(function (error) {
-          if (error.response?.data?.code === 'MFA_REQUIRED') { _this.mfaRequired = true; _this.errorMessage = error.response.data.message; return }
-          if (['INVALID_CREDENTIALS', 'INVALID_LOGIN_INPUT', 'ACCOUNT_UNLINKED'].includes(error.response?.data?.code)) { _this.errorMessage = error.response.data.message; return }
-          _this.errorMessage = apiErrorMessage(error, '暂时无法登录，请稍后重试')
-        }).then(function () {
-          _this.submitting = false
-        })
-      })
-    }
-  }
+const router = useRouter()
+const registeredPhone = localStorage.getItem('login_phone') || ''
+localStorage.removeItem('login_phone')
+const heroImage = '/static/img/care-lakeside-artisan.webp'
+const submitting = ref(false)
+const showPassword = ref(false)
+const mfaRequired = ref(false)
+const errorMessage = ref('')
+const largeText = ref(localStorage.getItem('large_text') === 'true')
+const loginForm = reactive({ phone: registeredPhone, password: '', otp: '', recoveryCode: '' })
+const loginFormRef = ref(null)
+const rules = {
+  phone: [
+    { required: true, message: '请输入手机号', trigger: 'blur' },
+    { pattern: /^1\d{10}$/, message: '请输入有效的 11 位手机号', trigger: 'blur' }
+  ],
+  password: [
+    { required: true, message: '请输入密码', trigger: 'blur' },
+    { validator: (_rule, value, done) => done(
+      new TextEncoder().encode(value || '').length <= 72
+        ? undefined : new Error('密码不能超过 72 个字节')), trigger: 'blur' }
+  ]
 }
+function applyTextSize() {
+  document.documentElement.classList.toggle('large-text', largeText.value)
+}
+function toggleTextSize() {
+  largeText.value = !largeText.value
+  localStorage.setItem('large_text', String(largeText.value))
+  applyTextSize()
+}
+function goRegister() { void router.push('/join-family') }
+async function submitForm() {
+  if (submitting.value) return
+  const valid = await loginFormRef.value?.validate().catch(() => false)
+  if (!valid) return
+  submitting.value = true
+  errorMessage.value = ''
+  try {
+    const { data } = await axios.post('/api/v1/auth/login', { ...loginForm })
+    if (data?.authenticated === true) {
+      const account = await loadSession(true)
+      if (!account) throw new Error('Login session not established')
+      await router.push(account.role === 'ADMIN' ? '/operations' : '/family-portal')
+    } else {
+      errorMessage.value = data?.message || '手机号或密码不正确，请重试'
+    }
+  } catch (error) {
+    const code = error.response?.data?.code
+    if (code === 'MFA_REQUIRED') {
+      mfaRequired.value = true
+      errorMessage.value = error.response.data.message
+    } else if (['INVALID_CREDENTIALS', 'INVALID_LOGIN_INPUT', 'ACCOUNT_UNLINKED'].includes(code)) {
+      errorMessage.value = error.response.data.message
+    } else {
+      errorMessage.value = apiErrorMessage(error, '暂时无法登录，请稍后重试')
+    }
+  } finally { submitting.value = false }
+}
+onMounted(applyTextSize)
 </script>
 
 <style scoped>

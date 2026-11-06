@@ -1,6 +1,6 @@
 <template>
   <div class="roles">
-    <div class="record-heading"><h2>最近上报记录</h2><el-button link :loading="isLoading" @click="searchOlds">刷新记录 <i class="el-icon-refresh" aria-hidden="true"></i></el-button></div>
+    <div class="record-heading"><h2>最近上报记录</h2><el-button link :loading="isLoading" @click="searchOlds">刷新记录 <el-icon aria-hidden="true"><Refresh /></el-icon></el-button></div>
     <el-alert v-if="loadError" :title="loadError" type="error" :closable="false" show-icon></el-alert>
 
     <el-table v-if="!mobileLayout" v-loading="isLoading" class="desktop-records" :data="oldsList"
@@ -22,7 +22,7 @@
       <el-table-column label="查看" width="190" align="center">
         <template #default="scope" >
 
-          <el-button size="small" plain type="success" icon="el-icon-check" @click="showDetails(scope.row)">
+          <el-button size="small" plain type="success" :icon="Check" @click="showDetails(scope.row)">
             详细情况
           </el-button>
         </template>
@@ -44,9 +44,9 @@
     <el-dialog :title="chartName ? chartName + '的健康详情' : '心率与血压详情'" width="92%" v-model="detailsVisible" @opened="resizeCharts" @closed="disposeCharts" >
       <el-alert v-if="chartError" :title="chartError" type="warning" :closable="false" show-icon></el-alert><el-button v-if="chartError" link @click="showDetails({ name: chartName })">重新加载详情</el-button><div v-loading="chartLoading" class="health-chart-grid">
 
-	  <div v-show="!chartError" id="myChart" ref="mychart" class="rate-chart"></div>
+	  <div v-show="!chartError" class="rate-chart trend-chart" ref="primaryChartElement"></div>
 
-		<div v-show="!chartError" id="myChartTwo" ref="mychartTwo" class="rate-chart"></div>
+		<div v-show="!chartError" class="rate-chart trend-chart" ref="secondaryChartElement"></div>
 
       </div>
       <template #footer><div  class="dialog-footer">
@@ -57,74 +57,52 @@
 
 </template>
 
-<script>
-import { api as requestClient } from '../api/client'
+<script setup>
+import { Check, Refresh } from '@element-plus/icons-vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useCollectionLayout } from '@/composables/useCollectionLayout'
+import { useRecordCharts } from '@/composables/useRecordCharts'
+import { createLatestRead } from '@/composables/latestRead'
+import { api } from '../api/client'
 import { apiErrorMessage } from '../api/httpContract'
 
-
-import { recordCharts } from '@/charts'
-
-export default {
-  setup () { return { mobileLayout: useCollectionLayout() } },
-  mixins: [recordCharts],
-  data () {
-    return {
-
-      oldsList: [],
-      isLoading: false,
-      loadError: '',
-		oldId: '',
-
-			}
+const mobileLayout = useCollectionLayout()
+const {
+  detailsVisible, chartLoading, chartError, chartName,
+  primaryChartElement, secondaryChartElement, showRecordDetails, resizeCharts, disposeCharts
+} = useRecordCharts()
+const oldId = ref(localStorage.getItem('oldIdfamily') || '')
+const oldsList = ref([])
+const isLoading = ref(false)
+const loadError = ref('')
+const reads = createLatestRead(
+  (query, signal) => api.post('api/v1/vitals/history', query, { signal }),
+  ({ data }) => {
+    oldsList.value = Array.isArray(data.vitalRecords) ? data.vitalRecords : []
+    loadError.value = ''
   },
-  created () {
-
-		this.oldId=localStorage.getItem('oldIdfamily')
-
-		this.searchOlds()
-
+  error => {
+    oldsList.value = []
+    loadError.value = apiErrorMessage(error, '记录暂时无法加载，请点击刷新重试。')
   },
-
-  methods: {
-    stateLabel (value) {
-      if (value === 1 || value === '1') return '异常'
-      if (value === 0 || value === '0') return '正常'
-      return '暂无状态'
-    },
-    stateClass (value) {
-      if (value === 1 || value === '1') return 'status-danger'
-      if (value === 0 || value === '0') return 'status-normal'
-      return 'unknown-state'
-    },
-
-    searchOlds () {
-
-      var _this = this
-      var oldId = _this.oldId
-
-      _this.isLoading = true
-      _this.loadError = ''
-      requestClient.post('api/v1/vitals/history',
-        {
-					"oldId":oldId
-				}).then(function (response) {
-
-        _this.oldsList = response.data && Array.isArray(response.data.vitalRecords) ? response.data.vitalRecords : []
-      })
-        .catch(function (error) {
-
-          _this.loadError = apiErrorMessage(error, '记录暂时无法加载，请点击刷新重试。')
-          _this.oldsList = []
-        }).then(function () { _this.isLoading = false })
-    },
-
-    showDetails (row) {
-      return this.showRecordDetails('vitals', this.oldId, row.name)
-    }
-  }
+  loading => { isLoading.value = loading }
+)
+function searchOlds() { return reads.run({ oldId: oldId.value }) }
+function stateLabel(value) {
+  if (value === 1 || value === '1') return '异常'
+  if (value === 0 || value === '0') return '正常'
+  return '暂无状态'
 }
-
+function stateClass(value) {
+  if (value === 1 || value === '1') return 'status-danger'
+  if (value === 0 || value === '0') return 'status-normal'
+  return 'unknown-state'
+}
+function showDetails(row) {
+  return showRecordDetails('vitals', oldId.value, row.name)
+}
+onMounted(() => { void searchOlds() })
+onBeforeUnmount(reads.dispose)
 </script>
 
 <style scoped>

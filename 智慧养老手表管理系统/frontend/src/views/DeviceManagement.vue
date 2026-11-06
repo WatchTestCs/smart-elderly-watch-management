@@ -1,6 +1,6 @@
 <template>
   <div class="device">
-    <header class="collection-heading"><div><h1>设备管理</h1><p>查看连接状态、跟进异常，并为家人关联照护设备。</p></div><el-button type="primary" aria-label="登记新设备" icon="el-icon-plus" @click="createDialogVisible = true">登记新设备</el-button></header>
+    <header class="collection-heading"><div><h1>设备管理</h1><p>查看连接状态、跟进异常，并为家人关联照护设备。</p></div><el-button type="primary" aria-label="登记新设备" :icon="Plus" @click="createDialogVisible = true">登记新设备</el-button></header>
     <section class="collection-metrics" aria-label="设备摘要"><article><span>登记设备</span><strong>{{ deviceLoadError && !deviceList.length ? '—' : deviceTotal }}</strong><small>当前筛选中的设备总数</small></article><article><span>在线设备</span><strong>{{ deviceLoadError && !deviceList.length ? '—' : onlineCount }}</strong><small>以最近一次设备连接状态为准</small></article><article><span>待处理异常</span><strong :class="alertsReady && alertTotals.total ? 'attention-number' : ''">{{ alertsReady ? alertTotals.total : '—' }}</strong><small>{{ alertsReady ? '人工确认与跟进后更新状态' : '异常统计暂未就绪' }}</small></article></section>
     <div v-if="deviceLoadError || alertLoadError" class="collection-feedback" role="alert"><span>{{ deviceLoadError || alertLoadError }}</span><el-button plain :loading="deviceLoading" @click="loadDevices">重新加载设备</el-button></div>
     <section class="device-alert-summary"><div><h2>异常跟进</h2><p v-if="alertsReady">人员 {{ alertTotals.personTotal }} · 心率 {{ alertTotals.rateTotal }} · 血压 {{ alertTotals.preTotal }}</p><p v-else>异常统计暂时无法确认，请重新加载。</p></div><el-button plain :disabled="!alertsReady || alertTotals.total === 0" @click="openWorkbench">查看全部待处理</el-button></section>
@@ -15,7 +15,7 @@
       <el-table-column label="待处理异常" width="210"><template #default="scope" ><div class="device-table-alerts"><el-button link :class="alertOf(scope.row.deviceId).personCount ? 'has-alert' : ''" :disabled="!alertsReady" @click="showAlert(scope.row, 'person')">人员 {{ alertsReady ? alertOf(scope.row.deviceId).personCount : '—' }}</el-button><el-button link :class="alertOf(scope.row.deviceId).rateCount ? 'has-alert' : ''" :disabled="!alertsReady" @click="showAlert(scope.row, 'rate')">心率 {{ alertsReady ? alertOf(scope.row.deviceId).rateCount : '—' }}</el-button><el-button link :class="alertOf(scope.row.deviceId).preCount ? 'has-alert' : ''" :disabled="!alertsReady" @click="showAlert(scope.row, 'pre')">血压 {{ alertsReady ? alertOf(scope.row.deviceId).preCount : '—' }}</el-button></div></template></el-table-column>
       <el-table-column label="电量" width="75"><template #default="scope" >{{ scope.row.battery == null ? '暂无' : scope.row.battery + '%' }}</template></el-table-column>
       <el-table-column label="最近上报" width="155"><template #default="scope" ><span class="device-table-time">{{ scope.row.lastTime || '暂无记录' }}</span></template></el-table-column>
-      <el-table-column label="操作" width="190" fixed="right"><template #default="scope" ><div class="device-table-actions"><el-button type="primary" plain @click="openBindCodeDialog(scope.row)">绑定码</el-button><el-dropdown trigger="click" @command="handleDeviceCommand($event, scope.row)"><el-button plain aria-label="更多设备操作">更多 <i class="el-icon-arrow-down" aria-hidden="true"></i></el-button><template #dropdown><el-dropdown-menu ><el-dropdown-item command="details">设备详情</el-dropdown-item><el-dropdown-item command="reset">重置密钥</el-dropdown-item><el-dropdown-item command="unbind" :disabled="!scope.row.oldId">解除绑定</el-dropdown-item><el-dropdown-item command="delete" divided>删除设备</el-dropdown-item></el-dropdown-menu></template></el-dropdown></div></template></el-table-column>
+      <el-table-column label="操作" width="190" fixed="right"><template #default="scope" ><div class="device-table-actions"><el-button type="primary" plain @click="openBindCodeDialog(scope.row)">绑定码</el-button><el-dropdown trigger="click" @command="handleDeviceCommand($event, scope.row)"><el-button plain aria-label="更多设备操作">更多 <el-icon aria-hidden="true"><ArrowDown /></el-icon></el-button><template #dropdown><el-dropdown-menu ><el-dropdown-item command="details">设备详情</el-dropdown-item><el-dropdown-item command="reset">重置密钥</el-dropdown-item><el-dropdown-item command="unbind" :disabled="!scope.row.oldId">解除绑定</el-dropdown-item><el-dropdown-item command="delete" divided>删除设备</el-dropdown-item></el-dropdown-menu></template></el-dropdown></div></template></el-table-column>
     </el-table>
     <el-pagination :current-page="currentPage" :page-size="pageSize" :total="deviceTotal" layout="total, prev, pager, next" @current-change="changeDevicePage" />
     <div v-if="mobileLayout && visibleDevices.length" class="device-mobile-grid"><article v-for="item in visibleDevices" :key="item.deviceId" class="device-record"><header><div><h3>{{ item.alias || '未命名设备' }}</h3><p>{{ item.deviceNo }}</p></div><span class="connection-state" :class="item.online == 1 ? 'is-online' : ''">{{ item.online == 1 ? '在线' : item.online == 0 ? '离线' : '状态未知' }}</span></header><dl><dt>绑定长者</dt><dd>{{ item.oldPersonName || '尚未绑定' }}</dd><dt>设备编号</dt><dd>{{ item.deviceId }}</dd><dt>剩余电量</dt><dd>{{ item.battery == null ? '暂无数据' : item.battery + '%' }}</dd><dt>最后上报</dt><dd>{{ item.lastTime || '暂无记录' }}</dd><dt>位置坐标</dt><dd>{{ item.lastLng == null || item.lastLat == null ? '暂无数据' : item.lastLng + '，' + item.lastLat }}</dd></dl><div class="device-alert-actions"><el-button plain :disabled="!alertsReady" @click="showAlert(item, 'person')">人员 · {{ alertsReady ? alertOf(item.deviceId).personCount : '—' }}</el-button><el-button plain :disabled="!alertsReady" @click="showAlert(item, 'rate')">心率 · {{ alertsReady ? alertOf(item.deviceId).rateCount : '—' }}</el-button><el-button plain :disabled="!alertsReady" @click="showAlert(item, 'pre')">血压 · {{ alertsReady ? alertOf(item.deviceId).preCount : '—' }}</el-button></div><div class="device-record-actions"><el-button type="primary" plain @click="openBindCodeDialog(item)">设备绑定码</el-button><el-button plain @click="resetSecret(item)">重置密钥</el-button><el-button plain :disabled="!item.oldId" @click="unbind(item)">解除绑定</el-button><el-button plain type="danger" @click="deleteDevice(item)">删除设备</el-button></div></article></div>
@@ -27,7 +27,7 @@
     <el-dialog :title="alertDialog.title" v-model="alertDialog.visible" width="620px">
       <div v-if="alertDialog.loading" style="text-align:center;padding:20px;">正在读取 ...</div>
       <div v-else-if="alertDialog.hasAlert === 0" class="no-alert">
-        <i class="el-icon-success" style="color:#52BAB5;font-size:32px;"></i>
+        <el-icon style="color:#52BAB5;font-size:32px;"><CircleCheckFilled /></el-icon>
         <div style="margin-top:8px;">{{ alertDialog.message }}</div>
       </div>
       <div v-else>
@@ -162,98 +162,26 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ArrowDown, CircleCheckFilled, Plus } from '@element-plus/icons-vue'
 import { useCollectionLayout } from '../composables/useCollectionLayout'
-import { deviceListMethods } from './device.list-methods.js'
-import { deviceAlertMethods } from './device.alert-methods.js'
-import { deviceRefreshMethods } from './device.refresh-methods.js'
-import { deviceAdminMethods } from './device.admin-methods.js'
+import { useDevices } from '../composables/useDevices'
 import HarmonyWatchSetup from '../components/HarmonyWatchSetup.vue'
 
-export default {
-  setup () { return { mobileLayout: useCollectionLayout() } },
-  components: { HarmonyWatchSetup },
-  data () {
-    return {
-      deviceList: [], deviceTotal: 0, serverOnlineCount: 0, currentPage: 1, pageSize: 20, filterTimer: null, reloadPending: false,
-      deviceDetailVisible: false, detailDevice: null,
-      deviceQuery: '', deviceState: 'all', deviceLoading: false, deviceLoadError: '', alertLoadError: '', alertsReady: false, creating: false,
-      oldPeople: [],
-      autoRefresh: true,
-      refreshDisposed: false,
-      timer: null,
-      createDialogVisible: false,
-      bindCodeDialogVisible: false,
-      createdDevice: null,
-      currentDevice: null,
-      bindCodeList: [],
-      newBindCode: null,
-      bindOldId: '',
-      bindExpireDays: '1',
-      createForm: {
-        alias: '',
-        model: 'HarmonyOS-Wear',
-        oldId: ''
-      },
-      // 红点：各设备未处理异常的条数
-      alertCounts: {},
-      alertTotals: { personTotal: 0, rateTotal: 0, preTotal: 0, total: 0 },
-      alertDialog: {
-        visible: false,
-        loading: false,
-        resolving: false,
-        hasAlert: 1,
-        title: '异常原因',
-        kind: 'person',
-        deviceId: null,
-        deviceNo: '',
-        alias: '',
-        oldPersonName: '',
-        reason: '',
-        detail: '',
-        value: '',
-        threshold: '',
-        occurTime: '',
-        advice: '',
-        recordId: null,
-        message: ''
-      },
-      workbench: {
-        visible: false,
-        list: []
-      }
-    }
-  },
-  computed: {
-    visibleDevices () { return this.deviceList },
-    onlineCount () { return this.serverOnlineCount }
-  },
-  created () {
-    this.loadDevices()
-    this.loadOldPeople()
-  },
-  mounted () {
-    document.addEventListener('visibilitychange', this.handleVisibilityChange)
-    this.startTimer()
-  },
-  beforeUnmount () {
-    this.refreshDisposed = true
-    clearTimeout(this.filterTimer)
-    document.removeEventListener('visibilitychange', this.handleVisibilityChange)
-    this.stopTimer()
-  },
-  watch: {
-    deviceQuery () { this.scheduleFilter() },
-    deviceState () { this.scheduleFilter() },
-    autoRefresh (enabled) { if (enabled) this.startTimer(); else this.stopTimer() }
-  },
-  methods: {
-    ...deviceListMethods,
-    ...deviceAlertMethods,
-    ...deviceRefreshMethods,
-    ...deviceAdminMethods
-  }
-}
+const mobileLayout = useCollectionLayout()
+const {
+  deviceList, deviceTotal, currentPage, pageSize,
+  deviceDetailVisible, detailDevice, deviceQuery, deviceState,
+  deviceLoading, deviceLoadError, alertLoadError, alertsReady,
+  creating, oldPeople, autoRefresh, createDialogVisible,
+  bindCodeDialogVisible, createdDevice, currentDevice,
+  bindCodeList, newBindCode, bindOldId, bindExpireDays,
+  createForm, alertTotals, alertDialog, workbench,
+  visibleDevices, onlineCount, loadDevices, changeDevicePage, handleDeviceCommand,
+  alertOf, showAlert, resolveAlert, resolveAlertRow, openWorkbench, gotoPage,
+  closeCreateDialog, createDevice, openBindCodeDialog,
+  createBindCode, deleteBindCode, resetSecret, unbind, deleteDevice, copy
+} = useDevices()
 </script>
 
 <style scoped src="./device.styles.css"></style>

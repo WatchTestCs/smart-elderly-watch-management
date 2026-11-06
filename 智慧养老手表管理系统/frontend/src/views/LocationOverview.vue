@@ -2,7 +2,7 @@
   <div class="roles">
     
     <div class="sys-research">
-      <form class="row-search" role="search" @submit.prevent="searchposition">
+      <form class="row-search" role="search" @submit.prevent="searchposition()">
 		  
         <div class="search-field">
           
@@ -13,12 +13,12 @@
             class="input-with-select">
             <template #append><el-button aria-label="查询长者姓名"
               
-              icon="el-icon-search"
+              :icon="Search"
               native-type="submit"></el-button></template>
           </el-input>
         </div>
         
-				<el-badge :value="this.num" class="item">
+				<el-badge :value="num" class="item">
 				  <el-button size="small">紧急告警</el-button>
 				</el-badge>
 				
@@ -46,22 +46,22 @@
 	  <el-table-column prop="beTime" label="上报时间" width="auto" align="center"></el-table-column>
       <el-table-column label="操作" align="center">
       	<template #default="scope" >
-      		<el-button v-if="scope.row.status==1" size="small" plain type="danger" icon="el-icon-warning"
+      		<el-button v-if="scope.row.status==1" size="small" plain type="danger" :icon="WarningFilled"
                        @click="showFallReason(scope.row)">告警记录与处理</el-button>
-      		<el-button v-if="scope.row.status==1" size="small" plain type="primary" icon="el-icon-check"
+      		<el-button v-if="scope.row.status==1" size="small" plain type="primary" :icon="Check"
       		           @click="handleFall(scope.row)">标记已处理</el-button>
-      		<el-button size="small" plain type="success" icon="el-icon-check" @click="showRoleDialog(scope.row)">
+      		<el-button size="small" plain type="success" :icon="Check" @click="showRoleDialog(scope.row)">
       			详细情况
       		</el-button>
       	</template>
       </el-table-column>
     </el-table>
     <record-cards v-if="mobileLayout" :records="positionList" :fields='[{"key":"sex","label":"性别"},{"key":"status","label":"告警状态","state":"fall"},{"key":"lng","label":"经度"},{"key":"lat","label":"纬度"}]' label="位置与告警记录" title-key="name" key-field="oldId" time-key="beTime">
-      <template #actions="scope"  ><span class="position-context">{{ describePositionContext(scope.row) }}</span><el-button v-if="scope.row.status==1" size="small" plain type="danger" icon="el-icon-warning"
+      <template #actions="scope"  ><span class="position-context">{{ describePositionContext(scope.row) }}</span><el-button v-if="scope.row.status==1" size="small" plain type="danger" :icon="WarningFilled"
                        @click="showFallReason(scope.row)">告警记录与处理</el-button>
-<el-button v-if="scope.row.status==1" size="small" plain type="primary" icon="el-icon-check"
+<el-button v-if="scope.row.status==1" size="small" plain type="primary" :icon="Check"
       		           @click="handleFall(scope.row)">标记已处理</el-button>
-<el-button size="small" plain type="success" icon="el-icon-check" @click="showRoleDialog(scope.row)">
+<el-button size="small" plain type="success" :icon="Check" @click="showRoleDialog(scope.row)">
       			详细情况
       		</el-button></template>
     </record-cards>
@@ -74,86 +74,72 @@
         :page-size="pageSize"
         :total="total" />
     </div>
-    <position-map :selection="selectedLocation" />
+    <position-map :selection="selectedLocation || undefined" />
   </div>
 	
 </template>
 
-<script>
-import { pagedRecords } from '@/composables/pagedRecords'
-import { api as requestClient } from '../api/client'
+<script setup lang="ts">
+import { Check, Search, WarningFilled } from '@element-plus/icons-vue'
+import { computed, ref, watch } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { usePagedRecords } from '@/composables/usePagedRecords'
 import { useCollectionLayout } from '@/composables/useCollectionLayout'
-
+import { api, accepted, type Envelope } from '../api/client'
+import { apiErrorMessage } from '../api/httpContract'
+import store from '@/store'
 import PositionMap from '@/components/PositionMap.vue'
 import RecordCards from '@/components/RecordCards.vue'
 import { describePositionContext } from '../utils/positionContext'
+import { positionAlertMessage } from './positionAlertMessage'
 
-export default {
-  computed: { num () { return this.positionList.filter(row => row.status === 1 || row.status === "1").length } },
-  mixins: [pagedRecords({ path: "api/v1/position/select", responseKey: "positionDtos", recordsKey: "positionList", searchKey: "name", load: "searchposition", failure: "位置数据暂时无法加载，请检查服务连接后重试。" })],
-  setup () { return { mobileLayout: useCollectionLayout(900) } },
-  components: { RecordCards, PositionMap },
-  data () {
-    return {
-      searchText: '',
+type PositionRow = Record<string, any>
+const searchText = ref('')
+const mobileLayout = useCollectionLayout(900)
+const {
+  records: positionList, isLoading, loadError, total,
+  pageSize, currentPage, load: searchposition,
+  handleSizeChange, changePage
+} = usePagedRecords<PositionRow, { name: string }>({
+  path: 'api/v1/position/select',
+  responseKey: 'positionDtos',
+  buildQuery: () => ({ name: searchText.value }),
+  failure: '位置数据暂时无法加载，请检查服务连接后重试。'
+})
+const selectedLocation = ref<PositionRow | null>(null)
+const num = computed(() => positionList.value.filter(row => row.status === 1 || row.status === '1').length)
 
-			selectedLocation: null,
-    }
-  },
-  created () {
-
-    this.searchposition()
-
-  },
-  methods: {
-    describePositionContext,
-    // 告警记录与处理办法（红点点进来就是这个）
-    showFallReason (row) {
-      var alarmPosition = row.alarmLng != null && row.alarmLat != null && row.alarmLng !== '' && row.alarmLat !== ''
-        ? '经度 ' + row.alarmLng + '，纬度 ' + row.alarmLat
-        : '未提供告警坐标（最新定位仅供参考）'
-      this.$alert(
-        '老人：' + row.name + '\n'
-        + '告警时间：' + (row.alarmTime || '未提供告警时间') + '\n'
-        + '告警附带坐标：' + alarmPosition + '\n'
-        + '事件类型：' + ({ sos: 'SOS 求助', fall: '设备上报摔倒', unknown: '未知' }[row.alarmKind] || '未知') + '\n'
-        + describePositionContext(row, true) + '\n\n'
-        + '怎么处理：\n'
-        + '① 立即电话联系老人或家属确认情况；\n'
-        + '② 结合告警附带坐标核实位置，必要时请求现场协助；\n'
-        + '③ 确认处理后点「标记已处理」，右上角告警红点数量会减少。',
-        '紧急告警 · 原因与处理',
-        { confirmButtonText: '知道了', callback: function () {} }
-      )
-    },
-    // 处置：消除告警红点
-    handleFall (row) {
-      var _this = this
-      this.$confirm('确认该紧急告警已经处理（联系过老人/家属）？处理后会从红点统计里移除。', '提示', {
-        confirmButtonText: '确定已处理',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }).then(function () {
-        requestClient.post('api/v1/locations/alerts/resolve-latest', {'oldId': row.oldId}).then(function (response) {
-          if (response.data.returnCode === '1111') {
-            _this.$message({type: 'success', message: '已处理，告警红点已消除'})
-          } else {
-            _this.$message({type: 'error', message: response.data.message || '处理失败'})
-          }
-          _this.searchposition()
-        }).catch(function (error) {
-          _this.$message({type: 'error', message: '处理失败'})
-        })
-      }).catch(function () {})
-    },
-
-    showRoleDialog (curRole) {
-      this.selectedLocation = { ...curRole }
-    }
-
+watch(() => store.state.alertRevision, () => { void searchposition(true) })
+watch(positionList, rows => {
+  const id = store.state.selectedResidentId
+  const selected = id == null ? null : rows.find(row => String(row.oldId) === id)
+  if (selected) selectedLocation.value = { ...selected }
+})
+function showFallReason(row: PositionRow) {
+  const { message, title } = positionAlertMessage(row)
+  return ElMessageBox.alert(message, title, { confirmButtonText: '知道了' })
+}
+async function handleFall(row: PositionRow) {
+  try {
+    await ElMessageBox.confirm(
+      '确认该紧急告警已经处理（联系过老人/家属）？处理后会从红点统计里移除。',
+      '提示',
+      { confirmButtonText: '确定已处理', cancelButtonText: '取消', type: 'warning' }
+    )
+  } catch { return }
+  try {
+    const { data } = await api.post<Envelope>('api/v1/locations/alerts/resolve-latest', { oldId: row.oldId })
+    accepted(data)
+    ElMessage({ type: 'success', message: '已处理，告警红点已消除' })
+    store.notifyAlertsChanged()
+  } catch (error) {
+    ElMessage({ type: 'error', message: apiErrorMessage(error, '处理失败') })
   }
 }
-
+function showRoleDialog(row: PositionRow) {
+  selectedLocation.value = { ...row }
+  store.selectResident(row.oldId)
+}
 </script>
 
 <style scoped>

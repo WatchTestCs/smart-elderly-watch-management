@@ -19,12 +19,12 @@
       </el-form>
 </template>
 
-<script>
-export default {
-  props: { draft: { type: Object, required: true }, rules: Object, editing: Boolean },
-  methods: {
-    validate (...args) { return this.$refs.form.validate(...args) },
-    resetFields (...args) { return this.$refs.form.resetFields(...args) }
-  }
-}
+<script setup>
+import { ref } from 'vue'
+defineProps({ draft: { type: Object, required: true }, rules: Object, editing: Boolean })
+const form = ref(null)
+defineExpose({
+  validate: (...args) => form.value?.validate(...args),
+  resetFields: (...args) => form.value?.resetFields(...args)
+})
 </script>

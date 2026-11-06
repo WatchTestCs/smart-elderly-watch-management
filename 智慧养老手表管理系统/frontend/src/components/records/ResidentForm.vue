@@ -48,7 +48,7 @@
       :value="item.customerId">
       </el-option>
       </el-select>
-          <p v-if="customerError" role="alert">{{ customerError }} <el-button plain :loading="customerLoading" @click="$emit('retry-guardians')">重新加载监护人</el-button></p>
+          <p v-if="customerError" role="alert">{{ customerError }} <el-button plain :loading="customerLoading" @click="emit('retry-guardians')">重新加载监护人</el-button></p>
 
 
     </el-form-item>
@@ -60,13 +60,16 @@
       </el-form>
 </template>
 
-<script>
-export default {
-  props: { draft: { type: Object, required: true }, rules: Object, editing: Boolean, options: Array, customerLoading: Boolean, customerError: String },
-  emits: ['retry-guardians'],
-  methods: {
-    validate (...args) { return this.$refs.form.validate(...args) },
-    resetFields (...args) { return this.$refs.form.resetFields(...args) }
-  }
-}
+<script setup>
+import { ref } from 'vue'
+defineProps({
+  draft: { type: Object, required: true },
+  rules: Object, editing: Boolean, options: Array, customerLoading: Boolean, customerError: String
+})
+const emit = defineEmits(['retry-guardians'])
+const form = ref(null)
+defineExpose({
+  validate: (...args) => form.value?.validate(...args),
+  resetFields: (...args) => form.value?.resetFields(...args)
+})
 </script>

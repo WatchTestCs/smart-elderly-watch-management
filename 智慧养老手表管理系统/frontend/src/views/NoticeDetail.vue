@@ -1,6 +1,6 @@
 <template>
   <div class="admin-notice">
-    <el-button plain icon="el-icon-arrow-left" @click="$router.push('/operations/overview')">返回运营总览</el-button>
+    <el-button plain :icon="ArrowLeft" @click="router.push('/operations/overview')">返回运营总览</el-button>
     <article v-loading="loading" class="notice-panel">
       <div v-if="error" role="alert" class="notice-feedback"><p>{{ error }}</p><el-button plain @click="loadNotice">重新加载公告</el-button></div>
       <template v-else-if="notice">
@@ -10,7 +10,7 @@
       </template>
     </article>
     <section class="notice-panel" v-loading="commentsLoading" aria-label="家属留言">
-      <div class="comments-heading"><h2>家属留言 <span>{{ comments.length }}</span></h2><el-button plain @click="$router.push('/operations/comments')">管理评论</el-button></div>
+      <div class="comments-heading"><h2>家属留言 <span>{{ comments.length }}</span></h2><el-button plain @click="router.push('/operations/comments')">管理评论</el-button></div>
       <div v-if="commentsError" role="alert" class="notice-feedback"><p>{{ commentsError }}</p><el-button plain @click="loadComments">重新加载留言</el-button></div>
       <p v-else-if="!commentsLoading && !comments.length" class="notice-time">暂时没有留言。</p>
       <ul v-else class="comment-list"><li v-for="(comment, index) in comments" :key="comment.saidId || index"><strong>{{ comment.personName || '家属' }}</strong><p>{{ comment.said }}</p><p v-if="comment.back" class="comment-reply">平台回复：{{ comment.back }}</p><small>赞同 · {{ comment.niceCount || 0 }}</small></li></ul>
@@ -18,37 +18,68 @@
   </div>
 </template>
 
-<script>
-import { api as requestClient } from '../api/client'
+<script setup lang="ts">
+import { ArrowLeft } from '@element-plus/icons-vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { api } from '../api/client'
 import { apiErrorMessage } from '../api/httpContract'
+import { createLatestRead } from '../composables/latestRead'
 
-export default {
-  data () { return { notice: null, pictures: [], comments: [], loading: false, commentsLoading: false, error: '', commentsError: '' } },
-  created () { this.loadNotice(); this.loadComments() },
-  watch: { '$route.query.textId' () { this.loadNotice(); this.loadComments() } },
-  methods: {
-    imageUrl (name) { return '/api/v1/image/download?name=' + encodeURIComponent(name || '') },
-    loadNotice () {
-      this.loading = true
-      this.error = ''
-      this.notice = null
-      this.pictures = []
-      requestClient.post('api/v1/notices/detail', { textId: this.$route.query.textId }).then((response) => {
-        if (!response.data.text) throw new Error('missing notice')
-        this.notice = response.data.text
-        this.pictures = response.data.pics || []
-      }).catch((error) => { this.error = apiErrorMessage(error, '公告暂时无法加载，请重试。') }).then(() => { this.loading = false })
-    },
-    loadComments () {
-      this.commentsLoading = true
-      this.commentsError = ''
-      this.comments = []
-      requestClient.post('api/v1/notice-comments/list', { textId: this.$route.query.textId }).then((response) => {
-        this.comments = response.data.comments || []
-      }).catch((error) => { this.commentsError = apiErrorMessage(error, '留言暂时无法加载，请重试。') }).then(() => { this.commentsLoading = false })
-    }
-  }
+const route = useRoute()
+const router = useRouter()
+const notice = ref<Record<string, any> | null>(null)
+const pictures = ref<any[]>([])
+const comments = ref<any[]>([])
+const loading = ref(false)
+const commentsLoading = ref(false)
+const error = ref('')
+const commentsError = ref('')
+const noticeReads = createLatestRead(
+  (query: { textId: unknown }, signal: AbortSignal) =>
+    api.post<Record<string, any>>('api/v1/notices/detail', query, { signal }),
+  ({ data }) => {
+    if (!data.text) throw new Error('missing notice')
+    notice.value = data.text
+    pictures.value = Array.isArray(data.pics) ? data.pics : []
+    error.value = ''
+  },
+  cause => {
+    notice.value = null
+    pictures.value = []
+    error.value = apiErrorMessage(cause, '公告暂时无法加载，请重试。')
+  },
+  value => { loading.value = value }
+)
+const commentReads = createLatestRead(
+  (query: { textId: unknown }, signal: AbortSignal) =>
+    api.post<Record<string, any>>('api/v1/notice-comments/list', query, { signal }),
+  ({ data }) => {
+    comments.value = Array.isArray(data.comments) ? data.comments : []
+    commentsError.value = ''
+  },
+  cause => {
+    comments.value = []
+    commentsError.value = apiErrorMessage(cause, '留言暂时无法加载，请重试。')
+  },
+  value => { commentsLoading.value = value }
+)
+function imageUrl(name: string) {
+  return '/api/v1/image/download?name=' + encodeURIComponent(name || '')
 }
+function loadNotice() {
+  notice.value = null
+  pictures.value = []
+  return noticeReads.run({ textId: route.query.textId })
+}
+function loadComments() {
+  comments.value = []
+  return commentReads.run({ textId: route.query.textId })
+}
+function reload() { void loadNotice(); void loadComments() }
+onMounted(reload)
+watch(() => route.query.textId, reload)
+onBeforeUnmount(() => { noticeReads.dispose(); commentReads.dispose() })
 </script>
 
 <style scoped>

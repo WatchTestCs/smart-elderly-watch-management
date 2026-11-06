@@ -17,7 +17,7 @@
           label-position="top"
           :model="registerForm"
           :rules="rules"
-          ref="registerForm"
+          ref="registerFormRef"
           class="register-form"
         >
           <el-form-item label="邀请码" prop="code" for="register-code">
@@ -52,11 +52,11 @@
           </el-form-item>
 
           <el-form-item label="密码" prop="familyPassword" for="register-familyPassword">
-            <el-input :type="showPassword ? 'text' : 'password'" autocomplete="new-password" id="register-familyPassword" aria-label="密码" v-model="registerForm.familyPassword" placeholder="12-20位，须包含字母和数字"><template #suffix><button  type="button" class="password-visibility" :aria-label="showPassword ? '隐藏密码' : '显示密码'" :aria-pressed="String(showPassword)" @click="showPassword = !showPassword"><i class="el-icon-view" aria-hidden="true"></i></button></template></el-input>
+            <el-input :type="showPassword ? 'text' : 'password'" autocomplete="new-password" id="register-familyPassword" aria-label="密码" v-model="registerForm.familyPassword" placeholder="12-20位，须包含字母和数字"><template #suffix><button  type="button" class="password-visibility" :aria-label="showPassword ? '隐藏密码' : '显示密码'" :aria-pressed="String(showPassword)" @click="showPassword = !showPassword"><el-icon aria-hidden="true"><View /></el-icon></button></template></el-input>
           </el-form-item>
 
           <el-form-item label="确认密码" prop="confirmPassword" for="register-confirmPassword">
-            <el-input :type="showConfirmPassword ? 'text' : 'password'" autocomplete="new-password" id="register-confirmPassword" aria-label="确认密码" v-model="registerForm.confirmPassword" placeholder="请再次输入密码"><template #suffix><button  type="button" class="password-visibility" :aria-label="showConfirmPassword ? '隐藏确认密码' : '显示确认密码'" :aria-pressed="String(showConfirmPassword)" @click="showConfirmPassword = !showConfirmPassword"><i class="el-icon-view" aria-hidden="true"></i></button></template></el-input>
+            <el-input :type="showConfirmPassword ? 'text' : 'password'" autocomplete="new-password" id="register-confirmPassword" aria-label="确认密码" v-model="registerForm.confirmPassword" placeholder="请再次输入密码"><template #suffix><button  type="button" class="password-visibility" :aria-label="showConfirmPassword ? '隐藏确认密码' : '显示确认密码'" :aria-pressed="String(showConfirmPassword)" @click="showConfirmPassword = !showConfirmPassword"><el-icon aria-hidden="true"><View /></el-icon></button></template></el-input>
           </el-form-item>
 
           <el-form-item label="联系地址" prop="familyAddress" for="register-familyAddress">
@@ -74,179 +74,128 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { View } from '@element-plus/icons-vue'
+import { onMounted, reactive, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import { apiErrorMessage } from '../api/httpContract'
-
 import { invitations } from '../api/invitations'
 
-export default {
-  data () {
-    var checkPhone = (rule, value, callback) => {
-      if (!value) {
-        return callback(new Error('手机号不能为空'))
-      }
-      if (!/^1\d{10}$/.test(value)) {
-        return callback(new Error('手机号格式不正确'))
-      }
-      callback()
+const router = useRouter()
+const heroImage = '/static/img/care-lakeside-artisan.webp'
+const heroImageSrcset = '/static/img/care-lakeside-artisan-640.webp 640w, /static/img/care-lakeside-artisan.webp 1536w'
+const brandLogo = '/static/brand/suining-logo-96.webp'
+const brandLogoSrcset = '/static/brand/suining-logo-96.webp 96w, /static/brand/suining-logo-192.webp 192w'
+const submitting = ref(false)
+const showPassword = ref(false)
+const showConfirmPassword = ref(false)
+const largeText = ref(localStorage.getItem('large_text') === 'true')
+const codeMessage = ref('')
+const codeOk = ref(false)
+const verifiedCode = ref('')
+const registerForm = reactive({
+  code: '', familyName: '', familyRelation: '', familySex: '男',
+  familyPhone: '', familyPassword: '', confirmPassword: '', familyAddress: ''
+})
+const registerFormRef = ref(null)
+function checkPhone(_rule, value, callback) {
+  if (!value) return callback(new Error('手机号不能为空'))
+  if (!/^1\d{10}$/.test(value)) return callback(new Error('手机号格式不正确'))
+  callback()
+}
+function checkConfirm(_rule, value, callback) {
+  if (!value) return callback(new Error('请再次输入密码'))
+  if (value !== registerForm.familyPassword) return callback(new Error('两次输入的密码不一致'))
+  callback()
+}
+function checkPasswordComplexity(_rule, value, callback) {
+  if (value && (!/[a-zA-Z]/.test(value) || !/\d/.test(value))) {
+    return callback(new Error('密码必须同时包含字母和数字'))
+  }
+  callback()
+}
+const rules = {
+  code: [{ required: true, message: '请输入邀请码', trigger: 'blur' }],
+  familyName: [{ required: true, message: '请输入姓名', trigger: 'blur' }],
+  familyRelation: [{ required: true, message: '请输入与老人的关系', trigger: 'blur' }],
+  familySex: [{ required: true, message: '请选择性别', trigger: 'change' }],
+  familyPhone: [
+    { required: true, message: '请输入手机号', trigger: 'blur' },
+    { validator: checkPhone, trigger: 'blur' }
+  ],
+  familyPassword: [
+    { required: true, message: '请输入密码', trigger: 'blur' },
+    { min: 12, max: 20, message: '密码长度为12-20个字符', trigger: 'blur' },
+    { validator: checkPasswordComplexity, trigger: 'blur' }
+  ],
+  confirmPassword: [{ validator: checkConfirm, trigger: 'blur' }]
+}
+function toggleTextSize() {
+  largeText.value = !largeText.value
+  localStorage.setItem('large_text', String(largeText.value))
+  document.documentElement.classList.toggle('large-text', largeText.value)
+}
+let codeRequest = 0
+watch(() => registerForm.code, () => {
+  codeRequest++
+  codeOk.value = false
+  verifiedCode.value = ''
+})
+async function checkCode() {
+  const code = registerForm.code.trim()
+  const revision = ++codeRequest
+  codeMessage.value = ''
+  codeOk.value = false
+  if (!code) return
+  try {
+    const { data } = await invitations.checkCode({ code })
+    if (revision !== codeRequest || code !== registerForm.code.trim()) return
+    if (data.returnCode === '1111') {
+      codeOk.value = true
+      verifiedCode.value = code
+      codeMessage.value = '邀请码有效，绑定老人：' + data.oldPersonName +
+        (data.remainDays === -1 ? '（长期有效）' : '（剩余 ' + data.remainDays + ' 天）')
+    } else {
+      codeMessage.value = data.message || '邀请码无效'
     }
-    var checkConfirm = (rule, value, callback) => {
-      if (!value) {
-        return callback(new Error('请再次输入密码'))
-      }
-      if (value !== this.registerForm.familyPassword) {
-        return callback(new Error('两次输入的密码不一致'))
-      }
-      callback()
-    }
-    // 与后端 ValidNewPassword 对齐：12-20 位且同时包含字母和数字
-    var checkPasswordComplexity = (rule, value, callback) => {
-      if (!value) {
-        return callback()
-      }
-      if (!/[a-zA-Z]/.test(value) || !/\d/.test(value)) {
-        return callback(new Error('密码必须同时包含字母和数字'))
-      }
-      callback()
-    }
-    return {
-      heroImage: '/static/img/care-lakeside-artisan.webp',
-      heroImageSrcset: '/static/img/care-lakeside-artisan-640.webp 640w, /static/img/care-lakeside-artisan.webp 1536w',
-      brandLogo: '/static/brand/suining-logo-96.webp',
-      brandLogoSrcset: '/static/brand/suining-logo-96.webp 96w, /static/brand/suining-logo-192.webp 192w',
-      submitting: false,
-      showPassword: false,
-      showConfirmPassword: false,
-      largeText: localStorage.getItem('large_text') === 'true',
-      codeMessage: '',
-      codeOk: false,
-      registerForm: {
-        code: '',
-        familyName: '',
-        familyRelation: '',
-        familySex: '男',
-        familyPhone: '',
-        familyPassword: '',
-        confirmPassword: '',
-        familyAddress: ''
-      },
-      rules: {
-        code: [
-          { required: true, message: '请输入邀请码', trigger: 'blur' }
-        ],
-        familyName: [
-          { required: true, message: '请输入姓名', trigger: 'blur' }
-        ],
-        familyRelation: [
-          { required: true, message: '请输入与老人的关系', trigger: 'blur' }
-        ],
-        familySex: [
-          { required: true, message: '请选择性别', trigger: 'change' }
-        ],
-        familyPhone: [
-          { required: true, message: '请输入手机号', trigger: 'blur' },
-          { validator: checkPhone, trigger: 'blur' }
-        ],
-        familyPassword: [
-          { required: true, message: '请输入密码', trigger: 'blur' },
-          { min: 12, max: 20, message: '密码长度为12-20个字符', trigger: 'blur' },
-          { validator: checkPasswordComplexity, trigger: 'blur' }
-        ],
-        confirmPassword: [
-          { validator: checkConfirm, trigger: 'blur' }
-        ]
-      }
-    }
-  },
-  mounted () { document.documentElement.classList.toggle('large-text', this.largeText) },
-  methods: {
-    toggleTextSize () {
-      this.largeText = !this.largeText
-      localStorage.setItem('large_text', String(this.largeText))
-      document.documentElement.classList.toggle('large-text', this.largeText)
-    },
-    // 验证邀请码，并显示该邀请码绑定的老人
-    checkCode () {
-      var code = (this.registerForm.code || '').trim()
-      this.codeMessage = ''
-      this.codeOk = false
-      if (code === '') {
-        return
-      }
-      invitations.checkCode({ 'code': code }).then((response) => {
-        var data = response.data
-        if (data.returnCode === '1111') {
-          this.codeOk = true
-          if (data.remainDays === -1) {
-            this.codeMessage = '邀请码有效，绑定老人：' + data.oldPersonName + '（长期有效）'
-          } else {
-            this.codeMessage = '邀请码有效，绑定老人：' + data.oldPersonName + '（剩余 ' + data.remainDays + ' 天）'
-          }
-        } else {
-          this.codeOk = false
-          this.codeMessage = data.message ? data.message : '邀请码无效'
-        }
-      }).catch((error) => {
-        this.codeOk = false
-        this.codeMessage = '邀请码验证失败，请稍后重试'
-      })
-    },
-    submitForm () {
-      this.$refs.registerForm.validate((valid) => {
-        if (!valid) {
-          return false
-        }
-        if (!this.codeOk) {
-          this.$message({
-            type: 'warning',
-            message: '请先验证邀请码是否可用'
-          })
-          return false
-        }
-        this.submitting = true
-        var params = {
-          code: this.registerForm.code.trim(),
-          familyName: this.registerForm.familyName,
-          familyRelation: this.registerForm.familyRelation,
-          familySex: this.registerForm.familySex,
-          familyPhone: this.registerForm.familyPhone,
-          familyPassword: this.registerForm.familyPassword,
-          familyAddress: this.registerForm.familyAddress
-        }
-        invitations.join(params).then((response) => {
-          this.submitting = false
-          var data = response.data
-          if (data.returnCode === '1111') {
-            this.$message({
-              type: 'success',
-              message: '注册成功！已绑定老人：' + data.oldPersonName + '，请使用手机号登录'
-            })
-            localStorage.setItem('login_phone', this.registerForm.familyPhone)
-            setTimeout(() => {
-              this.$router.push({ path: '/sign-in' })
-            }, 1500)
-          } else {
-            this.$message({
-              type: 'error',
-              message: data.message ? data.message : '注册失败，请稍后重试'
-            })
-            // 邀请码被占用或过期时重新校验一次，避免用户重复提交
-            this.checkCode()
-          }
-        }).catch((error) => {
-          this.submitting = false
-          this.$message({
-            type: 'error',
-            message: apiErrorMessage(error, '注册失败，请检查后端服务是否已启动')
-          })
-        })
-      })
-    },
-    goLogin () {
-      this.$router.push({ path: '/sign-in' })
-    }
+  } catch {
+    if (revision === codeRequest) codeMessage.value = '邀请码验证失败，请稍后重试'
   }
 }
+async function submitForm() {
+  if (submitting.value) return
+  const valid = await registerFormRef.value?.validate().catch(() => false)
+  if (!valid) return
+  if (!codeOk.value || verifiedCode.value !== registerForm.code.trim()) {
+    ElMessage({ type: 'warning', message: '请先验证邀请码是否可用' })
+    return
+  }
+  submitting.value = true
+  try {
+    const { data } = await invitations.join({
+      code: registerForm.code.trim(),
+      familyName: registerForm.familyName,
+      familyRelation: registerForm.familyRelation,
+      familySex: registerForm.familySex,
+      familyPhone: registerForm.familyPhone,
+      familyPassword: registerForm.familyPassword,
+      familyAddress: registerForm.familyAddress
+    })
+    if (data.returnCode !== '1111') {
+      ElMessage({ type: 'error', message: data.message || '注册失败，请稍后重试' })
+      void checkCode()
+      return
+    }
+    ElMessage({ type: 'success', message: '注册成功！已绑定老人：' + data.oldPersonName + '，请使用手机号登录' })
+    localStorage.setItem('login_phone', registerForm.familyPhone)
+    await router.push('/sign-in')
+  } catch (error) {
+    ElMessage({ type: 'error', message: apiErrorMessage(error, '注册失败，请检查后端服务是否已启动') })
+  } finally { submitting.value = false }
+}
+function goLogin() { void router.push('/sign-in') }
+onMounted(() => document.documentElement.classList.toggle('large-text', largeText.value))
 </script>
 
 <style scoped>

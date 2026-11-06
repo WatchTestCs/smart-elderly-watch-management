@@ -12,7 +12,7 @@
             class="input-with-select">
             <template #append><el-button aria-label="查询监护人姓名"
               
-              icon="el-icon-search"
+              :icon="Search"
               native-type="submit"></el-button></template>
           </el-input>
         </div>
@@ -101,20 +101,20 @@
 	  <el-table-column prop="customerAddress" label="地址" width="170" align="center"></el-table-column>
       <el-table-column label="操作" align="center">
         <template #default="scope" >
-          <el-button size="small" plain type="primary" icon="el-icon-edit"
+          <el-button size="small" plain type="primary" :icon="Edit"
                      @click="handleEditRole(scope.$index, scope.row)">编辑
           </el-button>
-          <el-button size="small" plain type="danger" icon="el-icon-delete" @click="deleteRole(scope.row.customerId)">删除
+          <el-button size="small" plain type="danger" :icon="Delete" @click="deleteRole(scope.row.customerId)">删除
           </el-button>
           
         </template>
       </el-table-column>
     </el-table>
     <record-cards v-if="mobileLayout && !loadError" :records="customerList" :fields='[{"key":"customerAge","label":"年龄"},{"key":"customerSex","label":"性别"},{"key":"customerPhone","label":"电话"},{"key":"customerAddress","label":"地址"}]' label="监护人资料" title-key="customerName" key-field="customerId">
-      <template #actions="scope"  ><el-button size="small" plain type="primary" icon="el-icon-edit"
+      <template #actions="scope"  ><el-button size="small" plain type="primary" :icon="Edit"
                      @click="handleEditRole(scope.$index, scope.row)">编辑
           </el-button>
-<el-button size="small" plain type="danger" icon="el-icon-delete" @click="deleteRole(scope.row.customerId)">删除
+<el-button size="small" plain type="danger" :icon="Delete" @click="deleteRole(scope.row.customerId)">删除
           </el-button></template>
     </record-cards>
     
@@ -131,6 +131,7 @@
 </template>
 
 <script setup lang="ts">
+import { Delete, Edit, Search } from '@element-plus/icons-vue'
 import { useCollectionLayout } from '@/composables/useCollectionLayout'
 import { onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'

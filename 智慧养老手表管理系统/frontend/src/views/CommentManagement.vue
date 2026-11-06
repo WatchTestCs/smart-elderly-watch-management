@@ -1,5 +1,5 @@
 <template>
-  <div class="roles" v-loading="isLoading" element-loading-text="正在加载评论…" :aria-busy="String(isLoading)">
+  <div class="roles" v-loading="isLoading" element-loading-text="正在加载评论…" :aria-busy="isLoading">
 
     <el-dialog :close-on-click-modal="false"
       title="评论回复"
@@ -21,8 +21,8 @@
     </span></template>
     </el-dialog>
 
-    <div v-if="loadError" class="collection-feedback" role="alert"><span>{{ loadError }}</span><el-button plain :loading="isLoading" @click="searchSaid(true)">重新加载</el-button></div>
-    <el-table v-if="!mobileLayout && !loadError" class="adaptive-record-table" :data="saidList"
+    <div v-if="loadError" class="collection-feedback" role="alert"><span>{{ loadError }}</span><el-button plain :loading="isLoading" @click="loadComments(true)">重新加载</el-button></div>
+    <el-table v-if="!mobileLayout && !loadError" class="adaptive-record-table" :data="comments"
     style="width: 100%" >
     <template #empty><div  class="care-empty-state"><strong>暂无评论</strong><span>收到的评论和回复会显示在这里。</span></div></template>
 
@@ -36,20 +36,20 @@
 	  
       <el-table-column label="操作" align="center">
         <template #default="scope" >
-          <el-button v-if="scope.row.back==null" size="small" plain type="primary" icon="el-icon-edit"
+          <el-button v-if="scope.row.back==null" size="small" plain type="primary" :icon="Edit"
                      @click="handleeditSaid(scope.$index, scope.row)">回复
           </el-button>
-          <el-button size="small" plain type="danger" icon="el-icon-delete" @click="deleteSaid(scope.row.saidId)">删除
+          <el-button size="small" plain type="danger" :icon="Delete" @click="deleteSaid(scope.row.saidId)">删除
           </el-button>
           
         </template>
       </el-table-column>
     </el-table>
-    <record-cards v-if="mobileLayout && !loadError" :records="saidList" :fields='[{"key":"saidId","label":"作者"},{"key":"said","label":"评论"},{"key":"back","label":"回复"},{"key":"backTime","label":"回复时间"},{"key":"title","label":"文章标题"}]' label="公告评论" title-key="personName" key-field="saidId" time-key="saidTime">
-      <template #actions="scope"  ><el-button v-if="scope.row.back==null" size="small" plain type="primary" icon="el-icon-edit"
+    <record-cards v-if="mobileLayout && !loadError" :records="comments" :fields='[{"key":"saidId","label":"作者"},{"key":"said","label":"评论"},{"key":"back","label":"回复"},{"key":"backTime","label":"回复时间"},{"key":"title","label":"文章标题"}]' label="公告评论" title-key="personName" key-field="saidId" time-key="saidTime">
+      <template #actions="scope"  ><el-button v-if="scope.row.back==null" size="small" plain type="primary" :icon="Edit"
                      @click="handleeditSaid(scope.$index, scope.row)">回复
           </el-button>
-<el-button size="small" plain type="danger" icon="el-icon-delete" @click="deleteSaid(scope.row.saidId)">删除
+<el-button size="small" plain type="danger" :icon="Delete" @click="deleteSaid(scope.row.saidId)">删除
           </el-button></template>
     </record-cards>
     
@@ -65,55 +65,39 @@
 
 </template>
 
-<script>
-import { deleteRecord, writeRecord } from '@/composables/recordActions'
-import { pagedRecords } from '@/composables/pagedRecords'
+<script setup lang="ts">
+import { Delete, Edit } from '@element-plus/icons-vue'
+import { ref } from 'vue'
+import { usePagedRecords } from '@/composables/usePagedRecords'
+import { writeRecord, deleteRecord } from '@/composables/recordActions'
 import { useCollectionLayout } from '@/composables/useCollectionLayout'
-
 import RecordCards from '@/components/RecordCards.vue'
 
-export default {
-  mixins: [pagedRecords({ path: "api/v1/notice-comments/search", responseKey: "moderatedComments", recordsKey: "saidList", load: "searchSaid", failure: "评论暂时无法加载，请检查服务连接后重试。" })],
-  setup () { return { mobileLayout: useCollectionLayout(900) } },
-  components: { RecordCards },
-  data () {
-    return {
-      
-      watchEditDialogVisible: false,
-      
-      saidEditForm: {
-        saidId: '',
-        said: '',
-        back: ''
-      },
-      
-
-    }
-  },
-  created () {
-    this.searchSaid()
-  },
-  methods: {
-    
-    
-    editSaid () {
-      return writeRecord(this, 'api/v1/notice-comments/reply', this.saidEditForm, '回复已保存', () => {
-        this.watchEditDialogVisible = false
-        this.searchSaid(true)
-      })
-    },
-    deleteSaid (saidId) {
-      return deleteRecord(this, 'api/v1/notice-comments/delete', { saidId }, '确认删除该评论？', () => this.searchSaid(true))
-    },
-    handleeditSaid (index, row) {
-      this.watchEditDialogVisible = true
-      this.saidEditForm = Object.assign({}, row) // 解决修改弹出框数据时，表格数据会发生同步改变
-
-    },
-
-
-
-  }
+type CommentRow = Record<string, any>
+const mobileLayout = useCollectionLayout(900)
+const {
+  records: comments, isLoading, loadError, total,
+  pageSize, currentPage, load: loadComments,
+  handleSizeChange, changePage
+} = usePagedRecords<CommentRow>({
+  path: 'api/v1/notice-comments/search',
+  responseKey: 'moderatedComments',
+  failure: '评论暂时无法加载，请检查服务连接后重试。'
+})
+const watchEditDialogVisible = ref(false)
+const saidEditForm = ref<CommentRow>({ saidId: '', said: '', back: '' })
+function editSaid() {
+  return writeRecord('api/v1/notice-comments/reply', saidEditForm.value, '回复已保存', async () => {
+    watchEditDialogVisible.value = false
+    await loadComments(true)
+  })
 }
-
+function deleteSaid(saidId: number | string) {
+  return deleteRecord('api/v1/notice-comments/delete', { saidId },
+    '确认删除该评论？', () => loadComments(true))
+}
+function handleeditSaid(_index: number, row: CommentRow) {
+  saidEditForm.value = { ...row }
+  watchEditDialogVisible.value = true
+}
 </script>

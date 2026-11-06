@@ -74,9 +74,11 @@ router.beforeEach(async to => {
     if (isOtherPortal(account)) return portalHome(account)
     if (account.role === 'ADMIN' && (account.duty === 'caregiver' || account.duty === 'auditor') && !['/operations/overview', '/operations'].includes(to.path)) return '/operations/overview'
   } catch (error) {
-    const unavailable = (error as { response?: { data?: { code?: string } } } | null)?.response?.data?.code === 'DATABASE_UNAVAILABLE'
+    const response = (error as { response?: { status?: number; data?: { code?: string } } } | null)?.response
+    const unavailable = response?.data?.code === 'DATABASE_UNAVAILABLE'
+    const transient = unavailable || response?.status === 502 || response?.status === 503 || response?.status === 504 || !response
     const account = authState.account as SessionAccount | null
-    if (unavailable && account) {
+    if (transient && account) {
       if (!publicPage && to.name !== 'not-found' && to.path !== '/setup' && isOtherPortal(account)) return portalHome(account)
       return to.path === '/setup' ? '/sign-in' : undefined
     }

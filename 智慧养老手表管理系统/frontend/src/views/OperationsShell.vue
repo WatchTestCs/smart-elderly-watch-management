@@ -1,9 +1,9 @@
 <template>
   <div class="care-app">
-    <a class="skip-link" href="#admin-main" @click.prevent="$refs.workspaceMain.focus()">跳到主要内容</a>
-    <nav-top></nav-top>
+    <a class="skip-link" href="#admin-main" @click.prevent="focusMain()">跳到主要内容</a>
+    <NavTop></NavTop>
     <div class="workspace-layout">
-      <slider class="workspace-sidebar"></slider>
+      <Slider class="workspace-sidebar"></Slider>
       <main ref="workspaceMain" id="admin-main" class="workspace-main" tabindex="-1">
         <div class="workspace-tabs" v-if="openTab.length">
           <el-tabs v-model="activeIndex" @tab-click="tabClick" @tab-remove="tabRemove">
@@ -13,78 +13,72 @@
         <section class="workspace-content">
           <database-notice />
           <header v-if="showPageIntro" class="view-intro">
-            <p class="view-breadcrumb">工作台 <i class="el-icon-arrow-right"></i> {{ $route.meta.title }}</p>
-            <h1>{{ $route.meta.title }}</h1>
+            <p class="view-breadcrumb">工作台 <el-icon><ArrowRight /></el-icon> {{ route.meta.title }}</p>
+            <h1>{{ route.meta.title }}</h1>
             <p class="view-description">{{ pageDescription }}</p>
           </header>
-          <router-view v-slot="{ Component }"><transition name="care-view" mode="out-in"><component :is="Component" :key="$route.path" /></transition></router-view>
+          <router-view v-slot="{ Component }"><transition name="care-view" mode="out-in"><component :is="Component" :key="route.path" /></transition></router-view>
         </section>
       </main>
     </div>
   </div>
 </template>
 
-<script>
+<script setup>
+import { ArrowRight } from '@element-plus/icons-vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import Slider from '@/components/Slider.vue'
-import navTop from '@/components/Header.vue'
+import NavTop from '@/components/Header.vue'
+import store from '@/store'
 
-export default {
-  name: 'Home',
-  components: { Slider, navTop },
-  computed: {
-    openTab () { return this.$store.state.openTab },
-    showPageIntro () {
-      return ['/operations/overview', '/operations/devices', '/operations/invitations'].indexOf(this.$route.path) === -1
-    },
-    pageDescription () {
-      var descriptions = {
-        '/operations/vitals': '查看近期心率与单项血压记录，异常状态以设备上报为准。',
-        '/operations/activity': '查看手表上报的睡眠与每日步数记录。',
-        '/operations/locations': '查看设备最近一次上报的位置与安全告警。',
-        '/operations/life': '查看手表上报的生活信息。',
-        '/operations/monitoring-profiles': '维护监测阈值档案；设备注册与在线状态请前往设备管理。',
-        '/operations/residents': '管理老人基础档案与关联设备。',
-        '/operations/guardians': '查看监护人资料与联系电话。',
-        '/operations/families': '查看家属账号与关联信息。',
-        '/operations/notices/edit': '编辑公告内容并预览发布信息。',
-        '/operations/notices/new': '创建面向家属的服务公告。',
-        '/operations/notices/detail': '查阅公告详情与图片内容。',
-        '/operations/notices': '查看和维护已发布公告。',
-        '/operations/comments': '查看公告评论并处理互动内容。'
-      }
-      return descriptions[this.$route.path] || '在这里查看和管理照护信息。'
-    },
-    activeIndex: {
-      get () { return this.$store.state.activeIndex },
-      set (value) { this.$store.activate(value) }
-    }
-  },
-  methods: {
-    tabClick () { this.$router.push({ path: this.activeIndex }) },
-    tabRemove (route) {
-      if (route === '/operations/overview') return
-      this.$store.removeTab(route)
-      if (this.activeIndex === route) {
-        var next = this.openTab[this.openTab.length - 1]
-        this.$router.push({ path: next ? next.route : '/operations/overview' })
-      }
-    },
-    addCurrentTab (route) {
-      if (!route.path || route.path === '/operations') return
-      if (!this.openTab.some(function (tab) { return tab.route === route.path })) {
-        this.$store.addTab({ route: route.path, name: route.meta.title || '运营总览' })
-      }
-      this.$store.activate(route.path)
-    }
-  },
-  mounted () { this.addCurrentTab(this.$route) },
-  watch: {
-    '$route' (to) {
-      this.addCurrentTab(to)
-      this.$nextTick(() => { if (this.$refs.workspaceMain) this.$refs.workspaceMain.scrollTop = 0 })
-    }
+const route = useRoute()
+const router = useRouter()
+const workspaceMain = ref(null)
+const openTab = computed(() => store.state.openTab)
+const activeIndex = computed({
+  get: () => store.state.activeIndex,
+  set: value => store.activate(value)
+})
+const noIntro = ['/operations/overview', '/operations/devices', '/operations/invitations']
+const showPageIntro = computed(() => !noIntro.includes(route.path))
+const descriptions = {
+  '/operations/vitals': '查看近期心率与单项血压记录，异常状态以设备上报为准。',
+  '/operations/activity': '查看手表上报的睡眠与每日步数记录。',
+  '/operations/locations': '查看设备最近一次上报的位置与安全告警。',
+  '/operations/life': '查看手表上报的生活信息。',
+  '/operations/monitoring-profiles': '维护监测阈值档案；设备注册与在线状态请前往设备管理。',
+  '/operations/residents': '管理老人基础档案与关联设备。',
+  '/operations/guardians': '查看监护人资料与联系电话。',
+  '/operations/families': '查看家属账号与关联信息。',
+  '/operations/notices/edit': '编辑公告内容并预览发布信息。',
+  '/operations/notices/new': '创建面向家属的服务公告。',
+  '/operations/notices/detail': '查阅公告详情与图片内容。',
+  '/operations/notices': '查看和维护已发布公告。',
+  '/operations/comments': '查看公告评论并处理互动内容。'
+}
+const pageDescription = computed(() => descriptions[route.path] || '在这里查看和管理照护信息。')
+function focusMain() { workspaceMain.value?.focus() }
+function tabClick() { void router.push({ path: activeIndex.value }) }
+function tabRemove(target) {
+  if (target === '/operations/overview') return
+  store.removeTab(target)
+  if (activeIndex.value === target) {
+    const next = openTab.value[openTab.value.length - 1]
+    void router.push({ path: next?.route || '/operations/overview' })
   }
 }
+function addCurrentTab(nextRoute) {
+  if (!nextRoute.path || nextRoute.path === '/operations') return
+  store.addTab({ route: nextRoute.path, name: String(nextRoute.meta.title || '运营总览') })
+  store.activate(nextRoute.path)
+}
+onMounted(() => addCurrentTab(route))
+watch(() => route.fullPath, async () => {
+  addCurrentTab(route)
+  await nextTick()
+  if (workspaceMain.value) workspaceMain.value.scrollTop = 0
+})
 </script>
 
 <style scoped>

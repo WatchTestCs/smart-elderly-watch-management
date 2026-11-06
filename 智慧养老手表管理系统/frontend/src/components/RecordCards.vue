@@ -5,42 +5,54 @@
       <header><h2>{{ row[titleKey] || '记录' }}</h2><span v-if="timeKey && row[timeKey]">{{ row[timeKey] }}</span></header>
       <dl><template v-for="field in primaryFields" :key="field.key"><dt>{{ field.label }}</dt><dd :class="stateClass(row, field)">{{ valueOf(row, field) }}</dd></template></dl>
       <details v-if="extraFields.length" class="record-more"><summary>更多资料</summary><dl><template v-for="field in extraFields" :key="field.key"><dt>{{ field.label }}</dt><dd :class="stateClass(row, field)">{{ valueOf(row, field) }}</dd></template></dl></details>
-      <div v-if="$slots.actions" class="record-actions"><slot name="actions" v-bind="{ row: row, $index: index }"></slot></div>
+      <div v-if="slots.actions" class="record-actions"><slot name="actions" v-bind="{ row: row, $index: index }"></slot></div>
     </article>
   </section>
 </template>
 
-<script>
-export default {
-  name: 'RecordCards',
-  props: {
-    records: { type: Array, required: true }, fields: { type: Array, required: true },
-    label: { type: String, required: true }, emptyTitle: { type: String, default: '暂无记录' },
-    titleKey: { type: String, default: 'name' }, keyField: { type: String, default: 'oldId' },
-    timeKey: { type: String, default: '' }
-  },
-  computed: {
-    primaryFields () { return this.fields.slice(0, 4) },
-    extraFields () { return this.fields.slice(4) }
-  },
-  methods: {
-    valueOf (row, field) {
-      var value = row[field.key]
-      if (field.state) {
-        if (value === 1 || value === '1') return field.state === 'fall' ? '紧急告警' : '异常'
-        if (field.handled && (row[field.handled] === 1 || row[field.handled] === '1')) return '已处理'
-        if (value === 0 || value === '0') return field.state === 'fall' ? '未告警/已处理' : '正常'
-        return '暂无状态'
-      }
-      return value == null || value === '' ? '暂未提供' : value
-    },
-    stateClass (row, field) {
-      if (!field.state) return ''
-      if (row[field.key] === 1 || row[field.key] === '1') return 'status-danger'
-      if (field.handled && (row[field.handled] === 1 || row[field.handled] === '1')) return 'status-handled'
-      return row[field.key] === 0 || row[field.key] === '0' ? 'status-normal' : 'status-unknown'
-    }
+<script setup lang="ts" generic="TRecord extends Record<string, any>">
+import { computed, useSlots } from 'vue'
+
+interface RecordField {
+  key: string
+  label: string
+  state?: string
+  handled?: string
+}
+
+const props = withDefaults(defineProps<{
+  records: TRecord[]
+  fields: RecordField[]
+  label: string
+  emptyTitle?: string
+  titleKey?: string
+  keyField?: string
+  timeKey?: string
+}>(), {
+  emptyTitle: '暂无记录',
+  titleKey: 'name',
+  keyField: 'oldId',
+  timeKey: ''
+})
+defineSlots<{ actions(props: { row: TRecord; $index: number }): any }>()
+const slots = useSlots()
+const primaryFields = computed(() => props.fields.slice(0, 4))
+const extraFields = computed(() => props.fields.slice(4))
+function valueOf(row: TRecord, field: RecordField): unknown {
+  const value = row[field.key]
+  if (field.state) {
+    if (value === 1 || value === '1') return field.state === 'fall' ? '紧急告警' : '异常'
+    if (field.handled && (row[field.handled] === 1 || row[field.handled] === '1')) return '已处理'
+    if (value === 0 || value === '0') return field.state === 'fall' ? '未告警/已处理' : '正常'
+    return '暂无状态'
   }
+  return value == null || value === '' ? '暂未提供' : value
+}
+function stateClass(row: TRecord, field: RecordField): string {
+  if (!field.state) return ''
+  if (row[field.key] === 1 || row[field.key] === '1') return 'status-danger'
+  if (field.handled && (row[field.handled] === 1 || row[field.handled] === '1')) return 'status-handled'
+  return row[field.key] === 0 || row[field.key] === '0' ? 'status-normal' : 'status-unknown'
 }
 </script>
 

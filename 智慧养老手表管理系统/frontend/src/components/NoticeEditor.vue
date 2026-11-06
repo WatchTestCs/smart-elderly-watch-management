@@ -1,5 +1,5 @@
 <template>
-  <div class="notice-editor" :aria-busy="String(loading || saving)">
+  <div class="notice-editor" :aria-busy="loading || saving">
     <div v-if="loadError" class="collection-feedback" role="alert"><span>{{ loadError }}</span><el-button plain @click="loadNotice">重新加载公告</el-button></div>
     <section class="editor-main collection-panel" v-loading="loading">
       <div class="editor-section-heading"><div><h2>公告内容</h2><p>清晰的标题与简短的正文，让家属更容易了解重点。</p></div></div>
@@ -7,82 +7,135 @@
         <el-form-item label="公告标题" for="notice-title" prop="title"><el-input id="notice-title" v-model="form.title" maxlength="20" placeholder="用一句话说明本次提醒" :disabled="saving || loading || !!loadError"></el-input><p class="editor-counter">{{ form.title.length }} / 20 字</p></el-form-item>
         <el-form-item label="公告正文" for="notice-body" prop="textMain"><el-input id="notice-body" type="textarea" :rows="4" v-model="form.textMain" maxlength="50" placeholder="写下需要家属知悉的简要提醒" :disabled="saving || loading || !!loadError"></el-input><p class="editor-counter">{{ form.textMain.length }} / 50 字</p></el-form-item>
       </el-form>
-      <section class="editor-attachments" aria-labelledby="attachment-heading"><div class="editor-section-heading"><div><h2 id="attachment-heading">补充图片</h2><p>图片可选，请上传与本次公告直接相关的内容。</p></div></div><el-upload action="api/v1/image/saveImage" :headers="$uploadHeaders" :with-credentials="true" :file-list="attachments" :disabled="saving || loading || !!loadError" :limit="10" accept="image/jpeg,image/png" list-type="picture" :before-upload="beforeUpload" :on-change="filesChanged" :on-success="uploadSuccess" :on-error="uploadError" :on-remove="filesRemoved" :on-exceed="uploadExceeded"><el-button plain icon="el-icon-plus" :disabled="saving || loading || !!loadError">添加公告图片</el-button><template #tip><p  class="collection-caption">最多10张 JPG / PNG 图片，每张不超过500KB。{{ uploadsPending ? '图片仍在上传或未成功，请处理后再发布。' : '' }}</p></template></el-upload></section>
+      <section class="editor-attachments" aria-labelledby="attachment-heading"><div class="editor-section-heading"><div><h2 id="attachment-heading">补充图片</h2><p>图片可选，请上传与本次公告直接相关的内容。</p></div></div><el-upload action="api/v1/image/saveImage" :headers="uploadHeaders" :with-credentials="true" :file-list="attachments" :disabled="saving || loading || !!loadError" :limit="10" accept="image/jpeg,image/png" list-type="picture" :before-upload="beforeUpload" :on-change="filesChanged" :on-success="uploadSuccess" :on-error="uploadError" :on-remove="filesRemoved" :on-exceed="uploadExceeded"><el-button plain :icon="Plus" :disabled="saving || loading || !!loadError">添加公告图片</el-button><template #tip><p  class="collection-caption">最多10张 JPG / PNG 图片，每张不超过500KB。{{ uploadsPending ? '图片仍在上传或未成功，请处理后再发布。' : '' }}</p></template></el-upload></section>
       <p v-if="saveError" class="editor-error" role="alert">{{ saveError }}</p>
       <footer class="editor-actions"><span>确认预览内容后再{{ editing ? '保存' : '发布' }}。</span><el-button type="primary" :loading="saving" :disabled="loading || !!loadError || uploadsPending" @click="submit">{{ editing ? '保存公告' : '发布公告' }}</el-button></footer>
     </section>
     <aside class="editor-side"><section class="notice-preview collection-panel" aria-label="公告实时预览"><p class="collection-eyebrow">家属阅读预览</p><h2>{{ form.title || '这里显示公告标题' }}</h2><p class="preview-time">{{ editing ? '保存后更新公告内容' : '发布后显示发布时间' }}</p><div class="preview-body">{{ form.textMain || '正文会在这里显示，方便您确认语气与重点。' }}</div><img v-for="file in successfulAttachments" :key="file.uid || file.name" :src="file.url" alt="公告附图预览"></section><section class="editor-guidance"><img src="/static/img/care-courtyard.webp" alt="" width="960" height="411"><div><h3>简洁一点，关怀更清楚</h3><p>先说明事项，再交代家属需要留意的内容。避免模糊时间和未经确认的健康结论。</p></div></section></aside>
   </div>
 </template>
-<script>
-import { api as requestClient } from '../api/client'
+<script setup lang="ts">
+import { Plus } from '@element-plus/icons-vue'
+import { computed, onMounted, ref, watch } from 'vue'
+import { onBeforeRouteLeave, onBeforeRouteUpdate, useRoute, useRouter } from 'vue-router'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { api, accepted, type Envelope } from '../api/client'
 import { apiErrorMessage } from '../api/httpContract'
+import { authState } from '../auth'
 
-import axios from 'axios'
-export default {
-  name: 'NoticeEditor',
-  props: { editing: { type: Boolean, default: false } },
-  data () { return { form: { title: '', textMain: '' }, attachments: [], loading: false, saving: false, loadError: '', saveError: '', baseline: JSON.stringify({ title: '', textMain: '', names: [] }), rules: { title: [{ required: true, whitespace: true, message: '请输入公告标题', trigger: 'blur' }], textMain: [{ required: true, whitespace: true, message: '请输入公告正文', trigger: 'blur' }] } } },
-  computed: {
-    signature () { return JSON.stringify({ title: this.form.title, textMain: this.form.textMain, names: this.attachments.map(file => file.name) }) },
-    dirty () { return this.signature !== this.baseline },
-    successfulAttachments () { return this.attachments.filter(file => file.status === 'success') },
-    uploadsPending () { return this.attachments.some(file => file.status !== 'success') }
-  },
-  created () { if (this.editing) this.loadNotice() },
-  beforeRouteLeave (to, from, next) { this.confirmLeave(next) },
-  beforeRouteUpdate (to, from, next) { this.confirmLeave(next) },
-  watch: { '$route.query.textId' () { if (this.editing) this.loadNotice() } },
-  methods: {
-    confirmLeave (next) {
-      if (!this.dirty) { next(); return }
-      if (this.saving || this.attachments.some(file => file.status === 'ready' || file.status === 'uploading')) { this.$message.warning('正在保存或处理图片，请稍候再离开'); next(false); return }
-      this.$confirm('尚有未保存的内容，离开后将丢失。', '离开编辑', { confirmButtonText: '离开编辑', cancelButtonText: '继续编辑', type: 'warning' }).then(() => next()).catch(() => next(false))
-    },
-    loadNotice () {
-      this.loading = true
-      this.loadError = ''
-      this.attachments = []
-      return requestClient.post('api/v1/notices/detail', { textId: this.$route.query.textId }).then((response) => {
-        if (!response.data.text || response.data.text.picId == null) throw new Error('missing notice')
-        this.form = { title: response.data.text.title || '', textMain: response.data.text.textMain || '' }
-        this.attachments = (response.data.pics || []).map((pic, index) => ({ uid: 'existing-' + index, name: pic.picName, url: '/api/v1/image/download?name=' + encodeURIComponent(pic.picName), status: 'success' }))
-        this.baseline = this.signature
-      }).catch((error) => { this.loadError = apiErrorMessage(error, '公告暂时无法加载，请重试。') }).then(() => { this.loading = false })
-    },
-    beforeUpload (file) {
-      if (!['image/jpeg', 'image/png'].includes(file.type)) { this.$message.error('请选择 JPG 或 PNG 图片'); return false }
-      if (file.size > 500 * 1024) { this.$message.error('每张图片不能超过500KB'); return false }
-      if (this.attachments.filter(item => item.name === file.name).length > 1) { this.$message.error('已有同名图片，请更换文件名后上传'); return false }
-      return true
-    },
-    filesChanged (file, files) { this.attachments = files },
-    filesRemoved (file, files) { this.attachments = files },
-    uploadSuccess (response, file, files) {
-      if (!response || response.returnCode !== '1111' || !response.filename) { file.status = 'fail'; this.$message.error(apiErrorMessage({ cause: response }, '图片未能上传，请删除后重试')) }
-      else { file.name = response.filename }
-      this.attachments = files
-    },
-    uploadError (error, file, files) { this.attachments = files; this.$message.error(apiErrorMessage(error, '图片暂时无法上传，请删除后重试')) },
-    uploadExceeded () { this.$message.warning('最多添加10张公告图片') },
-    submit () {
-      if (this.saving || this.loading || this.loadError || this.uploadsPending) return
-      this.$refs.editorForm.validate((valid) => {
-        if (!valid || this.saving) return
-        this.saving = true
-        this.saveError = ''
-        var params = { title: this.form.title.trim(), textMain: this.form.textMain.trim(), fileListName: this.successfulAttachments.map(file => file.name) }
-        if (this.editing) { params.textId = this.$route.query.textId }
-        axios.post(this.editing ? 'api/v1/notices/update' : 'api/v1/notices/create', params).then((response) => {
-          if (response.data.returnCode !== '1111') throw new Error('save rejected')
-          this.$message.success(this.editing ? '公告已保存' : '公告已发布')
-          this.baseline = this.signature
-          this.$router.push('/operations/notices')
-        }).catch((error) => { this.saveError = apiErrorMessage(error, '公告暂时未能保存，内容已保留，请稍后重试。') }).then(() => { this.saving = false })
-      })
-    }
-  }
+const props = withDefaults(defineProps<{ editing?: boolean }>(), { editing: false })
+const route = useRoute()
+const router = useRouter()
+const uploadHeaders = computed(() => ({ [authState.csrfHeader]: authState.csrfToken }))
+const form = ref({ title: '', textMain: '' })
+const attachments = ref<Record<string, any>[]>([])
+const loading = ref(false)
+const saving = ref(false)
+const loadError = ref('')
+const saveError = ref('')
+const baseline = ref(JSON.stringify({ title: '', textMain: '', names: [] as string[] }))
+const editorForm = ref<any>(null)
+const rules = {
+  title: [{ required: true, whitespace: true, message: '请输入公告标题', trigger: 'blur' }],
+  textMain: [{ required: true, whitespace: true, message: '请输入公告正文', trigger: 'blur' }]
 }
+const signature = computed(() => JSON.stringify({
+  title: form.value.title, textMain: form.value.textMain,
+  names: attachments.value.map(file => file.name)
+}))
+const dirty = computed(() => signature.value !== baseline.value)
+const successfulAttachments = computed(() => attachments.value.filter(file => file.status === 'success'))
+const uploadsPending = computed(() => attachments.value.some(file => file.status !== 'success'))
+async function confirmLeave() {
+  if (!dirty.value) return true
+  if (saving.value || attachments.value.some(file => ['ready','uploading'].includes(file.status))) {
+    ElMessage.warning('正在保存或处理图片，请稍候再离开')
+    return false
+  }
+  try {
+    await ElMessageBox.confirm('尚有未保存的内容，离开后将丢失。', '离开编辑', {
+      confirmButtonText: '离开编辑', cancelButtonText: '继续编辑', type: 'warning'
+    })
+    return true
+  } catch { return false }
+}
+onBeforeRouteLeave(confirmLeave)
+onBeforeRouteUpdate(confirmLeave)
+
+async function loadNotice() {
+  loading.value = true
+  loadError.value = ''
+  attachments.value = []
+  try {
+    const { data } = await api.post<Record<string, any>>('api/v1/notices/detail', {
+      textId: route.query.textId
+    })
+    if (!data.text || data.text.picId == null) throw new Error('missing notice')
+    form.value = { title: data.text.title || '', textMain: data.text.textMain || '' }
+    attachments.value = (data.pics || []).map((pic: any, index: number) => ({
+      uid: 'existing-' + index, name: pic.picName,
+      url: '/api/v1/image/download?name=' + encodeURIComponent(pic.picName), status: 'success'
+    }))
+    baseline.value = signature.value
+  } catch (error) {
+    loadError.value = apiErrorMessage(error, '公告暂时无法加载，请重试。')
+  } finally { loading.value = false }
+}
+function beforeUpload(file: File) {
+  if (!['image/jpeg','image/png'].includes(file.type)) {
+    ElMessage.error('请选择 JPG 或 PNG 图片')
+    return false
+  }
+  if (file.size > 500 * 1024) {
+    ElMessage.error('每张图片不能超过500KB')
+    return false
+  }
+  if (attachments.value.filter(item => item.name === file.name).length > 1) {
+    ElMessage.error('已有同名图片，请更换文件名后上传')
+    return false
+  }
+  return true
+}
+function filesChanged(_file: any, files: any[]) { attachments.value = files }
+function filesRemoved(_file: any, files: any[]) { attachments.value = files }
+function uploadSuccess(response: any, file: any, files: any[]) {
+  if (!response || response.returnCode !== '1111' || !response.filename) {
+    file.status = 'fail'
+    ElMessage.error(apiErrorMessage({ cause: response }, '图片未能上传，请删除后重试'))
+  } else file.name = response.filename
+  attachments.value = files
+}
+function uploadError(error: unknown, _file: any, files: any[]) {
+  attachments.value = files
+  ElMessage.error(apiErrorMessage(error, '图片暂时无法上传，请删除后重试'))
+}
+function uploadExceeded() { ElMessage.warning('最多添加10张公告图片') }
+async function submit() {
+  if (saving.value || loading.value || loadError.value || uploadsPending.value) return
+  const valid = await editorForm.value?.validate().catch(() => false)
+  if (!valid || saving.value) return
+  saving.value = true
+  saveError.value = ''
+  const params: Record<string, unknown> = {
+    title: form.value.title.trim(),
+    textMain: form.value.textMain.trim(),
+    fileListName: successfulAttachments.value.map(file => file.name)
+  }
+  if (props.editing) params.textId = route.query.textId
+  try {
+    const { data } = await api.post<Envelope>(
+      props.editing ? 'api/v1/notices/update' : 'api/v1/notices/create', params
+    )
+    accepted(data)
+    baseline.value = signature.value
+    ElMessage.success(props.editing ? '公告已保存' : '公告已发布')
+    await router.push('/operations/notices')
+  } catch (error) {
+    saveError.value = apiErrorMessage(error, '公告暂时未能保存，内容已保留，请稍后重试。')
+  } finally { saving.value = false }
+}
+onMounted(() => { if (props.editing) void loadNotice() })
+watch(() => route.query.textId, () => { if (props.editing) void loadNotice() })
 </script>
 <style scoped>
 .notice-editor { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(260px, 1fr); gap: 24px; align-items: start; }

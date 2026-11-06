@@ -1,6 +1,6 @@
 <template>
   <div class="roles">
-    <div class="record-heading"><h2>最近上报记录</h2><el-button link :loading="isLoading" @click="searchStep">刷新记录 <i class="el-icon-refresh" aria-hidden="true"></i></el-button></div>
+    <div class="record-heading"><h2>最近上报记录</h2><el-button link :loading="isLoading" @click="searchStep">刷新记录 <el-icon aria-hidden="true"><Refresh /></el-icon></el-button></div>
     <el-alert v-if="loadError" :title="loadError" type="error" :closable="false" show-icon></el-alert>
 
     <el-table v-if="!mobileLayout" v-loading="isLoading" class="desktop-records" :data="stepList"
@@ -19,7 +19,7 @@
       <el-table-column label="查看" width="180" align="center">
         <template #default="scope" >
 
-          <el-button size="small" plain type="success" icon="el-icon-check" @click="showDetails(scope.row)">
+          <el-button size="small" plain type="success" :icon="Check" @click="showDetails(scope.row)">
             详细情况
           </el-button>
         </template>
@@ -42,7 +42,7 @@
     <el-dialog :title="chartName ? chartName + '的睡眠详情' : '睡眠详情'" width="92%" v-model="detailsVisible" @opened="resizeCharts" @closed="disposeCharts">
       <el-alert v-if="chartError" :title="chartError" type="warning" :closable="false" show-icon></el-alert><el-button v-if="chartError" link @click="showDetails({ name: chartName })">重新加载详情</el-button><div v-loading="chartLoading">
 
-	  <div v-show="!chartError" id="myChart" ref="mychart" class="sleep-chart"></div>
+	  <div v-show="!chartError" class="sleep-chart trend-chart" ref="primaryChartElement"></div>
 
       </div>
       <template #footer><div  class="dialog-footer">
@@ -53,73 +53,52 @@
 
 </template>
 
-<script>
-import { api as requestClient } from '../api/client'
+<script setup>
+import { Check, Refresh } from '@element-plus/icons-vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useCollectionLayout } from '@/composables/useCollectionLayout'
+import { useRecordCharts } from '@/composables/useRecordCharts'
+import { createLatestRead } from '@/composables/latestRead'
+import { api } from '../api/client'
 import { apiErrorMessage } from '../api/httpContract'
 
-
-import { recordCharts } from '@/charts'
-
-export default {
-  setup () { return { mobileLayout: useCollectionLayout() } },
-  mixins: [recordCharts],
-  data () {
-    return {
-      oldId: '',
-
-      stepList: [],
-      isLoading: false,
-      loadError: '',
-
-      }
+const mobileLayout = useCollectionLayout()
+const {
+  detailsVisible, chartLoading, chartError, chartName,
+  primaryChartElement, secondaryChartElement, showRecordDetails, resizeCharts, disposeCharts
+} = useRecordCharts()
+const oldId = ref(localStorage.getItem('oldIdfamily') || '')
+const stepList = ref([])
+const isLoading = ref(false)
+const loadError = ref('')
+const reads = createLatestRead(
+  (query, signal) => api.post('api/v1/activity/history', query, { signal }),
+  ({ data }) => {
+    stepList.value = Array.isArray(data.activityRecords) ? data.activityRecords : []
+    loadError.value = ''
   },
-  created () {
-
-		this.oldId=localStorage.getItem('oldIdfamily')
-
-    this.searchStep()
-
+  error => {
+    stepList.value = []
+    loadError.value = apiErrorMessage(error, '记录暂时无法加载，请点击刷新重试。')
   },
-
-  methods: {
-    stateLabel (value) {
-      if (value === 1 || value === '1') return '异常'
-      if (value === 0 || value === '0') return '正常'
-      return '暂无状态'
-    },
-    stateClass (value) {
-      if (value === 1 || value === '1') return 'status-danger'
-      if (value === 0 || value === '0') return 'status-normal'
-      return 'unknown-state'
-    },
-
-    searchStep () {
-      var _this=this
-
-      			var oldId=_this.oldId
-      _this.isLoading = true
-      _this.loadError = ''
-      requestClient.post('api/v1/activity/history',
-        {
-          "oldId":oldId
-        }).then(function (response) {
-
-        _this.stepList = response.data && Array.isArray(response.data.activityRecords) ? response.data.activityRecords : []
-      })
-        .catch(function (error) {
-
-          _this.loadError = apiErrorMessage(error, '记录暂时无法加载，请点击刷新重试。')
-          _this.stepList = []
-        }).then(function () { _this.isLoading = false })
-    },
-
-    showDetails (row) {
-      return this.showRecordDetails('activity', this.oldId, row.name)
-    }
-  }
+  loading => { isLoading.value = loading }
+)
+function searchStep() { return reads.run({ oldId: oldId.value }) }
+function stateLabel(value) {
+  if (value === 1 || value === '1') return '异常'
+  if (value === 0 || value === '0') return '正常'
+  return '暂无状态'
 }
-
+function stateClass(value) {
+  if (value === 1 || value === '1') return 'status-danger'
+  if (value === 0 || value === '0') return 'status-normal'
+  return 'unknown-state'
+}
+function showDetails(row) {
+  return showRecordDetails('activity', oldId.value, row.name)
+}
+onMounted(() => { void searchStep() })
+onBeforeUnmount(reads.dispose)
 </script>
 
 <style scoped>

@@ -1,6 +1,6 @@
 <template>
   <div class="roles">
-    <div class="record-heading"><h2>最近上报记录</h2><el-button link :loading="isLoading" @click="searchposition">刷新记录 <i class="el-icon-refresh" aria-hidden="true"></i></el-button></div>
+    <div class="record-heading"><h2>最近上报记录</h2><el-button link :loading="isLoading" @click="searchposition">刷新记录 <el-icon aria-hidden="true"><Refresh /></el-icon></el-button></div>
 
     <el-alert v-if="loadError" :title="loadError" type="error" :closable="false" show-icon></el-alert>
     <el-table v-if="!mobileLayout" class="desktop-records" v-loading="isLoading" :data="positionList"
@@ -46,65 +46,38 @@
 
 </template>
 
-<script>
-import { api as requestClient } from '../api/client'
-import { useCollectionLayout } from '@/composables/useCollectionLayout'
+<script setup>
+import { Refresh } from '@element-plus/icons-vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { api } from '../api/client'
 import { apiErrorMessage } from '../api/httpContract'
-
-
+import { createLatestRead } from '../composables/latestRead'
+import { useCollectionLayout } from '@/composables/useCollectionLayout'
 import PositionMap from '@/components/PositionMap.vue'
 import { describePositionContext } from '../utils/positionContext'
 
-export default {
-  setup () { return { mobileLayout: useCollectionLayout() } },
-  components: { PositionMap },
-  data () {
-    return {
-      oldId: '',
-
-      positionList: [],
-      isLoading: false,
-      loadError: '',
-      selectedLocation: null,
-    }
+const mobileLayout = useCollectionLayout()
+const oldId = ref(localStorage.getItem('oldIdfamily') || '')
+const positionList = ref([])
+const isLoading = ref(false)
+const loadError = ref('')
+const selectedLocation = ref(null)
+const reads = createLatestRead(
+  (query, signal) => api.post('api/v1/position/selectFamily', query, { signal }),
+  ({ data }) => {
+    positionList.value = Array.isArray(data.positionDtos) ? data.positionDtos : []
+    loadError.value = ''
   },
-  created () {
-
-		this.oldId=localStorage.getItem('oldIdfamily')
-    this.searchposition()
-
+  error => {
+    positionList.value = []
+    loadError.value = apiErrorMessage(error, '位置记录暂时无法加载，请检查服务连接后重试。')
   },
-  methods: {
-    describePositionContext,
-
-    searchposition () {
-      var _this = this
-      var oldId = _this.oldId
-      _this.isLoading = true
-      _this.loadError = ''
-
-      requestClient.post('api/v1/position/selectFamily',
-        {
-          "oldId":oldId
-        }).then(function (response) {
-
-        _this.positionList = response.data && response.data.positionDtos ? response.data.positionDtos : []
-      })
-        .catch(function (error) {
-
-          _this.positionList = []
-          _this.loadError = apiErrorMessage(error, '位置记录暂时无法加载，请检查服务连接后重试。')
-        }).then(function () {
-          _this.isLoading = false
-        })
-    },
-    showLocation (curRole) {
-      this.selectedLocation = { ...curRole }
-    },
-
-    }
-}
-
+  loading => { isLoading.value = loading }
+)
+function searchposition() { return reads.run({ oldId: oldId.value }) }
+function showLocation(row) { selectedLocation.value = { ...row } }
+onMounted(() => { void searchposition() })
+onBeforeUnmount(reads.dispose)
 </script>
 
 <style scoped>

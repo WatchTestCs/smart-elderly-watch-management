@@ -1,7 +1,7 @@
 <template>
   <div class="notice-page">
-    <el-button class="notice-back" link icon="el-icon-back" @click="$router.push('/family-portal/overview')">返回照护总览</el-button>
-    <article v-loading="isLoading" class="notice-article" :aria-busy="String(isLoading)">
+    <el-button class="notice-back" link :icon="Back" @click="router.push('/family-portal/overview')">返回照护总览</el-button>
+    <article v-loading="isLoading" class="notice-article" :aria-busy="isLoading">
       <div v-if="loadError" class="notice-empty" role="alert"><h1>公告暂时无法加载</h1><p>{{ loadError }}</p><el-button type="primary" @click="searchDetail">重新加载</el-button></div>
       <template v-else><p class="notice-kicker">平台公告</p><h1>{{ title || (isLoading ? '正在加载公告…' : '公告内容') }}</h1><p class="notice-time">{{ time || '发布时间未提供' }}</p><div class="notice-body">{{ textMain || (isLoading ? '' : '暂时没有正文内容。') }}</div><figure v-for="(img, index) in imgList" :key="img.picName" class="notice-attachment"><img v-if="!failedImages[img.picName]" :src="imageSource(img.picName)" :alt="'公告附件 ' + (index + 1)" loading="lazy" @error="failedImages[img.picName] = true"><p v-else>附件图片暂时无法显示。</p></figure></template>
     </article>
@@ -12,62 +12,110 @@
     </section>
   </div>
 </template>
-<script>
-import { api as requestClient } from '../api/client'
+<script setup lang="ts">
+import { Back } from '@element-plus/icons-vue'
+import { onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { api, accepted, type Envelope } from '../api/client'
 import { apiErrorMessage } from '../api/httpContract'
+import { createLatestRead } from '../composables/latestRead'
 
-export default {
-  data () {
-    return { title: '', time: '', textMain: '', imgList: [], failedImages: {}, tableData: [], formSaid: { said: '' }, isLoading: false, loadError: '', commentsLoading: false, commentsError: '', submitting: false, submitError: '', submitSuccess: '', likingId: null }
+const router = useRouter()
+const route = useRoute()
+const title = ref('')
+const time = ref('')
+const textMain = ref('')
+const imgList = ref<Record<string, any>[]>([])
+const failedImages = reactive<Record<string, boolean>>({})
+const tableData = ref<Record<string, any>[]>([])
+const formSaid = reactive({ said: '' })
+const isLoading = ref(false)
+const loadError = ref('')
+const commentsLoading = ref(false)
+const commentsError = ref('')
+const submitting = ref(false)
+const submitError = ref('')
+const submitSuccess = ref('')
+const likingId = ref<number | string | null>(null)
+
+const details = createLatestRead(
+  (query: { textId: unknown }, signal: AbortSignal) =>
+    api.post<Record<string, any>>('api/v1/notices/detail', query, { signal }),
+  ({ data }) => {
+    if (!data?.text) throw new Error('missing notice')
+    title.value = data.text.title || '未命名公告'
+    time.value = data.text.time || ''
+    textMain.value = data.text.textMain || ''
+    imgList.value = Array.isArray(data.pics) ? data.pics : []
+    loadError.value = ''
   },
-  created () { this.searchDetail(); this.searchSaid() },
-  methods: {
-    imageSource (name) { return 'api/v1/image/download?name=' + encodeURIComponent(name || '') },
-    searchDetail () {
-      if (!this.$route.query.textId) { this.loadError = '缺少公告信息，请返回总览重新选择。'; return }
-      this.isLoading = true
-      this.loadError = ''
-      this.failedImages = {}
-      requestClient.post('api/v1/notices/detail', { textId: this.$route.query.textId }).then(response => {
-        var text = response.data && response.data.text
-        if (!text) throw new Error('missing notice')
-        this.title = text.title || '未命名公告'
-        this.time = text.time || ''
-        this.textMain = text.textMain || ''
-        this.imgList = Array.isArray(response.data.pics) ? response.data.pics : []
-      }).catch((error) => { this.loadError = apiErrorMessage(error, '请检查服务连接后重试。') }).then(() => { this.isLoading = false })
-    },
-    searchSaid () {
-      if (!this.$route.query.textId) return
-      this.commentsLoading = true
-      this.commentsError = ''
-      return requestClient.post('api/v1/notice-comments/list', { textId: this.$route.query.textId }).then(response => {
-        this.tableData = response.data && Array.isArray(response.data.comments) ? response.data.comments : []
-      }).catch((error) => { this.commentsError = apiErrorMessage(error, '留言暂时无法加载。') }).then(() => { this.commentsLoading = false })
-    },
-    onSubmit () {
-      if (!this.formSaid.said.trim() || this.submitting) return
-      this.submitting = true
-      this.submitError = ''
-      this.submitSuccess = ''
-      requestClient.post('api/v1/notice-comments/create', { said: this.formSaid.said.trim(), textId: this.$route.query.textId }).then(response => {
-        if (!response.data || response.data.returnCode !== '1111') throw new Error('comment rejected')
-        this.formSaid.said = ''
-        this.submitSuccess = '留言已发表。'
-        return this.searchSaid()
-      }).catch((error) => { this.submitError = apiErrorMessage(error, '留言未能发表，内容已保留，请重试。') }).then(() => { this.submitting = false })
-    },
-    getview (item) {
-      if (this.likingId !== null) return
-      this.likingId = item.saidId
-      this.submitError = ''
-      requestClient.post('api/v1/notice-comments/toggle-like', { saidId: item.saidId }).then(response => {
-        if (!response.data || response.data.returnCode !== '1111') throw new Error('like rejected')
-        return this.searchSaid()
-      }).catch((error) => { this.submitError = apiErrorMessage(error, '赞同操作未完成，请重试。') }).then(() => { this.likingId = null })
-    }
-  }
+  cause => { loadError.value = apiErrorMessage(cause, '请检查服务连接后重试。') },
+  loading => { isLoading.value = loading }
+)
+const comments = createLatestRead(
+  (query: { textId: unknown }, signal: AbortSignal) =>
+    api.post<Record<string, any>>('api/v1/notice-comments/list', query, { signal }),
+  ({ data }) => {
+    tableData.value = Array.isArray(data.comments) ? data.comments : []
+    commentsError.value = ''
+  },
+  cause => {
+    tableData.value = []
+    commentsError.value = apiErrorMessage(cause, '留言暂时无法加载。')
+  },
+  loading => { commentsLoading.value = loading }
+)
+function imageSource(name: string) {
+  return 'api/v1/image/download?name=' + encodeURIComponent(name || '')
 }
+function searchDetail() {
+  if (!route.query.textId) {
+    loadError.value = '缺少公告信息，请返回总览重新选择。'
+    return
+  }
+  Object.keys(failedImages).forEach(key => { delete failedImages[key] })
+  title.value = ''
+  textMain.value = ''
+  imgList.value = []
+  return details.run({ textId: route.query.textId })
+}
+function searchSaid() {
+  if (!route.query.textId) return
+  return comments.run({ textId: route.query.textId })
+}
+async function onSubmit() {
+  if (!formSaid.said.trim() || submitting.value || !route.query.textId) return
+  submitting.value = true
+  submitError.value = ''
+  submitSuccess.value = ''
+  try {
+    const { data } = await api.post<Envelope>('api/v1/notice-comments/create', {
+      said: formSaid.said.trim(), textId: route.query.textId
+    })
+    accepted(data)
+    formSaid.said = ''
+    submitSuccess.value = '留言已发表。'
+    await searchSaid()
+  } catch (error) {
+    submitError.value = apiErrorMessage(error, '留言未能发表，内容已保留，请重试。')
+  } finally { submitting.value = false }
+}
+async function getview(item: Record<string, any>) {
+  if (likingId.value !== null) return
+  likingId.value = item.saidId
+  submitError.value = ''
+  try {
+    const { data } = await api.post<Envelope>('api/v1/notice-comments/toggle-like', { saidId: item.saidId })
+    accepted(data)
+    await searchSaid()
+  } catch (error) {
+    submitError.value = apiErrorMessage(error, '赞同操作未完成，请重试。')
+  } finally { likingId.value = null }
+}
+function reload() { void searchDetail(); void searchSaid() }
+onMounted(reload)
+watch(() => route.query.textId, reload)
+onBeforeUnmount(() => { details.dispose(); comments.dispose() })
 </script>
 <style scoped>
 .notice-back { margin-bottom: 16px; }

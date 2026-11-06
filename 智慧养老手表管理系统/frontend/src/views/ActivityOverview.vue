@@ -12,7 +12,7 @@
             class="input-with-select">
             <template #append><el-button aria-label="查询长者姓名"
               
-              icon="el-icon-search"
+              :icon="Search"
               native-type="submit"></el-button></template>
           </el-input>
         </div>
@@ -40,14 +40,14 @@
       <el-table-column label="操作" align="center">
         <template #default="scope" >
           
-          <el-button size="small" plain type="success" icon="el-icon-check" aria-label="查看睡眠详情" @click="showRoleDialog(scope.row)">
+          <el-button size="small" plain type="success" :icon="Check" aria-label="查看睡眠详情" @click="showRoleDialog(scope.row)">
             查看睡眠详情
           </el-button>
         </template>
       </el-table-column>
     </el-table>
     <record-cards v-if="mobileLayout" :records="stepList" :fields='[{"key":"sex","label":"性别"},{"key":"step","label":"今日步数"},{"key":"sleep","label":"睡眠时间"},{"key":"sleepAlertState","label":"睡眠情况","state":"health"}]' label="睡眠与步数记录" title-key="name" key-field="oldId" time-key="createTime">
-      <template #actions="scope"  ><el-button size="small" plain type="success" icon="el-icon-check" aria-label="查看睡眠详情" @click="showRoleDialog(scope.row)">
+      <template #actions="scope"  ><el-button size="small" plain type="success" :icon="Check" aria-label="查看睡眠详情" @click="showRoleDialog(scope.row)">
             查看睡眠详情
           </el-button></template>
     </record-cards>
@@ -63,55 +63,50 @@
 
     <el-dialog title="睡眠记录详情" v-model="detailsVisible" @opened="resizeCharts" @closed="disposeCharts">
       <el-alert v-if="chartError" :title="chartError" type="warning" :closable="false" show-icon></el-alert>
-      <div v-loading="chartLoading" class="record-chart-content"><div id="myChart" ref="mychart" class="record-chart"></div></div>
+      <div v-loading="chartLoading" class="record-chart-content"><div class="record-chart trend-chart" ref="primaryChartElement"></div></div>
       <template #footer><div  class="dialog-footer"><el-button type="primary" @click="detailsVisible = false">关闭详情</el-button></div></template>
     </el-dialog>
   </div>
 
 </template>
 
-<script>
-import { pagedRecords } from '@/composables/pagedRecords'
-import { api as requestClient } from '../api/client'
+<script setup>
+import { Check, Search } from '@element-plus/icons-vue'
+import { onMounted, ref } from 'vue'
+import { ElMessage } from 'element-plus'
+import { usePagedRecords } from '@/composables/usePagedRecords'
 import { useCollectionLayout } from '@/composables/useCollectionLayout'
+import { useRecordCharts } from '@/composables/useRecordCharts'
+import { api as requestClient } from '../api/client'
 import { apiErrorMessage } from '../api/httpContract'
-
 import RecordCards from '@/components/RecordCards.vue'
 
-import { recordCharts } from '@/charts'
-
-export default {
-  setup () { return { mobileLayout: useCollectionLayout(900) } },
-  components: { RecordCards },
-  mixins: [recordCharts, pagedRecords({ path: "api/v1/activity/latest", responseKey: "activityRecords", recordsKey: "stepList", searchKey: "name", load: "searchStep", filters: {"timeFirst":"","timeLast":""} })],
-  data () {
-    return {
-      searchText: '',
-
-
-			stepCount:''
-    }
-  },
-  created () {
-
-    this.searchStep()
-		this.getCount()
-
-  },
-
-  methods: {
-    getCount () {
-      return requestClient.post('api/v1/activity/alerts/device-counts', {})
-        .then(({ data }) => { this.stepCount = data.sleep })
-        .catch(error => this.$message.error(apiErrorMessage(error, '请求未完成，请重试')))
-    },
-
-
-
-    showRoleDialog (row) {
-      return this.showRecordDetails('activity', row.oldId, row.name)
-    }
+const searchText = ref('')
+const stepCount = ref('')
+const mobileLayout = useCollectionLayout(900)
+const {
+  detailsVisible, chartLoading, chartError, chartName,
+  primaryChartElement, secondaryChartElement, showRecordDetails, resizeCharts, disposeCharts
+} = useRecordCharts()
+const {
+  records: stepList, isLoading, loadError, total,
+  pageSize, currentPage, load: searchStep,
+  handleSizeChange, changePage
+} = usePagedRecords({
+  path: 'api/v1/activity/latest',
+  responseKey: 'activityRecords',
+  buildQuery: () => ({ name: searchText.value, timeFirst: '', timeLast: '' })
+})
+async function getCount() {
+  try {
+    const { data } = await requestClient.post('api/v1/activity/alerts/device-counts', {})
+    stepCount.value = data.sleep
+  } catch (error) {
+    ElMessage.error(apiErrorMessage(error, '请求未完成，请重试'))
   }
 }
-
+function showRoleDialog(row) {
+  return showRecordDetails('activity', row.oldId, row.name)
+}
+onMounted(() => { void getCount() })
 </script>

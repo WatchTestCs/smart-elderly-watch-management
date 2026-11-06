@@ -1,10 +1,10 @@
 <template>
   <div class="invite">
-    <header class="collection-heading"><div><h1>家属邀请码</h1><p>为家属生成专属邀请，让关心有一个清晰的入口。</p></div><el-button type="primary" aria-label="生成邀请码" icon="el-icon-plus" @click="openCreateDialog">生成邀请码</el-button></header>
+    <header class="collection-heading"><div><h1>家属邀请码</h1><p>为家属生成专属邀请，让关心有一个清晰的入口。</p></div><el-button type="primary" aria-label="生成邀请码" :icon="Plus" @click="openCreateDialog">生成邀请码</el-button></header>
     <section class="invite-guide"><div><span class="guide-number">01</span><strong>选择长者</strong><p>指定家属需要关联的照护对象。</p></div><div><span class="guide-number">02</span><strong>生成邀请</strong><p>设置数量与有效期，按需分享。</p></div><div><span class="guide-number">03</span><strong>完成注册</strong><p>家属填写邀请码后关联长者。</p></div></section>
     <div v-if="listError" class="collection-feedback" role="alert"><span>{{ listError }}</span><el-button plain @click="searchInviteCodes">重新加载邀请码</el-button></div>
     <section class="collection-panel">
-      <div class="collection-toolbar"><div class="collection-filters"><div><label for="invite-state">邀请状态</label><el-select id="invite-state" v-model="state" @change="searchInviteCodes"><el-option label="全部状态" value="all"></el-option><el-option label="可使用" value="unused"></el-option><el-option label="已使用" value="used"></el-option><el-option label="已过期" value="expired"></el-option></el-select></div></div><div class="collection-tools"><span class="collection-caption">共 {{ total }} 条邀请记录</span><el-button plain :loading="listLoading" @click="searchInviteCodes">刷新</el-button></div></div>
+      <div class="collection-toolbar"><div class="collection-filters"><div><label for="invite-state">邀请状态</label><el-select id="invite-state" v-model="state" @change="searchInviteCodes()"><el-option label="全部状态" value="all"></el-option><el-option label="可使用" value="unused"></el-option><el-option label="已使用" value="used"></el-option><el-option label="已过期" value="expired"></el-option></el-select></div></div><div class="collection-tools"><span class="collection-caption">共 {{ total }} 条邀请记录</span><el-button plain :loading="listLoading" @click="searchInviteCodes">刷新</el-button></div></div>
     
     <el-dialog title="生成邀请码" v-model="createDialogVisible" :close-on-click-modal="!creating" :close-on-press-escape="!creating" :show-close="!creating" width="420px" @close="closeCreateDialog">
       <div v-if="oldPeopleError" class="collection-feedback" role="alert">{{ oldPeopleError }}<el-button plain @click="loadOldPeople">重试加载长者</el-button></div>
@@ -29,7 +29,7 @@
       </el-form>
       <template #footer><span  class="dialog-footer">
         <el-button :disabled="creating" @click="createDialogVisible = false">取 消</el-button>
-        <el-button type="primary" :loading="creating" @click="createInviteCode('createFormRef')">生 成</el-button>
+        <el-button type="primary" :loading="creating" @click="createInviteCode()">生 成</el-button>
       </span></template>
     </el-dialog>
 
@@ -70,154 +70,132 @@
   </div>
 </template>
 
-<script>
+<script setup lang="ts">
+import { Plus } from '@element-plus/icons-vue'
+import { onMounted, reactive, ref } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { useCollectionLayout } from '../composables/useCollectionLayout'
 import { copyText } from '../utils/clipboard'
 import { apiErrorMessage } from '../api/httpContract'
-
 import { invitations } from '../api/invitations'
 
-export default {
-  setup () { return { mobileLayout: useCollectionLayout() } },
-  data () {
-    return {
-      state: 'all',
-      listLoading: false, listError: '', creating: false, oldPeopleError: '',
-      createDialogVisible: false,
-      resultDialogVisible: false,
-      createdCodes: [],
-      oldPeople: [],
-      inviteCodeList: [],
-      total: 0,
-      pageSize: 10,
-      currentPage: 1,
-      createForm: {
-        oldId: '',
-        count: 1,
-        expireDays: ''
-      },
-      rules: {
-        oldId: [
-          { required: true, message: '请选择要绑定的老人', trigger: 'change' }
-        ]
-      }
-    }
-  },
-  created () {
-    this.searchInviteCodes()
-    this.loadOldPeople()
-  },
-  methods: {
-    searchInviteCodes (keepPage = false) {
-      if (keepPage !== true) this.currentPage = 1
-      this.listLoading = true
-      this.listError = ''
-      var state = this.state
-      return invitations.list({ page: this.currentPage, pageSize: this.pageSize,  state: state }).then((response) => {
-        if (state !== this.state) return
-        if (!Array.isArray(response.data.inviteCodes)) throw new Error('missing invites')
-        this.inviteCodeList = response.data.inviteCodes
-        this.total = response.data.total ?? this.inviteCodeList.length
-      }).catch((error) => { if (state === this.state) this.listError = apiErrorMessage(error, '邀请记录暂时无法更新，请重试。') }).then(() => { if (state === this.state) this.listLoading = false })
-    },
-    loadOldPeople () {
-      this.oldPeopleError = ''
-      invitations.oldPersonList().then((response) => {
-        this.oldPeople = response.data.oldPeople || []
-      }).catch((error) => {
-        this.oldPeopleError = apiErrorMessage(error, '长者列表暂时无法加载')
-      })
-    },
-    openCreateDialog () {
-      this.createDialogVisible = true
-      // 每次打开都重新拉取，避免刚添加的老人选不到
-      this.loadOldPeople()
-    },
-    closeCreateDialog () {
-      if (this.$refs.createFormRef) {
-        this.$refs.createFormRef.resetFields()
-      }
-      this.createForm.count = 1
-      this.createForm.expireDays = ''
-    },
-    createInviteCode (formName) {
-      if (this.creating) return
-      this.$refs[formName].validate((valid) => {
-        if (!valid) {
-          return false
-        }
-        var expireDays = (this.createForm.expireDays || '').toString().trim()
-        if (expireDays !== '' && !/^\d+$/.test(expireDays)) {
-          this.$message({ type: 'warning', message: '有效天数只能填数字，留空表示长期有效' })
-          return false
-        }
-        if (this.creating) return
-        this.creating = true
-        invitations.create(
-          {
-            oldId: this.createForm.oldId,
-            count: this.createForm.count,
-            expireDays: expireDays
-          }).then((response) => {
-          if (response.data.returnCode === '1111') {
-            this.createdCodes = response.data.codes || []
-            this.createDialogVisible = false
-            this.resultDialogVisible = true
-            this.searchInviteCodes()
-          } else {
-            this.$message({
-              type: 'error',
-              message: response.data.message ? response.data.message : '生成邀请码失败'
-            })
-          }
-        }).catch((error) => {
-          this.$message({ type: 'error', message: apiErrorMessage(error, '生成邀请码失败，请稍后重试') })
-        }).finally(() => { this.creating = false })
-      })
-    },
-    async deleteInviteCode (id) {
-      try {
-        await this.$confirm('作废后该邀请码将无法再用于注册，是否继续？', '提示', {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          type: 'warning'
-        })
-        invitations.delete({ 'id': id }).then((response) => {
-          if (response.data.returnCode === '1111') {
-            this.$message({ type: 'success', message: '已作废' })
-          } else {
-            this.$message({
-              type: 'error',
-              message: response.data.message ? response.data.message : '作废失败'
-            })
-          }
-          this.searchInviteCodes()
-        }).catch((error) => {
-          this.$message.error(apiErrorMessage(error, '请求未完成，请重试'))
-        })
-      } catch (err) {
-        this.$message({ type: 'info', message: '已取消操作' })
-      }
-    },
-    async copyCode (code) {
-      try {
-        await copyText(code)
-        this.$message({ type: 'success', message: '已复制邀请码：' + code })
-      } catch {
-        this.$message({ type: 'warning', message: '复制失败，请手动记录：' + code })
-      }
-    },
-    handleSizeChange (val) {
-      this.pageSize = val
-      this.currentPage = 1
-      this.searchInviteCodes(true)
-    },
-    changePage (val) {
-      this.currentPage = val
-      this.searchInviteCodes(true)
-    }
+type InviteRow = Record<string, any>
+const mobileLayout = useCollectionLayout()
+const state = ref('all')
+const listLoading = ref(false)
+const listError = ref('')
+const creating = ref(false)
+const oldPeopleError = ref('')
+const createDialogVisible = ref(false)
+const resultDialogVisible = ref(false)
+const createdCodes = ref<string[]>([])
+const oldPeople = ref<InviteRow[]>([])
+const inviteCodeList = ref<InviteRow[]>([])
+const total = ref(0)
+const pageSize = ref(10)
+const currentPage = ref(1)
+const createFormRef = ref<any>(null)
+const createForm = reactive<{ oldId: number | string; count: number; expireDays: string }>({
+  oldId: '', count: 1, expireDays: ''
+})
+const rules = { oldId: [{ required: true, message: '请选择要绑定的老人', trigger: 'change' }] }
+let requestRevision = 0
+
+async function searchInviteCodes(keepPage = false) {
+  if (keepPage !== true) currentPage.value = 1
+  const revision = ++requestRevision
+  const selected = state.value
+  listLoading.value = true
+  listError.value = ''
+  try {
+    const { data } = await invitations.list({
+      page: currentPage.value, pageSize: pageSize.value, state: selected
+    })
+    if (revision !== requestRevision || selected !== state.value) return
+    if (!Array.isArray(data.inviteCodes)) throw new Error('missing invites')
+    inviteCodeList.value = data.inviteCodes as InviteRow[]
+    total.value = data.total ?? data.inviteCodes.length
+  } catch (error) {
+    if (revision === requestRevision) listError.value =
+      apiErrorMessage(error, '邀请记录暂时无法更新，请重试。')
+  } finally {
+    if (revision === requestRevision) listLoading.value = false
   }
 }
+async function loadOldPeople() {
+  oldPeopleError.value = ''
+  try {
+    const { data } = await invitations.oldPersonList()
+    oldPeople.value = (Array.isArray(data.oldPeople) ? data.oldPeople : []) as InviteRow[]
+  } catch (error) {
+    oldPeopleError.value = apiErrorMessage(error, '长者列表暂时无法加载')
+  }
+}
+function openCreateDialog() {
+  createDialogVisible.value = true
+  void loadOldPeople()
+}
+function closeCreateDialog() {
+  createFormRef.value?.resetFields()
+  createForm.count = 1
+  createForm.expireDays = ''
+}
+async function createInviteCode() {
+  if (creating.value) return
+  const valid = await createFormRef.value?.validate().catch(() => false)
+  if (!valid) return
+  const expireDays = String(createForm.expireDays || '').trim()
+  if (expireDays && !/^\d+$/.test(expireDays)) {
+    ElMessage({ type: 'warning', message: '有效天数只能填数字，留空表示长期有效' })
+    return
+  }
+  creating.value = true
+  try {
+    const { data } = await invitations.create({
+      oldId: createForm.oldId, count: createForm.count, expireDays
+    })
+    if (data.returnCode !== '1111') throw new Error(data.message || '生成邀请码失败')
+    createdCodes.value = data.codes || []
+    createDialogVisible.value = false
+    resultDialogVisible.value = true
+    await searchInviteCodes()
+  } catch (error) {
+    ElMessage({ type: 'error', message: apiErrorMessage(error, '生成邀请码失败，请稍后重试') })
+  } finally { creating.value = false }
+}
+async function deleteInviteCode(id: number) {
+  try {
+    await ElMessageBox.confirm('作废后该邀请码将无法再用于注册，是否继续？', '提示', {
+      confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning'
+    })
+  } catch { return }
+  try {
+    const { data } = await invitations.delete({ id })
+    if (data.returnCode !== '1111') throw new Error(data.message || '作废失败')
+    ElMessage({ type: 'success', message: '已作废' })
+    await searchInviteCodes(true)
+  } catch (error) {
+    ElMessage({ type: 'error', message: apiErrorMessage(error, '请求未完成，请重试') })
+  }
+}
+async function copyCode(code: string) {
+  try {
+    await copyText(code)
+    ElMessage({ type: 'success', message: '已复制邀请码' })
+  } catch {
+    ElMessage({ type: 'warning', message: '复制失败，请手动记录。' })
+  }
+}
+function handleSizeChange(value: number) {
+  pageSize.value = value
+  currentPage.value = 1
+  void searchInviteCodes(true)
+}
+function changePage(value: number) {
+  currentPage.value = value
+  void searchInviteCodes(true)
+}
+onMounted(() => { void searchInviteCodes(); void loadOldPeople() })
 </script>
 
 <style scoped>

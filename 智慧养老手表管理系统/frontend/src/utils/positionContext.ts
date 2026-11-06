@@ -1,4 +1,4 @@
-interface PositionContext {
+export interface PositionContext {
   positionSource?: string | null
   positionSampledAt?: string | null
   positionAccuracy?: number | null

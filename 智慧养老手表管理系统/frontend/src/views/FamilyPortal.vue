@@ -1,54 +1,47 @@
 <template>
   <div class="care-app care-family">
-    <a class="skip-link" href="#care-main" @click.prevent="$refs.workspaceMain.focus()">跳转到主要内容</a>
-    <nav-top></nav-top>
+    <a class="skip-link" href="#care-main" @click.prevent="focusMain()">跳转到主要内容</a>
+    <NavTop></NavTop>
     <div class="workspace-layout">
-      <family-slider class="workspace-sidebar"></family-slider>
+      <FamilySlider class="workspace-sidebar"></FamilySlider>
       <main ref="workspaceMain" id="care-main" class="workspace-main" tabindex="-1">
         <section class="workspace-content">
           <database-notice />
           <header v-if="showPageIntro" class="view-intro">
-            <p class="view-breadcrumb">家属空间 <i class="el-icon-arrow-right"></i> {{ $route.meta.title }}</p>
-            <h1>{{ $route.meta.title }}</h1>
+            <p class="view-breadcrumb">家属空间 <el-icon><ArrowRight /></el-icon> {{ route.meta.title }}</p>
+            <h1>{{ route.meta.title }}</h1>
             <p class="view-description">{{ pageDescription }}</p>
           </header>
-          <router-view v-slot="{ Component }"><transition name="care-view" mode="out-in"><component :is="Component" :key="$route.path" /></transition></router-view>
+          <router-view v-slot="{ Component }"><transition name="care-view" mode="out-in"><component :is="Component" :key="route.path" /></transition></router-view>
         </section>
       </main>
     </div>
   </div>
 </template>
 
-<script>
-import familySlider from '@/components/FamilySlider.vue'
-import navTop from '@/components/Header.vue'
+<script setup>
+import { ArrowRight } from '@element-plus/icons-vue'
+import { computed, nextTick, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import FamilySlider from '@/components/FamilySlider.vue'
+import NavTop from '@/components/Header.vue'
 
-export default {
-  name: 'FamilyHome',
-  components: { familySlider, navTop },
-  watch: {
-    '$route.fullPath' () {
-      this.$nextTick(() => {
-        var main = this.$refs.workspaceMain
-        if (main) main.scrollTop = 0
-      })
-    }
-  },
-  computed: {
-    showPageIntro () {
-      return ['/family-portal/overview', '/family-portal/notice'].indexOf(this.$route.path) === -1
-    },
-    pageDescription () {
-      var descriptions = {
-        '/family-portal/vitals': '查看家人最近上报的心率与单项血压记录。',
-        '/family-portal/activity': '查看设备上报的睡眠与每日步数记录。',
-        '/family-portal/location': '查看设备最近一次上报的位置与安全告警。',
-        '/family-portal/profile': '查看和维护当前家属账号资料。'
-      }
-      return descriptions[this.$route.path] || '查看家人的照护信息与服务内容。'
-    }
-  }
+const route = useRoute()
+const workspaceMain = ref(null)
+const pagesWithoutIntro = ['/family-portal/overview', '/family-portal/notice']
+const descriptions = {
+  '/family-portal/vitals': '查看家人最近上报的心率与单项血压记录。',
+  '/family-portal/activity': '查看设备上报的睡眠与每日步数记录。',
+  '/family-portal/location': '查看设备最近一次上报的位置与安全告警。',
+  '/family-portal/profile': '查看和维护当前家属账号资料。'
 }
+const showPageIntro = computed(() => !pagesWithoutIntro.includes(route.path))
+const pageDescription = computed(() => descriptions[route.path] || '查看家人的照护信息与服务内容。')
+function focusMain() { workspaceMain.value?.focus() }
+watch(() => route.fullPath, async () => {
+  await nextTick()
+  if (workspaceMain.value) workspaceMain.value.scrollTop = 0
+})
 </script>
 
 <style scoped>

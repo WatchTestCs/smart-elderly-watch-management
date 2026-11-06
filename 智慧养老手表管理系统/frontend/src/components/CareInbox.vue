@@ -10,10 +10,10 @@
     <p v-else-if="!loading && !tasks.length" class="care-empty">{{ scope === 'verified' ? '当前没有已复核任务。' : '当前没有查询到待处理任务。请继续检查设备与服务状态。' }}</p>
     <p v-if="duty === 'auditor'" class="care-empty">当前为审计员岗位，可查看任务与履历。</p>
     <div v-if="tasks.length" class="care-task-list">
-      <article v-for="task in tasks" :key="task.id" class="care-task" :class="{ overdue: task.state !== 'verified' && isOverdue(task) }">
+      <article v-for="task in tasks" :key="task.id" class="care-task" :class="{ overdue: task.state !== 'verified' && isOverdue(task), urgent: priorityLabel(task) === 'P0 紧急' }">
         <div class="care-task-main">
           <strong>求助 #{{ task.id }} · {{ task.oldPersonName || '长者编号 ' + task.oldId }}</strong>
-          <span>设备 {{ task.deviceId }} · {{ stateLabel(task.state) }}</span>
+          <span><strong class="care-priority" :class="priorityClass(task)">{{ priorityLabel(task) }}</strong> · 设备 {{ task.deviceId }} · {{ stateLabel(task.state) }}</span>
           <small>接收于 {{ localTime(task.createdAt) }} · {{ task.state === 'verified' ? '复核于：' + localTime(task.verifiedAt) : isOverdue(task) ? '已超出当前处理期限' : '处理期限：' + localTime(task.dueAt) }}</small>
           <small>责任人：{{ task.acknowledgedBy || '尚未接单' }} · 通知状态：{{ deliveryLabel(task.notificationState) }}</small>
           <small class="care-next-step">下一步：{{ nextStep(task) }}</small>
@@ -59,6 +59,7 @@ import { ref, onMounted, onBeforeUnmount } from 'vue'
 import axios from 'axios'
 import { createLatestRead } from '../composables/latestRead'
 import CareOperationsPanel from './CareOperationsPanel.vue'
+import store from '../store'
 
 const emit = defineEmits(['verified'])
 const tasks = ref([])
@@ -77,6 +78,13 @@ const canAct = action => !error.value && (duty.value === 'supervisor' || (duty.v
 const actionLabels = {acknowledge:'确认接单',start:'开始处置',resolve:'登记处置措施',verify:'复核关闭',reopen:'重新开启'}
 const deliveryLabel = state => ({pending:"待发送",sending:"发送中",failed:"发送失败待重试",sent:"渠道已接收",delivered:"已确认送达",no_recipient:"未找到通知对象"})[state] || "未确认"
 const stateLabel = state => ({received:'等待通知与接单',notifying:'通知中',notified:'通知已送达',acknowledged:'已接单',in_progress:'处理中',resolved:'待复核',escalated:'超时升级',review_overdue:'复核超时',verified:'已复核关闭'})[state] || state
+const priorityLabel = task => {
+  if (task.kind === 'sos' || task.kind === 'fall' || task.severity === 'critical') return 'P0 紧急'
+  if (task.severity === 'high' || task.severity === 'warning') return 'P1 重点'
+  if (task.severity === 'low' || task.severity === 'normal') return 'P2 常规'
+  return '待分级'
+}
+const priorityClass = task => priorityLabel(task).startsWith('P0') ? 'priority-p0' : priorityLabel(task).startsWith('P1') ? 'priority-p1' : 'priority-normal'
 const localTime = value => value ? new Date(value).toLocaleString('zh-CN') : '未知'
 const isOverdue = task => Boolean(task.dueAt && Date.now() > new Date(task.dueAt).getTime())
 const nextStep = task => ({received:'值班人员立即接单并核实长者状况',notifying:'值班人员立即接单，不等待渠道回执',notified:'照护人员接单并到场核实',acknowledged:'开始现场处置并记录措施',in_progress:'完成现场处置并登记结果',resolved:'由另一名主管独立复核',escalated:'升级联系值班主管，优先接单',review_overdue:'主管立即复核或重新开启',verified:'可查看完整处置履历'})[task.state] || '核对任务状态'
@@ -144,6 +152,7 @@ async function submit () {
     if (data.returnCode !== '1111') throw new Error('transition rejected')
     dialog.value.visible = false
     error.value = ''
+    store.notifyAlertsChanged()
     await load()
     if (dialog.value.action === 'verify') emit('verified')
   } catch (cause) {
@@ -163,7 +172,11 @@ onBeforeUnmount(() => { clearInterval(timer); reads.dispose(); historyReads.disp
 .care-inbox :deep(.el-pagination){margin-top:18px;max-width:100%;overflow-x:auto}
 .care-task-list{display:grid;gap:10px}
 .care-task{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:15px 18px;background:#f7f9f5;border:1px solid #dfe5df;border-radius:10px}
-.care-task.overdue{border-left:4px solid var(--care-danger)}
+.care-task.overdue,.care-task.urgent{border-left:4px solid var(--care-danger)}
+.care-priority{font-weight:650;font-variant-numeric:tabular-nums}
+.care-priority.priority-p0{color:var(--care-danger)}
+.care-priority.priority-p1{color:#91651c}
+.care-priority.priority-normal{color:var(--care-text-muted)}
 .care-task-main{display:grid;gap:4px;min-width:0}
 .care-task-main strong{color:var(--care-text)}
 .care-next-step{font-weight:600;color:var(--care-primary)!important}
