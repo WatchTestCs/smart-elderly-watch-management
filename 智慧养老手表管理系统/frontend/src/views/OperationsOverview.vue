@@ -109,7 +109,7 @@ export default {
       tableData: [], searchText: '', appliedSearch: '', total: 0,
       isLoading: false, loadError: '', pageSize: 10, currentPage: 1,
       allCount: null, categoryCounts: null, num: null, positionTotal: null, countLoading: false, positionLoading: false,
-      countError: '', positionError: ''
+      countError: '', positionError: '', positionNeedsRefresh: false
     }
   },
   computed: {
@@ -125,7 +125,13 @@ export default {
     }
   },
   created () { if (!this.isRestricted) { this.searchOlds(); this.getCount(); this.searchposition() } },
-  watch: { alertRevision () { if (!this.isRestricted) this.searchposition() } },
+  watch: {
+    alertRevision () {
+      if (this.isRestricted) return
+      if (this.positionLoading) this.positionNeedsRefresh = true
+      else this.searchposition()
+    }
+  },
   methods: {
     getCount () {
       if (this.countLoading) return
@@ -159,6 +165,10 @@ export default {
         this.positionError = apiErrorMessage(error, '告警统计暂时无法加载')
       } finally {
         this.positionLoading = false
+        if (this.positionNeedsRefresh) {
+          this.positionNeedsRefresh = false
+          void this.searchposition()
+        }
       }
     },
     handleSizeChange (val) { this.pageSize = val; this.currentPage = 1; this.searchOlds(true) },
