@@ -5,7 +5,7 @@
         <p class="eyebrow">{{ familyName }}，您好</p>
         <h1 id="care-welcome-title">家人的近况，<br>一目了然</h1>
         <p class="welcome-description">查看健康、活动与位置记录，<br class="desktop-break">留意家人的日常变化。</p>
-        <el-button type="primary" @click="$router.push('/family-portal/vitals')">查看健康记录 <el-icon aria-hidden="true"><ArrowRight /></el-icon></el-button>
+        <el-button type="primary" @click="router.push('/family-portal/vitals')">查看健康记录 <el-icon aria-hidden="true"><ArrowRight /></el-icon></el-button>
       </div>
       <div class="welcome-scene" aria-hidden="true"><img src="/static/img/care-river-morning.webp" alt="" width="1200" height="800" fetchpriority="high" decoding="async"></div>
     </section>

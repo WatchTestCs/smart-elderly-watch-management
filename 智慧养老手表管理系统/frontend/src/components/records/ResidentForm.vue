@@ -48,7 +48,7 @@
       :value="item.customerId">
       </el-option>
       </el-select>
-          <p v-if="customerError" role="alert">{{ customerError }} <el-button plain :loading="customerLoading" @click="$emit('retry-guardians')">重新加载监护人</el-button></p>
+          <p v-if="customerError" role="alert">{{ customerError }} <el-button plain :loading="customerLoading" @click="emit('retry-guardians')">重新加载监护人</el-button></p>
 
 
     </el-form-item>
@@ -66,7 +66,7 @@ defineProps({
   draft: { type: Object, required: true },
   rules: Object, editing: Boolean, options: Array, customerLoading: Boolean, customerError: String
 })
-defineEmits(['retry-guardians'])
+const emit = defineEmits(['retry-guardians'])
 const form = ref(null)
 defineExpose({
   validate: (...args) => form.value?.validate(...args),

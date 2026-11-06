@@ -1,6 +1,6 @@
 <template>
   <div class="admin-notice">
-    <el-button plain :icon="ArrowLeft" @click="$router.push('/operations/overview')">返回运营总览</el-button>
+    <el-button plain :icon="ArrowLeft" @click="router.push('/operations/overview')">返回运营总览</el-button>
     <article v-loading="loading" class="notice-panel">
       <div v-if="error" role="alert" class="notice-feedback"><p>{{ error }}</p><el-button plain @click="loadNotice">重新加载公告</el-button></div>
       <template v-else-if="notice">
@@ -10,7 +10,7 @@
       </template>
     </article>
     <section class="notice-panel" v-loading="commentsLoading" aria-label="家属留言">
-      <div class="comments-heading"><h2>家属留言 <span>{{ comments.length }}</span></h2><el-button plain @click="$router.push('/operations/comments')">管理评论</el-button></div>
+      <div class="comments-heading"><h2>家属留言 <span>{{ comments.length }}</span></h2><el-button plain @click="router.push('/operations/comments')">管理评论</el-button></div>
       <div v-if="commentsError" role="alert" class="notice-feedback"><p>{{ commentsError }}</p><el-button plain @click="loadComments">重新加载留言</el-button></div>
       <p v-else-if="!commentsLoading && !comments.length" class="notice-time">暂时没有留言。</p>
       <ul v-else class="comment-list"><li v-for="(comment, index) in comments" :key="comment.saidId || index"><strong>{{ comment.personName || '家属' }}</strong><p>{{ comment.said }}</p><p v-if="comment.back" class="comment-reply">平台回复：{{ comment.back }}</p><small>赞同 · {{ comment.niceCount || 0 }}</small></li></ul>
@@ -21,12 +21,13 @@
 <script setup lang="ts">
 import { ArrowLeft } from '@element-plus/icons-vue'
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { api } from '../api/client'
 import { apiErrorMessage } from '../api/httpContract'
 import { createLatestRead } from '../composables/latestRead'
 
 const route = useRoute()
+const router = useRouter()
 const notice = ref<Record<string, any> | null>(null)
 const pictures = ref<any[]>([])
 const comments = ref<any[]>([])
