@@ -22,11 +22,10 @@
       </form>
     </div>
     
-    <el-dialog
+    <el-dialog :close-on-click-modal="false"
       title="设备添加"
       v-model="watchDialogVisible"
-      @close="closeRoleAddDialog"
-      width="30%">
+      @close="closeRoleAddDialog">
       <ThresholdForm :draft="watchForm" :rules="rules" ref="addwatchFormRef" />
       <template #footer><span  class="dialog-footer">
       <el-button @click="watchDialogVisible = false">取 消</el-button>
@@ -34,10 +33,9 @@
     </span></template>
     </el-dialog>
 
-    <el-dialog
+    <el-dialog :close-on-click-modal="false"
       title="设备编辑"
-      v-model="watchEditDialogVisible"
-      width="30%">
+      v-model="watchEditDialogVisible">
       <ThresholdForm editing :draft="watchEditForm" :rules="rules" ref="editwatchFormRef" />
       <template #footer><span  class="dialog-footer">
       <el-button @click="watchEditDialogVisible = false">取 消</el-button>

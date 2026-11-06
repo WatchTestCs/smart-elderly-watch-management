@@ -1,10 +1,9 @@
 <template>
   <div class="roles" v-loading="isLoading" element-loading-text="正在加载评论…" :aria-busy="String(isLoading)">
 
-    <el-dialog
+    <el-dialog :close-on-click-modal="false"
       title="评论回复"
-      v-model="watchEditDialogVisible"
-      width="30%">
+      v-model="watchEditDialogVisible">
       <el-form label-width="80px" :model="saidEditForm">
         <el-form-item label="" prop="saidId" style="display: none; ">
         <el-input v-model="saidEditForm.saidId"></el-input>

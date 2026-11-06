@@ -23,7 +23,7 @@
       </form>
     </div>
     
-    <el-dialog
+    <el-dialog :close-on-click-modal="false"
       title="家属添加"
       v-model="customerDialogVisible"
       @close="closeRoleAddDialog"
@@ -35,7 +35,7 @@
     </span></template>
     </el-dialog>
 
-    <el-dialog
+    <el-dialog :close-on-click-modal="false"
       title="家属编辑"
       v-model="oldEditDialogVisible"
       width="92%" custom-class="admin-record-dialog">
