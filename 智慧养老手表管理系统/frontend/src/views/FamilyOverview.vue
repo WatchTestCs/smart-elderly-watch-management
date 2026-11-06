@@ -100,79 +100,28 @@ html.large-text .care-family .announcement-copy p,
 html.large-text .care-family .data-caption { font-size: 18px; }
 @media (max-width: 700px) { html.large-text .care-family .welcome-card h1 { font-size: 36px; } }
 </style>
-<script>
-import { api as requestClient } from '../api/client'
-import { apiErrorMessage } from '../api/httpContract'
+<script setup lang="ts">
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { usePagedRecords } from '@/composables/usePagedRecords'
+import LatestHealthPanel from '../components/LatestHealthPanel.vue'
 
-
-	import axios from 'axios'
-	import LatestHealthPanel from '../components/LatestHealthPanel.vue'
-
-export default {
-  components: { LatestHealthPanel },
-  created () {
-		this.searchOlds()
-	},
-	methods: {
-
-	  changePage (val) {
-
-	    this.currentPage = val
-        this.searchOlds(true)
-	  },
-	  getDetail(row){
-
-		  var textId = row.textId
-		  var picId = row.picId
-
-		  this.$router.push({
-			path: '/family-portal/notice',
-			query: {
-				textId: textId,
-				picId: picId
-			}
-		  })
-	  },
-
-			searchOlds(keepPage = false){
-        if (keepPage !== true) this.currentPage = 1
-				var _this=this
-				_this.isLoading = true
-				_this.loadError = ''
-
-				var params = {
-
-          page: this.currentPage, pageSize: this.pageSize,
-					'title': _this.searchText
-				}
-
-				requestClient.post('api/v1/notices/list',params).then(function (response) {
-
-				_this.tableData = response.data && response.data.texts ? response.data.texts : []
-				_this.total = response.data.total ?? _this.tableData.length
-				})
-				.catch(function (error) {
-
-					_this.loadError = apiErrorMessage(error, '请检查服务连接后重试')
-					_this.tableData = []
-					_this.total = 0
-				}).then(function () {
-					_this.isLoading = false
-				})
-			}
-
-    },
-  data() {
-    return {
-	  familyName: localStorage.getItem('user_name') || '家人',
-	  tableData: [],
-		searchText: '',
-		total: 0,
-		pageSize: 10,
-		currentPage: 1,
-		isLoading: false,
-		loadError: ''
-    };
-  }
+const router = useRouter()
+const familyName = ref(localStorage.getItem('user_name') || '家人')
+const searchText = ref('')
+const {
+  records: tableData, total, pageSize, currentPage, isLoading, loadError,
+  load: searchOlds, changePage
+} = usePagedRecords<Record<string, any>, { title: string }>({
+  path: 'api/v1/notices/list',
+  responseKey: 'texts',
+  buildQuery: () => ({ title: searchText.value }),
+  failure: '请检查服务连接后重试'
+})
+function getDetail(row: Record<string, any>) {
+  void router.push({
+    path: '/family-portal/notice',
+    query: { textId: row.textId, picId: row.picId }
+  })
 }
 </script>
