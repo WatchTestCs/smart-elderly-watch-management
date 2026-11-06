@@ -60,8 +60,7 @@ export const deviceAdminMethods = {
       }
       this.post('createBindCode', {
         oldId: this.bindOldId,
-        expireDays: this.bindExpireDays,
-        createUser: localStorage.getItem('user_name') || '管理员'
+        expireDays: this.bindExpireDays
       }).then(function (response) {
         if (response.data.returnCode === '1111') {
           _this.newBindCode = response.data
