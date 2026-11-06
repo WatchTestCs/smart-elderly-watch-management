@@ -91,7 +91,8 @@
 
 <script>
 import { deleteRecord, writeRecord } from '@/composables/recordActions'
-import { pagedRecords } from '@/composables/pagedRecords'
+import { usePagedRecords } from '@/composables/usePagedRecords'
+import { ref } from 'vue'
 import { useCollectionLayout } from '@/composables/useCollectionLayout'
 
 import { checkThreshold } from './watch.validation'
@@ -99,12 +100,35 @@ import RecordCards from '@/components/RecordCards.vue'
 import ThresholdForm from '@/components/records/ThresholdForm.vue'
 
 export default {
-  mixins: [pagedRecords({ path: "api/v1/monitoring-profiles/list", responseKey: "watchDtos", recordsKey: "watchsList", searchKey: "oldName", load: "searchWatchs", failure: "监测阈值档案暂时无法加载，请检查服务连接后重试。" })],
-  setup () { return { mobileLayout: useCollectionLayout(900) } },
+
+
+  setup () {
+    const searchText = ref('')
+    const paging = usePagedRecords({
+      path: 'api/v1/monitoring-profiles/list',
+      responseKey: 'watchDtos',
+      buildQuery: () => ({ oldName: searchText.value }),
+      failure: '监测阈值档案暂时无法加载，请检查服务连接后重试。'
+    })
+    return {
+      mobileLayout: useCollectionLayout(900),
+      searchText,
+      watchsList: paging.records,
+      isLoading: paging.isLoading,
+      loadError: paging.loadError,
+      total: paging.total,
+      pageSize: paging.pageSize,
+      currentPage: paging.currentPage,
+      searchWatchs: paging.load,
+      handleSizeChange: paging.handleSizeChange,
+      changePage: paging.changePage
+    }
+  },
   components: { RecordCards, ThresholdForm },
   data () {
     return {
-      searchText: '', // 角色查询内容
+
+
       watchDialogVisible: false,
       watchEditDialogVisible: false,
       watchForm: {
@@ -135,7 +159,7 @@ export default {
     }
   },
   created () {
-    this.searchWatchs()
+    
   },
   methods: {
     addWatchs () { return this.saveProfile(false) },

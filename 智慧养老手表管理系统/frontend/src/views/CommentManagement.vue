@@ -68,14 +68,34 @@
 
 <script>
 import { deleteRecord, writeRecord } from '@/composables/recordActions'
-import { pagedRecords } from '@/composables/pagedRecords'
+import { usePagedRecords } from '@/composables/usePagedRecords'
 import { useCollectionLayout } from '@/composables/useCollectionLayout'
 
 import RecordCards from '@/components/RecordCards.vue'
 
 export default {
-  mixins: [pagedRecords({ path: "api/v1/notice-comments/search", responseKey: "moderatedComments", recordsKey: "saidList", load: "searchSaid", failure: "评论暂时无法加载，请检查服务连接后重试。" })],
-  setup () { return { mobileLayout: useCollectionLayout(900) } },
+
+
+  setup () {
+    const paging = usePagedRecords({
+      path: 'api/v1/notice-comments/search',
+      responseKey: 'moderatedComments',
+      buildQuery: () => ({}),
+      failure: '评论暂时无法加载，请检查服务连接后重试。'
+    })
+    return {
+      mobileLayout: useCollectionLayout(900),
+      saidList: paging.records,
+      isLoading: paging.isLoading,
+      loadError: paging.loadError,
+      total: paging.total,
+      pageSize: paging.pageSize,
+      currentPage: paging.currentPage,
+      searchSaid: paging.load,
+      handleSizeChange: paging.handleSizeChange,
+      changePage: paging.changePage
+    }
+  },
   components: { RecordCards },
   data () {
     return {
@@ -92,7 +112,7 @@ export default {
     }
   },
   created () {
-    this.searchSaid()
+    
   },
   methods: {
     

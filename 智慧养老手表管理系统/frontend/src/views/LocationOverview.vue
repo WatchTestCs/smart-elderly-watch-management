@@ -80,7 +80,8 @@
 </template>
 
 <script>
-import { pagedRecords } from '@/composables/pagedRecords'
+import { usePagedRecords } from '@/composables/usePagedRecords'
+import { ref } from 'vue'
 import { api as requestClient } from '../api/client'
 import { useCollectionLayout } from '@/composables/useCollectionLayout'
 
@@ -101,19 +102,40 @@ export default {
       if (selected) this.selectedLocation = { ...selected }
     }
   },
-  mixins: [pagedRecords({ path: "api/v1/position/select", responseKey: "positionDtos", recordsKey: "positionList", searchKey: "name", load: "searchposition", failure: "位置数据暂时无法加载，请检查服务连接后重试。" })],
-  setup () { return { mobileLayout: useCollectionLayout(900) } },
+
+  setup () {
+    const searchText = ref('')
+    const paging = usePagedRecords({
+      path: 'api/v1/position/select',
+      responseKey: 'positionDtos',
+      buildQuery: () => ({ name: searchText.value }),
+      failure: '位置数据暂时无法加载，请检查服务连接后重试。'
+    })
+    return {
+      mobileLayout: useCollectionLayout(900),
+      searchText,
+      positionList: paging.records,
+      isLoading: paging.isLoading,
+      loadError: paging.loadError,
+      total: paging.total,
+      pageSize: paging.pageSize,
+      currentPage: paging.currentPage,
+      searchposition: paging.load,
+      handleSizeChange: paging.handleSizeChange,
+      changePage: paging.changePage
+    }
+  },
   components: { RecordCards, PositionMap },
   data () {
     return {
-      searchText: '',
+
 
 			selectedLocation: null,
     }
   },
   created () {
 
-    this.searchposition()
+    
 
   },
   methods: {
