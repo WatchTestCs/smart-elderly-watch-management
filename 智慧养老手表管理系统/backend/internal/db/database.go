@@ -30,8 +30,9 @@ type sqlExecutor interface {
 }
 
 type executor struct {
-	pg pgExecutor
-	my sqlExecutor
+	pg     pgExecutor
+	my     sqlExecutor
+	packed bool
 }
 
 type Database struct {

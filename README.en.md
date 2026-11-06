@@ -155,6 +155,19 @@ cd 智慧养老手表管理系统
 
 The build script compiles the Vue frontend, embeds the assets into the Go binary, generates the sidecar SHA-256 manifest, builds the Tauri shell, and packages the NSIS installer into `outputs/v2.1.0-preview`.
 
+### Watch simulator and offline runs
+
+The Rust watch simulator can connect to preview or generate local data without a network, backend, or account. Building it requires Rust 1.89+ and, on Windows, MSVC and the Windows SDK.
+
+```powershell
+cargo build --release --locked --manifest-path 智慧养老手表管理系统/watch-sim/Cargo.toml
+.\智慧养老手表管理系统\watch-sim\target\release\watch-sim.exe --local "D:\watch-sim\local-data" --scenario demo --health-samples
+```
+
+Packaged builds include `本地模拟.cmd` for double-click startup. Each run creates a separate directory containing samples, events, and an `index.html` page that opens offline. See the [simulator guide](智慧养老手表管理系统/watch-sim/README.md) for online options, certificates, and validation commands.
+
+Compared with the preview Node simulator, the Rust build reduced startup plus three-request time by 79.5% and peak working set by 85.2%. Coverage, adaptations and raw measurements are performance evidence and are not distributed with this repository.
+
 ## Validation
 
 UI Quality runs with every Preview CI. `Core CI / required` covers the core checks; a formal candidate also requires native HAP compilation, actual Windows distribution tests, and complete evidence for the same SHA. See the [release gates](docs/reliability/release-governance.md) for inputs and rejection conditions.

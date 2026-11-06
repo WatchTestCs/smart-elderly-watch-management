@@ -113,7 +113,7 @@ func OpenMySQL(ctx context.Context, dsn string) (*Database, error) {
 		pool.Close()
 		return nil, errors.New("MySQL health probe unavailable")
 	}
-	return &Database{executor: executor{my: pool}, myPool: pool, healthPool: healthPool}, nil
+	return &Database{executor: executor{my: pool, packed: cacheLimit > 0}, myPool: pool, healthPool: healthPool}, nil
 }
 
 // mysqlIdleConnectionLimit is bounded by the existing 20-connection primary

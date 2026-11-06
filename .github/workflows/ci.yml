@@ -48,25 +48,25 @@ jobs:
       sdk_sha256: ${{ inputs.sdk_sha256 || vars.HARMONY_SDK_SHA256 || '' }}
       require_native: ${{ inputs.require_native || false }}
 
-  backend:
-    name: Backend
-    uses: ./.github/workflows/reusable-backend.yml
+  simulator-tests:
+    name: Watch simulator tests
+    uses: ./.github/workflows/watch-simulator.yml
 
   simulator:
     name: Watch simulator
+    if: ${{ always() }}
+    needs: [simulator-tests]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-          persist-credentials: false
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
-        with:
-          node-version: '24'
-      - name: Verify simulator state machine, SOS retry and device signing
-        run: node --test watch-sim/watch-sim.test.cjs
-        working-directory: 智慧养老手表管理系统
+      - name: Require both simulator platforms
+        env:
+          SIMULATOR_RESULT: ${{ needs['simulator-tests'].result }}
+        run: test "$SIMULATOR_RESULT" = success
+
+  backend:
+    name: Backend
+    uses: ./.github/workflows/reusable-backend.yml
 
   windows:
     name: Windows sidecar contract

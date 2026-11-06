@@ -153,6 +153,19 @@ cd 智慧养老手表管理系统
 
 构建脚本依次编译 Vue 静态资源、内嵌静态资源的 Go 服务端、sidecar SHA-256 校验文件、Tauri 原生壳以及 NSIS 安装包，最终产物输出到 `outputs/v2.1.0-preview`。
 
+### 手表模拟器与本地模拟
+
+手表模拟器现使用 Rust，可独立连接 preview，也可在无网络、后端或账号时保存本地模拟数据。构建模拟器需要 Rust 1.89+；Windows 还需 MSVC 与 Windows SDK。
+
+```powershell
+cargo build --release --locked --manifest-path 智慧养老手表管理系统/watch-sim/Cargo.toml
+.\智慧养老手表管理系统\watch-sim\target\release\watch-sim.exe --local "D:\手表模拟\本地数据" --scenario demo --health-samples
+```
+
+发布包可双击 `本地模拟.cmd`。每次运行创建独立目录，保存采样、事件与可离线打开的 `index.html`。联机参数、证书和验证命令见[模拟器说明](智慧养老手表管理系统/watch-sim/README.md)。
+
+与远端 Node 模拟器的对照显示，Rust 的三请求启动耗时降低79.5%、峰值工作集降低85.2%；功能覆盖、适配与原始测量数据属性能证据，未随仓库分发。
+
 ## 验证与性能
 
 UI Quality 随每次 Preview CI 执行。`Core CI / required` 仅表示基础检查通过；正式候选还需原生 HAP、实际 Windows 安装包测试和同一 SHA 的完整证据，操作与失败条件见[发布门禁](docs/reliability/release-governance.md)。
