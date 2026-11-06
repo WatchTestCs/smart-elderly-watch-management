@@ -26,8 +26,7 @@
     <el-dialog
       title="监护人添加"
       v-model="customerDialogVisible"
-      @close="closeRoleAddDialog"
-      width="30%">
+      @close="closeRoleAddDialog">
       <el-form label-width="80px" :model="customerForm" :rules="rules"  ref="addcustomerFormRef">
         <el-form-item label="姓名" prop="customerName">
           <el-input v-model="customerForm.customerName"></el-input>
@@ -57,8 +56,7 @@
 
     <el-dialog
       title="监护人编辑"
-      v-model="oldEditDialogVisible"
-      width="30%">
+      v-model="oldEditDialogVisible">
       <el-form ref="editCustomerFormRef" label-width="80px" :rules="rules" :model="oldEditForm">
         <el-form-item label="姓名" prop="customerName">
         <el-input v-model="oldEditForm.customerName"></el-input>
