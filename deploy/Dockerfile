@@ -5,12 +5,18 @@ RUN npm ci --no-audit --no-fund
 COPY ["智慧养老手表管理系统/frontend/", "./"]
 RUN npm run test && npm run typecheck && npm run build
 
-FROM golang:1.27.2-bookworm AS backend
+FROM golang:1.27.3-bookworm AS backend
+RUN apt-get update && apt-get install -y --no-install-recommends python3 \
+ && rm -rf /var/lib/apt/lists/*
+COPY scripts/prepare-backend-go.py /usr/local/bin/prepare-backend-go.py
 WORKDIR /src
 COPY ["智慧养老手表管理系统/backend/go.mod", "智慧养老手表管理系统/backend/go.sum", "./"]
+COPY ["智慧养老手表管理系统/backend/third_party/mysql/go.mod", "./third_party/mysql/go.mod"]
 RUN go mod download
 COPY ["智慧养老手表管理系统/backend/", "./"]
 COPY --from=frontend /ui/dist/ internal/handlers/web/
+RUN python3 /usr/local/bin/prepare-backend-go.py --output /tmp/backend-go
+ENV GOFLAGS=-overlay=/tmp/backend-go/overlay.json GOEXPERIMENT=jsonv2
 RUN CGO_ENABLED=0 go build -trimpath -o /out/suining ./cmd/server \
  && CGO_ENABLED=0 go build -trimpath -o /out/healthcheck ./cmd/healthcheck \
  && CGO_ENABLED=0 go build -trimpath -o /out/protect-notes ./cmd/protect-notes

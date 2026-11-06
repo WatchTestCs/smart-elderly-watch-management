@@ -1,5 +1,12 @@
-param([switch]$SelfSign)
+param([switch]$SelfSign,[string]$TestMySQLBin)
 $ErrorActionPreference='Stop'
+function Assert-ProductGoToolchain([string]$Version) {
+ if($Version -notmatch '^go1\.(\d+)\.(\d+)$'){throw 'Product packaging requires a released, patched Go toolchain'}
+ $minor=[int]$Matches[1];$patch=[int]$Matches[2]
+ if($minor -lt 27 -or ($minor -eq 27 -and $patch -lt 3)){
+  throw 'Product packaging requires Go 1.27.3+; compatibility compilers must not produce installers'
+ }
+}
 $project=Split-Path $PSScriptRoot -Parent
 $cargoTarget=Join-Path $PSScriptRoot 'target'
 if($env:CARGO_TARGET_DIR){
@@ -22,14 +29,37 @@ Copy-Item -Recurse -Force (Join-Path $project 'frontend/dist/*') $web
 $bin=Join-Path $PSScriptRoot 'binaries/suining-server-x86_64-pc-windows-msvc.exe'
 New-Item -ItemType Directory -Force (Split-Path $bin -Parent)|Out-Null
 Push-Location (Join-Path $project 'backend')
+$previousGoExperiment=$env:GOEXPERIMENT
+$previousGoRoot=$env:GOROOT
+$previousGoFlags=$env:GOFLAGS
+$previousPackedMySQL=$env:TEST_PACKED_MYSQL_DSN
+$testMySQL=$null
 try {
+ $productGoVersion=go env GOVERSION
+ if($LASTEXITCODE){throw 'Cannot establish product Go toolchain version'}
+ Assert-ProductGoToolchain -Version $productGoVersion
+ $policyOutput=Join-Path ([IO.Path]::GetTempPath()) ('suining-go-policy-'+[guid]::NewGuid().ToString('N'))
+ $prepared=python (Join-Path (Split-Path $project -Parent) 'scripts/prepare-backend-go.py') --output $policyOutput
+ if($LASTEXITCODE){throw 'Product compiler preparation failed'}
+ $prepared=$prepared | ConvertFrom-Json
+ $env:GOROOT=$prepared.environment.GOROOT
+ $env:GOFLAGS=$prepared.environment.GOFLAGS
+ $env:GOEXPERIMENT=$prepared.environment.GOEXPERIMENT
+ if(!$env:TEST_MYSQL_DSN -and !$env:TEST_PACKED_MYSQL_DSN){
+  . (Join-Path (Split-Path $project -Parent) 'scripts/reliability/windows-test-mysql.ps1')
+  $testMySQL=Start-DisposableTestMySQL -MySQLBin $TestMySQLBin
+  $env:TEST_PACKED_MYSQL_DSN=$testMySQL.DSN
+ }
  go test -count=1 ./...
  if($LASTEXITCODE -ne 0){throw 'Backend tests failed'}
  go vet ./...
  if($LASTEXITCODE -ne 0){throw 'Backend static checks failed'}
  go build -trimpath -ldflags '-s -w' -o $bin ./cmd/server
  if($LASTEXITCODE -ne 0){throw 'Go sidecar build failed'}
-} finally { Pop-Location }
+} finally {
+ try {if($testMySQL){Stop-DisposableTestMySQL -Owner $testMySQL}}
+ finally {$env:GOEXPERIMENT=$previousGoExperiment;$env:GOROOT=$previousGoRoot;$env:GOFLAGS=$previousGoFlags;$env:TEST_PACKED_MYSQL_DSN=$previousPackedMySQL;Pop-Location}
+}
 if($SelfSign){& (Join-Path $PSScriptRoot 'sign.ps1') -FilePath $bin | Set-Content (Join-Path $out 'backend-signature.json')}
 $hash=(Get-FileHash $bin -Algorithm SHA256).Hash.ToLowerInvariant()
 [IO.File]::WriteAllText((Join-Path $PSScriptRoot 'backend-sha256.txt'),$hash+"`n",[Text.UTF8Encoding]::new($false))

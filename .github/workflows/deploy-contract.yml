@@ -29,12 +29,14 @@ jobs:
           MYSQL_ROOT_PASSWORD: ci-do-not-use
           MYSQL_PASSWORD: ci-do-not-use
           PG_PASSWORD: ci-do-not-use
+          PG_ANALYTICS_PASSWORD: ci-do-not-use
           CARE_RECEIPT_SECRET: ci-placeholder-not-production-32-plus-chars
           S3_ENDPOINT: https://s3.example.invalid
           S3_BUCKET: ci-contract-only
         run: |
           docker compose -f deploy/platform.compose.yml config --quiet
           docker compose -f deploy/platform.compose.yml -f deploy/object-storage.compose.yml config --quiet
+          docker compose -f deploy/dual-db.compose.yml config --quiet
           python3 - <<'PY'
           from pathlib import Path
           text = Path('deploy/platform.compose.yml').read_text()

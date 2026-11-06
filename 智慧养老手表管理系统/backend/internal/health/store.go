@@ -13,6 +13,7 @@ import (
 )
 
 var ErrConflict = errors.New("same source record version has different content")
+var ErrSourceDeviceMismatch = errors.New("sample source device does not match authenticated device")
 
 type Owner struct {
 	OldID    int64
@@ -41,39 +42,84 @@ func Save(ctx context.Context, tx *db.Transaction, o Owner, s Sample) (int64, bo
 // owner clock remains locked through commit, preserving each owner's cursor
 // ordering. MySQL reserves globally unique revision ranges infrequently.
 func SaveBatch(ctx context.Context, tx *db.Transaction, o Owner, samples []Sample) (int64, int, error) {
+	batch, err := PrepareBatch(samples)
+	if err != nil {
+		return 0, 0, err
+	}
+	return batch.Save(ctx, tx, o)
+}
+
+// PreparedBatch holds validated, encoded samples without an owner or revision.
+// It belongs to one request and must not be saved concurrently.
+type PreparedBatch struct {
+	input          []preparedSample
+	minimumVersion int64
+}
+
+// PrepareBatch performs owner-independent work before acquiring database locks.
+func PrepareBatch(samples []Sample) (PreparedBatch, error) {
+	return prepareBatch(samples, nil)
+}
+
+// PrepareDeviceBatch checks each source before normalizing that sample, retaining
+// upload validation order without a second pass over the input.
+func PrepareDeviceBatch(device string, samples []Sample) (PreparedBatch, error) {
+	return prepareBatch(samples, &device)
+}
+
+func prepareBatch(samples []Sample, device *string) (PreparedBatch, error) {
 	if len(samples) < 1 || len(samples) > 200 {
-		return 0, 0, fmt.Errorf("batch must contain 1..200 samples")
+		return PreparedBatch{}, fmt.Errorf("batch must contain 1..200 samples")
 	}
 	input := make([]preparedSample, 0, len(samples))
-	ids := make([]any, 1, len(samples)+1)
 	minimumVersion := samples[0].Version
-	seen := make(map[string]bool, len(samples))
 	for _, s := range samples {
+		if device != nil && s.SourceDevice != *device {
+			return PreparedBatch{}, ErrSourceDeviceMismatch
+		}
 		s, err := s.Normalize()
 		if err != nil {
-			return 0, 0, err
+			return PreparedBatch{}, err
 		}
 		minimumVersion = min(minimumVersion, s.Version)
 		b, err := marshalSampleFast(s)
 		if err != nil {
-			return 0, 0, err
+			return PreparedBatch{}, err
 		}
-		id := identityDigest(o, s)
-		input = append(input, preparedSample{id: id, payload: b, sample: s})
-		if !seen[id] {
+		// Identity and SQL columns use immutable fields; the encoded snapshot
+		// owns the value and metadata, so retain no caller-owned mutable data.
+		s.Value, s.Metadata = nil, nil
+		input = append(input, preparedSample{payload: b, sample: s})
+	}
+	return PreparedBatch{input: input, minimumVersion: minimumVersion}, nil
+}
+
+// Save derives identity from the caller's locked owner and preserves the same
+// version/conflict/history transaction as SaveBatch.
+func (batch *PreparedBatch) Save(ctx context.Context, tx *db.Transaction, o Owner) (int64, int, error) {
+	if batch == nil || len(batch.input) < 1 || len(batch.input) > 200 {
+		return 0, 0, fmt.Errorf("batch must contain 1..200 samples")
+	}
+	input := batch.input
+	assignBatchIdentities(o, input)
+	ids := make([]any, 1, len(input)+1)
+	seen := make(map[string]uint8, len(input))
+	for i := range input {
+		id := input[i].id
+		if _, exists := seen[id]; !exists {
 			ids = append(ids, id)
-			seen[id] = true
+			seen[id] = 0
 		}
 	}
 	clock, err := lockOwner(ctx, tx, o.OldID)
 	if err != nil {
 		return 0, 0, err
 	}
-	previous, err := loadStoredSamples(ctx, tx, ids, minimumVersion)
+	previous, err := loadStoredSamples(ctx, tx, ids, batch.minimumVersion)
 	if err != nil {
 		return 0, 0, err
 	}
-	selection, err := selectBatch(input, previous, len(ids)-1)
+	selection, err := selectBatch(input, previous, seen)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -89,25 +135,27 @@ func SaveBatch(ctx context.Context, tx *db.Transaction, o Owner, samples []Sampl
 		input[index].revision = revision
 	}
 	cursor := max(selection.cursor, revision)
-	args := make([]any, 0, max(len(selection.final)*14, len(selection.events)*4))
-	for _, id := range selection.order {
-		item := &input[selection.final[id]]
+	scratch := borrowBatchArgs(max(len(selection.final)*14, len(selection.events)*4))
+	defer releaseBatchArgs(scratch)
+	args := scratch.values[:0]
+	ownerID, epoch := any(o.OldID), any(o.Epoch)
+	for _, index := range selection.final {
+		item := &input[index]
+		id := item.id
 		s := &item.sample
-		args = append(args, id, o.OldID, o.DeviceID, o.Epoch, s.Version, item.revision, json.RawMessage(item.payload), s.Source, s.SourceDevice, s.Metric, s.Semantics, s.Start.UnixMicro(), s.End.UnixMicro(), s.Deleted)
+		args = append(args, id, ownerID, o.DeviceID, epoch, s.Version, item.revision, json.RawMessage(item.payload), s.Source, s.SourceDevice, s.Metric, s.Semantics, s.Start.UnixMicro(), s.End.UnixMicro(), s.Deleted)
 	}
-	_, err = tx.Exec(ctx, batchSQL(batchUpsert, len(selection.final)), args...)
+	_, err = tx.ExecBatch(ctx, batchSQL(batchUpsert, len(selection.final)), args...)
 	if err != nil {
 		return 0, 0, err
 	}
 	// Exec consumes arguments synchronously; reuse the transaction-private backing
 	// array for history instead of allocating another large pointer slice.
 	args = args[:0]
-	for _, index := range selection.events {
-		event := &input[index]
-		b := changePayload(o, event.id, event.revision, event.payload)
-		args = append(args, event.revision, o.OldID, event.id, json.RawMessage(b))
-	}
-	_, err = tx.Exec(ctx, batchSQL(batchChanges, len(selection.events)), args...)
+	var history *historyBuffer
+	args, history = appendChangeRows(args, o, input, selection.events)
+	defer releaseHistoryBuffer(history)
+	_, err = tx.ExecBatch(ctx, batchSQL(batchChanges, len(selection.events)), args...)
 	if err != nil {
 		return 0, 0, fmt.Errorf("save health change: %w", err)
 	}
@@ -122,28 +170,49 @@ func SaveBatch(ctx context.Context, tx *db.Transaction, o Owner, samples []Sampl
 	return cursor, selection.duplicates, nil
 }
 
-// The sample was already JSON-encoded before taking the revision lock. Reuse
-// those bytes in its immutable change event rather than encode it a second time.
-// id is the hex SHA-256 identity produced by Digest, so it needs no escaping.
-func changePayload(o Owner, id string, revision int64, sample []byte) []byte {
-	b := make([]byte, 0, len(sample)+len(id)+128)
-	b = append(b, `{"sampleId":"`...)
-	b = append(b, id...)
-	b = append(b, `","oldId":`...)
-	b = strconv.AppendInt(b, o.OldID, 10)
-	b = append(b, `,"deviceId":`...)
+// Each history event views its own span in one transaction-private buffer.
+// Exec consumes these bytes before the argument buffer is reused.
+func appendChangeRows(args []any, o Owner, input []preparedSample, events []uint8) ([]any, *historyBuffer) {
+	var header [128]byte
+	ownerTail := append(header[:0], `","oldId":`...)
+	ownerTail = strconv.AppendInt(ownerTail, o.OldID, 10)
+	ownerTail = append(ownerTail, `,"deviceId":`...)
 	if o.DeviceID == nil {
-		b = append(b, "null"...)
+		ownerTail = append(ownerTail, "null"...)
 	} else {
-		b = strconv.AppendInt(b, *o.DeviceID, 10)
+		ownerTail = strconv.AppendInt(ownerTail, *o.DeviceID, 10)
 	}
-	b = append(b, `,"bindingVersion":`...)
-	b = strconv.AppendInt(b, o.Epoch, 10)
-	b = append(b, `,"revision":`...)
-	b = strconv.AppendInt(b, revision, 10)
-	b = append(b, `,"sample":`...)
-	b = append(b, sample...)
-	return append(b, '}')
+	ownerTail = append(ownerTail, `,"bindingVersion":`...)
+	ownerTail = strconv.AppendInt(ownerTail, o.Epoch, 10)
+	ownerTail = append(ownerTail, `,"revision":`...)
+	capacity := 0
+	for _, index := range events {
+		event := &input[index]
+		capacity += len(event.payload) + len(event.id) + len(ownerTail) + len(`{"sampleId":"`) + 20 + len(`,"sample":`) + 1
+	}
+	history := borrowHistoryBuffer(capacity)
+	var payloads []byte
+	if history == nil {
+		payloads = make([]byte, 0, capacity)
+	} else {
+		payloads = history.bytes[:0]
+	}
+	ownerID := any(o.OldID)
+	for _, index := range events {
+		event := &input[index]
+		start := len(payloads)
+		payloads = append(payloads, `{"sampleId":"`...)
+		// IDs are SHA-256 hex; the sample already owns its JSON snapshot.
+		payloads = append(payloads, event.id...)
+		payloads = append(payloads, ownerTail...)
+		payloads = strconv.AppendInt(payloads, event.revision, 10)
+		payloads = append(payloads, `,"sample":`...)
+		payloads = append(payloads, event.payload...)
+		payloads = append(payloads, '}')
+		raw := json.RawMessage(payloads[start:len(payloads):len(payloads)])
+		args = append(args, event.revision, ownerID, event.id, raw)
+	}
+	return args, history
 }
 
 func loadStoredSamples(ctx context.Context, tx *db.Transaction, ids []any, minimumVersion int64) (map[string]storedSample, error) {

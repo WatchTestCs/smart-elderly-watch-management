@@ -63,7 +63,7 @@ func TestIndexedBatchMatchesValueCopySelection(t *testing.T) {
 	for trial := range 1000 {
 		previous := make(map[string]storedSample)
 		input := make([]preparedSample, 1+random.Intn(200))
-		distinct := make(map[string]bool)
+		distinct := make(map[string]uint8)
 		for i := range input {
 			s := base
 			s.RecordID = fmt.Sprint(random.Intn(30))
@@ -90,7 +90,7 @@ func TestIndexedBatchMatchesValueCopySelection(t *testing.T) {
 			}
 			id := identityDigest(owner, s)
 			input[i] = preparedSample{id: id, payload: payload, sample: s}
-			distinct[id] = true
+			distinct[id] = 0
 			if random.Intn(4) == 0 {
 				old := s
 				if random.Intn(2) == 0 {
@@ -118,7 +118,7 @@ func TestIndexedBatchMatchesValueCopySelection(t *testing.T) {
 				previous[id] = prior
 			}
 		}
-		got, err := selectBatch(input, previous, len(distinct))
+		got, err := selectBatch(input, previous, distinct)
 		want, werr := selectBatchReference(input, before, len(distinct))
 		if (err == nil) != (werr == nil) || errors.Is(err, ErrConflict) != errors.Is(werr, ErrConflict) {
 			t.Fatalf("trial %d: errors differ: %v / %v", trial, err, werr)
@@ -129,11 +129,12 @@ func TestIndexedBatchMatchesValueCopySelection(t *testing.T) {
 			}
 			continue
 		}
-		if got.cursor != want.cursor || got.duplicates != want.duplicates || !reflect.DeepEqual(got.order, want.order) || len(got.events) != len(want.events) {
+		if got.cursor != want.cursor || got.duplicates != want.duplicates || len(got.final) != len(want.order) || len(got.events) != len(want.events) {
 			t.Fatalf("trial %d: selection differs", trial)
 		}
-		for id, index := range got.final {
-			if !reflect.DeepEqual(input[index], want.final[id]) {
+		for position, index := range got.final {
+			id := input[index].id
+			if id != want.order[position] || !reflect.DeepEqual(input[index], want.final[id]) {
 				t.Fatalf("trial %d: final version differs", trial)
 			}
 		}
@@ -153,7 +154,8 @@ func TestIndexedBatchMatchesValueCopySelection(t *testing.T) {
 			want.events[i].revision = revision
 			want.final[want.events[i].id] = want.events[i]
 		}
-		for id, index := range got.final {
+		for _, index := range got.final {
+			id := input[index].id
 			if !reflect.DeepEqual(input[index], want.final[id]) {
 				t.Fatalf("trial %d: assigned revision differs", trial)
 			}
@@ -179,7 +181,7 @@ func BenchmarkBatchSelectionLayout(b *testing.B) {
 			b.Run("valueCopy", func(b *testing.B) {
 				b.ReportAllocs()
 				for range b.N {
-					out, err := selectBatchReference(input, make(map[string]storedSample, unique), unique)
+					out, err := selectBatchReference(input, make(map[string]storedSample, unique), len(selectionSlotsForTest(input)))
 					if err != nil {
 						b.Fatal(err)
 					}
@@ -189,7 +191,7 @@ func BenchmarkBatchSelectionLayout(b *testing.B) {
 			b.Run("indices", func(b *testing.B) {
 				b.ReportAllocs()
 				for range b.N {
-					out, err := selectBatch(input, make(map[string]storedSample, unique), unique)
+					out, err := selectBatch(input, make(map[string]storedSample, unique), selectionSlotsForTest(input))
 					if err != nil {
 						b.Fatal(err)
 					}
@@ -202,8 +204,16 @@ func BenchmarkBatchSelectionLayout(b *testing.B) {
 
 func TestBatchSelectionRejectsIndexOverflow(t *testing.T) {
 	for _, size := range []int{0, 201, 256, 257} {
-		if _, err := selectBatch(make([]preparedSample, size), make(map[string]storedSample), 0); err == nil {
+		if _, err := selectBatch(make([]preparedSample, size), make(map[string]storedSample), nil); err == nil {
 			t.Fatalf("accepted batch size %d", size)
 		}
 	}
+}
+
+func selectionSlotsForTest(input []preparedSample) map[string]uint8 {
+	slots := make(map[string]uint8, len(input))
+	for _, item := range input {
+		slots[item.id] = 0
+	}
+	return slots
 }

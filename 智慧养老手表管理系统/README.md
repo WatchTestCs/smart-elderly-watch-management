@@ -1,6 +1,6 @@
 # 岁宁 2.1.0 · 核心源码工程
 
-本目录包含岁宁的 Tauri 2 / Rust 桌面壳、Go 业务后端、Vue 3 / Vite 前端界面以及 Node.js 手表协议模拟器。系统以独立部署的 MySQL 作为唯一业务主库，使用 PostgreSQL 异步存储分析投影。
+本目录包含岁宁的 Tauri 2 / Rust 桌面壳、Go 业务后端、Vue 3 / Vite 前端界面以及 Rust 手表业务模拟器。系统以独立部署的 MySQL 作为唯一业务主库，使用 PostgreSQL 异步存储分析投影。
 
 [产品与整体架构](../README.md) · [2.1.0 发布说明](../docs/releases/2.1.0.md) · [双库配置与迁移](../docs/DUAL_DATABASES.md) · [架构与接口边界](../docs/ARCHITECTURE.md) · [测试与数据库验收](../docs/TESTING.md)
 
@@ -12,7 +12,7 @@
 | `backend` | 业务 API、设备鉴权接入、服务端会话、照护工单与异步分析作业 | `cmd/server`、`internal/handlers`、`internal/care`、`internal/analytics` |
 | `backend/migrations` | MySQL 业务库迁移、旧版 PG 兼容迁移与 PG 分析库 schema | 内嵌 SQL 脚本与版本校验 |
 | `frontend` | Vue 路由、管理端与家属端页面、本地静态字体与图标、Playwright 浏览器测试 | `src`、`vite.config.js`、`qa` |
-| `watch-sim` | 手表 HTTP 上报模拟与本地运行端口自动发现 | `watch-sim.js`、`watch-sim.test.cjs` |
+| `watch-sim` | 手表 HTTP 上报模拟与本地运行端口自动发现 | `Cargo.toml`、`src/main.rs`、`tests/process.rs` |
 
 桌面启动时，Rust 主进程先校验并拉起 Go 子进程，Vue 界面从 Go 服务加载内嵌静态资源并调用同源 HTTP 接口；首次创建管理员则通过受限的 Tauri 原生 IPC 完成。所有实时业务读写均落在 MySQL，后台分析协程将已提交的 outbox 事件异步投影至 PostgreSQL，遇到 PG 离线时在队列中保留并自动重试。
 

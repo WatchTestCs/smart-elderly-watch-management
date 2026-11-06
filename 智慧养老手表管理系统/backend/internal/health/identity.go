@@ -33,7 +33,48 @@ func identityDigest(o Owner, s Sample) string {
 	b = appendJSONStringIdentity(b, s.Metric)
 	b = append(b, ']')
 	hash := sha256.Sum256(b)
-	return hex.EncodeToString(hash[:])
+	var encoded [64]byte
+	hex.Encode(encoded[:], hash[:])
+	return string(encoded[:])
+}
+
+// Keep the owner and consecutive equal source fields encoded in a request-local
+// buffer. Only record ID and metric must be appended again for every sample.
+func assignBatchIdentities(o Owner, input []preparedSample) {
+	if len(input) == 1 {
+		input[0].id, input[0].revision = identityDigest(o, input[0].sample), 0
+		return
+	}
+	var stack [512]byte
+	var encoded [64]byte
+	b := append(stack[:0], '[')
+	b = strconv.AppendInt(b, o.OldID, 10)
+	b = append(b, ',')
+	if o.DeviceID == nil {
+		b = append(b, "null"...)
+	} else {
+		b = strconv.AppendInt(b, *o.DeviceID, 10)
+	}
+	b = append(b, ',')
+	b = strconv.AppendInt(b, o.Epoch, 10)
+	ownerEnd := len(b)
+	prefixEnd := ownerEnd
+	var source, device string
+	for i := range input {
+		s := &input[i].sample
+		if i == 0 || source != s.Source || device != s.SourceDevice {
+			b = appendJSONStringIdentity(b[:ownerEnd], s.Source)
+			b = appendJSONStringIdentity(b, s.SourceDevice)
+			prefixEnd = len(b)
+			source, device = s.Source, s.SourceDevice
+		}
+		b = appendJSONStringIdentity(b[:prefixEnd], s.RecordID)
+		b = appendJSONStringIdentity(b, s.Metric)
+		b = append(b, ']')
+		hash := sha256.Sum256(b)
+		hex.Encode(encoded[:], hash[:])
+		input[i].id, input[i].revision = string(encoded[:]), 0
+	}
 }
 
 func appendJSONStringIdentity(b []byte, value string) []byte {

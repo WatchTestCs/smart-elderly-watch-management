@@ -30,10 +30,11 @@ func (h *Handler) healthBatch(w http.ResponseWriter, r *http.Request) {
 // Never enable owner-first concurrently with an old device-first writer.
 func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Request, lateDeviceLock bool) {
 	var req healthBatchRequest
-	if !decodeHealth(w, r, &req) {
+	if !decodeHealthBatch(w, r, &req) {
 		return
 	}
-	if !normalizeHealthUpload(w, &req) {
+	batch, ok := prepareHealthUpload(w, &req)
+	if !ok {
 		return
 	}
 	ctx := r.Context()
@@ -73,7 +74,7 @@ func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Reques
 	}
 	expectedOwner := *d.OldID
 	owner := health.Owner{OldID: expectedOwner, DeviceID: &d.ID, Epoch: d.HealthEpoch}
-	cursor, duplicates, err := health.SaveBatch(ctx, tx, owner, req.Samples)
+	cursor, duplicates, err := batch.Save(ctx, tx, owner)
 	if err != nil {
 		if errors.Is(err, health.ErrConflict) {
 			conflict409(w, err.Error())
@@ -169,22 +170,19 @@ type healthBatchRequest struct {
 	Samples        []health.Sample `json:"samples"`
 }
 
-func normalizeHealthUpload(w http.ResponseWriter, req *healthBatchRequest) bool {
+func prepareHealthUpload(w http.ResponseWriter, req *healthBatchRequest) (health.PreparedBatch, bool) {
 	if len(req.Samples) < 1 || len(req.Samples) > 200 {
 		write400(w, "每批须为 1–200 条采样")
-		return false
+		return health.PreparedBatch{}, false
 	}
-	for i, s := range req.Samples {
-		if s.SourceDevice != req.DeviceNo {
+	batch, err := health.PrepareDeviceBatch(req.DeviceNo, req.Samples)
+	if err != nil {
+		if errors.Is(err, health.ErrSourceDeviceMismatch) {
 			write400(w, "采样来源设备与认证设备不一致")
-			return false
-		}
-		n, err := s.Normalize()
-		if err != nil {
+		} else {
 			write400(w, err.Error())
-			return false
 		}
-		req.Samples[i] = n
+		return health.PreparedBatch{}, false
 	}
-	return true
+	return batch, true
 }

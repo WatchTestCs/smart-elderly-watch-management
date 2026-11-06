@@ -17,8 +17,11 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
-          go-version: '1.26.10'
+          go-version: '1.27.3'
           cache-dependency-path: 智慧养老手表管理系统/backend/go.sum
+      - name: Prepare product compiler
+        shell: pwsh
+        run: python scripts/prepare-backend-go.py --output "$env:RUNNER_TEMP/backend-go" --github-env "$env:GITHUB_ENV"
       - name: Validate all product versions
         shell: pwsh
         run: ./智慧养老手表管理系统/desktop/validate-version.ps1
@@ -62,7 +65,7 @@ jobs:
           node-version: '24'
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
         with:
-          go-version: '1.27.2'
+          go-version: '1.27.3'
           cache-dependency-path: 智慧养老手表管理系统/backend/go.sum
       - name: Build and exercise the actual desktop distributions
         shell: pwsh

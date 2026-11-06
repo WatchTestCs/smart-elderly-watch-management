@@ -3,6 +3,7 @@ package health
 import (
 	"encoding/json"
 	"math"
+	"slices"
 	"strconv"
 	"time"
 
@@ -13,23 +14,57 @@ import (
 // for the common, fully normalized, scalar health sample. Uncommon or
 // untrusted representations always use encoding/json for exact compatibility.
 func marshalSampleFast(s Sample) ([]byte, error) {
-	if s.Value == nil || !finiteSample(*s.Value) || s.SourceVersion != "" || s.GroupID != "" || s.Stage != "" || s.TimeBasis != "" || len(s.Metadata) != 0 || s.Deleted ||
+	if s.Value == nil || !finiteSample(*s.Value) || len(s.Metadata) > 8 || s.Deleted ||
 		!safeSampleString(s.RecordID) || !safeSampleString(s.Source) || !safeSampleString(s.SourceDevice) ||
 		!safeSampleString(s.Metric) || !safeSampleString(s.Unit) || !safeSampleString(s.Semantics) ||
+		(s.SourceVersion != "" && !safeSampleString(s.SourceVersion)) || (s.GroupID != "" && !safeSampleString(s.GroupID)) || (s.Stage != "" && !safeSampleString(s.Stage)) || (s.TimeBasis != "" && !safeSampleString(s.TimeBasis)) ||
 		!safeSampleTime(s.Start) || !safeSampleTime(s.End) {
 		return json.Marshal(s)
 	}
+	var keys [8]string
+	count, extra := 0, 0
+	for key, value := range s.Metadata {
+		if !safeSampleString(key) || !safeSampleString(value) {
+			return json.Marshal(s)
+		}
+		keys[count] = key
+		count++
+		extra += len(key) + len(value) + 6
+	}
+	if count > 1 {
+		slices.Sort(keys[:count])
+	}
+	if count > 0 {
+		extra += len(`,"metadata":{}`)
+	}
+	if s.SourceVersion != "" {
+		extra += len(s.SourceVersion) + len(`,"sourceVersion":""`)
+	}
+	if s.GroupID != "" {
+		extra += len(s.GroupID) + len(`,"groupId":""`)
+	}
+	if s.Stage != "" {
+		extra += len(s.Stage) + len(`,"stage":""`)
+	}
+	if s.TimeBasis != "" {
+		extra += len(s.TimeBasis) + len(`,"timeBasis":""`)
+	}
+
 	// Lengths of strings vary widely across devices. Allocate only one output
 	// buffer; a bounded reserve covers common timestamps and measurements.
 	// Append grows safely for unusually long RFC3339Nano/float representations.
-	b := make([]byte, 0, 208+len(s.RecordID)+len(s.Source)+len(s.SourceDevice)+len(s.Metric)+len(s.Unit)+len(s.Semantics))
+	b := make([]byte, 0, 208+extra+len(s.RecordID)+len(s.Source)+len(s.SourceDevice)+len(s.Metric)+len(s.Unit)+len(s.Semantics))
 	b = append(b, `{"recordId":"`...)
 	b = append(b, s.RecordID...)
 	b = append(b, `","source":"`...)
 	b = append(b, s.Source...)
 	b = append(b, `","sourceDevice":"`...)
 	b = append(b, s.SourceDevice...)
-	b = append(b, `","metric":"`...)
+	b = append(b, '"')
+	if s.SourceVersion != "" {
+		b = appendOptionalSampleString(b, "sourceVersion", s.SourceVersion)
+	}
+	b = append(b, `,"metric":"`...)
 	b = append(b, s.Metric...)
 	b = append(b, `","unit":"`...)
 	b = append(b, s.Unit...)
@@ -41,9 +76,44 @@ func marshalSampleFast(s Sample) ([]byte, error) {
 	b = s.End.AppendFormat(b, time.RFC3339Nano)
 	b = append(b, `","semantics":"`...)
 	b = append(b, s.Semantics...)
-	b = append(b, `","version":`...)
+	b = append(b, '"')
+	if s.GroupID != "" {
+		b = appendOptionalSampleString(b, "groupId", s.GroupID)
+	}
+	if s.Stage != "" {
+		b = appendOptionalSampleString(b, "stage", s.Stage)
+	}
+	if s.TimeBasis != "" {
+		b = appendOptionalSampleString(b, "timeBasis", s.TimeBasis)
+	}
+	if count > 0 {
+		b = append(b, `,"metadata":{`...)
+		for i, key := range keys[:count] {
+			if i > 0 {
+				b = append(b, ',')
+			}
+			b = append(b, '"')
+			b = append(b, key...)
+			b = append(b, `":"`...)
+			b = append(b, s.Metadata[key]...)
+			b = append(b, '"')
+		}
+		b = append(b, '}')
+	}
+	b = append(b, `,"version":`...)
 	b = strconv.AppendInt(b, s.Version, 10)
 	return append(b, '}'), nil
+}
+
+func appendOptionalSampleString(b []byte, key, value string) []byte {
+	if value == "" {
+		return b
+	}
+	b = append(b, `,"`...)
+	b = append(b, key...)
+	b = append(b, `":"`...)
+	b = append(b, value...)
+	return append(b, '"')
 }
 
 func safeSampleString(s string) bool { return jsonscan.Safe(s) }

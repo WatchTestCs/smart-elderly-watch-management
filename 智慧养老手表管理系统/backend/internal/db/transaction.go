@@ -39,7 +39,7 @@ func (d *Database) Begin(ctx context.Context) (*Transaction, error) {
 		if err != nil {
 			return nil, err
 		}
-		return &Transaction{executor: executor{my: tx}, myTx: tx}, nil
+		return &Transaction{executor: executor{my: tx, packed: d.packed}, myTx: tx}, nil
 	}
 	tx, err := d.pgPool.Begin(ctx)
 	if err != nil {
@@ -63,12 +63,23 @@ func (t *Transaction) Rollback(ctx context.Context) error {
 }
 
 func (e executor) Exec(ctx context.Context, query string, args ...any) (pgconn.CommandTag, error) {
+	return e.exec(ctx, query, args, false)
+}
+
+// ExecBatch preserves Exec semantics while enabling bounded MySQL transport reuse.
+func (e executor) ExecBatch(ctx context.Context, query string, args ...any) (pgconn.CommandTag, error) {
+	return e.exec(ctx, query, args, e.packed)
+}
+func (e executor) exec(ctx context.Context, query string, args []any, packed bool) (pgconn.CommandTag, error) {
 	if e.pg != nil {
 		return e.pg.Exec(ctx, query, args...)
 	}
 	q, a, err := mysqlQuery(query, args)
 	if err != nil {
 		return pgconn.CommandTag{}, err
+	}
+	if packed && len(a) >= 64 && len(a) <= 4096 && cacheableDML(q) {
+		a = []any{mysqlBatchArgs{values: a}}
 	}
 	r, err := e.my.ExecContext(ctx, q, a...)
 	if err != nil {

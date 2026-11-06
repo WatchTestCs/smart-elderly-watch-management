@@ -32,8 +32,9 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-go@v6
         with:
-          go-version: '1.27.2'
+          go-version: '1.27.3'
           cache-dependency-path: 智慧养老手表管理系统/backend/go.sum
+      - run: python3 scripts/prepare-backend-go.py --output "$RUNNER_TEMP/backend-go" --github-env "$GITHUB_ENV"
       - run: |
           go run ./cmd/migrate
           go run ./cmd/migrate

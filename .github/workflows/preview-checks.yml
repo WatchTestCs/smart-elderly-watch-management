@@ -18,5 +18,5 @@ jobs:
         working-directory: 智慧养老手表管理系统/frontend
       - run: npm ci && npx playwright install --with-deps chromium && npm test
         working-directory: 智慧养老手表管理系统/frontend/qa
-      - run: node --test watch-sim/watch-sim.test.cjs
-        working-directory: 智慧养老手表管理系统
+      - run: cargo test --locked --all-targets
+        working-directory: 智慧养老手表管理系统/watch-sim
