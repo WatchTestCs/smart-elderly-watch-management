@@ -53,72 +53,51 @@
 
 </template>
 
-<script>
-import { api as requestClient } from '../api/client'
+<script setup>
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useCollectionLayout } from '@/composables/useCollectionLayout'
+import { useRecordCharts } from '@/composables/useRecordCharts'
+import { createLatestRead } from '@/composables/latestRead'
+import { api } from '../api/client'
 import { apiErrorMessage } from '../api/httpContract'
 
-
-import { useRecordCharts } from '@/composables/useRecordCharts'
-
-export default {
-  setup () { return { mobileLayout: useCollectionLayout(), ...useRecordCharts() } },
-  data () {
-    return {
-      oldId: '',
-
-      stepList: [],
-      isLoading: false,
-      loadError: '',
-
-      }
+const mobileLayout = useCollectionLayout()
+const {
+  detailsVisible, chartLoading, chartError, chartName,
+  mychart, mychartTwo, showRecordDetails, resizeCharts, disposeCharts
+} = useRecordCharts()
+const oldId = ref(localStorage.getItem('oldIdfamily') || '')
+const stepList = ref([])
+const isLoading = ref(false)
+const loadError = ref('')
+const reads = createLatestRead(
+  (query, signal) => api.post('api/v1/activity/history', query, { signal }),
+  ({ data }) => {
+    stepList.value = Array.isArray(data.activityRecords) ? data.activityRecords : []
+    loadError.value = ''
   },
-  created () {
-
-		this.oldId=localStorage.getItem('oldIdfamily')
-
-    this.searchStep()
-
+  error => {
+    stepList.value = []
+    loadError.value = apiErrorMessage(error, '记录暂时无法加载，请点击刷新重试。')
   },
-
-  methods: {
-    stateLabel (value) {
-      if (value === 1 || value === '1') return '异常'
-      if (value === 0 || value === '0') return '正常'
-      return '暂无状态'
-    },
-    stateClass (value) {
-      if (value === 1 || value === '1') return 'status-danger'
-      if (value === 0 || value === '0') return 'status-normal'
-      return 'unknown-state'
-    },
-
-    searchStep () {
-      var _this=this
-
-      			var oldId=_this.oldId
-      _this.isLoading = true
-      _this.loadError = ''
-      requestClient.post('api/v1/activity/history',
-        {
-          "oldId":oldId
-        }).then(function (response) {
-
-        _this.stepList = response.data && Array.isArray(response.data.activityRecords) ? response.data.activityRecords : []
-      })
-        .catch(function (error) {
-
-          _this.loadError = apiErrorMessage(error, '记录暂时无法加载，请点击刷新重试。')
-          _this.stepList = []
-        }).then(function () { _this.isLoading = false })
-    },
-
-    showDetails (row) {
-      return this.showRecordDetails('activity', this.oldId, row.name)
-    }
-  }
+  loading => { isLoading.value = loading }
+)
+function searchStep() { return reads.run({ oldId: oldId.value }) }
+function stateLabel(value) {
+  if (value === 1 || value === '1') return '异常'
+  if (value === 0 || value === '0') return '正常'
+  return '暂无状态'
 }
-
+function stateClass(value) {
+  if (value === 1 || value === '1') return 'status-danger'
+  if (value === 0 || value === '0') return 'status-normal'
+  return 'unknown-state'
+}
+function showDetails(row) {
+  return showRecordDetails('activity', oldId.value, row.name)
+}
+onMounted(() => { void searchStep() })
+onBeforeUnmount(reads.dispose)
 </script>
 
 <style scoped>

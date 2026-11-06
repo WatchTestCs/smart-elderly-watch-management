@@ -70,70 +70,42 @@
 
 </template>
 
-<script>
+<script setup>
+import { onMounted, ref } from 'vue'
+import { ElMessage } from 'element-plus'
 import { usePagedRecords } from '@/composables/usePagedRecords'
-import { ref } from 'vue'
-import { api as requestClient } from '../api/client'
 import { useCollectionLayout } from '@/composables/useCollectionLayout'
+import { useRecordCharts } from '@/composables/useRecordCharts'
+import { api as requestClient } from '../api/client'
 import { apiErrorMessage } from '../api/httpContract'
-
 import RecordCards from '@/components/RecordCards.vue'
 
-import { useRecordCharts } from '@/composables/useRecordCharts'
-
-export default {
-  setup () {
-    const searchText = ref('')
-    const paging = usePagedRecords({
-      path: 'api/v1/activity/latest',
-      responseKey: 'activityRecords',
-      buildQuery: () => ({ name: searchText.value, timeFirst: '', timeLast: '' })
-    })
-    return {
-      mobileLayout: useCollectionLayout(900),
-      ...useRecordCharts(),
-      searchText,
-      stepList: paging.records,
-      isLoading: paging.isLoading,
-      loadError: paging.loadError,
-      total: paging.total,
-      pageSize: paging.pageSize,
-      currentPage: paging.currentPage,
-      searchStep: paging.load,
-      handleSizeChange: paging.handleSizeChange,
-      changePage: paging.changePage
-    }
-  },
-  components: { RecordCards },
-
-  data () {
-    return {
-
-
-
-			stepCount:''
-    }
-  },
-  created () {
-
-    
-		this.getCount()
-
-  },
-
-  methods: {
-    getCount () {
-      return requestClient.post('api/v1/activity/alerts/device-counts', {})
-        .then(({ data }) => { this.stepCount = data.sleep })
-        .catch(error => this.$message.error(apiErrorMessage(error, '请求未完成，请重试')))
-    },
-
-
-
-    showRoleDialog (row) {
-      return this.showRecordDetails('activity', row.oldId, row.name)
-    }
+const searchText = ref('')
+const stepCount = ref('')
+const mobileLayout = useCollectionLayout(900)
+const {
+  detailsVisible, chartLoading, chartError, chartName,
+  mychart, mychartTwo, showRecordDetails, resizeCharts, disposeCharts
+} = useRecordCharts()
+const {
+  records: stepList, isLoading, loadError, total,
+  pageSize, currentPage, load: searchStep,
+  handleSizeChange, changePage
+} = usePagedRecords({
+  path: 'api/v1/activity/latest',
+  responseKey: 'activityRecords',
+  buildQuery: () => ({ name: searchText.value, timeFirst: '', timeLast: '' })
+})
+async function getCount() {
+  try {
+    const { data } = await requestClient.post('api/v1/activity/alerts/device-counts', {})
+    stepCount.value = data.sleep
+  } catch (error) {
+    ElMessage.error(apiErrorMessage(error, '请求未完成，请重试'))
   }
 }
-
+function showRoleDialog(row) {
+  return showRecordDetails('activity', row.oldId, row.name)
+}
+onMounted(() => { void getCount() })
 </script>
