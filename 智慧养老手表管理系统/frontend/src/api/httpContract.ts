@@ -8,6 +8,11 @@ export interface ApiFailure {
   reference?: string
 }
 
+export function isSuccessEnvelope(value: unknown): value is { returnCode: '1111' } {
+  return value !== null && typeof value === 'object' && !Array.isArray(value) &&
+    (value as { returnCode?: unknown }).returnCode === '1111'
+}
+
 export function isApplicationAPI(url: string | undefined): boolean {
   if (!url) return false
   const target = new URL(url, window.location.href)
@@ -31,7 +36,7 @@ export function apiErrorMessage(error: unknown, fallback = '请求未完成'): s
 
 export function assertApiResponse(response: AxiosResponse): AxiosResponse {
   if (!isApplicationAPI(response.config.url) || ['blob', 'arraybuffer'].includes(response.config.responseType || '')) return response
-  if (response.data && typeof response.data === 'object' && !Array.isArray(response.data) && response.data.returnCode === '1111') return response
+  if (isSuccessEnvelope(response.data)) return response
   const message = response.data?.returnCode === '0000'
     ? apiErrorMessage({ response }, '请求被拒绝')
     : '服务响应格式错误'

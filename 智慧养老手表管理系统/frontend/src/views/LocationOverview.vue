@@ -89,7 +89,18 @@ import RecordCards from '@/components/RecordCards.vue'
 import { describePositionContext } from '../utils/positionContext'
 
 export default {
-  computed: { num () { return this.positionList.filter(row => row.status === 1 || row.status === "1").length } },
+  computed: {
+    num () { return this.positionList.filter(row => row.status === 1 || row.status === "1").length },
+    alertRevision () { return this.$store.state.alertRevision }
+  },
+  watch: {
+    alertRevision () { this.searchposition(true) },
+    positionList (rows) {
+      const id = this.$store.state.selectedResidentId
+      const selected = id == null ? null : rows.find(row => String(row.oldId) === id)
+      if (selected) this.selectedLocation = { ...selected }
+    }
+  },
   mixins: [pagedRecords({ path: "api/v1/position/select", responseKey: "positionDtos", recordsKey: "positionList", searchKey: "name", load: "searchposition", failure: "位置数据暂时无法加载，请检查服务连接后重试。" })],
   setup () { return { mobileLayout: useCollectionLayout(900) } },
   components: { RecordCards, PositionMap },
@@ -137,10 +148,10 @@ export default {
         requestClient.post('api/v1/locations/alerts/resolve-latest', {'oldId': row.oldId}).then(function (response) {
           if (response.data.returnCode === '1111') {
             _this.$message({type: 'success', message: '已处理，告警红点已消除'})
+            _this.$store.notifyAlertsChanged()
           } else {
             _this.$message({type: 'error', message: response.data.message || '处理失败'})
           }
-          _this.searchposition()
         }).catch(function (error) {
           _this.$message({type: 'error', message: '处理失败'})
         })
@@ -149,6 +160,7 @@ export default {
 
     showRoleDialog (curRole) {
       this.selectedLocation = { ...curRole }
+      this.$store.selectResident(curRole.oldId)
     }
 
   }

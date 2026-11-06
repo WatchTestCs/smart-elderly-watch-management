@@ -4,7 +4,7 @@
       <div><h1>{{ isRestricted ? '照护工作台' : '运营总览' }}</h1><p class="page-subtitle">{{ isRestricted ? '按职责接单、处置和复核，不展示无权限的后台统计。' : '查看设备异常与平台公告，及时跟进照护事项。' }}</p></div>
       <el-button v-if="!isRestricted" type="primary" icon="el-icon-plus" @click="addtext">发布公告</el-button>
     </div>
-    <care-inbox @verified="searchposition" />
+    <care-inbox />
     <div v-if="!isRestricted" class="dashboard-panels">
     <section class="overview-grid" aria-label="设备告警摘要">
       <article class="overview-card alert-card" v-loading="countLoading" :aria-busy="String(countLoading)">
@@ -113,6 +113,7 @@ export default {
     }
   },
   computed: {
+    alertRevision () { return this.$store.state.alertRevision },
     isRestricted () { return authState.account?.role === 'ADMIN' && ['caregiver', 'auditor'].includes(authState.account.duty) },
     emptyTitle () {
       if (this.loadError) return '公告暂时无法加载'
@@ -124,6 +125,7 @@ export default {
     }
   },
   created () { if (!this.isRestricted) { this.searchOlds(); this.getCount(); this.searchposition() } },
+  watch: { alertRevision () { if (!this.isRestricted) this.searchposition() } },
   methods: {
     getCount () {
       if (this.countLoading) return

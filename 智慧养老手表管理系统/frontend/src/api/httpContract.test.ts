@@ -1,6 +1,7 @@
 import { expect, it } from 'vitest'
 import { CanceledError, type AxiosResponse } from 'axios'
-import { apiErrorMessage, assertApiResponse, isApplicationAPI } from './httpContract'
+import { apiErrorMessage, assertApiResponse, isApplicationAPI, isSuccessEnvelope } from './httpContract'
+import { accepted } from './client'
 
 const response = (data: unknown) => ({ data, status: 200, config: { url: '/api/v1/guardians/list' } }) as AxiosResponse
 
@@ -26,4 +27,15 @@ it('leaves external responses and binary downloads to their own protocols', () =
   expect(assertApiResponse(external)).toBe(external)
   const image = { ...response(new Blob()), config: { url: '/api/v1/image/download?name=x', responseType: 'blob' } } as AxiosResponse
   expect(assertApiResponse(image)).toBe(image)
+})
+
+it('shares one success predicate for HTTP responses and explicit write acceptance', () => {
+  const ok = { returnCode: '1111' as const }
+  expect(isSuccessEnvelope(ok)).toBe(true)
+  expect(() => accepted(ok)).not.toThrow()
+  expect(() => accepted({ returnCode: '0000', code: 'CONFLICT', message: '记录已变化' })).toThrow('记录已变化')
+  expect(isSuccessEnvelope({ returnCode: '0000' })).toBe(false)
+  expect(isSuccessEnvelope([])).toBe(false)
+  expect(isSuccessEnvelope(null)).toBe(false)
+  expect(() => assertApiResponse(response({ returnCode: '0000', code: 'CONFLICT', message: '记录已变化' }))).toThrow('记录已变化')
 })

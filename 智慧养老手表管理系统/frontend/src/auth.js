@@ -1,6 +1,7 @@
 import { reactive } from 'vue'
 import axios from 'axios'
 import { apiErrorMessage, assertApiResponse } from './api/httpContract'
+import store from './store'
 
 export const authState = reactive({ account: null, csrfToken: '', csrfHeader: 'X-CSRF-TOKEN', setupRequired: false, databaseReady: null, configError: '' })
 let loaded = false
@@ -25,6 +26,7 @@ export function loadSession (refresh) {
     authState.csrfHeader = data.csrfHeader || 'X-CSRF-TOKEN'
     loaded = true
     clearProfile()
+    if (!authState.account) store.clearTabs()
     if (authState.account) {
       try {
         localStorage.setItem('user_name', authState.account.displayName || '用户')
@@ -45,6 +47,7 @@ export function endSession () {
     authState.account = null
     authState.csrfToken = ''
     clearProfile()
+    store.clearTabs()
   })
 }
 
@@ -76,6 +79,7 @@ export function installHttpSecurity (router, app) {
       authState.account = null
       authState.csrfToken = ''
       clearProfile()
+      store.clearTabs()
       if (!['/sign-in', '/join-family'].includes(router.currentRoute.value.path)) router.replace('/sign-in')
     }
     if (error.response && error.response.status === 403 && error.response.data && error.response.data.code === 'CSRF_REJECTED') {
@@ -98,24 +102,28 @@ export function installHttpSecurity (router, app) {
 }
 
 
-// One background probe across all pages; reconnecting never repeats business requests.
+// Shared service probe: back off while offline and never replay mutations.
 export function monitorDatabase (router) {
   let active = true
   let checking = false
+  let failures = 0
   let timer
+
   async function check () {
-    if (!active || checking) return
+    if (!active || checking || document.hidden) return
     clearTimeout(timer)
     checking = true
     const previous = authState.databaseReady
+    let ready = false
     try {
       const { data } = await axios.get('/api/v1/service/status', { skipSession: true, timeout: 5000 })
       if (!active) return
       if (typeof data.databaseReady !== 'boolean') throw new Error('Invalid database status')
       authState.databaseReady = data.databaseReady
       authState.configError = typeof data.configError === 'string' ? data.configError : ''
-      if (!data.databaseReady) loaded = false
-      if (data.databaseReady && previous === false) {
+      ready = data.databaseReady
+      if (!ready) loaded = false
+      if (ready && previous === false) {
         const account = await loadSession(true)
         if (!active) return
         const route = router.currentRoute.value.path
@@ -124,13 +132,34 @@ export function monitorDatabase (router) {
         else if (!account && !['/sign-in', '/join-family', '/setup'].includes(route)) await router.replace('/sign-in')
       }
     } catch (_) {
+      ready = false
       if (active) { authState.databaseReady = false; loaded = false }
     } finally {
       checking = false
-      if (active) timer = setTimeout(check, 3000)
+      if (active && !document.hidden) {
+        failures = ready ? 0 : Math.min(failures + 1, 5)
+        const delay = ready ? 10000 : Math.min(20000, 2000 * 2 ** (failures - 1))
+        timer = setTimeout(check, delay)
+      }
     }
   }
-  window.addEventListener('online', check)
-  check()
-  return () => { active = false; clearTimeout(timer); window.removeEventListener('online', check) }
+  function resume () {
+    if (!active || document.hidden || checking) return
+    clearTimeout(timer)
+    void check()
+  }
+  function onVisibilityChange () {
+    if (document.hidden) clearTimeout(timer)
+    else resume()
+  }
+
+  window.addEventListener('online', resume)
+  document.addEventListener('visibilitychange', onVisibilityChange)
+  resume()
+  return () => {
+    active = false
+    clearTimeout(timer)
+    window.removeEventListener('online', resume)
+    document.removeEventListener('visibilitychange', onVisibilityChange)
+  }
 }
