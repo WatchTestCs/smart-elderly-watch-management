@@ -2,7 +2,7 @@
     <el-dialog :title="dialog.title" v-model="dialog.visible" width="620px">
       <div v-if="dialog.loading" style="text-align:center;padding:20px;">正在读取 ...</div>
       <div v-else-if="dialog.hasAlert === 0" style="text-align:center;padding:20px;color:#606266;">
-        <i class="el-icon-success" style="color:#52BAB5;font-size:32px;"></i>
+        <el-icon style="color:#52BAB5;font-size:32px;"><CircleCheckFilled /></el-icon>
         <div style="margin-top:8px;">{{ dialog.message }}</div>
       </div>
       <div v-else>
@@ -36,6 +36,7 @@
 </template>
 
 <script setup>
+import { CircleCheckFilled } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 defineProps({ dialog: { type: Object, required: true } })
 const emit = defineEmits(['resolve'])

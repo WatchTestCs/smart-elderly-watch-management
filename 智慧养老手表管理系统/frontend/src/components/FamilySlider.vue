@@ -2,17 +2,18 @@
   <aside class="care-sidebar" aria-label="家人照护导航">
     <div class="sidebar-label">家人照护</div>
     <el-menu :default-active="route.path" class="care-menu" router>
-      <el-menu-item index="/family-portal/overview" aria-label="照护总览"><i class="el-icon-menu" aria-hidden="true"></i><span class="nav-label-full">照护总览</span><span class="nav-label-short">总览</span></el-menu-item>
-      <el-menu-item index="/family-portal/vitals" aria-label="心率与血压"><i class="el-icon-document" aria-hidden="true"></i><span class="nav-label-full">心率与血压</span><span class="nav-label-short">健康</span></el-menu-item>
-      <el-menu-item index="/family-portal/activity" aria-label="睡眠与步数"><i class="el-icon-time" aria-hidden="true"></i><span class="nav-label-full">睡眠与步数</span><span class="nav-label-short">活动</span></el-menu-item>
-      <el-menu-item index="/family-portal/location" aria-label="位置与安全"><i class="el-icon-location-outline" aria-hidden="true"></i><span class="nav-label-full">位置与安全</span><span class="nav-label-short">位置</span></el-menu-item>
+      <el-menu-item index="/family-portal/overview" aria-label="照护总览"><el-icon aria-hidden="true"><Menu /></el-icon><span class="nav-label-full">照护总览</span><span class="nav-label-short">总览</span></el-menu-item>
+      <el-menu-item index="/family-portal/vitals" aria-label="心率与血压"><el-icon aria-hidden="true"><Document /></el-icon><span class="nav-label-full">心率与血压</span><span class="nav-label-short">健康</span></el-menu-item>
+      <el-menu-item index="/family-portal/activity" aria-label="睡眠与步数"><el-icon aria-hidden="true"><Clock /></el-icon><span class="nav-label-full">睡眠与步数</span><span class="nav-label-short">活动</span></el-menu-item>
+      <el-menu-item index="/family-portal/location" aria-label="位置与安全"><el-icon aria-hidden="true"><Location /></el-icon><span class="nav-label-full">位置与安全</span><span class="nav-label-short">位置</span></el-menu-item>
       <el-menu-item index="/family-portal/profile" aria-label="个人中心"><span class="nav-profile-icon" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="7" r="3.5"/><path d="M5 21v-2a7 7 0 0 1 14 0v2Z"/></svg></span><span class="nav-label-full">个人中心</span><span class="nav-label-short">我的</span></el-menu-item>
     </el-menu>
     <div class="sidebar-moment" aria-hidden="true"><img src="/static/img/care-botanical.webp" alt="" width="440" height="660"><p>让关爱<br>成为日常</p></div>
-    <div class="sidebar-note"><i class="el-icon-time" aria-hidden="true"></i><span>数据以最近一次<br>设备上报为准</span></div>
+    <div class="sidebar-note"><el-icon aria-hidden="true"><Clock /></el-icon><span>数据以最近一次<br>设备上报为准</span></div>
   </aside>
 </template>
 <script setup>
+import { Clock, Document, Location, Menu } from '@element-plus/icons-vue'
 import { useRoute } from 'vue-router'
 const route = useRoute()
 </script>
