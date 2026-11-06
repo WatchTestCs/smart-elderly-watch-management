@@ -25,7 +25,7 @@
     <section class="announcement-panel">
       <div class="panel-heading">
         <div><h2>平台公告 <span v-if="!isLoading && !loadError" class="notice-count" :aria-label="'共 ' + total + ' 条公告'">{{ total }}</span></h2><p>面向家属发布的服务与照护信息</p></div>
-        <form class="search-box" role="search" @submit.prevent="searchOlds"><label class="search-label" for="admin-notice-search">按标题查找公告</label><el-input id="admin-notice-search" v-model="searchText" placeholder="搜索公告标题" :disabled="isLoading" clearable @clear="searchOlds"><template #append><el-button  icon="el-icon-search" aria-label="搜索公告" :loading="isLoading" native-type="submit"></el-button></template></el-input></form>
+        <form class="search-box" role="search" @submit.prevent="searchOlds()"><label class="search-label" for="admin-notice-search">按标题查找公告</label><el-input id="admin-notice-search" v-model="searchText" placeholder="搜索公告标题" :disabled="isLoading" clearable @clear="searchOlds"><template #append><el-button  icon="el-icon-search" aria-label="搜索公告" :loading="isLoading" native-type="submit"></el-button></template></el-input></form>
       </div>
       <el-table class="desktop-announcements" v-loading="isLoading" :data="tableData" @row-click="getDetail" row-class-name="clickable-row">
         <el-table-column type="index" label="序号" width="64" align="center"></el-table-column>
@@ -95,103 +95,141 @@
 @media (min-width: 901px) and (max-width: 1180px) { .overview-grid { grid-template-columns: 1fr; } .alert-card { border-right: 0; border-bottom: 1px solid #e2e9e1; } }
 @media (max-width: 760px) { .overview-card { padding: 22px 18px; } .alert-card { border-right: 0; border-bottom: 1px solid #e2e9e1; } .overview-note { padding: 18px; } .desktop-announcements { display: none; } .mobile-announcements { display: block; } .page-heading { align-items: flex-start; flex-direction: column; } .page-heading h1 { font-size: 25px; } .overview-grid { grid-template-columns: 1fr; } .overview-note { grid-column: auto; } .panel-heading { align-items: flex-start; flex-direction: column; } .search-box { width: 100%; } .announcement-panel { padding: 18px 14px; } .pagination-wrap { justify-content: center; overflow-x: auto; } }
 </style>
-<script>
-import { api as requestClient } from '../api/client'
+<script setup lang="ts">
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import { api } from '../api/client'
 import { apiErrorMessage } from '../api/httpContract'
-
+import { createLatestRead } from '../composables/latestRead'
 import CareInbox from '@/components/CareInbox.vue'
 import { authState } from '@/auth'
+import store from '@/store'
 
-export default {
-  components: { CareInbox },
-  data () {
-    return {
-      tableData: [], searchText: '', appliedSearch: '', total: 0,
-      isLoading: false, loadError: '', pageSize: 10, currentPage: 1,
-      allCount: null, categoryCounts: null, num: null, positionTotal: null, countLoading: false, positionLoading: false,
-      countError: '', positionError: '', positionNeedsRefresh: false
-    }
+type NoticeRow = Record<string, any>
+const router = useRouter()
+const searchText = ref('')
+const appliedSearch = ref('')
+const tableData = ref<NoticeRow[]>([])
+const total = ref(0)
+const isLoading = ref(false)
+const loadError = ref('')
+const pageSize = ref(10)
+const currentPage = ref(1)
+const allCount = ref<number | null>(null)
+const categoryCounts = ref<{ rate: number; pressure: number; sleep: number } | null>(null)
+const num = ref<number | null>(null)
+const positionTotal = ref<number | null>(null)
+const countLoading = ref(false)
+const positionLoading = ref(false)
+const countError = ref('')
+const positionError = ref('')
+let positionNeedsRefresh = false
+
+const isRestricted = computed(() => authState.account?.role === 'ADMIN' &&
+  ['caregiver','auditor'].includes(authState.account.duty))
+const emptyTitle = computed(() => loadError.value ? '公告暂时无法加载' :
+  appliedSearch.value ? '没有找到相关公告' : '暂时没有公告')
+const emptyDescription = computed(() => loadError.value || (appliedSearch.value
+  ? '试试其他标题关键词，或清除搜索条件查看全部公告。'
+  : '发布后的服务信息和照护提醒会显示在这里。'))
+
+const noticeReads = createLatestRead(
+  (query: { page: number; pageSize: number; title: string }, signal: AbortSignal) =>
+    api.post<Record<string, any>>('api/v1/notices/list', query, { signal }),
+  ({ data }) => {
+    if (!Array.isArray(data.texts)) throw new Error('missing notices')
+    tableData.value = data.texts
+    total.value = Number.isSafeInteger(data.total) ? data.total : data.texts.length
+    loadError.value = ''
   },
-  computed: {
-    alertRevision () { return this.$store.state.alertRevision },
-    isRestricted () { return authState.account?.role === 'ADMIN' && ['caregiver', 'auditor'].includes(authState.account.duty) },
-    emptyTitle () {
-      if (this.loadError) return '公告暂时无法加载'
-      return this.appliedSearch ? '没有找到相关公告' : '暂时没有公告'
-    },
-    emptyDescription () {
-      if (this.loadError) return this.loadError
-      return this.appliedSearch ? '试试其他标题关键词，或清除搜索条件查看全部公告。' : '发布后的服务信息和照护提醒会显示在这里。'
-    }
+  error => {
+    loadError.value = apiErrorMessage(error, '请检查服务连接后重试')
+    tableData.value = []
+    total.value = 0
   },
-  created () { if (!this.isRestricted) { this.searchOlds(); this.getCount(); this.searchposition() } },
-  watch: {
-    alertRevision () {
-      if (this.isRestricted) return
-      if (this.positionLoading) this.positionNeedsRefresh = true
-      else this.searchposition()
+  loading => { isLoading.value = loading }
+)
+function searchOlds(keepPage = false) {
+  if (isRestricted.value) return
+  if (keepPage !== true) currentPage.value = 1
+  appliedSearch.value = searchText.value.trim()
+  return noticeReads.run({
+    page: currentPage.value, pageSize: pageSize.value, title: appliedSearch.value
+  })
+}
+function clearSearch() { searchText.value = ''; void searchOlds() }
+function handleSizeChange(value: number) {
+  pageSize.value = value
+  currentPage.value = 1
+  void searchOlds(true)
+}
+function changePage(value: number) {
+  currentPage.value = value
+  void searchOlds(true)
+}
+function getDetail(row: NoticeRow) {
+  void router.push({ path: '/operations/notices/detail', query: { textId: row.textId, picId: row.picId } })
+}
+function addtext() { void router.push('/operations/notices/new') }
+
+async function getCount() {
+  if (countLoading.value || isRestricted.value) return
+  countLoading.value = true
+  countError.value = ''
+  allCount.value = null
+  categoryCounts.value = null
+  try {
+    const { data } = await api.post<{ heartRate: number; bloodPressure: number; sleep: number }>(
+      'api/v1/health/alerts/device-counts', {}
+    )
+    const { heartRate, bloodPressure, sleep } = data
+    if (![heartRate, bloodPressure, sleep].every(value => Number.isSafeInteger(value) && value >= 0)) {
+      throw new Error('invalid counts')
     }
-  },
-  methods: {
-    getCount () {
-      if (this.countLoading) return
-      this.countLoading = true
-      this.countError = ''
-      this.allCount = null
-      this.categoryCounts = null
-      return requestClient.post('api/v1/health/alerts/device-counts', {}).then(({ data }) => {
-        const { heartRate, bloodPressure, sleep } = data
-        if (![heartRate, bloodPressure, sleep].every(count => Number.isSafeInteger(count) && count >= 0)) throw new Error('invalid counts')
-        this.categoryCounts = { rate: heartRate, pressure: bloodPressure, sleep }
-        this.allCount = heartRate + bloodPressure + sleep
-      }).catch((error) => { this.countError = apiErrorMessage(error, '设备统计暂时无法加载') }).then(() => { this.countLoading = false })
-    },
-    async searchposition () {
-      if (this.isRestricted || this.positionLoading) return
-      this.positionLoading = true
-      this.positionError = ''
-      this.num = null
-      this.positionTotal = null
-      try {
-        const { data } = await requestClient.post('api/v1/locations/alerts/summary', {})
-        const { totalResidents, activeAlerts } = data
-        if (!Number.isSafeInteger(totalResidents) || totalResidents < 0 ||
-            !Number.isSafeInteger(activeAlerts) || activeAlerts < 0 || activeAlerts > totalResidents) {
-          throw new Error('invalid alert summary')
-        }
-        this.num = activeAlerts
-        this.positionTotal = totalResidents
-      } catch (error) {
-        this.positionError = apiErrorMessage(error, '告警统计暂时无法加载')
-      } finally {
-        this.positionLoading = false
-        if (this.positionNeedsRefresh) {
-          this.positionNeedsRefresh = false
-          void this.searchposition()
-        }
-      }
-    },
-    handleSizeChange (val) { this.pageSize = val; this.currentPage = 1; this.searchOlds(true) },
-    changePage (val) { this.currentPage = val; this.searchOlds(true) },
-    getDetail (row) { this.$router.push({ path: '/operations/notices/detail', query: { textId: row.textId, picId: row.picId } }) },
-    addtext () { this.$router.push('/operations/notices/new') },
-    clearSearch () { this.searchText = ''; this.searchOlds() },
-    searchOlds (keepPage = false) {
-      if (keepPage !== true) this.currentPage = 1
-      if (this.isLoading) return
-      this.appliedSearch = this.searchText.trim()
-      this.isLoading = true
-      this.loadError = ''
-      return requestClient.post('api/v1/notices/list', { page: this.currentPage, pageSize: this.pageSize,  title: this.appliedSearch }).then((response) => {
-        if (!Array.isArray(response.data.texts)) throw new Error('missing notices')
-        this.tableData = response.data.texts
-        this.total = response.data.total ?? this.tableData.length
-      }).catch((error) => {
-        this.loadError = apiErrorMessage(error, '请检查服务连接后重试')
-        this.tableData = []
-        this.total = 0
-      }).then(() => { this.isLoading = false })
+    categoryCounts.value = { rate: heartRate, pressure: bloodPressure, sleep }
+    allCount.value = heartRate + bloodPressure + sleep
+  } catch (error) {
+    countError.value = apiErrorMessage(error, '设备统计暂时无法加载')
+  } finally { countLoading.value = false }
+}
+async function searchposition() {
+  if (isRestricted.value || positionLoading.value) return
+  positionLoading.value = true
+  positionError.value = ''
+  num.value = null
+  positionTotal.value = null
+  try {
+    const { data } = await api.post<{ totalResidents: number; activeAlerts: number }>(
+      'api/v1/locations/alerts/summary', {}
+    )
+    const { totalResidents, activeAlerts } = data
+    if (!Number.isSafeInteger(totalResidents) || totalResidents < 0 ||
+        !Number.isSafeInteger(activeAlerts) || activeAlerts < 0 || activeAlerts > totalResidents) {
+      throw new Error('invalid alert summary')
+    }
+    num.value = activeAlerts
+    positionTotal.value = totalResidents
+  } catch (error) {
+    positionError.value = apiErrorMessage(error, '告警统计暂时无法加载')
+  } finally {
+    positionLoading.value = false
+    if (positionNeedsRefresh) {
+      positionNeedsRefresh = false
+      void searchposition()
     }
   }
 }
+watch(() => store.state.alertRevision, () => {
+  if (isRestricted.value) return
+  if (positionLoading.value) positionNeedsRefresh = true
+  else void searchposition()
+})
+onMounted(() => {
+  if (!isRestricted.value) {
+    void searchOlds()
+    void getCount()
+    void searchposition()
+  }
+})
+onBeforeUnmount(noticeReads.dispose)
 </script>
