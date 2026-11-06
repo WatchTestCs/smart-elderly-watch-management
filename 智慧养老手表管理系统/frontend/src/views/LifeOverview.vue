@@ -51,19 +51,39 @@
 
 </template>
 
-<script>
-import { pagedRecords } from '@/composables/pagedRecords'
+<script setup lang="ts">
+import { ref } from 'vue'
+import { usePagedRecords } from '@/composables/usePagedRecords'
 import { useCollectionLayout } from '@/composables/useCollectionLayout'
-
 import RecordCards from '@/components/RecordCards.vue'
 
-export default {
-  mixins: [pagedRecords({ path: "api/v1/residents/list", responseKey: "oldPeople", recordsKey: "OldPersonList", searchKey: "name", load: "searchOldPersonLife", failure: "生活资料暂时无法加载，请重新加载。", trim: true })],
-  setup () { return { mobileLayout: useCollectionLayout(900) } },
-  components: { RecordCards },
-  data () { return { searchText: '' } },
-  created () { this.searchOldPersonLife() },
-  methods: {
-  }
+interface LifeRecord {
+  oldId: number | string
+  name: string
+  sex?: string
+  illness?: string
+  warn?: string
+  drag?: string
+  foodLike?: string
+  foodHate?: string
 }
+
+const searchText = ref('')
+const mobileLayout = useCollectionLayout(900)
+const {
+  records: OldPersonList,
+  isLoading,
+  loadError,
+  total,
+  pageSize,
+  currentPage,
+  load: searchOldPersonLife,
+  handleSizeChange,
+  changePage
+} = usePagedRecords<LifeRecord, { name: string }>({
+  path: 'api/v1/residents/list',
+  responseKey: 'oldPeople',
+  buildQuery: () => ({ name: searchText.value.trim() }),
+  failure: '生活资料暂时无法加载，请重新加载。'
+})
 </script>

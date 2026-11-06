@@ -13,11 +13,23 @@ export async function createAdministrator (account) {
   return result
 }
 
+function hasOpenModalOrOverlay () {
+  return Array.from(document.querySelectorAll('.el-overlay, [role="dialog"]')).some(element => {
+    const style = window.getComputedStyle(element)
+    return element.getClientRects().length > 0 &&
+      element.getAttribute('aria-hidden') !== 'true' &&
+      style.display !== 'none' && style.visibility !== 'hidden'
+  })
+}
+
 export function installDesktopKeys () {
-  if (!isTauri()) return
-  window.addEventListener('keydown', async event => {
+  if (!isTauri()) return () => {}
+
+  const onKeyDown = async event => {
     if (event.repeat || !['F11', 'Escape'].includes(event.key)) return
-    if (event.key === 'F11') event.preventDefault()
+    // Escape belongs to the active dialog rather than the full-screen window.
+    if (event.key === 'Escape' && hasOpenModalOrOverlay()) return
+
     const desktop = getCurrentWindow()
     try {
       const fullscreen = await desktop.isFullscreen()
@@ -25,6 +37,9 @@ export function installDesktopKeys () {
         event.preventDefault()
         await desktop.setFullscreen(event.key === 'F11' ? !fullscreen : false)
       }
-    } catch (_) { /* Fullscreen permissions do not affect ordinary page interaction. */ }
-  })
+    } catch (_) { /* Fullscreen permissions must not break page interaction. */ }
+  }
+
+  window.addEventListener('keydown', onKeyDown)
+  return () => window.removeEventListener('keydown', onKeyDown)
 }

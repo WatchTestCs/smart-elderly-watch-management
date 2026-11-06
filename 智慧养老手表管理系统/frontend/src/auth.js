@@ -7,7 +7,11 @@ let loaded = false
 let pending = null
 const profileKeys = ['token', 'user_name', 'oldIdfamily', 'familyPhone', 'familyTouPic']
 
-function clearProfile () { profileKeys.forEach(key => localStorage.removeItem(key)) }
+function clearProfile () {
+  for (const key of profileKeys) {
+    try { localStorage.removeItem(key) } catch (_) { /* Storage may be disabled; the server session remains authoritative. */ }
+  }
+}
 
 export function loadSession (refresh) {
   if (!refresh && loaded) return Promise.resolve(authState.account)
@@ -22,11 +26,13 @@ export function loadSession (refresh) {
     loaded = true
     clearProfile()
     if (authState.account) {
-      localStorage.setItem('user_name', authState.account.displayName || '用户')
-      if (authState.account.role === 'FAMILY') {
-        localStorage.setItem('oldIdfamily', authState.account.oldId)
-        localStorage.setItem('familyPhone', authState.account.phone)
-      }
+      try {
+        localStorage.setItem('user_name', authState.account.displayName || '用户')
+        if (authState.account.role === 'FAMILY') {
+          if (authState.account.oldId != null) localStorage.setItem('oldIdfamily', authState.account.oldId)
+          if (authState.account.phone != null) localStorage.setItem('familyPhone', authState.account.phone)
+        }
+      } catch (_) { /* A blocked storage write must not invalidate a valid session. */ }
     }
     return authState.account
   }).then(account => { pending = null; return account }, error => { pending = null; throw error })

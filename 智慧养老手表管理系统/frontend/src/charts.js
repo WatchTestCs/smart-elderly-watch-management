@@ -6,7 +6,7 @@ const array = value => Array.isArray(value) ? value : []
 // Chart instances stay outside Vue's observation graph and are owned by the view.
 export const recordCharts = {
   data () { return { detailsVisible: false, chartLoading: false, chartError: '', chartName: '' } },
-  watch: { detailsVisible (visible) { if (!visible) this.cancelRecordRequest() } },
+  watch: { detailsVisible (visible) { if (!visible) { this.cancelRecordRequest(); this.disposeCharts() } } },
   beforeCreate () { this._chartsUnmounted = false; this._recordCharts = []; this._chartFrame = null; this._chartObserver = null; this._recordRequest = null },
   mounted () { window.addEventListener('resize', this.resizeCharts) },
   beforeUnmount () { this._chartsUnmounted = true; this.cancelRecordRequest(); window.removeEventListener('resize', this.resizeCharts); this.disposeCharts() },
