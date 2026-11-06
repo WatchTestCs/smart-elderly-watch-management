@@ -106,144 +106,107 @@
   </div>
 
 </template>
-
-<script>
+<script setup>
+import { reactive, ref } from 'vue'
 import { usePagedRecords } from '@/composables/usePagedRecords'
-import { ref } from 'vue'
-import { api as requestClient } from '../api/client'
 import { useCollectionLayout } from '@/composables/useCollectionLayout'
+import { writeRecord, deleteRecord } from '@/composables/recordActions'
+import { editableResident } from '@/composables/residentFields'
+import { api as requestClient } from '../api/client'
 import { apiErrorMessage } from '../api/httpContract'
-
-import { residentCommandMethods } from './person.command-methods'
 import RecordCards from '@/components/RecordCards.vue'
 import ResidentForm from '@/components/records/ResidentForm.vue'
 
-export default {
+const searchText = ref('')
+const mobileLayout = useCollectionLayout(900)
+const {
+  records: personDetailList, isLoading, loadError, total, pageSize, currentPage,
+  load: searchOldPersons, handleSizeChange, changePage
+} = usePagedRecords({
+  path: 'api/v1/residents/details',
+  responseKey: 'oldPersonDetails',
+  buildQuery: () => ({ name: searchText.value }),
+  failure: '老人档案暂时无法加载，请检查服务连接后重试。'
+})
 
+const emptyResident = () => ({
+  name: '', bothdate: '', sex: '', phone: '', room: '',
+  beTime: '', customerId: '', illness: '', warn: '',
+  foodLike: '', foodHate: '', drag: ''
+})
+const oldDialogVisible = ref(false)
+const oldEditDialogVisible = ref(false)
+const oldForm = reactive(emptyResident())
+const oldEditForm = ref({ ...emptyResident(), oldId: '', customerName: '', deviceId: '' })
+const addoldFormRef = ref(null)
+const editoldFormRef = ref(null)
+const options = ref([])
+const customerLoading = ref(false)
+const customerError = ref('')
 
-  setup () {
-    const searchText = ref('')
-    const paging = usePagedRecords({
-      path: 'api/v1/residents/details',
-      responseKey: 'oldPersonDetails',
-      buildQuery: () => ({ name: searchText.value }),
-      failure: '老人档案暂时无法加载，请检查服务连接后重试。'
-    })
-    return {
-      mobileLayout: useCollectionLayout(900),
-      searchText,
-      personDetailList: paging.records,
-      isLoading: paging.isLoading,
-      loadError: paging.loadError,
-      total: paging.total,
-      pageSize: paging.pageSize,
-      currentPage: paging.currentPage,
-      searchOldPersons: paging.load,
-      handleSizeChange: paging.handleSizeChange,
-      changePage: paging.changePage
-    }
-  },
-  components: { RecordCards, ResidentForm },
-  data () {
-    var checkPhone = (rule, value, callback) => {
-      const phoneReg = /^1[3|4|5|7|8][0-9]{9}$/
-      if (!value) {
-        return callback(new Error('电话号码不能为空'))
+const checkPhone = (_rule, value, callback) => {
+  if (!value) return callback(new Error('电话号码不能为空'))
+  if (!/^1[3-9]\d{9}$/.test(String(value))) return callback(new Error('电话号码格式不正确'))
+  callback()
+}
+const rules = { phone: [{ validator: checkPhone, trigger: 'blur' }] }
+
+async function addCustomerList() {
+  if (customerLoading.value) return
+  customerLoading.value = true
+  customerError.value = ''
+  try {
+    const residents = []
+    let page = 1
+    let total = 0
+    do {
+      const { data } = await requestClient.post('api/v1/guardians/list', { customerName: '', page, pageSize: 100 })
+      if (!Array.isArray(data.customers)) throw new Error('invalid guardians')
+      total = data.total ?? data.customers.length
+      if (!Number.isInteger(total) || total < 0 || (!data.customers.length && residents.length < total)) {
+        throw new Error('incomplete guardians')
       }
-      if (!Number.isInteger(+value)) {
-        callback(new Error('请输入数字值'))
-      } else {
-        if (phoneReg.test(value)) {
-          callback()
-        } else {
-          callback(new Error('电话号码格式不正确'))
-        }
-      }
-    }
-    return {
-
-
-      oldDialogVisible: false,
-      oldEditDialogVisible: false,
-      oldForm: {
-        name: '',
-        bothdate: '',
-    sex: '',
-    phone: '',
-    room: '',
-
-    beTime: '',
-    customerId: '',
-    illness: '',
-    warn: '',
-    foodLike: '',
-    foodHate: '',
-    drag: ''
-      },
-      oldEditForm: {
-           name: '',
-           bothdate: '',
-      oldId: '',
-       sex: '',
-       phone: '',
-       room: '',
-
-       beTime: '',
-       customerId: '',
-       customerName: '',
-       illness: '',
-       warn: '',
-       foodLike: '',
-       foodHate: '',
-       drag: '',
-       deviceId: ''
-      },
-      options:[],
-      customerLoading: false,
-      customerError: '',
-
-
-    rules: {
-          phone: [
-            { validator: checkPhone, trigger: 'blur'}
-          ]
-          }
-    }
-  },
-  created () {
-    
-  },
-  methods: {
-    ...residentCommandMethods,
-    async addCustomerList () {
-      if (this.customerLoading) return
-      this.customerLoading = true
-      this.customerError = ''
-      try {
-        var options = [], page = 1, total = 0
-        do {
-          var response = await requestClient.post('api/v1/guardians/list', { customerName: '', page, pageSize: 100 })
-          var items = response.data.customers
-          if (!Array.isArray(items)) throw new Error('invalid guardians')
-          total = response.data.total ?? items.length
-          if (!Number.isInteger(total) || total < 0 || (!items.length && options.length < total)) throw new Error('incomplete guardians')
-          options.push(...items)
-          page += 1
-        } while (options.length < total)
-        this.options = options
-      } catch (error) {
-        this.options = []
-        this.customerError = apiErrorMessage(error, '监护人选项暂时无法加载，请重试。')
-      } finally { this.customerLoading = false }
-    },
-    handleeditOldPerson (index, row) {
-      this.oldEditDialogVisible = true
-      this.oldEditForm = Object.assign({}, row) // 解决修改弹出框数据时，表格数据会发生同步改变
-
-    },
-
-
-
+      residents.push(...data.customers)
+      page += 1
+    } while (residents.length < total)
+    options.value = residents
+  } catch (error) {
+    options.value = []
+    customerError.value = apiErrorMessage(error, '监护人选项暂时无法加载，请重试。')
+  } finally {
+    customerLoading.value = false
   }
+}
+
+function addOldPersons() {
+  addoldFormRef.value?.validate(valid => {
+    if (!valid) return
+    return writeRecord('api/v1/residents/create', editableResident(oldForm), '添加老人成功', async () => {
+      oldDialogVisible.value = false
+      await searchOldPersons(true)
+    })
+  })
+}
+function editOldPerson() {
+  editoldFormRef.value?.validate(valid => {
+    if (!valid) return
+    const draft = oldEditForm.value
+    return writeRecord('api/v1/residents/update', {
+      ...editableResident(draft), oldId: draft.oldId
+    }, '编辑老人信息成功', async () => {
+      oldEditDialogVisible.value = false
+      await searchOldPersons(true)
+    })
+  })
+}
+function deleteOldPerson(oldId) {
+  return deleteRecord('api/v1/residents/delete', { oldId }, '此操作将永久删除该长者信息，是否继续？', () => searchOldPersons(true))
+}
+function closeRoleAddDialog() {
+  addoldFormRef.value?.resetFields()
+}
+function handleeditOldPerson(_index, row) {
+  oldEditForm.value = { ...row }
+  oldEditDialogVisible.value = true
 }
 </script>
