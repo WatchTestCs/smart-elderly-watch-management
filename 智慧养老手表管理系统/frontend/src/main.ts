@@ -1,4 +1,5 @@
 import { createApp } from 'vue'
+import { ElMessage } from 'element-plus'
 import App from './App.vue'
 import DatabaseNotice from './components/DatabaseNotice.vue'
 import PagerBar from './components/PagerBar.vue'
@@ -24,7 +25,7 @@ installHttpSecurity(router)
 app.config.errorHandler = (error, _instance, info) => {
   console.error('[app]', info, error)
   if (recoverFromChunkError(error)) return
-  app.config.globalProperties.$message.error({ message: '页面出现异常，请刷新后重试；若持续出现请联系管理员。', grouping: true })
+  ElMessage.error({ message: '页面出现异常，请刷新后重试；若持续出现请联系管理员。', grouping: true })
 }
 app.use(router)
 app.mount('#app')

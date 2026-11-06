@@ -3,7 +3,8 @@ import { dirname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { expect, it } from 'vitest'
 
-const root = dirname(fileURLToPath(import.meta.url))
+// This file lives in src/, but every assertion below is anchored to the frontend root.
+const root = dirname(dirname(fileURLToPath(import.meta.url)))
 const source = join(root, 'src')
 
 function* sourceFiles(dir: string): Generator<string> {
