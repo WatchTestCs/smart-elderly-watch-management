@@ -23,7 +23,7 @@
       </form>
     </div>
     
-    <el-dialog
+    <el-dialog :close-on-click-modal="false"
       title="老人添加"
       v-model="oldDialogVisible"
       @open="addCustomerList"
@@ -36,8 +36,8 @@
     </span></template>
     </el-dialog>
 
-    <el-dialog
-      title="角色编辑"
+    <el-dialog :close-on-click-modal="false"
+      title="老人编辑"
       v-model="oldEditDialogVisible"
       @open="addCustomerList"
       width="30%">

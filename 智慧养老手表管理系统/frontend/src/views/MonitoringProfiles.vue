@@ -22,7 +22,7 @@
       </form>
     </div>
     
-    <el-dialog
+    <el-dialog :close-on-click-modal="false"
       title="设备添加"
       v-model="watchDialogVisible"
       @close="closeRoleAddDialog"
@@ -34,7 +34,7 @@
     </span></template>
     </el-dialog>
 
-    <el-dialog
+    <el-dialog :close-on-click-modal="false"
       title="设备编辑"
       v-model="watchEditDialogVisible"
       width="30%">

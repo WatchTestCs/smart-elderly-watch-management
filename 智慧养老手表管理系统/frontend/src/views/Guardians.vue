@@ -23,7 +23,7 @@
       </form>
     </div>
     
-    <el-dialog
+    <el-dialog :close-on-click-modal="false"
       title="监护人添加"
       v-model="customerDialogVisible"
       @close="closeRoleAddDialog"
@@ -55,7 +55,7 @@
     </span></template>
     </el-dialog>
 
-    <el-dialog
+    <el-dialog :close-on-click-modal="false"
       title="监护人编辑"
       v-model="oldEditDialogVisible"
       width="30%">
