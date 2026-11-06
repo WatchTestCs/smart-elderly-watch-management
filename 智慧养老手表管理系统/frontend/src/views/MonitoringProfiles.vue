@@ -1,8 +1,8 @@
 <template>
-  <div class="roles" v-loading="isLoading" element-loading-text="正在加载监测阈值档案…" :aria-busy="String(isLoading)">
+  <div class="roles" v-loading="isLoading" element-loading-text="正在加载监测阈值档案…" :aria-busy="isLoading">
     
     <div class="sys-research">
-      <form class="row-search" role="search" @submit.prevent="searchWatchs">
+      <form class="row-search" role="search" @submit.prevent="searchWatchs()">
         <div class="search-field">
           
           <label class="table-search-label" for="search-watch">长者姓名</label>
@@ -30,7 +30,7 @@
       <ThresholdForm :draft="watchForm" :rules="rules" ref="addwatchFormRef" />
       <template #footer><span  class="dialog-footer">
       <el-button @click="watchDialogVisible = false">取 消</el-button>
-      <el-button type="primary" @click="addWatchs('addwatchFormRef')">确 定</el-button>
+      <el-button type="primary" @click="addWatchs()">确 定</el-button>
     </span></template>
     </el-dialog>
 

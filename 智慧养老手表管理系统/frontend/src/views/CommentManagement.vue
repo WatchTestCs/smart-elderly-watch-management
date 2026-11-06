@@ -1,5 +1,5 @@
 <template>
-  <div class="roles" v-loading="isLoading" element-loading-text="正在加载评论…" :aria-busy="String(isLoading)">
+  <div class="roles" v-loading="isLoading" element-loading-text="正在加载评论…" :aria-busy="isLoading">
 
     <el-dialog
       title="评论回复"

@@ -1,8 +1,8 @@
 <template>
-  <div class="roles" v-loading="isLoading" element-loading-text="正在加载家属账号…" :aria-busy="String(isLoading)">
+  <div class="roles" v-loading="isLoading" element-loading-text="正在加载家属账号…" :aria-busy="isLoading">
     
     <div class="sys-research">
-      <form class="row-search" role="search" @submit.prevent="searchfamily">
+      <form class="row-search" role="search" @submit.prevent="searchfamily()">
         <div class="search-field">
           
           <label class="table-search-label" for="search-family">家属姓名</label>
@@ -31,7 +31,7 @@
       <FamilyForm :draft="familyForm" :rules="rules" ref="addfamilyFormRef" />
       <template #footer><span  class="dialog-footer">
       <el-button @click="customerDialogVisible = false">取 消</el-button>
-      <el-button type="primary" @click="addFamily('addfamilyFormRef')">确 定</el-button>
+      <el-button type="primary" @click="addFamily()">确 定</el-button>
     </span></template>
     </el-dialog>
 

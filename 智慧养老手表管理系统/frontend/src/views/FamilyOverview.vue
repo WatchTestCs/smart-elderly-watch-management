@@ -11,7 +11,7 @@
     </section>
     <LatestHealthPanel />
     <div class="family-daily-grid">
-    <section class="announcement-panel" :aria-busy="String(isLoading)" aria-labelledby="announcement-heading">
+    <section class="announcement-panel" :aria-busy="isLoading" aria-labelledby="announcement-heading">
       <div class="panel-heading"><div><h2 id="announcement-heading">平台公告</h2><p>服务信息与照护提醒</p></div><el-button link :loading="isLoading" @click="searchOlds">刷新公告 <i class="el-icon-refresh" aria-hidden="true"></i></el-button></div>
       <div v-loading="isLoading" class="announcement-content">
         <ul v-if="tableData.length" class="announcement-list">

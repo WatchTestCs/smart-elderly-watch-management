@@ -2,7 +2,7 @@
   <div class="roles">
     
     <div class="sys-research">
-      <form class="row-search" role="search" @submit.prevent="searchposition">
+      <form class="row-search" role="search" @submit.prevent="searchposition()">
 		  
         <div class="search-field">
           
@@ -18,7 +18,7 @@
           </el-input>
         </div>
         
-				<el-badge :value="this.num" class="item">
+				<el-badge :value="num" class="item">
 				  <el-button size="small">紧急告警</el-button>
 				</el-badge>
 				
@@ -74,7 +74,7 @@
         :page-size="pageSize"
         :total="total" />
     </div>
-    <position-map :selection="selectedLocation" />
+    <position-map :selection="selectedLocation || undefined" />
   </div>
 	
 </template>
@@ -90,6 +90,7 @@ import store from '@/store'
 import PositionMap from '@/components/PositionMap.vue'
 import RecordCards from '@/components/RecordCards.vue'
 import { describePositionContext } from '../utils/positionContext'
+import { positionAlertMessage } from './positionAlertMessage'
 
 type PositionRow = Record<string, any>
 const searchText = ref('')
@@ -114,23 +115,8 @@ watch(positionList, rows => {
   if (selected) selectedLocation.value = { ...selected }
 })
 function showFallReason(row: PositionRow) {
-  const alarmPosition = row.alarmLng != null && row.alarmLat != null &&
-    row.alarmLng !== '' && row.alarmLat !== ''
-    ? '经度 ' + row.alarmLng + '，纬度 ' + row.alarmLat
-    : '未提供告警坐标（最新定位仅供参考）'
-  const content = [
-    '老人：' + row.name,
-    '告警时间：' + (row.alarmTime || '未提供告警时间'),
-    '告警附带坐标：' + alarmPosition,
-    '事件类型：' + ({ sos: 'SOS 求助', fall: '设备上报摔倒', unknown: '未知' } as Record<string, string>)[row.alarmKind] || '未知',
-    describePositionContext(row, true),
-    '',
-    '怎么处理：',
-    '① 立即电话联系老人或家属确认情况；',
-    '② 结合告警附带坐标核实位置，必要时请求现场协助；',
-    '③ 确认处理后点「标记已处理」，右上角告警红点数量会减少。'
-  ].join('\n')
-  return ElMessageBox.alert(content, '紧急告警 · 原因与处理', { confirmButtonText: '知道了' })
+  const { message, title } = positionAlertMessage(row)
+  return ElMessageBox.alert(message, title, { confirmButtonText: '知道了' })
 }
 async function handleFall(row: PositionRow) {
   try {

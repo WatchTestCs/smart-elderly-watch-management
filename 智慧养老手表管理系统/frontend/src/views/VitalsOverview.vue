@@ -2,7 +2,7 @@
   <div class="roles">
 
     <div class="sys-research">
-      <form class="row-search" role="search" @submit.prevent="searchOlds">
+      <form class="row-search" role="search" @submit.prevent="searchOlds()">
         <div class="search-field">
           
           <label class="table-search-label" for="search-vitals">长者姓名</label>
@@ -17,10 +17,10 @@
           </el-input>
         </div>
 
-		<el-badge :value="this.rateCount" :hidden="this.rateCount === 0" class="item">
+		<el-badge :value="rateCount" :hidden="rateCount === 0" class="item">
 		  <el-button size="small" :type="Number(rateCount) > 0 ? 'danger' : 'default'" plain @click="showAlertByKind('rate')">心率异常</el-button>
 		</el-badge>
-		<el-badge :value="this.preCount" :hidden="this.preCount === 0" class="item">
+		<el-badge :value="preCount" :hidden="preCount === 0" class="item">
 			<el-button size="small" :type="Number(preCount) > 0 ? 'danger' : 'default'" plain @click="showAlertByKind('pre')">血压异常</el-button>
 		</el-badge>
 		<el-button size="small" plain type="primary" @click="openWorkbench">只看待处理异常</el-button>
