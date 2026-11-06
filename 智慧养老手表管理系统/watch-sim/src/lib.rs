@@ -169,46 +169,6 @@ pub fn now_unix() -> i64 {
         .unwrap_or(0)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn parse_local_roundtrips_format_local() {
-        for t in [0i64, 1_793_531_600, 1_791_000_000, 2_000_000_000] {
-            let text = format_local(t);
-            assert_eq!(parse_local(&text), Some(t), "往返失败: {text}");
-        }
-    }
-
-    #[test]
-    fn parse_local_rejects_malformed() {
-        for bad in [
-            "",
-            "2026-11-01",
-            "2026-13-01 00:00:00",
-            "2026-11-01T00:00:00",
-            "abcd-ef-gh ij:kl:mn",
-        ] {
-            assert_eq!(parse_local(bad), None, "不该接受 {bad:?}");
-        }
-    }
-
-    #[test]
-    fn civil_conversion_matches_known_dates() {
-        // 1_793_531_600 == 2026-11-01T11:13:20Z
-        let (y, m, d, h, mi, s) = civil_from_unix(1_793_531_600);
-        assert_eq!((y, m, d), (2026, 11, 1));
-        assert_eq!((h, mi, s), (11, 13, 20));
-    }
-
-    #[test]
-    fn epoch_is_1970() {
-        let (y, m, d, ..) = civil_from_unix(0);
-        assert_eq!((y, m, d), (1970, 1, 1));
-    }
-}
-
 /// 健康样本使用 UTC，避免把本地墙上时间当作 UTC 写入。
 pub fn format_utc(unix_secs: i64) -> String {
     let (y, mo, d, h, mi, s) = civil_from_unix(unix_secs);

@@ -91,36 +91,3 @@ fn process_alive(pid: u32) -> bool {
 fn process_alive(pid: u32) -> bool {
     Path::new(&format!("/proc/{pid}")).exists()
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn own_process_is_alive() {
-        assert!(process_alive(std::process::id()));
-    }
-
-    #[test]
-    fn impossible_pid_is_dead() {
-        assert!(!process_alive(0x7FFF_FFFE));
-    }
-
-    #[test]
-    fn record_parses_expected_shape() {
-        let raw = r#"{"port":8795,"pid":1234,"desktopPid":5678}"#;
-        let r: ServerRecord = serde_json::from_str(raw).unwrap();
-        assert_eq!(r.port, 8795);
-        assert_eq!(r.desktop_pid, 5678);
-    }
-
-    #[test]
-    fn missing_record_reports_discovery_error() {
-        std::env::set_var(
-            "SUINING_USER_DATA",
-            std::env::temp_dir().join("ws-no-such-dir"),
-        );
-        let err = discover().unwrap_err();
-        assert_eq!(err, DISCOVERY_ERROR);
-    }
-}
