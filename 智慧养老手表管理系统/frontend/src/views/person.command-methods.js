@@ -6,7 +6,7 @@ const editable = draft => Object.fromEntries(residentFields.map(key => [key, dra
 export const residentCommandMethods = {
   addOldPersons () {
     this.$refs.addoldFormRef.validate(valid => {
-      if (valid) return writeRecord(this, 'api/v1/residents/create', editable(this.oldForm), '添加老人成功', () => {
+      if (valid) return writeRecord('api/v1/residents/create', editable(this.oldForm), '添加老人成功', () => {
         this.oldDialogVisible = false
         this.searchOldPersons()
       })
@@ -17,13 +17,13 @@ export const residentCommandMethods = {
     this.$refs.editoldFormRef.validate(valid => {
       if (!valid) return
       const draft = this.oldEditForm
-      return writeRecord(this, 'api/v1/residents/update', { ...editable(draft), oldId: draft.oldId }, '编辑老人信息成功', () => {
+      return writeRecord('api/v1/residents/update', { ...editable(draft), oldId: draft.oldId }, '编辑老人信息成功', () => {
         this.oldEditDialogVisible = false
         this.searchOldPersons()
       })
     })
   },
   deleteOldPerson (oldId) {
-    return deleteRecord(this, 'api/v1/residents/delete', { oldId }, '此操作将永久删除该长者信息，是否继续？', () => this.searchOldPersons())
+    return deleteRecord('api/v1/residents/delete', { oldId }, '此操作将永久删除该长者信息，是否继续？', () => this.searchOldPersons())
   }
 }

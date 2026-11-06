@@ -118,13 +118,13 @@ export default {
     
     
     editSaid () {
-      return writeRecord(this, 'api/v1/notice-comments/reply', this.saidEditForm, '回复已保存', () => {
+      return writeRecord('api/v1/notice-comments/reply', this.saidEditForm, '回复已保存', () => {
         this.watchEditDialogVisible = false
         this.searchSaid()
       })
     },
     deleteSaid (saidId) {
-      return deleteRecord(this, 'api/v1/notice-comments/delete', { saidId }, '确认删除该评论？', () => this.searchSaid())
+      return deleteRecord('api/v1/notice-comments/delete', { saidId }, '确认删除该评论？', () => this.searchSaid())
     },
     handleeditSaid (index, row) {
       this.watchEditDialogVisible = true

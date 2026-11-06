@@ -172,7 +172,7 @@ export default {
   },
   methods: {
     addFamily () {
-      return writeRecord(this, 'api/v1/family/add', this.familyForm, '家属已添加，请生成该老人的邀请码，由家属注册并设置登录密码。', () => {
+      return writeRecord('api/v1/family/add', this.familyForm, '家属已添加，请生成该老人的邀请码，由家属注册并设置登录密码。', () => {
         this.customerDialogVisible = false
         this.searchfamily()
       }, '添加家属失败，请检查服务连接后重试。')
@@ -183,13 +183,13 @@ export default {
     editFamily () {
       const fields = ['familyId', 'familyName', 'familyRelation', 'familySex', 'familyPhone', 'familyAddress']
       const body = Object.fromEntries(fields.map(key => [key, this.familyEditForm[key]]))
-      return writeRecord(this, 'api/v1/family/updateFamily', body, '家属信息已保存', () => {
+      return writeRecord('api/v1/family/updateFamily', body, '家属信息已保存', () => {
         this.oldEditDialogVisible = false
         this.searchfamily()
       })
     },
     deleteFamily (familyId) {
-      return deleteRecord(this, 'api/v1/family/deleteFamily', { familyId }, '确认删除该家属账号？', () => this.searchfamily())
+      return deleteRecord('api/v1/family/deleteFamily', { familyId }, '确认删除该家属账号？', () => this.searchfamily())
     },
     handleeditFamily (index, row) {
       this.oldEditDialogVisible = true

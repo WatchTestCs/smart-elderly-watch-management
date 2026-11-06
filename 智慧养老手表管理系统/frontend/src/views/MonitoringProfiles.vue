@@ -173,7 +173,7 @@ export default {
         if (!valid) return
         const path = editing ? 'api/v1/monitoring-profiles/update' : 'api/v1/monitoring-profiles/create'
         const body = editing ? this.watchEditForm : this.watchForm
-        return writeRecord(this, path, body, '监测档案已保存', () => {
+        return writeRecord(path, body, '监测档案已保存', () => {
           if (editing) this.watchEditDialogVisible = false
           else this.watchDialogVisible = false
           this.searchWatchs()
@@ -181,7 +181,7 @@ export default {
       })
     },
     deleteRole (deviceId) {
-      return deleteRecord(this, 'api/v1/monitoring-profiles/delete', { deviceId }, '确认删除该监测档案？', () => this.searchWatchs())
+      return deleteRecord('api/v1/monitoring-profiles/delete', { deviceId }, '确认删除该监测档案？', () => this.searchWatchs())
     },
     handleEditwatch (index, row) {
       this.watchEditDialogVisible = true
