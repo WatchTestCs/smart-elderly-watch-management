@@ -4,9 +4,11 @@ import (
 	"context"
 	"crypto/sha256"
 	"database/sql"
+	"database/sql/driver"
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/go-sql-driver/mysql"
 	"suining-care/migrations"
@@ -14,17 +16,37 @@ import (
 
 // MySQL DDL commits implicitly. Each statement is restartable; a checksum is
 // recorded only after all statements finish, under a connection-scoped lock.
-func MigrateMySQL(ctx context.Context, database *Database) error {
+func MigrateMySQL(ctx context.Context, database *Database) (result error) {
 	conn, err := database.myPool.Conn(ctx)
 	if err != nil {
 		return err
 	}
 	defer conn.Close()
-	var locked int
-	if err = conn.QueryRowContext(ctx, "SELECT GET_LOCK(CONCAT('suining-migrate:',DATABASE()),30)").Scan(&locked); err != nil || locked != 1 {
+	discard := func() {
+		_ = conn.Raw(func(any) error { return driver.ErrBadConn })
+	}
+	var locked sql.NullInt64
+	if err = conn.QueryRowContext(ctx, "SELECT GET_LOCK(CONCAT('suining-migrate:',DATABASE()),30)").Scan(&locked); err != nil {
+		discard()
+		return fmt.Errorf("acquire MySQL migration lock: %w", err)
+	}
+	if !locked.Valid || locked.Int64 != 1 {
 		return errors.New("MySQL migration lock unavailable")
 	}
-	defer conn.ExecContext(context.Background(), "SELECT RELEASE_LOCK(CONCAT('suining-migrate:',DATABASE()))")
+	defer func() {
+		releaseCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		var released sql.NullInt64
+		err := conn.QueryRowContext(releaseCtx, "SELECT RELEASE_LOCK(CONCAT('suining-migrate:',DATABASE()))").Scan(&released)
+		if err == nil && released.Valid && released.Int64 == 1 {
+			return
+		}
+		discard()
+		if err == nil {
+			err = errors.New("server did not confirm lock release")
+		}
+		result = errors.Join(result, fmt.Errorf("release MySQL migration lock: %w", err))
+	}()
 	var known, tables int
 	if err = conn.QueryRowContext(ctx, "SELECT count(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='schema_migrations'").Scan(&known); err != nil {
 		return err
