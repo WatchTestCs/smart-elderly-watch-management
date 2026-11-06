@@ -157,8 +157,7 @@ export default {
           {
             oldId: this.createForm.oldId,
             count: this.createForm.count,
-            expireDays: expireDays,
-            createUser: localStorage.getItem('user_name') || '管理员'
+            expireDays: expireDays
           }).then((response) => {
           if (response.data.returnCode === '1111') {
             this.createdCodes = response.data.codes || []

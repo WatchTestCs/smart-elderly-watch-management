@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"suining-care/internal/auth"
 	"suining-care/internal/db"
 	"suining-care/internal/response"
 	"time"
@@ -38,6 +39,14 @@ func inviteRemainingDays(expire *time.Time, now time.Time) int {
 		return -1
 	}
 	return int(expire.Sub(now).Hours() / 24)
+}
+
+// creatorName 取登录管理员的显示名作为生成人，不信任请求体里的自报姓名。
+func creatorName(r *http.Request) string {
+	if p := auth.Principal(r); p != nil && p.DisplayName != "" {
+		return p.DisplayName
+	}
+	return "管理员"
 }
 
 func fmtTS(t *time.Time) string {
@@ -152,10 +161,7 @@ func (h *Handler) inviteCreate(w http.ResponseWriter, r *http.Request) {
 			count = 50
 		}
 	}
-	createUser := str(m, "createUser")
-	if createUser == "" {
-		createUser = "管理员"
-	}
+	createUser := creatorName(r)
 
 	tx, err := h.DB.Begin(ctx)
 	if internalError(w, err) {
