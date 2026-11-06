@@ -96,112 +96,150 @@
 
 </template>
 
-<script>
+<script setup lang="ts">
+import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { ElMessage } from 'element-plus'
 import { usePagedRecords } from '@/composables/usePagedRecords'
-import { ref } from 'vue'
-import { api as requestClient } from '../api/client'
 import { useCollectionLayout } from '@/composables/useCollectionLayout'
+import { useRecordCharts } from '@/composables/useRecordCharts'
+import { createLatestRead } from '@/composables/latestRead'
+import { api, accepted, type Envelope } from '../api/client'
 import { apiErrorMessage } from '../api/httpContract'
-
 import RecordCards from '@/components/RecordCards.vue'
 import HealthAlertDialog from '@/components/records/HealthAlertDialog.vue'
-import { healthAlertMethods } from './vitals.alert-methods'
 
-import { useRecordCharts } from '@/composables/useRecordCharts'
-
-export default {
-  setup () {
-    const searchText = ref('')
-    const paging = usePagedRecords({
-      path: 'api/v1/vitals/latest',
-      responseKey: 'vitalRecords',
-      buildQuery: () => ({ name: searchText.value, timeFirst: '', timeLast: '' })
-    })
-    return {
-      mobileLayout: useCollectionLayout(900),
-      ...useRecordCharts(),
-      searchText,
-      oldsList: paging.records,
-      isLoading: paging.isLoading,
-      loadError: paging.loadError,
-      total: paging.total,
-      pageSize: paging.pageSize,
-      currentPage: paging.currentPage,
-      searchOlds: paging.load,
-      handleSizeChange: paging.handleSizeChange,
-      changePage: paging.changePage
-    }
-  },
-  components: { RecordCards, HealthAlertDialog },
-
-  data () {
-    return {
-
-
-      rateCount: '',
-      preCount: '',
-      // 异常（红点）处置
-      alertDialog: {
-        visible: false,
-        loading: false,
-        resolving: false,
-        hasAlert: 1,
-        title: '异常原因与处理',
-        recordId: null,
-        oldPersonName: '',
-        hr: '',
-        bp: '',
-        rateBad: 0,
-        preBad: 0,
-        reason: '',
-        detail: '',
-        occurTime: '',
-        advice: '',
-        message: ''
-      }
-    }
-  },
-  created () {
-
-    
-    this.getCount()
-
-  },
-
-  methods: {
-    ...healthAlertMethods,
-    getCount () {
-      requestClient.post('api/v1/vitals/alerts/device-counts', {})
-        .then(({ data }) => {
-          this.rateCount = data.heartRate
-          this.preCount = data.bloodPressure
-        })
-        .catch(error => this.$message.error(apiErrorMessage(error, '请求未完成，请重试')))
-      // 红点数字用"未处理的异常条数"，而不是历史异常设备数
-      this.loadAlertCount()
-    },
-    // 只看待处理异常（把有异常的老人筛出来）
-    openWorkbench () {
-      var list = []
-      this.oldsList.forEach(function (row) {
-        if (row.rateState == 1 || row.preState == 1) {
-          list.push(row)
-        }
-      })
-      if (list.length === 0) {
-        this.$message({ type: 'success', message: '当前没有待处理的异常' })
-        return
-      }
-      this.oldsList = list
-      this.total = list.length
-      this.$message({ type: 'info', message: '已筛选出 ' + list.length + ' 条待处理异常，点「查看原因」了解处理办法' })
-    },
-
-
-
-    showRoleDialog (row) {
-      return this.showRecordDetails('vitals', row.oldId, row.name)
-    }
+interface VitalRow {
+  oldId: number | string
+  name: string
+  recordId?: number | string
+  rateState?: number | string
+  preState?: number | string
+}
+const searchText = ref('')
+const rateCount = ref<number | string>('')
+const preCount = ref<number | string>('')
+const mobileLayout = useCollectionLayout(900)
+const {
+  detailsVisible, chartLoading, chartError, chartName,
+  mychart, mychartTwo, showRecordDetails, resizeCharts, disposeCharts
+} = useRecordCharts()
+const {
+  records: oldsList, isLoading, loadError, total,
+  pageSize, currentPage, load: searchOlds,
+  handleSizeChange, changePage
+} = usePagedRecords<VitalRow, { name: string; timeFirst: string; timeLast: string }>({
+  path: 'api/v1/vitals/latest',
+  responseKey: 'vitalRecords',
+  buildQuery: () => ({ name: searchText.value, timeFirst: '', timeLast: '' })
+})
+function emptyAlert() {
+  return {
+    visible: false, loading: false, resolving: false, hasAlert: 1,
+    title: '异常原因与处理', recordId: null,
+    oldPersonName: '', hr: '', bp: '', rateBad: 0,
+    preBad: 0, reason: '', detail: '', occurTime: '',
+    advice: '', message: ''
   }
 }
+const alertDialog = ref<Record<string, any>>(emptyAlert())
+
+async function loadAlertCount() {
+  try {
+    const { data } = await api.post<{ rateTotal: number; preTotal: number }>(
+      'api/v1/vitals/alerts/count', {}
+    )
+    rateCount.value = data.rateTotal
+    preCount.value = data.preTotal
+  } catch (error) {
+    ElMessage.error(apiErrorMessage(error, '请求未完成，请重试'))
+  }
+}
+const getCount = loadAlertCount
+const alertReads = createLatestRead(
+  (query: { recordId?: number | string; oldId?: number | string; kind?: string }, signal: AbortSignal) =>
+    api.post<Record<string, any>>('api/v1/vitals/alerts/detail', query, { signal }),
+  ({ data }) => {
+    Object.assign(alertDialog.value, {
+      hasAlert: data.hasAlert ?? 1,
+      message: data.message || '',
+      recordId: data.recordId ?? null,
+      oldPersonName: data.oldPersonName || alertDialog.value.oldPersonName,
+      hr: data.hr, bp: data.bp,
+      rateBad: data.rateBad || 0, preBad: data.preBad || 0,
+      reason: data.reason || '', detail: data.detail || '',
+      occurTime: data.occurTime || '', advice: data.advice || ''
+    })
+  },
+  error => {
+    alertDialog.value.hasAlert = 0
+    alertDialog.value.message = apiErrorMessage(error, '读取失败，请稍后重试')
+  },
+  loading => { alertDialog.value.loading = loading }
+)
+function loadAlertDetail(
+  recordId: number | string | null, name: string, oldId: number | string, kind = ''
+) {
+  alertDialog.value = { ...emptyAlert(), visible: true, loading: true, recordId, oldPersonName: name || '' }
+  return alertReads.run(recordId ? { recordId } : { oldId, kind })
+}
+function showAlertRow(row: VitalRow) {
+  return loadAlertDetail(null, row.name, row.oldId)
+}
+function showAlertByKind(kind: string) {
+  const target = oldsList.value.find(row =>
+    kind === 'rate' ? row.rateState == 1 : row.preState == 1
+  )
+  if (!target) {
+    ElMessage({ type: 'success', message: '当前没有未处理的' + (kind === 'rate' ? '心率' : '血压') + '异常' })
+    return
+  }
+  void loadAlertDetail(null, target.name, target.oldId, kind)
+}
+async function resolveAlert(kind: string) {
+  if (alertDialog.value.resolving) return
+  alertDialog.value.resolving = true
+  try {
+    const { data } = await api.post<Envelope>('api/v1/vitals/alerts/resolve', {
+      recordId: alertDialog.value.recordId, kind
+    })
+    accepted(data)
+    ElMessage({ type: 'success', message: '已处理，红点已消除' })
+    alertDialog.value.visible = false
+    await Promise.all([searchOlds(true), getCount()])
+  } catch (error) {
+    ElMessage({ type: 'error', message: apiErrorMessage(error, '处理失败') })
+  } finally { alertDialog.value.resolving = false }
+}
+async function resolveRow(row: VitalRow) {
+  const kinds = [
+    ...(row.rateState == 1 ? ['rate'] : []),
+    ...(row.preState == 1 ? ['pre'] : [])
+  ]
+  if (!kinds.length) return
+  const results = await Promise.allSettled(kinds.map(kind =>
+    api.post<Envelope>('api/v1/vitals/alerts/resolve', { recordId: row.recordId, kind })
+      .then(({ data }) => accepted(data))
+  ))
+  const failed = results.filter(result => result.status === 'rejected').length
+  ElMessage({
+    type: failed ? 'warning' : 'success',
+    message: failed ? '部分异常未处理完成，请核对后重试。' : '已处理，红点已消除'
+  })
+  await Promise.all([searchOlds(true), getCount()])
+}
+function openWorkbench() {
+  const rows = oldsList.value.filter(row => row.rateState == 1 || row.preState == 1)
+  if (!rows.length) {
+    ElMessage({ type: 'success', message: '当前没有待处理的异常' })
+    return
+  }
+  oldsList.value = rows
+  total.value = rows.length
+  ElMessage({ type: 'info', message: '已筛选出 ' + rows.length + ' 条待处理异常，点「查看原因」了解处理办法' })
+}
+function showRoleDialog(row: VitalRow) {
+  return showRecordDetails('vitals', row.oldId, row.name)
+}
+onMounted(() => { void loadAlertCount() })
+onBeforeUnmount(alertReads.dispose)
 </script>
