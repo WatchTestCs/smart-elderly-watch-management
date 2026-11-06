@@ -8,7 +8,7 @@ vi.mock('../api/client', () => ({ api: { post } }))
 import { pagedRecords } from './pagedRecords'
 
 const Probe = defineComponent({
-  mixins: [pagedRecords({ path: 'api/v1/x', responseKey: 'items', recordsKey: 'rows', searchKey: '', load: 'reload', failure: '失败', trim: false, filters: {} })],
+  mixins: [pagedRecords({ path: 'api/v1/x', responseKey: 'items', recordsKey: 'rows', searchKey: '', load: 'reload', failure: '失败', trim: false, filters: {}, exportColumns: null, exportName: '' })],
   render() { return h('div') }
 })
 
