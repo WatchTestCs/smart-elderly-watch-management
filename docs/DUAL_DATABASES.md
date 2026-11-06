@@ -24,17 +24,11 @@ flowchart LR
 
 MySQL DSN 未显式设置时，当前后端使用驱动的 `interpolateParams=true`，减少逐次 prepare/execute/close。驱动负责绑定值的转义与保守回退；强制 utf8mb4、禁用多语句，拒绝插值不安全的 collation。需要二进制 prepare 兼容模式时，在 DSN 明确设置 `interpolateParams=false`。这不改变事务提交与持久性策略。SQL 中含字面量问号等情况仍可能由驱动退回 prepare。
 
-两份 Compose 模板现在将 redo 容量设为 512 MiB，环境变量 `MYSQL_REDO_LOG_CAPACITY` 可覆盖。签名健康批次实测中，100 MiB 配置在 checkpoint 距离约 83 MiB 时出现同步等待；六轮交替对照的 8 设备中位吞吐由 14,656 提高到 37,774 条/秒。该参数调整日志空间预算，提交与 binlog 刷盘设置保持原样。测量记录属性能证据，未随仓库分发。
-
-更大的 redo 空间允许后台刷新在更长窗口内完成；空间紧张时，InnoDB 会推进 checkpoint 来回收日志。[MySQL 官方调优说明](https://dev.mysql.com/doc/refman/8.4/en/optimizing-innodb-logging.html) 默认磁盘预算比原 100 MiB 增加 412 MiB；buffer pool 默认从 128 MiB 调整为 512 MiB，内存预算增加 384 MiB，可通过 `MYSQL_BUFFER_POOL_SIZE` 覆盖。扩大后的 16 设备长负载有明显收益，4 设备没有观察到收益，完整分轮数据见测量记录。部署验收同时记录实际磁盘占用和恢复时间；已有外部 MySQL 实例由其管理员显式配置，应用连接时不会改动该全局参数。
-
 开发者向 JSON 列传值应使用 `json.RawMessage` 或 JSON 文本字符串；普通 `[]byte` 保持二进制语义，用于 BLOB。JSON 与二进制不能混用。数据库参数中不自行拼接或转义用户值。
 
 | 变量 | 使用位置 |
 | --- | --- |
 | `MYSQL_DSN` | Go 与迁移工具，go-sql-driver/mysql 原生 DSN，必须指定业务库 |
-| `MYSQL_REDO_LOG_CAPACITY` | 两份 Compose 模板的 redo 容量，默认 536870912 字节，可按写入量覆盖 |
-| `MYSQL_BUFFER_POOL_SIZE` | 两份 Compose 模板的 InnoDB 缓存，默认 536870912 字节，可按内存预算覆盖 |
 | `PG_ANALYTICS_URL` | Go，专用分析库的 PG URL |
 | `SUINING_MYSQL_DSN` / `SUINING_PG_ANALYTICS_URL` | Tauri，将对应配置传给 Go |
 | `LEGACY_POSTGRES_URL` | 离线导入工具的旧 PG 主库 |

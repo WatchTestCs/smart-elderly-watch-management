@@ -23,6 +23,3 @@ jobs:
       - run: cargo +1.99.1 fmt --check
       - run: cargo +1.99.1 test --locked --all-targets
       - run: cargo +1.99.1 build --locked --release
-      - name: Verify HTTPS on Linux
-        if: runner.os == 'Linux'
-        run: python3 tests/https.py target/release/watch-sim

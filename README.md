@@ -162,8 +162,7 @@ cargo build --release --locked --manifest-path 智慧养老手表管理系统/wa
 .\智慧养老手表管理系统\watch-sim\target\release\watch-sim.exe --local "D:\手表模拟\本地数据" --scenario demo --health-samples
 ```
 
-发布包可双击 `本地模拟.cmd`。每次运行创建独立目录，保存采样、事件与可离线打开的 `index.html`。联机参数、证书和验证命令见[模拟器说明](智慧养老手表管理系统/watch-sim/README.md)。MySQL 容器的 `MYSQL_REDO_LOG_CAPACITY` 与 `MYSQL_BUFFER_POOL_SIZE` 默认各为 `536870912` 字节，可按磁盘与内存预算覆盖。
-
+发布包可双击 `本地模拟.cmd`。每次运行创建独立目录，保存采样、事件与可离线打开的 `index.html`。联机参数、证书和验证命令见[模拟器说明](智慧养老手表管理系统/watch-sim/README.md)。
 
 与远端 Node 模拟器的对照显示，Rust 的三请求启动耗时降低79.5%、峰值工作集降低85.2%；功能覆盖、适配与原始测量数据属性能证据，未随仓库分发。
 
@@ -175,13 +174,11 @@ UI Quality 随每次 Preview CI 执行。`Core CI / required` 仅表示基础检
 | --- | --- |
 | 分支自动化检查 | [Preview CI](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/workflows/ci.yml) |
 | 当前版本发布信息 | [2.1.0 版本说明](docs/releases/2.1.0.md)及发行附件中的 manifest |
-| 后端回归 | 在 `智慧养老手表管理系统/backend` 中用 `python ../../scripts/prepare-backend-go.py --output <临时目录> --run test -count=1 ./...`，再以同一入口运行 `--run vet ./...` |
+| 后端回归 | 在 `智慧养老手表管理系统/backend` 中执行 `go test -count=1 ./...` 与 `go vet ./...` |
 | 前端构建 | 在 `智慧养老手表管理系统/frontend` 中执行 `npm ci` 与 `npm run build` |
 | 手表协议 | 在 `SuiningWatch` 中执行 `npm ci` 与 `npm test`；这不等同于 DevEco 原生编译或真机验收 |
 
-产品构建使用 Go 1.27.3+，保留正常负载更快的 JSON v2。上述准备入口按版本和源码哈希生成窄范围标准库 overlay，只跳过把同一片缓冲复制给自己的无效操作；容器、桌面、CI、源码扫描均使用同一入口，不改系统工具链源码。下载到 GOMODCACHE 的工具链会复制到指定临时目录，首次构建需要额外磁盘空间，生成的产品二进制运行时无需该目录。现有 Go 1.26.10/1.27.2 受保护检查保留真实兼容验证（入口加 `--compatibility`），不用于制作安装包。失败、正常负载对照及安全修复的性能记录属性能证据，未随仓库分发；未删除原用例或放宽期限。
-
-完整数据库集成与竞态测试需配置专用测试库环境变量 `TEST_MYSQL_DSN` 与 `TEST_DATABASE_URL`，再通过同一入口执行 `--run test -race -count=1 -timeout 900s ./...`（期限继承最新 preview 门禁）。MySQL 驱动专项缺少显式测试库会失败；切换 PostgreSQL 应用测试时，另设 `TEST_PACKED_MYSQL_DSN` 保留专项 MySQL 地址，不能把缺库或跳过当作完整验证。桌面打包未提供测试库时会使用新建、仅监听回环地址的临时 MySQL 实例；工具不在 PATH 时传 `-TestMySQLBin`，打包结束后核对所有权并正常关闭，日志保留。
+如需运行完整数据库集成与竞态测试，请先配置专用测试库环境变量 `TEST_MYSQL_DSN` 与 `TEST_DATABASE_URL`，再执行 `go test -race -count=1 -timeout 600s ./...`（未配置时数据库集成用例会自动跳过）。
 
 仓库当前 CI 结果以对应提交的 GitHub Actions 检查为准。性能实验、旧版本构建记录和阶段性补丁报告不再作为当前版本能力或验收结论；正式投入生产前，仍需针对真实穿戴硬件、外部短信或语音网关、生产数据迁移、跨网 TLS 证书及值班响应流程开展独立验收。通知发送成功仅代表网关已受理，实际照护结果以人工跟进与复核记录为准。
 ## 常见问题

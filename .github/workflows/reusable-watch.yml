@@ -157,10 +157,8 @@ jobs:
           cache-dependency-path: SuiningWatch/package-lock.json
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
         with:
-          go-version: '1.27.3'
+          go-version: '1.26.10'
           cache-dependency-path: 智慧养老手表管理系统/backend/go.sum
-      - name: Prepare product compiler
-        run: python3 scripts/prepare-backend-go.py --output "$RUNNER_TEMP/backend-go" --github-env "$GITHUB_ENV"
       - name: Exercise production watch protocol against disposable Go/MySQL
         shell: bash
         env:

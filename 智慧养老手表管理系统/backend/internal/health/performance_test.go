@@ -3,6 +3,7 @@ package health
 import (
 	"bytes"
 	"encoding/json"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -86,4 +87,28 @@ func TestBuildValueRows(t *testing.T) {
 	if got := buildValueRows(1, 200); strings.Count(got, "$") != 200 || !strings.HasSuffix(got, "$200)") {
 		t.Fatal("wrong sample lookup placeholders")
 	}
+}
+
+// The sample was already JSON-encoded before taking the revision lock. Reuse
+// those bytes in its immutable change event rather than encode it a second time.
+// id is the hex SHA-256 identity produced by Digest, so it needs no escaping.
+func changePayload(o Owner, id string, revision int64, sample []byte) []byte {
+	b := make([]byte, 0, len(sample)+len(id)+128)
+	b = append(b, `{"sampleId":"`...)
+	b = append(b, id...)
+	b = append(b, `","oldId":`...)
+	b = strconv.AppendInt(b, o.OldID, 10)
+	b = append(b, `,"deviceId":`...)
+	if o.DeviceID == nil {
+		b = append(b, "null"...)
+	} else {
+		b = strconv.AppendInt(b, *o.DeviceID, 10)
+	}
+	b = append(b, `,"bindingVersion":`...)
+	b = strconv.AppendInt(b, o.Epoch, 10)
+	b = append(b, `,"revision":`...)
+	b = strconv.AppendInt(b, revision, 10)
+	b = append(b, `,"sample":`...)
+	b = append(b, sample...)
+	return append(b, '}')
 }

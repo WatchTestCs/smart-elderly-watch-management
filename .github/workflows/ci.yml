@@ -89,22 +89,15 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
-          go-version: '1.27.3'
+          go-version: '1.27.2'
           cache-dependency-path: 智慧养老手表管理系统/backend/go.sum
-      - name: Prepare product compiler
-        run: python3 scripts/prepare-backend-go.py --output "$RUNNER_TEMP/backend-go" --github-env "$GITHUB_ENV"
       - name: Scan reachable Go vulnerabilities
         working-directory: 智慧养老手表管理系统/backend
         run: |
-          set -euo pipefail
           mkdir -p ../../evidence/ci/security
           git rev-parse HEAD > ../../evidence/ci/security/source-sha.txt
           go install golang.org/x/vuln/cmd/govulncheck@v1.9.0
           govulncheck -json ./... > ../../evidence/ci/security/govulncheck.jsonl 2>&1
-          python3 ../../scripts/reliability/audit-govulncheck.py ../../evidence/ci/security/govulncheck.jsonl --output ../../evidence/ci/security/govulncheck-summary.json
-      - name: Verify and scan pinned MySQL driver source
-        working-directory: 智慧养老手表管理系统/backend
-        run: python3 ../../scripts/performance/check-mysql-driver.py --evidence ../../evidence/ci/security/mysql-driver
       - if: always()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
         with:

@@ -164,8 +164,7 @@ cargo build --release --locked --manifest-path 智慧养老手表管理系统/wa
 .\智慧养老手表管理系统\watch-sim\target\release\watch-sim.exe --local "D:\watch-sim\local-data" --scenario demo --health-samples
 ```
 
-Packaged builds include `本地模拟.cmd` for double-click startup. Each run creates a separate directory containing samples, events, and an `index.html` page that opens offline. See the [simulator guide](智慧养老手表管理系统/watch-sim/README.md) for online options, certificates, and validation commands. The MySQL Compose variables `MYSQL_REDO_LOG_CAPACITY` and `MYSQL_BUFFER_POOL_SIZE` each default to `536870912` bytes and can be overridden for the host's disk and memory budget.
-
+Packaged builds include `本地模拟.cmd` for double-click startup. Each run creates a separate directory containing samples, events, and an `index.html` page that opens offline. See the [simulator guide](智慧养老手表管理系统/watch-sim/README.md) for online options, certificates, and validation commands.
 
 Compared with the preview Node simulator, the Rust build reduced startup plus three-request time by 79.5% and peak working set by 85.2%. Coverage, adaptations and raw measurements are performance evidence and are not distributed with this repository.
 
@@ -177,13 +176,11 @@ UI Quality runs with every Preview CI. `Core CI / required` covers the core chec
 | --- | --- |
 | Preview branch automation | [Preview CI](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/workflows/ci.yml) |
 | Current release notes | [Version 2.1.0](docs/releases/2.1.0.md) and the release manifest |
-| Backend regression | In `智慧养老手表管理系统/backend`, use `python ../../scripts/prepare-backend-go.py --output <temporary-directory> --run test -count=1 ./...`, then the same entry point with `--run vet ./...` |
+| Backend regression | Run `go test -count=1 ./...` and `go vet ./...` in `智慧养老手表管理系统/backend` |
 | Frontend build | Run `npm ci` and `npm run build` in `智慧养老手表管理系统/frontend` |
 | Watch protocol | Run `npm ci` and `npm test` in `SuiningWatch`; this does not replace native DevEco or physical-device validation |
 
 Database integration and race tests require dedicated disposable test databases configured through `TEST_MYSQL_DSN` and `TEST_DATABASE_URL`. Tests must never target production databases. CI results must be read from the workflow run for the exact commit being assessed.
-
-Product artifacts require Go 1.27.3+ and retain JSON v2. The preparation entry point validates the compiler and JSON source hashes, then applies a small overlay that avoids copying a buffer onto itself; builds, tests and source scans use that same overlay. Installed toolchains remain unchanged. A toolchain downloaded into GOMODCACHE needs an owned copy in the supplied directory; runtime binaries do not need it. The protected Go 1.26.10/1.27.2 compatibility checks still run their actual compilers with `--compatibility`, without producing installers. See the performance record for the retained failures and engine comparison; that evidence is not distributed with this repository. MySQL driver contracts require an explicit database; use `TEST_PACKED_MYSQL_DSN` during the PostgreSQL pass. Desktop packaging can start and stop its own disposable loopback MySQL instance when no test DSN is supplied; use `-TestMySQLBin` if server tools are not on PATH.
 
 Historical performance experiments and release-stage notes are not current-version acceptance evidence. Before production deployment, separately validate physical watch hardware, external notification gateways, production data migration, network TLS, and staffed incident response. Gateway acceptance does not prove notification delivery or completed care response.
 ## Troubleshooting

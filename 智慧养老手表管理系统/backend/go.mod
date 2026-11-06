@@ -30,5 +30,3 @@ require (
 	golang.org/x/sync v0.22.0 // indirect
 	golang.org/x/text v0.41.0 // indirect
 )
-
-replace github.com/go-sql-driver/mysql => ./third_party/mysql

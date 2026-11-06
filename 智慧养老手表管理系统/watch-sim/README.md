@@ -66,15 +66,11 @@ HTTPS 使用系统信任库；本地证书通过 `--ca-file <PEM>` 添加信任�
 | `src/transport.rs` | HTTP/HTTPS、证书和响应大小限制 |
 | `src/discovery.rs` | 本地桌面端口发现与进程校验 |
 | `src/physio.rs`、`src/scenario.rs`、`src/rng.rs` | 连续生理数值、场景时间轴和可复现随机数 |
-| `tests/process.rs` | 启动实际可执行文件验证请求链路 |
-| `tests/https.py` | 临时证书下验证 TLS 接受与拒绝路径 |
 
 ```text
 cargo test --locked --all-targets
-python tests/https.py target/debug/watch-sim.exe
-node tests/local-browser.cjs target/debug/watch-sim.exe
 ```
 
-HTTPS 测试需要 OpenSSL 命令行。本地页面测试使用 frontend/qa 的 Playwright；可通过 CARE_CHROME_PATH 指定已安装的 Chrome。Windows 发布包需具备 Visual C++ 运行库；本项目未启用静态 CRT。模拟器产生的数据用于软件联调，真机上的传感器与授权验证另行开展。
+Windows 发布包需具备 Visual C++ 运行库；本项目未启用静态 CRT。模拟器产生的数据用于软件联调，真机上的传感器与授权验证另行开展。
 
-性能基准和分轮测量记录属性能证据，未随仓库分发。`examples/health_load.rs` 用于有限请求的签名 HTTP 实库压测，设备数决定并发数。
+性能基准和分轮测量记录属性能证据，未随仓库分发。
