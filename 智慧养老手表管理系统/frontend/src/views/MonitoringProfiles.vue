@@ -89,109 +89,66 @@
 
 </template>
 
-<script>
-import { deleteRecord, writeRecord } from '@/composables/recordActions'
-import { usePagedRecords } from '@/composables/usePagedRecords'
+<script setup lang="ts">
 import { ref } from 'vue'
+import { usePagedRecords } from '@/composables/usePagedRecords'
+import { writeRecord, deleteRecord } from '@/composables/recordActions'
 import { useCollectionLayout } from '@/composables/useCollectionLayout'
-
 import { checkThreshold } from './watch.validation'
 import RecordCards from '@/components/RecordCards.vue'
 import ThresholdForm from '@/components/records/ThresholdForm.vue'
 
-export default {
-
-
-  setup () {
-    const searchText = ref('')
-    const paging = usePagedRecords({
-      path: 'api/v1/monitoring-profiles/list',
-      responseKey: 'watchDtos',
-      buildQuery: () => ({ oldName: searchText.value }),
-      failure: '监测阈值档案暂时无法加载，请检查服务连接后重试。'
-    })
-    return {
-      mobileLayout: useCollectionLayout(900),
-      searchText,
-      watchsList: paging.records,
-      isLoading: paging.isLoading,
-      loadError: paging.loadError,
-      total: paging.total,
-      pageSize: paging.pageSize,
-      currentPage: paging.currentPage,
-      searchWatchs: paging.load,
-      handleSizeChange: paging.handleSizeChange,
-      changePage: paging.changePage
-    }
-  },
-  components: { RecordCards, ThresholdForm },
-  data () {
-    return {
-
-
-      watchDialogVisible: false,
-      watchEditDialogVisible: false,
-      watchForm: {
-        deviceId: '',
-				bpf: '',
-				bpl: '',
-				hrf: '',
-				hrl: ''
-      },
-      watchEditForm: {
-        deviceId: '',
-        bpf: '',
-        bpl: '',
-        hrf: '',
-        hrl: ''
-      },
-      rules: {
-        deviceId: [
-          { required: true, message: '请输入手表Id', trigger: 'blur' }
-        ],
-        bpf: [{ validator: checkThreshold, trigger: 'blur' }],
-        bpl: [{ validator: checkThreshold, trigger: 'blur' }],
-        hrf: [{ validator: checkThreshold, trigger: 'blur' }],
-        hrl: [{ validator: checkThreshold, trigger: 'blur' }]
-      },
-
-
-    }
-  },
-  created () {
-    
-  },
-  methods: {
-    addWatchs () { return this.saveProfile(false) },
-    closeRoleAddDialog () {
-      this.$refs.addwatchFormRef.resetFields()
-    },
-    editWatch () { return this.saveProfile(true) },
-    saveProfile (editing) {
-      const form = this.$refs[editing ? 'editwatchFormRef' : 'addwatchFormRef']
-      form.validate(valid => {
-        if (!valid) return
-        const path = editing ? 'api/v1/monitoring-profiles/update' : 'api/v1/monitoring-profiles/create'
-        const body = editing ? this.watchEditForm : this.watchForm
-        return writeRecord(path, body, '监测档案已保存', () => {
-          if (editing) this.watchEditDialogVisible = false
-          else this.watchDialogVisible = false
-          this.searchWatchs()
-        })
-      })
-    },
-    deleteRole (deviceId) {
-      return deleteRecord('api/v1/monitoring-profiles/delete', { deviceId }, '确认删除该监测档案？', () => this.searchWatchs())
-    },
-    handleEditwatch (index, row) {
-      this.watchEditDialogVisible = true
-      this.watchEditForm = Object.fromEntries(['deviceId', 'bpf', 'bpl', 'hrf', 'hrl'].map(key => [key, row[key]])) // 解决修改弹出框数据时，表格数据会发生同步改变
-
-    },
-
-
-
-  }
+type MonitorRow = Record<string, any>
+const searchText = ref('')
+const mobileLayout = useCollectionLayout(900)
+const {
+  records: watchsList, isLoading, loadError, total,
+  pageSize, currentPage, load: searchWatchs,
+  handleSizeChange, changePage
+} = usePagedRecords<MonitorRow, { oldName: string }>({
+  path: 'api/v1/monitoring-profiles/list',
+  responseKey: 'watchDtos',
+  buildQuery: () => ({ oldName: searchText.value }),
+  failure: '监测阈值档案暂时无法加载，请检查服务连接后重试。'
+})
+const emptyForm = () => ({ deviceId: '', bpf: '', bpl: '', hrf: '', hrl: '' })
+const watchDialogVisible = ref(false)
+const watchEditDialogVisible = ref(false)
+const watchForm = ref(emptyForm())
+const watchEditForm = ref(emptyForm())
+const addwatchFormRef = ref<any>(null)
+const editwatchFormRef = ref<any>(null)
+const rules = {
+  deviceId: [{ required: true, message: '请输入手表Id', trigger: 'blur' }],
+  bpf: [{ validator: checkThreshold, trigger: 'blur' }],
+  bpl: [{ validator: checkThreshold, trigger: 'blur' }],
+  hrf: [{ validator: checkThreshold, trigger: 'blur' }],
+  hrl: [{ validator: checkThreshold, trigger: 'blur' }]
 }
-
+function closeRoleAddDialog() { addwatchFormRef.value?.resetFields() }
+function saveProfile(editing: boolean) {
+  const form = editing ? editwatchFormRef.value : addwatchFormRef.value
+  form?.validate((valid: boolean) => {
+    if (!valid) return
+    const path = editing ? 'api/v1/monitoring-profiles/update' : 'api/v1/monitoring-profiles/create'
+    const body = editing ? watchEditForm.value : watchForm.value
+    void writeRecord(path, body, '监测档案已保存', async () => {
+      if (editing) watchEditDialogVisible.value = false
+      else watchDialogVisible.value = false
+      await searchWatchs(true)
+    })
+  })
+}
+function addWatchs() { saveProfile(false) }
+function editWatch() { saveProfile(true) }
+function deleteRole(deviceId: number | string) {
+  return deleteRecord('api/v1/monitoring-profiles/delete', { deviceId },
+    '确认删除该监测档案？', () => searchWatchs(true))
+}
+function handleEditwatch(_index: number, row: MonitorRow) {
+  watchEditForm.value = Object.fromEntries(
+    ['deviceId','bpf','bpl','hrf','hrl'].map(key => [key, row[key]])
+  ) as ReturnType<typeof emptyForm>
+  watchEditDialogVisible.value = true
+}
 </script>

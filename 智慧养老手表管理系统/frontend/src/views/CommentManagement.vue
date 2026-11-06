@@ -66,75 +66,38 @@
 
 </template>
 
-<script>
-import { deleteRecord, writeRecord } from '@/composables/recordActions'
+<script setup lang="ts">
+import { ref } from 'vue'
 import { usePagedRecords } from '@/composables/usePagedRecords'
+import { writeRecord, deleteRecord } from '@/composables/recordActions'
 import { useCollectionLayout } from '@/composables/useCollectionLayout'
-
 import RecordCards from '@/components/RecordCards.vue'
 
-export default {
-
-
-  setup () {
-    const paging = usePagedRecords({
-      path: 'api/v1/notice-comments/search',
-      responseKey: 'moderatedComments',
-      buildQuery: () => ({}),
-      failure: '评论暂时无法加载，请检查服务连接后重试。'
-    })
-    return {
-      mobileLayout: useCollectionLayout(900),
-      saidList: paging.records,
-      isLoading: paging.isLoading,
-      loadError: paging.loadError,
-      total: paging.total,
-      pageSize: paging.pageSize,
-      currentPage: paging.currentPage,
-      searchSaid: paging.load,
-      handleSizeChange: paging.handleSizeChange,
-      changePage: paging.changePage
-    }
-  },
-  components: { RecordCards },
-  data () {
-    return {
-      
-      watchEditDialogVisible: false,
-      
-      saidEditForm: {
-        saidId: '',
-        said: '',
-        back: ''
-      },
-      
-
-    }
-  },
-  created () {
-    
-  },
-  methods: {
-    
-    
-    editSaid () {
-      return writeRecord('api/v1/notice-comments/reply', this.saidEditForm, '回复已保存', () => {
-        this.watchEditDialogVisible = false
-        this.searchSaid()
-      })
-    },
-    deleteSaid (saidId) {
-      return deleteRecord('api/v1/notice-comments/delete', { saidId }, '确认删除该评论？', () => this.searchSaid())
-    },
-    handleeditSaid (index, row) {
-      this.watchEditDialogVisible = true
-      this.saidEditForm = Object.assign({}, row) // 解决修改弹出框数据时，表格数据会发生同步改变
-
-    },
-
-
-
-  }
+type CommentRow = Record<string, any>
+const mobileLayout = useCollectionLayout(900)
+const {
+  records: saidList, isLoading, loadError, total,
+  pageSize, currentPage, load: searchSaid,
+  handleSizeChange, changePage
+} = usePagedRecords<CommentRow>({
+  path: 'api/v1/notice-comments/search',
+  responseKey: 'moderatedComments',
+  failure: '评论暂时无法加载，请检查服务连接后重试。'
+})
+const watchEditDialogVisible = ref(false)
+const saidEditForm = ref<CommentRow>({ saidId: '', said: '', back: '' })
+function editSaid() {
+  return writeRecord('api/v1/notice-comments/reply', saidEditForm.value, '回复已保存', async () => {
+    watchEditDialogVisible.value = false
+    await searchSaid(true)
+  })
 }
-
+function deleteSaid(saidId: number | string) {
+  return deleteRecord('api/v1/notice-comments/delete', { saidId },
+    '确认删除该评论？', () => searchSaid(true))
+}
+function handleeditSaid(_index: number, row: CommentRow) {
+  saidEditForm.value = { ...row }
+  watchEditDialogVisible.value = true
+}
 </script>

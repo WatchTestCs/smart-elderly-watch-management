@@ -90,115 +90,70 @@
 
 </template>
 
-<script>
-import { deleteRecord, writeRecord } from '@/composables/recordActions'
+<script setup lang="ts">
+import { reactive, ref } from 'vue'
 import { usePagedRecords } from '@/composables/usePagedRecords'
-import { ref } from 'vue'
+import { writeRecord, deleteRecord } from '@/composables/recordActions'
 import { useCollectionLayout } from '@/composables/useCollectionLayout'
-
 import RecordCards from '@/components/RecordCards.vue'
 import FamilyForm from '@/components/records/FamilyForm.vue'
 
-export default {
-
-
-  setup () {
-    const searchText = ref('')
-    const paging = usePagedRecords({
-      path: 'api/v1/family/select',
-      responseKey: 'familyDtos',
-      buildQuery: () => ({ familyName: searchText.value }),
-      failure: '家属账号暂时无法加载，请检查服务连接后重试。'
-    })
-    return {
-      mobileLayout: useCollectionLayout(900),
-      searchText,
-      familyList: paging.records,
-      isLoading: paging.isLoading,
-      loadError: paging.loadError,
-      total: paging.total,
-      pageSize: paging.pageSize,
-      currentPage: paging.currentPage,
-      searchfamily: paging.load,
-      handleSizeChange: paging.handleSizeChange,
-      changePage: paging.changePage
-    }
-  },
-  components: { RecordCards, FamilyForm },
-  data () {
-    var checkPhone = (rule, value, callback) => {
-    const phoneReg = /^1[3|4|5|7|8][0-9]{9}$/
-    if (!value) {
-      return callback(new Error('电话号码不能为空'))
-    }
-    if (!Number.isInteger(+value)) {
-      callback(new Error('请输入数字值'))
-    } else {
-      if (phoneReg.test(value)) {
-        callback()
-      } else {
-        callback(new Error('电话号码格式不正确'))
-      }
-    }
-  }
-    return {
-
-
-      customerDialogVisible: false,
-      oldEditDialogVisible: false,
-      familyForm: {
-        familyName: '',
-        familyRelation: '',
-    familySex: '',
-    familyPhone: '',
-    familyAddress: '',
-    oldPhone: ''
-      },
-      familyEditForm: {},
-
-
-    rules: {
-      familyPhone: [
-        { validator: checkPhone, trigger: 'blur'}
-      ],
-      oldPhone: [
-        { validator: checkPhone, trigger: 'blur'}
-      ]
-      }
-    }
-  },
-  created () {
-    
-  },
-  methods: {
-    addFamily () {
-      return writeRecord('api/v1/family/add', this.familyForm, '家属已添加，请生成该老人的邀请码，由家属注册并设置登录密码。', () => {
-        this.customerDialogVisible = false
-        this.searchfamily()
-      }, '添加家属失败，请检查服务连接后重试。')
+type FamilyRow = Record<string, any>
+const searchText = ref('')
+const mobileLayout = useCollectionLayout(900)
+const {
+  records: familyList, isLoading, loadError, total,
+  pageSize, currentPage, load: searchfamily,
+  handleSizeChange, changePage
+} = usePagedRecords<FamilyRow, { familyName: string }>({
+  path: 'api/v1/family/select',
+  responseKey: 'familyDtos',
+  buildQuery: () => ({ familyName: searchText.value }),
+  failure: '家属账号暂时无法加载，请检查服务连接后重试。'
+})
+const customerDialogVisible = ref(false)
+const oldEditDialogVisible = ref(false)
+const familyForm = reactive({
+  familyName: '', familyRelation: '', familySex: '',
+  familyPhone: '', familyAddress: '', oldPhone: ''
+})
+const familyEditForm = ref<FamilyRow>({})
+const addfamilyFormRef = ref<{ resetFields: () => void } | null>(null)
+function checkPhone(_rule: unknown, value: string, callback: (error?: Error) => void) {
+  if (!value) return callback(new Error('电话号码不能为空'))
+  if (!/^1[3-9]\d{9}$/.test(String(value))) return callback(new Error('电话号码格式不正确'))
+  callback()
+}
+const rules = {
+  familyPhone: [{ validator: checkPhone, trigger: 'blur' }],
+  oldPhone: [{ validator: checkPhone, trigger: 'blur' }]
+}
+function addFamily() {
+  return writeRecord(
+    'api/v1/family/add', familyForm,
+    '家属已添加，请生成该老人的邀请码，由家属注册并设置登录密码。',
+    async () => {
+      customerDialogVisible.value = false
+      await searchfamily(true)
     },
-    closeRoleAddDialog () {
-      this.$refs.addfamilyFormRef.resetFields()
-    },
-    editFamily () {
-      const fields = ['familyId', 'familyName', 'familyRelation', 'familySex', 'familyPhone', 'familyAddress']
-      const body = Object.fromEntries(fields.map(key => [key, this.familyEditForm[key]]))
-      return writeRecord('api/v1/family/updateFamily', body, '家属信息已保存', () => {
-        this.oldEditDialogVisible = false
-        this.searchfamily()
-      })
-    },
-    deleteFamily (familyId) {
-      return deleteRecord('api/v1/family/deleteFamily', { familyId }, '确认删除该家属账号？', () => this.searchfamily())
-    },
-    handleeditFamily (index, row) {
-      this.oldEditDialogVisible = true
-      this.familyEditForm = Object.assign({}, row) // 解决修改弹出框数据时，表格数据会发生同步改变
-
-    },
-
-
-
-  }
+    '添加家属失败，请检查服务连接后重试。'
+  )
+}
+function closeRoleAddDialog() { addfamilyFormRef.value?.resetFields() }
+function editFamily() {
+  const fields = ['familyId','familyName','familyRelation','familySex','familyPhone','familyAddress']
+  const body = Object.fromEntries(fields.map(key => [key, familyEditForm.value[key]]))
+  return writeRecord('api/v1/family/updateFamily', body, '家属信息已保存', async () => {
+    oldEditDialogVisible.value = false
+    await searchfamily(true)
+  })
+}
+function deleteFamily(familyId: number | string) {
+  return deleteRecord('api/v1/family/deleteFamily', { familyId },
+    '确认删除该家属账号？', () => searchfamily(true))
+}
+function handleeditFamily(_index: number, row: FamilyRow) {
+  familyEditForm.value = { ...row }
+  oldEditDialogVisible.value = true
 }
 </script>
