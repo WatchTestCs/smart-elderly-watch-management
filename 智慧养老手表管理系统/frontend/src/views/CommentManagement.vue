@@ -37,20 +37,20 @@
 	  
       <el-table-column label="操作" align="center">
         <template #default="scope" >
-          <el-button v-if="scope.row.back==null" size="small" plain type="primary" icon="el-icon-edit"
+          <el-button v-if="scope.row.back==null" size="small" plain type="primary" :icon="Edit"
                      @click="handleeditSaid(scope.$index, scope.row)">回复
           </el-button>
-          <el-button size="small" plain type="danger" icon="el-icon-delete" @click="deleteSaid(scope.row.saidId)">删除
+          <el-button size="small" plain type="danger" :icon="Delete" @click="deleteSaid(scope.row.saidId)">删除
           </el-button>
           
         </template>
       </el-table-column>
     </el-table>
     <record-cards v-if="mobileLayout && !loadError" :records="saidList" :fields='[{"key":"saidId","label":"作者"},{"key":"said","label":"评论"},{"key":"back","label":"回复"},{"key":"backTime","label":"回复时间"},{"key":"title","label":"文章标题"}]' label="公告评论" title-key="personName" key-field="saidId" time-key="saidTime">
-      <template #actions="scope"  ><el-button v-if="scope.row.back==null" size="small" plain type="primary" icon="el-icon-edit"
+      <template #actions="scope"  ><el-button v-if="scope.row.back==null" size="small" plain type="primary" :icon="Edit"
                      @click="handleeditSaid(scope.$index, scope.row)">回复
           </el-button>
-<el-button size="small" plain type="danger" icon="el-icon-delete" @click="deleteSaid(scope.row.saidId)">删除
+<el-button size="small" plain type="danger" :icon="Delete" @click="deleteSaid(scope.row.saidId)">删除
           </el-button></template>
     </record-cards>
     
@@ -67,6 +67,7 @@
 </template>
 
 <script setup lang="ts">
+import { Delete, Edit } from '@element-plus/icons-vue'
 import { ref } from 'vue'
 import { usePagedRecords } from '@/composables/usePagedRecords'
 import { writeRecord, deleteRecord } from '@/composables/recordActions'

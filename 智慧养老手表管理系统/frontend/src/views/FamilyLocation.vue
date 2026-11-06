@@ -1,6 +1,6 @@
 <template>
   <div class="roles">
-    <div class="record-heading"><h2>最近上报记录</h2><el-button link :loading="isLoading" @click="searchposition">刷新记录 <i class="el-icon-refresh" aria-hidden="true"></i></el-button></div>
+    <div class="record-heading"><h2>最近上报记录</h2><el-button link :loading="isLoading" @click="searchposition">刷新记录 <el-icon aria-hidden="true"><Refresh /></el-icon></el-button></div>
 
     <el-alert v-if="loadError" :title="loadError" type="error" :closable="false" show-icon></el-alert>
     <el-table v-if="!mobileLayout" class="desktop-records" v-loading="isLoading" :data="positionList"
@@ -47,6 +47,7 @@
 </template>
 
 <script setup>
+import { Refresh } from '@element-plus/icons-vue'
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { api } from '../api/client'
 import { apiErrorMessage } from '../api/httpContract'

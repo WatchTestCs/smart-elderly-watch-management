@@ -5,18 +5,18 @@
         <p class="eyebrow">{{ familyName }}，您好</p>
         <h1 id="care-welcome-title">家人的近况，<br>一目了然</h1>
         <p class="welcome-description">查看健康、活动与位置记录，<br class="desktop-break">留意家人的日常变化。</p>
-        <el-button type="primary" @click="$router.push('/family-portal/vitals')">查看健康记录 <i class="el-icon-arrow-right" aria-hidden="true"></i></el-button>
+        <el-button type="primary" @click="$router.push('/family-portal/vitals')">查看健康记录 <el-icon aria-hidden="true"><ArrowRight /></el-icon></el-button>
       </div>
       <div class="welcome-scene" aria-hidden="true"><img src="/static/img/care-river-morning.webp" alt="" width="1200" height="800" fetchpriority="high" decoding="async"></div>
     </section>
     <LatestHealthPanel />
     <div class="family-daily-grid">
     <section class="announcement-panel" :aria-busy="isLoading" aria-labelledby="announcement-heading">
-      <div class="panel-heading"><div><h2 id="announcement-heading">平台公告</h2><p>服务信息与照护提醒</p></div><el-button link :loading="isLoading" @click="searchOlds">刷新公告 <i class="el-icon-refresh" aria-hidden="true"></i></el-button></div>
+      <div class="panel-heading"><div><h2 id="announcement-heading">平台公告</h2><p>服务信息与照护提醒</p></div><el-button link :loading="isLoading" @click="searchOlds">刷新公告 <el-icon aria-hidden="true"><Refresh /></el-icon></el-button></div>
       <div v-loading="isLoading" class="announcement-content">
         <ul v-if="tableData.length" class="announcement-list">
           <li v-for="(item, index) in tableData" :key="item.textId || index">
-            <span class="announcement-icon" aria-hidden="true"><i class="el-icon-document"></i></span><div class="announcement-copy"><h3>{{ item.title || '未命名公告' }}</h3><p>{{ item.time || '发布时间未提供' }}</p></div><el-button link :aria-label="'阅读公告：' + (item.title || '未命名公告')" @click="getDetail(item)">阅读公告 <i class="el-icon-arrow-right" aria-hidden="true"></i></el-button>
+            <span class="announcement-icon" aria-hidden="true"><el-icon><Document /></el-icon></span><div class="announcement-copy"><h3>{{ item.title || '未命名公告' }}</h3><p>{{ item.time || '发布时间未提供' }}</p></div><el-button link :aria-label="'阅读公告：' + (item.title || '未命名公告')" @click="getDetail(item)">阅读公告 <el-icon aria-hidden="true"><ArrowRight /></el-icon></el-button>
           </li>
         </ul>
         <div v-else class="table-empty" role="status"><img v-if="!isLoading && !loadError" src="/static/img/care-announcement-empty.webp" alt="" width="160" height="160"><strong>{{ isLoading ? '正在加载公告' : loadError ? '公告暂时无法加载' : '暂时没有公告' }}</strong><span>{{ loadError || '平台发布的服务信息会显示在这里。' }}</span><el-button v-if="loadError" link @click="searchOlds">重新加载</el-button></div>
@@ -25,12 +25,12 @@
     </section>
     <section class="family-info-row" aria-labelledby="care-record-heading">
       <h2 id="care-record-heading" class="records-heading">常用记录</h2>
-      <router-link to="/family-portal/vitals" class="info-tile health-tile"><span class="tile-icon" aria-hidden="true"><i class="el-icon-document"></i></span><div class="tile-copy"><h3>心率与血压</h3><p>查看家人的健康记录与设备上报状态。</p></div><span class="tile-action" aria-hidden="true"><i class="el-icon-arrow-right"></i></span></router-link>
-      <router-link to="/family-portal/activity" class="info-tile activity-tile"><span class="tile-icon" aria-hidden="true"><i class="el-icon-time"></i></span><div class="tile-copy"><h3>睡眠与步数</h3><p>了解日常活动与最近上传的睡眠记录。</p></div><span class="tile-action" aria-hidden="true"><i class="el-icon-arrow-right"></i></span></router-link>
-      <router-link to="/family-portal/location" class="info-tile location-tile"><span class="tile-icon" aria-hidden="true"><i class="el-icon-location-outline"></i></span><div class="tile-copy"><h3>位置与安全</h3><p>查看最近一次位置与设备安全提醒。</p></div><span class="tile-action" aria-hidden="true"><i class="el-icon-arrow-right"></i></span></router-link>
+      <router-link to="/family-portal/vitals" class="info-tile health-tile"><span class="tile-icon" aria-hidden="true"><el-icon><Document /></el-icon></span><div class="tile-copy"><h3>心率与血压</h3><p>查看家人的健康记录与设备上报状态。</p></div><span class="tile-action" aria-hidden="true"><el-icon><ArrowRight /></el-icon></span></router-link>
+      <router-link to="/family-portal/activity" class="info-tile activity-tile"><span class="tile-icon" aria-hidden="true"><el-icon><Clock /></el-icon></span><div class="tile-copy"><h3>睡眠与步数</h3><p>了解日常活动与最近上传的睡眠记录。</p></div><span class="tile-action" aria-hidden="true"><el-icon><ArrowRight /></el-icon></span></router-link>
+      <router-link to="/family-portal/location" class="info-tile location-tile"><span class="tile-icon" aria-hidden="true"><el-icon><Location /></el-icon></span><div class="tile-copy"><h3>位置与安全</h3><p>查看最近一次位置与设备安全提醒。</p></div><span class="tile-action" aria-hidden="true"><el-icon><ArrowRight /></el-icon></span></router-link>
     </section>
     </div>
-    <p class="data-caption"><i class="el-icon-info" aria-hidden="true"></i> 数据以手表最近一次成功上报为准；没有新记录，不代表状态正常。</p>
+    <p class="data-caption"><el-icon aria-hidden="true"><InfoFilled /></el-icon> 数据以手表最近一次成功上报为准；没有新记录，不代表状态正常。</p>
   </div>
 </template>
 <style scoped>
@@ -101,6 +101,7 @@ html.large-text .care-family .data-caption { font-size: 18px; }
 @media (max-width: 700px) { html.large-text .care-family .welcome-card h1 { font-size: 36px; } }
 </style>
 <script setup lang="ts">
+import { ArrowRight, Clock, Document, InfoFilled, Location, Refresh } from '@element-plus/icons-vue'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePagedRecords } from '@/composables/usePagedRecords'

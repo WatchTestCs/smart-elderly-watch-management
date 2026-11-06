@@ -12,7 +12,7 @@
             class="input-with-select">
             <template #append><el-button aria-label="查询家属姓名"
               
-              icon="el-icon-search"
+              :icon="Search"
               native-type="submit"></el-button></template>
           </el-input>
         </div>
@@ -61,20 +61,20 @@
 	  <el-table-column prop="familyAddress" label="地址" width="auto" align="center"></el-table-column>
       <el-table-column label="操作" align="center">
         <template #default="scope" >
-          <el-button size="small" plain type="primary" icon="el-icon-edit"
+          <el-button size="small" plain type="primary" :icon="Edit"
                      @click="handleeditFamily(scope.$index, scope.row)">编辑
           </el-button>
-          <el-button size="small" plain type="danger" icon="el-icon-delete" @click="deleteFamily(scope.row.familyId)">删除
+          <el-button size="small" plain type="danger" :icon="Delete" @click="deleteFamily(scope.row.familyId)">删除
           </el-button>
           
         </template>
       </el-table-column>
     </el-table>
     <record-cards v-if="mobileLayout && !loadError" :records="familyList" :fields='[{"key":"name","label":"姓名"},{"key":"oldId","label":"老人编号"},{"key":"familyRelation","label":"关系"},{"key":"familySex","label":"性别"},{"key":"familyPhone","label":"电话"},{"key":"familyAddress","label":"地址"}]' label="家属账号资料" title-key="familyName" key-field="familyId">
-      <template #actions="scope"  ><el-button size="small" plain type="primary" icon="el-icon-edit"
+      <template #actions="scope"  ><el-button size="small" plain type="primary" :icon="Edit"
                      @click="handleeditFamily(scope.$index, scope.row)">编辑
           </el-button>
-<el-button size="small" plain type="danger" icon="el-icon-delete" @click="deleteFamily(scope.row.familyId)">删除
+<el-button size="small" plain type="danger" :icon="Delete" @click="deleteFamily(scope.row.familyId)">删除
           </el-button></template>
     </record-cards>
     
@@ -91,6 +91,7 @@
 </template>
 
 <script setup lang="ts">
+import { Delete, Edit, Search } from '@element-plus/icons-vue'
 import { reactive, ref } from 'vue'
 import { usePagedRecords } from '@/composables/usePagedRecords'
 import { writeRecord, deleteRecord } from '@/composables/recordActions'

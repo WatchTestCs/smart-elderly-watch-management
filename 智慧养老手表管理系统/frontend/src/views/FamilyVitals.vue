@@ -1,6 +1,6 @@
 <template>
   <div class="roles">
-    <div class="record-heading"><h2>最近上报记录</h2><el-button link :loading="isLoading" @click="searchOlds">刷新记录 <i class="el-icon-refresh" aria-hidden="true"></i></el-button></div>
+    <div class="record-heading"><h2>最近上报记录</h2><el-button link :loading="isLoading" @click="searchOlds">刷新记录 <el-icon aria-hidden="true"><Refresh /></el-icon></el-button></div>
     <el-alert v-if="loadError" :title="loadError" type="error" :closable="false" show-icon></el-alert>
 
     <el-table v-if="!mobileLayout" v-loading="isLoading" class="desktop-records" :data="oldsList"
@@ -22,7 +22,7 @@
       <el-table-column label="查看" width="190" align="center">
         <template #default="scope" >
 
-          <el-button size="small" plain type="success" icon="el-icon-check" @click="showDetails(scope.row)">
+          <el-button size="small" plain type="success" :icon="Check" @click="showDetails(scope.row)">
             详细情况
           </el-button>
         </template>
@@ -58,6 +58,7 @@
 </template>
 
 <script setup>
+import { Check, Refresh } from '@element-plus/icons-vue'
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useCollectionLayout } from '@/composables/useCollectionLayout'
 import { useRecordCharts } from '@/composables/useRecordCharts'

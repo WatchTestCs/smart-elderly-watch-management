@@ -8,7 +8,7 @@
         <section class="workspace-content">
           <database-notice />
           <header v-if="showPageIntro" class="view-intro">
-            <p class="view-breadcrumb">家属空间 <i class="el-icon-arrow-right"></i> {{ route.meta.title }}</p>
+            <p class="view-breadcrumb">家属空间 <el-icon><ArrowRight /></el-icon> {{ route.meta.title }}</p>
             <h1>{{ route.meta.title }}</h1>
             <p class="view-description">{{ pageDescription }}</p>
           </header>
@@ -20,6 +20,7 @@
 </template>
 
 <script setup>
+import { ArrowRight } from '@element-plus/icons-vue'
 import { computed, nextTick, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import FamilySlider from '@/components/FamilySlider.vue'

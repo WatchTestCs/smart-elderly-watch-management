@@ -1,6 +1,6 @@
 <template>
   <div class="invite">
-    <header class="collection-heading"><div><h1>家属邀请码</h1><p>为家属生成专属邀请，让关心有一个清晰的入口。</p></div><el-button type="primary" aria-label="生成邀请码" icon="el-icon-plus" @click="openCreateDialog">生成邀请码</el-button></header>
+    <header class="collection-heading"><div><h1>家属邀请码</h1><p>为家属生成专属邀请，让关心有一个清晰的入口。</p></div><el-button type="primary" aria-label="生成邀请码" :icon="Plus" @click="openCreateDialog">生成邀请码</el-button></header>
     <section class="invite-guide"><div><span class="guide-number">01</span><strong>选择长者</strong><p>指定家属需要关联的照护对象。</p></div><div><span class="guide-number">02</span><strong>生成邀请</strong><p>设置数量与有效期，按需分享。</p></div><div><span class="guide-number">03</span><strong>完成注册</strong><p>家属填写邀请码后关联长者。</p></div></section>
     <div v-if="listError" class="collection-feedback" role="alert"><span>{{ listError }}</span><el-button plain @click="searchInviteCodes">重新加载邀请码</el-button></div>
     <section class="collection-panel">
@@ -71,6 +71,7 @@
 </template>
 
 <script setup lang="ts">
+import { Plus } from '@element-plus/icons-vue'
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useCollectionLayout } from '../composables/useCollectionLayout'
