@@ -1,7 +1,7 @@
 <template>
   <aside class="care-sidebar" aria-label="家人照护导航">
     <div class="sidebar-label">家人照护</div>
-    <el-menu :default-active="$route.path" class="care-menu" router>
+    <el-menu :default-active="route.path" class="care-menu" router>
       <el-menu-item index="/family-portal/overview" aria-label="照护总览"><i class="el-icon-menu" aria-hidden="true"></i><span class="nav-label-full">照护总览</span><span class="nav-label-short">总览</span></el-menu-item>
       <el-menu-item index="/family-portal/vitals" aria-label="心率与血压"><i class="el-icon-document" aria-hidden="true"></i><span class="nav-label-full">心率与血压</span><span class="nav-label-short">健康</span></el-menu-item>
       <el-menu-item index="/family-portal/activity" aria-label="睡眠与步数"><i class="el-icon-time" aria-hidden="true"></i><span class="nav-label-full">睡眠与步数</span><span class="nav-label-short">活动</span></el-menu-item>
@@ -12,8 +12,9 @@
     <div class="sidebar-note"><i class="el-icon-time" aria-hidden="true"></i><span>数据以最近一次<br>设备上报为准</span></div>
   </aside>
 </template>
-<script>
-export default { name: 'FamilySlider' }
+<script setup>
+import { useRoute } from 'vue-router'
+const route = useRoute()
 </script>
 <style scoped>
 .care-sidebar { position: relative; display: flex; flex-direction: column; min-height: 100%; background: var(--care-brand-dark); color: #f2f4e9; }

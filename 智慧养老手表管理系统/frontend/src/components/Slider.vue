@@ -2,7 +2,7 @@
   <aside class="care-sidebar" aria-label="管理端导航">
     <button class="navigation-toggle" type="button" :aria-expanded="expanded ? 'true' : 'false'" aria-controls="admin-navigation" @click="expanded = !expanded"><span><i class="el-icon-menu" aria-hidden="true"></i> 功能导航</span><span>{{ expanded ? '收起' : '展开' }} <i :class="expanded ? 'el-icon-arrow-up' : 'el-icon-arrow-down'" aria-hidden="true"></i></span></button>
     <div class="sidebar-label">工作空间</div>
-    <el-menu :key="$route.path" :default-active="$route.path" :default-openeds="openedGroups" unique-opened id="admin-navigation" :class="['care-menu', { 'is-expanded': expanded }]" router>
+    <el-menu :key="route.path" :default-active="route.path" :default-openeds="openedGroups" unique-opened id="admin-navigation" :class="['care-menu', { 'is-expanded': expanded }]" router>
       <el-menu-item index="/operations/overview"><i class="el-icon-menu" aria-hidden="true"></i><template #title><span >运营总览</span></template></el-menu-item>
       <el-menu-item v-if="!restrictedDuty" index="/operations/devices"><i class="el-icon-time" aria-hidden="true"></i><template #title><span >设备管理</span></template></el-menu-item>
       <el-sub-menu v-if="!restrictedDuty" index="health">
@@ -31,24 +31,22 @@
   </aside>
 </template>
 
-<script>
+<script setup>
+import { computed, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { authState } from '@/auth'
-export default {
-  name: 'Slider',
-  data () { return { expanded: false } },
-  computed: {
-    restrictedDuty () { return authState.account?.role === 'ADMIN' && ['caregiver', 'auditor'].includes(authState.account.duty) },
-    openedGroups () {
-      var groups = {
-        health: ['/operations/vitals', '/operations/activity', '/operations/locations', '/operations/life'],
-        records: ['/operations/residents', '/operations/guardians', '/operations/monitoring-profiles', '/operations/families', '/operations/invitations'],
-        service: ['/operations/notices/new', '/operations/notices', '/operations/comments', '/operations/notices/edit', '/operations/notices/detail']
-      }
-      return Object.keys(groups).filter(group => groups[group].includes(this.$route.path))
-    }
-  },
-  watch: { '$route' () { this.expanded = false } }
+
+const route = useRoute()
+const expanded = ref(false)
+const restrictedDuty = computed(() => authState.account?.role === 'ADMIN' &&
+  ['caregiver', 'auditor'].includes(authState.account.duty))
+const groups = {
+  health: ['/operations/vitals', '/operations/activity', '/operations/locations', '/operations/life'],
+  records: ['/operations/residents', '/operations/guardians', '/operations/monitoring-profiles', '/operations/families', '/operations/invitations'],
+  service: ['/operations/notices/new', '/operations/notices', '/operations/comments', '/operations/notices/edit', '/operations/notices/detail']
 }
+const openedGroups = computed(() => Object.keys(groups).filter(group => groups[group].includes(route.path)))
+watch(() => route.fullPath, () => { expanded.value = false })
 </script>
 
 <style scoped>
