@@ -78,12 +78,12 @@ import { apiErrorMessage } from '../api/httpContract'
 
 import RecordCards from '@/components/RecordCards.vue'
 
-import { recordCharts } from '@/charts'
+import { useRecordCharts } from '@/composables/useRecordCharts'
 
 export default {
-  setup () { return { mobileLayout: useCollectionLayout(900) } },
+  setup () { return { mobileLayout: useCollectionLayout(900), ...useRecordCharts() } },
   components: { RecordCards },
-  mixins: [recordCharts, pagedRecords({ path: "api/v1/activity/latest", responseKey: "activityRecords", recordsKey: "stepList", searchKey: "name", load: "searchStep", filters: {"timeFirst":"","timeLast":""} })],
+  mixins: [pagedRecords({ path: "api/v1/activity/latest", responseKey: "activityRecords", recordsKey: "stepList", searchKey: "name", load: "searchStep", filters: {"timeFirst":"","timeLast":""} })],
   data () {
     return {
       searchText: '',

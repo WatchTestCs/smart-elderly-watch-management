@@ -59,11 +59,10 @@ import { useCollectionLayout } from '@/composables/useCollectionLayout'
 import { apiErrorMessage } from '../api/httpContract'
 
 
-import { recordCharts } from '@/charts'
+import { useRecordCharts } from '@/composables/useRecordCharts'
 
 export default {
-  setup () { return { mobileLayout: useCollectionLayout() } },
-  mixins: [recordCharts],
+  setup () { return { mobileLayout: useCollectionLayout(), ...useRecordCharts() } },
   data () {
     return {
       oldId: '',

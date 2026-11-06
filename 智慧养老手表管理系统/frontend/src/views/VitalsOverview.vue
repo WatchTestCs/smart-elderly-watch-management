@@ -106,12 +106,12 @@ import RecordCards from '@/components/RecordCards.vue'
 import HealthAlertDialog from '@/components/records/HealthAlertDialog.vue'
 import { healthAlertMethods } from './vitals.alert-methods'
 
-import { recordCharts } from '@/charts'
+import { useRecordCharts } from '@/composables/useRecordCharts'
 
 export default {
-  setup () { return { mobileLayout: useCollectionLayout(900) } },
+  setup () { return { mobileLayout: useCollectionLayout(900), ...useRecordCharts() } },
   components: { RecordCards, HealthAlertDialog },
-  mixins: [recordCharts, pagedRecords({ path: "api/v1/vitals/latest", responseKey: "vitalRecords", recordsKey: "oldsList", searchKey: "name", load: "searchOlds", filters: {"timeFirst":"","timeLast":""} })],
+  mixins: [pagedRecords({ path: "api/v1/vitals/latest", responseKey: "vitalRecords", recordsKey: "oldsList", searchKey: "name", load: "searchOlds", filters: {"timeFirst":"","timeLast":""} })],
   data () {
     return {
       searchText: '',
