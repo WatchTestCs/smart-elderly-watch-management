@@ -27,7 +27,7 @@
       title="家属添加"
       v-model="customerDialogVisible"
       @close="closeRoleAddDialog"
-      width="92%" custom-class="admin-record-dialog">
+      width="92%" class="admin-record-dialog">
       <FamilyForm :draft="familyForm" :rules="rules" ref="addfamilyFormRef" />
       <template #footer><span  class="dialog-footer">
       <el-button @click="customerDialogVisible = false">取 消</el-button>
@@ -38,7 +38,7 @@
     <el-dialog
       title="家属编辑"
       v-model="oldEditDialogVisible"
-      width="92%" custom-class="admin-record-dialog">
+      width="92%" class="admin-record-dialog">
       <FamilyForm editing :draft="familyEditForm" :rules="rules" />
       <template #footer><span  class="dialog-footer">
       <el-button @click="oldEditDialogVisible = false">取 消</el-button>

@@ -15,7 +15,7 @@
 				  title="编辑资料"
 				  v-model="messageEditDialogVisible"
           :close-on-click-modal="!isProfileSaving" :close-on-press-escape="!isProfileSaving" :show-close="!isProfileSaving"
-				  width="92%" custom-class="profile-dialog">
+				  width="92%" class="profile-dialog">
 				  <el-form label-width="80px" ref="profileEditFormRef" :rules="profileRules" :model="messageEditForm">
 				    <el-form-item label="家属ID" prop="familyId" style="display: none; ">
 				    <el-input v-model="messageEditForm.familyId"></el-input>
@@ -43,7 +43,7 @@
 				  title="修改密码"
 				  v-model="passwordEditDialogVisible"
           :close-on-click-modal="!isPasswordSaving" :close-on-press-escape="!isPasswordSaving" :show-close="!isPasswordSaving" @closed="resetForm('passwordEditForm')"
-				  width="92%" custom-class="profile-dialog">
+				  width="92%" class="profile-dialog">
 				  <el-form label-width="80px" class="demo-ruleForm" status-icon :rules="rules2" ref="passwordEditFormRef" :model="passwordEditForm">
 				    <el-form-item label="" prop="familyPhone" style="display: none; ">
 				    <el-input v-model="passwordEditForm.familyPhone"></el-input>

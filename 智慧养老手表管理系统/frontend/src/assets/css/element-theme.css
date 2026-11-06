@@ -37,7 +37,8 @@
   border-radius: var(--care-control-radius);
   min-height: var(--care-target-primary);
 }
-#app .care-app .el-button--text {
+#app .care-app .el-button.is-text,
+#app .care-app .el-button.is-link {
   min-width: var(--care-target-primary);
 }
 #app .care-app .el-input__inner {
@@ -120,8 +121,7 @@
   width: 100% !important;
   max-width: 100%;
 }
-#app .care-app .el-dialog #myChart,
-#app .care-app .el-dialog #myChartTwo {
+#app .care-app .el-dialog .trend-chart {
   width: 100% !important;
   max-width: 100%;
   height: 320px !important;

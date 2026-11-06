@@ -89,7 +89,7 @@
 
     <el-dialog title="健康记录详情" v-model="detailsVisible" @opened="resizeCharts" @closed="disposeCharts">
       <el-alert v-if="chartError" :title="chartError" type="warning" :closable="false" show-icon></el-alert>
-      <div v-loading="chartLoading" class="record-chart-content"><div id="myChart" ref="mychart" class="record-chart"></div><div id="myChartTwo" ref="mychartTwo" class="record-chart"></div></div>
+      <div v-loading="chartLoading" class="record-chart-content"><div class="trend-chart" ref="primaryChartElement" class="record-chart"></div><div class="trend-chart" ref="secondaryChartElement" class="record-chart"></div></div>
       <template #footer><div  class="dialog-footer"><el-button type="primary" @click="detailsVisible = false">关闭详情</el-button></div></template>
     </el-dialog>
   </div>
@@ -122,7 +122,7 @@ const preCount = ref<number | string>('')
 const mobileLayout = useCollectionLayout(900)
 const {
   detailsVisible, chartLoading, chartError, chartName,
-  mychart, mychartTwo, showRecordDetails, resizeCharts, disposeCharts
+  primaryChartElement, secondaryChartElement, showRecordDetails, resizeCharts, disposeCharts
 } = useRecordCharts()
 const {
   records: oldsList, isLoading, loadError, total,

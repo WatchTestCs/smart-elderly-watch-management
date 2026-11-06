@@ -27,8 +27,8 @@ export function useRecordCharts() {
   const chartLoading = ref(false)
   const chartError = ref('')
   const chartName = ref('')
-  const mychart = shallowRef<HTMLElement | null>(null)
-  const mychartTwo = shallowRef<HTMLElement | null>(null)
+  const primaryChartElement = shallowRef<HTMLElement | null>(null)
+  const secondaryChartElement = shallowRef<HTMLElement | null>(null)
   const charts: EChartsType[] = []
   let frame: number | null = null
   let observer: ResizeObserver | null = null
@@ -114,10 +114,10 @@ export function useRecordCharts() {
         }, true)
       }
 
-      render(mychart.value, vital
+      render(primaryChartElement.value, vital
         ? { title: '心率记录', subtitle, labels, values, unit: '次/分' }
         : { title: '睡眠时长', subtitle, labels, values, unit: '小时', type: 'bar' })
-      if (vital) render(mychartTwo.value, { title: '血压记录', subtitle, labels, values: pressures, unit: 'mmHg' })
+      if (vital) render(secondaryChartElement.value, { title: '血压记录', subtitle, labels, values: pressures, unit: 'mmHg' })
     } catch (error) {
       if (active()) chartError.value = apiErrorMessage(error, '详情暂时无法加载，请重试。')
     } finally {
@@ -143,7 +143,7 @@ export function useRecordCharts() {
   })
   return {
     detailsVisible, chartLoading, chartError, chartName,
-    mychart, mychartTwo,
+    primaryChartElement, secondaryChartElement,
     showRecordDetails, cancelRecordRequest, resizeCharts, disposeCharts
   }
 }

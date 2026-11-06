@@ -100,7 +100,7 @@ html.large-text #app .care-app .collection-caption, html.large-text #app .care-a
 }
 
 #app .care-app .el-textarea__inner::placeholder { color: #59665f; opacity: 1; }
-#app .care-app .el-button:not(.el-button--primary):not(.el-button--danger):not(.el-button--warning):not(.el-button--text):not(:disabled) { color: var(--care-text-secondary); border-color: var(--care-control-border); }
+#app .care-app .el-button:not(.el-button--primary):not(.el-button--danger):not(.el-button--warning):not(.is-text):not(:disabled) { color: var(--care-text-secondary); border-color: var(--care-control-border); }
 #app .care-app .el-button--danger { color: #fff; background: var(--care-danger); border-color: var(--care-danger); }
 #app .care-app .el-button--danger.is-plain { color: var(--care-danger); background: var(--care-danger-bg); border-color: #b45b55; }
 #app .care-app .el-button--warning { color: #fff; background: var(--care-warning); border-color: var(--care-warning); }

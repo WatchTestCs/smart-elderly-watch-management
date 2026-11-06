@@ -44,9 +44,9 @@
     <el-dialog :title="chartName ? chartName + '的健康详情' : '心率与血压详情'" width="92%" v-model="detailsVisible" @opened="resizeCharts" @closed="disposeCharts" >
       <el-alert v-if="chartError" :title="chartError" type="warning" :closable="false" show-icon></el-alert><el-button v-if="chartError" link @click="showDetails({ name: chartName })">重新加载详情</el-button><div v-loading="chartLoading" class="health-chart-grid">
 
-	  <div v-show="!chartError" id="myChart" ref="mychart" class="rate-chart"></div>
+	  <div v-show="!chartError" class="trend-chart" ref="primaryChartElement" class="rate-chart"></div>
 
-		<div v-show="!chartError" id="myChartTwo" ref="mychartTwo" class="rate-chart"></div>
+		<div v-show="!chartError" class="trend-chart" ref="secondaryChartElement" class="rate-chart"></div>
 
       </div>
       <template #footer><div  class="dialog-footer">
@@ -69,7 +69,7 @@ import { apiErrorMessage } from '../api/httpContract'
 const mobileLayout = useCollectionLayout()
 const {
   detailsVisible, chartLoading, chartError, chartName,
-  mychart, mychartTwo, showRecordDetails, resizeCharts, disposeCharts
+  primaryChartElement, secondaryChartElement, showRecordDetails, resizeCharts, disposeCharts
 } = useRecordCharts()
 const oldId = ref(localStorage.getItem('oldIdfamily') || '')
 const oldsList = ref([])
