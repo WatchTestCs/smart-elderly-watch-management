@@ -1,14 +1,14 @@
 import { defineComponent, h, type App } from 'vue'
 import {
   ElAlert, ElBadge, ElButton, ElConfigProvider, ElDatePicker, ElDialog, ElDropdown, ElDropdownItem, ElDropdownMenu,
-  ElForm, ElFormItem, ElInput, ElInputNumber, ElLoading, ElMenu, ElMenuItem, ElOption,
+  ElForm, ElFormItem, ElInput, ElInputNumber, ElIcon, ElLoading, ElMenu, ElMenuItem, ElOption,
   ElPagination, ElRadio, ElRadioGroup, ElSelect, ElSubMenu, ElSwitch, ElTabPane, ElTable, ElTableColumn, ElTabs, ElTag, ElUpload
 } from 'element-plus'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
 
 const components = [
   ElAlert, ElBadge, ElButton, ElDatePicker, ElDialog, ElDropdown, ElDropdownItem, ElDropdownMenu, ElForm, ElFormItem,
-  ElInput, ElInputNumber, ElMenu, ElMenuItem, ElOption, ElPagination, ElRadio, ElRadioGroup, ElSelect, ElSubMenu,
+  ElIcon, ElInput, ElInputNumber, ElMenu, ElMenuItem, ElOption, ElPagination, ElRadio, ElRadioGroup, ElSelect, ElSubMenu,
   ElSwitch, ElTabPane, ElTable, ElTableColumn, ElTabs, ElTag, ElUpload
 ]
 
