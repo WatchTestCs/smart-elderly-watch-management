@@ -24,12 +24,11 @@
       </form>
     </div>
     
-    <el-dialog
+    <el-dialog :close-on-click-modal="false"
       title="老人添加"
       v-model="oldDialogVisible"
       @open="addCustomerList"
-      @close="closeRoleAddDialog"
-      width="30%">
+      @close="closeRoleAddDialog">
       <ResidentForm :draft="oldForm" :rules="rules" ref="addoldFormRef" :options="options" :customer-loading="customerLoading" :customer-error="customerError" @retry-guardians="addCustomerList" />
       <template #footer><span  class="dialog-footer">
       <el-button @click="oldDialogVisible = false">取 消</el-button>
@@ -37,11 +36,10 @@
     </span></template>
     </el-dialog>
 
-    <el-dialog
-      title="角色编辑"
+    <el-dialog :close-on-click-modal="false"
+      title="老人编辑"
       v-model="oldEditDialogVisible"
-      @open="addCustomerList"
-      width="30%">
+      @open="addCustomerList">
       <ResidentForm editing :draft="oldEditForm" :rules="rules" ref="editoldFormRef" :options="options" :customer-loading="customerLoading" :customer-error="customerError" @retry-guardians="addCustomerList" />
       <template #footer><span  class="dialog-footer">
       <el-button @click="oldEditDialogVisible = false">取 消</el-button>

@@ -8,6 +8,9 @@ on:
       sdk_sha256:
         type: string
         default: ''
+      require_native:
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
@@ -54,7 +57,7 @@ jobs:
 
   native:
     name: HarmonyOS SDK compile (no hardware)
-    if: ${{ inputs.sdk_url != '' || inputs.sdk_sha256 != '' }}
+    if: ${{ inputs.require_native || inputs.sdk_url != '' || inputs.sdk_sha256 != '' }}
     runs-on: windows-latest
     timeout-minutes: 20
     steps:

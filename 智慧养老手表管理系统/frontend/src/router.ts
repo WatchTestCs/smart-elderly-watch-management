@@ -1,6 +1,7 @@
 import type { Component } from 'vue'
 import { createRouter, createWebHashHistory, type RouteRecordRaw } from 'vue-router'
 import { loadSession, authState } from './auth'
+import { documentTitle, recoverFromChunkError } from './appGuards'
 
 const NoticeEditor = () => import('./components/NoticeEditor.vue')
 type Page = [path: string, title: string, component: () => Promise<{ default: Component }>, props?: Record<string, boolean>]
@@ -50,7 +51,8 @@ const router = createRouter({
         ['/operations/invitations', '家属注册邀请码', () => import('./views/FamilyInvitations.vue')],
         ['/operations/devices', '设备管理', () => import('./views/DeviceManagement.vue')]
       ] satisfies Page[]).map(page)
-    }
+    },
+    { path: '/:pathMatch(.*)*', name: 'not-found', meta: { title: '页面不存在' }, component: () => import('./views/NotFound.vue') }
   ]
 })
 
@@ -68,17 +70,21 @@ router.beforeEach(async to => {
     if (to.path === '/setup') return '/sign-in'
     if (publicPage) return
     if (!account) return '/sign-in'
+    if (to.name === 'not-found') return
     if (isOtherPortal(account)) return portalHome(account)
     if (account.role === 'ADMIN' && (account.duty === 'caregiver' || account.duty === 'auditor') && !['/operations/overview', '/operations'].includes(to.path)) return '/operations/overview'
   } catch (error) {
     const unavailable = (error as { response?: { data?: { code?: string } } } | null)?.response?.data?.code === 'DATABASE_UNAVAILABLE'
     const account = authState.account as SessionAccount | null
     if (unavailable && account) {
-      if (!publicPage && to.path !== '/setup' && isOtherPortal(account)) return portalHome(account)
+      if (!publicPage && to.name !== 'not-found' && to.path !== '/setup' && isOtherPortal(account)) return portalHome(account)
       return to.path === '/setup' ? '/sign-in' : undefined
     }
     return publicPage || (to.path === '/setup' && unavailable) ? undefined : '/sign-in'
   }
 })
+
+router.afterEach(to => { document.title = documentTitle(to.meta.title) })
+router.onError(error => { recoverFromChunkError(error) })
 
 export default router

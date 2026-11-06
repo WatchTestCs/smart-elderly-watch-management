@@ -2,32 +2,18 @@ name: UI Quality
 
 on:
   workflow_call:
-  pull_request:
-    branches: [preview]
-    paths:
-      - "智慧养老手表管理系统/frontend/**"
-      - "tests/ui/**"
-      - "docs/screenshots/login-desktop.png"
-      - ".github/workflows/ui-quality.yml"
-  push:
-    branches: [preview]
-    paths:
-      - "智慧养老手表管理系统/frontend/**"
-      - "tests/ui/**"
-      - "docs/screenshots/login-desktop.png"
-      - ".github/workflows/ui-quality.yml"
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ui-quality-${{ github.event.pull_request.number || github.ref }}
+  group: ui-quality-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
   verify:
-    name: UI Quality / verify
+    name: verify
     runs-on: ubuntu-latest
     timeout-minutes: 15
     defaults:
@@ -38,6 +24,13 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Record exact UI source
+        working-directory: .
+        run: |
+          mkdir -p evidence/ci/ui-quality
+          git rev-parse HEAD > evidence/ci/ui-quality/source-sha.txt
 
       - name: Set up Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -172,12 +165,13 @@ jobs:
         if: ${{ always() }}
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
-          name: ui-quality-evidence
+          name: ui-quality-${{ github.event.pull_request.head.sha || github.sha }}
           path: |
+            evidence/ci/ui-quality/
             tests/ui/artifacts/
             智慧养老手表管理系统/frontend/qa/artifacts/f02-acceptance.json
             智慧养老手表管理系统/frontend/qa/artifacts/lifecycle-acceptance.json
             /tmp/suining-vite.log
             /tmp/suining-chrome.log
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 14

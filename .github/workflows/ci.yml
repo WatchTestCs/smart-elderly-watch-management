@@ -7,6 +7,14 @@ on:
     branches: [preview, 'codex/**']
   workflow_dispatch:
     inputs:
+      require_native:
+        description: Require a real SDK build for a formal release candidate; missing SDK configuration must fail
+        type: boolean
+        default: false
+      build_desktop:
+        description: Build and exercise the actual Windows Setup and Portable distributions
+        type: boolean
+        default: false
       sdk_url:
         description: Optional HTTPS URL of Windows Command Line Tools 6.1.1.280 for native watch compilation
         type: string
@@ -28,12 +36,17 @@ jobs:
     name: Frontend
     uses: ./.github/workflows/reusable-frontend.yml
 
+  ui-quality:
+    name: UI Quality
+    uses: ./.github/workflows/ui-quality.yml
+
   watch:
     name: Watch protocol
     uses: ./.github/workflows/reusable-watch.yml
     with:
-      sdk_url: ${{ inputs.sdk_url || '' }}
-      sdk_sha256: ${{ inputs.sdk_sha256 || '' }}
+      sdk_url: ${{ inputs.sdk_url || vars.HARMONY_SDK_URL || '' }}
+      sdk_sha256: ${{ inputs.sdk_sha256 || vars.HARMONY_SDK_SHA256 || '' }}
+      require_native: ${{ inputs.require_native || false }}
 
   backend:
     name: Backend
@@ -58,6 +71,8 @@ jobs:
   windows:
     name: Windows sidecar contract
     uses: ./.github/workflows/reusable-windows-package.yml
+    with:
+      build_desktop: ${{ inputs.build_desktop || false }}
 
   deployment:
     name: Deployment and alerts
@@ -91,9 +106,9 @@ jobs:
           if-no-files-found: error
 
   required:
-    name: Release gate / required
+    name: Core CI / required
     if: ${{ always() }}
-    needs: [frontend, watch, simulator, backend, windows, deployment, security-scan]
+    needs: [frontend, ui-quality, watch, simulator, backend, windows, deployment, security-scan]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -106,6 +121,7 @@ jobs:
         shell: bash
         run: |
           test "${{ needs.frontend.result }}" = "success"
+          test "${{ needs.ui-quality.result }}" = "success"
           test "${{ needs.watch.result }}" = "success"
           test "${{ needs.simulator.result }}" = "success"
           test "${{ needs.backend.result }}" = "success"
