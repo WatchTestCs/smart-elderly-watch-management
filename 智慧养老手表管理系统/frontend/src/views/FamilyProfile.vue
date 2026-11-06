@@ -5,11 +5,11 @@
     <SecurityPanel />
     <section v-loading="isProfileLoading" class="profile-card" aria-label="个人资料">
       <div class="profile-summary">
-        <div class="profile-avatar"><img v-if="imageUrl" :src="imageUrl" alt="当前账号头像" @error="imageUrl = ''"><span v-else>{{ (famiyList.familyName || personName || '家').slice(0, 1) }}</span></div>
-        <div class="profile-identity"><p>家属账号</p><h2>{{ famiyList.familyName || personName || '个人资料' }}</h2><span>在这里管理您的联系资料与账号。</span></div>
+        <div class="profile-avatar"><img v-if="imageUrl" :src="imageUrl" alt="当前账号头像" @error="imageUrl = ''"><span v-else>{{ (familyProfile.familyName || personName || '家').slice(0, 1) }}</span></div>
+        <div class="profile-identity"><p>家属账号</p><h2>{{ familyProfile.familyName || personName || '个人资料' }}</h2><span>在这里管理您的联系资料与账号。</span></div>
       </div>
       <div class="profile-actions"><el-button type="primary" @click="handleeditMessage">修改资料</el-button><el-button plain @click="handleeditPassword">修改密码</el-button><el-upload class="avatar-uploader" action="api/v1/image/saveImage" :headers="uploadHeaders" :show-file-list="false" :with-credentials="true" :on-success="handleAvatarSuccess" :on-error="handleAvatarError" :before-upload="beforeAvatarUpload"><el-button plain>更换头像</el-button></el-upload></div>
-      <dl class="profile-details"><div><dt>姓名</dt><dd>{{ famiyList.familyName || '暂未填写' }}</dd></div><div><dt>性别</dt><dd>{{ famiyList.familySex || '暂未填写' }}</dd></div><div><dt>手机号</dt><dd>{{ familyPhone || '暂未提供' }}</dd></div><div><dt>联系地址</dt><dd>{{ famiyList.familyAddress || '暂未填写' }}</dd></div></dl>
+      <dl class="profile-details"><div><dt>姓名</dt><dd>{{ familyProfile.familyName || '暂未填写' }}</dd></div><div><dt>性别</dt><dd>{{ familyProfile.familySex || '暂未填写' }}</dd></div><div><dt>手机号</dt><dd>{{ familyPhone || '暂未提供' }}</dd></div><div><dt>联系地址</dt><dd>{{ familyProfile.familyAddress || '暂未填写' }}</dd></div></dl>
     </section>
 <el-dialog
 				  title="编辑资料"
@@ -111,7 +111,7 @@ const passwordEditFormRef = ref(null)
 const personName = ref(localStorage.getItem('user_name') || '')
 const familyPhone = ref(localStorage.getItem('familyPhone') || '')
 const familyTouPic = ref('')
-const famiyList = ref({})
+const familyProfile = ref({})
 const profileRules = {
   familyName: [
     { required: true, whitespace: true, message: '请输入姓名', trigger: 'blur' },
@@ -146,8 +146,8 @@ async function searchFamily() {
   profileLoadError.value = ''
   try {
     const { data } = await api.post('api/v1/family/selectTwo', { familyPhone: familyPhone.value })
-    famiyList.value = data?.familyDto2 || {}
-    const profile = famiyList.value
+    familyProfile.value = data?.familyDto2 || {}
+    const profile = familyProfile.value
     if (profile.familyName) localStorage.setItem('user_name', profile.familyName)
     if (profile.familyTouPic) localStorage.setItem('familyTouPic', profile.familyTouPic)
     familyTouPic.value = profile.familyTouPic || ''
@@ -210,7 +210,7 @@ async function editPassword() {
   } finally { isPasswordSaving.value = false }
 }
 async function handleeditMessage() {
-  const profile = famiyList.value
+  const profile = familyProfile.value
   Object.assign(messageEditForm, {
     familyId: profile.familyId, familyName: profile.familyName,
     familySex: profile.familySex, familyAddress: profile.familyAddress,

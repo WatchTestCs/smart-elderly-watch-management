@@ -2,7 +2,7 @@
   <div class="roles" v-loading="isLoading" element-loading-text="正在加载家属账号…" :aria-busy="isLoading">
     
     <div class="sys-research">
-      <form class="row-search" role="search" @submit.prevent="searchfamily()">
+      <form class="row-search" role="search" @submit.prevent="loadFamilyAccounts()">
         <div class="search-field">
           
           <label class="table-search-label" for="search-family">家属姓名</label>
@@ -46,7 +46,7 @@
     </span></template>
     </el-dialog>
 
-    <div v-if="loadError" class="collection-feedback" role="alert"><span>{{ loadError }}</span><el-button plain :loading="isLoading" @click="searchfamily(true)">重新加载</el-button></div>
+    <div v-if="loadError" class="collection-feedback" role="alert"><span>{{ loadError }}</span><el-button plain :loading="isLoading" @click="loadFamilyAccounts(true)">重新加载</el-button></div>
     <el-table v-if="!mobileLayout && !loadError" class="adaptive-record-table" :data="familyList"
     style="width: 100%" border>
     <template #empty><div  class="care-empty-state"><strong>暂无家属账号</strong><span>添加家属或调整搜索条件后，账号会显示在这里。</span></div></template>
@@ -104,7 +104,7 @@ const searchText = ref('')
 const mobileLayout = useCollectionLayout(900)
 const {
   records: familyList, isLoading, loadError, total,
-  pageSize, currentPage, load: searchfamily,
+  pageSize, currentPage, load: loadFamilyAccounts,
   handleSizeChange, changePage
 } = usePagedRecords<FamilyRow, { familyName: string }>({
   path: 'api/v1/family/select',
@@ -135,7 +135,7 @@ function addFamily() {
     '家属已添加，请生成该老人的邀请码，由家属注册并设置登录密码。',
     async () => {
       customerDialogVisible.value = false
-      await searchfamily(true)
+      await loadFamilyAccounts(true)
     },
     '添加家属失败，请检查服务连接后重试。'
   )
@@ -146,12 +146,12 @@ function editFamily() {
   const body = Object.fromEntries(fields.map(key => [key, familyEditForm.value[key]]))
   return writeRecord('api/v1/family/updateFamily', body, '家属信息已保存', async () => {
     oldEditDialogVisible.value = false
-    await searchfamily(true)
+    await loadFamilyAccounts(true)
   })
 }
 function deleteFamily(familyId: number | string) {
   return deleteRecord('api/v1/family/deleteFamily', { familyId },
-    '确认删除该家属账号？', () => searchfamily(true))
+    '确认删除该家属账号？', () => loadFamilyAccounts(true))
 }
 function handleeditFamily(_index: number, row: FamilyRow) {
   familyEditForm.value = { ...row }

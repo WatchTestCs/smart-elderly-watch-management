@@ -25,20 +25,20 @@
     <section class="announcement-panel">
       <div class="panel-heading">
         <div><h2>平台公告 <span v-if="!isLoading && !loadError" class="notice-count" :aria-label="'共 ' + total + ' 条公告'">{{ total }}</span></h2><p>面向家属发布的服务与照护信息</p></div>
-        <form class="search-box" role="search" @submit.prevent="searchOlds()"><label class="search-label" for="admin-notice-search">按标题查找公告</label><el-input id="admin-notice-search" v-model="searchText" placeholder="搜索公告标题" :disabled="isLoading" clearable @clear="searchOlds"><template #append><el-button  :icon="Search" aria-label="搜索公告" :loading="isLoading" native-type="submit"></el-button></template></el-input></form>
+        <form class="search-box" role="search" @submit.prevent="loadNotices()"><label class="search-label" for="admin-notice-search">按标题查找公告</label><el-input id="admin-notice-search" v-model="searchText" placeholder="搜索公告标题" :disabled="isLoading" clearable @clear="loadNotices"><template #append><el-button  :icon="Search" aria-label="搜索公告" :loading="isLoading" native-type="submit"></el-button></template></el-input></form>
       </div>
-      <el-table class="desktop-announcements" v-loading="isLoading" :data="tableData" @row-click="getDetail" row-class-name="clickable-row">
+      <el-table class="desktop-announcements" v-loading="isLoading" :data="notices" @row-click="getDetail" row-class-name="clickable-row">
         <el-table-column type="index" label="序号" width="64" align="center"></el-table-column>
         <el-table-column prop="title" label="公告标题" min-width="220" show-overflow-tooltip>
           <template #default="scope" ><span class="announcement-title">{{ scope.row.title || '未命名公告' }}</span></template>
         </el-table-column>
         <el-table-column prop="time" label="发布时间" width="175"></el-table-column>
         <el-table-column label="查看" width="110" align="right"><template #default="scope" ><el-button link @click.stop="getDetail(scope.row)">查看详情 <el-icon><ArrowRight /></el-icon></el-button></template></el-table-column>
-        <template #empty><div  class="table-empty" role="status"><img v-if="!loadError && !appliedSearch" src="/static/img/care-announcement-empty.webp" alt="" width="160" height="160"><strong>{{ emptyTitle }}</strong><span>{{ emptyDescription }}</span><el-button v-if="loadError" plain @click="searchOlds">重新加载</el-button><el-button v-else-if="appliedSearch" plain @click="clearSearch">清除搜索条件</el-button></div></template>
+        <template #empty><div  class="table-empty" role="status"><img v-if="!loadError && !appliedSearch" src="/static/img/care-announcement-empty.webp" alt="" width="160" height="160"><strong>{{ emptyTitle }}</strong><span>{{ emptyDescription }}</span><el-button v-if="loadError" plain @click="loadNotices">重新加载</el-button><el-button v-else-if="appliedSearch" plain @click="clearSearch">清除搜索条件</el-button></div></template>
       </el-table>
       <div class="mobile-announcements" v-loading="isLoading">
-        <div v-if="!tableData.length" class="table-empty" role="status"><img v-if="!loadError && !appliedSearch" src="/static/img/care-announcement-empty.webp" alt="" width="160" height="160"><strong>{{ emptyTitle }}</strong><span>{{ emptyDescription }}</span><el-button v-if="loadError" plain @click="searchOlds">重新加载</el-button><el-button v-else-if="appliedSearch" plain @click="clearSearch">清除搜索条件</el-button></div>
-        <button v-for="notice in tableData" :key="notice.textId" type="button" class="mobile-notice" :aria-label="'查看详情：' + (notice.title || '未命名公告')" @click="getDetail(notice)"><span><strong>{{ notice.title || '未命名公告' }}</strong><time>{{ notice.time || '暂无发布时间' }}</time></span><el-icon aria-hidden="true"><ArrowRight /></el-icon></button>
+        <div v-if="!notices.length" class="table-empty" role="status"><img v-if="!loadError && !appliedSearch" src="/static/img/care-announcement-empty.webp" alt="" width="160" height="160"><strong>{{ emptyTitle }}</strong><span>{{ emptyDescription }}</span><el-button v-if="loadError" plain @click="loadNotices">重新加载</el-button><el-button v-else-if="appliedSearch" plain @click="clearSearch">清除搜索条件</el-button></div>
+        <button v-for="notice in notices" :key="notice.textId" type="button" class="mobile-notice" :aria-label="'查看详情：' + (notice.title || '未命名公告')" @click="getDetail(notice)"><span><strong>{{ notice.title || '未命名公告' }}</strong><time>{{ notice.time || '暂无发布时间' }}</time></span><el-icon aria-hidden="true"><ArrowRight /></el-icon></button>
       </div>
       <div class="pagination-wrap" v-if="total > pageSize"><el-pagination @size-change="handleSizeChange" @current-change="changePage" v-model:current-page="currentPage" :page-size="pageSize" layout="total, sizes, prev, pager, next" :total="total"></el-pagination></div>
     </section>
@@ -110,7 +110,7 @@ type NoticeRow = Record<string, any>
 const router = useRouter()
 const searchText = ref('')
 const appliedSearch = ref('')
-const tableData = ref<NoticeRow[]>([])
+const notices = ref<NoticeRow[]>([])
 const total = ref(0)
 const isLoading = ref(false)
 const loadError = ref('')
@@ -141,18 +141,18 @@ const noticeReads = createLatestRead(
     api.post<Record<string, any>>('api/v1/notices/list', query, { signal }),
   ({ data }) => {
     if (!Array.isArray(data.texts)) throw new Error('missing notices')
-    tableData.value = data.texts
+    notices.value = data.texts
     total.value = Number.isSafeInteger(data.total) ? data.total : data.texts.length
     loadError.value = ''
   },
   error => {
     loadError.value = apiErrorMessage(error, '请检查服务连接后重试')
-    tableData.value = []
+    notices.value = []
     total.value = 0
   },
   loading => { isLoading.value = loading }
 )
-function searchOlds(keepPage = false) {
+function loadNotices(keepPage = false) {
   if (isRestricted.value) return
   if (keepPage !== true) currentPage.value = 1
   appliedSearch.value = searchText.value.trim()
@@ -160,15 +160,15 @@ function searchOlds(keepPage = false) {
     page: currentPage.value, pageSize: pageSize.value, title: appliedSearch.value
   })
 }
-function clearSearch() { searchText.value = ''; void searchOlds() }
+function clearSearch() { searchText.value = ''; void loadNotices() }
 function handleSizeChange(value: number) {
   pageSize.value = value
   currentPage.value = 1
-  void searchOlds(true)
+  void loadNotices(true)
 }
 function changePage(value: number) {
   currentPage.value = value
-  void searchOlds(true)
+  void loadNotices(true)
 }
 function getDetail(row: NoticeRow) {
   void router.push({ path: '/operations/notices/detail', query: { textId: row.textId, picId: row.picId } })
@@ -229,7 +229,7 @@ watch(() => store.state.alertRevision, () => {
 })
 onMounted(() => {
   if (!isRestricted.value) {
-    void searchOlds()
+    void loadNotices()
     void getCount()
     void searchposition()
   }

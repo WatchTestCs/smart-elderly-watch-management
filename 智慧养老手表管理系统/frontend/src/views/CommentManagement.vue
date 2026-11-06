@@ -22,8 +22,8 @@
     </span></template>
     </el-dialog>
 
-    <div v-if="loadError" class="collection-feedback" role="alert"><span>{{ loadError }}</span><el-button plain :loading="isLoading" @click="searchSaid(true)">重新加载</el-button></div>
-    <el-table v-if="!mobileLayout && !loadError" class="adaptive-record-table" :data="saidList"
+    <div v-if="loadError" class="collection-feedback" role="alert"><span>{{ loadError }}</span><el-button plain :loading="isLoading" @click="loadComments(true)">重新加载</el-button></div>
+    <el-table v-if="!mobileLayout && !loadError" class="adaptive-record-table" :data="comments"
     style="width: 100%" >
     <template #empty><div  class="care-empty-state"><strong>暂无评论</strong><span>收到的评论和回复会显示在这里。</span></div></template>
 
@@ -46,7 +46,7 @@
         </template>
       </el-table-column>
     </el-table>
-    <record-cards v-if="mobileLayout && !loadError" :records="saidList" :fields='[{"key":"saidId","label":"作者"},{"key":"said","label":"评论"},{"key":"back","label":"回复"},{"key":"backTime","label":"回复时间"},{"key":"title","label":"文章标题"}]' label="公告评论" title-key="personName" key-field="saidId" time-key="saidTime">
+    <record-cards v-if="mobileLayout && !loadError" :records="comments" :fields='[{"key":"saidId","label":"作者"},{"key":"said","label":"评论"},{"key":"back","label":"回复"},{"key":"backTime","label":"回复时间"},{"key":"title","label":"文章标题"}]' label="公告评论" title-key="personName" key-field="saidId" time-key="saidTime">
       <template #actions="scope"  ><el-button v-if="scope.row.back==null" size="small" plain type="primary" :icon="Edit"
                      @click="handleeditSaid(scope.$index, scope.row)">回复
           </el-button>
@@ -77,8 +77,8 @@ import RecordCards from '@/components/RecordCards.vue'
 type CommentRow = Record<string, any>
 const mobileLayout = useCollectionLayout(900)
 const {
-  records: saidList, isLoading, loadError, total,
-  pageSize, currentPage, load: searchSaid,
+  records: comments, isLoading, loadError, total,
+  pageSize, currentPage, load: loadComments,
   handleSizeChange, changePage
 } = usePagedRecords<CommentRow>({
   path: 'api/v1/notice-comments/search',
@@ -90,12 +90,12 @@ const saidEditForm = ref<CommentRow>({ saidId: '', said: '', back: '' })
 function editSaid() {
   return writeRecord('api/v1/notice-comments/reply', saidEditForm.value, '回复已保存', async () => {
     watchEditDialogVisible.value = false
-    await searchSaid(true)
+    await loadComments(true)
   })
 }
 function deleteSaid(saidId: number | string) {
   return deleteRecord('api/v1/notice-comments/delete', { saidId },
-    '确认删除该评论？', () => searchSaid(true))
+    '确认删除该评论？', () => loadComments(true))
 }
 function handleeditSaid(_index: number, row: CommentRow) {
   saidEditForm.value = { ...row }

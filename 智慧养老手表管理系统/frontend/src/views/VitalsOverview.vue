@@ -2,7 +2,7 @@
   <div class="roles">
 
     <div class="sys-research">
-      <form class="row-search" role="search" @submit.prevent="searchOlds()">
+      <form class="row-search" role="search" @submit.prevent="loadVitals()">
         <div class="search-field">
           
           <label class="table-search-label" for="search-vitals">长者姓名</label>
@@ -27,7 +27,7 @@
       </form>
     </div>
 
-    <el-table v-if="!mobileLayout" class="adaptive-record-table" :data="oldsList"
+    <el-table v-if="!mobileLayout" class="adaptive-record-table" :data="vitalRecords"
     style="width: 100%" border>
     <template #empty><div  class="care-empty-state"><strong>暂无健康记录</strong><span>最新上报的心率与血压数据会显示在这里。</span></div></template>
 
@@ -64,7 +64,7 @@
         </template>
       </el-table-column>
     </el-table>
-    <record-cards v-if="mobileLayout" :records="oldsList" :fields='[{"key":"preState","label":"血压状态","state":"health","handled":"preHandled"},{"key":"rateState","label":"心率状态","state":"health","handled":"rateHandled"},{"key":"oldId","label":"长者编号"},{"key":"sex","label":"性别"}]' label="心率与血压记录" title-key="name" key-field="oldId" time-key="createTime">
+    <record-cards v-if="mobileLayout" :records="vitalRecords" :fields='[{"key":"preState","label":"血压状态","state":"health","handled":"preHandled"},{"key":"rateState","label":"心率状态","state":"health","handled":"rateHandled"},{"key":"oldId","label":"长者编号"},{"key":"sex","label":"性别"}]' label="心率与血压记录" title-key="name" key-field="oldId" time-key="createTime">
       <template #actions="scope"  ><el-button v-if="scope.row.rateState==1 || scope.row.preState==1"
                      size="small" plain type="danger" :icon="WarningFilled"
                      @click="showAlertRow(scope.row)">查看原因</el-button>
@@ -125,8 +125,8 @@ const {
   primaryChartElement, secondaryChartElement, showRecordDetails, resizeCharts, disposeCharts
 } = useRecordCharts()
 const {
-  records: oldsList, isLoading, loadError, total,
-  pageSize, currentPage, load: searchOlds,
+  records: vitalRecords, isLoading, loadError, total,
+  pageSize, currentPage, load: loadVitals,
   handleSizeChange, changePage
 } = usePagedRecords<VitalRow, { name: string; timeFirst: string; timeLast: string }>({
   path: 'api/v1/vitals/latest',
@@ -187,7 +187,7 @@ function showAlertRow(row: VitalRow) {
   return loadAlertDetail(null, row.name, row.oldId)
 }
 function showAlertByKind(kind: string) {
-  const target = oldsList.value.find(row =>
+  const target = vitalRecords.value.find(row =>
     kind === 'rate' ? row.rateState == 1 : row.preState == 1
   )
   if (!target) {
@@ -206,7 +206,7 @@ async function resolveAlert(kind: string) {
     accepted(data)
     ElMessage({ type: 'success', message: '已处理，红点已消除' })
     alertDialog.value.visible = false
-    await Promise.all([searchOlds(true), getCount()])
+    await Promise.all([loadVitals(true), getCount()])
   } catch (error) {
     ElMessage({ type: 'error', message: apiErrorMessage(error, '处理失败') })
   } finally { alertDialog.value.resolving = false }
@@ -226,15 +226,15 @@ async function resolveRow(row: VitalRow) {
     type: failed ? 'warning' : 'success',
     message: failed ? '部分异常未处理完成，请核对后重试。' : '已处理，红点已消除'
   })
-  await Promise.all([searchOlds(true), getCount()])
+  await Promise.all([loadVitals(true), getCount()])
 }
 function openWorkbench() {
-  const rows = oldsList.value.filter(row => row.rateState == 1 || row.preState == 1)
+  const rows = vitalRecords.value.filter(row => row.rateState == 1 || row.preState == 1)
   if (!rows.length) {
     ElMessage({ type: 'success', message: '当前没有待处理的异常' })
     return
   }
-  oldsList.value = rows
+  vitalRecords.value = rows
   total.value = rows.length
   ElMessage({ type: 'info', message: '已筛选出 ' + rows.length + ' 条待处理异常，点「查看原因」了解处理办法' })
 }

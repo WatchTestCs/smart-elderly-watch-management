@@ -2,7 +2,7 @@
   <div class="roles" v-loading="isLoading" element-loading-text="正在加载老人档案…" :aria-busy="String(isLoading)">
     
     <div class="sys-research">
-      <form class="row-search" role="search" @submit.prevent="searchOldPersons">
+      <form class="row-search" role="search" @submit.prevent="loadResidents">
         <div class="search-field">
           
           <label class="table-search-label" for="search-person">长者姓名</label>
@@ -32,7 +32,7 @@
       <ResidentForm :draft="oldForm" :rules="rules" ref="addoldFormRef" :options="options" :customer-loading="customerLoading" :customer-error="customerError" @retry-guardians="addCustomerList" />
       <template #footer><span  class="dialog-footer">
       <el-button @click="oldDialogVisible = false">取 消</el-button>
-      <el-button type="primary" @click="addOldPersons('addoldFormRef')">确 定</el-button>
+      <el-button type="primary" @click="createResident('addoldFormRef')">确 定</el-button>
     </span></template>
     </el-dialog>
 
@@ -48,7 +48,7 @@
     </span></template>
     </el-dialog>
 
-    <div v-if="loadError" class="collection-feedback" role="alert"><span>{{ loadError }}</span><el-button plain :loading="isLoading" @click="searchOldPersons(true)">重新加载</el-button></div>
+    <div v-if="loadError" class="collection-feedback" role="alert"><span>{{ loadError }}</span><el-button plain :loading="isLoading" @click="loadResidents(true)">重新加载</el-button></div>
     <el-table v-if="!mobileLayout && !loadError" class="adaptive-record-table" :data="personDetailList"
     style="width: 100%" border>
     <template #empty><div  class="care-empty-state"><strong>暂无老人档案</strong><span>添加老人或调整搜索条件后，档案会显示在这里。</span></div></template>
@@ -122,7 +122,7 @@ const searchText = ref('')
 const mobileLayout = useCollectionLayout(900)
 const {
   records: personDetailList, isLoading, loadError, total, pageSize, currentPage,
-  load: searchOldPersons, handleSizeChange, changePage
+  load: loadResidents, handleSizeChange, changePage
 } = usePagedRecords({
   path: 'api/v1/residents/details',
   responseKey: 'oldPersonDetails',
@@ -179,12 +179,12 @@ async function addCustomerList() {
   }
 }
 
-function addOldPersons() {
+function createResident() {
   addoldFormRef.value?.validate(valid => {
     if (!valid) return
     return writeRecord('api/v1/residents/create', editableResident(oldForm), '添加老人成功', async () => {
       oldDialogVisible.value = false
-      await searchOldPersons(true)
+      await loadResidents(true)
     })
   })
 }
@@ -196,12 +196,12 @@ function editOldPerson() {
       ...editableResident(draft), oldId: draft.oldId
     }, '编辑老人信息成功', async () => {
       oldEditDialogVisible.value = false
-      await searchOldPersons(true)
+      await loadResidents(true)
     })
   })
 }
 function deleteOldPerson(oldId) {
-  return deleteRecord('api/v1/residents/delete', { oldId }, '此操作将永久删除该长者信息，是否继续？', () => searchOldPersons(true))
+  return deleteRecord('api/v1/residents/delete', { oldId }, '此操作将永久删除该长者信息，是否继续？', () => loadResidents(true))
 }
 function closeRoleAddDialog() {
   addoldFormRef.value?.resetFields()

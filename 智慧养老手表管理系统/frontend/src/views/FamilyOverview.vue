@@ -12,14 +12,14 @@
     <LatestHealthPanel />
     <div class="family-daily-grid">
     <section class="announcement-panel" :aria-busy="isLoading" aria-labelledby="announcement-heading">
-      <div class="panel-heading"><div><h2 id="announcement-heading">平台公告</h2><p>服务信息与照护提醒</p></div><el-button link :loading="isLoading" @click="searchOlds">刷新公告 <el-icon aria-hidden="true"><Refresh /></el-icon></el-button></div>
+      <div class="panel-heading"><div><h2 id="announcement-heading">平台公告</h2><p>服务信息与照护提醒</p></div><el-button link :loading="isLoading" @click="loadNotices">刷新公告 <el-icon aria-hidden="true"><Refresh /></el-icon></el-button></div>
       <div v-loading="isLoading" class="announcement-content">
-        <ul v-if="tableData.length" class="announcement-list">
-          <li v-for="(item, index) in tableData" :key="item.textId || index">
+        <ul v-if="notices.length" class="announcement-list">
+          <li v-for="(item, index) in notices" :key="item.textId || index">
             <span class="announcement-icon" aria-hidden="true"><el-icon><Document /></el-icon></span><div class="announcement-copy"><h3>{{ item.title || '未命名公告' }}</h3><p>{{ item.time || '发布时间未提供' }}</p></div><el-button link :aria-label="'阅读公告：' + (item.title || '未命名公告')" @click="getDetail(item)">阅读公告 <el-icon aria-hidden="true"><ArrowRight /></el-icon></el-button>
           </li>
         </ul>
-        <div v-else class="table-empty" role="status"><img v-if="!isLoading && !loadError" src="/static/img/care-announcement-empty.webp" alt="" width="160" height="160"><strong>{{ isLoading ? '正在加载公告' : loadError ? '公告暂时无法加载' : '暂时没有公告' }}</strong><span>{{ loadError || '平台发布的服务信息会显示在这里。' }}</span><el-button v-if="loadError" link @click="searchOlds">重新加载</el-button></div>
+        <div v-else class="table-empty" role="status"><img v-if="!isLoading && !loadError" src="/static/img/care-announcement-empty.webp" alt="" width="160" height="160"><strong>{{ isLoading ? '正在加载公告' : loadError ? '公告暂时无法加载' : '暂时没有公告' }}</strong><span>{{ loadError || '平台发布的服务信息会显示在这里。' }}</span><el-button v-if="loadError" link @click="loadNotices">重新加载</el-button></div>
       </div>
       <div class="pagination-wrap" v-if="total > pageSize"><el-pagination @current-change="changePage" v-model:current-page="currentPage" :page-size="pageSize" :pager-count="5" layout="total, prev, pager, next" :total="total"></el-pagination></div>
     </section>
@@ -111,8 +111,8 @@ const router = useRouter()
 const familyName = ref(localStorage.getItem('user_name') || '家人')
 const searchText = ref('')
 const {
-  records: tableData, total, pageSize, currentPage, isLoading, loadError,
-  load: searchOlds, changePage
+  records: notices, total, pageSize, currentPage, isLoading, loadError,
+  load: loadNotices, changePage
 } = usePagedRecords<Record<string, any>, { title: string }>({
   path: 'api/v1/notices/list',
   responseKey: 'texts',

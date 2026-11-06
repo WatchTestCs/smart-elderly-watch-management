@@ -2,7 +2,7 @@
   <div class="roles" v-loading="isLoading" element-loading-text="正在加载监测阈值档案…" :aria-busy="isLoading">
     
     <div class="sys-research">
-      <form class="row-search" role="search" @submit.prevent="searchWatchs()">
+      <form class="row-search" role="search" @submit.prevent="loadMonitoringProfiles()">
         <div class="search-field">
           
           <label class="table-search-label" for="search-watch">长者姓名</label>
@@ -45,8 +45,8 @@
     </span></template>
     </el-dialog>
 
-    <div v-if="loadError" class="collection-feedback" role="alert"><span>{{ loadError }}</span><el-button plain :loading="isLoading" @click="searchWatchs(true)">重新加载</el-button></div>
-    <el-table v-if="!mobileLayout && !loadError" class="adaptive-record-table" :data="watchsList"
+    <div v-if="loadError" class="collection-feedback" role="alert"><span>{{ loadError }}</span><el-button plain :loading="isLoading" @click="loadMonitoringProfiles(true)">重新加载</el-button></div>
+    <el-table v-if="!mobileLayout && !loadError" class="adaptive-record-table" :data="monitoringProfiles"
     style="width: 100%" border>
     <template #empty><div  class="care-empty-state"><strong>暂无监测阈值档案</strong><span>添加手表或调整搜索条件后，档案会显示在这里。</span></div></template>
 
@@ -69,7 +69,7 @@
         </template>
       </el-table-column>
     </el-table>
-    <record-cards v-if="mobileLayout && !loadError" :records="watchsList" :fields='[{"key":"deviceId","label":"手表ID"},{"key":"bpf","label":"血压高值"},{"key":"bpl","label":"血压低值"},{"key":"hrf","label":"心率高值"},{"key":"hrl","label":"心率低值"}]' label="监测阈值档案" title-key="name" key-field="deviceId" time-key="opTime">
+    <record-cards v-if="mobileLayout && !loadError" :records="monitoringProfiles" :fields='[{"key":"deviceId","label":"手表ID"},{"key":"bpf","label":"血压高值"},{"key":"bpl","label":"血压低值"},{"key":"hrf","label":"心率高值"},{"key":"hrl","label":"心率低值"}]' label="监测阈值档案" title-key="name" key-field="deviceId" time-key="opTime">
       <template #actions="scope"  ><el-button size="small" plain type="primary" :icon="Edit"
                      @click="handleEditwatch(scope.$index, scope.row)">编辑
           </el-button>
@@ -103,8 +103,8 @@ type MonitorRow = Record<string, any>
 const searchText = ref('')
 const mobileLayout = useCollectionLayout(900)
 const {
-  records: watchsList, isLoading, loadError, total,
-  pageSize, currentPage, load: searchWatchs,
+  records: monitoringProfiles, isLoading, loadError, total,
+  pageSize, currentPage, load: loadMonitoringProfiles,
   handleSizeChange, changePage
 } = usePagedRecords<MonitorRow, { oldName: string }>({
   path: 'api/v1/monitoring-profiles/list',
@@ -136,7 +136,7 @@ function saveProfile(editing: boolean) {
     void writeRecord(path, body, '监测档案已保存', async () => {
       if (editing) watchEditDialogVisible.value = false
       else watchDialogVisible.value = false
-      await searchWatchs(true)
+      await loadMonitoringProfiles(true)
     })
   })
 }
@@ -144,7 +144,7 @@ function addWatchs() { saveProfile(false) }
 function editWatch() { saveProfile(true) }
 function deleteRole(deviceId: number | string) {
   return deleteRecord('api/v1/monitoring-profiles/delete', { deviceId },
-    '确认删除该监测档案？', () => searchWatchs(true))
+    '确认删除该监测档案？', () => loadMonitoringProfiles(true))
 }
 function handleEditwatch(_index: number, row: MonitorRow) {
   watchEditForm.value = Object.fromEntries(

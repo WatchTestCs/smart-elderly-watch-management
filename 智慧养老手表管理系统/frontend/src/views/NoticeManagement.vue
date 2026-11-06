@@ -4,14 +4,14 @@
       <header class="announcement-toolbar">
         <div><h2>公告动态</h2><p>查看、检索并维护已发布的公告。</p></div>
         <div class="announcement-actions">
-          <form class="announcement-query" role="search" @submit.prevent="searchOlds()"><label class="table-search-label" for="manage-notice-search">按标题查找</label><el-input id="manage-notice-search" v-model="searchText" placeholder="搜索公告标题" clearable @clear="searchOlds">
+          <form class="announcement-query" role="search" @submit.prevent="loadNotices()"><label class="table-search-label" for="manage-notice-search">按标题查找</label><el-input id="manage-notice-search" v-model="searchText" placeholder="搜索公告标题" clearable @clear="loadNotices">
             <template #append><el-button  :icon="Search" aria-label="搜索公告" native-type="submit"></el-button></template>
           </el-input></form>
           <el-button type="primary" :icon="Plus" @click="addtext">添加公告</el-button>
         </div>
       </header>
-      <div v-if="loadError" class="collection-feedback" role="alert">{{ loadError }}<el-button plain @click="searchOlds">重新加载公告</el-button></div>
-      <el-table class="managed-notices-desktop" v-loading="isLoading" :data="tableData" @row-dblclick="getDetail" row-class-name="clickable-row">
+      <div v-if="loadError" class="collection-feedback" role="alert">{{ loadError }}<el-button plain @click="loadNotices">重新加载公告</el-button></div>
+      <el-table class="managed-notices-desktop" v-loading="isLoading" :data="notices" @row-dblclick="getDetail" row-class-name="clickable-row">
         <template #empty><div  class="care-empty-state"><strong>暂无已发布公告</strong><span>发布后的公告会显示在这里。</span></div></template>
         <el-table-column type="index" label="序号" width="80" align="center"></el-table-column>
         <el-table-column prop="title" label="公告标题" min-width="260" show-overflow-tooltip></el-table-column>
@@ -23,7 +23,7 @@
           </template>
         </el-table-column>
       </el-table>
-      <div class="managed-notices-mobile" v-loading="isLoading"><article v-for="item in tableData" :key="item.textId" class="managed-notice"><h3>{{ item.title || '未命名公告' }}</h3><p>{{ item.time || '暂无发布时间' }}</p><div><el-button plain @click="getDetail(item)">阅读</el-button><el-button type="primary" plain @click="handleEdit(0, item)">编辑</el-button><el-button type="danger" plain :disabled="deletingId !== null" @click="handleDelete(0, item)">删除</el-button></div></article><div v-if="!tableData.length" class="collection-empty"><strong>{{ isLoading ? '正在加载公告…' : loadError ? '公告暂时无法加载' : '暂无匹配的公告' }}</strong><p>您可以调整关键词，或发布一条新的公告。</p></div></div>
+      <div class="managed-notices-mobile" v-loading="isLoading"><article v-for="item in notices" :key="item.textId" class="managed-notice"><h3>{{ item.title || '未命名公告' }}</h3><p>{{ item.time || '暂无发布时间' }}</p><div><el-button plain @click="getDetail(item)">阅读</el-button><el-button type="primary" plain @click="handleEdit(0, item)">编辑</el-button><el-button type="danger" plain :disabled="deletingId !== null" @click="handleDelete(0, item)">删除</el-button></div></article><div v-if="!notices.length" class="collection-empty"><strong>{{ isLoading ? '正在加载公告…' : loadError ? '公告暂时无法加载' : '暂无匹配的公告' }}</strong><p>您可以调整关键词，或发布一条新的公告。</p></div></div>
       <div v-if="total > pageSize" class="pagination-wrap">
         <el-pagination @size-change="handleSizeChange" @current-change="changePage" v-model:current-page="currentPage" :page-size="pageSize" layout="total, prev, pager, next" :pager-count="5" :total="total"></el-pagination>
       </div>
@@ -36,7 +36,7 @@
         <el-button size="small" type="primary" :icon="UploadFilled">选择图片</el-button>
         <template #tip><div  class="el-upload__tip">最多上传 10 张图片。</div></template>
       </el-upload>
-      <div class="upload-footer"><el-button type="primary" :loading="gallerySaving" :disabled="!fileList2.length || fileList2.some(file => file.status !== 'success')" @click="picShow">提交图片</el-button></div>
+      <div class="upload-footer"><el-button type="primary" :loading="gallerySaving" :disabled="!fileList2.length || fileList2.some(file => file.status !== 'success')" @click="saveGallery">提交图片</el-button></div>
     </div></details>
   </div>
 </template>
@@ -72,8 +72,8 @@ const router = useRouter()
 const uploadHeaders = computed(() => ({ [authState.csrfHeader]: authState.csrfToken }))
 const searchText = ref('')
 const {
-  records: tableData, isLoading, loadError, total,
-  pageSize, currentPage, load: searchOlds,
+  records: notices, isLoading, loadError, total,
+  pageSize, currentPage, load: loadNotices,
   handleSizeChange, changePage
 } = usePagedRecords<NoticeRow, { title: string }>({
   path: 'api/v1/notices/list',
@@ -90,7 +90,7 @@ const galleryUpload = ref<any>(null)
 function handleEdit(_index: number, row: NoticeRow) {
   void router.push({ path: '/operations/notices/edit', query: { textId: row.textId } })
 }
-async function picShow() {
+async function saveGallery() {
   if (gallerySaving.value || !fileList2.value.length ||
       fileList2.value.some(file => file.status !== 'success')) return
   gallerySaving.value = true
@@ -149,7 +149,7 @@ async function handleDelete(_index: number, row: NoticeRow) {
     const { data } = await api.post<Envelope>('api/v1/notices/delete', { textId: row.textId })
     accepted(data)
     ElMessage.success('公告已删除')
-    await searchOlds(true)
+    await loadNotices(true)
   } catch (error) {
     ElMessage.error(apiErrorMessage(error, '公告暂时无法删除，请重试'))
   } finally { deletingId.value = null }
