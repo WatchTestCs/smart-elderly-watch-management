@@ -1,10 +1,10 @@
 <template>
-  <div class="roles" :aria-busy="String(isLoading)">
+  <div class="roles" :aria-busy="isLoading">
     <el-alert v-if="loadError" :title="loadError" type="error" :closable="false" show-icon></el-alert>
-    <el-button v-if="loadError" link @click="searchOldPersonLife">重新加载生活资料</el-button>
+    <el-button v-if="loadError" link @click="searchOldPersonLife()">重新加载生活资料</el-button>
     
     <div class="sys-research">
-      <form class="row-search" role="search" @submit.prevent="searchOldPersonLife">
+      <form class="row-search" role="search" @submit.prevent="searchOldPersonLife()">
 		  
         <div class="search-field">
           
