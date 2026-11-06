@@ -1,8 +1,8 @@
 import { reactive } from 'vue'
-import type { Router } from 'vue-router'
 import type { InternalAxiosRequestConfig } from 'axios'
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
+import type { Router } from 'vue-router'
 import { apiErrorMessage, assertApiResponse } from './api/httpContract'
 import store from './store'
 
@@ -75,14 +75,14 @@ export function endSession () {
   })
 }
 
-export function installHttpSecurity (router: Pick<Router, 'currentRoute' | 'replace'>) {
+export function installHttpSecurity (router: { currentRoute: { value: { path: string } }; replace?: (path: string) => unknown }) {
   axios.defaults.withCredentials = true
   axios.interceptors.request.use(config => {
     const url = new URL(config.url || '', window.location.href)
     if (config.skipSession || url.origin !== window.location.origin || !(url.pathname.startsWith('/api/v1/'))) return config
     if (['get', 'head', 'options'].includes((config.method || 'get').toLowerCase())) return config
     return loadSession().then(() => {
-      config.headers.set(authState.csrfHeader, authState.csrfToken)
+      config.headers[authState.csrfHeader] = authState.csrfToken
       return config
     })
   })
@@ -101,7 +101,7 @@ export function installHttpSecurity (router: Pick<Router, 'currentRoute' | 'repl
       authState.csrfToken = ''
       clearProfile()
       store.clearTabs()
-      if (!['/sign-in', '/join-family'].includes(router.currentRoute.value.path)) router.replace('/sign-in')
+      if (!['/sign-in', '/join-family'].includes(router.currentRoute.value.path)) router.replace?.('/sign-in')
     }
     if (error.response && error.response.status === 403 && error.response.data && error.response.data.code === 'CSRF_REJECTED') {
       loaded = false
@@ -113,8 +113,8 @@ export function installHttpSecurity (router: Pick<Router, 'currentRoute' | 'repl
       // A supervisor may change a duty while a page is open. Refresh the
       // session, but never replay the denied mutation automatically.
       loadSession(true).then(account => {
-        if (account?.role === 'ADMIN' && ['caregiver', 'auditor'].includes(account.duty) && !['/operations/overview', '/operations'].includes(router.currentRoute.value.path)) {
-          router.replace('/operations/overview')
+        if (account?.role === 'ADMIN' && ['caregiver', 'auditor'].includes(account.duty || '') && !['/operations/overview', '/operations'].includes(router.currentRoute.value.path)) {
+          router.replace?.('/operations/overview')
         }
       }).catch(() => {})
     }
@@ -124,7 +124,7 @@ export function installHttpSecurity (router: Pick<Router, 'currentRoute' | 'repl
 
 
 // Shared service probe: back off while offline and never replay mutations.
-export function monitorDatabase (router: Pick<Router, 'currentRoute' | 'replace'>) {
+export function monitorDatabase (router: { currentRoute: { value: { path: string } }; replace?: (path: string) => unknown }) {
   let active = true
   let checking = false
   let failures = 0
@@ -148,9 +148,9 @@ export function monitorDatabase (router: Pick<Router, 'currentRoute' | 'replace'
         const account = await loadSession(true)
         if (!active) return
         const route = router.currentRoute.value.path
-        if (authState.setupRequired && route === '/sign-in') await router.replace('/setup')
-        else if (account && route === '/sign-in') await router.replace(account.role === 'FAMILY' ? '/family-portal/overview' : '/operations/overview')
-        else if (!account && !['/sign-in', '/join-family', '/setup'].includes(route)) await router.replace('/sign-in')
+        if (authState.setupRequired && route === '/sign-in') await router.replace?.('/setup')
+        else if (account && route === '/sign-in') await router.replace?.(account.role === 'FAMILY' ? '/family-portal/overview' : '/operations/overview')
+        else if (!account && !['/sign-in', '/join-family', '/setup'].includes(route)) await router.replace?.('/sign-in')
       }
     } catch (_) {
       ready = false
