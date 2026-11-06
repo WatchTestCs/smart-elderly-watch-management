@@ -7,12 +7,12 @@
     <care-inbox />
     <div v-if="!isRestricted" class="dashboard-panels">
     <section class="overview-grid" aria-label="设备告警摘要">
-      <article class="overview-card alert-card" v-loading="countLoading" :aria-busy="String(countLoading)">
+      <article class="overview-card alert-card" v-loading="countLoading" :aria-busy="countLoading">
         <div class="metric-icon amber"><i class="el-icon-warning"></i></div>
         <div class="metric-copy"><span>设备异常类别计数</span><strong v-if="!countError">{{ allCount == null ? '—' : allCount }}</strong><strong v-else class="metric-error" role="status">{{ countError }}</strong><small v-if="categoryCounts">心率 {{ categoryCounts.rate }} · 血压 {{ categoryCounts.pressure }} · 睡眠 {{ categoryCounts.sleep }}</small><small>同一设备可能对应多类异常</small></div>
         <el-button v-if="countError" link @click="getCount">重新加载设备统计</el-button><el-button v-else link @click="$router.push('/operations/devices')">查看设备 <i class="el-icon-arrow-right"></i></el-button>
       </article>
-      <article class="overview-card fall-card" v-loading="positionLoading" :aria-busy="String(positionLoading)">
+      <article class="overview-card fall-card" v-loading="positionLoading" :aria-busy="positionLoading">
         <div class="metric-icon rose"><i class="el-icon-warning"></i></div>
         <div class="metric-copy"><span>紧急告警</span><strong v-if="!positionError">{{ num == null ? '—' : num }}</strong><strong v-else class="metric-error" role="status">{{ positionError }}</strong><small v-if="positionTotal != null">{{ positionTotal ? num + ' / ' + positionTotal + ' 位长者有紧急告警' : '暂无长者位置记录' }}</small><small>根据最近告警记录统计</small></div>
         <el-button v-if="positionError" link @click="searchposition">重新加载告警统计</el-button><el-button v-else link @click="$router.push('/operations/locations')">查看位置 <i class="el-icon-arrow-right"></i></el-button>
@@ -125,8 +125,10 @@ const countError = ref('')
 const positionError = ref('')
 let positionNeedsRefresh = false
 
-const isRestricted = computed(() => authState.account?.role === 'ADMIN' &&
-  ['caregiver','auditor'].includes(authState.account.duty))
+const isRestricted = computed(() => {
+  const account = authState.account as { role: string; duty?: string } | null
+  return account?.role === 'ADMIN' && ['caregiver','auditor'].includes(account.duty || '')
+})
 const emptyTitle = computed(() => loadError.value ? '公告暂时无法加载' :
   appliedSearch.value ? '没有找到相关公告' : '暂时没有公告')
 const emptyDescription = computed(() => loadError.value || (appliedSearch.value

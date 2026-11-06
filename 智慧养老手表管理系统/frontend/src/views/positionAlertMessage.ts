@@ -1,6 +1,6 @@
-import { describePositionContext } from '../utils/positionContext'
+import { describePositionContext, type PositionContext } from '../utils/positionContext'
 
-export interface PositionAlarm {
+export interface PositionAlarm extends PositionContext {
   name?: string
   alarmTime?: string | null
   alarmLng?: string | number | null

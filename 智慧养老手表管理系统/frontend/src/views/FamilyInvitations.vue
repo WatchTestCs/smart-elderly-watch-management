@@ -112,7 +112,7 @@ async function searchInviteCodes(keepPage = false) {
     })
     if (revision !== requestRevision || selected !== state.value) return
     if (!Array.isArray(data.inviteCodes)) throw new Error('missing invites')
-    inviteCodeList.value = data.inviteCodes
+    inviteCodeList.value = data.inviteCodes as InviteRow[]
     total.value = data.total ?? data.inviteCodes.length
   } catch (error) {
     if (revision === requestRevision) listError.value =
@@ -125,7 +125,7 @@ async function loadOldPeople() {
   oldPeopleError.value = ''
   try {
     const { data } = await invitations.oldPersonList()
-    oldPeople.value = Array.isArray(data.oldPeople) ? data.oldPeople : []
+    oldPeople.value = (Array.isArray(data.oldPeople) ? data.oldPeople : []) as InviteRow[]
   } catch (error) {
     oldPeopleError.value = apiErrorMessage(error, '长者列表暂时无法加载')
   }
@@ -162,7 +162,7 @@ async function createInviteCode() {
     ElMessage({ type: 'error', message: apiErrorMessage(error, '生成邀请码失败，请稍后重试') })
   } finally { creating.value = false }
 }
-async function deleteInviteCode(id: number | string) {
+async function deleteInviteCode(id: number) {
   try {
     await ElMessageBox.confirm('作废后该邀请码将无法再用于注册，是否继续？', '提示', {
       confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning'

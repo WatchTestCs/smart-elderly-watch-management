@@ -1,5 +1,5 @@
 <template>
-  <div class="notice-editor" :aria-busy="String(loading || saving)">
+  <div class="notice-editor" :aria-busy="loading || saving">
     <div v-if="loadError" class="collection-feedback" role="alert"><span>{{ loadError }}</span><el-button plain @click="loadNotice">重新加载公告</el-button></div>
     <section class="editor-main collection-panel" v-loading="loading">
       <div class="editor-section-heading"><div><h2>公告内容</h2><p>清晰的标题与简短的正文，让家属更容易了解重点。</p></div></div>
