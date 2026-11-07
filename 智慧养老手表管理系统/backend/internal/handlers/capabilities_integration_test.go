@@ -295,7 +295,10 @@ func TestCareVerdictAndVitalReviewAudit(t *testing.T) {
 		f := withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: step.actor}, h.careTransition)
 		api(t, f, map[string]any{"id": id, "action": step.action, "note": "现场核实后确认误触", "verdict": "false_alarm"})
 	}
-	items := api(t, capabilityAdmin(h, h.alertReviews), map[string]any{"entity": "care", "recordId": id})["items"].([]any)
+	reviewAdmin := func(handler http.HandlerFunc) http.HandlerFunc {
+		return withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 2}, handler)
+	}
+	items := api(t, reviewAdmin(h.alertReviews), map[string]any{"entity": "care", "recordId": id})["items"].([]any)
 	if len(items) != 1 || items[0].(map[string]any)["verdict"] != "false_alarm" || items[0].(map[string]any)["actorId"] != float64(2) {
 		t.Fatal(items)
 	}
@@ -305,7 +308,7 @@ func TestCareVerdictAndVitalReviewAudit(t *testing.T) {
 		t.Fatal(err)
 	}
 	req := map[string]any{"recordId": record, "kind": "rate", "verdict": "false_alarm", "reason": "复测正常", "expectedReviewId": 0}
-	review := capabilityAdmin(h, h.alertReview)
+	review := reviewAdmin(h.alertReview)
 	out := api(t, review, req)
 	if w := callAPI(review, req); w.Code != 409 {
 		t.Fatal("lost concurrent review", w.Code)
@@ -314,7 +317,7 @@ func TestCareVerdictAndVitalReviewAudit(t *testing.T) {
 	req["verdict"] = "confirmed"
 	req["reason"] = "补充证据"
 	api(t, review, req)
-	items = api(t, capabilityAdmin(h, h.alertReviews), map[string]any{"entity": "ratepre", "recordId": record})["items"].([]any)
+	items = api(t, reviewAdmin(h.alertReviews), map[string]any{"entity": "ratepre", "recordId": record})["items"].([]any)
 	if len(items) != 2 {
 		t.Fatal("review history overwritten", items)
 	}
