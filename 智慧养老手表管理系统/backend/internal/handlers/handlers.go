@@ -48,7 +48,7 @@ func New(pool *dbstore.Database, sessions *session.Store, cfg config.Config) *Ha
 
 // Routes 注册全部路由。各组在自己的文件中通过 h.route 注册。
 func (h *Handler) Routes(mux *http.ServeMux) {
-	h.routeAuth(mux)            // 登录/session/setup/desktop
+	h.routeAuth(mux) // 登录/session/setup/desktop
 	h.routeRisk(mux)
 	h.routeUser(mux)            // 用户/客户
 	h.routeFamily(mux)          // 家属/邀请码
@@ -63,7 +63,6 @@ func (h *Handler) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/v1/notifications/search", h.notifications)
 	mux.HandleFunc("POST /api/v1/rule-policies", h.rulePolicy)
 }
-
 
 func InitRisk(ctx context.Context, pool *dbstore.Database) error {
 	if err := sharedRisk.EnableMySQL(pool.SQL()); err != nil {
