@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -90,5 +91,11 @@ func parseDeviceTelemetryPayload(w http.ResponseWriter, m map[string]any, now ti
 		return parsedDeviceTelemetry{}, false
 	}
 	out.alarm, _ = vstr(m, "alarm")
+	// An unknown emergency marker must not quietly become a normal report.
+	// The SOS button has its own endpoint and is never accepted as telemetry.
+	if out.alarm != "" && out.alarm != "0" && out.alarm != "1" && !strings.EqualFold(out.alarm, "fall") {
+		write400(w, "alarm 仅支持 0、1 或 fall")
+		return parsedDeviceTelemetry{}, false
+	}
 	return out, true
 }
