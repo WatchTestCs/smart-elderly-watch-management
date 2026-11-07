@@ -5,15 +5,56 @@ import { accepted, api, type Envelope } from '../api/client'
 import { apiErrorMessage } from '../api/httpContract'
 import { copyText } from '../utils/clipboard'
 
-export interface DeviceRecord extends Record<string, any> {
-  deviceId: number | string
+type DeviceId = number | string
+
+export interface DeviceRecord {
+  deviceId: DeviceId
   deviceNo: string
-  oldId?: number | string | null
+  oldId?: DeviceId | null
   alias?: string
   online?: number | string
+  model?: string
+  oldPersonName?: string
+  lastTime?: string
+  lastLng?: number | string | null
+  lastLat?: number | string | null
+  kind?: string
+  kindText?: string
+  reason?: string
+  recordId?: DeviceId
 }
-type DeviceId = number | string
-type DeviceAlertCounts = { personCount: number; rateCount: number; preCount: number }
+interface ResidentRecord { oldId: DeviceId; name: string }
+interface DeviceBindCode { id: DeviceId; code: string; expireTime: string; used: number }
+interface DeviceAlertCountRecord extends DeviceAlertCounts { deviceId: DeviceId }
+interface DeviceAlertCounts { personCount: number; rateCount: number; preCount: number }
+interface DeviceResponse extends Envelope {
+  devices?: DeviceRecord[]
+  total?: number
+  onlineCount?: number
+  items?: DeviceAlertCountRecord[]
+  personTotal?: number
+  rateTotal?: number
+  preTotal?: number
+  hasAlert?: number
+  message?: string
+  oldPersonName?: string
+  reason?: string
+  detail?: string
+  value?: string | number | null
+  threshold?: string
+  occurTime?: string
+  advice?: string
+  recordId?: DeviceId
+  deviceNo?: string
+  alias?: string
+  kindText?: string
+  secret?: string
+  bindCodes?: DeviceBindCode[]
+  code?: string
+  expireTime?: string
+}
+interface CreatedDevice { deviceNo: string; secret: string }
+interface NewBindCode { code: string; expireTime: string }
 interface DeviceAlert {
   visible: boolean
   loading: boolean
@@ -50,14 +91,14 @@ interface DeviceState {
   alertLoadError: string
   alertsReady: boolean
   creating: boolean
-  oldPeople: DeviceRecord[]
+  oldPeople: ResidentRecord[]
   autoRefresh: boolean
   createDialogVisible: boolean
   bindCodeDialogVisible: boolean
-  createdDevice: Record<string, any> | null
+  createdDevice: CreatedDevice | null
   currentDevice: DeviceRecord | null
-  bindCodeList: Record<string, any>[]
-  newBindCode: Record<string, any> | null
+  bindCodeList: DeviceBindCode[]
+  newBindCode: NewBindCode | null
   bindOldId: DeviceId | ''
   bindExpireDays: string
   createForm: { alias: string; model: string; oldId: DeviceId | '' }
@@ -68,7 +109,7 @@ interface DeviceState {
 }
 
 
-const post = (path: string, params: Record<string, unknown> = {}) => api.post<Envelope & Record<string, any>>('/api/v1/device/' + path, params)
+const post = (path: string, params: Record<string, unknown> = {}) => api.post<DeviceResponse>('/api/v1/device/' + path, params)
 
 function emptyAlert(): DeviceAlert {
   return {
