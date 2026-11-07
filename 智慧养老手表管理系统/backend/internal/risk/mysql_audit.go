@@ -128,10 +128,19 @@ func (a *mysqlAudit) run() {
 		}
 		pending = pending[:0]
 	}
+	// Bound in-memory backlog when MySQL is unavailable. The channel is bounded,
+	// but continuously draining it into pending would otherwise grow without limit.
+	appendPending := func(e Event) {
+		if len(pending) >= 4096 {
+			a.dropped.Add(1)
+			return
+		}
+		pending = append(pending, e)
+	}
 	for {
 		select {
 		case e := <-a.queue:
-			pending = append(pending, e)
+			appendPending(e)
 			if len(pending) >= 128 {
 				flush()
 			}
@@ -151,7 +160,7 @@ func (a *mysqlAudit) run() {
 			for {
 				select {
 				case e := <-a.queue:
-					pending = append(pending, e)
+					appendPending(e)
 				default:
 					flush()
 					if len(pending) > 0 {
