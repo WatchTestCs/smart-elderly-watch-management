@@ -136,7 +136,7 @@ describe('guardian data flow', () => {
     expect(validPhone('19912345678')).toBe(true)
     expect(validPhone('1|912345678')).toBe(false)
     for (const age of [0, '0', 150]) expect(validAge(age)).toBe(true)
-    for (const age of ['', null, -1, 151, 1.2]) expect(validAge(age)).toBe(false)
+    for (const age of ['', '   ', null, undefined, false, -1, 151, 1.2, '1.5', '1e2', '0x10']) expect(validAge(age)).toBe(false)
   })
   it('clears failed list state and can retry the same page', async () => {
     const post = vi.fn().mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce({ data: { customers: [], total: 0 } })
