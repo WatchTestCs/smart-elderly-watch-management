@@ -24,6 +24,8 @@ func commandSetup(t *testing.T) *Handler {
 	t.Helper()
 	pool := dbtest.MySQL(t)
 	seedDevice(t, pool)
+	mustExec(t, pool, "INSERT INTO users(user_id,user_name) VALUES(1,'能力主管')")
+	mustExec(t, pool, "INSERT INTO care_staff_permission(admin_id,duty,assigned_by) VALUES(1,'supervisor',1)")
 	h := testHandler(t, pool)
 	api(t, capabilityAdmin(h, h.commandProfile), map[string]any{"deviceId": 1, "wireType": "K1", "protocol": "suining-pull-v1", "enabled": true})
 	return h
@@ -216,6 +218,8 @@ func TestDailyRebuildCorrectionsDeletionAndIsolation(t *testing.T) {
 func TestFenceDebounceEventsAndCareLink(t *testing.T) {
 	pool := dbtest.MySQL(t)
 	seedDevice(t, pool)
+	mustExec(t, pool, "INSERT INTO users(user_id,user_name) VALUES(1,'围栏主管')")
+	mustExec(t, pool, "INSERT INTO care_staff_permission(admin_id,duty,assigned_by) VALUES(1,'supervisor',1)")
 	h := testHandler(t, pool)
 	req := map[string]any{"deviceId": 1, "name": "家", "enabled": true, "coordinateSystem": "WGS84", "timezone": "Asia/Shanghai", "timeBegin": 0, "timeEnd": 86400, "minPoints": 2, "dwellSeconds": 10, "maxAccuracy": 30, "coordinates": [][2]float64{{120, 30}, {120.01, 30}, {120.01, 30.01}, {120, 30.01}, {120, 30}}}
 	save := capabilityAdmin(h, h.fenceSave)
@@ -279,6 +283,8 @@ func TestFenceDebounceEventsAndCareLink(t *testing.T) {
 func TestCareVerdictAndVitalReviewAudit(t *testing.T) {
 	pool := dbtest.MySQL(t)
 	seedDevice(t, pool)
+	mustExec(t, pool, "INSERT INTO users(user_id,user_name) VALUES(1,'处置人员'),(2,'复核人员')")
+	mustExec(t, pool, "INSERT INTO care_staff_permission(admin_id,duty,assigned_by) VALUES(1,'caregiver',1),(2,'auditor',1)")
 	h := testHandler(t, pool)
 	sos := api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "requestId": "test-press", "bindingVersion": 1})
 	id := sos["incidentId"]
