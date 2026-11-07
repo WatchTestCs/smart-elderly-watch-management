@@ -26,7 +26,7 @@
       <p>主管可配置护理员或审计员。护理员可接单及记录处置；只有主管可复核关闭。</p>
       <div v-for="person in staff" :key="person.id" class="care-staff-row">
         <span>{{ person.name || '管理员' }}（编号 {{ person.id }}）</span>
-        <el-select :model-value="person.duty" :disabled="assigning !== null" :aria-label="'岗位：'+person.id" @change="duty => assign(person,duty)">
+        <el-select :model-value="person.duty" :disabled="assigning !== null" :aria-label="'岗位：'+person.id" @change="setDuty(person, $event)">
           <el-option label="主管" value="supervisor" />
           <el-option label="护理员" value="caregiver" />
           <el-option label="审计员" value="auditor" />
@@ -122,6 +122,12 @@ async function loadStaff() {
     if (disposed || revision !== staffRevision) return
     staff.value = []
     error.value = apiErrorMessage(cause, '人员权限列表未能加载')
+  }
+}
+
+function setDuty(person: Staff, value: unknown) {
+  if (value === 'supervisor' || value === 'caregiver' || value === 'auditor') {
+    void assign(person, value)
   }
 }
 
