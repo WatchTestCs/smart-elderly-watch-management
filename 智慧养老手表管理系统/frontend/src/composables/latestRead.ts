@@ -1,5 +1,4 @@
-// Serializes visible state, not network completion: newer reads can supersede a
-// transport that ignores cancellation. Writes must not use this helper.
+// Read-only queue: an abandoned transport must never delay or overwrite newer state.
 export function awaitAbortable<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     if (signal.aborted) { reject(new Error('read aborted')); return }
@@ -37,8 +36,6 @@ export function createLatestRead<P, T>(
           current.abort()
         }, timeoutMs) : undefined
         try {
-          // An aborted read must not keep the queue blocked even if its source
-          // ignores AbortSignal or never settles.
           const value = await awaitAbortable(
             Promise.resolve().then(() => {
               if (current.signal.aborted) throw new Error('read aborted')
@@ -85,8 +82,6 @@ export function createLatestRead<P, T>(
     pending = undefined
     revision++
     controller?.abort()
-    // Scoped consumers can still observe their loading state after disposal.
-    // Do not leave it stuck merely because the transport ignores AbortSignal.
     if (active) busy(false)
   }
 

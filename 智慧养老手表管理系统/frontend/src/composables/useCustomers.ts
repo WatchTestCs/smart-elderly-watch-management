@@ -13,7 +13,12 @@ export interface Customer {
 }
 export const emptyCustomer = (): Customer => ({ customerName: '', customerAge: '', customerSex: '', customerPhone: '', customerAddress: '' })
 export const validPhone = (value: unknown) => /^1\d{10}$/.test(String(value ?? ''))
-export const validAge = (value: unknown) => value !== '' && value !== null && value !== undefined && Number.isInteger(Number(value)) && Number(value) >= 0 && Number(value) <= 150
+export const validAge = (value: unknown) => {
+  if (typeof value !== 'number' && typeof value !== 'string') return false
+  if (typeof value === 'string' && !/^\d+$/.test(value.trim())) return false
+  const age = Number(value)
+  return Number.isInteger(age) && age >= 0 && age <= 150
+}
 
 export function useCustomers(client: PostClient) {
   const searchText = ref(''), customerDialogVisible = ref(false), oldEditDialogVisible = ref(false)

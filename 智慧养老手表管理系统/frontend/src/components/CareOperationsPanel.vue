@@ -26,7 +26,7 @@
       <p>主管可配置护理员或审计员。护理员可接单及记录处置；只有主管可复核关闭。</p>
       <div v-for="person in staff" :key="person.id" class="care-staff-row">
         <span>{{ person.name || '管理员' }}（编号 {{ person.id }}）</span>
-        <el-select :model-value="person.duty" :aria-label="'岗位：'+person.id" @change="duty => assign(person,duty)">
+        <el-select :model-value="person.duty" :disabled="assigning !== null" :aria-label="'岗位：'+person.id" @change="setDuty(person, $event)">
           <el-option label="主管" value="supervisor" />
           <el-option label="护理员" value="caregiver" />
           <el-option label="审计员" value="auditor" />
@@ -42,54 +42,139 @@
   </section>
   <SecurityPanel />
 </template>
-<script setup>
+<script setup lang="ts">
+import { ref, onMounted, onBeforeUnmount } from 'vue'
+import axios, { isAxiosError } from 'axios'
 import { apiErrorMessage } from '../api/httpContract'
-import {ref,onMounted,onBeforeUnmount} from 'vue'
-import axios from 'axios'
 import SecurityPanel from './SecurityPanel.vue'
-const diagnostics=ref(null)
-const staff=ref([])
-const accesses=ref([])
-const authorized=ref(false)
-const forbidden=ref(false)
-const showAudit=ref(false)
-const loading=ref(false)
-const error=ref('')
-const post=(url,body={})=>axios.post('api/v1/care/'+url,body,{withCredentials:true})
-async function refresh(){
-  if(loading.value)return
-  loading.value=true
-  try{
-    const {data}=await post('diagnostics')
-    diagnostics.value=data
-    authorized.value=true
-    forbidden.value=false
-    error.value=''
+
+type Duty = 'supervisor' | 'caregiver' | 'auditor'
+interface Staff { id: number | string; name: string; duty: Duty }
+interface AccessEntry { actorId: number | string; resource: string; at: string }
+interface AnalyticsStatus {
+  ready: boolean
+  configured: boolean
+  pending: number | null
+  lastSyncedAt?: string
+}
+interface Diagnostics {
+  primaryEngine?: string
+  analytics?: AnalyticsStatus
+  workerHealthy: boolean
+  notificationConfigured?: boolean
+  receiptConfigured?: boolean
+  pendingNotifications: number
+  failedNotifications: number
+  staleSending: number
+  overdueIncidents: number
+}
+
+const diagnostics = ref<Diagnostics | null>(null)
+const staff = ref<Staff[]>([])
+const accesses = ref<AccessEntry[]>([])
+const authorized = ref(false)
+const forbidden = ref(false)
+const showAudit = ref(false)
+const loading = ref(false)
+const assigning = ref<number | string | null>(null)
+const error = ref('')
+const post = <T,>(url: string, body: Record<string, unknown> = {}) =>
+  axios.post<T>('api/v1/care/' + url, body, { withCredentials: true })
+
+let disposed = false
+let staffRevision = 0
+let auditRevision = 0
+let timer: ReturnType<typeof setInterval> | undefined
+
+async function refresh() {
+  if (disposed || loading.value) return
+  loading.value = true
+  try {
+    const { data } = await post<Diagnostics>('diagnostics')
+    if (disposed) return
+    diagnostics.value = data
+    authorized.value = true
+    forbidden.value = false
+    error.value = ''
     await loadStaff()
-  }catch(e){
-    authorized.value=false
-    diagnostics.value=null
-    if(e?.response?.status===403){forbidden.value=true;error.value=''}
-    else{error.value=apiErrorMessage(e, '服务诊断暂不可用')}
-  }finally{loading.value=false}
+  } catch (cause) {
+    if (disposed) return
+    authorized.value = false
+    diagnostics.value = null
+    if (isAxiosError(cause) && cause.response?.status === 403) {
+      forbidden.value = true
+      error.value = ''
+    } else {
+      error.value = apiErrorMessage(cause, '服务诊断暂不可用')
+    }
+  } finally {
+    if (!disposed) loading.value = false
+  }
 }
-async function loadStaff(){
-  try{const {data}=await post('staff');staff.value=data.staff||[]}
-  catch(cause){staff.value=[];error.value=apiErrorMessage(cause, '人员权限列表未能加载')}
+
+async function loadStaff() {
+  const revision = ++staffRevision
+  try {
+    const { data } = await post<{ staff: Staff[] }>('staff')
+    if (disposed || revision !== staffRevision) return
+    staff.value = Array.isArray(data.staff) ? data.staff : []
+  } catch (cause) {
+    if (disposed || revision !== staffRevision) return
+    staff.value = []
+    error.value = apiErrorMessage(cause, '人员权限列表未能加载')
+  }
 }
-async function assign(person,duty){
-  if(person.duty===duty)return
-  try{error.value='';await post('assignDuty',{adminId:String(person.id),duty});await loadStaff()}
-  catch(cause){error.value=apiErrorMessage(cause, '岗位更改失败');await loadStaff()}
+
+function setDuty(person: Staff, value: unknown) {
+  if (value === 'supervisor' || value === 'caregiver' || value === 'auditor') {
+    void assign(person, value)
+  }
 }
-async function ifAudit(){
-  if(!showAudit.value)return
-  try{const {data}=await post('accessAudit');accesses.value=data.accesses||[]}
-  catch(cause){error.value=apiErrorMessage(cause, '审计记录暂不可用')}
+
+async function assign(person: Staff, duty: Duty) {
+  if (disposed || assigning.value !== null || person.duty === duty) return
+  assigning.value = person.id
+  error.value = ''
+  try {
+    await post('assignDuty', { adminId: String(person.id), duty })
+    if (!disposed) await loadStaff()
+  } catch (cause) {
+    if (!disposed) {
+      await loadStaff()
+      error.value = apiErrorMessage(cause, '岗位更改失败')
+    }
+  } finally {
+    if (!disposed) assigning.value = null
+  }
 }
-let timer
-onMounted(()=>{refresh();timer=setInterval(()=>{if(!document.hidden)refresh()},15000)})
-onBeforeUnmount(()=>clearInterval(timer))
+
+async function ifAudit() {
+  const revision = ++auditRevision
+  if (disposed || !showAudit.value) return
+  try {
+    const { data } = await post<{ accesses: AccessEntry[] }>('accessAudit')
+    if (!disposed && revision === auditRevision && showAudit.value) {
+      accesses.value = Array.isArray(data.accesses) ? data.accesses : []
+    }
+  } catch (cause) {
+    if (!disposed && revision === auditRevision && showAudit.value) {
+      error.value = apiErrorMessage(cause, '审计记录暂不可用')
+    }
+  }
+}
+
+onMounted(() => {
+  void refresh()
+  timer = setInterval(() => {
+    if (!document.hidden) void refresh()
+  }, 15_000)
+})
+onBeforeUnmount(() => {
+  disposed = true
+  staffRevision++
+  auditRevision++
+  clearInterval(timer)
+})
 </script>
 <style scoped>
 .care-worker-critical{padding:12px;background:#fff5ec;border-left:3px solid #b94d29;color:#8e3619;font-weight:600}
