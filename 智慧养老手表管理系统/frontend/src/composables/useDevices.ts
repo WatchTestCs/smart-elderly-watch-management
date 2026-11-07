@@ -296,8 +296,8 @@ export function useDevices() {
         if (count < 1) continue
         requests.push(post('alertDetail', { deviceId: device.deviceId, kind }).then(({ data }) =>
           data.hasAlert === 1 ? {
-            deviceId: device.deviceId, deviceNo: data.deviceNo,
-            alias: data.alias, oldPersonName: data.oldPersonName,
+            deviceId: device.deviceId, deviceNo: data.deviceNo || device.deviceNo,
+            alias: data.alias ?? device.alias ?? '', oldPersonName: data.oldPersonName ?? device.oldPersonName ?? '',
             kind, kindText: data.kindText, reason: data.reason, recordId: data.recordId
           } : null))
       }
@@ -427,7 +427,7 @@ export function useDevices() {
     }
   }
 
-  async function destructiveOperation(row: DeviceRecord, prompt: string, path: string, success: string, onSuccess?: (data: Record<string, any>) => unknown | Promise<unknown>) {
+  async function destructiveOperation(row: DeviceRecord, prompt: string, path: string, success: string, onSuccess?: (data: DeviceResponse) => unknown | Promise<unknown>) {
     try {
       await ElMessageBox.confirm(prompt, '提示', {
         confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning'
