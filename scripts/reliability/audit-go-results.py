@@ -40,7 +40,9 @@ def audit(path, mode):
         failures.append({"error": "missing or truncated test stream (<100 passing tests)"})
     required = {"TestCareSOSOutboxAuditAndState", "TestCareAdminTransitionsAndFamilyIsolation", "TestCareReceiptRequiresTrustedGatewaySignature"}
     if mode == "mysql":
-        required |= {"TestCapabilitiesRollbackAndReapply", "TestHighCardinalityHardCaps256Clients", "TestKeyRotationAndRetirementFailClosed", "TestImageS3TwoInstancesAndRealRestore", "TestCareFullHTTPChainAfterRealGatewayTimeout"}
+        required |= {"TestCapabilitiesRollbackAndReapply", "TestHighCardinalityHardCaps256Clients", "TestKeyRotationAndRetirementFailClosed", "TestRekeyMySQL", "TestProjectionRekeyCommandUsesMySQLSource", "TestImageS3TwoInstancesAndRealRestore", "TestCareFullHTTPChainAfterRealGatewayTimeout"}
+    else:
+        required.add("TestProjectionRekeyPostgres")
     for name in sorted(required - passed):
         failures.append({"test": name, "error": "required test did not pass"})
     return {"mode": mode, "counts": dict(counts), "skips": skips, "failures": failures, "accepted": not failures}
