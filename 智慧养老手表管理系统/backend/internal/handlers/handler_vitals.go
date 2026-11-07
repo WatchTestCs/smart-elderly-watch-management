@@ -41,8 +41,11 @@ func optBody(w http.ResponseWriter, r *http.Request) (map[string]any, bool) {
 	if r.Body == nil {
 		return map[string]any{}, true
 	}
-	data, err := io.ReadAll(io.LimitReader(r.Body, 1<<20))
-	if internalError(w, err) {
+	body := http.MaxBytesReader(w, r.Body, 1<<20)
+	defer body.Close()
+	data, err := io.ReadAll(body)
+	if err != nil {
+		write400(w, "请求参数格式错误或超出 1 MiB")
 		return nil, false
 	}
 	if len(bytes.TrimSpace(data)) == 0 {
@@ -209,7 +212,13 @@ func integerParam(value any) (int64, bool) {
 		parsed, err := strconv.ParseInt(strings.TrimSpace(id), 10, 64)
 		return parsed, err == nil
 	case float64:
-		return int64(id), id == math.Trunc(id)
+		// Converting an out-of-range float64 to int64 is implementation
+		// dependent. Reject overflow and non-finite IDs before conversion.
+		if math.IsNaN(id) || math.IsInf(id, 0) || id != math.Trunc(id) ||
+			id < math.MinInt64 || id >= 9223372036854775808 {
+			return 0, false
+		}
+		return int64(id), true
 	case int:
 		return int64(id), true
 	case int64:

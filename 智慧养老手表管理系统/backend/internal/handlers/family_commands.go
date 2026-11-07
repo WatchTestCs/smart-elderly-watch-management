@@ -175,7 +175,17 @@ func (h *Handler) familyDelete(w http.ResponseWriter, r *http.Request) {
 		recordNotFound(w)
 		return
 	}
+	if tx.IsMySQL() {
+		if _, err := tx.Exec(ctx, "DELETE FROM web_session WHERE role='FAMILY' AND actor_id=$1", id); internalError(w, err) {
+			_ = tx.Rollback(ctx)
+			return
+		}
+	}
 	if internalError(w, tx.Commit(ctx)) {
+		return
+	}
+	if err := h.Sessions.RevokeContext(context.WithoutCancel(ctx), auth.RoleFamily, id); err != nil {
+		response.JSON(w, http.StatusServiceUnavailable, map[string]any{"message": "账号已删除，但会话撤销确认失败"})
 		return
 	}
 	response.OK(w, nil)

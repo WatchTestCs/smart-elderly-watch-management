@@ -76,3 +76,27 @@ func TestParseDeviceTelemetryRetainsLegacyFields(t *testing.T) {
 		t.Fatalf("default time/source changed: %+v, ok=%v", fallback, ok)
 	}
 }
+
+func TestDeviceReportUnknownAlarmNeverOpensDatabase(t *testing.T) {
+	for _, alarm := range []any{"sos", "falling", "2", true, map[string]any{"type": "fall"}} {
+		response := callAPI((&Handler{}).deviceReport, map[string]any{
+			"deviceNo": "WATCH001", "secret": "existing-device-secret",
+			"alarm": alarm,
+		})
+		if response.Code != http.StatusBadRequest {
+			t.Fatalf("unrecognized alarm %v returned HTTP %d: %s", alarm, response.Code, response.Body.String())
+		}
+	}
+}
+
+func TestDeviceReportInvalidBindingVersionNeverOpensDatabase(t *testing.T) {
+	for _, version := range []any{nil, -1, 0, 1.5, "unknown", true} {
+		response := callAPI((&Handler{}).deviceReport, map[string]any{
+			"deviceNo": "WATCH001", "secret": "existing-device-secret",
+			"bindingVersion": version, "hr": 75,
+		})
+		if response.Code != http.StatusBadRequest {
+			t.Fatalf("invalid bindingVersion %v returned HTTP %d: %s", version, response.Code, response.Body.String())
+		}
+	}
+}
