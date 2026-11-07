@@ -52,6 +52,9 @@ impl OfflineQueue {
 
     /// 入队。队列满时丢最旧的一条并计数，而不是静默拒绝。
     pub fn push(&mut self, sample: HealthSample, epoch: i64) {
+        if self.epoch.is_some_and(|current| current != epoch) {
+            self.clear();
+        }
         if self.epoch.is_none() {
             self.epoch = Some(epoch);
         }
