@@ -2,6 +2,7 @@ import { common } from '@kit.AbilityKit';
 import { WatchApi } from '../services/WatchApi';
 import { WatchStore } from '../services/WatchStore';
 import { HealthSensors } from '../services/HealthSensors';
+import { WatchNetworkManager } from '../services/WatchNetworkManager';
 import { NativeSampling } from '../model/NativeSampling';
 import { Binding, WatchConfig,
   HealthSample, normalizeConfig, bindingFrom, enqueue, batchRequest, makeSamples, sameBinding, pendingForBinding } from '../model/Protocol';
@@ -32,6 +33,7 @@ struct Index {
   private counterDay: string = new Date().toISOString().slice(0, 10);
   private sensors: HealthSensors = new HealthSensors();
   private sampling: NativeSampling = new NativeSampling();
+  private network: WatchNetworkManager = new WatchNetworkManager();
 
   aboutToAppear(): void {
     this.sensors.resume();
@@ -54,11 +56,13 @@ struct Index {
       this.queued = batch ? batch.samples.length : 0;
       const simulator = this.store.simulator();
       if (simulator.day === this.counterDay) { this.steps = simulator.steps; }
+      this.network.startMonitoring(() => this.retryPendingAfterReconnect());
     } catch (error) {
       this.status = '读取本地状态失败，请重新打开应用；不会覆盖旧记录';
     }
   }
   aboutToDisappear(): void {
+    this.network.stopMonitoring();
     this.sensors.suspend();
     this.sampling.reset();
   }
@@ -168,6 +172,45 @@ struct Index {
     this.sampling = candidate;
     this.status = '已保存 ' + samples.length + ' 条传感器采样；计步首次读取仅建立基线' +
       (result.status ? '；' + result.status : '；点击上传记录提交');
+  }
+  private async retryPendingAfterReconnect(): Promise<void> {
+    if (this.busy || !this.store || !this.secret) { return; }
+    const pendingBatch = this.store.batch();
+    const pendingSOS = this.store.pendingSOS().filter((item) => !item.incidentId);
+    if (!pendingBatch && pendingSOS.length === 0) { return; }
+    await this.act(async () => {
+      if (!this.store) { return; }
+      const live = await this.liveBinding();
+      let items = this.store.pendingSOS();
+      let sosFlushed = 0;
+      for (const pending of items.filter((item) => !item.incidentId && sameBinding(item.binding, live))) {
+        const reply = await this.api.sos(this.config(), {
+          deviceNo: live.deviceNo, secret: this.secret,
+          requestId: pending.requestId, bindingVersion: pending.binding.version
+        });
+        if (!reply.incidentId) { throw new Error('后台确认缺少求助编号，原请求已保留'); }
+        const incidentId = reply.incidentId;
+        items = items.map((item) => item.requestId === pending.requestId && sameBinding(item.binding, live)
+          ? { binding: item.binding, requestId: item.requestId, incidentId: incidentId } : item);
+        await this.store.saveSOS(items);
+        sosFlushed++;
+      }
+      this.sosPending = items.filter((item) => !item.incidentId).length;
+
+      const batch = this.store.batch();
+      let telemetryFlushed = 0;
+      if (batch && sameBinding(batch.binding, live)) {
+        const reply = await this.api.upload(this.config(), batchRequest(batch, live, this.secret));
+        if (reply.accepted !== batch.samples.length) { throw new Error('上传确认数量不匹配，记录已保留'); }
+        await this.store.saveBatch(undefined);
+        telemetryFlushed = batch.samples.length;
+        this.queued = 0;
+        this.lastUpload = new Date().toLocaleTimeString();
+      }
+      if (sosFlushed || telemetryFlushed) {
+        this.status = '网络已恢复，自动补传：求助 ' + sosFlushed + ' 条，采样 ' + telemetryFlushed + ' 条';
+      }
+    });
   }
   private async upload(): Promise<void> {
     if (!this.store) { throw new Error('本地存储未就绪'); }
