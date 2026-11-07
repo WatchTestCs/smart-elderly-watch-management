@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strconv"
+	"suining-care/internal/health"
 	"testing"
 	"time"
 )
@@ -105,5 +106,75 @@ func TestSignedSOSIdempotentRetry(t *testing.T) {
 	var incidents int
 	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM care_incident").Scan(&incidents); err != nil || incidents != 1 {
 		t.Fatalf("SOS retry wrote %d incidents: %v", incidents, err)
+	}
+}
+
+
+func TestSignedHealthBatchValidationWithoutDatabase(t *testing.T) {
+	t.Setenv("CAREOLD_REQUIRE_SIGNED_DEVICE", "1")
+	body := map[string]any{
+		"deviceNo": "WATCH001", "secret": testSecret, "bindingVersion": 1,
+		"samples": []health.Sample{},
+	}
+	raw, err := json.Marshal(body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	h := &Handler{}
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/device/healthBatch", bytes.NewReader(raw))
+	w := httptest.NewRecorder()
+	h.healthBatch(w, req)
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("unsigned health batch accepted: %d %s", w.Code, w.Body.String())
+	}
+
+	req = signedTestRequest(t, "/api/v1/device/healthBatch", body, "health-invalid-hmac-012345", time.Now())
+	req.Header.Set("X-Device-Signature", "00")
+	w = httptest.NewRecorder()
+	h.healthBatch(w, req)
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("invalid health HMAC accepted: %d %s", w.Code, w.Body.String())
+	}
+}
+
+func TestSignedHealthBatchReplayUsesDurableNonce(t *testing.T) {
+	t.Setenv("CAREOLD_REQUIRE_SIGNED_DEVICE", "1")
+	pool := testDatabase(t)
+	seedDevice(t, pool)
+	h := testHandler(t, pool)
+	at := time.Date(2026, 11, 7, 12, 0, 0, 0, time.UTC)
+	sample := health.Sample{
+		RecordID: "signed-health-1", Source: "harmonyos", SourceDevice: "WATCH001",
+		Metric: "heart_rate", Unit: "count/min", Value: health.Number(72),
+		Start: at, End: at, Version: 1,
+	}
+	body := map[string]any{
+		"deviceNo": "WATCH001", "secret": testSecret, "bindingVersion": 1,
+		"samples": []health.Sample{sample},
+	}
+	send := func(nonce string) *httptest.ResponseRecorder {
+		w := httptest.NewRecorder()
+		h.healthBatch(w, signedTestRequest(t, "/api/v1/device/healthBatch", body, nonce, time.Now()))
+		return w
+	}
+	nonce := "health-nonce-replay-0123456789"
+	if first := send(nonce); first.Code != http.StatusOK {
+		t.Fatalf("initial signed health batch: %d %s", first.Code, first.Body.String())
+	}
+	if again := send(nonce); again.Code != http.StatusConflict {
+		t.Fatalf("replayed signed health batch: %d %s", again.Code, again.Body.String())
+	}
+	if fresh := send("health-nonce-fresh-0123456789"); fresh.Code != http.StatusOK {
+		t.Fatalf("fresh nonce retry: %d %s", fresh.Code, fresh.Body.String())
+	}
+
+	var samples int
+	if err := pool.QueryRow(context.Background(), `SELECT count(*) FROM health_sample
+		WHERE old_id=$1 AND device_id=$2 AND source=$3 AND source_device=$4 AND metric=$5`,
+		1, 1, "harmonyos", "WATCH001", "heart_rate").Scan(&samples); err != nil {
+		t.Fatal(err)
+	}
+	if samples != 1 {
+		t.Fatalf("signed retry wrote %d health rows, want 1", samples)
 	}
 }

@@ -13,14 +13,14 @@ import (
 	"suining-care/internal/response"
 )
 
-// A missing assignment preserves legacy administrator privileges until a
-// supervisor explicitly delegates a narrower duty. FAMILY is always rejected
-// by careAdmin before reaching these functions.
+// Duty is explicit. Legacy administrators are backfilled by migration; any
+// later administrator without an assignment remains visible as unassigned and
+// must not inherit supervisor privileges.
 func (h *Handler) careDuty(w http.ResponseWriter, r *http.Request, actor int64) (string, bool) {
 	var duty string
 	err := h.DB.QueryRow(r.Context(), "SELECT duty FROM care_staff_permission WHERE admin_id=$1", actor).Scan(&duty)
 	if err == pgx.ErrNoRows {
-		return "supervisor", true
+		return "unassigned", true
 	}
 	if internalError(w, err) {
 		return "", false
