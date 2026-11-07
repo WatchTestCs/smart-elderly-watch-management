@@ -42,7 +42,7 @@ func str(m map[string]any, key string) string {
 	return v
 }
 
-// int64Val 取数字字段（JSON number 解为 float64）。
+// int64Val parses integer-valued fields without accepting overflow or fractional values.
 func int64Val(m map[string]any, key string) (int64, bool) {
 	v, ok := m[key]
 	if !ok || v == nil {
@@ -56,10 +56,16 @@ func int64Val(m map[string]any, key string) (int64, bool) {
 		return int64(n), true
 	case json.Number:
 		i, err := n.Int64()
-		return i, err == nil
+		if err != nil {
+			return 0, false
+		}
+		return i, true
 	case string:
 		i, err := strconv.ParseInt(strings.TrimSpace(n), 10, 64)
-		return i, err == nil
+		if err != nil {
+			return 0, false
+		}
+		return i, true
 	case int64:
 		return n, true
 	case int:
@@ -85,7 +91,7 @@ func bodyPage(m map[string]any) (int, int) {
 // ref generates a UUID for an internal error reference.
 func ref() string { return uuid.NewString() }
 
-// isNotFound 判断 pgx.ErrNoRows。
+// isNotFound recognizes wrapped missing-row errors from both database drivers.
 func isNotFound(err error) bool { return errors.Is(err, pgx.ErrNoRows) || errors.Is(err, sql.ErrNoRows) }
 
 // internalError reports unexpected errors with an opaque reference.
