@@ -1,5 +1,5 @@
 import { reactive } from 'vue'
-import axios from 'axios'
+import axios, { type AxiosError } from 'axios'
 import { ElMessage } from 'element-plus'
 import { apiErrorMessage, assertApiResponse, isApplicationAPI } from './api/httpContract'
 import store from './store'
@@ -97,7 +97,7 @@ export function installHttpSecurity (router: { currentRoute: { value: { path: st
       return config
     })
   })
-  axios.interceptors.response.use(assertApiResponse, (error: any) => {
+  axios.interceptors.response.use(assertApiResponse, (error: AxiosError<{ code?: string }>) => {
     error.message = apiErrorMessage(error, error.message || '连接中断')
     if (error.response?.data?.code === 'DATABASE_UNAVAILABLE') {
       loaded = false
