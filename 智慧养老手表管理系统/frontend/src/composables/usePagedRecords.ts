@@ -31,7 +31,7 @@ export function usePagedRecords<TRecord, TQuery extends Record<string, unknown> 
       if (!Array.isArray(list) || typeof count !== 'number' || !Number.isSafeInteger(count) || count < 0) {
         throw new Error('invalid paged response')
       }
-      // 删除了末页最后一条时当前页会变空：回退到新的最后一页，而不是停在空白页。
+      // Deleting the last row on a page requires a fresh read of the new last page.
       const lastPage = Math.max(1, Math.ceil(count / pageSize.value))
       if (!list.length && count > 0 && lastPage < currentPage.value) {
         currentPage.value = lastPage
