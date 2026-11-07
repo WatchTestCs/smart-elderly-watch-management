@@ -40,6 +40,7 @@ func TestDeviceSignatureGateScopeWithoutDatabase(t *testing.T) {
 		{"shared route untouched", "/api/v1/health/statistics", true, http.StatusOK},
 		{"report keeps its transactional nonce", "/api/v1/device/report", true, http.StatusOK},
 		{"sos keeps its transactional nonce", "/api/v1/device/sos", true, http.StatusOK},
+		{"health batch keeps its transactional nonce", "/api/v1/device/healthBatch", true, http.StatusOK},
 		{"care receipt uses gateway HMAC", "/api/v1/care/receipt", true, http.StatusOK},
 		{"device route unsigned while disabled", "/api/v1/device/heartbeat", false, http.StatusOK},
 		{"device route unsigned while required", "/api/v1/device/heartbeat", true, http.StatusUnauthorized},

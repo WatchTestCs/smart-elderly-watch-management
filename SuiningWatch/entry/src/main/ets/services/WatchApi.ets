@@ -7,20 +7,19 @@ import { WatchRequestSigner } from './WatchRequestSigner';
 export class WatchApi {
   private signer: WatchRequestSigner = new WatchRequestSigner();
   private async post(config: WatchConfig, path: string,
-    body: Credentials | LoginRequest | BindRequest | HeartbeatRequest | BatchRequest | SOSRequest,
-    sign: boolean = false): Promise<DeviceReply> {
+    body: Credentials | LoginRequest | BindRequest | HeartbeatRequest | BatchRequest | SOSRequest): Promise<DeviceReply> {
     const request = http.createHttp();
     try {
       const payload = JSON.stringify(body);
-      const signature = sign ? await this.signer.sign(config.deviceNo, body.secret, payload) : undefined;
+      const signature = await this.signer.sign(config.deviceNo, body.secret, payload);
       const response = await request.request(config.server + '/api/v1/device/' + path, {
         method: http.RequestMethod.POST,
-        header: sign && signature ? {
+        header: {
           'Content-Type': 'application/json',
           'X-Device-Signature': signature.signature,
           'X-Device-Timestamp': signature.timestamp,
           'X-Device-Nonce': signature.nonce
-        } : { 'Content-Type': 'application/json' },
+        },
         extraData: payload,
         usingCache: false,
         expectDataType: http.HttpDataType.STRING,
@@ -49,9 +48,9 @@ export class WatchApi {
     return this.post(config, 'heartbeat', { deviceNo: config.deviceNo, secret: secret, appVersion: WATCH_APP_VERSION });
   }
   upload(config: WatchConfig, body: BatchRequest): Promise<DeviceReply> {
-    return this.post(config, 'healthBatch', body, true);
+    return this.post(config, 'healthBatch', body);
   }
   sos(config: WatchConfig, body: SOSRequest): Promise<DeviceReply> {
-    return this.post(config, 'sos', body, true);
+    return this.post(config, 'sos', body);
   }
 }
