@@ -10,7 +10,7 @@ it('keeps binding codes scoped to the currently selected resident', async () => 
   const replies = new Map<string, (value: unknown) => void>()
   vi.spyOn(axios, 'post').mockImplementation((url, body) => {
     if (url === '/api/v1/device/bindCodeList') {
-      return new Promise(resolve => { replies.set(String(body.oldId), resolve) })
+      return new Promise(resolve => { replies.set(String((body as { oldId?: string | number }).oldId), resolve) })
     }
     if (url === '/api/v1/device/list') return Promise.resolve({ data: { devices: [], total: 0 } })
     if (url === '/api/v1/device/alertCounts') return Promise.resolve({ data: { items: [], total: 0 } })
@@ -34,7 +34,7 @@ it('keeps binding codes scoped to the currently selected resident', async () => 
     expect(devices.bindCodeList.value).toEqual([{ id: 2, code: 'new', expireTime: 'tomorrow', used: 0 }])
     devices.bindCodeDialogVisible.value = false
     await flushPromises()
-    expect(devices.bindCodeList.value).toEqual([{ code: 'new' }])
+    expect(devices.bindCodeList.value).toEqual([{ id: 2, code: 'new', expireTime: 'tomorrow', used: 0 }])
   } finally {
     wrapper.unmount()
     vi.restoreAllMocks()
@@ -46,7 +46,7 @@ it('does not attach a created binding code to a newly selected resident', async 
   let finishCreate!: (value: unknown) => void
   vi.spyOn(axios, 'post').mockImplementation((url, body) => {
     if (url === '/api/v1/device/bindCodeList') {
-      return new Promise(resolve => { replies.set(String(body.oldId), resolve) })
+      return new Promise(resolve => { replies.set(String((body as { oldId?: string | number }).oldId), resolve) })
     }
     if (url === '/api/v1/device/createBindCode') return new Promise(resolve => { finishCreate = resolve })
     if (url === '/api/v1/device/list') return Promise.resolve({ data: { devices: [], total: 0 } })
