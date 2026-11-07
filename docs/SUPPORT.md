@@ -1,67 +1,32 @@
-# Support and feedback / 支持与反馈
+# 支持与问题反馈
 
-[简体中文 README](../README.md) · [English README](../README.en.md) · [Contributing](../CONTRIBUTING.md)
+项目通过 [GitHub Issues](https://github.com/WatchTestCs/smart-elderly-watch-management/issues) 接收缺陷报告和功能建议，可使用中文或英文。维护者按实际时间处理，不提供响应时限或生产可用性保证。
 
-Use [GitHub Issues](https://github.com/WatchTestCs/smart-elderly-watch-management/issues) for reproducible non-sensitive bugs and feature requests. Chinese and English are welcome. Support is best effort; no response-time or production availability SLA is promised.
+安全漏洞请按照 [安全政策](../.github/SECURITY.md) 私下报告。公开 Issue 不要包含真实长者资料、健康数据、位置记录、数据库文件、密码、设备密钥或私钥。日志和截图先脱敏。
 
-普通缺陷和功能建议可提交到 Issues。安全漏洞、真实人员资料、数据库文件、连接密码、设备密钥及私钥不要公开；请先阅读 [Security Policy](../.github/SECURITY.md)。
+## 常见问题
 
-## Quick checks / 提交前排查
-
-| Symptom | Check first |
+| 情况 | 检查 |
 | --- | --- |
-| Database warning / 数据库未连接 | Confirm MySQL readiness, the configured DSN and completed migrations. PostgreSQL failures delay analytics but should not block core business. |
-| Cannot create or use an account / 无法初始化或登录 | There is no default password. First-admin setup requires the native desktop flow and a ready database. |
-| Portable app will not start / 免安装无法启动 | Extract the whole ZIP, keep both EXEs together, and confirm WebView2 is available; Setup can install the missing shared runtime. |
-| Old records are missing / 升级后没有旧记录 | Back up first. Legacy PostgreSQL business data requires explicit offline import into an empty MySQL target; uploaded images are copied separately. No automatic legacy database conversion is performed. |
-| Linux differs from Windows / Linux 行为不一致 | The supported desktop delivery documented here targets Windows x64; do not assume an unverified Linux binary is equivalent. |
-| Unknown publisher / 未知发布者 | The current Windows preview artifacts are not signed by a publicly trusted certificate. Treat publisher warnings as expected and verify the downloaded SHA-256. |
+| 数据库未连接 | 检查 MySQL DSN、服务状态和迁移结果。PostgreSQL 故障主要影响异步分析。 |
+| 无法登录或初始化 | 系统没有默认管理员密码。首次初始化需要可用的业务数据库及桌面初始化入口。 |
+| 免安装版无法启动 | 完整解压 ZIP，保留主程序和 Go sidecar，并确认已安装 WebView2。 |
+| 升级后找不到旧数据 | 旧 PostgreSQL 业务数据需要离线导入空 MySQL；上传图片须另行迁移。安装程序不会自动转换数据库。 |
+| 显示未知发布者 | 当前 Windows 预览安装包尚未使用受信任证书签名。下载后核对发布页的 SHA-256。 |
 
-When sharing logs, include only a minimal redacted excerpt. Review screenshots for names, phone numbers, locations, and health information before posting them. Log collection is optional when it would reveal sensitive information.
+下载、安装和配置见 [项目 README](../README.md)。设备重新绑定后，旧绑定版本的健康记录不能以新绑定身份补传。
 
-Current Windows and source artifacts are listed in the [project downloads](../README.md#下载). New health uploads returning a binding conflict must retain the binding version from acquisition time; do not relabel old records. Notification delivery is separate from care verification.
+## 缺陷报告
 
-## Bug report template / 缺陷报告模板
+在 [新 Issue](https://github.com/WatchTestCs/smart-elderly-watch-management/issues/new) 中写明：
 
-Copy this into a [new issue](https://github.com/WatchTestCs/smart-elderly-watch-management/issues/new):
+- 使用的版本或提交 SHA、操作系统、安装包名称。
+- 最小复现步骤、预期结果和实际结果。
+- 问题是否稳定出现、MySQL 是否就绪。
+- 必要时附脱敏日志或截图。
 
-```text
-Summary / 问题概述:
+## 功能建议
 
-Version or commit / 版本或提交:
-Exact package filename / 安装包名称:
-OS and architecture / 系统与架构:
-Distribution / 交付方式: Windows Setup / portable ZIP / Linux archive / Linux DEB / source
+说明实际使用场景、受影响的角色、目前的限制、期望行为和验收方式。涉及数据库或登录机制时，写清楚对已有数据和会话的影响。
 
-Steps to reproduce / 最小复现步骤:
-1.
-2.
-
-Expected / 预期行为:
-Actual / 实际行为:
-
-Database state / 数据库是否已连接:
-Frequency / 是否稳定复现:
-Redacted logs or screenshots / 脱敏证据（可选）:
-```
-
-Do not paste a connection string, production database, password, private key, or personal care record. A database status and redacted error are sufficient to start a report.
-
-## Feature request template / 功能建议模板
-
-```text
-Use case / 使用场景:
-Who is affected / 使用者:
-Current limitation / 现有限制:
-Desired outcome / 期望结果:
-Alternatives considered / 已考虑的替代方法:
-How to verify success / 如何验收:
-```
-
-Describe the user need before prescribing a framework or dependency. For database or authentication changes, explain compatibility and whether existing data could be affected.
-
-## Branch and automation scope / 分支与自动化范围
-
-Current community documents are maintained on `preview`; the default branch remains unchanged. These are copyable reporting templates, not a claim that GitHub's automatic issue-form chooser has been enabled. GitHub makes issue templates available after they reach the default branch; see [official template documentation](https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/configuring-issue-templates-for-your-repository).
-
-本轮只维护 preview 文件，不为启用自动表单而修改 main、默认分支或仓库设置。
+代码贡献流程见 [CONTRIBUTING.md](../CONTRIBUTING.md)，当前版本的发布记录见 [CHANGELOG.md](../CHANGELOG.md)。
