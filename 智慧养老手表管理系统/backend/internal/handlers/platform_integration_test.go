@@ -29,6 +29,7 @@ func secureHandler(t *testing.T) *Handler {
 		t.Fatal(err)
 	}
 	mustExec(t, pool, "INSERT INTO users(user_id,user_name,user_phone,password,role) VALUES(1,'主管一','13800000001',$1,'1'),(2,'主管二','13800000002',$1,'1')", password)
+	mustExec(t, pool, "INSERT INTO care_staff_permission(admin_id,duty,assigned_by) VALUES(1,'supervisor',1),(2,'supervisor',1)")
 	return h
 }
 func TestTOTPEnrollmentRecoveryAndCrossReplicaRevocation(t *testing.T) {

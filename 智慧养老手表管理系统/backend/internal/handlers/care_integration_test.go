@@ -50,6 +50,8 @@ func TestCareSOSOutboxAuditAndState(t *testing.T) {
 func TestCareAdminTransitionsAndFamilyIsolation(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
+	mustExec(t, pool, "INSERT INTO users(user_id,user_name,role) VALUES(1,'处置主管','1'),(2,'复核主管','1')")
+	mustExec(t, pool, "INSERT INTO care_staff_permission(admin_id,duty,assigned_by) VALUES(1,'supervisor',1),(2,'supervisor',1)")
 	h := testHandler(t, pool)
 	out := api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "requestId": "test-press", "bindingVersion": 1})
 	id := int64(out["incidentId"].(float64))
