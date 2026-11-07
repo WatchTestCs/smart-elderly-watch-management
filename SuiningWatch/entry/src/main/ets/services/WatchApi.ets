@@ -1,17 +1,27 @@
 import { http } from '@kit.NetworkKit';
 import { WatchConfig, Credentials, DeviceReply, BindRequest, HeartbeatRequest,
   BatchRequest, SOSRequest, LoginRequest, WATCH_APP_VERSION, WATCH_PROTOCOL_VERSION, verifyHandshake } from '../model/Protocol';
+import { WatchRequestSigner } from './WatchRequestSigner';
 
 // A single request has a bounded lifetime; requests never log the device secret.
 export class WatchApi {
+  private signer: WatchRequestSigner = new WatchRequestSigner();
   private async post(config: WatchConfig, path: string,
-    body: Credentials | LoginRequest | BindRequest | HeartbeatRequest | BatchRequest | SOSRequest): Promise<DeviceReply> {
+    body: Credentials | LoginRequest | BindRequest | HeartbeatRequest | BatchRequest | SOSRequest,
+    sign: boolean = false): Promise<DeviceReply> {
     const request = http.createHttp();
     try {
+      const payload = JSON.stringify(body);
+      const signature = sign ? await this.signer.sign(config.deviceNo, body.secret, payload) : undefined;
       const response = await request.request(config.server + '/api/v1/device/' + path, {
         method: http.RequestMethod.POST,
-        header: { 'Content-Type': 'application/json' },
-        extraData: JSON.stringify(body),
+        header: sign && signature ? {
+          'Content-Type': 'application/json',
+          'X-Device-Signature': signature.signature,
+          'X-Device-Timestamp': signature.timestamp,
+          'X-Device-Nonce': signature.nonce
+        } : { 'Content-Type': 'application/json' },
+        extraData: payload,
         usingCache: false,
         expectDataType: http.HttpDataType.STRING,
         connectTimeout: 5000, readTimeout: 10000
@@ -39,9 +49,9 @@ export class WatchApi {
     return this.post(config, 'heartbeat', { deviceNo: config.deviceNo, secret: secret, appVersion: WATCH_APP_VERSION });
   }
   upload(config: WatchConfig, body: BatchRequest): Promise<DeviceReply> {
-    return this.post(config, 'healthBatch', body);
+    return this.post(config, 'healthBatch', body, true);
   }
   sos(config: WatchConfig, body: SOSRequest): Promise<DeviceReply> {
-    return this.post(config, 'sos', body);
+    return this.post(config, 'sos', body, true);
   }
 }

@@ -164,6 +164,7 @@ jobs:
         env:
           MYSQL_DSN: root:ci_watch_only@tcp(127.0.0.1:3306)/suining_watch_e2e?parseTime=true
           ADDR: 127.0.0.1:18796
+          CAREOLD_REQUIRE_SIGNED_DEVICE: '1'
         run: |
           set -euo pipefail
           mkdir -p evidence/ci/watch-integration

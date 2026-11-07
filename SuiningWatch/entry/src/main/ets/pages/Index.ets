@@ -2,6 +2,7 @@ import { common } from '@kit.AbilityKit';
 import { WatchApi } from '../services/WatchApi';
 import { WatchStore } from '../services/WatchStore';
 import { HealthSensors } from '../services/HealthSensors';
+import { WatchNetworkManager } from '../services/WatchNetworkManager';
 import { NativeSampling } from '../model/NativeSampling';
 import { Binding, WatchConfig,
   HealthSample, normalizeConfig, bindingFrom, enqueue, batchRequest, makeSamples, sameBinding, pendingForBinding } from '../model/Protocol';
@@ -32,6 +33,7 @@ struct Index {
   private counterDay: string = new Date().toISOString().slice(0, 10);
   private sensors: HealthSensors = new HealthSensors();
   private sampling: NativeSampling = new NativeSampling();
+  private network: WatchNetworkManager = new WatchNetworkManager();
 
   aboutToAppear(): void {
     this.sensors.resume();
@@ -54,11 +56,13 @@ struct Index {
       this.queued = batch ? batch.samples.length : 0;
       const simulator = this.store.simulator();
       if (simulator.day === this.counterDay) { this.steps = simulator.steps; }
+      this.network.startMonitoring(() => this.retryPendingAfterReconnect());
     } catch (error) {
       this.status = '读取本地状态失败，请重新打开应用；不会覆盖旧记录';
     }
   }
   aboutToDisappear(): void {
+    this.network.stopMonitoring();
     this.sensors.suspend();
     this.sampling.reset();
   }
@@ -118,7 +122,17 @@ struct Index {
     const binding = bindingFrom(config, reply);
     this.useBinding(binding);
     this.person = reply.oldPersonName || '长者 #' + binding.oldId;
-    this.status = '已认证 · ' + this.person;
+    const recovered = this.store
+      ? await this.store.flushPendingForBinding(this.api, config, this.secret, binding)
+      : { telemetryFlushed: 0, sosFlushed: 0 };
+    this.queued = this.store?.batch()?.samples.length || 0;
+    this.sosPending = this.store ? this.store.pendingSOS().filter((item) => !item.incidentId).length : 0;
+    if (recovered.telemetryFlushed > 0) {
+      this.lastUpload = new Date().toLocaleTimeString();
+    }
+    this.status = recovered.telemetryFlushed || recovered.sosFlushed
+      ? '已认证 · ' + this.person + '；已恢复求助 ' + recovered.sosFlushed + ' 条、采样 ' + recovered.telemetryFlushed + ' 条'
+      : '已认证 · ' + this.person;
   }
   private async bind(): Promise<void> {
     this.credentials();
@@ -168,6 +182,31 @@ struct Index {
     this.sampling = candidate;
     this.status = '已保存 ' + samples.length + ' 条传感器采样；计步首次读取仅建立基线' +
       (result.status ? '；' + result.status : '；点击上传记录提交');
+  }
+  private async retryPendingAfterReconnect(): Promise<void> {
+    if (this.busy || !this.store || this.secret.length < 24 || this.secret.length > 128) { return; }
+    const pendingBatch = this.store.batch();
+    const pendingSOS = this.store.pendingSOS().some((item) => !item.incidentId);
+    if (!pendingBatch && !pendingSOS) { return; }
+
+    await this.act(async () => {
+      if (!this.store) { return; }
+      const result = await this.store.flushPending(this.api, this.config(), this.secret);
+      if (result.binding) {
+        this.useBinding(result.binding);
+        this.person = '长者 #' + result.binding.oldId;
+      } else {
+        this.useBinding(undefined);
+      }
+      this.queued = this.store.batch()?.samples.length || 0;
+      this.sosPending = this.store.pendingSOS().filter((item) => !item.incidentId).length;
+      if (result.telemetryFlushed > 0) {
+        this.lastUpload = new Date().toLocaleTimeString();
+      }
+      if (result.sosFlushed || result.telemetryFlushed) {
+        this.status = '网络已恢复，自动补传：求助 ' + result.sosFlushed + ' 条，采样 ' + result.telemetryFlushed + ' 条';
+      }
+    });
   }
   private async upload(): Promise<void> {
     if (!this.store) { throw new Error('本地存储未就绪'); }
