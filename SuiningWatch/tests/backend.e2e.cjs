@@ -35,7 +35,7 @@ let cookie = '', csrf = '';
 const checks = [];
 function signedDeviceHeaders(route, body, payload) {
   if (!body || !body.secret || !body.deviceNo ||
-      (route !== '/api/v1/device/healthBatch' && route !== '/api/v1/device/sos')) return {};
+      !route.startsWith('/api/v1/device/')) return {};
   const timestamp = Math.floor(Date.now() / 1000).toString();
   const nonce = crypto.randomBytes(16).toString('hex');
   const bodyHash = crypto.createHash('sha256').update(payload).digest('hex');

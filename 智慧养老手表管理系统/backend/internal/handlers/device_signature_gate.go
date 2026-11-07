@@ -12,7 +12,7 @@ import (
 )
 
 // EnforceDeviceSignatures extends mandatory device HMAC and nonce replay
-// checks to hardware routes other than report/SOS. Those two endpoints already
+// checks to hardware routes other than report/SOS/healthBatch. Those three endpoints already
 // reserve their nonces inside the business transaction and must not do it
 // twice. /api/v1/care/receipt is tagged Device in the access registry but uses
 // a separate gateway HMAC, so it is excluded as well.
@@ -77,7 +77,7 @@ func (h *Handler) EnforceDeviceSignatures(next http.Handler) http.Handler {
 
 func deviceSignatureExempt(path string) bool {
 	switch path {
-	case "/api/v1/device/report", "/api/v1/device/sos", "/api/v1/care/receipt":
+	case "/api/v1/device/report", "/api/v1/device/sos", "/api/v1/device/healthBatch", "/api/v1/care/receipt":
 		return true
 	default:
 		return false
