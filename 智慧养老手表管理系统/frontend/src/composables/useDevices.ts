@@ -55,8 +55,6 @@ interface CreatedDeviceResponse { deviceNo: string; secret: string }
 interface BindCodeListResponse { bindCodes?: DeviceBindCode[] }
 interface NewBindCodeResponse { code: string; expireTime: string }
 interface DeviceMutationResponse { secret?: string }
-interface CreatedDevice { deviceNo: string; secret: string }
-interface NewBindCode { code: string; expireTime: string }
 interface DeviceAlert {
   visible: boolean
   loading: boolean
@@ -97,10 +95,10 @@ interface DeviceState {
   autoRefresh: boolean
   createDialogVisible: boolean
   bindCodeDialogVisible: boolean
-  createdDevice: CreatedDevice | null
+  createdDevice: CreatedDeviceResponse | null
   currentDevice: DeviceRecord | null
   bindCodeList: DeviceBindCode[]
-  newBindCode: NewBindCode | null
+  newBindCode: NewBindCodeResponse | null
   bindOldId: DeviceId | ''
   bindExpireDays: string
   createForm: { alias: string; model: string; oldId: DeviceId | '' }
