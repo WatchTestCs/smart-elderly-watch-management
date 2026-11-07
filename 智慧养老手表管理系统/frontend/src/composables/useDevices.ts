@@ -26,16 +26,17 @@ export interface DeviceRecord {
 }
 interface ResidentRecord { oldId: DeviceId; name: string }
 interface DeviceBindCode { id: DeviceId; code: string; expireTime: string; used: number }
-interface DeviceAlertCountRecord extends DeviceAlertCounts { deviceId: DeviceId }
 interface DeviceAlertCounts { personCount: number; rateCount: number; preCount: number }
-interface DeviceResponse extends Envelope {
-  devices?: DeviceRecord[]
-  total?: number
-  onlineCount?: number
-  items?: DeviceAlertCountRecord[]
+interface DeviceAlertCountRecord extends DeviceAlertCounts { deviceId: DeviceId }
+interface AlertCountsResponse {
+  items: DeviceAlertCountRecord[]
+  total: number
   personTotal?: number
   rateTotal?: number
   preTotal?: number
+}
+interface DeviceListResponse { devices: DeviceRecord[]; total?: number; onlineCount?: number }
+interface AlertDetailResponse {
   hasAlert?: number
   message?: string
   oldPersonName?: string
@@ -49,11 +50,11 @@ interface DeviceResponse extends Envelope {
   deviceNo?: string
   alias?: string
   kindText?: string
-  secret?: string
-  bindCodes?: DeviceBindCode[]
-  code?: string
-  expireTime?: string
 }
+interface CreatedDeviceResponse { deviceNo: string; secret: string }
+interface BindCodeListResponse { bindCodes?: DeviceBindCode[] }
+interface NewBindCodeResponse { code: string; expireTime: string }
+interface DeviceMutationResponse { secret?: string }
 interface CreatedDevice { deviceNo: string; secret: string }
 interface NewBindCode { code: string; expireTime: string }
 interface DeviceAlert {
@@ -110,7 +111,7 @@ interface DeviceState {
 }
 
 
-const post = (path: string, params: Record<string, unknown> = {}) => api.post<DeviceResponse>('/api/v1/device/' + path, params)
+const post = <T extends object = Record<string, never>>(path: string, params: Record<string, unknown> = {}) => api.post<Envelope & T>('/api/v1/device/' + path, params)
 
 function emptyAlert(): DeviceAlert {
   return {
@@ -156,7 +157,7 @@ export function useDevices() {
     if (disposed) return
     state.alertLoadError = ''
     try {
-      const { data } = await post('alertCounts')
+      const { data } = await post<AlertCountsResponse>('alertCounts')
       if (disposed || revision !== alertCountsRequest) return
       if (!Array.isArray(data.items) || typeof data.total !== 'number' || !Number.isSafeInteger(data.total)) throw new Error('missing alerts')
       state.alertCounts = Object.fromEntries(data.items.map(item => [item.deviceId, item]))
@@ -189,7 +190,7 @@ export function useDevices() {
     state.deviceLoadError = ''
     try {
       await Promise.all([
-        post('list', query).then(({ data }) => {
+        post<DeviceListResponse>('list', query).then(({ data }) => {
           if (disposed) return
           if (!isCurrentQuery()) {
             state.reloadPending = true
@@ -251,7 +252,7 @@ export function useDevices() {
       kind, deviceId: row.deviceId, deviceNo: row.deviceNo, alias: row.alias || ''
     }
     try {
-      const { data } = await post('alertDetail', { deviceId: row.deviceId, kind })
+      const { data } = await post<AlertDetailResponse>('alertDetail', { deviceId: row.deviceId, kind })
       if (revision !== alertRequest || disposed) return
       Object.assign(state.alertDialog, {
         loading: false, hasAlert: data.hasAlert === undefined ? 1 : data.hasAlert,
@@ -308,7 +309,7 @@ export function useDevices() {
         const count = kind === 'person' ? counts.personCount :
           kind === 'rate' ? counts.rateCount : counts.preCount
         if (count < 1) continue
-        requests.push(post('alertDetail', { deviceId: device.deviceId, kind }).then(({ data }) =>
+        requests.push(post<AlertDetailResponse>('alertDetail', { deviceId: device.deviceId, kind }).then(({ data }) =>
           data.hasAlert === 1 ? {
             deviceId: device.deviceId, deviceNo: data.deviceNo || device.deviceNo,
             alias: data.alias ?? device.alias ?? '', oldPersonName: data.oldPersonName ?? device.oldPersonName ?? '',
@@ -365,7 +366,7 @@ export function useDevices() {
     if (state.creating) return
     state.creating = true
     try {
-      const { data } = await post('create', {
+      const { data } = await post<CreatedDeviceResponse>('create', {
         alias: state.createForm.alias || '新手表',
         model: state.createForm.model || 'HarmonyOS-Wear',
         oldId: state.createForm.oldId === '' ? '' : state.createForm.oldId
@@ -400,7 +401,7 @@ export function useDevices() {
       return
     }
     try {
-      const { data } = await post('bindCodeList', { oldId })
+      const { data } = await post<BindCodeListResponse>('bindCodeList', { oldId })
       // The dialog may now belong to another resident.
       if (disposed || revision !== bindCodeRequest || !state.bindCodeDialogVisible || String(state.bindOldId) !== String(oldId)) return
       state.bindCodeList = Array.isArray(data.bindCodes) ? data.bindCodes : []
@@ -422,7 +423,7 @@ export function useDevices() {
     }
     const revision = bindDialogRevision
     try {
-      const { data } = await post('createBindCode', { oldId, expireDays: state.bindExpireDays })
+      const { data } = await post<NewBindCodeResponse>('createBindCode', { oldId, expireDays: state.bindExpireDays })
       accepted(data)
       if (disposed || revision !== bindDialogRevision || !state.bindCodeDialogVisible || String(state.bindOldId) !== String(oldId)) return
       if (typeof data.code !== 'string' || typeof data.expireTime !== 'string') throw new Error('invalid binding code response')
@@ -445,14 +446,14 @@ export function useDevices() {
     }
   }
 
-  async function destructiveOperation(row: DeviceRecord, prompt: string, path: string, success: string, onSuccess?: (data: DeviceResponse) => unknown | Promise<unknown>) {
+  async function destructiveOperation(row: DeviceRecord, prompt: string, path: string, success: string, onSuccess?: (data: Envelope & DeviceMutationResponse) => unknown | Promise<unknown>) {
     try {
       await ElMessageBox.confirm(prompt, '提示', {
         confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning'
       })
     } catch { return }
     try {
-      const { data } = await post(path, { deviceId: row.deviceId })
+      const { data } = await post<DeviceMutationResponse>(path, { deviceId: row.deviceId })
       accepted(data)
       if (onSuccess) await onSuccess(data)
       else ElMessage({ type: 'success', message: success })
