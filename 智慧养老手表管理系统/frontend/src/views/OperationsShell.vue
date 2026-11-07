@@ -17,7 +17,7 @@
             <h1>{{ route.meta.title }}</h1>
             <p class="view-description">{{ pageDescription }}</p>
           </header>
-          <router-view v-slot="{ Component }"><transition name="care-view" mode="out-in"><component :is="Component" :key="route.path" /></transition></router-view>
+          <router-view v-slot="{ Component }"><transition name="care-view" mode="out-in"><ErrorBoundary :key="route.path"><component :is="Component" /></ErrorBoundary></transition></router-view>
         </section>
       </main>
     </div>
@@ -26,6 +26,7 @@
 
 <script setup>
 import { ArrowRight } from '@element-plus/icons-vue'
+import ErrorBoundary from '@/components/ErrorBoundary.vue'
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Slider from '@/components/Slider.vue'
