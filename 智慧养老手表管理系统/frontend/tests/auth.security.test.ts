@@ -59,7 +59,7 @@ it('does not apply a pending session response after a 401', async () => {
   const router = { currentRoute: { value: { path: '/operations/overview' } }, replace: vi.fn() }
   installHttpSecurity(router)
   const denied = { response: { status: 401, data: { code: 'SESSION_EXPIRED' } } }
-  await expect(mock.responseError(denied)).rejects.toBe(denied)
+  await expect((mock.responseError as (error: unknown) => Promise<unknown>)(denied)).rejects.toBe(denied)
   finishSession({ data: {
     csrfToken: 'expired-csrf', authenticated: true,
     account: { id: 8, role: 'ADMIN', displayName: 'expired administrator' }
@@ -82,7 +82,7 @@ it('refreshes a rejected CSRF token without discarding the authenticated account
   })
   installHttpSecurity({ currentRoute: { value: { path: '/operations/overview' } } })
   const denied = { response: { status: 403, data: { code: 'CSRF_REJECTED' } } }
-  await expect(mock.responseError(denied)).rejects.toBe(denied)
+  await expect((mock.responseError as (error: unknown) => Promise<unknown>)(denied)).rejects.toBe(denied)
   await vi.waitFor(() => expect(authState.csrfToken).toBe('renewed-token'))
   expect(authState.account).toMatchObject({ id: 9, role: 'ADMIN', duty: 'supervisor' })
 })
