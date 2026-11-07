@@ -57,7 +57,9 @@ test('transport negotiates capabilities, destroys HTTP handles, and never replay
   await assert.rejects(api.login(config, 'not-logged'), /协议|兼容/);
   status = 409;
   reply = { returnCode: '0000', code: 'CONFLICT', message: '绑定版本已变化', reference: 'watch-test' };
-  await assert.rejects(api.upload(config, {}), /绑定版本/);
+  await assert.rejects(api.upload(config, {
+    deviceNo: 'WATCH001', secret: 'not-logged', bindingVersion: 1, samples: []
+  }), /绑定版本/);
   assert.equal(calls.length, 3);
   assert.equal(destroyed, 3);
   assert.throws(() => p.normalizeConfig('http://192.168.1.2', 'WATCH001'));
