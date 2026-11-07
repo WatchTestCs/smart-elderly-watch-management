@@ -1,5 +1,10 @@
 import { expect, it, vi } from 'vitest'
-const mock = vi.hoisted(() => ({ request: null as any, responseError: null as any, get: vi.fn(), post: vi.fn() }))
+const mock = vi.hoisted(() => ({
+  request: null as ((config: { url?: string; method?: string; headers: Record<string, string>; skipSession?: boolean }) => unknown) | null,
+  responseError: null as ((error: { message?: string; response?: { status?: number; data?: { code?: string } }; config?: { skipSession?: boolean } }) => Promise<unknown>) | null,
+  get: vi.fn(),
+  post: vi.fn()
+}))
 vi.mock('axios', async (importOriginal) => ({ ...await importOriginal<typeof import('axios')>(), default: {
   defaults: {}, get: mock.get, post: mock.post,
   interceptors: { request: { use: (fn: unknown) => { mock.request = fn } }, response: { use: (_success: unknown, error: unknown) => { mock.responseError = error } } }
@@ -10,22 +15,22 @@ it('adds CSRF to versioned mutations without leaking it to another origin', asyn
   mock.get.mockResolvedValue({ data: { csrfToken: 'session-csrf', authenticated: false } })
   installHttpSecurity({ currentRoute: { value: { path: '/sign-in' } } })
   const request = { url: '/api/v1/security/factor', method: 'post', headers: {} as Record<string, string> }
-  await mock.request(request)
+  await mock.request!(request)
   expect(request.headers['X-CSRF-TOKEN']).toBe('session-csrf')
   const external = { url: 'https://other.example/api/v1/security/factor', method: 'post', headers: {} }
-  await mock.request(external)
+  await mock.request!(external)
   expect(external.headers).toEqual({})
 })
 
 it('refreshes a downgraded ADMIN duty on forbidden response without replaying the write', async () => {
   const router = { currentRoute: { value: { path: '/operations/guardians' } }, replace: vi.fn() }
-  authState.account = { role: 'ADMIN', duty: 'supervisor' } as any
+  authState.account = { role: 'ADMIN', duty: 'supervisor' }
   mock.get.mockResolvedValue({
     data: { csrfToken: 'rotated', authenticated: true, account: { role: 'ADMIN', duty: 'caregiver' } }
   })
   installHttpSecurity(router)
   const denied = { response: { status: 403, data: { code: 'ACCESS_DENIED' } } }
-  await expect(mock.responseError(denied)).rejects.toBe(denied)
+  await expect(mock.responseError!(denied)).rejects.toBe(denied)
   await vi.waitFor(() => expect(router.replace).toHaveBeenCalledWith('/operations/overview'))
   expect(authState.account?.duty).toBe('caregiver')
   expect(mock.get).toHaveBeenCalledWith('/api/v1/auth/session', expect.objectContaining({ skipSession: true }))
