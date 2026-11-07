@@ -32,17 +32,18 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	isAlarm := parsed.alarm == "1" || strings.EqualFold(parsed.alarm, "fall")
+	// Even ordinary measurements belong to a binding epoch. A supplied epoch
+	// must be honored; silently ignoring it could attribute stale data to a
+	// newly bound elder.
+	bindingVersion, versionValid := int64Val(m, "bindingVersion")
+	if _, supplied := m["bindingVersion"]; supplied && (!versionValid || bindingVersion < 1) {
+		writeValidation400(w)
+		return
+	}
 	var requestID string
-	var bindingVersion int64
-	var versionValid bool
 	if isAlarm {
 		requestID, _ = vstr(m, "requestId")
 		if requestID != "" && !sosRequestIDOK(requestID) {
-			writeValidation400(w)
-			return
-		}
-		bindingVersion, versionValid = int64Val(m, "bindingVersion")
-		if _, supplied := m["bindingVersion"]; supplied && (!versionValid || bindingVersion < 1) {
 			writeValidation400(w)
 			return
 		}
@@ -68,31 +69,35 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 		hwFail(w, "DEVICE_NOT_BOUND", "设备还未绑定老人，请先在手表上输入绑定码")
 		return
 	}
-	if isAlarm {
-		// Care alarms must not be attributed using a stale owner or secret.
-		// Unversioned legacy reports are accepted only at binding epoch 1.
-		if !versionValid {
-			if d.HealthEpoch != 1 {
-				rollback()
-				conflict409(w, "绑定版本已变化，请重新登录")
-				return
-			}
-			bindingVersion = 1
-		}
-		locked, lockedCode, lockedMsg, lockErr := h.lockSOSDevice(ctx, tx, deviceNo, secret, bindingVersion)
-		if rollbackOnError(w, rollback, lockErr) {
-			return
-		}
-		if locked == nil {
+	// A report writes owner-scoped vitals, history and locations. Read-only
+	// authentication above is not enough: unbind can commit between that read
+	// and persistence. Take the same elder -> device locks as bind/SOS before
+	// *any* owner-scoped write, including queued non-emergency telemetry.
+	if !versionValid {
+		if isAlarm && d.HealthEpoch != 1 {
 			rollback()
-			if lockedCode == "409" {
-				conflict409(w, lockedMsg)
-			} else {
-				hwFail(w, lockedCode, lockedMsg)
-			}
+			conflict409(w, "绑定版本已变化，请重新登录")
 			return
 		}
-		d = locked
+		// Preserve existing unversioned ordinary-report compatibility, but
+		// recheck this snapshot's epoch under the row lock before writing.
+		bindingVersion = d.HealthEpoch
+	}
+	locked, lockedCode, lockedMsg, lockErr := h.lockSOSDevice(ctx, tx, deviceNo, secret, bindingVersion)
+	if rollbackOnError(w, rollback, lockErr) {
+		return
+	}
+	if locked == nil {
+		rollback()
+		if lockedCode == "409" {
+			conflict409(w, lockedMsg)
+		} else {
+			hwFail(w, lockedCode, lockedMsg)
+		}
+		return
+	}
+	d = locked
+	if isAlarm {
 		if requestID != "" {
 			var priorID, priorOwner int64
 			var priorKind, priorState string

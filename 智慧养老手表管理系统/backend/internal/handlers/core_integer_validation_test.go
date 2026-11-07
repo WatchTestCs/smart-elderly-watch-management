@@ -68,3 +68,16 @@ func TestDeviceRegistrationListContract(t *testing.T) {
 		t.Fatalf("invalid input created a device: %d %v", devices, err)
 	}
 }
+
+func TestGenericIntegerParamRejectsOverflowAndNonFiniteValues(t *testing.T) {
+	for _, input := range []any{1e100, -1e100, float64(1 << 63), math.NaN(), math.Inf(1), math.Inf(-1), 1.1} {
+		if value, ok := integerParam(input); ok {
+			t.Fatalf("invalid integer input %v accepted as %d", input, value)
+		}
+	}
+	for _, input := range []any{int64(1), float64(0), float64(9007199254740991), "-9223372036854775808", "9223372036854775807"} {
+		if _, ok := integerParam(input); !ok {
+			t.Fatalf("valid integer input %v rejected", input)
+		}
+	}
+}

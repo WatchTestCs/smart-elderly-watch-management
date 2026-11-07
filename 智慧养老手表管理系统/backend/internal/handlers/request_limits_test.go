@@ -55,3 +55,24 @@ func TestPaginationAndIDsRejectInvalidNumbers(t *testing.T) {
 		t.Fatalf("invalid pagination must be bounded: page=%d size=%d", p, ps)
 	}
 }
+
+func TestOptionalJSONCannotAcceptAnOversizedValidPrefix(t *testing.T) {
+	// LimitReader silently truncates trailing whitespace after a valid object.
+	// MaxBytesReader must reject the entire request instead.
+	for _, body := range []string{
+		"{}" + strings.Repeat(" ", 1<<20),
+		strings.Repeat(" ", (1<<20)+1),
+		"{}" + strings.Repeat(" ", 1<<20) + "[]",
+	} {
+		w := httptest.NewRecorder()
+		_, ok := optBody(w, httptest.NewRequest(http.MethodPost, "/api/v1/care/incidents", strings.NewReader(body)))
+		if ok || w.Code != http.StatusBadRequest {
+			t.Fatalf("oversized optional body accepted: ok=%v HTTP=%d", ok, w.Code)
+		}
+	}
+	w := httptest.NewRecorder()
+	out, ok := optBody(w, httptest.NewRequest(http.MethodPost, "/api/v1/care/incidents", strings.NewReader(" {} \n ")))
+	if !ok || len(out) != 0 {
+		t.Fatalf("normal optional object failed: HTTP=%d ok=%v body=%v", w.Code, ok, out)
+	}
+}
