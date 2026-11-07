@@ -33,6 +33,17 @@ jobs:
       - name: Install locked dependencies
         run: npm ci
 
+      - name: Set up Go for native API contract verification
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version: "1.27.2"
+          cache: false
+
+      - name: Verify native Go API types and drift rejection
+        run: |
+          npm run api:check
+          npm run test:api-drift
+
       - name: Unit tests and incremental TypeScript checks
         shell: bash
         run: |
