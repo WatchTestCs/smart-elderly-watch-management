@@ -212,3 +212,5 @@ Licensed under the [MIT License](LICENSE). Bundled fonts, map tiles, and third-p
 ## API contract
 
 [API contracts and resolved differences](docs/API_CONTRACTS.md) list request and success fields for 109 paths. JSON success uses HTTP 200 and `returnCode="1111"`. Failures use HTTP 4xx/5xx with `returnCode="0000"`, `code`, `message` and an optional `reference`. Image downloads return bytes; uploads use multipart field `file`.
+
+A `/device/report` carrying a valid `requestId` is idempotent at the transaction level: resending the same number with identical content returns the original success response (`duplicate=true`) without a second write, while reusing the number with different content returns 409. Legacy reports without a request ID keep their previous behaviour. With the durable telemetry queue enabled (`CAREOLD_DURABLE_TELEMETRY=1`), that path keeps its existing unique-key 409 semantics.
