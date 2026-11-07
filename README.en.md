@@ -212,3 +212,5 @@ Licensed under the [MIT License](LICENSE). Bundled fonts, map tiles, and third-p
 ## API contract
 
 [API contracts and resolved differences](docs/API_CONTRACTS.md) list request and success fields for 109 paths. JSON success uses HTTP 200 and `returnCode="1111"`. Failures use HTTP 4xx/5xx with `returnCode="0000"`, `code`, `message` and an optional `reference`. Image downloads return bytes; uploads use multipart field `file`.
+
+Device requests use `X-Device-Signature`, `X-Device-Timestamp` and `X-Device-Nonce`. With `CAREOLD_REQUIRE_SIGNED_DEVICE=1`, every device route requires a valid signature and rejects nonce replay, except `/device/report` and `/device/sos` (which reserve nonces inside their business transaction) and `/care/receipt` (which uses the gateway HMAC). Without the variable, legacy unsigned firmware still works, but any signature that is present must verify.
