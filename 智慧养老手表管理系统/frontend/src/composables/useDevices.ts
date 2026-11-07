@@ -376,7 +376,8 @@ export function useDevices() {
   }
   async function loadBindCodes(oldId: DeviceId | '') {
     const revision = ++bindCodeRequest
-    if (disposed || !oldId) {
+    if (disposed) return
+    if (!oldId) {
       state.bindCodeList = []
       return
     }
@@ -392,7 +393,8 @@ export function useDevices() {
     }
   }
   async function createBindCode() {
-    if (!state.bindOldId) {
+    const oldId = state.bindOldId
+    if (!oldId) {
       ElMessage({ type: 'warning', message: '请先选择要绑定的老人' })
       return
     }
@@ -400,16 +402,18 @@ export function useDevices() {
       ElMessage({ type: 'warning', message: '有效天数只能填数字' })
       return
     }
+    const revision = bindCodeRequest
     try {
-      const { data } = await post('createBindCode', {
-        oldId: state.bindOldId, expireDays: state.bindExpireDays
-      })
+      const { data } = await post('createBindCode', { oldId, expireDays: state.bindExpireDays })
       accepted(data)
+      if (disposed || revision !== bindCodeRequest || !state.bindCodeDialogVisible || String(state.bindOldId) !== String(oldId)) return
       if (typeof data.code !== 'string' || typeof data.expireTime !== 'string') throw new Error('invalid binding code response')
       state.newBindCode = { code: data.code, expireTime: data.expireTime }
-      await loadBindCodes(state.bindOldId)
+      await loadBindCodes(oldId)
     } catch (error) {
-      ElMessage({ type: 'error', message: apiErrorMessage(error, '生成失败') })
+      if (!disposed && revision === bindCodeRequest && state.bindCodeDialogVisible && String(state.bindOldId) === String(oldId)) {
+        ElMessage({ type: 'error', message: apiErrorMessage(error, '生成失败') })
+      }
     }
   }
   async function deleteBindCode(row: { id: DeviceId }) {
