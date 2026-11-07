@@ -109,7 +109,6 @@ func TestSignedSOSIdempotentRetry(t *testing.T) {
 	}
 }
 
-
 func TestSignedHealthBatchValidationWithoutDatabase(t *testing.T) {
 	t.Setenv("CAREOLD_REQUIRE_SIGNED_DEVICE", "1")
 	body := map[string]any{
