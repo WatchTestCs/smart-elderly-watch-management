@@ -1,5 +1,5 @@
 import { expect, it, vi } from 'vitest'
-import { APP_TITLE, documentTitle, isChunkLoadError, recoverFromChunkError } from './appGuards'
+import { APP_TITLE, documentTitle, isChunkLoadError, recoverFromChunkError } from '@/appGuards'
 
 const chunkError = new TypeError('Failed to fetch dynamically imported module: /assets/Residents-1a2b.js')
 const memory = () => {

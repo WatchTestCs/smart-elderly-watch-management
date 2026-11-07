@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { editableResident, residentFields } from '../composables/residentFields'
+import { editableResident, residentFields } from '@/composables/residentFields'
 
 it('serializes only editable resident fields without old display metadata', () => {
   const editable = {

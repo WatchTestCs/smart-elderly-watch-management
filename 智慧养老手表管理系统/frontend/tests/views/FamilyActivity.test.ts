@@ -1,7 +1,7 @@
 import { flushPromises, shallowMount } from '@vue/test-utils'
 import axios from 'axios'
 import { expect, it, vi } from 'vitest'
-import FamilyActivity from './FamilyActivity.vue'
+import FamilyActivity from '@/views/FamilyActivity.vue'
 
 it.each([
   [0, '0'],

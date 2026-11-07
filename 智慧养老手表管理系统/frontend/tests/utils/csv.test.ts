@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { toCsv } from './csv'
+import { toCsv } from '@/utils/csv'
 
 describe('toCsv', () => {
   const columns = [{ key: 'name', label: '姓名' }, { key: 'note', label: '备注' }]

@@ -1,10 +1,10 @@
 import { beforeEach, expect, it, vi } from 'vitest'
 
 const post = vi.hoisted(() => vi.fn())
-vi.mock('../api/client', () => ({ api: { post }, accepted: () => undefined }))
+vi.mock('@/api/client', () => ({ api: { post }, accepted: () => undefined }))
 vi.mock('element-plus', () => ({ ElMessage: vi.fn(), ElMessageBox: { confirm: vi.fn() } }))
 
-import { writeRecord } from './recordActions'
+import { writeRecord } from '@/composables/recordActions'
 
 beforeEach(() => post.mockReset())
 

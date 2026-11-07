@@ -2,7 +2,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { defineComponent } from 'vue'
 import { expect, it, vi } from 'vitest'
 import axios from 'axios'
-import LatestHealthPanel from './LatestHealthPanel.vue'
+import LatestHealthPanel from '@/components/LatestHealthPanel.vue'
 
 const Button = defineComponent({ emits: ['click'], template: '<button @click="$emit(\'click\')"><slot /></button>' })
 const mountPanel = () => mount(LatestHealthPanel, { global: { stubs: { ElButton: Button } } })

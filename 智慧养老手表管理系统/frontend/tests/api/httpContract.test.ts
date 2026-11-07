@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest'
 import { CanceledError, type AxiosResponse } from 'axios'
-import { apiErrorMessage, assertApiResponse, isApplicationAPI, isSuccessEnvelope } from './httpContract'
-import { accepted, apiPath } from './client'
+import { apiErrorMessage, assertApiResponse, isApplicationAPI, isSuccessEnvelope } from '@/api/httpContract'
+import { accepted, apiPath } from '@/api/client'
 
 const response = (data: unknown) => ({ data, status: 200, config: { url: '/api/v1/guardians/list' } }) as AxiosResponse
 
@@ -23,6 +23,9 @@ it('retains server messages, reference identifiers, HTTP definitions and cancell
 
 it('leaves external responses and binary downloads to their own protocols', () => {
   expect(isApplicationAPI('https://other.example/api/v1/guardians/list')).toBe(false)
+  expect(isApplicationAPI('http://[invalid/api/v1/guardians/list')).toBe(false)
+  const malformed = { ...response('ok'), config: { url: 'http://[invalid/api/v1/a' } } as AxiosResponse
+  expect(assertApiResponse(malformed)).toBe(malformed)
   const external = { ...response('ok'), config: { url: 'https://other.example/api/v1/a' } } as AxiosResponse
   expect(assertApiResponse(external)).toBe(external)
   const image = { ...response(new Blob()), config: { url: '/api/v1/image/download?name=x', responseType: 'blob' } } as AxiosResponse

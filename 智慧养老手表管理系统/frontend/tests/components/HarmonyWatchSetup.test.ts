@@ -1,7 +1,7 @@
 import { mount } from '@vue/test-utils'
 import { defineComponent } from 'vue'
 import { expect, it } from 'vitest'
-import HarmonyWatchSetup from './HarmonyWatchSetup.vue'
+import HarmonyWatchSetup from '@/components/HarmonyWatchSetup.vue'
 
 it('guides device setup with an HTTPS host, keeping credentials out of address configuration', async () => {
   const Input = defineComponent({ props: ['modelValue'], emits: ['update:modelValue'], template: '<input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />' })

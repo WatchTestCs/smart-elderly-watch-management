@@ -2,7 +2,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { defineComponent } from 'vue'
 import { expect, it, vi } from 'vitest'
 import axios from 'axios'
-import CareOperationsPanel from './CareOperationsPanel.vue'
+import CareOperationsPanel from '@/components/CareOperationsPanel.vue'
 
 const Button = defineComponent({ emits: ['click'], template: '<button @click="$emit(\'click\')"><slot /></button>' })
 const Select = defineComponent({ emits: ['change'], template: '<button @click="$emit(\'change\', \'caregiver\')">更改岗位</button>' })
@@ -20,4 +20,21 @@ it.each(['staff', 'assignDuty', 'accessAudit'])('renders %s server errors withou
     await flushPromises()
     expect(view.get('.care-error').text()).toBe('岗位记录已变化（编号：care-1）')
   } finally { view.unmount(); vi.restoreAllMocks() }
+})
+
+it('ignores a late staff response after the component unmounts', async () => {
+  let finishStaff!: (value: unknown) => void
+  vi.spyOn(axios, 'post').mockImplementation(async url => {
+    if (url === 'api/v1/care/staff') return new Promise(resolve => { finishStaff = resolve })
+    return { data: { primaryEngine: 'mysql', workerHealthy: true } }
+  })
+  const view = mount(CareOperationsPanel, {
+    global: { stubs: { ElButton: Button, ElSelect: Select, ElOption: true, SecurityPanel: true } }
+  })
+  await flushPromises()
+  view.unmount()
+  finishStaff({ data: { staff: [{ id: 1, name: 'late', duty: 'caregiver' }] } })
+  await flushPromises()
+  expect(axios.post).toHaveBeenCalledWith('api/v1/care/staff', {}, { withCredentials: true })
+  vi.restoreAllMocks()
 })

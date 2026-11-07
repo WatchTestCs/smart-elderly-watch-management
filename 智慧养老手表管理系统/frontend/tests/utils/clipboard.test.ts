@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from 'vitest'
-import { copyText } from './clipboard'
+import { copyText } from '@/utils/clipboard'
 
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); document.body.replaceChildren() })
 

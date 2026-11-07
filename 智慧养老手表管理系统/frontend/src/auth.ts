@@ -1,9 +1,7 @@
 import { reactive } from 'vue'
-import type { InternalAxiosRequestConfig } from 'axios'
-import axios from 'axios'
+import axios, { type AxiosError } from 'axios'
 import { ElMessage } from 'element-plus'
-import type { Router } from 'vue-router'
-import { apiErrorMessage, assertApiResponse } from './api/httpContract'
+import { apiErrorMessage, assertApiResponse, isApplicationAPI } from './api/httpContract'
 import store from './store'
 
 export interface SessionAccount {
@@ -36,8 +34,20 @@ const profileKeys = ['token', 'user_name', 'oldIdfamily', 'familyPhone', 'family
 
 function clearProfile () {
   for (const key of profileKeys) {
-    try { localStorage.removeItem(key) } catch (_) { /* Storage may be disabled; the server session remains authoritative. */ }
+    try { localStorage.removeItem(key) } catch { /* Optional browser storage. */ }
   }
+}
+
+function invalidateSession(clearIdentity = true) {
+  sessionGeneration++
+  pending = null
+  loaded = false
+  authState.csrfToken = ''
+  if (!clearIdentity) return
+  authState.account = null
+  authState.csrfHeader = 'X-CSRF-TOKEN'
+  clearProfile()
+  store.clearTabs()
 }
 
 export function loadSession (refresh = false): Promise<SessionAccount | null> {
@@ -73,29 +83,21 @@ export function loadSession (refresh = false): Promise<SessionAccount | null> {
 
 export function endSession () {
   return axios.post('/api/v1/auth/logout', {}, { skipSession: true, headers: { [authState.csrfHeader]: authState.csrfToken } }).then(() => {
-    sessionGeneration++
-    pending = null
-    loaded = false
-    authState.account = null
-    authState.csrfToken = ''
-    authState.csrfHeader = 'X-CSRF-TOKEN'
-    clearProfile()
-    store.clearTabs()
+    invalidateSession()
   })
 }
 
 export function installHttpSecurity (router: { currentRoute: { value: { path: string } }; replace?: (path: string) => unknown }) {
   axios.defaults.withCredentials = true
   axios.interceptors.request.use(config => {
-    const url = new URL(config.url || '', window.location.href)
-    if (config.skipSession || url.origin !== window.location.origin || !(url.pathname.startsWith('/api/v1/'))) return config
+    if (config.skipSession || !isApplicationAPI(config.url)) return config
     if (['get', 'head', 'options'].includes((config.method || 'get').toLowerCase())) return config
     return loadSession().then(() => {
       config.headers[authState.csrfHeader] = authState.csrfToken
       return config
     })
   })
-  axios.interceptors.response.use(assertApiResponse, (error: any) => {
+  axios.interceptors.response.use(assertApiResponse, (error: AxiosError<{ code?: string }>) => {
     error.message = apiErrorMessage(error, error.message || '连接中断')
     if (error.response?.data?.code === 'DATABASE_UNAVAILABLE') {
       loaded = false
@@ -105,27 +107,16 @@ export function installHttpSecurity (router: { currentRoute: { value: { path: st
         : '此功能需要连接数据库，正在自动连接。恢复后请重试。', grouping: true })
     }
     if (error.response && error.response.status === 401) {
-      sessionGeneration++
-      pending = null
-      loaded = false
-      authState.account = null
-      authState.csrfToken = ''
-      authState.csrfHeader = 'X-CSRF-TOKEN'
-      clearProfile()
-      store.clearTabs()
+      invalidateSession()
       if (!['/sign-in', '/join-family'].includes(router.currentRoute.value.path)) router.replace?.('/sign-in')
     }
     if (error.response && error.response.status === 403 && error.response.data && error.response.data.code === 'CSRF_REJECTED') {
-      sessionGeneration++
-      pending = null
-      loaded = false
-      authState.csrfToken = ''
-      // 只刷新令牌，不自动重放可能产生写入的请求。
+      invalidateSession(false)
+      // Refresh the token without replaying the rejected write.
       loadSession(true).catch(() => {})
     }
     if (error.response?.status === 403 && error.response.data?.code === 'ACCESS_DENIED' && authState.account?.role === 'ADMIN') {
-      // A supervisor may change a duty while a page is open. Refresh the
-      // session, but never replay the denied mutation automatically.
+      // Refresh changed permissions without replaying the rejected write.
       loadSession(true).then(account => {
         if (account?.role === 'ADMIN' && ['caregiver', 'auditor'].includes(account.duty || '') && !['/operations/overview', '/operations'].includes(router.currentRoute.value.path)) {
           router.replace?.('/operations/overview')
@@ -137,7 +128,7 @@ export function installHttpSecurity (router: { currentRoute: { value: { path: st
 }
 
 
-// Shared service probe: back off while offline and never replay mutations.
+// Probe readiness with backoff; never retry writes implicitly.
 export function monitorDatabase (router: { currentRoute: { value: { path: string } }; replace?: (path: string) => unknown }) {
   let active = true
   let checking = false

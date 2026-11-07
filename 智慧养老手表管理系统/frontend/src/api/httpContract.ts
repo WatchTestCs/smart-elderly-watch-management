@@ -15,8 +15,12 @@ export function isSuccessEnvelope(value: unknown): value is { returnCode: '1111'
 
 export function isApplicationAPI(url: string | undefined): boolean {
   if (!url) return false
-  const target = new URL(url, window.location.href)
-  return target.origin === window.location.origin && target.pathname.startsWith('/api/v1/')
+  try {
+    const target = new URL(url, window.location.href)
+    return target.origin === window.location.origin && target.pathname.startsWith('/api/v1/')
+  } catch {
+    return false
+  }
 }
 
 export function apiErrorMessage(error: unknown, fallback = '请求未完成'): string {
@@ -24,7 +28,7 @@ export function apiErrorMessage(error: unknown, fallback = '请求未完成'): s
   const failure = error as { response?: { data?: Partial<ApiFailure>; status?: number }; name?: string; message?: string; status?: number; cause?: Partial<ApiFailure> }
   let data = failure?.response?.data || (failure?.cause?.returnCode === '0000' ? failure.cause : undefined)
   if (!data && failure?.name === 'UploadAjaxError' && failure.message) {
-    try { data = JSON.parse(failure.message) as Partial<ApiFailure> } catch { /* Element Plus also reports plain transport errors. */ }
+    try { data = JSON.parse(failure.message) as Partial<ApiFailure> } catch { /* Plain upload transport error. */ }
   }
   if (data?.returnCode === '0000' && typeof data.code === 'string' && typeof data.message === 'string' && data.message.trim()) {
     return data.message + (typeof data.reference === 'string' && data.reference ? `（编号：${data.reference}）` : '')

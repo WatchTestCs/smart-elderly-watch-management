@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from 'vitest'
 import axios from 'axios'
-import { invitations } from './invitations'
+import { invitations } from '@/api/invitations'
 afterEach(() => vi.restoreAllMocks())
 it('preserves invitation routes, payloads and cookies', async () => {
   const post = vi.spyOn(axios, 'post').mockResolvedValue({ data: { returnCode: '1111' } })
