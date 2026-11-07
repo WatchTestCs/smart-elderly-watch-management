@@ -107,9 +107,11 @@ export function useDevices() {
   let workbenchRequest = 0
 
   async function loadAlertCounts() {
+    if (disposed) return
     state.alertLoadError = ''
     try {
       const { data } = await post('alertCounts')
+      if (disposed) return
       if (!Array.isArray(data.items) || !Number.isSafeInteger(data.total)) throw new Error('missing alerts')
       state.alertCounts = Object.fromEntries(data.items.map(item => [item.deviceId, item]))
       state.alertTotals = {
@@ -118,12 +120,14 @@ export function useDevices() {
       }
       state.alertsReady = true
     } catch (error) {
+      if (disposed) return
       state.alertsReady = false
       state.alertLoadError = apiErrorMessage(error, '异常统计暂时无法更新，请重新加载。')
     }
   }
 
   async function loadDevices() {
+    if (disposed) return
     if (state.deviceLoading) {
       state.reloadPending = true
       return
@@ -136,19 +140,22 @@ export function useDevices() {
           page: state.currentPage, pageSize: state.pageSize,
           query: state.deviceQuery, state: state.deviceState
         }).then(({ data }) => {
+          if (disposed) return
           if (!Array.isArray(data.devices)) throw new Error('missing devices')
           state.deviceList = data.devices
           state.deviceTotal = data.total ?? data.devices.length
           state.serverOnlineCount = data.onlineCount ??
             data.devices.filter((item: DeviceRecord) => item.online === 1).length
         }).catch(error => {
+          if (disposed) return
           state.deviceLoadError = apiErrorMessage(error, '设备列表暂时无法更新，请重新加载。')
         }),
         loadAlertCounts()
       ])
     } finally {
+      if (disposed) return
       state.deviceLoading = false
-      if (state.reloadPending && !disposed) {
+      if (state.reloadPending) {
         state.reloadPending = false
         void loadDevices()
       }
@@ -255,6 +262,7 @@ export function useDevices() {
       const rows = (await Promise.all(requests)).filter((row): row is DeviceRecord => row !== null)
       if (!disposed && revision === workbenchRequest) state.workbench.list = rows
     } catch (error) {
+      if (disposed || revision !== workbenchRequest) return
       ElMessage({ type: 'error', message: apiErrorMessage(error, '读取异常工作台失败') })
     }
   }
