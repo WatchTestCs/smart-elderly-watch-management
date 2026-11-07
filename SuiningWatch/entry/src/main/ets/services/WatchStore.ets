@@ -67,7 +67,7 @@ export class WatchStore {
   }
   async flushPending(api: WatchApiDispatcher, config: WatchConfig, secret: string): Promise<FlushResult> {
     const batch = this.batch();
-    let items = this.pendingSOS();
+    const items = this.pendingSOS();
     const hasPendingSOS = items.some((item) => !item.incidentId);
     if (!batch && !hasPendingSOS) {
       return { telemetryFlushed: 0, sosFlushed: 0 };
@@ -77,7 +77,17 @@ export class WatchStore {
     if (login.bound !== 1) {
       return { telemetryFlushed: 0, sosFlushed: 0 };
     }
-    const live = bindingFrom(config, login);
+    return this.flushPendingForBinding(api, config, secret, bindingFrom(config, login));
+  }
+
+  async flushPendingForBinding(api: WatchApiDispatcher, config: WatchConfig,
+    secret: string, live: Binding): Promise<FlushResult> {
+    const batch = this.batch();
+    let items = this.pendingSOS();
+    const hasPendingSOS = items.some((item) => !item.incidentId);
+    if (!batch && !hasPendingSOS) {
+      return { telemetryFlushed: 0, sosFlushed: 0, binding: live };
+    }
     let sosFlushed = 0;
 
     for (const pending of items.filter((item) => !item.incidentId && sameBinding(item.binding, live))) {

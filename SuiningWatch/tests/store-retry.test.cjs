@@ -102,3 +102,19 @@ test('reconnect clears telemetry only after an exact acknowledgement', async () 
   assert.equal(result.telemetryFlushed, batch.samples.length);
   assert.equal(store.batch(), undefined);
 });
+
+
+test('successful authentication can flush a durable queue without waiting for a network transition', async () => {
+  const batch = protocol.enqueue(undefined, binding, samples);
+  const { store } = makeStore({ batch: JSON.stringify(batch) });
+  const api = {
+    login: async () => { throw new Error('authenticated binding must be reused'); },
+    sos: async () => { throw new Error('unexpected SOS'); },
+    upload: async () => ({ returnCode: '1111', accepted: batch.samples.length })
+  };
+
+  const result = await store.flushPendingForBinding(api, config, 'x'.repeat(24), binding);
+  assert.equal(result.telemetryFlushed, batch.samples.length);
+  assert.deepEqual(result.binding, binding);
+  assert.equal(store.batch(), undefined);
+});

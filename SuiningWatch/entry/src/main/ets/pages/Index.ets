@@ -122,7 +122,17 @@ struct Index {
     const binding = bindingFrom(config, reply);
     this.useBinding(binding);
     this.person = reply.oldPersonName || '长者 #' + binding.oldId;
-    this.status = '已认证 · ' + this.person;
+    const recovered = this.store
+      ? await this.store.flushPendingForBinding(this.api, config, this.secret, binding)
+      : { telemetryFlushed: 0, sosFlushed: 0 };
+    this.queued = this.store?.batch()?.samples.length || 0;
+    this.sosPending = this.store ? this.store.pendingSOS().filter((item) => !item.incidentId).length : 0;
+    if (recovered.telemetryFlushed > 0) {
+      this.lastUpload = new Date().toLocaleTimeString();
+    }
+    this.status = recovered.telemetryFlushed || recovered.sosFlushed
+      ? '已认证 · ' + this.person + '；已恢复求助 ' + recovered.sosFlushed + ' 条、采样 ' + recovered.telemetryFlushed + ' 条'
+      : '已认证 · ' + this.person;
   }
   private async bind(): Promise<void> {
     this.credentials();
