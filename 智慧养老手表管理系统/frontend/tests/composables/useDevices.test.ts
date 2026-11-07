@@ -27,11 +27,11 @@ it('keeps binding codes scoped to the currently selected resident', async () => 
     await flushPromises()
     devices.bindOldId.value = 2
     await flushPromises()
-    replies.get('2')?.({ data: { bindCodes: [{ code: 'new' }] } })
+    replies.get('2')?.({ data: { bindCodes: [{ id: 2, code: 'new', expireTime: 'tomorrow', used: 0 }] } })
     await flushPromises()
-    replies.get('1')?.({ data: { bindCodes: [{ code: 'old' }] } })
+    replies.get('1')?.({ data: { bindCodes: [{ id: 1, code: 'old', expireTime: 'yesterday', used: 0 }] } })
     await flushPromises()
-    expect(devices.bindCodeList.value).toEqual([{ code: 'new' }])
+    expect(devices.bindCodeList.value).toEqual([{ id: 2, code: 'new', expireTime: 'tomorrow', used: 0 }])
     devices.bindCodeDialogVisible.value = false
     await flushPromises()
     expect(devices.bindCodeList.value).toEqual([{ code: 'new' }])
