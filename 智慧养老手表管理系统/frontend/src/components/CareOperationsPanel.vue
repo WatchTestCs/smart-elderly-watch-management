@@ -134,8 +134,8 @@ async function assign(person: Staff, duty: Duty) {
     if (!disposed) await loadStaff()
   } catch (cause) {
     if (!disposed) {
-      error.value = apiErrorMessage(cause, '岗位更改失败')
       await loadStaff()
+      error.value = apiErrorMessage(cause, '岗位更改失败')
     }
   } finally {
     if (!disposed) assigning.value = null
