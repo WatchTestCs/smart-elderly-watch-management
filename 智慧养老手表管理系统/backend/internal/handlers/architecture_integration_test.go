@@ -237,6 +237,8 @@ func TestArchitectureCareQueuePaginationAndDuty(t *testing.T) {
 func TestArchitectureVerificationClearsOnlyLinkedAlarm(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
+	mustExec(t, pool, "INSERT INTO users(user_id,user_name) VALUES(2,'复核主管')")
+	mustExec(t, pool, "INSERT INTO care_staff_permission(admin_id,duty,assigned_by) VALUES(2,'supervisor',2)")
 	mustExec(t, pool, "INSERT INTO alarm_precess(id,old_id,device_id,status,be_time) VALUES(1,1,1,'1',now()),(2,1,1,'1',now())")
 	mustExec(t, pool, `INSERT INTO care_incident(id,old_id,device_id,kind,state,severity,due_at,resolved_by,source_alarm_id)
 		VALUES(1,1,1,'sos','resolved','critical',now(),'1',1)`)
@@ -254,6 +256,8 @@ func TestArchitectureVerificationClearsOnlyLinkedAlarm(t *testing.T) {
 func TestArchitectureCareHistoryHasNoSilentLimit(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
+	mustExec(t, pool, "INSERT INTO users(user_id,user_name) VALUES(1,'历史审计')")
+	mustExec(t, pool, "INSERT INTO care_staff_permission(admin_id,duty,assigned_by) VALUES(1,'auditor',1)")
 	mustExec(t, pool, "INSERT INTO care_incident(id,old_id,device_id,kind,severity,due_at) VALUES(1,1,1,'sos','critical',now())")
 	for n := 1; n <= 105; n++ {
 		mustExec(t, pool, "INSERT INTO care_incident_event(incident_id,actor,action,note) VALUES(1,'1','note',$1)", fmt.Sprint(n))
@@ -269,6 +273,8 @@ func TestArchitectureCareHistoryHasNoSilentLimit(t *testing.T) {
 func TestArchitectureCareNoteAcceptsChineseCharacters(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
+	mustExec(t, pool, "INSERT INTO users(user_id,user_name) VALUES(1,'护理员')")
+	mustExec(t, pool, "INSERT INTO care_staff_permission(admin_id,duty,assigned_by) VALUES(1,'caregiver',1)")
 	mustExec(t, pool, "INSERT INTO care_incident(id,old_id,device_id,kind,state,severity,due_at) VALUES(1,1,1,'sos','in_progress','critical',now())")
 	h := testHandler(t, pool)
 	out := careRequest(t, h, h.careTransition, 1, map[string]any{"id": "1", "action": "resolve", "note": strings.Repeat("护理记录", 300)})
@@ -279,6 +285,8 @@ func TestArchitectureCareNoteAcceptsChineseCharacters(t *testing.T) {
 
 func TestArchitectureDiagnosticsExposeMissingGateway(t *testing.T) {
 	pool := testDatabase(t)
+	mustExec(t, pool, "INSERT INTO users(user_id,user_name) VALUES(1,'诊断主管')")
+	mustExec(t, pool, "INSERT INTO care_staff_permission(admin_id,duty,assigned_by) VALUES(1,'supervisor',1)")
 	mustExec(t, pool, "INSERT INTO care_worker_heartbeat(singleton,last_seen_at,started_at) VALUES(true,now(),now())")
 	t.Setenv("CARE_NOTIFY_WEBHOOK_URL", "")
 	t.Setenv("CARE_NOTIFY_WEBHOOK_TOKEN", "")
