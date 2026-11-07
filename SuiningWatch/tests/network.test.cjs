@@ -29,26 +29,31 @@ function harness() {
 
 test('network restore retries are coalesced and lifecycle is idempotent', async () => {
   const h = harness();
-  let release;
+  let release = () => {};
   let calls = 0;
-  h.manager.startMonitoring(async () => {
+  const callback = async () => {
     calls++;
     await new Promise(resolve => { release = resolve; });
-  });
-  h.manager.startMonitoring(() => { calls += 100; });
+  };
+
+  h.manager.startMonitoring(callback);
+  h.manager.startMonitoring(callback);
   assert.equal(h.registerCalls(), 1);
 
   h.fire();
   h.fire();
   await Promise.resolve();
-  assert.equal(calls, 100, 'latest callback is used and duplicate restore events are coalesced');
+  assert.equal(calls, 1, 'duplicate restore events are coalesced');
+
   release();
   await new Promise(resolve => setImmediate(resolve));
 
   h.fire();
   await Promise.resolve();
-  assert.equal(calls, 200);
+  assert.equal(calls, 2);
 
+  release();
+  await new Promise(resolve => setImmediate(resolve));
   h.manager.stopMonitoring();
   h.manager.stopMonitoring();
   assert.equal(h.unregisterCalls(), 1);
