@@ -53,7 +53,6 @@ func TestCareWorkerHeartbeatSchema(t *testing.T) {
 	}
 }
 
-
 func TestCareDutyDoesNotDefaultUnassignedAdminToSupervisor(t *testing.T) {
 	pool := testDatabase(t)
 	mustExec(t, pool, "INSERT INTO users(user_id,user_name) VALUES(11,'未分配管理员')")
