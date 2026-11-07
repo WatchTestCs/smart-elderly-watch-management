@@ -20,6 +20,9 @@ var (
 
 // Hash 生成 BCrypt 哈希。
 func Hash(plain string) (string, error) {
+	if len(plain) > 72 {
+		return "", bcrypt.ErrPasswordTooLong
+	}
 	h, err := bcrypt.GenerateFromPassword([]byte(plain), Cost)
 	if err != nil {
 		return "", err
@@ -29,6 +32,9 @@ func Hash(plain string) (string, error) {
 
 // Matches 校验明文密码；非哈希存量一律不匹配。
 func Matches(plain, hashed string) bool {
+	if plain == "" || len(plain) > 72 {
+		return false
+	}
 	ok := false
 	for _, p := range hashPrefix {
 		if strings.HasPrefix(hashed, p) {
@@ -49,7 +55,7 @@ func ValidNewPassword(pw string) bool {
 	if n < 12 || n > 20 {
 		return false
 	}
-	if len(pw) > 72 { // UTF-8 字节数 ≤72（BCrypt 上限）
+	if !utf8.ValidString(pw) || len(pw) > 72 { // UTF-8 字节数 ≤72（BCrypt 上限）
 		return false
 	}
 	hasLetter, hasDigit := false, false
