@@ -1,17 +1,26 @@
 import { http } from '@kit.NetworkKit';
 import { WatchConfig, Credentials, DeviceReply, BindRequest, HeartbeatRequest,
   BatchRequest, SOSRequest, LoginRequest, WATCH_APP_VERSION, WATCH_PROTOCOL_VERSION, verifyHandshake } from '../model/Protocol';
+import { WatchRequestSigner } from './WatchRequestSigner';
 
 // A single request has a bounded lifetime; requests never log the device secret.
 export class WatchApi {
+  private signer: WatchRequestSigner = new WatchRequestSigner();
   private async post(config: WatchConfig, path: string,
     body: Credentials | LoginRequest | BindRequest | HeartbeatRequest | BatchRequest | SOSRequest): Promise<DeviceReply> {
     const request = http.createHttp();
     try {
+      const payload = JSON.stringify(body);
+      const signature = await this.signer.sign(config.deviceNo, body.secret, payload);
       const response = await request.request(config.server + '/api/v1/device/' + path, {
         method: http.RequestMethod.POST,
-        header: { 'Content-Type': 'application/json' },
-        extraData: JSON.stringify(body),
+        header: {
+          'Content-Type': 'application/json',
+          'X-Device-Signature': signature.signature,
+          'X-Device-Timestamp': signature.timestamp,
+          'X-Device-Nonce': signature.nonce
+        },
+        extraData: payload,
         usingCache: false,
         expectDataType: http.HttpDataType.STRING,
         connectTimeout: 5000, readTimeout: 10000
