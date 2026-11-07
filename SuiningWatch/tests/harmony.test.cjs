@@ -1,6 +1,7 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
 const load = require('./load-ets.cjs');
+const { cryptoKit, arkTsKit } = require('./crypto-kit.cjs');
 const p = load('model/Protocol');
 const { NativeSampling } = load('model/NativeSampling');
 const config = p.normalizeConfig('https://care.example.com', 'WATCH001');
@@ -39,10 +40,14 @@ test('uncommitted sampling candidate cannot lose the next step delta', () => {
 test('transport negotiates capabilities, destroys HTTP handles, and never replays rejected writes', async () => {
   const calls = []; let destroyed = 0; let status = 200;
   let reply = { returnCode: '1111', protocolVersion: 1, maxBatchSize: 200 };
-  const { WatchApi } = load('services/WatchApi', { '@kit.NetworkKit': { http: {
-    RequestMethod: { POST: 'POST' }, HttpDataType: { STRING: 'STRING' },
-    createHttp: () => ({ request: async (url, options) => { calls.push({ url, options }); return { responseCode: status, result: JSON.stringify(reply) }; }, destroy: () => destroyed++ })
-  } } });
+  const { WatchApi } = load('services/WatchApi', {
+    '@kit.NetworkKit': { http: {
+      RequestMethod: { POST: 'POST' }, HttpDataType: { STRING: 'STRING' },
+      createHttp: () => ({ request: async (url, options) => { calls.push({ url, options }); return { responseCode: status, result: JSON.stringify(reply) }; }, destroy: () => destroyed++ })
+    } },
+    '@kit.CryptoArchitectureKit': cryptoKit(),
+    '@kit.ArkTS': arkTsKit
+  });
   const api = new WatchApi();
   await api.login(config, 'not-logged');
   assert.equal(calls[0].url, config.server + '/api/v1/device/login');
@@ -52,7 +57,9 @@ test('transport negotiates capabilities, destroys HTTP handles, and never replay
   await assert.rejects(api.login(config, 'not-logged'), /协议|兼容/);
   status = 409;
   reply = { returnCode: '0000', code: 'CONFLICT', message: '绑定版本已变化', reference: 'watch-test' };
-  await assert.rejects(api.upload(config, {}), /绑定版本/);
+  await assert.rejects(api.upload(config, {
+    deviceNo: 'WATCH001', secret: 'not-logged', bindingVersion: 1, samples: []
+  }), /绑定版本/);
   assert.equal(calls.length, 3);
   assert.equal(destroyed, 3);
   assert.throws(() => p.normalizeConfig('http://192.168.1.2', 'WATCH001'));
