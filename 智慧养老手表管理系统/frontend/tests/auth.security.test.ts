@@ -64,3 +64,20 @@ it('does not apply a pending session response after a 401', async () => {
   expect(authState.csrfToken).toBe('')
   expect(router.replace).toHaveBeenCalledWith('/sign-in')
 })
+
+it('refreshes a rejected CSRF token without discarding the authenticated account', async () => {
+  authState.account = { id: 9, role: 'ADMIN', duty: 'supervisor' }
+  authState.csrfToken = 'expired-token'
+  mock.get.mockResolvedValueOnce({
+    data: {
+      csrfToken: 'renewed-token',
+      authenticated: true,
+      account: { id: 9, role: 'ADMIN', duty: 'supervisor' }
+    }
+  })
+  installHttpSecurity({ currentRoute: { value: { path: '/operations/overview' } } })
+  const denied = { response: { status: 403, data: { code: 'CSRF_REJECTED' } } }
+  await expect(mock.responseError(denied)).rejects.toBe(denied)
+  await vi.waitFor(() => expect(authState.csrfToken).toBe('renewed-token'))
+  expect(authState.account).toMatchObject({ id: 9, role: 'ADMIN', duty: 'supervisor' })
+})
