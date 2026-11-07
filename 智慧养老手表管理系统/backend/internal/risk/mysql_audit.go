@@ -225,9 +225,11 @@ func (m *Manager) EnableMySQL(db *sql.DB) error {
 	}
 	spoolPath := os.Getenv("CAREOLD_RISK_AUDIT_SPOOL_PATH")
 	if spoolPath == "" {
-        configDir, err := os.UserConfigDir()
-        if err != nil { return fmt.Errorf("audit spool config directory: %w", err) }
-        spoolPath = filepath.Join(configDir, "suining-care", "risk-audit.jsonl")
+		configDir, err := os.UserConfigDir()
+		if err != nil {
+			return fmt.Errorf("audit spool config directory: %w", err)
+		}
+		spoolPath = filepath.Join(configDir, "suining-care", "risk-audit.jsonl")
 	}
 	a := &mysqlAudit{db: db, queue: make(chan Event, 4096), stop: make(chan struct{}), done: make(chan struct{}), spoolPath: spoolPath}
 	if _, err := a.readBacklog(); err != nil {
