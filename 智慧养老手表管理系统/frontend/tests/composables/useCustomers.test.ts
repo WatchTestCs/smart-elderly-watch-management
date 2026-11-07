@@ -1,8 +1,8 @@
 import { afterEach, describe, it, expect, vi } from 'vitest'
 import { effectScope } from 'vue'
 import axios from 'axios'
-import { useCustomers, validAge, validPhone } from './useCustomers'
-import { api, type PostClient } from '../api/client'
+import { useCustomers, validAge, validPhone } from '@/composables/useCustomers'
+import { api, type PostClient } from '@/api/client'
 import { flushPromises } from '@vue/test-utils'
 
 describe('guardian data flow', () => {

@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest'
 import { CanceledError, type AxiosResponse } from 'axios'
-import { apiErrorMessage, assertApiResponse, isApplicationAPI, isSuccessEnvelope } from './httpContract'
-import { accepted, apiPath } from './client'
+import { apiErrorMessage, assertApiResponse, isApplicationAPI, isSuccessEnvelope } from '@/api/httpContract'
+import { accepted, apiPath } from '@/api/client'
 
 const response = (data: unknown) => ({ data, status: 200, config: { url: '/api/v1/guardians/list' } }) as AxiosResponse
 

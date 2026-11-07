@@ -71,7 +71,11 @@ func MigrateMySQL(ctx context.Context, database *Database) (result error) {
 		var applied string
 		err = conn.QueryRowContext(ctx, "SELECT checksum FROM schema_migrations WHERE name=?", name).Scan(&applied)
 		if err == nil {
-			if applied != sum {
+			matches, checkErr := migrationChecksumMatches(data, applied)
+			if checkErr != nil {
+				return fmt.Errorf("cannot validate MySQL migration SQL: %s: %w", name, checkErr)
+			}
+			if !matches {
 				return fmt.Errorf("migration checksum changed: %s", name)
 			}
 			continue

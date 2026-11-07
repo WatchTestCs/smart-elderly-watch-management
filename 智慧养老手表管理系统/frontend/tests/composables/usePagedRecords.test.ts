@@ -3,8 +3,8 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { expect, it, vi } from 'vitest'
 
 const mock = vi.hoisted(() => ({ post: vi.fn() }))
-vi.mock('../api/client', () => ({ api: { post: mock.post } }))
-import { usePagedRecords } from './usePagedRecords'
+vi.mock('@/api/client', () => ({ api: { post: mock.post } }))
+import { usePagedRecords } from '@/composables/usePagedRecords'
 
 it('uses the server page contract and unwrapped response, then preserves page on navigation', async () => {
   const row = { oldId: 7, name: '测试长者' }

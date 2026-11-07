@@ -1,8 +1,8 @@
 import { mount } from '@vue/test-utils'
 import { expect, it } from 'vitest'
-import RecordCards from '../components/RecordCards.vue'
-import { describePositionContext } from '../utils/positionContext'
-import { positionAlertMessage } from './positionAlertMessage'
+import RecordCards from '@/components/RecordCards.vue'
+import { describePositionContext } from '@/utils/positionContext'
+import { positionAlertMessage } from '@/views/positionAlertMessage'
 
 it('marks historical sampling and keeps unprovided context unknown', () => {
   const now = Date.parse('2026-10-31T10:00:00Z')

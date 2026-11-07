@@ -1,7 +1,7 @@
 import { mount, flushPromises } from '@vue/test-utils'
 import { defineComponent } from 'vue'
 import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest'
-import CareInbox from './CareInbox.vue'
+import CareInbox from '@/components/CareInbox.vue'
 
 const { post } = vi.hoisted(() => ({ post: vi.fn() }))
 vi.mock('axios', async (importOriginal) => ({ ...await importOriginal<typeof import('axios')>(), default: { post } }))

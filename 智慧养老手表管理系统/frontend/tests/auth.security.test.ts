@@ -4,7 +4,7 @@ vi.mock('axios', async (importOriginal) => ({ ...await importOriginal<typeof imp
   defaults: {}, get: mock.get, post: mock.post,
   interceptors: { request: { use: (fn: unknown) => { mock.request = fn } }, response: { use: (_success: unknown, error: unknown) => { mock.responseError = error } } }
 } }))
-import { authState, endSession, installHttpSecurity, loadSession } from './auth'
+import { authState, endSession, installHttpSecurity, loadSession } from '@/auth'
 
 it('adds CSRF to versioned mutations without leaking it to another origin', async () => {
   mock.get.mockResolvedValue({ data: { csrfToken: 'session-csrf', authenticated: false } })
