@@ -38,6 +38,18 @@ function clearProfile () {
   }
 }
 
+function invalidateSession(clearIdentity = true) {
+  sessionGeneration++
+  pending = null
+  loaded = false
+  authState.csrfToken = ''
+  if (!clearIdentity) return
+  authState.account = null
+  authState.csrfHeader = 'X-CSRF-TOKEN'
+  clearProfile()
+  store.clearTabs()
+}
+
 export function loadSession (refresh = false): Promise<SessionAccount | null> {
   if (!refresh && loaded) return Promise.resolve(authState.account)
   if (pending) return pending
@@ -71,14 +83,7 @@ export function loadSession (refresh = false): Promise<SessionAccount | null> {
 
 export function endSession () {
   return axios.post('/api/v1/auth/logout', {}, { skipSession: true, headers: { [authState.csrfHeader]: authState.csrfToken } }).then(() => {
-    sessionGeneration++
-    pending = null
-    loaded = false
-    authState.account = null
-    authState.csrfToken = ''
-    authState.csrfHeader = 'X-CSRF-TOKEN'
-    clearProfile()
-    store.clearTabs()
+    invalidateSession()
   })
 }
 
@@ -102,22 +107,12 @@ export function installHttpSecurity (router: { currentRoute: { value: { path: st
         : '此功能需要连接数据库，正在自动连接。恢复后请重试。', grouping: true })
     }
     if (error.response && error.response.status === 401) {
-      sessionGeneration++
-      pending = null
-      loaded = false
-      authState.account = null
-      authState.csrfToken = ''
-      authState.csrfHeader = 'X-CSRF-TOKEN'
-      clearProfile()
-      store.clearTabs()
+      invalidateSession()
       if (!['/sign-in', '/join-family'].includes(router.currentRoute.value.path)) router.replace?.('/sign-in')
     }
     if (error.response && error.response.status === 403 && error.response.data && error.response.data.code === 'CSRF_REJECTED') {
-      sessionGeneration++
-      pending = null
-      loaded = false
-      authState.csrfToken = ''
-      // 只刷新令牌，不自动重放可能产生写入的请求。
+      invalidateSession(false)
+      // Refresh the token without replaying the rejected write.
       loadSession(true).catch(() => {})
     }
     if (error.response?.status === 403 && error.response.data?.code === 'ACCESS_DENIED' && authState.account?.role === 'ADMIN') {
