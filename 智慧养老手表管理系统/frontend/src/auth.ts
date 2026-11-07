@@ -34,7 +34,7 @@ const profileKeys = ['token', 'user_name', 'oldIdfamily', 'familyPhone', 'family
 
 function clearProfile () {
   for (const key of profileKeys) {
-    try { localStorage.removeItem(key) } catch (_) { /* Storage may be disabled; the server session remains authoritative. */ }
+    try { localStorage.removeItem(key) } catch { /* Optional browser storage. */ }
   }
 }
 
@@ -121,8 +121,7 @@ export function installHttpSecurity (router: { currentRoute: { value: { path: st
       loadSession(true).catch(() => {})
     }
     if (error.response?.status === 403 && error.response.data?.code === 'ACCESS_DENIED' && authState.account?.role === 'ADMIN') {
-      // A supervisor may change a duty while a page is open. Refresh the
-      // session, but never replay the denied mutation automatically.
+      // Refresh changed permissions without replaying the rejected write.
       loadSession(true).then(account => {
         if (account?.role === 'ADMIN' && ['caregiver', 'auditor'].includes(account.duty || '') && !['/operations/overview', '/operations'].includes(router.currentRoute.value.path)) {
           router.replace?.('/operations/overview')
@@ -134,7 +133,7 @@ export function installHttpSecurity (router: { currentRoute: { value: { path: st
 }
 
 
-// Shared service probe: back off while offline and never replay mutations.
+// Probe readiness with backoff; never retry writes implicitly.
 export function monitorDatabase (router: { currentRoute: { value: { path: string } }; replace?: (path: string) => unknown }) {
   let active = true
   let checking = false
