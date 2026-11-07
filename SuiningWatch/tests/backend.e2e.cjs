@@ -19,6 +19,7 @@ mod._compile(ts.transpileModule(fs.readFileSync(source, 'utf8'), {
 }).outputText, source);
 const protocol = mod.exports;
 const load = require('./load-ets.cjs');
+const { cryptoKit, arkTsKit } = require('./crypto-kit.cjs');
 let transportProxy = '';
 // Real HTTP to the disposable Go server through the production WatchApi.
 const { WatchApi } = load('services/WatchApi', { '@kit.NetworkKit': { http: {
@@ -27,16 +28,28 @@ const { WatchApi } = load('services/WatchApi', { '@kit.NetworkKit': { http: {
     const response = await fetch(transportProxy ? transportProxy + new URL(url).pathname : url, { method: options.method, headers: options.header, body: options.extraData, signal: AbortSignal.timeout(options.readTimeout) });
     return { responseCode: response.status, result: await response.text() };
   }, destroy() {} })
-} } });
+} }, '@kit.CryptoArchitectureKit': cryptoKit(), '@kit.ArkTS': arkTsKit });
 const { NativeSampling } = load('model/NativeSampling');
 const watch = new WatchApi();
 let cookie = '', csrf = '';
 const checks = [];
+function signedDeviceHeaders(route, body, payload) {
+  if (!body || !body.secret || !body.deviceNo || !route.startsWith('/api/v1/device/')) return {};
+  const timestamp = Math.floor(Date.now() / 1000).toString();
+  const nonce = crypto.randomBytes(16).toString('hex');
+  const bodyHash = crypto.createHash('sha256').update(payload).digest('hex');
+  const signature = crypto.createHmac('sha256', body.secret)
+    .update(String(body.deviceNo).toUpperCase() + ':' + timestamp + ':' + nonce + ':' + bodyHash)
+    .digest('hex');
+  return { 'X-Device-Signature': signature, 'X-Device-Timestamp': timestamp, 'X-Device-Nonce': nonce };
+}
 async function request(route, body, headers = {}, expected = 200) {
+  const payload = body === undefined ? undefined : JSON.stringify(body);
   const response = await fetch(base + route, {
     method: body === undefined ? 'GET' : 'POST',
-    headers: { 'Content-Type': 'application/json', Cookie: cookie, 'X-CSRF-TOKEN': csrf, ...headers },
-    body: body === undefined ? undefined : JSON.stringify(body), signal: AbortSignal.timeout(15000)
+    headers: { 'Content-Type': 'application/json', Cookie: cookie, 'X-CSRF-TOKEN': csrf,
+      ...signedDeviceHeaders(route, body, payload), ...headers },
+    body: payload, signal: AbortSignal.timeout(15000)
   });
   const setCookie = response.headers.get('set-cookie');
   if (setCookie) cookie = setCookie.split(';')[0];
@@ -101,7 +114,12 @@ async function main() {
       let payload = '';
       for await (const chunk of incoming) payload += chunk;
       forwarded++;
-      const response = await fetch(base + incoming.url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, signal: AbortSignal.timeout(10000) });
+      const response = await fetch(base + incoming.url, { method: 'POST', headers: {
+        'Content-Type': 'application/json',
+        'X-Device-Signature': incoming.headers['x-device-signature'],
+        'X-Device-Timestamp': incoming.headers['x-device-timestamp'],
+        'X-Device-Nonce': incoming.headers['x-device-nonce']
+      }, body: payload, signal: AbortSignal.timeout(10000) });
       assert.equal(response.status, 200);
       upstreamAck = await response.json();
       // The database committed, but the watch never receives its acknowledgement.
