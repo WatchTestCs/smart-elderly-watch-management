@@ -13,6 +13,7 @@ export interface DeviceRecord {
   oldId?: DeviceId | null
   alias?: string
   online?: number | string
+  battery?: number | string
   model?: string
   oldPersonName?: string
   lastTime?: string
@@ -176,15 +177,23 @@ export function useDevices() {
       state.reloadPending = true
       return
     }
+    const query = {
+      page: state.currentPage, pageSize: state.pageSize,
+      query: state.deviceQuery, state: state.deviceState
+    }
+    const isCurrentQuery = () =>
+      query.page === state.currentPage && query.pageSize === state.pageSize &&
+      query.query === state.deviceQuery && query.state === state.deviceState
     state.deviceLoading = true
     state.deviceLoadError = ''
     try {
       await Promise.all([
-        post('list', {
-          page: state.currentPage, pageSize: state.pageSize,
-          query: state.deviceQuery, state: state.deviceState
-        }).then(({ data }) => {
+        post('list', query).then(({ data }) => {
           if (disposed) return
+          if (!isCurrentQuery()) {
+            state.reloadPending = true
+            return
+          }
           if (!Array.isArray(data.devices)) throw new Error('missing devices')
           state.deviceList = data.devices
           state.deviceTotal = typeof data.total === 'number' ? data.total : data.devices.length
@@ -192,6 +201,10 @@ export function useDevices() {
             data.devices.filter(item => item.online === 1 || item.online === '1').length
         }).catch(error => {
           if (disposed) return
+          if (!isCurrentQuery()) {
+            state.reloadPending = true
+            return
+          }
           state.deviceLoadError = apiErrorMessage(error, '设备列表暂时无法更新，请重新加载。')
         }),
         loadAlertCounts()
