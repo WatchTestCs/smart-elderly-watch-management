@@ -4,6 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "api:generate": "node scripts/generate-api-types.mjs",
+    "api:check": "node scripts/generate-api-types.mjs --check",
+    "test:api-drift": "node scripts/test-api-drift.mjs",
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1",
@@ -28,7 +31,8 @@
     "typescript": "5.9.3",
     "vite": "8.3.4",
     "vitest": "5.0.5",
-    "vue-tsc": "3.3.13"
+    "vue-tsc": "3.3.13",
+    "openapi-typescript": "7.13.0"
   },
   "engines": {
     "node": "^20.19.0 || >=22.12.0"

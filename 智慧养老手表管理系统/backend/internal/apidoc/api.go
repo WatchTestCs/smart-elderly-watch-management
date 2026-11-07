@@ -65,6 +65,9 @@ func buildSchema() ([]byte, error) {
 			methods[method] = operation
 		}
 	}
+	if err := applyGoDTOs(template.Paths); err != nil {
+		return nil, err
+	}
 	return json.Marshal(template.document)
 }
 
