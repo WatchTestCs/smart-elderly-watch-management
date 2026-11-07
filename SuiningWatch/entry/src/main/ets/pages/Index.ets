@@ -174,41 +174,27 @@ struct Index {
       (result.status ? '；' + result.status : '；点击上传记录提交');
   }
   private async retryPendingAfterReconnect(): Promise<void> {
-    if (this.busy || !this.store || !this.secret) { return; }
+    if (this.busy || !this.store || this.secret.length < 24 || this.secret.length > 128) { return; }
     const pendingBatch = this.store.batch();
-    const pendingSOS = this.store.pendingSOS().filter((item) => !item.incidentId);
-    if (!pendingBatch && pendingSOS.length === 0) { return; }
+    const pendingSOS = this.store.pendingSOS().some((item) => !item.incidentId);
+    if (!pendingBatch && !pendingSOS) { return; }
+
     await this.act(async () => {
       if (!this.store) { return; }
-      const live = await this.liveBinding();
-      let items = this.store.pendingSOS();
-      let sosFlushed = 0;
-      for (const pending of items.filter((item) => !item.incidentId && sameBinding(item.binding, live))) {
-        const reply = await this.api.sos(this.config(), {
-          deviceNo: live.deviceNo, secret: this.secret,
-          requestId: pending.requestId, bindingVersion: pending.binding.version
-        });
-        if (!reply.incidentId) { throw new Error('后台确认缺少求助编号，原请求已保留'); }
-        const incidentId = reply.incidentId;
-        items = items.map((item) => item.requestId === pending.requestId && sameBinding(item.binding, live)
-          ? { binding: item.binding, requestId: item.requestId, incidentId: incidentId } : item);
-        await this.store.saveSOS(items);
-        sosFlushed++;
+      const result = await this.store.flushPending(this.api, this.config(), this.secret);
+      if (result.binding) {
+        this.useBinding(result.binding);
+        this.person = '长者 #' + result.binding.oldId;
+      } else {
+        this.useBinding(undefined);
       }
-      this.sosPending = items.filter((item) => !item.incidentId).length;
-
-      const batch = this.store.batch();
-      let telemetryFlushed = 0;
-      if (batch && sameBinding(batch.binding, live)) {
-        const reply = await this.api.upload(this.config(), batchRequest(batch, live, this.secret));
-        if (reply.accepted !== batch.samples.length) { throw new Error('上传确认数量不匹配，记录已保留'); }
-        await this.store.saveBatch(undefined);
-        telemetryFlushed = batch.samples.length;
-        this.queued = 0;
+      this.queued = this.store.batch()?.samples.length || 0;
+      this.sosPending = this.store.pendingSOS().filter((item) => !item.incidentId).length;
+      if (result.telemetryFlushed > 0) {
         this.lastUpload = new Date().toLocaleTimeString();
       }
-      if (sosFlushed || telemetryFlushed) {
-        this.status = '网络已恢复，自动补传：求助 ' + sosFlushed + ' 条，采样 ' + telemetryFlushed + ' 条';
+      if (result.sosFlushed || result.telemetryFlushed) {
+        this.status = '网络已恢复，自动补传：求助 ' + result.sosFlushed + ' 条，采样 ' + result.telemetryFlushed + ' 条';
       }
     });
   }
