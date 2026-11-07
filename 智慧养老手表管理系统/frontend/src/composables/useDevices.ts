@@ -380,14 +380,17 @@ export function useDevices() {
     } finally { state.creating = false }
   }
   function openBindCodeDialog(row: DeviceRecord) {
-    state.currentDevice = row
+    const wasVisible = state.bindCodeDialogVisible
+    const oldId = row.oldId ?? ''
+    const residentChanged = String(state.bindOldId) !== String(oldId)
     bindDialogRevision++
-    state.bindOldId = row.oldId ?? ''
+    state.currentDevice = row
+    state.bindOldId = oldId
     state.bindExpireDays = '1'
     state.newBindCode = null
     state.bindCodeList = []
     state.bindCodeDialogVisible = true
-    void loadBindCodes(row.oldId ?? '')
+    if (!wasVisible || !residentChanged) void loadBindCodes(oldId)
   }
   async function loadBindCodes(oldId: DeviceId | '') {
     const revision = ++bindCodeRequest
