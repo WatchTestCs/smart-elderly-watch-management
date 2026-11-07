@@ -169,7 +169,9 @@ func TestSignedHealthBatchReplayUsesDurableNonce(t *testing.T) {
 	}
 
 	var samples int
-	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM health_sample WHERE sample_id=$1", "signed-health-1").Scan(&samples); err != nil {
+	if err := pool.QueryRow(context.Background(), `SELECT count(*) FROM health_sample
+		WHERE old_id=$1 AND device_id=$2 AND source=$3 AND source_device=$4 AND metric=$5`,
+		1, 1, "harmonyos", "WATCH001", "heart_rate").Scan(&samples); err != nil {
 		t.Fatal(err)
 	}
 	if samples != 1 {
