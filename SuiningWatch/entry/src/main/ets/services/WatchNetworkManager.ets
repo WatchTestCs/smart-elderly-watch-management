@@ -45,6 +45,9 @@ export class WatchNetworkManager {
     this.retrying = true;
     try {
       await this.onRestored();
+    } catch (_error) {
+      // The page action owns user-visible retry errors. Network callbacks must
+      // never leak rejected promises into the ArkTS event loop.
     } finally {
       this.retrying = false;
     }
