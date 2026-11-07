@@ -1,5 +1,5 @@
 import { beforeEach, expect, it } from 'vitest'
-import store from './store'
+import store from '@/store'
 
 beforeEach(() => { store.clearTabs() })
 

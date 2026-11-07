@@ -1,8 +1,8 @@
 import { mount, flushPromises } from '@vue/test-utils'
 import { beforeEach, describe, it, expect, vi } from 'vitest'
-import SecurityPanel from './SecurityPanel.vue'
+import SecurityPanel from '@/components/SecurityPanel.vue'
 const { post } = vi.hoisted(() => ({ post: vi.fn() }))
-vi.mock('../api/client', () => ({ api: { post }, accepted: (data: { returnCode: string }) => { if (data.returnCode !== '1111') throw new Error('rejected') } }))
+vi.mock('@/api/client', () => ({ api: { post }, accepted: (data: { returnCode: string }) => { if (data.returnCode !== '1111') throw new Error('rejected') } }))
 describe('two-factor setup', () => {
   beforeEach(() => { post.mockReset() })
   it('shows a pending secret, then displays recovery codes only after confirmation', async () => {

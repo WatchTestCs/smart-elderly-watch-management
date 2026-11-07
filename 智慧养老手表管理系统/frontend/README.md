@@ -29,7 +29,15 @@ npm run build
 
 生产构建以 Chrome 120 为目标环境，默认关闭 source map 并拆分 CSS。执行桌面打包脚本 `desktop/build.ps1` 时，会自动将 `dist/` 下的产物复制到 Go 内嵌资源目录。
 
-## 浏览器端测试与静态资源
+## 测试与静态资源
+
+单元测试统一放在 `tests/`，与源码目录 `src/` 分离；子目录镜像 `src/` 结构，被测模块一律通过 `@/` 别名引用，不写相对路径：
+
+```powershell
+npm test
+```
+
+端到端测试位于 `qa/`，基于 Playwright：
 
 ```powershell
 npm --prefix qa ci

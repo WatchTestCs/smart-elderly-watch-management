@@ -3,5 +3,5 @@ import vue from '@vitejs/plugin-vue'
 import { fileURLToPath, URL } from 'node:url'
 export default defineConfig({
   plugins: [vue()], resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
-  test: { environment: 'happy-dom', include: ['src/**/*.test.ts'], restoreMocks: true }
+  test: { environment: 'happy-dom', include: ['tests/**/*.test.ts'], restoreMocks: true }
 })

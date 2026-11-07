@@ -3,7 +3,7 @@ import { dirname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { expect, it } from 'vitest'
 
-// This file lives in src/, but every assertion below is anchored to the frontend root.
+// This file lives in tests/, but every assertion below is anchored to the frontend root.
 const root = dirname(dirname(fileURLToPath(import.meta.url)))
 const source = join(root, 'src')
 
@@ -27,7 +27,6 @@ it('keeps Vue 2 component patterns and icon fonts out of the current frontend', 
     /\bconfig\.globalProperties\s*\.\s*\$(?:message|alert|confirm|store|uploadHeaders)\b/
   ]
   for (const file of sourceFiles(source)) {
-    if (file.endsWith('modernFrontend.test.ts')) continue
     const text = readFileSync(file, 'utf8')
     const name = relative(root, file)
     for (const pattern of banned) {

@@ -1,11 +1,11 @@
 import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
-import DatabaseNotice from './DatabaseNotice.vue'
+import DatabaseNotice from '@/components/DatabaseNotice.vue'
 
 const { get } = vi.hoisted(() => ({ get: vi.fn() }))
 vi.mock('axios', async (importOriginal) => ({ ...await importOriginal<typeof import('axios')>(), default: { get } }))
-import { authState, monitorDatabase } from '../auth'
+import { authState, monitorDatabase } from '@/auth'
 
 beforeEach(() => {
   get.mockReset()

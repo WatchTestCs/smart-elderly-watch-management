@@ -1,6 +1,6 @@
 import { afterEach, describe, it, expect, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
-import { createLatestRead } from './latestRead'
+import { createLatestRead } from '@/composables/latestRead'
 
 function deferred<T>() {
   let resolve!: (value: T) => void
