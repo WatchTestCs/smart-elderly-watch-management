@@ -15,8 +15,12 @@ export function isSuccessEnvelope(value: unknown): value is { returnCode: '1111'
 
 export function isApplicationAPI(url: string | undefined): boolean {
   if (!url) return false
-  const target = new URL(url, window.location.href)
-  return target.origin === window.location.origin && target.pathname.startsWith('/api/v1/')
+  try {
+    const target = new URL(url, window.location.href)
+    return target.origin === window.location.origin && target.pathname.startsWith('/api/v1/')
+  } catch {
+    return false
+  }
 }
 
 export function apiErrorMessage(error: unknown, fallback = '请求未完成'): string {
