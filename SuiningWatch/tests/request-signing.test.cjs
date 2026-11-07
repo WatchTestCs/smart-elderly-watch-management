@@ -35,7 +35,7 @@ test('device signer matches the backend HMAC contract byte-for-byte', async () =
   }
 });
 
-test('WatchApi signs only durable health and SOS writes and sends the exact signed JSON bytes', async () => {
+test('WatchApi signs login, bind, heartbeat, health and SOS using the exact sent JSON bytes', async () => {
   const requests = [];
   const httpMock = {
     RequestMethod: { POST: 'POST' },
@@ -65,6 +65,8 @@ test('WatchApi signs only durable health and SOS writes and sends the exact sign
   const secret = 'abcdefghijklmnopqrstuvwx';
 
   await api.login(config, secret);
+  await api.bind(config, secret, 'A123');
+  await api.heartbeat(config, secret);
   await api.upload(config, {
     deviceNo: 'WATCH001', secret, bindingVersion: 3,
     samples: [{
@@ -76,9 +78,8 @@ test('WatchApi signs only durable health and SOS writes and sends the exact sign
   });
   await api.sos(config, { deviceNo: 'WATCH001', secret, requestId: 'stable-sos', bindingVersion: 3 });
 
-  assert.equal(requests.length, 3);
-  assert.equal(requests[0].options.header['X-Device-Signature'], undefined);
-  for (const request of requests.slice(1)) {
+  assert.equal(requests.length, 5);
+  for (const request of requests) {
     assert.match(request.options.header['X-Device-Signature'], /^[0-9a-f]{64}$/);
     assert.match(request.options.header['X-Device-Nonce'], /^[0-9a-f]{32}$/);
     assert.match(request.options.header['X-Device-Timestamp'], /^\d+$/);

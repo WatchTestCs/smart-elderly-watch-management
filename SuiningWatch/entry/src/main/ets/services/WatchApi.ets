@@ -8,7 +8,7 @@ export class WatchApi {
   private signer: WatchRequestSigner = new WatchRequestSigner();
   private async post(config: WatchConfig, path: string,
     body: Credentials | LoginRequest | BindRequest | HeartbeatRequest | BatchRequest | SOSRequest,
-    sign: boolean = false): Promise<DeviceReply> {
+    sign: boolean = true): Promise<DeviceReply> {
     const request = http.createHttp();
     try {
       const payload = JSON.stringify(body);
