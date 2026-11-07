@@ -2,59 +2,17 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const crypto = require('node:crypto');
 const load = require('./load-ets.cjs');
+const { cryptoKit, arkTsKit } = require('./crypto-kit.cjs');
 
 const fixedRandom = Buffer.from('00112233445566778899aabbccddeeff', 'hex');
-
-function cryptoMock() {
-  return {
-    cryptoFramework: {
-      createMd: algorithm => {
-        assert.equal(algorithm, 'SHA256');
-        let data = Buffer.alloc(0);
-        return {
-          update: async blob => { data = Buffer.concat([data, Buffer.from(blob.data)]); },
-          digest: async () => ({ data: new Uint8Array(crypto.createHash('sha256').update(data).digest()) })
-        };
-      },
-      createRandom: () => ({
-        generateRandom: async length => {
-          assert.equal(length, 16);
-          return { data: new Uint8Array(fixedRandom) };
-        }
-      }),
-      createSymKeyGenerator: algorithm => {
-        assert.equal(algorithm, 'HMAC');
-        return { convertKey: async blob => ({ raw: Buffer.from(blob.data) }) };
-      },
-      createMac: algorithm => {
-        assert.equal(algorithm, 'SHA256');
-        let key;
-        let data = Buffer.alloc(0);
-        return {
-          init: async symKey => { key = symKey.raw; },
-          update: async blob => { data = Buffer.concat([data, Buffer.from(blob.data)]); },
-          doFinal: async () => ({ data: new Uint8Array(crypto.createHmac('sha256', key).update(data).digest()) })
-        };
-      }
-    }
-  };
-}
-
-const arkTsMock = {
-  buffer: {
-    from(value, encoding) {
-      return Buffer.from(value, encoding);
-    }
-  }
-};
 
 test('device signer matches the backend HMAC contract byte-for-byte', async () => {
   const originalNow = Date.now;
   Date.now = () => 1_799_366_400_000;
   try {
     const { WatchRequestSigner } = load('services/WatchRequestSigner', {
-      '@kit.CryptoArchitectureKit': cryptoMock(),
-      '@kit.ArkTS': arkTsMock
+      '@kit.CryptoArchitectureKit': cryptoKit(() => fixedRandom),
+      '@kit.ArkTS': arkTsKit
     });
     const signer = new WatchRequestSigner();
     const body = JSON.stringify({
@@ -98,8 +56,8 @@ test('WatchApi signs only durable health and SOS writes and sends the exact sign
   };
   const mocks = {
     '@kit.NetworkKit': { http: httpMock },
-    '@kit.CryptoArchitectureKit': cryptoMock(),
-    '@kit.ArkTS': arkTsMock
+    '@kit.CryptoArchitectureKit': cryptoKit(() => fixedRandom),
+    '@kit.ArkTS': arkTsKit
   };
   const { WatchApi } = load('services/WatchApi', mocks);
   const api = new WatchApi();

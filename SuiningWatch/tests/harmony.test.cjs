@@ -1,6 +1,7 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
 const load = require('./load-ets.cjs');
+const { cryptoKit, arkTsKit } = require('./crypto-kit.cjs');
 const p = load('model/Protocol');
 const { NativeSampling } = load('model/NativeSampling');
 const config = p.normalizeConfig('https://care.example.com', 'WATCH001');
@@ -39,10 +40,14 @@ test('uncommitted sampling candidate cannot lose the next step delta', () => {
 test('transport negotiates capabilities, destroys HTTP handles, and never replays rejected writes', async () => {
   const calls = []; let destroyed = 0; let status = 200;
   let reply = { returnCode: '1111', protocolVersion: 1, maxBatchSize: 200 };
-  const { WatchApi } = load('services/WatchApi', { '@kit.NetworkKit': { http: {
-    RequestMethod: { POST: 'POST' }, HttpDataType: { STRING: 'STRING' },
-    createHttp: () => ({ request: async (url, options) => { calls.push({ url, options }); return { responseCode: status, result: JSON.stringify(reply) }; }, destroy: () => destroyed++ })
-  } } });
+  const { WatchApi } = load('services/WatchApi', {
+    '@kit.NetworkKit': { http: {
+      RequestMethod: { POST: 'POST' }, HttpDataType: { STRING: 'STRING' },
+      createHttp: () => ({ request: async (url, options) => { calls.push({ url, options }); return { responseCode: status, result: JSON.stringify(reply) }; }, destroy: () => destroyed++ })
+    } },
+    '@kit.CryptoArchitectureKit': cryptoKit(),
+    '@kit.ArkTS': arkTsKit
+  });
   const api = new WatchApi();
   await api.login(config, 'not-logged');
   assert.equal(calls[0].url, config.server + '/api/v1/device/login');
