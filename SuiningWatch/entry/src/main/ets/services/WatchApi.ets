@@ -10,9 +10,9 @@ export class WatchApi {
     body: Credentials | LoginRequest | BindRequest | HeartbeatRequest | BatchRequest | SOSRequest,
     sign: boolean = false): Promise<DeviceReply> {
     const request = http.createHttp();
-    const payload = JSON.stringify(body);
-    const signature = sign ? await this.signer.sign(config.deviceNo, body.secret, payload) : undefined;
     try {
+      const payload = JSON.stringify(body);
+      const signature = sign ? await this.signer.sign(config.deviceNo, body.secret, payload) : undefined;
       const response = await request.request(config.server + '/api/v1/device/' + path, {
         method: http.RequestMethod.POST,
         header: sign && signature ? {
