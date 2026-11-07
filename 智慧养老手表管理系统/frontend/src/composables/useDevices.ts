@@ -104,15 +104,17 @@ export function useDevices() {
   let refreshTimer: ReturnType<typeof setTimeout> | undefined
   let disposed = false
   let alertRequest = 0
+  let alertCountsRequest = 0
   let workbenchRequest = 0
   let bindCodeRequest = 0
 
   async function loadAlertCounts() {
+    const revision = ++alertCountsRequest
     if (disposed) return
     state.alertLoadError = ''
     try {
       const { data } = await post('alertCounts')
-      if (disposed) return
+      if (disposed || revision !== alertCountsRequest) return
       if (!Array.isArray(data.items) || !Number.isSafeInteger(data.total)) throw new Error('missing alerts')
       state.alertCounts = Object.fromEntries(data.items.map(item => [item.deviceId, item]))
       state.alertTotals = {
@@ -121,7 +123,7 @@ export function useDevices() {
       }
       state.alertsReady = true
     } catch (error) {
-      if (disposed) return
+      if (disposed || revision !== alertCountsRequest) return
       state.alertsReady = false
       state.alertLoadError = apiErrorMessage(error, '异常统计暂时无法更新，请重新加载。')
     }
@@ -277,7 +279,7 @@ export function useDevices() {
       const { data } = await api.post<{ oldPeople: DeviceRecord[] }>('/api/v1/inviteCode/oldPersonList', {})
       if (!disposed) state.oldPeople = Array.isArray(data.oldPeople) ? data.oldPeople : []
     } catch (error) {
-      ElMessage({ type: 'error', message: apiErrorMessage(error, '读取老人列表失败') })
+      if (!disposed) ElMessage({ type: 'error', message: apiErrorMessage(error, '读取老人列表失败') })
     }
   }
   function stopTimer() {
@@ -326,6 +328,7 @@ export function useDevices() {
     state.bindOldId = row.oldId || ''
     state.bindExpireDays = '1'
     state.newBindCode = null
+    state.bindCodeList = []
     state.bindCodeDialogVisible = true
     void loadBindCodes(row.oldId ?? '')
   }
@@ -439,6 +442,7 @@ export function useDevices() {
   onBeforeUnmount(() => {
     disposed = true
     alertRequest++
+    alertCountsRequest++
     workbenchRequest++
     bindCodeRequest++
     clearTimeout(filterTimer)
