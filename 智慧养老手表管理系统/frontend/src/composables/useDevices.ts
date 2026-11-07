@@ -149,6 +149,7 @@ export function useDevices() {
   let alertCountsRequest = 0
   let workbenchRequest = 0
   let bindCodeRequest = 0
+  let bindDialogRevision = 0
 
   async function loadAlertCounts() {
     const revision = ++alertCountsRequest
@@ -380,7 +381,8 @@ export function useDevices() {
   }
   function openBindCodeDialog(row: DeviceRecord) {
     state.currentDevice = row
-    state.bindOldId = row.oldId || ''
+    bindDialogRevision++
+    state.bindOldId = row.oldId ?? ''
     state.bindExpireDays = '1'
     state.newBindCode = null
     state.bindCodeList = []
@@ -415,16 +417,16 @@ export function useDevices() {
       ElMessage({ type: 'warning', message: '有效天数只能填数字' })
       return
     }
-    const revision = bindCodeRequest
+    const revision = bindDialogRevision
     try {
       const { data } = await post('createBindCode', { oldId, expireDays: state.bindExpireDays })
       accepted(data)
-      if (disposed || revision !== bindCodeRequest || !state.bindCodeDialogVisible || String(state.bindOldId) !== String(oldId)) return
+      if (disposed || revision !== bindDialogRevision || !state.bindCodeDialogVisible || String(state.bindOldId) !== String(oldId)) return
       if (typeof data.code !== 'string' || typeof data.expireTime !== 'string') throw new Error('invalid binding code response')
       state.newBindCode = { code: data.code, expireTime: data.expireTime }
       await loadBindCodes(oldId)
     } catch (error) {
-      if (!disposed && revision === bindCodeRequest && state.bindCodeDialogVisible && String(state.bindOldId) === String(oldId)) {
+      if (!disposed && revision === bindDialogRevision && state.bindCodeDialogVisible && String(state.bindOldId) === String(oldId)) {
         ElMessage({ type: 'error', message: apiErrorMessage(error, '生成失败') })
       }
     }
@@ -484,12 +486,16 @@ export function useDevices() {
 
   watch(() => state.bindOldId, oldId => {
     if (!state.bindCodeDialogVisible) return
+    bindDialogRevision++
     state.bindCodeList = []
     state.newBindCode = null
     void loadBindCodes(oldId)
   }, { flush: 'sync' })
   watch(() => state.bindCodeDialogVisible, visible => {
-    if (!visible) bindCodeRequest++
+    if (!visible) {
+      bindCodeRequest++
+      bindDialogRevision++
+    }
   })
   watch(() => state.deviceQuery, scheduleFilter)
   watch(() => state.deviceState, scheduleFilter)
@@ -506,6 +512,7 @@ export function useDevices() {
     alertCountsRequest++
     workbenchRequest++
     bindCodeRequest++
+    bindDialogRevision++
     clearTimeout(filterTimer)
     document.removeEventListener('visibilitychange', handleVisibilityChange)
     stopTimer()
