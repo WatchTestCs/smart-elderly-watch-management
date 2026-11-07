@@ -77,6 +77,10 @@ func (h *Handler) careIncidents(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	if duty == "unassigned" {
+		response.JSON(w, http.StatusForbidden, map[string]any{"code": "DUTY_UNASSIGNED", "message": "当前管理账号尚未分配照护岗位"})
+		return
+	}
 	var total int64
 	if internalError(w, h.DB.QueryRow(r.Context(), `SELECT count(*) FROM care_incident WHERE (state='verified')=$1`, state == "verified").Scan(&total)) {
 		return
@@ -198,6 +202,14 @@ func (h *Handler) careTransition(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) careEvents(w http.ResponseWriter, r *http.Request) {
 	actor, ok := careAdmin(w, r)
 	if !ok {
+		return
+	}
+	duty, ok := h.careDuty(w, r, actor)
+	if !ok {
+		return
+	}
+	if duty == "unassigned" {
+		response.JSON(w, http.StatusForbidden, map[string]any{"code": "DUTY_UNASSIGNED", "message": "当前管理账号尚未分配照护岗位"})
 		return
 	}
 	m, ok := bodyMap(w, r)

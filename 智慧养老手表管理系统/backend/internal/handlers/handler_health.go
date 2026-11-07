@@ -19,6 +19,10 @@ func (h *Handler) routeHealth(mux *http.ServeMux) {
 }
 
 func (h *Handler) healthBatch(w http.ResponseWriter, r *http.Request) {
+	r, signedOK := prepareSignedDeviceRequest(w, r)
+	if !signedOK {
+		return
+	}
 	// Owner-first is opt-in only. All old-version writers must be stopped and
 	// drained before enabling it: mixed device->owner and owner->device lock
 	// ordering across replicas can produce InnoDB deadlocks.
@@ -70,6 +74,9 @@ func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Reques
 	}
 	if d.OldID == nil || d.HealthEpoch != req.BindingVersion {
 		conflict409(w, "绑定已变化，请重新登录；旧绑定数据不能归入新老人")
+		return
+	}
+	if !acceptSignedDeviceNonce(w, ctx, tx, d.ID) {
 		return
 	}
 	expectedOwner := *d.OldID

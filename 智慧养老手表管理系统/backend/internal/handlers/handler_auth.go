@@ -234,6 +234,15 @@ func (h *Handler) setup(w http.ResponseWriter, r *http.Request) {
 		response.Error500(w, ref())
 		return
 	}
+	var adminID int64
+	if internalError(w, tx.QueryRow(ctx, "SELECT user_id FROM users WHERE user_phone=$1", phone).Scan(&adminID)) {
+		return
+	}
+	if _, err := tx.Exec(ctx, `INSERT INTO care_staff_permission(admin_id,duty,assigned_by)
+		VALUES($1,'supervisor',$1) ON CONFLICT(admin_id) DO NOTHING`, adminID); err != nil {
+		response.Error500(w, ref())
+		return
+	}
 	if internalError(w, tx.Commit(ctx)) {
 		return
 	}
