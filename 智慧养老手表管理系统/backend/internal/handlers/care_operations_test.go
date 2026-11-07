@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 )
@@ -11,7 +12,7 @@ import (
 func TestCareDutyPermissionsAndSensitiveAudit(t *testing.T) {
 	pool := testDatabase(t)
 	mustExec(t, pool, "INSERT INTO users(user_id,user_name) VALUES(1,'主管'),(2,'护理员'),(3,'审计员')")
-	mustExec(t, pool, "INSERT INTO care_staff_permission(admin_id,duty,assigned_by) VALUES(2,'caregiver',1),(3,'auditor',1)")
+	mustExec(t, pool, "INSERT INTO care_staff_permission(admin_id,duty,assigned_by) VALUES(1,'supervisor',1),(2,'caregiver',1),(3,'auditor',1)")
 	h := testHandler(t, pool)
 	req := httptest.NewRequest("POST", "/api/v1/care/transition", nil)
 	for _, tc := range []struct {
@@ -49,5 +50,29 @@ func TestCareWorkerHeartbeatSchema(t *testing.T) {
 	if err := pool.QueryRow(context.Background(),
 		"SELECT last_seen_at > now()-interval '30 seconds' FROM care_worker_heartbeat WHERE singleton=true").Scan(&healthy); err != nil || !healthy {
 		t.Fatalf("worker heartbeat unavailable: %v", err)
+	}
+}
+
+
+func TestCareDutyDoesNotDefaultUnassignedAdminToSupervisor(t *testing.T) {
+	pool := testDatabase(t)
+	mustExec(t, pool, "INSERT INTO users(user_id,user_name) VALUES(11,'未分配管理员')")
+	h := testHandler(t, pool)
+	req := httptest.NewRequest("GET", "/api/v1/auth/session", nil)
+	w := httptest.NewRecorder()
+	duty, ok := h.careDuty(w, req, 11)
+	if !ok || duty != "unassigned" {
+		t.Fatalf("unassigned duty=%q ok=%v HTTP=%d", duty, ok, w.Code)
+	}
+	if duty == "supervisor" {
+		t.Fatal("unassigned administrator inherited supervisor privileges")
+	}
+
+	action := httptest.NewRecorder()
+	if h.authorizeCareAction(action, req, 11, "verify") {
+		t.Fatal("unassigned administrator authorized a care transition")
+	}
+	if action.Code != http.StatusForbidden {
+		t.Fatalf("unassigned transition HTTP %d, want 403", action.Code)
 	}
 }
