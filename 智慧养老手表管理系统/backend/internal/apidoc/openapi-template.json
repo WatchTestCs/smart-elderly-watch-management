@@ -3220,6 +3220,80 @@
         "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
+    "/api/v1/risk/events": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "events": {},
+                    "rules": {}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_risk.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+      }
+    },
+    "/api/v1/risk/rules": {
+      "post": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "rule": {}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "action": {},
+                  "durationHours": {},
+                  "ip": {},
+                  "reason": {}
+                }
+              }
+            }
+          }
+        },
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_risk.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+      }
+    },
+    "/api/v1/risk/rules/{id}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "deleted": {}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": null,
+          "content": null,
+          "$ref": "#/components/requestBodies/JsonObject"
+        },
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_risk.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+      }
+    },
     "/api/v1/rule-policies": {
       "post": {
         "responses": {

@@ -7,6 +7,7 @@ import (
 	"database/sql/driver"
 	"errors"
 	"fmt"
+	"io/fs"
 	"strings"
 	"time"
 
@@ -62,7 +63,14 @@ func MigrateMySQL(ctx context.Context, database *Database) (result error) {
 	if _, err = conn.ExecContext(ctx, "CREATE TABLE IF NOT EXISTS schema_migrations(name varchar(191) PRIMARY KEY,checksum char(64) NOT NULL,applied_at datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)) ENGINE=InnoDB"); err != nil {
 		return err
 	}
-	for _, name := range []string{"mysql/0001_core.sql", "mysql/0002_analytics.sql", "mysql/0003_health_samples.sql", "mysql/0004_device_capabilities.sql", "mysql/0005_platform.sql", "mysql/0006_health_performance.sql", "mysql/0007_cluster_scheduling.sql", "mysql/0008_rule_baseline_source.sql", "mysql/0009_rule_baseline_cover.sql", "mysql/0010_care_recipient_key.sql", "mysql/0011_encrypt_coordinates.sql", "mysql/0013_image_blob.sql", "mysql/0014_operational_indexes.sql", "mysql/0015_device_request_nonces.sql", "mysql/0016_durable_telemetry_inbox.sql", "mysql/0017_telemetry_observation_time.sql", "mysql/0018_daily_ownership.sql", "mysql/0019_sleep_observation_time.sql", "mysql/0020_position_metadata.sql"} {
+	names, err := fs.Glob(migrations.Files, "mysql/*.sql")
+	if err != nil {
+		return fmt.Errorf("list embedded MySQL migrations: %w", err)
+	}
+	if len(names) == 0 {
+		return errors.New("no embedded MySQL migrations")
+	}
+	for _, name := range names {
 		data, err := migrations.Files.ReadFile(name)
 		if err != nil {
 			return err

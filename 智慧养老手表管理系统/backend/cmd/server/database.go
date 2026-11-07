@@ -160,6 +160,9 @@ func watchDatabase(ctx context.Context, cfg config.Config, sessions *session.Sto
 		if workerDone != nil {
 			<-workerDone
 		}
+		if dropped := handlers.CloseRisk(); dropped > 0 {
+			log.Printf("risk audit dropped events: %d", dropped)
+		}
 		service.currentDB.Store(nil)
 		if pool != nil {
 			pool.Close()
@@ -180,6 +183,9 @@ func watchDatabase(ctx context.Context, cfg config.Config, sessions *session.Sto
 			migration, cancelMigration := context.WithTimeout(ctx, 2*time.Minute)
 			err = dbstore.MigrateMySQL(migration, pool)
 			cancelMigration()
+			if err == nil {
+				err = handlers.InitRisk(ctx, pool)
+			}
 			if err == nil {
 				if cfg.SessionBackend == "database" {
 					var box *securestore.Box
@@ -210,7 +216,7 @@ func watchDatabase(ctx context.Context, cfg config.Config, sessions *session.Sto
 			observability.Default.Set("suining_mysql_health_probe_ok", 0)
 			observability.Default.Add("suining_mysql_health_probe_failures_total", 1)
 			if service.api.Swap(nil) != nil || firstAttempt {
-				log.Print("database unavailable; reconnecting in background")
+				log.Printf("database unavailable: %v; reconnecting in background", err)
 			}
 		}
 		firstAttempt = false

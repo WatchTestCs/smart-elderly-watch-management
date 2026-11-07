@@ -1,4 +1,12 @@
 {
+  "DELETE /api/v1/risk/rules/{id}": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_risk.go",
+    "request": [],
+    "response": [
+      "deleted",
+      "returnCode"
+    ]
+  },
   "GET /api/v1/auth/session": {
     "file": "智慧养老手表管理系统/backend/internal/handlers/handler_auth.go",
     "request": [],
@@ -18,6 +26,15 @@
     ],
     "response": []
   },
+  "GET /api/v1/risk/events": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_risk.go",
+    "request": [],
+    "response": [
+      "events",
+      "returnCode",
+      "rules"
+    ]
+  },
   "GET /api/v1/service/status": {
     "file": "智慧养老手表管理系统/backend/cmd/server/database.go",
     "request": [],
@@ -27,6 +44,53 @@
       "primaryEngine",
       "configError",
       "analytics"
+    ]
+  },
+  "POST /api/v1/activity/alerts/device-counts": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go",
+    "request": [],
+    "response": [
+      "returnCode",
+      "sleep"
+    ]
+  },
+  "POST /api/v1/activity/chart": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_vitals_activity.go",
+    "request": [
+      "oldId"
+    ],
+    "response": [
+      "createTime",
+      "returnCode",
+      "sleep",
+      "activityRecords"
+    ]
+  },
+  "POST /api/v1/activity/history": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_vitals_activity.go",
+    "request": [
+      "oldId"
+    ],
+    "response": [
+      "returnCode",
+      "activityRecords"
+    ]
+  },
+  "POST /api/v1/activity/latest": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_vitals_activity.go",
+    "request": [
+      "name",
+      "timeFirst",
+      "timeLast",
+      "page",
+      "pageSize"
+    ],
+    "response": [
+      "page",
+      "pageSize",
+      "returnCode",
+      "activityRecords",
+      "total"
     ]
   },
   "POST /api/v1/alert-reviews": {
@@ -182,57 +246,6 @@
       "id",
       "returnCode",
       "state"
-    ]
-  },
-  "POST /api/v1/guardians/create": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_user.go",
-    "request": [
-      "customerAddress",
-      "customerAge",
-      "customerName",
-      "customerPhone",
-      "customerSex"
-    ],
-    "response": [
-      "returnCode"
-    ]
-  },
-  "POST /api/v1/guardians/delete": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_user.go",
-    "request": [
-      "customerId"
-    ],
-    "response": [
-      "returnCode"
-    ]
-  },
-  "POST /api/v1/guardians/list": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_user.go",
-    "request": [
-      "customerName",
-      "page",
-      "pageSize"
-    ],
-    "response": [
-      "customers",
-      "page",
-      "pageSize",
-      "returnCode",
-      "total"
-    ]
-  },
-  "POST /api/v1/guardians/update": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_user.go",
-    "request": [
-      "customerAddress",
-      "customerAge",
-      "customerId",
-      "customerName",
-      "customerPhone",
-      "customerSex"
-    ],
-    "response": [
-      "returnCode"
     ]
   },
   "POST /api/v1/desktop/exit": {
@@ -434,15 +447,6 @@
     ],
     "response": [
       "events",
-      "returnCode"
-    ]
-  },
-  "POST /api/v1/locations/alerts/resolve-latest": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_device_alerts.go",
-    "request": [
-      "oldId"
-    ],
-    "response": [
       "returnCode"
     ]
   },
@@ -745,6 +749,87 @@
       "returnCode"
     ]
   },
+  "POST /api/v1/gallery/list": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_social_pictures.go",
+    "request": [
+      "id",
+      "picName"
+    ],
+    "response": [
+      "galleryImages",
+      "returnCode"
+    ]
+  },
+  "POST /api/v1/gallery/replace": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_social_pictures.go",
+    "request": [
+      "fileListName"
+    ],
+    "response": [
+      "returnCode"
+    ]
+  },
+  "POST /api/v1/guardians/create": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_user.go",
+    "request": [
+      "customerAddress",
+      "customerAge",
+      "customerName",
+      "customerPhone",
+      "customerSex"
+    ],
+    "response": [
+      "returnCode"
+    ]
+  },
+  "POST /api/v1/guardians/delete": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_user.go",
+    "request": [
+      "customerId"
+    ],
+    "response": [
+      "returnCode"
+    ]
+  },
+  "POST /api/v1/guardians/list": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_user.go",
+    "request": [
+      "customerName",
+      "page",
+      "pageSize"
+    ],
+    "response": [
+      "customers",
+      "page",
+      "pageSize",
+      "returnCode",
+      "total"
+    ]
+  },
+  "POST /api/v1/guardians/update": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_user.go",
+    "request": [
+      "customerAddress",
+      "customerAge",
+      "customerId",
+      "customerName",
+      "customerPhone",
+      "customerSex"
+    ],
+    "response": [
+      "returnCode"
+    ]
+  },
+  "POST /api/v1/health/alerts/device-counts": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go",
+    "request": [],
+    "response": [
+      "bloodPressure",
+      "heartRate",
+      "returnCode",
+      "sleep"
+    ]
+  },
   "POST /api/v1/health/changes": {
     "file": "智慧养老手表管理系统/backend/internal/handlers/handler_health.go",
     "request": [
@@ -902,39 +987,8 @@
       "returnCode"
     ]
   },
-  "POST /api/v1/notifications/search": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_notifications.go",
-    "request": [
-      "after",
-      "familyId"
-    ],
-    "response": [
-      "items",
-      "returnCode"
-    ]
-  },
-  "POST /api/v1/residents/create": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_old_person.go",
-    "request": [
-      "name",
-      "bothdate",
-      "sex",
-      "phone",
-      "room",
-      "illness",
-      "warn",
-      "foodLike",
-      "foodHate",
-      "drag",
-      "customerId",
-      "deviceId"
-    ],
-    "response": [
-      "returnCode"
-    ]
-  },
-  "POST /api/v1/residents/delete": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_old_person.go",
+  "POST /api/v1/locations/alerts/resolve-latest": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_device_alerts.go",
     "request": [
       "oldId"
     ],
@@ -942,432 +996,13 @@
       "returnCode"
     ]
   },
-  "POST /api/v1/residents/list": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/old_person_query.go",
-    "request": [
-      "name",
-      "page",
-      "pageSize"
-    ],
-    "response": [
-      "oldPeople",
-      "page",
-      "pageSize",
-      "returnCode",
-      "total"
-    ]
-  },
-  "POST /api/v1/residents/details": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/old_person_query.go",
-    "request": [
-      "name",
-      "page",
-      "pageSize"
-    ],
-    "response": [
-      "oldPersonDetails",
-      "page",
-      "pageSize",
-      "returnCode",
-      "total"
-    ]
-  },
-  "POST /api/v1/residents/update": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_old_person.go",
-    "request": [
-      "oldId",
-      "name",
-      "bothdate",
-      "sex",
-      "phone",
-      "room",
-      "illness",
-      "warn",
-      "foodLike",
-      "foodHate",
-      "drag",
-      "customerId",
-      "customerName",
-      "deviceId"
-    ],
-    "response": [
-      "returnCode"
-    ]
-  },
-  "POST /api/v1/gallery/replace": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_social_pictures.go",
-    "request": [
-      "fileListName"
-    ],
-    "response": [
-      "returnCode"
-    ]
-  },
-  "POST /api/v1/gallery/list": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_social_pictures.go",
-    "request": [
-      "id",
-      "picName"
-    ],
-    "response": [
-      "galleryImages",
-      "returnCode"
-    ]
-  },
-  "POST /api/v1/position/select": {
+  "POST /api/v1/locations/alerts/summary": {
     "file": "智慧养老手表管理系统/backend/internal/handlers/handler_position.go",
-    "request": [
-      "name",
-      "page",
-      "pageSize"
-    ],
-    "response": [
-      "page",
-      "pageSize",
-      "positionDtos",
-      "returnCode",
-      "total"
-    ]
-  },
-  "POST /api/v1/position/selectFamily": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_position.go",
-    "request": [
-      "oldId"
-    ],
-    "response": [
-      "positionDtos",
-      "returnCode"
-    ]
-  },
-  "POST /api/v1/vitals/alerts/count": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_vitals_alerts.go",
     "request": [],
     "response": [
-      "preTotal",
-      "rateTotal",
+      "activeAlerts",
       "returnCode",
-      "total"
-    ]
-  },
-  "POST /api/v1/vitals/alerts/detail": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_vitals_alerts.go",
-    "request": [
-      "kind",
-      "oldId",
-      "recordId"
-    ],
-    "response": [
-      "hasAlert",
-      "message",
-      "returnCode",
-      "recordId",
-      "deviceId",
-      "oldId",
-      "oldPersonName",
-      "hr",
-      "bp",
-      "rateBad",
-      "preBad",
-      "occurTime",
-      "reason",
-      "detail",
-      "advice"
-    ]
-  },
-  "POST /api/v1/vitals/alerts/resolve": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_vitals_alerts.go",
-    "request": [
-      "kind",
-      "recordId"
-    ],
-    "response": [
-      "message",
-      "returnCode"
-    ]
-  },
-  "POST /api/v1/vitals/latest": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_vitals_measurements.go",
-    "request": [
-      "name",
-      "timeFirst",
-      "timeLast",
-      "page",
-      "pageSize"
-    ],
-    "response": [
-      "page",
-      "pageSize",
-      "vitalRecords",
-      "returnCode",
-      "total"
-    ]
-  },
-  "POST /api/v1/vitals/alerts/device-counts": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go",
-    "request": [],
-    "response": [
-      "bloodPressure",
-      "heartRate",
-      "returnCode"
-    ]
-  },
-  "POST /api/v1/vitals/chart": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_vitals_measurements.go",
-    "request": [
-      "oldId"
-    ],
-    "response": [
-      "bps",
-      "createTimes",
-      "hrs",
-      "returnCode",
-      "time"
-    ]
-  },
-  "POST /api/v1/vitals/history": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_vitals_measurements.go",
-    "request": [
-      "oldId"
-    ],
-    "response": [
-      "vitalRecords",
-      "returnCode"
-    ]
-  },
-  "POST /api/v1/rule-policies": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_rules.go",
-    "request": [
-      "deviceId",
-      "policy",
-      "revision"
-    ],
-    "response": [
-      "policy",
-      "returnCode",
-      "revision"
-    ]
-  },
-  "POST /api/v1/notice-comments/delete": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_social.go",
-    "request": [
-      "saidId"
-    ],
-    "response": [
-      "returnCode"
-    ]
-  },
-  "POST /api/v1/notice-comments/toggle-like": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_social.go",
-    "request": [
-      "saidId"
-    ],
-    "response": [
-      "returnCode"
-    ]
-  },
-  "POST /api/v1/notice-comments/create": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_social.go",
-    "request": [
-      "said",
-      "textId"
-    ],
-    "response": [
-      "returnCode"
-    ]
-  },
-  "POST /api/v1/notice-comments/list": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_social.go",
-    "request": [
-      "textId"
-    ],
-    "response": [
-      "returnCode",
-      "comments"
-    ]
-  },
-  "POST /api/v1/notice-comments/search": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_social.go",
-    "request": [
-      "page",
-      "pageSize"
-    ],
-    "response": [
-      "page",
-      "pageSize",
-      "returnCode",
-      "moderatedComments",
-      "total"
-    ]
-  },
-  "POST /api/v1/notice-comments/reply": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_social.go",
-    "request": [
-      "back",
-      "saidId"
-    ],
-    "response": [
-      "returnCode"
-    ]
-  },
-  "POST /api/v1/security/factor": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_security.go",
-    "request": [
-      "action",
-      "otp",
-      "password"
-    ],
-    "response": [
-      "returnCode",
-      "secret",
-      "uri",
-      "recoveryCodes",
-      "reloginRequired"
-    ]
-  },
-  "POST /api/v1/security/login-audit": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_security.go",
-    "request": [
-      "after"
-    ],
-    "response": [
-      "items",
-      "returnCode"
-    ]
-  },
-  "POST /api/v1/setup": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_auth.go",
-    "request": [
-      "name",
-      "password",
-      "phone"
-    ],
-    "response": [
-      "returnCode"
-    ]
-  },
-  "POST /api/v1/health/alerts/device-counts": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go",
-    "request": [],
-    "response": [
-      "bloodPressure",
-      "heartRate",
-      "returnCode",
-      "sleep"
-    ]
-  },
-  "POST /api/v1/activity/latest": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_vitals_activity.go",
-    "request": [
-      "name",
-      "timeFirst",
-      "timeLast",
-      "page",
-      "pageSize"
-    ],
-    "response": [
-      "page",
-      "pageSize",
-      "returnCode",
-      "activityRecords",
-      "total"
-    ]
-  },
-  "POST /api/v1/activity/alerts/device-counts": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go",
-    "request": [],
-    "response": [
-      "returnCode",
-      "sleep"
-    ]
-  },
-  "POST /api/v1/activity/chart": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_vitals_activity.go",
-    "request": [
-      "oldId"
-    ],
-    "response": [
-      "createTime",
-      "returnCode",
-      "sleep",
-      "activityRecords"
-    ]
-  },
-  "POST /api/v1/activity/history": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_vitals_activity.go",
-    "request": [
-      "oldId"
-    ],
-    "response": [
-      "returnCode",
-      "activityRecords"
-    ]
-  },
-  "POST /api/v1/notices/create": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_social_text.go",
-    "request": [
-      "fileListName",
-      "textMain",
-      "title"
-    ],
-    "response": [
-      "returnCode"
-    ]
-  },
-  "POST /api/v1/notices/delete": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_social_text.go",
-    "request": [
-      "textId"
-    ],
-    "response": [
-      "returnCode"
-    ]
-  },
-  "POST /api/v1/notices/list": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/social_text_query.go",
-    "request": [
-      "title",
-      "page",
-      "pageSize"
-    ],
-    "response": [
-      "page",
-      "pageSize",
-      "returnCode",
-      "texts",
-      "total"
-    ]
-  },
-  "POST /api/v1/notices/detail": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/social_text_query.go",
-    "request": [
-      "textId"
-    ],
-    "response": [
-      "pics",
-      "returnCode",
-      "text"
-    ]
-  },
-  "POST /api/v1/notices/update": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_social_text.go",
-    "request": [
-      "textId",
-      "title",
-      "textMain",
-      "fileListName"
-    ],
-    "response": [
-      "returnCode"
-    ]
-  },
-  "POST /api/v1/user/select": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_user.go",
-    "request": [
-      "userPhone"
-    ],
-    "response": [
-      "returnCode",
-      "usersByPhone2"
+      "totalResidents"
     ]
   },
   "POST /api/v1/monitoring-profiles/create": {
@@ -1420,13 +1055,408 @@
       "returnCode"
     ]
   },
-  "POST /api/v1/locations/alerts/summary": {
+  "POST /api/v1/notice-comments/create": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_social.go",
+    "request": [
+      "said",
+      "textId"
+    ],
+    "response": [
+      "returnCode"
+    ]
+  },
+  "POST /api/v1/notice-comments/delete": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_social.go",
+    "request": [
+      "saidId"
+    ],
+    "response": [
+      "returnCode"
+    ]
+  },
+  "POST /api/v1/notice-comments/list": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_social.go",
+    "request": [
+      "textId"
+    ],
+    "response": [
+      "returnCode",
+      "comments"
+    ]
+  },
+  "POST /api/v1/notice-comments/reply": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_social.go",
+    "request": [
+      "back",
+      "saidId"
+    ],
+    "response": [
+      "returnCode"
+    ]
+  },
+  "POST /api/v1/notice-comments/search": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_social.go",
+    "request": [
+      "page",
+      "pageSize"
+    ],
+    "response": [
+      "page",
+      "pageSize",
+      "returnCode",
+      "moderatedComments",
+      "total"
+    ]
+  },
+  "POST /api/v1/notice-comments/toggle-like": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_social.go",
+    "request": [
+      "saidId"
+    ],
+    "response": [
+      "returnCode"
+    ]
+  },
+  "POST /api/v1/notices/create": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_social_text.go",
+    "request": [
+      "fileListName",
+      "textMain",
+      "title"
+    ],
+    "response": [
+      "returnCode"
+    ]
+  },
+  "POST /api/v1/notices/delete": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_social_text.go",
+    "request": [
+      "textId"
+    ],
+    "response": [
+      "returnCode"
+    ]
+  },
+  "POST /api/v1/notices/detail": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/social_text_query.go",
+    "request": [
+      "textId"
+    ],
+    "response": [
+      "pics",
+      "returnCode",
+      "text"
+    ]
+  },
+  "POST /api/v1/notices/list": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/social_text_query.go",
+    "request": [
+      "title",
+      "page",
+      "pageSize"
+    ],
+    "response": [
+      "page",
+      "pageSize",
+      "returnCode",
+      "texts",
+      "total"
+    ]
+  },
+  "POST /api/v1/notices/update": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_social_text.go",
+    "request": [
+      "textId",
+      "title",
+      "textMain",
+      "fileListName"
+    ],
+    "response": [
+      "returnCode"
+    ]
+  },
+  "POST /api/v1/notifications/search": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_notifications.go",
+    "request": [
+      "after",
+      "familyId"
+    ],
+    "response": [
+      "items",
+      "returnCode"
+    ]
+  },
+  "POST /api/v1/position/select": {
     "file": "智慧养老手表管理系统/backend/internal/handlers/handler_position.go",
+    "request": [
+      "name",
+      "page",
+      "pageSize"
+    ],
+    "response": [
+      "page",
+      "pageSize",
+      "positionDtos",
+      "returnCode",
+      "total"
+    ]
+  },
+  "POST /api/v1/position/selectFamily": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_position.go",
+    "request": [
+      "oldId"
+    ],
+    "response": [
+      "positionDtos",
+      "returnCode"
+    ]
+  },
+  "POST /api/v1/residents/create": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_old_person.go",
+    "request": [
+      "name",
+      "bothdate",
+      "sex",
+      "phone",
+      "room",
+      "illness",
+      "warn",
+      "foodLike",
+      "foodHate",
+      "drag",
+      "customerId",
+      "deviceId"
+    ],
+    "response": [
+      "returnCode"
+    ]
+  },
+  "POST /api/v1/residents/delete": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_old_person.go",
+    "request": [
+      "oldId"
+    ],
+    "response": [
+      "returnCode"
+    ]
+  },
+  "POST /api/v1/residents/details": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/old_person_query.go",
+    "request": [
+      "name",
+      "page",
+      "pageSize"
+    ],
+    "response": [
+      "oldPersonDetails",
+      "page",
+      "pageSize",
+      "returnCode",
+      "total"
+    ]
+  },
+  "POST /api/v1/residents/list": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/old_person_query.go",
+    "request": [
+      "name",
+      "page",
+      "pageSize"
+    ],
+    "response": [
+      "oldPeople",
+      "page",
+      "pageSize",
+      "returnCode",
+      "total"
+    ]
+  },
+  "POST /api/v1/residents/update": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_old_person.go",
+    "request": [
+      "oldId",
+      "name",
+      "bothdate",
+      "sex",
+      "phone",
+      "room",
+      "illness",
+      "warn",
+      "foodLike",
+      "foodHate",
+      "drag",
+      "customerId",
+      "customerName",
+      "deviceId"
+    ],
+    "response": [
+      "returnCode"
+    ]
+  },
+  "POST /api/v1/risk/rules": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_risk.go",
+    "request": [
+      "action",
+      "durationHours",
+      "ip",
+      "reason"
+    ],
+    "response": [
+      "returnCode",
+      "rule"
+    ]
+  },
+  "POST /api/v1/rule-policies": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_rules.go",
+    "request": [
+      "deviceId",
+      "policy",
+      "revision"
+    ],
+    "response": [
+      "policy",
+      "returnCode",
+      "revision"
+    ]
+  },
+  "POST /api/v1/security/factor": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_security.go",
+    "request": [
+      "action",
+      "otp",
+      "password"
+    ],
+    "response": [
+      "returnCode",
+      "secret",
+      "uri",
+      "recoveryCodes",
+      "reloginRequired"
+    ]
+  },
+  "POST /api/v1/security/login-audit": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_security.go",
+    "request": [
+      "after"
+    ],
+    "response": [
+      "items",
+      "returnCode"
+    ]
+  },
+  "POST /api/v1/setup": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_auth.go",
+    "request": [
+      "name",
+      "password",
+      "phone"
+    ],
+    "response": [
+      "returnCode"
+    ]
+  },
+  "POST /api/v1/user/select": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_user.go",
+    "request": [
+      "userPhone"
+    ],
+    "response": [
+      "returnCode",
+      "usersByPhone2"
+    ]
+  },
+  "POST /api/v1/vitals/alerts/count": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_vitals_alerts.go",
     "request": [],
     "response": [
-      "activeAlerts",
+      "preTotal",
+      "rateTotal",
       "returnCode",
-      "totalResidents"
+      "total"
+    ]
+  },
+  "POST /api/v1/vitals/alerts/detail": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_vitals_alerts.go",
+    "request": [
+      "kind",
+      "oldId",
+      "recordId"
+    ],
+    "response": [
+      "hasAlert",
+      "message",
+      "returnCode",
+      "recordId",
+      "deviceId",
+      "oldId",
+      "oldPersonName",
+      "hr",
+      "bp",
+      "rateBad",
+      "preBad",
+      "occurTime",
+      "reason",
+      "detail",
+      "advice"
+    ]
+  },
+  "POST /api/v1/vitals/alerts/device-counts": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go",
+    "request": [],
+    "response": [
+      "bloodPressure",
+      "heartRate",
+      "returnCode"
+    ]
+  },
+  "POST /api/v1/vitals/alerts/resolve": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_vitals_alerts.go",
+    "request": [
+      "kind",
+      "recordId"
+    ],
+    "response": [
+      "message",
+      "returnCode"
+    ]
+  },
+  "POST /api/v1/vitals/chart": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_vitals_measurements.go",
+    "request": [
+      "oldId"
+    ],
+    "response": [
+      "bps",
+      "createTimes",
+      "hrs",
+      "returnCode",
+      "time"
+    ]
+  },
+  "POST /api/v1/vitals/history": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_vitals_measurements.go",
+    "request": [
+      "oldId"
+    ],
+    "response": [
+      "vitalRecords",
+      "returnCode"
+    ]
+  },
+  "POST /api/v1/vitals/latest": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_vitals_measurements.go",
+    "request": [
+      "name",
+      "timeFirst",
+      "timeLast",
+      "page",
+      "pageSize"
+    ],
+    "response": [
+      "page",
+      "pageSize",
+      "vitalRecords",
+      "returnCode",
+      "total"
     ]
   }
 }
