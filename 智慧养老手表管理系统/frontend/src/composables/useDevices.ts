@@ -105,6 +105,7 @@ export function useDevices() {
   let disposed = false
   let alertRequest = 0
   let workbenchRequest = 0
+  let bindCodeRequest = 0
 
   async function loadAlertCounts() {
     if (disposed) return
@@ -329,15 +330,19 @@ export function useDevices() {
     void loadBindCodes(row.oldId ?? '')
   }
   async function loadBindCodes(oldId: DeviceId | '') {
-    if (!oldId) {
+    const revision = ++bindCodeRequest
+    if (disposed || !oldId) {
       state.bindCodeList = []
       return
     }
     try {
       const { data } = await post('bindCodeList', { oldId })
+      if (disposed || revision !== bindCodeRequest || !state.bindCodeDialogVisible || String(state.bindOldId) !== String(oldId)) return
       state.bindCodeList = Array.isArray(data.bindCodes) ? data.bindCodes : []
     } catch (error) {
-      ElMessage({ type: 'error', message: apiErrorMessage(error, '请求未完成，请重试') })
+      if (!disposed && revision === bindCodeRequest && state.bindCodeDialogVisible) {
+        ElMessage({ type: 'error', message: apiErrorMessage(error, '请求未完成，请重试') })
+      }
     }
   }
   async function createBindCode() {
@@ -413,6 +418,15 @@ export function useDevices() {
     }
   }
 
+  watch(() => state.bindOldId, oldId => {
+    if (!state.bindCodeDialogVisible) return
+    state.bindCodeList = []
+    state.newBindCode = null
+    void loadBindCodes(oldId)
+  }, { flush: 'sync' })
+  watch(() => state.bindCodeDialogVisible, visible => {
+    if (!visible) bindCodeRequest++
+  })
   watch(() => state.deviceQuery, scheduleFilter)
   watch(() => state.deviceState, scheduleFilter)
   watch(() => state.autoRefresh, enabled => enabled ? startTimer() : stopTimer())
@@ -426,6 +440,7 @@ export function useDevices() {
     disposed = true
     alertRequest++
     workbenchRequest++
+    bindCodeRequest++
     clearTimeout(filterTimer)
     document.removeEventListener('visibilitychange', handleVisibilityChange)
     stopTimer()
