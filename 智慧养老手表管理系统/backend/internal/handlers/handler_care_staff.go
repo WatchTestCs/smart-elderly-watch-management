@@ -8,8 +8,8 @@ import (
 	"suining-care/internal/response"
 )
 
-// A legacy ADMIN with no duty assignment is supervisor until migrated.
-// Supervisors can delegate narrower privileges, but cannot demote themselves.
+// Supervisors can delegate narrower privileges. Missing assignments are
+// intentionally unassigned and cannot bootstrap their own supervisor access.
 func (h *Handler) careSupervisor(w http.ResponseWriter, r *http.Request) (int64, bool) {
 	actor, ok := careAdmin(w, r)
 	if !ok {
@@ -43,7 +43,7 @@ func (h *Handler) careStaff(w http.ResponseWriter, r *http.Request) {
 		}
 		return map[string]any{"id": id, "name": name, "duty": duty}, nil
 	}, `SELECT u.user_id,u.user_name,
- COALESCE(p.duty,'supervisor') FROM users u
+ COALESCE(p.duty,'unassigned') FROM users u
  LEFT JOIN care_staff_permission p ON p.admin_id=u.user_id
  ORDER BY u.user_id LIMIT 100`)
 	if !ok {

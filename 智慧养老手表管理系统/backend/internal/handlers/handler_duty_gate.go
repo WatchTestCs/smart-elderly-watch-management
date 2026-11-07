@@ -12,8 +12,8 @@ import (
 // EnforceAdminDuty closes the legacy ADMIN route gap: a caregiver or auditor
 // must not gain unrestricted administrative access outside the care workspace.
 // Run this AFTER auth.Middleware so the principal is available from context.
-// Legacy ADMIN accounts without an explicit assignment remain supervisors;
-// the rollout still requires an operator to inventory and assign those accounts.
+// Legacy administrators are backfilled to explicit supervisors by migration.
+// A missing assignment after that migration is unassigned and must fail closed.
 func (h *Handler) EnforceAdminDuty(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		principal := auth.Principal(r)
@@ -27,9 +27,8 @@ func (h *Handler) EnforceAdminDuty(next http.Handler) http.Handler {
 			"SELECT duty FROM care_staff_permission WHERE admin_id=$1",
 			principal.ID).Scan(&duty)
 		if errors.Is(err, pgx.ErrNoRows) {
-			// Preserve the documented migration behavior for unassigned ADMINs.
-			next.ServeHTTP(w, r)
-			return
+			duty = "unassigned"
+			err = nil
 		}
 		if err != nil {
 			// An unavailable role store must not turn into an allow decision.
