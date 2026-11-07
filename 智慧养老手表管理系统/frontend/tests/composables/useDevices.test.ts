@@ -77,3 +77,33 @@ it('does not attach a created binding code to a newly selected resident', async 
     vi.restoreAllMocks()
   }
 })
+
+it('does not publish device rows from a query superseded during an active read', async () => {
+  const listReplies: ((value: unknown) => void)[] = []
+  vi.spyOn(axios, 'post').mockImplementation(url => {
+    if (url === '/api/v1/device/list') return new Promise(resolve => { listReplies.push(resolve) })
+    if (url === '/api/v1/device/alertCounts') return Promise.resolve({ data: { items: [], total: 0 } })
+    if (url === '/api/v1/inviteCode/oldPersonList') return Promise.resolve({ data: { oldPeople: [] } })
+    throw new Error(`unexpected request: ${url}`)
+  })
+  let devices!: ReturnType<typeof useDevices>
+  const wrapper = mount(defineComponent({
+    setup() { devices = useDevices(); return () => null }
+  }))
+  try {
+    await flushPromises()
+    expect(listReplies).toHaveLength(1)
+    devices.changeDevicePage(2)
+    listReplies[0]({ data: { devices: [{ deviceId: 1, deviceNo: 'stale' }], total: 1 } })
+    await flushPromises()
+    expect(devices.deviceList.value).toEqual([])
+    expect(listReplies).toHaveLength(2)
+    listReplies[1]({ data: { devices: [{ deviceId: 2, deviceNo: 'current' }], total: 1 } })
+    await flushPromises()
+    expect(devices.deviceList.value).toEqual([{ deviceId: 2, deviceNo: 'current' }])
+    expect(devices.currentPage.value).toBe(2)
+  } finally {
+    wrapper.unmount()
+    vi.restoreAllMocks()
+  }
+})
