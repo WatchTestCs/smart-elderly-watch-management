@@ -1,9 +1,7 @@
 import { reactive } from 'vue'
-import type { InternalAxiosRequestConfig } from 'axios'
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
-import type { Router } from 'vue-router'
-import { apiErrorMessage, assertApiResponse } from './api/httpContract'
+import { apiErrorMessage, assertApiResponse, isApplicationAPI } from './api/httpContract'
 import store from './store'
 
 export interface SessionAccount {
@@ -87,8 +85,7 @@ export function endSession () {
 export function installHttpSecurity (router: { currentRoute: { value: { path: string } }; replace?: (path: string) => unknown }) {
   axios.defaults.withCredentials = true
   axios.interceptors.request.use(config => {
-    const url = new URL(config.url || '', window.location.href)
-    if (config.skipSession || url.origin !== window.location.origin || !(url.pathname.startsWith('/api/v1/'))) return config
+    if (config.skipSession || !isApplicationAPI(config.url)) return config
     if (['get', 'head', 'options'].includes((config.method || 'get').toLowerCase())) return config
     return loadSession().then(() => {
       config.headers[authState.csrfHeader] = authState.csrfToken
