@@ -68,7 +68,6 @@ interface DeviceState {
 }
 
 
-// Keep writes explicit: retrying administrative mutations could repeat a completed action.
 const post = (path: string, params: Record<string, unknown> = {}) => api.post<Envelope & Record<string, any>>('/api/v1/device/' + path, params)
 
 function emptyAlert(): DeviceAlert {
@@ -103,6 +102,7 @@ export function useDevices() {
   let filterTimer: ReturnType<typeof setTimeout> | undefined
   let refreshTimer: ReturnType<typeof setTimeout> | undefined
   let disposed = false
+  // Only the newest read may publish state, even if an older request ignores cancellation.
   let alertRequest = 0
   let alertCountsRequest = 0
   let workbenchRequest = 0
@@ -340,6 +340,7 @@ export function useDevices() {
     }
     try {
       const { data } = await post('bindCodeList', { oldId })
+      // The dialog may now belong to another resident.
       if (disposed || revision !== bindCodeRequest || !state.bindCodeDialogVisible || String(state.bindOldId) !== String(oldId)) return
       state.bindCodeList = Array.isArray(data.bindCodes) ? data.bindCodes : []
     } catch (error) {
