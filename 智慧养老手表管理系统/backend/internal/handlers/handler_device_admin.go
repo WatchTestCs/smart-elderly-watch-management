@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"suining-care/internal/db"
 	"suining-care/internal/devicerepo"
 	"suining-care/internal/response"
 	"time"
@@ -83,27 +82,18 @@ func (h *Handler) deviceList(w http.ResponseWriter, r *http.Request) {
 		pattern = "%" + query + "%"
 	}
 	ctx := r.Context()
-	const onlineExpr = `d.last_time >= now() - interval '60 seconds'`
-	filter := `WHERE ($1='' OR LOWER(d.device_no) LIKE $2 OR LOWER(COALESCE(d.alias,'') || ' ' || COALESCE(o.name,'')) LIKE $2)
-		AND ($3='all' OR CASE WHEN ` + onlineExpr + ` THEN 'online' ELSE 'offline' END = $3)`
-	base := `SELECT d.device_id, d.device_no, d.alias, d.model, d.app_version, d.battery,
-		d.old_id, o.name, o.phone, d.bind_time, d.last_time, d.last_lng, d.last_lat,
-		d.status, d.person_handled, d.rate_handled, d.pre_handled
-		FROM device d LEFT JOIN oldperson o ON o.old_id = d.old_id ` + filter + ` ORDER BY d.device_id`
-	var total, onlineCount int64
-	if err := h.DB.QueryRow(ctx,
-		`SELECT COUNT(*), COALESCE(SUM(CASE WHEN `+onlineExpr+` THEN 1 ELSE 0 END),0)
-		 FROM device d LEFT JOIN oldperson o ON o.old_id=d.old_id `+filter,
-		pattern, pattern, state).Scan(&total, &onlineCount); err != nil {
-		response.Error500(w, ref())
+	items, total, onlineCount, err := devicerepo.ListAdminDevices(ctx, h.DB, pattern, state, p, ps)
+	if internalError(w, err) {
 		return
 	}
 	now := time.Now()
-	list, ok := queryRows(h, w, ctx, func(rows db.Rows) (map[string]any, error) {
-		return h.scanAdminDevice(rows, now)
-	}, base+` LIMIT $4 OFFSET $5`, pattern, pattern, state, ps, (p-1)*ps)
-	if !ok {
-		return
+	list := make([]map[string]any, 0, len(items))
+	for _, item := range items {
+		view, err := h.adminDeviceView(item, now)
+		if internalError(w, err) {
+			return
+		}
+		list = append(list, view)
 	}
 	response.OK(w, map[string]any{
 		"total": total, "onlineCount": onlineCount, "page": p, "pageSize": ps,
@@ -252,39 +242,27 @@ func (h *Handler) deviceDeleteBindCode(w http.ResponseWriter, r *http.Request) {
 
 // genDeviceNo 生成唯一设备号（W + 8 位，重试 30 次，兜底时间戳）。
 
-func (h *Handler) scanAdminDevice(row db.Row, now time.Time) (map[string]any, error) {
-	var id int64
-	var no string
-	var alias, model, appVersion, oldName, oldPhone, lastLng, lastLat *string
-	var battery *int
-	var oldID *int64
-	var bindTime, lastTime *time.Time
-	var status *int
-	var personHandled, rateHandled, preHandled int
-	if err := row.Scan(&id, &no, &alias, &model, &appVersion, &battery, &oldID,
-		&oldName, &oldPhone, &bindTime, &lastTime, &lastLng, &lastLat, &status,
-		&personHandled, &rateHandled, &preHandled); err != nil {
-		return nil, err
-	}
+func (h *Handler) adminDeviceView(device devicerepo.AdminDevice, now time.Time) (map[string]any, error) {
 	name := "（未绑定）"
-	if oldName != nil {
-		name = *oldName
+	if device.ResidentName != nil {
+		name = *device.ResidentName
 	}
 	online := 0
-	if lastTime != nil && now.Sub(*lastTime) <= 60*time.Second {
+	if device.LastTime != nil && now.Sub(*device.LastTime) <= 60*time.Second {
 		online = 1
 	}
-	lastLng, lastLat, err := openCoordinates(h.Box, lastLng, lastLat)
+	lastLng, lastLat, err := openCoordinates(h.Box, device.LastLongitude, device.LastLatitude)
 	if err != nil {
 		return nil, err
 	}
 	return map[string]any{
-		"deviceId": id, "deviceNo": no, "alias": alias, "model": model,
-		"appVersion": appVersion, "battery": battery, "oldId": oldID,
-		"oldPersonName": name, "oldPersonPhone": oldPhone,
-		"bindTime": tsOrNil(bindTime), "lastTime": tsOrNil(lastTime),
-		"lastLng": lastLng, "lastLat": lastLat, "status": status,
-		"online": online, "personHandled": personHandled,
-		"rateHandled": rateHandled, "preHandled": preHandled,
+		"deviceId": device.ID, "deviceNo": device.Number, "alias": device.Alias,
+		"model": device.Model, "appVersion": device.AppVersion,
+		"battery": device.Battery, "oldId": device.ResidentID,
+		"oldPersonName": name, "oldPersonPhone": device.ResidentPhone,
+		"bindTime": tsOrNil(device.BoundAt), "lastTime": tsOrNil(device.LastTime),
+		"lastLng": lastLng, "lastLat": lastLat, "status": device.Status,
+		"online": online, "personHandled": device.PersonHandled,
+		"rateHandled": device.RateHandled, "preHandled": device.PressureHandled,
 	}, nil
 }
