@@ -9,11 +9,11 @@ import (
 )
 
 var (
-	ErrPhoneInUse       = errors.New("family phone already registered")
-	ErrResidentMissing  = errors.New("resident phone not found")
+	ErrPhoneInUse        = errors.New("family phone already registered")
+	ErrResidentMissing   = errors.New("resident phone not found")
 	ErrResidentAmbiguous = errors.New("resident phone has multiple matches")
-	ErrResidentBound    = errors.New("resident already bound")
-	ErrFamilyNotFound   = errors.New("family not found")
+	ErrResidentBound     = errors.New("resident already bound")
+	ErrFamilyNotFound    = errors.New("family not found")
 )
 
 type Family struct {
