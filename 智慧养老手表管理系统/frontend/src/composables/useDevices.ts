@@ -22,8 +22,12 @@ export function useDevices() {
   const visibleDevices = computed(() => state.deviceList)
   const onlineCount = computed(() => state.serverOnlineCount)
   const { openBindCodeDialog, loadBindCodes, createBindCode, deleteBindCode } = useDeviceBindings(state, post)
-  const { openWorkbench, disposeWorkbench } = useDeviceWorkbench(state, async (deviceId, kind) => {
-    const { data } = await post<AlertDetailResponse>('alertDetail', { deviceId, kind })
+  const { openWorkbench, disposeWorkbench } = useDeviceWorkbench(state, async (deviceId, kind, signal) => {
+    const { data } = await api.post<Envelope & AlertDetailResponse>(
+      '/api/v1/device/alertDetail',
+      { deviceId, kind },
+      { signal }
+    )
     return data
   })
   let filterTimer: ReturnType<typeof setTimeout> | undefined
