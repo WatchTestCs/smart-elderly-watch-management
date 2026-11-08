@@ -30,6 +30,10 @@ type Observation struct {
 type Result struct {
 	Ready      bool
 	SampleDays int
+	TrustedDays int
+	RejectedDays int
+	Confidence string
+	Reason string
 	Baseline   float64
 	Scale      float64
 	Score      float64
@@ -60,28 +64,54 @@ func Evaluate(current Observation, history []Observation) (Result, error) {
 		}
 		days[sampleDay] = append(days[sampleDay], sample.Value)
 	}
-	var daily []float64
-	for _, values := range days {
-		daily = append(daily, median(values))
+
+	orderedDays := make([]time.Time, 0, len(days))
+	for date := range days {
+		orderedDays = append(orderedDays, date)
 	}
-	result := Result{SampleDays: len(daily)}
-	if len(daily) < MinimumDays {
+	slices.SortFunc(orderedDays, func(a, b time.Time) int { return a.Compare(b) })
+	result := Result{SampleDays: len(orderedDays), Confidence: "insufficient", Reason: "insufficient_history"}
+	if len(orderedDays) < MinimumDays {
 		return result, nil
 	}
-	center := median(daily)
-	deviations := make([]float64, len(daily))
-	for i, value := range daily {
-		deviations[i] = math.Abs(value - center)
+
+	// Anchor on the first seven eligible days. A recent multi-day excursion
+	// must not teach the baseline that the excursion is normal.
+	anchor := make([]float64, MinimumDays)
+	for i, date := range orderedDays[:MinimumDays] {
+		anchor[i] = median(days[date])
 	}
-	// A metric-aware floor prevents ordinary changes in a low-variance history
-	// from being scored as extreme anomalies.
-	floor := math.Max(1, math.Abs(center)*0.05)
-	if current.Metric == "heart_rate" {
-		floor = math.Max(floor, 5)
+	center := median(anchor)
+	scale := robustScale(current.Metric, center, anchor)
+	trusted := slices.Clone(anchor)
+	lastTrusted := orderedDays[MinimumDays-1]
+	for _, date := range orderedDays[MinimumDays:] {
+		value := median(days[date])
+		if math.Abs(value-center) >= AlertScore*scale {
+			result.RejectedDays++
+			continue
+		}
+		trusted = append(trusted, value)
+		lastTrusted = date
 	}
-	scale := math.Max(floor, 1.4826*median(deviations))
+	result.TrustedDays = len(trusted)
+	// An old, abandoned baseline must not return a confident assessment.
+	if int(day.Sub(lastTrusted).Hours()/24) > 7 {
+		result.Reason = "stale_baseline"
+		return result, nil
+	}
+	// Keep the anchor fixed during the evaluation. Even accepted values near
+	// the boundary cannot gradually drag the reference toward an excursion.
 	score := (current.Value - center) / scale
 	result.Ready = true
+	result.Reason = ""
+	result.Confidence = "moderate"
+	if len(trusted) >= 14 && result.RejectedDays == 0 {
+		result.Confidence = "high"
+	}
+	if result.RejectedDays > 0 {
+		result.Confidence = "guarded"
+	}
 	result.Baseline = center
 	result.Scale = scale
 	result.Score = score
@@ -92,6 +122,18 @@ func Evaluate(current Observation, history []Observation) (Result, error) {
 		result.Direction = "below"
 	}
 	return result, nil
+}
+
+func robustScale(metric string, center float64, values []float64) float64 {
+	deviations := make([]float64, len(values))
+	for i, value := range values {
+		deviations[i] = math.Abs(value - center)
+	}
+	floor := math.Max(1, math.Abs(center)*0.05)
+	if metric == "heart_rate" || metric == "resting_heart_rate" {
+		floor = math.Max(floor, 5)
+	}
+	return math.Max(floor, 1.4826*median(deviations))
 }
 
 func median(values []float64) float64 {
