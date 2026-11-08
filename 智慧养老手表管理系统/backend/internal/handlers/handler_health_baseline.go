@@ -1,0 +1,91 @@
+package handlers
+
+import (
+	"encoding/json"
+	"net/http"
+	"time"
+
+	"suining-care/internal/health"
+	"suining-care/internal/healthbaseline"
+	"suining-care/internal/response"
+)
+
+// healthBaseline is read-only decision support. It does not create alerts or SOS.
+func (h *Handler) healthBaseline(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		OldID *int64 `json:"oldId"`
+	}
+	if !decodeHealth(w, r, &req) {
+		return
+	}
+	var requested any
+	if req.OldID != nil {
+		requested = *req.OldID
+	}
+	oldID, ok := h.resolveOldID(w, r, requested)
+	if !ok {
+		return
+	}
+	if oldID < 1 {
+		write400(w, "请指定有效的老人编号")
+		return
+	}
+	// Only currently bound devices contribute; an earlier binding epoch must
+	// never be analyzed as the current resident's health history.
+	// 29 days includes the current day and the preceding 28 calendar days.
+	cutoff := time.Now().UTC().Truncate(24 * time.Hour).AddDate(0, 0, -healthbaseline.HistoryDays)
+	rows, err := h.DB.Query(r.Context(), `SELECT s.epoch,s.payload
+ FROM health_sample s JOIN device d ON d.device_id=s.device_id
+ AND d.old_id=s.old_id AND d.health_epoch=s.epoch
+ WHERE s.old_id=$1 AND s.metric='heart_rate' AND s.deleted=false
+ AND s.sample_start >= $2
+ ORDER BY s.sample_start DESC LIMIT 5001`, oldID, cutoff.UnixMicro())
+	if internalError(w, err) {
+		return
+	}
+	defer rows.Close()
+	var observations []healthbaseline.Observation
+	for rows.Next() {
+		if len(observations) == 5000 {
+			response.JSON(w, http.StatusRequestEntityTooLarge, map[string]any{"message": "健康采样超过单次分析上限"})
+			return
+		}
+		var epoch int64
+		var payload []byte
+		if err = rows.Scan(&epoch, &payload); internalError(w, err) {
+			return
+		}
+		var sample health.Sample
+		if err = json.Unmarshal(payload, &sample); internalError(w, err) {
+			return
+		}
+		if sample.Value == nil || sample.Deleted || sample.Semantics != "instant" {
+			continue
+		}
+		observations = append(observations, healthbaseline.Observation{
+			OwnerID: oldID, BindingVersion: epoch,
+			Metric: sample.Metric, At: sample.Start, Value: *sample.Value, Valid: true,
+		})
+	}
+	if !rowsOK(w, rows) {
+		return
+	}
+	if len(observations) == 0 {
+		response.OK(w, map[string]any{"oldId": oldID, "metric": "heart_rate", "ready": false, "sampleDays": 0})
+		return
+	}
+	// The latest valid observation is the reference point. Evaluate excludes
+	// future/same-day values and observations from another binding epoch.
+	current := observations[0]
+	result, err := healthbaseline.Evaluate(current, observations[1:])
+	if internalError(w, err) {
+		return
+	}
+	response.OK(w, map[string]any{
+		"oldId": oldID, "metric": "heart_rate", "observedAt": current.At,
+		"value": current.Value, "ready": result.Ready,
+		"sampleDays": result.SampleDays, "baseline": result.Baseline,
+		"scale": result.Scale, "score": result.Score,
+		"direction": result.Direction, "anomalous": result.Anomalous,
+	})
+}
