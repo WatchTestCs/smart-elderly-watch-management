@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"errors"
+	"suining-care/internal/vitalrepo"
 	dbstore "suining-care/internal/db"
 	"suining-care/internal/response"
 
@@ -45,14 +47,11 @@ func (h *Handler) countVitalAlerts(w http.ResponseWriter, r *http.Request) {
 	if _, ok := optBody(w, r); !ok {
 		return
 	}
-	var rate, pre int64
-	err := h.DB.QueryRow(r.Context(), `SELECT
-		(SELECT COUNT(*) FROM ratepre r WHERE `+pendingRate+`),
-		(SELECT COUNT(*) FROM ratepre r WHERE `+pendingPressure+`)`).Scan(&rate, &pre)
+	rate, pressure, err := vitalrepo.AlertCounts(r.Context(), h.DB)
 	if internalError(w, err) {
 		return
 	}
-	response.OK(w, map[string]any{"rateTotal": rate, "preTotal": pre, "total": rate + pre})
+	response.OK(w, map[string]any{"rateTotal": rate, "preTotal": pressure, "total": rate + pressure})
 }
 
 const (
@@ -208,14 +207,6 @@ func scanVitalAlert(row dbstore.Row) (alertRow, bool, error) {
 	return alert, err == nil, err
 }
 
-// Callers validate kind before selecting a mutation.
-func vitalAlertUpdate(kind string) string {
-	if kind == "pre" {
-		return "UPDATE ratepre AS r SET pre_handled=1, pre_handled_at=now(), pre_state='0'"
-	}
-	return "UPDATE ratepre AS r SET rate_handled=1, rate_handled_at=now(), rate_state='0'"
-}
-
 // POST /api/v1/vitals/alerts/resolve —— 处置异常（消除红点），事务内执行。
 func (h *Handler) handleResolveVitalAlert(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
@@ -235,36 +226,15 @@ func (h *Handler) handleResolveVitalAlert(w http.ResponseWriter, r *http.Request
 		return
 	}
 	recordID, _ := strconv.ParseInt(recordIDStr, 10, 64)
-	var one int
-	if err := h.DB.QueryRow(r.Context(), "SELECT 1 FROM ratepre WHERE id=$1", recordID).Scan(&one); err != nil {
-		if isNotFound(err) {
-			response.Fail(w, "记录不存在")
-			return
-		}
-		response.Error500(w, ref())
+	changed, err := vitalrepo.ResolveAlert(r.Context(), h.DB, recordID, kind)
+	if errors.Is(err, vitalrepo.ErrAlertNotFound) {
+		response.Fail(w, "记录不存在")
 		return
 	}
-	kinds := []string{"rate", "pre"}
-	if kind == "rate" || kind == "pre" {
-		kinds = []string{kind}
-	}
-	tx, err := h.DB.Begin(r.Context())
 	if internalError(w, err) {
 		return
 	}
-	defer tx.Rollback(r.Context())
-	var rows int64
-	for _, k := range kinds {
-		ct, err := tx.Exec(r.Context(), vitalAlertUpdate(k)+" WHERE id=$1", recordID)
-		if internalError(w, err) {
-			return
-		}
-		rows += ct.RowsAffected()
-	}
-	if internalError(w, tx.Commit(r.Context())) {
-		return
-	}
-	if rows < 1 {
+	if !changed {
 		recordNotFound(w)
 		return
 	}
