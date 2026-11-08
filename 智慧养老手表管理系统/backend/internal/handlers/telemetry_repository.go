@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"suining-care/internal/devicerepo"
 	"context"
 	"strings"
 
@@ -21,7 +22,7 @@ type telemetryPersisted struct {
 	careIncidentID int64
 }
 
-func (repo telemetryRepository) PersistDeviceReport(ctx context.Context, tx *dbstore.Transaction, d *deviceRecord, parsed parsedDeviceTelemetry) (telemetryPersisted, error) {
+func (repo telemetryRepository) PersistDeviceReport(ctx context.Context, tx *dbstore.Transaction, d *devicerepo.DeviceRecord, parsed parsedDeviceTelemetry) (telemetryPersisted, error) {
 	oldID := *d.OldID
 	var position string
 	if parsed.lng != "" || parsed.alarm == "1" || strings.EqualFold(parsed.alarm, "fall") {
