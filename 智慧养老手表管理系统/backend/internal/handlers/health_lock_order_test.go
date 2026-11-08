@@ -11,8 +11,8 @@ import (
 	"time"
 
 	dbstore "suining-care/internal/db"
-	"suining-care/internal/health"
 	"suining-care/internal/devicecredential"
+	"suining-care/internal/health"
 )
 
 func holdHealthOwnerClock(t *testing.T, ctx context.Context, pool *dbstore.Database) func() {
