@@ -6,6 +6,7 @@ import (
 	"strings"
 	"suining-care/internal/commands"
 	dbstore "suining-care/internal/db"
+	"suining-care/internal/devicerepo"
 	"suining-care/internal/response"
 	"time"
 )
@@ -34,7 +35,7 @@ func (h *Handler) commandCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer tx.Rollback(ctx)
-	d, err := scanDeviceRecord(tx.QueryRow(ctx, `SELECT `+deviceRecordColumns+` FROM device WHERE device_id=$1 FOR UPDATE`, req.DeviceID))
+	d, err := devicerepo.ScanDeviceRecord(devicerepo.LockedDeviceRow(ctx, tx, req.DeviceID))
 	if err == pgx.ErrNoRows {
 		response.JSON(w, 404, map[string]any{"message": "设备不存在"})
 		return
