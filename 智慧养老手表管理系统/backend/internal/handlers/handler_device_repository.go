@@ -2,10 +2,6 @@ package handlers
 
 import (
 	"context"
-	"crypto/rand"
-	"crypto/sha256"
-	"crypto/subtle"
-	"encoding/base64"
 	"errors"
 	"net/http"
 
@@ -13,6 +9,7 @@ import (
 
 	dbstore "suining-care/internal/db"
 	"suining-care/internal/devicerepo"
+	"suining-care/internal/devicecredential"
 	"suining-care/internal/response"
 )
 
@@ -20,58 +17,6 @@ import (
 type deviceQueries interface {
 	QueryRow(ctx context.Context, sql string, args ...any) dbstore.Row
 }
-
-func secretHash(clear string) (string, error) {
-	if len(clear) < 24 || len(clear) > 64 {
-		return "", errSecretLen
-	}
-	h := sha256.New()
-	h.Write([]byte("suining-device-secret-v1"))
-	h.Write([]byte{0})
-	h.Write([]byte(clear))
-	return "sha256$" + base64.RawURLEncoding.EncodeToString(h.Sum(nil)), nil
-}
-
-func newDeviceSecret() (clear, hashed string, err error) {
-	clear, err = randAlpha(32)
-	if err != nil {
-		return "", "", err
-	}
-	hashed, err = secretHash(clear)
-	return clear, hashed, err
-}
-
-var errSecretLen = errors.New("Invalid device credential length")
-
-func secretMatches(supplied, stored string) bool {
-	if !secretHashRe.MatchString(stored) {
-		return false
-	}
-	if len(supplied) < 24 || len(supplied) > 64 {
-		return false
-	}
-	expected, err := secretHash(supplied)
-	if err != nil {
-		return false
-	}
-	return subtle.ConstantTimeCompare([]byte(expected), []byte(stored)) == 1
-}
-
-// randAlpha crypto/rand 生成 n 位字母表字符串。
-func randAlpha(n int) (string, error) {
-	b := make([]byte, n)
-	if _, err := rand.Read(b); err != nil {
-		return "", err
-	}
-	for i, v := range b {
-		b[i] = inviteCharset[int(v)%len(inviteCharset)]
-	}
-	return string(b), nil
-}
-
-// ---------------------------------------------------------------------------
-// 设备行与鉴权
-// ---------------------------------------------------------------------------
 
 func (h *Handler) readDeviceRecord(device *devicerepo.DeviceRecord, err error) (*devicerepo.DeviceRecord, error) {
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -108,7 +53,7 @@ func checkDeviceAuth(d *devicerepo.DeviceRecord, secret, disabledMsg string) (*d
 	return d, "", "", nil
 }
 func deviceCredentialFailure(supplied, stored string, status *int, disabledMsg string) (string, string) {
-	if !secretMatches(supplied, stored) {
+	if !devicecredential.Matches(supplied, stored) {
 		return "DEVICE_AUTH_FAILED", "设备号或密钥不正确"
 	}
 	if status != nil && *status == 0 {
