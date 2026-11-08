@@ -1,10 +1,10 @@
 package handlers
 
 import (
-	"suining-care/internal/devicerepo"
 	"context"
 
 	dbstore "suining-care/internal/db"
+	"suining-care/internal/devicerepo"
 	"suining-care/internal/telemetryrepo"
 )
 
