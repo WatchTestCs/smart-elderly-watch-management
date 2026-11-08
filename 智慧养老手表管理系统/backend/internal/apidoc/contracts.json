@@ -783,6 +783,11 @@
       "sourceDevice"
     ]
   },
+  "POST /api/v1/health/baseline": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_health_baseline.go",
+    "request": ["oldId"],
+    "response": ["returnCode", "oldId", "metric", "ready", "sampleDays", "trustedDays", "rejectedDays", "confidence", "reason", "observedAt", "value", "baseline", "scale", "score", "direction", "anomalous"]
+  },
   "POST /api/v1/health/latest": {
     "file": "智慧养老手表管理系统/backend/internal/handlers/handler_health_latest.go",
     "request": [

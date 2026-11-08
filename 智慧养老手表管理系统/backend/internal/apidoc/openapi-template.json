@@ -2062,6 +2062,43 @@
         "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
+    "/api/v1/health/baseline": {
+      "post": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "oldId": {},
+                    "metric": {},
+                    "ready": {},
+                    "sampleDays": {},
+                    "trustedDays": {},
+                    "rejectedDays": {},
+                    "confidence": {},
+                    "reason": {},
+                    "observedAt": {},
+                    "value": {},
+                    "baseline": {},
+                    "scale": {},
+                    "score": {},
+                    "direction": {},
+                    "anomalous": {}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": null,
+          "content": null,
+          "$ref": "#/components/requestBodies/ResidentId"
+        },
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_health.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+      }
+    },
     "/api/v1/health/changes": {
       "post": {
         "responses": {
