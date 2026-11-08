@@ -46,6 +46,20 @@ func NextState(before, action string) string {
 	return ""
 }
 
+// LockedIncidentState reads the transition preconditions while holding the row lock.
+// The caller must keep the transaction open through the subsequent writes.
+func LockedIncidentState(ctx context.Context, tx *db.Transaction, id int64) (state string, resolvedBy *string, err error) {
+	err = tx.QueryRow(ctx, "SELECT state,resolved_by FROM care_incident WHERE id=$1 FOR UPDATE", id).Scan(&state, &resolvedBy)
+	return
+}
+
+// PersistReviewVerdict records the human review within the incident transition transaction.
+func PersistReviewVerdict(ctx context.Context, tx *db.Transaction, id int64, verdict, note string, actor int64) error {
+	_, err := tx.Exec(ctx, `INSERT INTO alert_review(entity,record_id,kind,verdict,reason,actor_id)
+ SELECT 'care',id,kind,$2,$3,$4 FROM care_incident WHERE id=$1`, id, verdict, note, actor)
+	return err
+}
+
 // PersistTransition writes the new state, related alarm status and event in one transaction.
 // The caller owns the transaction and commits only after all related writes succeed.
 func PersistTransition(ctx context.Context, tx *db.Transaction, id int64, next, action, actor, note string) error {
