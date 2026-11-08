@@ -58,10 +58,7 @@ func (repo telemetryRepository) persistReportPositionAndAlarm(ctx context.Contex
 	if err := telemetryrepo.InsertAlarmEvent(ctx, tx, incidentID); err != nil {
 		return 0, err
 	}
-	if _, err := notify.QueueCareSMS(ctx, tx, repo.box, incidentID, oldID); err != nil {
-		return 0, err
-	}
-	if err := notify.CareInbox(ctx, tx, repo.box, oldID, incidentID); err != nil {
+	if _, err := notify.EnqueueIncident(ctx, tx, repo.box, incidentID, oldID); err != nil {
 		return 0, err
 	}
 	return incidentID, nil

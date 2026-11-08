@@ -59,13 +59,10 @@ func (h *Handler) persistFenceEvent(ctx context.Context, tx *dbstore.Transaction
 		if err := fencerepo.InsertExitReceipt(ctx, tx, id); err != nil {
 			return nil, err
 		}
-		if _, err := notify.QueueCareSMS(ctx, tx, h.Box, id, *d.OldID); err != nil {
+		if _, err := notify.EnqueueIncident(ctx, tx, h.Box, id, *d.OldID); err != nil {
 			return nil, err
 		}
 		if err := fencerepo.LinkIncident(ctx, tx, eventID, id); err != nil {
-			return nil, err
-		}
-		if err := notify.CareInbox(ctx, tx, h.Box, *d.OldID, id); err != nil {
 			return nil, err
 		}
 		incidentID = &id

@@ -91,7 +91,7 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 	if rollbackOnError(w, rollback, err) {
 		return
 	}
-	notificationState, err := h.queueSOSNotification(ctx, tx, incidentID, *d.OldID)
+	notificationState, err := notify.EnqueueIncident(ctx, tx, h.Box, incidentID, *d.OldID)
 	if rollbackOnError(w, rollback, err) {
 		return
 	}
@@ -135,20 +135,6 @@ func parseSOSRequest(w http.ResponseWriter, m map[string]any) (sosRequest, bool)
 		return sosRequest{}, false
 	}
 	return sosRequest{deviceNo: deviceNo, secret: secret, requestID: requestID, bindingVersion: bindingVersion}, true
-}
-
-func (h *Handler) queueSOSNotification(ctx context.Context, tx *dbstore.Transaction, incidentID, oldID int64) (string, error) {
-	queued, err := notify.QueueCareSMS(ctx, tx, h.Box, incidentID, oldID)
-	if err != nil {
-		return "", err
-	}
-	if err := notify.CareInbox(ctx, tx, h.Box, oldID, incidentID); err != nil {
-		return "", err
-	}
-	if queued > 0 {
-		return "pending", nil
-	}
-	return "no_recipient", nil
 }
 
 // lockSOSDevice authenticates and revalidates the owner under elder-then-device
