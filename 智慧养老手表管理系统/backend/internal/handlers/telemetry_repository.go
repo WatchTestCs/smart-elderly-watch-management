@@ -6,6 +6,7 @@ import (
 
 	dbstore "suining-care/internal/db"
 	"suining-care/internal/securestore"
+	"suining-care/internal/telemetryrepo"
 )
 
 // telemetryRepository owns SQL for the existing device report contract.
@@ -34,7 +35,7 @@ func (repo telemetryRepository) PersistDeviceReport(ctx context.Context, tx *dbs
 	if err != nil {
 		return telemetryPersisted{}, err
 	}
-	if err := repo.persistReportDay(ctx, tx, d, oldID, &parsed); err != nil {
+	if err := telemetryrepo.PersistDay(ctx, tx, d.ID, oldID, d.HealthEpoch, parsed.day, parsed.beTime, parsed.step, parsed.sleep, parsed.sleepState); err != nil {
 		return telemetryPersisted{}, err
 	}
 	incidentID, err := repo.persistReportPositionAndAlarm(ctx, tx, d, oldID, &parsed, position)
