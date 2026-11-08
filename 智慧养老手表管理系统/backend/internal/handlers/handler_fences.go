@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"suining-care/internal/telemetryrepo"
 	"encoding/json"
 	"math"
 	"net/http"
@@ -14,6 +13,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"suining-care/internal/fence"
 	"suining-care/internal/response"
+	"suining-care/internal/telemetryrepo"
 )
 
 type fenceConfig struct {

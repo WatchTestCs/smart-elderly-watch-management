@@ -2,12 +2,12 @@ package handlers
 
 import (
 	"context"
-	"suining-care/internal/telemetryrepo"
 	"github.com/jackc/pgx/v5"
 	"net/http"
 	"strings"
 	dbstore "suining-care/internal/db"
 	"suining-care/internal/response"
+	"suining-care/internal/telemetryrepo"
 	"time"
 	"unicode/utf8"
 )

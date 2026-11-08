@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"suining-care/internal/telemetryrepo"
 	"context"
 	"encoding/json"
 	"errors"
@@ -15,6 +14,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	dbstore "suining-care/internal/db"
 	"suining-care/internal/securestore"
+	"suining-care/internal/telemetryrepo"
 )
 
 const telemetryDurableBatchSize = 32

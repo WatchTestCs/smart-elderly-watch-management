@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"suining-care/internal/telemetryrepo"
 	"context"
 	"encoding/base64"
 	"encoding/json"
@@ -11,6 +10,7 @@ import (
 	"time"
 
 	"suining-care/internal/securestore"
+	"suining-care/internal/telemetryrepo"
 )
 
 func TestDurableTelemetryPersistsBeforeAckAndReplaysSafely(t *testing.T) {
