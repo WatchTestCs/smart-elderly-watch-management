@@ -115,9 +115,10 @@ func (h *Handler) deviceBind(w http.ResponseWriter, r *http.Request) {
 		writeValidation400(w)
 		return
 	}
+	now := time.Now()
 	result, failure, err := deviceworkflow.Bind(r.Context(), h.DB, deviceworkflow.BindInput{
 		Number: deviceNo, Secret: secret, Code: normalizeCode(codeRaw),
-		ProfileDay: siteDay(time.Now()),
+		At: now, ProfileDay: siteDay(now),
 	})
 	if internalError(w, err) {
 		return
