@@ -72,7 +72,7 @@
 
 <script setup lang="ts">
 import { Plus } from '@element-plus/icons-vue'
-import { onMounted, reactive, ref } from 'vue'
+import { onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
 import { useCollectionLayout } from '../composables/useCollectionLayout'
 import { copyText } from '../utils/clipboard'
@@ -112,8 +112,16 @@ async function searchInviteCodes(keepPage = false) {
     })
     if (revision !== requestRevision || selected !== state.value) return
     if (!Array.isArray(data.inviteCodes)) throw new Error('missing invites')
-    inviteCodeList.value = data.inviteCodes
     if (data.total !== undefined && (!Number.isSafeInteger(data.total) || data.total < 0)) throw new Error('invalid invitation count')
+    if (data.total !== undefined) {
+      const lastPage = Math.max(1, Math.ceil(data.total / pageSize.value))
+      if (currentPage.value > lastPage) {
+        currentPage.value = lastPage
+        void searchInviteCodes(true)
+        return
+      }
+    }
+    inviteCodeList.value = data.inviteCodes
     total.value = data.total ?? data.inviteCodes.length
   } catch (error) {
     if (revision === requestRevision) listError.value =
@@ -196,6 +204,7 @@ function changePage(value: number) {
   void searchInviteCodes(true)
 }
 onMounted(() => { void searchInviteCodes(); void loadOldPeople() })
+onBeforeUnmount(() => { requestRevision++ })
 </script>
 
 <style scoped>
