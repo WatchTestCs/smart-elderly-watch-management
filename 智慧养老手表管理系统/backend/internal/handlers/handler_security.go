@@ -14,6 +14,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"suining-care/internal/auth"
+	"suining-care/internal/authrepo"
 	"suining-care/internal/db"
 	"suining-care/internal/health"
 	"suining-care/internal/observability"
@@ -34,36 +35,28 @@ func (h *Handler) loginAuditTx(r *http.Request, phone, role string, id int64, ou
 	if !h.DB.IsMySQL() {
 		return nil
 	}
-	ip := h.clientIP(r)
-	q := "INSERT INTO login_audit(account_hash,ip_hash,role,actor_id,outcome,request_id) VALUES($1,$2,$3,$4,$5,$6)"
-	// X-Request-ID 是客户端可控的请求头，截断到列宽，防止超长值导致审计写入失败。
 	requestID := r.Header.Get("X-Request-ID")
 	if len(requestID) > 64 {
 		requestID = requestID[:64]
 	}
-	args := []any{h.Box.Index("account", phone), h.Box.Index("ip", ip), role, id, outcome, requestID}
-	if tx != nil {
-		_, err := tx.Exec(r.Context(), q, args...)
-		return err
-	}
-	_, err := h.DB.Exec(r.Context(), q, args...)
-	return err
+	return authrepo.RecordLoginAttempt(
+		r.Context(), h.DB, tx, h.Box.Index("account", phone), h.Box.Index("ip", h.clientIP(r)),
+		role, id, outcome, requestID,
+	)
 }
+
 func (h *Handler) loginAllowed(w http.ResponseWriter, r *http.Request, phone string) bool {
 	if !h.DB.IsMySQL() {
 		return true
 	}
-	ip := h.clientIP(r)
-	var failures, accountFailures int
-	// Shared durable audits apply across app replicas and rotating client IPs.
-	// Bounded subqueries avoid counting an unbounded audit history on each login.
-	err := h.DB.QueryRow(r.Context(), `SELECT
- (SELECT count(*) FROM (SELECT 1 FROM login_audit WHERE account_hash=$1 AND ip_hash=$2 AND outcome IN ('invalid_credentials','factor_required') AND created_at>$3 LIMIT 10) pair_attempts),
- (SELECT count(*) FROM (SELECT 1 FROM login_audit WHERE account_hash=$1 AND outcome IN ('invalid_credentials','factor_required') AND created_at>$3 LIMIT 30) account_attempts)`, h.Box.Index("account", phone), h.Box.Index("ip", ip), time.Now().Add(-15*time.Minute)).Scan(&failures, &accountFailures)
+	pair, account, err := authrepo.RecentFailureCounts(
+		r.Context(), h.DB, h.Box.Index("account", phone),
+		h.Box.Index("ip", h.clientIP(r)), time.Now().Add(-15*time.Minute),
+	)
 	if internalError(w, err) {
 		return false
 	}
-	if failures >= 10 || accountFailures >= 30 {
+	if pair >= 10 || account >= 30 {
 		w.Header().Set("Retry-After", "900")
 		response.JSON(w, 429, map[string]any{"message": "登录尝试过多，请稍后重试"})
 		return false
@@ -251,16 +244,8 @@ func (h *Handler) securityLoginAudit(w http.ResponseWriter, r *http.Request) {
 		write400(w, "游标无效")
 		return
 	}
-	items, ok := queryRows(h, w, r.Context(), func(rows db.Rows) (map[string]any, error) {
-		var id, actor int64
-		var role, outcome, rid string
-		var at time.Time
-		if err := rows.Scan(&id, &role, &actor, &outcome, &rid, &at); err != nil {
-			return nil, err
-		}
-		return map[string]any{"id": id, "role": role, "actorId": actor, "outcome": outcome, "requestId": rid, "createdAt": at}, nil
-	}, "SELECT id,role,actor_id,outcome,request_id,created_at FROM login_audit WHERE id>$1 ORDER BY id LIMIT 100", req.After)
-	if !ok {
+	items, err := authrepo.ListLoginAudits(r.Context(), h.DB, req.After)
+	if internalError(w, err) {
 		return
 	}
 	response.OK(w, map[string]any{"items": items})
