@@ -37,7 +37,7 @@
       <el-table-column label="操作" align="center">
         <template #default="scope" >
           <el-button v-if="scope.row.back==null" size="small" plain type="primary" :icon="Edit"
-                     @click="handleeditSaid(scope.$index, scope.row)">回复
+                     @click="openCommentReply(scope.$index, scope.row)">回复
           </el-button>
           <el-button size="small" plain type="danger" :icon="Delete" @click="deleteSaid(scope.row.saidId)">删除
           </el-button>
@@ -47,7 +47,7 @@
     </el-table>
     <record-cards v-if="mobileLayout && !loadError" :records="comments" :fields='[{"key":"saidId","label":"作者"},{"key":"said","label":"评论"},{"key":"back","label":"回复"},{"key":"backTime","label":"回复时间"},{"key":"title","label":"文章标题"}]' label="公告评论" title-key="personName" key-field="saidId" time-key="saidTime">
       <template #actions="scope"  ><el-button v-if="scope.row.back==null" size="small" plain type="primary" :icon="Edit"
-                     @click="handleeditSaid(scope.$index, scope.row)">回复
+                     @click="openCommentReply(scope.$index, scope.row)">回复
           </el-button>
 <el-button size="small" plain type="danger" :icon="Delete" @click="deleteSaid(scope.row.saidId)">删除
           </el-button></template>
@@ -96,7 +96,7 @@ function deleteSaid(saidId: number | string) {
   return deleteRecord('api/v1/notice-comments/delete', { saidId },
     '确认删除该评论？', () => loadComments(true))
 }
-function handleeditSaid(_index: number, row: CommentRow) {
+function openCommentReply(_index: number, row: CommentRow) {
   saidEditForm.value = { ...row }
   watchEditDialogVisible.value = true
 }
