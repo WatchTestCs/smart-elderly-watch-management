@@ -61,3 +61,34 @@ func ResolveAlert(ctx context.Context, store *db.Database, recordID int64, kind 
 	}
 	return affected > 0, nil
 }
+
+// ResolveDeviceAlert updates the selected metric and the device-level handled flag
+// within the caller's transaction. The caller owns locking and commit.
+func ResolveDeviceAlert(ctx context.Context, tx *db.Transaction, deviceID int64, kind string, recordID *int64) (int64, error) {
+	handled, pending := "rate_handled", pendingRate
+	if kind == "pre" {
+		handled, pending = "pre_handled", pendingPressure
+	}
+	query := updateSQL(kind) + " WHERE device_id=$1 AND "
+	args := []any{deviceID}
+	if recordID != nil {
+		query += "id=$2"
+		args = append(args, *recordID)
+	} else {
+		query += pending
+	}
+	result, err := tx.Exec(ctx, query, args...)
+	if err != nil {
+		return 0, err
+	}
+	var hasPending bool
+	if err := tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM ratepre r WHERE r.device_id=$1 AND "+pending+")", deviceID).Scan(&hasPending); err != nil {
+		return 0, err
+	}
+	if !hasPending {
+		if _, err := tx.Exec(ctx, "UPDATE device SET "+handled+"=1 WHERE device_id=$1", deviceID); err != nil {
+			return 0, err
+		}
+	}
+	return result.RowsAffected(), nil
+}

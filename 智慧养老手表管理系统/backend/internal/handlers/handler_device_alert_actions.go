@@ -8,6 +8,7 @@ import (
 	"strings"
 	dbstore "suining-care/internal/db"
 	"suining-care/internal/response"
+	"suining-care/internal/vitalrepo"
 	"time"
 )
 
@@ -158,7 +159,7 @@ func (h *Handler) deviceResolveAlert(w http.ResponseWriter, r *http.Request) {
 	var rows int64
 	switch kind {
 	case "rate", "pre":
-		rows, err = h.resolveVitalAlert(ctx, tx, deviceID, kind, recordID)
+		rows, err = vitalrepo.ResolveDeviceAlert(ctx, tx, deviceID, kind, recordID)
 		if rollbackOnError(w, rollback, err) {
 			return
 		}
@@ -250,31 +251,3 @@ func (h *Handler) alertResolutionReason(ctx context.Context, tx *dbstore.Transac
 	return before, nil
 }
 
-func (h *Handler) resolveVitalAlert(ctx context.Context, tx *dbstore.Transaction, deviceID int64, kind string, recordID *int64) (int64, error) {
-	handled, pending := "rate_handled", pendingRate
-	if kind == "pre" {
-		handled, pending = "pre_handled", pendingPressure
-	}
-	query := vitalAlertUpdate(kind) + " WHERE device_id=$1 AND "
-	args := []any{deviceID}
-	if recordID != nil {
-		query += "id=$2"
-		args = append(args, *recordID)
-	} else {
-		query += pending
-	}
-	result, err := tx.Exec(ctx, query, args...)
-	if err != nil {
-		return 0, err
-	}
-	var hasPending bool
-	if err := tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM ratepre r WHERE r.device_id=$1 AND "+pending+")", deviceID).Scan(&hasPending); err != nil {
-		return 0, err
-	}
-	if !hasPending {
-		if _, err := tx.Exec(ctx, "UPDATE device SET "+handled+"=1 WHERE device_id=$1", deviceID); err != nil {
-			return 0, err
-		}
-	}
-	return result.RowsAffected(), nil
-}
