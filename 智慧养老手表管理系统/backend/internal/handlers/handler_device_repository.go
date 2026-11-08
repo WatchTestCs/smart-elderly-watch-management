@@ -73,14 +73,6 @@ func randAlpha(n int) (string, error) {
 // 设备行与鉴权
 // ---------------------------------------------------------------------------
 
-func (h *Handler) findDeviceByNo(ctx context.Context, q deviceQueries, deviceNo string) (*devicerepo.DeviceRecord, error) {
-	return h.readDeviceRecord(devicerepo.FindDeviceByNo(ctx, q, deviceNo))
-}
-
-func (h *Handler) findDeviceByID(ctx context.Context, q deviceQueries, deviceID int64) (*devicerepo.DeviceRecord, error) {
-	return h.readDeviceRecord(devicerepo.FindDeviceByID(ctx, q, deviceID))
-}
-
 func (h *Handler) readDeviceRecord(device *devicerepo.DeviceRecord, err error) (*devicerepo.DeviceRecord, error) {
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -97,7 +89,7 @@ func (h *Handler) readDeviceRecord(device *devicerepo.DeviceRecord, err error) (
 
 // hwAuth checks the device number, secret and enabled status.
 func (h *Handler) hwAuth(ctx context.Context, q deviceQueries, deviceNo, secret, disabledMsg string) (*devicerepo.DeviceRecord, string, string, error) {
-	d, err := h.findDeviceByNo(ctx, q, deviceNo)
+	d, err := h.readDeviceRecord(devicerepo.FindDeviceByNo(ctx, q, deviceNo))
 	if err != nil {
 		return nil, "", "", err
 	}
