@@ -1,10 +1,10 @@
 package handlers
 
 import (
-	"context"
 	"net/http"
 	"suining-care/internal/auth"
 	"suining-care/internal/db"
+	"suining-care/internal/inviterepo"
 	"suining-care/internal/response"
 	"time"
 	"unicode/utf8"
@@ -165,7 +165,11 @@ func (h *Handler) inviteJoin(w http.ResponseWriter, r *http.Request) {
 		response.Error500(w, ref())
 		return
 	}
-	familyID, applied, err := saveInvitedFamily(ctx, tx, &registration, hash, boundFamilyID, familyID, *invOldID)
+	familyID, applied, err := inviterepo.SaveFamily(ctx, tx, inviterepo.FamilyRegistration{
+		Name: registration.familyName, Phone: registration.familyPhone, PasswordHash: hash,
+		Relation: registration.familyRelation, Sex: registration.familySex,
+		Address: registration.familyAddress,
+	}, boundFamilyID, familyID, *invOldID)
 	if err != nil || !applied {
 		_ = tx.Rollback(ctx)
 		conflict409(w, "注册失败，请重试")
@@ -241,29 +245,4 @@ func (registration *invitationRegistration) validationMessage() string {
 	}
 
 	return ""
-}
-
-func saveInvitedFamily(ctx context.Context, tx *db.Transaction, registration *invitationRegistration, hash string, boundFamilyID *int64, familyID, oldID int64) (int64, bool, error) {
-	var err error
-	if boundFamilyID == nil {
-		err = tx.QueryRow(ctx,
-			`INSERT INTO family(family_name,family_phone,family_password,family_relation,family_sex,family_address)
-		 VALUES($1,$2,$3,$4,$5,$6) RETURNING family_id`,
-			registration.familyName, registration.familyPhone, hash, registration.familyRelation, registration.familySex, registration.familyAddress).Scan(&familyID)
-	} else {
-		_, err = tx.Exec(ctx, `UPDATE family SET family_name=$1,family_password=$2,
-		 family_relation=$3,family_sex=$4,family_address=$5 WHERE family_id=$6 AND family_password IS NULL`,
-			registration.familyName, hash, registration.familyRelation, registration.familySex, registration.familyAddress, familyID)
-	}
-	if err != nil {
-		return familyID, false, err
-	}
-	// 绑定老人
-	if boundFamilyID == nil {
-		ct, err := tx.Exec(ctx, `UPDATE oldperson SET family_id=$1 WHERE old_id=$2 AND family_id IS NULL`, familyID, oldID)
-		if err != nil || ct.RowsAffected() != 1 {
-			return familyID, false, err
-		}
-	}
-	return familyID, true, nil
 }
