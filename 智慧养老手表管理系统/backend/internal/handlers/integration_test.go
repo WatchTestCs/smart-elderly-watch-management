@@ -125,9 +125,13 @@ func TestIntegrationMigrationsAndBindingConstraint(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+	want, wantErr := expectedMigrations(pool)
+	if wantErr != nil {
+		t.Fatal(wantErr)
+	}
 	var count int
-	if err := pool.QueryRow(ctx, "SELECT count(*) FROM schema_migrations").Scan(&count); err != nil || count != expectedMigrations(pool) {
-		t.Fatalf("migrations=%d err=%v", count, err)
+	if err := pool.QueryRow(ctx, "SELECT count(*) FROM schema_migrations").Scan(&count); err != nil || count != want {
+		t.Fatalf("migrations=%d want=%d err=%v", count, want, err)
 	}
 	_, err := pool.Exec(ctx, "INSERT INTO device(device_no,secret,old_id) VALUES('orphan','unused',999)")
 
@@ -414,11 +418,19 @@ func migrateTestDB(ctx context.Context, pool *db.Database) error {
 	}
 	return db.Migrate(ctx, pool.LegacyPostgres())
 }
-func expectedMigrations(pool *db.Database) int {
+func expectedMigrations(pool *db.Database) (int, error) {
 	if pool.IsMySQL() {
-		return 20
+		names, err := db.MySQLMigrationNames()
+		if err != nil {
+			return 0, err
+		}
+		return len(names), nil
 	}
-	return 19
+	names, err := db.LegacyMigrationNames()
+	if err != nil {
+		return 0, err
+	}
+	return len(names), nil
 }
 
 func lockWaitQuery(pool *dbstore.Database, deleting bool) string {
