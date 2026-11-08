@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { join, relative } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const root = new URL('../', import.meta.url)
 const sourceRoot = new URL('../src/', import.meta.url)
 const packageInfo = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
 const forbiddenPackages = [
@@ -22,6 +22,7 @@ const forbiddenSyntax = [
 
 const errors = []
 const advisory = []
+const sourcePath = fileURLToPath(sourceRoot)
 for (const section of ['dependencies', 'devDependencies', 'optionalDependencies']) {
   for (const name of Object.keys(packageInfo[section] ?? {})) {
     if (forbiddenPackages.includes(name) || name.startsWith('@vue/cli-plugin-')) {
@@ -49,23 +50,19 @@ let jsSfcs = 0
 function check(path) {
   scanned++
   const text = readFileSync(path, 'utf8')
-  const name = relative(new URL('.', sourceRoot).pathname, path)
+  const name = relative(sourcePath, path)
   const script = path.endsWith('.vue')
     ? (text.match(/<script\b[^>]*>[\s\S]*?<\/script>/gi) ?? []).join('\n')
     : text
   for (const [pattern, reason] of forbiddenSyntax) {
     pattern.lastIndex = 0
-    if (reason.startsWith('new or existing')) {
-      if (path.endsWith('.vue') && pattern.test(text)) jsSfcs++
-      continue
-    }
     for (const match of script.matchAll(pattern)) {
       const line = script.slice(0, match.index).split('\n').length
       errors.push(`${name}:${line}: ${reason} (${match[0]})`)
     }
   }
 }
-walk(new URL('.', sourceRoot).pathname)
+walk(sourcePath)
 advisory.push(`${jsSfcs} JavaScript SFCs need incremental migration to <script setup lang="ts"> before Vapor eligibility`)
 console.log(`Vue 3.6 readiness: scanned ${scanned} source files; ${advisory.join('; ')}`)
 if (errors.length) {
