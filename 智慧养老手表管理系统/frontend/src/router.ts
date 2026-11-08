@@ -2,6 +2,7 @@ import type { Component } from 'vue'
 import { createRouter, createWebHashHistory, type RouteRecordRaw } from 'vue-router'
 import { loadSession, authState, type SessionAccount } from './auth'
 import { documentTitle, recoverFromChunkError } from './appGuards'
+import { isRestrictedAdmin } from './domain/permissions'
 
 const NoticeEditor = () => import('./components/NoticeEditor.vue')
 type Page = [path: string, title: string, component: () => Promise<{ default: Component }>, props?: Record<string, boolean>]
@@ -76,7 +77,7 @@ router.beforeEach(async to => {
     if (!account) return '/sign-in'
     if (to.name === 'not-found') return
     if (wrongPortal(account, familyPage)) return portalHome(account)
-    if (account.role === 'ADMIN' && (account.duty === 'caregiver' || account.duty === 'auditor') && !['/operations/overview', '/operations'].includes(to.path)) return '/operations/overview'
+    if (isRestrictedAdmin(account) && !['/operations/overview', '/operations'].includes(to.path)) return '/operations/overview'
   } catch (error) {
     const response = (error as { response?: { status?: number; data?: { code?: string } } } | null)?.response
     const unavailable = response?.data?.code === 'DATABASE_UNAVAILABLE'
