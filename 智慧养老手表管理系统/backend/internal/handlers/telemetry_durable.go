@@ -60,9 +60,10 @@ func (repo telemetryRepository) QueueDurableReport(ctx context.Context, tx *dbst
 	if err != nil {
 		return err
 	}
-	if _, err = tx.Exec(ctx, `INSERT INTO telemetry_inbox(device_id,elder_id,binding_epoch,request_id,payload,status,created_at,next_retry_at)
-		VALUES($1,$2,$3,$4,$5,'pending',$6,$6)`,
-		d.ID, *d.OldID, d.HealthEpoch, requestID, sealed, parsed.now.UTC()); err != nil {
+	if err := telemetryrepo.EnqueueDurable(ctx, tx, telemetryrepo.DurableMessage{
+		DeviceID: d.ID, ResidentID: *d.OldID, BindingEpoch: d.HealthEpoch,
+		RequestID: requestID, Payload: sealed, ReceivedAt: parsed.now.UTC(),
+	}); err != nil {
 		return err
 	}
 	// A durable acknowledgement is also a real heartbeat. Update last-seen in
@@ -77,13 +78,6 @@ func durableQueueDuplicate(err error) bool {
 	}
 	var pg *pgconn.PgError
 	return errors.As(err, &pg) && pg.Code == "23505"
-}
-
-type durableQueueRow struct {
-	id, deviceID, elderID, bindingEpoch int64
-	payload                             string
-	nextRetryAt                         time.Time
-	attempts                            int
 }
 
 func decodeQueuedTelemetry(box *securestore.Box, raw string) (parsedDeviceTelemetry, error) {
@@ -111,22 +105,6 @@ func decodeQueuedTelemetry(box *securestore.Box, raw string) (parsedDeviceTeleme
 	}, nil
 }
 
-func durableQueueItemFailure(ctx context.Context, tx *dbstore.Transaction, item durableQueueRow, reason string) error {
-	// The encrypted payload remains available for review/recovery; no rows are
-	// silently discarded, even when a payload is corrupt or repeatedly fails.
-	if len(reason) > 500 {
-		reason = reason[:500]
-	}
-	next := time.Now().UTC().Add(time.Duration(1<<min(item.attempts, 7)) * time.Second)
-	status := "pending"
-	if item.attempts >= 11 {
-		status = "failed"
-	}
-	_, err := tx.Exec(ctx, `UPDATE telemetry_inbox SET attempts=$1,status=$2,next_retry_at=$3,last_error=$4 WHERE id=$5`,
-		item.attempts+1, status, next, reason, item.id)
-	return err
-}
-
 // DrainDurableTelemetryBatch acquires a singleton database row-lock shared by
 // all application replicas, ensuring FIFO processing for non-commutative
 // daily-statistics upserts. Crash or connection loss rolls back the whole batch.
@@ -139,31 +117,7 @@ func DrainDurableTelemetryBatch(ctx context.Context, db *dbstore.Database, box *
 		return 0, err
 	}
 	defer tx.Rollback(ctx)
-	var guard int
-	err = tx.QueryRow(ctx, `SELECT id FROM telemetry_inbox_guard WHERE id=1 FOR UPDATE SKIP LOCKED`).Scan(&guard)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return 0, nil
-	}
-	if err != nil {
-		return 0, err
-	}
-	rows, err := tx.Query(ctx, `SELECT id,device_id,elder_id,binding_epoch,payload,next_retry_at,attempts
-		FROM telemetry_inbox WHERE status='pending'
-		ORDER BY id LIMIT 32 FOR UPDATE SKIP LOCKED`)
-	if err != nil {
-		return 0, err
-	}
-	items := make([]durableQueueRow, 0, telemetryDurableBatchSize)
-	for rows.Next() {
-		var item durableQueueRow
-		if err := rows.Scan(&item.id, &item.deviceID, &item.elderID, &item.bindingEpoch, &item.payload, &item.nextRetryAt, &item.attempts); err != nil {
-			rows.Close()
-			return 0, err
-		}
-		items = append(items, item)
-	}
-	err = rows.Err()
-	rows.Close()
+	items, err := telemetryrepo.LockDurableBatch(ctx, tx, telemetryDurableBatchSize)
 	if err != nil {
 		return 0, err
 	}
@@ -177,7 +131,7 @@ func DrainDurableTelemetryBatch(ctx context.Context, db *dbstore.Database, box *
 	for _, item := range items {
 		// A failed older item must not allow a newer daily-state update to
 		// overtake it. A poison entry eventually becomes a retained dead letter.
-		if item.nextRetryAt.After(now) {
+		if item.NextRetryAt.After(now) {
 			break
 		}
 		processed++
@@ -189,7 +143,7 @@ func DrainDurableTelemetryBatch(ctx context.Context, db *dbstore.Database, box *
 			if _, rbErr := tx.Exec(ctx, `ROLLBACK TO SAVEPOINT telemetry_inbox_item`); rbErr != nil {
 				return 0, rbErr
 			}
-			if err := durableQueueItemFailure(ctx, tx, item, err.Error()); err != nil {
+			if err := telemetryrepo.MarkDurableFailure(ctx, tx, item, err.Error()); err != nil {
 				return 0, err
 			}
 		}
@@ -203,38 +157,34 @@ func DrainDurableTelemetryBatch(ctx context.Context, db *dbstore.Database, box *
 	return processed, nil
 }
 
-func processDurableQueueItem(ctx context.Context, tx *dbstore.Transaction, repo telemetryRepository, item durableQueueRow) error {
-	parsed, err := decodeQueuedTelemetry(repo.box, item.payload)
+func processDurableQueueItem(ctx context.Context, tx *dbstore.Transaction, repo telemetryRepository, item telemetryrepo.DurableItem) error {
+	parsed, err := decodeQueuedTelemetry(repo.box, item.Payload)
 	if err != nil {
 		return err
 	}
 	// Keep the same Elder -> Device lock order as SOS, bind and unbind.
 	var owner int64
-	err = tx.QueryRow(ctx, `SELECT old_id FROM oldperson WHERE old_id=$1 FOR UPDATE`, item.elderID).Scan(&owner)
+	err = tx.QueryRow(ctx, `SELECT old_id FROM oldperson WHERE old_id=$1 FOR UPDATE`, item.ResidentID).Scan(&owner)
 	if errors.Is(err, pgx.ErrNoRows) {
-		_, err = tx.Exec(ctx, `UPDATE telemetry_inbox SET status='stale',last_error='elder removed' WHERE id=$1`, item.id)
-		return err
+		return telemetryrepo.MarkDurableStale(ctx, tx, item.ID, "elder removed")
 	}
 	if err != nil {
 		return err
 	}
-	d, err := scanDeviceRecord(tx.QueryRow(ctx, `SELECT `+deviceRecordColumns+` FROM device WHERE device_id=$1 FOR UPDATE`, item.deviceID))
+	d, err := scanDeviceRecord(tx.QueryRow(ctx, `SELECT `+deviceRecordColumns+` FROM device WHERE device_id=$1 FOR UPDATE`, item.DeviceID))
 	if errors.Is(err, pgx.ErrNoRows) {
-		_, err = tx.Exec(ctx, `UPDATE telemetry_inbox SET status='stale',last_error='device removed' WHERE id=$1`, item.id)
-		return err
+		return telemetryrepo.MarkDurableStale(ctx, tx, item.ID, "device removed")
 	}
 	if err != nil {
 		return err
 	}
-	if d.OldID == nil || *d.OldID != item.elderID || d.HealthEpoch != item.bindingEpoch {
-		_, err = tx.Exec(ctx, `UPDATE telemetry_inbox SET status='stale',last_error='device binding changed' WHERE id=$1`, item.id)
-		return err
+	if d.OldID == nil || *d.OldID != item.ResidentID || d.HealthEpoch != item.BindingEpoch {
+		return telemetryrepo.MarkDurableStale(ctx, tx, item.ID, "device binding changed")
 	}
 	if _, err := repo.PersistDeviceReport(ctx, tx, d, parsed); err != nil {
 		return err
 	}
-	_, err = tx.Exec(ctx, `UPDATE telemetry_inbox SET status='done',completed_at=$1,last_error=NULL WHERE id=$2`, time.Now().UTC(), item.id)
-	return err
+	return telemetryrepo.MarkDurableDone(ctx, tx, item.ID, time.Now().UTC())
 }
 
 func RunDurableTelemetry(ctx context.Context, db *dbstore.Database, box *securestore.Box) {
