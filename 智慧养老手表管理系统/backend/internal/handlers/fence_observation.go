@@ -42,28 +42,30 @@ func advanceFenceObservation(f *fencerepo.Config, state *fence.State, req *fence
 }
 
 func (h *Handler) persistFenceEvent(ctx context.Context, tx *dbstore.Transaction, d *deviceRecord, f *fencerepo.Config, req *fencePointRequest, direction string, at time.Time) (map[string]any, error) {
-	var eventID int64
-	err := tx.QueryRow(ctx, `INSERT INTO fence_event(fence_id,fence_revision,old_id,device_id,epoch,direction,lng,lat,accuracy,occurred_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id`, f.ID, f.Revision, *d.OldID, d.ID, d.HealthEpoch, direction, req.Point[0], req.Point[1], req.Accuracy, at).Scan(&eventID)
+	eventID, err := fencerepo.InsertEvent(ctx, tx, fencerepo.NewEvent{
+		FenceID: f.ID, FenceRevision: f.Revision,
+		ResidentID: *d.OldID, DeviceID: d.ID, Epoch: d.HealthEpoch,
+		Direction: direction, Point: *req.Point, Accuracy: req.Accuracy, OccurredAt: at,
+	})
 	if err != nil {
 		return nil, err
 	}
 	var incidentID *int64
 	if direction == "exit" {
-		var id int64
-		err = tx.QueryRow(ctx, "INSERT INTO care_incident(old_id,device_id,kind,severity) VALUES($1,$2,'fence_exit','high') RETURNING id", *d.OldID, d.ID).Scan(&id)
-		if err == nil {
-			_, err = tx.Exec(ctx, "INSERT INTO care_incident_event(incident_id,actor,action,note) VALUES($1,'rule','received','围栏离开事件，等待通知与照护处置')", id)
-		}
-		if err == nil {
-			_, err = notify.QueueCareSMS(ctx, tx, h.Box, id, *d.OldID)
-		}
-		if err == nil {
-			_, err = tx.Exec(ctx, "UPDATE fence_event SET incident_id=$2 WHERE id=$1", eventID, id)
-		}
-		if err == nil {
-			err = notify.CareInbox(ctx, tx, h.Box, *d.OldID, id)
-		}
+		id, err := fencerepo.InsertExitIncident(ctx, tx, *d.OldID, d.ID)
 		if err != nil {
+			return nil, err
+		}
+		if err := fencerepo.InsertExitReceipt(ctx, tx, id); err != nil {
+			return nil, err
+		}
+		if _, err := notify.QueueCareSMS(ctx, tx, h.Box, id, *d.OldID); err != nil {
+			return nil, err
+		}
+		if err := fencerepo.LinkIncident(ctx, tx, eventID, id); err != nil {
+			return nil, err
+		}
+		if err := notify.CareInbox(ctx, tx, h.Box, *d.OldID, id); err != nil {
 			return nil, err
 		}
 		incidentID = &id
