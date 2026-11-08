@@ -2,11 +2,11 @@ package handlers
 
 import (
 	"context"
-	"github.com/jackc/pgx/v5"
 	"net/http"
 	"strconv"
 	"strings"
 	dbstore "suining-care/internal/db"
+	"suining-care/internal/devicerepo"
 	"suining-care/internal/response"
 	"suining-care/internal/vitalrepo"
 	"time"
@@ -80,11 +80,12 @@ func (h *Handler) deviceAlertDetail(w http.ResponseWriter, r *http.Request) {
 	}
 	oldName := "（未绑定）"
 	if d.OldID != nil {
-		var nm *string
-		if err := h.DB.QueryRow(ctx, `SELECT name FROM oldperson WHERE old_id=$1`, *d.OldID).Scan(&nm); err != nil && err != pgx.ErrNoRows {
+		nm, err := devicerepo.ResidentName(ctx, h.DB, *d.OldID)
+		if err != nil && !isNotFound(err) {
 			response.Error500(w, ref())
 			return
-		} else if nm != nil {
+		}
+		if nm != nil {
 			oldName = *nm
 		}
 	}
@@ -143,8 +144,8 @@ func (h *Handler) deviceResolveAlert(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	rollback := func() { _ = tx.Rollback(ctx) }
-	var exists bool
-	if err := tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM device WHERE device_id=$1)`, deviceID).Scan(&exists); rollbackOnError(w, rollback, err) {
+	exists, err := devicerepo.ExistsInTransaction(ctx, tx, deviceID)
+	if rollbackOnError(w, rollback, err) {
 		return
 	}
 	if !exists {
@@ -164,14 +165,11 @@ func (h *Handler) deviceResolveAlert(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	case "person":
-		// 记录"已确认过的掉线次数"：只有设备重新上线后又掉线（boot_seq 增长）才会再次报警。
-		ct, err := tx.Exec(ctx,
-			`UPDATE device SET person_handled=1, person_handled_at=now(), handled_seq=boot_seq
-			 WHERE device_id=$1`, deviceID)
+		// Boot-sequence acknowledgement remains atomic with the alert transaction.
+		rows, err = devicerepo.AcknowledgePersonAlert(ctx, tx, deviceID)
 		if rollbackOnError(w, rollback, err) {
 			return
 		}
-		rows = ct.RowsAffected()
 	default:
 		rollback()
 		response.Fail(w, "未知的异常类型："+kind)
