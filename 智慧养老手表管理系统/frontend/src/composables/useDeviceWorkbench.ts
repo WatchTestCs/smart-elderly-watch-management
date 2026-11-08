@@ -4,15 +4,24 @@ import type { AlertDetailResponse, DeviceId, DeviceRecord, DeviceState } from '.
 type AlertKind = 'person' | 'rate' | 'pre'
 interface AlertRequest { device: DeviceRecord; kind: AlertKind }
 
+const detailTimeoutMs = 3000
+
 // Owns the bounded detail queue and prevents obsolete dialog reads from publishing.
 export function useDeviceWorkbench(
   state: DeviceState,
-  readDetail: (deviceId: DeviceId, kind: AlertKind) => Promise<AlertDetailResponse>
+  readDetail: (deviceId: DeviceId, kind: AlertKind, signal: AbortSignal) => Promise<AlertDetailResponse>
 ) {
   let revision = 0
   let disposed = false
+  const activeReads = new Set<AbortController>()
+
+  function abortReads(): void {
+    for (const controller of activeReads) controller.abort()
+    activeReads.clear()
+  }
 
   async function openWorkbench(): Promise<void> {
+    abortReads()
     const request = ++revision
     const current = () => !disposed && request === revision
     state.workbench.visible = true
@@ -35,8 +44,11 @@ export function useDeviceWorkbench(
       while (nextIndex < pending.length && current()) {
         const index = nextIndex++
         const { device, kind } = pending[index]
+        const controller = new AbortController()
+        activeReads.add(controller)
+        const timeout = setTimeout(() => controller.abort(), detailTimeoutMs)
         try {
-          const detail = await readDetail(device.deviceId, kind)
+          const detail = await readDetail(device.deviceId, kind, controller.signal)
           if (!current()) return
           if (detail.hasAlert !== 1) continue
           results[index] = {
@@ -48,6 +60,9 @@ export function useDeviceWorkbench(
         } catch {
           if (!current()) return
           failed = true
+        } finally {
+          clearTimeout(timeout)
+          activeReads.delete(controller)
         }
       }
     }
@@ -61,6 +76,7 @@ export function useDeviceWorkbench(
   function disposeWorkbench(): void {
     disposed = true
     revision++
+    abortReads()
   }
 
   return { openWorkbench, disposeWorkbench }
