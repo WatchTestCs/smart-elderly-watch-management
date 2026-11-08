@@ -98,7 +98,7 @@ it('does not publish device rows from a query superseded during an active read',
     await flushPromises()
     expect(devices.deviceList.value).toEqual([])
     expect(listReplies).toHaveLength(2)
-    listReplies[1]({ data: { devices: [{ deviceId: 2, deviceNo: 'current' }], total: 1 } })
+    listReplies[1]({ data: { devices: [{ deviceId: 2, deviceNo: 'current' }], total: 21 } })
     await flushPromises()
     expect(devices.deviceList.value).toEqual([{ deviceId: 2, deviceNo: 'current' }])
     expect(devices.currentPage.value).toBe(2)
@@ -216,6 +216,33 @@ it('clears previous workbench results while refreshing alert details', async () 
     pendingDetails[1]({ data: { hasAlert: 1 } })
     await refresh
     expect(state.workbench.value.list).toHaveLength(1)
+  } finally {
+    wrapper.unmount()
+    vi.restoreAllMocks()
+  }
+})
+
+it('reloads page one after deleting the final device on a later page', async () => {
+  const queries: number[] = []
+  vi.spyOn(axios, 'post').mockImplementation((url, body) => {
+    if (url === '/api/v1/device/list') {
+      const page = (body as { page: number }).page
+      queries.push(page)
+      return Promise.resolve({ data: { devices: page === 1 ? [{ deviceId: 1, deviceNo: 'remaining' }] : [], total: 1 } })
+    }
+    if (url === '/api/v1/device/alertCounts') return Promise.resolve({ data: { items: [], total: 0 } })
+    if (url === '/api/v1/inviteCode/oldPersonList') return Promise.resolve({ data: { oldPeople: [] } })
+    throw new Error(`unexpected request: ${url}`)
+  })
+  let state!: ReturnType<typeof useDevices>
+  const wrapper = mount(defineComponent({ setup() { state = useDevices(); return () => null } }))
+  try {
+    await flushPromises()
+    state.changeDevicePage(2)
+    await flushPromises()
+    expect(queries).toEqual([1, 2, 1])
+    expect(state.currentPage.value).toBe(1)
+    expect(state.deviceList.value).toEqual([{ deviceId: 1, deviceNo: 'remaining' }])
   } finally {
     wrapper.unmount()
     vi.restoreAllMocks()
