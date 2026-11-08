@@ -35,10 +35,10 @@ type Result struct {
 	Confidence   string
 	Reason       string
 	Baseline     float64
-	Scale      float64
-	Score      float64
-	Direction  string
-	Anomalous  bool
+	Scale        float64
+	Score        float64
+	Direction    string
+	Anomalous    bool
 }
 
 // Evaluate compares a valid observation against at most 28 preceding calendar

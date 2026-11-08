@@ -33,7 +33,7 @@ func (h *Handler) healthBaseline(w http.ResponseWriter, r *http.Request) {
 	// Only currently bound devices contribute; an earlier binding epoch must
 	// never be analyzed as the current resident's health history.
 	// 29 days includes the current day and the preceding 28 calendar days.
-	cutoff := time.Now().UTC().Truncate(24 * time.Hour).AddDate(0, 0, -healthbaseline.HistoryDays)
+	cutoff := time.Now().UTC().Truncate(24*time.Hour).AddDate(0, 0, -healthbaseline.HistoryDays)
 	// Downsample to one actual observation per source/device/hour before
 	// decoding JSON. This keeps high-frequency wearable feeds bounded while
 	// retaining representative hourly history across the full 28-day window.
@@ -95,7 +95,7 @@ func (h *Handler) healthBaseline(w http.ResponseWriter, r *http.Request) {
 		"sampleDays": result.SampleDays, "trustedDays": result.TrustedDays,
 		"rejectedDays": result.RejectedDays, "confidence": result.Confidence, "reason": result.Reason,
 		"baseline": result.Baseline,
-		"scale": result.Scale, "score": result.Score,
+		"scale":    result.Scale, "score": result.Score,
 		"direction": result.Direction, "anomalous": result.Anomalous,
 	})
 }
