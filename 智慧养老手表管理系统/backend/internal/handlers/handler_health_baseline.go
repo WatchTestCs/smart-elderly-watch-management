@@ -92,7 +92,9 @@ func (h *Handler) healthBaseline(w http.ResponseWriter, r *http.Request) {
 	response.OK(w, map[string]any{
 		"oldId": oldID, "metric": "heart_rate", "observedAt": current.At,
 		"value": current.Value, "ready": result.Ready,
-		"sampleDays": result.SampleDays, "baseline": result.Baseline,
+		"sampleDays": result.SampleDays, "trustedDays": result.TrustedDays,
+		"rejectedDays": result.RejectedDays, "confidence": result.Confidence, "reason": result.Reason,
+		"baseline": result.Baseline,
 		"scale": result.Scale, "score": result.Score,
 		"direction": result.Direction, "anomalous": result.Anomalous,
 	})
