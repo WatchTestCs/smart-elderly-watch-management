@@ -2,14 +2,16 @@ package handlers
 
 import (
 	"errors"
-	"github.com/jackc/pgx/v5"
 	"net/http"
 	"strings"
+	"time"
+	"unicode/utf8"
+
+	"github.com/jackc/pgx/v5"
+
 	"suining-care/internal/devicerepo"
 	"suining-care/internal/response"
 	"suining-care/internal/telemetryrepo"
-	"time"
-	"unicode/utf8"
 )
 
 func checkDeviceCredentials(w http.ResponseWriter, m map[string]any) (string, string, bool) {
