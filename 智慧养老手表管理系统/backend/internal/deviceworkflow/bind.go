@@ -13,6 +13,7 @@ const (
 	CodeRequired    Failure = "BIND_CODE_REQUIRED"
 	CodeNotFound    Failure = "BIND_CODE_NOT_FOUND"
 	CodeUsed        Failure = "BIND_CODE_USED"
+	CodeRace        Failure = "BIND_CODE_CONSUMED"
 	CodeExpired     Failure = "BIND_CODE_EXPIRED"
 	ResidentMissing Failure = "NOT_FOUND"
 	AlreadyBound    Failure = "ALREADY_BOUND"
@@ -84,7 +85,7 @@ func Bind(ctx context.Context, store *db.Database, input BindInput) (BindResult,
 	case errors.Is(err, devicerepo.ErrBindFailed):
 		return BindResult{}, BindFailed, nil
 	case errors.Is(err, devicerepo.ErrBindCodeUsed):
-		return BindResult{}, CodeUsed, nil
+		return BindResult{}, CodeRace, nil
 	case err != nil:
 		return BindResult{}, "", err
 	}
