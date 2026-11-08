@@ -8,7 +8,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"net/http"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -77,49 +76,34 @@ func randAlpha(n int) (string, error) {
 // 设备行与鉴权
 // ---------------------------------------------------------------------------
 
-type deviceRecord struct {
-	ID            int64
-	No            string
-	Secret        string
-	Alias         *string
-	Model         *string
-	AppVersion    *string
-	Battery       *int
-	OldID         *int64
-	FamilyID      *int64
-	Status        *int
-	BindTime      *time.Time
-	LastTime      *time.Time
-	LastLng       *string
-	LastLat       *string
-	CreateTime    *time.Time
-	PersonHandled int
-	RateHandled   int
-	PreHandled    int
-	BootSeq       int
-	HealthEpoch   int64
-	HandledSeq    int
-}
+type deviceRecord = devicerepo.DeviceRecord
 
 const deviceRecordColumns = devicerepo.DeviceRecordColumns
 
 func scanDeviceRecord(row dbstore.Row) (*deviceRecord, error) {
-	var d deviceRecord
-	if err := row.Scan(&d.ID, &d.No, &d.Secret, &d.Alias, &d.Model, &d.AppVersion,
-		&d.Battery, &d.OldID, &d.FamilyID, &d.Status, &d.BindTime, &d.LastTime,
-		&d.LastLng, &d.LastLat, &d.CreateTime, &d.PersonHandled, &d.RateHandled,
-		&d.PreHandled, &d.BootSeq, &d.HandledSeq, &d.HealthEpoch); err != nil {
-		return nil, err
-	}
-	return &d, nil
+	return devicerepo.ScanDeviceRecord(row)
 }
 
 func (h *Handler) findDeviceByNo(ctx context.Context, q deviceQueries, deviceNo string) (*deviceRecord, error) {
-	return h.readDevice(q.QueryRow(ctx, `SELECT `+deviceRecordColumns+` FROM device WHERE device_no=$1`, deviceNo))
+	return h.readDeviceRecord(devicerepo.FindDeviceByNo(ctx, q, deviceNo))
 }
 
 func (h *Handler) findDeviceByID(ctx context.Context, q deviceQueries, deviceID int64) (*deviceRecord, error) {
-	return h.readDevice(q.QueryRow(ctx, `SELECT `+deviceRecordColumns+` FROM device WHERE device_id=$1`, deviceID))
+	return h.readDeviceRecord(devicerepo.FindDeviceByID(ctx, q, deviceID))
+}
+
+func (h *Handler) readDeviceRecord(device *deviceRecord, err error) (*deviceRecord, error) {
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	device.LastLng, device.LastLat, err = openCoordinates(h.Box, device.LastLng, device.LastLat)
+	if err != nil {
+		return nil, err
+	}
+	return device, nil
 }
 
 func (h *Handler) readDevice(row dbstore.Row) (*deviceRecord, error) {
