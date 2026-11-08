@@ -12,7 +12,7 @@
     <div class="sidebar-note"><el-icon aria-hidden="true"><Clock /></el-icon><span>数据以最近一次<br>设备上报为准</span></div>
   </aside>
 </template>
-<script setup>
+<script setup lang="ts">
 import { Clock, Document, Location, Menu } from '@element-plus/icons-vue'
 import { useRoute } from 'vue-router'
 const route = useRoute()
