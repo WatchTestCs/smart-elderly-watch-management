@@ -41,7 +41,7 @@ API 不应直接暴露到公网，建议用可信 TLS 反向代理和网络 ACL�
 
 ## 通知状态与网关契约
 
-SOS 成功响应是 `received`，不是 `delivered` 或 `acknowledged`。若有已绑定家属手机号，将在同一事务生成状态 `pending` 的 outbox 记录。未配置网关时任务安全留在数据库等待部署人员处理。后台每约五秒领取待发送任务，带有 `Idempotency-Key: care-outbox-<notificationId>` 的 POST JSON 请求；**网关必须持久化该键并对重复发送去重**。HTTPS 2xx 表示网关已接收（`sent`），不是已送达。
+SOS 成功响应是 `received`，不是 `delivered` 或 `acknowledged`。若有已绑定家属手机号，将在同一事务生成状态 `pending` 的 outbox 记录。未配置网关时任务安全留在数据库等待部署人员处理。后台通知 worker 空闲时约每秒检查一次队列，积压时连续分批排空。发送时附带 `Idempotency-Key: care-outbox-<notificationId>` 的 POST JSON 请求；**网关必须持久化该键并对重复发送去重**。HTTPS 2xx 表示网关已接收（`sent`），不是已送达。
 
 网关确认真实送达后必须带以下请求调用 `POST /api/v1/care/receipt`：
 - JSON：`{"notificationId":123,"status":"delivered"}`
