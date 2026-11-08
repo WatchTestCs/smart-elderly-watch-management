@@ -4,7 +4,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { accepted, api, type Envelope } from '../api/client'
 import { apiErrorMessage } from '../api/httpContract'
 import { copyText } from '../utils/clipboard'
-import { createDeviceState, emptyDeviceAlert } from './deviceModels'
+import { createDeviceState, emptyDeviceAlert, isValidCount } from './deviceModels'
 import { useDeviceBindings } from './useDeviceBindings'
 export type { DeviceRecord } from './deviceModels'
 import type {
@@ -36,7 +36,11 @@ export function useDevices() {
     try {
       const { data } = await post<AlertCountsResponse>('alertCounts')
       if (disposed || revision !== alertCountsRequest) return
-      if (!Array.isArray(data.items) || typeof data.total !== 'number' || !Number.isSafeInteger(data.total)) throw new Error('missing alerts')
+      if (!Array.isArray(data.items) || !isValidCount(data.total) ||
+        !data.items.every(item => isValidCount(item.personCount) && isValidCount(item.rateCount) && isValidCount(item.preCount)) ||
+        ![data.personTotal, data.rateTotal, data.preTotal].every(count => count === undefined || isValidCount(count))) {
+        throw new Error('invalid alert counters')
+      }
       state.alertCounts = Object.fromEntries(data.items.map(item => [item.deviceId, item]))
       state.alertTotals = {
         personTotal: data.personTotal ?? 0, rateTotal: data.rateTotal ?? 0,
@@ -73,10 +77,14 @@ export function useDevices() {
             state.reloadPending = true
             return
           }
-          if (!Array.isArray(data.devices)) throw new Error('missing devices')
+          if (!Array.isArray(data.devices) ||
+             (data.total !== undefined && !isValidCount(data.total)) ||
+             (data.onlineCount !== undefined && !isValidCount(data.onlineCount))) {
+             throw new Error('invalid device list')
+           }
           state.deviceList = data.devices
-          state.deviceTotal = typeof data.total === 'number' ? data.total : data.devices.length
-          state.serverOnlineCount = typeof data.onlineCount === 'number' ? data.onlineCount :
+          state.deviceTotal = data.total ?? data.devices.length
+          state.serverOnlineCount = data.onlineCount ??
             data.devices.filter(item => item.online === 1 || item.online === '1').length
         }).catch(error => {
           if (disposed) return
