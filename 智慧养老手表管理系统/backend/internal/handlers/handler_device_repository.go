@@ -142,8 +142,7 @@ func deviceCredentialFailure(supplied, stored string, status *int, disabledMsg s
 
 // lockDeviceID holds the device row lock until the caller finishes its transaction.
 func lockDeviceID(w http.ResponseWriter, ctx context.Context, tx *dbstore.Transaction, deviceID int64) bool {
-	var id int64
-	err := tx.QueryRow(ctx, "SELECT device_id FROM device WHERE device_id=$1 FOR UPDATE", deviceID).Scan(&id)
+	err := devicerepo.LockDeviceID(ctx, tx, deviceID)
 	if errors.Is(err, pgx.ErrNoRows) {
 		response.JSON(w, http.StatusNotFound, map[string]any{"message": "设备不存在"})
 		return false
