@@ -191,4 +191,3 @@ func (h *Handler) deviceHeartbeat(w http.ResponseWriter, r *http.Request) {
 		"reportInterval": 5, "pendingAlarm": 0,
 	})
 }
-

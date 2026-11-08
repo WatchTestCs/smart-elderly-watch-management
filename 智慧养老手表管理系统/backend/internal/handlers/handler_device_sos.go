@@ -1,15 +1,15 @@
 package handlers
 
 import (
-	"errors"
 	"context"
+	"errors"
 	"net/http"
 	"regexp"
 	"time"
 
-	"suining-care/internal/deviceworkflow"
 	dbstore "suining-care/internal/db"
 	"suining-care/internal/devicerepo"
+	"suining-care/internal/deviceworkflow"
 	"suining-care/internal/response"
 )
 
@@ -80,14 +80,14 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 	}
 	if result.Duplicate {
 		response.OK(w, map[string]any{
-			"message": "求助已接收（重复请求未再次入库）",
+			"message":    "求助已接收（重复请求未再次入库）",
 			"incidentId": result.IncidentID, "incidentState": result.IncidentState,
 			"notificationState": result.NotificationState, "duplicate": true,
 		})
 		return
 	}
 	response.OK(w, map[string]any{
-		"message": "求助已接收，等待通知和人员接单",
+		"message":    "求助已接收，等待通知和人员接单",
 		"incidentId": result.IncidentID, "incidentState": result.IncidentState,
 		"notificationState": result.NotificationState,
 	})
@@ -123,4 +123,3 @@ func parseSOSRequest(w http.ResponseWriter, m map[string]any) (sosRequest, bool)
 	}
 	return sosRequest{deviceNo: deviceNo, secret: secret, requestID: requestID, bindingVersion: bindingVersion}, true
 }
-
