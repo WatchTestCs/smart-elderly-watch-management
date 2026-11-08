@@ -1,9 +1,20 @@
 import { defineComponent, h, nextTick } from 'vue'
 import { mount } from '@vue/test-utils'
-import { expect, it } from 'vitest'
+import { expect, it, vi } from 'vitest'
 import ErrorBoundary from '@/components/ErrorBoundary.vue'
 
+it('reports a contained failure with the global handler prefix instead of swallowing it', async () => {
+  const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
+  const Broken = defineComponent(() => () => { throw new Error('reported failure') })
+  const wrapper = mount(ErrorBoundary, { slots: { default: () => h(Broken) } })
+  await nextTick()
+  expect(wrapper.find('[role="alert"]').exists()).toBe(true)
+  expect(logged).toHaveBeenCalledWith('[app]', expect.any(String), expect.objectContaining({ message: 'reported failure' }))
+  wrapper.unmount()
+})
+
 it('contains a child render failure and remounts it on retry', async () => {
+  vi.spyOn(console, 'error').mockImplementation(() => {})
   let broken = true
   const Child = defineComponent(() => () => {
     if (broken) throw new Error('render failure')
@@ -19,6 +30,7 @@ it('contains a child render failure and remounts it on retry', async () => {
 })
 
 it('stops remounting a persistently broken child after three retries', async () => {
+  vi.spyOn(console, 'error').mockImplementation(() => {})
   const Broken = defineComponent(() => () => { throw new Error('still broken') })
   const wrapper = mount(ErrorBoundary, { slots: { default: () => h(Broken) } })
   await nextTick()
@@ -32,6 +44,7 @@ it('stops remounting a persistently broken child after three retries', async () 
 })
 
 it('keeps shell navigation mounted and clears a failure when the route key changes', async () => {
+  vi.spyOn(console, 'error').mockImplementation(() => {})
   const Broken = defineComponent(() => () => { throw new Error('bad child') })
   const Shell = defineComponent({
     props: { path: { type: String, required: true } },

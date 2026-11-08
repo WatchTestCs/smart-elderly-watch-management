@@ -10,13 +10,18 @@
 
 <script setup lang="ts">
 import { computed, onErrorCaptured, ref } from 'vue'
+import { recoverFromChunkError } from '@/appGuards'
 
 const maxRetries = 3
 const failed = ref(false)
 const attempt = ref(0)
 const canRetry = computed(() => attempt.value < maxRetries)
 
-onErrorCaptured(() => {
+onErrorCaptured((error, _instance, info) => {
+  // Returning false stops the error before app.config.errorHandler (main.ts), so
+  // report it here with the same prefix and keep its stale-deploy chunk recovery.
+  console.error('[app]', info, error)
+  recoverFromChunkError(error)
   failed.value = true
   return false
 })

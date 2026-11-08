@@ -18,6 +18,9 @@ func TestPatchNumericAndMissingRowHandling(t *testing.T) {
 		{json.Number("1.5"), 0, false},
 		{" 42 ", 42, true},
 		{float64(1.5), 0, false},
+		{float64(9223372036854775808), 0, false},
+		{float64(1e19), 0, false},
+		{float64(-9223372036854775808), -9223372036854775808, true},
 	} {
 		got, ok := int64Val(map[string]any{"id": tc.value}, "id")
 		if got != tc.want || ok != tc.ok {
