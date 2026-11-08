@@ -2062,6 +2062,39 @@
         "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
+    "/api/v1/health/baseline": {
+      "post": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "oldId": {},
+                    "metric": {},
+                    "ready": {},
+                    "sampleDays": {},
+                    "observedAt": {},
+                    "value": {},
+                    "baseline": {},
+                    "scale": {},
+                    "score": {},
+                    "direction": {},
+                    "anomalous": {}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": null,
+          "content": null,
+          "$ref": "#/components/requestBodies/ResidentId"
+        },
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_health.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+      }
+    },
     "/api/v1/health/changes": {
       "post": {
         "responses": {
@@ -2153,50 +2186,6 @@
           }
         },
         "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_capability_routes.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
-      }
-    },
-    "/api/v1/health/baseline": {
-      "post": {
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": ["returnCode", "oldId", "metric", "ready", "sampleDays"],
-                  "properties": {
-                    "returnCode": {"type": "string"},
-                    "oldId": {"type": "integer"},
-                    "metric": {"type": "string", "enum": ["heart_rate"]},
-                    "ready": {"type": "boolean"},
-                    "sampleDays": {"type": "integer"},
-                    "observedAt": {"type": "string", "format": "date-time"},
-                    "value": {"type": "number"},
-                    "baseline": {"type": "number"},
-                    "scale": {"type": "number"},
-                    "score": {"type": "number"},
-                    "direction": {"type": "string"},
-                    "anomalous": {"type": "boolean"}
-                  }
-                }
-              }
-            }
-          }
-        },
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "additionalProperties": false,
-                "properties": {
-                  "oldId": {"type": "integer", "minimum": 1}
-                }
-              }
-            }
-          }
-        },
-        "description": "Read-only individualized heart-rate baseline using current device binding, historical daily medians and robust deviations."
       }
     },
     "/api/v1/health/latest": {
