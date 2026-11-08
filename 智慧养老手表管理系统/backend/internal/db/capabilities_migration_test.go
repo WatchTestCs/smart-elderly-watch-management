@@ -77,7 +77,7 @@ func TestCapabilitiesRollbackAndReapply(t *testing.T) {
 	}
 
 	var count int
-	if err = pool.QueryRow(ctx, "SELECT count(*) FROM schema_migrations").Scan(&count); err != nil || count != 3 {
+	if err = pool.QueryRow(ctx, "SELECT count(*) FROM schema_migrations").Scan(&count); err != nil || count != 4 {
 		t.Fatal(count, err)
 	}
 	if err = pool.QueryRow(ctx, "SELECT count(*) FROM care_incident_event WHERE incident_id=1").Scan(&count); err != nil || count != 1 {
