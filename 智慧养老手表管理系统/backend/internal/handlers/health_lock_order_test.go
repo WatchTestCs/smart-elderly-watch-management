@@ -12,6 +12,7 @@ import (
 
 	dbstore "suining-care/internal/db"
 	"suining-care/internal/health"
+	"suining-care/internal/devicecredential"
 )
 
 func holdHealthOwnerClock(t *testing.T, ctx context.Context, pool *dbstore.Database) func() {
@@ -246,7 +247,7 @@ func TestLateHealthDeviceLockRejectsConcurrentCredentialChanges(t *testing.T) {
 			}
 			var args []any
 			if tc.rotate {
-				hash, err := secretHash("another-test-secret-123456789012")
+				hash, err := devicecredential.Hash("another-test-secret-123456789012")
 				if err != nil {
 					release()
 					t.Fatal(err)
