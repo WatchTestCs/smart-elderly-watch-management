@@ -29,6 +29,12 @@ func LockResident(ctx context.Context, tx *db.Transaction, residentID int64) err
 	return tx.QueryRow(ctx, "SELECT old_id FROM oldperson WHERE old_id=$1 FOR UPDATE", residentID).Scan(&id)
 }
 
+// LockDeviceID holds the device row lock for the caller's transaction.
+func LockDeviceID(ctx context.Context, tx *db.Transaction, deviceID int64) error {
+	var id int64
+	return tx.QueryRow(ctx, "SELECT device_id FROM device WHERE device_id=$1 FOR UPDATE", deviceID).Scan(&id)
+}
+
 // LockedDeviceRow selects the current credential and binding state under a row lock.
 // The caller locks the resident first and retains the transaction until binding completes.
 func LockedDeviceRow(ctx context.Context, tx *db.Transaction, deviceID int64) db.Row {
