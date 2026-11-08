@@ -91,10 +91,16 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if decision := h.Risk.BeforeLogin(h.clientIP(r), phone); !decision.Allowed() {
+		h.Risk.RecordDenied(h.clientIP(r), phone, "login_restricted", r.UserAgent(),
+			r.Header.Get("Sec-CH-UA-Model"), r.Header.Get("X-App-Device-ID"))
+		h.riskDeniedLogin(w)
+		return
+	}
 	if !h.loginAllowed(w, r, phone) {
 		return
 	}
-	match, err := authrepo.Authenticate(r.Context(), h.DB, phone, password)
+	match, err := authrepo.Authenticate(r.Context(), h.DB, h.Box, phone, password)
 	if internalError(w, err) {
 		return
 	}
@@ -109,6 +115,7 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 	if internalError(w, h.loginAudit(r, phone, "", 0, "invalid_credentials")) {
 		return
 	}
+	h.Risk.FailedLogin(h.clientIP(r), phone, r.UserAgent(), r.Header.Get("Sec-CH-UA-Model"), r.Header.Get("X-App-Device-ID"))
 	response.JSON(w, http.StatusUnauthorized, map[string]any{"code": "INVALID_CREDENTIALS", "message": "手机号或密码不正确"})
 }
 
@@ -162,7 +169,7 @@ func (h *Handler) setup(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	err := authrepo.InitializeAdmin(r.Context(), h.DB, str(m, "name"), str(m, "phone"), str(m, "password"))
+	err := authrepo.InitializeAdmin(r.Context(), h.DB, h.Box, str(m, "name"), str(m, "phone"), str(m, "password"))
 	switch {
 	case errors.Is(err, authrepo.ErrAlreadyInitialized):
 		response.JSON(w, http.StatusConflict, map[string]any{"message": "管理员已创建"})
@@ -205,5 +212,6 @@ func (h *Handler) finishAccountLogin(w http.ResponseWriter, r *http.Request, m m
 	if !h.renewSession(w, r, p) {
 		return
 	}
+	h.Risk.SuccessfulLogin(h.clientIP(r), phone, r.UserAgent(), r.Header.Get("Sec-CH-UA-Model"), r.Header.Get("X-App-Device-ID"))
 	response.JSON(w, http.StatusOK, map[string]any{"authenticated": true})
 }
