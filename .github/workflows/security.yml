@@ -1,11 +1,18 @@
 name: Security
 
 on:
-  workflow_call:
+  push:
+    branches: [preview, 'codex/**']
+  pull_request:
+    branches: [preview]
   workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: security-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   codeql:
