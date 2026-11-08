@@ -92,7 +92,9 @@ func bodyPage(m map[string]any) (int, int) {
 func ref() string { return uuid.NewString() }
 
 // isNotFound recognizes wrapped missing-row errors from both database drivers.
-func isNotFound(err error) bool { return errors.Is(err, pgx.ErrNoRows) || errors.Is(err, sql.ErrNoRows) }
+func isNotFound(err error) bool {
+	return errors.Is(err, pgx.ErrNoRows) || errors.Is(err, sql.ErrNoRows)
+}
 
 // internalError reports unexpected errors with an opaque reference.
 func internalError(w http.ResponseWriter, err error) bool {
