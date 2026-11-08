@@ -78,6 +78,7 @@ interface VitalRecord {
   name: string
   rateState?: string | number | null
   preState?: string | number | null
+  createTime?: string
 }
 const oldsList = ref<VitalRecord[]>([])
 const isLoading = ref(false)
