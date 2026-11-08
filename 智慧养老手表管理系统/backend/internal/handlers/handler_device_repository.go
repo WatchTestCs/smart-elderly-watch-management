@@ -1,20 +1,20 @@
 package handlers
 
 import (
-	"net/http"
-
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/base64"
 	"errors"
-	"suining-care/internal/response"
+	"net/http"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+
 	dbstore "suining-care/internal/db"
+	"suining-care/internal/response"
 )
 
 // deviceQueries is implemented by the database and its transaction wrapper.
@@ -125,7 +125,7 @@ func (h *Handler) findDeviceByID(ctx context.Context, q deviceQueries, deviceID 
 
 func (h *Handler) readDevice(row dbstore.Row) (*deviceRecord, error) {
 	device, err := scanDeviceRecord(row)
-	if err == pgx.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	}
 	if err != nil {
