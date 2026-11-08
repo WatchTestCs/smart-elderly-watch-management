@@ -1,5 +1,5 @@
 <template>
-<el-form ref="form" label-width="80px" :model="draft" :rules="rules" :class="{ 'demo-ruleForm': !editing }" >
+<el-form ref="form" label-width="80px" :model="draft" :rules="rules" >
         <el-form-item label="姓名" prop="familyName">
           <el-input v-model="draft.familyName"></el-input>
         </el-form-item>
