@@ -7,7 +7,7 @@
           <form class="announcement-query" role="search" @submit.prevent="loadNotices()"><label class="table-search-label" for="manage-notice-search">按标题查找</label><el-input id="manage-notice-search" v-model="searchText" placeholder="搜索公告标题" clearable @clear="loadNotices">
             <template #append><el-button  :icon="Search" aria-label="搜索公告" native-type="submit"></el-button></template>
           </el-input></form>
-          <el-button type="primary" :icon="Plus" @click="addtext">添加公告</el-button>
+          <el-button type="primary" :icon="Plus" @click="openNoticeEditor">添加公告</el-button>
         </div>
       </header>
       <div v-if="loadError" class="collection-feedback" role="alert">{{ loadError }}<el-button plain @click="loadNotices">重新加载公告</el-button></div>
@@ -154,5 +154,5 @@ async function handleDelete(_index: number, row: NoticeRow) {
     ElMessage.error(apiErrorMessage(error, '公告暂时无法删除，请重试'))
   } finally { deletingId.value = null }
 }
-function addtext() { void router.push('/operations/notices/new') }
+function openNoticeEditor() { void router.push('/operations/notices/new') }
 </script>
