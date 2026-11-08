@@ -82,3 +82,44 @@ func TestDailyMedianAndHistoryWindow(t *testing.T) {
 		t.Fatalf("daily aggregate/window: %+v %v", result, err)
 	}
 }
+
+func TestSustainedAnomalyCannotPoisonBaseline(t *testing.T) {
+	now := time.Date(2026, 11, 8, 12, 0, 0, 0, time.UTC)
+	current := Observation{OwnerID: 1, DeviceID: 2, BindingVersion: 1, Source: "watch", SourceDevice: "w2", Metric: "heart_rate", At: now, Value: 112, Valid: true}
+	var history []Observation
+	for age := 1; age <= 21; age++ {
+		s := current
+		s.At = now.AddDate(0, 0, -age)
+		if age > 14 {
+			s.Value = 70
+		} else {
+			s.Value = 112
+		}
+		history = append(history, s)
+	}
+	got, err := Evaluate(current, history)
+	if err != nil || got.Ready || got.Reason != "stale_baseline" || got.Baseline != 0 || got.RejectedDays != 14 {
+		t.Fatalf("untrusted recent history must not normalize prolonged anomaly: %+v err=%v", got, err)
+	}
+	// The reference must remain correct even if the last excursion is recent.
+	current.At = now.AddDate(0, 0, -11)
+	got, err = Evaluate(current, history)
+	if err != nil || !got.Ready || !got.Anomalous || got.Baseline != 70 || got.RejectedDays != 3 || got.Confidence != "guarded" {
+		t.Fatalf("anchored baseline: %+v err=%v", got, err)
+	}
+}
+
+func TestBaselineFreshnessAndConfidence(t *testing.T) {
+	now := time.Date(2026, 11, 8, 12, 0, 0, 0, time.UTC)
+	current := Observation{OwnerID: 1, BindingVersion: 1, Metric: "heart_rate", At: now, Value: 72, Valid: true}
+	var history []Observation
+	for i := 10; i <= 16; i++ {
+		s := current
+		s.At = now.AddDate(0, 0, -i)
+		history = append(history, s)
+	}
+	got, err := Evaluate(current, history)
+	if err != nil || got.Ready || got.Reason != "stale_baseline" {
+		t.Fatalf("stale confidence: %+v err=%v", got, err)
+	}
+}
