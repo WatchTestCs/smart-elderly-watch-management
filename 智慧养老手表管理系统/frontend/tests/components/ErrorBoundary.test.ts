@@ -18,6 +18,19 @@ it('contains a child render failure and remounts it on retry', async () => {
   wrapper.unmount()
 })
 
+it('stops remounting a persistently broken child after three retries', async () => {
+  const Broken = defineComponent(() => () => { throw new Error('still broken') })
+  const wrapper = mount(ErrorBoundary, { slots: { default: () => h(Broken) } })
+  await nextTick()
+  for (let retry = 0; retry < 3; retry++) {
+    await wrapper.get('button').trigger('click')
+    await nextTick()
+  }
+  expect(wrapper.find('button').exists()).toBe(false)
+  expect(wrapper.get('[role="alert"]').text()).toContain('连续重试仍未恢复')
+  wrapper.unmount()
+})
+
 it('keeps shell navigation mounted and clears a failure when the route key changes', async () => {
   const Broken = defineComponent(() => () => { throw new Error('bad child') })
   const Shell = defineComponent({
