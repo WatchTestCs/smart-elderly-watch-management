@@ -38,6 +38,26 @@ func Matches(supplied, stored string) bool {
 	return err == nil && subtle.ConstantTimeCompare([]byte(expected), []byte(stored)) == 1
 }
 
+// Failure identifies why a device credential cannot be used.
+type Failure uint8
+
+const (
+	Valid Failure = iota
+	InvalidSecret
+	Disabled
+)
+
+// Check applies the same credential and enabled-state policy to every device entry point.
+func Check(supplied, stored string, status *int) Failure {
+	if !Matches(supplied, stored) {
+		return InvalidSecret
+	}
+	if status != nil && *status == 0 {
+		return Disabled
+	}
+	return Valid
+}
+
 func Generate() (clear, hashed string, err error) {
 	clear, err = securecode.Generate(32)
 	if err != nil {
