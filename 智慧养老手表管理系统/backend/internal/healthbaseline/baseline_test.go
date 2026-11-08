@@ -8,7 +8,7 @@ import (
 
 func TestPersonalBaseline(t *testing.T) {
 	now := time.Date(2026, 11, 8, 12, 0, 0, 0, time.UTC)
-	current := Observation{OwnerID: 7, BindingVersion: 2, Metric: "resting_heart_rate", At: now, Value: 80, Valid: true}
+	current := Observation{OwnerID: 7, DeviceID: 19, BindingVersion: 2, Source: "watch", SourceDevice: "watch19", Metric: "resting_heart_rate", At: now, Value: 80, Valid: true}
 	var history []Observation
 	for i := 1; i <= 8; i++ {
 		s := current
@@ -24,6 +24,16 @@ func TestPersonalBaseline(t *testing.T) {
 	history = append(history, wrong)
 	wrong.OwnerID = 7
 	wrong.BindingVersion = 1
+	history = append(history, wrong)
+	wrong = current
+	wrong.DeviceID = 20
+	wrong.At = now.AddDate(0, 0, -2)
+	wrong.Value = 120
+	history = append(history, wrong)
+	wrong = current
+	wrong.SourceDevice = "different-sensor"
+	wrong.At = now.AddDate(0, 0, -3)
+	wrong.Value = 120
 	history = append(history, wrong)
 	result, err := Evaluate(current, history)
 	if err != nil || !result.Ready || !result.Anomalous || result.Baseline != 60 || result.Direction != "above" || result.SampleDays != 8 {
