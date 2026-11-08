@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"net/http"
 
@@ -19,7 +20,7 @@ type deviceQueries interface {
 }
 
 func (h *Handler) readDeviceRecord(device *devicerepo.DeviceRecord, err error) (*devicerepo.DeviceRecord, error) {
-	if errors.Is(err, pgx.ErrNoRows) {
+	if (errors.Is(err, pgx.ErrNoRows) || errors.Is(err, sql.ErrNoRows)) {
 		return nil, nil
 	}
 	if err != nil {
@@ -59,7 +60,7 @@ func checkDeviceAuth(d *devicerepo.DeviceRecord, secret, disabledMsg string) (*d
 // lockDeviceID holds the device row lock until the caller finishes its transaction.
 func lockDeviceID(w http.ResponseWriter, ctx context.Context, tx *dbstore.Transaction, deviceID int64) bool {
 	err := devicerepo.LockDeviceID(ctx, tx, deviceID)
-	if errors.Is(err, pgx.ErrNoRows) {
+	if (errors.Is(err, pgx.ErrNoRows) || errors.Is(err, sql.ErrNoRows)) {
 		response.JSON(w, http.StatusNotFound, map[string]any{"message": "设备不存在"})
 		return false
 	}
