@@ -134,4 +134,3 @@ func scaleMask(px, mask uint32) uint8 {
 	}
 	return uint8(v * 255 / ((1 << width) - 1))
 }
-
