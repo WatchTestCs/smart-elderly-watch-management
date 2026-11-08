@@ -2,6 +2,7 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { defineComponent } from 'vue'
 import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest'
 import CareInbox from '@/components/CareInbox.vue'
+import store from '@/store'
 
 const { post } = vi.hoisted(() => ({ post: vi.fn() }))
 vi.mock('axios', async (importOriginal) => ({ ...await importOriginal<typeof import('axios')>(), default: { post } }))
@@ -19,6 +20,18 @@ function mountInbox() {
 describe('care task read scheduling', () => {
   beforeEach(() => { post.mockReset() })
   afterEach(() => { vi.useRealTimers() })
+
+  it('refreshes the care inbox on an external alert revision', async () => {
+    post.mockResolvedValueOnce(fixture('旧任务')).mockResolvedValueOnce(fixture('新求助'))
+    const view = mountInbox()
+    await flushPromises()
+    store.notifyAlertsChanged()
+    await flushPromises()
+    expect(post).toHaveBeenCalledTimes(2)
+    expect(view.text()).toContain('新求助')
+    expect(view.text()).not.toContain('旧任务')
+    view.unmount()
+  })
 
   it('refreshes tasks on tab visibility restoration and unregisters the listener', async () => {
     const visibility = vi.spyOn(document, 'hidden', 'get').mockReturnValue(true)
