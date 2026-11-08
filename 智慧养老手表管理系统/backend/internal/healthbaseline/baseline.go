@@ -73,8 +73,8 @@ func Evaluate(current Observation, history []Observation) (Result, error) {
 	for i, value := range daily {
 		deviations[i] = math.Abs(value - center)
 	}
-	// A one-unit floor prevents a constant baseline from generating infinite scores.
-	// A 5% physiologic floor avoids treating routine low-variance changes as emergencies.
+	// A metric-aware floor prevents ordinary changes in a low-variance history
+	// from being scored as extreme anomalies.
 	floor := math.Max(1, math.Abs(center)*0.05)
 	if current.Metric == "heart_rate" {
 		floor = math.Max(floor, 5)
