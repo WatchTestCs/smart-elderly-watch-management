@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"suining-care/internal/db"
+	"suining-care/internal/devicerepo"
 	"suining-care/internal/response"
 	"time"
 	"unicode/utf8"
@@ -126,8 +127,8 @@ func (h *Handler) genBindCode(ctx context.Context, q deviceQueries) (string, err
 		if err != nil {
 			return "", err
 		}
-		var exists bool
-		if err := q.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM bind_code WHERE code=$1)`, c).Scan(&exists); err != nil {
+		exists, err := devicerepo.CodeExists(ctx, q, c)
+		if err != nil {
 			return "", err
 		}
 		if !exists {
@@ -163,8 +164,8 @@ func (h *Handler) deviceCreateBindCode(w http.ResponseWriter, r *http.Request) {
 	}
 	oldID, _ := strconv.ParseInt(oldIDStr, 10, 64)
 	ctx := r.Context()
-	var oldName *string
-	if err := h.DB.QueryRow(ctx, `SELECT name FROM oldperson WHERE old_id=$1`, oldID).Scan(&oldName); err != nil {
+	oldName, err := devicerepo.ResidentName(ctx, h.DB, oldID)
+	if err != nil {
 		if err == pgx.ErrNoRows {
 			response.Fail(w, "老人不存在")
 		} else {
@@ -179,11 +180,8 @@ func (h *Handler) deviceCreateBindCode(w http.ResponseWriter, r *http.Request) {
 	if internalError(w, err) {
 		return
 	}
-	var id int64
-	if err := h.DB.QueryRow(ctx,
-		`INSERT INTO bind_code(code, old_id, family_id, create_user, create_time, expire_time, used)
-		 VALUES($1,$2,NULL,$3,$4,$5,0) RETURNING id`,
-		code, oldID, createUser, now, expireTime).Scan(&id); err != nil {
+	id, err := devicerepo.CreateBindCode(ctx, h.DB, code, oldID, createUser, now, expireTime)
+	if err != nil {
 		response.Error500(w, ref())
 		return
 	}
@@ -216,18 +214,16 @@ func (h *Handler) deviceBindCodeList(w http.ResponseWriter, r *http.Request) {
 	// 非数字 → 返回空列表而非报错。
 	if validID(oldIDStr) {
 		oldID, _ := strconv.ParseInt(oldIDStr, 10, 64)
-		list, ok = queryRows(h, w, r.Context(), func(rows db.Rows) (map[string]any, error) {
-			code, err := scanBindCode(rows)
-			if err != nil {
-				return nil, err
-			}
-			return map[string]any{
-				"id": code.ID, "code": code.Code, "expireTime": tsOrNil(code.ExpireTime),
-				"used": code.Used, "usedTime": tsOrNil(code.UsedTime), "usedDeviceId": code.UsedDevID,
-			}, nil
-		}, `SELECT `+bindCodeCols+` FROM bind_code WHERE old_id=$1 ORDER BY id DESC LIMIT 20`, oldID)
-		if !ok {
+		codes, err := devicerepo.ListBindCodes(r.Context(), h.DB, oldID)
+		if internalError(w, err) {
 			return
+		}
+		for _, code := range codes {
+			list = append(list, map[string]any{
+				"id": code.ID, "code": code.Code, "expireTime": tsOrNil(code.ExpireTime),
+				"used": code.Used, "usedTime": tsOrNil(code.UsedTime),
+				"usedDeviceId": code.UsedDeviceID,
+			})
 		}
 	}
 	response.OK(w, map[string]any{"bindCodes": list})
@@ -243,11 +239,11 @@ func (h *Handler) deviceDeleteBindCode(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	ct, err := h.DB.Exec(r.Context(), `DELETE FROM bind_code WHERE id=$1 AND used=0`, id)
+	deleted, err := devicerepo.DeleteUnusedBindCode(r.Context(), h.DB, id)
 	if internalError(w, err) {
 		return
 	}
-	if ct.RowsAffected() == 1 {
+	if deleted {
 		response.OK(w, nil)
 		return
 	}
