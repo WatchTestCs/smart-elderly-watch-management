@@ -1,0 +1,45 @@
+name: PR108 one-time Go format and verification
+
+on:
+  push:
+    branches: [refactor/preview-ts-scopes-20261107]
+    paths: [.github/workflows/pr108-format-and-verify-once.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  format-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: refactor/preview-ts-scopes-20261107
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version: '1.26.10'
+          cache-dependency-path: 智慧养老手表管理系统/backend/go.sum
+      - name: Format changed domain packages and commit in existing PR
+        working-directory: 智慧养老手表管理系统/backend
+        run: |
+          set -euo pipefail
+          gofmt -w ./cmd ./internal ./migrations
+          git add cmd internal migrations
+          if ! git diff --cached --quiet; then
+            git config user.name github-actions
+            git config user.email github-actions@users.noreply.github.com
+            git commit -m 'style(go): format domain repository extractions'
+            git push origin HEAD:refs/heads/refactor/preview-ts-scopes-20261107
+          fi
+          git rev-parse HEAD
+          test -z "$(gofmt -l ./cmd ./internal ./migrations)"
+      - name: Compile and vet all backend packages
+        working-directory: 智慧养老手表管理系统/backend
+        run: |
+          go test -run '^$' ./...
+          go vet ./...
+      - name: Test affected domain packages
+        working-directory: 智慧养老手表管理系统/backend
+        run: |
+          go test ./internal/careworkflow ./internal/notify ./internal/vitalrepo ./internal/telemetryrepo ./internal/devicerepo ./internal/inviterepo
