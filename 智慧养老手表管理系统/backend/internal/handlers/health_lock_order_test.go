@@ -346,7 +346,7 @@ func TestBulkPreparationRevalidatesConcurrentDeviceChanges(t *testing.T) {
 			defer holder.Rollback(context.Background())
 			var args []any
 			if tc.name == "rotation" {
-				hash, err := secretHash("another-test-secret-123456789012")
+				hash, err := devicecredential.Hash("another-test-secret-123456789012")
 				if err != nil {
 					t.Fatal(err)
 				}
