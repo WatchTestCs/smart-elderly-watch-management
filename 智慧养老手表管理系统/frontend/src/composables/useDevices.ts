@@ -173,7 +173,7 @@ export function useDevices() {
   async function resolveAlertRow(row: DeviceRecord) {
     try {
       const { data } = await post('resolveAlert', {
-        deviceId: row.deviceId, kind: row.kind, recordId: row.recordId || ''
+        deviceId: row.deviceId, kind: row.kind, recordId: row.recordId ?? ''
       })
       accepted(data)
       ElMessage({ type: 'success', message: '已处理，红点已消除' })
@@ -186,6 +186,7 @@ export function useDevices() {
   async function openWorkbench() {
     const revision = ++workbenchRequest
     state.workbench.visible = true
+    state.workbench.list = []
     const pending: { device: DeviceRecord; kind: 'person' | 'rate' | 'pre' }[] = []
     for (const device of state.deviceList) {
       const { personCount, rateCount, preCount } = alertOf(device.deviceId)
