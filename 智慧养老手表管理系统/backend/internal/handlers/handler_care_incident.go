@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -99,10 +100,9 @@ func (h *Handler) careTransition(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer tx.Rollback(ctx)
-	var before string
-	var resolver *string
-	if err := tx.QueryRow(ctx, "SELECT state,resolved_by FROM care_incident WHERE id=$1 FOR UPDATE", id).Scan(&before, &resolver); err != nil {
-		if err == pgx.ErrNoRows {
+	before, resolver, err := careworkflow.LockedIncidentState(ctx, tx, id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
 			response.Fail(w, "事件不存在")
 			return
 		}
@@ -137,8 +137,7 @@ func (h *Handler) careTransition(w http.ResponseWriter, r *http.Request) {
 			write400(w, "复核结论须为 confirmed 或 false_alarm")
 			return
 		}
-		if _, err := tx.Exec(ctx, `INSERT INTO alert_review(entity,record_id,kind,verdict,reason,actor_id)
- SELECT 'care',id,kind,$2,$3,$4 FROM care_incident WHERE id=$1`, id, verdict, note, actor); err != nil {
+		if err := careworkflow.PersistReviewVerdict(ctx, tx, id, verdict, note, actor); err != nil {
 			response.Error500(w, ref())
 			return
 		}
