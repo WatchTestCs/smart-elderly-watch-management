@@ -102,7 +102,16 @@ import { downloadCsv } from '../utils/csv'
 import RecordCards from '@/components/RecordCards.vue'
 import FamilyForm from '@/components/records/FamilyForm.vue'
 
-type FamilyRow = Record<string, any>
+interface FamilyRow extends Record<string, unknown> {
+  familyId?: number | string
+  oldId?: number | string
+  name?: string
+  familyName?: string
+  familyRelation?: string
+  familySex?: string
+  familyPhone?: string
+  familyAddress?: string
+}
 const searchText = ref('')
 const mobileLayout = useCollectionLayout(900)
 const {
@@ -145,8 +154,9 @@ function addFamily() {
 }
 function resetCreateForm() { createFormRef.value?.resetFields() }
 function editFamily() {
-  const fields = ['familyId','familyName','familyRelation','familySex','familyPhone','familyAddress']
-  const body = Object.fromEntries(fields.map(key => [key, familyEditForm.value[key]]))
+  const { familyId, familyName, familyRelation, familySex, familyPhone, familyAddress } = familyEditForm.value
+  if (familyId == null) return
+  const body = { familyId, familyName, familyRelation, familySex, familyPhone, familyAddress }
   return writeRecord('api/v1/family/updateFamily', body, '家属信息已保存', async () => {
     editDialogVisible.value = false
     await loadFamilyAccounts(true)
@@ -170,6 +180,6 @@ function exportCurrentPage() {
     { key: 'familySex', label: '性别' },
     { key: 'familyPhone', label: '电话' },
     { key: 'familyAddress', label: '地址' }
-  ], familyList.value as Record<string, unknown>[])
+  ], familyList.value)
 }
 </script>
