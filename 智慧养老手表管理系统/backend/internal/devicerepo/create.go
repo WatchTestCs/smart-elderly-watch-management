@@ -13,13 +13,13 @@ var ErrResidentNotFound = errors.New("resident not found")
 var ErrDeviceInsertFailed = errors.New("device insert failed")
 
 type NewDevice struct {
-	Number      string
-	SecretHash  string
-	Alias       string
-	Model       string
-	ResidentID  *int64
-	At          time.Time
-	ProfileDay  time.Time
+	Number     string
+	SecretHash string
+	Alias      string
+	Model      string
+	ResidentID *int64
+	At         time.Time
+	ProfileDay time.Time
 }
 
 // Create registers a device and its optional resident/profile association atomically.

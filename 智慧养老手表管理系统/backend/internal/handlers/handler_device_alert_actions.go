@@ -250,4 +250,3 @@ func (h *Handler) alertResolutionReason(ctx context.Context, tx *dbstore.Transac
 	}
 	return before, nil
 }
-
