@@ -21,3 +21,21 @@ func TestCredentialRoundTrip(t *testing.T) {
 		t.Fatal("malformed stored hash accepted")
 	}
 }
+
+func TestCheckDeviceStatus(t *testing.T) {
+	clear := strings.Repeat("A", 32)
+	hash, err := Hash(clear)
+	if err != nil {
+		t.Fatal(err)
+	}
+	enabled, disabled := 1, 0
+	if Check(clear, hash, &enabled) != Valid || Check(clear, hash, nil) != Valid {
+		t.Fatal("enabled device rejected")
+	}
+	if Check(clear, hash, &disabled) != Disabled {
+		t.Fatal("disabled device accepted")
+	}
+	if Check(strings.Repeat("B", 32), hash, &disabled) != InvalidSecret {
+		t.Fatal("credential mismatch must precede disabled-state disclosure")
+	}
+}
