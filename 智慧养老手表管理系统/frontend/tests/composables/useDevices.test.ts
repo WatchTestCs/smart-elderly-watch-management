@@ -184,3 +184,40 @@ it('keeps healthy workbench alerts visible when another detail request fails', a
     vi.restoreAllMocks()
   }
 })
+
+it('clears previous workbench results while refreshing alert details', async () => {
+  const pendingDetails: Array<(value: unknown) => void> = []
+  vi.spyOn(axios, 'post').mockImplementation(url => {
+    if (url === '/api/v1/device/list') {
+      return Promise.resolve({ data: { devices: [{ deviceId: 1, deviceNo: 'watch-1' }], total: 1 } })
+    }
+    if (url === '/api/v1/device/alertCounts') {
+      return Promise.resolve({ data: { items: [{ deviceId: 1, personCount: 1, rateCount: 0, preCount: 0 }], total: 1 } })
+    }
+    if (url === '/api/v1/device/alertDetail') {
+      return new Promise(resolve => pendingDetails.push(resolve))
+    }
+    if (url === '/api/v1/inviteCode/oldPersonList') return Promise.resolve({ data: { oldPeople: [] } })
+    throw new Error(`unexpected request: ${url}`)
+  })
+  let state!: ReturnType<typeof useDevices>
+  const wrapper = mount(defineComponent({ setup() { state = useDevices(); return () => null } }))
+  try {
+    await flushPromises()
+    const first = state.openWorkbench()
+    await flushPromises()
+    pendingDetails[0]({ data: { hasAlert: 1 } })
+    await first
+    expect(state.workbench.value.list).toHaveLength(1)
+
+    const refresh = state.openWorkbench()
+    expect(state.workbench.value.list).toEqual([])
+    await flushPromises()
+    pendingDetails[1]({ data: { hasAlert: 1 } })
+    await refresh
+    expect(state.workbench.value.list).toHaveLength(1)
+  } finally {
+    wrapper.unmount()
+    vi.restoreAllMocks()
+  }
+})
