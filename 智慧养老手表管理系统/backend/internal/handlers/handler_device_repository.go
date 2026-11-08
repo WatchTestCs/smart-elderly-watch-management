@@ -14,11 +14,6 @@ import (
 	"suining-care/internal/response"
 )
 
-// deviceQueries accepts the database and transaction readers used by device and alert queries.
-type deviceQueries interface {
-	QueryRow(ctx context.Context, sql string, args ...any) dbstore.Row
-}
-
 func (h *Handler) readDeviceRecord(device *devicerepo.DeviceRecord, err error) (*devicerepo.DeviceRecord, error) {
 	if (errors.Is(err, pgx.ErrNoRows) || errors.Is(err, sql.ErrNoRows)) {
 		return nil, nil
@@ -34,7 +29,7 @@ func (h *Handler) readDeviceRecord(device *devicerepo.DeviceRecord, err error) (
 }
 
 // hwAuth maps the device workflow's authentication result to the HTTP protocol.
-func (h *Handler) hwAuth(ctx context.Context, q deviceQueries, deviceNo, secret, disabledMsg string) (*devicerepo.DeviceRecord, string, string, error) {
+func (h *Handler) hwAuth(ctx context.Context, q dbstore.RowQuerier, deviceNo, secret, disabledMsg string) (*devicerepo.DeviceRecord, string, string, error) {
 	device, failure, err := deviceworkflow.Authenticate(ctx, q, deviceNo, secret)
 	if err != nil {
 		return nil, "", "", err
