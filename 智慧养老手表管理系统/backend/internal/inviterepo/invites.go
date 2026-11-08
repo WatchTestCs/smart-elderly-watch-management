@@ -52,11 +52,13 @@ func LockCode(ctx context.Context, tx *db.Transaction, code string) (LockedCode,
 	return invitation, err
 }
 
-func PhoneRegistered(ctx context.Context, tx *db.Transaction, phone string) (bool, error) {
+func PhoneRegistered(ctx context.Context, tx *db.Transaction, phone, lookup string) (bool, error) {
 	var registered bool
 	err := tx.QueryRow(ctx,
-		`SELECT EXISTS(SELECT 1 FROM users WHERE user_phone=$1)
-		 OR EXISTS(SELECT 1 FROM family WHERE family_phone=$1)`, phone).Scan(&registered)
+		`SELECT EXISTS(SELECT 1 FROM users WHERE
+		    (user_phone_protected=false AND user_phone=$1) OR
+		    (user_phone_protected=true AND user_phone_lookup=$2))
+		    OR EXISTS(SELECT 1 FROM family WHERE family_phone=$1)`, phone, lookup).Scan(&registered)
 	return registered, err
 }
 
@@ -73,13 +75,13 @@ func LockResident(ctx context.Context, tx *db.Transaction, residentID int64) (Re
 	return bound, err
 }
 
-func LockPasswordlessFamily(ctx context.Context, tx *db.Transaction, familyID int64, phone string) (int64, error) {
+func LockPasswordlessFamily(ctx context.Context, tx *db.Transaction, familyID int64, phone, lookup string) (int64, error) {
 	var id int64
 	err := tx.QueryRow(ctx,
 		`SELECT family_id FROM family
 		 WHERE family_id=$1 AND family_phone=$2 AND family_password IS NULL
-		 AND NOT EXISTS(SELECT 1 FROM users WHERE user_phone=$2) FOR UPDATE`,
-		familyID, phone).Scan(&id)
+		 AND NOT EXISTS(SELECT 1 FROM users WHERE (user_phone_protected=false AND user_phone=$2) OR (user_phone_protected=true AND user_phone_lookup=$3)) FOR UPDATE`,
+		familyID, phone, lookup).Scan(&id)
 	return id, err
 }
 
