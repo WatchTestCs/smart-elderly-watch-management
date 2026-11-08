@@ -19,6 +19,7 @@
 | 层 | 入口 | 职责 |
 | --- | --- | --- |
 | 后端契约 | `src/api/generated-api.d.ts`、`contractClient.ts` | Go OpenAPI 生成的请求与响应类型；生产请求仍经 HTTP 安全中间件 |
+| 邀请与公告数据 | `src/api/invitations.ts`、`src/views/OperationsOverview.vue` | 邀请记录、可绑定长者与公告列表使用显式 DTO；分页总数在读取边界验证 |
 | 网络与会话 | `src/api/client.ts`、`src/auth.ts` | API 路径、Cookie、CSRF、统一响应校验及连接状态 |
 | 读取调度 | `src/composables/latestRead.ts`、`usePagedRecords.ts` | 取消过期读取，避免迟到响应覆盖当前列表 |
 | 设备领域数据 | `src/composables/deviceModels.ts` | 设备、告警、绑定码 DTO；独立组件实例的初始状态 |
