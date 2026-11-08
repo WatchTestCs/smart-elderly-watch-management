@@ -32,11 +32,11 @@
 
     <details class="upload-panel"><summary class="image-maintenance-summary">更多展示图片设置<span>公告附图请在公告编辑中添加</span></summary><div class="image-maintenance-body">
       <div class="upload-heading"><div><h2>公告图片</h2><p>维护独立的展示图片，JPG 格式，单张不超过8MB。</p></div></div>
-      <el-upload ref="galleryUpload" class="upload-demo" :disabled="gallerySaving" :on-change="galleryChanged" :on-error="galleryError" action="/api/v1/image/saveImage" :with-credentials="true" :headers="uploadHeaders" :on-preview="handlePreview" :on-remove="handleRemove" :on-success="handleAvatarSuccess" :before-upload="beforeAvatarUpload" multiple :limit="10" :file-list="fileList2" list-type="picture">
+      <el-upload ref="galleryUpload" class="upload-demo" :disabled="gallerySaving" :on-change="galleryChanged" :on-error="galleryError" action="/api/v1/image/saveImage" :with-credentials="true" :headers="uploadHeaders" :on-preview="handlePreview" :on-remove="handleRemove" :on-success="handleAvatarSuccess" :before-upload="beforeAvatarUpload" multiple :limit="10" :file-list="galleryFiles" list-type="picture">
         <el-button size="small" type="primary" :icon="UploadFilled">选择图片</el-button>
         <template #tip><div  class="el-upload__tip">最多上传 10 张图片。</div></template>
       </el-upload>
-      <div class="upload-footer"><el-button type="primary" :loading="gallerySaving" :disabled="!fileList2.length || fileList2.some(file => file.status !== 'success')" @click="saveGallery">提交图片</el-button></div>
+      <div class="upload-footer"><el-button type="primary" :loading="gallerySaving" :disabled="!galleryFiles.length || galleryFiles.some(file => file.status !== 'success')" @click="saveGallery">提交图片</el-button></div>
     </div></details>
   </div>
 </template>
@@ -61,13 +61,13 @@
 import { Plus, Search, UploadFilled } from '@element-plus/icons-vue'
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox, type UploadFile, type UploadFiles, type UploadInstance } from 'element-plus'
 import { usePagedRecords } from '@/composables/usePagedRecords'
 import { api, accepted, type Envelope } from '../api/client'
 import { apiErrorMessage } from '../api/httpContract'
 import { authState } from '../auth'
+import type { NoticeRecord } from '../domain/notices'
 
-type NoticeRow = Record<string, any>
 const router = useRouter()
 const uploadHeaders = computed(() => ({ [authState.csrfHeader]: authState.csrfToken }))
 const searchText = ref('')
@@ -75,7 +75,7 @@ const {
   records: notices, isLoading, loadError, total,
   pageSize, currentPage, load: loadNotices,
   handleSizeChange, changePage
-} = usePagedRecords<NoticeRow, { title: string }>({
+} = usePagedRecords<NoticeRecord, { title: string }>({
   path: 'api/v1/notices/list',
   responseKey: 'texts',
   buildQuery: () => ({ title: searchText.value }),
@@ -85,42 +85,42 @@ const deletingId = ref<number | string | null>(null)
 const gallerySaving = ref(false)
 const previewVisible = ref(false)
 const previewUrl = ref('')
-const fileList2 = ref<Record<string, any>[]>([])
-const galleryUpload = ref<any>(null)
-function handleEdit(_index: number, row: NoticeRow) {
+const galleryFiles = ref<UploadFile[]>([])
+const galleryUpload = ref<UploadInstance | null>(null)
+function handleEdit(_index: number, row: NoticeRecord) {
   void router.push({ path: '/operations/notices/edit', query: { textId: row.textId } })
 }
 async function saveGallery() {
-  if (gallerySaving.value || !fileList2.value.length ||
-      fileList2.value.some(file => file.status !== 'success')) return
+  if (gallerySaving.value || !galleryFiles.value.length ||
+      galleryFiles.value.some(file => file.status !== 'success')) return
   gallerySaving.value = true
   try {
     const { data } = await api.post<Envelope>('api/v1/gallery/replace', {
-      fileListName: fileList2.value.map(file => file.name)
+      fileListName: galleryFiles.value.map(file => file.name)
     })
     accepted(data)
     ElMessage.success('展示图片已保存')
     galleryUpload.value?.clearFiles()
-    fileList2.value = []
+    galleryFiles.value = []
   } catch (error) {
     ElMessage.error(apiErrorMessage(error, '展示图片未能保存，选择的图片已保留，请重试'))
   } finally { gallerySaving.value = false }
 }
-function galleryChanged(_file: any, files: any[]) { fileList2.value = files }
-function handleRemove(_file: any, files: any[]) { fileList2.value = files }
-function handlePreview(file: any) {
+function galleryChanged(_file: UploadFile, files: UploadFiles) { galleryFiles.value = files }
+function handleRemove(_file: UploadFile, files: UploadFiles) { galleryFiles.value = files }
+function handlePreview(file: UploadFile) {
   previewUrl.value = file.url
   previewVisible.value = true
 }
-function handleAvatarSuccess(res: any, file: any, files: any[]) {
+function handleAvatarSuccess(res: { returnCode?: string; filename?: string } | null, file: UploadFile, files: UploadFiles) {
   if (!res || res.returnCode !== '1111' || !res.filename) {
     file.status = 'fail'
     ElMessage.error(apiErrorMessage({ cause: res }, '图片未能上传，请删除后重试'))
   } else file.name = res.filename
-  fileList2.value = files
+  galleryFiles.value = files
 }
-function galleryError(error: unknown, _file: any, files: any[]) {
-  fileList2.value = files
+function galleryError(error: Error, _file: UploadFile, files: UploadFiles) {
+  galleryFiles.value = files
   ElMessage.error(apiErrorMessage(error, '图片暂时无法上传，请重试'))
 }
 function beforeAvatarUpload(file: File): boolean {
@@ -134,10 +134,10 @@ function beforeAvatarUpload(file: File): boolean {
   }
   return true
 }
-function getDetail(row: NoticeRow) {
+function getDetail(row: NoticeRecord) {
   void router.push({ path: '/operations/notices/detail', query: { textId: row.textId } })
 }
-async function handleDelete(_index: number, row: NoticeRow) {
+async function handleDelete(_index: number, row: NoticeRecord) {
   if (deletingId.value !== null) return
   deletingId.value = row.textId
   try {
