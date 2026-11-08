@@ -11,10 +11,6 @@ import (
 	"suining-care/internal/db"
 )
 
-type deviceAlertQuerier interface {
-	QueryRow(context.Context, string, ...any) db.Row
-}
-
 type PendingDeviceAlert struct {
 	ID           int64
 	HR           *int
@@ -31,7 +27,7 @@ type PendingDeviceAlert struct {
 // FindPendingDeviceAlert reads the newest unresolved measurement for a device.
 // It does not format text for HTTP, keeping the persisted measurement separate
 // from the response and operator-facing explanation.
-func FindPendingDeviceAlert(ctx context.Context, store deviceAlertQuerier, deviceID int64, kind string, recordID *int64) (*PendingDeviceAlert, error) {
+func FindPendingDeviceAlert(ctx context.Context, store db.RowQuerier, deviceID int64, kind string, recordID *int64) (*PendingDeviceAlert, error) {
 	pending := pendingPressure
 	if kind == "rate" {
 		pending = pendingRate
