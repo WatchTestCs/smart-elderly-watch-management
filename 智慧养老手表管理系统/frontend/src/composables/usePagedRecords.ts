@@ -22,6 +22,10 @@ export function usePagedRecords<TRecord, TQuery extends Record<string, unknown> 
   const pageSize = ref(options.initialPageSize ?? 10)
   const currentPage = ref(1)
 
+  function pageQuery(): PageQuery {
+    return { ...(options.buildQuery?.() ?? {}), page: currentPage.value, pageSize: pageSize.value } as PageQuery
+  }
+
   const reader = createLatestRead(
     (query: PageQuery, signal: AbortSignal) =>
       api.post<Record<string, unknown>>(options.path, query, { signal }),
@@ -31,11 +35,11 @@ export function usePagedRecords<TRecord, TQuery extends Record<string, unknown> 
       if (!Array.isArray(list) || typeof count !== 'number' || !Number.isSafeInteger(count) || count < 0) {
         throw new Error('invalid paged response')
       }
-      // Deleting the last row on a page requires a fresh read of the new last page.
+      // A deletion can invalidate the current page, including when the collection becomes empty.
       const lastPage = Math.max(1, Math.ceil(count / pageSize.value))
-      if (!list.length && count > 0 && lastPage < currentPage.value) {
+      if (currentPage.value > lastPage) {
         currentPage.value = lastPage
-        void reader.run({ ...(options.buildQuery?.() ?? {}), page: lastPage, pageSize: pageSize.value } as PageQuery)
+        void reader.run(pageQuery())
         return
       }
       records.value = list as TRecord[]
@@ -53,12 +57,7 @@ export function usePagedRecords<TRecord, TQuery extends Record<string, unknown> 
   function load(keepPage = false): Promise<void> {
     if (keepPage !== true) currentPage.value = 1
     loadError.value = ''
-    const query = {
-      ...(options.buildQuery?.() ?? {}),
-      page: currentPage.value,
-      pageSize: pageSize.value
-    } as PageQuery
-    return reader.run(query)
+    return reader.run(pageQuery())
   }
 
   function handleSizeChange(size: number): Promise<void> {
