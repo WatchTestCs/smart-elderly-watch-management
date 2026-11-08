@@ -17,6 +17,7 @@ import (
 
 	"suining-care/internal/auth"
 	"suining-care/internal/config"
+	"suining-care/internal/devicecredential"
 	"suining-care/internal/csrf"
 	"suining-care/internal/db"
 
@@ -200,7 +201,7 @@ const testSecret = "test-device-secret-1234567890"
 
 func seedDevice(t *testing.T, pool *dbstore.Database) {
 	t.Helper()
-	hash, err := secretHash(testSecret)
+	hash, err := devicecredential.Hash(testSecret)
 	if err != nil {
 		t.Fatal(err)
 	}
