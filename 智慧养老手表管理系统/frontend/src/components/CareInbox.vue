@@ -56,7 +56,6 @@
 import { api as requestClient, type Envelope } from '../api/client'
 import { apiErrorMessage } from '../api/httpContract'
 import { ref, shallowRef, watch, onMounted, onBeforeUnmount } from 'vue'
-import axios from 'axios'
 import { createLatestRead } from '../composables/latestRead'
 import CareOperationsPanel from './CareOperationsPanel.vue'
 import store from '../store'
@@ -127,7 +126,7 @@ const nextStep = (task: CareTask) => ({received:'值班人员立即接单并核�
 
 let timer: ReturnType<typeof setInterval> | undefined
 const reads = createLatestRead(
-  (query: { page: number; pageSize: number; state: string }, signal: AbortSignal) => axios.post<CareListResponse>('api/v1/care/incidents', query, {withCredentials:true, signal}),
+  (query: { page: number; pageSize: number; state: string }, signal: AbortSignal) => requestClient.post<CareListResponse>('api/v1/care/incidents', query, { signal }),
   ({data}, query) => {
     if (!Array.isArray(data.items) || !Number.isInteger(data.total) || data.total < 0 || !['supervisor','caregiver','auditor'].includes(data.duty) || !Number.isInteger(data.actorId)) throw new Error('invalid care response')
     const lastPage = Math.max(1, Math.ceil(data.total / pageSize))
@@ -150,7 +149,7 @@ function load () {
 function changePage (value: number) { page.value = value; load() }
 function changeScope () { page.value = 1; load() }
 const historyReads = createLatestRead(
-  (query: { id: string; page: number; pageSize: number }, signal: AbortSignal) => axios.post<{ events: CareEvent[]; total: number }>('api/v1/care/events', query, {withCredentials:true, signal}),
+  (query: { id: string; page: number; pageSize: number }, signal: AbortSignal) => requestClient.post<{ events: CareEvent[]; total: number }>('api/v1/care/events', query, { signal }),
   ({data}) => {
     if (!Array.isArray(data.events) || !Number.isInteger(data.total)) throw new Error('invalid history')
     history.value.events = data.events
