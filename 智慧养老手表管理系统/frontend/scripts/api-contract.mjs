@@ -1,9 +1,9 @@
 import { execFileSync } from 'node:child_process'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
+import { renderOpenApiTypes } from '../tools/openapi/index.mjs'
 
 export const generatedPath = fileURLToPath(new URL('../src/api/generated-api.d.ts', import.meta.url))
-const healthPath = '/api/v1/health/latest'
 
 export function exportDocument() {
   return JSON.parse(execFileSync('go', ['run', './cmd/openapi'], {
@@ -12,67 +12,66 @@ export function exportDocument() {
   }))
 }
 
-function schemaType(schema, document) {
-  if (!schema || typeof schema !== 'object') return 'unknown'
-  if (schema.$ref) {
-    const path = schema.$ref.replace(/^#\//, '').split('/')
-    let value = document
-    for (const part of path) value = value?.[part.replace(/~1/g, '/').replace(/~0/g, '~')]
-    if (!value) throw new Error('Unresolved OpenAPI reference: ' + schema.$ref)
-    return schemaType(value, document)
+function trimGenerated(source) {
+  const header = 'export interface paths {\n';
+  const pathsStart = source.indexOf(header);
+  const firstPath = source.indexOf('    "/', pathsStart + header.length);
+  const pathsEnd = source.indexOf('\n}\nexport type webhooks', firstPath);
+  if (pathsStart < 0 || firstPath < 0 || pathsEnd < 0) throw new Error('Unexpected generated OpenAPI paths structure');
+  const routeStart = source.indexOf('    "/api/v1/health/latest": {', firstPath);
+  const nextPath = routeStart < 0 ? -1 : source.indexOf('\n    "/', routeStart + 1);
+  const routeEnd = nextPath >= 0 && nextPath < pathsEnd ? nextPath : pathsEnd;
+  const route = routeStart >= 0 && routeStart < pathsEnd ? source.slice(routeStart, routeEnd) : '';
+  const kept = source.slice(0, firstPath) + route + source.slice(pathsEnd);
+  const componentStart = kept.indexOf('export interface components {\n');
+  const componentEnd = kept.indexOf('\n}\nexport type $defs', componentStart);
+  if (componentStart < 0 || componentEnd < 0) throw new Error('Unexpected generated OpenAPI components structure');
+  const section = kept.slice(componentStart, componentEnd);
+  const groups = ['schemas', 'responses', 'parameters', 'requestBodies', 'headers', 'pathItems'];
+  const members = new Map();
+  const retained = new Map(groups.map(group => [group, new Set()]));
+  for (const group of groups) {
+    const marker = `    ${group}: {\n`;
+    const groupStart = section.indexOf(marker);
+    if (groupStart < 0) { members.set(group, new Map()); continue; }
+    const groupEnd = section.indexOf('\n    };', groupStart + marker.length);
+    if (groupEnd < 0) throw new Error(`Cannot parse ${group} components`);
+    const groupBody = section.slice(groupStart + marker.length, groupEnd);
+    const keys = [...groupBody.matchAll(/^        ([A-Za-z_$][\w$]*):/gm)];
+    const found = new Map();
+    keys.forEach((m, i) => found.set(m[1], groupBody.slice(m.index, i + 1 < keys.length ? keys[i + 1].index : groupBody.length).trimEnd() + '\n'));
+    members.set(group, found);
   }
-  if (Object.hasOwn(schema, 'const')) return JSON.stringify(schema.const)
-  if (Array.isArray(schema.enum)) return schema.enum.map(x => JSON.stringify(x)).join(' | ') || 'never'
-  if (schema.anyOf || schema.oneOf) {
-    return (schema.anyOf || schema.oneOf).map(x => schemaType(x, document)).join(' | ')
-  }
-  if (Array.isArray(schema.type)) {
-    return schema.type.map(t => schemaType({ ...schema, type: t }, document)).join(' | ')
-  }
-  switch (schema.type) {
-    case 'string': return 'string'
-    case 'integer':
-    case 'number': return 'number'
-    case 'boolean': return 'boolean'
-    case 'null': return 'null'
-    case 'array': return '(' + schemaType(schema.items, document) + ')[]'
-    case 'object':
-    case undefined: {
-      const entries = Object.entries(schema.properties || {})
-      const required = new Set(schema.required || [])
-      const fields = entries.map(([name, value]) =>
-        JSON.stringify(name) + (required.has(name) ? ': ' : '?: ') + schemaType(value, document) + ';')
-      if (schema.additionalProperties === true) fields.push('[key: string]: unknown;')
-      else if (schema.additionalProperties && typeof schema.additionalProperties === 'object') {
-        fields.push('[key: string]: ' + schemaType(schema.additionalProperties, document) + ';')
-      }
-      if (!fields.length) return schema.additionalProperties === false ? 'Record<string, never>' : 'Record<string, unknown>'
-      return '{ ' + fields.join(' ') + ' }'
+  const queue = [route];
+  while (queue.length) {
+    const block = queue.pop();
+    for (const ref of block.matchAll(/components\["([^"]+)"\]\["([^"]+)"\]/g)) {
+      const group = ref[1], name = ref[2];
+      const selected = retained.get(group);
+      const value = members.get(group)?.get(name);
+      if (!selected || value === undefined) throw new Error(`Missing referenced API component: ${group}.${name}`);
+      if (!selected.has(name)) { selected.add(name); queue.push(value); }
     }
-    default: throw new Error('Unsupported OpenAPI schema type: ' + schema.type)
   }
+  let reducedComponents = 'export interface components {\n';
+  for (const group of groups) {
+    const names = retained.get(group);
+    if (names.size === 0) { reducedComponents += `    ${group}: never;\n`; continue; }
+    reducedComponents += `    ${group}: {\n`;
+    for (const [name, value] of members.get(group)) if (names.has(name)) reducedComponents += value;
+    reducedComponents += '    };\n';
+  }
+  return kept.slice(0, componentStart) + reducedComponents + kept.slice(componentEnd);
 }
 
-export function generateTypes(document) {
-  const op = document.paths?.[healthPath]?.post
-  if (!op) return '// Generated from the native Go OpenAPI. Do not edit.\nexport interface paths {}\n'
-  const request = op.requestBody?.content?.['application/json']?.schema
-  const reply = op.responses?.['200']?.content?.['application/json']?.schema
-  if (!request || !reply) throw new Error('Missing native Go health contract schema')
-  return '// Generated from the native Go OpenAPI. Do not edit.\n'
-    + 'export interface paths {\n'
-    + '  ' + JSON.stringify(healthPath) + ': {\n'
-    + '    post: {\n'
-    + '      requestBody: { content: { "application/json": ' + schemaType(request, document) + ' } };\n'
-    + '      responses: { 200: { content: { "application/json": ' + schemaType(reply, document) + ' } } };\n'
-    + '    };\n'
-    + '  };\n'
-    + '}\n'
+export async function generateTypes(document) {
+  const source = await renderOpenApiTypes(document)
+  return '// Generated from the published Go OpenAPI by npm run api:generate. Do not edit.\n' + trimGenerated(source)
 }
 
 export async function generate(check) {
   const document = exportDocument()
-  const text = generateTypes(document)
+  const text = await generateTypes(document)
   if (check) {
     if (readFileSync(generatedPath, 'utf8') !== text) {
       throw new Error('Generated API types differ from the published Go contract; run npm run api:generate')
