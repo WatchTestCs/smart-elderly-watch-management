@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"suining-care/internal/careworkflow"
+	"suining-care/internal/deviceworkflow"
 	"suining-care/internal/response"
 )
 
@@ -84,16 +85,21 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 		// recheck this snapshot's epoch under the row lock before writing.
 		bindingVersion = d.HealthEpoch
 	}
-	locked, lockedCode, lockedMsg, lockErr := h.lockSOSDevice(ctx, tx, deviceNo, secret, bindingVersion)
+	locked, failure, lockErr := deviceworkflow.LockBoundDevice(ctx, tx, deviceNo, secret, bindingVersion)
 	if rollbackOnError(w, rollback, lockErr) {
 		return
 	}
 	if locked == nil {
 		rollback()
-		if lockedCode == "409" {
-			conflict409(w, lockedMsg)
-		} else {
-			hwFail(w, lockedCode, lockedMsg)
+		switch failure {
+		case deviceworkflow.BindingChanged:
+			conflict409(w, "绑定已变化，请重新登录；旧绑定求助不能归入新老人")
+		case deviceworkflow.DeviceUnbound:
+			hwFail(w, "DEVICE_NOT_BOUND", "设备还未绑定老人")
+		case deviceworkflow.DeviceDisabled:
+			hwFail(w, "DEVICE_DISABLED", "设备已停用")
+		default:
+			hwFail(w, "DEVICE_AUTH_FAILED", "设备号或密钥不正确")
 		}
 		return
 	}
