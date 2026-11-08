@@ -55,7 +55,7 @@
 
 <script setup lang="ts">
 import { Check, Refresh } from '@element-plus/icons-vue'
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, shallowRef } from 'vue'
 import { authState } from '../auth'
 import { useCollectionLayout } from '@/composables/useCollectionLayout'
 import { useRecordCharts } from '@/composables/useRecordCharts'
@@ -77,7 +77,7 @@ interface ActivityRecord {
   sleepAlertState?: string | number | null
   createTime?: string
 }
-const stepList = ref<ActivityRecord[]>([])
+const stepList = shallowRef<ActivityRecord[]>([])
 const isLoading = ref(false)
 const loadError = ref('')
 const reads = createLatestRead(
