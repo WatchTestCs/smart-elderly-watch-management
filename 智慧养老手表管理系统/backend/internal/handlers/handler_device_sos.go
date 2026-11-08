@@ -6,6 +6,7 @@ import (
 	"regexp"
 
 	"suining-care/internal/careworkflow"
+	"suining-care/internal/devicerepo"
 	dbstore "suining-care/internal/db"
 	"suining-care/internal/notify"
 	"suining-care/internal/response"
@@ -150,10 +151,10 @@ func (h *Handler) lockSOSDevice(ctx context.Context, tx *dbstore.Transaction, de
 	// Match binding and unbinding's elder-then-device lock order. Recheck the
 	// device under its row lock before writing or acknowledging a retry.
 	expectedOwner := *d.OldID
-	if _, err := tx.Exec(ctx, `SELECT old_id FROM oldperson WHERE old_id=$1 FOR UPDATE`, expectedOwner); err != nil {
+	if err := devicerepo.LockResident(ctx, tx, expectedOwner); err != nil {
 		return nil, "", "", err
 	}
-	locked, err := scanDeviceRecord(tx.QueryRow(ctx, `SELECT `+deviceRecordColumns+` FROM device WHERE device_id=$1 FOR UPDATE`, d.ID))
+	locked, err := scanDeviceRecord(devicerepo.LockedDeviceRow(ctx, tx, d.ID))
 	if err != nil {
 		return nil, "", "", err
 	}
