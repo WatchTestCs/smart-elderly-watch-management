@@ -70,7 +70,7 @@ func (h *Handler) deviceAlertDetail(w http.ResponseWriter, r *http.Request) {
 		kind = "person"
 	}
 	ctx := r.Context()
-	d, err := h.findDeviceByID(ctx, h.DB, deviceID)
+	d, err := h.readDeviceRecord(devicerepo.FindDeviceByID(ctx, h.DB, deviceID))
 	if internalError(w, err) {
 		return
 	}
