@@ -3,6 +3,7 @@ import axios, { type AxiosError } from 'axios'
 import { ElMessage } from 'element-plus'
 import { apiErrorMessage, assertApiResponse, isApplicationAPI } from './api/httpContract'
 import store from './store'
+import { isRestrictedAdmin } from './domain/permissions'
 
 export interface SessionAccount {
   role: 'ADMIN' | 'FAMILY'
@@ -118,7 +119,7 @@ export function installHttpSecurity (router: { currentRoute: { value: { path: st
     if (error.response?.status === 403 && error.response.data?.code === 'ACCESS_DENIED' && authState.account?.role === 'ADMIN') {
       // Refresh changed permissions without replaying the rejected write.
       loadSession(true).then(account => {
-        if (account?.role === 'ADMIN' && ['caregiver', 'auditor'].includes(account.duty || '') && !['/operations/overview', '/operations'].includes(router.currentRoute.value.path)) {
+        if (isRestrictedAdmin(account) && !['/operations/overview', '/operations'].includes(router.currentRoute.value.path)) {
           router.replace?.('/operations/overview')
         }
       }).catch(() => {})
