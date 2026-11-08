@@ -3,6 +3,9 @@ package guardianrepo
 
 import (
 	"context"
+	"errors"
+
+	"github.com/jackc/pgx/v5"
 
 	"suining-care/internal/db"
 )
@@ -69,4 +72,39 @@ func Update(ctx context.Context, store *db.Database, id int64, fields Fields) (i
 		return 0, err
 	}
 	return result.RowsAffected(), nil
+}
+
+var ErrGuardianNotFound = errors.New("guardian not found")
+var ErrGuardianAssigned = errors.New("guardian has assigned residents")
+
+// Delete locks the guardian before checking resident assignments and removing it.
+func Delete(ctx context.Context, store *db.Database, id int64) error {
+	tx, err := store.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	var found int64
+	if err := tx.QueryRow(ctx, "SELECT customer_id FROM customer WHERE customer_id=$1 FOR UPDATE", id).Scan(&found); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrGuardianNotFound
+		}
+		return err
+	}
+	var assigned bool
+	if err := tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM oldperson WHERE customer_id=$1)", id).Scan(&assigned); err != nil {
+		return err
+	}
+	if assigned {
+		return ErrGuardianAssigned
+	}
+	result, err := tx.Exec(ctx, "DELETE FROM customer WHERE customer_id=$1", id)
+	if err != nil {
+		return err
+	}
+	if result.RowsAffected() != 1 {
+		return ErrGuardianNotFound
+	}
+	return tx.Commit(ctx)
 }
