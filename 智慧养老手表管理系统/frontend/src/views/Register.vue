@@ -74,11 +74,11 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { View } from '@element-plus/icons-vue'
 import { onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, type FormInstance, type FormItemRule } from 'element-plus'
 import { apiErrorMessage } from '../api/httpContract'
 import { invitations } from '../api/invitations'
 
@@ -98,18 +98,18 @@ const registerForm = reactive({
   code: '', familyName: '', familyRelation: '', familySex: '男',
   familyPhone: '', familyPassword: '', confirmPassword: '', familyAddress: ''
 })
-const registerFormRef = ref(null)
-function checkPhone(_rule, value, callback) {
+const registerFormRef = ref<FormInstance | null>(null)
+const checkPhone: NonNullable<FormItemRule['validator']> = (_rule, value, callback) => {
   if (!value) return callback(new Error('手机号不能为空'))
-  if (!/^1\d{10}$/.test(value)) return callback(new Error('手机号格式不正确'))
+  if (!/^1\d{10}$/.test(String(value))) return callback(new Error('手机号格式不正确'))
   callback()
 }
-function checkConfirm(_rule, value, callback) {
+const checkConfirm: NonNullable<FormItemRule['validator']> = (_rule, value, callback) => {
   if (!value) return callback(new Error('请再次输入密码'))
   if (value !== registerForm.familyPassword) return callback(new Error('两次输入的密码不一致'))
   callback()
 }
-function checkPasswordComplexity(_rule, value, callback) {
+const checkPasswordComplexity: NonNullable<FormItemRule['validator']> = (_rule, value, callback) => {
   if (value && (!/[a-zA-Z]/.test(value) || !/\d/.test(value))) {
     return callback(new Error('密码必须同时包含字母和数字'))
   }
