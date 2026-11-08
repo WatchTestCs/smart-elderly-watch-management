@@ -10,9 +10,9 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/jackc/pgx/v5/pgtype"
 
 	"suining-care/internal/auth"
+	"suining-care/internal/authrepo"
 	"suining-care/internal/csrf"
 	"suining-care/internal/response"
 	"suining-care/internal/session"
@@ -25,11 +25,6 @@ func (h *Handler) routeAuth(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/v1/setup", h.setup)
 	mux.HandleFunc("POST /api/v1/desktop/exit", h.desktopExit)
 }
-
-// timingDummyHash 是一条与本哈希同 cost（12）的无效 bcrypt 记录：手机号在
-// users/family 两表都不存在时也执行一次口令比较，使"账号是否存在"无法通过
-// 响应时间区分。它不是任何账号的凭据。
-const timingDummyHash = "$2a$12$S1k/y1BsWtNAy/eeN.zaleT.hNjDpyRQ/1S7MCXu5Y8GN61EoKbMK"
 
 // MountDesktopExit allows closing the desktop even before the database is ready.
 func (h *Handler) MountDesktopExit(mux *http.ServeMux) {
@@ -85,14 +80,6 @@ func (h *Handler) sessionInfo(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// Try the administrator account first when both roles share a phone number.
-var loginAccounts = [...]struct{ role, query string }{
-	{auth.RoleAdmin, `SELECT user_id, user_name, user_phone, password, NULL FROM users WHERE user_phone=$1`},
-	{auth.RoleFamily, `SELECT f.family_id, f.family_name, f.family_phone, f.family_password, o.old_id
-  FROM family f LEFT JOIN oldperson o ON o.family_id=f.family_id
-  WHERE f.family_phone=$1 ORDER BY o.old_id LIMIT 1`},
-}
-
 // login 处理 POST /api/v1/auth/login：公开；先查 users（管理员），再查 family（家属）。
 func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
@@ -109,35 +96,17 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 	if !h.loginAllowed(w, r, phone) {
 		return
 	}
-	compared := false
-	for _, account := range loginAccounts {
-		var id int64
-		var name, storedPhone, hash pgtype.Text
-		var oldID pgtype.Int8
-		err := h.DB.QueryRow(r.Context(), account.query, phone).Scan(&id, &name, &storedPhone, &hash, &oldID)
-		if isNotFound(err) {
-			continue
-		}
-		if internalError(w, err) {
-			return
-		}
-		compared = true
-		if !auth.Matches(password, hash.String) {
-			continue
-		}
-		if account.role == auth.RoleFamily && !oldID.Valid {
-			response.JSON(w, http.StatusForbidden, map[string]any{"code": "ACCOUNT_UNLINKED", "message": "该家属账号尚未关联老人，请联系管理员"})
-			return
-		}
-		h.finishAccountLogin(w, r, m, session.Principal{
-			Role: account.role, ID: id, Phone: storedPhone.String, OldID: oldID.Int64, DisplayName: name.String,
-		}, phone)
+	match, err := authrepo.Authenticate(r.Context(), h.DB, phone, password)
+	if internalError(w, err) {
 		return
 	}
-
-	if !compared {
-		// 两次查询都未命中：补一次等价 bcrypt 比较，消除账号枚举计时侧信道。
-		_ = auth.Matches(password, timingDummyHash)
+	if match.Unlinked {
+		response.JSON(w, http.StatusForbidden, map[string]any{"code": "ACCOUNT_UNLINKED", "message": "该家属账号尚未关联老人，请联系管理员"})
+		return
+	}
+	if match.Authenticated {
+		h.finishAccountLogin(w, r, m, match.Principal, phone)
+		return
 	}
 	if internalError(w, h.loginAudit(r, phone, "", 0, "invalid_credentials")) {
 		return
