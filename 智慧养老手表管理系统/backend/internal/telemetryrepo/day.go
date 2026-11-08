@@ -31,7 +31,7 @@ func watchDayUpsertSQL(mysql bool) string {
 }
 
 // PersistDay updates a bound device's daily sample inside the caller's transaction.
-func PersistDay(ctx context.Context, tx *dbstore.Transaction, deviceID, oldID, healthEpoch int64, day, beTime any, step, sleep, sleepState *int) error {
+func PersistDay(ctx context.Context, tx *dbstore.Transaction, deviceID, oldID, healthEpoch int64, day, beTime any, step, sleep *int, sleepState *string) error {
 	if step != nil || sleep != nil || sleepState != nil {
 		var rowID, epoch int64
 		var owner *int64
