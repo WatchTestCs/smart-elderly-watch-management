@@ -109,7 +109,7 @@ async function saveGallery() {
 function galleryChanged(_file: UploadFile, files: UploadFiles) { galleryFiles.value = files }
 function handleRemove(_file: UploadFile, files: UploadFiles) { galleryFiles.value = files }
 function handlePreview(file: UploadFile) {
-  previewUrl.value = file.url
+  previewUrl.value = file.url ?? ''
   previewVisible.value = true
 }
 function handleAvatarSuccess(res: { returnCode?: string; filename?: string } | null, file: UploadFile, files: UploadFiles) {
