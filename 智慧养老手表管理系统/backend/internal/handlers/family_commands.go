@@ -6,6 +6,7 @@ import (
 	"suining-care/internal/auth"
 	"suining-care/internal/db"
 	"suining-care/internal/response"
+	"suining-care/internal/userphone"
 )
 
 // POST /api/v1/family/add —— 管理员新增家属并绑定老人（事务，ADMIN；不写密码）。
@@ -33,12 +34,17 @@ func (h *Handler) familyAdd(w http.ResponseWriter, r *http.Request) {
 	if internalError(w, err) {
 		return
 	}
+	lookup, err := userphone.SearchIndex(ctx, h.DB, h.Box, phone)
+	if internalError(w, err) {
+		_ = tx.Rollback(ctx)
+		return
+	}
 	// 手机号是家属账号与多处查询的定位键，拒绝重复创建，避免后续按手机号
 	// 的 UPDATE/查询命中多行产生数据歧义。
 	var dup bool
 	if err := tx.QueryRow(ctx,
-		`SELECT EXISTS(SELECT 1 FROM users WHERE user_phone=$1)
-		      OR EXISTS(SELECT 1 FROM family WHERE family_phone=$1)`, phone).Scan(&dup); err != nil {
+		`SELECT EXISTS(SELECT 1 FROM users WHERE (user_phone_protected=false AND user_phone=$1) OR (user_phone_protected=true AND user_phone_lookup=$2))
+		      OR EXISTS(SELECT 1 FROM family WHERE family_phone=$1)`, phone, lookup).Scan(&dup); err != nil {
 		_ = tx.Rollback(ctx)
 		response.Error500(w, ref())
 		return
@@ -118,10 +124,14 @@ func (h *Handler) familyUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := r.Context()
+	lookup, err := userphone.SearchIndex(ctx, h.DB, h.Box, phone)
+	if internalError(w, err) {
+		return
+	}
 	var dup bool
 	if err := h.DB.QueryRow(ctx,
-		`SELECT EXISTS(SELECT 1 FROM users WHERE user_phone=$1)
-		 OR EXISTS(SELECT 1 FROM family WHERE family_phone=$1 AND family_id<>$2)`, phone, id).Scan(&dup); err != nil {
+		`SELECT EXISTS(SELECT 1 FROM users WHERE (user_phone_protected=false AND user_phone=$1) OR (user_phone_protected=true AND user_phone_lookup=$3))
+		 OR EXISTS(SELECT 1 FROM family WHERE family_phone=$1 AND family_id<>$2)`, phone, id, lookup).Scan(&dup); err != nil {
 		response.Error500(w, ref())
 		return
 	}
