@@ -418,7 +418,7 @@ func expectedMigrations(pool *db.Database) int {
 	if pool.IsMySQL() {
 		return 21
 	}
-	return 19
+	return 20
 }
 
 func lockWaitQuery(pool *dbstore.Database, deleting bool) string {
