@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
 	"os"
@@ -132,35 +131,14 @@ func (h *Handler) healthChanges(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	rows, err := h.DB.Query(r.Context(), `SELECT revision,payload FROM health_change WHERE old_id=$1 AND revision>$2 ORDER BY revision LIMIT $3`, oldID, req.After, req.Limit+1)
+	changes, err := health.ListChanges(r.Context(), h.DB, oldID, req.After, req.Limit)
 	if internalError(w, err) {
 		return
 	}
-	defer rows.Close()
-	items := []json.RawMessage{}
-	cursor := req.After
-	hasMore := false
-	for rows.Next() {
-		var rev int64
-		var b []byte
-		if err = rows.Scan(&rev, &b); internalError(w, err) {
-			return
-		}
-		if rev < 0 || rev > health.MaxRevision {
-			response.Error500(w, ref())
-			return
-		}
-		if len(items) == req.Limit {
-			hasMore = true
-			break
-		}
-		items = append(items, json.RawMessage(b))
-		cursor = rev
-	}
-	if !rowsOK(w, rows) {
-		return
-	}
-	response.OK(w, map[string]any{"changes": items, "nextCursor": cursor, "hasMore": hasMore, "oldId": oldID})
+	response.OK(w, map[string]any{
+		"changes": changes.Items, "nextCursor": changes.NextCursor,
+		"hasMore": changes.HasMore, "oldId": oldID,
+	})
 }
 
 type healthBatchRequest struct {
