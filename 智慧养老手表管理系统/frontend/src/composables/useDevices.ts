@@ -5,11 +5,12 @@ import { accepted, api, type Envelope } from '../api/client'
 import { apiErrorMessage } from '../api/httpContract'
 import { copyText } from '../utils/clipboard'
 import { createDeviceState, emptyDeviceAlert } from './deviceModels'
+import { useDeviceBindings } from './useDeviceBindings'
 export type { DeviceRecord } from './deviceModels'
 import type {
   DeviceId, DeviceRecord, ResidentRecord, DeviceAlertCounts, AlertCountsResponse,
-  DeviceListResponse, AlertDetailResponse, CreatedDeviceResponse, BindCodeListResponse,
-  NewBindCodeResponse, DeviceMutationResponse, DeviceState
+  DeviceListResponse, AlertDetailResponse, CreatedDeviceResponse,
+  DeviceMutationResponse, DeviceState
 } from './deviceModels'
 
 const post = <T extends object = Record<string, never>>(path: string, params: Record<string, unknown> = {}) => api.post<Envelope & T>('/api/v1/device/' + path, params)
@@ -19,6 +20,7 @@ export function useDevices() {
   const state = reactive<DeviceState>(createDeviceState())
   const visibleDevices = computed(() => state.deviceList)
   const onlineCount = computed(() => state.serverOnlineCount)
+  const { openBindCodeDialog, loadBindCodes, createBindCode, deleteBindCode } = useDeviceBindings(state, post)
   let filterTimer: ReturnType<typeof setTimeout> | undefined
   let refreshTimer: ReturnType<typeof setTimeout> | undefined
   let disposed = false
@@ -26,8 +28,6 @@ export function useDevices() {
   let alertRequest = 0
   let alertCountsRequest = 0
   let workbenchRequest = 0
-  let bindCodeRequest = 0
-  let bindDialogRevision = 0
 
   async function loadAlertCounts() {
     const revision = ++alertCountsRequest
@@ -257,72 +257,6 @@ export function useDevices() {
       ElMessage({ type: 'error', message: apiErrorMessage(error, '登记失败') })
     } finally { state.creating = false }
   }
-  function openBindCodeDialog(row: DeviceRecord) {
-    const wasVisible = state.bindCodeDialogVisible
-    const oldId = row.oldId ?? ''
-    const residentChanged = String(state.bindOldId) !== String(oldId)
-    bindDialogRevision++
-    state.currentDevice = row
-    state.bindOldId = oldId
-    state.bindExpireDays = '1'
-    state.newBindCode = null
-    state.bindCodeList = []
-    state.bindCodeDialogVisible = true
-    if (!wasVisible || !residentChanged) void loadBindCodes(oldId)
-  }
-  async function loadBindCodes(oldId: DeviceId | '') {
-    const revision = ++bindCodeRequest
-    if (disposed) return
-    if (!oldId) {
-      state.bindCodeList = []
-      return
-    }
-    try {
-      const { data } = await post<BindCodeListResponse>('bindCodeList', { oldId })
-      // The dialog may now belong to another resident.
-      if (disposed || revision !== bindCodeRequest || !state.bindCodeDialogVisible || String(state.bindOldId) !== String(oldId)) return
-      state.bindCodeList = Array.isArray(data.bindCodes) ? data.bindCodes : []
-    } catch (error) {
-      if (!disposed && revision === bindCodeRequest && state.bindCodeDialogVisible) {
-        ElMessage({ type: 'error', message: apiErrorMessage(error, '请求未完成，请重试') })
-      }
-    }
-  }
-  async function createBindCode() {
-    const oldId = state.bindOldId
-    if (!oldId) {
-      ElMessage({ type: 'warning', message: '请先选择要绑定的老人' })
-      return
-    }
-    if (!/^\d+$/.test(state.bindExpireDays)) {
-      ElMessage({ type: 'warning', message: '有效天数只能填数字' })
-      return
-    }
-    const revision = bindDialogRevision
-    try {
-      const { data } = await post<NewBindCodeResponse>('createBindCode', { oldId, expireDays: state.bindExpireDays })
-      accepted(data)
-      if (disposed || revision !== bindDialogRevision || !state.bindCodeDialogVisible || String(state.bindOldId) !== String(oldId)) return
-      if (typeof data.code !== 'string' || typeof data.expireTime !== 'string') throw new Error('invalid binding code response')
-      state.newBindCode = { code: data.code, expireTime: data.expireTime }
-      await loadBindCodes(oldId)
-    } catch (error) {
-      if (!disposed && revision === bindDialogRevision && state.bindCodeDialogVisible && String(state.bindOldId) === String(oldId)) {
-        ElMessage({ type: 'error', message: apiErrorMessage(error, '生成失败') })
-      }
-    }
-  }
-  async function deleteBindCode(row: { id: DeviceId }) {
-    try {
-      const { data } = await post('deleteBindCode', { id: row.id })
-      accepted(data)
-      ElMessage({ type: 'success', message: '已作废' })
-      await loadBindCodes(state.bindOldId)
-    } catch (error) {
-      ElMessage({ type: 'error', message: apiErrorMessage(error, '请求未完成，请重试') })
-    }
-  }
-
   async function destructiveOperation(row: DeviceRecord, prompt: string, path: string, success: string, onSuccess?: (data: Envelope & DeviceMutationResponse) => unknown | Promise<unknown>) {
     try {
       await ElMessageBox.confirm(prompt, '提示', {
@@ -365,19 +299,6 @@ export function useDevices() {
     }
   }
 
-  watch(() => state.bindOldId, oldId => {
-    if (!state.bindCodeDialogVisible) return
-    bindDialogRevision++
-    state.bindCodeList = []
-    state.newBindCode = null
-    void loadBindCodes(oldId)
-  }, { flush: 'sync' })
-  watch(() => state.bindCodeDialogVisible, visible => {
-    if (!visible) {
-      bindCodeRequest++
-      bindDialogRevision++
-    }
-  })
   watch(() => state.deviceQuery, scheduleFilter)
   watch(() => state.deviceState, scheduleFilter)
   watch(() => state.autoRefresh, enabled => enabled ? startTimer() : stopTimer())
@@ -392,9 +313,7 @@ export function useDevices() {
     alertRequest++
     alertCountsRequest++
     workbenchRequest++
-    bindCodeRequest++
-    bindDialogRevision++
-    clearTimeout(filterTimer)
+      clearTimeout(filterTimer)
     document.removeEventListener('visibilitychange', handleVisibilityChange)
     stopTimer()
   })
