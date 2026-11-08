@@ -2,7 +2,7 @@
   <div class="roles">
     
     <div class="sys-research">
-      <form class="row-search" role="search" @submit.prevent="searchStep">
+      <form class="row-search" role="search" @submit.prevent="searchStep()">
         <div class="search-field">
           
           <label class="table-search-label" for="search-step">长者姓名</label>
