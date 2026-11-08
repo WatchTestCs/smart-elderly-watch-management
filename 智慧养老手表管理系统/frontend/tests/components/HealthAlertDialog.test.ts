@@ -17,7 +17,8 @@ describe('health alert evidence', () => {
       title: '异常详情', reason: '设备上报异常', oldPersonName: '测试长者',
       hr: 116, bp: 145, occurTime: '2026-11-08 10:00',
       detail: '当前监测档案触发', advice: '联系照护人员',
-      rateBad: 1, preBad: 0, resolving: false
+      rateBad: 1, preBad: 0, resolving: false,
+      recordId: null, message: ''
     })
     const view = mount(HealthAlertDialog, {
       props: { dialog },
