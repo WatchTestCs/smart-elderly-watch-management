@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"suining-care/internal/devicecredential"
 	"suining-care/internal/health"
 	"suining-care/internal/response"
 )
@@ -15,6 +16,18 @@ func (h *Handler) routeHealth(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/v1/health/changes", h.healthChanges)
 	mux.HandleFunc("POST /api/v1/health/statistics", h.healthStatistics)
 	mux.HandleFunc("POST /api/v1/health/latest", h.healthLatest)
+}
+
+func checkHealthDeviceCredential(w http.ResponseWriter, supplied, stored string, status *int) bool {
+	switch devicecredential.Check(supplied, stored, status) {
+	case devicecredential.InvalidSecret:
+		hwFail(w, "DEVICE_AUTH_FAILED", "设备号或密钥不正确")
+		return false
+	case devicecredential.Disabled:
+		hwFail(w, "DEVICE_DISABLED", "设备已停用")
+		return false
+	}
+	return true
 }
 
 func (h *Handler) healthBatch(w http.ResponseWriter, r *http.Request) {
@@ -63,8 +76,7 @@ func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Reques
 		hwFail(w, "DEVICE_AUTH_FAILED", "设备号或密钥不正确，或设备已停用")
 		return
 	}
-	if code, msg = deviceCredentialFailure(req.Secret, d.Secret, d.Status, "设备已停用"); code != "" {
-		hwFail(w, code, msg)
+	if !checkHealthDeviceCredential(w, req.Secret, d.Secret, d.Status) {
 		return
 	}
 	if d.OldID == nil || d.HealthEpoch != req.BindingVersion {
@@ -92,8 +104,7 @@ func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Reques
 			hwFail(w, "DEVICE_AUTH_FAILED", "设备号或密钥不正确")
 			return
 		}
-		if code, msg = deviceCredentialFailure(req.Secret, d.Secret, d.Status, "设备已停用"); code != "" {
-			hwFail(w, code, msg)
+		if !checkHealthDeviceCredential(w, req.Secret, d.Secret, d.Status) {
 			return
 		}
 		if d.OldID == nil || *d.OldID != expectedOwner || d.HealthEpoch != req.BindingVersion {
