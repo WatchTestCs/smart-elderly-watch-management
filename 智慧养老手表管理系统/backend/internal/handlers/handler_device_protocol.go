@@ -304,4 +304,3 @@ func bindCodeFailure(bc *bindCodeRow) (string, string) {
 	}
 	return "", ""
 }
-
