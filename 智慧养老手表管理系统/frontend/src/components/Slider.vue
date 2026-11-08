@@ -40,7 +40,7 @@ import { authState } from '@/auth'
 const route = useRoute()
 const expanded = ref(false)
 const restrictedDuty = computed(() => authState.account?.role === 'ADMIN' &&
-  ['caregiver', 'auditor'].includes(authState.account.duty))
+  ['caregiver', 'auditor'].includes(authState.account.duty ?? ''))
 const groups: Record<string, string[]> = {
   health: ['/operations/vitals', '/operations/activity', '/operations/locations', '/operations/life'],
   records: ['/operations/residents', '/operations/guardians', '/operations/monitoring-profiles', '/operations/families', '/operations/invitations'],
