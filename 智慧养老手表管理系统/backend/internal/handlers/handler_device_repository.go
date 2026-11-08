@@ -76,23 +76,15 @@ func randAlpha(n int) (string, error) {
 // 设备行与鉴权
 // ---------------------------------------------------------------------------
 
-type deviceRecord = devicerepo.DeviceRecord
-
-const deviceRecordColumns = devicerepo.DeviceRecordColumns
-
-func scanDeviceRecord(row dbstore.Row) (*deviceRecord, error) {
-	return devicerepo.ScanDeviceRecord(row)
-}
-
-func (h *Handler) findDeviceByNo(ctx context.Context, q deviceQueries, deviceNo string) (*deviceRecord, error) {
+func (h *Handler) findDeviceByNo(ctx context.Context, q deviceQueries, deviceNo string) (*devicerepo.DeviceRecord, error) {
 	return h.readDeviceRecord(devicerepo.FindDeviceByNo(ctx, q, deviceNo))
 }
 
-func (h *Handler) findDeviceByID(ctx context.Context, q deviceQueries, deviceID int64) (*deviceRecord, error) {
+func (h *Handler) findDeviceByID(ctx context.Context, q deviceQueries, deviceID int64) (*devicerepo.DeviceRecord, error) {
 	return h.readDeviceRecord(devicerepo.FindDeviceByID(ctx, q, deviceID))
 }
 
-func (h *Handler) readDeviceRecord(device *deviceRecord, err error) (*deviceRecord, error) {
+func (h *Handler) readDeviceRecord(device *devicerepo.DeviceRecord, err error) (*devicerepo.DeviceRecord, error) {
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	}
@@ -106,12 +98,8 @@ func (h *Handler) readDeviceRecord(device *deviceRecord, err error) (*deviceReco
 	return device, nil
 }
 
-func (h *Handler) readDevice(row dbstore.Row) (*deviceRecord, error) {
-	return h.readDeviceRecord(devicerepo.ScanDeviceRecord(row))
-}
-
 // hwAuth checks the device number, secret and enabled status.
-func (h *Handler) hwAuth(ctx context.Context, q deviceQueries, deviceNo, secret, disabledMsg string) (*deviceRecord, string, string, error) {
+func (h *Handler) hwAuth(ctx context.Context, q deviceQueries, deviceNo, secret, disabledMsg string) (*devicerepo.DeviceRecord, string, string, error) {
 	d, err := h.findDeviceByNo(ctx, q, deviceNo)
 	if err != nil {
 		return nil, "", "", err
@@ -120,7 +108,7 @@ func (h *Handler) hwAuth(ctx context.Context, q deviceQueries, deviceNo, secret,
 }
 
 // Both full and health-only projections use the same credential policy.
-func checkDeviceAuth(d *deviceRecord, secret, disabledMsg string) (*deviceRecord, string, string, error) {
+func checkDeviceAuth(d *devicerepo.DeviceRecord, secret, disabledMsg string) (*devicerepo.DeviceRecord, string, string, error) {
 	if d == nil {
 		return nil, "DEVICE_AUTH_FAILED", "设备号或密钥不正确", nil
 	}
