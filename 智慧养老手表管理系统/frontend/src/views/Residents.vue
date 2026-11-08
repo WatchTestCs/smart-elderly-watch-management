@@ -105,10 +105,10 @@
   </div>
 
 </template>
-<script setup>
+<script setup lang="ts">
 import { Delete, Edit, Search } from '@element-plus/icons-vue'
 import { reactive, ref } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, type FormItemRule } from 'element-plus'
 import { usePagedRecords } from '@/composables/usePagedRecords'
 import { useCollectionLayout } from '@/composables/useCollectionLayout'
 import { writeRecord, deleteRecord } from '@/composables/recordActions'
@@ -119,12 +119,22 @@ import { downloadCsv } from '../utils/csv'
 import RecordCards from '@/components/RecordCards.vue'
 import ResidentForm from '@/components/records/ResidentForm.vue'
 
+interface ResidentRecord extends Record<string, unknown> {
+  oldId: string | number
+  name: string
+  customerName?: string
+  deviceId?: string
+}
+interface GuardianOption extends Record<string, unknown> {
+  customerId: string | number
+  customerName: string
+}
 const searchText = ref('')
 const mobileLayout = useCollectionLayout(900)
 const {
   records: personDetailList, isLoading, loadError, total, pageSize, currentPage,
   load: loadResidents, handleSizeChange, changePage
-} = usePagedRecords({
+} = usePagedRecords<ResidentRecord>({
   path: 'api/v1/residents/details',
   responseKey: 'oldPersonDetails',
   buildQuery: () => ({ name: searchText.value }),
@@ -139,14 +149,14 @@ const emptyResident = () => ({
 const oldDialogVisible = ref(false)
 const oldEditDialogVisible = ref(false)
 const oldForm = reactive(emptyResident())
-const oldEditForm = ref({ ...emptyResident(), oldId: '', customerName: '', deviceId: '' })
-const addoldFormRef = ref(null)
-const editoldFormRef = ref(null)
-const options = ref([])
+const oldEditForm = ref({ ...emptyResident(), oldId: '' as string | number, customerName: '', deviceId: '' })
+const addoldFormRef = ref<InstanceType<typeof ResidentForm> | null>(null)
+const editoldFormRef = ref<InstanceType<typeof ResidentForm> | null>(null)
+const options = ref<GuardianOption[]>([])
 const customerLoading = ref(false)
 const customerError = ref('')
 
-const checkPhone = (_rule, value, callback) => {
+const checkPhone: NonNullable<FormItemRule['validator']> = (_rule, value, callback) => {
   if (!value) return callback(new Error('电话号码不能为空'))
   if (!/^1[3-9]\d{9}$/.test(String(value))) return callback(new Error('电话号码格式不正确'))
   callback()
@@ -158,11 +168,11 @@ async function addCustomerList() {
   customerLoading.value = true
   customerError.value = ''
   try {
-    const residents = []
+    const residents: GuardianOption[] = []
     let page = 1
     let total = 0
     do {
-      const { data } = await requestClient.post('api/v1/guardians/list', { customerName: '', page, pageSize: 100 })
+      const { data } = await requestClient.post<{ customers: GuardianOption[]; total?: number }>('api/v1/guardians/list', { customerName: '', page, pageSize: 100 })
       if (!Array.isArray(data.customers)) throw new Error('invalid guardians')
       total = data.total ?? data.customers.length
       if (!Number.isInteger(total) || total < 0 || (!data.customers.length && residents.length < total)) {
@@ -181,7 +191,7 @@ async function addCustomerList() {
 }
 
 function createResident() {
-  addoldFormRef.value?.validate(valid => {
+  addoldFormRef.value?.validate((valid: boolean) => {
     if (!valid) return
     return writeRecord('api/v1/residents/create', editableResident(oldForm), '添加老人成功', async () => {
       oldDialogVisible.value = false
@@ -190,7 +200,7 @@ function createResident() {
   })
 }
 function editOldPerson() {
-  editoldFormRef.value?.validate(valid => {
+  editoldFormRef.value?.validate((valid: boolean) => {
     if (!valid) return
     const draft = oldEditForm.value
     return writeRecord('api/v1/residents/update', {
@@ -201,14 +211,14 @@ function editOldPerson() {
     })
   })
 }
-function deleteOldPerson(oldId) {
+function deleteOldPerson(oldId: number | string) {
   return deleteRecord('api/v1/residents/delete', { oldId }, '此操作将永久删除该长者信息，是否继续？', () => loadResidents(true))
 }
 function closeRoleAddDialog() {
   addoldFormRef.value?.resetFields()
 }
-function handleeditOldPerson(_index, row) {
-  oldEditForm.value = { ...row }
+function handleeditOldPerson(_index: number, row: ResidentRecord) {
+  oldEditForm.value = { ...emptyResident(), ...row, oldId: row.oldId, customerName: row.customerName || '', deviceId: row.deviceId || '' }
   oldEditDialogVisible.value = true
 }
 function exportCurrentPage() {
