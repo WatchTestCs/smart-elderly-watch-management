@@ -83,8 +83,8 @@ func (h *Handler) deviceLogin(w http.ResponseWriter, r *http.Request) {
 	if d.OldID != nil {
 		bound = 1
 		fields["bound"] = bound
-		var oldName *string
-		if err := h.DB.QueryRow(ctx, `SELECT name FROM oldperson WHERE old_id=$1`, *d.OldID).Scan(&oldName); err != nil && err != pgx.ErrNoRows {
+		oldName, err := devicerepo.ResidentName(ctx, h.DB, *d.OldID)
+		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 			response.Error500(w, ref())
 			return
 		}
@@ -145,7 +145,7 @@ func (h *Handler) deviceBind(w http.ResponseWriter, r *http.Request) {
 	binding, err := devicerepo.LockResidentBinding(ctx, tx, *bc.OldID)
 	if err != nil {
 		rollback()
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			hwFail(w, "NOT_FOUND", "绑定码对应的老人不存在")
 		} else {
 			response.Error500(w, ref())
