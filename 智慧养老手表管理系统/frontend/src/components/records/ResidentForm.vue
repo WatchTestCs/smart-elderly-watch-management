@@ -61,11 +61,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, type PropType } from 'vue'
 import type { FormInstance } from 'element-plus'
+interface GuardianOption { customerId: string | number; customerName: string }
 defineProps({
   draft: { type: Object, required: true },
-  rules: Object, editing: Boolean, options: Array, customerLoading: Boolean, customerError: String
+  rules: Object, editing: Boolean, options: Array as PropType<GuardianOption[]>, customerLoading: Boolean, customerError: String
 })
 const emit = defineEmits(['retry-guardians'])
 const form = ref<FormInstance | null>(null)
