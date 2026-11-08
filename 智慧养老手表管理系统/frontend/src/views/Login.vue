@@ -40,9 +40,10 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { Iphone, Setting, View } from '@element-plus/icons-vue'
 import { onMounted, reactive, ref } from 'vue'
+import type { FormInstance, FormItemRule } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { apiErrorMessage } from '../api/httpContract'
 import axios from 'axios'
@@ -58,7 +59,7 @@ const mfaRequired = ref(false)
 const errorMessage = ref('')
 const largeText = ref(localStorage.getItem('large_text') === 'true')
 const loginForm = reactive({ phone: registeredPhone, password: '', otp: '', recoveryCode: '' })
-const loginFormRef = ref(null)
+const loginFormRef = ref<FormInstance | null>(null)
 const rules = {
   phone: [
     { required: true, message: '请输入手机号', trigger: 'blur' },
@@ -66,9 +67,9 @@ const rules = {
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
-    { validator: (_rule, value, done) => done(
+    { validator: ((_rule, value, done) => done(
       new TextEncoder().encode(value || '').length <= 72
-        ? undefined : new Error('密码不能超过 72 个字节')), trigger: 'blur' }
+        ? undefined : new Error('密码不能超过 72 个字节'))) satisfies FormItemRule['validator'], trigger: 'blur' }
   ]
 }
 function applyTextSize() {
@@ -96,12 +97,12 @@ async function submitForm() {
       errorMessage.value = data?.message || '手机号或密码不正确，请重试'
     }
   } catch (error) {
-    const code = error.response?.data?.code
+    const code = axios.isAxiosError(error) ? error.response?.data?.code : undefined
     if (code === 'MFA_REQUIRED') {
       mfaRequired.value = true
-      errorMessage.value = error.response.data.message
+      errorMessage.value = axios.isAxiosError(error) ? error.response?.data?.message || '需要进行二次验证' : '需要进行二次验证'
     } else if (['INVALID_CREDENTIALS', 'INVALID_LOGIN_INPUT', 'ACCOUNT_UNLINKED'].includes(code)) {
-      errorMessage.value = error.response.data.message
+      errorMessage.value = axios.isAxiosError(error) ? error.response?.data?.message || '登录失败，请重试' : '登录失败，请重试'
     } else {
       errorMessage.value = apiErrorMessage(error, '暂时无法登录，请稍后重试')
     }
