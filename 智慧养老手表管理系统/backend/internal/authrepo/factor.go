@@ -68,7 +68,7 @@ func SetupFactor(ctx context.Context, tx *db.Transaction, role string, actorID i
 func EnableFactor(ctx context.Context, tx *db.Transaction, role string, actorID, counter int64, hashes []byte) error {
 	_, err := tx.Exec(ctx,
 		"UPDATE auth_factor SET enabled=true,last_counter=$3,recovery_hashes=$4 WHERE role=$1 AND actor_id=$2",
-		role, actorID, counter, hashes)
+		role, actorID, counter, json.RawMessage(hashes))
 	return err
 }
 func DeleteFactor(ctx context.Context, tx *db.Transaction, role string, actorID int64) error {
