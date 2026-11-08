@@ -23,6 +23,12 @@ type Binding struct {
 	ProfileDay       time.Time
 }
 
+// LockResident ensures binding-related operations acquire the resident lock before the device lock.
+func LockResident(ctx context.Context, tx *db.Transaction, residentID int64) error {
+	var id int64
+	return tx.QueryRow(ctx, "SELECT old_id FROM oldperson WHERE old_id=$1 FOR UPDATE", residentID).Scan(&id)
+}
+
 // LockedDeviceRow selects the current credential and binding state under a row lock.
 // The caller locks the resident first and retains the transaction until binding completes.
 func LockedDeviceRow(ctx context.Context, tx *db.Transaction, deviceID int64) db.Row {
