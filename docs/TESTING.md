@@ -25,6 +25,8 @@ go test -race -count=1 -timeout 600s ./...
 npm ci
 npm test
 npm run typecheck
+npm run api:check
+npm run test:api-drift
 npm run build
 ```
 
