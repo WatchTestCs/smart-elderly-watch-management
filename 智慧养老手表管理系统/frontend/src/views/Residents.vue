@@ -1,8 +1,8 @@
 <template>
-  <div class="roles" v-loading="isLoading" element-loading-text="正在加载老人档案…" :aria-busy="String(isLoading)">
+  <div class="roles" v-loading="isLoading" element-loading-text="正在加载老人档案…" :aria-busy="isLoading">
     
     <div class="sys-research">
-      <form class="row-search" role="search" @submit.prevent="loadResidents">
+      <form class="row-search" role="search" @submit.prevent="loadResidents()">
         <div class="search-field">
           
           <label class="table-search-label" for="search-person">长者姓名</label>
@@ -32,7 +32,7 @@
       <ResidentForm :draft="oldForm" :rules="rules" ref="addoldFormRef" :options="options" :customer-loading="customerLoading" :customer-error="customerError" @retry-guardians="addCustomerList" />
       <template #footer><span  class="dialog-footer">
       <el-button @click="oldDialogVisible = false">取 消</el-button>
-      <el-button type="primary" @click="createResident('addoldFormRef')">确 定</el-button>
+      <el-button type="primary" @click="createResident()">确 定</el-button>
     </span></template>
     </el-dialog>
 
@@ -193,7 +193,7 @@ async function addCustomerList() {
 function createResident() {
   addoldFormRef.value?.validate((valid: boolean) => {
     if (!valid) return
-    return writeRecord('api/v1/residents/create', editableResident(oldForm), '添加老人成功', async () => {
+    void writeRecord('api/v1/residents/create', editableResident(oldForm), '添加老人成功', async () => {
       oldDialogVisible.value = false
       await loadResidents(true)
     })
@@ -203,7 +203,7 @@ function editOldPerson() {
   editoldFormRef.value?.validate((valid: boolean) => {
     if (!valid) return
     const draft = oldEditForm.value
-    return writeRecord('api/v1/residents/update', {
+    void writeRecord('api/v1/residents/update', {
       ...editableResident(draft), oldId: draft.oldId
     }, '编辑老人信息成功', async () => {
       oldEditDialogVisible.value = false
