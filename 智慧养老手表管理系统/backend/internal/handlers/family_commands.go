@@ -44,7 +44,7 @@ func (h *Handler) familyAdd(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	err := familyrepo.Create(r.Context(), h.DB, family, oldPhone)
+	err := familyrepo.Create(r.Context(), h.DB, h.Box, family, oldPhone)
 	switch {
 	case errors.Is(err, familyrepo.ErrPhoneInUse):
 		response.Fail(w, "该手机号已被使用，请更换手机号")
@@ -76,7 +76,7 @@ func (h *Handler) familyUpdate(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	err := familyrepo.Update(r.Context(), h.DB, id, family)
+	err := familyrepo.Update(r.Context(), h.DB, h.Box, id, family)
 	switch {
 	case errors.Is(err, familyrepo.ErrPhoneInUse):
 		response.Fail(w, "该手机号已被使用，请更换手机号")
