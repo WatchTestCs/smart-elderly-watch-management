@@ -46,7 +46,7 @@
 
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { Refresh } from '@element-plus/icons-vue'
 import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
 import { authState } from '../auth'
@@ -55,16 +55,24 @@ import { apiErrorMessage } from '../api/httpContract'
 import { createLatestRead } from '../composables/latestRead'
 import { useCollectionLayout } from '@/composables/useCollectionLayout'
 import PositionMap from '@/components/PositionMap.vue'
-import { describePositionContext } from '../utils/positionContext'
+import { describePositionContext, type PositionContext } from '../utils/positionContext'
 
 const mobileLayout = useCollectionLayout()
 const oldId = computed(() => String(authState.account?.oldId ?? ''))
-const positionList = ref([])
+interface PositionRecord extends PositionContext {
+  oldId?: string | number
+  name: string
+  lng: number | string
+  lat: number | string
+  status?: string | number | null
+  beTime?: string
+}
+const positionList = ref<PositionRecord[]>([])
 const isLoading = ref(false)
 const loadError = ref('')
-const selectedLocation = ref(null)
+const selectedLocation = ref<PositionRecord | null>(null)
 const reads = createLatestRead(
-  (query, signal) => api.post('api/v1/position/selectFamily', query, { signal }),
+  (query: { oldId: string }, signal: AbortSignal) => api.post<{ positionDtos?: PositionRecord[] }>('api/v1/position/selectFamily', query, { signal }),
   ({ data }) => {
     positionList.value = Array.isArray(data.positionDtos) ? data.positionDtos : []
     loadError.value = ''
@@ -76,7 +84,7 @@ const reads = createLatestRead(
   loading => { isLoading.value = loading }
 )
 function searchposition() { return reads.run({ oldId: oldId.value }) }
-function showLocation(row) { selectedLocation.value = { ...row } }
+function showLocation(row: PositionRecord) { selectedLocation.value = { ...row } }
 onMounted(() => { void searchposition() })
 onBeforeUnmount(reads.dispose)
 </script>
