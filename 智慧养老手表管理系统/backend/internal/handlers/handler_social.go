@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"suining-care/internal/socialrepo"
-	dbstore "suining-care/internal/db"
 	"suining-care/internal/response"
 	"time"
 	"unicode/utf8"
@@ -64,24 +63,10 @@ func (h *Handler) searchNoticeComments(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	sql := `SELECT said_id, said, back,` +
-		` TO_CHAR(said_time,'YYYY-MM-DD HH24:MI:SS.MS') AS saidTime,` +
-		` TO_CHAR(back_time,'YYYY-MM-DD HH24:MI:SS.MS') AS backTime,` +
-		` person_name, tou_pic, title FROM said INNER JOIN ` + socialTextTable(h.DB.IsMySQL()) + ` ON said.text_id=` + socialTextTable(h.DB.IsMySQL()) + `.text_id` +
-		` ORDER BY said_time DESC, said_id DESC`
-	total, ok := h.pagedTotal(w, r, sql, nil)
-	if !ok {
-		return
-	}
-	limitSQL, fullArgs := pageArgs(nil, page, pageSize)
-	items, ok := queryRows(h, w, r.Context(), func(rows dbstore.Rows) (moderatedNoticeComment, error) {
-		var d moderatedNoticeComment
-		if err := rows.Scan(&d.SaidID, &d.Said, &d.Back, &d.SaidTime, &d.BackTime, &d.PersonName, &d.TouPic, &d.Title); err != nil {
-			return d, err
-		}
-		return d, nil
-	}, sql+limitSQL, fullArgs...)
-	if !ok {
+	items, total, err := socialrepo.SearchModeratedComments(
+		r.Context(), h.DB, socialTextTable(h.DB.IsMySQL()), page, pageSize,
+	)
+	if internalError(w, err) {
 		return
 	}
 	response.JSON(w, http.StatusOK, map[string]any{
