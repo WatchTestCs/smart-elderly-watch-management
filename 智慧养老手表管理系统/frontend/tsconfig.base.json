@@ -17,6 +17,9 @@
         "./src/*"
       ]
     },
-    "noEmit": true
-  }
+    "noEmit": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true
+  },
+  "extends": "@vue/tsconfig/tsconfig.json"
 }
