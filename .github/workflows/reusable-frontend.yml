@@ -44,6 +44,9 @@ jobs:
           npm run api:check
           npm run test:api-drift
 
+      - name: Enforce Vue 3.6 migration boundary
+        run: npm run check:vue36
+
       - name: Unit tests and incremental TypeScript checks
         shell: bash
         run: |
