@@ -1,15 +1,15 @@
 package devicecredential
 
 import (
-	"crypto/rand"
 	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/base64"
 	"errors"
 	"strings"
+
+	"suining-care/internal/securecode"
 )
 
-const codeAlphabet = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ"
 const hashPrefix = "sha256$"
 const hashDomain = "suining-device-secret-v1"
 
@@ -38,19 +38,8 @@ func Matches(supplied, stored string) bool {
 	return err == nil && subtle.ConstantTimeCompare([]byte(expected), []byte(stored)) == 1
 }
 
-func RandomCode(n int) (string, error) {
-	b := make([]byte, n)
-	if _, err := rand.Read(b); err != nil {
-		return "", err
-	}
-	for i, v := range b {
-		b[i] = codeAlphabet[int(v)%len(codeAlphabet)]
-	}
-	return string(b), nil
-}
-
 func Generate() (clear, hashed string, err error) {
-	clear, err = RandomCode(32)
+	clear, err = securecode.Generate(32)
 	if err != nil {
 		return "", "", err
 	}
