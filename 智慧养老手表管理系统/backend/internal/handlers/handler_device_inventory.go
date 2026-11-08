@@ -18,8 +18,8 @@ func (h *Handler) genDeviceNo(ctx context.Context) (string, error) {
 			return "", err
 		}
 		no := "W" + s
-		var exists bool
-		if err := h.DB.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM device WHERE device_no=$1)`, no).Scan(&exists); err != nil {
+		exists, err := devicerepo.NumberExists(ctx, h.DB, no)
+		if err != nil {
 			return "", err
 		}
 		if !exists {
