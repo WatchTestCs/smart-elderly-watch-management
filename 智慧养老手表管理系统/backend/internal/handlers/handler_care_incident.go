@@ -4,14 +4,12 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 	"unicode/utf8"
 
 	"github.com/jackc/pgx/v5"
 
 	"suining-care/internal/auth"
 	"suining-care/internal/careworkflow"
-	"suining-care/internal/db"
 	"suining-care/internal/response"
 )
 
@@ -164,40 +162,28 @@ func (h *Handler) careEvents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id, ok := requireID(w, m, "id")
+	if !ok || !h.auditCareAccess(w, r, actor, "incident_events", &id) {
+		return
+	}
+	page, pageSize, ok := strictPage(w, m)
 	if !ok {
 		return
 	}
-	if !h.auditCareAccess(w, r, actor, "incident_events", &id) {
+	events, total, err := careworkflow.ListEvents(r.Context(), h.DB, id, page, pageSize)
+	if internalError(w, err) {
 		return
 	}
-	page, ps, ok := strictPage(w, m)
-	if !ok {
-		return
-	}
-	var total int64
-	if internalError(w, h.DB.QueryRow(r.Context(), `SELECT count(*) FROM care_incident_event WHERE incident_id=$1`, id).Scan(&total)) {
-		return
-	}
-	events, ok := queryRows(h, w, r.Context(), func(rows db.Rows) (map[string]any, error) {
-		var actor, action string
-		var note *string
-		var created time.Time
-		if err := rows.Scan(&actor, &action, &note, &created); err != nil {
-			return nil, err
+	for i := range events {
+		if events[i].Note == nil {
+			continue
 		}
-		if note != nil {
-			plain, err := h.openNote(*note)
-			if err != nil {
-				return nil, err
-			}
-			note = &plain
+		plain, err := h.openNote(*events[i].Note)
+		if internalError(w, err) {
+			return
 		}
-		return map[string]any{"actor": actor, "action": action, "note": note, "createdAt": created}, nil
-	},
-		`SELECT actor,action,note,created_at FROM care_incident_event
-      WHERE incident_id=$1 ORDER BY id ASC LIMIT $2 OFFSET $3`, id, ps, (page-1)*ps)
-	if !ok {
-		return
+		events[i].Note = &plain
 	}
-	response.OK(w, map[string]any{"events": events, "total": total, "page": page, "pageSize": ps})
+	response.OK(w, map[string]any{
+		"events": events, "total": total, "page": page, "pageSize": pageSize,
+	})
 }
