@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"suining-care/internal/devicecredential"
 	"context"
 	"errors"
 	"net/http"
@@ -13,7 +14,7 @@ import (
 
 func (h *Handler) genDeviceNo(ctx context.Context) (string, error) {
 	for i := 0; i < 30; i++ {
-		s, err := randAlpha(8)
+		s, err := devicecredential.RandomCode(8)
 		if err != nil {
 			return "", err
 		}
@@ -45,7 +46,7 @@ func (h *Handler) deviceCreate(w http.ResponseWriter, r *http.Request) {
 	if internalError(w, err) {
 		return
 	}
-	clearSecret, hashed, err := newDeviceSecret()
+	clearSecret, hashed, err := devicecredential.Generate()
 	if internalError(w, err) {
 		return
 	}
@@ -86,7 +87,7 @@ func (h *Handler) deviceResetSecret(w http.ResponseWriter, r *http.Request) {
 		response.Fail(w, "设备不存在")
 		return
 	}
-	clearSecret, hashed, err := newDeviceSecret()
+	clearSecret, hashed, err := devicecredential.Generate()
 	if internalError(w, err) {
 		return
 	}
