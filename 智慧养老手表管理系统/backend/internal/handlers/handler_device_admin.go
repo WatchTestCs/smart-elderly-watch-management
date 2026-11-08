@@ -156,7 +156,7 @@ func (h *Handler) deviceCreateBindCode(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	oldName, err := devicerepo.ResidentName(ctx, h.DB, oldID)
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			response.Fail(w, "老人不存在")
 		} else {
 			response.Error500(w, ref())
