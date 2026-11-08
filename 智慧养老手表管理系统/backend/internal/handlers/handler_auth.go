@@ -3,12 +3,11 @@ package handlers
 
 import (
 	"context"
+	"errors"
 	"crypto/subtle"
 	"net/http"
 	"os"
-	"strings"
 	"time"
-	"unicode/utf8"
 
 
 	"suining-care/internal/auth"
@@ -164,49 +163,17 @@ func (h *Handler) setup(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	phone := str(m, "phone")
-	name := str(m, "name")
-	password := str(m, "password")
-
-	ctx := r.Context()
-	tx, err := h.DB.Begin(ctx)
-	if internalError(w, err) {
-		return
-	}
-	defer tx.Rollback(ctx)
-
-	// 行锁串行化，防止并发重复初始化。
-	var metaID int64
-	if internalError(w, tx.QueryRow(ctx, "SELECT id FROM app_metadata WHERE id=1 FOR UPDATE").Scan(&metaID)) {
-		return
-	}
-	var count int64
-	if internalError(w, tx.QueryRow(ctx, "SELECT COUNT(*) FROM users").Scan(&count)) {
-		return
-	}
-	if count != 0 {
+	err := authrepo.InitializeAdmin(r.Context(), h.DB, str(m, "name"), str(m, "phone"), str(m, "password"))
+	switch {
+	case errors.Is(err, authrepo.ErrAlreadyInitialized):
 		response.JSON(w, http.StatusConflict, map[string]any{"message": "管理员已创建"})
-		return
-	}
-	if !auth.ValidPhone(phone) || strings.TrimSpace(name) == "" ||
-		utf8.RuneCountInString(name) > 10 || !auth.ValidNewPassword(password) {
+	case errors.Is(err, authrepo.ErrInvalidAdmin):
 		response.JSON(w, http.StatusBadRequest, map[string]any{"message": "请检查姓名、手机号和密码"})
+	case internalError(w, err):
 		return
+	default:
+		response.OK(w, nil)
 	}
-	hashed, err := auth.Hash(password)
-	if internalError(w, err) {
-		return
-	}
-	if _, err := tx.Exec(ctx,
-		"INSERT INTO users(user_name,user_phone,password,role) VALUES($1,$2,$3,'1')",
-		name, phone, hashed); err != nil {
-		response.Error500(w, ref())
-		return
-	}
-	if internalError(w, tx.Commit(ctx)) {
-		return
-	}
-	response.OK(w, nil)
 }
 
 // desktopExit 处理 POST /api/v1/desktop/exit：公开 + 桌面 token；通过后延迟退出进程。
