@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"strings"
 	"time"
@@ -97,6 +98,43 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	d = locked
+	// A numbered report is idempotent for the whole transaction: replaying the
+	// same request returns the committed acknowledgement, while reusing the
+	// number with different data is a hard conflict instead of silent data loss.
+	receiptID, _ := vstr(m, "requestId")
+	receiptDigest := ""
+	// The durable queue already owns its replay contract (a unique key and
+	// a 409 on collision); do not turn that into a duplicate acknowledgement.
+	if receiptID != "" && sosRequestIDOK(receiptID) && !durableTelemetryEligible(parsed, receiptID, h.Box) {
+		var digestErr error
+		receiptDigest, digestErr = reportPayloadDigest(m)
+		if digestErr != nil {
+			rollback()
+			writeValidation400(w)
+			return
+		}
+		priorDigest, priorResult, found, lookupErr := lookupDeviceReportReceipt(ctx, tx, d.ID, d.HealthEpoch, receiptID)
+		if lookupErr != nil {
+			rollback()
+			response.Error500(w, ref())
+			return
+		}
+		if found {
+			rollback()
+			if priorDigest != receiptDigest {
+				conflict409(w, "同一请求编号对应不同上报内容")
+				return
+			}
+			var fields map[string]any
+			if json.Unmarshal([]byte(priorResult), &fields) != nil {
+				response.Error500(w, ref())
+				return
+			}
+			fields["duplicate"] = true
+			response.OK(w, fields)
+			return
+		}
+	}
 	if isAlarm {
 		if requestID != "" {
 			var priorID, priorOwner int64
@@ -143,21 +181,22 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 			}
 			return
 		}
-		if internalError(w, tx.Commit(ctx)) {
-			return
-		}
-		response.OK(w, map[string]any{
+		queuedResult := map[string]any{
 			"rateState": nil, "preState": nil, "queued": true,
 			"message":    "设备数据已持久接收，等待后台处理",
 			"serverTime": parsed.now.Format(tsLayout),
-		})
+		}
+		if !stageDeviceReportReceipt(w, ctx, tx, rollback, d, receiptID, receiptDigest, queuedResult) {
+			return
+		}
+		if internalError(w, tx.Commit(ctx)) {
+			return
+		}
+		response.OK(w, queuedResult)
 		return
 	}
 	persisted, err := (telemetryRepository{box: h.Box}).PersistDeviceReport(ctx, tx, d, parsed)
 	if rollbackOnError(w, rollback, err) {
-		return
-	}
-	if internalError(w, tx.Commit(ctx)) {
 		return
 	}
 	result := map[string]any{
@@ -167,6 +206,12 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 	if persisted.careIncidentID != 0 {
 		result["incidentId"] = persisted.careIncidentID
 		result["incidentState"] = "received"
+	}
+	if !stageDeviceReportReceipt(w, ctx, tx, rollback, d, receiptID, receiptDigest, result) {
+		return
+	}
+	if internalError(w, tx.Commit(ctx)) {
+		return
 	}
 	response.OK(w, result)
 }
