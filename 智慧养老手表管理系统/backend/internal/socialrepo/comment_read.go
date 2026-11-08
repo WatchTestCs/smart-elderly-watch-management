@@ -54,3 +54,34 @@ func ListComments(ctx context.Context, store *db.Database, viewerPhone string, n
 		return item, err
 	}, query, args...)
 }
+
+type ModeratedComment struct {
+	SaidID     *int64  `json:"saidId"`
+	Said       *string `json:"said"`
+	Back       *string `json:"back"`
+	SaidTime   *string `json:"saidTime"`
+	BackTime   *string `json:"backTime"`
+	PersonName *string `json:"personName"`
+	TouPic     *string `json:"touPic"`
+	Title      *string `json:"title"`
+}
+
+// SearchModeratedComments returns one page and the full count of comments.
+func SearchModeratedComments(ctx context.Context, store *db.Database, noticeTable string, page, pageSize int) ([]ModeratedComment, int64, error) {
+	query := `SELECT said_id, said, back,` +
+		` TO_CHAR(said_time,'YYYY-MM-DD HH24:MI:SS.MS') AS saidTime,` +
+		` TO_CHAR(back_time,'YYYY-MM-DD HH24:MI:SS.MS') AS backTime,` +
+		` person_name, tou_pic, title FROM said INNER JOIN ` + noticeTable +
+		` ON said.text_id=` + noticeTable + `.text_id` +
+		` ORDER BY said_time DESC, said_id DESC`
+	var total int64
+	if err := store.QueryRow(ctx, "SELECT COUNT(*) FROM ("+query+") AS paged_total").Scan(&total); err != nil {
+		return nil, 0, err
+	}
+	items, err := db.QueryList(ctx, store, func(rows db.Rows) (ModeratedComment, error) {
+		var item ModeratedComment
+		err := rows.Scan(&item.SaidID, &item.Said, &item.Back, &item.SaidTime, &item.BackTime, &item.PersonName, &item.TouPic, &item.Title)
+		return item, err
+	}, query+" LIMIT $1 OFFSET $2", pageSize, (page-1)*pageSize)
+	return items, total, err
+}
