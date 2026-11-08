@@ -107,3 +107,48 @@ it('does not publish device rows from a query superseded during an active read',
     vi.restoreAllMocks()
   }
 })
+
+it('limits workbench alert reads to six in flight and preserves device order', async () => {
+  const devices = Array.from({ length: 12 }, (_, index) => ({ deviceId: index + 1, deviceNo: `watch-${index + 1}` }))
+  const finish: Array<() => void> = []
+  let active = 0
+  let peak = 0
+  vi.spyOn(axios, 'post').mockImplementation((url) => {
+    if (url === '/api/v1/device/list') return Promise.resolve({ data: { devices, total: devices.length } })
+    if (url === '/api/v1/device/alertCounts') {
+      return Promise.resolve({ data: {
+        items: devices.map(device => ({ deviceId: device.deviceId, personCount: 1, rateCount: 0, preCount: 0 })),
+        total: devices.length
+      } })
+    }
+    if (url === '/api/v1/device/alertDetail') {
+      active += 1
+      peak = Math.max(peak, active)
+      return new Promise(resolve => finish.push(() => {
+        active -= 1
+        resolve({ data: { hasAlert: 1 } })
+      }))
+    }
+    if (url === '/api/v1/inviteCode/oldPersonList') return Promise.resolve({ data: { oldPeople: [] } })
+    throw new Error(`unexpected request: ${url}`)
+  })
+  let state!: ReturnType<typeof useDevices>
+  const wrapper = mount(defineComponent({ setup() { state = useDevices(); return () => null } }))
+  try {
+    await flushPromises()
+    const pending = state.openWorkbench()
+    await flushPromises()
+    expect(finish).toHaveLength(6)
+    expect(peak).toBe(6)
+    for (let index = 0; index < devices.length; index++) {
+      finish[index]()
+      await flushPromises()
+    }
+    await pending
+    expect(peak).toBe(6)
+    expect(state.workbench.value.list.map(row => row.deviceId)).toEqual(devices.map(row => row.deviceId))
+  } finally {
+    wrapper.unmount()
+    vi.restoreAllMocks()
+  }
+})
