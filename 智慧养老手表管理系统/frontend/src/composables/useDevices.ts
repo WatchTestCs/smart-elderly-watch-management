@@ -86,6 +86,14 @@ export function useDevices() {
              (data.onlineCount !== undefined && !isValidCount(data.onlineCount))) {
              throw new Error('invalid device list')
            }
+          if (data.total !== undefined) {
+            const lastPage = Math.max(1, Math.ceil(data.total / state.pageSize))
+            if (state.currentPage > lastPage) {
+              state.currentPage = lastPage
+              state.reloadPending = true
+              return
+            }
+          }
           state.deviceList = data.devices
           state.deviceTotal = data.total ?? data.devices.length
           state.serverOnlineCount = data.onlineCount ??
