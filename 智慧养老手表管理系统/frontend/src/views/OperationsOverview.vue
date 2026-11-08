@@ -2,7 +2,7 @@
   <div class="dashboard">
     <div class="page-heading">
       <div><h1>{{ isRestricted ? '照护工作台' : '运营总览' }}</h1><p class="page-subtitle">{{ isRestricted ? '按职责接单、处置和复核，不展示无权限的后台统计。' : '查看设备异常与平台公告，及时跟进照护事项。' }}</p></div>
-      <el-button v-if="!isRestricted" type="primary" :icon="Plus" @click="addtext">发布公告</el-button>
+      <el-button v-if="!isRestricted" type="primary" :icon="Plus" @click="openNoticeEditor">发布公告</el-button>
     </div>
     <care-inbox />
     <div v-if="!isRestricted" class="dashboard-panels">
@@ -15,7 +15,7 @@
       <article class="overview-card fall-card" v-loading="positionLoading" :aria-busy="positionLoading">
         <div class="metric-icon rose"><el-icon><WarningFilled /></el-icon></div>
         <div class="metric-copy"><span>紧急告警</span><strong v-if="!positionError">{{ num == null ? '—' : num }}</strong><strong v-else class="metric-error" role="status">{{ positionError }}</strong><small v-if="positionTotal != null">{{ positionTotal ? num + ' / ' + positionTotal + ' 位长者有紧急告警' : '暂无长者位置记录' }}</small><small>根据最近告警记录统计</small></div>
-        <el-button v-if="positionError" link @click="searchposition">重新加载告警统计</el-button><el-button v-else link @click="router.push('/operations/locations')">查看位置 <el-icon><ArrowRight /></el-icon></el-button>
+        <el-button v-if="positionError" link @click="loadLocationAlertSummary">重新加载告警统计</el-button><el-button v-else link @click="router.push('/operations/locations')">查看位置 <el-icon><ArrowRight /></el-icon></el-button>
       </article>
       <article class="overview-note">
         <span class="note-icon"><el-icon><InfoFilled /></el-icon></span>
@@ -183,7 +183,7 @@ function changePage(value: number) {
 function getDetail(row: NoticeRow) {
   void router.push({ path: '/operations/notices/detail', query: { textId: row.textId, picId: row.picId } })
 }
-function addtext() { void router.push('/operations/notices/new') }
+function openNoticeEditor() { void router.push('/operations/notices/new') }
 
 async function getCount() {
   if (countLoading.value || isRestricted.value) return
@@ -205,7 +205,7 @@ async function getCount() {
     countError.value = apiErrorMessage(error, '设备统计暂时无法加载')
   } finally { countLoading.value = false }
 }
-async function searchposition() {
+async function loadLocationAlertSummary() {
   if (isRestricted.value || positionLoading.value) return
   positionLoading.value = true
   positionError.value = ''
@@ -228,20 +228,20 @@ async function searchposition() {
     positionLoading.value = false
     if (positionNeedsRefresh) {
       positionNeedsRefresh = false
-      void searchposition()
+      void loadLocationAlertSummary()
     }
   }
 }
 watch(() => store.state.alertRevision, () => {
   if (isRestricted.value) return
   if (positionLoading.value) positionNeedsRefresh = true
-  else void searchposition()
+  else void loadLocationAlertSummary()
 })
 onMounted(() => {
   if (!isRestricted.value) {
     void loadNotices()
     void getCount()
-    void searchposition()
+    void loadLocationAlertSummary()
   }
 })
 onBeforeUnmount(noticeReads.dispose)
