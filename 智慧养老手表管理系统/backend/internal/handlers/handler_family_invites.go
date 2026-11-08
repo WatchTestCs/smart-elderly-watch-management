@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"suining-care/internal/devicecredential"
+	"suining-care/internal/securecode"
 	"context"
 	"net/http"
 	"strconv"
@@ -14,7 +14,6 @@ import (
 )
 
 // ---- InviteCode ----
-
 
 // normalizeCode 输入归一化：去首尾空格、去所有空格与连字符、转大写。
 func normalizeCode(s string) string {
@@ -221,7 +220,7 @@ func parseInvitationExpiry(m map[string]any) (*time.Time, bool) {
 func unusedInvitationCode(ctx context.Context, tx *db.Transaction) (string, error) {
 	code := ""
 	for a := 0; a < 20; a++ { // 最多 20 次重试保唯一
-		c, err := devicecredential.RandomCode(8)
+		c, err := securecode.Generate(8)
 		if err != nil {
 			return "", err
 		}
