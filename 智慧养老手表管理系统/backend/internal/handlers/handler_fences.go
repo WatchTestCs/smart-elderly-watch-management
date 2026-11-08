@@ -5,39 +5,24 @@ import (
 	"math"
 	"net/http"
 	"strings"
-	dbstore "suining-care/internal/db"
 	"time"
 	_ "time/tzdata"
 	"unicode/utf8"
 
 	"github.com/jackc/pgx/v5"
 	"suining-care/internal/fence"
+	"suining-care/internal/fencerepo"
 	"suining-care/internal/response"
 	"suining-care/internal/telemetryrepo"
 )
 
-type fenceConfig struct {
-	ID               int64         `json:"id"`
-	DeviceID         int64         `json:"deviceId"`
-	Revision         int64         `json:"revision"`
-	Name             string        `json:"name"`
-	Enabled          bool          `json:"enabled"`
-	Coordinates      []fence.Point `json:"coordinates"`
-	CoordinateSystem string        `json:"coordinateSystem"`
-	Timezone         string        `json:"timezone"`
-	TimeBegin        int           `json:"timeBegin"`
-	TimeEnd          int           `json:"timeEnd"`
-	MinPoints        int           `json:"minPoints"`
-	DwellSeconds     int           `json:"dwellSeconds"`
-	MaxAccuracy      float64       `json:"maxAccuracy"`
-}
 
 func (h *Handler) fenceSave(w http.ResponseWriter, r *http.Request) {
 	actor, ok := h.careSupervisor(w, r)
 	if !ok {
 		return
 	}
-	var req fenceConfig
+	var req fencerepo.Config
 	if !decodeCapability(w, r, &req) {
 		return
 	}
@@ -123,17 +108,8 @@ func (h *Handler) fenceList(w http.ResponseWriter, r *http.Request) {
 		write400(w, "设备无效")
 		return
 	}
-	items, ok := queryRows(h, w, r.Context(), func(rows dbstore.Rows) (fenceConfig, error) {
-		var item fenceConfig
-		var b []byte
-		if err := rows.Scan(&item.ID, &item.DeviceID, &item.Revision, &item.Name, &item.Enabled, &b, &item.CoordinateSystem, &item.Timezone, &item.TimeBegin, &item.TimeEnd, &item.MinPoints, &item.DwellSeconds, &item.MaxAccuracy); err != nil {
-			return item, err
-		}
-		err := json.Unmarshal(b, &item.Coordinates)
-		return item, err
-	}, `SELECT f.id,f.device_id,f.revision,f.name,f.enabled,f.coordinates,f.coordinate_system,f.timezone,f.time_begin,f.time_end,f.min_points,f.dwell_seconds,f.max_accuracy
- FROM device_fence f JOIN device d ON d.device_id=f.device_id AND d.old_id=f.old_id AND d.health_epoch=f.epoch WHERE f.device_id=$1 ORDER BY f.id`, req.DeviceID)
-	if !ok {
+	items, err := fencerepo.ListConfigured(r.Context(), h.DB, req.DeviceID)
+	if internalError(w, err) {
 		return
 	}
 	response.OK(w, map[string]any{"items": items})
@@ -158,7 +134,7 @@ func (h *Handler) fencePoint(w http.ResponseWriter, r *http.Request) {
 	if d == nil {
 		return
 	}
-	configs, err := loadActiveFences(ctx, tx, d.ID, *d.OldID, d.HealthEpoch)
+	configs, err := fencerepo.ListActive(ctx, tx, d.ID, *d.OldID, d.HealthEpoch)
 	if internalError(w, err) {
 		return
 	}
@@ -223,18 +199,8 @@ func (h *Handler) fenceEvents(w http.ResponseWriter, r *http.Request) {
 		write400(w, "老人或游标无效")
 		return
 	}
-	items, ok := queryRows(h, w, r.Context(), func(rows dbstore.Rows) (map[string]any, error) {
-		var id, fid, rev, did int64
-		var direction string
-		var lng, lat, accuracy float64
-		var at time.Time
-		var incident *int64
-		if err := rows.Scan(&id, &fid, &rev, &did, &direction, &lng, &lat, &accuracy, &at, &incident); err != nil {
-			return nil, err
-		}
-		return map[string]any{"id": id, "fenceId": fid, "fenceRevision": rev, "deviceId": did, "direction": direction, "lng": lng, "lat": lat, "accuracy": accuracy, "occurredAt": at, "incidentId": incident}, nil
-	}, `SELECT id,fence_id,fence_revision,device_id,direction,lng,lat,accuracy,occurred_at,incident_id FROM fence_event WHERE old_id=$1 AND id>$2 ORDER BY id LIMIT 100`, req.OldID, req.After)
-	if !ok {
+	items, err := fencerepo.ListEvents(r.Context(), h.DB, req.OldID, req.After)
+	if internalError(w, err) {
 		return
 	}
 	response.OK(w, map[string]any{"items": items})

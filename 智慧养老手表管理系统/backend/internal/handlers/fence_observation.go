@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	dbstore "suining-care/internal/db"
 	"suining-care/internal/fence"
+	"suining-care/internal/fencerepo"
 	"suining-care/internal/notify"
 	"time"
 )
@@ -17,19 +18,7 @@ type fencePointRequest struct {
 	OccurredAt       time.Time    `json:"occurredAt"`
 }
 
-func loadActiveFences(ctx context.Context, tx *dbstore.Transaction, deviceID, oldID, epoch int64) ([]fenceConfig, error) {
-	return dbstore.QueryList(ctx, tx, func(row dbstore.Rows) (fenceConfig, error) {
-		var f fenceConfig
-		var raw []byte
-		if err := row.Scan(&f.ID, &f.Revision, &raw, &f.Timezone, &f.TimeBegin, &f.TimeEnd, &f.MinPoints, &f.DwellSeconds, &f.MaxAccuracy); err != nil {
-			return f, err
-		}
-		err := json.Unmarshal(raw, &f.Coordinates)
-		return f, err
-	}, `SELECT id,revision,coordinates,timezone,time_begin,time_end,min_points,dwell_seconds,max_accuracy FROM device_fence WHERE device_id=$1 AND old_id=$2 AND epoch=$3 AND enabled=true ORDER BY id FOR UPDATE`, deviceID, oldID, epoch)
-}
-
-func advanceFenceObservation(f *fenceConfig, state *fence.State, req *fencePointRequest, at time.Time) (string, bool, error) {
+func advanceFenceObservation(f *fencerepo.Config, state *fence.State, req *fencePointRequest, at time.Time) (string, bool, error) {
 	if !at.After(state.Last) {
 		return "", false, nil
 	}
@@ -52,7 +41,7 @@ func advanceFenceObservation(f *fenceConfig, state *fence.State, req *fencePoint
 	return direction, true, nil
 }
 
-func (h *Handler) persistFenceEvent(ctx context.Context, tx *dbstore.Transaction, d *deviceRecord, f *fenceConfig, req *fencePointRequest, direction string, at time.Time) (map[string]any, error) {
+func (h *Handler) persistFenceEvent(ctx context.Context, tx *dbstore.Transaction, d *deviceRecord, f *fencerepo.Config, req *fencePointRequest, direction string, at time.Time) (map[string]any, error) {
 	var eventID int64
 	err := tx.QueryRow(ctx, `INSERT INTO fence_event(fence_id,fence_revision,old_id,device_id,epoch,direction,lng,lat,accuracy,occurred_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id`, f.ID, f.Revision, *d.OldID, d.ID, d.HealthEpoch, direction, req.Point[0], req.Point[1], req.Accuracy, at).Scan(&eventID)
 	if err != nil {
