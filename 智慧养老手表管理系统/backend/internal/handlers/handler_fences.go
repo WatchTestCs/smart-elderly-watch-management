@@ -213,7 +213,7 @@ func (h *Handler) fenceEvents(w http.ResponseWriter, r *http.Request) {
 	}
 	var req struct {
 		ResidentID int64 `json:"residentId"`
-		After int64 `json:"after"`
+		After      int64 `json:"after"`
 	}
 	if !decodeCapability(w, r, &req) {
 		return

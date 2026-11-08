@@ -202,9 +202,9 @@ func (h *Handler) familyDelete(w http.ResponseWriter, r *http.Request) {
 }
 
 type familyBindingTarget struct {
-	residentID    int64
-	familyID *int64
-	matches  int
+	residentID int64
+	familyID   *int64
+	matches    int
 }
 
 func loadFamilyBindingTarget(ctx context.Context, tx *db.Transaction, phone string) (familyBindingTarget, error) {

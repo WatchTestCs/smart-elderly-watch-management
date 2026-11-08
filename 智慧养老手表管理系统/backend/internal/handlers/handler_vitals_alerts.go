@@ -11,7 +11,7 @@ import (
 
 type vitalRecord struct {
 	Name        *string `json:"name"`
-	ResidentID       *int64  `json:"residentId"`
+	ResidentID  *int64  `json:"residentId"`
 	Sex         *string `json:"sex"`
 	RateState   *string `json:"rateState"`
 	PreState    *string `json:"preState"`
@@ -63,7 +63,7 @@ const (
 type alertRow struct {
 	ID            int64
 	DeviceID      *int64
-	ResidentID         *int64
+	ResidentID    *int64
 	Hr            *int64
 	Bp            *int64
 	RateState     *string
@@ -71,7 +71,7 @@ type alertRow struct {
 	RateDone      bool
 	PreDone       bool
 	CreateTime    *string
-	ResidentName *string
+	ResidentName  *string
 	HrHigh, HrLow *int
 	BpHigh, BpLow *int
 }
@@ -159,19 +159,19 @@ func describeRatepreAlert(a alertRow) map[string]any {
 		pb = 1
 	}
 	return map[string]any{
-		"hasAlert":      1,
-		"recordId":      a.ID,
-		"deviceId":      a.DeviceID,
-		"residentId":         a.ResidentID,
+		"hasAlert":     1,
+		"recordId":     a.ID,
+		"deviceId":     a.DeviceID,
+		"residentId":   a.ResidentID,
 		"residentName": a.ResidentName,
-		"hr":            hr,
-		"bp":            bp,
-		"rateBad":       rb,
-		"preBad":        pb,
-		"occurTime":     a.CreateTime,
-		"reason":        strings.Join(reasons, "；"),
-		"detail":        strings.Join(details, "；"),
-		"advice":        "① 先联系家属确认老人身体状况；② 持续异常建议就医；③ 若是阈值设置不合理，到「基础管理-手表信息」调整心率/血压上下限；④ 确认无误后点「标记已处理」消除红点。",
+		"hr":           hr,
+		"bp":           bp,
+		"rateBad":      rb,
+		"preBad":       pb,
+		"occurTime":    a.CreateTime,
+		"reason":       strings.Join(reasons, "；"),
+		"detail":       strings.Join(details, "；"),
+		"advice":       "① 先联系家属确认老人身体状况；② 持续异常建议就医；③ 若是阈值设置不合理，到「基础管理-手表信息」调整心率/血压上下限；④ 确认无误后点「标记已处理」消除红点。",
 	}
 }
 

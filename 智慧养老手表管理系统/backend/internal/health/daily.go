@@ -13,7 +13,7 @@ import (
 // Fixed reporting offsets match the existing statistics API. No implicit local
 // timezone or data-source merging is performed.
 type DailyKey struct {
-	ResidentID         int64  `json:"residentId"`
+	ResidentID    int64  `json:"residentId"`
 	Source        string `json:"source"`
 	SourceDevice  string `json:"sourceDevice"`
 	Metric        string `json:"metric"`

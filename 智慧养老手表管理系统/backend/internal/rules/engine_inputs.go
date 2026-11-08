@@ -12,9 +12,9 @@ import (
 
 type ruleDevice struct {
 	id, residentID, epoch int64
-	no               string
-	last, bound      *time.Time
-	battery          *float64
+	no                    string
+	last, bound           *time.Time
+	battery               *float64
 }
 
 func readRulePolicy(ctx context.Context, tx *db.Transaction, id int64) (Policy, error) {

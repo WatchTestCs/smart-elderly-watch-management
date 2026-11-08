@@ -48,7 +48,7 @@ type personRow struct {
 	deviceID   int64
 	deviceNo   string
 	alias      *string
-	residentID      *int64
+	residentID *int64
 	lastTime   *time.Time
 	battery    *int
 	bootSeq    int

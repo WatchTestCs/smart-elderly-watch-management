@@ -14,7 +14,7 @@ import (
 type healthDevice struct {
 	ID          int64
 	No, Secret  string
-	ResidentID       *int64
+	ResidentID  *int64
 	Status      *int
 	HealthEpoch int64
 }

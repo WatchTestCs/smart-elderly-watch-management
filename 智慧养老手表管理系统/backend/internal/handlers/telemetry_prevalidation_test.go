@@ -58,7 +58,7 @@ func TestParseDeviceTelemetryRetainsLegacyFields(t *testing.T) {
 	w := httptest.NewRecorder()
 	parsed, ok := parseDeviceTelemetryPayload(w, map[string]any{
 		"eventTime": "2026-10-27 08:09:10",
-		"hr":     "0", "bp": "120", "step": "0", "sleep": "8",
+		"hr":        "0", "bp": "120", "step": "0", "sleep": "8",
 		"sleepState": "1", "source": "gps", "battery": "85",
 		"lng": "105.5", "lat": "30.5", "alarm": "fall",
 	}, now)

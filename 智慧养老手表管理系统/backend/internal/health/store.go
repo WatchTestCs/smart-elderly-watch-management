@@ -16,17 +16,17 @@ var ErrConflict = errors.New("same source record version has different content")
 var ErrSourceDeviceMismatch = errors.New("sample source device does not match authenticated device")
 
 type Owner struct {
-	ResidentID    int64
-	DeviceID *int64
-	Epoch    int64
+	ResidentID int64
+	DeviceID   *int64
+	Epoch      int64
 }
 type Record struct {
-	SampleID string `json:"sampleId"`
-	ResidentID    int64  `json:"residentId"`
-	DeviceID *int64 `json:"deviceId"`
-	Epoch    int64  `json:"bindingVersion"`
-	Revision int64  `json:"revision"`
-	Sample   Sample `json:"sample"`
+	SampleID   string `json:"sampleId"`
+	ResidentID int64  `json:"residentId"`
+	DeviceID   *int64 `json:"deviceId"`
+	Epoch      int64  `json:"bindingVersion"`
+	Revision   int64  `json:"revision"`
+	Sample     Sample `json:"sample"`
 }
 
 func Digest(b []byte) string { h := sha256.Sum256(b); return hex.EncodeToString(h[:]) }

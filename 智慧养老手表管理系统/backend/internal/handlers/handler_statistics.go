@@ -95,7 +95,7 @@ func (h *Handler) statisticsRevision(ctx context.Context, residentID int64) (int
 }
 
 type healthStatisticsRequest struct {
-	ResidentID        int64     `json:"residentId"`
+	ResidentID   int64     `json:"residentId"`
 	Source       string    `json:"source"`
 	SourceDevice string    `json:"sourceDevice"`
 	Metric       string    `json:"metric"`

@@ -116,8 +116,8 @@ func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Reques
 func (h *Handler) healthChanges(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		ResidentID int64 `json:"residentId"`
-		After int64 `json:"after"`
-		Limit int   `json:"limit"`
+		After      int64 `json:"after"`
+		Limit      int   `json:"limit"`
 	}
 	if !decodeHealth(w, r, &req) {
 		return

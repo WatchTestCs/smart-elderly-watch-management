@@ -9,7 +9,7 @@ import (
 
 type activityRecord struct {
 	Name            *string `json:"name"`
-	ResidentID           *int64  `json:"residentId"`
+	ResidentID      *int64  `json:"residentId"`
 	Sex             *string `json:"sex"`
 	Step            *int64  `json:"step"`
 	Sleep           *int64  `json:"sleep"`

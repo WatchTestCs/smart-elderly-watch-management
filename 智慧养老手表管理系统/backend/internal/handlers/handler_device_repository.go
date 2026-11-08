@@ -84,7 +84,7 @@ type deviceRecord struct {
 	Model         *string
 	AppVersion    *string
 	Battery       *int
-	ResidentID         *int64
+	ResidentID    *int64
 	FamilyID      *int64
 	Status        *int
 	BindTime      *time.Time

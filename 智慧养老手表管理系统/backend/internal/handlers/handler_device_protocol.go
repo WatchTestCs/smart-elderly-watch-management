@@ -99,7 +99,7 @@ func (h *Handler) deviceLogin(w http.ResponseWriter, r *http.Request) {
 type bindCodeRow struct {
 	ID         int64
 	Code       string
-	ResidentID      *int64
+	ResidentID *int64
 	FamilyID   *int64
 	CreateUser *string
 	ExpireTime *time.Time
