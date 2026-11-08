@@ -20,13 +20,6 @@ func NumberExists(ctx context.Context, store *db.Database, number string) (bool,
 	return exists, err
 }
 
-// ResidentName reads the name attached to a bound device without changing ownership.
-func ResidentName(ctx context.Context, store *db.Database, residentID int64) (*string, error) {
-	var name *string
-	err := store.QueryRow(ctx, `SELECT name FROM oldperson WHERE old_id=$1`, residentID).Scan(&name)
-	return name, err
-}
-
 func UpdateSecret(ctx context.Context, store *db.Database, deviceID int64, hash string) (bool, error) {
 	result, err := store.Exec(ctx, `UPDATE device SET secret=$1 WHERE device_id=$2`, hash, deviceID)
 	if err != nil {
