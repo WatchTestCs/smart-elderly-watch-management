@@ -3,9 +3,7 @@
         <el-form-item label="姓名" prop="familyName">
           <el-input v-model="draft.familyName"></el-input>
         </el-form-item>
-<el-form-item v-if="editing" label="姓名" prop="familyId" style="display: none;">
-    <el-input v-model="draft.familyId"></el-input>
-    </el-form-item>
+
         <el-form-item label="关系" prop="familyRelation">
           <el-input v-model="draft.familyRelation"></el-input>
         </el-form-item>
