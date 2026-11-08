@@ -59,7 +59,7 @@ func phoneInUse(ctx context.Context, store *db.Database, box *securestore.Box, p
 		    OR EXISTS(SELECT 1 FROM family WHERE family_phone=$1 AND family_id<>$3)`
 		args = append(args, *exceptFamilyID)
 	}
-	err := store.QueryRow(ctx, query, args...).Scan(&used)
+	err = store.QueryRow(ctx, query, args...).Scan(&used)
 	return used, err
 }
 
