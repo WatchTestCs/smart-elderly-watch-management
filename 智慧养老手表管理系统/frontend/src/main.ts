@@ -2,7 +2,6 @@ import { createApp } from 'vue'
 import { ElMessage } from 'element-plus'
 import App from './App.vue'
 import DatabaseNotice from './components/DatabaseNotice.vue'
-import PagerBar from './components/PagerBar.vue'
 import { installDesktopKeys } from './desktop'
 import router from './router'
 import installElement from './element'
@@ -18,7 +17,6 @@ import '@/assets/css/commercial.css'
 
 const app = createApp(App)
 app.component('database-notice', DatabaseNotice)
-app.component('pager-bar', PagerBar)
 installElement(app)
 installHttpSecurity(router)
 // 兜底：组件渲染/生命周期里未捕获的错误不再静默，页面脚本加载失败时自动刷新到新版本。
