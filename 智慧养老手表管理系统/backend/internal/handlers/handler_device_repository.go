@@ -14,6 +14,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 
 	dbstore "suining-care/internal/db"
+	"suining-care/internal/devicerepo"
 	"suining-care/internal/response"
 )
 
@@ -100,9 +101,7 @@ type deviceRecord struct {
 	HandledSeq    int
 }
 
-const deviceRecordColumns = `device_id, device_no, secret, alias, model, app_version, battery,
-	old_id, family_id, status, bind_time, last_time, last_lng, last_lat, create_time,
-	person_handled, rate_handled, pre_handled, boot_seq, handled_seq, health_epoch`
+const deviceRecordColumns = devicerepo.DeviceRecordColumns
 
 func scanDeviceRecord(row dbstore.Row) (*deviceRecord, error) {
 	var d deviceRecord
