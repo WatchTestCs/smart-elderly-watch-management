@@ -140,18 +140,9 @@ func (h *Handler) fencePoint(w http.ResponseWriter, r *http.Request) {
 	}
 	events := []map[string]any{}
 	for _, f := range configs {
-		var state fence.State
-		var rev int64
-		var b []byte
-		err = tx.QueryRow(ctx, "SELECT revision,payload FROM fence_state WHERE fence_id=$1 FOR UPDATE", f.ID).Scan(&rev, &b)
-		if err != nil && err != pgx.ErrNoRows {
-			response.Error500(w, ref())
+		state, err := fencerepo.LoadState(ctx, tx, f.ID, f.Revision)
+		if internalError(w, err) {
 			return
-		}
-		if err == nil && rev == f.Revision {
-			if internalError(w, json.Unmarshal(b, &state)) {
-				return
-			}
 		}
 		at := req.OccurredAt.UTC().Truncate(time.Microsecond)
 		direction, fresh, err := advanceFenceObservation(&f, &state, &req, at)
@@ -161,9 +152,7 @@ func (h *Handler) fencePoint(w http.ResponseWriter, r *http.Request) {
 		if !fresh {
 			continue
 		}
-		b, _ = json.Marshal(state)
-		_, err = tx.Exec(ctx, `INSERT INTO fence_state(fence_id,revision,payload) VALUES($1,$2,$3) ON CONFLICT(fence_id) DO UPDATE SET revision=EXCLUDED.revision,payload=EXCLUDED.payload`, f.ID, f.Revision, json.RawMessage(b))
-		if internalError(w, err) {
+		if internalError(w, fencerepo.SaveState(ctx, tx, f.ID, f.Revision, state)) {
 			return
 		}
 		if direction == "" {
