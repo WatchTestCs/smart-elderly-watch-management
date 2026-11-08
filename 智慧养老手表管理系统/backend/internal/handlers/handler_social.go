@@ -4,6 +4,7 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"suining-care/internal/socialrepo"
 	dbstore "suining-care/internal/db"
 	"suining-care/internal/response"
 	"time"
@@ -154,11 +155,11 @@ func (h *Handler) deleteNoticeComment(w http.ResponseWriter, r *http.Request) {
 		response.Fail(w, "参数不正确")
 		return
 	}
-	ct, err := h.DB.Exec(r.Context(), "DELETE FROM said WHERE said_id=$1", saidID)
+	deleted, err := socialrepo.DeleteComment(r.Context(), h.DB, saidID)
 	if internalError(w, err) {
 		return
 	}
-	writeCode(w, ct.RowsAffected() == 1)
+	writeCode(w, deleted)
 }
 
 // POST /api/v1/notice-comments/create —— 发表说说/评论。
@@ -237,11 +238,11 @@ func (h *Handler) replyToNoticeComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	back, _ := v.(string)
-	ct, err := h.DB.Exec(r.Context(), "UPDATE said SET back=$1, back_time=$2 WHERE said_id=$3", back, time.Now(), saidID)
+	updated, err := socialrepo.ReplyComment(r.Context(), h.DB, saidID, back, time.Now())
 	if internalError(w, err) {
 		return
 	}
-	writeCode(w, ct.RowsAffected() == 1)
+	writeCode(w, updated)
 }
 
 // POST /api/v1/notice-comments/toggle-like —— 点赞/取消点赞（事务内执行，行锁防并发）。
@@ -259,48 +260,15 @@ func (h *Handler) toggleNoticeCommentLike(w http.ResponseWriter, r *http.Request
 	if !ok {
 		return
 	}
-	tx, err := h.DB.Begin(r.Context())
+	changed, err := socialrepo.ToggleLike(r.Context(), h.DB, saidID, p.Phone)
+	if isNotFound(err) {
+		response.JSON(w, http.StatusNotFound, map[string]any{"message": "评论不存在"})
+		return
+	}
 	if internalError(w, err) {
 		return
 	}
-	defer tx.Rollback(r.Context())
-	var locked int64
-	if err := tx.QueryRow(r.Context(), "SELECT said_id FROM said WHERE said_id=$1 FOR UPDATE", saidID).Scan(&locked); err != nil {
-		if isNotFound(err) {
-			response.JSON(w, http.StatusNotFound, map[string]any{"message": "评论不存在"})
-			return
-		}
-		response.Error500(w, ref())
-		return
-	}
-	var cnt int64
-	if internalError(w, tx.QueryRow(r.Context(), "SELECT COUNT(1) FROM nice_count WHERE said_id=$1 AND phone=$2", saidID, p.Phone).Scan(&cnt)) {
-		return
-	}
-	var rows int64
-	if cnt > 0 {
-		ct, err := tx.Exec(r.Context(), "DELETE FROM nice_count WHERE said_id=$1 AND phone=$2", saidID, p.Phone)
-		if internalError(w, err) {
-			return
-		}
-		rows = ct.RowsAffected()
-		if _, err := tx.Exec(r.Context(), "UPDATE said SET nice_count=nice_count-1 WHERE said_id=$1", saidID); internalError(w, err) {
-			return
-		}
-	} else {
-		ct, err := tx.Exec(r.Context(), "INSERT INTO nice_count(said_id,phone) VALUES($1,$2)", saidID, p.Phone)
-		if internalError(w, err) {
-			return
-		}
-		rows = ct.RowsAffected()
-		if _, err := tx.Exec(r.Context(), "UPDATE said SET nice_count=nice_count+1 WHERE said_id=$1", saidID); internalError(w, err) {
-			return
-		}
-	}
-	if internalError(w, tx.Commit(r.Context())) {
-		return
-	}
-	writeCode(w, rows == 1)
+	writeCode(w, changed)
 }
 
 // ---------------------------------------------------------------------------
