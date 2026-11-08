@@ -95,7 +95,7 @@
     </record-cards>
     
     <div v-if="!loadError" style="margin-top: 10px;text-align: center">
-      <pager-bar
+      <el-pagination layout="total, sizes, prev, pager, next, jumper"
         @size-change="handleSizeChange"
         @current-change="changePage"
         v-model:current-page="currentPage"
