@@ -13,6 +13,13 @@ func Exists(ctx context.Context, store *db.Database, deviceID int64) (bool, erro
 	return exists, err
 }
 
+// NumberExists checks the unique device number in the inventory store.
+func NumberExists(ctx context.Context, store *db.Database, number string) (bool, error) {
+	var exists bool
+	err := store.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM device WHERE device_no=$1)`, number).Scan(&exists)
+	return exists, err
+}
+
 func UpdateSecret(ctx context.Context, store *db.Database, deviceID int64, hash string) (bool, error) {
 	result, err := store.Exec(ctx, `UPDATE device SET secret=$1 WHERE device_id=$2`, hash, deviceID)
 	if err != nil {
