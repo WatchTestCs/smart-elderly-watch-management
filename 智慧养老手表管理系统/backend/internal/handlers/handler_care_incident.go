@@ -39,21 +39,6 @@ func careAdmin(w http.ResponseWriter, r *http.Request) (int64, bool) {
 	return p.ID, true
 }
 
-func careNotificationStatusExpr(mysql bool) string {
-	agg := "bool_or"
-	if mysql {
-		agg = "MAX"
-	}
-	return `(SELECT CASE
-            WHEN ` + agg + `(n.status='delivered') THEN 'delivered'
-            WHEN ` + agg + `(n.status='failed') THEN 'failed'
-            WHEN ` + agg + `(n.status='sending') THEN 'sending'
-            WHEN ` + agg + `(n.status='pending') THEN 'pending'
-            WHEN ` + agg + `(n.status='sent') THEN 'sent'
-            ELSE 'no_recipient' END
-           FROM care_notification_outbox n WHERE n.incident_id=i.id)`
-}
-
 func (h *Handler) careIncidents(w http.ResponseWriter, r *http.Request) {
 	actor, ok := careAdmin(w, r)
 	if !ok || !h.auditCareAccess(w, r, actor, "incident_list", nil) {
@@ -63,7 +48,7 @@ func (h *Handler) careIncidents(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	page, ps, ok := strictPage(w, m)
+	page, pageSize, ok := strictPage(w, m)
 	if !ok {
 		return
 	}
@@ -79,39 +64,11 @@ func (h *Handler) careIncidents(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	var total int64
-	if internalError(w, h.DB.QueryRow(r.Context(), `SELECT count(*) FROM care_incident WHERE (state='verified')=$1`, state == "verified").Scan(&total)) {
+	items, total, err := careworkflow.ListIncidents(r.Context(), h.DB, state == "verified", page, pageSize)
+	if internalError(w, err) {
 		return
 	}
-	items, ok := queryRows(h, w, r.Context(), func(rows db.Rows) (map[string]any, error) {
-		var id, oldID, deviceID int64
-		var kind, state, severity string
-		var created, due time.Time
-		var assigned, resolved, verified, oldName *string
-		var deliveryStatus string
-		var ackAt, resAt, verAt *time.Time
-		if err := rows.Scan(&id, &oldID, &deviceID, &kind, &state, &severity, &created, &due,
-			&assigned, &ackAt, &resolved, &resAt, &verified, &verAt, &oldName, &deliveryStatus); err != nil {
-			return nil, err
-		}
-		return map[string]any{
-			"id": id, "oldId": oldID, "deviceId": deviceID, "kind": kind, "state": state,
-			"severity": severity, "createdAt": created, "dueAt": due,
-			"oldPersonName": oldName, "notificationState": deliveryStatus,
-			"acknowledgedBy": assigned, "acknowledgedAt": ackAt,
-			"resolvedBy": resolved, "resolvedAt": resAt, "verifiedBy": verified, "verifiedAt": verAt,
-		}, nil
-	}, `SELECT i.id,i.old_id,i.device_id,i.kind,i.state,i.severity,i.created_at,i.due_at,
-          i.acknowledged_by,i.acknowledged_at,i.resolved_by,i.resolved_at,i.verified_by,i.verified_at,
-          o.name,
-          `+careNotificationStatusExpr(h.DB.IsMySQL())+`
-     FROM care_incident i LEFT JOIN oldperson o ON o.old_id=i.old_id
-     WHERE (i.state='verified')=$1 ORDER BY i.due_at ASC, i.id DESC
-     LIMIT $2 OFFSET $3`, state == "verified", ps, (page-1)*ps)
-	if !ok {
-		return
-	}
-	response.OK(w, map[string]any{"items": items, "total": total, "page": page, "pageSize": ps, "duty": duty, "actorId": actor})
+	response.OK(w, map[string]any{"items": items, "total": total, "page": page, "pageSize": pageSize, "duty": duty, "actorId": actor})
 }
 
 // Transitions are serialized with SELECT ... FOR UPDATE. A transition records its
