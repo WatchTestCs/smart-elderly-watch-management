@@ -7,6 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"suining-care/internal/devicerepo"
 )
 
 func TestSOSRejectsStaleBinding(t *testing.T) {
@@ -194,7 +196,7 @@ func TestSOSPersistenceRollbackLeavesNoPartialRows(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	d, err := scanDeviceRecord(tx.QueryRow(ctx, `SELECT `+deviceRecordColumns+` FROM device WHERE device_id=1 FOR UPDATE`))
+	d, err := devicerepo.ScanDeviceRecord(devicerepo.LockedDeviceRow(ctx, tx, 1))
 	if err != nil {
 		_ = tx.Rollback(ctx)
 		t.Fatal(err)
