@@ -8,7 +8,7 @@
         <div class="profile-avatar"><img v-if="imageUrl" :src="imageUrl" alt="当前账号头像" @error="imageUrl = ''"><span v-else>{{ (familyProfile.familyName || personName || '家').slice(0, 1) }}</span></div>
         <div class="profile-identity"><p>家属账号</p><h2>{{ familyProfile.familyName || personName || '个人资料' }}</h2><span>在这里管理您的联系资料与账号。</span></div>
       </div>
-      <div class="profile-actions"><el-button type="primary" @click="handleeditMessage">修改资料</el-button><el-button plain @click="handleeditPassword">修改密码</el-button><el-upload class="avatar-uploader" action="/api/v1/image/saveImage" :headers="uploadHeaders" :show-file-list="false" :with-credentials="true" :on-success="handleAvatarSuccess" :on-error="handleAvatarError" :before-upload="beforeAvatarUpload"><el-button plain>更换头像</el-button></el-upload></div>
+      <div class="profile-actions"><el-button type="primary" @click="openProfileEditor">修改资料</el-button><el-button plain @click="openPasswordEditor">修改密码</el-button><el-upload class="avatar-uploader" action="/api/v1/image/saveImage" :headers="uploadHeaders" :show-file-list="false" :with-credentials="true" :on-success="handleAvatarSuccess" :on-error="handleAvatarError" :before-upload="beforeAvatarUpload"><el-button plain>更换头像</el-button></el-upload></div>
       <dl class="profile-details"><div><dt>姓名</dt><dd>{{ familyProfile.familyName || '暂未填写' }}</dd></div><div><dt>性别</dt><dd>{{ familyProfile.familySex || '暂未填写' }}</dd></div><div><dt>手机号</dt><dd>{{ familyPhone || '暂未提供' }}</dd></div><div><dt>联系地址</dt><dd>{{ familyProfile.familyAddress || '暂未填写' }}</dd></div></dl>
     </section>
 <el-dialog
@@ -44,7 +44,7 @@
 				  v-model="passwordEditDialogVisible"
           :close-on-click-modal="!isPasswordSaving" :close-on-press-escape="!isPasswordSaving" :show-close="!isPasswordSaving" @closed="resetForm()"
 				  width="92%" class="profile-dialog">
-				  <el-form label-width="80px" class="demo-ruleForm" status-icon :rules="rules2" ref="passwordEditFormRef" :model="passwordEditForm">
+				  <el-form label-width="80px" status-icon :rules="rules2" ref="passwordEditFormRef" :model="passwordEditForm">
 				    <el-form-item label="原密码" for="profile-old-password" prop="oldPassword" >
 				    <el-input id="profile-old-password" type="password" aria-label="原密码" autocomplete="current-password" v-model="passwordEditForm.oldPassword"></el-input>
 				    </el-form-item>
@@ -212,7 +212,7 @@ async function editPassword() {
     ElMessage.error(apiErrorMessage(error, '密码暂时无法修改，请稍后重试'))
   } finally { isPasswordSaving.value = false }
 }
-async function handleeditMessage() {
+async function openProfileEditor() {
   const profile = familyProfile.value
   Object.assign(messageEditForm, {
     familyId: profile.familyId, familyName: profile.familyName,
@@ -223,7 +223,7 @@ async function handleeditMessage() {
   await nextTick()
   profileEditFormRef.value?.clearValidate()
 }
-function handleeditPassword() {
+function openPasswordEditor() {
   passwordEditDialogVisible.value = true
 }
 function resetForm() {
