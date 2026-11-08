@@ -106,7 +106,16 @@ import CareInbox from '@/components/CareInbox.vue'
 import { authState } from '@/auth'
 import store from '@/store'
 
-type NoticeRow = Record<string, any>
+interface NoticeRow {
+  textId: string | number
+  picId?: string | number
+  title?: string
+  time?: string
+}
+interface NoticeListResponse {
+  texts: NoticeRow[]
+  total?: number
+}
 const router = useRouter()
 const searchText = ref('')
 const appliedSearch = ref('')
@@ -138,11 +147,12 @@ const emptyDescription = computed(() => loadError.value || (appliedSearch.value
 
 const noticeReads = createLatestRead(
   (query: { page: number; pageSize: number; title: string }, signal: AbortSignal) =>
-    api.post<Record<string, any>>('api/v1/notices/list', query, { signal }),
+    api.post<NoticeListResponse>('api/v1/notices/list', query, { signal }),
   ({ data }) => {
     if (!Array.isArray(data.texts)) throw new Error('missing notices')
     notices.value = data.texts
-    total.value = Number.isSafeInteger(data.total) ? data.total : data.texts.length
+    if (data.total !== undefined && (!Number.isSafeInteger(data.total) || data.total < 0)) throw new Error('invalid notice count')
+    total.value = data.total ?? data.texts.length
     loadError.value = ''
   },
   error => {
