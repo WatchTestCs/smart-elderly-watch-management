@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	dbstore "suining-care/internal/db"
+	"suining-care/internal/guardianrepo"
 	"suining-care/internal/response"
 )
 
@@ -52,38 +53,13 @@ func (h *Handler) listGuardians(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	name := str(m, "customerName")
-	p, ps := bodyPage(m)
-	ctx := r.Context()
-	var total int64
-	const filter = ` FROM customer WHERE ($1='' OR customer_name LIKE '%'||$1||'%')`
-	const countSQL = `SELECT COUNT(*) AS total` + filter
-	list := []map[string]any{}
-	err := dbstore.QueryEach(ctx, h.DB, func(rows dbstore.Rows) error {
-		var id *int64
-		var cname *string
-		var cage *int64
-		var csex, cphone, caddr *string
-		if err := rows.Scan(&id, &cname, &cage, &csex, &cphone, &caddr, &total); err != nil {
-			return err
-		}
-		// The aggregate supplies one count row even when the page is empty.
-		if id == nil {
-			return nil
-		}
-		list = append(list, map[string]any{
-			"customerId": *id, "customerName": cname, "customerAge": cage,
-			"customerSex": csex, "customerPhone": cphone, "customerAddress": caddr,
-		})
-		return nil
-	}, `SELECT page.*, totals.total FROM (`+countSQL+`) AS totals LEFT JOIN (
-		 SELECT customer_id,customer_name,customer_age,customer_sex,customer_phone,customer_address`+filter+`
-		 ORDER BY customer_id LIMIT $2 OFFSET $3) AS page
-		 ON TRUE ORDER BY page.customer_id`, name, ps, (p-1)*ps)
+	page, pageSize := bodyPage(m)
+	items, total, err := guardianrepo.List(r.Context(), h.DB, name, page, pageSize)
 	if internalError(w, err) {
 		return
 	}
 	response.JSON(w, http.StatusOK, map[string]any{
-		"customers": list, "total": total, "page": p, "pageSize": ps,
+		"customers": items, "total": total, "page": page, "pageSize": pageSize,
 	})
 }
 
@@ -97,13 +73,13 @@ func (h *Handler) createGuardian(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	ct, err := h.DB.Exec(r.Context(),
-		`INSERT INTO customer(customer_name,customer_age,customer_sex,customer_phone,customer_address)
-		 VALUES($1,$2,$3,$4,$5)`, name, age, sex, phone, addr)
+	affected, err := guardianrepo.Create(r.Context(), h.DB, guardianrepo.Fields{
+		Name: name, Age: age, Sex: sex, Phone: phone, Address: addr,
+	})
 	if internalError(w, err) {
 		return
 	}
-	writeSingleMutation(w, ct.RowsAffected())
+	writeSingleMutation(w, affected)
 }
 
 // POST /api/v1/guardians/update —— 更新客户（ADMIN）。
@@ -121,14 +97,13 @@ func (h *Handler) updateGuardian(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	ct, err := h.DB.Exec(r.Context(),
-		`UPDATE customer SET customer_name=$1,customer_age=$2,customer_sex=$3,
-		 customer_phone=$4,customer_address=$5 WHERE customer_id=$6`,
-		name, age, sex, phone, addr, id)
+	affected, err := guardianrepo.Update(r.Context(), h.DB, id, guardianrepo.Fields{
+		Name: name, Age: age, Sex: sex, Phone: phone, Address: addr,
+	})
 	if internalError(w, err) {
 		return
 	}
-	writeSingleMutation(w, ct.RowsAffected())
+	writeSingleMutation(w, affected)
 }
 
 // POST /api/v1/guardians/delete —— 删除客户（ADMIN）。
