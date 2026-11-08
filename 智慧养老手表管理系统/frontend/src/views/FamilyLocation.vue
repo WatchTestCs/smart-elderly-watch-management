@@ -48,7 +48,7 @@
 
 <script setup lang="ts">
 import { Refresh } from '@element-plus/icons-vue'
-import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
+import { computed, ref, shallowRef, onMounted, onBeforeUnmount } from 'vue'
 import { authState } from '../auth'
 import { api } from '../api/client'
 import { apiErrorMessage } from '../api/httpContract'
@@ -67,7 +67,7 @@ interface PositionRecord extends PositionContext {
   status?: string | number | null
   beTime?: string
 }
-const positionList = ref<PositionRecord[]>([])
+const positionList = shallowRef<PositionRecord[]>([])
 const isLoading = ref(false)
 const loadError = ref('')
 const selectedLocation = ref<PositionRecord | null>(null)
