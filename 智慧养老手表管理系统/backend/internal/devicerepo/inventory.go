@@ -7,8 +7,8 @@ import (
 	"suining-care/internal/db"
 )
 
-// DeviceRecordColumns is the canonical projection for credential and binding snapshots.
-const DeviceRecordColumns = `device_id, device_no, secret, alias, model, app_version, battery,
+// deviceRecordColumns is shared only inside the device persistence package.
+const deviceRecordColumns = `device_id, device_no, secret, alias, model, app_version, battery,
 	old_id, family_id, status, bind_time, last_time, last_lng, last_lat, create_time,
 	person_handled, rate_handled, pre_handled, boot_seq, handled_seq, health_epoch`
 
