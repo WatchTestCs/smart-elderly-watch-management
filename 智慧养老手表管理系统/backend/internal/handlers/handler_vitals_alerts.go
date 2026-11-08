@@ -59,21 +59,6 @@ const (
 	pendingPressure = "(r.pre_state='1' AND (r.pre_handled_at IS NULL OR r.create_time > r.pre_handled_at))"
 )
 
-type alertRow struct {
-	ID            int64
-	DeviceID      *int64
-	OldID         *int64
-	Hr            *int64
-	Bp            *int64
-	RateState     *string
-	PreState      *string
-	RateDone      bool
-	PreDone       bool
-	CreateTime    *string
-	OldPersonName *string
-	HrHigh, HrLow *int
-	BpHigh, BpLow *int
-}
 
 // POST /api/v1/vitals/alerts/detail —— 查看一条异常记录的原因。
 func (h *Handler) getVitalAlert(w http.ResponseWriter, r *http.Request) {
@@ -85,15 +70,15 @@ func (h *Handler) getVitalAlert(w http.ResponseWriter, r *http.Request) {
 	oldIDStr := strID(m, "oldId")
 	kind := strings.ToLower(str(m, "kind"))
 
-	var a alertRow
+	var a vitalrepo.Alert
 	var found bool
 	var err error
 	if isDigits(recordIDStr) {
 		id, _ := strconv.ParseInt(recordIDStr, 10, 64)
-		a, found, err = h.findAlertRecord(r, id)
+		a, found, err = vitalrepo.FindAlert(r.Context(), h.DB, id)
 	} else if isDigits(oldIDStr) {
 		id, _ := strconv.ParseInt(oldIDStr, 10, 64)
-		a, found, err = h.findLatestPending(r, id, kind)
+		a, found, err = vitalrepo.FindLatestPending(r.Context(), h.DB, id, kind)
 	} else {
 		response.Fail(w, "参数不正确")
 		return
@@ -126,7 +111,7 @@ func vitalAlertReason(metric string, value, low, high int) string {
 	}
 }
 
-func describeRatepreAlert(a alertRow) map[string]any {
+func describeRatepreAlert(a vitalrepo.Alert) map[string]any {
 	hr, bp := 0, 0
 	if a.Hr != nil {
 		hr = int(*a.Hr)
@@ -172,39 +157,6 @@ func describeRatepreAlert(a alertRow) map[string]any {
 		"detail":        strings.Join(details, "；"),
 		"advice":        "① 先联系家属确认老人身体状况；② 持续异常建议就医；③ 若是阈值设置不合理，到「基础管理-手表信息」调整心率/血压上下限；④ 确认无误后点「标记已处理」消除红点。",
 	}
-}
-
-const vitalAlertSelect = `SELECT r.id, r.device_id, r.old_id, r.hr, r.bp, r.rate_state, r.pre_state,
-		COALESCE((r.rate_handled_at IS NOT NULL AND r.create_time <= r.rate_handled_at), false),
-		COALESCE((r.pre_handled_at IS NOT NULL AND r.create_time <= r.pre_handled_at), false),
-		TO_CHAR(r.create_time,'YYYY-MM-DD HH24:MI:SS'), o.name, w.hrf, w.hrl, w.bpf, w.bpl
-		FROM ratepre r LEFT JOIN oldperson o ON o.old_id=r.old_id
-		LEFT JOIN watch_info w ON w.device_id=r.device_id`
-
-func (h *Handler) findAlertRecord(r *http.Request, id int64) (alertRow, bool, error) {
-	return scanVitalAlert(h.DB.QueryRow(r.Context(), vitalAlertSelect+` WHERE r.id=$1`, id))
-}
-
-func (h *Handler) findLatestPending(r *http.Request, oldID int64, kind string) (alertRow, bool, error) {
-	condition := "(" + pendingRate + " OR " + pendingPressure + ")"
-	switch kind {
-	case "rate":
-		condition = pendingRate
-	case "pre":
-		condition = pendingPressure
-	}
-	return scanVitalAlert(h.DB.QueryRow(r.Context(), vitalAlertSelect+
-		` WHERE r.old_id=$1 AND `+condition+` ORDER BY r.create_time DESC, r.id DESC LIMIT 1`, oldID))
-}
-
-func scanVitalAlert(row dbstore.Row) (alertRow, bool, error) {
-	var alert alertRow
-	err := row.Scan(&alert.ID, &alert.DeviceID, &alert.OldID, &alert.Hr, &alert.Bp, &alert.RateState, &alert.PreState,
-		&alert.RateDone, &alert.PreDone, &alert.CreateTime, &alert.OldPersonName, &alert.HrHigh, &alert.HrLow, &alert.BpHigh, &alert.BpLow)
-	if isNotFound(err) {
-		return alert, false, nil
-	}
-	return alert, err == nil, err
 }
 
 // POST /api/v1/vitals/alerts/resolve —— 处置异常（消除红点），事务内执行。
