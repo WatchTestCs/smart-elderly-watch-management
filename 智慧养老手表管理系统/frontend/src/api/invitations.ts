@@ -1,11 +1,27 @@
 import { api, type Envelope } from './client'
 
+export interface InvitationRecord {
+  id: number
+  code: string
+  oldPersonName?: string
+  createUser?: string
+  createTime?: string
+  expireTime?: string
+  status: string
+  usedTime?: string
+}
+
+export interface InvitableResident {
+  oldId: string | number
+  name: string
+}
+
 export interface InvitationResult extends Envelope {
   oldPersonName?: string
   remainDays?: number
   codes?: string[]
-  inviteCodes?: unknown[]
-  oldPeople?: unknown[]
+  inviteCodes?: InvitationRecord[]
+  oldPeople?: InvitableResident[]
   total?: number
 }
 
