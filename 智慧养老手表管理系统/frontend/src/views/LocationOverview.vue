@@ -91,9 +91,17 @@ import store from '@/store'
 import PositionMap from '@/components/PositionMap.vue'
 import RecordCards from '@/components/RecordCards.vue'
 import { describePositionContext } from '../utils/positionContext'
-import { positionAlertMessage } from './positionAlertMessage'
+import { positionAlertMessage, type PositionAlarm } from './positionAlertMessage'
 
-type PositionRow = Record<string, any>
+interface PositionRow extends PositionAlarm {
+  oldId: number | string
+  name: string
+  sex?: string
+  status?: number | string
+  lng?: number | string | null
+  lat?: number | string | null
+  beTime?: string
+}
 const searchText = ref('')
 const mobileLayout = useCollectionLayout(900)
 const {
