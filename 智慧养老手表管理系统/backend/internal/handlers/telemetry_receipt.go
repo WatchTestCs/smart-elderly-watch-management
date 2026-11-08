@@ -10,8 +10,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	dbstore "suining-care/internal/db"
-	"suining-care/internal/response"
 	"suining-care/internal/devicerepo"
+	"suining-care/internal/response"
 )
 
 // reportPayloadDigest hashes the decoded request body. encoding/json sorts
