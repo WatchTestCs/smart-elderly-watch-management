@@ -186,40 +186,43 @@ export function useDevices() {
   async function openWorkbench() {
     const revision = ++workbenchRequest
     state.workbench.visible = true
-    const kinds = ['person', 'rate', 'pre']
-    const pending: { device: DeviceRecord; kind: string }[] = []
+    const pending: { device: DeviceRecord; kind: 'person' | 'rate' | 'pre' }[] = []
     for (const device of state.deviceList) {
-      const counts = alertOf(device.deviceId)
-      for (const kind of kinds) {
-        const count = kind === 'person' ? counts.personCount :
-          kind === 'rate' ? counts.rateCount : counts.preCount
-        if (count > 0) pending.push({ device, kind })
-      }
+      const { personCount, rateCount, preCount } = alertOf(device.deviceId)
+      if (personCount > 0) pending.push({ device, kind: 'person' })
+      if (rateCount > 0) pending.push({ device, kind: 'rate' })
+      if (preCount > 0) pending.push({ device, kind: 'pre' })
     }
+
     const results: (DeviceRecord | null)[] = Array(pending.length).fill(null)
     let nextIndex = 0
+    let failed = false
+    const current = () => !disposed && revision === workbenchRequest
+
     async function readDetails() {
-      while (nextIndex < pending.length && !disposed && revision === workbenchRequest) {
+      while (nextIndex < pending.length && current()) {
         const index = nextIndex++
         const { device, kind } = pending[index]
-        const { data } = await post<AlertDetailResponse>('alertDetail', { deviceId: device.deviceId, kind })
-        if (data.hasAlert !== 1) continue
-        results[index] = {
-          deviceId: device.deviceId, deviceNo: data.deviceNo || device.deviceNo,
-          alias: data.alias ?? device.alias ?? '', oldPersonName: data.oldPersonName ?? device.oldPersonName ?? '',
-          kind, kindText: data.kindText, reason: data.reason, recordId: data.recordId
+        try {
+          const { data } = await post<AlertDetailResponse>('alertDetail', { deviceId: device.deviceId, kind })
+          if (!current()) return
+          if (data.hasAlert !== 1) continue
+          results[index] = {
+            deviceId: device.deviceId, deviceNo: data.deviceNo || device.deviceNo,
+            alias: data.alias ?? device.alias ?? '', oldPersonName: data.oldPersonName ?? device.oldPersonName ?? '',
+            kind, kindText: data.kindText, reason: data.reason, recordId: data.recordId
+          }
+        } catch {
+          if (!current()) return
+          failed = true
         }
       }
     }
-    try {
-      await Promise.all(Array.from({ length: Math.min(6, pending.length) }, () => readDetails()))
-      if (!disposed && revision === workbenchRequest) {
-        state.workbench.list = results.filter((row): row is DeviceRecord => row !== null)
-      }
-    } catch (error) {
-      if (disposed || revision !== workbenchRequest) return
-      ElMessage({ type: 'error', message: apiErrorMessage(error, '读取异常工作台失败') })
-    }
+
+    await Promise.all(Array.from({ length: Math.min(6, pending.length) }, () => readDetails()))
+    if (!current()) return
+    state.workbench.list = results.filter((row): row is DeviceRecord => row !== null)
+    if (failed) ElMessage({ type: 'warning', message: '部分异常详情加载失败，请刷新后重试' })
   }
   function gotoPage(kind: string) {
     void router.push(kind === 'person' ? '/operations/monitoring-profiles' : '/operations/vitals')
