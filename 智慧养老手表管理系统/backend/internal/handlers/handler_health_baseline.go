@@ -64,7 +64,8 @@ func (h *Handler) healthBaseline(w http.ResponseWriter, r *http.Request) {
 		}
 		observations = append(observations, healthbaseline.Observation{
 			OwnerID: oldID, DeviceID: deviceID, BindingVersion: epoch,
-			Metric: sample.Metric, At: sample.Start, Value: *sample.Value, Valid: true,
+			Metric: sample.Metric, Source: sample.Source, SourceDevice: sample.SourceDevice,
+			At: sample.Start, Value: *sample.Value, Valid: true,
 		})
 	}
 	if !rowsOK(w, rows) {
