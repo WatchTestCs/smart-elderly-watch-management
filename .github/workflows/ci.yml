@@ -64,13 +64,23 @@ jobs:
           SIMULATOR_RESULT: ${{ needs['simulator-tests'].result }}
         run: test "$SIMULATOR_RESULT" = success
 
-  security:
-    name: Security
-    uses: ./.github/workflows/security.yml
+  dependency-review:
+    name: Dependency review
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
-      packages: read
-      security-events: write
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Reject newly introduced vulnerable dependencies
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294
+        with:
+          fail-on-severity: high
+          fail-on-scopes: development, runtime
 
   backend:
     name: Backend
@@ -116,7 +126,7 @@ jobs:
   required:
     name: Core CI / required
     if: ${{ always() }}
-    needs: [frontend, ui-quality, watch, simulator, backend, windows, deployment, security-scan, security]
+    needs: [frontend, ui-quality, watch, simulator, backend, windows, deployment, security-scan, dependency-review]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -136,4 +146,4 @@ jobs:
           test "${{ needs.windows.result }}" = "success"
           test "${{ needs.deployment.result }}" = "success"
           test "${{ needs.security-scan.result }}" = "success"
-          test "${{ needs.security.result }}" = "success"
+          test "${{ needs['dependency-review'].result }}" = "success" || test "${{ needs['dependency-review'].result }}" = "skipped"
