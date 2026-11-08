@@ -162,7 +162,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ArrowDown, CircleCheckFilled, Plus } from '@element-plus/icons-vue'
 import { useCollectionLayout } from '../composables/useCollectionLayout'
 import { useDevices } from '../composables/useDevices'
