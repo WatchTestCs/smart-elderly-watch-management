@@ -9,6 +9,27 @@ interface WorkspaceState {
 }
 const storageKey = 'suining-workspace-v1'
 const home = '/operations/overview'
+const maximumTabs = 20
+
+function validTab(value: unknown): value is Tab {
+  if (!value || typeof value !== 'object') return false
+  const tab = value as Partial<Tab>
+  return typeof tab.route === 'string' && tab.route.startsWith('/operations/') &&
+    typeof tab.name === 'string' && tab.name.length > 0
+}
+
+function restoreTabs(value: unknown): Tab[] {
+  if (!Array.isArray(value)) return []
+  const routes = new Set<string>()
+  const tabs: Tab[] = []
+  for (const item of value) {
+    if (!validTab(item) || routes.has(item.route)) continue
+    tabs.push({ route: item.route, name: item.name })
+    routes.add(item.route)
+    if (tabs.length === maximumTabs) break
+  }
+  return tabs
+}
 
 function restoreWorkspace(): Pick<WorkspaceState, 'openTab' | 'activeIndex' | 'selectedResidentId'> {
   try {
@@ -16,9 +37,7 @@ function restoreWorkspace(): Pick<WorkspaceState, 'openTab' | 'activeIndex' | 's
     if (raw) {
       const saved = JSON.parse(raw) as Partial<WorkspaceState>
       return {
-        openTab: Array.isArray(saved.openTab) ? saved.openTab.filter(tab =>
-          tab && typeof tab.route === 'string' && tab.route.startsWith('/operations/') &&
-          typeof tab.name === 'string').slice(0, 20) : [],
+        openTab: restoreTabs(saved.openTab),
         activeIndex: typeof saved.activeIndex === 'string' && saved.activeIndex.startsWith('/operations/')
           ? saved.activeIndex : home,
         selectedResidentId: typeof saved.selectedResidentId === 'string' ? saved.selectedResidentId : null
@@ -44,10 +63,14 @@ if (alertsChannel) alertsChannel.onmessage = event => {
 const store = {
   state,
   addTab(tab: Tab) {
-    if (!state.openTab.some(item => item.route === tab.route)) {
-      state.openTab.push(tab)
-      persistWorkspace()
+    if (!validTab(tab) || state.openTab.some(item => item.route === tab.route)) return
+    if (state.openTab.length >= maximumTabs) {
+      const oldestClosable = state.openTab.findIndex(item => item.route !== home)
+      if (oldestClosable === -1) return
+      state.openTab.splice(oldestClosable, 1)
     }
+    state.openTab.push(tab)
+    persistWorkspace()
   },
   removeTab(route: string) {
     state.openTab = state.openTab.filter(tab => tab.route !== route)
