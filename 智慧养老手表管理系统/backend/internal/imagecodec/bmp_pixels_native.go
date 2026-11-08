@@ -1,6 +1,6 @@
 //go:build linux && amd64 && cgo && !purego
 
-package handlers
+package imagecodec
 
 /*
 #cgo CFLAGS: -O3

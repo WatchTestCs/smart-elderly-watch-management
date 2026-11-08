@@ -1,4 +1,4 @@
-package handlers
+package imagecodec
 
 import (
 	"encoding/binary"

@@ -11,6 +11,8 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	"suining-care/internal/imagecodec"
 )
 
 func TestCoordinateJSONCompatibility(t *testing.T) {
@@ -42,7 +44,7 @@ func TestOversizedPNGGuard(t *testing.T) {
 	if input.Len() > maxImageBytes {
 		t.Fatal("fixture exceeds byte limit")
 	}
-	_, decoded, width, height, ok := sniffImage(input.Bytes())
+	_, decoded, width, height, ok := imagecodec.Sniff(input.Bytes())
 	if ok || decoded != nil {
 		t.Fatalf("over-limit %dx%d image already fully decoded (%d compressed bytes) before dimension rejection", width, height, input.Len())
 	}
@@ -62,7 +64,7 @@ func TestImageUploadGuards(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			kind, decoded, width, height, ok := sniffImage(input.Bytes())
+			kind, decoded, width, height, ok := imagecodec.Sniff(input.Bytes())
 			if !ok || kind != format || decoded == nil || width != 2 || height != 2 {
 				t.Fatal("valid image rejected")
 			}
