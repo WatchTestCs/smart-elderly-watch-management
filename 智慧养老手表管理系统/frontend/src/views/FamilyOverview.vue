@@ -107,6 +107,7 @@ import { authState } from '../auth'
 import { useRouter } from 'vue-router'
 import { usePagedRecords } from '@/composables/usePagedRecords'
 import LatestHealthPanel from '../components/LatestHealthPanel.vue'
+import type { NoticeRecord } from '../domain/notices'
 
 const router = useRouter()
 const familyName = computed(() => authState.account?.displayName || '家人')
@@ -114,13 +115,13 @@ const searchText = ref('')
 const {
   records: notices, total, pageSize, currentPage, isLoading, loadError,
   load: loadNotices, changePage
-} = usePagedRecords<Record<string, any>, { title: string }>({
+} = usePagedRecords<NoticeRecord, { title: string }>({
   path: 'api/v1/notices/list',
   responseKey: 'texts',
   buildQuery: () => ({ title: searchText.value }),
   failure: '请检查服务连接后重试'
 })
-function getDetail(row: Record<string, any>) {
+function getDetail(row: NoticeRecord) {
   void router.push({
     path: '/family-portal/notice',
     query: { textId: row.textId, picId: row.picId }
