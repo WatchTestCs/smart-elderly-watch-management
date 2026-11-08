@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"context"
 	"net/http"
 	"regexp"
@@ -28,16 +29,8 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 	}
 	lng, _ := vstr(m, "lng")
 	lat, _ := vstr(m, "lat")
-	if msg := checkPosition(lng, lat); msg != "" {
-		write400(w, msg)
-		return
-	}
-	now := time.Now()
-	position, err := parsePositionMetadata(m, lng, lat, now)
-	if err != nil {
-		write400(w, err.Error())
-		return
-	}
+	var invalidPosition string
+	errInvalidPosition := errors.New("invalid SOS position")
 	result, failure, err := deviceworkflow.SOS(r.Context(), h.DB, h.Box, deviceworkflow.SOSInput{
 		Number: req.deviceNo, Secret: req.secret, Epoch: req.bindingVersion, RequestID: req.requestID,
 	}, deviceworkflow.SOSHooks{
@@ -45,10 +38,24 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 			return acceptSignedDeviceNonce(w, ctx, tx, deviceID)
 		},
 		Persist: func(ctx context.Context, tx *dbstore.Transaction, device *devicerepo.DeviceRecord) (int64, error) {
+			if msg := checkPosition(lng, lat); msg != "" {
+				invalidPosition = msg
+				return 0, errInvalidPosition
+			}
+			now := time.Now()
+			position, err := parsePositionMetadata(m, lng, lat, now)
+			if err != nil {
+				invalidPosition = err.Error()
+				return 0, errInvalidPosition
+			}
 			return (telemetryRepository{box: h.Box}).PersistSOSIncident(ctx, tx, device, lng, lat, req.requestID, position, now)
 		},
 	})
 	if failure == deviceworkflow.NonceRejected {
+		return
+	}
+	if errors.Is(err, errInvalidPosition) {
+		write400(w, invalidPosition)
 		return
 	}
 	if internalError(w, err) {
