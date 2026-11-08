@@ -195,8 +195,22 @@ async function submit () {
     dialog.value.error = apiErrorMessage(cause, '任务操作未完成')
   } finally {saving.value = false}
 }
-onMounted(() => {load();timer=setInterval(() => {if (!document.hidden && !loading.value && !saving.value && !dialog.value.visible && !history.value.visible) load()},15000)})
-onBeforeUnmount(() => { if (timer !== undefined) clearInterval(timer); reads.dispose(); historyReads.dispose() })
+function refreshWhenVisible() {
+  if (!document.hidden && !saving.value && !dialog.value.visible && !history.value.visible) void load()
+}
+onMounted(() => {
+  void load()
+  timer = setInterval(() => {
+    if (!loading.value) refreshWhenVisible()
+  }, 15000)
+  document.addEventListener('visibilitychange', refreshWhenVisible)
+})
+onBeforeUnmount(() => {
+  if (timer !== undefined) clearInterval(timer)
+  document.removeEventListener('visibilitychange', refreshWhenVisible)
+  reads.dispose()
+  historyReads.dispose()
+})
 </script>
 <style scoped>
 .care-inbox{margin-bottom:24px;padding:22px;border:1px solid #d8e2da;border-radius:14px;background:#fff}
