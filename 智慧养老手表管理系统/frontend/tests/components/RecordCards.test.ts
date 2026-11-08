@@ -14,7 +14,7 @@ describe('record card data boundary', () => {
           { key: 'note', label: '备注' }
         ]
       },
-      slots: { actions: ({ row }: { row: typeof records[number] }) => row.name }
+      slots: { actions: ({ row }: { row: object }) => (row as typeof records[number]).name }
     })
     expect(view.text()).toContain('测试长者')
     expect(view.text()).toContain('紧急告警')
