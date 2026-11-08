@@ -252,22 +252,34 @@ func (h *Handler) setup(w http.ResponseWriter, r *http.Request) {
 	if internalError(w, err) {
 		return
 	}
-	var id int64
-	if err := tx.QueryRow(ctx,
-		"INSERT INTO users(user_name,password,role) VALUES($1,$2,'1') RETURNING user_id",
-		name, hashed).Scan(&id); internalError(w, err) {
-		return
-	}
-	protected, err := userphone.Protect(h.Box, id, phone)
-	if internalError(w, err) {
-		return
-	}
-	if internalError(w, userphone.BindLookupKey(ctx, tx, h.Box)) {
-		return
-	}
-	if _, err = tx.Exec(ctx, `UPDATE users SET user_phone_cipher=$1,user_phone_lookup=$2,user_phone_protected=true WHERE user_id=$3`,
-		protected.Ciphertext, protected.Lookup, id); internalError(w, err) {
-		return
+	if h.Box == nil {
+		// Staged rollout: without a configured encryption key, keep the original
+		// plaintext write so first-run setup stays available on deployments that
+		// have not enabled administrator phone protection yet. Existing legacy
+		// rows remain readable through the unprotected login branch.
+		if _, err := tx.Exec(ctx,
+			"INSERT INTO users(user_name,user_phone,password,role) VALUES($1,$2,$3,'1')",
+			name, phone, hashed); internalError(w, err) {
+			return
+		}
+	} else {
+		var id int64
+		if err := tx.QueryRow(ctx,
+			"INSERT INTO users(user_name,password,role) VALUES($1,$2,'1') RETURNING user_id",
+			name, hashed).Scan(&id); internalError(w, err) {
+			return
+		}
+		protected, err := userphone.Protect(h.Box, id, phone)
+		if internalError(w, err) {
+			return
+		}
+		if internalError(w, userphone.BindLookupKey(ctx, tx, h.Box)) {
+			return
+		}
+		if _, err = tx.Exec(ctx, `UPDATE users SET user_phone_cipher=$1,user_phone_lookup=$2,user_phone_protected=true WHERE user_id=$3`,
+			protected.Ciphertext, protected.Lookup, id); internalError(w, err) {
+			return
+		}
 	}
 	if internalError(w, tx.Commit(ctx)) {
 		return
