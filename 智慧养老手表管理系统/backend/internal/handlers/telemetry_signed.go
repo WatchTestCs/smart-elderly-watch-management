@@ -91,7 +91,7 @@ func prepareSignedDeviceRequest(w http.ResponseWriter, r *http.Request) (*http.R
 	return r.WithContext(context.WithValue(r.Context(), signedDeviceContextKey{}, signed)), true
 }
 
-func persistSignedDeviceNonce(ctx context.Context, tx deviceQueries, deviceID int64) (bool, error) {
+func persistSignedDeviceNonce(ctx context.Context, tx *dbstore.Transaction, deviceID int64) (bool, error) {
 	signed, ok := ctx.Value(signedDeviceContextKey{}).(signedDeviceNonce)
 	if !ok {
 		return true, nil
@@ -111,7 +111,7 @@ func persistSignedDeviceNonce(ctx context.Context, tx deviceQueries, deviceID in
 	return false, err
 }
 
-func acceptSignedDeviceNonce(w http.ResponseWriter, ctx context.Context, tx deviceQueries, deviceID int64) bool {
+func acceptSignedDeviceNonce(w http.ResponseWriter, ctx context.Context, tx *dbstore.Transaction, deviceID int64) bool {
 	accepted, err := persistSignedDeviceNonce(ctx, tx, deviceID)
 	if err != nil {
 		response.JSON(w, http.StatusServiceUnavailable, map[string]any{"message": "设备防重放状态不可用"})
