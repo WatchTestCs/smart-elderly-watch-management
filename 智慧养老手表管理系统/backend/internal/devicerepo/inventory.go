@@ -7,6 +7,11 @@ import (
 	"suining-care/internal/db"
 )
 
+// DeviceRecordColumns is the canonical projection for credential and binding snapshots.
+const DeviceRecordColumns = `device_id, device_no, secret, alias, model, app_version, battery,
+	old_id, family_id, status, bind_time, last_time, last_lng, last_lat, create_time,
+	person_handled, rate_handled, pre_handled, boot_seq, handled_seq, health_epoch`
+
 func Exists(ctx context.Context, store *db.Database, deviceID int64) (bool, error) {
 	var exists bool
 	err := store.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM device WHERE device_id=$1)`, deviceID).Scan(&exists)
