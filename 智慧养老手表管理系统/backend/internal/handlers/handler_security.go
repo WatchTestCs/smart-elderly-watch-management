@@ -2,22 +2,16 @@ package handlers
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/base32"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"net/http"
-	"net/url"
 	"strconv"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"suining-care/internal/auth"
 	"suining-care/internal/authrepo"
 	"suining-care/internal/db"
-	"suining-care/internal/health"
 	"suining-care/internal/observability"
 	"suining-care/internal/response"
 	"suining-care/internal/securestore"
@@ -148,7 +142,7 @@ func (h *Handler) securityFactor(w http.ResponseWriter, r *http.Request) {
 			conflict409(w, "已启用双因素认证，不能覆盖现有密钥")
 			return
 		}
-		result, err = h.setupFactor(ctx, tx, p.Role, p.ID, scope)
+		result, err = authrepo.CreateFactorSetup(ctx, tx, h.Box, p.Role, p.ID, scope, time.Now())
 	case "confirm", "disable":
 		if err == pgx.ErrNoRows || (req.Action == "confirm" && (factor.Enabled || time.Now().After(factor.PendingUntil))) || (req.Action == "disable" && !factor.Enabled) {
 			conflict409(w, "双因素认证状态不允许此操作")
@@ -166,7 +160,7 @@ func (h *Handler) securityFactor(w http.ResponseWriter, r *http.Request) {
 		if req.Action == "disable" {
 			err = authrepo.DeleteFactor(ctx, tx, p.Role, p.ID)
 		} else {
-			codes, hashes, codeErr := newRecoveryCodes()
+			codes, hashes, codeErr := authrepo.GenerateRecoveryCodes()
 			if internalError(w, codeErr) {
 				return
 			}
@@ -219,32 +213,4 @@ func (h *Handler) securityLoginAudit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	response.OK(w, map[string]any{"items": items})
-}
-
-func (h *Handler) setupFactor(ctx context.Context, tx *db.Transaction, role string, actorID int64, scope string) (map[string]any, error) {
-	seed := make([]byte, 20)
-	if _, err := rand.Read(seed); err != nil {
-		return nil, err
-	}
-	secret := base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(seed)
-	sealed, err := h.Box.Seal(secret, scope)
-	if err == nil {
-		err = authrepo.SetupFactor(ctx, tx, role, actorID, sealed, time.Now().Add(10*time.Minute), uuid.NewString())
-	}
-	result := map[string]any{"secret": secret, "uri": "otpauth://totp/" + url.PathEscape("岁宁:"+role+":"+strconv.FormatInt(actorID, 10)) + "?secret=" + secret + "&issuer=" + url.QueryEscape("岁宁") + "&algorithm=SHA1&digits=6&period=30"}
-	return result, err
-}
-
-func newRecoveryCodes() ([]string, []string, error) {
-	codes, hashes := []string{}, []string{}
-	for range 8 {
-		b := make([]byte, 12)
-		if _, err := rand.Read(b); err != nil {
-			return nil, nil, err
-		}
-		code := hex.EncodeToString(b)
-		codes = append(codes, code)
-		hashes = append(hashes, health.Digest([]byte(code)))
-	}
-	return codes, hashes, nil
 }

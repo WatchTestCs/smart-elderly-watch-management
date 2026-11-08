@@ -28,7 +28,6 @@ func notificationPhones(ctx context.Context, q dbQuerier) ([]notificationTarget,
 	}, "SELECT DISTINCT f.family_id,f.family_phone FROM family f INNER JOIN oldperson o ON o.family_id=f.family_id WHERE f.family_phone IS NOT NULL")
 }
 
-
 // POST /api/v1/gallery/replace —— 替换首页展示图（整体替换，事务内执行）。
 func (h *Handler) replaceGallery(w http.ResponseWriter, r *http.Request) {
 	m, ok := optBody(w, r)
