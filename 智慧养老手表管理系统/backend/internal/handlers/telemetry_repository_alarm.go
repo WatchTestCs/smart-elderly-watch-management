@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"suining-care/internal/devicerepo"
 	"context"
 	"strings"
 	"time"
@@ -10,7 +11,7 @@ import (
 	"suining-care/internal/telemetryrepo"
 )
 
-func (repo telemetryRepository) persistReportPositionAndAlarm(ctx context.Context, tx *dbstore.Transaction, d *deviceRecord, oldID int64, parsed *parsedDeviceTelemetry, position string) (int64, error) {
+func (repo telemetryRepository) persistReportPositionAndAlarm(ctx context.Context, tx *dbstore.Transaction, d *devicerepo.DeviceRecord, oldID int64, parsed *parsedDeviceTelemetry, position string) (int64, error) {
 	lng, lat, sourceStr, alarm, beTime := parsed.lng, parsed.lat, parsed.sourceStr, parsed.alarm, parsed.beTime
 	if lng != "" && lat != "" {
 		location := telemetryrepo.Location{
@@ -65,7 +66,7 @@ func (repo telemetryRepository) persistReportPositionAndAlarm(ctx context.Contex
 }
 
 // SOS incident, event and notification records must commit before the device is acknowledged.
-func (repo telemetryRepository) PersistSOSIncident(ctx context.Context, tx *dbstore.Transaction, d *deviceRecord, lng, lat, requestID string, meta positionMetadata, now time.Time) (int64, error) {
+func (repo telemetryRepository) PersistSOSIncident(ctx context.Context, tx *dbstore.Transaction, d *devicerepo.DeviceRecord, lng, lat, requestID string, meta positionMetadata, now time.Time) (int64, error) {
 	position, err := sealPositionMetadata(repo.box, meta)
 	if err != nil {
 		return 0, err
