@@ -82,7 +82,7 @@
 html.large-text .care-family .profile-identity span, html.large-text .care-family .profile-details dd { font-size: 21px; }
 </style>
 <script setup lang="ts">
-import { computed, nextTick, onMounted, reactive, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { ElMessage, type FormInstance, type FormItemRule } from 'element-plus'
 import { api, accepted, type Envelope } from '../api/client'
 import { apiErrorMessage } from '../api/httpContract'
@@ -145,11 +145,15 @@ const rules2 = {
     { pattern: /^(?=.*[A-Za-z])(?=.*[0-9]).{12,20}$/, message: '请设置 12–20 位含字母和数字的密码', trigger: 'blur' }
   ]
 }
+let profileReadRevision = 0
 async function searchFamily() {
+  const revision = ++profileReadRevision
+  const requestedPhone = familyPhone.value
   isProfileLoading.value = true
   profileLoadError.value = ''
   try {
-    const { data } = await api.post<{ familyDto2?: FamilyProfileData }>('api/v1/family/selectTwo', { familyPhone: familyPhone.value })
+    const { data } = await api.post<{ familyDto2?: FamilyProfileData }>('api/v1/family/selectTwo', { familyPhone: requestedPhone })
+    if (revision !== profileReadRevision || requestedPhone !== familyPhone.value) return
     familyProfile.value = data?.familyDto2 || {}
     const profile = familyProfile.value
     if (profile.familyName && authState.account) authState.account.displayName = profile.familyName
@@ -157,8 +161,12 @@ async function searchFamily() {
     imageUrl.value = familyTouPic.value && familyTouPic.value !== 'undefined' && familyTouPic.value !== 'null'
       ? '/api/v1/image/download?name=' + encodeURIComponent(familyTouPic.value) : ''
   } catch (error) {
-    profileLoadError.value = apiErrorMessage(error, '个人资料暂时无法加载，请重试。')
-  } finally { isProfileLoading.value = false }
+    if (revision === profileReadRevision && requestedPhone === familyPhone.value) {
+      profileLoadError.value = apiErrorMessage(error, '个人资料暂时无法加载，请重试。')
+    }
+  } finally {
+    if (revision === profileReadRevision) isProfileLoading.value = false
+  }
 }
 async function editFamily() {
   if (isProfileSaving.value) return
@@ -238,4 +246,5 @@ function beforeAvatarUpload(file: File) {
   return validType && validSize
 }
 onMounted(() => { void searchFamily() })
+onBeforeUnmount(() => { profileReadRevision++ })
 </script>
