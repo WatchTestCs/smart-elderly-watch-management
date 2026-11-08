@@ -49,9 +49,9 @@ func ScanDeviceRecord(row db.Row) (*DeviceRecord, error) {
 }
 
 func FindDeviceByNo(ctx context.Context, store deviceReader, number string) (*DeviceRecord, error) {
-	return ScanDeviceRecord(store.QueryRow(ctx, "SELECT "+DeviceRecordColumns+" FROM device WHERE device_no=$1", number))
+	return ScanDeviceRecord(store.QueryRow(ctx, "SELECT "+deviceRecordColumns+" FROM device WHERE device_no=$1", number))
 }
 
 func FindDeviceByID(ctx context.Context, store deviceReader, id int64) (*DeviceRecord, error) {
-	return ScanDeviceRecord(store.QueryRow(ctx, "SELECT "+DeviceRecordColumns+" FROM device WHERE device_id=$1", id))
+	return ScanDeviceRecord(store.QueryRow(ctx, "SELECT "+deviceRecordColumns+" FROM device WHERE device_id=$1", id))
 }
