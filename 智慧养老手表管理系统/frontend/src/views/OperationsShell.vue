@@ -62,10 +62,10 @@ const pageDescription = computed(() => descriptions[route.path] || '在这里查
 function focusMain() { workspaceMain.value?.focus() }
 function tabClick() { void router.push({ path: activeIndex.value }) }
 function tabRemove(target: string | number) {
-  target = String(target)
-  if (target === '/operations/overview') return
-  store.removeTab(target)
-  if (activeIndex.value === target) {
+  const routeName = String(target)
+  if (routeName === '/operations/overview') return
+  store.removeTab(routeName)
+  if (activeIndex.value === routeName) {
     const next = openTab.value[openTab.value.length - 1]
     void router.push({ path: next?.route || '/operations/overview' })
   }
