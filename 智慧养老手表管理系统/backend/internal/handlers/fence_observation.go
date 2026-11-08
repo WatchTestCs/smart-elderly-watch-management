@@ -2,12 +2,12 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
+	"time"
+
 	dbstore "suining-care/internal/db"
 	"suining-care/internal/fence"
 	"suining-care/internal/fencerepo"
 	"suining-care/internal/notify"
-	"time"
 )
 
 type fencePointRequest struct {

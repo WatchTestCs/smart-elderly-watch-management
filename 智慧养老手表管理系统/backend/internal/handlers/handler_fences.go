@@ -16,7 +16,6 @@ import (
 	"suining-care/internal/telemetryrepo"
 )
 
-
 func (h *Handler) fenceSave(w http.ResponseWriter, r *http.Request) {
 	actor, ok := h.careSupervisor(w, r)
 	if !ok {
