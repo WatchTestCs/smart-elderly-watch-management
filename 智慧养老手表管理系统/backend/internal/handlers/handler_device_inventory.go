@@ -2,11 +2,11 @@ package handlers
 
 import (
 	"context"
-	"suining-care/internal/telemetryrepo"
 	"net/http"
 	"strconv"
 	"suining-care/internal/devicerepo"
 	"suining-care/internal/response"
+	"suining-care/internal/telemetryrepo"
 	"time"
 	"unicode/utf8"
 )

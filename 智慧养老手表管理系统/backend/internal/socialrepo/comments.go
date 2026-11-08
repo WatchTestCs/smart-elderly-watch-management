@@ -72,12 +72,12 @@ func ToggleLike(ctx context.Context, store *db.Database, commentID int64, phone 
 }
 
 type NewComment struct {
-	NoticeID int64
-	Content string
-	AuthorName string
+	NoticeID    int64
+	Content     string
+	AuthorName  string
 	AuthorPhone string
-	Avatar string
-	CreatedAt time.Time
+	Avatar      string
+	CreatedAt   time.Time
 }
 
 // AuthorAvatar retrieves the current family profile image for a comment author.

@@ -6,7 +6,7 @@ func TestNextState(t *testing.T) {
 	cases := []struct {
 		before string
 		action string
-		want string
+		want   string
 	}{
 		{"received", "acknowledge", "acknowledged"},
 		{"notifying", "escalate", "escalated"},

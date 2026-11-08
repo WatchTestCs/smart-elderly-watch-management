@@ -46,4 +46,3 @@ func (repo telemetryRepository) persistReportVitals(ctx context.Context, tx *dbs
 	}
 	return result, nil
 }
-

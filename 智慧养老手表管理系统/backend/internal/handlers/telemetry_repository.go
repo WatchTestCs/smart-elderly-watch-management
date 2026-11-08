@@ -48,4 +48,3 @@ func (repo telemetryRepository) PersistDeviceReport(ctx context.Context, tx *dbs
 	}
 	return result, nil
 }
-

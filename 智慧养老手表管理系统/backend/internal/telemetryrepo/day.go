@@ -73,4 +73,3 @@ func PersistDay(ctx context.Context, tx *dbstore.Transaction, deviceID, oldID, h
 	}
 	return nil
 }
-
