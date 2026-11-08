@@ -10,14 +10,15 @@ const forbiddenPackages = [
   'vue-cli-service', '@vue/cli-service', 'vue-loader', 'vue-jest'
 ]
 const forbiddenSyntax = [
-  [/\bnew\s+Vue\s*\(/g, 'Vue 2 constructor'],
-  [/\bVue\.(?:use|extend|component|directive|filter|mixin|prototype)\b/g, 'Vue 2 global API'],
-  [/\b(?:this\.)?\$(?:listeners|scopedSlots|children|destroy|set|delete|on|off|once)\b/g, 'removed instance API'],
-  [/\b(?:beforeDestroy|destroyed)\s*\(/g, 'removed lifecycle hook'],
-  [/\bv-bind:[\w-]+\.sync\b|\s:\w+\.sync\b/g, 'removed .sync binding'],
-  [/@[\w:-]+\.native\b/g, 'removed .native modifier'],
-  [/\bslot-scope\s*=/g, 'removed scoped-slot syntax'],
-  [/<script\b[^>]*\b(?:lang=["'](?:js|javascript)["']|src=["'][^"']+\.js["'])/g, 'new or existing JS SFC; migrate before Vapor']
+  [/\\bnew\\s+Vue\\s*\\(/g, 'Vue 2 constructor'],
+  [/\\bVue\\.(?:use|extend|component|directive|filter|mixin|prototype)\\b/g, 'Vue 2 global API'],
+  [/\\b(?:this\\.)?\\$(?:listeners|scopedSlots|children|destroy|set|delete|on|off|once)\\b/g, 'removed instance API'],
+  [/\\b(?:beforeDestroy|destroyed)\\s*\\(/g, 'removed lifecycle hook']
+]
+const forbiddenTemplate = [
+  [/\\bv-bind:[\\w-]+\\.sync\\b|\\s:[\\w-]+\\.sync\\b/g, 'removed .sync binding'],
+  [/@[\\w:-]+\\.native\\b/g, 'removed .native modifier'],
+  [/\\bslot-scope\\s*=/g, 'removed scoped-slot syntax']
 ]
 
 const errors = []
@@ -51,13 +52,23 @@ function check(path) {
   scanned++
   const text = readFileSync(path, 'utf8')
   const name = relative(sourcePath, path)
-  const script = path.endsWith('.vue')
-    ? (text.match(/<script\b[^>]*>[\s\S]*?<\/script>/gi) ?? []).join('\n')
+  const isSfc = path.endsWith('.vue')
+  const script = isSfc
+    ? (text.match(/<script\\b[^>]*>[\\s\\S]*?<\\/script>/gi) ?? []).join('\\n')
     : text
+  if (isSfc) {
+    const tags = text.match(/<script\\b[^>]*>/gi) ?? []
+    if (tags.some(tag => !/\\blang=["']ts["']/.test(tag))) jsSfcs++
+    for (const [pattern, reason] of forbiddenTemplate) {
+      for (const match of text.matchAll(pattern)) {
+        const line = text.slice(0, match.index).split('\\n').length
+        errors.push(`${name}:${line}: ${reason} (${match[0]})`)
+      }
+    }
+  }
   for (const [pattern, reason] of forbiddenSyntax) {
-    pattern.lastIndex = 0
     for (const match of script.matchAll(pattern)) {
-      const line = script.slice(0, match.index).split('\n').length
+      const line = script.slice(0, match.index).split('\\n').length
       errors.push(`${name}:${line}: ${reason} (${match[0]})`)
     }
   }
