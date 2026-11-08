@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"suining-care/internal/devicerepo"
 	"context"
 
 	dbstore "suining-care/internal/db"
@@ -17,7 +18,7 @@ func measurementState(value *int, low, high int) any {
 	return "0"
 }
 
-func (repo telemetryRepository) persistReportVitals(ctx context.Context, tx *dbstore.Transaction, d *deviceRecord, oldID int64, parsed *parsedDeviceTelemetry) (telemetryPersisted, error) {
+func (repo telemetryRepository) persistReportVitals(ctx context.Context, tx *dbstore.Transaction, d *devicerepo.DeviceRecord, oldID int64, parsed *parsedDeviceTelemetry) (telemetryPersisted, error) {
 	hr, bp := parsed.hr, parsed.bp
 	// Zero vital signs are legacy "not measured" sentinels.
 	if hr != nil && *hr == 0 {
