@@ -1,18 +1,20 @@
 package handlers
 
 import (
-	"suining-care/internal/securecode"
 	"context"
 	"errors"
-	"github.com/jackc/pgx/v5"
 	"math"
 	"net/http"
 	"strconv"
 	"strings"
-	"suining-care/internal/devicerepo"
-	"suining-care/internal/response"
 	"time"
 	"unicode/utf8"
+
+	"github.com/jackc/pgx/v5"
+
+	"suining-care/internal/devicerepo"
+	"suining-care/internal/response"
+	"suining-care/internal/securecode"
 )
 
 // ---------------------------------------------------------------------------
