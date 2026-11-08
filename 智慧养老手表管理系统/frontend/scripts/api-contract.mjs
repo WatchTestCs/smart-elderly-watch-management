@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import openapiTS, { astToString } from 'openapi-typescript'
+import { renderOpenApiTypes } from '../tools/openapi/index.mjs'
 
 export const generatedPath = fileURLToPath(new URL('../src/api/generated-api.d.ts', import.meta.url))
 
@@ -65,8 +65,8 @@ function trimGenerated(source) {
 }
 
 export async function generateTypes(document) {
-  const ast = await openapiTS(document)
-  return '// Generated from the published Go OpenAPI by npm run api:generate. Do not edit.\n' + trimGenerated(astToString(ast))
+  const source = await renderOpenApiTypes(document)
+  return '// Generated from the published Go OpenAPI by npm run api:generate. Do not edit.\n' + trimGenerated(source)
 }
 
 export async function generate(check) {
