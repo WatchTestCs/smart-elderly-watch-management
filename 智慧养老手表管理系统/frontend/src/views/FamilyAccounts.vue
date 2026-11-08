@@ -162,7 +162,8 @@ function editFamily() {
     await loadFamilyAccounts(true)
   })
 }
-function deleteFamily(familyId: number | string) {
+function deleteFamily(familyId: number | string | undefined) {
+  if (familyId === undefined) return
   return deleteRecord('api/v1/family/deleteFamily', { familyId },
     '确认删除该家属账号？', () => loadFamilyAccounts(true))
 }
