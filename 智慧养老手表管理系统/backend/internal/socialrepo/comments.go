@@ -70,3 +70,36 @@ func ToggleLike(ctx context.Context, store *db.Database, commentID int64, phone 
 	}
 	return affected == 1, nil
 }
+
+type NewComment struct {
+	NoticeID int64
+	Content string
+	AuthorName string
+	AuthorPhone string
+	Avatar string
+	CreatedAt time.Time
+}
+
+// AuthorAvatar retrieves the current family profile image for a comment author.
+func AuthorAvatar(ctx context.Context, tx *db.Transaction, phone string) (string, error) {
+	var avatar *string
+	err := tx.QueryRow(ctx, "SELECT family_tou_pic FROM family WHERE family_phone=$1", phone).Scan(&avatar)
+	if err != nil {
+		return "", err
+	}
+	if avatar == nil {
+		return "", nil
+	}
+	return *avatar, nil
+}
+
+// InsertComment writes a notice comment inside the caller's transaction.
+func InsertComment(ctx context.Context, tx *db.Transaction, comment NewComment) (bool, error) {
+	result, err := tx.Exec(ctx,
+		"INSERT INTO said(said,text_id,said_time,person_name,said_phone,tou_pic) VALUES($1,$2,$3,$4,$5,$6)",
+		comment.Content, comment.NoticeID, comment.CreatedAt, comment.AuthorName, comment.AuthorPhone, comment.Avatar)
+	if err != nil {
+		return false, err
+	}
+	return result.RowsAffected() == 1, nil
+}
