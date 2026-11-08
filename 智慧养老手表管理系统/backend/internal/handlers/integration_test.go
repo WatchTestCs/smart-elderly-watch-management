@@ -3,9 +3,6 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	dbstore "suining-care/internal/db"
-	"suining-care/internal/db/dbtest"
-
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -15,16 +12,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
+
 	"suining-care/internal/auth"
 	"suining-care/internal/config"
-	"suining-care/internal/devicecredential"
 	"suining-care/internal/csrf"
+	dbstore "suining-care/internal/db"
 	"suining-care/internal/db"
-
-	"github.com/google/uuid"
+	"suining-care/internal/db/dbtest"
+	"suining-care/internal/devicecredential"
 	"suining-care/internal/session"
-
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // Each test uses a separate temporary schema in a dedicated test database.
