@@ -6,6 +6,7 @@ import { apiErrorMessage } from '../api/httpContract'
 import { copyText } from '../utils/clipboard'
 import { createDeviceState, emptyDeviceAlert, isValidCount } from './deviceModels'
 import { useDeviceBindings } from './useDeviceBindings'
+import { useDeviceWorkbench } from './useDeviceWorkbench'
 export type { DeviceRecord } from './deviceModels'
 import type {
   DeviceId, DeviceRecord, ResidentRecord, DeviceAlertCounts, AlertCountsResponse,
@@ -21,13 +22,16 @@ export function useDevices() {
   const visibleDevices = computed(() => state.deviceList)
   const onlineCount = computed(() => state.serverOnlineCount)
   const { openBindCodeDialog, loadBindCodes, createBindCode, deleteBindCode } = useDeviceBindings(state, post)
+  const { openWorkbench, disposeWorkbench } = useDeviceWorkbench(state, async (deviceId, kind) => {
+    const { data } = await post<AlertDetailResponse>('alertDetail', { deviceId, kind })
+    return data
+  })
   let filterTimer: ReturnType<typeof setTimeout> | undefined
   let refreshTimer: ReturnType<typeof setTimeout> | undefined
   let disposed = false
   // Only the newest read may publish state, even if an older request ignores cancellation.
   let alertRequest = 0
   let alertCountsRequest = 0
-  let workbenchRequest = 0
 
   async function loadAlertCounts() {
     const revision = ++alertCountsRequest
@@ -183,48 +187,6 @@ export function useDevices() {
       ElMessage({ type: 'error', message: apiErrorMessage(error, '处理失败') })
     }
   }
-  async function openWorkbench() {
-    const revision = ++workbenchRequest
-    state.workbench.visible = true
-    state.workbench.list = []
-    const pending: { device: DeviceRecord; kind: 'person' | 'rate' | 'pre' }[] = []
-    for (const device of state.deviceList) {
-      const { personCount, rateCount, preCount } = alertOf(device.deviceId)
-      if (personCount > 0) pending.push({ device, kind: 'person' })
-      if (rateCount > 0) pending.push({ device, kind: 'rate' })
-      if (preCount > 0) pending.push({ device, kind: 'pre' })
-    }
-
-    const results: (DeviceRecord | null)[] = Array(pending.length).fill(null)
-    let nextIndex = 0
-    let failed = false
-    const current = () => !disposed && revision === workbenchRequest
-
-    async function readDetails() {
-      while (nextIndex < pending.length && current()) {
-        const index = nextIndex++
-        const { device, kind } = pending[index]
-        try {
-          const { data } = await post<AlertDetailResponse>('alertDetail', { deviceId: device.deviceId, kind })
-          if (!current()) return
-          if (data.hasAlert !== 1) continue
-          results[index] = {
-            deviceId: device.deviceId, deviceNo: data.deviceNo || device.deviceNo,
-            alias: data.alias ?? device.alias ?? '', oldPersonName: data.oldPersonName ?? device.oldPersonName ?? '',
-            kind, kindText: data.kindText, reason: data.reason, recordId: data.recordId
-          }
-        } catch {
-          if (!current()) return
-          failed = true
-        }
-      }
-    }
-
-    await Promise.all(Array.from({ length: Math.min(6, pending.length) }, () => readDetails()))
-    if (!current()) return
-    state.workbench.list = results.filter((row): row is DeviceRecord => row !== null)
-    if (failed) ElMessage({ type: 'warning', message: '部分异常详情加载失败，请刷新后重试' })
-  }
   function gotoPage(kind: string) {
     void router.push(kind === 'person' ? '/operations/monitoring-profiles' : '/operations/vitals')
     state.alertDialog.visible = false
@@ -335,7 +297,7 @@ export function useDevices() {
     disposed = true
     alertRequest++
     alertCountsRequest++
-    workbenchRequest++
+    disposeWorkbench()
     clearTimeout(filterTimer)
     document.removeEventListener('visibilitychange', handleVisibilityChange)
     stopTimer()
