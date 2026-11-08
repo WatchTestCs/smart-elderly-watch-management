@@ -14,6 +14,20 @@
 
 前端所有数据均通过 Go `/api/v1/` 接口读写，不直接连接 MySQL 或 PostgreSQL。
 
+### 数据流及代码所有权
+
+| 层 | 入口 | 职责 |
+| --- | --- | --- |
+| 后端契约 | `src/api/generated-api.d.ts`、`contractClient.ts` | Go OpenAPI 生成的请求与响应类型；生产请求仍经 HTTP 安全中间件 |
+| 网络与会话 | `src/api/client.ts`、`src/auth.ts` | API 路径、Cookie、CSRF、统一响应校验及连接状态 |
+| 读取调度 | `src/composables/latestRead.ts`、`usePagedRecords.ts` | 取消过期读取，避免迟到响应覆盖当前列表 |
+| 设备领域数据 | `src/composables/deviceModels.ts` | 设备、告警、绑定码 DTO；独立组件实例的初始状态 |
+| 设备绑定流程 | `src/composables/useDeviceBindings.ts` | 绑定码查询、创建、作废与切换长者时的响应隔离 |
+| 设备页面编排 | `src/composables/useDevices.ts` | 设备与告警读取、过滤分页、定时刷新和页面事件 |
+| 展示层 | `src/views/DeviceManagement.vue` | 渲染设备列表及对话框，不承担后端数据转换 |
+
+读路径是 **Go API → Axios/会话拦截器 → 领域组合式函数 → Vue 模板**。写请求由用户操作触发，成功后显式重新读取；不得在读取失败或页面恢复可见时自动重放写操作。当前 `useDevices()` 的页面接口保持不变；新设备功能优先沿现有领域边界扩展，不把响应 DTO、持久状态和 DOM 事件混写在同一个文件。
+
 ## 本地开发与构建
 
 请使用 Node.js `^20.19.0 || >=22.12.0`，并通过 `package-lock.json` 安装固定版本依赖：
