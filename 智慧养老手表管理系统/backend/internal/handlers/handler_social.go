@@ -128,27 +128,25 @@ func (h *Handler) createNoticeComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer tx.Rollback(r.Context())
-	touPic := ""
-	var pic *string
-	if err := tx.QueryRow(r.Context(), "SELECT family_tou_pic FROM family WHERE family_phone=$1", p.Phone).Scan(&pic); err == nil && pic != nil {
-		touPic = *pic
-	} else if err != nil && !isNotFound(err) {
+	touPic, err := socialrepo.AuthorAvatar(r.Context(), tx, p.Phone)
+	if err != nil && !isNotFound(err) {
 		response.Error500(w, ref())
 		return
 	}
 	if touPic != "" && !h.lockImages(w, r.Context(), tx, []string{touPic}) {
 		return
 	}
-	ct, err := tx.Exec(r.Context(),
-		"INSERT INTO said(said,text_id,said_time,person_name,said_phone,tou_pic) VALUES($1,$2,$3,$4,$5,$6)",
-		saidContent, textID, time.Now(), p.DisplayName, p.Phone, touPic)
+	inserted, err := socialrepo.InsertComment(r.Context(), tx, socialrepo.NewComment{
+		NoticeID: textID, Content: saidContent, CreatedAt: time.Now(),
+		AuthorName: p.DisplayName, AuthorPhone: p.Phone, Avatar: touPic,
+	})
 	if internalError(w, err) {
 		return
 	}
 	if err = tx.Commit(r.Context()); internalError(w, err) {
 		return
 	}
-	writeCode(w, ct.RowsAffected() == 1)
+	writeCode(w, inserted)
 }
 
 // POST /api/v1/notice-comments/reply —— 管理员回复说说。
