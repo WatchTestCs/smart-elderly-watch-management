@@ -2,6 +2,7 @@ package authrepo
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"suining-care/internal/auth"
@@ -33,7 +34,7 @@ func LockLoginFactor(ctx context.Context, tx *db.Transaction, role string, actor
 func UpdateLoginFactor(ctx context.Context, tx *db.Transaction, role string, actorID, counter int64, hashes []byte) error {
 	_, err := tx.Exec(ctx,
 		"UPDATE auth_factor SET last_counter=$3,recovery_hashes=$4 WHERE role=$1 AND actor_id=$2",
-		role, actorID, counter, hashes)
+		role, actorID, counter, json.RawMessage(hashes))
 	return err
 }
 
