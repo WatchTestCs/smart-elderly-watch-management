@@ -42,7 +42,7 @@
 				<el-dialog
 				  title="修改密码"
 				  v-model="passwordEditDialogVisible"
-          :close-on-click-modal="!isPasswordSaving" :close-on-press-escape="!isPasswordSaving" :show-close="!isPasswordSaving" @closed="resetForm('passwordEditForm')"
+          :close-on-click-modal="!isPasswordSaving" :close-on-press-escape="!isPasswordSaving" :show-close="!isPasswordSaving" @closed="resetForm()"
 				  width="92%" class="profile-dialog">
 				  <el-form label-width="80px" class="demo-ruleForm" status-icon :rules="rules2" ref="passwordEditFormRef" :model="passwordEditForm">
 				    <el-form-item label="原密码" for="profile-old-password" prop="oldPassword" >
@@ -56,8 +56,8 @@
 						</el-form-item>
 				  </el-form>
 				  <template #footer><span  class="dialog-footer">
-				  <el-button :disabled="isPasswordSaving" @click="resetForm('passwordEditForm')">取 消</el-button>
-				  <el-button type="primary" :loading="isPasswordSaving" @click="editPassword('passwordEditForm')">确 定</el-button>
+				  <el-button :disabled="isPasswordSaving" @click="resetForm()">取 消</el-button>
+				  <el-button type="primary" :loading="isPasswordSaving" @click="editPassword()">确 定</el-button>
 				</span></template>
 				</el-dialog>
 
@@ -84,7 +84,7 @@ html.large-text .care-family .profile-identity span, html.large-text .care-famil
 <script setup lang="ts">
 import { computed, nextTick, onMounted, reactive, ref } from 'vue'
 import { ElMessage, type FormInstance, type FormItemRule } from 'element-plus'
-import { api, accepted } from '../api/client'
+import { api, accepted, type Envelope } from '../api/client'
 import { apiErrorMessage } from '../api/httpContract'
 import { authState } from '../auth'
 import SecurityPanel from '../components/SecurityPanel.vue'
@@ -166,7 +166,7 @@ async function editFamily() {
   if (!valid) return
   isProfileSaving.value = true
   try {
-    const { data } = await api.post('api/v1/family/updateTwo', { ...messageEditForm })
+    const { data } = await api.post<Envelope>('api/v1/family/updateTwo', { ...messageEditForm })
     accepted(data)
     messageEditDialogVisible.value = false
     ElMessage.success('个人资料已保存')
@@ -181,7 +181,7 @@ async function handleAvatarSuccess(res: { returnCode?: string; filename?: string
     return
   }
   try {
-    const { data } = await api.post('api/v1/family/updateTouPic', {
+    const { data } = await api.post<Envelope>('api/v1/family/updateTouPic', {
       familyTouPic: res.filename, familyPhone: familyPhone.value
     })
     accepted(data)
@@ -200,7 +200,7 @@ async function editPassword() {
   if (!valid) return
   isPasswordSaving.value = true
   try {
-    const { data } = await api.post('api/v1/family/updatePassword', {
+    const { data } = await api.post<Envelope>('api/v1/family/updatePassword', {
       familyPhone: familyPhone.value,
       oldPassword: passwordEditForm.oldPassword,
       familyPassword: passwordEditForm.familyPassword
