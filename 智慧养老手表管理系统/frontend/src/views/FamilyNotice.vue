@@ -3,12 +3,12 @@
     <el-button class="notice-back" link :icon="Back" @click="router.push('/family-portal/overview')">返回照护总览</el-button>
     <article v-loading="isLoading" class="notice-article" :aria-busy="isLoading">
       <div v-if="loadError" class="notice-empty" role="alert"><h1>公告暂时无法加载</h1><p>{{ loadError }}</p><el-button type="primary" @click="searchDetail">重新加载</el-button></div>
-      <template v-else><p class="notice-kicker">平台公告</p><h1>{{ title || (isLoading ? '正在加载公告…' : '公告内容') }}</h1><p class="notice-time">{{ time || '发布时间未提供' }}</p><div class="notice-body">{{ textMain || (isLoading ? '' : '暂时没有正文内容。') }}</div><figure v-for="(img, index) in imgList" :key="img.picName" class="notice-attachment"><img v-if="!failedImages[img.picName]" :src="imageSource(img.picName)" :alt="'公告附件 ' + (index + 1)" loading="lazy" @error="failedImages[img.picName] = true"><p v-else>附件图片暂时无法显示。</p></figure></template>
+      <template v-else><p class="notice-kicker">平台公告</p><h1>{{ title || (isLoading ? '正在加载公告…' : '公告内容') }}</h1><p class="notice-time">{{ time || '发布时间未提供' }}</p><div class="notice-body">{{ textMain || (isLoading ? '' : '暂时没有正文内容。') }}</div><figure v-for="(img, index) in imgList" :key="img.picName" class="notice-attachment"><img v-if="!failedImages[img.picName]" :src="noticeImageUrl(img.picName)" :alt="'公告附件 ' + (index + 1)" loading="lazy" @error="failedImages[img.picName] = true"><p v-else>附件图片暂时无法显示。</p></figure></template>
     </article>
     <section v-if="!isLoading && !loadError" class="notice-comments" aria-labelledby="notice-comment-title">
       <h2 id="notice-comment-title">留言交流</h2>
       <el-form :model="formSaid" @submit.prevent="onSubmit"><el-form-item label="您的留言（最多30字）"><el-input aria-label="您的留言（最多30字）" type="textarea" :rows="3" maxlength="30" v-model="formSaid.said" placeholder="写下您想咨询或分享的内容"></el-input></el-form-item><p v-if="submitError" class="notice-error" role="alert">{{ submitError }}</p><el-button type="primary" :loading="submitting" :disabled="!formSaid.said.trim()" @click="onSubmit">发表留言</el-button><p v-if="submitSuccess" class="notice-success" role="status">{{ submitSuccess }}</p></el-form>
-      <div class="comment-list" v-loading="commentsLoading"><p v-if="commentsError" role="alert">{{ commentsError }} <el-button link @click="searchSaid">重新加载</el-button></p><p v-else-if="!tableData.length" class="comment-empty">还没有留言，欢迎分享您的想法。</p><article v-for="(item, index) in tableData" :key="item.saidId || index" class="comment-item"><div class="comment-heading"><strong>{{ item.personName || '家属' }}</strong><span>{{ item.saidTime || '' }}</span></div><p>{{ item.said }}</p><div v-if="item.back" class="comment-reply"><strong>平台回复</strong><p>{{ item.back }}</p></div><el-button link :aria-pressed="String(item.good == 1)" :loading="likingId === item.saidId" @click="getview(item)">{{ item.good == 1 ? '取消赞同' : '赞同' }} · {{ item.niceCount || 0 }}</el-button></article></div>
+      <div class="comment-list" v-loading="commentsLoading"><p v-if="commentsError" role="alert">{{ commentsError }} <el-button link @click="searchSaid">重新加载</el-button></p><p v-else-if="!tableData.length" class="comment-empty">还没有留言，欢迎分享您的想法。</p><article v-for="(item, index) in tableData" :key="item.saidId || index" class="comment-item"><div class="comment-heading"><strong>{{ item.personName || '家属' }}</strong><span>{{ item.saidTime || '' }}</span></div><p>{{ item.said }}</p><div v-if="item.back" class="comment-reply"><strong>平台回复</strong><p>{{ item.back }}</p></div><el-button link :aria-pressed="String(item.good == 1)" :loading="likingId === item.saidId" @click="toggleCommentLike(item)">{{ item.good == 1 ? '取消赞同' : '赞同' }} · {{ item.niceCount || 0 }}</el-button></article></div>
     </section>
   </div>
 </template>
@@ -19,15 +19,16 @@ import { useRoute, useRouter } from 'vue-router'
 import { api, accepted, type Envelope } from '../api/client'
 import { apiErrorMessage } from '../api/httpContract'
 import { createLatestRead } from '../composables/latestRead'
+import { noticeImageUrl, type NoticePicture, type NoticeComment, type NoticeDetailResponse, type NoticeCommentsResponse } from '../domain/notices'
 
 const router = useRouter()
 const route = useRoute()
 const title = ref('')
 const time = ref('')
 const textMain = ref('')
-const imgList = ref<Record<string, any>[]>([])
+const imgList = ref<NoticePicture[]>([])
 const failedImages = reactive<Record<string, boolean>>({})
-const tableData = ref<Record<string, any>[]>([])
+const tableData = ref<NoticeComment[]>([])
 const formSaid = reactive({ said: '' })
 const isLoading = ref(false)
 const loadError = ref('')
@@ -40,7 +41,7 @@ const likingId = ref<number | string | null>(null)
 
 const details = createLatestRead(
   (query: { textId: unknown }, signal: AbortSignal) =>
-    api.post<Record<string, any>>('api/v1/notices/detail', query, { signal }),
+    api.post<NoticeDetailResponse>('api/v1/notices/detail', query, { signal }),
   ({ data }) => {
     if (!data?.text) throw new Error('missing notice')
     title.value = data.text.title || '未命名公告'
@@ -54,7 +55,7 @@ const details = createLatestRead(
 )
 const comments = createLatestRead(
   (query: { textId: unknown }, signal: AbortSignal) =>
-    api.post<Record<string, any>>('api/v1/notice-comments/list', query, { signal }),
+    api.post<NoticeCommentsResponse>('api/v1/notice-comments/list', query, { signal }),
   ({ data }) => {
     tableData.value = Array.isArray(data.comments) ? data.comments : []
     commentsError.value = ''
@@ -65,9 +66,6 @@ const comments = createLatestRead(
   },
   loading => { commentsLoading.value = loading }
 )
-function imageSource(name: string) {
-  return 'api/v1/image/download?name=' + encodeURIComponent(name || '')
-}
 function searchDetail() {
   if (!route.query.textId) {
     loadError.value = '缺少公告信息，请返回总览重新选择。'
@@ -100,7 +98,7 @@ async function onSubmit() {
     submitError.value = apiErrorMessage(error, '留言未能发表，内容已保留，请重试。')
   } finally { submitting.value = false }
 }
-async function getview(item: Record<string, any>) {
+async function toggleCommentLike(item: NoticeComment) {
   if (likingId.value !== null) return
   likingId.value = item.saidId
   submitError.value = ''
