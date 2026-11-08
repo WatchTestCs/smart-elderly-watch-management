@@ -2,6 +2,7 @@ package vitalrepo
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 
 	"github.com/jackc/pgx/v5"
@@ -53,7 +54,7 @@ func scanAlert(row db.Row) (Alert, bool, error) {
 		&item.RateState, &item.PreState, &item.RateDone, &item.PreDone,
 		&item.CreateTime, &item.OldPersonName, &item.HrHigh, &item.HrLow,
 		&item.BpHigh, &item.BpLow)
-	if errors.Is(err, pgx.ErrNoRows) {
+	if errors.Is(err, pgx.ErrNoRows) || errors.Is(err, sql.ErrNoRows) {
 		return item, false, nil
 	}
 	return item, err == nil, err
