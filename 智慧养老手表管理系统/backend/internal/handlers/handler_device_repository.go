@@ -10,17 +10,14 @@ import (
 	"net/http"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 
 	dbstore "suining-care/internal/db"
 	"suining-care/internal/devicerepo"
 	"suining-care/internal/response"
 )
 
-// deviceQueries is implemented by the database and its transaction wrapper.
+// deviceQueries accepts the database and transaction readers used by device and alert queries.
 type deviceQueries interface {
-	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
-	Query(ctx context.Context, sql string, args ...any) (dbstore.Rows, error)
 	QueryRow(ctx context.Context, sql string, args ...any) dbstore.Row
 }
 
