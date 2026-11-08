@@ -19,6 +19,8 @@ type Observation struct {
 	OwnerID        int64
 	DeviceID       int64
 	BindingVersion int64
+	Source         string
+	SourceDevice   string
 	Metric         string
 	At             time.Time
 	Value          float64
@@ -48,7 +50,7 @@ func Evaluate(current Observation, history []Observation) (Result, error) {
 	days := make(map[time.Time][]float64)
 	for _, sample := range history {
 		if sample.OwnerID != current.OwnerID || sample.DeviceID != current.DeviceID || sample.BindingVersion != current.BindingVersion ||
-			sample.Metric != current.Metric || !sample.Valid || sample.At.IsZero() ||
+			sample.Source != current.Source || sample.SourceDevice != current.SourceDevice || sample.Metric != current.Metric || !sample.Valid || sample.At.IsZero() ||
 			math.IsNaN(sample.Value) || math.IsInf(sample.Value, 0) {
 			continue
 		}
@@ -72,7 +74,12 @@ func Evaluate(current Observation, history []Observation) (Result, error) {
 		deviations[i] = math.Abs(value - center)
 	}
 	// A one-unit floor prevents a constant baseline from generating infinite scores.
-	scale := math.Max(1, 1.4826*median(deviations))
+	// A 5% physiologic floor avoids treating routine low-variance changes as emergencies.
+	floor := math.Max(1, math.Abs(center)*0.05)
+	if current.Metric == "heart_rate" {
+		floor = math.Max(floor, 5)
+	}
+	scale := math.Max(floor, 1.4826*median(deviations))
 	score := (current.Value - center) / scale
 	result.Ready = true
 	result.Baseline = center
