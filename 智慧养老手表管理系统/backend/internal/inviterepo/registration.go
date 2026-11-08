@@ -27,12 +27,18 @@ func SaveFamily(ctx context.Context, tx *db.Transaction, registration FamilyRegi
 			registration.Name, registration.Phone, registration.PasswordHash,
 			registration.Relation, registration.Sex, registration.Address).Scan(&familyID)
 	} else {
-		_, err = tx.Exec(ctx,
+		result, updateErr := tx.Exec(ctx,
 			`UPDATE family SET family_name=$1,family_password=$2,
 			 family_relation=$3,family_sex=$4,family_address=$5
 			 WHERE family_id=$6 AND family_password IS NULL`,
 			registration.Name, registration.PasswordHash, registration.Relation,
 			registration.Sex, registration.Address, familyID)
+		if updateErr != nil {
+			return familyID, false, updateErr
+		}
+		if result.RowsAffected() != 1 {
+			return familyID, false, nil
+		}
 	}
 	if err != nil {
 		return familyID, false, err
