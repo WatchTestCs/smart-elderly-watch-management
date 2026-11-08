@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jackc/pgx/v5"
+	"suining-care/internal/careworkflow"
 	"suining-care/internal/response"
 )
 
@@ -137,30 +137,26 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 	}
 	if isAlarm {
 		if requestID != "" {
-			var priorID, priorOwner int64
-			var priorKind, priorState string
-			err := tx.QueryRow(ctx, `SELECT id,old_id,kind,state FROM care_incident
-				WHERE device_id=$1 AND request_id=$2 FOR UPDATE`, d.ID, requestID).
-				Scan(&priorID, &priorOwner, &priorKind, &priorState)
-			if err == nil {
+			prior, err := careworkflow.FindReportRetry(ctx, tx, d.ID, requestID)
+			if err != nil {
+				rollback()
+				response.Error500(w, ref())
+				return
+			}
+			if prior != nil {
 				rollback()
 				kind := "device_alarm"
 				if strings.EqualFold(parsed.alarm, "fall") {
 					kind = "fall"
 				}
-				if priorOwner != *d.OldID || priorKind != kind {
+				if prior.ResidentID != *d.OldID || prior.Kind != kind {
 					conflict409(w, "设备上报编号已被其他事件或绑定使用")
 					return
 				}
 				response.OK(w, map[string]any{
-					"incidentId": priorID, "incidentState": priorState,
+					"incidentId": prior.ID, "incidentState": prior.State,
 					"duplicate": true, "message": "设备告警已接收（重复请求）",
 				})
-				return
-			}
-			if err != pgx.ErrNoRows {
-				rollback()
-				response.Error500(w, ref())
 				return
 			}
 		}
