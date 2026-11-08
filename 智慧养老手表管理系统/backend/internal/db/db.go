@@ -3,8 +3,10 @@ package db
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io/fs"
+	"sort"
 	"strings"
 
 	"github.com/jackc/pgx/v5"
@@ -32,9 +34,23 @@ func Open(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {
 	return pool, nil
 }
 
+// LegacyMigrationNames returns the embedded legacy PostgreSQL migrations in
+// dependency order, derived from the embedded filesystem.
+func LegacyMigrationNames() ([]string, error) {
+	names, err := fs.Glob(migrations.Files, "*.sql")
+	if err != nil {
+		return nil, fmt.Errorf("list embedded legacy migrations: %w", err)
+	}
+	if len(names) == 0 {
+		return nil, errors.New("no embedded legacy migrations")
+	}
+	sort.Strings(names)
+	return names, nil
+}
+
 // Migrate 从程序内嵌资源读取迁移，不依赖进程工作目录。
 func Migrate(ctx context.Context, pool *pgxpool.Pool) error {
-	files, err := fs.Glob(migrations.Files, "*.sql")
+	files, err := LegacyMigrationNames()
 	if err != nil {
 		return err
 	}
