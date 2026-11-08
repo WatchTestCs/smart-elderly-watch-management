@@ -12,10 +12,6 @@ import (
 	"suining-care/internal/devicerepo"
 )
 
-type reader interface {
-	QueryRow(context.Context, string, ...any) db.Row
-}
-
 type Failure string
 
 const (
@@ -30,7 +26,7 @@ func MissingRow(err error) bool {
 }
 
 // Authenticate reads the stored device record without opening its encrypted coordinates.
-func Authenticate(ctx context.Context, q reader, number, secret string) (*devicerepo.DeviceRecord, Failure, error) {
+func Authenticate(ctx context.Context, q db.RowQuerier, number, secret string) (*devicerepo.DeviceRecord, Failure, error) {
 	device, err := devicerepo.FindDeviceByNo(ctx, q, number)
 	if MissingRow(err) {
 		return nil, InvalidCredential, nil
