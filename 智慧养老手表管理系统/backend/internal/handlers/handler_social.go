@@ -32,42 +32,6 @@ func (h *Handler) routeSocial(mux *http.ServeMux) {
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
 
-type noticeComment struct {
-	SaidID     *int64  `json:"saidId"`
-	Said       *string `json:"said"`
-	TextID     *int64  `json:"textId"`
-	Back       *string `json:"back"`
-	SaidTime   *string `json:"saidTime"`
-	BackTime   *string `json:"backTime"`
-	PersonName *string `json:"personName"`
-	NiceCount  *int64  `json:"niceCount"`
-	SaidPhone  *string `json:"saidPhone"`
-	TouPic     *string `json:"touPic"`
-	Good       *string `json:"good"`
-}
-
-type moderatedNoticeComment struct {
-	SaidID     *int64  `json:"saidId"`
-	Said       *string `json:"said"`
-	Back       *string `json:"back"`
-	SaidTime   *string `json:"saidTime"`
-	BackTime   *string `json:"backTime"`
-	PersonName *string `json:"personName"`
-	TouPic     *string `json:"touPic"`
-	Title      *string `json:"title"`
-}
-
-// maskPhone 将评论作者手机号脱敏为 138****1234：said/select 面向任意登录家属，
-// 原样返回会批量暴露全体用户的登录账号（手机号）。非 11 位号码一律不返回。
-func maskPhone(phone *string) *string {
-	if phone == nil || len(*phone) != 11 {
-		return nil
-	}
-	v := *phone
-	masked := v[:3] + "****" + v[7:]
-	return &masked
-}
-
 // POST /api/v1/notice-comments/list —— 查询某公告下的说说/评论（含当前人点赞状态）。
 func (h *Handler) listNoticeComments(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
@@ -83,27 +47,8 @@ func (h *Handler) listNoticeComments(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	sql := `SELECT s.said_id, s.said, s.text_id, s.back,` +
-		` TO_CHAR(s.said_time,'YYYY-MM-DD HH24:MI:SS.MS') AS saidTime,` +
-		` TO_CHAR(s.back_time,'YYYY-MM-DD HH24:MI:SS.MS') AS backTime,` +
-		` s.person_name, s.nice_count, s.said_phone, s.tou_pic,` +
-		` CASE WHEN EXISTS (SELECT 1 FROM nice_count n WHERE n.said_id=s.said_id AND n.phone=$1) THEN '1' ELSE '0' END AS good` +
-		` FROM said s`
-	args := []any{p.Phone}
-	if textID != 0 {
-		sql += " WHERE s.text_id=$2"
-		args = append(args, textID)
-	}
-	items, ok := queryRows(h, w, r.Context(), func(rows dbstore.Rows) (noticeComment, error) {
-		var d noticeComment
-		if err := rows.Scan(&d.SaidID, &d.Said, &d.TextID, &d.Back, &d.SaidTime, &d.BackTime,
-			&d.PersonName, &d.NiceCount, &d.SaidPhone, &d.TouPic, &d.Good); err != nil {
-			return d, err
-		}
-		d.SaidPhone = maskPhone(d.SaidPhone)
-		return d, nil
-	}, sql, args...)
-	if !ok {
+	items, err := socialrepo.ListComments(r.Context(), h.DB, p.Phone, textID)
+	if internalError(w, err) {
 		return
 	}
 	response.JSON(w, http.StatusOK, map[string]any{"comments": items})
