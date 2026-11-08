@@ -2,11 +2,11 @@ package handlers
 
 import (
 	"context"
-	"errors"
 	"crypto/rand"
 	"encoding/base32"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/url"
 	"strconv"
