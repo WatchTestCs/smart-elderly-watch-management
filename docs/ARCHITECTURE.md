@@ -66,6 +66,18 @@ Tauri 能力配置限定主窗口、本机页面和必要命令；原生命令�
 
 照护任务由 `handler_care_incident`、岗位与诊断处理器及 `internal/care` 后台作业协作。总览注册 `CareInbox`，读取带总数、岗位和操作者 ID 的分页任务；接单、处置与复核通过事务写入状态及事件履历，独立复核同时更新关联告警。设备归属只通过设备登记、绑定、解绑入口修改，普通档案编辑保留现有归属。
 
+### 设备上报持久化边界
+
+Go 的 `internal/handlers/telemetry_repository.go` 只编排单次设备上报事务。分工如下：
+
+| 代码 | 数据与责任 |
+| --- | --- |
+| `telemetry_repository_vitals.go` | 心率/血压测量及阈值状态，写入 `ratepre` |
+| `telemetry_repository_day.go` | 步数、睡眠按采样时间更新日汇总，设备重新绑定时归档旧归属 |
+| `telemetry_repository_alarm.go` | 设备位置、跌倒/异常事件与 SOS 持久化，关联照护工单及必要的通知队列 |
+
+三个模块仍共用调用方传入的事务；任一步失败都由调用方处理整体回滚。不得将位置告警、SOS 工单和通知入队拆成互不相关的事务，也不得把记录落库直接描述成通知已送达。
+
 ### 会话与离线退出
 
 会话使用 `SUINING_SESSION` Cookie，登录时轮换会话标识以降低会话固定风险。当前默认 `SESSION_BACKEND=database`：加密服务端会话保存在 MySQL，跨实例查询和撤销依赖主库；明确选择 `memory` 的单实例开发环境才把会话放在 Go 进程内存，其会话重启后失效。
