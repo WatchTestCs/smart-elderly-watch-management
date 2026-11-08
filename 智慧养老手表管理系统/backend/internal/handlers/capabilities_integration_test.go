@@ -89,7 +89,7 @@ func TestCommandQueueReceiptsAndBinding(t *testing.T) {
 	req["requestKey"] = "three"
 	req["action"] = "location"
 	api(t, create, req)
-	mustExec(t, h.DB, "UPDATE device SET old_id=NULL WHERE device_id=1")
+	mustExec(t, h.DB, "UPDATE device SET resident_id=NULL WHERE device_id=1")
 	if w := callAPI(h.commandAck, ack); w.Code != 409 {
 		t.Fatal("old binding ACK", w.Code)
 	}
@@ -155,7 +155,7 @@ func TestDailyRebuildCorrectionsDeletionAndIsolation(t *testing.T) {
 	mustExec(t, pool, "ALTER TABLE health_sample MODIFY source varchar(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL")
 	h := testHandler(t, pool)
 	admin := capabilityAdmin(h, h.healthDaily)
-	req := map[string]any{"oldId": 1, "source": "watch", "sourceDevice": "WATCH001", "metric": "heart_rate", "semantics": "instant", "day": "2026-10-20", "offsetMinutes": 480, "days": 2}
+	req := map[string]any{"residentId": 1, "source": "watch", "sourceDevice": "WATCH001", "metric": "heart_rate", "semantics": "instant", "day": "2026-10-20", "offsetMinutes": 480, "days": 2}
 	tm := time.Date(2026, 10, 20, 12, 0, 0, 0, time.FixedZone("", 8*3600))
 	s := health.Sample{RecordID: "daily", Source: "watch", SourceDevice: "WATCH001", Metric: "heart_rate", Semantics: "instant", Unit: "count/min", Value: health.Number(80), Start: tm, End: tm, Version: 1}
 	otherSource := s
@@ -206,7 +206,7 @@ func TestDailyRebuildCorrectionsDeletionAndIsolation(t *testing.T) {
 		t.Fatal(items)
 	}
 	mustExec(t, pool, "INSERT INTO family(family_id,family_phone) VALUES(1,'1'),(2,'2')")
-	mustExec(t, pool, "UPDATE oldperson SET family_id=1 WHERE old_id=1")
+	mustExec(t, pool, "UPDATE resident SET family_id=1 WHERE resident_id=1")
 	other := withHealthPrincipal(h, session.Principal{Role: auth.RoleFamily, ID: 2}, h.healthDaily)
 	if w := callAPI(other, req); w.Code != 403 {
 		t.Fatal("daily data leaked", w.Code)

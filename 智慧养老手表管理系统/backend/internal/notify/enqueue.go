@@ -74,13 +74,13 @@ func EnqueueBatch(ctx context.Context, tx *db.Transaction, box *securestore.Box,
 	return flush()
 }
 
-func CareInbox(ctx context.Context, tx *db.Transaction, box *securestore.Box, oldID, incidentID int64) error {
+func CareInbox(ctx context.Context, tx *db.Transaction, box *securestore.Box, residentID, incidentID int64) error {
 	if !tx.IsMySQL() {
 		return nil
 	}
 	var familyID int64
 	var phone string
-	err := tx.QueryRow(ctx, "SELECT f.family_id,f.family_phone FROM oldperson o JOIN family f ON f.family_id=o.family_id WHERE o.old_id=$1", oldID).Scan(&familyID, &phone)
+	err := tx.QueryRow(ctx, "SELECT f.family_id,f.family_phone FROM resident o JOIN family f ON f.family_id=o.family_id WHERE o.resident_id=$1", residentID).Scan(&familyID, &phone)
 	if err == pgx.ErrNoRows {
 		return nil
 	}

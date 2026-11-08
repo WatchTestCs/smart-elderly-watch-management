@@ -9,7 +9,7 @@ import (
 // parsedDeviceTelemetry holds values already checked before opening a database
 // transaction. The existing watch wire format and response schema are retained.
 type parsedDeviceTelemetry struct {
-	now, beTime, day                      time.Time
+	now, eventTime, day                      time.Time
 	hr, bp, step, sleep, battery          *int
 	sleepState, appVersion                *string
 	lng, lat, sourceStr, alarm, requestID string
@@ -18,24 +18,24 @@ type parsedDeviceTelemetry struct {
 
 func parseDeviceTelemetryPayload(w http.ResponseWriter, m map[string]any, now time.Time) (parsedDeviceTelemetry, bool) {
 	out := parsedDeviceTelemetry{now: now, sourceStr: "gps"}
-	beTimeStr, _ := vstr(m, "beTime")
-	if beTimeStr == "" {
-		beTimeStr = now.Format(tsLayout)
+	eventTimeStr, _ := vstr(m, "eventTime")
+	if eventTimeStr == "" {
+		eventTimeStr = now.Format(tsLayout)
 	}
 	var valid bool
-	out.beTime, valid = parseReportTimeStrict(beTimeStr)
+	out.eventTime, valid = parseReportTimeStrict(eventTimeStr)
 	if !valid {
-		write400(w, "beTime 格式应为 yyyy-MM-dd HH:mm:ss")
+		write400(w, "eventTime 格式应为 yyyy-MM-dd HH:mm:ss")
 		return parsedDeviceTelemetry{}, false
 	}
 	// Legacy timestamps use server wall time without a zone. Compare in the
 	// same representation so a non-UTC server does not reject its own default.
 	wallNow, _ := parseReportTimeStrict(now.Format(tsLayout))
-	if out.beTime.After(wallNow.Add(5 * time.Minute)) {
-		write400(w, "beTime 不能晚于服务器时间 5 分钟，请检查设备时钟")
+	if out.eventTime.After(wallNow.Add(5 * time.Minute)) {
+		write400(w, "eventTime 不能晚于服务器时间 5 分钟，请检查设备时钟")
 		return parsedDeviceTelemetry{}, false
 	}
-	out.day, _ = time.Parse("2006-01-02", beTimeStr[:10])
+	out.day, _ = time.Parse("2006-01-02", eventTimeStr[:10])
 
 	var msg string
 	if out.hr, msg = parseMetric(m, "hr", 20, 250); msg != "" {

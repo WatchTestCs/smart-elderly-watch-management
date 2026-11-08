@@ -50,7 +50,7 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 	if requestID != "" {
 		var priorID, priorOwner int64
 		var priorKind, priorState, priorNotification string
-		err := tx.QueryRow(ctx, `SELECT i.id,i.old_id,i.kind,i.state,
+		err := tx.QueryRow(ctx, `SELECT i.id,i.resident_id,i.kind,i.state,
 			COALESCE((SELECT min(n.status) FROM care_notification_outbox n
 			WHERE n.incident_id=i.id),'no_recipient')
 			FROM care_incident i WHERE i.device_id=$1 AND i.request_id=$2 FOR UPDATE`,
@@ -59,7 +59,7 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 			rollback()
 			// A fall-report retry and an SOS press are different event types.
 			// Reusing a requestId across types must not acknowledge the wrong event.
-			if priorOwner != *d.OldID || priorKind != "sos" {
+			if priorOwner != *d.ResidentID || priorKind != "sos" {
 				conflict409(w, "求助编号已被其他事件或绑定使用，请检查设备请求编号")
 				return
 			}
@@ -97,7 +97,7 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 	if rollbackOnError(w, rollback, err) {
 		return
 	}
-	notificationState, err := h.queueSOSNotification(ctx, tx, incidentID, *d.OldID)
+	notificationState, err := h.queueSOSNotification(ctx, tx, incidentID, *d.ResidentID)
 	if rollbackOnError(w, rollback, err) {
 		return
 	}
@@ -143,12 +143,12 @@ func parseSOSRequest(w http.ResponseWriter, m map[string]any) (sosRequest, bool)
 	return sosRequest{deviceNo: deviceNo, secret: secret, requestID: requestID, bindingVersion: bindingVersion}, true
 }
 
-func (h *Handler) queueSOSNotification(ctx context.Context, tx *dbstore.Transaction, incidentID, oldID int64) (string, error) {
-	queued, err := notify.QueueCareSMS(ctx, tx, h.Box, incidentID, oldID)
+func (h *Handler) queueSOSNotification(ctx context.Context, tx *dbstore.Transaction, incidentID, residentID int64) (string, error) {
+	queued, err := notify.QueueCareSMS(ctx, tx, h.Box, incidentID, residentID)
 	if err != nil {
 		return "", err
 	}
-	if err := notify.CareInbox(ctx, tx, h.Box, oldID, incidentID); err != nil {
+	if err := notify.CareInbox(ctx, tx, h.Box, residentID, incidentID); err != nil {
 		return "", err
 	}
 	if queued > 0 {
@@ -164,13 +164,13 @@ func (h *Handler) lockSOSDevice(ctx context.Context, tx *dbstore.Transaction, de
 	if err != nil || d == nil {
 		return nil, code, msg, err
 	}
-	if d.OldID == nil {
+	if d.ResidentID == nil {
 		return nil, "DEVICE_NOT_BOUND", "设备还未绑定老人", nil
 	}
 	// Match binding and unbinding's elder-then-device lock order. Recheck the
 	// device under its row lock before writing or acknowledging a retry.
-	expectedOwner := *d.OldID
-	if _, err := tx.Exec(ctx, `SELECT old_id FROM oldperson WHERE old_id=$1 FOR UPDATE`, expectedOwner); err != nil {
+	expectedOwner := *d.ResidentID
+	if _, err := tx.Exec(ctx, `SELECT resident_id FROM resident WHERE resident_id=$1 FOR UPDATE`, expectedOwner); err != nil {
 		return nil, "", "", err
 	}
 	locked, err := scanDeviceRecord(tx.QueryRow(ctx, `SELECT `+deviceRecordColumns+` FROM device WHERE device_id=$1 FOR UPDATE`, d.ID))
@@ -184,7 +184,7 @@ func (h *Handler) lockSOSDevice(ctx context.Context, tx *dbstore.Transaction, de
 	if locked.No != deviceNo {
 		return nil, "DEVICE_AUTH_FAILED", "设备号或密钥不正确", nil
 	}
-	if locked.OldID == nil || *locked.OldID != expectedOwner || locked.HealthEpoch != bindingVersion {
+	if locked.ResidentID == nil || *locked.ResidentID != expectedOwner || locked.HealthEpoch != bindingVersion {
 		return nil, "409", "绑定已变化，请重新登录；旧绑定求助不能归入新老人", nil
 	}
 	return locked, "", "", nil

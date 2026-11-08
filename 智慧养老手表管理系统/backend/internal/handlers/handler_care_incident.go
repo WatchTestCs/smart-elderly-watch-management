@@ -82,28 +82,28 @@ func (h *Handler) careIncidents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	items, ok := queryRows(h, w, r.Context(), func(rows db.Rows) (map[string]any, error) {
-		var id, oldID, deviceID int64
+		var id, residentID, deviceID int64
 		var kind, state, severity string
 		var created, due time.Time
 		var assigned, resolved, verified, oldName *string
 		var deliveryStatus string
 		var ackAt, resAt, verAt *time.Time
-		if err := rows.Scan(&id, &oldID, &deviceID, &kind, &state, &severity, &created, &due,
+		if err := rows.Scan(&id, &residentID, &deviceID, &kind, &state, &severity, &created, &due,
 			&assigned, &ackAt, &resolved, &resAt, &verified, &verAt, &oldName, &deliveryStatus); err != nil {
 			return nil, err
 		}
 		return map[string]any{
-			"id": id, "oldId": oldID, "deviceId": deviceID, "kind": kind, "state": state,
+			"id": id, "residentId": residentID, "deviceId": deviceID, "kind": kind, "state": state,
 			"severity": severity, "createdAt": created, "dueAt": due,
-			"oldPersonName": oldName, "notificationState": deliveryStatus,
+			"residentName": oldName, "notificationState": deliveryStatus,
 			"acknowledgedBy": assigned, "acknowledgedAt": ackAt,
 			"resolvedBy": resolved, "resolvedAt": resAt, "verifiedBy": verified, "verifiedAt": verAt,
 		}, nil
-	}, `SELECT i.id,i.old_id,i.device_id,i.kind,i.state,i.severity,i.created_at,i.due_at,
+	}, `SELECT i.id,i.resident_id,i.device_id,i.kind,i.state,i.severity,i.created_at,i.due_at,
           i.acknowledged_by,i.acknowledged_at,i.resolved_by,i.resolved_at,i.verified_by,i.verified_at,
           o.name,
           `+careNotificationStatusExpr(h.DB.IsMySQL())+`
-     FROM care_incident i LEFT JOIN oldperson o ON o.old_id=i.old_id
+     FROM care_incident i LEFT JOIN resident o ON o.resident_id=i.resident_id
      WHERE (i.state='verified')=$1 ORDER BY i.due_at ASC, i.id DESC
      LIMIT $2 OFFSET $3`, state == "verified", ps, (page-1)*ps)
 	if !ok {
@@ -277,7 +277,7 @@ func persistCareTransition(ctx context.Context, tx *db.Transaction, id int64, ne
 		return err
 	}
 	if action == "verify" {
-		if _, err := tx.Exec(ctx, `UPDATE alarm_precess SET status='0'
+		if _, err := tx.Exec(ctx, `UPDATE alarm_event SET status='0'
 			WHERE id=(SELECT source_alarm_id FROM care_incident WHERE id=$1)`, id); err != nil {
 			return err
 		}

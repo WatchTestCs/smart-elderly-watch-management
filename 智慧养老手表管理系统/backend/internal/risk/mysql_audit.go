@@ -12,6 +12,8 @@ import (
 	"path/filepath"
 	"sync/atomic"
 	"time"
+
+	"suining-care/internal/config"
 )
 
 // mysqlAudit is one asynchronous writer for authentication observations. The
@@ -232,7 +234,7 @@ func (m *Manager) EnableMySQL(db *sql.DB) error {
 	if err != nil {
 		return err
 	}
-	spoolPath := os.Getenv("CAREOLD_RISK_AUDIT_SPOOL_PATH")
+	spoolPath := config.Env("RISK_AUDIT_SPOOL_PATH")
 	if spoolPath == "" {
 		configDir, err := os.UserConfigDir()
 		if err != nil {

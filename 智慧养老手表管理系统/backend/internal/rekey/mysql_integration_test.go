@@ -43,9 +43,9 @@ func TestRekeyMySQL(t *testing.T) {
 		return Column{}
 	}
 	s := func(scope string) string { return sealed(t, old, "synthetic protected value", scope) }
-	exec("INSERT INTO oldperson(old_id,name) VALUES(1,'synthetic')")
-	exec("INSERT INTO device(device_id,device_no,secret,old_id,last_lng,last_lat) VALUES(1,'REKEY-LAB',?,1,?,?)", strings.Repeat("x", 48), s("location"), s("location"))
-	exec("INSERT INTO care_incident(id,old_id,device_id,resolution_note) VALUES(1,1,1,?)", s("care-text"))
+	exec("INSERT INTO resident(resident_id,name) VALUES(1,'synthetic')")
+	exec("INSERT INTO device(device_id,device_no,secret,resident_id,last_lng,last_lat) VALUES(1,'REKEY-LAB',?,1,?,?)", strings.Repeat("x", 48), s("location"), s("location"))
+	exec("INSERT INTO care_incident(id,resident_id,device_id,resolution_note) VALUES(1,1,1,?)", s("care-text"))
 	for _, id := range []int{1, 2, 10, 100} {
 		exec("INSERT INTO care_incident_event(id,incident_id,actor,action,note) VALUES(?,1,'synthetic','received',?)", id, s("care-text"))
 	}
@@ -53,9 +53,9 @@ func TestRekeyMySQL(t *testing.T) {
 	lookup := old.Index("care-notification-recipient", "13800000001")
 	exec("INSERT INTO care_notification_outbox(id,incident_id,channel,recipient,recipient_key) VALUES(1,1,'sms',?,?)", sealed(t, old, "13800000001", "care-notification-recipient"), lookup)
 	exec("INSERT INTO message_outbox(id,topic,source_key,family_id,channel,recipient) VALUES(1,'care','1',1,'sms',?)", s("notification-recipient"))
-	exec("INSERT INTO device_location(id,device_id,old_id,lng,lat,position_metadata) VALUES(1,1,1,?,?,?)", s("location"), s("location"), s("location"))
-	exec("INSERT INTO alarm_precess(id,old_id,device_id,lng,lat,position_metadata) VALUES(1,1,1,?,?,?)", s("location"), s("location"), s("location"))
-	exec("INSERT INTO alarm_process(id,old_id,device_id,lng,lat) VALUES(1,1,1,?,?)", s("location"), s("location"))
+	exec("INSERT INTO device_location(id,device_id,resident_id,lng,lat,position_metadata) VALUES(1,1,1,?,?,?)", s("location"), s("location"), s("location"))
+	exec("INSERT INTO alarm_event(id,resident_id,device_id,lng,lat,position_metadata) VALUES(1,1,1,?,?,?)", s("location"), s("location"), s("location"))
+	exec("INSERT INTO alarm_process(id,resident_id,device_id,lng,lat) VALUES(1,1,1,?,?)", s("location"), s("location"))
 	for _, hash := range []string{strings.Repeat("1", 64), strings.Repeat("a", 64), strings.Repeat("z", 64)} {
 		exec("INSERT INTO web_session(id_hash,role,actor_id,payload,expires_at) VALUES(?,'ADMIN',1,?,UTC_TIMESTAMP(6)+INTERVAL 1 HOUR)", hash, s("session"))
 	}
@@ -73,7 +73,7 @@ func TestRekeyMySQL(t *testing.T) {
 	exec(`INSERT INTO analytics_outbox(entity,entity_id,payload) VALUES('care_incident',98765,'{"note":"sne1:v2:A:not-a-coordinate"}')`)
 	unrelatedProjection := get("SELECT CAST(payload AS CHAR) FROM analytics_outbox WHERE entity='care_incident' AND entity_id=98765")
 	options := Options{BatchSize: 1, MaxRowsPerColumn: 1000}
-	beforeBusiness := get("SELECT CONCAT(health_epoch,':',old_id,':',device_no) FROM device WHERE device_id=1")
+	beforeBusiness := get("SELECT CONCAT(health_epoch,':',resident_id,':',device_no) FROM device WHERE device_id=1")
 	beforeIncident := get("SELECT CONCAT(state,':',updated_at) FROM care_incident WHERE id=1")
 	beforeNote := get("SELECT resolution_note FROM care_incident WHERE id=1")
 
@@ -115,7 +115,7 @@ func TestRekeyMySQL(t *testing.T) {
 		if get("SELECT recipient_key FROM care_notification_outbox WHERE id=1") != lookup || current.Index("care-notification-recipient", "13800000001") != lookup {
 			t.Fatal("HMAC index changed")
 		}
-		if get("SELECT CONCAT(health_epoch,':',old_id,':',device_no) FROM device WHERE device_id=1") != beforeBusiness || get("SELECT CONCAT(state,':',updated_at) FROM care_incident WHERE id=1") != beforeIncident {
+		if get("SELECT CONCAT(health_epoch,':',resident_id,':',device_no) FROM device WHERE device_id=1") != beforeBusiness || get("SELECT CONCAT(state,':',updated_at) FROM care_incident WHERE id=1") != beforeIncident {
 			t.Fatal("business state changed")
 		}
 		if get("SELECT JSON_EXTRACT(evidence,'$.future') FROM rule_state LIMIT 1") != "7" {
@@ -172,7 +172,7 @@ func TestRekeyMySQL(t *testing.T) {
 	t.Run("historical projection authentication fails before direct field writes", func(t *testing.T) {
 		note := sealed(t, old, "valid earlier field", "care-text")
 		exec("UPDATE care_incident SET resolution_note=? WHERE id=1", note)
-		payload, _ := json.Marshal(map[string]any{"lng": sealed(t, old, "113.5", "location"), "lat": "sne1:v2:MISSING:AAAA", "source": "gps", "old_id": 1})
+		payload, _ := json.Marshal(map[string]any{"lng": sealed(t, old, "113.5", "location"), "lat": "sne1:v2:MISSING:AAAA", "source": "gps", "resident_id": 1})
 		exec("INSERT INTO analytics_outbox(entity,entity_id,payload) VALUES('device_location',98766,?)", string(payload))
 		options.Apply = true
 		report, err := Run(ctx, database, current, old, options)

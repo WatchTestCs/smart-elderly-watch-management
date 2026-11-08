@@ -1,4 +1,4 @@
-// 老人位置坐标（device_location 轨迹、device 最新位置、alarm_precess/alarm_process
+// 老人位置坐标（device_location 轨迹、device 最新位置、alarm_event/alarm_process
 // 告警坐标）属 PIPL 敏感个人信息：写入时以 securestore AEAD 密文落库，读取时解密。
 // 未配置密钥（config.Validate 已在生产阻断该组合）与历史明文行原样读写，无需回填迁移。
 // fence_event.lng/lat 是 double 数值列且 API 按数字消费，保持明文（见审计报告 M-3）。

@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS device_command_profile (
  updated_by bigint NOT NULL, updated_at datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 CREATE TABLE IF NOT EXISTS device_command (
- id bigint AUTO_INCREMENT PRIMARY KEY, device_id bigint NOT NULL, old_id bigint NOT NULL,
+ id bigint AUTO_INCREMENT PRIMARY KEY, device_id bigint NOT NULL, resident_id bigint NOT NULL,
  epoch bigint NOT NULL, request_key varchar(64) NOT NULL, action varchar(32) NOT NULL,
  ttl_seconds integer NOT NULL CHECK(ttl_seconds BETWEEN 30 AND 3600),
  wire_type varchar(64) NOT NULL, channel varchar(16) NOT NULL, wire_action varchar(64) NOT NULL,
@@ -19,17 +19,17 @@ CREATE TABLE IF NOT EXISTS device_command (
  INDEX idx_command_device(device_id,id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 CREATE TABLE IF NOT EXISTS metric_daily (
- cache_key char(64) PRIMARY KEY, old_id bigint NOT NULL,
+ cache_key char(64) PRIMARY KEY, resident_id bigint NOT NULL,
  source varchar(256) NOT NULL, source_device varchar(4096) NOT NULL,
  metric varchar(64) NOT NULL, semantics varchar(32) NOT NULL,
  record_day date NOT NULL, offset_minutes integer NOT NULL,
  dirty boolean NOT NULL DEFAULT true, computed_revision bigint NOT NULL DEFAULT 0,
  result json, error_text varchar(512) NOT NULL DEFAULT '',
  updated_at datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), INDEX idx_daily_dirty(dirty,updated_at),
- INDEX idx_daily_owner(old_id,record_day)
+ INDEX idx_daily_owner(resident_id,record_day)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 CREATE TABLE IF NOT EXISTS device_fence (
- id bigint AUTO_INCREMENT PRIMARY KEY, device_id bigint NOT NULL, old_id bigint NOT NULL, epoch bigint NOT NULL,
+ id bigint AUTO_INCREMENT PRIMARY KEY, device_id bigint NOT NULL, resident_id bigint NOT NULL, epoch bigint NOT NULL,
  name varchar(64) NOT NULL, enabled boolean NOT NULL, revision bigint NOT NULL DEFAULT 1,
  coordinates json NOT NULL, coordinate_system varchar(16) NOT NULL CHECK(coordinate_system='WGS84'),
  timezone varchar(64) NOT NULL, time_begin integer NOT NULL CHECK(time_begin>=0 AND time_begin<86400),
@@ -45,11 +45,11 @@ CREATE TABLE IF NOT EXISTS fence_state (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 CREATE TABLE IF NOT EXISTS fence_event (
  id bigint AUTO_INCREMENT PRIMARY KEY, fence_id bigint NOT NULL, fence_revision bigint NOT NULL,
- old_id bigint NOT NULL, device_id bigint NOT NULL, epoch bigint NOT NULL,
+ resident_id bigint NOT NULL, device_id bigint NOT NULL, epoch bigint NOT NULL,
  direction varchar(8) NOT NULL CHECK(direction IN ('entry','exit')),
  lng double NOT NULL, lat double NOT NULL, accuracy double NOT NULL,
  occurred_at datetime(6) NOT NULL, created_at datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
- incident_id bigint, UNIQUE(fence_id,fence_revision,occurred_at), INDEX idx_fence_event_owner(old_id,id)
+ incident_id bigint, UNIQUE(fence_id,fence_revision,occurred_at), INDEX idx_fence_event_owner(resident_id,id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 CREATE TABLE IF NOT EXISTS alert_review (
  id bigint AUTO_INCREMENT PRIMARY KEY, entity varchar(16) NOT NULL CHECK(entity IN ('care','ratepre')),

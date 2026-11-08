@@ -22,7 +22,7 @@ func TestHealthStatisticsHotCacheConsistency(t *testing.T) {
 	at := time.Date(2026, 10, 22, 9, 0, 0, 0, time.UTC)
 	s := health.Sample{RecordID: "hot", Source: "watch", SourceDevice: "WATCH001", Metric: "heart_rate", Unit: "count/min", Value: health.Number(72), Start: at, End: at, Version: 1}
 	batch := map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "bindingVersion": 1, "samples": []health.Sample{s}}
-	query := map[string]any{"oldId": 1, "source": "watch", "sourceDevice": "WATCH001", "metric": "heart_rate", "semantics": "instant", "from": at.Add(-time.Hour), "to": at.Add(time.Hour)}
+	query := map[string]any{"residentId": 1, "source": "watch", "sourceDevice": "WATCH001", "metric": "heart_rate", "semantics": "instant", "from": at.Add(-time.Hour), "to": at.Add(time.Hour)}
 	admin := withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 1}, h.healthStatistics)
 	check := func(count int, mean float64) {
 		t.Helper()
@@ -48,7 +48,7 @@ func TestHealthStatisticsHotCacheConsistency(t *testing.T) {
 	}
 	defer tx.Rollback(context.Background())
 	deviceID := int64(1)
-	if _, _, err = health.Save(context.Background(), tx, health.Owner{OldID: 1, DeviceID: &deviceID, Epoch: 1}, s); err != nil {
+	if _, _, err = health.Save(context.Background(), tx, health.Owner{ResidentID: 1, DeviceID: &deviceID, Epoch: 1}, s); err != nil {
 		t.Fatal(err)
 	}
 	check(1, 91)
@@ -75,16 +75,16 @@ func TestHealthStatisticsHotCacheAuthorizationAndIdentity(t *testing.T) {
 	t.Cleanup(h.Sessions.Close)
 	seedDevice(t, pool)
 	mustExec(t, pool, "INSERT INTO family(family_id,family_phone) VALUES(1,'1'),(2,'2')")
-	mustExec(t, pool, "UPDATE oldperson SET family_id=1 WHERE old_id=1")
-	mustExec(t, pool, "INSERT INTO oldperson(old_id,name,family_id) VALUES(2,'other',2)")
+	mustExec(t, pool, "UPDATE resident SET family_id=1 WHERE resident_id=1")
+	mustExec(t, pool, "INSERT INTO resident(resident_id,name,family_id) VALUES(2,'other',2)")
 	at := time.Date(2026, 10, 22, 9, 0, 0, 0, time.UTC)
 	s := health.Sample{RecordID: "hot", Source: "watch", SourceDevice: "WATCH001", Metric: "heart_rate", Unit: "count/min", Value: health.Number(72), Start: at, End: at, Version: 1}
 	api(t, h.healthBatch, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "bindingVersion": 1, "samples": []health.Sample{s}})
-	query := map[string]any{"oldId": 1, "source": "watch", "sourceDevice": "WATCH001", "metric": "heart_rate", "semantics": "instant", "from": at.Add(-time.Hour), "to": at.Add(time.Hour)}
+	query := map[string]any{"residentId": 1, "source": "watch", "sourceDevice": "WATCH001", "metric": "heart_rate", "semantics": "instant", "from": at.Add(-time.Hour), "to": at.Add(time.Hour)}
 	family := withHealthPrincipal(h, session.Principal{Role: auth.RoleFamily, ID: 1}, h.healthStatistics)
 	api(t, family, query)
 	api(t, family, query)
-	mustExec(t, pool, "UPDATE oldperson SET family_id=2 WHERE old_id=1")
+	mustExec(t, pool, "UPDATE resident SET family_id=2 WHERE resident_id=1")
 	if got := callAPI(family, query); got.Code != http.StatusForbidden {
 		t.Fatal("warm cache bypassed changed family authorization", got.Code)
 	}
@@ -96,7 +96,7 @@ func TestHealthStatisticsHotCacheAuthorizationAndIdentity(t *testing.T) {
 		field string
 		value any
 	}{
-		{"oldId", int64(2)}, {"source", "other"}, {"sourceDevice", "other"}, {"metric", "body_mass"}, {"semantics", "interval"}, {"from", at.Add(time.Minute)}, {"to", at.Add(-time.Minute)},
+		{"residentId", int64(2)}, {"source", "other"}, {"sourceDevice", "other"}, {"metric", "body_mass"}, {"semantics", "interval"}, {"from", at.Add(time.Minute)}, {"to", at.Add(-time.Minute)},
 	} {
 		copyQuery := map[string]any{}
 		for k, v := range query {
@@ -119,8 +119,8 @@ func TestHealthStatisticsHotCacheRequiresDatabaseValidation(t *testing.T) {
 	pool := testDatabase(t)
 	h := New(pool, session.NewStore(time.Hour), config.Config{HealthCacheBytes: 1 << 20})
 	t.Cleanup(h.Sessions.Close)
-	mustExec(t, pool, "INSERT INTO oldperson(old_id,name) VALUES(1,'hot')")
-	query := map[string]any{"oldId": 1, "source": "watch", "sourceDevice": "WATCH001", "metric": "heart_rate", "semantics": "instant", "from": "2026-10-22T00:00:00Z", "to": "2026-10-23T00:00:00Z"}
+	mustExec(t, pool, "INSERT INTO resident(resident_id,name) VALUES(1,'hot')")
+	query := map[string]any{"residentId": 1, "source": "watch", "sourceDevice": "WATCH001", "metric": "heart_rate", "semantics": "instant", "from": "2026-10-22T00:00:00Z", "to": "2026-10-23T00:00:00Z"}
 	admin := withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin}, h.healthStatistics)
 	api(t, admin, query)
 	pool.Close()
@@ -133,7 +133,7 @@ func TestHealthStatisticsHotCacheReportingOffset(t *testing.T) {
 	pool := testDatabase(t)
 	h := New(pool, session.NewStore(time.Hour), config.Config{HealthCacheBytes: 1 << 20})
 	t.Cleanup(h.Sessions.Close)
-	mustExec(t, pool, "INSERT INTO oldperson(old_id,name) VALUES(1,'hot')")
+	mustExec(t, pool, "INSERT INTO resident(resident_id,name) VALUES(1,'hot')")
 	// This observation falls on Oct 22 in UTC+8, and Oct 21 in UTC. Requests
 	// for the same calendar date must not share a result across these offsets.
 	at := time.Date(2026, 10, 21, 20, 0, 0, 0, time.UTC)
@@ -143,7 +143,7 @@ func TestHealthStatisticsHotCacheReportingOffset(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer tx.Rollback(context.Background())
-	if _, _, err = health.Save(context.Background(), tx, health.Owner{OldID: 1}, s); err != nil {
+	if _, _, err = health.Save(context.Background(), tx, health.Owner{ResidentID: 1}, s); err != nil {
 		t.Fatal(err)
 	}
 	if err = tx.Commit(context.Background()); err != nil {
@@ -152,7 +152,7 @@ func TestHealthStatisticsHotCacheReportingOffset(t *testing.T) {
 	admin := withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin}, h.healthStatistics)
 	for i, offset := range []int{0, 8 * 3600} {
 		at := time.Date(2026, 10, 22, 0, 0, 0, 0, time.FixedZone("", offset))
-		query := map[string]any{"oldId": 1, "source": "watch", "sourceDevice": "WATCH001", "metric": "steps", "semantics": "daily_total", "from": at, "to": at.AddDate(0, 0, 1)}
+		query := map[string]any{"residentId": 1, "source": "watch", "sourceDevice": "WATCH001", "metric": "steps", "semantics": "daily_total", "from": at, "to": at.AddDate(0, 0, 1)}
 		for range 2 {
 			out := api(t, admin, query)
 			if out["statistics"].(map[string]any)["count"] != float64(i) {
@@ -173,7 +173,7 @@ func TestHealthStatisticsHotCacheUnencodableTime(t *testing.T) {
 	admin := withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin}, h.healthStatistics)
 	// The time parser accepts this offset on supported Go versions, whereas
 	// Time.MarshalJSON rejects it. A failed key encoding must not hash nil.
-	query := map[string]any{"oldId": 1, "source": "watch", "sourceDevice": "WATCH001", "metric": "heart_rate", "semantics": "instant", "from": "2026-10-23T00:00:00+24:00", "to": "2026-10-24T00:00:00+24:00"}
+	query := map[string]any{"residentId": 1, "source": "watch", "sourceDevice": "WATCH001", "metric": "heart_rate", "semantics": "instant", "from": "2026-10-23T00:00:00+24:00", "to": "2026-10-24T00:00:00+24:00"}
 	if out := api(t, admin, query)["statistics"].(map[string]any); out["count"] != float64(1) {
 		t.Fatal(out)
 	}
@@ -193,7 +193,7 @@ func TestHealthStatisticsHotCacheOverflowResultConsistency(t *testing.T) {
 	other := s
 	other.RecordID = "overflow-2"
 	api(t, h.healthBatch, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "bindingVersion": 1, "samples": []health.Sample{s, other}})
-	query := map[string]any{"oldId": 1, "source": "watch", "sourceDevice": "WATCH001", "metric": "heart_rate", "semantics": "instant", "from": at.Add(-time.Hour), "to": at.Add(time.Hour)}
+	query := map[string]any{"residentId": 1, "source": "watch", "sourceDevice": "WATCH001", "metric": "heart_rate", "semantics": "instant", "from": at.Add(-time.Hour), "to": at.Add(time.Hour)}
 	admin := withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin}, h.healthStatistics)
 	uncached := testHandler(t, pool)
 	plain := withHealthPrincipal(uncached, session.Principal{Role: auth.RoleAdmin}, uncached.healthStatistics)

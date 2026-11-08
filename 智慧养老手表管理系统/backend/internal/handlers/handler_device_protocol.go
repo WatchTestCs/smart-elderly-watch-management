@@ -73,24 +73,24 @@ func (h *Handler) deviceLogin(w http.ResponseWriter, r *http.Request) {
 	bound := 0
 	fields := map[string]any{
 		"deviceId": d.ID, "deviceNo": d.No, "alias": d.Alias,
-		"bound": bound, "oldId": d.OldID, "bindingVersion": d.HealthEpoch,
+		"bound": bound, "residentId": d.ResidentID, "bindingVersion": d.HealthEpoch,
 	}
 	if harmony {
 		fields["protocolVersion"] = 1
 		fields["maxBatchSize"] = 200
 	}
-	if d.OldID != nil {
+	if d.ResidentID != nil {
 		bound = 1
 		fields["bound"] = bound
 		var oldName *string
-		if err := h.DB.QueryRow(ctx, `SELECT name FROM oldperson WHERE old_id=$1`, *d.OldID).Scan(&oldName); err != nil && err != pgx.ErrNoRows {
+		if err := h.DB.QueryRow(ctx, `SELECT name FROM resident WHERE resident_id=$1`, *d.ResidentID).Scan(&oldName); err != nil && err != pgx.ErrNoRows {
 			response.Error500(w, ref())
 			return
 		}
 		if oldName != nil {
-			fields["oldPersonName"] = *oldName
+			fields["residentName"] = *oldName
 		} else {
-			fields["oldPersonName"] = ""
+			fields["residentName"] = ""
 		}
 	}
 	response.OK(w, fields)
@@ -99,7 +99,7 @@ func (h *Handler) deviceLogin(w http.ResponseWriter, r *http.Request) {
 type bindCodeRow struct {
 	ID         int64
 	Code       string
-	OldID      *int64
+	ResidentID      *int64
 	FamilyID   *int64
 	CreateUser *string
 	ExpireTime *time.Time
@@ -110,14 +110,14 @@ type bindCodeRow struct {
 
 func scanBindCode(row dbstore.Row) (*bindCodeRow, error) {
 	var b bindCodeRow
-	if err := row.Scan(&b.ID, &b.Code, &b.OldID, &b.FamilyID, &b.CreateUser,
+	if err := row.Scan(&b.ID, &b.Code, &b.ResidentID, &b.FamilyID, &b.CreateUser,
 		&b.ExpireTime, &b.Used, &b.UsedTime, &b.UsedDevID); err != nil {
 		return nil, err
 	}
 	return &b, nil
 }
 
-const bindCodeCols = `id, code, old_id, family_id, create_user, expire_time, used, used_time, used_device_id`
+const bindCodeCols = `id, code, resident_id, family_id, create_user, expire_time, used, used_time, used_device_id`
 
 func (h *Handler) findBindCode(ctx context.Context, q deviceQueries, code string) (*bindCodeRow, error) {
 	b, err := scanBindCode(q.QueryRow(ctx,
@@ -178,7 +178,7 @@ func (h *Handler) deviceBind(w http.ResponseWriter, r *http.Request) {
 	}
 	var oldName *string
 	var oldDeviceID, oldFamilyID *int64
-	err = tx.QueryRow(ctx, `SELECT name, device_id, family_id FROM oldperson WHERE old_id=$1 FOR UPDATE`, *bc.OldID).
+	err = tx.QueryRow(ctx, `SELECT name, device_id, family_id FROM resident WHERE resident_id=$1 FOR UPDATE`, *bc.ResidentID).
 		Scan(&oldName, &oldDeviceID, &oldFamilyID)
 	if err != nil {
 		rollback()
@@ -210,7 +210,7 @@ func (h *Handler) deviceBind(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	if d.OldID != nil && *d.OldID != *bc.OldID {
+	if d.ResidentID != nil && *d.ResidentID != *bc.ResidentID {
 		rollback()
 		conflict409(w, "设备已绑定其他长者，请先在设备管理解除绑定")
 		return
@@ -219,9 +219,9 @@ func (h *Handler) deviceBind(w http.ResponseWriter, r *http.Request) {
 	// The locked row is authoritative: never restore stale admin settings,
 	// location, telemetry, or disabled status from the initial auth snapshot.
 	ct, err := tx.Exec(ctx,
-		`UPDATE device SET old_id=$1, family_id=$2, bind_time=$3,
+		`UPDATE device SET resident_id=$1, family_id=$2, bind_time=$3,
 		 last_time=GREATEST(COALESCE(last_time,$3),$3) WHERE device_id=$4`,
-		*bc.OldID, bc.FamilyID, now, d.ID)
+		*bc.ResidentID, bc.FamilyID, now, d.ID)
 	if rollbackOnError(w, rollback, err) {
 		return
 	}
@@ -252,7 +252,7 @@ func (h *Handler) deviceBind(w http.ResponseWriter, r *http.Request) {
 	if oldName != nil {
 		nm = *oldName
 	}
-	response.OK(w, map[string]any{"oldId": *bc.OldID, "oldPersonName": nm})
+	response.OK(w, map[string]any{"residentId": *bc.ResidentID, "residentName": nm})
 }
 
 // POST /api/v1/device/heartbeat —— 设备心跳（公开）。
@@ -289,11 +289,11 @@ func (h *Handler) deviceHeartbeat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	bound := 0
-	if d.OldID != nil {
+	if d.ResidentID != nil {
 		bound = 1
 	}
 	response.OK(w, map[string]any{
-		"serverTime": now.Format(tsLayout), "bound": bound, "oldId": d.OldID, "bindingVersion": d.HealthEpoch,
+		"serverTime": now.Format(tsLayout), "bound": bound, "residentId": d.ResidentID, "bindingVersion": d.HealthEpoch,
 		"reportInterval": 5, "pendingAlarm": 0,
 	})
 }
@@ -308,7 +308,7 @@ func bindCodeFailure(bc *bindCodeRow) (string, string) {
 	if bc.ExpireTime != nil && !bc.ExpireTime.After(time.Now()) {
 		return "BIND_CODE_EXPIRED", "该绑定码已过期，请重新生成"
 	}
-	if bc.OldID == nil {
+	if bc.ResidentID == nil {
 		return "NOT_FOUND", "绑定码对应的老人不存在"
 	}
 	return "", ""
@@ -317,12 +317,12 @@ func bindCodeFailure(bc *bindCodeRow) (string, string) {
 func linkBoundDevice(ctx context.Context, tx *dbstore.Transaction, deviceID int64, bc *bindCodeRow, oldDeviceID, oldFamilyID *int64, now time.Time) error {
 	// 老人档案 device_id 只填一次，防止后绑定的表顶掉。
 	if oldDeviceID == nil {
-		if _, err := tx.Exec(ctx, `UPDATE oldperson SET device_id=$1 WHERE old_id=$2`, deviceID, *bc.OldID); err != nil {
+		if _, err := tx.Exec(ctx, `UPDATE resident SET device_id=$1 WHERE resident_id=$2`, deviceID, *bc.ResidentID); err != nil {
 			return err
 		}
 	}
 	if oldFamilyID == nil && bc.FamilyID != nil {
-		if _, err := tx.Exec(ctx, `UPDATE oldperson SET family_id=$1 WHERE old_id=$2`, *bc.FamilyID, *bc.OldID); err != nil {
+		if _, err := tx.Exec(ctx, `UPDATE resident SET family_id=$1 WHERE resident_id=$2`, *bc.FamilyID, *bc.ResidentID); err != nil {
 			return err
 		}
 	}

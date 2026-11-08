@@ -68,7 +68,7 @@ func (h *Handler) listMonitoringProfiles(w http.ResponseWriter, r *http.Request)
 	ctx := r.Context()
 	base := `SELECT w.device_id, w.op_time, w.hrf, w.bpf, w.hrl, w.bpl, o.name
 		FROM watch_info w LEFT JOIN device d ON d.device_id=w.device_id
-		LEFT JOIN oldperson o ON o.old_id=d.old_id
+		LEFT JOIN resident o ON o.resident_id=d.resident_id
 		WHERE ($1='' OR o.name LIKE '%'||$1||'%') ORDER BY w.device_id`
 	var total int64
 	if internalError(w, h.DB.QueryRow(ctx, `SELECT COUNT(*) FROM (`+base+`) AS t`, oldName).Scan(&total)) {

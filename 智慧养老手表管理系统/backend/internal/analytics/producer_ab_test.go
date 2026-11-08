@@ -116,7 +116,7 @@ func insertProducerBatch(ctx context.Context, sqlDB *sql.DB, mode string, first,
 		values = append(values, "(?,?,?,?,?,?,?,?)")
 		args = append(args, id, 1, 1, 70+id%30, 110+id%20, "0", "0", timestamp)
 	}
-	query := fmt.Sprintf("INSERT INTO %s(id,device_id,old_id,hr,bp,rate_state,pre_state,create_time) VALUES %s",
+	query := fmt.Sprintf("INSERT INTO %s(id,device_id,resident_id,hr,bp,rate_state,pre_state,create_time) VALUES %s",
 		table, strings.Join(values, ","))
 	if _, err := tx.ExecContext(ctx, query, args...); err != nil {
 		return err
@@ -126,7 +126,7 @@ func insertProducerBatch(ctx context.Context, sqlDB *sql.DB, mode string, first,
 		// The projection JSON fields match the current ratepre trigger.
 		const eventSQL = `INSERT INTO analytics_outbox(entity,entity_id,payload,deleted)
 			SELECT 'ratepre',id,
-			  JSON_OBJECT('device_id',device_id,'old_id',old_id,'hr',hr,'bp',bp,
+			  JSON_OBJECT('device_id',device_id,'resident_id',resident_id,'hr',hr,'bp',bp,
 			              'rate_state',rate_state,'pre_state',pre_state,'create_time',create_time),
 			  false FROM ratepre_direct WHERE id BETWEEN ? AND ? ORDER BY id`
 		if _, err := tx.ExecContext(ctx, eventSQL, first, last); err != nil {

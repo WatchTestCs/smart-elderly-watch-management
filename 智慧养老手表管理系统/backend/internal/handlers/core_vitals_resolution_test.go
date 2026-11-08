@@ -9,7 +9,7 @@ import (
 func TestPendingVitalsDetailHonorsEachHandledTime(t *testing.T) {
 	h := extraAuditHandler(t)
 	seedDevice(t, h.DB)
-	mustExec(t, h.DB, "INSERT INTO ratepre(id,device_id,old_id,hr,bp,rate_state,pre_state,create_time) VALUES(1,1,1,150,180,'1','1','2026-10-20 10:00:00')")
+	mustExec(t, h.DB, "INSERT INTO ratepre(id,device_id,resident_id,hr,bp,rate_state,pre_state,create_time) VALUES(1,1,1,150,180,'1','1','2026-10-20 10:00:00')")
 	for _, handled := range []string{"rate", "pre"} {
 		mustExec(t, h.DB, "UPDATE ratepre SET rate_handled_at=NULL,pre_handled_at=NULL WHERE id=1")
 		mustExec(t, h.DB, "UPDATE ratepre SET "+handled+"_handled_at='2026-10-20 11:00:00' WHERE id=1")
@@ -21,18 +21,18 @@ func TestPendingVitalsDetailHonorsEachHandledTime(t *testing.T) {
 			if kind == handled {
 				continue
 			}
-			byOwner := api(t, h.getVitalAlert, map[string]any{"oldId": 1, "kind": kind})
+			byOwner := api(t, h.getVitalAlert, map[string]any{"residentId": 1, "kind": kind})
 			if !reflect.DeepEqual(byOwner, selected) {
 				t.Errorf("handled=%s kind=%q owner detail resurrected handled metric: got=%v want=%v", handled, kind, byOwner, selected)
 			}
 		}
 	}
 	mustExec(t, h.DB, "UPDATE ratepre SET rate_handled_at='2026-10-20 11:00:00',pre_handled_at='2026-10-20 11:00:00' WHERE id=1")
-	if out := api(t, h.getVitalAlert, map[string]any{"oldId": 1}); out["hasAlert"] != float64(0) {
+	if out := api(t, h.getVitalAlert, map[string]any{"residentId": 1}); out["hasAlert"] != float64(0) {
 		t.Fatalf("fully handled record remained pending: %v", out)
 	}
 	mustExec(t, h.DB, "UPDATE ratepre SET rate_handled_at='2026-10-20 09:00:00',pre_handled_at='2026-10-20 09:00:00' WHERE id=1")
-	if out := api(t, h.getVitalAlert, map[string]any{"oldId": 1}); out["rateBad"] != float64(1) || out["preBad"] != float64(1) {
+	if out := api(t, h.getVitalAlert, map[string]any{"residentId": 1}); out["rateBad"] != float64(1) || out["preBad"] != float64(1) {
 		t.Fatalf("older handling suppressed newer observations: %v", out)
 	}
 }
@@ -40,7 +40,7 @@ func TestPendingVitalsDetailHonorsEachHandledTime(t *testing.T) {
 func TestContinuousVitalsResolutionRejectsUnknownKind(t *testing.T) {
 	h := extraAuditHandler(t)
 	seedDevice(t, h.DB)
-	mustExec(t, h.DB, "INSERT INTO ratepre(id,device_id,old_id,hr,bp,rate_state,pre_state,create_time) VALUES(1,1,1,150,180,'1','1','2026-10-20 10:00:00')")
+	mustExec(t, h.DB, "INSERT INTO ratepre(id,device_id,resident_id,hr,bp,rate_state,pre_state,create_time) VALUES(1,1,1,150,180,'1','1','2026-10-20 10:00:00')")
 	for _, kind := range []any{"rat", "all", 1, map[string]any{"kind": "rate"}} {
 		mustExec(t, h.DB, "UPDATE ratepre SET rate_state='1',pre_state='1',rate_handled_at=NULL,pre_handled_at=NULL WHERE id=1")
 		out := callAPI(h.handleResolveVitalAlert, map[string]any{"recordId": 1, "kind": kind})
@@ -82,7 +82,7 @@ func TestContinuousVitalsResolutionRejectsUnknownKind(t *testing.T) {
 func TestContinuousVitalsResolutionReasonMatchesSelectedRecord(t *testing.T) {
 	h := extraAuditHandler(t)
 	seedDevice(t, h.DB)
-	mustExec(t, h.DB, "INSERT INTO ratepre(id,device_id,old_id,hr,bp,rate_state,pre_state,create_time) VALUES(1,1,1,150,180,'1','1','2026-10-20 10:00:00'),(2,1,1,40,70,'1','1','2026-10-20 11:00:00')")
+	mustExec(t, h.DB, "INSERT INTO ratepre(id,device_id,resident_id,hr,bp,rate_state,pre_state,create_time) VALUES(1,1,1,150,180,'1','1','2026-10-20 10:00:00'),(2,1,1,40,70,'1','1','2026-10-20 11:00:00')")
 	for _, tc := range []struct{ kind, reason, state string }{{"rate", "心率偏高", "rate_state"}, {"pre", "血压偏高", "pre_state"}} {
 		out := api(t, h.deviceResolveAlert, map[string]any{"deviceId": 1, "recordId": 1, "kind": tc.kind})
 		if out["returnCode"] != "1111" || out["handledReason"] != tc.reason {

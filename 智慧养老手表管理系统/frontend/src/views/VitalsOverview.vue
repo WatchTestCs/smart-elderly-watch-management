@@ -64,7 +64,7 @@
         </template>
       </el-table-column>
     </el-table>
-    <record-cards v-if="mobileLayout" :records="vitalRecords" :fields='[{"key":"preState","label":"血压状态","state":"health","handled":"preHandled"},{"key":"rateState","label":"心率状态","state":"health","handled":"rateHandled"},{"key":"oldId","label":"长者编号"},{"key":"sex","label":"性别"}]' label="心率与血压记录" title-key="name" key-field="oldId" time-key="createTime">
+    <record-cards v-if="mobileLayout" :records="vitalRecords" :fields='[{"key":"preState","label":"血压状态","state":"health","handled":"preHandled"},{"key":"rateState","label":"心率状态","state":"health","handled":"rateHandled"},{"key":"residentId","label":"长者编号"},{"key":"sex","label":"性别"}]' label="心率与血压记录" title-key="name" key-field="residentId" time-key="createTime">
       <template #actions="scope"  ><el-button v-if="scope.row.rateState==1 || scope.row.preState==1"
                      size="small" plain type="danger" :icon="WarningFilled"
                      @click="showAlertRow(scope.row)">查看原因</el-button>
@@ -110,7 +110,7 @@ import RecordCards from '@/components/RecordCards.vue'
 import HealthAlertDialog from '@/components/records/HealthAlertDialog.vue'
 
 interface VitalRow {
-  oldId: number | string
+  residentId: number | string
   name: string
   recordId?: number | string
   rateState?: number | string
@@ -137,7 +137,7 @@ function emptyAlert() {
   return {
     visible: false, loading: false, resolving: false, hasAlert: 1,
     title: '异常原因与处理', recordId: null,
-    oldPersonName: '', hr: '', bp: '', rateBad: 0,
+    residentName: '', hr: '', bp: '', rateBad: 0,
     preBad: 0, reason: '', detail: '', occurTime: '',
     advice: '', message: ''
   }
@@ -157,14 +157,14 @@ async function loadAlertCount() {
 }
 const getCount = loadAlertCount
 const alertReads = createLatestRead(
-  (query: { recordId?: number | string; oldId?: number | string; kind?: string }, signal: AbortSignal) =>
+  (query: { recordId?: number | string; residentId?: number | string; kind?: string }, signal: AbortSignal) =>
     api.post<Record<string, any>>('api/v1/vitals/alerts/detail', query, { signal }),
   ({ data }) => {
     Object.assign(alertDialog.value, {
       hasAlert: data.hasAlert ?? 1,
       message: data.message || '',
       recordId: data.recordId ?? null,
-      oldPersonName: data.oldPersonName || alertDialog.value.oldPersonName,
+      residentName: data.residentName || alertDialog.value.residentName,
       hr: data.hr, bp: data.bp,
       rateBad: data.rateBad || 0, preBad: data.preBad || 0,
       reason: data.reason || '', detail: data.detail || '',
@@ -178,13 +178,13 @@ const alertReads = createLatestRead(
   loading => { alertDialog.value.loading = loading }
 )
 function loadAlertDetail(
-  recordId: number | string | null, name: string, oldId: number | string, kind = ''
+  recordId: number | string | null, name: string, residentId: number | string, kind = ''
 ) {
-  alertDialog.value = { ...emptyAlert(), visible: true, loading: true, recordId, oldPersonName: name || '' }
-  return alertReads.run(recordId ? { recordId } : { oldId, kind })
+  alertDialog.value = { ...emptyAlert(), visible: true, loading: true, recordId, residentName: name || '' }
+  return alertReads.run(recordId ? { recordId } : { residentId, kind })
 }
 function showAlertRow(row: VitalRow) {
-  return loadAlertDetail(null, row.name, row.oldId)
+  return loadAlertDetail(null, row.name, row.residentId)
 }
 function showAlertByKind(kind: string) {
   const target = vitalRecords.value.find(row =>
@@ -194,7 +194,7 @@ function showAlertByKind(kind: string) {
     ElMessage({ type: 'success', message: '当前没有未处理的' + (kind === 'rate' ? '心率' : '血压') + '异常' })
     return
   }
-  void loadAlertDetail(null, target.name, target.oldId, kind)
+  void loadAlertDetail(null, target.name, target.residentId, kind)
 }
 async function resolveAlert(kind: string) {
   if (alertDialog.value.resolving) return
@@ -239,7 +239,7 @@ function openWorkbench() {
   ElMessage({ type: 'info', message: '已筛选出 ' + rows.length + ' 条待处理异常，点「查看原因」了解处理办法' })
 }
 function showRoleDialog(row: VitalRow) {
-  return showRecordDetails('vitals', row.oldId, row.name)
+  return showRecordDetails('vitals', row.residentId, row.name)
 }
 onMounted(() => { void loadAlertCount() })
 onBeforeUnmount(alertReads.dispose)

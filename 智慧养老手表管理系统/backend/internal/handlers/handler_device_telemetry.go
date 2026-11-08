@@ -65,7 +65,7 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 		hwFail(w, code, msg)
 		return
 	}
-	if d.OldID == nil {
+	if d.ResidentID == nil {
 		rollback()
 		hwFail(w, "DEVICE_NOT_BOUND", "设备还未绑定老人，请先在手表上输入绑定码")
 		return
@@ -139,7 +139,7 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 		if requestID != "" {
 			var priorID, priorOwner int64
 			var priorKind, priorState string
-			err := tx.QueryRow(ctx, `SELECT id,old_id,kind,state FROM care_incident
+			err := tx.QueryRow(ctx, `SELECT id,resident_id,kind,state FROM care_incident
 				WHERE device_id=$1 AND request_id=$2 FOR UPDATE`, d.ID, requestID).
 				Scan(&priorID, &priorOwner, &priorKind, &priorState)
 			if err == nil {
@@ -148,7 +148,7 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 				if strings.EqualFold(parsed.alarm, "fall") {
 					kind = "fall"
 				}
-				if priorOwner != *d.OldID || priorKind != kind {
+				if priorOwner != *d.ResidentID || priorKind != kind {
 					conflict409(w, "设备上报编号已被其他事件或绑定使用")
 					return
 				}

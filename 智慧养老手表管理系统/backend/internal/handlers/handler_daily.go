@@ -11,9 +11,9 @@ import (
 
 func metricDailyEnsureSQL(mysql bool) string {
 	if mysql {
-		return `INSERT INTO metric_daily(cache_key,old_id,source,source_device,metric,semantics,record_day,offset_minutes) VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON DUPLICATE KEY UPDATE cache_key=cache_key`
+		return `INSERT INTO metric_daily(cache_key,resident_id,source,source_device,metric,semantics,record_day,offset_minutes) VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON DUPLICATE KEY UPDATE cache_key=cache_key`
 	}
-	return `INSERT INTO metric_daily(cache_key,old_id,source,source_device,metric,semantics,record_day,offset_minutes) VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT(cache_key) DO NOTHING`
+	return `INSERT INTO metric_daily(cache_key,resident_id,source,source_device,metric,semantics,record_day,offset_minutes) VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT(cache_key) DO NOTHING`
 }
 
 func (h *Handler) healthDaily(w http.ResponseWriter, r *http.Request) {
@@ -24,11 +24,11 @@ func (h *Handler) healthDaily(w http.ResponseWriter, r *http.Request) {
 	if !decodeCapability(w, r, &req) {
 		return
 	}
-	oldID, ok := h.resolveOptionalOldID(w, r, req.OldID)
+	residentID, ok := h.resolveOptionalResidentID(w, r, req.ResidentID)
 	if !ok {
 		return
 	}
-	req.OldID = oldID
+	req.ResidentID = residentID
 	from, _, err := req.DailyKey.Bounds()
 	if err != nil {
 		write400(w, err.Error())
@@ -45,7 +45,7 @@ func (h *Handler) healthDaily(w http.ResponseWriter, r *http.Request) {
 	}
 	defer tx.Rollback(ctx)
 	// Use the same lock order as sample invalidation and the refresh worker.
-	if _, err = health.LockOwner(ctx, tx, oldID); internalError(w, err) {
+	if _, err = health.LockOwner(ctx, tx, residentID); internalError(w, err) {
 		return
 	}
 	items := []map[string]any{}
@@ -53,7 +53,7 @@ func (h *Handler) healthDaily(w http.ResponseWriter, r *http.Request) {
 		k := req.DailyKey
 		k.Day = from.AddDate(0, 0, n).Format("2006-01-02")
 		id := k.ID()
-		_, err = tx.Exec(ctx, metricDailyEnsureSQL(tx.IsMySQL()), id, k.OldID, k.Source, k.SourceDevice, k.Metric, k.Semantics, k.Day, k.OffsetMinutes)
+		_, err = tx.Exec(ctx, metricDailyEnsureSQL(tx.IsMySQL()), id, k.ResidentID, k.Source, k.SourceDevice, k.Metric, k.Semantics, k.Day, k.OffsetMinutes)
 		if internalError(w, err) {
 			return
 		}

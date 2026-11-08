@@ -33,7 +33,7 @@ func (h *Handler) deviceCreate(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	alias, model, oldID, ok := parseDeviceRegistration(m)
+	alias, model, residentID, ok := parseDeviceRegistration(m)
 	if !ok {
 		writeValidation400(w)
 		return
@@ -44,9 +44,9 @@ func (h *Handler) deviceCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	rollback := func() { _ = tx.Rollback(ctx) }
-	if oldID != nil {
+	if residentID != nil {
 		var exists bool
-		if err := tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM oldperson WHERE old_id=$1)`, *oldID).Scan(&exists); rollbackOnError(w, rollback, err) {
+		if err := tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM resident WHERE resident_id=$1)`, *residentID).Scan(&exists); rollbackOnError(w, rollback, err) {
 			return
 		}
 		if !exists {
@@ -64,16 +64,16 @@ func (h *Handler) deviceCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	now := time.Now()
-	var bindTimeAny, oldIDAny any
-	if oldID != nil {
+	var bindTimeAny, residentIDAny any
+	if residentID != nil {
 		bindTimeAny = now
-		oldIDAny = *oldID
+		residentIDAny = *residentID
 	}
 	var deviceID int64
 	if err := tx.QueryRow(ctx,
-		`INSERT INTO device(device_no, secret, alias, model, old_id, status, bind_time, create_time)
+		`INSERT INTO device(device_no, secret, alias, model, resident_id, status, bind_time, create_time)
 		 VALUES($1,$2,$3,$4,$5,1,$6,$7) RETURNING device_id`,
-		deviceNo, hashed, alias, model, oldIDAny, bindTimeAny, now).Scan(&deviceID); err != nil {
+		deviceNo, hashed, alias, model, residentIDAny, bindTimeAny, now).Scan(&deviceID); err != nil {
 		rollback()
 		response.Error500(w, ref())
 		return
@@ -83,8 +83,8 @@ func (h *Handler) deviceCreate(w http.ResponseWriter, r *http.Request) {
 		response.Fail(w, "新建设备失败")
 		return
 	}
-	if oldID != nil {
-		ct, err := tx.Exec(ctx, `UPDATE oldperson SET device_id=COALESCE(device_id,$1) WHERE old_id=$2`, deviceID, *oldID)
+	if residentID != nil {
+		ct, err := tx.Exec(ctx, `UPDATE resident SET device_id=COALESCE(device_id,$1) WHERE resident_id=$2`, deviceID, *residentID)
 		if err != nil || ct.RowsAffected() != 1 {
 			rollbackFailure(w, rollback)
 			return
@@ -161,10 +161,10 @@ func (h *Handler) detachDevice(w http.ResponseWriter, r *http.Request, remove bo
 		return
 	}
 	rollback := func() { _ = tx.Rollback(ctx) }
-	if _, err := tx.Exec(ctx, `UPDATE oldperson SET device_id=(SELECT min(d.device_id) FROM device d WHERE d.old_id=oldperson.old_id AND d.device_id<>$1) WHERE device_id=$1`, deviceID); rollbackOnError(w, rollback, err) {
+	if _, err := tx.Exec(ctx, `UPDATE resident SET device_id=(SELECT min(d.device_id) FROM device d WHERE d.resident_id=resident.resident_id AND d.device_id<>$1) WHERE device_id=$1`, deviceID); rollbackOnError(w, rollback, err) {
 		return
 	}
-	query := `UPDATE device SET old_id=NULL, family_id=NULL, bind_time=NULL, last_lng=NULL, last_lat=NULL
+	query := `UPDATE device SET resident_id=NULL, family_id=NULL, bind_time=NULL, last_lng=NULL, last_lat=NULL
 		WHERE device_id=$1`
 	failureMessage := "解绑失败"
 	if remove {
@@ -201,14 +201,14 @@ func parseDeviceRegistration(m map[string]any) (string, string, *int64, bool) {
 	if utf8.RuneCountInString(alias) > 32 || utf8.RuneCountInString(model) > 32 {
 		return "", "", nil, false
 	}
-	oldIDStr, _ := vstr(m, "oldId")
-	var oldID *int64
-	if oldIDStr != "" {
-		if !validID(oldIDStr) {
+	residentIDStr, _ := vstr(m, "residentId")
+	var residentID *int64
+	if residentIDStr != "" {
+		if !validID(residentIDStr) {
 			return "", "", nil, false
 		}
-		n, _ := strconv.ParseInt(oldIDStr, 10, 64)
-		oldID = &n
+		n, _ := strconv.ParseInt(residentIDStr, 10, 64)
+		residentID = &n
 	}
-	return alias, model, oldID, true
+	return alias, model, residentID, true
 }

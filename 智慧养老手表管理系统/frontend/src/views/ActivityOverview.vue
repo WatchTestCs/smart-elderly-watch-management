@@ -46,7 +46,7 @@
         </template>
       </el-table-column>
     </el-table>
-    <record-cards v-if="mobileLayout" :records="stepList" :fields='[{"key":"sex","label":"性别"},{"key":"step","label":"今日步数"},{"key":"sleep","label":"睡眠时间"},{"key":"sleepAlertState","label":"睡眠情况","state":"health"}]' label="睡眠与步数记录" title-key="name" key-field="oldId" time-key="createTime">
+    <record-cards v-if="mobileLayout" :records="stepList" :fields='[{"key":"sex","label":"性别"},{"key":"step","label":"今日步数"},{"key":"sleep","label":"睡眠时间"},{"key":"sleepAlertState","label":"睡眠情况","state":"health"}]' label="睡眠与步数记录" title-key="name" key-field="residentId" time-key="createTime">
       <template #actions="scope"  ><el-button size="small" plain type="success" :icon="Check" aria-label="查看睡眠详情" @click="showRoleDialog(scope.row)">
             查看睡眠详情
           </el-button></template>
@@ -106,7 +106,7 @@ async function getCount() {
   }
 }
 function showRoleDialog(row) {
-  return showRecordDetails('activity', row.oldId, row.name)
+  return showRecordDetails('activity', row.residentId, row.name)
 }
 onMounted(() => { void getCount() })
 </script>

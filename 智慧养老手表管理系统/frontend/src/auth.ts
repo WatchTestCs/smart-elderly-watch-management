@@ -9,7 +9,7 @@ export interface SessionAccount {
   id?: number | string
   duty?: 'supervisor' | 'caregiver' | 'auditor' | string
   displayName?: string
-  oldId?: number | string
+  residentId?: number | string
   phone?: string
 }
 export interface SessionState {
@@ -30,7 +30,7 @@ export const authState = reactive<SessionState>({
 let loaded = false
 let pending: Promise<SessionAccount | null> | null = null
 let sessionGeneration = 0
-const profileKeys = ['token', 'user_name', 'oldIdfamily', 'familyPhone', 'familyTouPic']
+const profileKeys = ['token', 'user_name', 'residentIdfamily', 'familyPhone', 'familyTouPic']
 
 function clearProfile () {
   for (const key of profileKeys) {
@@ -70,7 +70,7 @@ export function loadSession (refresh = false): Promise<SessionAccount | null> {
       String(previousAccount.id ?? '') !== String(nextAccount.id ?? '') ||
       previousAccount.role !== nextAccount.role ||
       previousAccount.phone !== nextAccount.phone ||
-      String(previousAccount.oldId ?? '') !== String(nextAccount.oldId ?? '') ||
+      String(previousAccount.residentId ?? '') !== String(nextAccount.residentId ?? '') ||
       previousAccount.duty !== nextAccount.duty
     )
     if (!nextAccount || identityChanged) store.clearTabs()

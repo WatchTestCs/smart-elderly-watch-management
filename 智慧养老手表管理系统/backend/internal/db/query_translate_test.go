@@ -164,7 +164,7 @@ func TestCompileMySQLQueryDoesNotKnowSocialTextTable(t *testing.T) {
 }
 
 func TestCompileMySQLQueryHasNoBusinessTableSpecialCases(t *testing.T) {
-	position := "SELECT GREATEST(COALESCE(l.be_time, o.be_time), COALESCE(a.be_time, o.be_time)) FROM oldperson o"
+	position := "SELECT GREATEST(COALESCE(l.event_time, o.event_time), COALESCE(a.event_time, o.event_time)) FROM resident o"
 	plan, err := compileMySQLQuery(position)
 	if err != nil || plan.sql != position {
 		t.Fatalf("position SQL must no longer be table-special-cased: sql=%q err=%v", plan.sql, err)
@@ -267,8 +267,8 @@ func TestMySQLReturningOnlySupportsKnownGeneratedKeys(t *testing.T) {
 	for _, tc := range []struct{ table, column, sql string }{
 		{"device", "device_no", "INSERT INTO device(device_no) VALUES($1)"},
 		{"family", "id", "INSERT INTO family(family_name) VALUES($1)"},
-		{"care_incident", "id", "INSERT INTO care_incident(old_id) VALUES($1) ON CONFLICT DO NOTHING"},
-		{"care_incident", "id", "INSERT INTO care_incident(old_id) VALUES($1) ON CONFLICT(old_id) DO UPDATE SET old_id=EXCLUDED.old_id"},
+		{"care_incident", "id", "INSERT INTO care_incident(resident_id) VALUES($1) ON CONFLICT DO NOTHING"},
+		{"care_incident", "id", "INSERT INTO care_incident(resident_id) VALUES($1) ON CONFLICT(resident_id) DO UPDATE SET resident_id=EXCLUDED.resident_id"},
 	} {
 		if err := validateMySQLReturning(tc.table, tc.column, tc.sql); err == nil {
 			t.Fatalf("unsupported RETURNING shape accepted: %s.%s %s", tc.table, tc.column, tc.sql)

@@ -46,7 +46,7 @@ func TestHealthVersionsCursorAndIsolation(t *testing.T) {
 	admin := withHealthPrincipal(h, session.Principal{Role: "ADMIN"}, h.healthChanges)
 	var cursor float64
 	for i := 1; i <= 3; i++ {
-		out = api(t, admin, map[string]any{"oldId": 1, "after": cursor, "limit": 1})
+		out = api(t, admin, map[string]any{"residentId": 1, "after": cursor, "limit": 1})
 		changes := out["changes"].([]any)
 		if len(changes) != 1 {
 			t.Fatal(out)
@@ -65,14 +65,14 @@ func TestHealthVersionsCursorAndIsolation(t *testing.T) {
 			t.Fatal(out)
 		}
 	}
-	out = api(t, admin, map[string]any{"oldId": 1, "after": cursor})
+	out = api(t, admin, map[string]any{"residentId": 1, "after": cursor})
 	if len(out["changes"].([]any)) != 0 || out["nextCursor"] != cursor {
 		t.Fatal(out)
 	}
 	mustExec(t, pool, "INSERT INTO family(family_id,family_phone) VALUES(1,'1'),(2,'2')")
-	mustExec(t, pool, "UPDATE oldperson SET family_id=1 WHERE old_id=1")
+	mustExec(t, pool, "UPDATE resident SET family_id=1 WHERE resident_id=1")
 	other := withHealthPrincipal(h, session.Principal{Role: "FAMILY", ID: 2}, h.healthChanges)
-	if w := callAPI(other, map[string]any{"oldId": 1}); w.Code != 403 {
+	if w := callAPI(other, map[string]any{"residentId": 1}); w.Code != 403 {
 		t.Fatalf("family leak %d", w.Code)
 	}
 	// Any conflict rolls back all earlier samples in the same batch.
@@ -102,7 +102,7 @@ func TestHealthWriteCursorFollowsCommitOrder(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer tx1.Rollback(ctx)
-	first, _, err := health.Save(ctx, tx1, health.Owner{OldID: 1}, s)
+	first, _, err := health.Save(ctx, tx1, health.Owner{ResidentID: 1}, s)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -114,7 +114,7 @@ func TestHealthWriteCursorFollowsCommitOrder(t *testing.T) {
 	blocked, cancel := context.WithTimeout(ctx, 150*time.Millisecond)
 	defer cancel()
 	s.RecordID = "second"
-	if _, _, err = health.Save(blocked, tx2, health.Owner{OldID: 1}, s); err == nil {
+	if _, _, err = health.Save(blocked, tx2, health.Owner{ResidentID: 1}, s); err == nil {
 		t.Fatal("later revision published before first transaction committed")
 	}
 	tx2.Rollback(ctx)
@@ -130,7 +130,7 @@ func TestHealthWriteCursorFollowsCommitOrder(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer tx3.Rollback(ctx)
-	second, _, err := health.Save(ctx, tx3, health.Owner{OldID: 1}, s)
+	second, _, err := health.Save(ctx, tx3, health.Owner{ResidentID: 1}, s)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -177,7 +177,7 @@ func TestHealthBindingEpochAndStatistics(t *testing.T) {
 	req := map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "bindingVersion": 1, "samples": []health.Sample{s}}
 	api(t, h.healthBatch, req)
 	admin := withHealthPrincipal(h, session.Principal{Role: "ADMIN"}, h.healthStatistics)
-	query := map[string]any{"oldId": 1, "source": "watch", "sourceDevice": "WATCH001", "metric": "heart_rate", "semantics": "instant", "from": at.Add(-time.Hour), "to": at.Add(time.Hour)}
+	query := map[string]any{"residentId": 1, "source": "watch", "sourceDevice": "WATCH001", "metric": "heart_rate", "semantics": "instant", "from": at.Add(-time.Hour), "to": at.Add(time.Hour)}
 	out := api(t, admin, query)
 	if out["statistics"].(map[string]any)["mean"] != float64(72) {
 		t.Fatal(out)
@@ -187,8 +187,8 @@ func TestHealthBindingEpochAndStatistics(t *testing.T) {
 		t.Fatalf("ordinary device update changed epoch: %v", out)
 	}
 	// Even an unbind/rebind to the same person invalidates the earlier batch.
-	mustExec(t, pool, "UPDATE device SET old_id=NULL WHERE device_id=1")
-	mustExec(t, pool, "UPDATE device SET old_id=1 WHERE device_id=1")
+	mustExec(t, pool, "UPDATE device SET resident_id=NULL WHERE device_id=1")
+	mustExec(t, pool, "UPDATE device SET resident_id=1 WHERE device_id=1")
 	if w := callAPI(h.healthBatch, req); w.Code != 409 {
 		t.Fatalf("stale binding accepted: %d %s", w.Code, w.Body.String())
 	}
@@ -198,7 +198,7 @@ func TestHealthBindingEpochAndStatistics(t *testing.T) {
 		t.Fatal(out)
 	}
 	var count int
-	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM health_sample WHERE old_id=1").Scan(&count); err != nil || count != 2 {
+	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM health_sample WHERE resident_id=1").Scan(&count); err != nil || count != 2 {
 		t.Fatalf("binding generations merged: %d %v", count, err)
 	}
 }

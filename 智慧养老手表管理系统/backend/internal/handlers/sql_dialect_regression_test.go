@@ -34,12 +34,12 @@ func TestDeviceReportDailyUpsertPreservesMissingFields(t *testing.T) {
 	api(t, h.deviceReport, map[string]any{
 		"deviceNo": "WATCH001", "secret": testSecret,
 		"step": 100, "sleep": 8, "sleepState": "1",
-		"beTime": "2026-10-28 08:00:00",
+		"eventTime": "2026-10-28 08:00:00",
 	})
 	api(t, h.deviceReport, map[string]any{
 		"deviceNo": "WATCH001", "secret": testSecret,
 		"step":   250,
-		"beTime": "2026-10-28 20:00:00",
+		"eventTime": "2026-10-28 20:00:00",
 	})
 
 	var rows, step, sleep int
@@ -76,7 +76,7 @@ func TestSocialTextTableIsRepositoryOwned(t *testing.T) {
 }
 
 func TestBusinessRepositoriesOwnEngineSpecificSQL(t *testing.T) {
-	if got := positionLatestSQL(); !strings.Contains(got, "l.lng, l.lat, l.be_time AS be_time") {
+	if got := positionLatestSQL(); !strings.Contains(got, "l.lng, l.lat, l.event_time AS event_time") {
 		t.Fatalf("position time must belong to the coordinates: %s", got)
 	}
 

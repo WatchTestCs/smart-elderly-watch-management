@@ -42,7 +42,7 @@ func TestHarmonyWatchNegotiationAndNativeRoundTrip(t *testing.T) {
 	if out := api(t, h.healthBatch, batch); out["duplicates"] != float64(2) {
 		t.Fatal(out)
 	}
-	latest := api(t, latestHealthRoute(h, session.Principal{Role: auth.RoleAdmin, ID: 1}), map[string]any{"oldId": 1})
+	latest := api(t, latestHealthRoute(h, session.Principal{Role: auth.RoleAdmin, ID: 1}), map[string]any{"residentId": 1})
 	raw, _ := json.Marshal(latest["items"])
 	var records []health.Record
 	if err := json.Unmarshal(raw, &records); err != nil || len(records) != 2 {
@@ -53,7 +53,7 @@ func TestHarmonyWatchNegotiationAndNativeRoundTrip(t *testing.T) {
 			t.Fatal(record)
 		}
 	}
-	mustExec(t, pool, "UPDATE device SET old_id=NULL WHERE device_id=1")
+	mustExec(t, pool, "UPDATE device SET resident_id=NULL WHERE device_id=1")
 	if w := callAPI(h.healthBatch, batch); w.Code != 409 {
 		t.Fatalf("stale native batch accepted: %d %s", w.Code, w.Body.String())
 	}

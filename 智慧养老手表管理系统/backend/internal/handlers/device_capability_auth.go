@@ -30,7 +30,7 @@ func (h *Handler) capabilityDevice(w http.ResponseWriter, r *http.Request, tx *d
 		hwFail(w, code, msg)
 		return nil
 	}
-	if d.OldID == nil || d.HealthEpoch != c.BindingVersion {
+	if d.ResidentID == nil || d.HealthEpoch != c.BindingVersion {
 		conflict409(w, "绑定版本已改变")
 		return nil
 	}

@@ -27,7 +27,7 @@ const view=__LOCAL_DATA__;
 const latest=view.latest,data=latest.data;
 const text=(id,value)=>document.getElementById(id).textContent=value;
 for(const key of ['hr','bp','step','sleep','battery'])text(key,data[key]??'—');
-text('meta',`${data.deviceNo} · ${data.beTime}`);text('scene',latest.scenarioLabel);text('count',`已生成 ${latest.sampleCount} 次采样`);
+text('meta',`${data.deviceNo} · ${data.eventTime}`);text('scene',latest.scenarioLabel);text('count',`已生成 ${latest.sampleCount} 次采样`);
 text('coordinates',`${data.lng}° E · ${data.lat}° N`);text('event-count',`共 ${latest.eventCount} 次`);
 const namespace='http://www.w3.org/2000/svg';
 function line(svg,points,color){const element=document.createElementNS(namespace,'polyline');element.setAttribute('points',points);element.setAttribute('fill','none');element.setAttribute('stroke',color);element.setAttribute('stroke-width','2.5');element.setAttribute('stroke-linecap','round');element.setAttribute('stroke-linejoin','round');svg.appendChild(element);if(!points.includes(' ')){const [x,y]=points.split(',');const dot=document.createElementNS(namespace,'circle');dot.setAttribute('cx',x);dot.setAttribute('cy',y);dot.setAttribute('r','3');dot.setAttribute('fill',color);svg.appendChild(dot);}}

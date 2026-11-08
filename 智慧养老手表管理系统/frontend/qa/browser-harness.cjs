@@ -22,7 +22,7 @@ module.exports = async function (run) {
  let role='FAMILY', signedIn=true;
  let writes=[], generated=false, passwordRequests=[], mode='normal', loginMode='failure', counter=0, comments=[];
  const context=await browser.newContext({viewport:{width:1440,height:1000},deviceScaleFactor:Number(process.env.CARE_DPR||1)});
- await context.addInitScript(()=>{localStorage.setItem('token','review-token');localStorage.setItem('user_name','小明');localStorage.setItem('oldIdfamily','1');localStorage.setItem('familyPhone','13000000000');const large=new URLSearchParams(location.search).get('large');if(large!==null)localStorage.setItem('large_text',large==='1'?'true':'false');});
+ await context.addInitScript(()=>{localStorage.setItem('token','review-token');localStorage.setItem('user_name','小明');localStorage.setItem('residentIdfamily','1');localStorage.setItem('familyPhone','13000000000');const large=new URLSearchParams(location.search).get('large');if(large!==null)localStorage.setItem('large_text',large==='1'?'true':'false');});
  await context.route('**/api/v1/**',async route=>{
   const url=new URL(route.request().url());const endpoint=url.pathname.replace(/^\//,'');
   if(endpoint==='api/v1/family/updatePassword')passwordRequests.push(route.request().postDataJSON());
@@ -30,36 +30,36 @@ module.exports = async function (run) {
   const unknown=mode==='unknown';
   const fixtures={
    'api/v1/service/status':{databaseReady:true},
-   'api/v1/health/latest':{returnCode:'1111',oldId:1,items:[]},
+   'api/v1/health/latest':{returnCode:'1111',residentId:1,items:[]},
    'api/v1/care/incidents':{items:[],total:0,page:1,pageSize:20,duty:'supervisor',actorId:1},
    'api/v1/care/diagnostics':{workerHealthy:true,notificationConfigured:false,receiptConfigured:false,pendingNotifications:0,failedNotifications:0,staleSending:0,overdueIncidents:0},
    'api/v1/care/staff':{staff:[]},
-   'api/v1/auth/session':{authenticated:signedIn,account:signedIn?{role,id:1,phone:'13000000000',oldId:role==='FAMILY'?1:null,displayName:role==='FAMILY'?'小明':'管理员'}:{},csrfToken:'mock-csrf-token',csrfHeader:'X-CSRF-TOKEN'},
+   'api/v1/auth/session':{authenticated:signedIn,account:signedIn?{role,id:1,phone:'13000000000',residentId:role==='FAMILY'?1:null,displayName:role==='FAMILY'?'小明':'管理员'}:{},csrfToken:'mock-csrf-token',csrfHeader:'X-CSRF-TOKEN'},
    'api/v1/auth/logout':{returnCode:'1111'},
    'api/v1/family/updateTouPic':{returnCode:'1111'},
    'api/v1/notices/list':{texts:mode==='empty'?[]:[{textId:1,picId:0,title:'设备使用与照护提醒',time:'2026-10-13 10:20'},{textId:2,picId:0,title:'服务安排与平台使用说明',time:'2026-10-12 09:00'}]},
    'api/v1/vitals/history':{vitalRecords:mode==='empty'?[]:[{name:'李奶奶',preState:unknown?null:0,rateState:unknown?null:1,createTime:'2026-10-13 10:20'}]},
    'api/v1/activity/history':{activityRecords:mode==='empty'?[]:[{name:'李奶奶',step:2860,sleep:'7小时20分',sleepAlertState:unknown?null:0,createTime:'2026-10-13 10:20'}]},
-   'api/v1/position/selectFamily':{positionDtos:mode==='empty'?[]:[{name:'李奶奶',status:unknown?null:1,lng:121.4737,lat:31.2304,beTime:'2026-10-13 10:20'}]},
+   'api/v1/position/selectFamily':{positionDtos:mode==='empty'?[]:[{name:'李奶奶',status:unknown?null:1,lng:121.4737,lat:31.2304,eventTime:'2026-10-13 10:20'}]},
    'api/v1/family/selectTwo':{familyDto2:{familyId:1,familyName:'小明',familySex:'男',familyAddress:'示例联系地址',familyTouPic:''}},
    'api/v1/vitals/chart':{hrs:[72,76,73],bps:[120,125,122],createTimes:['08:00','09:00','10:00'],time:'2026-10-13'},
    'api/v1/activity/chart':{sleep:[7,8,7],createTime:['10-11','10-12','10-13']},
    'api/v1/notices/detail':{text:{picId:1,title:'设备使用与照护提醒',time:'2026-10-13 10:20',textMain:'请定期查看设备上传记录。\n平台公告会在这里展示完整内容。'},pics:[]},
    'api/v1/notice-comments/list':{comments:comments},
-   'api/v1/residents/list':{oldPeople:[{oldId:1,name:'李奶奶',sex:'女',age:78}]},
-   'api/v1/residents/details':{oldPersonDetails:[{oldId:1,name:'李奶奶',sex:'女',age:78,customerName:'张女士',phone:'13000000000',address:'示例联系地址',deviceId:1}],total:1},
-   'api/v1/guardians/list':{customers:[{customerId:1,customerName:'张女士',name:'张女士',customerPhone:'13000000000',customerSex:'女',customerAddress:'示例联系地址'}],total:1},
-   'api/v1/monitoring-profiles/list':{watchDtos:[{deviceId:1,name:'李奶奶',sex:'女',oldId:1,rateMax:100,rateMin:60}]},
+   'api/v1/residents/list':{residents:[{residentId:1,name:'李奶奶',sex:'女',age:78}]},
+   'api/v1/residents/details':{residentDetails:[{residentId:1,name:'李奶奶',sex:'女',age:78,guardianName:'张女士',phone:'13000000000',address:'示例联系地址',deviceId:1}],total:1},
+   'api/v1/guardians/list':{guardians:[{guardianId:1,guardianName:'张女士',name:'张女士',guardianPhone:'13000000000',guardianSex:'女',guardianAddress:'示例联系地址'}],total:1},
+   'api/v1/monitoring-profiles/list':{watchDtos:[{deviceId:1,name:'李奶奶',sex:'女',residentId:1,rateMax:100,rateMin:60}]},
    'api/v1/activity/latest':{activityRecords:[{name:'李奶奶',step:2860,sleep:'7小时20分',sleepAlertState:0,createTime:'2026-10-14 10:20'}]},
    'api/v1/activity/alerts/device-counts':{sleep:0},
    'api/v1/notice-comments/search':{moderatedComments:[]},
-   'api/v1/device/list':{devices:mode==='empty'?[]:[{deviceId:1,deviceNo:'CARE-001',alias:'家人的手表',oldId:1,oldPersonName:'李奶奶',online:1,battery:76,lastTime:'2026-10-14 10:20',lastLng:121.4737,lastLat:31.2304},{deviceId:2,deviceNo:'CARE-002',alias:'备用手表',oldId:null,oldPersonName:'',online:0,battery:null,lastTime:'',lastLng:null,lastLat:null}]},
+   'api/v1/device/list':{devices:mode==='empty'?[]:[{deviceId:1,deviceNo:'CARE-001',alias:'家人的手表',residentId:1,residentName:'李奶奶',online:1,battery:76,lastTime:'2026-10-14 10:20',lastLng:121.4737,lastLat:31.2304},{deviceId:2,deviceNo:'CARE-002',alias:'备用手表',residentId:null,residentName:'',online:0,battery:null,lastTime:'',lastLng:null,lastLat:null}]},
    'api/v1/device/alertCounts':{items:[{deviceId:1,personCount:0,rateCount:1,preCount:0}],personTotal:0,rateTotal:1,preTotal:0,total:1},
    'api/v1/device/create':{returnCode:'1111',deviceId:3,deviceNo:'CARE-003',secret:'mock-device-secret'},
    'api/v1/device/bindCodeList':{bindCodes:[]},
-   'api/v1/device/alertDetail':{hasAlert:1,deviceNo:'CARE-001',alias:'家人的手表',oldPersonName:'李奶奶',reason:'心率状态异常',advice:'请联系家属确认情况',detail:'测试设备上报',occurTime:'2026-10-14 10:20',kindText:'心率',recordId:1},
-   'api/v1/inviteCode/oldPersonList':{oldPeople:[{oldId:1,name:'李奶奶'}]},
-   'api/v1/inviteCode/list':{inviteCodes:mode==='empty'?[]:[{id:1,code:'CARE-FAMILY',oldPersonName:'李奶奶',createUser:'管理员',createTime:'2026-10-14 10:20',expireTime:'',status:'unused',usedTime:''}]},
+   'api/v1/device/alertDetail':{hasAlert:1,deviceNo:'CARE-001',alias:'家人的手表',residentName:'李奶奶',reason:'心率状态异常',advice:'请联系家属确认情况',detail:'测试设备上报',occurTime:'2026-10-14 10:20',kindText:'心率',recordId:1},
+   'api/v1/inviteCode/residentList':{residents:[{residentId:1,name:'李奶奶'}]},
+   'api/v1/inviteCode/list':{inviteCodes:mode==='empty'?[]:[{id:1,code:'CARE-FAMILY',residentName:'李奶奶',createUser:'管理员',createTime:'2026-10-14 10:20',expireTime:'',status:'unused',usedTime:''}]},
    'api/v1/inviteCode/create':{returnCode:'1111',codes:['CARE-NEW-01']},
    'api/v1/notices/create':{returnCode:mode==='save-error'?'0000':'1111'},
    'api/v1/image/saveImage':{returnCode:mode==='upload-error'?'0000':'1111',filename:'saved-image.png'},
@@ -68,7 +68,7 @@ module.exports = async function (run) {
    'api/v1/locations/alerts/summary':{totalResidents:1,activeAlerts:1},
    'api/v1/position/select':{positionDtos:[{status:1}]},
    'api/v1/health/alerts/device-counts':{heartRate:1,bloodPressure:0,sleep:0},
-   'api/v1/family/select':{familyDtos:[{name:'李奶奶',oldId:1,familyName:'小明',familyRelation:'子女',familySex:'男',familyPhone:'13000000000',familyAddress:'示例地址'}]},
+   'api/v1/family/select':{familyDtos:[{name:'李奶奶',residentId:1,familyName:'小明',familyRelation:'子女',familySex:'男',familyPhone:'13000000000',familyAddress:'示例地址'}]},
    'api/v1/vitals/latest':{vitalRecords:[{name:'李奶奶',rateState:1,preState:0,createTime:'2026-10-14 09:00'}]},
    'api/v1/vitals/alerts/device-counts':{heartRate:1,bloodPressure:0},
    'api/v1/vitals/alerts/count':{rateTotal:1,preTotal:0},

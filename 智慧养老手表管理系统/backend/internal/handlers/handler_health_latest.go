@@ -14,20 +14,20 @@ import (
 // The microsecond index selects ties; payload start times choose the winner.
 func (h *Handler) healthLatest(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		OldID *int64 `json:"oldId"`
+		ResidentID *int64 `json:"residentId"`
 	}
 	if !decodeHealth(w, r, &req) {
 		return
 	}
 	var requested any
-	if req.OldID != nil {
-		requested = *req.OldID
+	if req.ResidentID != nil {
+		requested = *req.ResidentID
 	}
-	oldID, ok := h.resolveOldID(w, r, requested)
+	residentID, ok := h.resolveResidentID(w, r, requested)
 	if !ok {
 		return
 	}
-	if oldID < 1 {
+	if residentID < 1 {
 		write400(w, "请指定有效的老人编号")
 		return
 	}
@@ -39,9 +39,9 @@ func (h *Handler) healthLatest(w http.ResponseWriter, r *http.Request) {
  FROM health_sample s INNER JOIN (
  SELECT sample_id,
  RANK() OVER (PARTITION BY `+partition+` ORDER BY sample_start DESC) AS latest_rank
- FROM health_sample WHERE old_id=$1 AND NOT deleted
+ FROM health_sample WHERE resident_id=$1 AND NOT deleted
 	 ) ranked ON ranked.sample_id=s.sample_id
- WHERE ranked.latest_rank=1 ORDER BY s.sample_id LIMIT 10001`, oldID)
+ WHERE ranked.latest_rank=1 ORDER BY s.sample_id LIMIT 10001`, residentID)
 	if internalError(w, err) {
 		return
 	}
@@ -55,7 +55,7 @@ func (h *Handler) healthLatest(w http.ResponseWriter, r *http.Request) {
 			response.JSON(w, http.StatusRequestEntityTooLarge, map[string]any{"message": "最新采样候选超过 10000 条，请通过增量接口读取"})
 			return
 		}
-		record := health.Record{OldID: oldID}
+		record := health.Record{ResidentID: residentID}
 		var payload []byte
 		if err = rows.Scan(&record.SampleID, &record.DeviceID, &record.Epoch, &record.Revision, &payload); internalError(w, err) {
 			return
@@ -81,5 +81,5 @@ func (h *Handler) healthLatest(w http.ResponseWriter, r *http.Request) {
 		a, b := &items[i].Sample, &items[j].Sample
 		return cmp.Or(cmp.Compare(a.Source, b.Source), cmp.Compare(a.SourceDevice, b.SourceDevice), cmp.Compare(a.Metric, b.Metric), cmp.Compare(a.Semantics, b.Semantics)) < 0
 	})
-	response.OK(w, map[string]any{"oldId": oldID, "items": items})
+	response.OK(w, map[string]any{"residentId": residentID, "items": items})
 }

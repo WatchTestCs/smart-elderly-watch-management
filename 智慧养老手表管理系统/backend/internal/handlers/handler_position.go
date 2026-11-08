@@ -12,16 +12,16 @@ import (
 )
 
 func positionLatestSQL() string {
-	return `SELECT o.name, o.old_id, o.sex, l.lng, l.lat, l.be_time AS be_time,
-	COALESCE(a.status, '0') AS status, a.be_time AS alarm_time, a.lng AS alarm_lng, a.lat AS alarm_lat,
+	return `SELECT o.name, o.resident_id, o.sex, l.lng, l.lat, l.event_time AS event_time,
+	COALESCE(a.status, '0') AS status, a.event_time AS alarm_time, a.lng AS alarm_lng, a.lat AS alarm_lat,
 	l.position_metadata AS location_metadata, a.position_metadata AS alarm_metadata, COALESCE(a.kind,'unknown') AS alarm_kind
-	FROM oldperson o
-	LEFT JOIN (SELECT old_id, lng, lat, be_time, position_metadata,
-		ROW_NUMBER() OVER (PARTITION BY old_id ORDER BY be_time DESC, id DESC) AS rn FROM device_location) l
-		ON l.old_id = o.old_id AND l.rn = 1
-	LEFT JOIN (SELECT old_id, status, be_time, lng, lat, kind, position_metadata,
-		ROW_NUMBER() OVER (PARTITION BY old_id ORDER BY be_time DESC, id DESC) AS rn FROM alarm_precess) a
-		ON a.old_id = o.old_id AND a.rn = 1`
+	FROM resident o
+	LEFT JOIN (SELECT resident_id, lng, lat, event_time, position_metadata,
+		ROW_NUMBER() OVER (PARTITION BY resident_id ORDER BY event_time DESC, id DESC) AS rn FROM device_location) l
+		ON l.resident_id = o.resident_id AND l.rn = 1
+	LEFT JOIN (SELECT resident_id, status, event_time, lng, lat, kind, position_metadata,
+		ROW_NUMBER() OVER (PARTITION BY resident_id ORDER BY event_time DESC, id DESC) AS rn FROM alarm_event) a
+		ON a.resident_id = o.resident_id AND a.rn = 1`
 }
 
 func scanPositionRow(box *securestore.Box, row dbstore.Row) (map[string]any, error) {
@@ -29,9 +29,9 @@ func scanPositionRow(box *securestore.Box, row dbstore.Row) (map[string]any, err
 	var alarmLng, alarmLat *string
 	var positionRaw, alarmRaw *string
 	var alarmKind string
-	var oldID int64
-	var beTime, alarmTime *time.Time
-	if err := row.Scan(&name, &oldID, &sex, &lng, &lat, &beTime, &status, &alarmTime, &alarmLng, &alarmLat, &positionRaw, &alarmRaw, &alarmKind); err != nil {
+	var residentID int64
+	var eventTime, alarmTime *time.Time
+	if err := row.Scan(&name, &residentID, &sex, &lng, &lat, &eventTime, &status, &alarmTime, &alarmLng, &alarmLat, &positionRaw, &alarmRaw, &alarmKind); err != nil {
 		return nil, err
 	}
 	lng, lat, err := openCoordinates(box, lng, lat)
@@ -51,9 +51,9 @@ func scanPositionRow(box *securestore.Box, row dbstore.Row) (map[string]any, err
 		return nil, err
 	}
 	return map[string]any{
-		"name": name, "oldId": oldID, "sex": sex,
+		"name": name, "residentId": residentID, "sex": sex,
 		"lng": lng, "lat": lat,
-		"beTime": tsOrNil(beTime), "status": status,
+		"eventTime": tsOrNil(eventTime), "status": status,
 		"alarmTime": tsOrNil(alarmTime), "alarmLng": alarmLng, "alarmLat": alarmLat,
 		"alarmKind": alarmKind, "alarmSource": alarm.Source, "alarmSampledAt": metadataSampleTime(alarm.SampledAt), "alarmAccuracy": alarm.Accuracy, "alarmValidity": alarm.Validity,
 		"positionSource": position.Source, "positionSampledAt": metadataSampleTime(position.SampledAt), "positionAccuracy": position.Accuracy, "positionValidity": position.Validity,
@@ -69,10 +69,10 @@ func (h *Handler) positionSelect(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	const filter = ` WHERE ($1='' OR o.name LIKE '%'||$1||'%')`
 	var total int64
-	if internalError(w, h.DB.QueryRow(ctx, `SELECT COUNT(*) FROM oldperson o`+filter, name).Scan(&total)) {
+	if internalError(w, h.DB.QueryRow(ctx, `SELECT COUNT(*) FROM resident o`+filter, name).Scan(&total)) {
 		return
 	}
-	list, ok := queryRows(h, w, ctx, h.scanPosition, positionLatestSQL()+filter+` ORDER BY be_time DESC, o.old_id LIMIT $2 OFFSET $3`, name, ps, (p-1)*ps)
+	list, ok := queryRows(h, w, ctx, h.scanPosition, positionLatestSQL()+filter+` ORDER BY event_time DESC, o.resident_id LIMIT $2 OFFSET $3`, name, ps, (p-1)*ps)
 	if !ok {
 		return
 	}
@@ -82,14 +82,14 @@ func (h *Handler) positionSelect(w http.ResponseWriter, r *http.Request) {
 }
 
 // positionAlertSummary counts each resident once and inspects only their
-// latest alarm. The existing (old_id, be_time, id) index supports the lookup.
+// latest alarm. The existing (resident_id, event_time, id) index supports the lookup.
 func (h *Handler) positionAlertSummary(w http.ResponseWriter, r *http.Request) {
 	var total, active int64
 	err := h.DB.QueryRow(r.Context(), `SELECT COUNT(*),
 		COUNT((SELECT CASE WHEN a.status='1' AND CHAR_LENGTH(a.status)=1 THEN 1 END
-			FROM alarm_precess a WHERE a.old_id=o.old_id
-			ORDER BY a.be_time DESC, a.id DESC LIMIT 1))
-		FROM oldperson o`).Scan(&total, &active)
+			FROM alarm_event a WHERE a.resident_id=o.resident_id
+			ORDER BY a.event_time DESC, a.id DESC LIMIT 1))
+		FROM resident o`).Scan(&total, &active)
 	if internalError(w, err) {
 		return
 	}
@@ -105,37 +105,37 @@ func (h *Handler) positionSelectFamily(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	p := auth.Principal(r)
 	admin := p != nil && p.Role == auth.RoleAdmin
-	raw, _ := vstr(m, "oldId")
-	var oldID int64
-	if raw == "" && !admin && p != nil && p.OldID != 0 {
-		oldID = p.OldID
+	raw, _ := vstr(m, "residentId")
+	var residentID int64
+	if raw == "" && !admin && p != nil && p.ResidentID != 0 {
+		residentID = p.ResidentID
 	} else {
 		id, err := strconv.ParseInt(raw, 10, 64)
 		if err != nil {
 			write400(w, "老人编号不正确")
 			return
 		}
-		oldID = id
+		residentID = id
 	}
 	if !admin {
 		var familyID *int64
-		err := h.DB.QueryRow(ctx, "SELECT family_id FROM oldperson WHERE old_id=$1", oldID).Scan(&familyID)
+		err := h.DB.QueryRow(ctx, "SELECT family_id FROM resident WHERE resident_id=$1", residentID).Scan(&familyID)
 		if err != nil || familyID == nil || p == nil || *familyID != p.ID {
 			scopeDeny(w)
 			return
 		}
 	}
 	list, ok := queryRows(h, w, ctx, h.scanPosition,
-		`SELECT o.name, o.old_id, o.sex, l.lng, l.lat,
-			l.be_time AS be_time,
-			COALESCE(a.status, '0') AS status, a.be_time AS alarm_time, a.lng AS alarm_lng, a.lat AS alarm_lat,
+		`SELECT o.name, o.resident_id, o.sex, l.lng, l.lat,
+			l.event_time AS event_time,
+			COALESCE(a.status, '0') AS status, a.event_time AS alarm_time, a.lng AS alarm_lng, a.lat AS alarm_lat,
 			l.position_metadata AS location_metadata, a.position_metadata AS alarm_metadata, COALESCE(a.kind,'unknown') AS alarm_kind
-		 FROM oldperson o
-		 LEFT JOIN (SELECT old_id, lng, lat, be_time, position_metadata FROM device_location WHERE old_id=$1 ORDER BY be_time DESC, id DESC LIMIT 1) l
-			ON l.old_id = o.old_id
-		 LEFT JOIN (SELECT old_id, status, be_time, lng, lat, kind, position_metadata FROM alarm_precess WHERE old_id=$2 ORDER BY be_time DESC, id DESC LIMIT 1) a
-			ON a.old_id = o.old_id
-		 WHERE o.old_id=$3`, oldID, oldID, oldID)
+		 FROM resident o
+		 LEFT JOIN (SELECT resident_id, lng, lat, event_time, position_metadata FROM device_location WHERE resident_id=$1 ORDER BY event_time DESC, id DESC LIMIT 1) l
+			ON l.resident_id = o.resident_id
+		 LEFT JOIN (SELECT resident_id, status, event_time, lng, lat, kind, position_metadata FROM alarm_event WHERE resident_id=$2 ORDER BY event_time DESC, id DESC LIMIT 1) a
+			ON a.resident_id = o.resident_id
+		 WHERE o.resident_id=$3`, residentID, residentID, residentID)
 	if !ok {
 		return
 	}

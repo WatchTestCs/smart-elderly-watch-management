@@ -23,7 +23,7 @@ func (h *Handler) healthStatistics(w http.ResponseWriter, r *http.Request) {
 		write400(w, message)
 		return
 	}
-	oldID, ok := h.resolveOptionalOldID(w, r, req.OldID)
+	residentID, ok := h.resolveOptionalResidentID(w, r, req.ResidentID)
 	if !ok {
 		return
 	}
@@ -33,10 +33,10 @@ func (h *Handler) healthStatistics(w http.ResponseWriter, r *http.Request) {
 	var revision int64
 	cacheable := false
 	if h.healthCache != nil {
-		req.OldID = oldID
+		req.ResidentID = residentID
 		b, err := json.Marshal(req) // Keep reporting offsets for daily totals.
 		if err == nil {
-			revision, err = h.statisticsRevision(r.Context(), oldID)
+			revision, err = h.statisticsRevision(r.Context(), residentID)
 		}
 		if err == nil {
 			cacheable = true
@@ -53,7 +53,7 @@ func (h *Handler) healthStatistics(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	observability.Default.Add("suining_health_statistics_db_loads_total", 1)
-	samples, candidates, err := h.loadStatisticsSamples(r.Context(), oldID, req)
+	samples, candidates, err := h.loadStatisticsSamples(r.Context(), residentID, req)
 	if internalError(w, err) {
 		return
 	}
@@ -69,7 +69,7 @@ func (h *Handler) healthStatistics(w http.ResponseWriter, r *http.Request) {
 	if cacheable {
 		// A single SQL result is a consistent snapshot. Admit it only if no
 		// sample write committed between the first clock read and this check.
-		current, err := h.statisticsRevision(r.Context(), oldID)
+		current, err := h.statisticsRevision(r.Context(), residentID)
 		if err == nil && current == revision {
 			b, err := json.Marshal(out)
 			if err == nil {
@@ -82,20 +82,20 @@ func (h *Handler) healthStatistics(w http.ResponseWriter, r *http.Request) {
 	response.OK(w, map[string]any{"statistics": out, "source": req.Source, "sourceDevice": req.SourceDevice, "metric": req.Metric, "semantics": req.Semantics})
 }
 
-func (h *Handler) statisticsRevision(ctx context.Context, oldID int64) (int64, error) {
+func (h *Handler) statisticsRevision(ctx context.Context, residentID int64) (int64, error) {
 	var revision int64
 	query := "SELECT revision FROM health_clock WHERE id=1"
 	args := []any{}
 	if h.DB.IsMySQL() {
-		query = "SELECT COALESCE((SELECT revision FROM health_owner_clock WHERE old_id=$1),0)"
-		args = append(args, oldID)
+		query = "SELECT COALESCE((SELECT revision FROM health_owner_clock WHERE resident_id=$1),0)"
+		args = append(args, residentID)
 	}
 	err := h.DB.QueryRow(ctx, query, args...).Scan(&revision)
 	return revision, err
 }
 
 type healthStatisticsRequest struct {
-	OldID        int64     `json:"oldId"`
+	ResidentID        int64     `json:"residentId"`
 	Source       string    `json:"source"`
 	SourceDevice string    `json:"sourceDevice"`
 	Metric       string    `json:"metric"`
@@ -121,7 +121,7 @@ func (req healthStatisticsRequest) validationMessage() string {
 	return ""
 }
 
-func (h *Handler) loadStatisticsSamples(ctx context.Context, oldID int64, req healthStatisticsRequest) ([]health.Sample, int, error) {
+func (h *Handler) loadStatisticsSamples(ctx context.Context, residentID int64, req healthStatisticsRequest) ([]health.Sample, int, error) {
 	sourceFilter := "source=$2 AND source_device=$3 AND metric=$4 AND semantics=$5"
 	if h.DB.IsMySQL() {
 		// MySQL binary collations can still ignore trailing spaces. Sampling
@@ -151,10 +151,10 @@ func (h *Handler) loadStatisticsSamples(ctx context.Context, oldID int64, req he
 		}
 		return nil
 	}, `SELECT payload FROM health_sample
-	 WHERE old_id=$1 AND `+sourceFilter+` AND NOT deleted
+	 WHERE resident_id=$1 AND `+sourceFilter+` AND NOT deleted
 	 AND sample_start<$7
 	 AND (sample_start>=$6 OR ($5='interval' AND sample_end>=$6))
-	 ORDER BY revision LIMIT 10001`, oldID, req.Source, req.SourceDevice, req.Metric, req.Semantics, req.From.UnixMicro(), upper)
+	 ORDER BY revision LIMIT 10001`, residentID, req.Source, req.SourceDevice, req.Metric, req.Semantics, req.From.UnixMicro(), upper)
 	if err != nil {
 		return nil, 0, err
 	}

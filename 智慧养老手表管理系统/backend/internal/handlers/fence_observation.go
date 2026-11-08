@@ -17,7 +17,7 @@ type fencePointRequest struct {
 	OccurredAt       time.Time    `json:"occurredAt"`
 }
 
-func loadActiveFences(ctx context.Context, tx *dbstore.Transaction, deviceID, oldID, epoch int64) ([]fenceConfig, error) {
+func loadActiveFences(ctx context.Context, tx *dbstore.Transaction, deviceID, residentID, epoch int64) ([]fenceConfig, error) {
 	return dbstore.QueryList(ctx, tx, func(row dbstore.Rows) (fenceConfig, error) {
 		var f fenceConfig
 		var raw []byte
@@ -26,7 +26,7 @@ func loadActiveFences(ctx context.Context, tx *dbstore.Transaction, deviceID, ol
 		}
 		err := json.Unmarshal(raw, &f.Coordinates)
 		return f, err
-	}, `SELECT id,revision,coordinates,timezone,time_begin,time_end,min_points,dwell_seconds,max_accuracy FROM device_fence WHERE device_id=$1 AND old_id=$2 AND epoch=$3 AND enabled=true ORDER BY id FOR UPDATE`, deviceID, oldID, epoch)
+	}, `SELECT id,revision,coordinates,timezone,time_begin,time_end,min_points,dwell_seconds,max_accuracy FROM device_fence WHERE device_id=$1 AND resident_id=$2 AND epoch=$3 AND enabled=true ORDER BY id FOR UPDATE`, deviceID, residentID, epoch)
 }
 
 func advanceFenceObservation(f *fenceConfig, state *fence.State, req *fencePointRequest, at time.Time) (string, bool, error) {
@@ -54,25 +54,25 @@ func advanceFenceObservation(f *fenceConfig, state *fence.State, req *fencePoint
 
 func (h *Handler) persistFenceEvent(ctx context.Context, tx *dbstore.Transaction, d *deviceRecord, f *fenceConfig, req *fencePointRequest, direction string, at time.Time) (map[string]any, error) {
 	var eventID int64
-	err := tx.QueryRow(ctx, `INSERT INTO fence_event(fence_id,fence_revision,old_id,device_id,epoch,direction,lng,lat,accuracy,occurred_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id`, f.ID, f.Revision, *d.OldID, d.ID, d.HealthEpoch, direction, req.Point[0], req.Point[1], req.Accuracy, at).Scan(&eventID)
+	err := tx.QueryRow(ctx, `INSERT INTO fence_event(fence_id,fence_revision,resident_id,device_id,epoch,direction,lng,lat,accuracy,occurred_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id`, f.ID, f.Revision, *d.ResidentID, d.ID, d.HealthEpoch, direction, req.Point[0], req.Point[1], req.Accuracy, at).Scan(&eventID)
 	if err != nil {
 		return nil, err
 	}
 	var incidentID *int64
 	if direction == "exit" {
 		var id int64
-		err = tx.QueryRow(ctx, "INSERT INTO care_incident(old_id,device_id,kind,severity) VALUES($1,$2,'fence_exit','high') RETURNING id", *d.OldID, d.ID).Scan(&id)
+		err = tx.QueryRow(ctx, "INSERT INTO care_incident(resident_id,device_id,kind,severity) VALUES($1,$2,'fence_exit','high') RETURNING id", *d.ResidentID, d.ID).Scan(&id)
 		if err == nil {
 			_, err = tx.Exec(ctx, "INSERT INTO care_incident_event(incident_id,actor,action,note) VALUES($1,'rule','received','围栏离开事件，等待通知与照护处置')", id)
 		}
 		if err == nil {
-			_, err = notify.QueueCareSMS(ctx, tx, h.Box, id, *d.OldID)
+			_, err = notify.QueueCareSMS(ctx, tx, h.Box, id, *d.ResidentID)
 		}
 		if err == nil {
 			_, err = tx.Exec(ctx, "UPDATE fence_event SET incident_id=$2 WHERE id=$1", eventID, id)
 		}
 		if err == nil {
-			err = notify.CareInbox(ctx, tx, h.Box, *d.OldID, id)
+			err = notify.CareInbox(ctx, tx, h.Box, *d.ResidentID, id)
 		}
 		if err != nil {
 			return nil, err

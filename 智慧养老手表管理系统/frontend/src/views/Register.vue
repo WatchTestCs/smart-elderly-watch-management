@@ -154,7 +154,7 @@ async function checkCode() {
     if (data.returnCode === '1111') {
       codeOk.value = true
       verifiedCode.value = code
-      codeMessage.value = '邀请码有效，绑定老人：' + data.oldPersonName +
+      codeMessage.value = '邀请码有效，绑定老人：' + data.residentName +
         (data.remainDays === -1 ? '（长期有效）' : '（剩余 ' + data.remainDays + ' 天）')
     } else {
       codeMessage.value = data.message || '邀请码无效'
@@ -187,7 +187,7 @@ async function submitForm() {
       void checkCode()
       return
     }
-    ElMessage({ type: 'success', message: '注册成功！已绑定老人：' + data.oldPersonName + '，请使用手机号登录' })
+    ElMessage({ type: 'success', message: '注册成功！已绑定老人：' + data.residentName + '，请使用手机号登录' })
     localStorage.setItem('login_phone', registerForm.familyPhone)
     await router.push('/sign-in')
   } catch (error) {

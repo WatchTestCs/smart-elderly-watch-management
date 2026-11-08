@@ -54,20 +54,20 @@ async function main() {
   await request('/api/v1/setup', { name: '模拟测试', phone: '13900000001', password }, { 'X-Suining-Desktop': bootstrap });
   await request('/api/v1/auth/login', { phone: '13900000001', password });
   csrf = (await request('/api/v1/auth/session')).csrfToken;
-  await request('/api/v1/guardians/create', { customerName: '模拟监护', customerAge: '40', customerSex: '男', customerPhone: '13900000002', customerAddress: '模拟器测试' });
-  const customer = (await request('/api/v1/guardians/list', { customerName: '模拟监护', page: 1, pageSize: 20 })).customers[0];
-  await request('/api/v1/residents/create', { name: '模拟长者', bothdate: '1950-01-01', sex: '男', phone: '13900000003', room: 'T01', illness: '', warn: '', foodLike: '', foodHate: '', drag: '', customerId: String(customer.customerId) });
-  const elder = (await request('/api/v1/residents/list', { name: '模拟长者', page: 1, pageSize: 20 })).oldPeople[0];
+  await request('/api/v1/guardians/create', { guardianName: '模拟监护', guardianAge: '40', guardianSex: '男', guardianPhone: '13900000002', guardianAddress: '模拟器测试' });
+  const guardian = (await request('/api/v1/guardians/list', { guardianName: '模拟监护', page: 1, pageSize: 20 })).guardians[0];
+  await request('/api/v1/residents/create', { name: '模拟长者', birthdate: '1950-01-01', sex: '男', phone: '13900000003', room: 'T01', illness: '', warn: '', foodLike: '', foodHate: '', drug: '', guardianId: String(guardian.guardianId) });
+  const elder = (await request('/api/v1/residents/list', { name: '模拟长者', page: 1, pageSize: 20 })).residents[0];
   const device = await request('/api/v1/device/create', { alias: 'WATCH5 模拟协议测试', model: 'WATCH5-SIM' });
   const credentials = { deviceNo: device.deviceNo, secret: device.secret };
   const before = await request('/api/v1/device/login', credentials);
   assert.equal(before.bound, 0);
   checks.push('new device authenticated and reported unbound');
-  const code = await request('/api/v1/device/createBindCode', { oldId: String(elder.oldId), expireDays: '1' });
+  const code = await request('/api/v1/device/createBindCode', { residentId: String(elder.residentId), expireDays: '1' });
   await request('/api/v1/device/bind', { ...credentials, code: code.code });
   const config = protocol.normalizeConfig(base, device.deviceNo);
   const live = protocol.bindingFrom(config, await watch.login(config, device.secret));
-  assert.equal(live.oldId, elder.oldId);
+  assert.equal(live.residentId, elder.residentId);
   checks.push('bind code attached device to test elder');
   assert.equal((await watch.heartbeat(config, device.secret)).bound, 1);
   checks.push('heartbeat acknowledged');
@@ -76,7 +76,7 @@ async function main() {
   const body = protocol.batchRequest(queue, live, device.secret);
   assert.equal((await request('/api/v1/device/healthBatch', body)).accepted, 2);
   assert.equal((await request('/api/v1/device/healthBatch', body)).duplicates, 2);
-  const changes = await request('/api/v1/health/changes', { oldId: elder.oldId, after: 0, limit: 100 });
+  const changes = await request('/api/v1/health/changes', { residentId: elder.residentId, after: 0, limit: 100 });
   assert.equal(changes.changes.length, 2);
   checks.push('two simulated samples persisted; retry acknowledged two duplicates without extra changes');
   const native = new NativeSampling();
@@ -132,7 +132,7 @@ async function main() {
     if (fs.existsSync(prefsFile)) fs.unlinkSync(prefsFile);
     fs.rmdirSync(temporary);
   }
-  const latest = await request('/api/v1/health/latest', { oldId: elder.oldId });
+  const latest = await request('/api/v1/health/latest', { residentId: elder.residentId });
   const nativeRecords = latest.items.filter(item => item.sample.source === 'suining-harmonyos');
   assert.equal(nativeRecords.length, 2);
   assert.equal(nativeRecords.find(item => item.sample.metric === 'steps').sample.value, 5);
@@ -148,7 +148,7 @@ async function main() {
   assert.equal(first.notificationState, 'no_recipient');
   checks.push('same SOS request ID reused one incident; no real notification recipient');
   await request('/api/v1/device/unbind', { deviceId: String(device.deviceId) });
-  const code2 = await request('/api/v1/device/createBindCode', { oldId: String(elder.oldId), expireDays: '1' });
+  const code2 = await request('/api/v1/device/createBindCode', { residentId: String(elder.residentId), expireDays: '1' });
   await request('/api/v1/device/bind', { ...credentials, code: code2.code });
   const rebound = protocol.bindingFrom(config, await request('/api/v1/device/login', credentials));
   assert.notEqual(rebound.version, live.version);

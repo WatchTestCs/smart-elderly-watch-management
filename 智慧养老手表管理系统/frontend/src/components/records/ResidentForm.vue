@@ -3,8 +3,8 @@
         <el-form-item label="姓名" prop="name">
           <el-input v-model="draft.name"></el-input>
         </el-form-item>
-<el-form-item v-if="editing" label="年龄" prop="oldId" style="display: none;">
-              <el-input v-model="draft.oldId"></el-input>
+<el-form-item v-if="editing" label="年龄" prop="residentId" style="display: none;">
+              <el-input v-model="draft.residentId"></el-input>
             </el-form-item>
 
     <el-form-item label="性别" prop="sex">
@@ -31,24 +31,24 @@
     <el-form-item label="忌口食物" prop="foodHate">
     <el-input v-model="draft.foodHate"></el-input>
     </el-form-item>
-    <el-form-item label="常用药物" prop="drag">
-    <el-input v-model="draft.drag"></el-input>
+    <el-form-item label="常用药物" prop="drug">
+    <el-input v-model="draft.drug"></el-input>
     </el-form-item>
-    <el-form-item label="出生日期" prop="bothdate">
+    <el-form-item label="出生日期" prop="birthdate">
 
-      <el-date-picker type="date" placeholder="选择日期" value-format="YYYY-MM-DD" v-model="draft.bothdate" style="width: 100%;"></el-date-picker>
+      <el-date-picker type="date" placeholder="选择日期" value-format="YYYY-MM-DD" v-model="draft.birthdate" style="width: 100%;"></el-date-picker>
 
     </el-form-item>
-    <el-form-item label="监护人" prop="customerId">
+    <el-form-item label="监护人" prop="guardianId">
 
-        <el-select class="guardian-select" v-model="draft.customerId" placeholder="请选择监护人" :loading="customerLoading" :aria-busy="String(customerLoading)">
+        <el-select class="guardian-select" v-model="draft.guardianId" placeholder="请选择监护人" :loading="guardianLoading" :aria-busy="String(guardianLoading)">
         <el-option v-for="item in options"
-      :key="item.customerId"
-      :label="item.customerName"
-      :value="item.customerId">
+      :key="item.guardianId"
+      :label="item.guardianName"
+      :value="item.guardianId">
       </el-option>
       </el-select>
-          <p v-if="customerError" role="alert">{{ customerError }} <el-button plain :loading="customerLoading" @click="emit('retry-guardians')">重新加载监护人</el-button></p>
+          <p v-if="guardianError" role="alert">{{ guardianError }} <el-button plain :loading="guardianLoading" @click="emit('retry-guardians')">重新加载监护人</el-button></p>
 
 
     </el-form-item>
@@ -64,7 +64,7 @@
 import { ref } from 'vue'
 defineProps({
   draft: { type: Object, required: true },
-  rules: Object, editing: Boolean, options: Array, customerLoading: Boolean, customerError: String
+  rules: Object, editing: Boolean, options: Array, guardianLoading: Boolean, guardianError: String
 })
 const emit = defineEmits(['retry-guardians'])
 const form = ref(null)

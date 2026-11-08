@@ -5,13 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
-	"os"
 	"regexp"
 	"time"
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"suining-care/internal/config"
 	dbstore "suining-care/internal/db"
 	"suining-care/internal/securestore"
 )
@@ -33,7 +33,7 @@ type queuedTelemetryPayload struct {
 }
 
 func durableTelemetryEligible(parsed parsedDeviceTelemetry, requestID string, box *securestore.Box) bool {
-	return os.Getenv("CAREOLD_DURABLE_TELEMETRY") == "1" &&
+	return config.Env("DURABLE_TELEMETRY") == "1" &&
 		box != nil && durableRequestIDPattern.MatchString(requestID) &&
 		parsed.hr == nil && parsed.bp == nil && parsed.alarm == "" &&
 		parsed.lng == "" && parsed.lat == "" &&
@@ -48,7 +48,7 @@ func (repo telemetryRepository) QueueDurableReport(ctx context.Context, tx *dbst
 		return errors.New("durable telemetry requires a valid encryption key")
 	}
 	data, err := json.Marshal(queuedTelemetryPayload{
-		ReceivedAt: parsed.now, ReportedAt: parsed.beTime,
+		ReceivedAt: parsed.now, ReportedAt: parsed.eventTime,
 		Step: parsed.step, Sleep: parsed.sleep, SleepState: parsed.sleepState,
 		Battery: parsed.battery, AppVersion: parsed.appVersion,
 	})
@@ -61,7 +61,7 @@ func (repo telemetryRepository) QueueDurableReport(ctx context.Context, tx *dbst
 	}
 	if _, err = tx.Exec(ctx, `INSERT INTO telemetry_inbox(device_id,elder_id,binding_epoch,request_id,payload,status,created_at,next_retry_at)
 		VALUES($1,$2,$3,$4,$5,'pending',$6,$6)`,
-		d.ID, *d.OldID, d.HealthEpoch, requestID, sealed, parsed.now.UTC()); err != nil {
+		d.ID, *d.ResidentID, d.HealthEpoch, requestID, sealed, parsed.now.UTC()); err != nil {
 		return err
 	}
 	// A durable acknowledgement is also a real heartbeat. Update last-seen in
@@ -102,7 +102,7 @@ func decodeQueuedTelemetry(box *securestore.Box, raw string) (parsedDeviceTeleme
 	}
 	day := payload.ReportedAt.UTC()
 	return parsedDeviceTelemetry{
-		now: payload.ReceivedAt, beTime: payload.ReportedAt,
+		now: payload.ReceivedAt, eventTime: payload.ReportedAt,
 		day:  time.Date(day.Year(), day.Month(), day.Day(), 0, 0, 0, 0, time.UTC),
 		step: payload.Step, sleep: payload.Sleep, sleepState: payload.SleepState,
 		battery: payload.Battery, appVersion: payload.AppVersion,
@@ -209,7 +209,7 @@ func processDurableQueueItem(ctx context.Context, tx *dbstore.Transaction, repo 
 	}
 	// Keep the same Elder -> Device lock order as SOS, bind and unbind.
 	var owner int64
-	err = tx.QueryRow(ctx, `SELECT old_id FROM oldperson WHERE old_id=$1 FOR UPDATE`, item.elderID).Scan(&owner)
+	err = tx.QueryRow(ctx, `SELECT resident_id FROM resident WHERE resident_id=$1 FOR UPDATE`, item.elderID).Scan(&owner)
 	if errors.Is(err, pgx.ErrNoRows) {
 		_, err = tx.Exec(ctx, `UPDATE telemetry_inbox SET status='stale',last_error='elder removed' WHERE id=$1`, item.id)
 		return err
@@ -225,7 +225,7 @@ func processDurableQueueItem(ctx context.Context, tx *dbstore.Transaction, repo 
 	if err != nil {
 		return err
 	}
-	if d.OldID == nil || *d.OldID != item.elderID || d.HealthEpoch != item.bindingEpoch {
+	if d.ResidentID == nil || *d.ResidentID != item.elderID || d.HealthEpoch != item.bindingEpoch {
 		_, err = tx.Exec(ctx, `UPDATE telemetry_inbox SET status='stale',last_error='device binding changed' WHERE id=$1`, item.id)
 		return err
 	}

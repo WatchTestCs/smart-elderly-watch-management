@@ -26,7 +26,7 @@
       </el-table-column>
     </el-table>
     <section v-if="mobileLayout && stepList.length" class="family-record-cards" aria-label="活动和睡眠记录">
-      <article v-for="item in stepList" :key="item.oldId" class="family-record-card">
+      <article v-for="item in stepList" :key="item.residentId" class="family-record-card">
         <h2>{{ item.name || '活动记录' }}</h2>
         <dl>
           <dt>今日步数</dt><dd>{{ item.step == null ? '暂无数据' : item.step + ' 步' }}</dd>
@@ -68,7 +68,7 @@ const {
   detailsVisible, chartLoading, chartError, chartName,
   primaryChartElement, secondaryChartElement, showRecordDetails, resizeCharts, disposeCharts
 } = useRecordCharts()
-const oldId = computed(() => String(authState.account?.oldId ?? ''))
+const residentId = computed(() => String(authState.account?.residentId ?? ''))
 const stepList = ref([])
 const isLoading = ref(false)
 const loadError = ref('')
@@ -84,7 +84,7 @@ const reads = createLatestRead(
   },
   loading => { isLoading.value = loading }
 )
-function searchStep() { return reads.run({ oldId: oldId.value }) }
+function searchStep() { return reads.run({ residentId: residentId.value }) }
 function stateLabel(value) {
   if (value === 1 || value === '1') return '异常'
   if (value === 0 || value === '0') return '正常'
@@ -96,7 +96,7 @@ function stateClass(value) {
   return 'unknown-state'
 }
 function showDetails(row) {
-  return showRecordDetails('activity', oldId.value, row.name)
+  return showRecordDetails('activity', residentId.value, row.name)
 }
 onMounted(() => { void searchStep() })
 onBeforeUnmount(reads.dispose)

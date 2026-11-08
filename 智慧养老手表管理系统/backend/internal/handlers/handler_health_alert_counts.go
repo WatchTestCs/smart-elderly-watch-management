@@ -17,7 +17,7 @@ const vitalAlertCountsSQL = `SELECT COUNT(CASE WHEN has_rate=1 THEN 1 END) AS he
 const sleepAlertCountSQL = `SELECT COUNT(*) AS sleep_count FROM (
 	SELECT w.sleep_sate, ROW_NUMBER() OVER (PARTITION BY w.device_id ORDER BY w.create_time DESC,w.id DESC) AS rn
 	FROM watch_day_info w INNER JOIN device d ON d.device_id=w.device_id
-	AND d.old_id=w.old_id AND d.health_epoch=w.binding_epoch) latest WHERE rn=1 AND sleep_sate='1'`
+	AND d.resident_id=w.resident_id AND d.health_epoch=w.binding_epoch) latest WHERE rn=1 AND sleep_sate='1'`
 
 func (h *Handler) countVitalAlertDevices(w http.ResponseWriter, r *http.Request) {
 	if _, ok := optBody(w, r); !ok {

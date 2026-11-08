@@ -22,8 +22,8 @@ func TestDeviceReportInvalidPayloadNeverOpensDatabase(t *testing.T) {
 		{"sleep state", "sleepState", "2"},
 		{"battery", "battery", 101},
 		{"unpaired coordinates", "lng", "120.5"},
-		{"invalid timestamp", "beTime", "2026-02-31 13:00:00"},
-		{"future timestamp", "beTime", "2099-01-01 00:00:00"},
+		{"invalid timestamp", "eventTime", "2026-02-31 13:00:00"},
+		{"future timestamp", "eventTime", "2099-01-01 00:00:00"},
 		{"long app version", "appVersion", "this-version-name-is-far-too-long"},
 	}
 	for _, tc := range cases {
@@ -57,7 +57,7 @@ func TestParseDeviceTelemetryRetainsLegacyFields(t *testing.T) {
 	now := time.Date(2026, 10, 28, 10, 0, 0, 0, time.UTC)
 	w := httptest.NewRecorder()
 	parsed, ok := parseDeviceTelemetryPayload(w, map[string]any{
-		"beTime": "2026-10-27 08:09:10",
+		"eventTime": "2026-10-27 08:09:10",
 		"hr":     "0", "bp": "120", "step": "0", "sleep": "8",
 		"sleepState": "1", "source": "gps", "battery": "85",
 		"lng": "105.5", "lat": "30.5", "alarm": "fall",
@@ -66,13 +66,13 @@ func TestParseDeviceTelemetryRetainsLegacyFields(t *testing.T) {
 		parsed.step == nil || *parsed.step != 0 || parsed.sleep == nil || *parsed.sleep != 8 ||
 		parsed.sleepState == nil || *parsed.sleepState != "1" || parsed.battery == nil ||
 		*parsed.battery != 85 || parsed.alarm != "fall" || parsed.sourceStr != "gps" ||
-		parsed.beTime.Format("2006-01-02 15:04:05") != "2026-10-27 08:09:10" ||
+		parsed.eventTime.Format("2006-01-02 15:04:05") != "2026-10-27 08:09:10" ||
 		parsed.day.Format("2006-01-02") != "2026-10-27" {
 		t.Fatalf("legacy device values changed: %+v, ok=%v, body=%s", parsed, ok, w.Body.String())
 	}
 	w = httptest.NewRecorder()
 	fallback, ok := parseDeviceTelemetryPayload(w, map[string]any{}, now)
-	if !ok || !fallback.beTime.Equal(now) || fallback.sourceStr != "gps" {
+	if !ok || !fallback.eventTime.Equal(now) || fallback.sourceStr != "gps" {
 		t.Fatalf("default time/source changed: %+v, ok=%v", fallback, ok)
 	}
 }

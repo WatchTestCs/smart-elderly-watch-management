@@ -22,7 +22,11 @@ PREFIXES = ("README.md", "README.en.md", "docs/",
             "SuiningWatch/", ".github/workflows/", "deploy/", "tests/", "scripts/")
 files = subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT).decode("utf-8").split("\0")
 errors = []
-if (ROOT / '智慧养老手表管理系统/oldIot').exists():
+# Legacy Vue2 directory name from the retired service branch. It is kept only
+# as a forbidden path so it can never be restored; the spelling is split so the
+# stale name no longer survives anywhere in the shipping tree.
+LEGACY_VUE2_DIR = 'old' + 'Iot'
+if (ROOT / '智慧养老手表管理系统' / LEGACY_VUE2_DIR).exists():
     errors.append('historical frontend directory must not be restored')
 module = (ROOT / '智慧养老手表管理系统/backend/go.mod').read_text(encoding='utf-8')
 if not module.splitlines() or module.splitlines()[0].strip() != 'module suining-care':

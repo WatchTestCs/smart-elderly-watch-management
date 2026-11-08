@@ -9,7 +9,7 @@
         <el-alert :title="'问题：' + dialog.reason" type="error" :closable="false" show-icon></el-alert>
         <table class="alert-table">
           <tbody>
-            <tr><th>老人</th><td>{{ dialog.oldPersonName }}</td></tr>
+            <tr><th>老人</th><td>{{ dialog.residentName }}</td></tr>
             <tr><th>本次测量</th><td>心率 {{ dialog.hr }} 次/分　血压 {{ dialog.bp }} mmHg</td></tr>
             <tr><th>正常范围</th><td>心率 55-110 次/分；血压 90-140 mmHg</td></tr>
             <tr><th>发生时间</th><td>{{ dialog.occurTime }}</td></tr>

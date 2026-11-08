@@ -29,7 +29,7 @@
       </el-table-column>
     </el-table>
     <section v-if="mobileLayout && oldsList.length" class="family-record-cards" aria-label="心率与血压记录">
-      <article v-for="item in oldsList" :key="item.oldId" class="family-record-card">
+      <article v-for="item in oldsList" :key="item.residentId" class="family-record-card">
         <h2>{{ item.name || '健康记录' }}</h2>
         <dl>
           <dt>血压状态</dt><dd :class="stateClass(item.preState)">{{ stateLabel(item.preState) }}{{ item.preState == 1 ? '，请查看详情' : '' }}</dd>
@@ -72,7 +72,7 @@ const {
   detailsVisible, chartLoading, chartError, chartName,
   primaryChartElement, secondaryChartElement, showRecordDetails, resizeCharts, disposeCharts
 } = useRecordCharts()
-const oldId = computed(() => String(authState.account?.oldId ?? ''))
+const residentId = computed(() => String(authState.account?.residentId ?? ''))
 const oldsList = ref([])
 const isLoading = ref(false)
 const loadError = ref('')
@@ -88,7 +88,7 @@ const reads = createLatestRead(
   },
   loading => { isLoading.value = loading }
 )
-function searchOlds() { return reads.run({ oldId: oldId.value }) }
+function searchOlds() { return reads.run({ residentId: residentId.value }) }
 function stateLabel(value) {
   if (value === 1 || value === '1') return '异常'
   if (value === 0 || value === '0') return '正常'
@@ -100,7 +100,7 @@ function stateClass(value) {
   return 'unknown-state'
 }
 function showDetails(row) {
-  return showRecordDetails('vitals', oldId.value, row.name)
+  return showRecordDetails('vitals', residentId.value, row.name)
 }
 onMounted(() => { void searchOlds() })
 onBeforeUnmount(reads.dispose)

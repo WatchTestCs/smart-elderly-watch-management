@@ -4,5 +4,5 @@
 -- fence_event.lng/lat 是 double 数值列且按数字消费，保持明文。
 ALTER TABLE device_location MODIFY lng varchar(128) DEFAULT NULL, MODIFY lat varchar(128) DEFAULT NULL;
 ALTER TABLE device MODIFY last_lng varchar(128) DEFAULT NULL, MODIFY last_lat varchar(128) DEFAULT NULL;
-ALTER TABLE alarm_precess MODIFY lng varchar(128) DEFAULT NULL, MODIFY lat varchar(128) DEFAULT NULL;
+ALTER TABLE alarm_event MODIFY lng varchar(128) DEFAULT NULL, MODIFY lat varchar(128) DEFAULT NULL;
 ALTER TABLE alarm_process MODIFY lng varchar(128) DEFAULT NULL, MODIFY lat varchar(128) DEFAULT NULL;

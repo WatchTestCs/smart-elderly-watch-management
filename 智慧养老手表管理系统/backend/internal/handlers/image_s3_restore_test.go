@@ -43,7 +43,7 @@ func TestImageS3TwoInstancesAndRealRestore(t *testing.T) {
 	seedDevice(t, pool)
 	mustExec(t, pool, "INSERT INTO users(user_id,user_name) VALUES(1,'admin')")
 	mustExec(t, pool, "INSERT INTO family(family_id,family_name,family_phone) VALUES(1,'synthetic','13800000001')")
-	mustExec(t, pool, "UPDATE oldperson SET family_id=1 WHERE old_id=1")
+	mustExec(t, pool, "UPDATE resident SET family_id=1 WHERE resident_id=1")
 	cfg := config.Config{DataKey: base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{6}, 32)), BlobBackend: "s3", Blob: blob.S3Options{Endpoint: os.Getenv("TEST_S3_ENDPOINT"), Region: "us-east-1", Bucket: os.Getenv("TEST_S3_BUCKET"), AccessKey: os.Getenv("TEST_S3_ACCESS_KEY"), SecretKey: os.Getenv("TEST_S3_SECRET_KEY")}}
 	makeServer := func(pool *db.Database) (*httptest.Server, *session.Store, *Handler) {
 		store := session.NewStore(time.Hour)

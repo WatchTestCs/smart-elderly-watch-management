@@ -7,15 +7,15 @@ vi.mock('@/api/client', () => ({ api: { post: mock.post } }))
 import { usePagedRecords } from '@/composables/usePagedRecords'
 
 it('uses the server page contract and unwrapped response, then preserves page on navigation', async () => {
-  const row = { oldId: 7, name: '测试长者' }
-  mock.post.mockResolvedValue({ data: { returnCode: '1111', oldPeople: [row], total: 25 } })
-  let state!: ReturnType<typeof usePagedRecords<{ oldId: number; name: string }, { name: string }>>
+  const row = { residentId: 7, name: '测试长者' }
+  mock.post.mockResolvedValue({ data: { returnCode: '1111', residents: [row], total: 25 } })
+  let state!: ReturnType<typeof usePagedRecords<{ residentId: number; name: string }, { name: string }>>
   const wrapper = mount(defineComponent({
     setup() {
       const searchText = ref('张')
-      state = usePagedRecords<{ oldId: number; name: string }, { name: string }>({
+      state = usePagedRecords<{ residentId: number; name: string }, { name: string }>({
         path: 'api/v1/residents/list',
-        responseKey: 'oldPeople',
+        responseKey: 'residents',
         buildQuery: () => ({ name: searchText.value })
       })
       return () => null

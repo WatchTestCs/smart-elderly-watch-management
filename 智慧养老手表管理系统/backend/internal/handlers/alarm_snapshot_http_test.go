@@ -51,7 +51,7 @@ func TestAlarmSnapshotHTTPNeverBorrowsHistory(t *testing.T) {
 			}
 			report := func(at string, fields map[string]any, want int) {
 				t.Helper()
-				fields["deviceNo"], fields["secret"], fields["beTime"] = "WATCH001", testSecret, "2026-10-20 "+at
+				fields["deviceNo"], fields["secret"], fields["eventTime"] = "WATCH001", testSecret, "2026-10-20 "+at
 				post("report", fields, want)
 			}
 			if cached {
@@ -62,25 +62,25 @@ func TestAlarmSnapshotHTTPNeverBorrowsHistory(t *testing.T) {
 			if row["alarmLng"] != nil || row["alarmLat"] != nil || row["alarmTime"] != "2026-10-20 11:00:00" {
 				t.Errorf("alarm without this request's coordinates borrowed history: %v", row)
 			}
-			if cached && (row["lng"] != "121" || row["lat"] != "31" || row["beTime"] != "2026-10-20 10:00:00") {
+			if cached && (row["lng"] != "121" || row["lat"] != "31" || row["eventTime"] != "2026-10-20 10:00:00") {
 				t.Errorf("independent historical location lost: %v", row)
 			}
 			for _, fields := range []map[string]any{{"alarm": "fall", "lng": "120"}, {"alarm": "fall", "lat": "30"}} {
 				report("11:30:00", fields, 400)
 			}
 			var count int
-			if err := h.DB.QueryRow(context.Background(), "SELECT count(*) FROM alarm_precess").Scan(&count); err != nil || count != 1 {
+			if err := h.DB.QueryRow(context.Background(), "SELECT count(*) FROM alarm_event").Scan(&count); err != nil || count != 1 {
 				t.Fatalf("invalid partial point wrote alarms: count=%d err=%v", count, err)
 			}
 			// A later ordinary position must not add coordinates to the earlier alarm.
 			report("12:00:00", map[string]any{"lng": "122", "lat": "32"}, 200)
 			var lng, lat *string
-			if err := h.DB.QueryRow(context.Background(), "SELECT lng,lat FROM alarm_precess ORDER BY id LIMIT 1").Scan(&lng, &lat); err != nil || lng != nil || lat != nil {
+			if err := h.DB.QueryRow(context.Background(), "SELECT lng,lat FROM alarm_event ORDER BY id LIMIT 1").Scan(&lng, &lat); err != nil || lng != nil || lat != nil {
 				t.Errorf("unknown alarm snapshot changed: lng=%v lat=%v err=%v", lng, lat, err)
 			}
 			// A valid explicit zero pair is a real point, not missing data.
 			report("13:00:00", map[string]any{"alarm": "fall", "lng": "0", "lat": "0"}, 200)
-			if err := h.DB.QueryRow(context.Background(), "SELECT lng,lat FROM alarm_precess ORDER BY id DESC LIMIT 1").Scan(&lng, &lat); err != nil || lng == nil || lat == nil || *lng == "0" || *lat == "0" {
+			if err := h.DB.QueryRow(context.Background(), "SELECT lng,lat FROM alarm_event ORDER BY id DESC LIMIT 1").Scan(&lng, &lat); err != nil || lng == nil || lat == nil || *lng == "0" || *lat == "0" {
 				t.Fatalf("fresh point missing or not encrypted: lng=%v lat=%v err=%v", lng, lat, err)
 			}
 			lng, lat, err := openCoordinates(h.Box, lng, lat)
@@ -96,7 +96,7 @@ func TestAlarmSnapshotHTTPNeverBorrowsHistory(t *testing.T) {
 				t.Fatalf("retry did not preserve original incident: first=%v second=%v", first, second)
 			}
 			admin := withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 1}, h.positionSelectFamily)
-			row = api(t, admin, map[string]any{"oldId": 1})["positionDtos"].([]any)[0].(map[string]any)
+			row = api(t, admin, map[string]any{"residentId": 1})["positionDtos"].([]any)[0].(map[string]any)
 			if row["alarmLng"] != "0" || row["alarmLat"] != "0" {
 				t.Errorf("retry changed alarm point: %v", row)
 			}

@@ -12,7 +12,7 @@ const fixturePath = path.join(temporary, 'src/api/__contract_drift_probe__.ts')
 const compiler = path.join(root, 'node_modules/typescript/bin/tsc')
 const fixture = `
 import { postContract, type JsonReply } from './contractClient'
-postContract('/api/v1/health/latest', { oldId: 1 })
+postContract('/api/v1/health/latest', { residentId: 1 })
 declare const reply: JsonReply<'/api/v1/health/latest'>
 const metric: string = reply.items[0].sample.metric
 const device: number | null = reply.items[0].deviceId
@@ -52,7 +52,7 @@ try {
       delete document.paths['/api/v1/health/latest']
     }],
     ['changed request field type', document => {
-      latest(document).requestBody.content['application/json'].schema.properties.oldId.type = 'string'
+      latest(document).requestBody.content['application/json'].schema.properties.residentId.type = 'string'
     }],
     ['renamed required response field', document => {
       const sample = latest(document).responses['200'].content['application/json'].schema.properties.items.items.properties.sample

@@ -1,21 +1,21 @@
 -- MySQL 8.0.16+ / InnoDB, dedicated database only.
-CREATE TABLE IF NOT EXISTS alarm_precess (
+CREATE TABLE IF NOT EXISTS alarm_event (
   id bigint AUTO_INCREMENT PRIMARY KEY,
   status varchar(20) DEFAULT NULL,
-  old_id bigint DEFAULT NULL,
+  resident_id bigint DEFAULT NULL,
   device_id bigint DEFAULT NULL,
-  be_time datetime(6) DEFAULT NULL,
+  event_time datetime(6) DEFAULT NULL,
   lng varchar(20) DEFAULT NULL,
   lat varchar(20) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
-CREATE TABLE IF NOT EXISTS customer (
-  customer_id bigint AUTO_INCREMENT PRIMARY KEY,
-  customer_name varchar(20) DEFAULT NULL,
-  customer_age bigint DEFAULT NULL,
-  customer_sex char(1) DEFAULT NULL,
-  customer_phone varchar(12) DEFAULT NULL,
-  customer_address varchar(20) DEFAULT NULL
+CREATE TABLE IF NOT EXISTS guardian (
+  guardian_id bigint AUTO_INCREMENT PRIMARY KEY,
+  guardian_name varchar(20) DEFAULT NULL,
+  guardian_age bigint DEFAULT NULL,
+  guardian_sex char(1) DEFAULT NULL,
+  guardian_phone varchar(12) DEFAULT NULL,
+  guardian_address varchar(20) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 CREATE TABLE IF NOT EXISTS family (
@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS family (
 CREATE TABLE IF NOT EXISTS invite_code (
   id bigint AUTO_INCREMENT PRIMARY KEY,
   code varchar(20) NOT NULL,
-  old_id bigint DEFAULT NULL,
+  resident_id bigint DEFAULT NULL,
   create_user varchar(20) DEFAULT '管理员',
   create_time datetime(6) DEFAULT NULL,
   expire_time datetime(6) DEFAULT NULL,
@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS invite_code (
   used_family_id bigint DEFAULT NULL,
   CONSTRAINT uk_invite_code_code UNIQUE (code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
-CREATE INDEX idx_invite_code_old ON invite_code(old_id);
+CREATE INDEX idx_invite_code_resident ON invite_code(resident_id);
 
 CREATE TABLE IF NOT EXISTS nice_count (
   phone varchar(30) DEFAULT NULL,
@@ -51,8 +51,8 @@ CREATE TABLE IF NOT EXISTS nice_count (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 CREATE INDEX idx_nice_count_said_phone ON nice_count(said_id, phone);
 
-CREATE TABLE IF NOT EXISTS oldperson (
-  old_id bigint AUTO_INCREMENT PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS resident (
+  resident_id bigint AUTO_INCREMENT PRIMARY KEY,
   name varchar(10) DEFAULT NULL,
   age bigint DEFAULT NULL,
   sex char(1) DEFAULT NULL,
@@ -62,11 +62,11 @@ CREATE TABLE IF NOT EXISTS oldperson (
   warn varchar(5) DEFAULT NULL,
   food_like varchar(20) DEFAULT NULL,
   food_hate varchar(20) DEFAULT NULL,
-  drag varchar(20) DEFAULT NULL,
+  drug varchar(20) DEFAULT NULL,
   family_id bigint DEFAULT NULL,
-  customer_id bigint DEFAULT NULL,
-  be_time date DEFAULT NULL,
-  bothdate date DEFAULT NULL,
+  guardian_id bigint DEFAULT NULL,
+  event_time date DEFAULT NULL,
+  birthdate date DEFAULT NULL,
   device_id bigint DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
@@ -83,7 +83,7 @@ CREATE TABLE IF NOT EXISTS pic_show (
 CREATE TABLE IF NOT EXISTS ratepre (
   id bigint AUTO_INCREMENT PRIMARY KEY,
   device_id bigint DEFAULT NULL,
-  old_id bigint DEFAULT NULL,
+  resident_id bigint DEFAULT NULL,
   rate_state varchar(5) DEFAULT NULL,
   pre_state varchar(5) DEFAULT NULL,
   create_time datetime(6) DEFAULT NULL,
@@ -147,7 +147,7 @@ CREATE TABLE IF NOT EXISTS device (
   model varchar(32) DEFAULT NULL,
   app_version varchar(20) DEFAULT NULL,
   battery bigint DEFAULT NULL,
-  old_id bigint DEFAULT NULL,
+  resident_id bigint DEFAULT NULL,
   family_id bigint DEFAULT NULL,
   status smallint NOT NULL DEFAULT 1,
   bind_time datetime(6) DEFAULT NULL,
@@ -157,25 +157,25 @@ CREATE TABLE IF NOT EXISTS device (
   create_time datetime(6) DEFAULT NULL,
   CONSTRAINT uk_device_no UNIQUE (device_no)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
-CREATE INDEX idx_device_old ON device(old_id);
+CREATE INDEX idx_device_resident ON device(resident_id);
 
 CREATE TABLE IF NOT EXISTS device_location (
   id bigint AUTO_INCREMENT PRIMARY KEY,
   device_id bigint DEFAULT NULL,
-  old_id bigint DEFAULT NULL,
+  resident_id bigint DEFAULT NULL,
   lng varchar(20) DEFAULT NULL,
   lat varchar(20) DEFAULT NULL,
   source varchar(20) DEFAULT NULL,
-  be_time datetime(6) DEFAULT NULL,
+  event_time datetime(6) DEFAULT NULL,
   create_time datetime(6) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
-CREATE INDEX idx_loc_old_time ON device_location(old_id, id);
+CREATE INDEX idx_loc_resident_time ON device_location(resident_id, id);
 CREATE INDEX idx_loc_device_time ON device_location(device_id, id);
 
 CREATE TABLE IF NOT EXISTS bind_code (
   id bigint AUTO_INCREMENT PRIMARY KEY,
   code varchar(20) NOT NULL,
-  old_id bigint DEFAULT NULL,
+  resident_id bigint DEFAULT NULL,
   family_id bigint DEFAULT NULL,
   create_user varchar(20) DEFAULT NULL,
   create_time datetime(6) DEFAULT NULL,
@@ -185,7 +185,7 @@ CREATE TABLE IF NOT EXISTS bind_code (
   used_device_id bigint DEFAULT NULL,
   CONSTRAINT uk_bind_code UNIQUE (code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
-CREATE INDEX idx_bind_code_old ON bind_code(old_id);
+CREATE INDEX idx_bind_code_resident ON bind_code(resident_id);
 
 ALTER TABLE ratepre ADD COLUMN rate_handled bigint DEFAULT 0 NOT NULL;
 ALTER TABLE ratepre ADD COLUMN pre_handled bigint DEFAULT 0 NOT NULL;
@@ -199,10 +199,10 @@ ALTER TABLE device ADD COLUMN boot_seq bigint DEFAULT 0 NOT NULL;
 ALTER TABLE device ADD COLUMN handled_seq bigint DEFAULT 0 NOT NULL;
 ALTER TABLE device ADD COLUMN last_online_at datetime(6);
 
-CREATE INDEX idx_ratepre_old_time ON ratepre(old_id,create_time,id);
+CREATE INDEX idx_ratepre_resident_time ON ratepre(resident_id,create_time,id);
 CREATE INDEX idx_ratepre_device_time ON ratepre(device_id,create_time,id);
-CREATE INDEX idx_alarm_old_time ON alarm_precess(old_id,be_time,id);
-CREATE INDEX idx_old_family ON oldperson(family_id);
+CREATE INDEX idx_alarm_resident_time ON alarm_event(resident_id,event_time,id);
+CREATE INDEX idx_resident_family ON resident(family_id);
 CREATE INDEX idx_said_text ON said(text_id,said_time);
 CREATE INDEX idx_pic_group ON pic(pic_id);
 
@@ -226,17 +226,17 @@ CREATE UNIQUE INDEX uk_day_device_date ON watch_day_info(device_id,create_time);
 CREATE TABLE IF NOT EXISTS alarm_process (
   id bigint AUTO_INCREMENT PRIMARY KEY,
   status varchar(20) DEFAULT NULL,
-  old_id bigint DEFAULT NULL,
+  resident_id bigint DEFAULT NULL,
   device_id bigint DEFAULT NULL,
-  be_time datetime(6) DEFAULT NULL,
+  event_time datetime(6) DEFAULT NULL,
   lng varchar(20) DEFAULT NULL,
   lat varchar(20) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 
 
-ALTER TABLE device ADD CONSTRAINT fk_device_oldperson
-  FOREIGN KEY (old_id) REFERENCES oldperson(old_id) ON DELETE RESTRICT;
+ALTER TABLE device ADD CONSTRAINT fk_device_resident
+  FOREIGN KEY (resident_id) REFERENCES resident(resident_id) ON DELETE RESTRICT;
 
 
 
@@ -244,9 +244,9 @@ ALTER TABLE device ADD CONSTRAINT fk_device_oldperson
 CREATE TABLE IF NOT EXISTS care_incident (
   id bigint AUTO_INCREMENT PRIMARY KEY,
   source_alarm_id bigint,
-  FOREIGN KEY (source_alarm_id) REFERENCES alarm_precess(id) ON DELETE SET NULL,
+  FOREIGN KEY (source_alarm_id) REFERENCES alarm_event(id) ON DELETE SET NULL,
   request_id varchar(64),
-  old_id bigint NOT NULL,
+  resident_id bigint NOT NULL,
   device_id bigint NOT NULL,
   kind varchar(32) NOT NULL DEFAULT 'sos',
   state varchar(32) NOT NULL DEFAULT 'received'

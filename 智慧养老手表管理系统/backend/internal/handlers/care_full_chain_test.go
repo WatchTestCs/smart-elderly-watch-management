@@ -30,7 +30,7 @@ func TestCareFullHTTPChainAfterRealGatewayTimeout(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
 	mustExec(t, pool, "INSERT INTO family(family_id,family_name,family_phone) VALUES(1,'synthetic','13800000001')")
-	mustExec(t, pool, "UPDATE oldperson SET family_id=1 WHERE old_id=1")
+	mustExec(t, pool, "UPDATE resident SET family_id=1 WHERE resident_id=1")
 	mustExec(t, pool, "INSERT INTO users(user_id,user_name) VALUES(1,'resolver'),(2,'supervisor')")
 	mustExec(t, pool, "INSERT INTO care_staff_permission(admin_id,duty,assigned_by) VALUES(1,'caregiver',2),(2,'supervisor',2)")
 	store := session.NewStore(time.Hour)

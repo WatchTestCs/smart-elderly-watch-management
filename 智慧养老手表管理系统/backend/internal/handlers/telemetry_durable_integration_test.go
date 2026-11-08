@@ -13,7 +13,7 @@ import (
 )
 
 func TestDurableTelemetryPersistsBeforeAckAndReplaysSafely(t *testing.T) {
-	t.Setenv("CAREOLD_DURABLE_TELEMETRY", "1")
+	t.Setenv("SUINING_DURABLE_TELEMETRY", "1")
 	pool := testDatabase(t)
 	seedDevice(t, pool)
 	h := testHandler(t, pool)
@@ -25,7 +25,7 @@ func TestDurableTelemetryPersistsBeforeAckAndReplaysSafely(t *testing.T) {
 	payload := map[string]any{
 		"deviceNo": "WATCH001", "secret": testSecret,
 		"requestId": "durable-step-001", "step": "1200", "sleep": "8",
-		"beTime": "2026-10-28 09:00:00",
+		"eventTime": "2026-10-28 09:00:00",
 	}
 	requestStarted := time.Now().Add(-5 * time.Second)
 	first := callAPI(h.deviceReport, payload)
@@ -76,7 +76,7 @@ func TestDurableTelemetryPersistsBeforeAckAndReplaysSafely(t *testing.T) {
 }
 
 func TestDurableTelemetryRetainsCorruptQueuePayload(t *testing.T) {
-	t.Setenv("CAREOLD_DURABLE_TELEMETRY", "1")
+	t.Setenv("SUINING_DURABLE_TELEMETRY", "1")
 	pool := testDatabase(t)
 	seedDevice(t, pool)
 	h := testHandler(t, pool)

@@ -115,7 +115,7 @@ func TestAnnouncementWritesOutboxInsideTransaction(t *testing.T) {
 	h := secureHandler(t)
 	seedDevice(t, h.DB)
 	mustExec(t, h.DB, "INSERT INTO family(family_id,family_phone) VALUES(1,'13800000003')")
-	mustExec(t, h.DB, "UPDATE oldperson SET family_id=1 WHERE old_id=1")
+	mustExec(t, h.DB, "UPDATE resident SET family_id=1 WHERE resident_id=1")
 	api(t, h.createNotice, map[string]any{"title": "通知", "textMain": "新的照护公告", "fileListName": []string{}})
 	var count int
 	if err := h.DB.QueryRow(context.Background(), "SELECT count(*) FROM message_outbox WHERE topic='announcement'").Scan(&count); err != nil || count != 2 {

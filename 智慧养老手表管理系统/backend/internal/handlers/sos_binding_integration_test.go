@@ -13,8 +13,8 @@ func TestSOSRejectsStaleBinding(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
 	h := testHandler(t, pool)
-	mustExec(t, pool, "INSERT INTO oldperson(old_id,name) VALUES(2,'new owner')")
-	mustExec(t, pool, "UPDATE device SET old_id=2, health_epoch=health_epoch+1 WHERE device_id=1")
+	mustExec(t, pool, "INSERT INTO resident(resident_id,name) VALUES(2,'new owner')")
+	mustExec(t, pool, "UPDATE device SET resident_id=2, health_epoch=health_epoch+1 WHERE device_id=1")
 	response := callAPI(h.deviceSos, map[string]any{
 		"deviceNo": "WATCH001", "secret": testSecret,
 		"requestId": "stale-binding", "bindingVersion": 1,
@@ -26,7 +26,7 @@ func TestSOSRejectsStaleBinding(t *testing.T) {
 	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM care_incident").Scan(&incidents); err != nil {
 		t.Fatal(err)
 	}
-	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM alarm_precess").Scan(&alarms); err != nil {
+	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM alarm_event").Scan(&alarms); err != nil {
 		t.Fatal(err)
 	}
 	if incidents != 0 || alarms != 0 {
@@ -46,7 +46,7 @@ func TestSOSRejectsStaleBinding(t *testing.T) {
 func TestSOSConcurrentRebind(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
-	mustExec(t, pool, "INSERT INTO oldperson(old_id,name) VALUES(2,'new owner')")
+	mustExec(t, pool, "INSERT INTO resident(resident_id,name) VALUES(2,'new owner')")
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 	tx, err := pool.Begin(ctx)
@@ -54,7 +54,7 @@ func TestSOSConcurrentRebind(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer tx.Rollback(context.Background())
-	if _, err := tx.Exec(ctx, "SELECT old_id FROM oldperson WHERE old_id=1 FOR UPDATE"); err != nil {
+	if _, err := tx.Exec(ctx, "SELECT resident_id FROM resident WHERE resident_id=1 FOR UPDATE"); err != nil {
 		t.Fatal(err)
 	}
 	h := testHandler(t, pool)
@@ -64,10 +64,10 @@ func TestSOSConcurrentRebind(t *testing.T) {
 	}()
 	waits := `SELECT count(*) FROM performance_schema.data_lock_waits w
 		JOIN performance_schema.data_locks l ON l.ENGINE_LOCK_ID=w.REQUESTING_ENGINE_LOCK_ID AND l.ENGINE=w.ENGINE
-		WHERE l.OBJECT_SCHEMA=DATABASE() AND l.OBJECT_NAME='oldperson'`
+		WHERE l.OBJECT_SCHEMA=DATABASE() AND l.OBJECT_NAME='resident'`
 	if !pool.IsMySQL() {
 		waits = `SELECT count(*) FROM pg_stat_activity WHERE datname=current_database()
-			AND wait_event_type='Lock' AND query LIKE '%SELECT old_id FROM oldperson WHERE old_id=%FOR UPDATE%'
+			AND wait_event_type='Lock' AND query LIKE '%SELECT resident_id FROM resident WHERE resident_id=%FOR UPDATE%'
 			AND pid<>pg_backend_pid()`
 	}
 	for {
@@ -85,7 +85,7 @@ func TestSOSConcurrentRebind(t *testing.T) {
 			time.Sleep(10 * time.Millisecond)
 		}
 	}
-	if _, err := tx.Exec(ctx, "UPDATE device SET old_id=2 WHERE device_id=1"); err != nil {
+	if _, err := tx.Exec(ctx, "UPDATE device SET resident_id=2 WHERE device_id=1"); err != nil {
 		t.Fatal(err)
 	}
 	if err := tx.Commit(ctx); err != nil {
@@ -130,8 +130,8 @@ func TestSOSVersionedRetryAndRequiredIdentity(t *testing.T) {
 			t.Fatalf("bindingVersion %v: HTTP %d", invalid, response.Code)
 		}
 	}
-	mustExec(t, pool, "INSERT INTO oldperson(old_id,name) VALUES(2,'new owner')")
-	mustExec(t, pool, "UPDATE device SET old_id=2 WHERE device_id=1")
+	mustExec(t, pool, "INSERT INTO resident(resident_id,name) VALUES(2,'new owner')")
+	mustExec(t, pool, "UPDATE device SET resident_id=2 WHERE device_id=1")
 	payload["bindingVersion"] = 2
 	response := callAPI(h.deviceSos, payload)
 	if response.Code != http.StatusConflict {
@@ -177,7 +177,7 @@ func TestSOSConcurrentDuplicateRequests(t *testing.T) {
 	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM care_incident").Scan(&incidents); err != nil {
 		t.Fatal(err)
 	}
-	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM alarm_precess").Scan(&alarms); err != nil {
+	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM alarm_event").Scan(&alarms); err != nil {
 		t.Fatal(err)
 	}
 	if incidents != 1 || alarms != 1 {
@@ -207,7 +207,7 @@ func TestSOSPersistenceRollbackLeavesNoPartialRows(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for _, table := range []string{"alarm_precess", "care_incident", "care_incident_event"} {
+	for _, table := range []string{"alarm_event", "care_incident", "care_incident_event"} {
 		var count int
 		if err := pool.QueryRow(ctx, "SELECT count(*) FROM "+table).Scan(&count); err != nil {
 			t.Fatal(err)

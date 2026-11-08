@@ -69,12 +69,12 @@ func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Reques
 		hwFail(w, code, msg)
 		return
 	}
-	if d.OldID == nil || d.HealthEpoch != req.BindingVersion {
+	if d.ResidentID == nil || d.HealthEpoch != req.BindingVersion {
 		conflict409(w, "绑定已变化，请重新登录；旧绑定数据不能归入新老人")
 		return
 	}
-	expectedOwner := *d.OldID
-	owner := health.Owner{OldID: expectedOwner, DeviceID: &d.ID, Epoch: d.HealthEpoch}
+	expectedOwner := *d.ResidentID
+	owner := health.Owner{ResidentID: expectedOwner, DeviceID: &d.ID, Epoch: d.HealthEpoch}
 	cursor, duplicates, err := batch.Save(ctx, tx, owner)
 	if err != nil {
 		if errors.Is(err, health.ErrConflict) {
@@ -98,7 +98,7 @@ func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Reques
 			hwFail(w, code, msg)
 			return
 		}
-		if d.OldID == nil || *d.OldID != expectedOwner || d.HealthEpoch != req.BindingVersion {
+		if d.ResidentID == nil || *d.ResidentID != expectedOwner || d.HealthEpoch != req.BindingVersion {
 			conflict409(w, "绑定已变化，请重新登录；旧绑定数据不能归入新老人")
 			return
 		}
@@ -115,7 +115,7 @@ func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Reques
 
 func (h *Handler) healthChanges(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		OldID int64 `json:"oldId"`
+		ResidentID int64 `json:"residentId"`
 		After int64 `json:"after"`
 		Limit int   `json:"limit"`
 	}
@@ -129,11 +129,11 @@ func (h *Handler) healthChanges(w http.ResponseWriter, r *http.Request) {
 	if req.Limit == 0 {
 		req.Limit = 100
 	}
-	oldID, ok := h.resolveOptionalOldID(w, r, req.OldID)
+	residentID, ok := h.resolveOptionalResidentID(w, r, req.ResidentID)
 	if !ok {
 		return
 	}
-	rows, err := h.DB.Query(r.Context(), `SELECT revision,payload FROM health_change WHERE old_id=$1 AND revision>$2 ORDER BY revision LIMIT $3`, oldID, req.After, req.Limit+1)
+	rows, err := h.DB.Query(r.Context(), `SELECT revision,payload FROM health_change WHERE resident_id=$1 AND revision>$2 ORDER BY revision LIMIT $3`, residentID, req.After, req.Limit+1)
 	if internalError(w, err) {
 		return
 	}
@@ -161,7 +161,7 @@ func (h *Handler) healthChanges(w http.ResponseWriter, r *http.Request) {
 	if !rowsOK(w, rows) {
 		return
 	}
-	response.OK(w, map[string]any{"changes": items, "nextCursor": cursor, "hasMore": hasMore, "oldId": oldID})
+	response.OK(w, map[string]any{"changes": items, "nextCursor": cursor, "hasMore": hasMore, "residentId": residentID})
 }
 
 type healthBatchRequest struct {

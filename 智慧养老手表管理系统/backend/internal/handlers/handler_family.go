@@ -17,7 +17,7 @@ func (h *Handler) routeFamily(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/v1/inviteCode/list", h.inviteList)
 	mux.HandleFunc("POST /api/v1/inviteCode/create", h.inviteCreate)
 	mux.HandleFunc("POST /api/v1/inviteCode/delete", h.inviteDelete)
-	mux.HandleFunc("POST /api/v1/inviteCode/oldPersonList", h.inviteOldPersonList)
+	mux.HandleFunc("POST /api/v1/inviteCode/residentList", h.inviteResidentList)
 	mux.HandleFunc("POST /api/v1/inviteCode/checkCode", h.inviteCheckCode)
 	mux.HandleFunc("POST /api/v1/inviteCode/join", h.inviteJoin)
 }

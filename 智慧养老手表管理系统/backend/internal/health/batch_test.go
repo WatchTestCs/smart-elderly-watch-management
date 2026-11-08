@@ -12,7 +12,7 @@ import (
 func TestBatchVersionsHistoryAndConflictRollback(t *testing.T) {
 	p := dbtest.MySQL(t)
 	ctx := context.Background()
-	if _, err := p.Exec(ctx, "INSERT INTO oldperson(old_id,name) VALUES(1,'batch')"); err != nil {
+	if _, err := p.Exec(ctx, "INSERT INTO resident(resident_id,name) VALUES(1,'batch')"); err != nil {
 		t.Fatal(err)
 	}
 	at := time.Now().UTC().Truncate(time.Microsecond)
@@ -25,7 +25,7 @@ func TestBatchVersionsHistoryAndConflictRollback(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer tx.Rollback(ctx)
-	revision, duplicates, err := SaveBatch(ctx, tx, Owner{OldID: 1}, []Sample{s, newer, s, newer})
+	revision, duplicates, err := SaveBatch(ctx, tx, Owner{ResidentID: 1}, []Sample{s, newer, s, newer})
 	if err != nil || revision != 2 || duplicates != 2 {
 		t.Fatal(revision, duplicates, err)
 	}
@@ -73,14 +73,14 @@ func TestBatchVersionsHistoryAndConflictRollback(t *testing.T) {
 	other.RecordID = "other"
 	conflict := newer
 	conflict.Value = Number(90)
-	_, _, err = SaveBatch(ctx, tx, Owner{OldID: 1}, []Sample{other, conflict})
+	_, _, err = SaveBatch(ctx, tx, Owner{ResidentID: 1}, []Sample{other, conflict})
 	if !errors.Is(err, ErrConflict) {
 		t.Fatal("same version changed content", err)
 	}
 	if err = tx.Rollback(ctx); err != nil {
 		t.Fatal(err)
 	}
-	if err = p.QueryRow(ctx, "SELECT revision FROM health_owner_clock WHERE old_id=1").Scan(&clock); err != nil || clock != 2 {
+	if err = p.QueryRow(ctx, "SELECT revision FROM health_owner_clock WHERE resident_id=1").Scan(&clock); err != nil || clock != 2 {
 		t.Fatal(clock, err)
 	}
 	if err = p.QueryRow(ctx, "SELECT revision FROM health_clock WHERE id=1").Scan(&clock); err != nil || clock != ownerRevisionRange {

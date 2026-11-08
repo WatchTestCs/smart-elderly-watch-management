@@ -25,7 +25,7 @@ type telemetryPersisted struct {
 
 func watchDayUpsertSQL(mysql bool) string {
 	if mysql {
-		return `INSERT INTO watch_day_info(device_id, sleep, step, sleep_sate, create_time, step_observed_at, old_id, binding_epoch, sleep_observed_at, sleep_state_observed_at)
+		return `INSERT INTO watch_day_info(device_id, sleep, step, sleep_sate, create_time, step_observed_at, resident_id, binding_epoch, sleep_observed_at, sleep_state_observed_at)
 		 VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 		 ON DUPLICATE KEY UPDATE
 			sleep = CASE WHEN VALUES(sleep_observed_at) IS NOT NULL AND (sleep_observed_at IS NULL OR VALUES(sleep_observed_at)>=sleep_observed_at) THEN VALUES(sleep) ELSE sleep END,
@@ -35,7 +35,7 @@ func watchDayUpsertSQL(mysql bool) string {
 			sleep_observed_at = COALESCE(GREATEST(sleep_observed_at,VALUES(sleep_observed_at)),sleep_observed_at,VALUES(sleep_observed_at)),
 			sleep_state_observed_at = COALESCE(GREATEST(sleep_state_observed_at,VALUES(sleep_state_observed_at)),sleep_state_observed_at,VALUES(sleep_state_observed_at))`
 	}
-	return `INSERT INTO watch_day_info(device_id, sleep, step, sleep_sate, create_time, step_observed_at, old_id, binding_epoch, sleep_observed_at, sleep_state_observed_at)
+	return `INSERT INTO watch_day_info(device_id, sleep, step, sleep_sate, create_time, step_observed_at, resident_id, binding_epoch, sleep_observed_at, sleep_state_observed_at)
 	 VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 	 ON CONFLICT (device_id, create_time) DO UPDATE SET
 		sleep = CASE WHEN EXCLUDED.sleep_observed_at IS NOT NULL AND (watch_day_info.sleep_observed_at IS NULL OR EXCLUDED.sleep_observed_at>=watch_day_info.sleep_observed_at) THEN EXCLUDED.sleep ELSE watch_day_info.sleep END,
@@ -47,7 +47,7 @@ func watchDayUpsertSQL(mysql bool) string {
 }
 
 func (repo telemetryRepository) PersistDeviceReport(ctx context.Context, tx *dbstore.Transaction, d *deviceRecord, parsed parsedDeviceTelemetry) (telemetryPersisted, error) {
-	oldID := *d.OldID
+	residentID := *d.ResidentID
 	var position string
 	if parsed.lng != "" || parsed.alarm == "1" || strings.EqualFold(parsed.alarm, "fall") {
 		var err error
@@ -56,14 +56,14 @@ func (repo telemetryRepository) PersistDeviceReport(ctx context.Context, tx *dbs
 			return telemetryPersisted{}, err
 		}
 	}
-	result, err := repo.persistReportVitals(ctx, tx, d, oldID, &parsed)
+	result, err := repo.persistReportVitals(ctx, tx, d, residentID, &parsed)
 	if err != nil {
 		return telemetryPersisted{}, err
 	}
-	if err := repo.persistReportDay(ctx, tx, d, oldID, &parsed); err != nil {
+	if err := repo.persistReportDay(ctx, tx, d, residentID, &parsed); err != nil {
 		return telemetryPersisted{}, err
 	}
-	incidentID, err := repo.persistReportPositionAndAlarm(ctx, tx, d, oldID, &parsed, position)
+	incidentID, err := repo.persistReportPositionAndAlarm(ctx, tx, d, residentID, &parsed, position)
 	if err != nil {
 		return telemetryPersisted{}, err
 	}
@@ -84,7 +84,7 @@ func measurementState(value *int, low, high int) any {
 	return "0"
 }
 
-func (repo telemetryRepository) persistReportVitals(ctx context.Context, tx *dbstore.Transaction, d *deviceRecord, oldID int64, parsed *parsedDeviceTelemetry) (telemetryPersisted, error) {
+func (repo telemetryRepository) persistReportVitals(ctx context.Context, tx *dbstore.Transaction, d *deviceRecord, residentID int64, parsed *parsedDeviceTelemetry) (telemetryPersisted, error) {
 	hr, bp := parsed.hr, parsed.bp
 	// Zero vital signs are legacy "not measured" sentinels.
 	if hr != nil && *hr == 0 {
@@ -109,78 +109,78 @@ func (repo telemetryRepository) persistReportVitals(ctx context.Context, tx *dbs
 		return result, nil
 	}
 	if _, err := tx.Exec(ctx,
-		`INSERT INTO ratepre(device_id,old_id,rate_state,pre_state,create_time,hr,bp)
-    VALUES($1,$2,$3,$4,$5,$6,$7)`, d.ID, oldID, result.rateState, result.preState, parsed.beTime, hr, bp); err != nil {
+		`INSERT INTO ratepre(device_id,resident_id,rate_state,pre_state,create_time,hr,bp)
+    VALUES($1,$2,$3,$4,$5,$6,$7)`, d.ID, residentID, result.rateState, result.preState, parsed.eventTime, hr, bp); err != nil {
 		return telemetryPersisted{}, err
 	}
 	return result, nil
 }
 
-func (repo telemetryRepository) persistReportDay(ctx context.Context, tx *dbstore.Transaction, d *deviceRecord, oldID int64, parsed *parsedDeviceTelemetry) error {
+func (repo telemetryRepository) persistReportDay(ctx context.Context, tx *dbstore.Transaction, d *deviceRecord, residentID int64, parsed *parsedDeviceTelemetry) error {
 	step, sleep, sleepState := parsed.step, parsed.sleep, parsed.sleepState
-	beTime, day := parsed.beTime, parsed.day
+	eventTime, day := parsed.eventTime, parsed.day
 	if step != nil || sleep != nil || sleepState != nil {
 		var rowID, epoch int64
 		var owner *int64
-		err := tx.QueryRow(ctx, `SELECT id,old_id,binding_epoch FROM watch_day_info
+		err := tx.QueryRow(ctx, `SELECT id,resident_id,binding_epoch FROM watch_day_info
 		 WHERE device_id=$1 AND create_time=$2 FOR UPDATE`, d.ID, day).Scan(&rowID, &owner, &epoch)
 		if err != nil && err != pgx.ErrNoRows {
 			return err
 		}
-		if err == nil && (owner == nil || *owner != oldID || epoch != d.HealthEpoch) {
+		if err == nil && (owner == nil || *owner != residentID || epoch != d.HealthEpoch) {
 			// Preserve the previous binding's snapshot before starting an empty one.
 			if _, err = tx.Exec(ctx, `INSERT INTO watch_day_info_archive
-			 (device_id,sleep,step,sleep_sate,create_time,step_observed_at,old_id,binding_epoch,sleep_observed_at,sleep_state_observed_at)
-			 SELECT device_id,sleep,step,sleep_sate,create_time,step_observed_at,old_id,binding_epoch,sleep_observed_at,sleep_state_observed_at
+			 (device_id,sleep,step,sleep_sate,create_time,step_observed_at,resident_id,binding_epoch,sleep_observed_at,sleep_state_observed_at)
+			 SELECT device_id,sleep,step,sleep_sate,create_time,step_observed_at,resident_id,binding_epoch,sleep_observed_at,sleep_state_observed_at
 			 FROM watch_day_info WHERE id=$1`, rowID); err != nil {
 				return err
 			}
 			if _, err = tx.Exec(ctx, `UPDATE watch_day_info SET sleep=NULL,step=NULL,sleep_sate=NULL,
-			 step_observed_at=NULL,sleep_observed_at=NULL,sleep_state_observed_at=NULL,old_id=$1,binding_epoch=$2 WHERE id=$3`, oldID, d.HealthEpoch, rowID); err != nil {
+			 step_observed_at=NULL,sleep_observed_at=NULL,sleep_state_observed_at=NULL,resident_id=$1,binding_epoch=$2 WHERE id=$3`, residentID, d.HealthEpoch, rowID); err != nil {
 				return err
 			}
 		}
 		var stepAny, sleepAny, stateAny, stepObservedAt, sleepObservedAt, sleepStateObservedAt any
 		if step != nil {
 			stepAny = *step
-			stepObservedAt = beTime
+			stepObservedAt = eventTime
 		}
 		if sleep != nil {
 			sleepAny = *sleep
-			sleepObservedAt = beTime
+			sleepObservedAt = eventTime
 		}
 		if sleepState != nil {
 			stateAny = *sleepState
-			sleepStateObservedAt = beTime
+			sleepStateObservedAt = eventTime
 		}
 		if _, err := tx.Exec(ctx, watchDayUpsertSQL(tx.IsMySQL()),
-			d.ID, sleepAny, stepAny, stateAny, day, stepObservedAt, oldID, d.HealthEpoch, sleepObservedAt, sleepStateObservedAt); err != nil {
+			d.ID, sleepAny, stepAny, stateAny, day, stepObservedAt, residentID, d.HealthEpoch, sleepObservedAt, sleepStateObservedAt); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (repo telemetryRepository) insertDeviceLocation(ctx context.Context, tx *dbstore.Transaction, deviceID, oldID int64, lng, lat, source string, at time.Time, position string) error {
+func (repo telemetryRepository) insertDeviceLocation(ctx context.Context, tx *dbstore.Transaction, deviceID, residentID int64, lng, lat, source string, at time.Time, position string) error {
 	_, err := tx.Exec(ctx,
-		`INSERT INTO device_location(device_id, old_id, lng, lat, source, be_time, create_time, position_metadata)
+		`INSERT INTO device_location(device_id, resident_id, lng, lat, source, event_time, create_time, position_metadata)
     VALUES($1,$2,$3,$4,$5,$6,now(),$7)`,
-		deviceID, oldID, sealCoordinate(repo.box, lng), sealCoordinate(repo.box, lat), source, at, position)
+		deviceID, residentID, sealCoordinate(repo.box, lng), sealCoordinate(repo.box, lat), source, at, position)
 	return err
 }
 
-const insertTelemetryAlarm = `INSERT INTO alarm_precess(status, old_id, device_id, be_time, lng, lat, kind, position_metadata)
+const insertTelemetryAlarm = `INSERT INTO alarm_event(status, resident_id, device_id, event_time, lng, lat, kind, position_metadata)
  VALUES('1',$1,$2,$3,$4,$5,$6,$7)`
 
-func (repo telemetryRepository) persistReportPositionAndAlarm(ctx context.Context, tx *dbstore.Transaction, d *deviceRecord, oldID int64, parsed *parsedDeviceTelemetry, position string) (int64, error) {
-	lng, lat, sourceStr, alarm, beTime := parsed.lng, parsed.lat, parsed.sourceStr, parsed.alarm, parsed.beTime
+func (repo telemetryRepository) persistReportPositionAndAlarm(ctx context.Context, tx *dbstore.Transaction, d *deviceRecord, residentID int64, parsed *parsedDeviceTelemetry, position string) (int64, error) {
+	lng, lat, sourceStr, alarm, eventTime := parsed.lng, parsed.lat, parsed.sourceStr, parsed.alarm, parsed.eventTime
 	if lng != "" && lat != "" {
-		if err := repo.insertDeviceLocation(ctx, tx, d.ID, oldID, lng, lat, sourceStr, beTime, position); err != nil {
+		if err := repo.insertDeviceLocation(ctx, tx, d.ID, residentID, lng, lat, sourceStr, eventTime, position); err != nil {
 			return 0, err
 		}
 		if _, err := tx.Exec(ctx, `UPDATE device SET last_lng=$1, last_lat=$2 WHERE device_id=$3
-		 AND NOT EXISTS(SELECT 1 FROM device_location WHERE device_id=$3 AND old_id=$5 AND be_time>$4)`,
-			sealCoordinate(repo.box, lng), sealCoordinate(repo.box, lat), d.ID, beTime, oldID); err != nil {
+		 AND NOT EXISTS(SELECT 1 FROM device_location WHERE device_id=$3 AND resident_id=$5 AND event_time>$4)`,
+			sealCoordinate(repo.box, lng), sealCoordinate(repo.box, lat), d.ID, eventTime, residentID); err != nil {
 			return 0, err
 		}
 	}
@@ -193,7 +193,7 @@ func (repo telemetryRepository) persistReportPositionAndAlarm(ctx context.Contex
 		}
 		var alarmID, incidentID int64
 		if err := tx.QueryRow(ctx, insertTelemetryAlarm+" RETURNING id",
-			oldID, d.ID, beTime, alarmLng, alarmLat, kind, position).Scan(&alarmID); err != nil {
+			residentID, d.ID, eventTime, alarmLng, alarmLat, kind, position).Scan(&alarmID); err != nil {
 			return 0, err
 		}
 		incidentKind := "device_alarm"
@@ -205,19 +205,19 @@ func (repo telemetryRepository) persistReportPositionAndAlarm(ctx context.Contex
 			requestValue = parsed.requestID
 		}
 		if err := tx.QueryRow(ctx,
-			`INSERT INTO care_incident(source_alarm_id,old_id,device_id,kind,request_id)
+			`INSERT INTO care_incident(source_alarm_id,resident_id,device_id,kind,request_id)
 			 VALUES($1,$2,$3,$4,$5) RETURNING id`,
-			alarmID, oldID, d.ID, incidentKind, requestValue).Scan(&incidentID); err != nil {
+			alarmID, residentID, d.ID, incidentKind, requestValue).Scan(&incidentID); err != nil {
 			return 0, err
 		}
 		if _, err := tx.Exec(ctx, `INSERT INTO care_incident_event(incident_id,actor,action,note)
 			VALUES($1,'device','received','设备异常已持久化；等待通知和人工处置')`, incidentID); err != nil {
 			return 0, err
 		}
-		if _, err := notify.QueueCareSMS(ctx, tx, repo.box, incidentID, oldID); err != nil {
+		if _, err := notify.QueueCareSMS(ctx, tx, repo.box, incidentID, residentID); err != nil {
 			return 0, err
 		}
-		if err := notify.CareInbox(ctx, tx, repo.box, oldID, incidentID); err != nil {
+		if err := notify.CareInbox(ctx, tx, repo.box, residentID, incidentID); err != nil {
 			return 0, err
 		}
 		return incidentID, nil
@@ -235,11 +235,11 @@ func (repo telemetryRepository) PersistSOSIncident(ctx context.Context, tx *dbst
 	var alarmID int64
 	if err := tx.QueryRow(ctx,
 		insertTelemetryAlarm+" RETURNING id",
-		*d.OldID, d.ID, now, coordinateArg(repo.box, lng), coordinateArg(repo.box, lat), "sos", position).Scan(&alarmID); err != nil {
+		*d.ResidentID, d.ID, now, coordinateArg(repo.box, lng), coordinateArg(repo.box, lat), "sos", position).Scan(&alarmID); err != nil {
 		return 0, err
 	}
 	if lng != "" && lat != "" {
-		if err := repo.insertDeviceLocation(ctx, tx, d.ID, *d.OldID, lng, lat, "sos", now, position); err != nil {
+		if err := repo.insertDeviceLocation(ctx, tx, d.ID, *d.ResidentID, lng, lat, "sos", now, position); err != nil {
 			return 0, err
 		}
 	}
@@ -252,9 +252,9 @@ func (repo telemetryRepository) PersistSOSIncident(ctx context.Context, tx *dbst
 		requestValue = requestID
 	}
 	if err := tx.QueryRow(ctx,
-		`INSERT INTO care_incident(source_alarm_id, old_id, device_id, request_id)
+		`INSERT INTO care_incident(source_alarm_id, resident_id, device_id, request_id)
 		 VALUES($1,$2,$3,$4) RETURNING id`,
-		alarmID, *d.OldID, d.ID, requestValue).Scan(&incidentID); err != nil {
+		alarmID, *d.ResidentID, d.ID, requestValue).Scan(&incidentID); err != nil {
 		return 0, err
 	}
 	if _, err := tx.Exec(ctx,

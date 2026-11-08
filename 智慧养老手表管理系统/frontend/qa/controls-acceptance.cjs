@@ -1,5 +1,5 @@
 const fs=require('fs'),path=require('path'),run=require('./browser-harness.cjs');
-const routes=[['/operations/activity','activity/latest','name'],['/operations/vitals','vitals/latest','name'],['/operations/locations','position/select','name'],['/operations/life','residents/list','name'],['/operations/monitoring-profiles','monitoring-profiles/list','oldName'],['/operations/residents','residents/details','name'],['/operations/guardians','guardians/list','customerName'],['/operations/families','family/select','familyName'],['/operations/overview','notices/list','title'],['/operations/notices','notices/list','title']];
+const routes=[['/operations/activity','activity/latest','name'],['/operations/vitals','vitals/latest','name'],['/operations/locations','position/select','name'],['/operations/life','residents/list','name'],['/operations/monitoring-profiles','monitoring-profiles/list','oldName'],['/operations/residents','residents/details','name'],['/operations/guardians','guardians/list','guardianName'],['/operations/families','family/select','familyName'],['/operations/overview','notices/list','title'],['/operations/notices','notices/list','title']];
 run(async({page,base,report,setRole,setSignedIn})=>{
  setRole('ADMIN');setSignedIn(true);const checks=[];let navigation=0;
  const check=(name,pass,details)=>checks.push({name,pass:Boolean(pass),details});

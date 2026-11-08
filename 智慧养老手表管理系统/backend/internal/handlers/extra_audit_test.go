@@ -28,12 +28,12 @@ func extraAuditHandler(t *testing.T) *Handler {
 func TestExtraAuditFamilyOnboarding(t *testing.T) {
 	h := extraAuditHandler(t)
 	p := h.DB
-	mustExec(t, p, "INSERT INTO oldperson(old_id,name,phone) VALUES(1,'老人','13800000001')")
+	mustExec(t, p, "INSERT INTO resident(resident_id,name,phone) VALUES(1,'老人','13800000001')")
 	added := api(t, h.familyAdd, map[string]any{"familyName": "家属", "familyRelation": "子女", "familySex": "女", "familyPhone": "13800000002", "oldPhone": "13800000001", "familyAddress": "测试"})
 	if added["returnCode"] != "1111" {
 		t.Fatal(added)
 	}
-	mustExec(t, p, "INSERT INTO invite_code(code,old_id,used) VALUES('AUDITJOIN',1,0)")
+	mustExec(t, p, "INSERT INTO invite_code(code,resident_id,used) VALUES('AUDITJOIN',1,0)")
 	join := api(t, h.inviteJoin, map[string]any{"code": "AUDITJOIN", "familyName": "家属", "familyPhone": "13800000002", "familyPassword": "TestPassword123!", "familyRelation": "子女", "familySex": "女", "familyAddress": "测试"})
 	login := callAPI(h.login, map[string]any{"phone": "13800000002", "password": "TestPassword123!"})
 	var missing bool
@@ -44,7 +44,7 @@ func TestExtraAuditFamilyOnboarding(t *testing.T) {
 	if missing || login.Code != 200 || join["returnCode"] != "1111" {
 		t.Fatal("pre-created family could not activate and log in")
 	}
-	mustExec(t, p, "INSERT INTO invite_code(code,old_id,used) VALUES('AUDITRESET',1,0)")
+	mustExec(t, p, "INSERT INTO invite_code(code,resident_id,used) VALUES('AUDITRESET',1,0)")
 	retry := apiFailure(t, 400, h.inviteJoin, map[string]any{"code": "AUDITRESET", "familyName": "其他人", "familyPhone": "13800000002", "familyPassword": "OtherPassword123!", "familyRelation": "子女", "familySex": "女", "familyAddress": "测试"})
 	if retry["returnCode"] == "1111" {
 		t.Fatal("invitation reset an already active account")
@@ -87,10 +87,10 @@ func TestExtraAuditFamilyOverwrite(t *testing.T) {
 	if !p.IsMySQL() {
 		mustExec(t, p, "SELECT setval(pg_get_serial_sequence('family','family_id'),1)")
 	}
-	mustExec(t, p, "INSERT INTO oldperson(old_id,name,phone,family_id) VALUES(1,'老人','13800000001',1)")
+	mustExec(t, p, "INSERT INTO resident(resident_id,name,phone,family_id) VALUES(1,'老人','13800000001',1)")
 	out := callAPI(h.familyAdd, map[string]any{"familyName": "新家属", "familyRelation": "子女", "familySex": "女", "familyPhone": "13800000003", "oldPhone": "13800000001", "familyAddress": "测试"})
 	var bound int64
-	if err := p.QueryRow(context.Background(), "SELECT family_id FROM oldperson WHERE old_id=1").Scan(&bound); err != nil {
+	if err := p.QueryRow(context.Background(), "SELECT family_id FROM resident WHERE resident_id=1").Scan(&bound); err != nil {
 		t.Fatal(err)
 	}
 	t.Logf("add HTTP=%d; original familyId=1; now familyId=%d", out.Code, bound)
@@ -112,7 +112,7 @@ func TestExtraAuditOutOfOrderTelemetry(t *testing.T) {
 		steps int
 		lng   string
 	}{{"2026-10-20 10:00:00", 5000, "120"}, {"2026-10-20 09:00:00", 1000, "119"}} {
-		out := api(t, h.deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "step": v.steps, "lng": v.lng, "lat": "30", "beTime": v.at})
+		out := api(t, h.deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "step": v.steps, "lng": v.lng, "lat": "30", "eventTime": v.at})
 		if out["returnCode"] != "1111" {
 			t.Fatal(out)
 		}
@@ -127,7 +127,7 @@ func TestExtraAuditOutOfOrderTelemetry(t *testing.T) {
 		t.Fatal("late older snapshot replaced the newer daily steps")
 	}
 	item := pos["positionDtos"].([]any)[0].(map[string]any)
-	if item["lng"] != "120" || item["beTime"] != "2026-10-20 10:00:00" {
+	if item["lng"] != "120" || item["eventTime"] != "2026-10-20 10:00:00" {
 		t.Fatal("late older report replaced current location")
 	}
 	var sealed string
@@ -139,9 +139,9 @@ func TestExtraAuditOutOfOrderTelemetry(t *testing.T) {
 		t.Fatalf("device last coordinate regressed: %s %v", lng, err)
 	}
 	// A newer correction may lower the count; missing steps must not advance its clock.
-	api(t, h.deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "step": 4000, "beTime": "2026-10-20 11:00:00"})
-	api(t, h.deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "sleep": 8, "beTime": "2026-10-20 12:00:00"})
-	api(t, h.deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "step": 4500, "beTime": "2026-10-20 11:30:00"})
+	api(t, h.deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "step": 4000, "eventTime": "2026-10-20 11:00:00"})
+	api(t, h.deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "sleep": 8, "eventTime": "2026-10-20 12:00:00"})
+	api(t, h.deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "step": 4500, "eventTime": "2026-10-20 11:30:00"})
 	if err := p.QueryRow(context.Background(), "SELECT step FROM watch_day_info WHERE device_id=1").Scan(&steps); err != nil {
 		t.Fatal(err)
 	}
@@ -154,15 +154,15 @@ func TestExtraAuditPositionTimestamp(t *testing.T) {
 	h := extraAuditHandler(t)
 	p := h.DB
 	seedDevice(t, p)
-	out := api(t, h.deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "lng": "120", "lat": "30", "beTime": "2026-10-20 08:00:00"})
+	out := api(t, h.deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "lng": "120", "lat": "30", "eventTime": "2026-10-20 08:00:00"})
 	if out["returnCode"] != "1111" {
 		t.Fatal(out)
 	}
-	mustExec(t, p, "INSERT INTO alarm_precess(old_id,device_id,status,be_time) VALUES(1,1,'1',$1)", time.Date(2026, 10, 20, 10, 0, 0, 0, time.UTC))
+	mustExec(t, p, "INSERT INTO alarm_event(resident_id,device_id,status,event_time) VALUES(1,1,'1',$1)", time.Date(2026, 10, 20, 10, 0, 0, 0, time.UTC))
 	pos := api(t, h.positionSelect, map[string]any{"name": ""})
 	item := pos["positionDtos"].([]any)[0].(map[string]any)
 	t.Logf("location sampled at 08:00; newer alarm at 10:00; displayed=%v", item)
-	if item["beTime"] != "2026-10-20 08:00:00" {
+	if item["eventTime"] != "2026-10-20 08:00:00" {
 		t.Fatal("location timestamp was replaced by unrelated alarm time")
 	}
 }

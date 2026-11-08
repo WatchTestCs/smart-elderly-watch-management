@@ -32,7 +32,7 @@ func listLatestMeasurements[T any](h *Handler, w http.ResponseWriter, r *http.Re
 		sql += " AND t.createTime BETWEEN $" + strconv.Itoa(len(args)+1) + " AND $" + strconv.Itoa(len(args)+2)
 		args = append(args, timeFirst, timeLast)
 	}
-	sql += " ORDER BY t.createTime DESC, t.oldId"
+	sql += " ORDER BY t.createTime DESC, t.residentId"
 	total, ok := h.pagedTotal(w, r, sql, args)
 	if !ok {
 		return

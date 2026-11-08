@@ -93,12 +93,12 @@ func (h *Handler) inviteList(w http.ResponseWriter, r *http.Request) {
 	list, ok := queryRows(h, w, ctx, func(rows db.Rows) (map[string]any, error) {
 		var id int64
 		var code string
-		var oldID *int64
+		var residentID *int64
 		var createUser *string
 		var createTime, expire, usedTime *time.Time
 		var used int16
 		var oldName *string
-		if err := rows.Scan(&id, &code, &oldID, &createUser, &createTime, &expire, &used, &usedTime, &oldName); err != nil {
+		if err := rows.Scan(&id, &code, &residentID, &createUser, &createTime, &expire, &used, &usedTime, &oldName); err != nil {
 			return nil, err
 		}
 		st := inviteStatus(used, expire, now)
@@ -107,15 +107,15 @@ func (h *Handler) inviteList(w http.ResponseWriter, r *http.Request) {
 			nm = *oldName
 		}
 		return map[string]any{
-			"id": id, "code": code, "oldId": oldID, "oldPersonName": nm,
+			"id": id, "code": code, "residentId": residentID, "residentName": nm,
 			"createUser": createUser, "createTime": fmtTS(createTime),
 			"expireTime": fmtTS(expire), "remainDays": inviteRemainingDays(expire, now),
 			"usedTime": fmtTS(usedTime), "status": st, "statusText": statusText[st],
 		}, nil
 	},
-		`SELECT ic.id,ic.code,ic.old_id,ic.create_user,ic.create_time,
+		`SELECT ic.id,ic.code,ic.resident_id,ic.create_user,ic.create_time,
 		        ic.expire_time,ic.used,ic.used_time,o.name
-		 FROM invite_code ic LEFT JOIN oldperson o ON ic.old_id=o.old_id
+		 FROM invite_code ic LEFT JOIN resident o ON ic.resident_id=o.resident_id
 		 WHERE 1=1 `+cond+` ORDER BY ic.id DESC LIMIT $1 OFFSET $2`, ps, (p-1)*ps)
 	if !ok {
 		return
@@ -131,14 +131,14 @@ func (h *Handler) inviteCreate(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	oldID, okID := int64Val(m, "oldId")
-	if !okID || oldID <= 0 {
+	residentID, okID := int64Val(m, "residentId")
+	if !okID || residentID <= 0 {
 		response.Fail(w, "请选择邀请码绑定的老人")
 		return
 	}
 	ctx := r.Context()
 	var oldName *string
-	if err := h.DB.QueryRow(ctx, `SELECT name FROM oldperson WHERE old_id=$1`, oldID).Scan(&oldName); err != nil {
+	if err := h.DB.QueryRow(ctx, `SELECT name FROM resident WHERE resident_id=$1`, residentID).Scan(&oldName); err != nil {
 		if isNotFound(err) {
 			response.Fail(w, "老人不存在，请重新选择")
 			return
@@ -177,8 +177,8 @@ func (h *Handler) inviteCreate(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 		if _, err := tx.Exec(ctx,
-			`INSERT INTO invite_code(code,old_id,create_user,create_time,expire_time,used)
-			 VALUES($1,$2,$3,$4,$5,0)`, code, oldID, createUser, now, expire); err != nil {
+			`INSERT INTO invite_code(code,resident_id,create_user,create_time,expire_time,used)
+			 VALUES($1,$2,$3,$4,$5,0)`, code, residentID, createUser, now, expire); err != nil {
 			failed = true
 			break
 		}
@@ -201,7 +201,7 @@ func (h *Handler) inviteCreate(w http.ResponseWriter, r *http.Request) {
 		nm = *oldName
 	}
 	response.OK(w, map[string]any{
-		"codes": codes, "oldId": oldID, "oldPersonName": nm, "expireTime": expAny,
+		"codes": codes, "residentId": residentID, "residentName": nm, "expireTime": expAny,
 	})
 }
 

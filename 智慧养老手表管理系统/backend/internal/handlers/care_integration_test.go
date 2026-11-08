@@ -24,7 +24,7 @@ func TestCareSOSOutboxAuditAndState(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
 	mustExec(t, pool, "INSERT INTO family(family_id,family_name,family_phone) VALUES(1,'家属','13800000001')")
-	mustExec(t, pool, "UPDATE oldperson SET family_id=1 WHERE old_id=1")
+	mustExec(t, pool, "UPDATE resident SET family_id=1 WHERE resident_id=1")
 	h := testHandler(t, pool)
 	out := api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "requestId": "test-press", "bindingVersion": 1})
 	if out["returnCode"] != "1111" || out["notificationState"] != "pending" || out["incidentState"] != "received" {
@@ -97,7 +97,7 @@ func TestCareReceiptRequiresTrustedGatewaySignature(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
 	mustExec(t, pool, "INSERT INTO family(family_id,family_name,family_phone) VALUES(1,'家属','13800000001')")
-	mustExec(t, pool, "UPDATE oldperson SET family_id=1 WHERE old_id=1")
+	mustExec(t, pool, "UPDATE resident SET family_id=1 WHERE resident_id=1")
 	h := testHandler(t, pool)
 	api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "requestId": "test-press", "bindingVersion": 1})
 	var id int64
@@ -154,7 +154,7 @@ func TestCareSOSRequestIDPreventsDuplicateAlerts(t *testing.T) {
 		t.Fatalf("same press was duplicated: %+v %+v", first, repeated)
 	}
 	var count int
-	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM alarm_precess").Scan(&count); err != nil || count != 1 {
+	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM alarm_event").Scan(&count); err != nil || count != 1 {
 		t.Fatalf("duplicate alert inserted count=%d err=%v", count, err)
 	}
 	fresh := api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "requestId": "press-124", "bindingVersion": 1})

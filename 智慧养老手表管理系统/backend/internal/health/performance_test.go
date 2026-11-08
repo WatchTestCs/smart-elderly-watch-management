@@ -14,14 +14,14 @@ var preparedBytes []byte
 func sampleBenchmarkInput() (Owner, Sample) {
 	at := time.Date(2026, 10, 20, 12, 0, 0, 0, time.UTC)
 	device := int64(123)
-	return Owner{OldID: 456, DeviceID: &device, Epoch: 1}, Sample{RecordID: "sample-123456", Source: "watch", SourceDevice: "WATCH-123456", Metric: "heart_rate", Unit: "count/min", Value: Number(72), Start: at, End: at, Version: 1}
+	return Owner{ResidentID: 456, DeviceID: &device, Epoch: 1}, Sample{RecordID: "sample-123456", Source: "watch", SourceDevice: "WATCH-123456", Metric: "heart_rate", Unit: "count/min", Value: Number(72), Start: at, End: at, Version: 1}
 }
 
 func BenchmarkSamplePreparation(b *testing.B) {
 	at := time.Date(2026, 10, 20, 12, 0, 0, 0, time.UTC)
 	s := Sample{RecordID: "sample-123456", Source: "watch", SourceDevice: "WATCH-123456", Metric: "heart_rate", Unit: "count/min", Value: Number(72), Start: at, End: at, Version: 1}
 	device := int64(123)
-	o := Owner{OldID: 456, DeviceID: &device, Epoch: 1}
+	o := Owner{ResidentID: 456, DeviceID: &device, Epoch: 1}
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		n, err := s.Normalize()
@@ -32,7 +32,7 @@ func BenchmarkSamplePreparation(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		identity, _ := json.Marshal([]any{o.OldID, o.DeviceID, o.Epoch, n.Source, n.SourceDevice, n.RecordID, n.Metric})
+		identity, _ := json.Marshal([]any{o.ResidentID, o.DeviceID, o.Epoch, n.Source, n.SourceDevice, n.RecordID, n.Metric})
 		id := Digest(identity)
 		if len(changePayload(o, id, 987654321, payload)) == 0 {
 			b.Fatal("empty change")
@@ -45,7 +45,7 @@ func TestChangePayloadMatchesRecordJSON(t *testing.T) {
 	s := Sample{RecordID: "quoted\"record", Source: "<watch>&", SourceDevice: "设备\\\n", Metric: "heart_rate", Unit: "count/min", Value: Number(72), Start: at, End: at, Metadata: map[string]string{"second": "\u2028", "first": "quoted\"value"}, Version: 2}
 	id := Digest([]byte("identity"))
 	device := int64(123)
-	for _, owner := range []Owner{{OldID: 456, Epoch: 9}, {OldID: 456, DeviceID: &device, Epoch: 9}} {
+	for _, owner := range []Owner{{ResidentID: 456, Epoch: 9}, {ResidentID: 456, DeviceID: &device, Epoch: 9}} {
 		for _, deleted := range []bool{false, true} {
 			s.Deleted = deleted
 			s.Value = Number(72)
@@ -56,7 +56,7 @@ func TestChangePayloadMatchesRecordJSON(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			want, err := json.Marshal(Record{id, owner.OldID, owner.DeviceID, owner.Epoch, 987654321, s})
+			want, err := json.Marshal(Record{id, owner.ResidentID, owner.DeviceID, owner.Epoch, 987654321, s})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -96,8 +96,8 @@ func changePayload(o Owner, id string, revision int64, sample []byte) []byte {
 	b := make([]byte, 0, len(sample)+len(id)+128)
 	b = append(b, `{"sampleId":"`...)
 	b = append(b, id...)
-	b = append(b, `","oldId":`...)
-	b = strconv.AppendInt(b, o.OldID, 10)
+	b = append(b, `","residentId":`...)
+	b = strconv.AppendInt(b, o.ResidentID, 10)
 	b = append(b, `,"deviceId":`...)
 	if o.DeviceID == nil {
 		b = append(b, "null"...)

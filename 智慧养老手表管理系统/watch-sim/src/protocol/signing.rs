@@ -11,7 +11,7 @@ use super::Credentials;
 
 type HmacSha256 = Hmac<Sha256>;
 
-/// 三个签名头。后端在 `CAREOLD_REQUIRE_SIGNED_DEVICE=1` 时强制要求，
+/// 三个签名头。后端在 `SUINING_REQUIRE_SIGNED_DEVICE=1` 时强制要求，
 /// 未设置时允许不带签名，但**一旦带上就必须验证通过**——所以要么整体不带，
 /// 要么每个请求都重新生成 nonce 与时间戳。
 #[derive(Debug, Clone)]

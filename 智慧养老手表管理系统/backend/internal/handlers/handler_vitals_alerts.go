@@ -11,7 +11,7 @@ import (
 
 type vitalRecord struct {
 	Name        *string `json:"name"`
-	OldID       *int64  `json:"oldId"`
+	ResidentID       *int64  `json:"residentId"`
 	Sex         *string `json:"sex"`
 	RateState   *string `json:"rateState"`
 	PreState    *string `json:"preState"`
@@ -23,20 +23,20 @@ type vitalRecord struct {
 	CreateTime  *string `json:"createTime"`
 }
 
-const vitalRecordSelect = `SELECT o.name AS name, o.old_id AS oldId, o.sex AS sex,` +
+const vitalRecordSelect = `SELECT o.name AS name, o.resident_id AS residentId, o.sex AS sex,` +
 	` r.rate_state AS rateState, r.pre_state AS preState, r.hr AS hr, r.bp AS bp, r.id AS recordId,` +
 	` CAST(r.rate_handled AS varchar) AS rateHandled, CAST(r.pre_handled AS varchar) AS preHandled,` +
 	` TO_CHAR(r.create_time,'YYYY-MM-DD HH24:MI:SS') AS createTime` +
-	` FROM oldperson o`
+	` FROM resident o`
 
 // 按长者选出最新的心率和血压记录。
 const latestVitalsQuery = vitalRecordSelect +
-	` INNER JOIN (SELECT *, ROW_NUMBER() OVER (PARTITION BY old_id ORDER BY create_time DESC, id DESC) AS rn FROM ratepre) r` +
-	` ON r.old_id=o.old_id AND r.rn=1`
+	` INNER JOIN (SELECT *, ROW_NUMBER() OVER (PARTITION BY resident_id ORDER BY create_time DESC, id DESC) AS rn FROM ratepre) r` +
+	` ON r.resident_id=o.resident_id AND r.rn=1`
 
 func scanVitalRecord(rows dbstore.Rows) (vitalRecord, error) {
 	var d vitalRecord
-	err := rows.Scan(&d.Name, &d.OldID, &d.Sex, &d.RateState, &d.PreState, &d.Hr, &d.Bp, &d.RecordID, &d.RateHandled, &d.PreHandled, &d.CreateTime)
+	err := rows.Scan(&d.Name, &d.ResidentID, &d.Sex, &d.RateState, &d.PreState, &d.Hr, &d.Bp, &d.RecordID, &d.RateHandled, &d.PreHandled, &d.CreateTime)
 	return d, err
 }
 
@@ -63,7 +63,7 @@ const (
 type alertRow struct {
 	ID            int64
 	DeviceID      *int64
-	OldID         *int64
+	ResidentID         *int64
 	Hr            *int64
 	Bp            *int64
 	RateState     *string
@@ -71,7 +71,7 @@ type alertRow struct {
 	RateDone      bool
 	PreDone       bool
 	CreateTime    *string
-	OldPersonName *string
+	ResidentName *string
 	HrHigh, HrLow *int
 	BpHigh, BpLow *int
 }
@@ -83,7 +83,7 @@ func (h *Handler) getVitalAlert(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	recordIDStr := strID(m, "recordId")
-	oldIDStr := strID(m, "oldId")
+	residentIDStr := strID(m, "residentId")
 	kind := strings.ToLower(str(m, "kind"))
 
 	var a alertRow
@@ -92,8 +92,8 @@ func (h *Handler) getVitalAlert(w http.ResponseWriter, r *http.Request) {
 	if isDigits(recordIDStr) {
 		id, _ := strconv.ParseInt(recordIDStr, 10, 64)
 		a, found, err = h.findAlertRecord(r, id)
-	} else if isDigits(oldIDStr) {
-		id, _ := strconv.ParseInt(oldIDStr, 10, 64)
+	} else if isDigits(residentIDStr) {
+		id, _ := strconv.ParseInt(residentIDStr, 10, 64)
 		a, found, err = h.findLatestPending(r, id, kind)
 	} else {
 		response.Fail(w, "参数不正确")
@@ -162,8 +162,8 @@ func describeRatepreAlert(a alertRow) map[string]any {
 		"hasAlert":      1,
 		"recordId":      a.ID,
 		"deviceId":      a.DeviceID,
-		"oldId":         a.OldID,
-		"oldPersonName": a.OldPersonName,
+		"residentId":         a.ResidentID,
+		"residentName": a.ResidentName,
 		"hr":            hr,
 		"bp":            bp,
 		"rateBad":       rb,
@@ -175,18 +175,18 @@ func describeRatepreAlert(a alertRow) map[string]any {
 	}
 }
 
-const vitalAlertSelect = `SELECT r.id, r.device_id, r.old_id, r.hr, r.bp, r.rate_state, r.pre_state,
+const vitalAlertSelect = `SELECT r.id, r.device_id, r.resident_id, r.hr, r.bp, r.rate_state, r.pre_state,
 		COALESCE((r.rate_handled_at IS NOT NULL AND r.create_time <= r.rate_handled_at), false),
 		COALESCE((r.pre_handled_at IS NOT NULL AND r.create_time <= r.pre_handled_at), false),
 		TO_CHAR(r.create_time,'YYYY-MM-DD HH24:MI:SS'), o.name, w.hrf, w.hrl, w.bpf, w.bpl
-		FROM ratepre r LEFT JOIN oldperson o ON o.old_id=r.old_id
+		FROM ratepre r LEFT JOIN resident o ON o.resident_id=r.resident_id
 		LEFT JOIN watch_info w ON w.device_id=r.device_id`
 
 func (h *Handler) findAlertRecord(r *http.Request, id int64) (alertRow, bool, error) {
 	return scanVitalAlert(h.DB.QueryRow(r.Context(), vitalAlertSelect+` WHERE r.id=$1`, id))
 }
 
-func (h *Handler) findLatestPending(r *http.Request, oldID int64, kind string) (alertRow, bool, error) {
+func (h *Handler) findLatestPending(r *http.Request, residentID int64, kind string) (alertRow, bool, error) {
 	condition := "(" + pendingRate + " OR " + pendingPressure + ")"
 	switch kind {
 	case "rate":
@@ -195,13 +195,13 @@ func (h *Handler) findLatestPending(r *http.Request, oldID int64, kind string) (
 		condition = pendingPressure
 	}
 	return scanVitalAlert(h.DB.QueryRow(r.Context(), vitalAlertSelect+
-		` WHERE r.old_id=$1 AND `+condition+` ORDER BY r.create_time DESC, r.id DESC LIMIT 1`, oldID))
+		` WHERE r.resident_id=$1 AND `+condition+` ORDER BY r.create_time DESC, r.id DESC LIMIT 1`, residentID))
 }
 
 func scanVitalAlert(row dbstore.Row) (alertRow, bool, error) {
 	var alert alertRow
-	err := row.Scan(&alert.ID, &alert.DeviceID, &alert.OldID, &alert.Hr, &alert.Bp, &alert.RateState, &alert.PreState,
-		&alert.RateDone, &alert.PreDone, &alert.CreateTime, &alert.OldPersonName, &alert.HrHigh, &alert.HrLow, &alert.BpHigh, &alert.BpLow)
+	err := row.Scan(&alert.ID, &alert.DeviceID, &alert.ResidentID, &alert.Hr, &alert.Bp, &alert.RateState, &alert.PreState,
+		&alert.RateDone, &alert.PreDone, &alert.CreateTime, &alert.ResidentName, &alert.HrHigh, &alert.HrLow, &alert.BpHigh, &alert.BpLow)
 	if isNotFound(err) {
 		return alert, false, nil
 	}

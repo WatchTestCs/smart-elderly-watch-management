@@ -18,7 +18,7 @@ func identityDigest(o Owner, s Sample) string {
 	var stack [512]byte
 	b := stack[:0]
 	b = append(b, '[')
-	b = strconv.AppendInt(b, o.OldID, 10)
+	b = strconv.AppendInt(b, o.ResidentID, 10)
 	b = append(b, ',')
 	if o.DeviceID == nil {
 		b = append(b, "null"...)
@@ -48,7 +48,7 @@ func assignBatchIdentities(o Owner, input []preparedSample) {
 	var stack [512]byte
 	var encoded [64]byte
 	b := append(stack[:0], '[')
-	b = strconv.AppendInt(b, o.OldID, 10)
+	b = strconv.AppendInt(b, o.ResidentID, 10)
 	b = append(b, ',')
 	if o.DeviceID == nil {
 		b = append(b, "null"...)

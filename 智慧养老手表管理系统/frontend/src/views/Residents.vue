@@ -27,9 +27,9 @@
     <el-dialog :close-on-click-modal="false"
       title="老人添加"
       v-model="oldDialogVisible"
-      @open="addCustomerList"
+      @open="addGuardianList"
       @close="closeRoleAddDialog">
-      <ResidentForm :draft="oldForm" :rules="rules" ref="addoldFormRef" :options="options" :customer-loading="customerLoading" :customer-error="customerError" @retry-guardians="addCustomerList" />
+      <ResidentForm :draft="oldForm" :rules="rules" ref="addoldFormRef" :options="options" :guardian-loading="guardianLoading" :guardian-error="guardianError" @retry-guardians="addGuardianList" />
       <template #footer><span  class="dialog-footer">
       <el-button @click="oldDialogVisible = false">取 消</el-button>
       <el-button type="primary" @click="createResident('addoldFormRef')">确 定</el-button>
@@ -39,11 +39,11 @@
     <el-dialog :close-on-click-modal="false"
       title="老人编辑"
       v-model="oldEditDialogVisible"
-      @open="addCustomerList">
-      <ResidentForm editing :draft="oldEditForm" :rules="rules" ref="editoldFormRef" :options="options" :customer-loading="customerLoading" :customer-error="customerError" @retry-guardians="addCustomerList" />
+      @open="addGuardianList">
+      <ResidentForm editing :draft="oldEditForm" :rules="rules" ref="editoldFormRef" :options="options" :guardian-loading="guardianLoading" :guardian-error="guardianError" @retry-guardians="addGuardianList" />
       <template #footer><span  class="dialog-footer">
       <el-button @click="oldEditDialogVisible = false">取 消</el-button>
-      <el-button type="primary" @click="editOldPerson">确 定</el-button>
+      <el-button type="primary" @click="editResident">确 定</el-button>
     </span></template>
     </el-dialog>
 
@@ -58,7 +58,7 @@
 				<p>关系:{{prop.row.familyRelation}}</p><p>家属电话:{{prop.row.familyPhone}}</p>
 				<p>家属地址:{{prop.row.familyAddress}}</p><p>过敏:{{prop.row.warn}}</p>
 				<p>喜好食物:{{prop.row.foodLike}}</p><p>忌口食物:{{prop.row.foodHate}}</p>
-				<p>常用药物:{{prop.row.drag}}</p><p>病史:{{prop.row.illness}}</p>
+				<p>常用药物:{{prop.row.drug}}</p><p>病史:{{prop.row.illness}}</p>
 				
 			  </template>
 	  
@@ -66,31 +66,31 @@
       
       <el-table-column type="index" width="100" align="center"></el-table-column>
       <el-table-column prop="name" label="姓名" width="100" align="center"></el-table-column>
-      <el-table-column prop="bothdate" label="出生日期" width="120" align="center"></el-table-column>
+      <el-table-column prop="birthdate" label="出生日期" width="120" align="center"></el-table-column>
 	  <el-table-column prop="sex" label="性别" width="100" align="center"></el-table-column>
 	  <el-table-column prop="phone" label="电话" width="120" align="center"></el-table-column>
 	  <el-table-column prop="room" label="房间" width="100" align="center"></el-table-column>
-	  <el-table-column prop="beTime" label="入院时间" width="100" align="center"></el-table-column>
+	  <el-table-column prop="eventTime" label="入院时间" width="100" align="center"></el-table-column>
 	  
-		<el-table-column prop="customerName" label="监护人" width="100" align="center"></el-table-column>
+		<el-table-column prop="guardianName" label="监护人" width="100" align="center"></el-table-column>
 		<el-table-column prop="deviceId" label="手表编号" width="100" align="center"></el-table-column>
 
       <el-table-column label="操作" width="200" align="center" fixed="right">
         <template #default="scope" >
           <el-button size="small" plain type="primary" :icon="Edit"
-                     @click="handleeditOldPerson(scope.$index, scope.row)">编辑
+                     @click="handleeditResident(scope.$index, scope.row)">编辑
           </el-button>
-          <el-button size="small" plain type="danger" :icon="Delete" @click="deleteOldPerson(scope.row.oldId)">删除
+          <el-button size="small" plain type="danger" :icon="Delete" @click="deleteResident(scope.row.residentId)">删除
           </el-button>
           
         </template>
       </el-table-column>
     </el-table>
-    <record-cards v-if="mobileLayout && !loadError" :records="personDetailList" :fields='[{"key":"bothdate","label":"出生日期"},{"key":"sex","label":"性别"},{"key":"phone","label":"电话"},{"key":"room","label":"房间"},{"key":"beTime","label":"入院时间"},{"key":"familyName","label":"家属姓名"},{"key":"familyRelation","label":"关系"},{"key":"familyPhone","label":"家属电话"},{"key":"familyAddress","label":"家属地址"},{"key":"familySex","label":"家属性别"},{"key":"customerName","label":"监护人"},{"key":"deviceId","label":"手表编号"},{"key":"illness","label":"病史"},{"key":"warn","label":"过敏"},{"key":"foodLike","label":"喜好食物"},{"key":"foodHate","label":"忌口食物"},{"key":"drag","label":"常用药物"}]' label="老人档案" empty-title="暂无老人档案" title-key="name" key-field="oldId">
+    <record-cards v-if="mobileLayout && !loadError" :records="personDetailList" :fields='[{"key":"birthdate","label":"出生日期"},{"key":"sex","label":"性别"},{"key":"phone","label":"电话"},{"key":"room","label":"房间"},{"key":"eventTime","label":"入院时间"},{"key":"familyName","label":"家属姓名"},{"key":"familyRelation","label":"关系"},{"key":"familyPhone","label":"家属电话"},{"key":"familyAddress","label":"家属地址"},{"key":"familySex","label":"家属性别"},{"key":"guardianName","label":"监护人"},{"key":"deviceId","label":"手表编号"},{"key":"illness","label":"病史"},{"key":"warn","label":"过敏"},{"key":"foodLike","label":"喜好食物"},{"key":"foodHate","label":"忌口食物"},{"key":"drug","label":"常用药物"}]' label="老人档案" empty-title="暂无老人档案" title-key="name" key-field="residentId">
       <template #actions="scope"  ><el-button size="small" plain type="primary" :icon="Edit"
-                     @click="handleeditOldPerson(scope.$index, scope.row)">编辑
+                     @click="handleeditResident(scope.$index, scope.row)">编辑
           </el-button>
-<el-button size="small" plain type="danger" :icon="Delete" @click="deleteOldPerson(scope.row.oldId)">删除
+<el-button size="small" plain type="danger" :icon="Delete" @click="deleteResident(scope.row.residentId)">删除
           </el-button></template>
     </record-cards>
     
@@ -126,25 +126,25 @@ const {
   load: loadResidents, handleSizeChange, changePage
 } = usePagedRecords({
   path: 'api/v1/residents/details',
-  responseKey: 'oldPersonDetails',
+  responseKey: 'residentDetails',
   buildQuery: () => ({ name: searchText.value }),
   failure: '老人档案暂时无法加载，请检查服务连接后重试。'
 })
 
 const emptyResident = () => ({
-  name: '', bothdate: '', sex: '', phone: '', room: '',
-  beTime: '', customerId: '', illness: '', warn: '',
-  foodLike: '', foodHate: '', drag: ''
+  name: '', birthdate: '', sex: '', phone: '', room: '',
+  eventTime: '', guardianId: '', illness: '', warn: '',
+  foodLike: '', foodHate: '', drug: ''
 })
 const oldDialogVisible = ref(false)
 const oldEditDialogVisible = ref(false)
 const oldForm = reactive(emptyResident())
-const oldEditForm = ref({ ...emptyResident(), oldId: '', customerName: '', deviceId: '' })
+const oldEditForm = ref({ ...emptyResident(), residentId: '', guardianName: '', deviceId: '' })
 const addoldFormRef = ref(null)
 const editoldFormRef = ref(null)
 const options = ref([])
-const customerLoading = ref(false)
-const customerError = ref('')
+const guardianLoading = ref(false)
+const guardianError = ref('')
 
 const checkPhone = (_rule, value, callback) => {
   if (!value) return callback(new Error('电话号码不能为空'))
@@ -153,30 +153,30 @@ const checkPhone = (_rule, value, callback) => {
 }
 const rules = { phone: [{ validator: checkPhone, trigger: 'blur' }] }
 
-async function addCustomerList() {
-  if (customerLoading.value) return
-  customerLoading.value = true
-  customerError.value = ''
+async function addGuardianList() {
+  if (guardianLoading.value) return
+  guardianLoading.value = true
+  guardianError.value = ''
   try {
     const residents = []
     let page = 1
     let total = 0
     do {
-      const { data } = await requestClient.post('api/v1/guardians/list', { customerName: '', page, pageSize: 100 })
-      if (!Array.isArray(data.customers)) throw new Error('invalid guardians')
-      total = data.total ?? data.customers.length
-      if (!Number.isInteger(total) || total < 0 || (!data.customers.length && residents.length < total)) {
+      const { data } = await requestClient.post('api/v1/guardians/list', { guardianName: '', page, pageSize: 100 })
+      if (!Array.isArray(data.guardians)) throw new Error('invalid guardians')
+      total = data.total ?? data.guardians.length
+      if (!Number.isInteger(total) || total < 0 || (!data.guardians.length && residents.length < total)) {
         throw new Error('incomplete guardians')
       }
-      residents.push(...data.customers)
+      residents.push(...data.guardians)
       page += 1
     } while (residents.length < total)
     options.value = residents
   } catch (error) {
     options.value = []
-    customerError.value = apiErrorMessage(error, '监护人选项暂时无法加载，请重试。')
+    guardianError.value = apiErrorMessage(error, '监护人选项暂时无法加载，请重试。')
   } finally {
-    customerLoading.value = false
+    guardianLoading.value = false
   }
 }
 
@@ -189,25 +189,25 @@ function createResident() {
     })
   })
 }
-function editOldPerson() {
+function editResident() {
   editoldFormRef.value?.validate(valid => {
     if (!valid) return
     const draft = oldEditForm.value
     return writeRecord('api/v1/residents/update', {
-      ...editableResident(draft), oldId: draft.oldId
+      ...editableResident(draft), residentId: draft.residentId
     }, '编辑老人信息成功', async () => {
       oldEditDialogVisible.value = false
       await loadResidents(true)
     })
   })
 }
-function deleteOldPerson(oldId) {
-  return deleteRecord('api/v1/residents/delete', { oldId }, '此操作将永久删除该长者信息，是否继续？', () => loadResidents(true))
+function deleteResident(residentId) {
+  return deleteRecord('api/v1/residents/delete', { residentId }, '此操作将永久删除该长者信息，是否继续？', () => loadResidents(true))
 }
 function closeRoleAddDialog() {
   addoldFormRef.value?.resetFields()
 }
-function handleeditOldPerson(_index, row) {
+function handleeditResident(_index, row) {
   oldEditForm.value = { ...row }
   oldEditDialogVisible.value = true
 }
@@ -215,12 +215,12 @@ function exportCurrentPage() {
   if (!personDetailList.value.length) { ElMessage.warning('当前没有可导出的数据'); return }
   downloadCsv(`老人档案-${new Date().toISOString().slice(0, 10)}.csv`, [
     { key: 'name', label: '姓名' },
-    { key: 'bothdate', label: '出生日期' },
+    { key: 'birthdate', label: '出生日期' },
     { key: 'sex', label: '性别' },
     { key: 'phone', label: '电话' },
     { key: 'room', label: '房间' },
-    { key: 'beTime', label: '入院时间' },
-    { key: 'customerName', label: '监护人' },
+    { key: 'eventTime', label: '入院时间' },
+    { key: 'guardianName', label: '监护人' },
     { key: 'deviceId', label: '手表编号' }
   ], personDetailList.value)
 }

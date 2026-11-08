@@ -84,7 +84,7 @@ type deviceRecord struct {
 	Model         *string
 	AppVersion    *string
 	Battery       *int
-	OldID         *int64
+	ResidentID         *int64
 	FamilyID      *int64
 	Status        *int
 	BindTime      *time.Time
@@ -101,13 +101,13 @@ type deviceRecord struct {
 }
 
 const deviceRecordColumns = `device_id, device_no, secret, alias, model, app_version, battery,
-	old_id, family_id, status, bind_time, last_time, last_lng, last_lat, create_time,
+	resident_id, family_id, status, bind_time, last_time, last_lng, last_lat, create_time,
 	person_handled, rate_handled, pre_handled, boot_seq, handled_seq, health_epoch`
 
 func scanDeviceRecord(row dbstore.Row) (*deviceRecord, error) {
 	var d deviceRecord
 	if err := row.Scan(&d.ID, &d.No, &d.Secret, &d.Alias, &d.Model, &d.AppVersion,
-		&d.Battery, &d.OldID, &d.FamilyID, &d.Status, &d.BindTime, &d.LastTime,
+		&d.Battery, &d.ResidentID, &d.FamilyID, &d.Status, &d.BindTime, &d.LastTime,
 		&d.LastLng, &d.LastLat, &d.CreateTime, &d.PersonHandled, &d.RateHandled,
 		&d.PreHandled, &d.BootSeq, &d.HandledSeq, &d.HealthEpoch); err != nil {
 		return nil, err

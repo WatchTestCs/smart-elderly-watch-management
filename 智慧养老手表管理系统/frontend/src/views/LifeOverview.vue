@@ -1,10 +1,10 @@
 <template>
   <div class="roles" :aria-busy="isLoading">
     <el-alert v-if="loadError" :title="loadError" type="error" :closable="false" show-icon></el-alert>
-    <el-button v-if="loadError" link @click="searchOldPersonLife()">重新加载生活资料</el-button>
+    <el-button v-if="loadError" link @click="searchResidentLife()">重新加载生活资料</el-button>
     
     <div class="sys-research">
-      <form class="row-search" role="search" @submit.prevent="searchOldPersonLife()">
+      <form class="row-search" role="search" @submit.prevent="searchResidentLife()">
 		  
         <div class="search-field">
           
@@ -23,7 +23,7 @@
       </form>
     </div>
     
-    <el-table v-if="!mobileLayout" class="adaptive-record-table" :data="OldPersonList"
+    <el-table v-if="!mobileLayout" class="adaptive-record-table" :data="ResidentList"
     style="width: 100%" border v-loading="isLoading">
     <template #empty><div  class="care-empty-state"><strong>暂无生活信息</strong><span>设备上报的生活信息会显示在这里。</span></div></template>
 
@@ -32,11 +32,11 @@
       <el-table-column prop="sex" label="性别" width="140" align="center"></el-table-column>
 	  <el-table-column prop="illness" label="病史" width="140" align="center"></el-table-column>
 	  <el-table-column prop="warn" label="过敏药物" width="140" align="center"></el-table-column>
-	  <el-table-column prop="drag" label="常用药物" width="140" align="center"></el-table-column>
+	  <el-table-column prop="drug" label="常用药物" width="140" align="center"></el-table-column>
       <el-table-column prop="foodLike" label="喜欢吃的食物" width="auto" align="center"></el-table-column>
 	  <el-table-column prop="foodHate" label="忌口" width="auto" align="center"></el-table-column>
     </el-table>
-    <record-cards v-if="mobileLayout" :records="OldPersonList" :fields='[{"key":"sex","label":"性别"},{"key":"illness","label":"病史"},{"key":"warn","label":"过敏药物"},{"key":"drag","label":"常用药物"},{"key":"foodLike","label":"喜欢吃的食物"},{"key":"foodHate","label":"忌口"}]' label="生活资料" title-key="name" key-field="oldId"></record-cards>
+    <record-cards v-if="mobileLayout" :records="ResidentList" :fields='[{"key":"sex","label":"性别"},{"key":"illness","label":"病史"},{"key":"warn","label":"过敏药物"},{"key":"drug","label":"常用药物"},{"key":"foodLike","label":"喜欢吃的食物"},{"key":"foodHate","label":"忌口"}]' label="生活资料" title-key="name" key-field="residentId"></record-cards>
     
     <div style="margin-top: 10px;text-align: center">
       <pager-bar
@@ -59,12 +59,12 @@ import { useCollectionLayout } from '@/composables/useCollectionLayout'
 import RecordCards from '@/components/RecordCards.vue'
 
 interface LifeRecord {
-  oldId: number | string
+  residentId: number | string
   name: string
   sex?: string
   illness?: string
   warn?: string
-  drag?: string
+  drug?: string
   foodLike?: string
   foodHate?: string
 }
@@ -72,18 +72,18 @@ interface LifeRecord {
 const searchText = ref('')
 const mobileLayout = useCollectionLayout(900)
 const {
-  records: OldPersonList,
+  records: ResidentList,
   isLoading,
   loadError,
   total,
   pageSize,
   currentPage,
-  load: searchOldPersonLife,
+  load: searchResidentLife,
   handleSizeChange,
   changePage
 } = usePagedRecords<LifeRecord, { name: string }>({
   path: 'api/v1/residents/list',
-  responseKey: 'oldPeople',
+  responseKey: 'residents',
   buildQuery: () => ({ name: searchText.value.trim() }),
   failure: '生活资料暂时无法加载，请重新加载。'
 })

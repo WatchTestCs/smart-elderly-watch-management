@@ -78,9 +78,9 @@ func (h *Handler) deviceAlertDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	oldName := "（未绑定）"
-	if d.OldID != nil {
+	if d.ResidentID != nil {
 		var nm *string
-		if err := h.DB.QueryRow(ctx, `SELECT name FROM oldperson WHERE old_id=$1`, *d.OldID).Scan(&nm); err != nil && err != pgx.ErrNoRows {
+		if err := h.DB.QueryRow(ctx, `SELECT name FROM resident WHERE resident_id=$1`, *d.ResidentID).Scan(&nm); err != nil && err != pgx.ErrNoRows {
 			response.Error500(w, ref())
 			return
 		} else if nm != nil {
@@ -89,7 +89,7 @@ func (h *Handler) deviceAlertDetail(w http.ResponseWriter, r *http.Request) {
 	}
 	fields := map[string]any{
 		"deviceId": d.ID, "deviceNo": d.No, "alias": d.Alias,
-		"oldPersonName": oldName, "personHandled": d.PersonHandled,
+		"residentName": oldName, "personHandled": d.PersonHandled,
 		"rateHandled": d.RateHandled, "preHandled": d.PreHandled,
 	}
 	var alert map[string]any

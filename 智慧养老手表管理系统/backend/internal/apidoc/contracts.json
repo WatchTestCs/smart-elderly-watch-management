@@ -57,7 +57,7 @@
   "POST /api/v1/activity/chart": {
     "file": "智慧养老手表管理系统/backend/internal/handlers/handler_vitals_activity.go",
     "request": [
-      "oldId"
+      "residentId"
     ],
     "response": [
       "createTime",
@@ -69,7 +69,7 @@
   "POST /api/v1/activity/history": {
     "file": "智慧养老手表管理系统/backend/internal/handlers/handler_vitals_activity.go",
     "request": [
-      "oldId"
+      "residentId"
     ],
     "response": [
       "returnCode",
@@ -318,7 +318,7 @@
       "alias",
       "deviceId",
       "deviceNo",
-      "oldPersonName",
+      "residentName",
       "personHandled",
       "preHandled",
       "rateHandled",
@@ -344,15 +344,15 @@
       "secret"
     ],
     "response": [
-      "oldId",
-      "oldPersonName",
+      "residentId",
+      "residentName",
       "returnCode"
     ]
   },
   "POST /api/v1/device/bindCodeList": {
     "file": "智慧养老手表管理系统/backend/internal/handlers/handler_device_admin.go",
     "request": [
-      "oldId"
+      "residentId"
     ],
     "response": [
       "bindCodes",
@@ -392,7 +392,7 @@
     "request": [
       "alias",
       "model",
-      "oldId"
+      "residentId"
     ],
     "response": [
       "deviceId",
@@ -406,13 +406,13 @@
     "request": [
       "createUser",
       "expireDays",
-      "oldId"
+      "residentId"
     ],
     "response": [
       "code",
       "expireTime",
-      "oldId",
-      "oldPersonName",
+      "residentId",
+      "residentName",
       "returnCode"
     ]
   },
@@ -476,7 +476,7 @@
     "response": [
       "bindingVersion",
       "bound",
-      "oldId",
+      "residentId",
       "pendingAlarm",
       "reportInterval",
       "returnCode",
@@ -514,9 +514,9 @@
       "bound",
       "deviceId",
       "deviceNo",
-      "oldId",
+      "residentId",
       "returnCode",
-      "oldPersonName",
+      "residentName",
       "protocolVersion",
       "maxBatchSize"
     ]
@@ -535,7 +535,7 @@
       "lat",
       "alarm",
       "battery",
-      "beTime",
+      "eventTime",
       "appVersion",
       "requestId",
       "source",
@@ -707,7 +707,7 @@
     "file": "智慧养老手表管理系统/backend/internal/handlers/handler_fences.go",
     "request": [
       "after",
-      "oldId"
+      "residentId"
     ],
     "response": [
       "items",
@@ -772,11 +772,11 @@
   "POST /api/v1/guardians/create": {
     "file": "智慧养老手表管理系统/backend/internal/handlers/handler_user.go",
     "request": [
-      "customerAddress",
-      "customerAge",
-      "customerName",
-      "customerPhone",
-      "customerSex"
+      "guardianAddress",
+      "guardianAge",
+      "guardianName",
+      "guardianPhone",
+      "guardianSex"
     ],
     "response": [
       "returnCode"
@@ -785,7 +785,7 @@
   "POST /api/v1/guardians/delete": {
     "file": "智慧养老手表管理系统/backend/internal/handlers/handler_user.go",
     "request": [
-      "customerId"
+      "guardianId"
     ],
     "response": [
       "returnCode"
@@ -794,12 +794,12 @@
   "POST /api/v1/guardians/list": {
     "file": "智慧养老手表管理系统/backend/internal/handlers/handler_user.go",
     "request": [
-      "customerName",
+      "guardianName",
       "page",
       "pageSize"
     ],
     "response": [
-      "customers",
+      "guardians",
       "page",
       "pageSize",
       "returnCode",
@@ -809,12 +809,12 @@
   "POST /api/v1/guardians/update": {
     "file": "智慧养老手表管理系统/backend/internal/handlers/handler_user.go",
     "request": [
-      "customerAddress",
-      "customerAge",
-      "customerId",
-      "customerName",
-      "customerPhone",
-      "customerSex"
+      "guardianAddress",
+      "guardianAge",
+      "guardianId",
+      "guardianName",
+      "guardianPhone",
+      "guardianSex"
     ],
     "response": [
       "returnCode"
@@ -835,20 +835,20 @@
     "request": [
       "after",
       "limit",
-      "oldId"
+      "residentId"
     ],
     "response": [
       "changes",
       "hasMore",
       "nextCursor",
-      "oldId",
+      "residentId",
       "returnCode"
     ]
   },
   "POST /api/v1/health/daily-query": {
     "file": "智慧养老手表管理系统/backend/internal/handlers/handler_daily.go",
     "request": [
-      "oldId",
+      "residentId",
       "source",
       "sourceDevice",
       "metric",
@@ -870,17 +870,17 @@
   },
   "POST /api/v1/health/baseline": {
     "file": "智慧养老手表管理系统/backend/internal/handlers/handler_health_baseline.go",
-    "request": ["oldId"],
-    "response": ["returnCode", "oldId", "metric", "ready", "sampleDays", "trustedDays", "rejectedDays", "confidence", "reason", "observedAt", "value", "baseline", "scale", "score", "direction", "anomalous"]
+    "request": ["residentId"],
+    "response": ["returnCode", "residentId", "metric", "ready", "sampleDays", "trustedDays", "rejectedDays", "confidence", "reason", "observedAt", "value", "baseline", "scale", "score", "direction", "anomalous"]
   },
   "POST /api/v1/health/latest": {
     "file": "智慧养老手表管理系统/backend/internal/handlers/handler_health_latest.go",
     "request": [
-      "oldId"
+      "residentId"
     ],
     "response": [
       "items",
-      "oldId",
+      "residentId",
       "returnCode"
     ]
   },
@@ -889,7 +889,7 @@
     "request": [
       "from",
       "metric",
-      "oldId",
+      "residentId",
       "semantics",
       "source",
       "sourceDevice",
@@ -921,7 +921,7 @@
     ],
     "response": [
       "expireTime",
-      "oldPersonName",
+      "residentName",
       "remainDays",
       "returnCode"
     ]
@@ -932,13 +932,13 @@
       "count",
       "createUser",
       "expireDays",
-      "oldId"
+      "residentId"
     ],
     "response": [
       "codes",
       "expireTime",
-      "oldId",
-      "oldPersonName",
+      "residentId",
+      "residentName",
       "returnCode"
     ]
   },
@@ -965,7 +965,7 @@
     "response": [
       "familyId",
       "familyName",
-      "oldPersonName",
+      "residentName",
       "returnCode"
     ]
   },
@@ -984,18 +984,18 @@
       "total"
     ]
   },
-  "POST /api/v1/inviteCode/oldPersonList": {
+  "POST /api/v1/inviteCode/residentList": {
     "file": "智慧养老手表管理系统/backend/internal/handlers/handler_family_invite_join.go",
     "request": [],
     "response": [
-      "oldPeople",
+      "residents",
       "returnCode"
     ]
   },
   "POST /api/v1/locations/alerts/resolve-latest": {
     "file": "智慧养老手表管理系统/backend/internal/handlers/handler_device_alerts.go",
     "request": [
-      "oldId"
+      "residentId"
     ],
     "response": [
       "returnCode"
@@ -1209,7 +1209,7 @@
   "POST /api/v1/position/selectFamily": {
     "file": "智慧养老手表管理系统/backend/internal/handlers/handler_position.go",
     "request": [
-      "oldId"
+      "residentId"
     ],
     "response": [
       "positionDtos",
@@ -1217,10 +1217,10 @@
     ]
   },
   "POST /api/v1/residents/create": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_old_person.go",
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_resident.go",
     "request": [
       "name",
-      "bothdate",
+      "birthdate",
       "sex",
       "phone",
       "room",
@@ -1228,8 +1228,8 @@
       "warn",
       "foodLike",
       "foodHate",
-      "drag",
-      "customerId",
+      "drug",
+      "guardianId",
       "deviceId"
     ],
     "response": [
@@ -1237,23 +1237,23 @@
     ]
   },
   "POST /api/v1/residents/delete": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_old_person.go",
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_resident.go",
     "request": [
-      "oldId"
+      "residentId"
     ],
     "response": [
       "returnCode"
     ]
   },
   "POST /api/v1/residents/details": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/old_person_query.go",
+    "file": "智慧养老手表管理系统/backend/internal/handlers/resident_query.go",
     "request": [
       "name",
       "page",
       "pageSize"
     ],
     "response": [
-      "oldPersonDetails",
+      "residentDetails",
       "page",
       "pageSize",
       "returnCode",
@@ -1261,14 +1261,14 @@
     ]
   },
   "POST /api/v1/residents/list": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/old_person_query.go",
+    "file": "智慧养老手表管理系统/backend/internal/handlers/resident_query.go",
     "request": [
       "name",
       "page",
       "pageSize"
     ],
     "response": [
-      "oldPeople",
+      "residents",
       "page",
       "pageSize",
       "returnCode",
@@ -1276,11 +1276,11 @@
     ]
   },
   "POST /api/v1/residents/update": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_old_person.go",
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_resident.go",
     "request": [
-      "oldId",
+      "residentId",
       "name",
-      "bothdate",
+      "birthdate",
       "sex",
       "phone",
       "room",
@@ -1288,9 +1288,9 @@
       "warn",
       "foodLike",
       "foodHate",
-      "drag",
-      "customerId",
-      "customerName",
+      "drug",
+      "guardianId",
+      "guardianName",
       "deviceId"
     ],
     "response": [
@@ -1383,7 +1383,7 @@
     "file": "智慧养老手表管理系统/backend/internal/handlers/handler_vitals_alerts.go",
     "request": [
       "kind",
-      "oldId",
+      "residentId",
       "recordId"
     ],
     "response": [
@@ -1392,8 +1392,8 @@
       "returnCode",
       "recordId",
       "deviceId",
-      "oldId",
-      "oldPersonName",
+      "residentId",
+      "residentName",
       "hr",
       "bp",
       "rateBad",
@@ -1427,7 +1427,7 @@
   "POST /api/v1/vitals/chart": {
     "file": "智慧养老手表管理系统/backend/internal/handlers/handler_vitals_measurements.go",
     "request": [
-      "oldId"
+      "residentId"
     ],
     "response": [
       "bps",
@@ -1440,7 +1440,7 @@
   "POST /api/v1/vitals/history": {
     "file": "智慧养老手表管理系统/backend/internal/handlers/handler_vitals_measurements.go",
     "request": [
-      "oldId"
+      "residentId"
     ],
     "response": [
       "vitalRecords",

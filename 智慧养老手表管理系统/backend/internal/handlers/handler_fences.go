@@ -66,7 +66,7 @@ func (h *Handler) fenceSave(w http.ResponseWriter, r *http.Request) {
 	if internalError(w, err) {
 		return
 	}
-	if d.OldID == nil {
+	if d.ResidentID == nil {
 		conflict409(w, "设备尚未绑定老人")
 		return
 	}
@@ -80,12 +80,12 @@ func (h *Handler) fenceSave(w http.ResponseWriter, r *http.Request) {
 			conflict409(w, "每个绑定最多 20 个围栏，请编辑或停用已有围栏")
 			return
 		}
-		err = tx.QueryRow(ctx, `INSERT INTO device_fence(device_id,old_id,epoch,name,enabled,coordinates,coordinate_system,timezone,time_begin,time_end,min_points,dwell_seconds,max_accuracy,updated_by)
- VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING id`, d.ID, *d.OldID, d.HealthEpoch, req.Name, req.Enabled, json.RawMessage(b), req.CoordinateSystem, req.Timezone, req.TimeBegin, req.TimeEnd, req.MinPoints, req.DwellSeconds, req.MaxAccuracy, actor).Scan(&req.ID)
+		err = tx.QueryRow(ctx, `INSERT INTO device_fence(device_id,resident_id,epoch,name,enabled,coordinates,coordinate_system,timezone,time_begin,time_end,min_points,dwell_seconds,max_accuracy,updated_by)
+ VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING id`, d.ID, *d.ResidentID, d.HealthEpoch, req.Name, req.Enabled, json.RawMessage(b), req.CoordinateSystem, req.Timezone, req.TimeBegin, req.TimeEnd, req.MinPoints, req.DwellSeconds, req.MaxAccuracy, actor).Scan(&req.ID)
 		req.Revision = 1
 	} else {
 		var revision int64
-		err = tx.QueryRow(ctx, "SELECT revision FROM device_fence WHERE id=$1 AND device_id=$2 AND old_id=$3 AND epoch=$4 FOR UPDATE", req.ID, d.ID, *d.OldID, d.HealthEpoch).Scan(&revision)
+		err = tx.QueryRow(ctx, "SELECT revision FROM device_fence WHERE id=$1 AND device_id=$2 AND resident_id=$3 AND epoch=$4 FOR UPDATE", req.ID, d.ID, *d.ResidentID, d.HealthEpoch).Scan(&revision)
 		if err == pgx.ErrNoRows || (err == nil && revision != req.Revision) {
 			conflict409(w, "围栏或绑定版本已变化")
 			return
@@ -131,7 +131,7 @@ func (h *Handler) fenceList(w http.ResponseWriter, r *http.Request) {
 		err := json.Unmarshal(b, &item.Coordinates)
 		return item, err
 	}, `SELECT f.id,f.device_id,f.revision,f.name,f.enabled,f.coordinates,f.coordinate_system,f.timezone,f.time_begin,f.time_end,f.min_points,f.dwell_seconds,f.max_accuracy
- FROM device_fence f JOIN device d ON d.device_id=f.device_id AND d.old_id=f.old_id AND d.health_epoch=f.epoch WHERE f.device_id=$1 ORDER BY f.id`, req.DeviceID)
+ FROM device_fence f JOIN device d ON d.device_id=f.device_id AND d.resident_id=f.resident_id AND d.health_epoch=f.epoch WHERE f.device_id=$1 ORDER BY f.id`, req.DeviceID)
 	if !ok {
 		return
 	}
@@ -157,7 +157,7 @@ func (h *Handler) fencePoint(w http.ResponseWriter, r *http.Request) {
 	if d == nil {
 		return
 	}
-	configs, err := loadActiveFences(ctx, tx, d.ID, *d.OldID, d.HealthEpoch)
+	configs, err := loadActiveFences(ctx, tx, d.ID, *d.ResidentID, d.HealthEpoch)
 	if internalError(w, err) {
 		return
 	}
@@ -212,13 +212,13 @@ func (h *Handler) fenceEvents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var req struct {
-		OldID int64 `json:"oldId"`
+		ResidentID int64 `json:"residentId"`
 		After int64 `json:"after"`
 	}
 	if !decodeCapability(w, r, &req) {
 		return
 	}
-	if req.OldID < 1 || req.After < 0 {
+	if req.ResidentID < 1 || req.After < 0 {
 		write400(w, "老人或游标无效")
 		return
 	}
@@ -232,7 +232,7 @@ func (h *Handler) fenceEvents(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 		return map[string]any{"id": id, "fenceId": fid, "fenceRevision": rev, "deviceId": did, "direction": direction, "lng": lng, "lat": lat, "accuracy": accuracy, "occurredAt": at, "incidentId": incident}, nil
-	}, `SELECT id,fence_id,fence_revision,device_id,direction,lng,lat,accuracy,occurred_at,incident_id FROM fence_event WHERE old_id=$1 AND id>$2 ORDER BY id LIMIT 100`, req.OldID, req.After)
+	}, `SELECT id,fence_id,fence_revision,device_id,direction,lng,lat,accuracy,occurred_at,incident_id FROM fence_event WHERE resident_id=$1 AND id>$2 ORDER BY id LIMIT 100`, req.ResidentID, req.After)
 	if !ok {
 		return
 	}

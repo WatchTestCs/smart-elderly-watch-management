@@ -122,7 +122,7 @@
               "type": "object",
               "additionalProperties": true,
               "properties": {
-                "oldId": {}
+                "residentId": {}
               }
             }
           }
@@ -876,7 +876,7 @@
                     "alias": {},
                     "deviceId": {},
                     "deviceNo": {},
-                    "oldPersonName": {},
+                    "residentName": {},
                     "personHandled": {},
                     "preHandled": {},
                     "rateHandled": {},
@@ -920,8 +920,8 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "oldId": {},
-                    "oldPersonName": {}
+                    "residentId": {},
+                    "residentName": {}
                   }
                 }
               }
@@ -1063,7 +1063,7 @@
                 "properties": {
                   "alias": {},
                   "model": {},
-                  "oldId": {}
+                  "residentId": {}
                 }
               }
             }
@@ -1082,8 +1082,8 @@
                   "properties": {
                     "code": {},
                     "expireTime": {},
-                    "oldId": {},
-                    "oldPersonName": {}
+                    "residentId": {},
+                    "residentName": {}
                   }
                 }
               }
@@ -1097,7 +1097,7 @@
                 "properties": {
                   "createUser": {},
                   "expireDays": {},
-                  "oldId": {}
+                  "residentId": {}
                 }
               }
             }
@@ -1229,7 +1229,7 @@
                   "properties": {
                     "bindingVersion": {},
                     "bound": {},
-                    "oldId": {},
+                    "residentId": {},
                     "pendingAlarm": {},
                     "reportInterval": {},
                     "serverTime": {}
@@ -1307,8 +1307,8 @@
                     "bound": {},
                     "deviceId": {},
                     "deviceNo": {},
-                    "oldId": {},
-                    "oldPersonName": {},
+                    "residentId": {},
+                    "residentName": {},
                     "protocolVersion": {},
                     "maxBatchSize": {}
                   }
@@ -1405,7 +1405,7 @@
                   "lat": {},
                   "alarm": {},
                   "battery": {},
-                  "beTime": {},
+                  "eventTime": {},
                   "appVersion": {},
                   "requestId": {},
                   "source": {}
@@ -1782,7 +1782,7 @@
               "schema": {
                 "properties": {
                   "after": {},
-                  "oldId": {}
+                  "residentId": {}
                 }
               }
             }
@@ -1924,11 +1924,11 @@
             "application/json": {
               "schema": {
                 "properties": {
-                  "customerAddress": {},
-                  "customerAge": {},
-                  "customerName": {},
-                  "customerPhone": {},
-                  "customerSex": {}
+                  "guardianAddress": {},
+                  "guardianAge": {},
+                  "guardianName": {},
+                  "guardianPhone": {},
+                  "guardianSex": {}
                 }
               }
             }
@@ -1951,7 +1951,7 @@
             "application/json": {
               "schema": {
                 "properties": {
-                  "customerId": {}
+                  "guardianId": {}
                 }
               }
             }
@@ -1968,7 +1968,7 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "customers": {},
+                    "guardians": {},
                     "page": {},
                     "pageSize": {},
                     "total": {}
@@ -1983,7 +1983,7 @@
             "application/json": {
               "schema": {
                 "properties": {
-                  "customerName": {},
+                  "guardianName": {},
                   "page": {},
                   "pageSize": {}
                 }
@@ -2008,12 +2008,12 @@
             "application/json": {
               "schema": {
                 "properties": {
-                  "customerAddress": {},
-                  "customerAge": {},
-                  "customerId": {},
-                  "customerName": {},
-                  "customerPhone": {},
-                  "customerSex": {}
+                  "guardianAddress": {},
+                  "guardianAge": {},
+                  "guardianId": {},
+                  "guardianName": {},
+                  "guardianPhone": {},
+                  "guardianSex": {}
                 }
               }
             }
@@ -2070,7 +2070,7 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "oldId": {},
+                    "residentId": {},
                     "metric": {},
                     "ready": {},
                     "sampleDays": {},
@@ -2110,7 +2110,7 @@
                     "changes": {},
                     "hasMore": {},
                     "nextCursor": {},
-                    "oldId": {}
+                    "residentId": {}
                   }
                 }
               }
@@ -2124,7 +2124,7 @@
                 "properties": {
                   "after": {},
                   "limit": {},
-                  "oldId": {}
+                  "residentId": {}
                 }
               }
             }
@@ -2160,7 +2160,7 @@
               "schema": {
                 "additionalProperties": false,
                 "properties": {
-                  "oldId": {
+                  "residentId": {
                     "type": "integer"
                   },
                   "source": {
@@ -2201,12 +2201,12 @@
                 "schema": {
                   "required": [
                     "items",
-                    "oldId",
+                    "residentId",
                     "returnCode"
                   ],
                   "additionalProperties": false,
                   "properties": {
-                    "oldId": {
+                    "residentId": {
                       "type": "integer"
                     },
                     "items": {
@@ -2215,7 +2215,7 @@
                         "type": "object",
                         "additionalProperties": false,
                         "required": [
-                          "oldId",
+                          "residentId",
                           "bindingVersion",
                           "revision",
                           "sampleId",
@@ -2223,7 +2223,7 @@
                           "sample"
                         ],
                         "properties": {
-                          "oldId": {
+                          "residentId": {
                             "type": "integer"
                           },
                           "bindingVersion": {
@@ -2306,7 +2306,7 @@
               "schema": {
                 "additionalProperties": false,
                 "properties": {
-                  "oldId": {
+                  "residentId": {
                     "type": "integer",
                     "minimum": 1
                   }
@@ -2315,7 +2315,7 @@
             }
           }
         },
-        "description": "Latest nondeleted stored sample per exact source/sourceDevice/metric/semantics. Order by exact sample.start descending, then revision descending. Intervals retain both endpoints; daily totals are snapshots, not today's aggregate. FAMILY may omit oldId and is checked against current ownership; ADMIN supplies oldId. Historical binding/version and sampling time are preserved; no freshness guarantee or cross-source merging."
+        "description": "Latest nondeleted stored sample per exact source/sourceDevice/metric/semantics. Order by exact sample.start descending, then revision descending. Intervals retain both endpoints; daily totals are snapshots, not today's aggregate. FAMILY may omit residentId and is checked against current ownership; ADMIN supplies residentId. Historical binding/version and sampling time are preserved; no freshness guarantee or cross-source merging."
       }
     },
     "/api/v1/health/statistics": {
@@ -2344,7 +2344,7 @@
                 "properties": {
                   "from": {},
                   "metric": {},
-                  "oldId": {},
+                  "residentId": {},
                   "semantics": {},
                   "source": {},
                   "sourceDevice": {},
@@ -2432,7 +2432,7 @@
                 "schema": {
                   "properties": {
                     "expireTime": {},
-                    "oldPersonName": {},
+                    "residentName": {},
                     "remainDays": {}
                   }
                 }
@@ -2465,8 +2465,8 @@
                   "properties": {
                     "codes": {},
                     "expireTime": {},
-                    "oldId": {},
-                    "oldPersonName": {}
+                    "residentId": {},
+                    "residentName": {}
                   }
                 }
               }
@@ -2481,7 +2481,7 @@
                   "count": {},
                   "createUser": {},
                   "expireDays": {},
-                  "oldId": {}
+                  "residentId": {}
                 }
               }
             }
@@ -2523,7 +2523,7 @@
                   "properties": {
                     "familyId": {},
                     "familyName": {},
-                    "oldPersonName": {}
+                    "residentName": {}
                   }
                 }
               }
@@ -2585,7 +2585,7 @@
         "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_family.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
-    "/api/v1/inviteCode/oldPersonList": {
+    "/api/v1/inviteCode/residentList": {
       "post": {
         "responses": {
           "200": {
@@ -2593,7 +2593,7 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "oldPeople": {}
+                    "residents": {}
                   }
                 }
               }
@@ -3133,7 +3133,7 @@
               "schema": {
                 "properties": {
                   "name": {},
-                  "bothdate": {},
+                  "birthdate": {},
                   "sex": {},
                   "phone": {},
                   "room": {},
@@ -3141,8 +3141,8 @@
                   "warn": {},
                   "foodLike": {},
                   "foodHate": {},
-                  "drag": {},
-                  "customerId": {},
+                  "drug": {},
+                  "guardianId": {},
                   "deviceId": {}
                 }
               }
@@ -3177,7 +3177,7 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "oldPersonDetails": {},
+                    "residentDetails": {},
                     "page": {},
                     "pageSize": {},
                     "total": {}
@@ -3203,7 +3203,7 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "oldPeople": {},
+                    "residents": {},
                     "page": {},
                     "pageSize": {},
                     "total": {}
@@ -3235,9 +3235,9 @@
             "application/json": {
               "schema": {
                 "properties": {
-                  "oldId": {},
+                  "residentId": {},
                   "name": {},
-                  "bothdate": {},
+                  "birthdate": {},
                   "sex": {},
                   "phone": {},
                   "room": {},
@@ -3245,9 +3245,9 @@
                   "warn": {},
                   "foodLike": {},
                   "foodHate": {},
-                  "drag": {},
-                  "customerId": {},
-                  "customerName": {},
+                  "drug": {},
+                  "guardianId": {},
+                  "guardianName": {},
                   "deviceId": {}
                 }
               }
@@ -3553,8 +3553,8 @@
                     "message": {},
                     "recordId": {},
                     "deviceId": {},
-                    "oldId": {},
-                    "oldPersonName": {},
+                    "residentId": {},
+                    "residentName": {},
                     "hr": {},
                     "bp": {},
                     "rateBad": {},
@@ -3575,7 +3575,7 @@
               "schema": {
                 "properties": {
                   "kind": {},
-                  "oldId": {},
+                  "residentId": {},
                   "recordId": {}
                 }
               }

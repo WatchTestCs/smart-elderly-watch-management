@@ -49,9 +49,9 @@ func TestDeviceSignatureGateScopeWithoutDatabase(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.require {
-				t.Setenv("CAREOLD_REQUIRE_SIGNED_DEVICE", "1")
+				t.Setenv("SUINING_REQUIRE_SIGNED_DEVICE", "1")
 			} else {
-				t.Setenv("CAREOLD_REQUIRE_SIGNED_DEVICE", "")
+				t.Setenv("SUINING_REQUIRE_SIGNED_DEVICE", "")
 			}
 			w := serveDeviceGate(&Handler{}, gateRequest(t, tc.path, body))
 			if w.Code != tc.want {
@@ -66,7 +66,7 @@ func TestDeviceSignatureGateScopeWithoutDatabase(t *testing.T) {
 
 // A supplied signature must verify even when the opt-in switch is off.
 func TestDeviceSignatureGateRejectsInvalidSignatureWhenDisabled(t *testing.T) {
-	t.Setenv("CAREOLD_REQUIRE_SIGNED_DEVICE", "")
+	t.Setenv("SUINING_REQUIRE_SIGNED_DEVICE", "")
 	body := map[string]any{"deviceNo": "WATCH001", "secret": testSecret}
 	req := signedTestRequest(t, "/api/v1/device/heartbeat", body, "heartbeat-invalid-0123456789", time.Now())
 	req.Header.Set("X-Device-Signature", "not-hex")
@@ -82,7 +82,7 @@ func TestDeviceSignatureGateRejectsInvalidSignatureWhenDisabled(t *testing.T) {
 }
 
 func TestDeviceSignatureGateRejectsNonceReplay(t *testing.T) {
-	t.Setenv("CAREOLD_REQUIRE_SIGNED_DEVICE", "1")
+	t.Setenv("SUINING_REQUIRE_SIGNED_DEVICE", "1")
 	db := testDatabase(t)
 	seedDevice(t, db)
 	h := testHandler(t, db)

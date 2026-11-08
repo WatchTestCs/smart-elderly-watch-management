@@ -58,7 +58,7 @@ export function useRecordCharts() {
     })
   }
 
-  async function showRecordDetails(kind: 'vitals' | 'activity', oldId: string | number, name: string) {
+  async function showRecordDetails(kind: 'vitals' | 'activity', residentId: string | number, name: string) {
     cancelRecordRequest()
     const controller = new AbortController()
     request = controller
@@ -69,7 +69,7 @@ export function useRecordCharts() {
     const active = () => request === controller && detailsVisible.value && !unmounted
     try {
       const [{ data }, { default: echarts }] = await Promise.all([
-        api.post<ChartData>(`api/v1/${kind}/chart`, { oldId }, { signal: controller.signal }),
+        api.post<ChartData>(`api/v1/${kind}/chart`, { residentId }, { signal: controller.signal }),
         import('../chartEngine')
       ])
       if (!active()) return

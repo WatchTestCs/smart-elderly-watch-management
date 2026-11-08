@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// DATE 列（老人档案 be_time、阈值档案 op_time、默认档案 create_time）必须落在
+// DATE 列（老人档案 event_time、阈值档案 op_time、默认档案 create_time）必须落在
 // 机构所在地的「今天」。连接固定 time_zone='+00:00'、驱动 Loc=UTC，所以这里既
 // 验证取的是现场日历，也验证写入后仍落在同一天。
 func TestSiteDayUsesSiteCalendar(t *testing.T) {

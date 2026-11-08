@@ -8,7 +8,7 @@ vi.mock('axios', async (importOriginal) => ({ ...await importOriginal<typeof imp
 const Pagination = defineComponent({ name: 'Pagination', emits: ['current-change'], template: '<nav />' })
 const Button = defineComponent({ emits: ['click'], template: '<button @click="$emit(\'click\')"><slot /></button>' })
 const Dialog = defineComponent({ props: ['modelValue'], emits: ['close', 'update:modelValue'], template: '<section v-if="modelValue" class="test-dialog"><slot /><slot name="footer" /><button class="close-dialog" @click="$emit(\'update:modelValue\', false); $emit(\'close\')">关闭</button></section>' })
-const fixture = (name: string, total = 100) => ({ data: { items: [{ id: name, oldPersonName: name, state: 'received' }], total, duty: 'supervisor', actorId: 7 } })
+const fixture = (name: string, total = 100) => ({ data: { items: [{ id: name, residentName: name, state: 'received' }], total, duty: 'supervisor', actorId: 7 } })
 function mountInbox() {
   return mount(CareInbox, { global: {
     stubs: { 'el-pagination': Pagination, 'el-select': true, 'el-option': true, 'el-button': Button, 'el-dialog': Dialog, 'el-input': true, CareOperationsPanel: true },
@@ -51,8 +51,8 @@ describe('care task read scheduling', () => {
   it('replaces a hung history read and cancels another read when its dialog closes', async () => {
     let finishOld!: (value: unknown) => void
     post.mockResolvedValueOnce({ data: { ...fixture('first').data, items: [
-      { id: 'first', oldPersonName: '第一位', state: 'received' },
-      { id: 'second', oldPersonName: '第二位', state: 'received' }
+      { id: 'first', residentName: '第一位', state: 'received' },
+      { id: 'second', residentName: '第二位', state: 'received' }
     ] } })
       .mockReturnValueOnce(new Promise(resolve => { finishOld = resolve }))
       .mockResolvedValueOnce({ data: { events: [{ action: '最新履历' }], total: 1 } })
@@ -101,7 +101,7 @@ describe('care task read scheduling', () => {
   })
 
   it('keeps delivered notifications visibly unclaimed until a person acknowledges', async () => {
-    post.mockResolvedValueOnce({ data: { items: [{ id: 'delivery-only', oldPersonName: '送达待接单', state: 'notified', notificationState: 'delivered', acknowledgedBy: null }], total: 1, duty: 'supervisor', actorId: 7 } })
+    post.mockResolvedValueOnce({ data: { items: [{ id: 'delivery-only', residentName: '送达待接单', state: 'notified', notificationState: 'delivered', acknowledgedBy: null }], total: 1, duty: 'supervisor', actorId: 7 } })
     const view = mountInbox()
     await flushPromises()
     expect(view.text()).toContain('已确认送达')

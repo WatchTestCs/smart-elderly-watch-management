@@ -63,11 +63,11 @@ func (h *Handler) listGuardians(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	name := str(m, "customerName")
+	name := str(m, "guardianName")
 	p, ps := bodyPage(m)
 	ctx := r.Context()
 	var total int64
-	const filter = ` FROM customer WHERE ($1='' OR customer_name LIKE '%'||$1||'%')`
+	const filter = ` FROM guardian WHERE ($1='' OR guardian_name LIKE '%'||$1||'%')`
 	const countSQL = `SELECT COUNT(*) AS total` + filter
 	list := []map[string]any{}
 	err := dbstore.QueryEach(ctx, h.DB, func(rows dbstore.Rows) error {
@@ -83,19 +83,19 @@ func (h *Handler) listGuardians(w http.ResponseWriter, r *http.Request) {
 			return nil
 		}
 		list = append(list, map[string]any{
-			"customerId": *id, "customerName": cname, "customerAge": cage,
-			"customerSex": csex, "customerPhone": cphone, "customerAddress": caddr,
+			"guardianId": *id, "guardianName": cname, "guardianAge": cage,
+			"guardianSex": csex, "guardianPhone": cphone, "guardianAddress": caddr,
 		})
 		return nil
 	}, `SELECT page.*, totals.total FROM (`+countSQL+`) AS totals LEFT JOIN (
-		 SELECT customer_id,customer_name,customer_age,customer_sex,customer_phone,customer_address`+filter+`
-		 ORDER BY customer_id LIMIT $2 OFFSET $3) AS page
-		 ON TRUE ORDER BY page.customer_id`, name, ps, (p-1)*ps)
+		 SELECT guardian_id,guardian_name,guardian_age,guardian_sex,guardian_phone,guardian_address`+filter+`
+		 ORDER BY guardian_id LIMIT $2 OFFSET $3) AS page
+		 ON TRUE ORDER BY page.guardian_id`, name, ps, (p-1)*ps)
 	if internalError(w, err) {
 		return
 	}
 	response.JSON(w, http.StatusOK, map[string]any{
-		"customers": list, "total": total, "page": p, "pageSize": ps,
+		"guardians": list, "total": total, "page": p, "pageSize": ps,
 	})
 }
 
@@ -110,7 +110,7 @@ func (h *Handler) createGuardian(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ct, err := h.DB.Exec(r.Context(),
-		`INSERT INTO customer(customer_name,customer_age,customer_sex,customer_phone,customer_address)
+		`INSERT INTO guardian(guardian_name,guardian_age,guardian_sex,guardian_phone,guardian_address)
 		 VALUES($1,$2,$3,$4,$5)`, name, age, sex, phone, addr)
 	if internalError(w, err) {
 		return
@@ -124,7 +124,7 @@ func (h *Handler) updateGuardian(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	id, okID := int64Val(m, "customerId")
+	id, okID := int64Val(m, "guardianId")
 	if !okID {
 		response.Error500(w, ref())
 		return
@@ -134,8 +134,8 @@ func (h *Handler) updateGuardian(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ct, err := h.DB.Exec(r.Context(),
-		`UPDATE customer SET customer_name=$1,customer_age=$2,customer_sex=$3,
-		 customer_phone=$4,customer_address=$5 WHERE customer_id=$6`,
+		`UPDATE guardian SET guardian_name=$1,guardian_age=$2,guardian_sex=$3,
+		 guardian_phone=$4,guardian_address=$5 WHERE guardian_id=$6`,
 		name, age, sex, phone, addr, id)
 	if internalError(w, err) {
 		return
@@ -149,7 +149,7 @@ func (h *Handler) deleteGuardian(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	id, okID := int64Val(m, "customerId")
+	id, okID := int64Val(m, "guardianId")
 	if !okID {
 		response.Error500(w, ref())
 		return
@@ -160,18 +160,18 @@ func (h *Handler) deleteGuardian(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer tx.Rollback(ctx)
-	if !lockCustomer(w, r, tx, id) {
+	if !lockGuardian(w, r, tx, id) {
 		return
 	}
 	var assigned bool
-	if internalError(w, tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM oldperson WHERE customer_id=$1)", id).Scan(&assigned)) {
+	if internalError(w, tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM resident WHERE guardian_id=$1)", id).Scan(&assigned)) {
 		return
 	}
 	if assigned {
 		response.Fail(w, "该监护人仍关联长者，请先调整长者档案")
 		return
 	}
-	ct, err := tx.Exec(ctx, `DELETE FROM customer WHERE customer_id=$1`, id)
+	ct, err := tx.Exec(ctx, `DELETE FROM guardian WHERE guardian_id=$1`, id)
 	if internalError(w, err) {
 		return
 	}
@@ -186,9 +186,9 @@ func (h *Handler) deleteGuardian(w http.ResponseWriter, r *http.Request) {
 }
 
 // Profile assignment and guardian deletion lock the same parent before changing references.
-func lockCustomer(w http.ResponseWriter, r *http.Request, tx *dbstore.Transaction, id int64) bool {
+func lockGuardian(w http.ResponseWriter, r *http.Request, tx *dbstore.Transaction, id int64) bool {
 	var found int64
-	if err := tx.QueryRow(r.Context(), "SELECT customer_id FROM customer WHERE customer_id=$1 FOR UPDATE", id).Scan(&found); err != nil {
+	if err := tx.QueryRow(r.Context(), "SELECT guardian_id FROM guardian WHERE guardian_id=$1 FOR UPDATE", id).Scan(&found); err != nil {
 		if isNotFound(err) {
 			response.Fail(w, "监护人不存在，请刷新后重新选择")
 		} else {
@@ -200,11 +200,11 @@ func lockCustomer(w http.ResponseWriter, r *http.Request, tx *dbstore.Transactio
 }
 
 func guardianFields(w http.ResponseWriter, m map[string]any) (string, int, string, string, string, bool) {
-	name := str(m, "customerName")
-	ageStr, _ := vstr(m, "customerAge")
-	sex := str(m, "customerSex")
-	phone := str(m, "customerPhone")
-	addr := str(m, "customerAddress")
+	name := str(m, "guardianName")
+	ageStr, _ := vstr(m, "guardianAge")
+	sex := str(m, "guardianSex")
+	phone := str(m, "guardianPhone")
+	addr := str(m, "guardianAddress")
 	if name == "" || ageStr == "" || sex == "" || phone == "" || addr == "" {
 		response.Fail(w, "参数不完整")
 		return "", 0, "", "", "", false

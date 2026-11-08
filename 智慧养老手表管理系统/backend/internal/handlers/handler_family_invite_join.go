@@ -11,19 +11,19 @@ import (
 	"unicode/utf8"
 )
 
-func (h *Handler) inviteOldPersonList(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) inviteResidentList(w http.ResponseWriter, r *http.Request) {
 	list, ok := queryRows(h, w, r.Context(), func(rows db.Rows) (map[string]any, error) {
 		var id int64
 		var name, phone, room *string
 		if err := rows.Scan(&id, &name, &phone, &room); err != nil {
 			return nil, err
 		}
-		return map[string]any{"oldId": id, "name": name, "phone": phone, "room": room}, nil
-	}, `SELECT old_id,name,phone,room FROM oldperson`)
+		return map[string]any{"residentId": id, "name": name, "phone": phone, "room": room}, nil
+	}, `SELECT resident_id,name,phone,room FROM resident`)
 	if !ok {
 		return
 	}
-	response.OK(w, map[string]any{"oldPeople": list})
+	response.OK(w, map[string]any{"residents": list})
 }
 
 // POST /api/v1/inviteCode/checkCode —— 校验邀请码（公开）。
@@ -47,7 +47,7 @@ func (h *Handler) inviteCheckCode(w http.ResponseWriter, r *http.Request) {
 	var oldName *string
 	err := h.DB.QueryRow(r.Context(),
 		`SELECT ic.used,ic.expire_time,o.name FROM invite_code ic
-		 LEFT JOIN oldperson o ON ic.old_id=o.old_id WHERE ic.code=$1`,
+		 LEFT JOIN resident o ON ic.resident_id=o.resident_id WHERE ic.code=$1`,
 		code).Scan(&used, &expire, &oldName)
 	if err != nil {
 		if isNotFound(err) {
@@ -71,7 +71,7 @@ func (h *Handler) inviteCheckCode(w http.ResponseWriter, r *http.Request) {
 		nm = *oldName
 	}
 	response.OK(w, map[string]any{
-		"oldPersonName": nm, "expireTime": fmtTS(expire), "remainDays": inviteRemainingDays(expire, time.Now()),
+		"residentName": nm, "expireTime": fmtTS(expire), "remainDays": inviteRemainingDays(expire, time.Now()),
 	})
 }
 
@@ -98,12 +98,12 @@ func (h *Handler) inviteJoin(w http.ResponseWriter, r *http.Request) {
 	}
 	// 邀请码行锁查询
 	var invID int64
-	var invOldID *int64
+	var invResidentID *int64
 	var used int16
 	var expire *time.Time
 	err = tx.QueryRow(ctx,
-		`SELECT id,old_id,used,expire_time FROM invite_code WHERE code=$1 FOR UPDATE`, registration.code).
-		Scan(&invID, &invOldID, &used, &expire)
+		`SELECT id,resident_id,used,expire_time FROM invite_code WHERE code=$1 FOR UPDATE`, registration.code).
+		Scan(&invID, &invResidentID, &used, &expire)
 	if err != nil {
 		_ = tx.Rollback(ctx)
 		if isNotFound(err) {
@@ -140,12 +140,12 @@ func (h *Handler) inviteJoin(w http.ResponseWriter, r *http.Request) {
 	// 邀请码绑定的老人须存在
 	var oldName *string
 	var boundFamilyID *int64
-	if invOldID == nil {
+	if invResidentID == nil {
 		_ = tx.Rollback(ctx)
 		response.Fail(w, "邀请码绑定的老人不存在，请联系管理员")
 		return
 	}
-	if err := tx.QueryRow(ctx, `SELECT name, family_id FROM oldperson WHERE old_id=$1 FOR UPDATE`, *invOldID).Scan(&oldName, &boundFamilyID); err != nil {
+	if err := tx.QueryRow(ctx, `SELECT name, family_id FROM resident WHERE resident_id=$1 FOR UPDATE`, *invResidentID).Scan(&oldName, &boundFamilyID); err != nil {
 		_ = tx.Rollback(ctx)
 		if isNotFound(err) {
 			response.Fail(w, "邀请码绑定的老人不存在，请联系管理员")
@@ -182,7 +182,7 @@ func (h *Handler) inviteJoin(w http.ResponseWriter, r *http.Request) {
 		response.Error500(w, ref())
 		return
 	}
-	familyID, applied, err := saveInvitedFamily(ctx, tx, &registration, hash, boundFamilyID, familyID, *invOldID)
+	familyID, applied, err := saveInvitedFamily(ctx, tx, &registration, hash, boundFamilyID, familyID, *invResidentID)
 	if err != nil || !applied {
 		_ = tx.Rollback(ctx)
 		conflict409(w, "注册失败，请重试")
@@ -205,7 +205,7 @@ func (h *Handler) inviteJoin(w http.ResponseWriter, r *http.Request) {
 		nm = *oldName
 	}
 	response.OK(w, map[string]any{
-		"familyId": familyID, "familyName": registration.familyName, "oldPersonName": nm,
+		"familyId": familyID, "familyName": registration.familyName, "residentName": nm,
 	})
 }
 
@@ -260,7 +260,7 @@ func (registration *invitationRegistration) validationMessage() string {
 	return ""
 }
 
-func saveInvitedFamily(ctx context.Context, tx *db.Transaction, registration *invitationRegistration, hash string, boundFamilyID *int64, familyID, oldID int64) (int64, bool, error) {
+func saveInvitedFamily(ctx context.Context, tx *db.Transaction, registration *invitationRegistration, hash string, boundFamilyID *int64, familyID, residentID int64) (int64, bool, error) {
 	var err error
 	if boundFamilyID == nil {
 		err = tx.QueryRow(ctx,
@@ -277,7 +277,7 @@ func saveInvitedFamily(ctx context.Context, tx *db.Transaction, registration *in
 	}
 	// 绑定老人
 	if boundFamilyID == nil {
-		ct, err := tx.Exec(ctx, `UPDATE oldperson SET family_id=$1 WHERE old_id=$2 AND family_id IS NULL`, familyID, oldID)
+		ct, err := tx.Exec(ctx, `UPDATE resident SET family_id=$1 WHERE resident_id=$2 AND family_id IS NULL`, familyID, residentID)
 		if err != nil || ct.RowsAffected() != 1 {
 			return familyID, false, err
 		}

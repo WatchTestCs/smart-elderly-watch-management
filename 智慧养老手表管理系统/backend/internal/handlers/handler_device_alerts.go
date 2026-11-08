@@ -17,15 +17,15 @@ func (h *Handler) resolveLatestLocationAlert(w http.ResponseWriter, r *http.Requ
 	if !ok {
 		return
 	}
-	oldID, ok := requireID(w, m, "oldId")
+	residentID, ok := requireID(w, m, "residentId")
 	if !ok {
 		return
 	}
 	ctx := r.Context()
 	var alarmID int64
 	err := h.DB.QueryRow(ctx,
-		`SELECT id FROM alarm_precess WHERE old_id=$1 ORDER BY be_time DESC, id DESC LIMIT 1`,
-		oldID).Scan(&alarmID)
+		`SELECT id FROM alarm_event WHERE resident_id=$1 ORDER BY event_time DESC, id DESC LIMIT 1`,
+		residentID).Scan(&alarmID)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			response.Fail(w, "没有待处理的告警")
@@ -34,7 +34,7 @@ func (h *Handler) resolveLatestLocationAlert(w http.ResponseWriter, r *http.Requ
 		}
 		return
 	}
-	if _, err := h.DB.Exec(ctx, `UPDATE alarm_precess SET status='0' WHERE id=$1`, alarmID); internalError(w, err) {
+	if _, err := h.DB.Exec(ctx, `UPDATE alarm_event SET status='0' WHERE id=$1`, alarmID); internalError(w, err) {
 		return
 	}
 	response.OK(w, nil)
@@ -48,7 +48,7 @@ type personRow struct {
 	deviceID   int64
 	deviceNo   string
 	alias      *string
-	oldID      *int64
+	residentID      *int64
 	lastTime   *time.Time
 	battery    *int
 	bootSeq    int
@@ -59,14 +59,14 @@ type personRow struct {
 	bpf, bpl   *int
 }
 
-const personCols = `d.device_id, d.device_no, d.alias, d.old_id, d.last_time, d.battery,
+const personCols = `d.device_id, d.device_no, d.alias, d.resident_id, d.last_time, d.battery,
 	d.boot_seq, d.handled_seq, d.create_time, o.name, w.hrf, w.hrl, w.bpf, w.bpl`
-const personFrom = `FROM device d LEFT JOIN oldperson o ON o.old_id = d.old_id
+const personFrom = `FROM device d LEFT JOIN resident o ON o.resident_id = d.resident_id
 	LEFT JOIN watch_info w ON w.device_id = d.device_id`
 
 func scanPersonRow(row dbstore.Row, extra ...any) (*personRow, error) {
 	var pr personRow
-	dest := []any{&pr.deviceID, &pr.deviceNo, &pr.alias, &pr.oldID, &pr.lastTime,
+	dest := []any{&pr.deviceID, &pr.deviceNo, &pr.alias, &pr.residentID, &pr.lastTime,
 		&pr.battery, &pr.bootSeq, &pr.handledSeq, &pr.createTime, &pr.oldName,
 		&pr.hrf, &pr.hrl, &pr.bpf, &pr.bpl}
 	dest = append(dest, extra...)
@@ -123,7 +123,7 @@ func describePersonAlert(pr *personRow, now time.Time) map[string]any {
 	// handled_seq = -1 是"从未确认"哨兵。
 	offlineAcknowledged := pr.handledSeq >= pr.bootSeq && pr.handledSeq >= 0 && !onlineNow
 	var reasons, details []string
-	if pr.oldID == nil {
+	if pr.residentID == nil {
 		reasons = append(reasons, "未绑定老人")
 		details = append(details, "设备还没有绑定到老人，采集到的数据无法归到具体人身上。")
 	}
@@ -151,7 +151,7 @@ func describePersonAlert(pr *personRow, now time.Time) map[string]any {
 		return nil
 	}
 	oldName := "（未绑定）"
-	if pr.oldID != nil && pr.oldName != nil {
+	if pr.residentID != nil && pr.oldName != nil {
 		oldName = *pr.oldName
 	}
 	occurTime := ""
@@ -165,7 +165,7 @@ func describePersonAlert(pr *personRow, now time.Time) map[string]any {
 		"reason": strings.Join(reasons, "；"), "detail": strings.Join(details, "；"),
 		"value": "", "threshold": "", "occurTime": occurTime,
 		"recordId": nil, "deviceId": pr.deviceID, "deviceNo": pr.deviceNo,
-		"alias": pr.alias, "oldPersonName": oldName,
+		"alias": pr.alias, "residentName": oldName,
 	}
 }
 
@@ -189,9 +189,9 @@ func (h *Handler) findRatepreAlert(ctx context.Context, q deviceQueries, deviceI
 		args = append(args, *recordID)
 	}
 	err := q.QueryRow(ctx,
-		`SELECT r.id, r.hr, r.bp, r.create_time, o.old_id, o.name, w.hrf, w.hrl, w.bpf, w.bpl
+		`SELECT r.id, r.hr, r.bp, r.create_time, o.resident_id, o.name, w.hrf, w.hrl, w.bpf, w.bpl
 		 FROM ratepre r LEFT JOIN watch_info w ON w.device_id = r.device_id
-		 LEFT JOIN oldperson o ON o.old_id = r.old_id
+		 LEFT JOIN resident o ON o.resident_id = r.resident_id
 		 WHERE r.device_id=$1 AND `+pending+recordFilter+`
 		 ORDER BY r.create_time DESC, r.id DESC LIMIT 1`, args...).
 		Scan(&id, &hr, &bp, &createTime, &residentID, &residentName, &hrf, &hrl, &bpf, &bpl)
@@ -227,7 +227,7 @@ func (h *Handler) findRatepreAlert(ctx context.Context, q deviceQueries, deviceI
 			"，本次测量 " + strconv.Itoa(measurement) + " " + unit + "。",
 		"value": measurement, "threshold": strconv.Itoa(low) + "-" + strconv.Itoa(high),
 		"occurTime": tsOrNil(createTime), "recordId": id,
-		"deviceId": deviceID, "oldPersonName": oldName,
+		"deviceId": deviceID, "residentName": oldName,
 	}, nil
 }
 

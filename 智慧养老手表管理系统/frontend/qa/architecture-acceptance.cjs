@@ -9,7 +9,7 @@ run(async ({ page, context, base, report, setRole }) => {
   const check = (name, pass) => { checks.push({ name, pass: Boolean(pass) }); assert.ok(pass, name) }
   let duty = 'supervisor', actorId = 1, failList = false, failTransition = false, workerHealthy = true, pgReady = false
   let taskRequests = [], transitions = [], diagnosticsRequests = 0
-  const tasks = Array.from({ length: 61 }, (_, i) => ({ id: i + 1, oldId: 1, deviceId: 1, oldPersonName: '李奶奶', state: 'received', createdAt: '2026-10-19T08:00:00+08:00', dueAt: '2026-10-19T08:03:00+08:00', notificationState: 'pending' }))
+  const tasks = Array.from({ length: 61 }, (_, i) => ({ id: i + 1, residentId: 1, deviceId: 1, residentName: '李奶奶', state: 'received', createdAt: '2026-10-19T08:00:00+08:00', dueAt: '2026-10-19T08:03:00+08:00', notificationState: 'pending' }))
   await context.route('**/api/v1/care/incidents', route => {
     const input = route.request().postDataJSON()
     taskRequests.push(input)
@@ -119,7 +119,7 @@ run(async ({ page, context, base, report, setRole }) => {
     const { page: number = 1, pageSize = 20 } = route.request().postDataJSON()
     if (failGuardianPage && number === 2) return route.fulfill({ status: 503, json: {returnCode:'0000',code:'SERVICE_UNAVAILABLE',message: 'temporarily unavailable' } })
     const start = (number - 1) * pageSize
-    return route.fulfill({ json: {returnCode:'1111', customers: Array.from({ length: Math.max(0, Math.min(pageSize, 205 - start)) }, (_, i) => ({ customerId: start + i + 1, customerName: '监护人' + (start + i + 1) })), total: 205 } })
+    return route.fulfill({ json: {returnCode:'1111', guardians: Array.from({ length: Math.max(0, Math.min(pageSize, 205 - start)) }, (_, i) => ({ guardianId: start + i + 1, guardianName: '监护人' + (start + i + 1) })), total: 205 } })
   })
   await page.goto(base + '/?large=0&architecture=guardians#/operations/residents')
   await page.getByRole('button', { name: '添加老人', exact: true }).click()

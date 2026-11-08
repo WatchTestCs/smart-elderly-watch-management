@@ -29,7 +29,7 @@ JSON 成功使用 HTTP 200，根字段 `returnCode` 固定为字符串 `1111`。
 | 评论发表 | 发送 `phone`、`personName`、`touPic`，后端使用会话身份 | 删除三个多余字段 |
 | 评论赞同 | 发送后端未读取的 `phone` | 仅发送 `saidId` |
 | 公告删除与编辑 | 发送后端未读取的 `picId` | 删除参数，移除编辑器的闲置 `picId` 状态；图片归属由后端原记录确定 |
-| 长者新增、编辑 | 直接发送表单或查询 DTO，夹带入院时间、家属和设备展示字段 | 只发送后端可编辑字段与 `oldId`，保留 `customerId` |
+| 长者新增、编辑 | 直接发送表单或查询 DTO，夹带入院时间、家属和设备展示字段 | 只发送后端可编辑字段与 `residentId`，保留 `guardianId` |
 | 阈值与家属编辑 | 发送查询行的附加字段 | 阈值限制为设备 ID 和四项阈值，家属限制为六项档案字段 |
 | 设备确认操作 | 内层请求未返回给确认框链，错误仅打印日志 | 返回 Promise；取消关闭不报错，HTTP 失败显示统一消息 |
 | 人员权限与审计面板 | 错误消息各自拼接，人员刷新错误可能被清除 | 使用统一消息，保留人员刷新错误状态 |
@@ -87,31 +87,31 @@ JSON 成功使用 HTTP 200，根字段 `returnCode` 固定为字符串 `1111`。
 | `POST /api/v1/care/receipt` | `notificationId`, `status` | `notificationId`, `status` |
 | `POST /api/v1/care/staff` | 无 | `staff` |
 | `POST /api/v1/care/transition` | `action`, `id`, `note`, `verdict` | `id`, `state` |
-| `POST /api/v1/guardians/create` | `customerAddress`, `customerAge`, `customerName`, `customerPhone`, `customerSex` | 结果包 |
-| `POST /api/v1/guardians/delete` | `customerId` | 结果包 |
-| `POST /api/v1/guardians/list` | `customerName`, `page`, `pageSize` | `customers`, `page`, `pageSize`, `total` |
-| `POST /api/v1/guardians/update` | `customerAddress`, `customerAge`, `customerId`, `customerName`, `customerPhone`, `customerSex` | 结果包 |
+| `POST /api/v1/guardians/create` | `guardianAddress`, `guardianAge`, `guardianName`, `guardianPhone`, `guardianSex` | 结果包 |
+| `POST /api/v1/guardians/delete` | `guardianId` | 结果包 |
+| `POST /api/v1/guardians/list` | `guardianName`, `page`, `pageSize` | `guardians`, `page`, `pageSize`, `total` |
+| `POST /api/v1/guardians/update` | `guardianAddress`, `guardianAge`, `guardianId`, `guardianName`, `guardianPhone`, `guardianSex` | 结果包 |
 | `POST /api/v1/desktop/exit` | 无 | `closing` |
 | `POST /api/v1/device-command-profiles` | `deviceId`, `enabled`, `protocol`, `wireType` | `deviceId`, `enabled` |
 | `POST /api/v1/device-commands` | `action`, `deviceId`, `requestKey`, `ttlSeconds` | `commandId`, `duplicate`, `status` |
 | `POST /api/v1/device-commands/search` | `after`, `deviceId` | `items` |
 | `POST /api/v1/device/alertCounts` | 无 | `items`, `personTotal`, `preTotal`, `rateTotal`, `total` |
-| `POST /api/v1/device/alertDetail` | `deviceId`, `kind` | `alias`, `deviceId`, `deviceNo`, `oldPersonName`, `personHandled`, `preHandled`, `rateHandled`, `hasAlert`, `message`, `kind`, `kindText`, `reason`, `detail`, `value`, `threshold`, `occurTime`, `recordId`, `advice` |
-| `POST /api/v1/device/bind` | `code`, `deviceNo`, `secret` | `oldId`, `oldPersonName` |
-| `POST /api/v1/device/bindCodeList` | `oldId` | `bindCodes` |
+| `POST /api/v1/device/alertDetail` | `deviceId`, `kind` | `alias`, `deviceId`, `deviceNo`, `residentName`, `personHandled`, `preHandled`, `rateHandled`, `hasAlert`, `message`, `kind`, `kindText`, `reason`, `detail`, `value`, `threshold`, `occurTime`, `recordId`, `advice` |
+| `POST /api/v1/device/bind` | `code`, `deviceNo`, `secret` | `residentId`, `residentName` |
+| `POST /api/v1/device/bindCodeList` | `residentId` | `bindCodes` |
 | `POST /api/v1/device/commandAck` | `deviceNo`, `secret`, `bindingVersion`, `commandId`, `deliveryToken`, `result` | `commandId`, `status` |
 | `POST /api/v1/device/commandPull` | `bindingVersion`, `deviceNo`, `secret` | `command` |
-| `POST /api/v1/device/create` | `alias`, `model`, `oldId` | `deviceId`, `deviceNo`, `secret` |
-| `POST /api/v1/device/createBindCode` | `createUser`, `expireDays`, `oldId` | `code`, `expireTime`, `oldId`, `oldPersonName` |
+| `POST /api/v1/device/create` | `alias`, `model`, `residentId` | `deviceId`, `deviceNo`, `secret` |
+| `POST /api/v1/device/createBindCode` | `createUser`, `expireDays`, `residentId` | `code`, `expireTime`, `residentId`, `residentName` |
 | `POST /api/v1/device/delete` | `deviceId` | 结果包 |
 | `POST /api/v1/device/deleteBindCode` | `id` | 结果包 |
 | `POST /api/v1/device/fencePoint` | `deviceNo`, `secret`, `bindingVersion`, `coordinateSystem`, `point`, `accuracy`, `occurredAt` | `events` |
-| `POST /api/v1/locations/alerts/resolve-latest` | `oldId` | 结果包 |
+| `POST /api/v1/locations/alerts/resolve-latest` | `residentId` | 结果包 |
 | `POST /api/v1/device/healthBatch` | `bindingVersion`, `deviceNo`, `samples`, `secret` | `accepted`, `duplicates`, `writeRevision` |
-| `POST /api/v1/device/heartbeat` | `appVersion`, `battery`, `deviceNo`, `secret` | `bindingVersion`, `bound`, `oldId`, `pendingAlarm`, `reportInterval`, `serverTime` |
+| `POST /api/v1/device/heartbeat` | `appVersion`, `battery`, `deviceNo`, `secret` | `bindingVersion`, `bound`, `residentId`, `pendingAlarm`, `reportInterval`, `serverTime` |
 | `POST /api/v1/device/list` | `query`, `state`, `page`, `pageSize` | `devices`, `onlineCount`, `page`, `pageSize`, `total` |
-| `POST /api/v1/device/login` | `deviceNo`, `platform`, `protocolVersion`, `secret` | `alias`, `bindingVersion`, `bound`, `deviceId`, `deviceNo`, `oldId`, `oldPersonName`, `protocolVersion`, `maxBatchSize` |
-| `POST /api/v1/device/report` | `deviceNo`, `secret`, `hr`, `bp`, `step`, `sleep`, `sleepState`, `lng`, `lat`, `alarm`, `battery`, `beTime`, `appVersion`, `requestId`, `source`, `positionSource`, `positionSampledAt`, `positionAccuracy` | `message`, `preState`, `queued`, `rateState`, `serverTime` |
+| `POST /api/v1/device/login` | `deviceNo`, `platform`, `protocolVersion`, `secret` | `alias`, `bindingVersion`, `bound`, `deviceId`, `deviceNo`, `residentId`, `residentName`, `protocolVersion`, `maxBatchSize` |
+| `POST /api/v1/device/report` | `deviceNo`, `secret`, `hr`, `bp`, `step`, `sleep`, `sleepState`, `lng`, `lat`, `alarm`, `battery`, `eventTime`, `appVersion`, `requestId`, `source`, `positionSource`, `positionSampledAt`, `positionAccuracy` | `message`, `preState`, `queued`, `rateState`, `serverTime` |
 | `POST /api/v1/device/resetSecret` | `deviceId` | `secret` |
 | `POST /api/v1/device/resolveAlert` | `deviceId`, `kind`, `recordId` | `handledReason`, `message` |
 | `POST /api/v1/device/sos` | `alarm`, `bindingVersion`, `deviceNo`, `lat`, `lng`, `positionAccuracy`, `positionSampledAt`, `positionSource`, `requestId`, `secret` | `duplicate`, `incidentId`, `incidentState`, `message`, `notificationState` |
@@ -124,37 +124,37 @@ JSON 成功使用 HTTP 200，根字段 `returnCode` 固定为字符串 `1111`。
 | `POST /api/v1/family/updatePassword` | `familyPassword`, `familyPhone`, `oldPassword` | 结果包 |
 | `POST /api/v1/family/updateTouPic` | `familyPhone`, `familyTouPic` | 结果包 |
 | `POST /api/v1/family/updateTwo` | `familyAddress`, `familyId`, `familyName`, `familyPhone`, `familySex` | 结果包 |
-| `POST /api/v1/fence-events/search` | `after`, `oldId` | `items` |
+| `POST /api/v1/fence-events/search` | `after`, `residentId` | `items` |
 | `POST /api/v1/fences` | `coordinateSystem`, `coordinates`, `deviceId`, `dwellSeconds`, `enabled`, `id`, `maxAccuracy`, `minPoints`, `name`, `revision`, `timeBegin`, `timeEnd`, `timezone` | `deviceApplied`, `id`, `revision`, `state` |
 | `POST /api/v1/fences/search` | `deviceId` | `items` |
-| `POST /api/v1/health/changes` | `after`, `limit`, `oldId` | `changes`, `hasMore`, `nextCursor`, `oldId` |
-| `POST /api/v1/health/daily-query` | `oldId`, `source`, `sourceDevice`, `metric`, `semantics`, `day`, `offsetMinutes`, `days` | `algorithmVersion`, `items`, `metric`, `offsetMinutes`, `semantics`, `source`, `sourceDevice` |
-| `POST /api/v1/health/latest` | `oldId` | `items`, `oldId` |
-| `POST /api/v1/health/statistics` | `from`, `metric`, `oldId`, `semantics`, `source`, `sourceDevice`, `to` | `metric`, `semantics`, `source`, `sourceDevice`, `statistics` |
+| `POST /api/v1/health/changes` | `after`, `limit`, `residentId` | `changes`, `hasMore`, `nextCursor`, `residentId` |
+| `POST /api/v1/health/daily-query` | `residentId`, `source`, `sourceDevice`, `metric`, `semantics`, `day`, `offsetMinutes`, `days` | `algorithmVersion`, `items`, `metric`, `offsetMinutes`, `semantics`, `source`, `sourceDevice` |
+| `POST /api/v1/health/latest` | `residentId` | `items`, `residentId` |
+| `POST /api/v1/health/statistics` | `from`, `metric`, `residentId`, `semantics`, `source`, `sourceDevice`, `to` | `metric`, `semantics`, `source`, `sourceDevice`, `statistics` |
 | `POST /api/v1/image/saveImage` | `file` | `filename` |
-| `POST /api/v1/inviteCode/checkCode` | `code` | `expireTime`, `oldPersonName`, `remainDays` |
-| `POST /api/v1/inviteCode/create` | `count`, `createUser`, `expireDays`, `oldId` | `codes`, `expireTime`, `oldId`, `oldPersonName` |
+| `POST /api/v1/inviteCode/checkCode` | `code` | `expireTime`, `residentName`, `remainDays` |
+| `POST /api/v1/inviteCode/create` | `count`, `createUser`, `expireDays`, `residentId` | `codes`, `expireTime`, `residentId`, `residentName` |
 | `POST /api/v1/inviteCode/delete` | `id` | 结果包 |
-| `POST /api/v1/inviteCode/join` | `code`, `familyAddress`, `familyName`, `familyPassword`, `familyPhone`, `familyRelation`, `familySex` | `familyId`, `familyName`, `oldPersonName` |
+| `POST /api/v1/inviteCode/join` | `code`, `familyAddress`, `familyName`, `familyPassword`, `familyPhone`, `familyRelation`, `familySex` | `familyId`, `familyName`, `residentName` |
 | `POST /api/v1/inviteCode/list` | `page`, `pageSize`, `state` | `inviteCodes`, `page`, `pageSize`, `total` |
-| `POST /api/v1/inviteCode/oldPersonList` | 无 | `oldPeople` |
+| `POST /api/v1/inviteCode/residentList` | 无 | `residents` |
 | `POST /api/v1/notifications/search` | `after`, `familyId` | `items` |
-| `POST /api/v1/residents/create` | `name`, `bothdate`, `sex`, `phone`, `room`, `illness`, `warn`, `foodLike`, `foodHate`, `drag`, `customerId`, `deviceId` | 结果包 |
-| `POST /api/v1/residents/delete` | `oldId` | 结果包 |
-| `POST /api/v1/residents/list` | `name`, `page`, `pageSize` | `oldPeople`, `page`, `pageSize`, `total` |
-| `POST /api/v1/residents/details` | `name`, `page`, `pageSize` | `oldPersonDetails`, `page`, `pageSize`, `total` |
-| `POST /api/v1/residents/update` | `oldId`, `name`, `bothdate`, `sex`, `phone`, `room`, `illness`, `warn`, `foodLike`, `foodHate`, `drag`, `customerId`, `customerName`, `deviceId` | 结果包 |
+| `POST /api/v1/residents/create` | `name`, `birthdate`, `sex`, `phone`, `room`, `illness`, `warn`, `foodLike`, `foodHate`, `drug`, `guardianId`, `deviceId` | 结果包 |
+| `POST /api/v1/residents/delete` | `residentId` | 结果包 |
+| `POST /api/v1/residents/list` | `name`, `page`, `pageSize` | `residents`, `page`, `pageSize`, `total` |
+| `POST /api/v1/residents/details` | `name`, `page`, `pageSize` | `residentDetails`, `page`, `pageSize`, `total` |
+| `POST /api/v1/residents/update` | `residentId`, `name`, `birthdate`, `sex`, `phone`, `room`, `illness`, `warn`, `foodLike`, `foodHate`, `drug`, `guardianId`, `guardianName`, `deviceId` | 结果包 |
 | `POST /api/v1/gallery/replace` | `fileListName` | 结果包 |
 | `POST /api/v1/gallery/list` | `id`, `picName` | `galleryImages` |
 | `POST /api/v1/position/select` | `name`, `page`, `pageSize` | `page`, `pageSize`, `positionDtos`, `total` |
-| `POST /api/v1/position/selectFamily` | `oldId` | `positionDtos` |
+| `POST /api/v1/position/selectFamily` | `residentId` | `positionDtos` |
 | `POST /api/v1/vitals/alerts/count` | 无 | `preTotal`, `rateTotal`, `total` |
-| `POST /api/v1/vitals/alerts/detail` | `kind`, `oldId`, `recordId` | `hasAlert`, `message`, `recordId`, `deviceId`, `oldId`, `oldPersonName`, `hr`, `bp`, `rateBad`, `preBad`, `occurTime`, `reason`, `detail`, `advice` |
+| `POST /api/v1/vitals/alerts/detail` | `kind`, `residentId`, `recordId` | `hasAlert`, `message`, `recordId`, `deviceId`, `residentId`, `residentName`, `hr`, `bp`, `rateBad`, `preBad`, `occurTime`, `reason`, `detail`, `advice` |
 | `POST /api/v1/vitals/alerts/resolve` | `kind`, `recordId` | `message` |
 | `POST /api/v1/vitals/latest` | `name`, `timeFirst`, `timeLast`, `page`, `pageSize` | `page`, `pageSize`, `vitalRecords`, `total` |
 | `POST /api/v1/vitals/alerts/device-counts` | 无 | `heartRate`, `bloodPressure` |
-| `POST /api/v1/vitals/chart` | `oldId` | `bps`, `createTimes`, `hrs`, `time` |
-| `POST /api/v1/vitals/history` | `oldId` | `vitalRecords` |
+| `POST /api/v1/vitals/chart` | `residentId` | `bps`, `createTimes`, `hrs`, `time` |
+| `POST /api/v1/vitals/history` | `residentId` | `vitalRecords` |
 | `POST /api/v1/rule-policies` | `deviceId`, `policy`, `revision` | `policy`, `revision` |
 | `POST /api/v1/notice-comments/delete` | `saidId` | 结果包 |
 | `POST /api/v1/notice-comments/toggle-like` | `saidId` | 结果包 |
@@ -168,8 +168,8 @@ JSON 成功使用 HTTP 200，根字段 `returnCode` 固定为字符串 `1111`。
 | `POST /api/v1/health/alerts/device-counts` | 无 | `heartRate`, `bloodPressure`, `sleep` |
 | `POST /api/v1/activity/latest` | `name`, `timeFirst`, `timeLast`, `page`, `pageSize` | `page`, `pageSize`, `activityRecords`, `total` |
 | `POST /api/v1/activity/alerts/device-counts` | 无 | `sleep` |
-| `POST /api/v1/activity/chart` | `oldId` | `createTime`, `sleep`, `activityRecords` |
-| `POST /api/v1/activity/history` | `oldId` | `activityRecords` |
+| `POST /api/v1/activity/chart` | `residentId` | `createTime`, `sleep`, `activityRecords` |
+| `POST /api/v1/activity/history` | `residentId` | `activityRecords` |
 | `POST /api/v1/notices/create` | `fileListName`, `textMain`, `title` | 结果包 |
 | `POST /api/v1/notices/delete` | `textId` | 结果包 |
 | `POST /api/v1/notices/list` | `title`, `page`, `pageSize` | `page`, `pageSize`, `texts`, `total` |

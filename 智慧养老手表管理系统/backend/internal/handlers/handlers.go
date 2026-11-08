@@ -5,7 +5,6 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"os"
 	"suining-care/internal/analytics"
 	"suining-care/internal/blob"
 	dbstore "suining-care/internal/db"
@@ -68,12 +67,12 @@ func InitRisk(ctx context.Context, pool *dbstore.Database) error {
 	if err := sharedRisk.EnableMySQL(pool.SQL()); err != nil {
 		return err
 	}
-	if path := os.Getenv("CAREOLD_RISK_PROXY_CIDRS_FILE"); path != "" {
+	if path := config.Env("RISK_PROXY_CIDRS_FILE"); path != "" {
 		if err := sharedRisk.LoadProxyCIDRs(path); err != nil {
 			log.Printf("risk IP feed unavailable: %v", err)
 		}
 	}
-	if path := os.Getenv("CAREOLD_RISK_NETWORK_FEED"); path != "" {
+	if path := config.Env("RISK_NETWORK_FEED"); path != "" {
 		if err := sharedRisk.StartNetworkRefresh(ctx, path, 15*time.Minute, func(err error) {
 			log.Printf("risk intelligence update failed: %v", err)
 		}); err != nil {

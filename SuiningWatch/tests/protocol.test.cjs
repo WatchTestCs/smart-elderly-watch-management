@@ -12,7 +12,7 @@ const mod = new Module(source, module);
 mod._compile(compiled, source);
 const p = mod.exports;
 const config = p.normalizeConfig('http://127.0.0.1:18796/', 'watch5_sim_001');
-const binding = p.bindingFrom(config, { returnCode: '1111', bound: 1, oldId: 7, bindingVersion: 3 });
+const binding = p.bindingFrom(config, { returnCode: '1111', bound: 1, residentId: 7, bindingVersion: 3 });
 const samples = p.makeSamples(config.deviceNo, 'stable-001', new Date('2026-10-25T04:00:00Z'), 72, 1280);
 
 test('server validation rejects credentials, paths and query strings', () => {
@@ -23,7 +23,7 @@ test('server validation rejects credentials, paths and query strings', () => {
 });
 test('unbound or missing binding version cannot produce an authenticated owner', () => {
   assert.throws(() => p.bindingFrom(config, { returnCode: '1111', bound: 0 }));
-  assert.throws(() => p.bindingFrom(config, { returnCode: '1111', bound: 1, oldId: 7 }));
+  assert.throws(() => p.bindingFrom(config, { returnCode: '1111', bound: 1, residentId: 7 }));
 });
 test('samples declare simulation, units, and UTC cumulative day boundary', () => {
   assert.equal(samples[0].metadata.simulated, 'true');
@@ -42,7 +42,7 @@ test('serialized offline batch retries preserve sample IDs and original binding 
 });
 test('server, owner, device or epoch changes prevent uploading and mixing old samples', () => {
   const queue = p.enqueue(undefined, binding, samples);
-  for (const change of [{ server: 'http://other' }, { oldId: 8 }, { deviceNo: 'WATCH2' }, { version: 4 }]) {
+  for (const change of [{ server: 'http://other' }, { residentId: 8 }, { deviceNo: 'WATCH2' }, { version: 4 }]) {
     const other = { ...binding, ...change };
     assert.throws(() => p.batchRequest(queue, other, 'secret'));
     assert.throws(() => p.enqueue(queue, other, samples));
@@ -59,7 +59,7 @@ test('queue capacity never silently evicts old records', () => {
 test('old pending SOS remains available while a new binding can create its own request', () => {
   const old = { binding, requestId: 'old-sos' };
   const restored = p.readPendingSOS(JSON.stringify(old));
-  const rebound = { ...binding, oldId: 8, version: 4 };
+  const rebound = { ...binding, residentId: 8, version: 4 };
   assert.equal(p.pendingForBinding(restored, rebound), undefined);
   const next = { binding: rebound, requestId: 'new-sos' };
   const saved = p.readPendingSOS(JSON.stringify([...restored, next]));

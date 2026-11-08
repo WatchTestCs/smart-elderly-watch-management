@@ -10,12 +10,12 @@ type DeviceId = number | string
 export interface DeviceRecord {
   deviceId: DeviceId
   deviceNo: string
-  oldId?: DeviceId | null
+  residentId?: DeviceId | null
   alias?: string
   online?: number | string
   battery?: number | string
   model?: string
-  oldPersonName?: string
+  residentName?: string
   lastTime?: string
   lastLng?: number | string | null
   lastLat?: number | string | null
@@ -24,7 +24,7 @@ export interface DeviceRecord {
   reason?: string
   recordId?: DeviceId
 }
-interface ResidentRecord { oldId: DeviceId; name: string }
+interface ResidentRecord { residentId: DeviceId; name: string }
 interface DeviceBindCode { id: DeviceId; code: string; expireTime: string; used: number }
 interface DeviceAlertCounts { personCount: number; rateCount: number; preCount: number }
 interface DeviceAlertCountRecord extends DeviceAlertCounts { deviceId: DeviceId }
@@ -39,7 +39,7 @@ interface DeviceListResponse { devices: DeviceRecord[]; total?: number; onlineCo
 interface AlertDetailResponse {
   hasAlert?: number
   message?: string
-  oldPersonName?: string
+  residentName?: string
   reason?: string
   detail?: string
   value?: string | number | null
@@ -65,7 +65,7 @@ interface DeviceAlert {
   deviceId: DeviceId | null
   deviceNo: string
   alias: string
-  oldPersonName: string
+  residentName: string
   reason: string
   detail: string
   value: string | number
@@ -91,7 +91,7 @@ interface DeviceState {
   alertLoadError: string
   alertsReady: boolean
   creating: boolean
-  oldPeople: ResidentRecord[]
+  residents: ResidentRecord[]
   autoRefresh: boolean
   createDialogVisible: boolean
   bindCodeDialogVisible: boolean
@@ -99,9 +99,9 @@ interface DeviceState {
   currentDevice: DeviceRecord | null
   bindCodeList: DeviceBindCode[]
   newBindCode: NewBindCodeResponse | null
-  bindOldId: DeviceId | ''
+  bindResidentId: DeviceId | ''
   bindExpireDays: string
-  createForm: { alias: string; model: string; oldId: DeviceId | '' }
+  createForm: { alias: string; model: string; residentId: DeviceId | '' }
   alertCounts: Record<string, DeviceAlertCounts>
   alertTotals: { personTotal: number; rateTotal: number; preTotal: number; total: number }
   alertDialog: DeviceAlert
@@ -115,7 +115,7 @@ function emptyAlert(): DeviceAlert {
   return {
     visible: false, loading: false, resolving: false, hasAlert: 1,
     title: '异常原因', kind: 'person', deviceId: null, deviceNo: '',
-    alias: '', oldPersonName: '', reason: '', detail: '', value: '',
+    alias: '', residentName: '', reason: '', detail: '', value: '',
     threshold: '', occurTime: '', advice: '', recordId: null, message: ''
   }
 }
@@ -128,11 +128,11 @@ export function useDevices() {
     deviceDetailVisible: false, detailDevice: null,
     deviceQuery: '', deviceState: 'all', deviceLoading: false,
     deviceLoadError: '', alertLoadError: '', alertsReady: false,
-    creating: false, oldPeople: [], autoRefresh: true,
+    creating: false, residents: [], autoRefresh: true,
     createDialogVisible: false, bindCodeDialogVisible: false,
     createdDevice: null, currentDevice: null, bindCodeList: [], newBindCode: null,
-    bindOldId: '', bindExpireDays: '1',
-    createForm: { alias: '', model: 'HarmonyOS-Wear', oldId: '' },
+    bindResidentId: '', bindExpireDays: '1',
+    createForm: { alias: '', model: 'HarmonyOS-Wear', residentId: '' },
     alertCounts: {},
     alertTotals: { personTotal: 0, rateTotal: 0, preTotal: 0, total: 0 },
     alertDialog: emptyAlert(),
@@ -254,7 +254,7 @@ export function useDevices() {
       if (revision !== alertRequest || disposed) return
       Object.assign(state.alertDialog, {
         loading: false, hasAlert: data.hasAlert === undefined ? 1 : data.hasAlert,
-        message: data.message || '', oldPersonName: data.oldPersonName || '',
+        message: data.message || '', residentName: data.residentName || '',
         reason: data.reason || '', detail: data.detail || '',
         value: data.value == null ? '' : data.value, threshold: data.threshold || '',
         occurTime: data.occurTime || '', advice: data.advice || '',
@@ -310,7 +310,7 @@ export function useDevices() {
         requests.push(post<AlertDetailResponse>('alertDetail', { deviceId: device.deviceId, kind }).then(({ data }) =>
           data.hasAlert === 1 ? {
             deviceId: device.deviceId, deviceNo: data.deviceNo || device.deviceNo,
-            alias: data.alias ?? device.alias ?? '', oldPersonName: data.oldPersonName ?? device.oldPersonName ?? '',
+            alias: data.alias ?? device.alias ?? '', residentName: data.residentName ?? device.residentName ?? '',
             kind, kindText: data.kindText, reason: data.reason, recordId: data.recordId
           } : null))
       }
@@ -328,10 +328,10 @@ export function useDevices() {
     state.alertDialog.visible = false
   }
 
-  async function loadOldPeople() {
+  async function loadResidents() {
     try {
-      const { data } = await api.post<{ oldPeople: ResidentRecord[] }>('/api/v1/inviteCode/oldPersonList', {})
-      if (!disposed) state.oldPeople = Array.isArray(data.oldPeople) ? data.oldPeople : []
+      const { data } = await api.post<{ residents: ResidentRecord[] }>('/api/v1/inviteCode/residentList', {})
+      if (!disposed) state.residents = Array.isArray(data.residents) ? data.residents : []
     } catch (error) {
       if (!disposed) ElMessage({ type: 'error', message: apiErrorMessage(error, '读取老人列表失败') })
     }
@@ -358,7 +358,7 @@ export function useDevices() {
   function closeCreateDialog() {
     state.createDialogVisible = false
     state.createdDevice = null
-    state.createForm = { alias: '', model: 'HarmonyOS-Wear', oldId: '' }
+    state.createForm = { alias: '', model: 'HarmonyOS-Wear', residentId: '' }
   }
   async function createDevice() {
     if (state.creating) return
@@ -367,7 +367,7 @@ export function useDevices() {
       const { data } = await post<CreatedDeviceResponse>('create', {
         alias: state.createForm.alias || '新手表',
         model: state.createForm.model || 'HarmonyOS-Wear',
-        oldId: state.createForm.oldId === '' ? '' : state.createForm.oldId
+        residentId: state.createForm.residentId === '' ? '' : state.createForm.residentId
       })
       accepted(data)
       if (typeof data.deviceNo !== 'string' || typeof data.secret !== 'string') throw new Error('invalid device registration response')
@@ -380,28 +380,28 @@ export function useDevices() {
   }
   function openBindCodeDialog(row: DeviceRecord) {
     const wasVisible = state.bindCodeDialogVisible
-    const oldId = row.oldId ?? ''
-    const residentChanged = String(state.bindOldId) !== String(oldId)
+    const residentId = row.residentId ?? ''
+    const residentChanged = String(state.bindResidentId) !== String(residentId)
     bindDialogRevision++
     state.currentDevice = row
-    state.bindOldId = oldId
+    state.bindResidentId = residentId
     state.bindExpireDays = '1'
     state.newBindCode = null
     state.bindCodeList = []
     state.bindCodeDialogVisible = true
-    if (!wasVisible || !residentChanged) void loadBindCodes(oldId)
+    if (!wasVisible || !residentChanged) void loadBindCodes(residentId)
   }
-  async function loadBindCodes(oldId: DeviceId | '') {
+  async function loadBindCodes(residentId: DeviceId | '') {
     const revision = ++bindCodeRequest
     if (disposed) return
-    if (!oldId) {
+    if (!residentId) {
       state.bindCodeList = []
       return
     }
     try {
-      const { data } = await post<BindCodeListResponse>('bindCodeList', { oldId })
+      const { data } = await post<BindCodeListResponse>('bindCodeList', { residentId })
       // The dialog may now belong to another resident.
-      if (disposed || revision !== bindCodeRequest || !state.bindCodeDialogVisible || String(state.bindOldId) !== String(oldId)) return
+      if (disposed || revision !== bindCodeRequest || !state.bindCodeDialogVisible || String(state.bindResidentId) !== String(residentId)) return
       state.bindCodeList = Array.isArray(data.bindCodes) ? data.bindCodes : []
     } catch (error) {
       if (!disposed && revision === bindCodeRequest && state.bindCodeDialogVisible) {
@@ -410,8 +410,8 @@ export function useDevices() {
     }
   }
   async function createBindCode() {
-    const oldId = state.bindOldId
-    if (!oldId) {
+    const residentId = state.bindResidentId
+    if (!residentId) {
       ElMessage({ type: 'warning', message: '请先选择要绑定的老人' })
       return
     }
@@ -421,14 +421,14 @@ export function useDevices() {
     }
     const revision = bindDialogRevision
     try {
-      const { data } = await post<NewBindCodeResponse>('createBindCode', { oldId, expireDays: state.bindExpireDays })
+      const { data } = await post<NewBindCodeResponse>('createBindCode', { residentId, expireDays: state.bindExpireDays })
       accepted(data)
-      if (disposed || revision !== bindDialogRevision || !state.bindCodeDialogVisible || String(state.bindOldId) !== String(oldId)) return
+      if (disposed || revision !== bindDialogRevision || !state.bindCodeDialogVisible || String(state.bindResidentId) !== String(residentId)) return
       if (typeof data.code !== 'string' || typeof data.expireTime !== 'string') throw new Error('invalid binding code response')
       state.newBindCode = { code: data.code, expireTime: data.expireTime }
-      await loadBindCodes(oldId)
+      await loadBindCodes(residentId)
     } catch (error) {
-      if (!disposed && revision === bindDialogRevision && state.bindCodeDialogVisible && String(state.bindOldId) === String(oldId)) {
+      if (!disposed && revision === bindDialogRevision && state.bindCodeDialogVisible && String(state.bindResidentId) === String(residentId)) {
         ElMessage({ type: 'error', message: apiErrorMessage(error, '生成失败') })
       }
     }
@@ -438,7 +438,7 @@ export function useDevices() {
       const { data } = await post('deleteBindCode', { id: row.id })
       accepted(data)
       ElMessage({ type: 'success', message: '已作废' })
-      await loadBindCodes(state.bindOldId)
+      await loadBindCodes(state.bindResidentId)
     } catch (error) {
       ElMessage({ type: 'error', message: apiErrorMessage(error, '请求未完成，请重试') })
     }
@@ -486,12 +486,12 @@ export function useDevices() {
     }
   }
 
-  watch(() => state.bindOldId, oldId => {
+  watch(() => state.bindResidentId, residentId => {
     if (!state.bindCodeDialogVisible) return
     bindDialogRevision++
     state.bindCodeList = []
     state.newBindCode = null
-    void loadBindCodes(oldId)
+    void loadBindCodes(residentId)
   }, { flush: 'sync' })
   watch(() => state.bindCodeDialogVisible, visible => {
     if (!visible) {
@@ -504,7 +504,7 @@ export function useDevices() {
   watch(() => state.autoRefresh, enabled => enabled ? startTimer() : stopTimer())
   onMounted(() => {
     void loadDevices()
-    void loadOldPeople()
+    void loadResidents()
     document.addEventListener('visibilitychange', handleVisibilityChange)
     startTimer()
   })
@@ -523,7 +523,7 @@ export function useDevices() {
     ...toRefs(state), visibleDevices, onlineCount,
     loadDevices, loadAlertCounts, scheduleFilter, changeDevicePage, handleDeviceCommand,
     alertOf, showAlert, resolveAlert, resolveAlertRow, openWorkbench, gotoPage,
-    loadOldPeople, startTimer, stopTimer, handleVisibilityChange,
+    loadResidents, startTimer, stopTimer, handleVisibilityChange,
     closeCreateDialog, createDevice, openBindCodeDialog, loadBindCodes,
     createBindCode, deleteBindCode, resetSecret, unbind, deleteDevice, copy
   }

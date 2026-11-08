@@ -87,7 +87,7 @@ func (h *Handler) familyAdd(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// 3. 绑定老人
-	ct, err := tx.Exec(ctx, `UPDATE oldperson SET family_id=$1 WHERE old_id=$2 AND family_id IS NULL`, familyID, target.oldID)
+	ct, err := tx.Exec(ctx, `UPDATE resident SET family_id=$1 WHERE resident_id=$2 AND family_id IS NULL`, familyID, target.residentID)
 	if err != nil || ct.RowsAffected() != 1 {
 		_ = tx.Rollback(ctx)
 		response.Error500(w, ref())
@@ -169,7 +169,7 @@ func (h *Handler) familyDelete(w http.ResponseWriter, r *http.Request) {
 	if internalError(w, err) {
 		return
 	}
-	if _, err := tx.Exec(ctx, `UPDATE oldperson SET family_id=NULL WHERE family_id=$1`, id); err != nil {
+	if _, err := tx.Exec(ctx, `UPDATE resident SET family_id=NULL WHERE family_id=$1`, id); err != nil {
 		_ = tx.Rollback(ctx)
 		response.Error500(w, ref())
 		return
@@ -202,7 +202,7 @@ func (h *Handler) familyDelete(w http.ResponseWriter, r *http.Request) {
 }
 
 type familyBindingTarget struct {
-	oldID    int64
+	residentID    int64
 	familyID *int64
 	matches  int
 }
@@ -211,7 +211,7 @@ func loadFamilyBindingTarget(ctx context.Context, tx *db.Transaction, phone stri
 	target := familyBindingTarget{}
 	err := db.QueryEach(ctx, tx, func(rows db.Rows) error {
 		target.matches++
-		return rows.Scan(&target.oldID, &target.familyID)
-	}, `SELECT old_id,family_id FROM oldperson WHERE phone=$1 ORDER BY old_id LIMIT 2 FOR UPDATE`, phone)
+		return rows.Scan(&target.residentID, &target.familyID)
+	}, `SELECT resident_id,family_id FROM resident WHERE phone=$1 ORDER BY resident_id LIMIT 2 FOR UPDATE`, phone)
 	return target, err
 }

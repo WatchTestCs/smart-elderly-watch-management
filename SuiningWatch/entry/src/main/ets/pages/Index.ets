@@ -73,7 +73,7 @@ struct Index {
       this.nativeHeart = 0;
       this.nativeCounter = -1;
       this.sampling.reset();
-      this.person = binding ? '长者 #' + binding.oldId : '尚未绑定';
+      this.person = binding ? '长者 #' + binding.residentId : '尚未绑定';
     }
     this.binding = binding;
     this.connected = binding !== undefined;
@@ -92,7 +92,7 @@ struct Index {
     if (reply.bound !== 1) { this.useBinding(undefined); }
     const binding = bindingFrom(config, reply);
     this.useBinding(binding);
-    this.person = reply.oldPersonName || '长者 #' + binding.oldId;
+    this.person = reply.residentName || '长者 #' + binding.residentId;
     return binding;
   }
   private async act(action: () => Promise<void>): Promise<void> {
@@ -117,7 +117,7 @@ struct Index {
     }
     const binding = bindingFrom(config, reply);
     this.useBinding(binding);
-    this.person = reply.oldPersonName || '长者 #' + binding.oldId;
+    this.person = reply.residentName || '长者 #' + binding.residentId;
     this.status = '已认证 · ' + this.person;
   }
   private async bind(): Promise<void> {

@@ -1,5 +1,5 @@
 // Heart-rate, blood-pressure, sleep and step endpoints.
-// 另含两组共享小工具（optBody/strictPage/numParam/resolveOldID 等），供 handler_social.go 复用。
+// 另含两组共享小工具（optBody/strictPage/numParam/resolveResidentID 等），供 handler_social.go 复用。
 package handlers
 
 import (
@@ -164,29 +164,29 @@ func principalOr401(w http.ResponseWriter, r *http.Request) (*session.Principal,
 	return p, true
 }
 
-func (h *Handler) readScopedOldID(w http.ResponseWriter, r *http.Request) (int64, bool) {
+func (h *Handler) readScopedResidentID(w http.ResponseWriter, r *http.Request) (int64, bool) {
 	body, ok := bodyMap(w, r)
 	if !ok {
 		return 0, false
 	}
-	return h.resolveOldID(w, r, body["oldId"])
+	return h.resolveResidentID(w, r, body["residentId"])
 }
 
-func (h *Handler) resolveOptionalOldID(w http.ResponseWriter, r *http.Request, id int64) (int64, bool) {
+func (h *Handler) resolveOptionalResidentID(w http.ResponseWriter, r *http.Request, id int64) (int64, bool) {
 	if id == 0 {
-		return h.resolveOldID(w, r, nil)
+		return h.resolveResidentID(w, r, nil)
 	}
-	return h.resolveOldID(w, r, id)
+	return h.resolveResidentID(w, r, id)
 }
 
-// resolveOldID allows ADMIN to select an elder by ID;
-// FAMILY 传空用会话绑定的 oldId，传值则实时查库核对 oldperson.family_id。
-func (h *Handler) resolveOldID(w http.ResponseWriter, r *http.Request, value any) (int64, bool) {
+// resolveResidentID allows ADMIN to select an elder by ID;
+// FAMILY 传空用会话绑定的 residentId，传值则实时查库核对 resident.family_id。
+func (h *Handler) resolveResidentID(w http.ResponseWriter, r *http.Request, value any) (int64, bool) {
 	p, ok := principalOr401(w, r)
 	if !ok {
 		return 0, false
 	}
-	id := p.OldID
+	id := p.ResidentID
 	if value != nil {
 		var valid bool
 		id, valid = integerParam(value)
@@ -197,7 +197,7 @@ func (h *Handler) resolveOldID(w http.ResponseWriter, r *http.Request, value any
 	}
 	if p.Role != auth.RoleAdmin {
 		var familyID *int64
-		err := h.DB.QueryRow(r.Context(), "SELECT family_id FROM oldperson WHERE old_id=$1", id).Scan(&familyID)
+		err := h.DB.QueryRow(r.Context(), "SELECT family_id FROM resident WHERE resident_id=$1", id).Scan(&familyID)
 		if err != nil || familyID == nil || *familyID != p.ID {
 			response.JSON(w, http.StatusForbidden, map[string]any{"message": "无权访问该账户或照护记录"})
 			return 0, false

@@ -1,6 +1,6 @@
 export const residentFields = [
-  'name', 'bothdate', 'sex', 'phone', 'room',
-  'illness', 'warn', 'foodLike', 'foodHate', 'drag', 'customerId'
+  'name', 'birthdate', 'sex', 'phone', 'room',
+  'illness', 'warn', 'foodLike', 'foodHate', 'drug', 'guardianId'
 ] as const
 
 export function editableResident(draft: Record<string, unknown>): Record<string, unknown> {

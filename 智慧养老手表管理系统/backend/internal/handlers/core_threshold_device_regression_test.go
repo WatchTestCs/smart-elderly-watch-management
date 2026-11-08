@@ -29,8 +29,8 @@ func TestContinuousThresholdSearchIncludesSecondaryDevice(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
 	h := testHandler(t, pool)
-	mustExec(t, pool, "UPDATE oldperson SET device_id=1 WHERE old_id=1")
-	mustExec(t, pool, "INSERT INTO device(device_id,device_no,secret,old_id) SELECT 2,'WATCH002',secret,old_id FROM device WHERE device_id=1")
+	mustExec(t, pool, "UPDATE resident SET device_id=1 WHERE resident_id=1")
+	mustExec(t, pool, "INSERT INTO device(device_id,device_no,secret,resident_id) SELECT 2,'WATCH002',secret,resident_id FROM device WHERE device_id=1")
 	for _, id := range []int{1, 2} {
 		out := api(t, h.createMonitoringProfile, map[string]any{"deviceId": id, "hrf": 100, "hrl": 60, "bpf": 150, "bpl": 90})
 		if out["returnCode"] != "1111" {
@@ -51,12 +51,12 @@ func TestContinuousThresholdSearchIncludesSecondaryDevice(t *testing.T) {
 	if updated["returnCode"] != "1111" {
 		t.Fatal(updated)
 	}
-	reported := api(t, h.deviceReport, map[string]any{"deviceNo": "WATCH002", "secret": testSecret, "hr": 130, "beTime": "2026-10-20 09:00:00"})
+	reported := api(t, h.deviceReport, map[string]any{"deviceNo": "WATCH002", "secret": testSecret, "hr": 130, "eventTime": "2026-10-20 09:00:00"})
 	if reported["rateState"] != "0" {
 		t.Fatalf("secondary device did not use edited threshold: %v", reported)
 	}
 	var primary int
-	if err := pool.QueryRow(context.Background(), "SELECT device_id FROM oldperson WHERE old_id=1").Scan(&primary); err != nil || primary != 1 {
+	if err := pool.QueryRow(context.Background(), "SELECT device_id FROM resident WHERE resident_id=1").Scan(&primary); err != nil || primary != 1 {
 		t.Fatalf("profile lookup changed primary binding: primary=%d err=%v", primary, err)
 	}
 }

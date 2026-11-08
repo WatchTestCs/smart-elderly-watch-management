@@ -31,7 +31,7 @@ const props = withDefaults(defineProps<{
 }>(), {
   emptyTitle: '暂无记录',
   titleKey: 'name',
-  keyField: 'oldId',
+  keyField: 'residentId',
   timeKey: ''
 })
 defineSlots<{ actions(props: { row: TRecord; $index: number }): any }>()

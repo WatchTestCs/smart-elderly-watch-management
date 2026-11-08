@@ -14,16 +14,16 @@ import (
 type healthDevice struct {
 	ID          int64
 	No, Secret  string
-	OldID       *int64
+	ResidentID       *int64
 	Status      *int
 	HealthEpoch int64
 }
 
-const healthDeviceCols = `device_id,device_no,secret,old_id,status,health_epoch`
+const healthDeviceCols = `device_id,device_no,secret,resident_id,status,health_epoch`
 
 func scanHealthDevice(row db.Row) (*healthDevice, error) {
 	var d healthDevice
-	if err := row.Scan(&d.ID, &d.No, &d.Secret, &d.OldID, &d.Status, &d.HealthEpoch); err != nil {
+	if err := row.Scan(&d.ID, &d.No, &d.Secret, &d.ResidentID, &d.Status, &d.HealthEpoch); err != nil {
 		return nil, err
 	}
 	return &d, nil

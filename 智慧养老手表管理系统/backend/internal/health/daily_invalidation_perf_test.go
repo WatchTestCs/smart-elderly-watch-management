@@ -23,7 +23,7 @@ func TestSaveBatchOnlyInvalidatesCleanDailyCacheRows(t *testing.T) {
 		dirty bool
 	}{{a, 1, false}, {b, 1, true}, {c, 2, false}} {
 		_, err := p.Exec(ctx, `INSERT INTO metric_daily
-		(cache_key,old_id,source,source_device,metric,semantics,record_day,offset_minutes,dirty)
+		(cache_key,resident_id,source,source_device,metric,semantics,record_day,offset_minutes,dirty)
 		VALUES($1,$2,'sim','sim','heart_rate','instant','2026-10-22',0,$3)`, tc.key, tc.owner, tc.dirty)
 		if err != nil {
 			t.Fatal(err)
@@ -41,7 +41,7 @@ func TestSaveBatchOnlyInvalidatesCleanDailyCacheRows(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer tx.Rollback(ctx) // Always release locks before database cleanup, even on Fatal.
-	if _, _, err := SaveBatch(ctx, tx, Owner{OldID: 1}, []Sample{sample}); err != nil {
+	if _, _, err := SaveBatch(ctx, tx, Owner{ResidentID: 1}, []Sample{sample}); err != nil {
 		t.Fatal(err)
 	}
 	if err := tx.Rollback(ctx); err != nil {
@@ -62,7 +62,7 @@ func TestSaveBatchOnlyInvalidatesCleanDailyCacheRows(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, _, err := SaveBatch(ctx, tx, Owner{OldID: 1}, []Sample{sample}); err != nil {
+	if _, _, err := SaveBatch(ctx, tx, Owner{ResidentID: 1}, []Sample{sample}); err != nil {
 		t.Fatal(err)
 	}
 	if err := tx.Commit(ctx); err != nil {

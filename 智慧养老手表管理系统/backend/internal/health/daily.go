@@ -13,7 +13,7 @@ import (
 // Fixed reporting offsets match the existing statistics API. No implicit local
 // timezone or data-source merging is performed.
 type DailyKey struct {
-	OldID         int64  `json:"oldId"`
+	ResidentID         int64  `json:"residentId"`
 	Source        string `json:"source"`
 	SourceDevice  string `json:"sourceDevice"`
 	Metric        string `json:"metric"`
@@ -32,7 +32,7 @@ func (k DailyKey) ID() string {
 	return Digest(b)
 }
 func (k DailyKey) Bounds() (time.Time, time.Time, error) {
-	if k.OldID < 1 || k.Source == "" || len(k.Source) > 256 || k.SourceDevice == "" || len(k.SourceDevice) > 4096 || len(k.Metric) > 64 || k.OffsetMinutes < -840 || k.OffsetMinutes > 840 {
+	if k.ResidentID < 1 || k.Source == "" || len(k.Source) > 256 || k.SourceDevice == "" || len(k.SourceDevice) > 4096 || len(k.Metric) > 64 || k.OffsetMinutes < -840 || k.OffsetMinutes > 840 {
 		return time.Time{}, time.Time{}, fmt.Errorf("日统计身份或偏移无效")
 	}
 	loc := time.FixedZone("reporting", k.OffsetMinutes*60)
@@ -72,17 +72,17 @@ func (k DailyKey) Bounds() (time.Time, time.Time, error) {
 
 func dailyCacheSelectSQL(mysql bool) string {
 	if mysql {
-		return `SELECT old_id,source,source_device,metric,semantics,CAST(record_day AS CHAR),offset_minutes,dirty FROM metric_daily WHERE cache_key=$1 FOR UPDATE`
+		return `SELECT resident_id,source,source_device,metric,semantics,CAST(record_day AS CHAR),offset_minutes,dirty FROM metric_daily WHERE cache_key=$1 FOR UPDATE`
 	}
-	return `SELECT old_id,source,source_device,metric,semantics,CAST(record_day AS varchar),offset_minutes,dirty FROM metric_daily WHERE cache_key=$1 FOR UPDATE`
+	return `SELECT resident_id,source,source_device,metric,semantics,CAST(record_day AS varchar),offset_minutes,dirty FROM metric_daily WHERE cache_key=$1 FOR UPDATE`
 }
 
 func dailySamplesSQL(mysql bool) string {
 	if mysql {
-		return `SELECT payload FROM health_sample WHERE old_id=$1 AND BINARY source=BINARY $2 AND BINARY source_device=BINARY $3 AND BINARY metric=BINARY $4 AND BINARY semantics=BINARY $5 AND NOT deleted
+		return `SELECT payload FROM health_sample WHERE resident_id=$1 AND BINARY source=BINARY $2 AND BINARY source_device=BINARY $3 AND BINARY metric=BINARY $4 AND BINARY semantics=BINARY $5 AND NOT deleted
  AND sample_start<$7 AND (sample_start>=$6 OR ($5='interval' AND sample_end>=$6)) ORDER BY revision LIMIT 100001`
 	}
-	return `SELECT payload FROM health_sample WHERE old_id=$1 AND source=$2 AND source_device=$3 AND metric=$4 AND semantics=$5 AND NOT deleted
+	return `SELECT payload FROM health_sample WHERE resident_id=$1 AND source=$2 AND source_device=$3 AND metric=$4 AND semantics=$5 AND NOT deleted
  AND sample_start<$7 AND (sample_start>=$6 OR ($5='interval' AND sample_end>=$6)) ORDER BY revision LIMIT 100001`
 }
 
@@ -96,19 +96,19 @@ func RefreshDaily(ctx context.Context, pool *db.Database, id string) error {
 	defer tx.Rollback(ctx)
 	// Read the immutable owner before taking its clock lock. Keep the same lock
 	// order as sample invalidation: owner clock, then daily cache row.
-	var oldID int64
-	if err = tx.QueryRow(ctx, "SELECT old_id FROM metric_daily WHERE cache_key=$1", id).Scan(&oldID); err == pgx.ErrNoRows {
+	var residentID int64
+	if err = tx.QueryRow(ctx, "SELECT resident_id FROM metric_daily WHERE cache_key=$1", id).Scan(&residentID); err == pgx.ErrNoRows {
 		return nil
 	} else if err != nil {
 		return err
 	}
-	revision, err := LockOwner(ctx, tx, oldID)
+	revision, err := LockOwner(ctx, tx, residentID)
 	if err != nil {
 		return err
 	}
 	var k DailyKey
 	var dirty bool
-	err = tx.QueryRow(ctx, dailyCacheSelectSQL(tx.IsMySQL()), id).Scan(&k.OldID, &k.Source, &k.SourceDevice, &k.Metric, &k.Semantics, &k.Day, &k.OffsetMinutes, &dirty)
+	err = tx.QueryRow(ctx, dailyCacheSelectSQL(tx.IsMySQL()), id).Scan(&k.ResidentID, &k.Source, &k.SourceDevice, &k.Metric, &k.Semantics, &k.Day, &k.OffsetMinutes, &dirty)
 	if err == pgx.ErrNoRows {
 		return nil
 	}
@@ -122,7 +122,7 @@ func RefreshDaily(ctx context.Context, pool *db.Database, id string) error {
 	if err != nil {
 		return err
 	}
-	rows, err := tx.Query(ctx, dailySamplesSQL(tx.IsMySQL()), k.OldID, k.Source, k.SourceDevice, k.Metric, k.Semantics, from.UnixMicro(), to.UnixMicro())
+	rows, err := tx.Query(ctx, dailySamplesSQL(tx.IsMySQL()), k.ResidentID, k.Source, k.SourceDevice, k.Metric, k.Semantics, from.UnixMicro(), to.UnixMicro())
 	if err != nil {
 		return err
 	}

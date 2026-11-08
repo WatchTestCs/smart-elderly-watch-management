@@ -12,7 +12,7 @@
     <div v-if="tasks.length" class="care-task-list">
       <article v-for="task in tasks" :key="task.id" class="care-task" :class="{ overdue: task.state !== 'verified' && isOverdue(task), urgent: priorityLabel(task) === 'P0 紧急' }">
         <div class="care-task-main">
-          <strong>求助 #{{ task.id }} · {{ task.oldPersonName || '长者编号 ' + task.oldId }}</strong>
+          <strong>求助 #{{ task.id }} · {{ task.residentName || '长者编号 ' + task.residentId }}</strong>
           <span><strong class="care-priority" :class="priorityClass(task)">{{ priorityLabel(task) }}</strong> · 设备 {{ task.deviceId }} · {{ stateLabel(task.state) }}</span>
           <small>接收于 {{ localTime(task.createdAt) }} · {{ task.state === 'verified' ? '复核于：' + localTime(task.verifiedAt) : isOverdue(task) ? '已超出当前处理期限' : '处理期限：' + localTime(task.dueAt) }}</small>
           <small>责任人：{{ task.acknowledgedBy || '尚未接单' }} · 通知状态：{{ deliveryLabel(task.notificationState) }}</small>

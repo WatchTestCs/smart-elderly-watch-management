@@ -86,13 +86,13 @@ func (h *Handler) deviceList(w http.ResponseWriter, r *http.Request) {
 	filter := `WHERE ($1='' OR LOWER(d.device_no) LIKE $2 OR LOWER(COALESCE(d.alias,'') || ' ' || COALESCE(o.name,'')) LIKE $2)
 		AND ($3='all' OR CASE WHEN ` + onlineExpr + ` THEN 'online' ELSE 'offline' END = $3)`
 	base := `SELECT d.device_id, d.device_no, d.alias, d.model, d.app_version, d.battery,
-		d.old_id, o.name, o.phone, d.bind_time, d.last_time, d.last_lng, d.last_lat,
+		d.resident_id, o.name, o.phone, d.bind_time, d.last_time, d.last_lng, d.last_lat,
 		d.status, d.person_handled, d.rate_handled, d.pre_handled
-		FROM device d LEFT JOIN oldperson o ON o.old_id = d.old_id ` + filter + ` ORDER BY d.device_id`
+		FROM device d LEFT JOIN resident o ON o.resident_id = d.resident_id ` + filter + ` ORDER BY d.device_id`
 	var total, onlineCount int64
 	if err := h.DB.QueryRow(ctx,
 		`SELECT COUNT(*), COALESCE(SUM(CASE WHEN `+onlineExpr+` THEN 1 ELSE 0 END),0)
-		 FROM device d LEFT JOIN oldperson o ON o.old_id=d.old_id `+filter,
+		 FROM device d LEFT JOIN resident o ON o.resident_id=d.resident_id `+filter,
 		pattern, pattern, state).Scan(&total, &onlineCount); err != nil {
 		response.Error500(w, ref())
 		return
@@ -143,8 +143,8 @@ func (h *Handler) deviceCreateBindCode(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	oldIDStr, present := vstr(m, "oldId")
-	if !present || !validID(oldIDStr) {
+	residentIDStr, present := vstr(m, "residentId")
+	if !present || !validID(residentIDStr) {
 		writeValidation400(w)
 		return
 	}
@@ -161,10 +161,10 @@ func (h *Handler) deviceCreateBindCode(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	oldID, _ := strconv.ParseInt(oldIDStr, 10, 64)
+	residentID, _ := strconv.ParseInt(residentIDStr, 10, 64)
 	ctx := r.Context()
 	var oldName *string
-	if err := h.DB.QueryRow(ctx, `SELECT name FROM oldperson WHERE old_id=$1`, oldID).Scan(&oldName); err != nil {
+	if err := h.DB.QueryRow(ctx, `SELECT name FROM resident WHERE resident_id=$1`, residentID).Scan(&oldName); err != nil {
 		if err == pgx.ErrNoRows {
 			response.Fail(w, "老人不存在")
 		} else {
@@ -181,9 +181,9 @@ func (h *Handler) deviceCreateBindCode(w http.ResponseWriter, r *http.Request) {
 	}
 	var id int64
 	if err := h.DB.QueryRow(ctx,
-		`INSERT INTO bind_code(code, old_id, family_id, create_user, create_time, expire_time, used)
+		`INSERT INTO bind_code(code, resident_id, family_id, create_user, create_time, expire_time, used)
 		 VALUES($1,$2,NULL,$3,$4,$5,0) RETURNING id`,
-		code, oldID, createUser, now, expireTime).Scan(&id); err != nil {
+		code, residentID, createUser, now, expireTime).Scan(&id); err != nil {
 		response.Error500(w, ref())
 		return
 	}
@@ -196,7 +196,7 @@ func (h *Handler) deviceCreateBindCode(w http.ResponseWriter, r *http.Request) {
 		nm = *oldName
 	}
 	response.OK(w, map[string]any{
-		"code": code, "oldId": oldID, "oldPersonName": nm,
+		"code": code, "residentId": residentID, "residentName": nm,
 		"expireTime": expireTime.Format(tsLayout),
 	})
 }
@@ -207,15 +207,15 @@ func (h *Handler) deviceBindCodeList(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	oldIDStr, present := vstr(m, "oldId")
-	if !present || oldIDStr == "" {
+	residentIDStr, present := vstr(m, "residentId")
+	if !present || residentIDStr == "" {
 		writeValidation400(w)
 		return
 	}
 	list := []map[string]any{}
 	// 非数字 → 返回空列表而非报错。
-	if validID(oldIDStr) {
-		oldID, _ := strconv.ParseInt(oldIDStr, 10, 64)
+	if validID(residentIDStr) {
+		residentID, _ := strconv.ParseInt(residentIDStr, 10, 64)
 		list, ok = queryRows(h, w, r.Context(), func(rows db.Rows) (map[string]any, error) {
 			code, err := scanBindCode(rows)
 			if err != nil {
@@ -225,7 +225,7 @@ func (h *Handler) deviceBindCodeList(w http.ResponseWriter, r *http.Request) {
 				"id": code.ID, "code": code.Code, "expireTime": tsOrNil(code.ExpireTime),
 				"used": code.Used, "usedTime": tsOrNil(code.UsedTime), "usedDeviceId": code.UsedDevID,
 			}, nil
-		}, `SELECT `+bindCodeCols+` FROM bind_code WHERE old_id=$1 ORDER BY id DESC LIMIT 20`, oldID)
+		}, `SELECT `+bindCodeCols+` FROM bind_code WHERE resident_id=$1 ORDER BY id DESC LIMIT 20`, residentID)
 		if !ok {
 			return
 		}
@@ -261,11 +261,11 @@ func (h *Handler) scanAdminDevice(row db.Row, now time.Time) (map[string]any, er
 	var no string
 	var alias, model, appVersion, oldName, oldPhone, lastLng, lastLat *string
 	var battery *int
-	var oldID *int64
+	var residentID *int64
 	var bindTime, lastTime *time.Time
 	var status *int
 	var personHandled, rateHandled, preHandled int
-	if err := row.Scan(&id, &no, &alias, &model, &appVersion, &battery, &oldID,
+	if err := row.Scan(&id, &no, &alias, &model, &appVersion, &battery, &residentID,
 		&oldName, &oldPhone, &bindTime, &lastTime, &lastLng, &lastLat, &status,
 		&personHandled, &rateHandled, &preHandled); err != nil {
 		return nil, err
@@ -284,8 +284,8 @@ func (h *Handler) scanAdminDevice(row db.Row, now time.Time) (map[string]any, er
 	}
 	return map[string]any{
 		"deviceId": id, "deviceNo": no, "alias": alias, "model": model,
-		"appVersion": appVersion, "battery": battery, "oldId": oldID,
-		"oldPersonName": name, "oldPersonPhone": oldPhone,
+		"appVersion": appVersion, "battery": battery, "residentId": residentID,
+		"residentName": name, "residentPhone": oldPhone,
 		"bindTime": tsOrNil(bindTime), "lastTime": tsOrNil(lastTime),
 		"lastLng": lastLng, "lastLat": lastLat, "status": status,
 		"online": online, "personHandled": personHandled,

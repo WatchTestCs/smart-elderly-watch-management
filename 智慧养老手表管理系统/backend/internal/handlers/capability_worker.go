@@ -26,7 +26,7 @@ func (h *Handler) CapabilityTick(ctx context.Context) error {
 	// Binding changes invalidate pending commands; expiration never means success.
 	for _, query := range [...]string{
 		`UPDATE device_command SET status='cancelled' WHERE status IN ('pending','sent') AND NOT EXISTS
- (SELECT 1 FROM device d WHERE d.device_id=device_command.device_id AND d.old_id=device_command.old_id AND d.health_epoch=device_command.epoch AND d.status<>0)`,
+ (SELECT 1 FROM device d WHERE d.device_id=device_command.device_id AND d.resident_id=device_command.resident_id AND d.health_epoch=device_command.epoch AND d.status<>0)`,
 		`UPDATE device_command SET status='timeout' WHERE status IN ('pending','sent') AND (expires_at<=now() OR (status='sent' AND retry_at<=now() AND attempts>=max_attempts))`,
 		`UPDATE device_command SET status='pending',delivery_token=NULL WHERE status='sent' AND retry_at<=now() AND expires_at>now() AND attempts<max_attempts`,
 	} {

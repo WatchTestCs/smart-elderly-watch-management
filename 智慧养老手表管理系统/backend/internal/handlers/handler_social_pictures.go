@@ -24,7 +24,7 @@ func notificationPhones(ctx context.Context, q dbQuerier) ([]notificationTarget,
 		var target notificationTarget
 		err := row.Scan(&target.FamilyID, &target.Phone)
 		return target, err
-	}, "SELECT DISTINCT f.family_id,f.family_phone FROM family f INNER JOIN oldperson o ON o.family_id=f.family_id WHERE f.family_phone IS NOT NULL")
+	}, "SELECT DISTINCT f.family_id,f.family_phone FROM family f INNER JOIN resident o ON o.family_id=f.family_id WHERE f.family_phone IS NOT NULL")
 }
 
 type galleryImage struct {

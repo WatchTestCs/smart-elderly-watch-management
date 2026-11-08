@@ -64,9 +64,9 @@ func TestMySQLMigrationLineEndingsAndTampering(t *testing.T) {
 		}
 	}
 	exec("UPDATE health_clock SET revision=55 WHERE id=1")
-	exec("INSERT INTO oldperson(old_id,name) VALUES(1,'synthetic')")
-	exec("INSERT INTO device(device_id,device_no,secret,old_id) VALUES(1,'NEWLINE-LAB','unused',1)")
-	exec("INSERT INTO care_incident(id,old_id,device_id) VALUES(1,1,1)")
+	exec("INSERT INTO resident(resident_id,name) VALUES(1,'synthetic')")
+	exec("INSERT INTO device(device_id,device_no,secret,resident_id) VALUES(1,'NEWLINE-LAB','unused',1)")
+	exec("INSERT INTO care_incident(id,resident_id,device_id) VALUES(1,1,1)")
 	marker := strings.Repeat("1", 64)
 	exec("INSERT INTO care_notification_outbox(id,incident_id,channel,recipient,recipient_key) VALUES(1,1,'sms','synthetic',?)", marker)
 	capture := func() map[string]migrationLedgerEntry {

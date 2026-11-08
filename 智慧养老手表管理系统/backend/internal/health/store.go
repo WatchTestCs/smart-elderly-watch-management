@@ -16,13 +16,13 @@ var ErrConflict = errors.New("same source record version has different content")
 var ErrSourceDeviceMismatch = errors.New("sample source device does not match authenticated device")
 
 type Owner struct {
-	OldID    int64
+	ResidentID    int64
 	DeviceID *int64
 	Epoch    int64
 }
 type Record struct {
 	SampleID string `json:"sampleId"`
-	OldID    int64  `json:"oldId"`
+	ResidentID    int64  `json:"residentId"`
 	DeviceID *int64 `json:"deviceId"`
 	Epoch    int64  `json:"bindingVersion"`
 	Revision int64  `json:"revision"`
@@ -111,7 +111,7 @@ func (batch *PreparedBatch) Save(ctx context.Context, tx *db.Transaction, o Owne
 			seen[id] = 0
 		}
 	}
-	clock, err := lockOwner(ctx, tx, o.OldID)
+	clock, err := lockOwner(ctx, tx, o.ResidentID)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -126,7 +126,7 @@ func (batch *PreparedBatch) Save(ctx context.Context, tx *db.Transaction, o Owne
 	if len(selection.events) == 0 {
 		return selection.cursor, selection.duplicates, nil
 	}
-	revision, err := clock.reserve(ctx, tx, o.OldID, len(selection.events))
+	revision, err := clock.reserve(ctx, tx, o.ResidentID, len(selection.events))
 	if err != nil {
 		return 0, 0, err
 	}
@@ -138,7 +138,7 @@ func (batch *PreparedBatch) Save(ctx context.Context, tx *db.Transaction, o Owne
 	scratch := borrowBatchArgs(max(len(selection.final)*14, len(selection.events)*4))
 	defer releaseBatchArgs(scratch)
 	args := scratch.values[:0]
-	ownerID, epoch := any(o.OldID), any(o.Epoch)
+	ownerID, epoch := any(o.ResidentID), any(o.Epoch)
 	for _, index := range selection.final {
 		item := &input[index]
 		id := item.id
@@ -163,7 +163,7 @@ func (batch *PreparedBatch) Save(ctx context.Context, tx *db.Transaction, o Owne
 		// Invalidate all cached days for this owner, including the OLD date of a
 		// corrected/deleted interval. Skip already-dirty rows to avoid needless
 		// update locks, redo work and cache invalidation churn.
-		if _, err = tx.Exec(ctx, "UPDATE metric_daily SET dirty=true WHERE old_id=$1 AND dirty=false", o.OldID); err != nil {
+		if _, err = tx.Exec(ctx, "UPDATE metric_daily SET dirty=true WHERE resident_id=$1 AND dirty=false", o.ResidentID); err != nil {
 			return 0, 0, err
 		}
 	}
@@ -174,8 +174,8 @@ func (batch *PreparedBatch) Save(ctx context.Context, tx *db.Transaction, o Owne
 // Exec consumes these bytes before the argument buffer is reused.
 func appendChangeRows(args []any, o Owner, input []preparedSample, events []uint8) ([]any, *historyBuffer) {
 	var header [128]byte
-	ownerTail := append(header[:0], `","oldId":`...)
-	ownerTail = strconv.AppendInt(ownerTail, o.OldID, 10)
+	ownerTail := append(header[:0], `","residentId":`...)
+	ownerTail = strconv.AppendInt(ownerTail, o.ResidentID, 10)
 	ownerTail = append(ownerTail, `,"deviceId":`...)
 	if o.DeviceID == nil {
 		ownerTail = append(ownerTail, "null"...)
@@ -197,7 +197,7 @@ func appendChangeRows(args []any, o Owner, input []preparedSample, events []uint
 	} else {
 		payloads = history.bytes[:0]
 	}
-	ownerID := any(o.OldID)
+	ownerID := any(o.ResidentID)
 	for _, index := range events {
 		event := &input[index]
 		start := len(payloads)

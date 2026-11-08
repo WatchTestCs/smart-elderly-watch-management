@@ -10,11 +10,11 @@ it('keeps binding codes scoped to the currently selected resident', async () => 
   const replies = new Map<string, (value: unknown) => void>()
   vi.spyOn(axios, 'post').mockImplementation((url, body) => {
     if (url === '/api/v1/device/bindCodeList') {
-      return new Promise(resolve => { replies.set(String((body as { oldId?: string | number }).oldId), resolve) })
+      return new Promise(resolve => { replies.set(String((body as { residentId?: string | number }).residentId), resolve) })
     }
     if (url === '/api/v1/device/list') return Promise.resolve({ data: { devices: [], total: 0 } })
     if (url === '/api/v1/device/alertCounts') return Promise.resolve({ data: { items: [], total: 0 } })
-    if (url === '/api/v1/inviteCode/oldPersonList') return Promise.resolve({ data: { oldPeople: [] } })
+    if (url === '/api/v1/inviteCode/residentList') return Promise.resolve({ data: { residents: [] } })
     throw new Error(`unexpected request: ${url}`)
   })
   let devices!: ReturnType<typeof useDevices>
@@ -23,9 +23,9 @@ it('keeps binding codes scoped to the currently selected resident', async () => 
   }))
   try {
     await flushPromises()
-    devices.openBindCodeDialog({ deviceId: 1, deviceNo: 'watch-1', oldId: 1 })
+    devices.openBindCodeDialog({ deviceId: 1, deviceNo: 'watch-1', residentId: 1 })
     await flushPromises()
-    devices.bindOldId.value = 2
+    devices.bindResidentId.value = 2
     await flushPromises()
     replies.get('2')?.({ data: { bindCodes: [{ id: 2, code: 'new', expireTime: 'tomorrow', used: 0 }] } })
     await flushPromises()
@@ -46,12 +46,12 @@ it('does not attach a created binding code to a newly selected resident', async 
   let finishCreate!: (value: unknown) => void
   vi.spyOn(axios, 'post').mockImplementation((url, body) => {
     if (url === '/api/v1/device/bindCodeList') {
-      return new Promise(resolve => { replies.set(String((body as { oldId?: string | number }).oldId), resolve) })
+      return new Promise(resolve => { replies.set(String((body as { residentId?: string | number }).residentId), resolve) })
     }
     if (url === '/api/v1/device/createBindCode') return new Promise(resolve => { finishCreate = resolve })
     if (url === '/api/v1/device/list') return Promise.resolve({ data: { devices: [], total: 0 } })
     if (url === '/api/v1/device/alertCounts') return Promise.resolve({ data: { items: [], total: 0 } })
-    if (url === '/api/v1/inviteCode/oldPersonList') return Promise.resolve({ data: { oldPeople: [] } })
+    if (url === '/api/v1/inviteCode/residentList') return Promise.resolve({ data: { residents: [] } })
     throw new Error(`unexpected request: ${url}`)
   })
   let devices!: ReturnType<typeof useDevices>
@@ -60,11 +60,11 @@ it('does not attach a created binding code to a newly selected resident', async 
   }))
   try {
     await flushPromises()
-    devices.openBindCodeDialog({ deviceId: 1, deviceNo: 'watch-1', oldId: 1 })
+    devices.openBindCodeDialog({ deviceId: 1, deviceNo: 'watch-1', residentId: 1 })
     await flushPromises()
     const creating = devices.createBindCode()
     await flushPromises()
-    devices.bindOldId.value = 2
+    devices.bindResidentId.value = 2
     await flushPromises()
     replies.get('2')?.({ data: { bindCodes: [{ id: 2, code: 'new', expireTime: 'tomorrow', used: 0 }] } })
     await flushPromises()
@@ -83,7 +83,7 @@ it('does not publish device rows from a query superseded during an active read',
   vi.spyOn(axios, 'post').mockImplementation(url => {
     if (url === '/api/v1/device/list') return new Promise(resolve => { listReplies.push(resolve) })
     if (url === '/api/v1/device/alertCounts') return Promise.resolve({ data: { items: [], total: 0 } })
-    if (url === '/api/v1/inviteCode/oldPersonList') return Promise.resolve({ data: { oldPeople: [] } })
+    if (url === '/api/v1/inviteCode/residentList') return Promise.resolve({ data: { residents: [] } })
     throw new Error(`unexpected request: ${url}`)
   })
   let devices!: ReturnType<typeof useDevices>

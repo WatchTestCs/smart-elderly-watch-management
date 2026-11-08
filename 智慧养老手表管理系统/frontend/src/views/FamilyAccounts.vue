@@ -18,7 +18,7 @@
         </div>
         <div class="toolbar-actions">
           <el-button plain @click="exportCurrentPage">导出本页</el-button>
-          <el-button plain @click="customerDialogVisible = true">添加家属</el-button>
+          <el-button plain @click="guardianDialogVisible = true">添加家属</el-button>
         </div>
 		
       </form>
@@ -26,12 +26,12 @@
     
     <el-dialog :close-on-click-modal="false"
       title="家属添加"
-      v-model="customerDialogVisible"
+      v-model="guardianDialogVisible"
       @close="closeRoleAddDialog"
       width="92%" class="admin-record-dialog">
       <FamilyForm :draft="familyForm" :rules="rules" ref="addfamilyFormRef" />
       <template #footer><span  class="dialog-footer">
-      <el-button @click="customerDialogVisible = false">取 消</el-button>
+      <el-button @click="guardianDialogVisible = false">取 消</el-button>
       <el-button type="primary" @click="addFamily()">确 定</el-button>
     </span></template>
     </el-dialog>
@@ -54,7 +54,7 @@
 
       <el-table-column type="index" width="100" align="center"></el-table-column>
 	  <el-table-column prop="name" label="姓名" width="140" align="center"></el-table-column>
-	  <el-table-column prop="oldId" label="老人编号" width="140" align="center"></el-table-column>
+	  <el-table-column prop="residentId" label="老人编号" width="140" align="center"></el-table-column>
       <el-table-column prop="familyName" label="家属姓名" width="140" align="center"></el-table-column>
       <el-table-column prop="familyRelation" label="关系" width="140" align="center"></el-table-column>
 	  <el-table-column prop="familySex" label="性别" width="140" align="center"></el-table-column>
@@ -71,7 +71,7 @@
         </template>
       </el-table-column>
     </el-table>
-    <record-cards v-if="mobileLayout && !loadError" :records="familyList" :fields='[{"key":"name","label":"姓名"},{"key":"oldId","label":"老人编号"},{"key":"familyRelation","label":"关系"},{"key":"familySex","label":"性别"},{"key":"familyPhone","label":"电话"},{"key":"familyAddress","label":"地址"}]' label="家属账号资料" title-key="familyName" key-field="familyId">
+    <record-cards v-if="mobileLayout && !loadError" :records="familyList" :fields='[{"key":"name","label":"姓名"},{"key":"residentId","label":"老人编号"},{"key":"familyRelation","label":"关系"},{"key":"familySex","label":"性别"},{"key":"familyPhone","label":"电话"},{"key":"familyAddress","label":"地址"}]' label="家属账号资料" title-key="familyName" key-field="familyId">
       <template #actions="scope"  ><el-button size="small" plain type="primary" :icon="Edit"
                      @click="handleeditFamily(scope.$index, scope.row)">编辑
           </el-button>
@@ -115,7 +115,7 @@ const {
   buildQuery: () => ({ familyName: searchText.value }),
   failure: '家属账号暂时无法加载，请检查服务连接后重试。'
 })
-const customerDialogVisible = ref(false)
+const guardianDialogVisible = ref(false)
 const oldEditDialogVisible = ref(false)
 const familyForm = reactive({
   familyName: '', familyRelation: '', familySex: '',
@@ -137,7 +137,7 @@ function addFamily() {
     'api/v1/family/add', familyForm,
     '家属已添加，请生成该老人的邀请码，由家属注册并设置登录密码。',
     async () => {
-      customerDialogVisible.value = false
+      guardianDialogVisible.value = false
       await loadFamilyAccounts(true)
     },
     '添加家属失败，请检查服务连接后重试。'
@@ -164,7 +164,7 @@ function exportCurrentPage() {
   if (!familyList.value.length) { ElMessage.warning('当前没有可导出的数据'); return }
   downloadCsv(`家属账号-${new Date().toISOString().slice(0, 10)}.csv`, [
     { key: 'name', label: '老人姓名' },
-    { key: 'oldId', label: '老人编号' },
+    { key: 'residentId', label: '老人编号' },
     { key: 'familyName', label: '家属姓名' },
     { key: 'familyRelation', label: '关系' },
     { key: 'familySex', label: '性别' },

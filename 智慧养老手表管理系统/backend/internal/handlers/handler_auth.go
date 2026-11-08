@@ -67,7 +67,7 @@ func (h *Handler) sessionInfo(w http.ResponseWriter, r *http.Request) {
 		p := sess.Principal
 		account = map[string]any{
 			"role": p.Role, "id": p.ID, "phone": p.Phone,
-			"oldId": p.OldID, "displayName": p.DisplayName,
+			"residentId": p.ResidentID, "displayName": p.DisplayName,
 		}
 		if p.Role == auth.RoleAdmin {
 			duty, ok := h.careDuty(w, r, p.ID)
@@ -90,9 +90,9 @@ func (h *Handler) sessionInfo(w http.ResponseWriter, r *http.Request) {
 var loginAccounts = [...]struct{ role, query string }{
 	{auth.RoleAdmin, `SELECT user_id,user_name,user_phone,password,NULL,user_phone_cipher,user_phone_lookup,user_phone_protected
  FROM users WHERE (user_phone_protected=false AND user_phone=$1) OR (user_phone_protected=true AND user_phone_lookup=$2)`},
-	{auth.RoleFamily, `SELECT f.family_id, f.family_name, f.family_phone, f.family_password, o.old_id, NULL, NULL, false
-  FROM family f LEFT JOIN oldperson o ON o.family_id=f.family_id
-  WHERE f.family_phone=$1 ORDER BY o.old_id LIMIT 1`},
+	{auth.RoleFamily, `SELECT f.family_id, f.family_name, f.family_phone, f.family_password, o.resident_id, NULL, NULL, false
+  FROM family f LEFT JOIN resident o ON o.family_id=f.family_id
+  WHERE f.family_phone=$1 ORDER BY o.resident_id LIMIT 1`},
 }
 
 // login 处理 POST /api/v1/auth/login：公开；先查 users（管理员），再查 family（家属）。
@@ -125,13 +125,13 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 	for _, account := range loginAccounts {
 		var id int64
 		var name, storedPhone, hash pgtype.Text
-		var oldID pgtype.Int8
+		var residentID pgtype.Int8
 		var protected userphone.Record
 		args := []any{phone}
 		if account.role == auth.RoleAdmin {
 			args = append(args, lookup)
 		}
-		err := h.DB.QueryRow(r.Context(), account.query, args...).Scan(&id, &name, &storedPhone, &hash, &oldID, &protected.Cipher, &protected.Lookup, &protected.Protected)
+		err := h.DB.QueryRow(r.Context(), account.query, args...).Scan(&id, &name, &storedPhone, &hash, &residentID, &protected.Cipher, &protected.Lookup, &protected.Protected)
 		if isNotFound(err) {
 			continue
 		}
@@ -155,12 +155,12 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 		if !auth.Matches(password, hash.String) {
 			continue
 		}
-		if account.role == auth.RoleFamily && !oldID.Valid {
+		if account.role == auth.RoleFamily && !residentID.Valid {
 			response.JSON(w, http.StatusForbidden, map[string]any{"code": "ACCOUNT_UNLINKED", "message": "该家属账号尚未关联老人，请联系管理员"})
 			return
 		}
 		h.finishAccountLogin(w, r, m, session.Principal{
-			Role: account.role, ID: id, Phone: storedPhone.String, OldID: oldID.Int64, DisplayName: name.String,
+			Role: account.role, ID: id, Phone: storedPhone.String, ResidentID: residentID.Int64, DisplayName: name.String,
 		}, phone)
 		return
 	}

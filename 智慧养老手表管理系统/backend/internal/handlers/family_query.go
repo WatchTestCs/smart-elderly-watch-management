@@ -17,24 +17,24 @@ func (h *Handler) familySelect(w http.ResponseWriter, r *http.Request) {
 	p, ps := bodyPage(m)
 	ctx := r.Context()
 	var total int64
-	const filter = ` FROM oldperson o JOIN family f ON o.family_id=f.family_id
+	const filter = ` FROM resident o JOIN family f ON o.family_id=f.family_id
 		 WHERE ($1='' OR f.family_name LIKE '%'||$1||'%')`
 	const countSQL = `SELECT COUNT(*) AS total` + filter
 	list, ok := queryRows(h, w, ctx, func(rows dbstore.Rows) (map[string]any, error) {
-		var oldID, familyID int64
+		var residentID, familyID int64
 		var oldName, fname, frel, fsex, fphone, faddr, fpic *string
-		if err := rows.Scan(&oldID, &oldName, &familyID, &fname, &frel, &fsex, &fphone, &faddr, &fpic); err != nil {
+		if err := rows.Scan(&residentID, &oldName, &familyID, &fname, &frel, &fsex, &fphone, &faddr, &fpic); err != nil {
 			return nil, err
 		}
 		return map[string]any{
-			"oldId": oldID, "name": oldName, "familyId": familyID,
+			"residentId": residentID, "name": oldName, "familyId": familyID,
 			"familyName": fname, "familyRelation": frel, "familySex": fsex,
 			"familyPhone": fphone, "familyAddress": faddr, "familyTouPic": fpic,
 		}, nil
 	},
-		`SELECT o.old_id,o.name,f.family_id,f.family_name,f.family_relation,
+		`SELECT o.resident_id,o.name,f.family_id,f.family_name,f.family_relation,
 		        f.family_sex,f.family_phone,f.family_address,f.family_tou_pic`+filter+`
-		 ORDER BY o.old_id LIMIT $2 OFFSET $3`, name, ps, (p-1)*ps)
+		 ORDER BY o.resident_id LIMIT $2 OFFSET $3`, name, ps, (p-1)*ps)
 	if !ok {
 		return
 	}

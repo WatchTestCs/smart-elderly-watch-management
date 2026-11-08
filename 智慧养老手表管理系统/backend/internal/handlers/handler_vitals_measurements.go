@@ -13,14 +13,14 @@ func (h *Handler) listLatestVitals(w http.ResponseWriter, r *http.Request) {
 
 // POST /api/v1/vitals/history —— 家属查询自己老人的心率血压列表。
 func (h *Handler) listVitalHistory(w http.ResponseWriter, r *http.Request) {
-	oldID, ok := h.readScopedOldID(w, r)
+	residentID, ok := h.readScopedResidentID(w, r)
 	if !ok {
 		return
 	}
 	sql := vitalRecordSelect +
-		` INNER JOIN (SELECT * FROM ratepre WHERE old_id=$1 ORDER BY create_time DESC, id DESC LIMIT 1) r ON r.old_id=o.old_id` +
+		` INNER JOIN (SELECT * FROM ratepre WHERE resident_id=$1 ORDER BY create_time DESC, id DESC LIMIT 1) r ON r.resident_id=o.resident_id` +
 		` ORDER BY createTime DESC`
-	items, ok := queryRows(h, w, r.Context(), scanVitalRecord, sql, oldID)
+	items, ok := queryRows(h, w, r.Context(), scanVitalRecord, sql, residentID)
 	if !ok {
 		return
 	}
@@ -29,7 +29,7 @@ func (h *Handler) listVitalHistory(w http.ResponseWriter, r *http.Request) {
 
 // POST /api/v1/vitals/chart —— 家属查询老人心率血压明细（图表用）。
 func (h *Handler) getVitalChart(w http.ResponseWriter, r *http.Request) {
-	oldID, ok := h.readScopedOldID(w, r)
+	residentID, ok := h.readScopedResidentID(w, r)
 	if !ok {
 		return
 	}
@@ -59,8 +59,8 @@ func (h *Handler) getVitalChart(w http.ResponseWriter, r *http.Request) {
 		createTimes = append(createTimes, ct)
 		return nil
 	}, `SELECT r.hr AS hr, r.bp AS bp, TO_CHAR(r.create_time,'YYYY-MM-DD HH24:MI:SS') AS createTime
-		FROM (SELECT id, hr, bp, create_time FROM ratepre WHERE old_id=$1 ORDER BY create_time DESC, id DESC LIMIT 30) r
-		ORDER BY r.create_time ASC, r.id ASC`, oldID)
+		FROM (SELECT id, hr, bp, create_time FROM ratepre WHERE resident_id=$1 ORDER BY create_time DESC, id DESC LIMIT 30) r
+		ORDER BY r.create_time ASC, r.id ASC`, residentID)
 	if internalError(w, err) {
 		return
 	}

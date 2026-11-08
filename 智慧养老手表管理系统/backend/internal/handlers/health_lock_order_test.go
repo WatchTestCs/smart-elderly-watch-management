@@ -188,7 +188,7 @@ func TestLateHealthDeviceLockRejectsConcurrentUnbind(t *testing.T) {
 	// Simulate a rebind event while the health write is uncommitted but has not
 	// acquired the device lock. The late path MUST abort upon epoch mismatch.
 	updateCtx, stopUpdate := context.WithTimeout(ctx, time.Second)
-	_, err = pool.Exec(updateCtx, "UPDATE device SET old_id=NULL WHERE device_id=1")
+	_, err = pool.Exec(updateCtx, "UPDATE device SET resident_id=NULL WHERE device_id=1")
 	stopUpdate()
 	if err != nil {
 		release()
@@ -326,7 +326,7 @@ func TestBulkPreparationRevalidatesConcurrentDeviceChanges(t *testing.T) {
 	}{
 		{"rotation", "UPDATE device SET secret=$1 WHERE device_id=1", 401, "DEVICE_AUTH_FAILED"},
 		{"disabled", "UPDATE device SET status=0 WHERE device_id=1", 403, "DEVICE_DISABLED"},
-		{"unbind", "UPDATE device SET old_id=NULL WHERE device_id=1", 409, ""},
+		{"unbind", "UPDATE device SET resident_id=NULL WHERE device_id=1", 409, ""},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			pool := testDatabase(t)

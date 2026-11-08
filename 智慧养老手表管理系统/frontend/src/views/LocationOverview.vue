@@ -43,7 +43,7 @@
 	  <el-table-column prop="lng" label="经度" width="160" align="center"></el-table-column>
 	  <el-table-column prop="lat" label="纬度" width="160" align="center"></el-table-column>
       <el-table-column label="定位来源与采样" width="240" align="left"><template #default="scope"><span class="position-context">{{ describePositionContext(scope.row) }}</span></template></el-table-column>
-	  <el-table-column prop="beTime" label="上报时间" width="auto" align="center"></el-table-column>
+	  <el-table-column prop="eventTime" label="上报时间" width="auto" align="center"></el-table-column>
       <el-table-column label="操作" align="center">
       	<template #default="scope" >
       		<el-button v-if="scope.row.status==1" size="small" plain type="danger" :icon="WarningFilled"
@@ -56,7 +56,7 @@
       	</template>
       </el-table-column>
     </el-table>
-    <record-cards v-if="mobileLayout" :records="positionList" :fields='[{"key":"sex","label":"性别"},{"key":"status","label":"告警状态","state":"fall"},{"key":"lng","label":"经度"},{"key":"lat","label":"纬度"}]' label="位置与告警记录" title-key="name" key-field="oldId" time-key="beTime">
+    <record-cards v-if="mobileLayout" :records="positionList" :fields='[{"key":"sex","label":"性别"},{"key":"status","label":"告警状态","state":"fall"},{"key":"lng","label":"经度"},{"key":"lat","label":"纬度"}]' label="位置与告警记录" title-key="name" key-field="residentId" time-key="eventTime">
       <template #actions="scope"  ><span class="position-context">{{ describePositionContext(scope.row) }}</span><el-button v-if="scope.row.status==1" size="small" plain type="danger" :icon="WarningFilled"
                        @click="showFallReason(scope.row)">告警记录与处理</el-button>
 <el-button v-if="scope.row.status==1" size="small" plain type="primary" :icon="Check"
@@ -112,7 +112,7 @@ const num = computed(() => positionList.value.filter(row => row.status === 1 || 
 watch(() => store.state.alertRevision, () => { void searchposition(true) })
 watch(positionList, rows => {
   const id = store.state.selectedResidentId
-  const selected = id == null ? null : rows.find(row => String(row.oldId) === id)
+  const selected = id == null ? null : rows.find(row => String(row.residentId) === id)
   if (selected) selectedLocation.value = { ...selected }
 })
 function showFallReason(row: PositionRow) {
@@ -128,7 +128,7 @@ async function handleFall(row: PositionRow) {
     )
   } catch { return }
   try {
-    const { data } = await api.post<Envelope>('api/v1/locations/alerts/resolve-latest', { oldId: row.oldId })
+    const { data } = await api.post<Envelope>('api/v1/locations/alerts/resolve-latest', { residentId: row.residentId })
     accepted(data)
     ElMessage({ type: 'success', message: '已处理，告警红点已消除' })
     store.notifyAlertsChanged()
@@ -138,7 +138,7 @@ async function handleFall(row: PositionRow) {
 }
 function showRoleDialog(row: PositionRow) {
   selectedLocation.value = { ...row }
-  store.selectResident(row.oldId)
+  store.selectResident(row.residentId)
 }
 </script>
 
