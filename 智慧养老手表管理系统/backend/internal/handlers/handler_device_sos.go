@@ -2,9 +2,10 @@ package handlers
 
 import (
 	"context"
-	"github.com/jackc/pgx/v5"
 	"net/http"
 	"regexp"
+
+	"suining-care/internal/careworkflow"
 	dbstore "suining-care/internal/db"
 	"suining-care/internal/notify"
 	"suining-care/internal/response"
@@ -48,28 +49,21 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 	// A device should reuse a stable requestId when retrying the same SOS on
 	// weak networks; each new press must use a new ID.
 	if requestID != "" {
-		var priorID, priorOwner int64
-		var priorKind, priorState, priorNotification string
-		err := tx.QueryRow(ctx, `SELECT i.id,i.old_id,i.kind,i.state,
-			COALESCE((SELECT min(n.status) FROM care_notification_outbox n
-			WHERE n.incident_id=i.id),'no_recipient')
-			FROM care_incident i WHERE i.device_id=$1 AND i.request_id=$2 FOR UPDATE`,
-			d.ID, requestID).Scan(&priorID, &priorOwner, &priorKind, &priorState, &priorNotification)
-		if err == nil {
+		prior, err := careworkflow.FindSOSRetry(ctx, tx, d.ID, requestID)
+		if err != nil {
+			rollbackFailure(w, rollback)
+			return
+		}
+		if prior != nil {
 			rollback()
 			// A fall-report retry and an SOS press are different event types.
-			// Reusing a requestId across types must not acknowledge the wrong event.
-			if priorOwner != *d.OldID || priorKind != "sos" {
+			if prior.ResidentID != *d.OldID || prior.Kind != "sos" {
 				conflict409(w, "求助编号已被其他事件或绑定使用，请检查设备请求编号")
 				return
 			}
 			response.OK(w, map[string]any{"message": "求助已接收（重复请求未再次入库）",
-				"incidentId": priorID, "incidentState": priorState,
-				"notificationState": priorNotification, "duplicate": true})
-			return
-		}
-		if err != pgx.ErrNoRows {
-			rollbackFailure(w, rollback)
+				"incidentId": prior.ID, "incidentState": prior.State,
+				"notificationState": prior.NotificationState, "duplicate": true})
 			return
 		}
 	}
