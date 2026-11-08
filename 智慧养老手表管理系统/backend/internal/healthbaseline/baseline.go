@@ -28,13 +28,13 @@ type Observation struct {
 }
 
 type Result struct {
-	Ready      bool
-	SampleDays int
-	TrustedDays int
+	Ready        bool
+	SampleDays   int
+	TrustedDays  int
 	RejectedDays int
-	Confidence string
-	Reason string
-	Baseline   float64
+	Confidence   string
+	Reason       string
+	Baseline     float64
 	Scale      float64
 	Score      float64
 	Direction  string
