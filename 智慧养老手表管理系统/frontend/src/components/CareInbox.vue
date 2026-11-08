@@ -55,7 +55,7 @@
 <script setup lang="ts">
 import { api as requestClient, type Envelope } from '../api/client'
 import { apiErrorMessage } from '../api/httpContract'
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, shallowRef, watch, onMounted, onBeforeUnmount } from 'vue'
 import axios from 'axios'
 import { createLatestRead } from '../composables/latestRead'
 import CareOperationsPanel from './CareOperationsPanel.vue'
@@ -98,7 +98,7 @@ interface CareListResponse {
   actorId: number
 }
 const emit = defineEmits(['verified'])
-const tasks = ref<CareTask[]>([])
+const tasks = shallowRef<CareTask[]>([])
 const error = ref('')
 const loading = ref(false)
 const saving = ref(false)
@@ -198,6 +198,7 @@ async function submit () {
 function refreshWhenVisible() {
   if (!document.hidden && !saving.value && !dialog.value.visible && !history.value.visible) void load()
 }
+watch(() => store.state.alertRevision, refreshWhenVisible)
 onMounted(() => {
   void load()
   timer = setInterval(() => {
