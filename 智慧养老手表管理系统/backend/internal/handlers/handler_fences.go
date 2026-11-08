@@ -10,9 +10,10 @@ import (
 	"unicode/utf8"
 
 	"github.com/jackc/pgx/v5"
+
+	"suining-care/internal/devicerepo"
 	"suining-care/internal/fence"
 	"suining-care/internal/fencerepo"
-	"suining-care/internal/devicerepo"
 	"suining-care/internal/response"
 	"suining-care/internal/telemetryrepo"
 )
