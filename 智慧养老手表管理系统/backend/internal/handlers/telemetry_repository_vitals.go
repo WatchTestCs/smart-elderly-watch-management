@@ -3,8 +3,8 @@ package handlers
 import (
 	"context"
 
-	"github.com/jackc/pgx/v5"
 	dbstore "suining-care/internal/db"
+	"suining-care/internal/telemetryrepo"
 )
 
 func measurementState(value *int, low, high int) any {
@@ -27,23 +27,21 @@ func (repo telemetryRepository) persistReportVitals(ctx context.Context, tx *dbs
 		bp = nil
 	}
 	hasMeasurements := (hr != nil && *hr > 0) || (bp != nil && *bp > 0)
-	var hrf, hrl, bpf, bpl *int
+	var bounds telemetryrepo.Thresholds
 	if hasMeasurements {
-		err := tx.QueryRow(ctx, `SELECT hrf, hrl, bpf, bpl FROM watch_info WHERE device_id=$1`, d.ID).
-			Scan(&hrf, &hrl, &bpf, &bpl)
-		if err != nil && err != pgx.ErrNoRows {
+		var err error
+		bounds, err = telemetryrepo.ReadThresholds(ctx, tx, d.ID)
+		if err != nil {
 			return telemetryPersisted{}, err
 		}
 	}
-	hrLow, hrHigh := alertThresholds(hrf, hrl, 55, 110)
-	bpLow, bpHigh := alertThresholds(bpf, bpl, 90, 140)
+	hrLow, hrHigh := alertThresholds(bounds.HeartRateLow, bounds.HeartRateHigh, 55, 110)
+	bpLow, bpHigh := alertThresholds(bounds.PressureLow, bounds.PressureHigh, 90, 140)
 	result := telemetryPersisted{rateState: measurementState(hr, hrLow, hrHigh), preState: measurementState(bp, bpLow, bpHigh)}
 	if !hasMeasurements {
 		return result, nil
 	}
-	if _, err := tx.Exec(ctx,
-		`INSERT INTO ratepre(device_id,old_id,rate_state,pre_state,create_time,hr,bp)
-    VALUES($1,$2,$3,$4,$5,$6,$7)`, d.ID, oldID, result.rateState, result.preState, parsed.beTime, hr, bp); err != nil {
+	if err := telemetryrepo.InsertVitals(ctx, tx, d.ID, oldID, parsed.beTime, hr, bp, result.rateState, result.preState); err != nil {
 		return telemetryPersisted{}, err
 	}
 	return result, nil
