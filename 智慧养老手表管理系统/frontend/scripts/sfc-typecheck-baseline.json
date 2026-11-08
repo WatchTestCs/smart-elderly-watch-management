@@ -1,27 +1,3 @@
 {
-  "baseline": "8ac70742ddac634f3705f77b3de457e72b7999a6",
-  "untyped": [
-    "src/components/CareInbox.vue",
-    "src/components/DatabaseNotice.vue",
-    "src/components/FamilySlider.vue",
-    "src/components/Header.vue",
-    "src/components/PositionMap.vue",
-    "src/components/records/FamilyForm.vue",
-    "src/components/records/HealthAlertDialog.vue",
-    "src/components/records/ResidentForm.vue",
-    "src/components/records/ThresholdForm.vue",
-    "src/components/Slider.vue",
-    "src/views/ActivityOverview.vue",
-    "src/views/DeviceManagement.vue",
-    "src/views/FamilyActivity.vue",
-    "src/views/FamilyLocation.vue",
-    "src/views/FamilyPortal.vue",
-    "src/views/FamilyProfile.vue",
-    "src/views/FamilyVitals.vue",
-    "src/views/Login.vue",
-    "src/views/OperationsShell.vue",
-    "src/views/Register.vue",
-    "src/views/Residents.vue",
-    "src/views/Setup.vue"
-  ]
+  "untyped": []
 }
