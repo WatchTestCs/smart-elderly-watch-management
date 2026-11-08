@@ -108,6 +108,7 @@ import { api, accepted, type Envelope } from '../api/client'
 import { apiErrorMessage } from '../api/httpContract'
 import RecordCards from '@/components/RecordCards.vue'
 import HealthAlertDialog from '@/components/records/HealthAlertDialog.vue'
+import type { VitalAlertDetail, VitalAlertState } from '@/domain/vitals'
 
 interface VitalRow {
   oldId: number | string
@@ -133,7 +134,7 @@ const {
   responseKey: 'vitalRecords',
   buildQuery: () => ({ name: searchText.value, timeFirst: '', timeLast: '' })
 })
-function emptyAlert() {
+function emptyAlert(): VitalAlertState {
   return {
     visible: false, loading: false, resolving: false, hasAlert: 1,
     title: '异常原因与处理', recordId: null,
@@ -142,7 +143,7 @@ function emptyAlert() {
     advice: '', message: ''
   }
 }
-const alertDialog = ref<Record<string, any>>(emptyAlert())
+const alertDialog = ref<VitalAlertState>(emptyAlert())
 
 async function loadAlertCount() {
   try {
@@ -158,14 +159,14 @@ async function loadAlertCount() {
 const getCount = loadAlertCount
 const alertReads = createLatestRead(
   (query: { recordId?: number | string; oldId?: number | string; kind?: string }, signal: AbortSignal) =>
-    api.post<Record<string, any>>('api/v1/vitals/alerts/detail', query, { signal }),
+    api.post<VitalAlertDetail>('api/v1/vitals/alerts/detail', query, { signal }),
   ({ data }) => {
     Object.assign(alertDialog.value, {
       hasAlert: data.hasAlert ?? 1,
       message: data.message || '',
       recordId: data.recordId ?? null,
       oldPersonName: data.oldPersonName || alertDialog.value.oldPersonName,
-      hr: data.hr, bp: data.bp,
+      hr: data.hr ?? '', bp: data.bp ?? '',
       rateBad: data.rateBad || 0, preBad: data.preBad || 0,
       reason: data.reason || '', detail: data.detail || '',
       occurTime: data.occurTime || '', advice: data.advice || ''
@@ -181,7 +182,7 @@ function loadAlertDetail(
   recordId: number | string | null, name: string, oldId: number | string, kind = ''
 ) {
   alertDialog.value = { ...emptyAlert(), visible: true, loading: true, recordId, oldPersonName: name || '' }
-  return alertReads.run(recordId ? { recordId } : { oldId, kind })
+  return alertReads.run(recordId !== null ? { recordId } : { oldId, kind })
 }
 function showAlertRow(row: VitalRow) {
   return loadAlertDetail(null, row.name, row.oldId)
