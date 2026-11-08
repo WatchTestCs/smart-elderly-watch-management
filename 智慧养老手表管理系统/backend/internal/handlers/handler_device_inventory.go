@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"suining-care/internal/devicecredential"
+	"suining-care/internal/securecode"
 	"context"
 	"errors"
 	"net/http"
@@ -14,7 +15,7 @@ import (
 
 func (h *Handler) genDeviceNo(ctx context.Context) (string, error) {
 	for i := 0; i < 30; i++ {
-		s, err := devicecredential.RandomCode(8)
+		s, err := securecode.Generate(8)
 		if err != nil {
 			return "", err
 		}
