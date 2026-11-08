@@ -11,10 +11,6 @@ import (
 	"suining-care/internal/db"
 )
 
-type codeQueries interface {
-	QueryRow(context.Context, string, ...any) db.Row
-}
-
 type BindCode struct {
 	ID           int64
 	Code         string
@@ -33,7 +29,7 @@ type ResidentBinding struct {
 	FamilyID *int64
 }
 
-func LockResidentBinding(ctx context.Context, store codeQueries, residentID int64) (ResidentBinding, error) {
+func LockResidentBinding(ctx context.Context, store db.RowQuerier, residentID int64) (ResidentBinding, error) {
 	var binding ResidentBinding
 	err := store.QueryRow(ctx,
 		"SELECT name, device_id, family_id FROM oldperson WHERE old_id=$1 FOR UPDATE",
@@ -43,7 +39,7 @@ func LockResidentBinding(ctx context.Context, store codeQueries, residentID int6
 
 // FindBindCode returns nil for missing codes so the device protocol can
 // distinguish unknown, consumed and expired binding codes without leaking SQL.
-func FindBindCode(ctx context.Context, store codeQueries, code string) (*BindCode, error) {
+func FindBindCode(ctx context.Context, store db.RowQuerier, code string) (*BindCode, error) {
 	var row BindCode
 	err := store.QueryRow(ctx,
 		`SELECT id,code,old_id,family_id,create_user,expire_time,used,used_time,used_device_id
@@ -59,7 +55,7 @@ func FindBindCode(ctx context.Context, store codeQueries, code string) (*BindCod
 	return &row, nil
 }
 
-func CodeExists(ctx context.Context, store codeQueries, code string) (bool, error) {
+func CodeExists(ctx context.Context, store db.RowQuerier, code string) (bool, error) {
 	var exists bool
 	err := store.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM bind_code WHERE code=$1)", code).Scan(&exists)
 	return exists, err
