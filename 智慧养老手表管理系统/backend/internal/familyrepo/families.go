@@ -6,6 +6,8 @@ import (
 	"errors"
 
 	"suining-care/internal/db"
+	"suining-care/internal/securestore"
+	"suining-care/internal/userphone"
 )
 
 var (
@@ -39,14 +41,22 @@ func loadBindingTarget(ctx context.Context, tx *db.Transaction, phone string) (b
 	return target, err
 }
 
-func phoneInUse(ctx context.Context, store *db.Database, phone string, exceptFamilyID *int64) (bool, error) {
+func phoneInUse(ctx context.Context, store *db.Database, box *securestore.Box, phone string, exceptFamilyID *int64) (bool, error) {
+	lookup, err := userphone.SearchIndex(ctx, store, box, phone)
+	if err != nil {
+		return false, err
+	}
 	var used bool
-	query := `SELECT EXISTS(SELECT 1 FROM users WHERE user_phone=$1)
-		OR EXISTS(SELECT 1 FROM family WHERE family_phone=$1)`
-	args := []any{phone}
+	query := `SELECT EXISTS(SELECT 1 FROM users WHERE
+	    (user_phone_protected=false AND user_phone=$1) OR
+	    (user_phone_protected=true AND user_phone_lookup=$2))
+	    OR EXISTS(SELECT 1 FROM family WHERE family_phone=$1)`
+	args := []any{phone, lookup}
 	if exceptFamilyID != nil {
-		query = `SELECT EXISTS(SELECT 1 FROM users WHERE user_phone=$1)
-			OR EXISTS(SELECT 1 FROM family WHERE family_phone=$1 AND family_id<>$2)`
+		query = `SELECT EXISTS(SELECT 1 FROM users WHERE
+		    (user_phone_protected=false AND user_phone=$1) OR
+		    (user_phone_protected=true AND user_phone_lookup=$2))
+		    OR EXISTS(SELECT 1 FROM family WHERE family_phone=$1 AND family_id<>$3)`
 		args = append(args, *exceptFamilyID)
 	}
 	err := store.QueryRow(ctx, query, args...).Scan(&used)
@@ -54,16 +64,23 @@ func phoneInUse(ctx context.Context, store *db.Database, phone string, exceptFam
 }
 
 // Create binds one unambiguous unassigned resident in a single transaction.
-func Create(ctx context.Context, store *db.Database, input Family, residentPhone string) error {
+func Create(ctx context.Context, store *db.Database, box *securestore.Box, input Family, residentPhone string) error {
 	tx, err := store.Begin(ctx)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback(ctx)
+	lookup, err := userphone.SearchIndex(ctx, tx, box, input.Phone)
+	if err != nil {
+		return err
+	}
 	var duplicate bool
 	err = tx.QueryRow(ctx,
-		`SELECT EXISTS(SELECT 1 FROM users WHERE user_phone=$1)
-		 OR EXISTS(SELECT 1 FROM family WHERE family_phone=$1)`, input.Phone).Scan(&duplicate)
+		`SELECT EXISTS(SELECT 1 FROM users WHERE
+		    (user_phone_protected=false AND user_phone=$1) OR
+		    (user_phone_protected=true AND user_phone_lookup=$2))
+		    OR EXISTS(SELECT 1 FROM family WHERE family_phone=$1)`,
+		input.Phone, lookup).Scan(&duplicate)
 	if err != nil {
 		return err
 	}
@@ -102,8 +119,8 @@ func Create(ctx context.Context, store *db.Database, input Family, residentPhone
 	return tx.Commit(ctx)
 }
 
-func Update(ctx context.Context, store *db.Database, familyID int64, input Family) error {
-	used, err := phoneInUse(ctx, store, input.Phone, &familyID)
+func Update(ctx context.Context, store *db.Database, box *securestore.Box, familyID int64, input Family) error {
+	used, err := phoneInUse(ctx, store, box, input.Phone, &familyID)
 	if err != nil {
 		return err
 	}
