@@ -9,7 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	dbstore "suining-care/internal/db"
-	"suining-care/internal/devicecredential"
+	"suining-care/internal/deviceworkflow"
 	"suining-care/internal/devicerepo"
 	"suining-care/internal/response"
 )
@@ -33,28 +33,20 @@ func (h *Handler) readDeviceRecord(device *devicerepo.DeviceRecord, err error) (
 	return device, nil
 }
 
-// hwAuth checks the device number, secret and enabled status.
+// hwAuth maps the device workflow's authentication result to the HTTP protocol.
 func (h *Handler) hwAuth(ctx context.Context, q deviceQueries, deviceNo, secret, disabledMsg string) (*devicerepo.DeviceRecord, string, string, error) {
-	d, err := h.readDeviceRecord(devicerepo.FindDeviceByNo(ctx, q, deviceNo))
+	device, failure, err := deviceworkflow.Authenticate(ctx, q, deviceNo, secret)
 	if err != nil {
 		return nil, "", "", err
 	}
-	return checkDeviceAuth(d, secret, disabledMsg)
-}
-
-// Both full and health-only projections use the same credential policy.
-func checkDeviceAuth(d *devicerepo.DeviceRecord, secret, disabledMsg string) (*devicerepo.DeviceRecord, string, string, error) {
-	if d == nil {
+	switch failure {
+	case deviceworkflow.InvalidCredential:
 		return nil, "DEVICE_AUTH_FAILED", "设备号或密钥不正确", nil
-	}
-	switch devicecredential.Check(secret, d.Secret, d.Status) {
-	case devicecredential.InvalidSecret:
-		return nil, "DEVICE_AUTH_FAILED", "设备号或密钥不正确", nil
-	case devicecredential.Disabled:
+	case deviceworkflow.DeviceDisabled:
 		return nil, "DEVICE_DISABLED", disabledMsg, nil
-	default:
-		return d, "", "", nil
 	}
+	device, err = h.readDeviceRecord(device, nil)
+	return device, "", "", err
 }
 
 // lockDeviceID holds the device row lock until the caller finishes its transaction.
