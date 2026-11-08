@@ -70,7 +70,7 @@
 
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { Check, Search } from '@element-plus/icons-vue'
 import { onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
@@ -82,30 +82,34 @@ import { apiErrorMessage } from '../api/httpContract'
 import RecordCards from '@/components/RecordCards.vue'
 
 const searchText = ref('')
-const stepCount = ref('')
+const stepCount = ref<string | number>('')
 const mobileLayout = useCollectionLayout(900)
 const {
   detailsVisible, chartLoading, chartError, chartName,
   primaryChartElement, secondaryChartElement, showRecordDetails, resizeCharts, disposeCharts
 } = useRecordCharts()
+interface ActivityRecord {
+  oldId: number | string
+  name: string
+}
 const {
   records: stepList, isLoading, loadError, total,
   pageSize, currentPage, load: searchStep,
   handleSizeChange, changePage
-} = usePagedRecords({
+} = usePagedRecords<ActivityRecord>({
   path: 'api/v1/activity/latest',
   responseKey: 'activityRecords',
   buildQuery: () => ({ name: searchText.value, timeFirst: '', timeLast: '' })
 })
 async function getCount() {
   try {
-    const { data } = await requestClient.post('api/v1/activity/alerts/device-counts', {})
+    const { data } = await requestClient.post<{ sleep: number | string }>('api/v1/activity/alerts/device-counts', {})
     stepCount.value = data.sleep
   } catch (error) {
     ElMessage.error(apiErrorMessage(error, '请求未完成，请重试'))
   }
 }
-function showRoleDialog(row) {
+function showRoleDialog(row: ActivityRecord) {
   return showRecordDetails('activity', row.oldId, row.name)
 }
 onMounted(() => { void getCount() })
