@@ -49,7 +49,7 @@ function valueOf(row: TRecord, field: RecordField): unknown {
   const value = valueAt(row, field.key)
   if (field.state) {
     if (value === 1 || value === '1') return field.state === 'fall' ? '紧急告警' : '异常'
-    if (field.handled && (valueAt(row, field.handled) === 1 || row[field.handled] === '1')) return '已处理'
+    if (field.handled && (valueAt(row, field.handled) === 1 || valueAt(row, field.handled) === '1')) return '已处理'
     if (value === 0 || value === '0') return field.state === 'fall' ? '未告警/已处理' : '正常'
     return '暂无状态'
   }
@@ -57,9 +57,9 @@ function valueOf(row: TRecord, field: RecordField): unknown {
 }
 function stateClass(row: TRecord, field: RecordField): string {
   if (!field.state) return ''
-  if (row[field.key] === 1 || row[field.key] === '1') return 'status-danger'
-  if (field.handled && (row[field.handled] === 1 || row[field.handled] === '1')) return 'status-handled'
-  return row[field.key] === 0 || row[field.key] === '0' ? 'status-normal' : 'status-unknown'
+  if (valueAt(row, field.key) === 1 || valueAt(row, field.key) === '1') return 'status-danger'
+  if (field.handled && (valueAt(row, field.handled) === 1 || valueAt(row, field.handled) === '1')) return 'status-handled'
+  return valueAt(row, field.key) === 0 || valueAt(row, field.key) === '0' ? 'status-normal' : 'status-unknown'
 }
 </script>
 
