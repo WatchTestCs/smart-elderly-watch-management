@@ -155,8 +155,7 @@ func (h *Handler) deviceBind(w http.ResponseWriter, r *http.Request) {
 	// Lock the elder before the device, matching unbind/delete lock order.
 	// Changing owners requires an explicit unbind so the old primary reference
 	// cannot be left pointing at a device that now reports for someone else.
-	locked, err := scanDeviceRecord(tx.QueryRow(ctx,
-		`SELECT `+deviceRecordColumns+` FROM device WHERE device_id=$1 FOR UPDATE`, d.ID))
+	locked, err := scanDeviceRecord(devicerepo.LockedDeviceRow(ctx, tx, d.ID))
 	if rollbackOnError(w, rollback, err) {
 		return
 	}
