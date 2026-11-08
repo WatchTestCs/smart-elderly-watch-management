@@ -23,11 +23,11 @@
 		<el-badge :value="preCount" :hidden="preCount === 0" class="item">
 			<el-button size="small" :type="Number(preCount) > 0 ? 'danger' : 'default'" plain @click="showAlertByKind('pre')">血压异常</el-button>
 		</el-badge>
-		<el-button size="small" plain type="primary" @click="openWorkbench">只看待处理异常</el-button>
+		<el-button size="small" plain type="primary" @click="togglePendingAlerts">{{ onlyPendingAlerts ? '显示本页全部记录' : '只看本页待处理异常' }}</el-button>
       </form>
     </div>
 
-    <el-table v-if="!mobileLayout" class="adaptive-record-table" :data="vitalRecords"
+    <el-table v-if="!mobileLayout" class="adaptive-record-table" :data="displayedVitals"
     style="width: 100%" border>
     <template #empty><div  class="care-empty-state"><strong>暂无健康记录</strong><span>最新上报的心率与血压数据会显示在这里。</span></div></template>
 
@@ -64,7 +64,7 @@
         </template>
       </el-table-column>
     </el-table>
-    <record-cards v-if="mobileLayout" :records="vitalRecords" :fields='[{"key":"preState","label":"血压状态","state":"health","handled":"preHandled"},{"key":"rateState","label":"心率状态","state":"health","handled":"rateHandled"},{"key":"oldId","label":"长者编号"},{"key":"sex","label":"性别"}]' label="心率与血压记录" title-key="name" key-field="oldId" time-key="createTime">
+    <record-cards v-if="mobileLayout" :records="displayedVitals" :fields='[{"key":"preState","label":"血压状态","state":"health","handled":"preHandled"},{"key":"rateState","label":"心率状态","state":"health","handled":"rateHandled"},{"key":"oldId","label":"长者编号"},{"key":"sex","label":"性别"}]' label="心率与血压记录" title-key="name" key-field="oldId" time-key="createTime">
       <template #actions="scope"  ><el-button v-if="scope.row.rateState==1 || scope.row.preState==1"
                      size="small" plain type="danger" :icon="WarningFilled"
                      @click="showAlertRow(scope.row)">查看原因</el-button>
@@ -98,7 +98,7 @@
 
 <script setup lang="ts">
 import { Check, Search, WarningFilled } from '@element-plus/icons-vue'
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { usePagedRecords } from '@/composables/usePagedRecords'
 import { useCollectionLayout } from '@/composables/useCollectionLayout'
@@ -134,6 +134,11 @@ const {
   responseKey: 'vitalRecords',
   buildQuery: () => ({ name: searchText.value, timeFirst: '', timeLast: '' })
 })
+const onlyPendingAlerts = ref(false)
+const displayedVitals = computed(() => onlyPendingAlerts.value
+  ? vitalRecords.value.filter(row => row.rateState == 1 || row.preState == 1)
+  : vitalRecords.value)
+
 function emptyAlert(): VitalAlertState {
   return {
     visible: false, loading: false, resolving: false, hasAlert: 1,
@@ -229,15 +234,16 @@ async function resolveRow(row: VitalRow) {
   })
   await Promise.all([loadVitals(true), getCount()])
 }
-function openWorkbench() {
-  const rows = vitalRecords.value.filter(row => row.rateState == 1 || row.preState == 1)
-  if (!rows.length) {
-    ElMessage({ type: 'success', message: '当前没有待处理的异常' })
+function togglePendingAlerts() {
+  if (onlyPendingAlerts.value) {
+    onlyPendingAlerts.value = false
     return
   }
-  vitalRecords.value = rows
-  total.value = rows.length
-  ElMessage({ type: 'info', message: '已筛选出 ' + rows.length + ' 条待处理异常，点「查看原因」了解处理办法' })
+  if (!vitalRecords.value.some(row => row.rateState == 1 || row.preState == 1)) {
+    ElMessage({ type: 'info', message: '本页没有待处理异常' })
+    return
+  }
+  onlyPendingAlerts.value = true
 }
 function showRoleDialog(row: VitalRow) {
   return showRecordDetails('vitals', row.oldId, row.name)
