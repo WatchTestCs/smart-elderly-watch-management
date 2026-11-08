@@ -5,6 +5,7 @@ on:
     branches: [refactor/preview-ts-scopes-20261107]
     paths:
       - .github/workflows/verify-pr108-once.yml
+      - '智慧养老手表管理系统/backend/internal/inviterepo/**'
   workflow_dispatch:
 
 permissions:
