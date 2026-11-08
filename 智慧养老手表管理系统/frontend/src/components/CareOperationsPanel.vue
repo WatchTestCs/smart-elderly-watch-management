@@ -44,7 +44,8 @@
 </template>
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue'
-import axios, { isAxiosError } from 'axios'
+import { isAxiosError } from 'axios'
+import { api } from '../api/client'
 import { apiErrorMessage } from '../api/httpContract'
 import SecurityPanel from './SecurityPanel.vue'
 
@@ -79,7 +80,7 @@ const loading = ref(false)
 const assigning = ref<number | string | null>(null)
 const error = ref('')
 const post = <T,>(url: string, body: Record<string, unknown> = {}) =>
-  axios.post<T>('api/v1/care/' + url, body, { withCredentials: true })
+  api.post<T>('api/v1/care/' + url, body)
 
 let disposed = false
 let staffRevision = 0
