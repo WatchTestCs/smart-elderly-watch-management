@@ -2,12 +2,12 @@ package handlers
 
 import (
 	"context"
-	"github.com/jackc/pgx/v5"
 	"net/http"
 	"strconv"
 	"strings"
 	dbstore "suining-care/internal/db"
 	"suining-care/internal/response"
+	"suining-care/internal/telemetryrepo"
 	"suining-care/internal/vitalrepo"
 	"time"
 )
@@ -22,20 +22,12 @@ func (h *Handler) resolveLatestLocationAlert(w http.ResponseWriter, r *http.Requ
 	if !ok {
 		return
 	}
-	ctx := r.Context()
-	var alarmID int64
-	err := h.DB.QueryRow(ctx,
-		`SELECT id FROM alarm_precess WHERE old_id=$1 ORDER BY be_time DESC, id DESC LIMIT 1`,
-		oldID).Scan(&alarmID)
-	if err != nil {
-		if err == pgx.ErrNoRows {
-			response.Fail(w, "没有待处理的告警")
-		} else {
-			response.Error500(w, ref())
-		}
+	resolved, err := telemetryrepo.ResolveLatestLocationAlert(r.Context(), h.DB, oldID)
+	if internalError(w, err) {
 		return
 	}
-	if _, err := h.DB.Exec(ctx, `UPDATE alarm_precess SET status='0' WHERE id=$1`, alarmID); internalError(w, err) {
+	if !resolved {
+		response.Fail(w, "没有待处理的告警")
 		return
 	}
 	response.OK(w, nil)
