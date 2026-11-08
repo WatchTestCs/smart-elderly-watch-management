@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"encoding/json"
+	"errors"
 	"math"
 	"net/http"
 	"strings"
@@ -55,38 +55,18 @@ func (h *Handler) fenceSave(w http.ResponseWriter, r *http.Request) {
 		conflict409(w, "设备尚未绑定老人")
 		return
 	}
-	b, _ := json.Marshal(req.Coordinates)
-	if req.ID == 0 {
-		var count int
-		if err = tx.QueryRow(ctx, "SELECT count(*) FROM device_fence WHERE device_id=$1 AND epoch=$2", d.ID, d.HealthEpoch).Scan(&count); internalError(w, err) {
-			return
-		}
-		if count >= 20 {
-			conflict409(w, "每个绑定最多 20 个围栏，请编辑或停用已有围栏")
-			return
-		}
-		err = tx.QueryRow(ctx, `INSERT INTO device_fence(device_id,old_id,epoch,name,enabled,coordinates,coordinate_system,timezone,time_begin,time_end,min_points,dwell_seconds,max_accuracy,updated_by)
- VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING id`, d.ID, *d.OldID, d.HealthEpoch, req.Name, req.Enabled, json.RawMessage(b), req.CoordinateSystem, req.Timezone, req.TimeBegin, req.TimeEnd, req.MinPoints, req.DwellSeconds, req.MaxAccuracy, actor).Scan(&req.ID)
-		req.Revision = 1
-	} else {
-		var revision int64
-		err = tx.QueryRow(ctx, "SELECT revision FROM device_fence WHERE id=$1 AND device_id=$2 AND old_id=$3 AND epoch=$4 FOR UPDATE", req.ID, d.ID, *d.OldID, d.HealthEpoch).Scan(&revision)
-		if err == pgx.ErrNoRows || (err == nil && revision != req.Revision) {
-			conflict409(w, "围栏或绑定版本已变化")
-			return
-		}
-		if internalError(w, err) {
-			return
-		}
-		req.Revision++
-		_, err = tx.Exec(ctx, `UPDATE device_fence SET name=$2,enabled=$3,coordinates=$4,coordinate_system=$5,timezone=$6,time_begin=$7,time_end=$8,min_points=$9,dwell_seconds=$10,max_accuracy=$11,updated_by=$12,revision=$13,updated_at=now() WHERE id=$1`, req.ID, req.Name, req.Enabled, json.RawMessage(b), req.CoordinateSystem, req.Timezone, req.TimeBegin, req.TimeEnd, req.MinPoints, req.DwellSeconds, req.MaxAccuracy, actor, req.Revision)
-		if err == nil {
-			_, err = tx.Exec(ctx, "DELETE FROM fence_state WHERE fence_id=$1", req.ID)
-		}
+	err = fencerepo.Save(ctx, tx, actor, d.ID, *d.OldID, d.HealthEpoch, &req)
+	switch {
+	case errors.Is(err, fencerepo.ErrFenceLimit):
+		conflict409(w, "每个绑定最多 20 个围栏，请编辑或停用已有围栏")
+		return
+	case errors.Is(err, fencerepo.ErrFenceRevision):
+		conflict409(w, "围栏或绑定版本已变化")
+		return
+	case internalError(w, err):
+		return
 	}
-	if err == nil {
-		err = commitCareChange(ctx, tx, actor, "fence_save")
-	}
+	err = commitCareChange(ctx, tx, actor, "fence_save")
 	if internalError(w, err) {
 		return
 	}
