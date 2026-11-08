@@ -2,7 +2,7 @@
   <div class="roles" v-loading="isLoading" element-loading-text="正在加载监护人信息…" :aria-busy="isLoading">
     
     <div class="sys-research">
-      <form class="row-search" role="search" @submit.prevent="searchCustomers()">
+      <form class="row-search" role="search" @submit.prevent="loadGuardians()">
         <div class="search-field">
           
           <label class="table-search-label" for="search-customer">监护人姓名</label>
@@ -28,24 +28,24 @@
       title="监护人添加"
       v-model="createDialogVisible"
       @close="resetCreateForm">
-      <el-form label-width="80px" :model="customerForm" :rules="rules"  ref="createGuardianFormRef">
+      <el-form label-width="80px" :model="createForm" :rules="rules"  ref="createGuardianFormRef">
         <el-form-item label="姓名" prop="customerName">
-          <el-input v-model="customerForm.customerName"></el-input>
+          <el-input v-model="createForm.customerName"></el-input>
         </el-form-item>
         <el-form-item label="年龄" prop="customerAge">
-          <el-input v-model="customerForm.customerAge"></el-input>
+          <el-input v-model="createForm.customerAge"></el-input>
         </el-form-item>
 		<el-form-item label="性别" prop="customerSex">
-		<el-radio-group v-model="customerForm.customerSex">
+		<el-radio-group v-model="createForm.customerSex">
 		  <el-radio value="男">男</el-radio>
 		  <el-radio value="女">女</el-radio>
 		</el-radio-group>
 		</el-form-item>
 		<el-form-item label="电话" prop="customerPhone">
-		<el-input v-model="customerForm.customerPhone"></el-input>
+		<el-input v-model="createForm.customerPhone"></el-input>
 		</el-form-item>
 		<el-form-item label="地址" prop="customerAddress">
-		<el-input v-model="customerForm.customerAddress"></el-input>
+		<el-input v-model="createForm.customerAddress"></el-input>
 		</el-form-item>
 		
       </el-form>
@@ -88,8 +88,8 @@
     </el-dialog>
 
     <el-alert v-if="mutationError" :title="mutationError" type="error" :closable="false" show-icon />
-    <div v-if="loadError" class="collection-feedback" role="alert"><span>{{ loadError }}</span><el-button plain :loading="isLoading" @click="searchCustomers(true)">重新加载</el-button></div>
-    <el-table v-if="!mobileLayout && !loadError" class="adaptive-record-table" :data="customerList"
+    <div v-if="loadError" class="collection-feedback" role="alert"><span>{{ loadError }}</span><el-button plain :loading="isLoading" @click="loadGuardians(true)">重新加载</el-button></div>
+    <el-table v-if="!mobileLayout && !loadError" class="adaptive-record-table" :data="guardianList"
     style="width: 100%" border>
     <template #empty><div  class="care-empty-state"><strong>暂无监护人信息</strong><span>添加监护人或调整搜索条件后，信息会显示在这里。</span></div></template>
 
@@ -110,7 +110,7 @@
         </template>
       </el-table-column>
     </el-table>
-    <record-cards v-if="mobileLayout && !loadError" :records="customerList" :fields='[{"key":"customerAge","label":"年龄"},{"key":"customerSex","label":"性别"},{"key":"customerPhone","label":"电话"},{"key":"customerAddress","label":"地址"}]' label="监护人资料" title-key="customerName" key-field="customerId">
+    <record-cards v-if="mobileLayout && !loadError" :records="guardianList" :fields='[{"key":"customerAge","label":"年龄"},{"key":"customerSex","label":"性别"},{"key":"customerPhone","label":"电话"},{"key":"customerAddress","label":"地址"}]' label="监护人资料" title-key="customerName" key-field="customerId">
       <template #actions="scope"  ><el-button size="small" plain type="primary" :icon="Edit"
                      @click="openEditDialog(scope.$index, scope.row)">编辑
           </el-button>
@@ -138,10 +138,10 @@ import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
 import RecordCards from '@/components/RecordCards.vue'
 import { api } from '../api/client'
 import { downloadCsv } from '../utils/csv'
-import { useCustomers, validAge, validPhone } from '../composables/useCustomers'
+import { useGuardians, validAge, validPhone } from '../composables/useGuardians'
 const mobileLayout = useCollectionLayout(900)
-const state = useCustomers(api)
-const { searchText, createDialogVisible, editDialogVisible, customerForm, editForm, isLoading, saving, loadError, mutationError, total, pageSize, currentPage, customerList, searchCustomers, openEditDialog, resetCreateForm, handleSizeChange, changePage } = state
+const state = useGuardians(api)
+const { searchText, createDialogVisible, editDialogVisible, createForm, editForm, isLoading, saving, loadError, mutationError, total, pageSize, currentPage, guardianList, loadGuardians, openEditDialog, resetCreateForm, handleSizeChange, changePage } = state
 const createGuardianFormRef = ref<FormInstance>()
 const editGuardianFormRef = ref<FormInstance>()
 const rules = {
@@ -162,8 +162,8 @@ async function deleteGuardian(id: number | string | undefined) {
  if (await state.remove(id)) ElMessage.success('删除监护人成功')
 }
 function exportCurrentPage () {
-  if (!customerList.value.length) { ElMessage.warning('当前没有可导出的数据'); return }
-  downloadCsv(`监护人-${new Date().toISOString().slice(0, 10)}.csv`, [{ key: 'customerName', label: '姓名' }, { key: 'customerAge', label: '年龄' }, { key: 'customerSex', label: '性别' }, { key: 'customerPhone', label: '电话' }, { key: 'customerAddress', label: '地址' }], customerList.value)
+  if (!guardianList.value.length) { ElMessage.warning('当前没有可导出的数据'); return }
+  downloadCsv(`监护人-${new Date().toISOString().slice(0, 10)}.csv`, [{ key: 'customerName', label: '姓名' }, { key: 'customerAge', label: '年龄' }, { key: 'customerSex', label: '性别' }, { key: 'customerPhone', label: '电话' }, { key: 'customerAddress', label: '地址' }], guardianList.value)
 }
-onMounted(() => searchCustomers())
+onMounted(() => loadGuardians())
 </script>
