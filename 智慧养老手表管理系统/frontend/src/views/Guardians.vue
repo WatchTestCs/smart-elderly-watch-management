@@ -18,7 +18,7 @@
         </div>
         <div class="toolbar-actions">
           <el-button plain @click="exportCurrentPage">导出本页</el-button>
-          <el-button plain @click="customerDialogVisible = true">添加监护人</el-button>
+          <el-button plain @click="createDialogVisible = true">添加监护人</el-button>
         </div>
 		
       </form>
@@ -26,9 +26,9 @@
     
     <el-dialog :close-on-click-modal="false"
       title="监护人添加"
-      v-model="customerDialogVisible"
-      @close="closeRoleAddDialog">
-      <el-form label-width="80px" :model="customerForm" :rules="rules"  ref="addcustomerFormRef">
+      v-model="createDialogVisible"
+      @close="resetCreateForm">
+      <el-form label-width="80px" :model="customerForm" :rules="rules"  ref="createGuardianFormRef">
         <el-form-item label="姓名" prop="customerName">
           <el-input v-model="customerForm.customerName"></el-input>
         </el-form-item>
@@ -50,40 +50,40 @@
 		
       </el-form>
       <template #footer><span  class="dialog-footer">
-      <el-button @click="customerDialogVisible = false">取 消</el-button>
-      <el-button type="primary" @click="addRoles()" :loading="saving">确 定</el-button>
+      <el-button @click="createDialogVisible = false">取 消</el-button>
+      <el-button type="primary" @click="createGuardian()" :loading="saving">确 定</el-button>
     </span></template>
     </el-dialog>
 
     <el-dialog :close-on-click-modal="false"
       title="监护人编辑"
-      v-model="oldEditDialogVisible">
-      <el-form ref="editCustomerFormRef" label-width="80px" :rules="rules" :model="oldEditForm">
+      v-model="editDialogVisible">
+      <el-form ref="editGuardianFormRef" label-width="80px" :rules="rules" :model="editForm">
         <el-form-item label="姓名" prop="customerName">
-        <el-input v-model="oldEditForm.customerName"></el-input>
+        <el-input v-model="editForm.customerName"></el-input>
         </el-form-item>
 				<el-form-item label="姓名" prop="customerId" style="display: none;">
-				<el-input v-model="oldEditForm.customerId"></el-input>
+				<el-input v-model="editForm.customerId"></el-input>
 				</el-form-item>
         <el-form-item label="年龄" prop="customerAge">
-        <el-input v-model="oldEditForm.customerAge"></el-input>
+        <el-input v-model="editForm.customerAge"></el-input>
         </el-form-item>
         <el-form-item label="性别" prop="customerSex">
-        <el-radio-group v-model="oldEditForm.customerSex">
+        <el-radio-group v-model="editForm.customerSex">
         <el-radio value="男">男</el-radio>
         <el-radio value="女">女</el-radio>
         </el-radio-group>
         </el-form-item>
         <el-form-item label="电话" prop="customerPhone">
-        <el-input v-model="oldEditForm.customerPhone"></el-input>
+        <el-input v-model="editForm.customerPhone"></el-input>
         </el-form-item>
         <el-form-item label="地址" prop="customerAddress">
-        <el-input v-model="oldEditForm.customerAddress"></el-input>
+        <el-input v-model="editForm.customerAddress"></el-input>
         </el-form-item>
       </el-form>
       <template #footer><span  class="dialog-footer">
-      <el-button @click="oldEditDialogVisible = false">取 消</el-button>
-      <el-button type="primary" @click="editRole()" :loading="saving">确 定</el-button>
+      <el-button @click="editDialogVisible = false">取 消</el-button>
+      <el-button type="primary" @click="saveGuardianEdit()" :loading="saving">确 定</el-button>
     </span></template>
     </el-dialog>
 
@@ -102,9 +102,9 @@
       <el-table-column label="操作" align="center">
         <template #default="scope" >
           <el-button size="small" plain type="primary" :icon="Edit"
-                     @click="handleEditRole(scope.$index, scope.row)">编辑
+                     @click="openEditDialog(scope.$index, scope.row)">编辑
           </el-button>
-          <el-button size="small" plain type="danger" :icon="Delete" @click="deleteRole(scope.row.customerId)">删除
+          <el-button size="small" plain type="danger" :icon="Delete" @click="deleteGuardian(scope.row.customerId)">删除
           </el-button>
           
         </template>
@@ -112,9 +112,9 @@
     </el-table>
     <record-cards v-if="mobileLayout && !loadError" :records="customerList" :fields='[{"key":"customerAge","label":"年龄"},{"key":"customerSex","label":"性别"},{"key":"customerPhone","label":"电话"},{"key":"customerAddress","label":"地址"}]' label="监护人资料" title-key="customerName" key-field="customerId">
       <template #actions="scope"  ><el-button size="small" plain type="primary" :icon="Edit"
-                     @click="handleEditRole(scope.$index, scope.row)">编辑
+                     @click="openEditDialog(scope.$index, scope.row)">编辑
           </el-button>
-<el-button size="small" plain type="danger" :icon="Delete" @click="deleteRole(scope.row.customerId)">删除
+<el-button size="small" plain type="danger" :icon="Delete" @click="deleteGuardian(scope.row.customerId)">删除
           </el-button></template>
     </record-cards>
     
@@ -141,22 +141,22 @@ import { downloadCsv } from '../utils/csv'
 import { useCustomers, validAge, validPhone } from '../composables/useCustomers'
 const mobileLayout = useCollectionLayout(900)
 const state = useCustomers(api)
-const { searchText, customerDialogVisible, oldEditDialogVisible, customerForm, oldEditForm, isLoading, saving, loadError, mutationError, total, pageSize, currentPage, customerList, searchCustomers, handleEditRole, closeRoleAddDialog, handleSizeChange, changePage } = state
-const addcustomerFormRef = ref<FormInstance>()
-const editCustomerFormRef = ref<FormInstance>()
+const { searchText, createDialogVisible, editDialogVisible, customerForm, editForm, isLoading, saving, loadError, mutationError, total, pageSize, currentPage, customerList, searchCustomers, openEditDialog, resetCreateForm, handleSizeChange, changePage } = state
+const createGuardianFormRef = ref<FormInstance>()
+const editGuardianFormRef = ref<FormInstance>()
 const rules = {
  customerPhone: [{ validator: (_rule: unknown, value: unknown, done: (err?: Error) => void) => done(validPhone(value) ? undefined : new Error('请输入有效的 11 位手机号')), trigger: 'blur' }],
  customerAge: [{ validator: (_rule: unknown, value: unknown, done: (err?: Error) => void) => done(validAge(value) ? undefined : new Error('请输入 0–150 岁的整数年龄')), trigger: 'blur' }]
 }
-async function addRoles() {
- if (!await addcustomerFormRef.value?.validate().catch(() => false)) return
+async function createGuardian() {
+ if (!await createGuardianFormRef.value?.validate().catch(() => false)) return
  if (await state.save()) ElMessage.success('添加监护人成功')
 }
-async function editRole() {
- if (!await editCustomerFormRef.value?.validate().catch(() => false)) return
+async function saveGuardianEdit() {
+ if (!await editGuardianFormRef.value?.validate().catch(() => false)) return
  if (await state.save(true)) ElMessage.success('编辑监护人信息成功')
 }
-async function deleteRole(id: number | string | undefined) {
+async function deleteGuardian(id: number | string | undefined) {
  if (id === undefined) return
  try { await ElMessageBox.confirm('确认删除该监护人？', '删除监护人', { type: 'warning' }) } catch { return }
  if (await state.remove(id)) ElMessage.success('删除监护人成功')
