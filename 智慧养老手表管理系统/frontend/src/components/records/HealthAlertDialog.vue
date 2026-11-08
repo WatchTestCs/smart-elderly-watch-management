@@ -37,7 +37,8 @@
 <script setup lang="ts">
 import { CircleCheckFilled } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
-defineProps({ dialog: { type: Object, required: true } })
-const emit = defineEmits(['resolve'])
+import type { VitalAlertState } from '@/domain/vitals'
+defineProps<{ dialog: VitalAlertState }>()
+const emit = defineEmits<{ resolve: [kind: 'rate' | 'pre'] }>()
 const router = useRouter()
 </script>
