@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"errors"
 	"crypto/rand"
 	"encoding/base32"
 	"encoding/hex"
@@ -73,54 +74,34 @@ func (h *Handler) factorLogin(w http.ResponseWriter, r *http.Request, m map[stri
 		return false
 	}
 	defer tx.Rollback(ctx)
-	factor, fetchErr := authrepo.LockLoginFactor(ctx, tx, role, id)
-	err = fetchErr
-	if err != nil && err != pgx.ErrNoRows {
-		response.Error500(w, ref())
+	valid, generation, err := authrepo.VerifyLoginFactor(
+		ctx, tx, h.Box, role, id, factorScope(role, id),
+		str(m, "otp"), str(m, "recoveryCode"), time.Now(),
+	)
+	if errors.Is(err, authrepo.ErrFactorSecretUnavailable) {
+		response.JSON(w, 503, map[string]any{"message": "安全密钥不可用"})
 		return false
 	}
-	if err == nil && factor.Enabled {
-		secret, e := h.Box.Open(factor.Sealed, factorScope(role, id))
-		if e != nil {
-			response.JSON(w, 503, map[string]any{"message": "安全密钥不可用"})
+	if internalError(w, err) {
+		return false
+	}
+	if !valid {
+		if internalError(w, h.loginAuditTx(r, phone, role, id, "factor_required", tx)) {
 			return false
 		}
-		counter, valid := securestore.VerifyTOTP(secret, str(m, "otp"), time.Now(), factor.LastCounter)
-		if !valid && str(m, "recoveryCode") != "" {
-			var codes []string
-			if internalError(w, json.Unmarshal(factor.RecoveryHashes, &codes)) {
-				return false
-			}
-			candidate := health.Digest([]byte(str(m, "recoveryCode")))
-			for i, v := range codes {
-				if v == candidate {
-					codes = append(codes[:i], codes[i+1:]...)
-					factor.RecoveryHashes, _ = json.Marshal(codes)
-					valid = true
-					counter = factor.LastCounter
-					break
-				}
-			}
-		}
-		if !valid {
-			if internalError(w, h.loginAuditTx(r, phone, role, id, "factor_required", tx)) {
-				return false
-			}
-			if internalError(w, tx.Commit(ctx)) {
-				return false
-			}
-			response.JSON(w, 401, map[string]any{"code": "MFA_REQUIRED", "message": "请输入有效的动态验证码或未使用的恢复码"})
+		if internalError(w, tx.Commit(ctx)) {
 			return false
 		}
-		if internalError(w, authrepo.UpdateLoginFactor(ctx, tx, role, id, counter, factor.RecoveryHashes)) {
-			return false
-		}
-		*r = *r.WithContext(context.WithValue(r.Context(), factorGenerationKey{}, factor.Generation))
+		response.JSON(w, 401, map[string]any{"code": "MFA_REQUIRED", "message": "请输入有效的动态验证码或未使用的恢复码"})
+		return false
+	}
+	if generation != "" {
+		*r = *r.WithContext(context.WithValue(r.Context(), factorGenerationKey{}, generation))
 	}
 	if internalError(w, h.loginAuditTx(r, phone, role, id, "credentials_verified", tx)) {
 		return false
 	}
-	if err = tx.Commit(ctx); internalError(w, err) {
+	if internalError(w, tx.Commit(ctx)) {
 		return false
 	}
 	return true
