@@ -1,14 +1,11 @@
 package handlers
 
 import (
-	"context"
 	"crypto/sha256"
 	"encoding/json"
 	"net/http"
 	"time"
 
-	fastjson "github.com/goccy/go-json"
-	"suining-care/internal/db"
 	"suining-care/internal/health"
 	"suining-care/internal/observability"
 	"suining-care/internal/response"
@@ -36,7 +33,7 @@ func (h *Handler) healthStatistics(w http.ResponseWriter, r *http.Request) {
 		req.OldID = oldID
 		b, err := json.Marshal(req) // Keep reporting offsets for daily totals.
 		if err == nil {
-			revision, err = h.statisticsRevision(r.Context(), oldID)
+			revision, err = health.StatisticsRevision(r.Context(), h.DB, oldID)
 		}
 		if err == nil {
 			cacheable = true
@@ -53,7 +50,10 @@ func (h *Handler) healthStatistics(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	observability.Default.Add("suining_health_statistics_db_loads_total", 1)
-	samples, candidates, err := h.loadStatisticsSamples(r.Context(), oldID, req)
+	samples, candidates, err := health.LoadStatisticsSamples(r.Context(), h.DB, oldID, health.StatisticsQuery{
+		Source: req.Source, SourceDevice: req.SourceDevice, Metric: req.Metric,
+		Semantics: req.Semantics, From: req.From, To: req.To,
+	})
 	if internalError(w, err) {
 		return
 	}
@@ -69,7 +69,7 @@ func (h *Handler) healthStatistics(w http.ResponseWriter, r *http.Request) {
 	if cacheable {
 		// A single SQL result is a consistent snapshot. Admit it only if no
 		// sample write committed between the first clock read and this check.
-		current, err := h.statisticsRevision(r.Context(), oldID)
+		current, err := health.StatisticsRevision(r.Context(), h.DB, oldID)
 		if err == nil && current == revision {
 			b, err := json.Marshal(out)
 			if err == nil {
@@ -80,18 +80,6 @@ func (h *Handler) healthStatistics(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	response.OK(w, map[string]any{"statistics": out, "source": req.Source, "sourceDevice": req.SourceDevice, "metric": req.Metric, "semantics": req.Semantics})
-}
-
-func (h *Handler) statisticsRevision(ctx context.Context, oldID int64) (int64, error) {
-	var revision int64
-	query := "SELECT revision FROM health_clock WHERE id=1"
-	args := []any{}
-	if h.DB.IsMySQL() {
-		query = "SELECT COALESCE((SELECT revision FROM health_owner_clock WHERE old_id=$1),0)"
-		args = append(args, oldID)
-	}
-	err := h.DB.QueryRow(ctx, query, args...).Scan(&revision)
-	return revision, err
 }
 
 type healthStatisticsRequest struct {
@@ -119,44 +107,4 @@ func (req healthStatisticsRequest) validationMessage() string {
 		}
 	}
 	return ""
-}
-
-func (h *Handler) loadStatisticsSamples(ctx context.Context, oldID int64, req healthStatisticsRequest) ([]health.Sample, int, error) {
-	sourceFilter := "source=$2 AND source_device=$3 AND metric=$4 AND semantics=$5"
-	if h.DB.IsMySQL() {
-		// MySQL binary collations can still ignore trailing spaces. Sampling
-		// identities and the daily-statistics query compare the complete bytes.
-		sourceFilter = "BINARY source=BINARY $2 AND BINARY source_device=BINARY $3 AND BINARY metric=BINARY $4 AND BINARY semantics=BINARY $5"
-	}
-	upper := req.To.UnixMicro()
-	if req.To.Nanosecond()%1000 != 0 {
-		upper++
-	}
-	samples := []health.Sample{}
-	candidates := 0
-	err := db.QueryEach(ctx, h.DB, func(rows db.Rows) error {
-		candidates++
-		var b []byte
-		var s health.Sample
-		if err := rows.Scan(&b); err != nil {
-			return err
-		}
-		// Stored samples use the compatible decoder; request validation and
-		// canonical/cache encoding retain encoding/json.
-		if err := fastjson.Unmarshal(b, &s); err != nil {
-			return err
-		}
-		if s.InWindow(req.From, req.To) {
-			samples = append(samples, s)
-		}
-		return nil
-	}, `SELECT payload FROM health_sample
-	 WHERE old_id=$1 AND `+sourceFilter+` AND NOT deleted
-	 AND sample_start<$7
-	 AND (sample_start>=$6 OR ($5='interval' AND sample_end>=$6))
-	 ORDER BY revision LIMIT 10001`, oldID, req.Source, req.SourceDevice, req.Metric, req.Semantics, req.From.UnixMicro(), upper)
-	if err != nil {
-		return nil, 0, err
-	}
-	return samples, candidates, nil
 }
