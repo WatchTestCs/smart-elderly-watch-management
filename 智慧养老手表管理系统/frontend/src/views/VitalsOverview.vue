@@ -121,7 +121,7 @@ const rateCount = ref<number | string>('')
 const preCount = ref<number | string>('')
 const mobileLayout = useCollectionLayout(900)
 const {
-  detailsVisible, chartLoading, chartError, chartName,
+  detailsVisible, chartLoading, chartError,
   primaryChartElement, secondaryChartElement, showRecordDetails, resizeCharts, disposeCharts
 } = useRecordCharts()
 const {
