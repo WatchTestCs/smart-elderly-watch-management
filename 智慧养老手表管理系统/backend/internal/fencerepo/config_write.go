@@ -54,7 +54,7 @@ func Save(ctx context.Context, tx *db.Transaction, actor string, deviceID, resid
 	}
 	config.Revision++
 	if _, err := tx.Exec(ctx,
-		`UPDATE device_fence SET name=$2,enabled=$3,coordinates=$4,coordinate_system=$5,timezone=$6,time_begin=$7,time_end,min_points=$8,dwell_seconds=$9,max_accuracy=$10,updated_by=$11,revision=$12,updated_at=now() WHERE id=$1`,
+		`UPDATE device_fence SET name=$2,enabled=$3,coordinates=$4,coordinate_system=$5,timezone=$6,time_begin=$7,time_end=$8,min_points=$9,dwell_seconds=$10,max_accuracy=$11,updated_by=$12,revision=$13,updated_at=now() WHERE id=$1`,
 		config.ID, config.Name, config.Enabled, json.RawMessage(coordinates), config.CoordinateSystem,
 		config.Timezone, config.TimeBegin, config.TimeEnd, config.MinPoints, config.DwellSeconds,
 		config.MaxAccuracy, actor, config.Revision); err != nil {
