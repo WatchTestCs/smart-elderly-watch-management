@@ -1,12 +1,12 @@
 <template>
   <section class="position-map" aria-label="位置地图">
     <div class="position-map-heading">
-      <div><h2>位置地图</h2><p>{{ valid ? `${selection.name || '长者'} · ${selection.lng}，${selection.lat}` : '选择一条位置记录，在此查看。' }}</p></div>
+      <div><h2>位置地图</h2><p>{{ valid ? `${selection?.name || '长者'} · ${selection?.lng}，${selection?.lat}` : '选择一条位置记录，在此查看。' }}</p></div>
       <el-button v-if="valid && !online" @click="enableTiles">加载在线地图</el-button>
       <el-button v-if="online" link @click="disableTiles">关闭在线地图</el-button>
     </div>
     <div ref="canvas" class="position-map-canvas" :class="{ 'has-location': valid }" role="region" aria-label="可缩放的位置地图"></div>
-    <p v-if="valid" class="position-map-note">{{ describePositionContext(selection) }}</p>
+    <p v-if="valid" class="position-map-note">{{ describePositionContext(selection ?? {}) }}</p>
     <p class="position-map-note" role="status">{{ message }}</p>
   </section>
 </template>
@@ -18,8 +18,8 @@ import 'leaflet/dist/leaflet.css'
 import { describePositionContext, type PositionContext } from '../utils/positionContext'
 
 interface PositionSelection extends PositionContext {
-  lng: number | string
-  lat: number | string
+  lng?: number | string | null
+  lat?: number | string | null
   name?: string
 }
 const props = defineProps({ selection: { type: Object as PropType<PositionSelection | null>, default: null } })
