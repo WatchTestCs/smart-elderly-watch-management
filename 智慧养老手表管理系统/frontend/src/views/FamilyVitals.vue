@@ -59,7 +59,7 @@
 
 <script setup lang="ts">
 import { Check, Refresh } from '@element-plus/icons-vue'
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, shallowRef } from 'vue'
 import { authState } from '../auth'
 import { useCollectionLayout } from '@/composables/useCollectionLayout'
 import { useRecordCharts } from '@/composables/useRecordCharts'
@@ -80,7 +80,7 @@ interface VitalRecord {
   preState?: string | number | null
   createTime?: string
 }
-const oldsList = ref<VitalRecord[]>([])
+const oldsList = shallowRef<VitalRecord[]>([])
 const isLoading = ref(false)
 const loadError = ref('')
 const reads = createLatestRead(
