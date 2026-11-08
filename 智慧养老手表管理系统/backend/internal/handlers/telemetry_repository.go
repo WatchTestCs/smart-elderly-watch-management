@@ -43,7 +43,7 @@ func (repo telemetryRepository) PersistDeviceReport(ctx context.Context, tx *dbs
 		return telemetryPersisted{}, err
 	}
 	result.careIncidentID = incidentID
-	if err := touchDevice(ctx, tx, d.ID, parsed.battery, parsed.appVersion, parsed.now); err != nil {
+	if err := telemetryrepo.TouchDevice(ctx, tx, d.ID, parsed.battery, parsed.appVersion, parsed.now); err != nil {
 		return telemetryPersisted{}, err
 	}
 	return result, nil

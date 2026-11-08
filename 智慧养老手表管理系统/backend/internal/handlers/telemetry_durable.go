@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"suining-care/internal/telemetryrepo"
 	"context"
 	"encoding/json"
 	"errors"
@@ -66,7 +67,7 @@ func (repo telemetryRepository) QueueDurableReport(ctx context.Context, tx *dbst
 	}
 	// A durable acknowledgement is also a real heartbeat. Update last-seen in
 	// the ingest transaction rather than waiting for a potentially delayed worker.
-	return touchDevice(ctx, tx, d.ID, parsed.battery, parsed.appVersion, parsed.now)
+	return telemetryrepo.TouchDevice(ctx, tx, d.ID, parsed.battery, parsed.appVersion, parsed.now)
 }
 
 func durableQueueDuplicate(err error) bool {

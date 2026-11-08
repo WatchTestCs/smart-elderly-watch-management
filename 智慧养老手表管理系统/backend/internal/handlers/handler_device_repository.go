@@ -168,23 +168,6 @@ func deviceCredentialFailure(supplied, stored string, status *int, disabledMsg s
 	return "", ""
 }
 
-// touchDevice 更新心跳：last_time/last_online_at=now，battery/appVersion 仅在提供时更新。
-func touchDevice(ctx context.Context, q deviceQueries, deviceID int64, battery *int, appVersion *string, now time.Time) error {
-	var bAny, aAny any
-	if battery != nil {
-		bAny = *battery
-	}
-	if appVersion != nil {
-		aAny = *appVersion
-	}
-	_, err := q.Exec(ctx,
-		`UPDATE device SET last_time=GREATEST(COALESCE(last_time,$1),$1),
-		 battery=COALESCE($2,battery), app_version=COALESCE($3,app_version),
-		 last_online_at=GREATEST(COALESCE(last_online_at,$1),$1) WHERE device_id=$4`,
-		now, bAny, aAny, deviceID)
-	return err
-}
-
 // lockDeviceID holds the device row lock until the caller finishes its transaction.
 func lockDeviceID(w http.ResponseWriter, ctx context.Context, tx *dbstore.Transaction, deviceID int64) bool {
 	var id int64

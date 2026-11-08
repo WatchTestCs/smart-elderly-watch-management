@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"suining-care/internal/telemetryrepo"
 	"encoding/json"
 	"math"
 	"net/http"
@@ -198,7 +199,7 @@ func (h *Handler) fencePoint(w http.ResponseWriter, r *http.Request) {
 		}
 		events = append(events, event)
 	}
-	if err = touchDevice(ctx, tx, d.ID, nil, nil, time.Now()); internalError(w, err) {
+	if err = telemetryrepo.TouchDevice(ctx, tx, d.ID, nil, nil, time.Now()); internalError(w, err) {
 		return
 	}
 	if err = tx.Commit(ctx); internalError(w, err) {

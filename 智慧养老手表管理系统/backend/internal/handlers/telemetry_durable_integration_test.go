@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"suining-care/internal/telemetryrepo"
 	"context"
 	"encoding/base64"
 	"encoding/json"
@@ -108,10 +109,10 @@ func TestTouchDeviceTimeNeverRegresses(t *testing.T) {
 	seedDevice(t, pool)
 	ctx := context.Background()
 	now := time.Now().UTC().Truncate(time.Second)
-	if err := touchDevice(ctx, pool, 1, nil, nil, now); err != nil {
+	if err := telemetryrepo.TouchDevice(ctx, pool, 1, nil, nil, now); err != nil {
 		t.Fatal(err)
 	}
-	if err := touchDevice(ctx, pool, 1, nil, nil, now.Add(-time.Hour)); err != nil {
+	if err := telemetryrepo.TouchDevice(ctx, pool, 1, nil, nil, now.Add(-time.Hour)); err != nil {
 		t.Fatal(err)
 	}
 	var stored time.Time

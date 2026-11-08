@@ -90,7 +90,7 @@ func (repo telemetryRepository) PersistSOSIncident(ctx context.Context, tx *dbst
 			return 0, err
 		}
 	}
-	if err := touchDevice(ctx, tx, d.ID, nil, nil, now); err != nil {
+	if err := telemetryrepo.TouchDevice(ctx, tx, d.ID, nil, nil, now); err != nil {
 		return 0, err
 	}
 	var requestValue any

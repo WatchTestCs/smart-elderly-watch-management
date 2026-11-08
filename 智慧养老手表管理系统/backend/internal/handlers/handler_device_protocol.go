@@ -68,7 +68,7 @@ func (h *Handler) deviceLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	now := time.Now()
-	if internalError(w, touchDevice(ctx, h.DB, d.ID, nil, nil, now)) {
+	if internalError(w, telemetryrepo.TouchDevice(ctx, h.DB, d.ID, nil, nil, now)) {
 		return
 	}
 	bound := 0
@@ -286,7 +286,7 @@ func (h *Handler) deviceHeartbeat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	now := time.Now()
-	if internalError(w, touchDevice(ctx, h.DB, d.ID, battery, appVersion, now)) {
+	if internalError(w, telemetryrepo.TouchDevice(ctx, h.DB, d.ID, battery, appVersion, now)) {
 		return
 	}
 	bound := 0
