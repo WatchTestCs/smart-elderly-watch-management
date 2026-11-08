@@ -3,7 +3,6 @@ package handlers
 import (
 	"net/http"
 	"suining-care/internal/auth"
-	"suining-care/internal/db"
 	"suining-care/internal/inviterepo"
 	"suining-care/internal/response"
 	"time"
@@ -11,15 +10,8 @@ import (
 )
 
 func (h *Handler) inviteOldPersonList(w http.ResponseWriter, r *http.Request) {
-	list, ok := queryRows(h, w, r.Context(), func(rows db.Rows) (map[string]any, error) {
-		var id int64
-		var name, phone, room *string
-		if err := rows.Scan(&id, &name, &phone, &room); err != nil {
-			return nil, err
-		}
-		return map[string]any{"oldId": id, "name": name, "phone": phone, "room": room}, nil
-	}, `SELECT old_id,name,phone,room FROM oldperson`)
-	if !ok {
+	list, err := inviterepo.ListResidents(r.Context(), h.DB)
+	if internalError(w, err) {
 		return
 	}
 	response.OK(w, map[string]any{"oldPeople": list})
@@ -36,13 +28,7 @@ func (h *Handler) inviteCheckCode(w http.ResponseWriter, r *http.Request) {
 		response.Fail(w, "请输入邀请码")
 		return
 	}
-	var used int16
-	var expire *time.Time
-	var oldName *string
-	err := h.DB.QueryRow(r.Context(),
-		`SELECT ic.used,ic.expire_time,o.name FROM invite_code ic
-		 LEFT JOIN oldperson o ON ic.old_id=o.old_id WHERE ic.code=$1`,
-		code).Scan(&used, &expire, &oldName)
+	status, err := inviterepo.ReadCode(r.Context(), h.DB, code)
 	if err != nil {
 		if isNotFound(err) {
 			response.Error(w, http.StatusNotFound, "INVITE_NOT_FOUND", "邀请码不存在，请向管理员确认")
@@ -51,7 +37,7 @@ func (h *Handler) inviteCheckCode(w http.ResponseWriter, r *http.Request) {
 		response.Error500(w, ref())
 		return
 	}
-	switch inviteStatus(used, expire, time.Now()) {
+	switch inviteStatus(status.Used, status.ExpireTime, time.Now()) {
 	case "used":
 		response.Error(w, http.StatusConflict, "INVITE_USED", "该邀请码已被使用")
 		return
@@ -60,11 +46,11 @@ func (h *Handler) inviteCheckCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	nm := ""
-	if oldName != nil {
-		nm = *oldName
+	if status.ResidentName != nil {
+		nm = *status.ResidentName
 	}
 	response.OK(w, map[string]any{
-		"oldPersonName": nm, "expireTime": fmtTS(expire), "remainDays": inviteRemainingDays(expire, time.Now()),
+		"oldPersonName": nm, "expireTime": fmtTS(status.ExpireTime), "remainDays": inviteRemainingDays(status.ExpireTime, time.Now()),
 	})
 }
 
@@ -84,14 +70,8 @@ func (h *Handler) inviteJoin(w http.ResponseWriter, r *http.Request) {
 	if internalError(w, err) {
 		return
 	}
-	// 邀请码行锁查询
-	var invID int64
-	var invOldID *int64
-	var used int16
-	var expire *time.Time
-	err = tx.QueryRow(ctx,
-		`SELECT id,old_id,used,expire_time FROM invite_code WHERE code=$1 FOR UPDATE`, registration.code).
-		Scan(&invID, &invOldID, &used, &expire)
+	// Preserve the invitation row lock through registration and consumption.
+	inv, err := inviterepo.LockCode(ctx, tx, registration.code)
 	if err != nil {
 		_ = tx.Rollback(ctx)
 		if isNotFound(err) {
@@ -101,7 +81,7 @@ func (h *Handler) inviteJoin(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	switch inviteStatus(used, expire, time.Now()) {
+	switch inviteStatus(inv.Used, inv.ExpireTime, time.Now()) {
 	case "used":
 		_ = tx.Rollback(ctx)
 		response.Fail(w, "该邀请码已被使用")
@@ -112,23 +92,20 @@ func (h *Handler) inviteJoin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// 手机号是否已注册
-	var dup bool
-	if err := tx.QueryRow(ctx,
-		`SELECT EXISTS(SELECT 1 FROM users WHERE user_phone=$1)
-		      OR EXISTS(SELECT 1 FROM family WHERE family_phone=$1)`, registration.familyPhone).Scan(&dup); err != nil {
+	dup, err := inviterepo.PhoneRegistered(ctx, tx, registration.familyPhone)
+	if err != nil {
 		_ = tx.Rollback(ctx)
 		response.Error500(w, ref())
 		return
 	}
 	// 邀请码绑定的老人须存在
-	var oldName *string
-	var boundFamilyID *int64
-	if invOldID == nil {
+	if inv.ResidentID == nil {
 		_ = tx.Rollback(ctx)
 		response.Fail(w, "邀请码绑定的老人不存在，请联系管理员")
 		return
 	}
-	if err := tx.QueryRow(ctx, `SELECT name, family_id FROM oldperson WHERE old_id=$1 FOR UPDATE`, *invOldID).Scan(&oldName, &boundFamilyID); err != nil {
+	resident, err := inviterepo.LockResident(ctx, tx, *inv.ResidentID)
+	if err != nil {
 		_ = tx.Rollback(ctx)
 		if isNotFound(err) {
 			response.Fail(w, "邀请码绑定的老人不存在，请联系管理员")
@@ -140,10 +117,8 @@ func (h *Handler) inviteJoin(w http.ResponseWriter, r *http.Request) {
 	// An invitation may activate only the same elder's pre-created, passwordless
 	// family record. It must never reset an active account or replace a binding.
 	var familyID int64
-	if boundFamilyID != nil {
-		err = tx.QueryRow(ctx, `SELECT family_id FROM family
-		 WHERE family_id=$1 AND family_phone=$2 AND family_password IS NULL
-		 AND NOT EXISTS(SELECT 1 FROM users WHERE user_phone=$2) FOR UPDATE`, *boundFamilyID, registration.familyPhone).Scan(&familyID)
+	if resident.FamilyID != nil {
+		familyID, err = inviterepo.LockPasswordlessFamily(ctx, tx, *resident.FamilyID, registration.familyPhone)
 		if err != nil {
 			_ = tx.Rollback(ctx)
 			if isNotFound(err) {
@@ -169,17 +144,15 @@ func (h *Handler) inviteJoin(w http.ResponseWriter, r *http.Request) {
 		Name: registration.familyName, Phone: registration.familyPhone, PasswordHash: hash,
 		Relation: registration.familyRelation, Sex: registration.familySex,
 		Address: registration.familyAddress,
-	}, boundFamilyID, familyID, *invOldID)
+	}, resident.FamilyID, familyID, *inv.ResidentID)
 	if err != nil || !applied {
 		_ = tx.Rollback(ctx)
 		conflict409(w, "注册失败，请重试")
 		return
 	}
 	// 原子占用邀请码（防并发）
-	ct, err := tx.Exec(ctx,
-		`UPDATE invite_code SET used=1,used_family_id=$1,used_time=$2 WHERE id=$3 AND used=0`,
-		familyID, time.Now(), invID)
-	if err != nil || ct.RowsAffected() != 1 {
+	claimed, err := inviterepo.ConsumeCode(ctx, tx, inv.ID, familyID, time.Now())
+	if err != nil || !claimed {
 		_ = tx.Rollback(ctx)
 		conflict409(w, "邀请码已失效，请重新获取")
 		return
@@ -188,8 +161,8 @@ func (h *Handler) inviteJoin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	nm := ""
-	if oldName != nil {
-		nm = *oldName
+	if resident.Name != nil {
+		nm = *resident.Name
 	}
 	response.OK(w, map[string]any{
 		"familyId": familyID, "familyName": registration.familyName, "oldPersonName": nm,
