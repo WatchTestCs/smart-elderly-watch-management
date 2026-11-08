@@ -140,7 +140,7 @@ func parseSOSRequest(w http.ResponseWriter, m map[string]any) (sosRequest, bool)
 
 // lockSOSDevice authenticates and revalidates the owner under elder-then-device
 // locks. Code 409 denotes a binding conflict; other codes use the device envelope.
-func (h *Handler) lockSOSDevice(ctx context.Context, tx *dbstore.Transaction, deviceNo, secret string, bindingVersion int64) (*deviceRecord, string, string, error) {
+func (h *Handler) lockSOSDevice(ctx context.Context, tx *dbstore.Transaction, deviceNo, secret string, bindingVersion int64) (*devicerepo.DeviceRecord, string, string, error) {
 	d, code, msg, err := h.hwAuth(ctx, tx, deviceNo, secret, "设备已停用")
 	if err != nil || d == nil {
 		return nil, code, msg, err
@@ -154,7 +154,7 @@ func (h *Handler) lockSOSDevice(ctx context.Context, tx *dbstore.Transaction, de
 	if err := devicerepo.LockResident(ctx, tx, expectedOwner); err != nil {
 		return nil, "", "", err
 	}
-	locked, err := scanDeviceRecord(devicerepo.LockedDeviceRow(ctx, tx, d.ID))
+	locked, err := devicerepo.ScanDeviceRecord(devicerepo.LockedDeviceRow(ctx, tx, d.ID))
 	if err != nil {
 		return nil, "", "", err
 	}
