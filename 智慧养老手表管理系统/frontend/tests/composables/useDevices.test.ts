@@ -152,3 +152,35 @@ it('limits workbench alert reads to six in flight and preserves device order', a
     vi.restoreAllMocks()
   }
 })
+
+it('keeps healthy workbench alerts visible when another detail request fails', async () => {
+  const devices = [
+    { deviceId: 1, deviceNo: 'watch-1' },
+    { deviceId: 2, deviceNo: 'watch-2' },
+    { deviceId: 3, deviceNo: 'watch-3' }
+  ]
+  vi.spyOn(axios, 'post').mockImplementation((url, body) => {
+    if (url === '/api/v1/device/list') return Promise.resolve({ data: { devices, total: 3 } })
+    if (url === '/api/v1/device/alertCounts') return Promise.resolve({ data: {
+      items: devices.map(device => ({ deviceId: device.deviceId, personCount: 1, rateCount: 0, preCount: 0 })),
+      total: 3
+    } })
+    if (url === '/api/v1/device/alertDetail') {
+      const id = (body as { deviceId: number }).deviceId
+      return id === 2 ? Promise.reject(new Error('temporary failure')) :
+        Promise.resolve({ data: { hasAlert: 1 } })
+    }
+    if (url === '/api/v1/inviteCode/oldPersonList') return Promise.resolve({ data: { oldPeople: [] } })
+    throw new Error(`unexpected request: ${url}`)
+  })
+  let state!: ReturnType<typeof useDevices>
+  const wrapper = mount(defineComponent({ setup() { state = useDevices(); return () => null } }))
+  try {
+    await flushPromises()
+    await state.openWorkbench()
+    expect(state.workbench.value.list.map(row => row.deviceId)).toEqual([1, 3])
+  } finally {
+    wrapper.unmount()
+    vi.restoreAllMocks()
+  }
+})
