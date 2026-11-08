@@ -52,11 +52,11 @@
           </el-form-item>
 
           <el-form-item label="密码" prop="familyPassword" for="register-familyPassword">
-            <el-input :type="showPassword ? 'text' : 'password'" autocomplete="new-password" id="register-familyPassword" aria-label="密码" v-model="registerForm.familyPassword" placeholder="12-20位，须包含字母和数字"><template #suffix><button  type="button" class="password-visibility" :aria-label="showPassword ? '隐藏密码' : '显示密码'" :aria-pressed="String(showPassword)" @click="showPassword = !showPassword"><el-icon aria-hidden="true"><View /></el-icon></button></template></el-input>
+            <el-input :type="showPassword ? 'text' : 'password'" autocomplete="new-password" id="register-familyPassword" aria-label="密码" v-model="registerForm.familyPassword" placeholder="12-20位，须包含字母和数字"><template #suffix><button  type="button" class="password-visibility" :aria-label="showPassword ? '隐藏密码' : '显示密码'" :aria-pressed="showPassword" @click="showPassword = !showPassword"><el-icon aria-hidden="true"><View /></el-icon></button></template></el-input>
           </el-form-item>
 
           <el-form-item label="确认密码" prop="confirmPassword" for="register-confirmPassword">
-            <el-input :type="showConfirmPassword ? 'text' : 'password'" autocomplete="new-password" id="register-confirmPassword" aria-label="确认密码" v-model="registerForm.confirmPassword" placeholder="请再次输入密码"><template #suffix><button  type="button" class="password-visibility" :aria-label="showConfirmPassword ? '隐藏确认密码' : '显示确认密码'" :aria-pressed="String(showConfirmPassword)" @click="showConfirmPassword = !showConfirmPassword"><el-icon aria-hidden="true"><View /></el-icon></button></template></el-input>
+            <el-input :type="showConfirmPassword ? 'text' : 'password'" autocomplete="new-password" id="register-confirmPassword" aria-label="确认密码" v-model="registerForm.confirmPassword" placeholder="请再次输入密码"><template #suffix><button  type="button" class="password-visibility" :aria-label="showConfirmPassword ? '隐藏确认密码' : '显示确认密码'" :aria-pressed="showConfirmPassword" @click="showConfirmPassword = !showConfirmPassword"><el-icon aria-hidden="true"><View /></el-icon></button></template></el-input>
           </el-form-item>
 
           <el-form-item label="联系地址" prop="familyAddress" for="register-familyAddress">
