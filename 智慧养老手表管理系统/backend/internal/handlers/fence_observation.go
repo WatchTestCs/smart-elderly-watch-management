@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"suining-care/internal/devicerepo"
 	"context"
 	"time"
 
@@ -41,7 +42,7 @@ func advanceFenceObservation(f *fencerepo.Config, state *fence.State, req *fence
 	return direction, true, nil
 }
 
-func (h *Handler) persistFenceEvent(ctx context.Context, tx *dbstore.Transaction, d *deviceRecord, f *fencerepo.Config, req *fencePointRequest, direction string, at time.Time) (map[string]any, error) {
+func (h *Handler) persistFenceEvent(ctx context.Context, tx *dbstore.Transaction, d *devicerepo.DeviceRecord, f *fencerepo.Config, req *fencePointRequest, direction string, at time.Time) (map[string]any, error) {
 	eventID, err := fencerepo.InsertEvent(ctx, tx, fencerepo.NewEvent{
 		FenceID: f.ID, FenceRevision: f.Revision,
 		ResidentID: *d.OldID, DeviceID: d.ID, Epoch: d.HealthEpoch,
