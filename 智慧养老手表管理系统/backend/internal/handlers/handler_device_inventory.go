@@ -2,11 +2,11 @@ package handlers
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strconv"
 	"suining-care/internal/devicerepo"
 	"suining-care/internal/response"
-	"suining-care/internal/telemetryrepo"
 	"time"
 	"unicode/utf8"
 )
@@ -41,67 +41,31 @@ func (h *Handler) deviceCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := r.Context()
-	tx, err := h.DB.Begin(ctx)
+	deviceNo, err := h.genDeviceNo(ctx)
 	if internalError(w, err) {
 		return
 	}
-	rollback := func() { _ = tx.Rollback(ctx) }
-	if oldID != nil {
-		var exists bool
-		if err := tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM oldperson WHERE old_id=$1)`, *oldID).Scan(&exists); rollbackOnError(w, rollback, err) {
-			return
-		}
-		if !exists {
-			rollback()
-			response.Fail(w, "老人不存在")
-			return
-		}
-	}
-	deviceNo, err := h.genDeviceNo(ctx)
-	if rollbackOnError(w, rollback, err) {
-		return
-	}
 	clearSecret, hashed, err := newDeviceSecret()
-	if rollbackOnError(w, rollback, err) {
+	if internalError(w, err) {
 		return
 	}
 	now := time.Now()
-	var bindTimeAny, oldIDAny any
-	if oldID != nil {
-		bindTimeAny = now
-		oldIDAny = *oldID
-	}
-	var deviceID int64
-	if err := tx.QueryRow(ctx,
-		`INSERT INTO device(device_no, secret, alias, model, old_id, status, bind_time, create_time)
-		 VALUES($1,$2,$3,$4,$5,1,$6,$7) RETURNING device_id`,
-		deviceNo, hashed, alias, model, oldIDAny, bindTimeAny, now).Scan(&deviceID); err != nil {
-		rollback()
-		response.Error500(w, ref())
-		return
-	}
-	if deviceID == 0 {
-		rollback()
-		response.Fail(w, "新建设备失败")
-		return
-	}
-	if oldID != nil {
-		ct, err := tx.Exec(ctx, `UPDATE oldperson SET device_id=COALESCE(device_id,$1) WHERE old_id=$2`, deviceID, *oldID)
-		if err != nil || ct.RowsAffected() != 1 {
-			rollbackFailure(w, rollback)
-			return
-		}
-		if err := telemetryrepo.EnsureDefaultWatchProfile(ctx, tx, deviceID, siteDay(now)); rollbackOnError(w, rollback, err) {
-			return
-		}
-	}
-	if internalError(w, tx.Commit(ctx)) {
-		return
-	}
-	// secret 明文仅此一次返回。
-	response.OK(w, map[string]any{
-		"deviceId": deviceID, "deviceNo": deviceNo, "secret": clearSecret,
+	deviceID, err := devicerepo.Create(ctx, h.DB, devicerepo.NewDevice{
+		Number: deviceNo, SecretHash: hashed, Alias: alias, Model: model,
+		ResidentID: oldID, At: now, ProfileDay: siteDay(now),
 	})
+	switch {
+	case errors.Is(err, devicerepo.ErrResidentNotFound):
+		response.Fail(w, "老人不存在")
+	case errors.Is(err, devicerepo.ErrDeviceInsertFailed):
+		response.Fail(w, "新建设备失败")
+	case internalError(w, err):
+		return
+	default:
+		response.OK(w, map[string]any{
+			"deviceId": deviceID, "deviceNo": deviceNo, "secret": clearSecret,
+		})
+	}
 }
 
 // POST /api/v1/device/resetSecret —— 重置设备密钥（ADMIN）。
