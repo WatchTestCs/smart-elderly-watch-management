@@ -85,8 +85,8 @@ const searchText = ref('')
 const stepCount = ref<string | number>('')
 const mobileLayout = useCollectionLayout(900)
 const {
-  detailsVisible, chartLoading, chartError, chartName,
-  primaryChartElement, secondaryChartElement, showRecordDetails, resizeCharts, disposeCharts
+  detailsVisible, chartLoading, chartError,
+  primaryChartElement, showRecordDetails, resizeCharts, disposeCharts
 } = useRecordCharts()
 interface ActivityRecord {
   oldId: number | string
