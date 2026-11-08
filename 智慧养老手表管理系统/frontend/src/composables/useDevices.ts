@@ -187,24 +187,35 @@ export function useDevices() {
     const revision = ++workbenchRequest
     state.workbench.visible = true
     const kinds = ['person', 'rate', 'pre']
-    const requests: Promise<DeviceRecord | null>[] = []
+    const pending: { device: DeviceRecord; kind: string }[] = []
     for (const device of state.deviceList) {
+      const counts = alertOf(device.deviceId)
       for (const kind of kinds) {
-        const counts = alertOf(device.deviceId)
         const count = kind === 'person' ? counts.personCount :
           kind === 'rate' ? counts.rateCount : counts.preCount
-        if (count < 1) continue
-        requests.push(post<AlertDetailResponse>('alertDetail', { deviceId: device.deviceId, kind }).then(({ data }) =>
-          data.hasAlert === 1 ? {
-            deviceId: device.deviceId, deviceNo: data.deviceNo || device.deviceNo,
-            alias: data.alias ?? device.alias ?? '', oldPersonName: data.oldPersonName ?? device.oldPersonName ?? '',
-            kind, kindText: data.kindText, reason: data.reason, recordId: data.recordId
-          } : null))
+        if (count > 0) pending.push({ device, kind })
+      }
+    }
+    const results: (DeviceRecord | null)[] = Array(pending.length).fill(null)
+    let nextIndex = 0
+    async function readDetails() {
+      while (nextIndex < pending.length && !disposed && revision === workbenchRequest) {
+        const index = nextIndex++
+        const { device, kind } = pending[index]
+        const { data } = await post<AlertDetailResponse>('alertDetail', { deviceId: device.deviceId, kind })
+        if (data.hasAlert !== 1) continue
+        results[index] = {
+          deviceId: device.deviceId, deviceNo: data.deviceNo || device.deviceNo,
+          alias: data.alias ?? device.alias ?? '', oldPersonName: data.oldPersonName ?? device.oldPersonName ?? '',
+          kind, kindText: data.kindText, reason: data.reason, recordId: data.recordId
+        }
       }
     }
     try {
-      const rows = (await Promise.all(requests)).filter((row): row is DeviceRecord => row !== null)
-      if (!disposed && revision === workbenchRequest) state.workbench.list = rows
+      await Promise.all(Array.from({ length: Math.min(6, pending.length) }, () => readDetails()))
+      if (!disposed && revision === workbenchRequest) {
+        state.workbench.list = results.filter((row): row is DeviceRecord => row !== null)
+      }
     } catch (error) {
       if (disposed || revision !== workbenchRequest) return
       ElMessage({ type: 'error', message: apiErrorMessage(error, '读取异常工作台失败') })
@@ -321,7 +332,7 @@ export function useDevices() {
     alertRequest++
     alertCountsRequest++
     workbenchRequest++
-      clearTimeout(filterTimer)
+    clearTimeout(filterTimer)
     document.removeEventListener('visibilitychange', handleVisibilityChange)
     stopTimer()
   })
