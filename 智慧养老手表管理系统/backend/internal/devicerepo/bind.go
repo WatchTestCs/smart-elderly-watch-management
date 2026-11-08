@@ -38,7 +38,7 @@ func LockDeviceID(ctx context.Context, tx *db.Transaction, deviceID int64) error
 // LockedDeviceRow selects the current credential and binding state under a row lock.
 // The caller locks the resident first and retains the transaction until binding completes.
 func LockedDeviceRow(ctx context.Context, tx *db.Transaction, deviceID int64) db.Row {
-	return tx.QueryRow(ctx, `SELECT `+DeviceRecordColumns+` FROM device WHERE device_id=$1 FOR UPDATE`, deviceID)
+	return tx.QueryRow(ctx, `SELECT `+deviceRecordColumns+` FROM device WHERE device_id=$1 FOR UPDATE`, deviceID)
 }
 
 // CompleteBinding updates only the locked device and its resident references.
