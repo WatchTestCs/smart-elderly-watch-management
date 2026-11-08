@@ -36,11 +36,11 @@ import { ArrowDown, ArrowUp, Clock, Document, Menu, Message, User } from '@eleme
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { authState } from '@/auth'
+import { isRestrictedAdmin } from '@/domain/permissions'
 
 const route = useRoute()
 const expanded = ref(false)
-const restrictedDuty = computed(() => authState.account?.role === 'ADMIN' &&
-  ['caregiver', 'auditor'].includes(authState.account.duty ?? ''))
+const restrictedDuty = computed(() => isRestrictedAdmin(authState.account))
 const groups: Record<string, string[]> = {
   health: ['/operations/vitals', '/operations/activity', '/operations/locations', '/operations/life'],
   records: ['/operations/residents', '/operations/guardians', '/operations/monitoring-profiles', '/operations/families', '/operations/invitations'],
