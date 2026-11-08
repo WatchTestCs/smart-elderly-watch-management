@@ -6,6 +6,7 @@ import (
 
 	dbstore "suining-care/internal/db"
 	"suining-care/internal/response"
+	"suining-care/internal/userphone"
 )
 
 // routeUser registers account and guardian routes.
@@ -28,17 +29,28 @@ func (h *Handler) userSelect(w http.ResponseWriter, r *http.Request) {
 		response.Fail(w, "参数不完整")
 		return
 	}
+	lookup, err := userphone.SearchIndex(r.Context(), h.DB, h.Box, phone)
+	if internalError(w, err) {
+		return
+	}
 	list, ok := queryRows(h, w, r.Context(), func(rows dbstore.Rows) (map[string]any, error) {
 		var id int64
 		var name, uphone, role *string
-		if err := rows.Scan(&id, &name, &uphone, &role); err != nil {
+		var protected userphone.Record
+		if err := rows.Scan(&id, &name, &uphone, &role, &protected.Cipher, &protected.Lookup, &protected.Protected); err != nil {
+			return nil, err
+		}
+		protected.Legacy = uphone
+		uphone, err := protected.OpenStored(h.Box, id)
+		if err != nil {
 			return nil, err
 		}
 		return map[string]any{
 			"userId": id, "userName": name, "userPhone": uphone,
 			"role": role, "password": nil,
 		}, nil
-	}, `SELECT user_id,user_name,user_phone,role FROM users WHERE user_phone=$1`, phone)
+	}, `SELECT user_id,user_name,user_phone,role,user_phone_cipher,user_phone_lookup,user_phone_protected FROM users
+ WHERE (user_phone_protected=false AND user_phone=$1) OR (user_phone_protected=true AND user_phone_lookup=$2)`, phone, lookup)
 	if !ok {
 		return
 	}
