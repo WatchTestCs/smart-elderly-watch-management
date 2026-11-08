@@ -66,7 +66,7 @@ import { apiErrorMessage } from '../api/httpContract'
 const mobileLayout = useCollectionLayout()
 const {
   detailsVisible, chartLoading, chartError, chartName,
-  primaryChartElement, secondaryChartElement, showRecordDetails, resizeCharts, disposeCharts
+  primaryChartElement, showRecordDetails, resizeCharts, disposeCharts
 } = useRecordCharts()
 const oldId = computed(() => String(authState.account?.oldId ?? ''))
 interface ActivityRecord {
