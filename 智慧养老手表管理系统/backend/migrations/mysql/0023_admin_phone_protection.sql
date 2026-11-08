@@ -1,5 +1,5 @@
--- Additive expansion. The original phone column remains readable until backfill.
--- MySQL applies each ALTER atomically; duplicate-column errors on migration
+-- Additive expansion. Keep the original phone column readable until backfill.
+-- MySQL applies each ALTER atomically. Duplicate-column errors on migration
 -- replay are handled by the existing runner, without changing older checksums.
 ALTER TABLE users
  ADD COLUMN user_phone_cipher text DEFAULT NULL,
