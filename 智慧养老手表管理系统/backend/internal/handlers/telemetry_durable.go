@@ -12,9 +12,10 @@ import (
 	"github.com/go-sql-driver/mysql"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+
 	dbstore "suining-care/internal/db"
-	"suining-care/internal/securestore"
 	"suining-care/internal/devicerepo"
+	"suining-care/internal/securestore"
 	"suining-care/internal/telemetryrepo"
 )
 
