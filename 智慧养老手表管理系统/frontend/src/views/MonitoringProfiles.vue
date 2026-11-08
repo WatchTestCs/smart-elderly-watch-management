@@ -25,7 +25,7 @@
     <el-dialog :close-on-click-modal="false"
       title="设备添加"
       v-model="watchDialogVisible"
-      @close="closeRoleAddDialog">
+      @close="resetWatchForm">
       <ThresholdForm :draft="watchForm" :rules="rules" ref="addwatchFormRef" />
       <template #footer><span  class="dialog-footer">
       <el-button @click="watchDialogVisible = false">取 消</el-button>
@@ -124,7 +124,7 @@ const rules = {
   hrf: [{ validator: checkThreshold, trigger: 'blur' }],
   hrl: [{ validator: checkThreshold, trigger: 'blur' }]
 }
-function closeRoleAddDialog() { addwatchFormRef.value?.resetFields() }
+function resetWatchForm() { addwatchFormRef.value?.resetFields() }
 function saveProfile(editing: boolean) {
   const form = editing ? editwatchFormRef.value : addwatchFormRef.value
   form?.validate((valid: boolean) => {
