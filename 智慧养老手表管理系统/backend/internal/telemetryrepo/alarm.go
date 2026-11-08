@@ -89,3 +89,13 @@ func InsertAlarmEvent(ctx context.Context, tx *db.Transaction, incidentID int64)
 	 VALUES($1,'device','received','设备异常已持久化；等待通知和人工处置')`, incidentID)
 	return err
 }
+
+// InsertSOSIncident retains the SOS-specific database default for incident kind.
+func InsertSOSIncident(ctx context.Context, tx *db.Transaction, alarmID, residentID, deviceID int64, requestID any) (int64, error) {
+	var id int64
+	err := tx.QueryRow(ctx,
+		`INSERT INTO care_incident(source_alarm_id, old_id, device_id, request_id)
+		 VALUES($1,$2,$3,$4) RETURNING id`,
+		alarmID, residentID, deviceID, requestID).Scan(&id)
+	return id, err
+}
