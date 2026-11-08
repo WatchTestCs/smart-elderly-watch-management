@@ -46,20 +46,14 @@ func checkDeviceAuth(d *devicerepo.DeviceRecord, secret, disabledMsg string) (*d
 	if d == nil {
 		return nil, "DEVICE_AUTH_FAILED", "设备号或密钥不正确", nil
 	}
-	code, msg := deviceCredentialFailure(secret, d.Secret, d.Status, disabledMsg)
-	if code != "" {
-		return nil, code, msg, nil
+	switch devicecredential.Check(secret, d.Secret, d.Status) {
+	case devicecredential.InvalidSecret:
+		return nil, "DEVICE_AUTH_FAILED", "设备号或密钥不正确", nil
+	case devicecredential.Disabled:
+		return nil, "DEVICE_DISABLED", disabledMsg, nil
+	default:
+		return d, "", "", nil
 	}
-	return d, "", "", nil
-}
-func deviceCredentialFailure(supplied, stored string, status *int, disabledMsg string) (string, string) {
-	if !devicecredential.Matches(supplied, stored) {
-		return "DEVICE_AUTH_FAILED", "设备号或密钥不正确"
-	}
-	if status != nil && *status == 0 {
-		return "DEVICE_DISABLED", disabledMsg
-	}
-	return "", ""
 }
 
 // lockDeviceID holds the device row lock until the caller finishes its transaction.
