@@ -4,6 +4,7 @@ import (
 	"context"
 	dbstore "suining-care/internal/db"
 	"suining-care/internal/response"
+	"suining-care/internal/socialrepo"
 
 	"net/http"
 	"strings"
@@ -27,10 +28,6 @@ func notificationPhones(ctx context.Context, q dbQuerier) ([]notificationTarget,
 	}, "SELECT DISTINCT f.family_id,f.family_phone FROM family f INNER JOIN oldperson o ON o.family_id=f.family_id WHERE f.family_phone IS NOT NULL")
 }
 
-type galleryImage struct {
-	ID      *int64  `json:"id"`
-	PicName *string `json:"picName"`
-}
 
 // POST /api/v1/gallery/replace —— 替换首页展示图（整体替换，事务内执行）。
 func (h *Handler) replaceGallery(w http.ResponseWriter, r *http.Request) {
@@ -61,16 +58,8 @@ func (h *Handler) replaceGallery(w http.ResponseWriter, r *http.Request) {
 	if !h.lockImages(w, r.Context(), tx, names) {
 		return
 	}
-	if _, err := tx.Exec(r.Context(), "DELETE FROM pic_show"); internalError(w, err) {
+	if internalError(w, socialrepo.ReplaceGallery(r.Context(), tx, names)) {
 		return
-	}
-	for _, name := range names {
-		ct, err := tx.Exec(r.Context(), "INSERT INTO pic_show(pic_name) VALUES($1)", name)
-		if err != nil || ct.RowsAffected() != 1 {
-			// 保存失败时回滚事务。
-			response.Error500(w, ref())
-			return
-		}
 	}
 	if internalError(w, tx.Commit(r.Context())) {
 		return
@@ -83,14 +72,8 @@ func (h *Handler) listGallery(w http.ResponseWriter, r *http.Request) {
 	if _, ok := optBody(w, r); !ok {
 		return
 	}
-	items, ok := queryRows(h, w, r.Context(), func(rows dbstore.Rows) (galleryImage, error) {
-		var d galleryImage
-		if err := rows.Scan(&d.ID, &d.PicName); err != nil {
-			return d, err
-		}
-		return d, nil
-	}, "SELECT id, pic_name FROM pic_show")
-	if !ok {
+	items, err := socialrepo.ListGallery(r.Context(), h.DB)
+	if internalError(w, err) {
 		return
 	}
 	response.JSON(w, http.StatusOK, map[string]any{"galleryImages": items})
