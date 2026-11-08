@@ -1,8 +1,15 @@
 import path from 'node:path'
-import ts from 'typescript'
-import { exportDocument, generateTypes, generatedPath } from './api-contract.mjs'
+import { cpSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { spawnSync } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
+import { exportDocument, generateTypes } from './api-contract.mjs'
 
-const fixturePath = path.join(path.dirname(generatedPath), '__contract_drift_probe__.ts')
+const root = fileURLToPath(new URL('..', import.meta.url))
+// Keep the fixture outside src/tests, but beneath the project so the real
+// consumer resolves the installed dependencies without links or source edits.
+const temporary = mkdtempSync(path.join(root, '.api-drift-'))
+const fixturePath = path.join(temporary, 'src/api/__contract_drift_probe__.ts')
+const compiler = path.join(root, 'node_modules/typescript/bin/tsc')
 const fixture = `
 import { postContract, type JsonReply } from './contractClient'
 postContract('/api/v1/health/latest', { oldId: 1 })
@@ -13,61 +20,63 @@ const timestamp: string | undefined = reply.items[0].sample.metadata?.timestampB
 `
 
 function compile(generated) {
-  const options = {
-    strict: true, noEmit: true, skipLibCheck: true, types: [],
-    target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext,
-    moduleResolution: ts.ModuleResolutionKind.Bundler, esModuleInterop: true
-  }
-  const host = ts.createCompilerHost(options)
-  const originalSource = host.getSourceFile.bind(host)
-  const originalExists = host.fileExists.bind(host)
-  host.fileExists = file => path.resolve(file) === fixturePath || originalExists(file)
-  host.getSourceFile = (file, languageVersion, onError, shouldCreate) => {
-    const resolved = path.resolve(file)
-    if (resolved === fixturePath || resolved === generatedPath) {
-      return ts.createSourceFile(file, resolved === fixturePath ? fixture : generated, languageVersion, true)
-    }
-    return originalSource(file, languageVersion, onError, shouldCreate)
-  }
-  const program = ts.createProgram([fixturePath], options, host)
-  if (program.getSyntacticDiagnostics().length) throw new Error('Contract probe contains syntax errors')
-  return ts.getPreEmitDiagnostics(program)
+  writeFileSync(path.join(temporary, 'src/api/generated-api.d.ts'), generated)
+  const result = spawnSync(process.execPath, [compiler, '--noEmit', '--pretty', 'false', '-p', temporary], {
+    cwd: temporary, encoding: 'utf8', windowsHide: true, timeout: 60000, maxBuffer: 8 * 1024 * 1024
+  })
+  if (result.error || result.signal || result.status === null) throw result.error || new Error('Contract compiler did not complete')
+  return { status: result.status, output: result.stdout + result.stderr }
 }
 
-const original = exportDocument()
-const baseline = compile(await generateTypes(original))
-if (baseline.length) {
-  console.error(ts.formatDiagnosticsWithColorAndContext(baseline, {
-    getCurrentDirectory: () => process.cwd(), getCanonicalFileName: file => file, getNewLine: () => '\n'
+try {
+  cpSync(path.join(root, 'src'), path.join(temporary, 'src'), { recursive: true })
+  writeFileSync(fixturePath, fixture)
+  writeFileSync(path.join(temporary, 'tsconfig.json'), JSON.stringify({
+    compilerOptions: {
+      strict: true, noEmit: true, skipLibCheck: true, types: [], rootDir: './src',
+      target: 'ES2022', module: 'ESNext', moduleResolution: 'Bundler', esModuleInterop: true
+    },
+    files: ['src/api/__contract_drift_probe__.ts']
   }))
-  throw new Error('Current generated contract must compile before testing drift')
-}
-console.log('Current Go contract and typed consumer compile')
-const latest = document => document.paths['/api/v1/health/latest'].post
-for (const [name, mutate] of [
-  ['removed route', document => {
-    document.paths['/api/v1/health/latest-renamed'] = document.paths['/api/v1/health/latest']
-    delete document.paths['/api/v1/health/latest']
-  }],
-  ['changed request field type', document => {
-    latest(document).requestBody.content['application/json'].schema.properties.oldId.type = 'string'
-  }],
-  ['renamed required response field', document => {
-    const sample = latest(document).responses['200'].content['application/json'].schema.properties.items.items.properties.sample
-    sample.properties.metricName = sample.properties.metric
-    delete sample.properties.metric
-    sample.required = sample.required.map(name => name === 'metric' ? 'metricName' : name)
-  }],
-  ['changed metadata value type', document => {
-    const sample = latest(document).responses['200'].content['application/json'].schema.properties.items.items.properties.sample
-    sample.properties.metadata.additionalProperties.type = 'integer'
-  }]
-]) {
-  const changed = structuredClone(original)
-  mutate(changed)
-  const diagnostics = compile(await generateTypes(changed))
-  if (!diagnostics.some(item => path.resolve(item.file?.fileName || '') === fixturePath)) {
-    throw new Error(`Typed consumer did not reject API drift: ${name}`)
+  const original = exportDocument()
+  const baseline = compile(await generateTypes(original))
+  if (baseline.status !== 0) {
+    console.error(baseline.output)
+    throw new Error('Current generated contract must compile before testing drift')
   }
-  console.log(`Expected compile rejection: ${name}`)
+  console.log('Current Go contract and typed consumer compile')
+  const latest = document => document.paths['/api/v1/health/latest'].post
+  for (const [name, mutate] of [
+    ['removed route', document => {
+      document.paths['/api/v1/health/latest-renamed'] = document.paths['/api/v1/health/latest']
+      delete document.paths['/api/v1/health/latest']
+    }],
+    ['changed request field type', document => {
+      latest(document).requestBody.content['application/json'].schema.properties.oldId.type = 'string'
+    }],
+    ['renamed required response field', document => {
+      const sample = latest(document).responses['200'].content['application/json'].schema.properties.items.items.properties.sample
+      sample.properties.metricName = sample.properties.metric
+      delete sample.properties.metric
+      sample.required = sample.required.map(name => name === 'metric' ? 'metricName' : name)
+    }],
+    ['changed metadata value type', document => {
+      const sample = latest(document).responses['200'].content['application/json'].schema.properties.items.items.properties.sample
+      sample.properties.metadata.additionalProperties.type = 'integer'
+    }]
+  ]) {
+    const changed = structuredClone(original)
+    mutate(changed)
+    const result = compile(await generateTypes(changed))
+    const errors = result.output.split(/\r?\n/).filter(line => /error TS\d+:/.test(line))
+    const consumerRejected = errors.some(line => /__contract_drift_probe__\.ts\(\d+,\d+\): error TS(?:2322|2339|2344|2345):/.test(line))
+    if (result.status === 0 || !consumerRejected || errors.some(line => !/error TS(?:2322|2339|2344|2345):/.test(line))) {
+      console.error(result.output)
+      throw new Error(`Typed consumer did not reject API drift: ${name}`)
+    }
+    console.log(`Expected compile rejection: ${name}`)
+  }
+} finally {
+  if (path.dirname(temporary) !== path.resolve(root) || !path.basename(temporary).startsWith('.api-drift-')) throw new Error('Unsafe contract fixture path')
+  rmSync(temporary, { recursive: true, force: true })
 }
