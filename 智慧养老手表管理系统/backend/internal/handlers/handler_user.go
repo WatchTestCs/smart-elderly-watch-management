@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -112,39 +113,21 @@ func (h *Handler) deleteGuardian(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	id, okID := int64Val(m, "customerId")
-	if !okID {
+	id, ok := int64Val(m, "customerId")
+	if !ok {
 		response.Error500(w, ref())
 		return
 	}
-	ctx := r.Context()
-	tx, err := h.DB.Begin(ctx)
-	if internalError(w, err) {
-		return
-	}
-	defer tx.Rollback(ctx)
-	if !lockCustomer(w, r, tx, id) {
-		return
-	}
-	var assigned bool
-	if internalError(w, tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM oldperson WHERE customer_id=$1)", id).Scan(&assigned)) {
-		return
-	}
-	if assigned {
+	err := guardianrepo.Delete(r.Context(), h.DB, id)
+	switch {
+	case errors.Is(err, guardianrepo.ErrGuardianNotFound):
+		response.Fail(w, "监护人不存在，请刷新后重新选择")
+	case errors.Is(err, guardianrepo.ErrGuardianAssigned):
 		response.Fail(w, "该监护人仍关联长者，请先调整长者档案")
+	case internalError(w, err):
 		return
-	}
-	ct, err := tx.Exec(ctx, `DELETE FROM customer WHERE customer_id=$1`, id)
-	if internalError(w, err) {
-		return
-	}
-	if ct.RowsAffected() == 1 {
-		if internalError(w, tx.Commit(ctx)) {
-			return
-		}
+	default:
 		response.OK(w, nil)
-	} else {
-		recordNotFound(w)
 	}
 }
 
