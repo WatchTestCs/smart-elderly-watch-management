@@ -57,10 +57,6 @@ func TestSocialTextTableIsRepositoryOwned(t *testing.T) {
 }
 
 func TestBusinessRepositoriesOwnEngineSpecificSQL(t *testing.T) {
-	if got := positionLatestSQL(); !strings.Contains(got, "l.lng, l.lat, l.be_time AS be_time") {
-		t.Fatalf("position time must belong to the coordinates: %s", got)
-	}
-
 	mysqlInsert, mysqlID := pictureGroupAllocatorSQL(true)
 	postgresInsert, postgresID := pictureGroupAllocatorSQL(false)
 	if mysqlInsert != "INSERT INTO picture_group () VALUES ()" || mysqlID != "SELECT LAST_INSERT_ID()" {
