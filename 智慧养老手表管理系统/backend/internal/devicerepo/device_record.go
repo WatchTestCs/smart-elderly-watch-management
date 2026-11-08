@@ -48,6 +48,6 @@ func FindDeviceByNo(ctx context.Context, store db.RowQuerier, number string) (*D
 	return ScanDeviceRecord(store.QueryRow(ctx, "SELECT "+deviceRecordColumns+" FROM device WHERE device_no=$1", number))
 }
 
-func FindDeviceByID(ctx context.Context, store deviceReader, id int64) (*DeviceRecord, error) {
+func FindDeviceByID(ctx context.Context, store db.RowQuerier, id int64) (*DeviceRecord, error) {
 	return ScanDeviceRecord(store.QueryRow(ctx, "SELECT "+deviceRecordColumns+" FROM device WHERE device_id=$1", id))
 }
