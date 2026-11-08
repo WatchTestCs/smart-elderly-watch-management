@@ -2183,6 +2183,19 @@
             }
           }
         },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "oldId": {"type": "integer", "minimum": 1}
+                }
+              }
+            }
+          }
+        },
         "description": "Read-only individualized heart-rate baseline using current device binding, historical daily medians and robust deviations."
       }
     },
