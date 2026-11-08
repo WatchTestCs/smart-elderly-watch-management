@@ -34,12 +34,19 @@ func (h *Handler) healthBaseline(w http.ResponseWriter, r *http.Request) {
 	// never be analyzed as the current resident's health history.
 	// 29 days includes the current day and the preceding 28 calendar days.
 	cutoff := time.Now().UTC().Truncate(24 * time.Hour).AddDate(0, 0, -healthbaseline.HistoryDays)
-	rows, err := h.DB.Query(r.Context(), `SELECT s.device_id,s.epoch,s.payload
+	// Downsample to one actual observation per source/device/hour before
+	// decoding JSON. This keeps high-frequency wearable feeds bounded while
+	// retaining representative hourly history across the full 28-day window.
+	rows, err := h.DB.Query(r.Context(), `SELECT device_id,epoch,payload FROM (
+ SELECT s.device_id,s.epoch,s.payload,s.sample_start,s.revision,
+ ROW_NUMBER() OVER (PARTITION BY s.device_id,s.epoch,s.source,s.source_device,FLOOR(s.sample_start / 3600000000)
+ ORDER BY s.sample_start DESC,s.revision DESC) AS hour_rank
  FROM health_sample s JOIN device d ON d.device_id=s.device_id
  AND d.old_id=s.old_id AND d.health_epoch=s.epoch
  WHERE s.old_id=$1 AND s.metric='heart_rate' AND s.deleted=false
  AND s.sample_start >= $2
- ORDER BY s.sample_start DESC LIMIT 5001`, oldID, cutoff.UnixMicro())
+ ) hourly WHERE hour_rank=1
+ ORDER BY sample_start DESC,revision DESC LIMIT 5001`, oldID, cutoff.UnixMicro())
 	if internalError(w, err) {
 		return
 	}
