@@ -107,18 +107,7 @@ func (h *Handler) readDeviceRecord(device *deviceRecord, err error) (*deviceReco
 }
 
 func (h *Handler) readDevice(row dbstore.Row) (*deviceRecord, error) {
-	device, err := scanDeviceRecord(row)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	device.LastLng, device.LastLat, err = openCoordinates(h.Box, device.LastLng, device.LastLat)
-	if err != nil {
-		return nil, err
-	}
-	return device, nil
+	return h.readDeviceRecord(devicerepo.ScanDeviceRecord(row))
 }
 
 // hwAuth checks the device number, secret and enabled status.
