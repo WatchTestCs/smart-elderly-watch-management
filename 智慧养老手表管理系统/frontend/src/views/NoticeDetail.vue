@@ -6,7 +6,7 @@
       <template v-else-if="notice">
         <header><p class="notice-label">平台公告</p><h2>{{ notice.title || '未命名公告' }}</h2><p class="notice-time">发布时间 · {{ notice.time || '暂未提供' }}</p></header>
         <div class="notice-body">{{ notice.textMain || '本公告暂无正文。' }}</div>
-        <section v-if="pictures.length" class="notice-pictures" aria-label="公告图片"><img v-for="(pic, index) in pictures" :key="pic.picName" :src="imageUrl(pic.picName)" :alt="'公告附图 ' + (index + 1)"></section>
+        <section v-if="pictures.length" class="notice-pictures" aria-label="公告图片"><img v-for="(pic, index) in pictures" :key="pic.picName" :src="noticeImageUrl(pic.picName)" :alt="'公告附图 ' + (index + 1)"></section>
       </template>
     </article>
     <section class="notice-panel" v-loading="commentsLoading" aria-label="家属留言">
@@ -25,19 +25,20 @@ import { useRoute, useRouter } from 'vue-router'
 import { api } from '../api/client'
 import { apiErrorMessage } from '../api/httpContract'
 import { createLatestRead } from '../composables/latestRead'
+import { noticeImageUrl, type NoticeRecord, type NoticePicture, type NoticeComment, type NoticeDetailResponse, type NoticeCommentsResponse } from '../domain/notices'
 
 const route = useRoute()
 const router = useRouter()
-const notice = ref<Record<string, any> | null>(null)
-const pictures = ref<any[]>([])
-const comments = ref<any[]>([])
+const notice = ref<NoticeRecord | null>(null)
+const pictures = ref<NoticePicture[]>([])
+const comments = ref<NoticeComment[]>([])
 const loading = ref(false)
 const commentsLoading = ref(false)
 const error = ref('')
 const commentsError = ref('')
 const noticeReads = createLatestRead(
   (query: { textId: unknown }, signal: AbortSignal) =>
-    api.post<Record<string, any>>('api/v1/notices/detail', query, { signal }),
+    api.post<NoticeDetailResponse>('api/v1/notices/detail', query, { signal }),
   ({ data }) => {
     if (!data.text) throw new Error('missing notice')
     notice.value = data.text
@@ -53,7 +54,7 @@ const noticeReads = createLatestRead(
 )
 const commentReads = createLatestRead(
   (query: { textId: unknown }, signal: AbortSignal) =>
-    api.post<Record<string, any>>('api/v1/notice-comments/list', query, { signal }),
+    api.post<NoticeCommentsResponse>('api/v1/notice-comments/list', query, { signal }),
   ({ data }) => {
     comments.value = Array.isArray(data.comments) ? data.comments : []
     commentsError.value = ''
@@ -64,9 +65,6 @@ const commentReads = createLatestRead(
   },
   value => { commentsLoading.value = value }
 )
-function imageUrl(name: string) {
-  return '/api/v1/image/download?name=' + encodeURIComponent(name || '')
-}
 function loadNotice() {
   notice.value = null
   pictures.value = []
