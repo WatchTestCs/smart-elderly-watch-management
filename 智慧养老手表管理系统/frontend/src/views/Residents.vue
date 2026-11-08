@@ -29,7 +29,7 @@
       v-model="createDialogVisible"
       @open="loadGuardianOptions"
       @close="resetCreateForm">
-      <ResidentForm :draft="createForm" :rules="rules" ref="createFormRef" :guardianOptions="guardianOptions" :customer-loading="guardianLoading" :customer-error="guardianError" @retry-guardians="loadGuardianOptions" />
+      <ResidentForm :draft="createForm" :rules="rules" ref="createFormRef" :options="guardianOptions" :customer-loading="guardianLoading" :customer-error="guardianError" @retry-guardians="loadGuardianOptions" />
       <template #footer><span  class="dialog-footer">
       <el-button @click="createDialogVisible = false">取 消</el-button>
       <el-button type="primary" @click="createResident()">确 定</el-button>
@@ -40,7 +40,7 @@
       title="老人编辑"
       v-model="editDialogVisible"
       @open="loadGuardianOptions">
-      <ResidentForm editing :draft="editForm" :rules="rules" ref="editFormRef" :guardianOptions="guardianOptions" :customer-loading="guardianLoading" :customer-error="guardianError" @retry-guardians="loadGuardianOptions" />
+      <ResidentForm editing :draft="editForm" :rules="rules" ref="editFormRef" :options="guardianOptions" :customer-loading="guardianLoading" :customer-error="guardianError" @retry-guardians="loadGuardianOptions" />
       <template #footer><span  class="dialog-footer">
       <el-button @click="editDialogVisible = false">取 消</el-button>
       <el-button type="primary" @click="updateResident">确 定</el-button>
