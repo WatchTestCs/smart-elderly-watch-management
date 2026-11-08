@@ -14,6 +14,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	dbstore "suining-care/internal/db"
 	"suining-care/internal/securestore"
+	"suining-care/internal/devicerepo"
 	"suining-care/internal/telemetryrepo"
 )
 
@@ -44,7 +45,7 @@ func durableTelemetryEligible(parsed parsedDeviceTelemetry, requestID string, bo
 
 // QueueDurableReport is invoked in the authenticated device transaction.
 // A successful response is only emitted *after* that transaction commits.
-func (repo telemetryRepository) QueueDurableReport(ctx context.Context, tx *dbstore.Transaction, d *deviceRecord, parsed parsedDeviceTelemetry, requestID string) error {
+func (repo telemetryRepository) QueueDurableReport(ctx context.Context, tx *dbstore.Transaction, d *devicerepo.DeviceRecord, parsed parsedDeviceTelemetry, requestID string) error {
 	if repo.box == nil {
 		return errors.New("durable telemetry requires a valid encryption key")
 	}
@@ -171,7 +172,7 @@ func processDurableQueueItem(ctx context.Context, tx *dbstore.Transaction, repo 
 	if err != nil {
 		return err
 	}
-	d, err := scanDeviceRecord(tx.QueryRow(ctx, `SELECT `+deviceRecordColumns+` FROM device WHERE device_id=$1 FOR UPDATE`, item.DeviceID))
+	d, err := devicerepo.ScanDeviceRecord(devicerepo.LockedDeviceRow(ctx, tx, item.DeviceID))
 	if errors.Is(err, pgx.ErrNoRows) {
 		return telemetryrepo.MarkDurableStale(ctx, tx, item.ID, "device removed")
 	}
