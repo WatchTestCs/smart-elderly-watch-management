@@ -105,21 +105,16 @@ import { createLatestRead } from '../composables/latestRead'
 import CareInbox from '@/components/CareInbox.vue'
 import { authState } from '@/auth'
 import store from '@/store'
+import type { NoticeRecord } from '../domain/notices'
 
-interface NoticeRow {
-  textId: string | number
-  picId?: string | number
-  title?: string
-  time?: string
-}
 interface NoticeListResponse {
-  texts: NoticeRow[]
+  texts: NoticeRecord[]
   total?: number
 }
 const router = useRouter()
 const searchText = ref('')
 const appliedSearch = ref('')
-const notices = ref<NoticeRow[]>([])
+const notices = ref<NoticeRecord[]>([])
 const total = ref(0)
 const isLoading = ref(false)
 const loadError = ref('')
@@ -180,7 +175,7 @@ function changePage(value: number) {
   currentPage.value = value
   void loadNotices(true)
 }
-function getDetail(row: NoticeRow) {
+function getDetail(row: NoticeRecord) {
   void router.push({ path: '/operations/notices/detail', query: { textId: row.textId, picId: row.picId } })
 }
 function openNoticeEditor() { void router.push('/operations/notices/new') }
