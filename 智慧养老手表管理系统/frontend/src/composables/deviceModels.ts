@@ -1,5 +1,9 @@
 export type DeviceId = number | string
 
+export function isValidCount(value: unknown): value is number {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0
+}
+
 export interface DeviceRecord {
   deviceId: DeviceId
   deviceNo: string
