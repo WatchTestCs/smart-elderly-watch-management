@@ -25,6 +25,7 @@ type BindInput struct {
 	Secret     string
 	Code       string
 	ProfileDay time.Time
+	At         time.Time
 }
 
 type BindResult struct {
@@ -75,11 +76,10 @@ func Bind(ctx context.Context, store *db.Database, input BindInput) (BindResult,
 	if locked.OldID != nil && *locked.OldID != *code.OldID {
 		return BindResult{}, AlreadyBound, nil
 	}
-	now := time.Now()
 	err = devicerepo.CompleteBinding(ctx, tx, devicerepo.Binding{
 		DeviceID: locked.ID, ResidentID: *code.OldID, FamilyID: code.FamilyID,
 		CodeID: code.ID, ExistingDeviceID: resident.DeviceID, ExistingFamilyID: resident.FamilyID,
-		At: now, ProfileDay: input.ProfileDay,
+		At: input.At, ProfileDay: input.ProfileDay,
 	})
 	switch {
 	case errors.Is(err, devicerepo.ErrBindFailed):
