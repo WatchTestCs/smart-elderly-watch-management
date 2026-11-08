@@ -5,6 +5,7 @@ import (
 	"suining-care/internal/auth"
 	"suining-care/internal/inviterepo"
 	"suining-care/internal/response"
+	"suining-care/internal/userphone"
 	"time"
 	"unicode/utf8"
 )
@@ -19,6 +20,12 @@ func (h *Handler) inviteOldPersonList(w http.ResponseWriter, r *http.Request) {
 
 // POST /api/v1/inviteCode/checkCode —— 校验邀请码（公开）。
 func (h *Handler) inviteCheckCode(w http.ResponseWriter, r *http.Request) {
+	if decision := h.Risk.BeforeInvite(h.clientIP(r)); !decision.Allowed() {
+		h.Risk.RecordDenied(h.clientIP(r), "", "invite_restricted", r.UserAgent(),
+			r.Header.Get("Sec-CH-UA-Model"), r.Header.Get("X-App-Device-ID"))
+		h.riskDeniedInvite(w)
+		return
+	}
 	m, ok := bodyMap(w, r)
 	if !ok {
 		return
@@ -31,6 +38,7 @@ func (h *Handler) inviteCheckCode(w http.ResponseWriter, r *http.Request) {
 	status, err := inviterepo.ReadCode(r.Context(), h.DB, code)
 	if err != nil {
 		if isNotFound(err) {
+			h.Risk.InvalidInvite(h.clientIP(r), r.UserAgent(), r.Header.Get("Sec-CH-UA-Model"), r.Header.Get("X-App-Device-ID"))
 			response.Error(w, http.StatusNotFound, "INVITE_NOT_FOUND", "邀请码不存在，请向管理员确认")
 			return
 		}
@@ -56,6 +64,12 @@ func (h *Handler) inviteCheckCode(w http.ResponseWriter, r *http.Request) {
 
 // POST /api/v1/inviteCode/join —— 家属凭邀请码注册（公开，事务）。
 func (h *Handler) inviteJoin(w http.ResponseWriter, r *http.Request) {
+	if decision := h.Risk.BeforeInvite(h.clientIP(r)); !decision.Allowed() {
+		h.Risk.RecordDenied(h.clientIP(r), "", "invite_restricted", r.UserAgent(),
+			r.Header.Get("Sec-CH-UA-Model"), r.Header.Get("X-App-Device-ID"))
+		h.riskDeniedInvite(w)
+		return
+	}
 	m, ok := bodyMap(w, r)
 	if !ok {
 		return
@@ -92,7 +106,13 @@ func (h *Handler) inviteJoin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// 手机号是否已注册
-	dup, err := inviterepo.PhoneRegistered(ctx, tx, registration.familyPhone)
+	lookup, err := userphone.SearchIndex(ctx, tx, h.Box, registration.familyPhone)
+	if err != nil {
+		_ = tx.Rollback(ctx)
+		response.Error500(w, ref())
+		return
+	}
+	dup, err := inviterepo.PhoneRegistered(ctx, tx, registration.familyPhone, lookup)
 	if err != nil {
 		_ = tx.Rollback(ctx)
 		response.Error500(w, ref())
@@ -118,7 +138,7 @@ func (h *Handler) inviteJoin(w http.ResponseWriter, r *http.Request) {
 	// family record. It must never reset an active account or replace a binding.
 	var familyID int64
 	if resident.FamilyID != nil {
-		familyID, err = inviterepo.LockPasswordlessFamily(ctx, tx, *resident.FamilyID, registration.familyPhone)
+		familyID, err = inviterepo.LockPasswordlessFamily(ctx, tx, *resident.FamilyID, registration.familyPhone, lookup)
 		if err != nil {
 			_ = tx.Rollback(ctx)
 			if isNotFound(err) {
