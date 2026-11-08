@@ -11,7 +11,6 @@
           <tbody>
             <tr><th>老人</th><td>{{ dialog.oldPersonName }}</td></tr>
             <tr><th>本次测量</th><td>心率 {{ dialog.hr }} 次/分　血压 {{ dialog.bp }} mmHg</td></tr>
-            <tr><th>正常范围</th><td>心率 55-110 次/分；血压 90-140 mmHg</td></tr>
             <tr><th>发生时间</th><td>{{ dialog.occurTime }}</td></tr>
             <tr><th>判断依据</th><td>{{ dialog.detail }}</td></tr>
             <tr><th>怎么处理</th><td>{{ dialog.advice }}</td></tr>
@@ -26,7 +25,7 @@
         </div>
         <div class="tip-small">
           处理后这条记录会从「异常」变成「已处理」，红点消失，历史记录与曲线仍然保留。
-          如果老人基础心率/血压本身偏离默认范围，请到「基础管理-手表信息」调整阈值，避免反复报警。
+          告警依据以当前监测规则及设备上报信息为准。需要核对阈值时，请查看监测阈值档案。
         </div>
       </div>
       <template #footer><span  class="dialog-footer">
