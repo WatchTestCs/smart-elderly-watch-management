@@ -25,6 +25,10 @@
 | 设备绑定流程 | `src/composables/useDeviceBindings.ts` | 绑定码查询、创建、作废与切换长者时的响应隔离 |
 | 设备页面编排 | `src/composables/useDevices.ts` | 设备与告警读取、过滤分页、定时刷新和页面事件 |
 | 展示层 | `src/views/DeviceManagement.vue` | 渲染设备列表及对话框，不承担后端数据转换 |
+| 照护领域规则 | `src/domain/care.ts` | 工单与履历 DTO、优先级、状态及通知显示规则；无组件依赖 |
+| 照护页面 | `src/components/CareInbox.vue` | 接单与复核交互、异步读取、页面可见性和任务事件响应 |
+| 图表配置 | `src/charts/recordChartOptions.ts` | ECharts 心率、血压、睡眠渲染参数与无障碍/动画设置 |
+| 图表生命周期 | `src/composables/useRecordCharts.ts` | 健康数据读取、取消过期请求、图表实例回收与尺寸监听 |
 
 读路径是 **Go API → Axios/会话拦截器 → 领域组合式函数 → Vue 模板**。写请求由用户操作触发，成功后显式重新读取；不得在读取失败或页面恢复可见时自动重放写操作。当前 `useDevices()` 的页面接口保持不变；新设备功能优先沿现有领域边界扩展，不把响应 DTO、持久状态和 DOM 事件混写在同一个文件。
 
