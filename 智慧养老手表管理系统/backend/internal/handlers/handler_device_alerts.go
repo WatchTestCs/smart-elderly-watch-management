@@ -163,7 +163,7 @@ func describePersonAlert(pr *personRow, now time.Time) map[string]any {
 }
 
 // findRatepreAlert returns the selected pending record, or the latest when recordID is nil.
-func (h *Handler) findRatepreAlert(ctx context.Context, q deviceQueries, deviceID int64, kind string, recordID *int64) (map[string]any, error) {
+func (h *Handler) findRatepreAlert(ctx context.Context, q dbstore.RowQuerier, deviceID int64, kind string, recordID *int64) (map[string]any, error) {
 	isRate := kind == "rate"
 	record, err := vitalrepo.FindPendingDeviceAlert(ctx, q, deviceID, kind, recordID)
 	if err != nil || record == nil {
