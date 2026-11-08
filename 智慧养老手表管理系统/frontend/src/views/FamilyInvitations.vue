@@ -73,13 +73,12 @@
 <script setup lang="ts">
 import { Plus } from '@element-plus/icons-vue'
 import { onMounted, reactive, ref } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
 import { useCollectionLayout } from '../composables/useCollectionLayout'
 import { copyText } from '../utils/clipboard'
 import { apiErrorMessage } from '../api/httpContract'
-import { invitations } from '../api/invitations'
+import { invitations, type InvitationRecord, type InvitableResident } from '../api/invitations'
 
-type InviteRow = Record<string, any>
 const mobileLayout = useCollectionLayout()
 const state = ref('all')
 const listLoading = ref(false)
@@ -89,12 +88,12 @@ const oldPeopleError = ref('')
 const createDialogVisible = ref(false)
 const resultDialogVisible = ref(false)
 const createdCodes = ref<string[]>([])
-const oldPeople = ref<InviteRow[]>([])
-const inviteCodeList = ref<InviteRow[]>([])
+const oldPeople = ref<InvitableResident[]>([])
+const inviteCodeList = ref<InvitationRecord[]>([])
 const total = ref(0)
 const pageSize = ref(10)
 const currentPage = ref(1)
-const createFormRef = ref<any>(null)
+const createFormRef = ref<FormInstance | null>(null)
 const createForm = reactive<{ oldId: number | string; count: number; expireDays: string }>({
   oldId: '', count: 1, expireDays: ''
 })
@@ -113,7 +112,8 @@ async function searchInviteCodes(keepPage = false) {
     })
     if (revision !== requestRevision || selected !== state.value) return
     if (!Array.isArray(data.inviteCodes)) throw new Error('missing invites')
-    inviteCodeList.value = data.inviteCodes as InviteRow[]
+    inviteCodeList.value = data.inviteCodes
+    if (data.total !== undefined && (!Number.isSafeInteger(data.total) || data.total < 0)) throw new Error('invalid invitation count')
     total.value = data.total ?? data.inviteCodes.length
   } catch (error) {
     if (revision === requestRevision) listError.value =
@@ -126,7 +126,7 @@ async function loadOldPeople() {
   oldPeopleError.value = ''
   try {
     const { data } = await invitations.oldPersonList()
-    oldPeople.value = (Array.isArray(data.oldPeople) ? data.oldPeople : []) as InviteRow[]
+    oldPeople.value = Array.isArray(data.oldPeople) ? data.oldPeople : []
   } catch (error) {
     oldPeopleError.value = apiErrorMessage(error, '长者列表暂时无法加载')
   }
