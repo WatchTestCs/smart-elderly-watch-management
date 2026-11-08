@@ -25,13 +25,13 @@ type Observation struct {
 }
 
 type Result struct {
-	Ready         bool
-	SampleDays    int
-	Baseline      float64
-	Scale         float64
-	Score         float64
-	Direction     string
-	Anomalous     bool
+	Ready      bool
+	SampleDays int
+	Baseline   float64
+	Scale      float64
+	Score      float64
+	Direction  string
+	Anomalous  bool
 }
 
 // Evaluate compares a valid observation against at most 28 preceding calendar
