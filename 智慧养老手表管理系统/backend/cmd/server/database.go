@@ -196,7 +196,7 @@ func watchDatabase(ctx context.Context, cfg config.Config, sessions *session.Sto
 				h.Routes(mux)
 				observability.Default.SetRouteResolver(func(r *http.Request) string { _, pattern := mux.Handler(r); return pattern })
 				workerDone = startDatabaseWorkers(ctx, pool, h, cfg.PGAnalyticsURL, &service.analytics)
-				api = limiter.Middleware(csrf.Middleware(sessions, auth.Middleware(sessions, h.EnforceAdminDuty(sensitiveCareAudit(pool, response.Router(mux))))))
+				api = limiter.Middleware(csrf.Middleware(sessions, auth.Middleware(sessions, h.EnforceAdminDuty(h.EnforceDeviceSignatures(sensitiveCareAudit(pool, response.Router(mux)))))))
 			}
 		}
 		if err == nil {
