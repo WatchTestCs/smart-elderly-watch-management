@@ -61,15 +61,6 @@ func TestBusinessRepositoriesOwnEngineSpecificSQL(t *testing.T) {
 		t.Fatalf("position time must belong to the coordinates: %s", got)
 	}
 
-	mysqlWatch := watchProfileInsertSQL(true)
-	postgresWatch := watchProfileInsertSQL(false)
-	if !strings.Contains(mysqlWatch, "ON DUPLICATE KEY UPDATE device_id=device_id") || strings.Contains(mysqlWatch, "ON CONFLICT") {
-		t.Fatalf("watch_info MySQL SQL is not native: %s", mysqlWatch)
-	}
-	if !strings.Contains(postgresWatch, "ON CONFLICT(device_id) DO NOTHING") || strings.Contains(postgresWatch, "ON DUPLICATE KEY") {
-		t.Fatalf("watch_info PostgreSQL SQL is not native: %s", postgresWatch)
-	}
-
 	mysqlInsert, mysqlID := pictureGroupAllocatorSQL(true)
 	postgresInsert, postgresID := pictureGroupAllocatorSQL(false)
 	if mysqlInsert != "INSERT INTO picture_group () VALUES ()" || mysqlID != "SELECT LAST_INSERT_ID()" {

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"suining-care/internal/telemetryrepo"
 	"net/http"
 	"strconv"
 	"suining-care/internal/response"
@@ -89,7 +90,7 @@ func (h *Handler) deviceCreate(w http.ResponseWriter, r *http.Request) {
 			rollbackFailure(w, rollback)
 			return
 		}
-		if err := saveDefaultWatchProfile(ctx, tx, deviceID, now); rollbackOnError(w, rollback, err) {
+		if err := telemetryrepo.EnsureDefaultWatchProfile(ctx, tx, deviceID, siteDay(now)); rollbackOnError(w, rollback, err) {
 			return
 		}
 	}

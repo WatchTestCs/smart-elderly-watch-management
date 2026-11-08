@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"suining-care/internal/telemetryrepo"
 	"github.com/jackc/pgx/v5"
 	"net/http"
 	"strings"
@@ -326,5 +327,5 @@ func linkBoundDevice(ctx context.Context, tx *dbstore.Transaction, deviceID int6
 			return err
 		}
 	}
-	return saveDefaultWatchProfile(ctx, tx, deviceID, now)
+	return telemetryrepo.EnsureDefaultWatchProfile(ctx, tx, deviceID, siteDay(now))
 }

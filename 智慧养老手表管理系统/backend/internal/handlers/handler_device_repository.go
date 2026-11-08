@@ -185,23 +185,6 @@ func touchDevice(ctx context.Context, q deviceQueries, deviceID int64, battery *
 	return err
 }
 
-func watchProfileInsertSQL(mysql bool) string {
-	if mysql {
-		return `INSERT INTO watch_info(device_id, op_time, bpf, bpl, hrf, hrl) VALUES($1,$2,$3,$4,$5,$6)
-		 ON DUPLICATE KEY UPDATE device_id=device_id`
-	}
-	return `INSERT INTO watch_info(device_id, op_time, bpf, bpl, hrf, hrl) VALUES($1,$2,$3,$4,$5,$6)
-		 ON CONFLICT(device_id) DO NOTHING`
-}
-
-// saveDefaultWatchProfile fills a missing default profile without replacing a
-// caregiver's customized thresholds during device registration or binding.
-func saveDefaultWatchProfile(ctx context.Context, tx *dbstore.Transaction, deviceID int64, now time.Time) error {
-	day := siteDay(now)
-	_, err := tx.Exec(ctx, watchProfileInsertSQL(tx.IsMySQL()), deviceID, day, 140, 90, 110, 55)
-	return err
-}
-
 // lockDeviceID holds the device row lock until the caller finishes its transaction.
 func lockDeviceID(w http.ResponseWriter, ctx context.Context, tx *dbstore.Transaction, deviceID int64) bool {
 	var id int64
