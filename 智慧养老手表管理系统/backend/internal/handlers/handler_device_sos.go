@@ -6,14 +6,13 @@ import (
 	"regexp"
 	"time"
 
-	"suining-care/internal/careworkflow"
+	"suining-care/internal/deviceworkflow"
 	dbstore "suining-care/internal/db"
 	"suining-care/internal/devicerepo"
-	"suining-care/internal/notify"
 	"suining-care/internal/response"
 )
 
-// POST /api/v1/device/sos —— SOS 一键呼叫（公开，事务）。
+// POST /api/v1/device/sos: parse request and map the transactional outcome.
 func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 	r, signedOK := prepareSignedDeviceRequest(w, r)
 	if !signedOK {
@@ -27,83 +26,63 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	deviceNo, secret, bindingVersion, requestID := req.deviceNo, req.secret, req.bindingVersion, req.requestID
-	ctx := r.Context()
-	tx, err := h.DB.Begin(ctx)
-	if internalError(w, err) {
-		return
-	}
-	rollback := func() { _ = tx.Rollback(ctx) }
-	d, code, msg, err := h.lockSOSDevice(ctx, tx, deviceNo, secret, bindingVersion)
-	if rollbackOnError(w, rollback, err) {
-		return
-	}
-	if d == nil {
-		rollback()
-		if code == "409" {
-			conflict409(w, msg)
-		} else {
-			hwFail(w, code, msg)
-		}
-		return
-	}
-	// A device should reuse a stable requestId when retrying the same SOS on
-	// weak networks; each new press must use a new ID.
-	if requestID != "" {
-		prior, err := careworkflow.FindSOSRetry(ctx, tx, d.ID, requestID)
-		if err != nil {
-			rollbackFailure(w, rollback)
-			return
-		}
-		if prior != nil {
-			rollback()
-			// A fall-report retry and an SOS press are different event types.
-			if prior.ResidentID != *d.OldID || prior.Kind != "sos" {
-				conflict409(w, "求助编号已被其他事件或绑定使用，请检查设备请求编号")
-				return
-			}
-			response.OK(w, map[string]any{"message": "求助已接收（重复请求未再次入库）",
-				"incidentId": prior.ID, "incidentState": prior.State,
-				"notificationState": prior.NotificationState, "duplicate": true})
-			return
-		}
-	}
-	// Only new incidents reserve a nonce: identical weak-network SOS retries
-	// still receive their original idempotent acknowledgement.
-	if !acceptSignedDeviceNonce(w, ctx, tx, d.ID) {
-		rollback()
-		return
-	}
 	lng, _ := vstr(m, "lng")
 	lat, _ := vstr(m, "lat")
 	if msg := checkPosition(lng, lat); msg != "" {
-		rollback()
 		write400(w, msg)
 		return
 	}
 	now := time.Now()
 	position, err := parsePositionMetadata(m, lng, lat, now)
 	if err != nil {
-		rollback()
 		write400(w, err.Error())
 		return
 	}
-	incidentID, err := (telemetryRepository{box: h.Box}).PersistSOSIncident(ctx, tx, d, lng, lat, requestID, position, now)
-	if rollbackOnError(w, rollback, err) {
+	result, failure, err := deviceworkflow.SOS(r.Context(), h.DB, h.Box, deviceworkflow.SOSInput{
+		Number: req.deviceNo, Secret: req.secret, Epoch: req.bindingVersion, RequestID: req.requestID,
+	}, deviceworkflow.SOSHooks{
+		AcceptNonce: func(ctx context.Context, tx *dbstore.Transaction, deviceID int64) bool {
+			return acceptSignedDeviceNonce(w, ctx, tx, deviceID)
+		},
+		Persist: func(ctx context.Context, tx *dbstore.Transaction, device *devicerepo.DeviceRecord) (int64, error) {
+			return (telemetryRepository{box: h.Box}).PersistSOSIncident(ctx, tx, device, lng, lat, req.requestID, position, now)
+		},
+	})
+	if failure == deviceworkflow.NonceRejected {
 		return
 	}
-	notificationState, err := notify.EnqueueIncident(ctx, tx, h.Box, incidentID, *d.OldID)
-	if rollbackOnError(w, rollback, err) {
+	if internalError(w, err) {
 		return
 	}
-	if internalError(w, tx.Commit(ctx)) {
+	switch failure {
+	case deviceworkflow.BindingChanged:
+		conflict409(w, "绑定已变化，请重新登录；旧绑定求助不能归入新老人")
+		return
+	case deviceworkflow.SOSRequestConflict:
+		conflict409(w, "求助编号已被其他事件或绑定使用，请检查设备请求编号")
+		return
+	case deviceworkflow.DeviceUnbound:
+		hwFail(w, "DEVICE_NOT_BOUND", "设备还未绑定老人")
+		return
+	case deviceworkflow.DeviceDisabled:
+		hwFail(w, "DEVICE_DISABLED", "设备已停用")
+		return
+	case deviceworkflow.InvalidCredential:
+		hwFail(w, "DEVICE_AUTH_FAILED", "设备号或密钥不正确")
+		return
+	}
+	if result.Duplicate {
+		response.OK(w, map[string]any{
+			"message": "求助已接收（重复请求未再次入库）",
+			"incidentId": result.IncidentID, "incidentState": result.IncidentState,
+			"notificationState": result.NotificationState, "duplicate": true,
+		})
 		return
 	}
 	response.OK(w, map[string]any{
-		"message":           "求助已接收，等待通知和人员接单",
-		"incidentId":        incidentID,
-		"incidentState":     "received",
-		"notificationState": notificationState,
+		"message": "求助已接收，等待通知和人员接单",
+		"incidentId": result.IncidentID, "incidentState": result.IncidentState,
+		"notificationState": result.NotificationState,
 	})
 }
 
@@ -138,35 +117,3 @@ func parseSOSRequest(w http.ResponseWriter, m map[string]any) (sosRequest, bool)
 	return sosRequest{deviceNo: deviceNo, secret: secret, requestID: requestID, bindingVersion: bindingVersion}, true
 }
 
-// lockSOSDevice authenticates and revalidates the owner under elder-then-device
-// locks. Code 409 denotes a binding conflict; other codes use the device envelope.
-func (h *Handler) lockSOSDevice(ctx context.Context, tx *dbstore.Transaction, deviceNo, secret string, bindingVersion int64) (*devicerepo.DeviceRecord, string, string, error) {
-	d, code, msg, err := h.hwAuth(ctx, tx, deviceNo, secret, "设备已停用")
-	if err != nil || d == nil {
-		return nil, code, msg, err
-	}
-	if d.OldID == nil {
-		return nil, "DEVICE_NOT_BOUND", "设备还未绑定老人", nil
-	}
-	// Match binding and unbinding's elder-then-device lock order. Recheck the
-	// device under its row lock before writing or acknowledging a retry.
-	expectedOwner := *d.OldID
-	if err := devicerepo.LockResident(ctx, tx, expectedOwner); err != nil {
-		return nil, "", "", err
-	}
-	locked, err := devicerepo.ScanDeviceRecord(devicerepo.LockedDeviceRow(ctx, tx, d.ID))
-	if err != nil {
-		return nil, "", "", err
-	}
-	locked, code, msg, err = checkDeviceAuth(locked, secret, "设备已停用")
-	if err != nil || locked == nil {
-		return nil, code, msg, err
-	}
-	if locked.No != deviceNo {
-		return nil, "DEVICE_AUTH_FAILED", "设备号或密钥不正确", nil
-	}
-	if locked.OldID == nil || *locked.OldID != expectedOwner || locked.HealthEpoch != bindingVersion {
-		return nil, "409", "绑定已变化，请重新登录；旧绑定求助不能归入新老人", nil
-	}
-	return locked, "", "", nil
-}
