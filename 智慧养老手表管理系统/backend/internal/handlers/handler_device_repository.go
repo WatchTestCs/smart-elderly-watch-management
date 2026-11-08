@@ -8,8 +8,8 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	dbstore "suining-care/internal/db"
-	"suining-care/internal/devicerepo"
 	"suining-care/internal/devicecredential"
+	"suining-care/internal/devicerepo"
 	"suining-care/internal/response"
 )
 
