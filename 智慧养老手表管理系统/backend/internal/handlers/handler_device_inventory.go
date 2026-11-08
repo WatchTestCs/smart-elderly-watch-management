@@ -5,6 +5,7 @@ import (
 	"suining-care/internal/telemetryrepo"
 	"net/http"
 	"strconv"
+	"suining-care/internal/devicerepo"
 	"suining-care/internal/response"
 	"time"
 	"unicode/utf8"
@@ -113,9 +114,8 @@ func (h *Handler) deviceResetSecret(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	ctx := r.Context()
-	var exists bool
-	if internalError(w, h.DB.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM device WHERE device_id=$1)`, deviceID).Scan(&exists)) {
+	exists, err := devicerepo.Exists(r.Context(), h.DB, deviceID)
+	if internalError(w, err) {
 		return
 	}
 	if !exists {
@@ -126,11 +126,11 @@ func (h *Handler) deviceResetSecret(w http.ResponseWriter, r *http.Request) {
 	if internalError(w, err) {
 		return
 	}
-	ct, err := h.DB.Exec(ctx, `UPDATE device SET secret=$1 WHERE device_id=$2`, hashed, deviceID)
+	changed, err := devicerepo.UpdateSecret(r.Context(), h.DB, deviceID, hashed)
 	if internalError(w, err) {
 		return
 	}
-	if ct.RowsAffected() != 1 {
+	if !changed {
 		response.Fail(w, "密钥更新失败，请重试")
 		return
 	}
@@ -156,35 +156,16 @@ func (h *Handler) detachDevice(w http.ResponseWriter, r *http.Request, remove bo
 	if !ok {
 		return
 	}
-	ctx := r.Context()
-	tx, err := h.DB.Begin(ctx)
+	changed, err := devicerepo.Detach(r.Context(), h.DB, deviceID, remove)
 	if internalError(w, err) {
 		return
 	}
-	rollback := func() { _ = tx.Rollback(ctx) }
-	if _, err := tx.Exec(ctx, `UPDATE oldperson SET device_id=(SELECT min(d.device_id) FROM device d WHERE d.old_id=oldperson.old_id AND d.device_id<>$1) WHERE device_id=$1`, deviceID); rollbackOnError(w, rollback, err) {
-		return
-	}
-	query := `UPDATE device SET old_id=NULL, family_id=NULL, bind_time=NULL, last_lng=NULL, last_lat=NULL
-		WHERE device_id=$1`
-	failureMessage := "解绑失败"
-	if remove {
-		if _, err := tx.Exec(ctx, `DELETE FROM watch_info WHERE device_id=$1`, deviceID); rollbackOnError(w, rollback, err) {
-			return
+	if !changed {
+		if remove {
+			response.Fail(w, "删除失败")
+		} else {
+			response.Fail(w, "解绑失败")
 		}
-		query = `DELETE FROM device WHERE device_id=$1`
-		failureMessage = "删除失败"
-	}
-	result, err := tx.Exec(ctx, query, deviceID)
-	if rollbackOnError(w, rollback, err) {
-		return
-	}
-	if affected := result.RowsAffected(); affected < 1 || (remove && affected != 1) {
-		rollback()
-		response.Fail(w, failureMessage)
-		return
-	}
-	if internalError(w, tx.Commit(ctx)) {
 		return
 	}
 	response.OK(w, nil)
