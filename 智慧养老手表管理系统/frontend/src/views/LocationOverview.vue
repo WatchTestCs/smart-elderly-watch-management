@@ -2,7 +2,7 @@
   <div class="roles">
     
     <div class="sys-research">
-      <form class="row-search" role="search" @submit.prevent="searchposition()">
+      <form class="row-search" role="search" @submit.prevent="loadLocationRecords()">
 		  
         <div class="search-field">
           
@@ -98,7 +98,7 @@ const searchText = ref('')
 const mobileLayout = useCollectionLayout(900)
 const {
   records: positionList, isLoading, loadError, total,
-  pageSize, currentPage, load: searchposition,
+  pageSize, currentPage, load: loadLocationRecords,
   handleSizeChange, changePage
 } = usePagedRecords<PositionRow, { name: string }>({
   path: 'api/v1/position/select',
@@ -109,7 +109,7 @@ const {
 const selectedLocation = ref<PositionRow | null>(null)
 const num = computed(() => positionList.value.filter(row => row.status === 1 || row.status === '1').length)
 
-watch(() => store.state.alertRevision, () => { void searchposition(true) })
+watch(() => store.state.alertRevision, () => { void loadLocationRecords(true) })
 watch(positionList, rows => {
   const id = store.state.selectedResidentId
   const selected = id == null ? null : rows.find(row => String(row.oldId) === id)
