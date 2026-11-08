@@ -5,7 +5,8 @@
       "vite/client",
       "vitest/globals",
       "node"
-    ]
+    ],
+    "rootDir": "."
   },
   "include": [
     "src/**/*.ts",

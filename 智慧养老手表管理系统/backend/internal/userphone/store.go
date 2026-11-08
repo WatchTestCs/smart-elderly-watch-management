@@ -1,0 +1,91 @@
+package userphone
+
+import (
+	"context"
+	"crypto/subtle"
+	"errors"
+
+	"suining-care/internal/db"
+	"suining-care/internal/securestore"
+)
+
+type Record struct {
+	Legacy, Cipher, Lookup *string
+	Protected              bool
+}
+
+// OpenStored rejects inconsistent or tampered protected rows, never falling
+// back to a legacy phone when an encrypted row fails authentication.
+func (r Record) OpenStored(box *securestore.Box, id int64) (*string, error) {
+	if !r.Protected {
+		if r.Cipher != nil || r.Lookup != nil {
+			return nil, errors.New("inconsistent legacy administrator phone")
+		}
+		return r.Legacy, nil
+	}
+	if r.Legacy != nil || (r.Cipher == nil) != (r.Lookup == nil) {
+		return nil, errors.New("inconsistent protected administrator phone")
+	}
+	if r.Cipher == nil {
+		return nil, nil
+	}
+	phone, err := Reveal(box, id, Protected{Ciphertext: *r.Cipher, Lookup: *r.Lookup})
+	if err != nil {
+		return nil, err
+	}
+	return &phone, nil
+}
+
+type Queryer interface {
+	QueryRow(context.Context, string, ...any) db.Row
+}
+
+// SearchIndex validates lookup-key binding and detects keyless protected rows.
+// Legacy-only installations may authenticate during a staged migration.
+func SearchIndex(ctx context.Context, q Queryer, box *securestore.Box, phone string) (string, error) {
+	var verifier *string
+	var protected bool
+	err := q.QueryRow(ctx, `SELECT (SELECT lookup_verifier FROM account_phone_key_state WHERE singleton=1),
+ EXISTS(SELECT 1 FROM users WHERE user_phone_protected=true)`).Scan(&verifier, &protected)
+	if err != nil {
+		return "", errors.New("cannot verify administrator phone lookup key")
+	}
+	if box == nil {
+		if protected || verifier != nil {
+			return "", errors.New("administrator phone lookup key is unavailable")
+		}
+		return "", nil
+	}
+	fingerprint, err := KeyBinding(box)
+	if err != nil {
+		return "", err
+	}
+	if verifier == nil && protected {
+		return "", errors.New("administrator phone key binding is missing")
+	}
+	if verifier != nil && subtle.ConstantTimeCompare([]byte(fingerprint), []byte(*verifier)) != 1 {
+		return "", errors.New("administrator phone lookup key differs from stored binding")
+	}
+	return Lookup(box, phone)
+}
+
+// BindLookupKey registers the immutable fingerprint in the same business
+// transaction as the first encrypted write. A mismatched key always fails.
+func BindLookupKey(ctx context.Context, tx *db.Transaction, box *securestore.Box) error {
+	fingerprint, err := KeyBinding(box)
+	if err != nil {
+		return err
+	}
+	if _, err := tx.Exec(ctx, `INSERT INTO account_phone_key_state(singleton,lookup_verifier)
+ VALUES(1,$1) ON CONFLICT DO NOTHING`, fingerprint); err != nil {
+		return errors.New("cannot register administrator phone lookup key")
+	}
+	var actual string
+	if err := tx.QueryRow(ctx, `SELECT lookup_verifier FROM account_phone_key_state WHERE singleton=1`).Scan(&actual); err != nil {
+		return errors.New("cannot read administrator phone lookup key binding")
+	}
+	if subtle.ConstantTimeCompare([]byte(fingerprint), []byte(actual)) != 1 {
+		return errors.New("administrator phone lookup key binding mismatch")
+	}
+	return nil
+}

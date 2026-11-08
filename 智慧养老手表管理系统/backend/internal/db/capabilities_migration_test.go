@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"testing"
 
@@ -62,8 +63,34 @@ func TestCapabilitiesRollbackAndReapply(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	for _, name := range []string{"mysql_0021_report_receipts.sql", "mysql_0020_position_metadata.sql", "mysql_0019_sleep_observation_time.sql", "mysql_0018_daily_ownership.sql", "mysql_0017_telemetry_observation_time.sql", "mysql_0016_durable_telemetry_inbox.sql", "mysql_0015_device_request_nonces.sql", "mysql_0014_operational_indexes.sql", "mysql_0013_image_blob.sql", "mysql_0011_encrypt_coordinates.sql", "mysql_0010_care_recipient_key.sql", "mysql_0009_rule_baseline_cover.sql", "mysql_0008_rule_baseline_source.sql", "mysql_0007_cluster_scheduling.sql", "mysql_0006_health_performance.sql", "mysql_0005_platform.sql", "mysql_0004_device_capabilities.sql"} {
-		b, err := os.ReadFile(filepath.Join("..", "..", "migrations", "rollback", name))
+	rollbackDir := filepath.Join("..", "..", "migrations", "rollback")
+	entries, err := os.ReadDir(rollbackDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var rollbacks []string
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasPrefix(entry.Name(), "mysql_") || !strings.HasSuffix(entry.Name(), ".sql") {
+			continue
+		}
+		rollbacks = append(rollbacks, entry.Name())
+	}
+	if len(rollbacks) == 0 {
+		t.Fatal("no MySQL rollback scripts found")
+	}
+	// Rollbacks undo later migrations first, so apply them in reverse order.
+	sort.Sort(sort.Reverse(sort.StringSlice(rollbacks)))
+
+	var applied int
+	if err = pool.QueryRow(ctx, "SELECT count(*) FROM schema_migrations").Scan(&applied); err != nil {
+		t.Fatal(err)
+	}
+	wantRemaining := applied - len(rollbacks)
+	if wantRemaining < 1 {
+		t.Fatal("rollback scripts outnumber applied migrations", applied, len(rollbacks))
+	}
+	for _, name := range rollbacks {
+		b, err := os.ReadFile(filepath.Join(rollbackDir, name))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -77,7 +104,7 @@ func TestCapabilitiesRollbackAndReapply(t *testing.T) {
 	}
 
 	var count int
-	if err = pool.QueryRow(ctx, "SELECT count(*) FROM schema_migrations").Scan(&count); err != nil || count != 3 {
+	if err = pool.QueryRow(ctx, "SELECT count(*) FROM schema_migrations").Scan(&count); err != nil || count != wantRemaining {
 		t.Fatal(count, err)
 	}
 	if err = pool.QueryRow(ctx, "SELECT count(*) FROM care_incident_event WHERE incident_id=1").Scan(&count); err != nil || count != 1 {

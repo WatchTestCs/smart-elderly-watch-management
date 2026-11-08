@@ -26,6 +26,7 @@ var mysqlReturningColumns = map[string]string{
 	"family":         "family_id",
 	"fence_event":    "id",
 	"text":           "text_id",
+	"users":          "user_id",
 }
 
 func mysqlReturningColumnSupported(table, column string) bool {
