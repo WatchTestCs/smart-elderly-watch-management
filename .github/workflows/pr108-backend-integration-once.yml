@@ -1,0 +1,13 @@
+name: PR108 one-time backend integration
+
+on:
+  push:
+    branches: [refactor/preview-ts-scopes-20261107]
+    paths: [.github/workflows/pr108-backend-integration-once.yml]
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    uses: ./.github/workflows/reusable-backend.yml
