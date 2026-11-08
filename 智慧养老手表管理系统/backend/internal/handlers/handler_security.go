@@ -73,35 +73,31 @@ func (h *Handler) factorLogin(w http.ResponseWriter, r *http.Request, m map[stri
 		return false
 	}
 	defer tx.Rollback(ctx)
-	var sealed string
-	var enabled bool
-	var last int64
-	var hashes []byte
-	var generation string
-	err = tx.QueryRow(ctx, "SELECT secret,enabled,last_counter,recovery_hashes,generation FROM auth_factor WHERE role=$1 AND actor_id=$2 FOR UPDATE", role, id).Scan(&sealed, &enabled, &last, &hashes, &generation)
+	factor, fetchErr := authrepo.LockLoginFactor(ctx, tx, role, id)
+	err = fetchErr
 	if err != nil && err != pgx.ErrNoRows {
 		response.Error500(w, ref())
 		return false
 	}
-	if err == nil && enabled {
-		secret, e := h.Box.Open(sealed, factorScope(role, id))
+	if err == nil && factor.Enabled {
+		secret, e := h.Box.Open(factor.Sealed, factorScope(role, id))
 		if e != nil {
 			response.JSON(w, 503, map[string]any{"message": "安全密钥不可用"})
 			return false
 		}
-		counter, valid := securestore.VerifyTOTP(secret, str(m, "otp"), time.Now(), last)
+		counter, valid := securestore.VerifyTOTP(secret, str(m, "otp"), time.Now(), factor.LastCounter)
 		if !valid && str(m, "recoveryCode") != "" {
 			var codes []string
-			if internalError(w, json.Unmarshal(hashes, &codes)) {
+			if internalError(w, json.Unmarshal(factor.RecoveryHashes, &codes)) {
 				return false
 			}
 			candidate := health.Digest([]byte(str(m, "recoveryCode")))
 			for i, v := range codes {
 				if v == candidate {
 					codes = append(codes[:i], codes[i+1:]...)
-					hashes, _ = json.Marshal(codes)
+					factor.RecoveryHashes, _ = json.Marshal(codes)
 					valid = true
-					counter = last
+					counter = factor.LastCounter
 					break
 				}
 			}
@@ -116,10 +112,10 @@ func (h *Handler) factorLogin(w http.ResponseWriter, r *http.Request, m map[stri
 			response.JSON(w, 401, map[string]any{"code": "MFA_REQUIRED", "message": "请输入有效的动态验证码或未使用的恢复码"})
 			return false
 		}
-		if _, err = tx.Exec(ctx, "UPDATE auth_factor SET last_counter=$3,recovery_hashes=$4 WHERE role=$1 AND actor_id=$2", role, id, counter, json.RawMessage(hashes)); internalError(w, err) {
+		if internalError(w, authrepo.UpdateLoginFactor(ctx, tx, role, id, counter, factor.RecoveryHashes)) {
 			return false
 		}
-		*r = *r.WithContext(context.WithValue(r.Context(), factorGenerationKey{}, generation))
+		*r = *r.WithContext(context.WithValue(r.Context(), factorGenerationKey{}, factor.Generation))
 	}
 	if internalError(w, h.loginAuditTx(r, phone, role, id, "credentials_verified", tx)) {
 		return false
@@ -152,21 +148,14 @@ func (h *Handler) securityFactor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer tx.Rollback(ctx)
-	query := "SELECT password FROM users WHERE user_id=$1 FOR UPDATE"
-	if p.Role == auth.RoleFamily {
-		query = "SELECT family_password FROM family WHERE family_id=$1 FOR UPDATE"
-	}
-	var password string
-	if err = tx.QueryRow(ctx, query, p.ID).Scan(&password); err != nil || !auth.Matches(req.Password, password) {
+	password, passwordErr := authrepo.LockPassword(ctx, tx, p.Role, p.ID)
+	if passwordErr != nil || !auth.Matches(req.Password, password) {
 		response.JSON(w, 403, map[string]any{"message": "须验证当前密码"})
 		return
 	}
 	scope := factorScope(p.Role, p.ID)
-	var sealed string
-	var enabled bool
-	var until time.Time
-	var last int64
-	err = tx.QueryRow(ctx, "SELECT secret,enabled,pending_until,last_counter FROM auth_factor WHERE role=$1 AND actor_id=$2 FOR UPDATE", p.Role, p.ID).Scan(&sealed, &enabled, &until, &last)
+	factor, factorErr := authrepo.LockFactor(ctx, tx, p.Role, p.ID)
+	err = factorErr
 	if err != nil && err != pgx.ErrNoRows {
 		response.Error500(w, ref())
 		return
@@ -174,34 +163,34 @@ func (h *Handler) securityFactor(w http.ResponseWriter, r *http.Request) {
 	result := map[string]any{}
 	switch req.Action {
 	case "setup":
-		if enabled {
+		if factor.Enabled {
 			conflict409(w, "已启用双因素认证，不能覆盖现有密钥")
 			return
 		}
 		result, err = h.setupFactor(ctx, tx, p.Role, p.ID, scope)
 	case "confirm", "disable":
-		if err == pgx.ErrNoRows || (req.Action == "confirm" && (enabled || time.Now().After(until))) || (req.Action == "disable" && !enabled) {
+		if err == pgx.ErrNoRows || (req.Action == "confirm" && (factor.Enabled || time.Now().After(factor.PendingUntil))) || (req.Action == "disable" && !factor.Enabled) {
 			conflict409(w, "双因素认证状态不允许此操作")
 			return
 		}
-		secret, e := h.Box.Open(sealed, scope)
+		secret, e := h.Box.Open(factor.Sealed, scope)
 		if internalError(w, e) {
 			return
 		}
-		counter, valid := securestore.VerifyTOTP(secret, req.OTP, time.Now(), last)
+		counter, valid := securestore.VerifyTOTP(secret, req.OTP, time.Now(), factor.LastCounter)
 		if !valid {
 			response.JSON(w, 403, map[string]any{"message": "动态验证码无效或已使用"})
 			return
 		}
 		if req.Action == "disable" {
-			_, err = tx.Exec(ctx, "DELETE FROM auth_factor WHERE role=$1 AND actor_id=$2", p.Role, p.ID)
+			err = authrepo.DeleteFactor(ctx, tx, p.Role, p.ID)
 		} else {
 			codes, hashes, codeErr := newRecoveryCodes()
 			if internalError(w, codeErr) {
 				return
 			}
 			b, _ := json.Marshal(hashes)
-			_, err = tx.Exec(ctx, "UPDATE auth_factor SET enabled=true,last_counter=$3,recovery_hashes=$4 WHERE role=$1 AND actor_id=$2", p.Role, p.ID, counter, json.RawMessage(b))
+			err = authrepo.EnableFactor(ctx, tx, p.Role, p.ID, counter, b)
 			result["recoveryCodes"] = codes
 		}
 		result["reloginRequired"] = true
@@ -210,7 +199,7 @@ func (h *Handler) securityFactor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err == nil && req.Action != "setup" && h.Cfg.SessionBackend == "database" {
-		_, err = tx.Exec(ctx, "DELETE FROM web_session WHERE role=$1 AND actor_id=$2", p.Role, p.ID)
+		err = authrepo.RevokeDatabaseSessions(ctx, tx, p.Role, p.ID)
 	}
 	if err == nil {
 		err = tx.Commit(ctx)
@@ -259,7 +248,7 @@ func (h *Handler) setupFactor(ctx context.Context, tx *db.Transaction, role stri
 	secret := base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(seed)
 	sealed, err := h.Box.Seal(secret, scope)
 	if err == nil {
-		_, err = tx.Exec(ctx, `INSERT INTO auth_factor(role,actor_id,secret,pending_until,recovery_hashes,generation) VALUES($1,$2,$3,$4,'[]',$5) ON CONFLICT(role,actor_id) DO UPDATE SET secret=EXCLUDED.secret,pending_until=EXCLUDED.pending_until,last_counter=-1,generation=EXCLUDED.generation`, role, actorID, sealed, time.Now().Add(10*time.Minute), uuid.NewString())
+		err = authrepo.SetupFactor(ctx, tx, role, actorID, sealed, time.Now().Add(10*time.Minute), uuid.NewString())
 	}
 	result := map[string]any{"secret": secret, "uri": "otpauth://totp/" + url.PathEscape("岁宁:"+role+":"+strconv.FormatInt(actorID, 10)) + "?secret=" + secret + "&issuer=" + url.QueryEscape("岁宁") + "&algorithm=SHA1&digits=6&period=30"}
 	return result, err
