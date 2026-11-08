@@ -33,10 +33,6 @@ type DeviceRecord struct {
 	HandledSeq    int
 }
 
-type deviceReader interface {
-	QueryRow(context.Context, string, ...any) db.Row
-}
-
 func ScanDeviceRecord(row db.Row) (*DeviceRecord, error) {
 	var d DeviceRecord
 	if err := row.Scan(&d.ID, &d.No, &d.Secret, &d.Alias, &d.Model, &d.AppVersion,
@@ -48,7 +44,7 @@ func ScanDeviceRecord(row db.Row) (*DeviceRecord, error) {
 	return &d, nil
 }
 
-func FindDeviceByNo(ctx context.Context, store deviceReader, number string) (*DeviceRecord, error) {
+func FindDeviceByNo(ctx context.Context, store db.RowQuerier, number string) (*DeviceRecord, error) {
 	return ScanDeviceRecord(store.QueryRow(ctx, "SELECT "+deviceRecordColumns+" FROM device WHERE device_no=$1", number))
 }
 
