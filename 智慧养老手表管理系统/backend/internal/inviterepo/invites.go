@@ -27,6 +27,7 @@ type CodeStatus struct {
 	ExpireTime   *time.Time
 	ResidentName *string
 }
+
 func ReadCode(ctx context.Context, store *db.Database, code string) (CodeStatus, error) {
 	var status CodeStatus
 	err := store.QueryRow(ctx,
@@ -42,6 +43,7 @@ type LockedCode struct {
 	Used       int16
 	ExpireTime *time.Time
 }
+
 func LockCode(ctx context.Context, tx *db.Transaction, code string) (LockedCode, error) {
 	var invitation LockedCode
 	err := tx.QueryRow(ctx,
@@ -62,6 +64,7 @@ type ResidentBinding struct {
 	Name     *string
 	FamilyID *int64
 }
+
 func LockResident(ctx context.Context, tx *db.Transaction, residentID int64) (ResidentBinding, error) {
 	var bound ResidentBinding
 	err := tx.QueryRow(ctx,
