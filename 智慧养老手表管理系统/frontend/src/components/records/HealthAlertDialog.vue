@@ -35,7 +35,7 @@
     </el-dialog>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { CircleCheckFilled } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 defineProps({ dialog: { type: Object, required: true } })
