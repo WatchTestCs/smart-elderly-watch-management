@@ -5,6 +5,7 @@ import { accepted, api, type Envelope } from '../api/client'
 import { apiErrorMessage } from '../api/httpContract'
 import { copyText } from '../utils/clipboard'
 import { createDeviceState, emptyDeviceAlert } from './deviceModels'
+export type { DeviceRecord } from './deviceModels'
 import type {
   DeviceId, DeviceRecord, ResidentRecord, DeviceAlertCounts, AlertCountsResponse,
   DeviceListResponse, AlertDetailResponse, CreatedDeviceResponse, BindCodeListResponse,
