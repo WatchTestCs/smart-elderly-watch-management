@@ -17,6 +17,7 @@ const (
 
 type Observation struct {
 	OwnerID        int64
+	DeviceID       int64
 	BindingVersion int64
 	Metric         string
 	At             time.Time
@@ -46,7 +47,7 @@ func Evaluate(current Observation, history []Observation) (Result, error) {
 	firstDay := day.AddDate(0, 0, -HistoryDays)
 	days := make(map[time.Time][]float64)
 	for _, sample := range history {
-		if sample.OwnerID != current.OwnerID || sample.BindingVersion != current.BindingVersion ||
+		if sample.OwnerID != current.OwnerID || sample.DeviceID != current.DeviceID || sample.BindingVersion != current.BindingVersion ||
 			sample.Metric != current.Metric || !sample.Valid || sample.At.IsZero() ||
 			math.IsNaN(sample.Value) || math.IsInf(sample.Value, 0) {
 			continue
