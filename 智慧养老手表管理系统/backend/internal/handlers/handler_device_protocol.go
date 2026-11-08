@@ -2,10 +2,12 @@ package handlers
 
 import (
 	"context"
+	"errors"
 	"github.com/jackc/pgx/v5"
 	"net/http"
 	"strings"
 	dbstore "suining-care/internal/db"
+	"suining-care/internal/devicerepo"
 	"suining-care/internal/response"
 	"suining-care/internal/telemetryrepo"
 	"time"
@@ -217,33 +219,21 @@ func (h *Handler) deviceBind(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	now := time.Now()
-	// The locked row is authoritative: never restore stale admin settings,
-	// location, telemetry, or disabled status from the initial auth snapshot.
-	ct, err := tx.Exec(ctx,
-		`UPDATE device SET old_id=$1, family_id=$2, bind_time=$3,
-		 last_time=GREATEST(COALESCE(last_time,$3),$3) WHERE device_id=$4`,
-		*bc.OldID, bc.FamilyID, now, d.ID)
-	if rollbackOnError(w, rollback, err) {
-		return
-	}
-	if ct.RowsAffected() != 1 {
+	err = devicerepo.CompleteBinding(ctx, tx, devicerepo.Binding{
+		DeviceID: d.ID, ResidentID: *bc.OldID, FamilyID: bc.FamilyID,
+		CodeID: bc.ID, ExistingDeviceID: oldDeviceID, ExistingFamilyID: oldFamilyID,
+		At: now, ProfileDay: siteDay(now),
+	})
+	switch {
+	case errors.Is(err, devicerepo.ErrBindFailed):
 		rollback()
 		conflict409(w, "设备绑定失败")
 		return
-	}
-	if err := linkBoundDevice(ctx, tx, d.ID, bc, oldDeviceID, oldFamilyID, now); rollbackOnError(w, rollback, err) {
-		return
-	}
-	// 标记绑定码已用（used=0 乐观锁）。
-	ct, err = tx.Exec(ctx,
-		`UPDATE bind_code SET used=1, used_device_id=$1, used_time=$2 WHERE id=$3 AND used=0`,
-		d.ID, now, bc.ID)
-	if rollbackOnError(w, rollback, err) {
-		return
-	}
-	if ct.RowsAffected() != 1 {
+	case errors.Is(err, devicerepo.ErrBindCodeUsed):
 		rollback()
 		conflict409(w, "该绑定码已被使用")
+		return
+	case rollbackOnError(w, rollback, err):
 		return
 	}
 	if internalError(w, tx.Commit(ctx)) {
@@ -315,17 +305,3 @@ func bindCodeFailure(bc *bindCodeRow) (string, string) {
 	return "", ""
 }
 
-func linkBoundDevice(ctx context.Context, tx *dbstore.Transaction, deviceID int64, bc *bindCodeRow, oldDeviceID, oldFamilyID *int64, now time.Time) error {
-	// 老人档案 device_id 只填一次，防止后绑定的表顶掉。
-	if oldDeviceID == nil {
-		if _, err := tx.Exec(ctx, `UPDATE oldperson SET device_id=$1 WHERE old_id=$2`, deviceID, *bc.OldID); err != nil {
-			return err
-		}
-	}
-	if oldFamilyID == nil && bc.FamilyID != nil {
-		if _, err := tx.Exec(ctx, `UPDATE oldperson SET family_id=$1 WHERE old_id=$2`, *bc.FamilyID, *bc.OldID); err != nil {
-			return err
-		}
-	}
-	return telemetryrepo.EnsureDefaultWatchProfile(ctx, tx, deviceID, siteDay(now))
-}
