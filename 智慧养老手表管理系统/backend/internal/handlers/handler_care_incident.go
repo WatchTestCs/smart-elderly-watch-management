@@ -1,13 +1,12 @@
 package handlers
 
 import (
-	"context"
 	"github.com/jackc/pgx/v5"
 	"net/http"
 	"strconv"
 	"strings"
 	"suining-care/internal/auth"
-	"suining-care/internal/db"
+	"suining-care/internal/careworkflow"
 	"suining-care/internal/response"
 	"time"
 	"unicode/utf8"
@@ -156,7 +155,7 @@ func (h *Handler) careTransition(w http.ResponseWriter, r *http.Request) {
 		response.JSON(w, http.StatusForbidden, map[string]any{"message": "处置人与复核人必须不同"})
 		return
 	}
-	next := nextCareState(before, action)
+	next := careworkflow.NextState(before, action)
 	if next == "" {
 		response.JSON(w, http.StatusConflict, map[string]any{"message": "当前状态不允许此操作"})
 		return
@@ -186,7 +185,7 @@ func (h *Handler) careTransition(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	if internalError(w, persistCareTransition(ctx, tx, id, next, action, strconv.FormatInt(actor, 10), note)) {
+	if internalError(w, careworkflow.PersistTransition(ctx, tx, id, next, action, strconv.FormatInt(actor, 10), note)) {
 		return
 	}
 	if internalError(w, tx.Commit(ctx)) {
@@ -241,49 +240,4 @@ func (h *Handler) careEvents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	response.OK(w, map[string]any{"events": events, "total": total, "page": page, "pageSize": ps})
-}
-
-func nextCareState(before, action string) string {
-	allowed := map[string]map[string]string{
-		"received":       {"acknowledge": "acknowledged", "escalate": "escalated"},
-		"notifying":      {"acknowledge": "acknowledged", "escalate": "escalated"},
-		"notified":       {"acknowledge": "acknowledged", "escalate": "escalated"},
-		"escalated":      {"acknowledge": "acknowledged"},
-		"review_overdue": {"verify": "verified", "reopen": "in_progress"},
-		"acknowledged":   {"start": "in_progress", "escalate": "escalated"},
-		"in_progress":    {"resolve": "resolved", "escalate": "escalated"},
-		"resolved":       {"verify": "verified", "reopen": "in_progress"},
-	}
-	return allowed[before][action]
-}
-
-func persistCareTransition(ctx context.Context, tx *db.Transaction, id int64, next, action, actor, note string) error {
-	if _, err := tx.Exec(ctx, `UPDATE care_incident SET
-    state=$2,updated_at=now(),
-    due_at=CASE
-      WHEN $3='acknowledge' THEN now()+interval '10 minutes'
-      WHEN $3='start' THEN now()+interval '30 minutes'
-      WHEN $3='resolve' THEN now()+interval '30 minutes'
-      WHEN $3='reopen' THEN now()+interval '10 minutes'
-      ELSE due_at END,
-    acknowledged_by=CASE WHEN $3='acknowledge' THEN $4 ELSE acknowledged_by END,
-    acknowledged_at=CASE WHEN $3='acknowledge' THEN now() ELSE acknowledged_at END,
-    resolved_by=CASE WHEN $3='resolve' THEN $4 ELSE resolved_by END,
-    resolved_at=CASE WHEN $3='resolve' THEN now() ELSE resolved_at END,
-    resolution_note=CASE WHEN $3='resolve' THEN $5 ELSE resolution_note END,
-    verified_by=CASE WHEN $3='verify' THEN $4 ELSE verified_by END,
-    verified_at=CASE WHEN $3='verify' THEN now() ELSE verified_at END
-   WHERE id=$1`, id, next, action, actor, note); err != nil {
-		return err
-	}
-	if action == "verify" {
-		if _, err := tx.Exec(ctx, `UPDATE alarm_precess SET status='0'
-			WHERE id=(SELECT source_alarm_id FROM care_incident WHERE id=$1)`, id); err != nil {
-			return err
-		}
-	}
-	_, err := tx.Exec(ctx,
-		"INSERT INTO care_incident_event(incident_id,actor,action,note) VALUES($1,$2,$3,$4)",
-		id, actor, action, note)
-	return err
 }
