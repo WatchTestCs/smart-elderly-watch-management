@@ -2,7 +2,11 @@ package devicerepo
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"time"
+
+	"github.com/jackc/pgx/v5"
 
 	"suining-care/internal/db"
 )
@@ -14,10 +18,45 @@ type codeQueries interface {
 type BindCode struct {
 	ID           int64
 	Code         string
+	OldID        *int64
+	FamilyID     *int64
+	CreateUser   *string
 	ExpireTime   *time.Time
 	Used         int
 	UsedTime     *time.Time
 	UsedDeviceID *int64
+}
+
+type ResidentBinding struct {
+	Name     *string
+	DeviceID *int64
+	FamilyID *int64
+}
+
+func LockResidentBinding(ctx context.Context, store codeQueries, residentID int64) (ResidentBinding, error) {
+	var binding ResidentBinding
+	err := store.QueryRow(ctx,
+		"SELECT name, device_id, family_id FROM oldperson WHERE old_id=$1 FOR UPDATE",
+		residentID).Scan(&binding.Name, &binding.DeviceID, &binding.FamilyID)
+	return binding, err
+}
+
+// FindBindCode returns nil for missing codes so the device protocol can
+// distinguish unknown, consumed and expired binding codes without leaking SQL.
+func FindBindCode(ctx context.Context, store codeQueries, code string) (*BindCode, error) {
+	var row BindCode
+	err := store.QueryRow(ctx,
+		`SELECT id,code,old_id,family_id,create_user,expire_time,used,used_time,used_device_id
+		 FROM bind_code WHERE code=$1`, code).
+		Scan(&row.ID, &row.Code, &row.OldID, &row.FamilyID, &row.CreateUser,
+			&row.ExpireTime, &row.Used, &row.UsedTime, &row.UsedDeviceID)
+	if errors.Is(err, pgx.ErrNoRows) || errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &row, nil
 }
 
 func CodeExists(ctx context.Context, store codeQueries, code string) (bool, error) {

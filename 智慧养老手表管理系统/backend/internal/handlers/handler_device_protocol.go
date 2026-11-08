@@ -1,12 +1,10 @@
 package handlers
 
 import (
-	"context"
 	"errors"
 	"github.com/jackc/pgx/v5"
 	"net/http"
 	"strings"
-	dbstore "suining-care/internal/db"
 	"suining-care/internal/devicerepo"
 	"suining-care/internal/response"
 	"suining-care/internal/telemetryrepo"
@@ -99,41 +97,6 @@ func (h *Handler) deviceLogin(w http.ResponseWriter, r *http.Request) {
 	response.OK(w, fields)
 }
 
-type bindCodeRow struct {
-	ID         int64
-	Code       string
-	OldID      *int64
-	FamilyID   *int64
-	CreateUser *string
-	ExpireTime *time.Time
-	Used       int
-	UsedTime   *time.Time
-	UsedDevID  *int64
-}
-
-func scanBindCode(row dbstore.Row) (*bindCodeRow, error) {
-	var b bindCodeRow
-	if err := row.Scan(&b.ID, &b.Code, &b.OldID, &b.FamilyID, &b.CreateUser,
-		&b.ExpireTime, &b.Used, &b.UsedTime, &b.UsedDevID); err != nil {
-		return nil, err
-	}
-	return &b, nil
-}
-
-const bindCodeCols = `id, code, old_id, family_id, create_user, expire_time, used, used_time, used_device_id`
-
-func (h *Handler) findBindCode(ctx context.Context, q deviceQueries, code string) (*bindCodeRow, error) {
-	b, err := scanBindCode(q.QueryRow(ctx,
-		`SELECT `+bindCodeCols+` FROM bind_code WHERE code=$1`, code))
-	if err != nil {
-		if err == pgx.ErrNoRows {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return b, nil
-}
-
 // POST /api/v1/device/bind —— 设备绑定老人（公开，事务）。
 func (h *Handler) deviceBind(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
@@ -170,7 +133,7 @@ func (h *Handler) deviceBind(w http.ResponseWriter, r *http.Request) {
 		hwFail(w, "BIND_CODE_REQUIRED", "请输入绑定码")
 		return
 	}
-	bc, err := h.findBindCode(ctx, tx, bindCode)
+	bc, err := devicerepo.FindBindCode(ctx, tx, bindCode)
 	if rollbackOnError(w, rollback, err) {
 		return
 	}
@@ -179,10 +142,7 @@ func (h *Handler) deviceBind(w http.ResponseWriter, r *http.Request) {
 		hwFail(w, code, msg)
 		return
 	}
-	var oldName *string
-	var oldDeviceID, oldFamilyID *int64
-	err = tx.QueryRow(ctx, `SELECT name, device_id, family_id FROM oldperson WHERE old_id=$1 FOR UPDATE`, *bc.OldID).
-		Scan(&oldName, &oldDeviceID, &oldFamilyID)
+	binding, err := devicerepo.LockResidentBinding(ctx, tx, *bc.OldID)
 	if err != nil {
 		rollback()
 		if err == pgx.ErrNoRows {
@@ -221,7 +181,7 @@ func (h *Handler) deviceBind(w http.ResponseWriter, r *http.Request) {
 	now := time.Now()
 	err = devicerepo.CompleteBinding(ctx, tx, devicerepo.Binding{
 		DeviceID: d.ID, ResidentID: *bc.OldID, FamilyID: bc.FamilyID,
-		CodeID: bc.ID, ExistingDeviceID: oldDeviceID, ExistingFamilyID: oldFamilyID,
+		CodeID: bc.ID, ExistingDeviceID: binding.DeviceID, ExistingFamilyID: binding.FamilyID,
 		At: now, ProfileDay: siteDay(now),
 	})
 	switch {
@@ -240,8 +200,8 @@ func (h *Handler) deviceBind(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	nm := ""
-	if oldName != nil {
-		nm = *oldName
+	if binding.Name != nil {
+		nm = *binding.Name
 	}
 	response.OK(w, map[string]any{"oldId": *bc.OldID, "oldPersonName": nm})
 }
@@ -289,7 +249,7 @@ func (h *Handler) deviceHeartbeat(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func bindCodeFailure(bc *bindCodeRow) (string, string) {
+func bindCodeFailure(bc *devicerepo.BindCode) (string, string) {
 	if bc == nil {
 		return "BIND_CODE_NOT_FOUND", "绑定码不存在，请在系统里重新生成"
 	}
