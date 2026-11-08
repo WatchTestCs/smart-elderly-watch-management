@@ -1,6 +1,6 @@
 <template>
   <div class="roles">
-    <div class="record-heading"><h2>最近上报记录</h2><el-button link :loading="isLoading" @click="searchposition">刷新记录 <el-icon aria-hidden="true"><Refresh /></el-icon></el-button></div>
+    <div class="record-heading"><h2>最近上报记录</h2><el-button link :loading="isLoading" @click="loadFamilyLocations">刷新记录 <el-icon aria-hidden="true"><Refresh /></el-icon></el-button></div>
 
     <el-alert v-if="loadError" :title="loadError" type="error" :closable="false" show-icon></el-alert>
     <el-table v-if="!mobileLayout" class="desktop-records" v-loading="isLoading" :data="positionList"
@@ -83,9 +83,9 @@ const reads = createLatestRead(
   },
   loading => { isLoading.value = loading }
 )
-function searchposition() { return reads.run({ oldId: oldId.value }) }
+function loadFamilyLocations() { return reads.run({ oldId: oldId.value }) }
 function showLocation(row: PositionRecord) { selectedLocation.value = { ...row } }
-onMounted(() => { void searchposition() })
+onMounted(() => { void loadFamilyLocations() })
 onBeforeUnmount(reads.dispose)
 </script>
 
