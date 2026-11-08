@@ -53,7 +53,7 @@ describe('guardian data flow', () => {
     const state = scope.run(() => useCustomers({ post } as PostClient))!
     const form = { customerName: '姓名', customerPhone: '19912345678', customerAge: 70 }
     Object.assign(state.customerForm, form)
-    state.customerDialogVisible.value = true
+    state.createDialogVisible.value = true
     const pendingRead = state.searchCustomers()
     const saved = state.save()
     await vi.advanceTimersByTimeAsync(10000)
@@ -66,7 +66,7 @@ describe('guardian data flow', () => {
     expect(await saved).toBe(false)
     await vi.advanceTimersByTimeAsync(30000)
     expect(state.customerForm).toMatchObject(form)
-    expect(state.customerDialogVisible.value).toBe(true)
+    expect(state.createDialogVisible.value).toBe(true)
     expect(state.mutationError.value).toContain('未收到保存确认')
     expect(post.mock.calls.filter(([path]) => path.endsWith('/create'))).toHaveLength(1)
   })
@@ -153,10 +153,10 @@ describe('guardian data flow', () => {
     const post = vi.fn().mockResolvedValue({ data: { returnCode: '0000', code: 'INVALID_REQUEST', message: 'denied' } })
     const state = useCustomers({ post } as PostClient)
     const row = { customerId: 1, customerName: '原名', customerAge: 70, customerPhone: '19912345678', customerSex: '女', customerAddress: '' }
-    state.handleEditRole(0, row); state.oldEditForm.customerName = '编辑中'
+    state.openEditDialog(0, row); state.editForm.customerName = '编辑中'
     expect(row.customerName).toBe('原名')
     expect(await state.save(true)).toBe(false)
-    expect(state.oldEditDialogVisible.value).toBe(true)
+    expect(state.editDialogVisible.value).toBe(true)
     expect(state.mutationError.value).toBe('denied')
   })
   it('does not pretend a rejected deletion succeeded', async () => {
