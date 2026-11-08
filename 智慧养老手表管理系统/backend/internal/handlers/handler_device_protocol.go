@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"suining-care/internal/devicerepo"
+	"suining-care/internal/deviceworkflow"
 	"suining-care/internal/response"
 	"suining-care/internal/telemetryrepo"
 )
@@ -99,7 +100,7 @@ func (h *Handler) deviceLogin(w http.ResponseWriter, r *http.Request) {
 	response.OK(w, fields)
 }
 
-// POST /api/v1/device/bind —— 设备绑定老人（公开，事务）。
+// POST /api/v1/device/bind: device binding owns its database transaction.
 func (h *Handler) deviceBind(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -114,97 +115,37 @@ func (h *Handler) deviceBind(w http.ResponseWriter, r *http.Request) {
 		writeValidation400(w)
 		return
 	}
-	ctx := r.Context()
-	tx, err := h.DB.Begin(ctx)
+	result, failure, err := deviceworkflow.Bind(r.Context(), h.DB, deviceworkflow.BindInput{
+		Number: deviceNo, Secret: secret, Code: normalizeCode(codeRaw),
+		ProfileDay: siteDay(time.Now()),
+	})
 	if internalError(w, err) {
 		return
 	}
-	rollback := func() { _ = tx.Rollback(ctx) }
-	d, code, msg, err := h.hwAuth(ctx, tx, deviceNo, secret, "设备已停用")
-	if rollbackOnError(w, rollback, err) {
-		return
-	}
-	if d == nil {
-		rollback()
-		hwFail(w, code, msg)
-		return
-	}
-	bindCode := normalizeCode(codeRaw)
-	if bindCode == "" {
-		rollback()
-		hwFail(w, "BIND_CODE_REQUIRED", "请输入绑定码")
-		return
-	}
-	bc, err := devicerepo.FindBindCode(ctx, tx, bindCode)
-	if rollbackOnError(w, rollback, err) {
-		return
-	}
-	if code, msg := bindCodeFailure(bc); code != "" {
-		rollback()
-		hwFail(w, code, msg)
-		return
-	}
-	binding, err := devicerepo.LockResidentBinding(ctx, tx, *bc.OldID)
-	if err != nil {
-		rollback()
-		if errors.Is(err, pgx.ErrNoRows) {
-			hwFail(w, "NOT_FOUND", "绑定码对应的老人不存在")
-		} else {
-			response.Error500(w, ref())
-		}
-		return
-	}
-	// Lock the elder before the device, matching unbind/delete lock order.
-	// Changing owners requires an explicit unbind so the old primary reference
-	// cannot be left pointing at a device that now reports for someone else.
-	locked, err := devicerepo.ScanDeviceRecord(devicerepo.LockedDeviceRow(ctx, tx, d.ID))
-	if rollbackOnError(w, rollback, err) {
-		return
-	}
-	d, code, msg, err = checkDeviceAuth(locked, secret, "设备已停用")
-	if rollbackOnError(w, rollback, err) {
-		return
-	}
-	if d == nil || d.No != deviceNo {
-		rollback()
-		if d != nil {
-			hwFail(w, "DEVICE_AUTH_FAILED", "设备号或密钥不正确")
-		} else {
-			hwFail(w, code, msg)
-		}
-		return
-	}
-	if d.OldID != nil && *d.OldID != *bc.OldID {
-		rollback()
+	switch failure {
+	case "":
+		response.OK(w, map[string]any{"oldId": result.ResidentID, "oldPersonName": result.Name})
+	case deviceworkflow.AlreadyBound:
 		conflict409(w, "设备已绑定其他长者，请先在设备管理解除绑定")
-		return
-	}
-	now := time.Now()
-	err = devicerepo.CompleteBinding(ctx, tx, devicerepo.Binding{
-		DeviceID: d.ID, ResidentID: *bc.OldID, FamilyID: bc.FamilyID,
-		CodeID: bc.ID, ExistingDeviceID: binding.DeviceID, ExistingFamilyID: binding.FamilyID,
-		At: now, ProfileDay: siteDay(now),
-	})
-	switch {
-	case errors.Is(err, devicerepo.ErrBindFailed):
-		rollback()
+	case deviceworkflow.BindFailed:
 		conflict409(w, "设备绑定失败")
-		return
-	case errors.Is(err, devicerepo.ErrBindCodeUsed):
-		rollback()
-		conflict409(w, "该绑定码已被使用")
-		return
-	case rollbackOnError(w, rollback, err):
-		return
+	case deviceworkflow.CodeUsed:
+		if result.ResidentID == 0 {
+			hwFail(w, "BIND_CODE_USED", "该绑定码已被使用")
+		}
+	case deviceworkflow.CodeRequired:
+		hwFail(w, "BIND_CODE_REQUIRED", "请输入绑定码")
+	case deviceworkflow.CodeNotFound:
+		hwFail(w, "BIND_CODE_NOT_FOUND", "绑定码不存在，请在系统里重新生成")
+	case deviceworkflow.CodeExpired:
+		hwFail(w, "BIND_CODE_EXPIRED", "该绑定码已过期，请重新生成")
+	case deviceworkflow.ResidentMissing:
+		hwFail(w, "NOT_FOUND", "绑定码对应的老人不存在")
+	case deviceworkflow.DeviceDisabled:
+		hwFail(w, "DEVICE_DISABLED", "设备已停用")
+	default:
+		hwFail(w, "DEVICE_AUTH_FAILED", "设备号或密钥不正确")
 	}
-	if internalError(w, tx.Commit(ctx)) {
-		return
-	}
-	nm := ""
-	if binding.Name != nil {
-		nm = *binding.Name
-	}
-	response.OK(w, map[string]any{"oldId": *bc.OldID, "oldPersonName": nm})
 }
 
 // POST /api/v1/device/heartbeat —— 设备心跳（公开）。
@@ -250,18 +191,3 @@ func (h *Handler) deviceHeartbeat(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func bindCodeFailure(bc *devicerepo.BindCode) (string, string) {
-	if bc == nil {
-		return "BIND_CODE_NOT_FOUND", "绑定码不存在，请在系统里重新生成"
-	}
-	if bc.Used == 1 {
-		return "BIND_CODE_USED", "该绑定码已被使用"
-	}
-	if bc.ExpireTime != nil && !bc.ExpireTime.After(time.Now()) {
-		return "BIND_CODE_EXPIRED", "该绑定码已过期，请重新生成"
-	}
-	if bc.OldID == nil {
-		return "NOT_FOUND", "绑定码对应的老人不存在"
-	}
-	return "", ""
-}
