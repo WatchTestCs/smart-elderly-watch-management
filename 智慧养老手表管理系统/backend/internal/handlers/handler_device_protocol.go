@@ -130,9 +130,9 @@ func (h *Handler) deviceBind(w http.ResponseWriter, r *http.Request) {
 	case deviceworkflow.BindFailed:
 		conflict409(w, "设备绑定失败")
 	case deviceworkflow.CodeUsed:
-		if result.ResidentID == 0 {
-			hwFail(w, "BIND_CODE_USED", "该绑定码已被使用")
-		}
+		hwFail(w, "BIND_CODE_USED", "该绑定码已被使用")
+	case deviceworkflow.CodeRace:
+		conflict409(w, "该绑定码已被使用")
 	case deviceworkflow.CodeRequired:
 		hwFail(w, "BIND_CODE_REQUIRED", "请输入绑定码")
 	case deviceworkflow.CodeNotFound:
