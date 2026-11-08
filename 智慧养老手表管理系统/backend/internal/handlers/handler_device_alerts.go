@@ -8,6 +8,7 @@ import (
 	"strings"
 	dbstore "suining-care/internal/db"
 	"suining-care/internal/response"
+	"suining-care/internal/vitalrepo"
 	"time"
 )
 
@@ -172,40 +173,15 @@ func describePersonAlert(pr *personRow, now time.Time) map[string]any {
 // findRatepreAlert returns the selected pending record, or the latest when recordID is nil.
 func (h *Handler) findRatepreAlert(ctx context.Context, q deviceQueries, deviceID int64, kind string, recordID *int64) (map[string]any, error) {
 	isRate := kind == "rate"
-	pending := pendingRate
-	if !isRate {
-		pending = pendingPressure
-	}
-	var id int64
-	var hr, bp *int
-	var createTime *time.Time
-	var residentID *int64
-	var residentName *string
-	var hrf, hrl, bpf, bpl *int
-	recordFilter := ""
-	args := []any{deviceID}
-	if recordID != nil {
-		recordFilter = " AND r.id=$2"
-		args = append(args, *recordID)
-	}
-	err := q.QueryRow(ctx,
-		`SELECT r.id, r.hr, r.bp, r.create_time, o.old_id, o.name, w.hrf, w.hrl, w.bpf, w.bpl
-		 FROM ratepre r LEFT JOIN watch_info w ON w.device_id = r.device_id
-		 LEFT JOIN oldperson o ON o.old_id = r.old_id
-		 WHERE r.device_id=$1 AND `+pending+recordFilter+`
-		 ORDER BY r.create_time DESC, r.id DESC LIMIT 1`, args...).
-		Scan(&id, &hr, &bp, &createTime, &residentID, &residentName, &hrf, &hrl, &bpf, &bpl)
-	if err != nil {
-		if err == pgx.ErrNoRows {
-			return nil, nil
-		}
+	record, err := vitalrepo.FindPendingDeviceAlert(ctx, q, deviceID, kind, recordID)
+	if err != nil || record == nil {
 		return nil, err
 	}
-	value, first, last := hr, hrf, hrl
+	value, first, last := record.HR, record.HRHigh, record.HRLow
 	low, high := 55, 110
 	metric, unit := "心率", "次/分"
 	if !isRate {
-		value, first, last = bp, bpf, bpl
+		value, first, last = record.BP, record.BPHigh, record.BPLow
 		low, high = 90, 140
 		metric, unit = "血压", "mmHg"
 	}
@@ -215,10 +191,10 @@ func (h *Handler) findRatepreAlert(ctx context.Context, q deviceQueries, deviceI
 	}
 	low, high = alertThresholds(first, last, low, high)
 	oldName := "（未绑定）"
-	if residentID != nil {
+	if record.ResidentID != nil {
 		oldName = ""
-		if residentName != nil {
-			oldName = *residentName
+		if record.ResidentName != nil {
+			oldName = *record.ResidentName
 		}
 	}
 	return map[string]any{
@@ -226,7 +202,7 @@ func (h *Handler) findRatepreAlert(ctx context.Context, q deviceQueries, deviceI
 		"detail": "当前档案范围 " + strconv.Itoa(low) + "-" + strconv.Itoa(high) + " " + unit +
 			"，本次测量 " + strconv.Itoa(measurement) + " " + unit + "。",
 		"value": measurement, "threshold": strconv.Itoa(low) + "-" + strconv.Itoa(high),
-		"occurTime": tsOrNil(createTime), "recordId": id,
+		"occurTime": tsOrNil(record.OccurredAt), "recordId": record.ID,
 		"deviceId": deviceID, "oldPersonName": oldName,
 	}, nil
 }
