@@ -15,7 +15,7 @@ var ErrFenceRevision = errors.New("fence or binding revision conflict")
 
 // Save runs under a previously acquired device row lock and remains in the
 // same transaction as the caller's care-access audit.
-func Save(ctx context.Context, tx *db.Transaction, actor string, deviceID, residentID, epoch int64, config *Config) error {
+func Save(ctx context.Context, tx *db.Transaction, actor int64, deviceID, residentID, epoch int64, config *Config) error {
 	coordinates, err := json.Marshal(config.Coordinates)
 	if err != nil {
 		return err
