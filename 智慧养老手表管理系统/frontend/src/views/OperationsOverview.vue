@@ -104,6 +104,7 @@ import { apiErrorMessage } from '../api/httpContract'
 import { createLatestRead } from '../composables/latestRead'
 import CareInbox from '@/components/CareInbox.vue'
 import { authState } from '@/auth'
+import { isRestrictedAdmin } from '@/domain/permissions'
 import store from '@/store'
 import type { NoticeRecord } from '../domain/notices'
 
@@ -130,10 +131,7 @@ const countError = ref('')
 const positionError = ref('')
 let positionNeedsRefresh = false
 
-const isRestricted = computed(() => {
-  const account = authState.account as { role: string; duty?: string } | null
-  return account?.role === 'ADMIN' && ['caregiver','auditor'].includes(account.duty || '')
-})
+const isRestricted = computed(() => isRestrictedAdmin(authState.account))
 const emptyTitle = computed(() => loadError.value ? '公告暂时无法加载' :
   appliedSearch.value ? '没有找到相关公告' : '暂时没有公告')
 const emptyDescription = computed(() => loadError.value || (appliedSearch.value
