@@ -20,6 +20,33 @@ describe('care task read scheduling', () => {
   beforeEach(() => { post.mockReset() })
   afterEach(() => { vi.useRealTimers() })
 
+  it('refreshes tasks on tab visibility restoration and unregisters the listener', async () => {
+    const visibility = vi.spyOn(document, 'hidden', 'get').mockReturnValue(true)
+    try {
+      post.mockResolvedValueOnce(fixture('旧任务')).mockResolvedValueOnce(fixture('最新任务'))
+      const view = mountInbox()
+      await flushPromises()
+      expect(view.text()).toContain('旧任务')
+      document.dispatchEvent(new Event('visibilitychange'))
+      await flushPromises()
+      expect(post).toHaveBeenCalledTimes(1)
+
+      visibility.mockReturnValue(false)
+      document.dispatchEvent(new Event('visibilitychange'))
+      await flushPromises()
+      expect(post).toHaveBeenCalledTimes(2)
+      expect(view.text()).toContain('最新任务')
+      expect(view.text()).not.toContain('旧任务')
+
+      view.unmount()
+      document.dispatchEvent(new Event('visibilitychange'))
+      await flushPromises()
+      expect(post).toHaveBeenCalledTimes(2)
+    } finally {
+      visibility.mockRestore()
+    }
+  })
+
   it('aborts a hung task page on timeout and can poll successfully afterwards', async () => {
     vi.useFakeTimers()
     post.mockReturnValueOnce(new Promise(() => {})).mockResolvedValueOnce(fixture('恢复任务'))
