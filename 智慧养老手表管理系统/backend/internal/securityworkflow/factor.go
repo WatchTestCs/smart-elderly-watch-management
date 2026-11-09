@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 
 	"suining-care/internal/auth"
 	"suining-care/internal/authrepo"
@@ -55,7 +54,7 @@ func ChangeFactor(ctx context.Context, store *db.Database, box *securestore.Box,
 	}
 	scope := "totp:" + input.Role + ":" + strconv.FormatInt(input.ActorID, 10)
 	factor, factorErr := authrepo.LockFactor(ctx, tx, input.Role, input.ActorID)
-	if factorErr != nil && !errors.Is(factorErr, pgx.ErrNoRows) && !errors.Is(factorErr, sql.ErrNoRows) {
+	if factorErr != nil && !errors.Is(factorErr, sql.ErrNoRows) && !errors.Is(factorErr, sql.ErrNoRows) {
 		return nil, "", factorErr
 	}
 	result := map[string]any{}

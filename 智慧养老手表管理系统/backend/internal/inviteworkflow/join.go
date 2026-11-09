@@ -6,7 +6,6 @@ import (
 	"errors"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 
 	"suining-care/internal/auth"
 	"suining-care/internal/db"
@@ -38,7 +37,7 @@ const (
 )
 
 func missing(err error) bool {
-	return errors.Is(err, sql.ErrNoRows) || errors.Is(err, pgx.ErrNoRows)
+	return errors.Is(err, sql.ErrNoRows) || errors.Is(err, sql.ErrNoRows)
 }
 
 // Join owns the invitation lock, resident lock, account creation and code

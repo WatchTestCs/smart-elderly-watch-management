@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 	"suining-care/internal/db"
 )
 
@@ -46,7 +45,7 @@ func (m *Manager) Get(ctx context.Context, key string) ([]byte, error) {
 	var record Record
 	if m.DB != nil {
 		err := m.DB.QueryRow(ctx, "SELECT content_sha256,size_bytes,state FROM image_blob WHERE name=$1", key).Scan(&record.SHA256, &record.Size, &record.State)
-		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
 			return nil, err
 		}
 		if err == nil && record.State != "ready" {
