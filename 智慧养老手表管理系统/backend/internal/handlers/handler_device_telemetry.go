@@ -53,6 +53,25 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 		parsed.requestID = requestID
 	}
 	ctx := r.Context()
+	// Authenticate before opening a transaction. The locked row is rechecked
+	// below, so no owner-scoped writes can escape a concurrent bind or revoke.
+	// The report needs no decrypted last-known coordinates.
+	d, authFailure, err := deviceworkflow.Authenticate(ctx, h.DB, deviceNo, secret)
+	if internalError(w, err) {
+		return
+	}
+	if d == nil {
+		message := "设备号或密钥不正确"
+		if authFailure == deviceworkflow.DeviceDisabled {
+			message = "设备已停用"
+		}
+		hwFail(w, string(authFailure), message)
+		return
+	}
+	if d.OldID == nil {
+		hwFail(w, "DEVICE_NOT_BOUND", "设备还未绑定老人，请先在手表上输入绑定码")
+		return
+	}
 	beginAt := time.Now()
 	tx, err := h.DB.Begin(ctx)
 	observability.Default.Add("suining_device_report_begin_seconds_total", time.Since(beginAt).Seconds())
@@ -60,20 +79,6 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	rollback := func() { _ = tx.Rollback(ctx) }
-	d, code, msg, err := h.hwAuth(ctx, tx, deviceNo, secret, "设备已停用")
-	if rollbackOnError(w, rollback, err) {
-		return
-	}
-	if d == nil {
-		rollback()
-		hwFail(w, code, msg)
-		return
-	}
-	if d.OldID == nil {
-		rollback()
-		hwFail(w, "DEVICE_NOT_BOUND", "设备还未绑定老人，请先在手表上输入绑定码")
-		return
-	}
 	// A report writes owner-scoped vitals, history and locations. Read-only
 	// authentication above is not enough: unbind can commit between that read
 	// and persistence. Take the same elder -> device locks as bind/SOS before
