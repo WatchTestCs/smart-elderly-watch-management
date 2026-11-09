@@ -159,6 +159,9 @@ func (batch *PreparedBatch) Save(ctx context.Context, tx *db.Transaction, o Owne
 	if err != nil {
 		return 0, 0, fmt.Errorf("save health change: %w", err)
 	}
+	if err = refreshLatest(ctx, tx, o, input, selection.final); err != nil {
+		return 0, 0, err
+	}
 	if tx.IsMySQL() {
 		// Invalidate all cached days for this owner, including the OLD date of a
 		// corrected/deleted interval. Skip already-dirty rows to avoid needless
