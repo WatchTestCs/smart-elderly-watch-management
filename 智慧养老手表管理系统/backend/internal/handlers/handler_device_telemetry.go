@@ -56,7 +56,9 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 	// Authenticate before opening a transaction. The locked row is rechecked
 	// below, so no owner-scoped writes can escape a concurrent bind or revoke.
 	// The report needs no decrypted last-known coordinates.
+	authAt := time.Now()
 	d, authFailure, err := deviceworkflow.Authenticate(ctx, h.DB, deviceNo, secret)
+	observability.Default.Add("suining_device_report_auth_seconds_total", time.Since(authAt).Seconds())
 	if internalError(w, err) {
 		return
 	}
