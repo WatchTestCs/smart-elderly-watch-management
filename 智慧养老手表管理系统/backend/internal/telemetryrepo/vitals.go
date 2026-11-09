@@ -8,6 +8,7 @@ import (
 
 
 	"suining-care/internal/db"
+	"suining-care/internal/healthalertstate"
 )
 
 // Thresholds contains the configured per-device alert bounds.
@@ -30,10 +31,12 @@ func ReadThresholds(ctx context.Context, tx *db.Transaction, deviceID int64) (Th
 }
 
 // InsertVitals persists one measurement within the report transaction.
-func InsertVitals(ctx context.Context, tx *db.Transaction, deviceID, residentID int64, observedAt time.Time, heartRate, pressure *int, heartRateState, pressureState any) error {
-	_, err := tx.Exec(ctx,
+func InsertVitals(ctx context.Context, tx *db.Transaction, deviceID, residentID, epoch int64, observedAt time.Time, heartRate, pressure *int, heartRateState, pressureState any) error {
+	if _, err := tx.Exec(ctx,
 		`INSERT INTO ratepre(device_id,old_id,rate_state,pre_state,create_time,hr,bp)
     VALUES($1,$2,$3,$4,$5,$6,$7)`,
-		deviceID, residentID, heartRateState, pressureState, observedAt, heartRate, pressure)
-	return err
+		deviceID, residentID, heartRateState, pressureState, observedAt, heartRate, pressure); err != nil {
+		return err
+	}
+	return healthalertstate.RecordVitals(ctx, tx, deviceID, epoch, observedAt, heartRateState, pressureState)
 }

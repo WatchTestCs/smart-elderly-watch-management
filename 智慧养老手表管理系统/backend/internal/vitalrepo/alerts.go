@@ -8,6 +8,7 @@ import (
 
 
 	"suining-care/internal/db"
+	"suining-care/internal/healthalertstate"
 )
 
 var ErrAlertNotFound = errors.New("vital alert record not found")
@@ -31,8 +32,8 @@ func updateSQL(kind string) string {
 
 // ResolveAlert marks one or both metrics handled in a single transaction.
 func ResolveAlert(ctx context.Context, store *db.Database, recordID int64, kind string) (bool, error) {
-	var exists int
-	err := store.QueryRow(ctx, "SELECT 1 FROM ratepre WHERE id=$1", recordID).Scan(&exists)
+	var deviceID *int64
+	err := store.QueryRow(ctx, "SELECT device_id FROM ratepre WHERE id=$1", recordID).Scan(&deviceID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return false, ErrAlertNotFound
 	}
@@ -55,6 +56,9 @@ func ResolveAlert(ctx context.Context, store *db.Database, recordID int64, kind 
 			return false, err
 		}
 		affected += result.RowsAffected()
+	}
+	if err := healthalertstate.SyncVitalsIfPresent(ctx, tx, deviceID); err != nil {
+		return false, err
 	}
 	if err := tx.Commit(ctx); err != nil {
 		return false, err
@@ -81,9 +85,13 @@ func ResolveDeviceAlert(ctx context.Context, tx *db.Transaction, deviceID int64,
 	if err != nil {
 		return 0, err
 	}
-	var hasPending bool
-	if err := tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM ratepre r WHERE r.device_id=$1 AND "+pending+")", deviceID).Scan(&hasPending); err != nil {
+	heartPending, pressurePending, err := healthalertstate.SyncVitals(ctx, tx, deviceID)
+	if err != nil {
 		return 0, err
+	}
+	hasPending := heartPending
+	if kind == "pre" {
+		hasPending = pressurePending
 	}
 	if !hasPending {
 		if _, err := tx.Exec(ctx, "UPDATE device SET "+handled+"=1 WHERE device_id=$1", deviceID); err != nil {
