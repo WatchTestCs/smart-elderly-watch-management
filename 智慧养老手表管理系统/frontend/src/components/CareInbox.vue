@@ -54,7 +54,7 @@
 </template>
 <script setup lang="ts">
 import { api as requestClient, type Envelope } from '../api/client'
-import { apiErrorMessage } from '../api/httpContract'
+import { apiErrorMessage, readErrorMessage } from '../api/httpContract'
 import { ref, shallowRef, watch, onMounted, onBeforeUnmount } from 'vue'
 import { createLatestRead } from '../composables/latestRead'
 import CareOperationsPanel from './CareOperationsPanel.vue'
@@ -111,10 +111,7 @@ const historyReads = createLatestRead(
     history.value.events = data.events
     history.value.total = data.total
   },
-  error => {
-    history.value.error = error instanceof Error && error.message.includes('超时')
-      ? '审计记录读取超时，请重试' : apiErrorMessage(error, '审计记录暂时无法加载')
-  },
+  error => { history.value.error = readErrorMessage(error, '审计记录暂时无法加载') },
   value => { history.value.loading = value }
 )
 async function viewHistory (task: CareTask) {

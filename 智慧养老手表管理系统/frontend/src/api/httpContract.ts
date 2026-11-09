@@ -31,12 +31,28 @@ export const UNCONFIRMED_MESSAGE = '未在时限内收到服务端确认，请�
 
 export function transportOutcome(error: unknown): TransportOutcome {
   if (isCancel(error)) return 'cancelled'
-  const failure = error as { code?: unknown; response?: unknown } | null
+  const failure = error as { code?: unknown; response?: unknown; name?: unknown; status?: unknown } | null
   if (failure?.response) return 'server'
   const code = typeof failure?.code === 'string' ? failure.code : ''
   if (code === 'ECONNABORTED' || code === 'ETIMEDOUT') return 'timeout'
   if (['ERR_NETWORK', 'ECONNREFUSED', 'ENOTFOUND', 'EAI_AGAIN'].includes(code)) return 'network'
+  // el-upload uses a raw XHR, so a lost response never reaches the axios
+  // interceptors: it arrives as UploadAjaxError with status 0 and no payload.
+  if (failure?.name === 'UploadAjaxError' && (failure.status === 0 || failure.status === undefined)) return 'network'
   return 'application'
+}
+
+export const READ_TIMEOUT_MESSAGE = '查询超时，请稍后重试'
+
+// Reads have no side effects: a lost response here must not be described as a
+// possibly-applied write. Keep the classification on the error, not on copy.
+export function readTimeoutError(): Error & { code: string } {
+  return Object.assign(new Error('read timed out'), { code: 'ERR_READ_TIMEOUT' })
+}
+
+export function readErrorMessage(error: unknown, fallback = '数据暂时无法加载'): string {
+  if ((error as { code?: unknown } | null)?.code === 'ERR_READ_TIMEOUT') return READ_TIMEOUT_MESSAGE
+  return apiErrorMessage(error, fallback)
 }
 
 export function apiErrorMessage(error: unknown, fallback = '请求未完成'): string {

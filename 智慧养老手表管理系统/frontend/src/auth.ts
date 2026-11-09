@@ -83,10 +83,15 @@ export function loadSession (refresh = false): Promise<SessionAccount | null> {
   return flight
 }
 
-export function endSession () {
-  return axios.post('/api/v1/auth/logout', {}, { skipSession: true, timeout: REQUEST_TIMEOUT_MS, headers: { [authState.csrfHeader]: authState.csrfToken } }).then(() => {
+export async function endSession () {
+  try {
+    await axios.post('/api/v1/auth/logout', {}, { skipSession: true, timeout: REQUEST_TIMEOUT_MS, headers: { [authState.csrfHeader]: authState.csrfToken } })
+  } finally {
+    // A lost response may still mean the server destroyed the session. Keeping
+    // stale credentials would show an account that no longer exists until the
+    // next request happens to return 401.
     invalidateSession()
-  })
+  }
 }
 
 export function installHttpSecurity (router: { currentRoute: { value: { path: string } }; replace?: (path: string) => unknown }) {
