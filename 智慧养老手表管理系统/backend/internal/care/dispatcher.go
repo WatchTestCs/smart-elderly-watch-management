@@ -44,14 +44,10 @@ func (d *dispatcher) claimCareDelivery(ctx context.Context) (careDeliveryClaim, 
 		return careDeliveryClaim{}, true, err
 	}
 	defer tx.Rollback(ctx)
-	exhaustionFilter := ""
-	if d.db.IsMySQL() {
-		exhaustionFilter = "exhausted=false AND "
-	}
 	err = tx.QueryRow(ctx, `SELECT id,incident_id,recipient,channel,attempts
         FROM care_notification_outbox
-		WHERE `+exhaustionFilter+`((status IN ('pending','failed') AND retry_at <= now())
-           OR (status='sending' AND last_attempt_at < now() - interval '2 minutes'))
+		WHERE exhausted=false AND ((status IN ('pending','failed') AND retry_at <= CURRENT_TIMESTAMP(6))
+           OR (status='sending' AND last_attempt_at < CURRENT_TIMESTAMP(6) - INTERVAL 2 MINUTE))
         ORDER BY retry_at,id LIMIT 1 FOR UPDATE SKIP LOCKED`).Scan(&job.id, &job.incidentID, &job.recipient, &job.channel, &job.attempts)
 	if err != nil {
 		// No row is normal; connection and SQL errors are not.
@@ -70,7 +66,7 @@ func (d *dispatcher) claimCareDelivery(ctx context.Context) (careDeliveryClaim, 
 		return careDeliveryClaim{}, true, err
 	}
 	if _, err := tx.Exec(ctx, `UPDATE care_notification_outbox SET status='sending',
-        attempts=$2,last_attempt_at=now() WHERE id=$1`, job.id, job.attempts); err != nil {
+        attempts=$2,last_attempt_at=CURRENT_TIMESTAMP(6) WHERE id=$1`, job.id, job.attempts); err != nil {
 		return careDeliveryClaim{}, true, err
 	}
 	if err := tx.Commit(ctx); err != nil {
@@ -125,7 +121,7 @@ func (d *dispatcher) finishCareDelivery(ctx context.Context, job *delivery, err 
 	if err == nil {
 		_, updateErr := d.db.Exec(ctx, `
 			UPDATE care_notification_outbox
-			SET status='sent', sent_at=now(),last_error=NULL
+			SET status='sent', sent_at=CURRENT_TIMESTAMP(6),last_error=NULL
 			WHERE id=$1 AND status='sending' AND attempts=$2`, job.id, job.attempts)
 		// A newer claim or an authenticated receipt must never be overwritten.
 		// "sent" only means the gateway accepted the request.
@@ -142,13 +138,11 @@ func (d *dispatcher) finishCareDelivery(ctx context.Context, job *delivery, err 
 		return beginErr
 	}
 	defer finish.Rollback(ctx)
-	exhaustionUpdate := ""
-	if d.db.IsMySQL() {
-		exhaustionUpdate = ",exhausted=($4>=5)"
-	}
 	changed, updateErr := finish.Exec(ctx, `
 		UPDATE care_notification_outbox
-		SET status='failed', last_error=$2, retry_at=now()+($3 * interval '1 second')`+exhaustionUpdate+`
+		SET status='failed', last_error=$2,
+		    retry_at=TIMESTAMPADD(SECOND,$3,CURRENT_TIMESTAMP(6)),
+		    exhausted=($4>=5)
 		WHERE id=$1 AND status='sending' AND attempts=$4`, job.id, truncate(err.Error(), 400), int(wait.Seconds()), job.attempts)
 	if updateErr != nil {
 		return updateErr
@@ -158,7 +152,7 @@ func (d *dispatcher) finishCareDelivery(ctx context.Context, job *delivery, err 
 		if sealErr != nil {
 			return sealErr
 		}
-		_, err = finish.Exec(ctx, `INSERT INTO care_notification_outbox(incident_id,channel,recipient,recipient_key) VALUES($1,'voice',$2,$3) ON CONFLICT DO NOTHING`, job.incidentID, voiceRecipient, voiceKey)
+		_, err = finish.Exec(ctx, `INSERT INTO care_notification_outbox(incident_id,channel,recipient,recipient_key) VALUES($1,'voice',$2,$3) ON DUPLICATE KEY UPDATE id=id`, job.incidentID, voiceRecipient, voiceKey)
 		if err != nil {
 			return err
 		}

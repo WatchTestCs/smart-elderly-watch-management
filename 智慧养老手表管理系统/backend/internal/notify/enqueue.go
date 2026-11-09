@@ -25,16 +25,13 @@ type Message struct {
 // EnqueueBatch shares the caller's transaction; success still requires its commit.
 // Statements are bounded, but no messages are discarded when the input is larger.
 func EnqueueBatch(ctx context.Context, tx *db.Transaction, box *securestore.Box, messages []Message) error {
-	if !tx.IsMySQL() {
-		return nil
-	}
 	var values strings.Builder
 	args := make([]any, 0, min(len(messages), 256)*10)
 	flush := func() error {
 		if len(args) == 0 {
 			return nil
 		}
-		_, err := tx.Exec(ctx, `INSERT INTO message_outbox(topic,source_key,family_id,channel,recipient,status,delivered_at) VALUES `+values.String()+` ON CONFLICT(topic,source_key,family_id,channel) DO NOTHING`, args...)
+		_, err := tx.Exec(ctx, `INSERT INTO message_outbox(topic,source_key,family_id,channel,recipient,status,delivered_at) VALUES `+values.String()+` ON DUPLICATE KEY UPDATE id=id`, args...)
 		values.Reset()
 		args = args[:0]
 		return err
@@ -61,7 +58,7 @@ func EnqueueBatch(ctx context.Context, tx *db.Transaction, box *securestore.Box,
 			// records local availability only; it makes no claim about reading.
 			state, delivered := "'pending'", "NULL"
 			if channel == "in_app" {
-				state, delivered = "'delivered'", "now()"
+				state, delivered = "'delivered'", "CURRENT_TIMESTAMP(6)"
 			}
 			fmt.Fprintf(&values, "($%d,$%d,$%d,$%d,$%d,%s,%s)", n+1, n+2, n+3, n+4, n+5, state, delivered)
 			args = append(args, message.Topic, message.Key, message.FamilyID, channel, recipient)
@@ -76,9 +73,6 @@ func EnqueueBatch(ctx context.Context, tx *db.Transaction, box *securestore.Box,
 }
 
 func CareInbox(ctx context.Context, tx *db.Transaction, box *securestore.Box, oldID, incidentID int64) error {
-	if !tx.IsMySQL() {
-		return nil
-	}
 	var familyID int64
 	var phone string
 	err := tx.QueryRow(ctx, "SELECT f.family_id,f.family_phone FROM oldperson o JOIN family f ON f.family_id=o.family_id WHERE o.old_id=$1", oldID).Scan(&familyID, &phone)

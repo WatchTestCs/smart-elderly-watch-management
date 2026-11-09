@@ -45,8 +45,7 @@ func (e *Engine) persist(ctx context.Context, tx *db.Transaction, device, old, e
 		streak++
 	}
 	if c.Breach && streak >= c.Required && !active {
-		var id int64
-		err = tx.QueryRow(ctx, "INSERT INTO care_incident(old_id,device_id,kind,severity) VALUES($1,$2,$3,$4) RETURNING id", old, device, "rule_"+c.Kind, c.Severity).Scan(&id)
+		id, err := tx.InsertID(ctx, "INSERT INTO care_incident(old_id,device_id,kind,severity) VALUES($1,$2,$3,$4)", old, device, "rule_"+c.Kind, c.Severity)
 		if err != nil {
 			return err
 		}
@@ -80,6 +79,6 @@ func (e *Engine) persist(ctx context.Context, tx *db.Transaction, device, old, e
 		}
 		b, _ = json.Marshal(map[string]string{"encrypted": sealed})
 	}
-	_, err = tx.Exec(ctx, `INSERT INTO rule_state(device_id,epoch,kind,observation_key,streak,active,incident_id,evidence,updated_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT(device_id,epoch,kind) DO UPDATE SET observation_key=EXCLUDED.observation_key,streak=EXCLUDED.streak,active=EXCLUDED.active,incident_id=EXCLUDED.incident_id,evidence=EXCLUDED.evidence,updated_at=EXCLUDED.updated_at`, device, epoch, c.Kind, c.Key, streak, active, incident, json.RawMessage(b), now)
+	_, err = tx.Exec(ctx, `INSERT INTO rule_state(device_id,epoch,kind,observation_key,streak,active,incident_id,evidence,updated_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) AS new ON DUPLICATE KEY UPDATE observation_key=new.observation_key,streak=new.streak,active=new.active,incident_id=new.incident_id,evidence=new.evidence,updated_at=new.updated_at`, device, epoch, c.Kind, c.Key, streak, active, incident, json.RawMessage(b), now)
 	return err
 }
