@@ -8,6 +8,7 @@ import (
 
 	"suining-care/internal/careworkflow"
 	"suining-care/internal/deviceworkflow"
+	"suining-care/internal/observability"
 	"suining-care/internal/response"
 )
 
@@ -52,7 +53,9 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 		parsed.requestID = requestID
 	}
 	ctx := r.Context()
+	beginAt := time.Now()
 	tx, err := h.DB.Begin(ctx)
+	observability.Default.Add("suining_device_report_begin_seconds_total", time.Since(beginAt).Seconds())
 	if internalError(w, err) {
 		return
 	}
@@ -85,7 +88,9 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 		// recheck this snapshot's epoch under the row lock before writing.
 		bindingVersion = d.HealthEpoch
 	}
+	lockAt := time.Now()
 	locked, failure, lockErr := deviceworkflow.LockAuthenticatedDevice(ctx, tx, d, deviceNo, secret, bindingVersion)
+	observability.Default.Add("suining_device_report_binding_lock_seconds_total", time.Since(lockAt).Seconds())
 	if rollbackOnError(w, rollback, lockErr) {
 		return
 	}
@@ -197,7 +202,9 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 		response.OK(w, queuedResult)
 		return
 	}
+	persistAt := time.Now()
 	persisted, err := (telemetryRepository{box: h.Box}).PersistDeviceReport(ctx, tx, d, parsed)
+	observability.Default.Add("suining_device_report_persist_seconds_total", time.Since(persistAt).Seconds())
 	if rollbackOnError(w, rollback, err) {
 		return
 	}
