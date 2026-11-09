@@ -2,13 +2,14 @@ package handlers
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
 	dbstore "suining-care/internal/db"
+	"suining-care/internal/devicealertworkflow"
 	"suining-care/internal/devicerepo"
 	"suining-care/internal/response"
-	"suining-care/internal/vitalrepo"
 	"time"
 )
 
@@ -137,59 +138,25 @@ func (h *Handler) deviceResolveAlert(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	deviceID, kind, recordID := req.deviceID, req.kind, req.recordID
-	ctx := r.Context()
-	tx, err := h.DB.Begin(ctx)
-	if internalError(w, err) {
-		return
-	}
-	rollback := func() { _ = tx.Rollback(ctx) }
-	exists, err := devicerepo.ExistsInTransaction(ctx, tx, deviceID)
-	if rollbackOnError(w, rollback, err) {
-		return
-	}
-	if !exists {
-		rollback()
+	before, err := devicealertworkflow.Resolve(r.Context(), h.DB, req.deviceID, req.kind, req.recordID, h.alertResolutionReason)
+	switch {
+	case errors.Is(err, devicealertworkflow.ErrDeviceMissing):
 		response.Fail(w, "设备不存在")
-		return
-	}
-	before, err := h.alertResolutionReason(ctx, tx, deviceID, kind, recordID)
-	if rollbackOnError(w, rollback, err) {
-		return
-	}
-	var rows int64
-	switch kind {
-	case "rate", "pre":
-		rows, err = vitalrepo.ResolveDeviceAlert(ctx, tx, deviceID, kind, recordID)
-		if rollbackOnError(w, rollback, err) {
-			return
-		}
-	case "person":
-		// Boot-sequence acknowledgement remains atomic with the alert transaction.
-		rows, err = devicerepo.AcknowledgePersonAlert(ctx, tx, deviceID)
-		if rollbackOnError(w, rollback, err) {
-			return
-		}
-	default:
-		rollback()
-		response.Fail(w, "未知的异常类型："+kind)
-		return
-	}
-	if rows < 1 {
-		rollback()
-		if recordID != nil {
+	case errors.Is(err, devicealertworkflow.ErrUnknownKind):
+		response.Fail(w, "未知的异常类型："+req.kind)
+	case errors.Is(err, devicealertworkflow.ErrNoPendingAlert):
+		if req.recordID != nil {
 			response.Fail(w, "记录不存在或不属于该设备，处置失败")
 		} else {
 			response.Fail(w, "没有可处置的异常记录")
 		}
+	case internalError(w, err):
 		return
+	default:
+		response.OK(w, map[string]any{
+			"handledReason": before, "message": "已处置，红点已消除",
+		})
 	}
-	if internalError(w, tx.Commit(ctx)) {
-		return
-	}
-	response.OK(w, map[string]any{
-		"handledReason": before, "message": "已处置，红点已消除",
-	})
 }
 
 type alertResolution struct {
