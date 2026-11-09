@@ -6,7 +6,7 @@
 //	SUINING_READY_FILE                   就绪后原子写入 {"port":N,"pid":M}
 //	SUINING_PARENT_PID                   父进程退出时后端自行退出
 //	SUINING_DATA_DIR                     数据目录（图片默认落到其下 images/）
-//	SUINING_DESKTOP_TOKEN                 桌面端 bootstrap token（= DESKTOP_TOKEN）
+//	SUINING_DESKTOP_TOKEN                 桌面端 bootstrap token
 package main
 
 import (

@@ -153,7 +153,6 @@ fn start_backend(app: &tauri::App) -> Result<Backend, Box<dyn std::error::Error>
         .env("SUINING_READY_FILE", &ready)
         .env("SUINING_PARENT_PID", std::process::id().to_string())
         .env("SUINING_DESKTOP_TOKEN", &token)
-        .env_remove("DESKTOP_TOKEN")
         .env("SUINING_PORT", "0");
     for (desktop_key, server_key) in [
         ("SUINING_MYSQL_DSN", "MYSQL_DSN"),

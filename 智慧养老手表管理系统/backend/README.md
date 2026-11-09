@@ -47,7 +47,7 @@ go run ./cmd/server
 | `HEALTH_HOT_CACHE_MIB` | 健康统计进程内缓存上限，默认 16 MiB（范围 0 至 256，`0` 表示禁用） |
 | `DATA_ENCRYPTION_KEY` / `DATA_ENCRYPTION_KEY_FILE` | 32 字节随机密钥的 Base64 字符串或密钥文件路径，多实例部署时必须共享同一密钥并持久保存 |
 | `METRICS_TOKEN` / `METRICS_TOKEN_FILE` | 访问 `/metrics` 接口所需的 Bearer 令牌，长度至少 24 个字符 |
-| `DESKTOP_TOKEN` | 桌面端用于首次初始化与安全退出的随机令牌，仅在原生进程与 Go 之间传递 |
+| `SUINING_DESKTOP_TOKEN` | 桌面端用于首次初始化与安全退出的随机令牌，仅在原生进程与 Go 之间传递 |
 
 在桌面模式下，Rust 主进程会将 `SUINING_MYSQL_DSN`、`SUINING_PG_ANALYTICS_URL` 及 `DATA_ENCRYPTION_KEY_FILE` 传递给 Go 子进程，同时注入动态回环端口、本地数据目录、随机令牌和父进程 PID，详见[桌面整合细则](../../docs/ARCHITECTURE.md)。本地开发也可直接运行仓库根目录的 `python3 scripts/start-platform.py` 自动拉起容器环境。
 

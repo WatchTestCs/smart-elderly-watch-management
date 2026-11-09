@@ -100,3 +100,16 @@ func TestSecureCookies(t *testing.T) {
 		}
 	}
 }
+
+func TestDesktopTokenUsesSingleCurrentEnvironmentKey(t *testing.T) {
+	t.Setenv("DESKTOP_TOKEN", "obsolete-value")
+	t.Setenv("SUINING_DESKTOP_TOKEN", "")
+	t.Setenv("SUINING_DESKTOP_TOKEN_FILE", "")
+	if token := Load().DesktopToken; token != "" {
+		t.Fatalf("obsolete desktop token environment key accepted: %q", token)
+	}
+	t.Setenv("SUINING_DESKTOP_TOKEN", "current-value")
+	if token := Load().DesktopToken; token != "current-value" {
+		t.Fatalf("current desktop token not loaded: %q", token)
+	}
+}

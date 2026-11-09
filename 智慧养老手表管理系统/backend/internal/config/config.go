@@ -78,7 +78,7 @@ func (c Config) Validate() error {
 		}
 	}
 	if t := strings.TrimSpace(c.DesktopToken); t != "" && len(t) < 24 {
-		return errors.New("DESKTOP_TOKEN 至少需要 24 个字符（桌面端每次启动自动生成 64 位随机值）；" +
+		return errors.New("SUINING_DESKTOP_TOKEN 至少需要 24 个字符（桌面端每次启动自动生成 64 位随机值）；" +
 			"过短的令牌可被线速穷举，校验失败时 setup 与 desktop/exit 均会拒绝")
 	}
 	switch c.SessionBackend {
@@ -144,7 +144,7 @@ func Load() Config {
 		Addr:             getenv("ADDR", "127.0.0.1:8080"),
 		SessionTTL:       time.Duration(ttlHours) * time.Hour,
 		ImageDir:         getenv("IMAGE_DIR", "./data/images"),
-		DesktopToken:     getenv("DESKTOP_TOKEN", getenv("SUINING_DESKTOP_TOKEN", "")),
+		DesktopToken:     getenv("SUINING_DESKTOP_TOKEN", ""),
 		DataKey:          getenv("DATA_ENCRYPTION_KEY", ""),
 		SessionBackend:   strings.ToLower(strings.TrimSpace(getenv("SESSION_BACKEND", "database"))),
 		HealthCacheBytes: cacheMiB << 20,
