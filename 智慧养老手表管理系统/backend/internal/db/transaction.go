@@ -5,8 +5,6 @@ import (
 	"database/sql"
 )
 
-func (d *Database) IsMySQL() bool    { return d.myPool != nil }
-func (t *Transaction) IsMySQL() bool { return t.myTx != nil }
 func (d *Database) SQL() *sql.DB     { return d.myPool }
 
 func (d *Database) Close() {
