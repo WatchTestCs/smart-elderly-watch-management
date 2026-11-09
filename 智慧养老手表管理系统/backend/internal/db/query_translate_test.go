@@ -91,29 +91,6 @@ func TestCompileMySQLQueryRejectsPostgresRegexOperators(t *testing.T) {
 // RETURNING 只被一种形状支持：整串是 INSERT ... RETURNING <单列>。
 // 其他形状不会被翻译，会生成非法 MySQL —— 这里的反例是"护栏"，
 // 用来提醒任何新增 RETURNING 的人：先改翻译器，再写 SQL。
-func TestReturningShapeCoverage(t *testing.T) {
-	accept := []string{
-		"INSERT INTO t(a) VALUES($1) RETURNING id",
-		"INSERT INTO t(a)\n\t\t VALUES($1)\n\t\t RETURNING device_id",
-		"INSERT INTO t(a) VALUES($1) ON CONFLICT DO NOTHING RETURNING id",
-	}
-	reject := []string{
-		"UPDATE t SET a=1 RETURNING id",
-		"DELETE FROM t WHERE id=1 RETURNING id",
-		"INSERT INTO t(a) VALUES($1) RETURNING a, b",
-		"INSERT INTO t(a) SELECT x FROM y RETURNING id FROM (SELECT 1) z",
-	}
-	for _, query := range accept {
-		if !insertReturning.MatchString(query) {
-			t.Fatalf("应被识别为 RETURNING 形状: %q", query)
-		}
-	}
-	for _, query := range reject {
-		if insertReturning.MatchString(query) {
-			t.Fatalf("不应被识别为 RETURNING 形状（会生成非法 MySQL）: %q", query)
-		}
-	}
-}
 
 // 参数越界必须在执行前拦住，而不是把错的参数发到数据库。
 func TestMySQLQueryRejectsMissingArguments(t *testing.T) {
@@ -254,27 +231,4 @@ func TestMySQLQueryRejectsExtraArguments(t *testing.T) {
 	}
 }
 
-func TestMySQLReturningOnlySupportsKnownGeneratedKeys(t *testing.T) {
-	for _, tc := range []struct{ table, column string }{
-		{"alert_review", "id"}, {"bind_code", "id"}, {"care_incident", "id"},
-		{"device", "device_id"}, {"device_command", "id"}, {"device_fence", "id"},
-		{"family", "family_id"}, {"fence_event", "id"}, {"text", "text_id"},
-	} {
-		if err := validateMySQLReturning(tc.table, tc.column, "INSERT INTO "+tc.table+"(x) VALUES($1)"); err != nil {
-			t.Fatalf("%s.%s should be supported: %v", tc.table, tc.column, err)
-		}
-	}
-	for _, tc := range []struct{ table, column, sql string }{
-		{"device", "device_no", "INSERT INTO device(device_no) VALUES($1)"},
-		{"family", "id", "INSERT INTO family(family_name) VALUES($1)"},
-		{"care_incident", "id", "INSERT INTO care_incident(old_id) VALUES($1) ON CONFLICT DO NOTHING"},
-		{"care_incident", "id", "INSERT INTO care_incident(old_id) VALUES($1) ON CONFLICT(old_id) DO UPDATE SET old_id=EXCLUDED.old_id"},
-	} {
-		if err := validateMySQLReturning(tc.table, tc.column, tc.sql); err == nil {
-			t.Fatalf("unsupported RETURNING shape accepted: %s.%s %s", tc.table, tc.column, tc.sql)
-		}
-	}
-	if err := validateMySQLReturning("care_incident", "id", "INSERT INTO care_incident(note) VALUES('ON CONFLICT DO NOTHING')"); err != nil {
-		t.Fatalf("conflict-like text literal must not be treated as a clause: %v", err)
-	}
-}
+

@@ -68,12 +68,10 @@ func ResidentName(ctx context.Context, store *db.Database, residentID int64) (*s
 }
 
 func CreateBindCode(ctx context.Context, store *db.Database, code string, residentID int64, creator string, createdAt, expiresAt time.Time) (int64, error) {
-	var id int64
-	err := store.QueryRow(ctx,
+	return store.InsertID(ctx,
 		`INSERT INTO bind_code(code, old_id, family_id, create_user, create_time, expire_time, used)
-		 VALUES($1,$2,NULL,$3,$4,$5,0) RETURNING id`,
-		code, residentID, creator, createdAt, expiresAt).Scan(&id)
-	return id, err
+		 VALUES($1,$2,NULL,$3,$4,$5,0)`,
+		code, residentID, creator, createdAt, expiresAt)
 }
 
 func ListBindCodes(ctx context.Context, store *db.Database, residentID int64) ([]BindCode, error) {

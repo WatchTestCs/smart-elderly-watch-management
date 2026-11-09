@@ -21,21 +21,17 @@ type NewEvent struct {
 }
 
 func InsertEvent(ctx context.Context, tx *db.Transaction, event NewEvent) (int64, error) {
-	var id int64
-	err := tx.QueryRow(ctx,
+	return tx.InsertID(ctx,
 		`INSERT INTO fence_event(fence_id,fence_revision,old_id,device_id,epoch,direction,lng,lat,accuracy,occurred_at)
-		 VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id`,
+		 VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
 		event.FenceID, event.FenceRevision, event.ResidentID, event.DeviceID, event.Epoch,
-		event.Direction, event.Point[0], event.Point[1], event.Accuracy, event.OccurredAt).Scan(&id)
-	return id, err
+		event.Direction, event.Point[0], event.Point[1], event.Accuracy, event.OccurredAt)
 }
 
 func InsertExitIncident(ctx context.Context, tx *db.Transaction, residentID, deviceID int64) (int64, error) {
-	var id int64
-	err := tx.QueryRow(ctx,
-		"INSERT INTO care_incident(old_id,device_id,kind,severity) VALUES($1,$2,'fence_exit','high') RETURNING id",
-		residentID, deviceID).Scan(&id)
-	return id, err
+	return tx.InsertID(ctx,
+		"INSERT INTO care_incident(old_id,device_id,kind,severity) VALUES($1,$2,'fence_exit','high')",
+		residentID, deviceID)
 }
 
 func InsertExitReceipt(ctx context.Context, tx *db.Transaction, incidentID int64) error {

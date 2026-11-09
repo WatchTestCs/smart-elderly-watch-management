@@ -43,12 +43,12 @@ func (t *Transaction) Rollback(context.Context) error {
 }
 
 // InsertID executes one MySQL INSERT and returns its auto-increment identifier.
-func (t *Transaction) InsertID(ctx context.Context, query string, args ...any) (int64, error) {
+func (e executor) InsertID(ctx context.Context, query string, args ...any) (int64, error) {
 	q, bound, err := mysqlQuery(query, args)
 	if err != nil {
 		return 0, err
 	}
-	result, err := t.myTx.ExecContext(ctx, q, bound...)
+	result, err := e.my.ExecContext(ctx, q, bound...)
 	if err != nil {
 		return 0, err
 	}

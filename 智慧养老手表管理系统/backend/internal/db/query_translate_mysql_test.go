@@ -38,15 +38,16 @@ func TestMySQLDoNothingWorksForTableWithoutIDColumn(t *testing.T) {
 	}
 }
 
-func TestMySQLInsertReturningSupportsAlarmAndQuotedText(t *testing.T) {
+func TestInsertIDSupportsGeneratedKeys(t *testing.T) {
 	pool := dbtest.MySQL(t)
 	ctx := context.Background()
-	var alarmID, textID int64
-	if err := pool.QueryRow(ctx, "INSERT INTO alarm_precess(status) VALUES($1) RETURNING id", "1").Scan(&alarmID); err != nil || alarmID <= 0 {
-		t.Fatalf("alarm INSERT RETURNING failed: id=%d err=%v", alarmID, err)
+	alarmID, err := pool.InsertID(ctx, "INSERT INTO alarm_precess(status) VALUES($1)", "1")
+	if err != nil || alarmID <= 0 {
+		t.Fatalf("alarm InsertID failed: id=%d err=%v", alarmID, err)
 	}
-	if err := pool.QueryRow(ctx, "INSERT INTO `text`(title,text_main,time) VALUES($1,$2,$3) RETURNING text_id",
-		"compatibility test", "body", time.Now()).Scan(&textID); err != nil || textID <= 0 {
-		t.Fatalf("quoted reserved-table INSERT RETURNING failed: id=%d err=%v", textID, err)
+	textID, err := pool.InsertID(ctx, "INSERT INTO `text`(title,text_main,time) VALUES($1,$2,$3)",
+		"native insert-id test", "body", time.Now())
+	if err != nil || textID <= 0 {
+		t.Fatalf("text InsertID failed: id=%d err=%v", textID, err)
 	}
 }

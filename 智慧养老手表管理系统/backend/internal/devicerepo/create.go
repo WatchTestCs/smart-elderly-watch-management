@@ -42,12 +42,11 @@ func Create(ctx context.Context, store *db.Database, input NewDevice) (int64, er
 		residentValue = *input.ResidentID
 		bindTime = input.At
 	}
-	var deviceID int64
-	err = tx.QueryRow(ctx,
+	deviceID, err := tx.InsertID(ctx,
 		`INSERT INTO device(device_no, secret, alias, model, old_id, status, bind_time, create_time)
-		 VALUES($1,$2,$3,$4,$5,1,$6,$7) RETURNING device_id`,
+		 VALUES($1,$2,$3,$4,$5,1,$6,$7)`,
 		input.Number, input.SecretHash, input.Alias, input.Model,
-		residentValue, bindTime, input.At).Scan(&deviceID)
+		residentValue, bindTime, input.At)
 	if err != nil {
 		return 0, err
 	}

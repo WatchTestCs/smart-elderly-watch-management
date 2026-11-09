@@ -30,12 +30,12 @@ func Save(ctx context.Context, tx *db.Transaction, actor int64, deviceID, reside
 		if count >= 20 {
 			return ErrFenceLimit
 		}
-		err := tx.QueryRow(ctx,
+		config.ID, err = tx.InsertID(ctx,
 			`INSERT INTO device_fence(device_id,old_id,epoch,name,enabled,coordinates,coordinate_system,timezone,time_begin,time_end,min_points,dwell_seconds,max_accuracy,updated_by)
-			 VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING id`,
+			 VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
 			deviceID, residentID, epoch, config.Name, config.Enabled, json.RawMessage(coordinates),
 			config.CoordinateSystem, config.Timezone, config.TimeBegin, config.TimeEnd, config.MinPoints,
-			config.DwellSeconds, config.MaxAccuracy, actor).Scan(&config.ID)
+			config.DwellSeconds, config.MaxAccuracy, actor)
 		if err != nil {
 			return err
 		}

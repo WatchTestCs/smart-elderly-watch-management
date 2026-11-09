@@ -47,14 +47,12 @@ type Alarm struct {
 }
 
 const insertAlarm = `INSERT INTO alarm_precess(status, old_id, device_id, be_time, lng, lat, kind, position_metadata)
- VALUES('1',$1,$2,$3,$4,$5,$6,$7) RETURNING id`
+ VALUES('1',$1,$2,$3,$4,$5,$6,$7)`
 
 // InsertAlarm writes an alarm and returns its persisted identifier.
 func InsertAlarm(ctx context.Context, tx *db.Transaction, alarm Alarm) (int64, error) {
-	var id int64
-	err := tx.QueryRow(ctx, insertAlarm, alarm.ResidentID, alarm.DeviceID,
-		alarm.ObservedAt, alarm.Longitude, alarm.Latitude, alarm.Kind, alarm.PositionMetadata).Scan(&id)
-	return id, err
+	return tx.InsertID(ctx, insertAlarm, alarm.ResidentID, alarm.DeviceID,
+		alarm.ObservedAt, alarm.Longitude, alarm.Latitude, alarm.Kind, alarm.PositionMetadata)
 }
 
 type Incident struct {
@@ -67,13 +65,11 @@ type Incident struct {
 
 // InsertIncident persists the care incident associated with an alarm.
 func InsertIncident(ctx context.Context, tx *db.Transaction, incident Incident) (int64, error) {
-	var id int64
-	err := tx.QueryRow(ctx,
+	return tx.InsertID(ctx,
 		`INSERT INTO care_incident(source_alarm_id,old_id,device_id,kind,request_id)
-		 VALUES($1,$2,$3,$4,$5) RETURNING id`,
+		 VALUES($1,$2,$3,$4,$5)`,
 		incident.AlarmID, incident.ResidentID, incident.DeviceID,
-		incident.Kind, incident.RequestID).Scan(&id)
-	return id, err
+		incident.Kind, incident.RequestID)
 }
 
 // InsertSOSEvent creates the required receipt evidence, not a delivery confirmation.
@@ -92,10 +88,8 @@ func InsertAlarmEvent(ctx context.Context, tx *db.Transaction, incidentID int64)
 
 // InsertSOSIncident retains the SOS-specific database default for incident kind.
 func InsertSOSIncident(ctx context.Context, tx *db.Transaction, alarmID, residentID, deviceID int64, requestID any) (int64, error) {
-	var id int64
-	err := tx.QueryRow(ctx,
+	return tx.InsertID(ctx,
 		`INSERT INTO care_incident(source_alarm_id, old_id, device_id, request_id)
-		 VALUES($1,$2,$3,$4) RETURNING id`,
-		alarmID, residentID, deviceID, requestID).Scan(&id)
-	return id, err
+		 VALUES($1,$2,$3,$4)`,
+		alarmID, residentID, deviceID, requestID)
 }

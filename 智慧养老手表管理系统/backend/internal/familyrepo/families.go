@@ -87,11 +87,10 @@ func Create(ctx context.Context, store *db.Database, box *securestore.Box, input
 	if duplicate {
 		return ErrPhoneInUse
 	}
-	var familyID int64
-	err = tx.QueryRow(ctx,
+	familyID, err := tx.InsertID(ctx,
 		`INSERT INTO family(family_name,family_relation,family_sex,family_phone,family_address)
-		 VALUES($1,$2,$3,$4,$5) RETURNING family_id`,
-		input.Name, input.Relation, input.Sex, input.Phone, input.Address).Scan(&familyID)
+		 VALUES($1,$2,$3,$4,$5)`,
+		input.Name, input.Relation, input.Sex, input.Phone, input.Address)
 	if err != nil {
 		return err
 	}
@@ -159,11 +158,9 @@ func Delete(ctx context.Context, store *db.Database, familyID int64) error {
 	if result.RowsAffected() != 1 {
 		return ErrFamilyNotFound
 	}
-	if tx.IsMySQL() {
-		if _, err := tx.Exec(ctx,
-			"DELETE FROM web_session WHERE role='FAMILY' AND actor_id=$1", familyID); err != nil {
-			return err
-		}
+	if _, err := tx.Exec(ctx,
+		"DELETE FROM web_session WHERE role='FAMILY' AND actor_id=$1", familyID); err != nil {
+		return err
 	}
 	return tx.Commit(ctx)
 }

@@ -49,10 +49,10 @@ func InitializeAdmin(ctx context.Context, store *db.Database, box *securestore.B
 			return err
 		}
 	} else {
-		var id int64
-		if err := tx.QueryRow(ctx,
-			"INSERT INTO users(user_name,password,role) VALUES($1,$2,'1') RETURNING user_id",
-			name, hashed).Scan(&id); err != nil {
+		id, err := tx.InsertID(ctx,
+			"INSERT INTO users(user_name,password,role) VALUES($1,$2,'1')",
+			name, hashed)
+		if err != nil {
 			return err
 		}
 		protected, err := userphone.Protect(box, id, phone)

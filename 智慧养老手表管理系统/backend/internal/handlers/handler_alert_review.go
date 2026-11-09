@@ -65,12 +65,11 @@ func (h *Handler) alertReview(w http.ResponseWriter, r *http.Request) {
 		conflict409(w, "此记录没有可复核的活动告警")
 		return
 	}
-	var id int64
 	req.Reason, err = h.sealNote(req.Reason)
 	if internalError(w, err) {
 		return
 	}
-	err = tx.QueryRow(ctx, "INSERT INTO alert_review(entity,record_id,kind,verdict,reason,actor_id) VALUES('ratepre',$1,$2,$3,$4,$5) RETURNING id", req.RecordID, req.Kind, req.Verdict, req.Reason, actor).Scan(&id)
+	id, err := tx.InsertID(ctx, "INSERT INTO alert_review(entity,record_id,kind,verdict,reason,actor_id) VALUES('ratepre',$1,$2,$3,$4,$5)", req.RecordID, req.Kind, req.Verdict, req.Reason, actor)
 	if err == nil {
 		err = tx.Commit(ctx)
 	}
