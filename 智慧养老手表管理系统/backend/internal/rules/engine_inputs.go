@@ -161,7 +161,7 @@ func readRuleBaselines(ctx context.Context, tx *db.Transaction, device ruleDevic
  FROM health_sample WHERE old_id=$1 AND device_id=$2 AND metric=$3 AND deleted=false
  AND source=$4 AND source_device=$5 AND BINARY source=BINARY $4 AND BINARY source_device=BINARY $5
  AND sample_start>=$6 AND sample_start<$7 AND (JSON_UNQUOTE(JSON_EXTRACT(payload,'$.timeBasis')) IS NULL OR JSON_UNQUOTE(JSON_EXTRACT(payload,'$.timeBasis'))<>'legacy-unzoned')`
-		if tx.IsMySQL() && len(item.v.Device) <= 64 {
+		if len(item.v.Device) <= 64 {
 			// All predicates and values are present in this index. Avoid random
 			// payload reads while holding the device lock as history grows.
 			query = baselineCoverSQL

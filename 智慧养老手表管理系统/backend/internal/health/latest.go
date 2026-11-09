@@ -110,10 +110,7 @@ func readLatest(ctx context.Context, q latestQuerier, oldID int64) ([]Record, er
 }
 
 func buildLatest(ctx context.Context, q *db.Transaction, oldID int64) ([]Record, error) {
-	partition := "source,source_device,metric,semantics"
-	if q.IsMySQL() {
-		partition = "BINARY source,BINARY source_device,BINARY metric,BINARY semantics"
-	}
+	partition := "BINARY source,BINARY source_device,BINARY metric,BINARY semantics"
 	sql := "SELECT s.sample_id,s.device_id,s.epoch,s.revision,s.payload FROM health_sample s INNER JOIN (" +
 		"SELECT sample_id,RANK() OVER (PARTITION BY " + partition + " ORDER BY sample_start DESC) AS latest_rank " +
 		"FROM health_sample WHERE old_id=$1 AND NOT deleted) ranked ON ranked.sample_id=s.sample_id " +
@@ -201,10 +198,7 @@ func refreshLatest(ctx context.Context, tx *db.Transaction, o Owner, input []pre
 }
 
 func refreshLatestSeries(ctx context.Context, tx *db.Transaction, oldID int64, s Sample, key [32]byte) error {
-	filter := "source=$2 AND source_device=$3 AND metric=$4 AND semantics=$5"
-	if tx.IsMySQL() {
-		filter = "BINARY source=BINARY $2 AND BINARY source_device=BINARY $3 AND BINARY metric=BINARY $4 AND BINARY semantics=BINARY $5"
-	}
+	filter := "BINARY source=BINARY $2 AND BINARY source_device=BINARY $3 AND BINARY metric=BINARY $4 AND BINARY semantics=BINARY $5"
 	sql := "SELECT sample_id,device_id,epoch,revision,sample_start,payload FROM health_sample WHERE old_id=$1 AND " +
 		filter + " AND NOT deleted ORDER BY sample_start DESC,revision DESC,sample_id DESC"
 	rows, err := tx.Query(ctx, sql, oldID, s.Source, s.SourceDevice, s.Metric, s.Semantics)

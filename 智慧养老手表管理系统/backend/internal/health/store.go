@@ -162,13 +162,11 @@ func (batch *PreparedBatch) Save(ctx context.Context, tx *db.Transaction, o Owne
 	if err = refreshLatest(ctx, tx, o, input, selection.final); err != nil {
 		return 0, 0, err
 	}
-	if tx.IsMySQL() {
-		// Invalidate all cached days for this owner, including the OLD date of a
-		// corrected/deleted interval. Skip already-dirty rows to avoid needless
-		// update locks, redo work and cache invalidation churn.
-		if _, err = tx.Exec(ctx, "UPDATE metric_daily SET dirty=true WHERE old_id=$1 AND dirty=false", o.OldID); err != nil {
-			return 0, 0, err
-		}
+	// Invalidate all cached days for this owner, including the OLD date of a
+	// corrected/deleted interval. Skip already-dirty rows to avoid needless
+	// update locks, redo work and cache invalidation churn.
+	if _, err = tx.Exec(ctx, "UPDATE metric_daily SET dirty=true WHERE old_id=$1 AND dirty=false", o.OldID); err != nil {
+		return 0, 0, err
 	}
 	return cursor, selection.duplicates, nil
 }
