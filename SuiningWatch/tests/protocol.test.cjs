@@ -42,7 +42,7 @@ test('serialized offline batch retries preserve sample IDs and original binding 
 });
 test('server, owner, device or epoch changes prevent uploading and mixing old samples', () => {
   const queue = p.enqueue(undefined, binding, samples);
-  for (const change of [{ server: 'http://other' }, { oldId: 8 }, { deviceNo: 'WATCH2' }, { version: 4 }]) {
+  for (const change of [{ server: 'http://other' }, { residentId: 8 }, { deviceNo: 'WATCH2' }, { version: 4 }]) {
     const other = { ...binding, ...change };
     assert.throws(() => p.batchRequest(queue, other, 'secret'));
     assert.throws(() => p.enqueue(queue, other, samples));
@@ -59,7 +59,7 @@ test('queue capacity never silently evicts old records', () => {
 test('old pending SOS remains available while a new binding can create its own request', () => {
   const old = { binding, requestId: 'old-sos' };
   const restored = p.readPendingSOS(JSON.stringify(old));
-  const rebound = { ...binding, oldId: 8, version: 4 };
+  const rebound = { ...binding, residentId: 8, version: 4 };
   assert.equal(p.pendingForBinding(restored, rebound), undefined);
   const next = { binding: rebound, requestId: 'new-sos' };
   const saved = p.readPendingSOS(JSON.stringify([...restored, next]));

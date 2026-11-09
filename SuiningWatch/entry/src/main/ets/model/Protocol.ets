@@ -27,7 +27,7 @@ export interface LoginRequest extends Credentials { platform: string; protocolVe
 export interface Binding {
   server: string;
   deviceNo: string;
-  oldId: number;
+  residentId: number;
   version: number;
 }
 export interface SampleMetadata {
@@ -101,10 +101,10 @@ export function bindingFrom(config: WatchConfig, reply: DeviceReply): Binding {
     throw new Error('设备尚未绑定长者，请输入后台生成的设备绑定码');
   }
   return { server: config.server, deviceNo: config.deviceNo,
-    oldId: reply.oldId, version: reply.bindingVersion };
+    residentId: reply.oldId, version: reply.bindingVersion };
 }
 export function sameBinding(a: Binding, b: Binding): boolean {
-  return a.server === b.server && a.deviceNo === b.deviceNo && a.oldId === b.oldId && a.version === b.version;
+  return a.server === b.server && a.deviceNo === b.deviceNo && a.residentId === b.residentId && a.version === b.version;
 }
 export function enqueue(current: PendingBatch | undefined, binding: Binding,
   samples: HealthSample[]): PendingBatch {

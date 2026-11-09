@@ -67,7 +67,7 @@ async function main() {
   await request('/api/v1/device/bind', { ...credentials, code: code.code });
   const config = protocol.normalizeConfig(base, device.deviceNo);
   const live = protocol.bindingFrom(config, await watch.login(config, device.secret));
-  assert.equal(live.oldId, elder.oldId);
+  assert.equal(live.residentId, elder.oldId);
   checks.push('bind code attached device to test elder');
   assert.equal((await watch.heartbeat(config, device.secret)).bound, 1);
   checks.push('heartbeat acknowledged');
