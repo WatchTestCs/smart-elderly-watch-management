@@ -17,9 +17,10 @@ import (
 	"strings"
 	"time"
 
-	"suining-care/internal/response"
-	dbstore "suining-care/internal/db"
 	mysqlDriver "github.com/go-sql-driver/mysql"
+
+	dbstore "suining-care/internal/db"
+	"suining-care/internal/response"
 )
 
 const signedDeviceWindow = 5 * time.Minute
@@ -103,7 +104,7 @@ func persistSignedDeviceNonce(ctx context.Context, tx *dbstore.Transaction, devi
 	if errors.As(err, &myErr) && myErr.Number == 1062 {
 		return false, nil
 	}
- 	return false, err
+	return false, err
 }
 
 func acceptSignedDeviceNonce(w http.ResponseWriter, ctx context.Context, tx *dbstore.Transaction, deviceID int64) bool {

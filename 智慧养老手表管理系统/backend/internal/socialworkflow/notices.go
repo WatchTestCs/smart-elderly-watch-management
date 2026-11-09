@@ -12,16 +12,11 @@ import (
 
 var ErrNoticeNotFound = errors.New("notice not found")
 
-func noticeTable(mysql bool) string {
-	if mysql {
-		return "`text`"
-	}
-	return "text"
-}
+const noticeTable = "`text`"
 
 func noticePictureGroup(ctx context.Context, tx *db.Transaction, id int64) (*int64, error) {
 	var group *int64
-	err := tx.QueryRow(ctx, "SELECT pic_id FROM "+noticeTable(tx.IsMySQL())+" WHERE text_id=$1 FOR UPDATE", id).Scan(&group)
+	err := tx.QueryRow(ctx, "SELECT pic_id FROM "+noticeTable+" WHERE text_id=$1 FOR UPDATE", id).Scan(&group)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNoticeNotFound
 	}
@@ -29,16 +24,7 @@ func noticePictureGroup(ctx context.Context, tx *db.Transaction, id int64) (*int
 }
 
 func allocateNoticePictureGroup(ctx context.Context, tx *db.Transaction) (int64, error) {
-	query := "SELECT nextval('picture_group')"
-	if tx.IsMySQL() {
-		if _, err := tx.Exec(ctx, "INSERT INTO picture_group () VALUES ()"); err != nil {
-			return 0, err
-		}
-		query = "SELECT LAST_INSERT_ID()"
-	}
-	var id int64
-	err := tx.QueryRow(ctx, query).Scan(&id)
-	return id, err
+	return tx.InsertID(ctx, "INSERT INTO picture_group () VALUES ()")
 }
 
 func replaceNoticePictures(ctx context.Context, tx *db.Transaction, group int64, names []string) error {
@@ -87,7 +73,7 @@ func UpdateNotice(ctx context.Context, store *db.Database, manager *blob.Manager
 	if err := replaceNoticePictures(ctx, tx, groupID, names); err != nil {
 		return false, err
 	}
-	result, err := tx.Exec(ctx, "UPDATE "+noticeTable(tx.IsMySQL())+" SET title=$1,text_main=$2,time=$3,pic_id=$4 WHERE text_id=$5", title, body, time.Now(), groupID, id)
+	result, err := tx.Exec(ctx, "UPDATE "+noticeTable+" SET title=$1,text_main=$2,time=$3,pic_id=$4 WHERE text_id=$5", title, body, time.Now(), groupID, id)
 	if err != nil {
 		return false, err
 	}
@@ -110,7 +96,7 @@ func DeleteNotice(ctx context.Context, store *db.Database, id int64) (bool, erro
 	if err != nil {
 		return false, err
 	}
-	result, err := tx.Exec(ctx, "DELETE FROM "+noticeTable(tx.IsMySQL())+" WHERE text_id=$1", id)
+	result, err := tx.Exec(ctx, "DELETE FROM "+noticeTable+" WHERE text_id=$1", id)
 	if err != nil {
 		return false, err
 	}

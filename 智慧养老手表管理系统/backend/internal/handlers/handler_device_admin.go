@@ -10,10 +10,10 @@ import (
 	"time"
 	"unicode/utf8"
 
+	dbstore "suining-care/internal/db"
 	"suining-care/internal/devicerepo"
 	"suining-care/internal/response"
 	"suining-care/internal/securecode"
-	dbstore "suining-care/internal/db"
 )
 
 // ---------------------------------------------------------------------------
@@ -243,7 +243,6 @@ func (h *Handler) deviceDeleteBindCode(w http.ResponseWriter, r *http.Request) {
 }
 
 // genDeviceNo 生成唯一设备号（W + 8 位，重试 30 次，兜底时间戳）。
-
 func (h *Handler) adminDeviceView(device devicerepo.AdminDevice, now time.Time) (map[string]any, error) {
 	name := "（未绑定）"
 	if device.ResidentName != nil {

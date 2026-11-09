@@ -5,9 +5,10 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
-	"suining-care/internal/response"
 	"time"
+
 	dbstore "suining-care/internal/db"
+	"suining-care/internal/response"
 )
 
 // POST /api/v1/residents/create —— 新增老人档案（ADMIN）。

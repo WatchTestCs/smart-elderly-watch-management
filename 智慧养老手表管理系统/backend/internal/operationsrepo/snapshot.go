@@ -26,19 +26,19 @@ type HealthAlerts struct {
 }
 
 type Snapshot struct {
-	Health                HealthAlerts `json:"health"`
-	TotalResidents        int64        `json:"totalResidents"`
-	ActiveLocationAlerts  int64        `json:"activeLocationAlerts"`
-	ActiveCareIncidents   int64        `json:"activeCareIncidents"`
-	OverdueCareIncidents  int64        `json:"overdueCareIncidents"`
-	PendingNotifications  int64        `json:"pendingNotifications"`
-	FailedNotifications   int64        `json:"failedNotifications"`
-	StaleNotifications    int64        `json:"staleNotifications"`
-	ActiveDevices         int64        `json:"activeDevices"`
-	OfflineDevices        int64        `json:"offlineDevices"`
-	LowBatteryDevices     int64        `json:"lowBatteryDevices"`
-	UnboundDevices        int64        `json:"unboundDevices"`
-	CapturedAt            time.Time    `json:"capturedAt"`
+	Health               HealthAlerts `json:"health"`
+	TotalResidents       int64        `json:"totalResidents"`
+	ActiveLocationAlerts int64        `json:"activeLocationAlerts"`
+	ActiveCareIncidents  int64        `json:"activeCareIncidents"`
+	OverdueCareIncidents int64        `json:"overdueCareIncidents"`
+	PendingNotifications int64        `json:"pendingNotifications"`
+	FailedNotifications  int64        `json:"failedNotifications"`
+	StaleNotifications   int64        `json:"staleNotifications"`
+	ActiveDevices        int64        `json:"activeDevices"`
+	OfflineDevices       int64        `json:"offlineDevices"`
+	LowBatteryDevices    int64        `json:"lowBatteryDevices"`
+	UnboundDevices       int64        `json:"unboundDevices"`
+	CapturedAt           time.Time    `json:"capturedAt"`
 }
 
 func ReadHealthAlerts(ctx context.Context, q db.RowQuerier) (HealthAlerts, error) {

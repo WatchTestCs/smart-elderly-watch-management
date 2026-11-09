@@ -3,6 +3,8 @@ package telemetryrepo
 import (
 	"context"
 	"time"
+
+	"suining-care/internal/db"
 )
 
 type heartbeatWriter interface {

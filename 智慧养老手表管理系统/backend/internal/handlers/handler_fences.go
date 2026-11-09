@@ -1,12 +1,12 @@
 package handlers
 
 import (
-	_ "time/tzdata"
 	"errors"
 	"math"
 	"net/http"
 	"strings"
 	"time"
+	_ "time/tzdata"
 	"unicode/utf8"
 
 	"suining-care/internal/devicerepo"
