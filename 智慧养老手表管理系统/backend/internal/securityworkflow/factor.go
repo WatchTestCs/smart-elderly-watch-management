@@ -19,7 +19,7 @@ import (
 type FactorAction string
 
 const (
-	Setup FactorAction = "setup"
+	Setup   FactorAction = "setup"
 	Confirm FactorAction = "confirm"
 	Disable FactorAction = "disable"
 )
@@ -27,19 +27,19 @@ const (
 type FactorFailure string
 
 const (
-	WrongPassword FactorFailure = "wrong_password"
-	AlreadyEnabled FactorFailure = "already_enabled"
-	InvalidState FactorFailure = "invalid_state"
-	InvalidOTP FactorFailure = "invalid_otp"
-	InvalidAction FactorFailure = "invalid_action"
+	WrongPassword   FactorFailure = "wrong_password"
+	AlreadyEnabled  FactorFailure = "already_enabled"
+	InvalidState    FactorFailure = "invalid_state"
+	InvalidOTP      FactorFailure = "invalid_otp"
+	InvalidAction   FactorFailure = "invalid_action"
 )
 
 type FactorInput struct {
-	Role string
-	ActorID int64
-	Action FactorAction
-	Password string
-	OTP string
+	Role             string
+	ActorID          int64
+	Action           FactorAction
+	Password         string
+	OTP              string
 	DatabaseSessions bool
 }
 
