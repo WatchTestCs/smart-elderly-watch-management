@@ -1,11 +1,11 @@
 package fencerepo
 
 import (
+	"database/sql"
 	"context"
 	"encoding/json"
 	"errors"
 
-	"github.com/jackc/pgx/v5"
 
 	"suining-care/internal/db"
 	"suining-care/internal/fence"
@@ -17,7 +17,7 @@ func LoadState(ctx context.Context, tx *db.Transaction, fenceID, revision int64)
 	var storedRevision int64
 	var payload []byte
 	err := tx.QueryRow(ctx, "SELECT revision,payload FROM fence_state WHERE fence_id=$1 FOR UPDATE", fenceID).Scan(&storedRevision, &payload)
-	if errors.Is(err, pgx.ErrNoRows) {
+	if errors.Is(err, sql.ErrNoRows) {
 		return fence.State{}, nil
 	}
 	if err != nil {

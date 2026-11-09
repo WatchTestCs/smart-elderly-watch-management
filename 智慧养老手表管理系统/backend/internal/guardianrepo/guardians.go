@@ -2,10 +2,10 @@
 package guardianrepo
 
 import (
+	"database/sql"
 	"context"
 	"errors"
 
-	"github.com/jackc/pgx/v5"
 
 	"suining-care/internal/db"
 )
@@ -87,7 +87,7 @@ func Delete(ctx context.Context, store *db.Database, id int64) error {
 
 	var found int64
 	if err := tx.QueryRow(ctx, "SELECT customer_id FROM customer WHERE customer_id=$1 FOR UPDATE", id).Scan(&found); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
+		if errors.Is(err, sql.ErrNoRows) {
 			return ErrGuardianNotFound
 		}
 		return err

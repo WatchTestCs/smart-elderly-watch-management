@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/jackc/pgx/v5"
 
 	"suining-care/internal/db"
 	"suining-care/internal/devicecredential"
@@ -22,7 +21,7 @@ const (
 )
 
 func MissingRow(err error) bool {
-	return errors.Is(err, sql.ErrNoRows) || errors.Is(err, pgx.ErrNoRows)
+	return errors.Is(err, sql.ErrNoRows) || errors.Is(err, sql.ErrNoRows)
 }
 
 // Authenticate reads the stored device record without opening its encrypted coordinates.

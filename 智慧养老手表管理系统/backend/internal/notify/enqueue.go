@@ -1,9 +1,10 @@
 package notify
 
 import (
+	"errors"
+	"database/sql"
 	"context"
 	"fmt"
-	"github.com/jackc/pgx/v5"
 	"strings"
 	"suining-care/internal/db"
 	"suining-care/internal/securestore"
@@ -81,7 +82,7 @@ func CareInbox(ctx context.Context, tx *db.Transaction, box *securestore.Box, ol
 	var familyID int64
 	var phone string
 	err := tx.QueryRow(ctx, "SELECT f.family_id,f.family_phone FROM oldperson o JOIN family f ON f.family_id=o.family_id WHERE o.old_id=$1", oldID).Scan(&familyID, &phone)
-	if err == pgx.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil
 	}
 	if err != nil {

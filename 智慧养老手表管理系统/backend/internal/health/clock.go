@@ -1,11 +1,11 @@
 package health
 
 import (
+	"database/sql"
 	"context"
 	"errors"
 	"fmt"
 
-	"github.com/jackc/pgx/v5"
 	"suining-care/internal/db"
 )
 
@@ -38,7 +38,7 @@ func lockOwner(ctx context.Context, tx *db.Transaction, oldID int64) (ownerClock
 		return clock, err
 	}
 	err := tx.QueryRow(ctx, "SELECT revision,range_end FROM health_owner_clock WHERE old_id=$1 FOR UPDATE", oldID).Scan(&clock.revision, &clock.rangeEnd)
-	if errors.Is(err, pgx.ErrNoRows) {
+	if errors.Is(err, sql.ErrNoRows) {
 		// A new owner has no reserved range. Read the existing high-water mark
 		// without locking it; a later reservation always locks and rereads it.
 		var high int64

@@ -1,12 +1,13 @@
 package health
 
 import (
+	"errors"
+	"database/sql"
 	"context"
 	"encoding/json"
 	"fmt"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 	"suining-care/internal/db"
 )
 
@@ -97,7 +98,7 @@ func RefreshDaily(ctx context.Context, pool *db.Database, id string) error {
 	// Read the immutable owner before taking its clock lock. Keep the same lock
 	// order as sample invalidation: owner clock, then daily cache row.
 	var oldID int64
-	if err = tx.QueryRow(ctx, "SELECT old_id FROM metric_daily WHERE cache_key=$1", id).Scan(&oldID); err == pgx.ErrNoRows {
+	if err = tx.QueryRow(ctx, "SELECT old_id FROM metric_daily WHERE cache_key=$1", id).Scan(&oldID); errors.Is(err, sql.ErrNoRows) {
 		return nil
 	} else if err != nil {
 		return err
@@ -109,7 +110,7 @@ func RefreshDaily(ctx context.Context, pool *db.Database, id string) error {
 	var k DailyKey
 	var dirty bool
 	err = tx.QueryRow(ctx, dailyCacheSelectSQL(tx.IsMySQL()), id).Scan(&k.OldID, &k.Source, &k.SourceDevice, &k.Metric, &k.Semantics, &k.Day, &k.OffsetMinutes, &dirty)
-	if err == pgx.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil
 	}
 	if err != nil {

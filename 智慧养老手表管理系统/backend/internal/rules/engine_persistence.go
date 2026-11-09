@@ -1,9 +1,10 @@
 package rules
 
 import (
+	"errors"
+	"database/sql"
 	"context"
 	"encoding/json"
-	"github.com/jackc/pgx/v5"
 	"suining-care/internal/db"
 	"suining-care/internal/notify"
 	"time"
@@ -16,7 +17,7 @@ func (e *Engine) persist(ctx context.Context, tx *db.Transaction, device, old, e
 	var incident *int64
 	var prior []byte
 	err := tx.QueryRow(ctx, "SELECT observation_key,streak,active,incident_id,evidence FROM rule_state WHERE device_id=$1 AND epoch=$2 AND kind=$3 FOR UPDATE", device, epoch, c.Kind).Scan(&previous, &streak, &active, &incident, &prior)
-	if err != nil && err != pgx.ErrNoRows {
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return err
 	}
 	if previous == c.Key {

@@ -1,8 +1,9 @@
 package rules
 
 import (
+	"errors"
+	"database/sql"
 	"context"
-	"github.com/jackc/pgx/v5"
 	"suining-care/internal/db"
 	"suining-care/internal/observability"
 	"suining-care/internal/securestore"
@@ -35,7 +36,7 @@ func (e *Engine) Device(ctx context.Context, id int64, now time.Time) error {
 	defer tx.Rollback(ctx)
 	device := ruleDevice{id: id}
 	err = tx.QueryRow(ctx, "SELECT old_id,health_epoch,device_no,last_time,bind_time,battery FROM device WHERE device_id=$1 AND old_id IS NOT NULL AND status<>0 FOR UPDATE", id).Scan(&device.oldID, &device.epoch, &device.no, &device.last, &device.bound, &device.battery)
-	if err == pgx.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil
 	}
 	if err != nil {

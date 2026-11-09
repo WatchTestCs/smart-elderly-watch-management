@@ -1,8 +1,9 @@
 package rules
 
 import (
+	"errors"
+	"database/sql"
 	"context"
-	"github.com/jackc/pgx/v5"
 	"suining-care/internal/db"
 	"time"
 )
@@ -15,7 +16,7 @@ func upgradeNightIncident(ctx context.Context, tx *db.Transaction, device ruleDe
 		var incident int64
 		var at time.Time
 		err = tx.QueryRow(ctx, "SELECT id,created_at FROM care_incident WHERE device_id=$1 AND old_id=$2 AND kind IN ('sos','fence_exit') AND state<>'verified' ORDER BY id DESC LIMIT 1", id, oldID).Scan(&incident, &at)
-		if err != nil && err != pgx.ErrNoRows {
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
 			return err
 		}
 		if err == nil && p.Night(at) {

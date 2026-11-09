@@ -1,11 +1,11 @@
 package care
 
 import (
+	"database/sql"
 	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/jackc/pgx/v5"
 	"net/http"
 	"strconv"
 	"suining-care/internal/notify"
@@ -55,7 +55,7 @@ func (d *dispatcher) claimCareDelivery(ctx context.Context) (careDeliveryClaim, 
         ORDER BY retry_at,id LIMIT 1 FOR UPDATE SKIP LOCKED`).Scan(&job.id, &job.incidentID, &job.recipient, &job.channel, &job.attempts)
 	if err != nil {
 		// No row is normal; connection and SQL errors are not.
-		if errors.Is(err, pgx.ErrNoRows) {
+		if errors.Is(err, sql.ErrNoRows) {
 			return careDeliveryClaim{}, false, nil
 		}
 		return careDeliveryClaim{}, true, err

@@ -1,10 +1,11 @@
 package rules
 
 import (
+	"errors"
+	"database/sql"
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/jackc/pgx/v5"
 	"suining-care/internal/db"
 	"suining-care/internal/health"
 	"time"
@@ -26,10 +27,10 @@ func readRulePolicy(ctx context.Context, tx *db.Transaction, id int64) (Policy, 
 		if err = json.Unmarshal(payload, &p); err != nil {
 			return Policy{}, err
 		}
-	} else if err == pgx.ErrNoRows {
+	} else if errors.Is(err, sql.ErrNoRows) {
 		var hrf, hrl, bpf, bpl *float64
 		err = tx.QueryRow(ctx, "SELECT hrf,hrl,bpf,bpl FROM watch_info WHERE device_id=$1", id).Scan(&hrf, &hrl, &bpf, &bpl)
-		if err != nil && err != pgx.ErrNoRows {
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
 			return Policy{}, err
 		}
 		if hrf != nil && hrl != nil {
@@ -90,7 +91,7 @@ func readLatestRuleObservations(ctx context.Context, tx *db.Transaction, device 
 		var revision int64
 		var b []byte
 		err = tx.QueryRow(ctx, latestSampleSQL, oldID, id, epoch, metric, now.Add(-window).UnixMicro(), now.UnixMicro()).Scan(&sampleID, &revision, &b)
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			continue
 		}
 		if err != nil {
@@ -128,7 +129,7 @@ func readLegacyRuleVitals(ctx context.Context, tx *db.Transaction, device ruleDe
 		var at time.Time
 		var hr, bp *float64
 		err = tx.QueryRow(ctx, "SELECT id,create_time,hr,bp FROM ratepre WHERE device_id=$1 AND old_id=$2 AND create_time>=$3 ORDER BY create_time DESC,id DESC LIMIT 1", id, oldID, now.Add(-5*time.Minute)).Scan(&record, &at, &hr, &bp)
-		if err != nil && err != pgx.ErrNoRows {
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
 			return err
 		}
 		if err == nil {

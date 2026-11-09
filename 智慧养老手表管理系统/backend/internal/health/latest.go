@@ -1,6 +1,7 @@
 package health
 
 import (
+	"database/sql"
 	"cmp"
 	"context"
 	"crypto/sha256"
@@ -9,7 +10,6 @@ import (
 	"errors"
 	"sort"
 
-	"github.com/jackc/pgx/v5"
 	"suining-care/internal/db"
 )
 
@@ -23,7 +23,7 @@ type latestQuerier interface {
 func latestReady(ctx context.Context, q latestQuerier, oldID int64) (bool, error) {
 	var id int64
 	err := q.QueryRow(ctx, "SELECT old_id FROM health_latest_ready WHERE old_id=$1", oldID).Scan(&id)
-	if errors.Is(err, pgx.ErrNoRows) {
+	if errors.Is(err, sql.ErrNoRows) {
 		return false, nil
 	}
 	return err == nil, err
