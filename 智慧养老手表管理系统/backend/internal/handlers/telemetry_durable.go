@@ -15,12 +15,10 @@ import (
 
 	dbstore "suining-care/internal/db"
 	"suining-care/internal/devicerepo"
-	"suining-care/internal/observability"
 	"suining-care/internal/securestore"
 	"suining-care/internal/telemetryrepo"
+	"suining-care/internal/telemetryworkflow"
 )
-
-const telemetryDurableBatchSize = 32
 
 var durableRequestIDPattern = regexp.MustCompile(`^[A-Za-z0-9_.:-]{1,64}$`)
 
@@ -108,61 +106,15 @@ func decodeQueuedTelemetry(box *securestore.Box, raw string) (parsedDeviceTeleme
 	}, nil
 }
 
-// DrainDurableTelemetryBatch acquires a singleton database row-lock shared by
-// all application replicas, ensuring FIFO processing for non-commutative
-// daily-statistics upserts. Crash or connection loss rolls back the whole batch.
-func DrainDurableTelemetryBatch(ctx context.Context, db *dbstore.Database, box *securestore.Box) (int, error) {
+// DrainDurableTelemetryBatch retains the public API for existing integrations.
+func DrainDurableTelemetryBatch(ctx context.Context, store *dbstore.Database, box *securestore.Box) (int, error) {
 	if box == nil {
 		return 0, errors.New("missing telemetry encryption key")
 	}
-	batchStarted := time.Now()
-	defer func() {
-		observability.Default.Add("suining_telemetry_drain_seconds_total", time.Since(batchStarted).Seconds())
-	}()
-	tx, err := db.Begin(ctx)
-	if err != nil {
-		return 0, err
-	}
-	defer tx.Rollback(ctx)
-	items, err := telemetryrepo.LockDurableBatch(ctx, tx, telemetryDurableBatchSize)
-	if err != nil {
-		return 0, err
-	}
-	if len(items) == 0 {
-		return 0, nil
-	}
-
 	repo := telemetryRepository{box: box}
-	processed := 0
-	now := time.Now().UTC()
-	for _, item := range items {
-		// A failed older item must not allow a newer daily-state update to
-		// overtake it. A poison entry eventually becomes a retained dead letter.
-		if item.NextRetryAt.After(now) {
-			break
-		}
-		processed++
-		if _, err := tx.Exec(ctx, `SAVEPOINT telemetry_inbox_item`); err != nil {
-			return 0, err
-		}
-		err := processDurableQueueItem(ctx, tx, repo, item)
-		if err != nil {
-			if _, rbErr := tx.Exec(ctx, `ROLLBACK TO SAVEPOINT telemetry_inbox_item`); rbErr != nil {
-				return 0, rbErr
-			}
-			if err := telemetryrepo.MarkDurableFailure(ctx, tx, item, err.Error()); err != nil {
-				return 0, err
-			}
-		}
-		if _, err := tx.Exec(ctx, `RELEASE SAVEPOINT telemetry_inbox_item`); err != nil {
-			return 0, err
-		}
-	}
-	if err := tx.Commit(ctx); err != nil {
-		return 0, err
-	}
-	observability.Default.Add("suining_telemetry_drain_processed_total", float64(processed))
-	return processed, nil
+	return telemetryworkflow.Drain(ctx, store, func(ctx context.Context, tx *dbstore.Transaction, item telemetryrepo.DurableItem) error {
+		return processDurableQueueItem(ctx, tx, repo, item)
+	})
 }
 
 func processDurableQueueItem(ctx context.Context, tx *dbstore.Transaction, repo telemetryRepository, item telemetryrepo.DurableItem) error {
@@ -195,30 +147,13 @@ func processDurableQueueItem(ctx context.Context, tx *dbstore.Transaction, repo 
 	return telemetryrepo.MarkDurableDone(ctx, tx, item.ID, time.Now().UTC())
 }
 
-func RunDurableTelemetry(ctx context.Context, db *dbstore.Database, box *securestore.Box) {
+func RunDurableTelemetry(ctx context.Context, store *dbstore.Database, box *securestore.Box) {
 	if box == nil {
 		log.Print("durable telemetry worker disabled: DATA_ENCRYPTION_KEY not configured")
 		return
 	}
-	ticker := time.NewTicker(250 * time.Millisecond)
-	defer ticker.Stop()
-	for {
-		if ctx.Err() != nil {
-			return
-		}
-		run, cancel := context.WithTimeout(ctx, 10*time.Second)
-		count, err := DrainDurableTelemetryBatch(run, db, box)
-		cancel()
-		if err != nil && ctx.Err() == nil {
-			log.Printf("durable telemetry batch failed; pending rows retained: %v", err)
-		}
-		if count > 0 {
-			continue
-		}
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
-		}
-	}
+	repo := telemetryRepository{box: box}
+	telemetryworkflow.Run(ctx, store, func(ctx context.Context, tx *dbstore.Transaction, item telemetryrepo.DurableItem) error {
+		return processDurableQueueItem(ctx, tx, repo, item)
+	})
 }
