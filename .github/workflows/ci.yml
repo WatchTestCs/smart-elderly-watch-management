@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [preview]
   push:
-    branches: [preview, 'codex/**']
+    branches: [preview]
   workflow_dispatch:
     inputs:
       require_native:
