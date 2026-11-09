@@ -27,26 +27,36 @@ type Incident struct {
 	VerifiedAt        *time.Time `json:"verifiedAt"`
 }
 
-func notificationStatusSQL(mysql bool) string {
-	aggregate := "bool_or"
-	if mysql {
-		aggregate = "MAX"
-	}
-	return `(SELECT CASE
-            WHEN ` + aggregate + `(n.status='delivered') THEN 'delivered'
-            WHEN ` + aggregate + `(n.status='failed') THEN 'failed'
-            WHEN ` + aggregate + `(n.status='sending') THEN 'sending'
-            WHEN ` + aggregate + `(n.status='pending') THEN 'pending'
-            WHEN ` + aggregate + `(n.status='sent') THEN 'sent'
+const notificationStatusSQL = `(SELECT CASE
+            WHEN MAX(n.status='delivered') THEN 'delivered'
+            WHEN MAX(n.status='failed') THEN 'failed'
+            WHEN MAX(n.status='sending') THEN 'sending'
+            WHEN MAX(n.status='pending') THEN 'pending'
+            WHEN MAX(n.status='sent') THEN 'sent'
             ELSE 'no_recipient' END
            FROM care_notification_outbox n WHERE n.incident_id=i.id)`
-}
 
-// ListIncidents returns due-time-ordered tasks and an independent total count.
+const activeIncidentOrderSQL = ` ORDER BY
+	CASE
+		WHEN i.kind IN ('sos','fall') OR i.severity='critical' THEN 0
+		WHEN i.severity IN ('high','warning') THEN 1
+		ELSE 2
+	END,
+	(i.due_at < CURRENT_TIMESTAMP(6)) DESC,
+	i.due_at ASC,
+	i.id DESC`
+
+const verifiedIncidentOrderSQL = ` ORDER BY i.verified_at DESC, i.id DESC`
+
+// ListIncidents returns risk-ordered active work and newest-first verified history.
 func ListIncidents(ctx context.Context, store *db.Database, verified bool, page, pageSize int) ([]Incident, int64, error) {
 	var total int64
 	if err := store.QueryRow(ctx, `SELECT count(*) FROM care_incident WHERE (state='verified')=$1`, verified).Scan(&total); err != nil {
 		return nil, 0, err
+	}
+	order := activeIncidentOrderSQL
+	if verified {
+		order = verifiedIncidentOrderSQL
 	}
 	items, err := db.QueryList(ctx, store, func(rows db.Rows) (Incident, error) {
 		var item Incident
@@ -58,9 +68,9 @@ func ListIncidents(ctx context.Context, store *db.Database, verified bool, page,
 	}, `SELECT i.id,i.old_id,i.device_id,i.kind,i.state,i.severity,i.created_at,i.due_at,
           i.acknowledged_by,i.acknowledged_at,i.resolved_by,i.resolved_at,i.verified_by,i.verified_at,
           o.name,
-          `+notificationStatusSQL(store.IsMySQL())+`
+          `+notificationStatusSQL+`
      FROM care_incident i LEFT JOIN oldperson o ON o.old_id=i.old_id
-     WHERE (i.state='verified')=$1 ORDER BY i.due_at ASC, i.id DESC
+     WHERE (i.state='verified')=$1`+order+`
      LIMIT $2 OFFSET $3`, verified, pageSize, (page-1)*pageSize)
 	return items, total, err
 }
