@@ -249,3 +249,32 @@ impl DeviceSession {
         result
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::protocol::{BatchRequest, Credentials};
+
+    #[test]
+    fn borrowed_batch_matches_existing_wire_contract() {
+        let cred = Credentials::new("watch-1".into(), "secret".into());
+        let samples = vec![HealthSample::heart_rate(
+            "sample-1".into(),
+            "watch-1",
+            72,
+            "2026-11-09T00:00:00Z",
+        )];
+        let refs: Vec<_> = samples.iter().collect();
+        let borrowed = QueuedBatch {
+            device_no: &cred.device_no,
+            secret: &cred.secret,
+            binding_version: 3,
+            samples: &refs,
+        };
+        let owned = BatchRequest::new(&cred, 3, samples);
+        assert_eq!(
+            serde_json::to_value(borrowed).unwrap(),
+            serde_json::to_value(owned).unwrap()
+        );
+    }
+}
