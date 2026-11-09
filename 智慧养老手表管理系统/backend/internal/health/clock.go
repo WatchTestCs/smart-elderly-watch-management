@@ -1,8 +1,8 @@
 package health
 
 import (
-	"database/sql"
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 
@@ -29,14 +29,6 @@ func LockOwner(ctx context.Context, tx *db.Transaction, oldID int64) (int64, err
 
 func lockOwner(ctx context.Context, tx *db.Transaction, oldID int64) (ownerClock, error) {
 	var clock ownerClock
-	if !tx.IsMySQL() {
-		err := tx.QueryRow(ctx, "SELECT revision FROM health_clock WHERE id=1 FOR UPDATE").Scan(&clock.revision)
-		clock.rangeEnd = maxSafeRevision
-		if err == nil && (clock.revision < 0 || clock.revision > maxSafeRevision) {
-			err = fmt.Errorf("health revision exceeds safe cursor range")
-		}
-		return clock, err
-	}
 	err := tx.QueryRow(ctx, "SELECT revision,range_end FROM health_owner_clock WHERE old_id=$1 FOR UPDATE", oldID).Scan(&clock.revision, &clock.rangeEnd)
 	if errors.Is(err, sql.ErrNoRows) {
 		// A new owner has no reserved range. Read the existing high-water mark
@@ -63,7 +55,7 @@ func (c ownerClock) reserve(ctx context.Context, tx *db.Transaction, oldID int64
 	if start < 0 || start > maxSafeRevision-int64(count) {
 		return 0, fmt.Errorf("health revision exceeds safe cursor range")
 	}
-	if tx.IsMySQL() && int64(count) > end-start {
+	if int64(count) > end-start {
 		if err := tx.QueryRow(ctx, "SELECT revision FROM health_clock WHERE id=1 FOR UPDATE").Scan(&start); err != nil {
 			return 0, err
 		}
@@ -75,10 +67,6 @@ func (c ownerClock) reserve(ctx context.Context, tx *db.Transaction, oldID int64
 			return 0, err
 		}
 	}
-	if tx.IsMySQL() {
-		_, err := tx.Exec(ctx, "UPDATE health_owner_clock SET revision=$2,range_end=$3 WHERE old_id=$1", oldID, start+int64(count), end)
-		return start, err
-	}
-	_, err := tx.Exec(ctx, "UPDATE health_clock SET revision=$1 WHERE id=1", start+int64(count))
+	_, err := tx.Exec(ctx, "UPDATE health_owner_clock SET revision=$2,range_end=$3 WHERE old_id=$1", oldID, start+int64(count), end)
 	return start, err
 }

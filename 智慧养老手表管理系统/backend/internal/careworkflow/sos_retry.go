@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 
-
 	"suining-care/internal/db"
 )
 
@@ -26,7 +25,7 @@ func FindSOSRetry(ctx context.Context, tx *db.Transaction, deviceID int64, reque
 		WHERE n.incident_id=i.id),'no_recipient')
 		FROM care_incident i WHERE i.device_id=$1 AND i.request_id=$2 FOR UPDATE`,
 		deviceID, requestID).Scan(&found.ID, &found.ResidentID, &found.Kind, &found.State, &found.NotificationState)
-	if errors.Is(err, sql.ErrNoRows) || errors.Is(err, sql.ErrNoRows) {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
 	if err != nil {

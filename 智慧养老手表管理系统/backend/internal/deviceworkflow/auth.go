@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 
-
 	"suining-care/internal/db"
 	"suining-care/internal/devicecredential"
 	"suining-care/internal/devicerepo"
@@ -21,7 +20,7 @@ const (
 )
 
 func MissingRow(err error) bool {
-	return errors.Is(err, sql.ErrNoRows) || errors.Is(err, sql.ErrNoRows)
+	return errors.Is(err, sql.ErrNoRows)
 }
 
 // Authenticate reads the stored device record without opening its encrypted coordinates.

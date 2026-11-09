@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 
-
 	"suining-care/internal/db"
 )
 
@@ -25,7 +24,7 @@ func FindReportRetry(ctx context.Context, tx *db.Transaction, deviceID int64, re
 		`SELECT id,old_id,kind,state FROM care_incident
 		 WHERE device_id=$1 AND request_id=$2 FOR UPDATE`,
 		deviceID, requestID).Scan(&prior.ID, &prior.ResidentID, &prior.Kind, &prior.State)
-	if errors.Is(err, sql.ErrNoRows) || errors.Is(err, sql.ErrNoRows) {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
 	if err != nil {
