@@ -72,7 +72,7 @@ pub fn discover() -> Result<Discovery, String> {
 #[cfg(windows)]
 fn process_alive(pid: u32) -> bool {
     use std::os::raw::c_void;
-    extern "system" {
+    unsafe extern "system" {
         fn OpenProcess(desired_access: u32, inherit_handle: i32, process_id: u32) -> *mut c_void;
         fn CloseHandle(handle: *mut c_void) -> i32;
     }
