@@ -2,19 +2,15 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
 	"net/http"
 	"strconv"
 	"time"
 
-	"github.com/jackc/pgx/v5"
-	"suining-care/internal/auth"
 	"suining-care/internal/authrepo"
 	"suining-care/internal/db"
 	"suining-care/internal/observability"
 	"suining-care/internal/response"
-	"suining-care/internal/securestore"
+	"suining-care/internal/securityworkflow"
 )
 
 type factorGenerationKey struct{}
@@ -117,75 +113,30 @@ func (h *Handler) securityFactor(w http.ResponseWriter, r *http.Request) {
 	if !decodeCapability(w, r, &req) {
 		return
 	}
-	ctx := r.Context()
-	tx, err := h.DB.Begin(ctx)
+	result, failure, err := securityworkflow.ChangeFactor(r.Context(), h.DB, h.Box, securityworkflow.FactorInput{
+		Role: p.Role, ActorID: p.ID, Action: securityworkflow.FactorAction(req.Action),
+		Password: req.Password, OTP: req.OTP, DatabaseSessions: h.Cfg.SessionBackend == "database",
+	})
 	if internalError(w, err) {
 		return
 	}
-	defer tx.Rollback(ctx)
-	password, passwordErr := authrepo.LockPassword(ctx, tx, p.Role, p.ID)
-	if passwordErr != nil || !auth.Matches(req.Password, password) {
+	switch failure {
+	case securityworkflow.WrongPassword:
 		response.JSON(w, 403, map[string]any{"message": "须验证当前密码"})
-		return
-	}
-	scope := factorScope(p.Role, p.ID)
-	factor, factorErr := authrepo.LockFactor(ctx, tx, p.Role, p.ID)
-	err = factorErr
-	if err != nil && err != pgx.ErrNoRows {
-		response.Error500(w, ref())
-		return
-	}
-	result := map[string]any{}
-	switch req.Action {
-	case "setup":
-		if factor.Enabled {
-			conflict409(w, "已启用双因素认证，不能覆盖现有密钥")
-			return
-		}
-		result, err = authrepo.CreateFactorSetup(ctx, tx, h.Box, p.Role, p.ID, scope, time.Now())
-	case "confirm", "disable":
-		if err == pgx.ErrNoRows || (req.Action == "confirm" && (factor.Enabled || time.Now().After(factor.PendingUntil))) || (req.Action == "disable" && !factor.Enabled) {
-			conflict409(w, "双因素认证状态不允许此操作")
-			return
-		}
-		secret, e := h.Box.Open(factor.Sealed, scope)
-		if internalError(w, e) {
-			return
-		}
-		counter, valid := securestore.VerifyTOTP(secret, req.OTP, time.Now(), factor.LastCounter)
-		if !valid {
-			response.JSON(w, 403, map[string]any{"message": "动态验证码无效或已使用"})
-			return
-		}
-		if req.Action == "disable" {
-			err = authrepo.DeleteFactor(ctx, tx, p.Role, p.ID)
-		} else {
-			codes, hashes, codeErr := authrepo.GenerateRecoveryCodes()
-			if internalError(w, codeErr) {
-				return
-			}
-			b, _ := json.Marshal(hashes)
-			err = authrepo.EnableFactor(ctx, tx, p.Role, p.ID, counter, b)
-			result["recoveryCodes"] = codes
-		}
-		result["reloginRequired"] = true
-	default:
+	case securityworkflow.AlreadyEnabled:
+		conflict409(w, "已启用双因素认证，不能覆盖现有密钥")
+	case securityworkflow.InvalidState:
+		conflict409(w, "双因素认证状态不允许此操作")
+	case securityworkflow.InvalidOTP:
+		response.JSON(w, 403, map[string]any{"message": "动态验证码无效或已使用"})
+	case securityworkflow.InvalidAction:
 		write400(w, "操作须为 setup、confirm 或 disable")
-		return
 	}
-	if err == nil && req.Action != "setup" && h.Cfg.SessionBackend == "database" {
-		err = authrepo.RevokeDatabaseSessions(ctx, tx, p.Role, p.ID)
-	}
-	if err == nil {
-		err = tx.Commit(ctx)
-	}
-	if internalError(w, err) {
+	if failure != "" {
 		return
 	}
 	if req.Action != "setup" && h.Cfg.SessionBackend != "database" {
-		// The factor change is committed: cancellation must not retain the old
-		// memory sessions. Database mode revoked within the same transaction.
-		if err = h.Sessions.RevokeContext(context.WithoutCancel(ctx), p.Role, p.ID); err != nil {
+		if err := h.Sessions.RevokeContext(context.WithoutCancel(r.Context()), p.Role, p.ID); err != nil {
 			response.JSON(w, 503, map[string]any{"message": "认证状态已更新，但会话撤销需重试"})
 			return
 		}
