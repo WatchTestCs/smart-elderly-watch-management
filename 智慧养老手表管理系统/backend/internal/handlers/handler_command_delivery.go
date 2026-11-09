@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
 	"net/http"
 	"suining-care/internal/response"
 	"time"
@@ -26,7 +25,7 @@ func (h *Handler) commandPull(w http.ResponseWriter, r *http.Request) {
 	}
 	var enabled bool
 	err = tx.QueryRow(ctx, "SELECT enabled FROM device_command_profile WHERE device_id=$1 AND protocol='suining-pull-v1'", d.ID).Scan(&enabled)
-	if err == pgx.ErrNoRows || (err == nil && !enabled) {
+	if isNotFound(err) || (err == nil && !enabled) {
 		conflict409(w, "指令协议未启用")
 		return
 	}
@@ -39,7 +38,7 @@ func (h *Handler) commandPull(w http.ResponseWriter, r *http.Request) {
 	err = tx.QueryRow(ctx, `SELECT id,action,wire_action,channel,expires_at FROM device_command
  WHERE device_id=$1 AND epoch=$2 AND old_id=$3 AND status='pending' AND retry_at<=now() AND expires_at>now()
  ORDER BY id LIMIT 1 FOR UPDATE`, d.ID, d.HealthEpoch, *d.OldID).Scan(&id, &action, &wire, &channel, &expires)
-	if err == pgx.ErrNoRows {
+	if isNotFound(err) {
 		response.OK(w, map[string]any{"command": nil})
 		return
 	}
@@ -89,7 +88,7 @@ func (h *Handler) commandAck(w http.ResponseWriter, r *http.Request) {
 	if req.Result == "failed" {
 		want = "failed"
 	}
-	if err == pgx.ErrNoRows {
+	if isNotFound(err) {
 		conflict409(w, "指令不属于当前绑定")
 		return
 	}

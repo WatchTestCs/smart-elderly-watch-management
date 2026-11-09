@@ -6,7 +6,6 @@ import (
 	"errors"
 
 	"github.com/go-sql-driver/mysql"
-	"github.com/jackc/pgx/v5"
 )
 
 func (e executor) QueryRow(ctx context.Context, query string, args ...any) Row {
@@ -23,13 +22,7 @@ func (r *sqlRows) Close() { _ = r.Rows.Close() }
 
 type sqlRow struct{ *sql.Row }
 
-func (r sqlRow) Scan(dst ...any) error {
-	err := r.Row.Scan(dst...)
-	if errors.Is(err, sql.ErrNoRows) {
-		return pgx.ErrNoRows
-	}
-	return err
-}
+func (r sqlRow) Scan(dst ...any) error { return r.Row.Scan(dst...) }
 
 type errorRow struct{ err error }
 

@@ -7,7 +7,6 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/jackc/pgx/v5"
 	"suining-care/internal/response"
 )
 
@@ -45,7 +44,7 @@ func (h *Handler) alertReview(w http.ResponseWriter, r *http.Request) {
 	var state *string
 	// Kind is allowlisted above, never arbitrary SQL input.
 	err = tx.QueryRow(ctx, "SELECT id,"+req.Kind+"_state FROM ratepre WHERE id=$1 FOR UPDATE", req.RecordID).Scan(&record, &state)
-	if err == pgx.ErrNoRows {
+	if isNotFound(err) {
 		response.JSON(w, 404, map[string]any{"message": "记录不存在"})
 		return
 	}

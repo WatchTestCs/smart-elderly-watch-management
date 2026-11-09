@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"io"
 	"net/http"
 	"os"
@@ -13,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 	"suining-care/internal/response"
 )
 
@@ -36,7 +34,7 @@ func (h *Handler) careReceipt(w http.ResponseWriter, r *http.Request) {
 	err = tx.QueryRow(ctx, `SELECT incident_id,status,attempts FROM care_notification_outbox
    WHERE id=$1 FOR UPDATE`, item.NotificationID).Scan(&incidentID, &status, &attempts)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
+		if isNotFound(err) {
 			response.JSON(w, http.StatusConflict, map[string]any{"message": "回执状态不符合预期"})
 		} else {
 			response.Error500(w, ref())

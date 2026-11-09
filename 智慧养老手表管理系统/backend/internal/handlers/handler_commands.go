@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"github.com/jackc/pgx/v5"
 	"net/http"
 	"strings"
 	"suining-care/internal/commands"
@@ -36,7 +35,7 @@ func (h *Handler) commandCreate(w http.ResponseWriter, r *http.Request) {
 	}
 	defer tx.Rollback(ctx)
 	d, err := devicerepo.ScanDeviceRecord(devicerepo.LockedDeviceRow(ctx, tx, req.DeviceID))
-	if err == pgx.ErrNoRows {
+	if isNotFound(err) {
 		response.JSON(w, 404, map[string]any{"message": "设备不存在"})
 		return
 	}
@@ -59,13 +58,13 @@ func (h *Handler) commandCreate(w http.ResponseWriter, r *http.Request) {
 		response.OK(w, map[string]any{"commandId": id, "status": status, "duplicate": true})
 		return
 	}
-	if err != pgx.ErrNoRows {
+	if !isNotFound(err) {
 		response.Error500(w, ref())
 		return
 	}
 	var typ string
 	err = tx.QueryRow(ctx, "SELECT wire_type FROM device_command_profile WHERE device_id=$1 AND enabled=true AND protocol='suining-pull-v1'", d.ID).Scan(&typ)
-	if err == pgx.ErrNoRows {
+	if isNotFound(err) {
 		conflict409(w, "设备尚未启用岁宁指令协议")
 		return
 	}

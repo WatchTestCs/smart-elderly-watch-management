@@ -1,13 +1,11 @@
 package handlers
 
 import (
-	"errors"
 	"net/http"
 	"strings"
 	"time"
 	"unicode/utf8"
 
-	"github.com/jackc/pgx/v5"
 
 	"suining-care/internal/devicerepo"
 	"suining-care/internal/deviceworkflow"
@@ -87,7 +85,7 @@ func (h *Handler) deviceLogin(w http.ResponseWriter, r *http.Request) {
 		bound = 1
 		fields["bound"] = bound
 		residentName, err := devicerepo.ResidentName(ctx, h.DB, *d.OldID)
-		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		if err != nil && !isNotFound(err) {
 			response.Error500(w, ref())
 			return
 		}

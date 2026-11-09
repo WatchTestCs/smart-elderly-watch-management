@@ -1,13 +1,11 @@
 package handlers
 
 import (
-	"errors"
 	"net/http"
 	"strconv"
 	"strings"
 	"unicode/utf8"
 
-	"github.com/jackc/pgx/v5"
 
 	"suining-care/internal/auth"
 	"suining-care/internal/careworkflow"
@@ -102,7 +100,7 @@ func (h *Handler) careTransition(w http.ResponseWriter, r *http.Request) {
 	defer tx.Rollback(ctx)
 	before, resolver, err := careworkflow.LockedIncidentState(ctx, tx, id)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
+		if isNotFound(err) {
 			response.Fail(w, "事件不存在")
 			return
 		}

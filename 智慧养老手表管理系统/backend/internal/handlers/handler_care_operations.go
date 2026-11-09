@@ -9,7 +9,6 @@ import (
 	"suining-care/internal/db"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 	"suining-care/internal/response"
 )
 
@@ -19,7 +18,7 @@ import (
 func (h *Handler) careDuty(w http.ResponseWriter, r *http.Request, actor int64) (string, bool) {
 	var duty string
 	err := h.DB.QueryRow(r.Context(), "SELECT duty FROM care_staff_permission WHERE admin_id=$1", actor).Scan(&duty)
-	if err == pgx.ErrNoRows {
+	if isNotFound(err) {
 		return "supervisor", true
 	}
 	if internalError(w, err) {
@@ -87,7 +86,7 @@ func (h *Handler) careDiagnostics(w http.ResponseWriter, r *http.Request) {
 	}
 	var workerSeen, workerStarted *time.Time
 	if err := h.DB.QueryRow(r.Context(),
-		"SELECT last_seen_at,started_at FROM care_worker_heartbeat WHERE singleton=true").Scan(&workerSeen, &workerStarted); err != nil && err != pgx.ErrNoRows {
+		"SELECT last_seen_at,started_at FROM care_worker_heartbeat WHERE singleton=true").Scan(&workerSeen, &workerStarted); err != nil && !isNotFound(err) {
 		response.Error500(w, ref())
 		return
 	}

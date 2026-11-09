@@ -10,7 +10,6 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/jackc/pgx/v5"
 
 	dbstore "suining-care/internal/db"
 	"suining-care/internal/devicerepo"
@@ -160,7 +159,7 @@ func (h *Handler) deviceCreateBindCode(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	oldName, err := devicerepo.ResidentName(ctx, h.DB, oldID)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
+		if isNotFound(err) {
 			response.Fail(w, "老人不存在")
 		} else {
 			response.Error500(w, ref())
