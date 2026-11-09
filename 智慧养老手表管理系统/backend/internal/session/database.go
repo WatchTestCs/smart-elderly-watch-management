@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"time"
 
+	"suining-care/internal/observability"
 	"suining-care/internal/securestore"
 )
 
@@ -41,15 +42,22 @@ func (d *databaseStore) get(ctx context.Context, id string) *Session {
 	var sealed, role string
 	var actorID int64
 	var generation sql.NullString
-	if d.db.QueryRowContext(ctx, "SELECT s.payload,s.role,s.actor_id,f.generation FROM web_session s LEFT JOIN auth_factor f ON f.role=s.role AND f.actor_id=s.actor_id AND f.enabled=true WHERE s.id_hash=? AND s.expires_at>UTC_TIMESTAMP(6)", idHash(id)).Scan(&sealed, &role, &actorID, &generation) != nil {
+	queryStart := time.Now()
+	queryErr := d.db.QueryRowContext(ctx, "SELECT s.payload,s.role,s.actor_id,f.generation FROM web_session s LEFT JOIN auth_factor f ON f.role=s.role AND f.actor_id=s.actor_id AND f.enabled=true WHERE s.id_hash=? AND s.expires_at>UTC_TIMESTAMP(6)", idHash(id)).Scan(&sealed, &role, &actorID, &generation)
+	observability.Default.Add("suining_session_lookup_seconds_total", time.Since(queryStart).Seconds())
+	observability.Default.Add("suining_session_lookup_total", 1)
+	if queryErr != nil {
 		return nil
 	}
+	decodeStart := time.Now()
 	plain, err := d.box.Open(sealed, "session")
-	if err != nil {
-		return nil
-	}
 	var sess Session
-	if json.Unmarshal([]byte(plain), &sess) != nil || sess.ID != id || time.Now().After(sess.ExpiresAt) || sess.Principal.Role != role || sess.Principal.ID != actorID || ctx.Err() != nil {
+	decodeErr := err
+	if decodeErr == nil {
+		decodeErr = json.Unmarshal([]byte(plain), &sess)
+	}
+	observability.Default.Add("suining_session_decode_seconds_total", time.Since(decodeStart).Seconds())
+	if decodeErr != nil || sess.ID != id || time.Now().After(sess.ExpiresAt) || sess.Principal.Role != role || sess.Principal.ID != actorID || ctx.Err() != nil {
 		return nil
 	}
 	if role != "" && generation.String != sess.Principal.FactorGeneration {

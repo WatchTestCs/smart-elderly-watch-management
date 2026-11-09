@@ -17,7 +17,7 @@ run(async ({ page, context, base, report, setRole, setSignedIn }) => {
     if (failTiles) return route.fulfill({ status: 503, body: '' })
     await route.fulfill({ contentType: 'image/png', body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aD1sAAAAASUVORK5CYII=', 'base64') })
   })
-  let coordinates = { lng: '0', lat: '0', name: '<img src=x onerror=alert(1)>', residentId: 1, status: '0' }
+  let coordinates = { lng: '0', lat: '0', name: '<img src=x onerror=alert(1)>', oldId: 1, status: '0' }
   for (const endpoint of ['select', 'selectFamily']) await context.route('**/api/v1/position/' + endpoint, route => route.fulfill({
     contentType: 'application/json', body: JSON.stringify({returnCode:'1111', positionDtos: [coordinates], total: 1 })
   }))
@@ -54,10 +54,10 @@ run(async ({ page, context, base, report, setRole, setSignedIn }) => {
     ['/operations/vitals', 'ratepre/selectRatepre', 'vitalRecords', '查询长者姓名'],
     ['/operations/locations', 'position/select', 'positionDtos', '查询长者姓名'],
     ['/operations/devices', 'device/list', 'devices', null],
-    ['/operations/life', 'resident/select', 'residents', '查询长者姓名'],
-    ['/operations/residents', 'resident/selectDetail', 'residentDetails', '查询长者姓名'],
+    ['/operations/life', 'oldPerson/select', 'oldPeople', '查询长者姓名'],
+    ['/operations/residents', 'oldPerson/selectDetail', 'oldPersonDetails', '查询长者姓名'],
     ['/operations/monitoring-profiles', 'watchInfo/select', 'watchDtos', '查询长者姓名'],
-    ['/operations/guardians', 'guardian/select', 'guardians', '查询监护人姓名'],
+    ['/operations/guardians', 'customer/select', 'customers', '查询监护人姓名'],
     ['/operations/families', 'family/select', 'familyDtos', '查询家属姓名'],
     ['/operations/overview', 'text/select', 'texts', '搜索公告'],
     ['/operations/notices', 'text/select', 'texts', '搜索公告'],
@@ -68,7 +68,7 @@ run(async ({ page, context, base, report, setRole, setSignedIn }) => {
     await context.route('**/api/v1/' + endpoint, r => {
       const input = r.request().postDataJSON()
       return r.fulfill({ contentType: 'application/json', body: JSON.stringify({returnCode:'1111',
-        [key]: [{ residentId: input.page || 1, deviceId: input.page || 1, deviceNo: 'PAGE', name: '分页长者', alias: '分页设备', status: 1 }],
+        [key]: [{ oldId: input.page || 1, deviceId: input.page || 1, deviceNo: 'PAGE', name: '分页长者', alias: '分页设备', status: 1 }],
         total: 45, onlineCount: 0
       }) })
     })

@@ -52,11 +52,11 @@
           </el-form-item>
 
           <el-form-item label="密码" prop="familyPassword" for="register-familyPassword">
-            <el-input :type="showPassword ? 'text' : 'password'" autocomplete="new-password" id="register-familyPassword" aria-label="密码" v-model="registerForm.familyPassword" placeholder="12-20位，须包含字母和数字"><template #suffix><button  type="button" class="password-visibility" :aria-label="showPassword ? '隐藏密码' : '显示密码'" :aria-pressed="String(showPassword)" @click="showPassword = !showPassword"><el-icon aria-hidden="true"><View /></el-icon></button></template></el-input>
+            <el-input :type="showPassword ? 'text' : 'password'" autocomplete="new-password" id="register-familyPassword" aria-label="密码" v-model="registerForm.familyPassword" placeholder="12-20位，须包含字母和数字"><template #suffix><button  type="button" class="password-visibility" :aria-label="showPassword ? '隐藏密码' : '显示密码'" :aria-pressed="showPassword" @click="showPassword = !showPassword"><el-icon aria-hidden="true"><View /></el-icon></button></template></el-input>
           </el-form-item>
 
           <el-form-item label="确认密码" prop="confirmPassword" for="register-confirmPassword">
-            <el-input :type="showConfirmPassword ? 'text' : 'password'" autocomplete="new-password" id="register-confirmPassword" aria-label="确认密码" v-model="registerForm.confirmPassword" placeholder="请再次输入密码"><template #suffix><button  type="button" class="password-visibility" :aria-label="showConfirmPassword ? '隐藏确认密码' : '显示确认密码'" :aria-pressed="String(showConfirmPassword)" @click="showConfirmPassword = !showConfirmPassword"><el-icon aria-hidden="true"><View /></el-icon></button></template></el-input>
+            <el-input :type="showConfirmPassword ? 'text' : 'password'" autocomplete="new-password" id="register-confirmPassword" aria-label="确认密码" v-model="registerForm.confirmPassword" placeholder="请再次输入密码"><template #suffix><button  type="button" class="password-visibility" :aria-label="showConfirmPassword ? '隐藏确认密码' : '显示确认密码'" :aria-pressed="showConfirmPassword" @click="showConfirmPassword = !showConfirmPassword"><el-icon aria-hidden="true"><View /></el-icon></button></template></el-input>
           </el-form-item>
 
           <el-form-item label="联系地址" prop="familyAddress" for="register-familyAddress">
@@ -74,11 +74,11 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { View } from '@element-plus/icons-vue'
 import { onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, type FormInstance, type FormItemRule } from 'element-plus'
 import { apiErrorMessage } from '../api/httpContract'
 import { invitations } from '../api/invitations'
 
@@ -98,18 +98,18 @@ const registerForm = reactive({
   code: '', familyName: '', familyRelation: '', familySex: '男',
   familyPhone: '', familyPassword: '', confirmPassword: '', familyAddress: ''
 })
-const registerFormRef = ref(null)
-function checkPhone(_rule, value, callback) {
+const registerFormRef = ref<FormInstance | null>(null)
+const checkPhone: NonNullable<FormItemRule['validator']> = (_rule, value, callback) => {
   if (!value) return callback(new Error('手机号不能为空'))
-  if (!/^1\d{10}$/.test(value)) return callback(new Error('手机号格式不正确'))
+  if (!/^1\d{10}$/.test(String(value))) return callback(new Error('手机号格式不正确'))
   callback()
 }
-function checkConfirm(_rule, value, callback) {
+const checkConfirm: NonNullable<FormItemRule['validator']> = (_rule, value, callback) => {
   if (!value) return callback(new Error('请再次输入密码'))
   if (value !== registerForm.familyPassword) return callback(new Error('两次输入的密码不一致'))
   callback()
 }
-function checkPasswordComplexity(_rule, value, callback) {
+const checkPasswordComplexity: NonNullable<FormItemRule['validator']> = (_rule, value, callback) => {
   if (value && (!/[a-zA-Z]/.test(value) || !/\d/.test(value))) {
     return callback(new Error('密码必须同时包含字母和数字'))
   }
@@ -154,7 +154,7 @@ async function checkCode() {
     if (data.returnCode === '1111') {
       codeOk.value = true
       verifiedCode.value = code
-      codeMessage.value = '邀请码有效，绑定老人：' + data.residentName +
+      codeMessage.value = '邀请码有效，绑定老人：' + data.oldPersonName +
         (data.remainDays === -1 ? '（长期有效）' : '（剩余 ' + data.remainDays + ' 天）')
     } else {
       codeMessage.value = data.message || '邀请码无效'
@@ -187,7 +187,7 @@ async function submitForm() {
       void checkCode()
       return
     }
-    ElMessage({ type: 'success', message: '注册成功！已绑定老人：' + data.residentName + '，请使用手机号登录' })
+    ElMessage({ type: 'success', message: '注册成功！已绑定老人：' + data.oldPersonName + '，请使用手机号登录' })
     localStorage.setItem('login_phone', registerForm.familyPhone)
     await router.push('/sign-in')
   } catch (error) {

@@ -3,13 +3,14 @@ import axios, { type AxiosError } from 'axios'
 import { ElMessage } from 'element-plus'
 import { apiErrorMessage, assertApiResponse, isApplicationAPI } from './api/httpContract'
 import store from './store'
+import { isRestrictedAdmin } from './domain/permissions'
 
 export interface SessionAccount {
   role: 'ADMIN' | 'FAMILY'
   id?: number | string
   duty?: 'supervisor' | 'caregiver' | 'auditor' | string
   displayName?: string
-  residentId?: number | string
+  oldId?: number | string
   phone?: string
 }
 export interface SessionState {
@@ -30,7 +31,7 @@ export const authState = reactive<SessionState>({
 let loaded = false
 let pending: Promise<SessionAccount | null> | null = null
 let sessionGeneration = 0
-const profileKeys = ['token', 'user_name', 'residentIdfamily', 'familyPhone', 'familyTouPic']
+const profileKeys = ['token', 'user_name', 'oldIdfamily', 'familyPhone', 'familyTouPic']
 
 function clearProfile () {
   for (const key of profileKeys) {
@@ -70,7 +71,7 @@ export function loadSession (refresh = false): Promise<SessionAccount | null> {
       String(previousAccount.id ?? '') !== String(nextAccount.id ?? '') ||
       previousAccount.role !== nextAccount.role ||
       previousAccount.phone !== nextAccount.phone ||
-      String(previousAccount.residentId ?? '') !== String(nextAccount.residentId ?? '') ||
+      String(previousAccount.oldId ?? '') !== String(nextAccount.oldId ?? '') ||
       previousAccount.duty !== nextAccount.duty
     )
     if (!nextAccount || identityChanged) store.clearTabs()
@@ -118,7 +119,7 @@ export function installHttpSecurity (router: { currentRoute: { value: { path: st
     if (error.response?.status === 403 && error.response.data?.code === 'ACCESS_DENIED' && authState.account?.role === 'ADMIN') {
       // Refresh changed permissions without replaying the rejected write.
       loadSession(true).then(account => {
-        if (account?.role === 'ADMIN' && ['caregiver', 'auditor'].includes(account.duty || '') && !['/operations/overview', '/operations'].includes(router.currentRoute.value.path)) {
+        if (isRestrictedAdmin(account) && !['/operations/overview', '/operations'].includes(router.currentRoute.value.path)) {
           router.replace?.('/operations/overview')
         }
       }).catch(() => {})

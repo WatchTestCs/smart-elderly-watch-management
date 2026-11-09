@@ -6,9 +6,9 @@ import { accepted, apiPath } from '@/api/client'
 const response = (data: unknown) => ({ data, status: 200, config: { url: '/api/v1/guardians/list' } }) as AxiosResponse
 
 it('accepts the common success envelope and rejects missing or failed results', () => {
-  const success = response({ returnCode: '1111', guardians: [], total: 0 })
+  const success = response({ returnCode: '1111', customers: [], total: 0 })
   expect(assertApiResponse(success)).toBe(success)
-  expect(() => assertApiResponse(response({ guardians: [] }))).toThrow('服务响应格式错误')
+  expect(() => assertApiResponse(response({ customers: [] }))).toThrow('服务响应格式错误')
   expect(() => assertApiResponse(response({ returnCode: '0000', code: 'CONFLICT', message: '绑定已变化' }))).toThrow('绑定已变化')
 })
 

@@ -57,7 +57,7 @@ impl LocalRun {
         json_line(&mut self.records, &frame)?;
         if self.previous_scene != Some(scene) && (scene.asks_sos() || scene.emits_alarm()) {
             self.event_count += 1;
-            let event = json!({"kind":scene.code(),"eventId":uuid::Uuid::new_v4().simple().to_string(),"at":payload.event_time,"lng":payload.lng,"lat":payload.lat,"mode":"local"});
+            let event = json!({"kind":scene.code(),"eventId":uuid::Uuid::new_v4().simple().to_string(),"at":payload.be_time,"lng":payload.lng,"lat":payload.lat,"mode":"local"});
             json_line(&mut self.events, &event)?;
             if self.recent_events.len() == 20 {
                 self.recent_events.pop_front();
@@ -68,7 +68,7 @@ impl LocalRun {
         if self.history.len() == 120 {
             self.history.pop_front();
         }
-        self.history.push_back(json!({"at":payload.event_time,"hr":payload.hr,"bp":payload.bp,"lng":payload.lng,"lat":payload.lat}));
+        self.history.push_back(json!({"at":payload.be_time,"hr":payload.hr,"bp":payload.bp,"lng":payload.lng,"lat":payload.lat}));
         let mut latest = frame;
         latest["eventCount"] = json!(self.event_count);
         write_snapshot(

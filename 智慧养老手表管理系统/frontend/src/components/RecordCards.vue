@@ -1,8 +1,8 @@
 <template>
   <section class="admin-record-list" :aria-label="label">
     <div v-if="!records.length" class="care-empty-state" role="status"><strong>{{ emptyTitle }}</strong><span>记录会显示在这里，可调整搜索条件后重试。</span></div>
-    <article v-for="(row, index) in records" :key="row[keyField] == null ? index : row[keyField]" class="admin-record">
-      <header><h2>{{ row[titleKey] || '记录' }}</h2><span v-if="timeKey && row[timeKey]">{{ row[timeKey] }}</span></header>
+    <article v-for="(row, index) in records" :key="recordKey(row, keyField, index)" class="admin-record">
+      <header><h2>{{ valueAt(row, titleKey) || '记录' }}</h2><span v-if="timeKey && valueAt(row, timeKey)">{{ valueAt(row, timeKey) }}</span></header>
       <dl><template v-for="field in primaryFields" :key="field.key"><dt>{{ field.label }}</dt><dd :class="stateClass(row, field)">{{ valueOf(row, field) }}</dd></template></dl>
       <details v-if="extraFields.length" class="record-more"><summary>更多资料</summary><dl><template v-for="field in extraFields" :key="field.key"><dt>{{ field.label }}</dt><dd :class="stateClass(row, field)">{{ valueOf(row, field) }}</dd></template></dl></details>
       <div v-if="slots.actions" class="record-actions"><slot name="actions" v-bind="{ row: row, $index: index }"></slot></div>
@@ -10,7 +10,7 @@
   </section>
 </template>
 
-<script setup lang="ts" generic="TRecord extends Record<string, any>">
+<script setup lang="ts" generic="TRecord extends object">
 import { computed, useSlots } from 'vue'
 
 interface RecordField {
@@ -31,18 +31,25 @@ const props = withDefaults(defineProps<{
 }>(), {
   emptyTitle: '暂无记录',
   titleKey: 'name',
-  keyField: 'residentId',
+  keyField: 'oldId',
   timeKey: ''
 })
-defineSlots<{ actions(props: { row: TRecord; $index: number }): any }>()
+defineSlots<{ actions(props: { row: TRecord; $index: number }): unknown }>()
 const slots = useSlots()
 const primaryFields = computed(() => props.fields.slice(0, 4))
 const extraFields = computed(() => props.fields.slice(4))
+function valueAt(row: TRecord, key: string): unknown {
+  return (row as Record<string, unknown>)[key]
+}
+function recordKey(row: TRecord, key: string, index: number): string | number {
+  const value = valueAt(row, key)
+  return typeof value === 'string' || typeof value === 'number' ? value : index
+}
 function valueOf(row: TRecord, field: RecordField): unknown {
-  const value = row[field.key]
+  const value = valueAt(row, field.key)
   if (field.state) {
     if (value === 1 || value === '1') return field.state === 'fall' ? '紧急告警' : '异常'
-    if (field.handled && (row[field.handled] === 1 || row[field.handled] === '1')) return '已处理'
+    if (field.handled && (valueAt(row, field.handled) === 1 || valueAt(row, field.handled) === '1')) return '已处理'
     if (value === 0 || value === '0') return field.state === 'fall' ? '未告警/已处理' : '正常'
     return '暂无状态'
   }
@@ -50,9 +57,9 @@ function valueOf(row: TRecord, field: RecordField): unknown {
 }
 function stateClass(row: TRecord, field: RecordField): string {
   if (!field.state) return ''
-  if (row[field.key] === 1 || row[field.key] === '1') return 'status-danger'
-  if (field.handled && (row[field.handled] === 1 || row[field.handled] === '1')) return 'status-handled'
-  return row[field.key] === 0 || row[field.key] === '0' ? 'status-normal' : 'status-unknown'
+  if (valueAt(row, field.key) === 1 || valueAt(row, field.key) === '1') return 'status-danger'
+  if (field.handled && (valueAt(row, field.handled) === 1 || valueAt(row, field.handled) === '1')) return 'status-handled'
+  return valueAt(row, field.key) === 0 || valueAt(row, field.key) === '0' ? 'status-normal' : 'status-unknown'
 }
 </script>
 

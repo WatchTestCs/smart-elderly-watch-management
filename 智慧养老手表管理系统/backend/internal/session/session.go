@@ -18,7 +18,7 @@ type Principal struct {
 	Role             string // ADMIN or FAMILY; empty for an anonymous session.
 	ID               int64
 	Phone            string
-	ResidentID       int64
+	OldID            int64
 	DisplayName      string
 	FactorGeneration string
 }

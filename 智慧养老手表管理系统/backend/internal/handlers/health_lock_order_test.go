@@ -11,6 +11,7 @@ import (
 	"time"
 
 	dbstore "suining-care/internal/db"
+	"suining-care/internal/devicecredential"
 	"suining-care/internal/health"
 )
 
@@ -188,7 +189,7 @@ func TestLateHealthDeviceLockRejectsConcurrentUnbind(t *testing.T) {
 	// Simulate a rebind event while the health write is uncommitted but has not
 	// acquired the device lock. The late path MUST abort upon epoch mismatch.
 	updateCtx, stopUpdate := context.WithTimeout(ctx, time.Second)
-	_, err = pool.Exec(updateCtx, "UPDATE device SET resident_id=NULL WHERE device_id=1")
+	_, err = pool.Exec(updateCtx, "UPDATE device SET old_id=NULL WHERE device_id=1")
 	stopUpdate()
 	if err != nil {
 		release()
@@ -246,7 +247,7 @@ func TestLateHealthDeviceLockRejectsConcurrentCredentialChanges(t *testing.T) {
 			}
 			var args []any
 			if tc.rotate {
-				hash, err := secretHash("another-test-secret-123456789012")
+				hash, err := devicecredential.Hash("another-test-secret-123456789012")
 				if err != nil {
 					release()
 					t.Fatal(err)
@@ -326,7 +327,7 @@ func TestBulkPreparationRevalidatesConcurrentDeviceChanges(t *testing.T) {
 	}{
 		{"rotation", "UPDATE device SET secret=$1 WHERE device_id=1", 401, "DEVICE_AUTH_FAILED"},
 		{"disabled", "UPDATE device SET status=0 WHERE device_id=1", 403, "DEVICE_DISABLED"},
-		{"unbind", "UPDATE device SET resident_id=NULL WHERE device_id=1", 409, ""},
+		{"unbind", "UPDATE device SET old_id=NULL WHERE device_id=1", 409, ""},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			pool := testDatabase(t)
@@ -345,7 +346,7 @@ func TestBulkPreparationRevalidatesConcurrentDeviceChanges(t *testing.T) {
 			defer holder.Rollback(context.Background())
 			var args []any
 			if tc.name == "rotation" {
-				hash, err := secretHash("another-test-secret-123456789012")
+				hash, err := devicecredential.Hash("another-test-secret-123456789012")
 				if err != nil {
 					t.Fatal(err)
 				}

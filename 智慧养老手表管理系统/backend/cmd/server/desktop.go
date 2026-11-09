@@ -12,27 +12,32 @@ package main
 import (
 	"fmt"
 	"log"
+	"net"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"time"
 )
 
 // applyDesktopEnv 把桌面端环境变量折叠进监听地址与图片目录，返回就绪文件与父 PID。
 func applyDesktopEnv(addr, imageDir string) (newAddr, newImageDir, readyFile string, parentPid int) {
 	newAddr, newImageDir = addr, imageDir
-	if p := os.Getenv("SUINING_PORT"); p != "" {
-		bind := os.Getenv("SUINING_BIND_ADDRESS")
+	if p := strings.TrimSpace(os.Getenv("SUINING_PORT")); p != "" {
+		bind := strings.TrimSpace(os.Getenv("SUINING_BIND_ADDRESS"))
 		if bind == "" {
 			bind = "127.0.0.1"
 		}
-		newAddr = bind + ":" + p
+		newAddr = net.JoinHostPort(strings.Trim(bind, "[]"), p)
 	}
 	if d := os.Getenv("SUINING_DATA_DIR"); d != "" && os.Getenv("IMAGE_DIR") == "" {
 		newImageDir = filepath.Join(d, "images")
 	}
 	readyFile = os.Getenv("SUINING_READY_FILE")
-	if s := os.Getenv("SUINING_PARENT_PID"); s != "" {
-		fmt.Sscanf(s, "%d", &parentPid)
+	if s := strings.TrimSpace(os.Getenv("SUINING_PARENT_PID")); s != "" {
+		if pid, err := strconv.Atoi(s); err == nil && pid > 0 {
+			parentPid = pid
+		}
 	}
 	return newAddr, newImageDir, readyFile, parentPid
 }
@@ -53,7 +58,12 @@ func writeReadyFile(path string, port int) {
 		return
 	}
 	tmpName := tmp.Name()
-	fmt.Fprintf(tmp, "{\"port\":%d,\"pid\":%d}", port, os.Getpid())
+	if _, err := fmt.Fprintf(tmp, "{\"port\":%d,\"pid\":%d}", port, os.Getpid()); err != nil {
+		_ = tmp.Close()
+		_ = os.Remove(tmpName)
+		log.Printf("readyfile: write: %v", err)
+		return
+	}
 	if err := tmp.Close(); err != nil {
 		os.Remove(tmpName)
 		log.Printf("readyfile: %v", err)

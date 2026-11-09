@@ -1,6 +1,6 @@
 <template>
   <div class="roles">
-    <div class="record-heading"><h2>最近上报记录</h2><el-button link :loading="isLoading" @click="searchposition">刷新记录 <el-icon aria-hidden="true"><Refresh /></el-icon></el-button></div>
+    <div class="record-heading"><h2>最近上报记录</h2><el-button link :loading="isLoading" @click="loadFamilyLocations">刷新记录 <el-icon aria-hidden="true"><Refresh /></el-icon></el-button></div>
 
     <el-alert v-if="loadError" :title="loadError" type="error" :closable="false" show-icon></el-alert>
     <el-table v-if="!mobileLayout" class="desktop-records" v-loading="isLoading" :data="positionList"
@@ -17,7 +17,7 @@
 	  </el-table-column>
 	  <el-table-column label="位置坐标" width="220" align="center"><template #default="scope" >{{ scope.row.lng }}，{{ scope.row.lat }}</template></el-table-column>
       <el-table-column label="定位来源与采样" width="240"><template #default="scope">{{ describePositionContext(scope.row) }}</template></el-table-column>
-	  <el-table-column prop="eventTime" label="记录时间" width="190" align="center"></el-table-column>
+	  <el-table-column prop="beTime" label="记录时间" width="190" align="center"></el-table-column>
       <el-table-column label="查看" width="170" align="center">
       	<template #default="scope" >
 
@@ -28,12 +28,12 @@
       </el-table-column>
     </el-table>
     <section v-if="mobileLayout && positionList.length" class="family-record-cards" aria-label="位置和安全记录">
-      <article v-for="item in positionList" :key="item.residentId" class="family-record-card">
+      <article v-for="item in positionList" :key="item.oldId" class="family-record-card">
         <h2>{{ item.name || '位置记录' }}</h2>
         <dl>
           <dt>安全状态</dt>
           <dd :class="item.status == 1 ? 'status-danger' : item.status == 0 ? 'status-normal' : ''">{{ item.status == 1 ? '紧急告警，请及时确认' : item.status == 0 ? '未告警/已处理' : '状态未知' }}</dd>
-          <dt>记录时间</dt><dd>{{ item.eventTime || '暂无时间信息' }}</dd>
+          <dt>记录时间</dt><dd>{{ item.beTime || '暂无时间信息' }}</dd>
           <dt>位置坐标</dt><dd>{{ item.lng }}, {{ item.lat }}</dd>
           <dt>定位来源与采样</dt><dd>{{ describePositionContext(item) }}</dd>
         </dl>
@@ -46,25 +46,33 @@
 
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { Refresh } from '@element-plus/icons-vue'
-import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
+import { computed, ref, shallowRef, onMounted, onBeforeUnmount } from 'vue'
 import { authState } from '../auth'
 import { api } from '../api/client'
 import { apiErrorMessage } from '../api/httpContract'
 import { createLatestRead } from '../composables/latestRead'
 import { useCollectionLayout } from '@/composables/useCollectionLayout'
 import PositionMap from '@/components/PositionMap.vue'
-import { describePositionContext } from '../utils/positionContext'
+import { describePositionContext, type PositionContext } from '../utils/positionContext'
 
 const mobileLayout = useCollectionLayout()
-const residentId = computed(() => String(authState.account?.residentId ?? ''))
-const positionList = ref([])
+const oldId = computed(() => String(authState.account?.oldId ?? ''))
+interface PositionRecord extends PositionContext {
+  oldId?: string | number
+  name: string
+  lng: number | string
+  lat: number | string
+  status?: string | number | null
+  beTime?: string
+}
+const positionList = shallowRef<PositionRecord[]>([])
 const isLoading = ref(false)
 const loadError = ref('')
-const selectedLocation = ref(null)
+const selectedLocation = ref<PositionRecord | null>(null)
 const reads = createLatestRead(
-  (query, signal) => api.post('api/v1/position/selectFamily', query, { signal }),
+  (query: { oldId: string }, signal: AbortSignal) => api.post<{ positionDtos?: PositionRecord[] }>('api/v1/position/selectFamily', query, { signal }),
   ({ data }) => {
     positionList.value = Array.isArray(data.positionDtos) ? data.positionDtos : []
     loadError.value = ''
@@ -75,9 +83,9 @@ const reads = createLatestRead(
   },
   loading => { isLoading.value = loading }
 )
-function searchposition() { return reads.run({ residentId: residentId.value }) }
-function showLocation(row) { selectedLocation.value = { ...row } }
-onMounted(() => { void searchposition() })
+function loadFamilyLocations() { return reads.run({ oldId: oldId.value }) }
+function showLocation(row: PositionRecord) { selectedLocation.value = { ...row } }
+onMounted(() => { void loadFamilyLocations() })
 onBeforeUnmount(reads.dispose)
 </script>
 

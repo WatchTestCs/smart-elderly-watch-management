@@ -14,7 +14,7 @@ func TestBindingRechecksDisabledDeviceAfterElderLock(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
 	h := testHandler(t, pool)
-	mustExec(t, pool, `INSERT INTO bind_code(code,resident_id,expire_time,used)
+	mustExec(t, pool, `INSERT INTO bind_code(code,old_id,expire_time,used)
 		VALUES('RACE01',1,now()+interval '1 day',0)`)
 	ctx := context.Background()
 	gate, err := pool.Begin(ctx)
@@ -23,7 +23,7 @@ func TestBindingRechecksDisabledDeviceAfterElderLock(t *testing.T) {
 	}
 	defer gate.Rollback(ctx)
 	var elderID int64
-	if err := gate.QueryRow(ctx, "SELECT resident_id FROM resident WHERE resident_id=1 FOR UPDATE").Scan(&elderID); err != nil {
+	if err := gate.QueryRow(ctx, "SELECT old_id FROM oldperson WHERE old_id=1 FOR UPDATE").Scan(&elderID); err != nil {
 		t.Fatal(err)
 	}
 	result := make(chan *httptest.ResponseRecorder, 1)

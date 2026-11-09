@@ -4,7 +4,7 @@ import { invitations } from '@/api/invitations'
 afterEach(() => vi.restoreAllMocks())
 it('preserves invitation routes, payloads and cookies', async () => {
   const post = vi.spyOn(axios, 'post').mockResolvedValue({ data: { returnCode: '1111' } })
-  const cases = [['checkCode', { code: 'abc' }], ['join', { code: 'abc' }], ['list', { page: 2, pageSize: 10, state: 'used' }], ['residentList', {}], ['create', { residentId: 7, createUser: 'operator' }], ['delete', { id: 9 }]] as const
+  const cases = [['checkCode', { code: 'abc' }], ['join', { code: 'abc' }], ['list', { page: 2, pageSize: 10, state: 'used' }], ['oldPersonList', {}], ['create', { oldId: 7, createUser: 'operator' }], ['delete', { id: 9 }]] as const
   for (const [name, body] of cases) {
     await (invitations[name] as Function)(body)
     expect(post).toHaveBeenLastCalledWith(`/api/v1/inviteCode/${name}`, body, { withCredentials: true, signal: undefined })

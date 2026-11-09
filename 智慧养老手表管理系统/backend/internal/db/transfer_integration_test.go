@@ -57,7 +57,7 @@ func testLegacyTransfer(t *testing.T, version int) {
 			t.Fatal(err)
 		}
 	}
-	for _, query := range []string{"INSERT INTO users(user_id,user_name) VALUES(7,'主管')", "INSERT INTO resident(resident_id,name) VALUES(11,'长者')", "INSERT INTO device(device_id,device_no,secret,resident_id) VALUES(5,'IMPORT','hashed-secret',11)", "UPDATE resident SET device_id=5 WHERE resident_id=11", "INSERT INTO ratepre(id,device_id,resident_id,hr,bp) VALUES(9,5,11,72,NULL)"} {
+	for _, query := range []string{"INSERT INTO users(user_id,user_name) VALUES(7,'主管')", "INSERT INTO oldperson(old_id,name) VALUES(11,'长者')", "INSERT INTO device(device_id,device_no,secret,old_id) VALUES(5,'IMPORT','hashed-secret',11)", "UPDATE oldperson SET device_id=5 WHERE old_id=11", "INSERT INTO ratepre(id,device_id,old_id,hr,bp) VALUES(9,5,11,72,NULL)"} {
 		if _, err = source.Exec(ctx, query); err != nil {
 			t.Fatal(err)
 		}
@@ -65,14 +65,14 @@ func testLegacyTransfer(t *testing.T, version int) {
 	if version >= 7 {
 		payload := `{"recordId":"imported","source":"watch","sourceDevice":"IMPORT","metric":"heart_rate","unit":"count/min","value":72,"start":"2026-10-19T09:00:00+08:00","end":"2026-10-19T09:00:00+08:00","semantics":"instant","version":2}`
 		id := strings.Repeat("a", 64)
-		query := "INSERT INTO health_sample(sample_id,resident_id,device_id,epoch,version,revision,payload) VALUES($1,11,5,3,2,4,$2)"
+		query := "INSERT INTO health_sample(sample_id,old_id,device_id,epoch,version,revision,payload) VALUES($1,11,5,3,2,4,$2)"
 		if version == 8 {
-			query = "INSERT INTO health_sample(sample_id,resident_id,device_id,epoch,version,revision,payload,source,source_device,metric,semantics,sample_start,sample_end,deleted) VALUES($1,11,5,3,2,4,$2,'watch','IMPORT','heart_rate','instant',1792371600000000,1792371600000000,false)"
+			query = "INSERT INTO health_sample(sample_id,old_id,device_id,epoch,version,revision,payload,source,source_device,metric,semantics,sample_start,sample_end,deleted) VALUES($1,11,5,3,2,4,$2,'watch','IMPORT','heart_rate','instant',1792371600000000,1792371600000000,false)"
 		}
 		if _, err = source.Exec(ctx, query, id, payload); err != nil {
 			t.Fatal(err)
 		}
-		if _, err = source.Exec(ctx, "UPDATE health_clock SET revision=4; UPDATE device SET resident_id=NULL; UPDATE device SET resident_id=11"); err != nil {
+		if _, err = source.Exec(ctx, "UPDATE health_clock SET revision=4; UPDATE device SET old_id=NULL; UPDATE device SET old_id=11"); err != nil {
 			t.Fatal(err)
 		}
 		if _, err = source.Exec(ctx, "INSERT INTO health_change VALUES(4,11,$1,$2)", id, payload); err != nil {
@@ -93,7 +93,7 @@ func testLegacyTransfer(t *testing.T, version int) {
 	var nameRead string
 	var hr int
 	var bp *int
-	if err = target.QueryRow(ctx, "SELECT name FROM resident WHERE resident_id=11").Scan(&nameRead); err != nil || nameRead != "长者" {
+	if err = target.QueryRow(ctx, "SELECT name FROM oldperson WHERE old_id=11").Scan(&nameRead); err != nil || nameRead != "长者" {
 		t.Fatalf("identity lost: %s %v", nameRead, err)
 	}
 	if err = target.QueryRow(ctx, "SELECT hr,bp FROM ratepre WHERE id=9").Scan(&hr, &bp); err != nil || hr != 72 || bp != nil {

@@ -7,15 +7,15 @@ vi.mock('@/api/client', () => ({ api: { post: mock.post } }))
 import { usePagedRecords } from '@/composables/usePagedRecords'
 
 it('uses the server page contract and unwrapped response, then preserves page on navigation', async () => {
-  const row = { residentId: 7, name: '测试长者' }
-  mock.post.mockResolvedValue({ data: { returnCode: '1111', residents: [row], total: 25 } })
-  let state!: ReturnType<typeof usePagedRecords<{ residentId: number; name: string }, { name: string }>>
+  const row = { oldId: 7, name: '测试长者' }
+  mock.post.mockResolvedValue({ data: { returnCode: '1111', oldPeople: [row], total: 25 } })
+  let state!: ReturnType<typeof usePagedRecords<{ oldId: number; name: string }, { name: string }>>
   const wrapper = mount(defineComponent({
     setup() {
       const searchText = ref('张')
-      state = usePagedRecords<{ residentId: number; name: string }, { name: string }>({
+      state = usePagedRecords<{ oldId: number; name: string }, { name: string }>({
         path: 'api/v1/residents/list',
-        responseKey: 'residents',
+        responseKey: 'oldPeople',
         buildQuery: () => ({ name: searchText.value })
       })
       return () => null
@@ -78,5 +78,30 @@ it('does not loop when the server returns an empty first page', async () => {
   await flushPromises()
   expect(state.currentPage.value).toBe(1)
   expect(post).toHaveBeenCalledTimes(1) // 这一次就是自加载，没有二次回退请求
+  wrapper.unmount()
+})
+
+it('returns to page one after deleting the final record in a collection', async () => {
+  mock.post.mockReset()
+  mock.post.mockResolvedValue({ data: { items: [], total: 0 } })
+  let state!: ReturnType<typeof usePagedRecords<{ id: number }>>
+  const wrapper = mount(defineComponent({
+    setup() {
+      state = usePagedRecords<{ id: number }>({ path: 'api/v1/x', responseKey: 'items' })
+      return () => null
+    }
+  }))
+  await flushPromises()
+
+  mock.post.mockReset()
+  mock.post.mockResolvedValue({ data: { items: [], total: 0 } })
+  state.currentPage.value = 2
+  await state.load(true)
+  await flushPromises()
+
+  expect(mock.post.mock.calls.map(call => call[1].page)).toEqual([2, 1])
+  expect(state.currentPage.value).toBe(1)
+  expect(state.total.value).toBe(0)
+  expect(state.records.value).toEqual([])
   wrapper.unmount()
 })

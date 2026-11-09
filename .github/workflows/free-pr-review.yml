@@ -1,44 +1,48 @@
-name: Free PR code review
+name: Go static checks
 
 on:
   pull_request:
     branches: [preview]
     paths:
       - '智慧养老手表管理系统/backend/**'
-      - '.github/workflows/free-pr-review.yml'
+      - '.github/workflows/**'
   workflow_dispatch:
 
 permissions:
   contents: read
-  checks: write
 
 concurrency:
-  group: free-review-${{ github.event.pull_request.number || github.ref }}
+  group: go-static-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  go-review:
-    name: Reviewdog / Go lint
-    # Fork PRs do not receive write-scoped tokens. Skip them rather than
-    # executing untrusted code with a privileged checks token.
-    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+  go-static:
+    name: Go static checks
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - name: Checkout PR
+      - name: Checkout exact PR head
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
 
-      - name: Annotate new Go issues
-        uses: reviewdog/action-golangci-lint@c76cceaaab89abe74e649d2e34c6c9adc26662d2 # v2.10.0
+      - name: Set up Go
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
-          github_token: ${{ github.token }}
-          workdir: '智慧养老手表管理系统/backend'
-          go_version_file: '智慧养老手表管理系统/backend/go.mod'
-          reporter: github-pr-check
-          filter_mode: added
-          level: warning
-          fail_level: none
-          golangci_lint_flags: '--timeout=5m ./...'
+          go-version-file: '智慧养老手表管理系统/backend/go.mod'
+          cache-dependency-path: '智慧养老手表管理系统/backend/go.sum'
+
+      - name: Lint GitHub Actions workflows
+        run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12 -shellcheck=
+
+      - name: Verify formatting and vet
+        working-directory: '智慧养老手表管理系统/backend'
+        run: |
+          set -euo pipefail
+          unformatted="$(gofmt -l ./cmd ./internal ./migrations)"
+          if [ -n "$unformatted" ]; then
+            printf 'Go files requiring gofmt:\n%s\n' "$unformatted"
+            exit 1
+          fi
+          go vet ./...

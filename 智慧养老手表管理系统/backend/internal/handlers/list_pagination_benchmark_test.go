@@ -23,19 +23,19 @@ func BenchmarkListPagination(b *testing.B) {
 				b.Fatal(err)
 			}
 			for start := 1; start <= count; start += 100 {
-				var guardians, elders, texts []string
+				var customers, elders, texts []string
 				for id := start; id < start+100 && id <= count; id++ {
 					name, familyID := "other", 2
 					if id%37 == 0 {
 						name, familyID = "selected", 1
 					}
-					guardians = append(guardians, fmt.Sprintf("(%d,'%s')", id, name))
+					customers = append(customers, fmt.Sprintf("(%d,'%s')", id, name))
 					elders = append(elders, fmt.Sprintf("(%d,'%s',%d)", id, name, familyID))
 					texts = append(texts, fmt.Sprintf("(%d,'%s','%s','2026-10-19 08:01:02.123')", id, name, strings.Repeat("x", 512)))
 				}
 				for _, query := range []string{
-					"INSERT INTO guardian(guardian_id,guardian_name) VALUES" + strings.Join(guardians, ","),
-					"INSERT INTO resident(resident_id,name,family_id) VALUES" + strings.Join(elders, ","),
+					"INSERT INTO customer(customer_id,customer_name) VALUES" + strings.Join(customers, ","),
+					"INSERT INTO oldperson(old_id,name,family_id) VALUES" + strings.Join(elders, ","),
 					"INSERT INTO text(text_id,title,text_main,time) VALUES" + strings.Join(texts, ","),
 				} {
 					if _, err := pool.Exec(ctx, query); err != nil {
@@ -48,7 +48,7 @@ func BenchmarkListPagination(b *testing.B) {
 				name, key, filterKey string
 				handler              http.HandlerFunc
 			}{
-				{"guardian", "guardians", "guardianName", h.listGuardians},
+				{"customer", "customers", "customerName", h.listGuardians},
 				{"family", "familyDtos", "familyName", h.familySelect},
 				{"text", "texts", "title", h.listNotices},
 			} {

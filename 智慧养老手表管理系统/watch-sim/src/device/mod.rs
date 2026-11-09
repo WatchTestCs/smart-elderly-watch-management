@@ -18,7 +18,7 @@ pub use self::failure::Failure;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Binding {
-    pub resident_id: i64,
+    pub old_id: i64,
     pub old_name: String,
     /// 绑定版本（后端 `device.health_epoch`）。重绑后会变。
     pub version: i64,

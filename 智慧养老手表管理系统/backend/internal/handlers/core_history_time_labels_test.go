@@ -12,26 +12,26 @@ func historyLabelsHandler(t *testing.T) *Handler {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
 	mustExec(t, pool, "INSERT INTO family(family_id,family_phone) VALUES(1,'13800000001')")
-	mustExec(t, pool, "UPDATE resident SET device_id=1,family_id=1 WHERE resident_id=1")
+	mustExec(t, pool, "UPDATE oldperson SET device_id=1,family_id=1 WHERE old_id=1")
 	return testHandler(t, pool)
 }
 
 func TestContinuousVitalHistoryLabelsKeepFullObservationTime(t *testing.T) {
 	h := historyLabelsHandler(t)
-	roles := []session.Principal{{Role: auth.RoleAdmin, ID: 1}, {Role: auth.RoleFamily, ID: 1, ResidentID: 1}}
+	roles := []session.Principal{{Role: auth.RoleAdmin, ID: 1}, {Role: auth.RoleFamily, ID: 1, OldID: 1}}
 	read := withHealthPrincipal(h, roles[0], h.getVitalChart)
-	empty := api(t, read, map[string]any{"residentId": 1})
+	empty := api(t, read, map[string]any{"oldId": 1})
 	if empty["time"] != "" || len(empty["createTimes"].([]any)) != 0 {
 		t.Fatalf("empty history invented a time: %v", empty)
 	}
 	report := func(at string, fields map[string]any) {
-		fields["deviceNo"], fields["secret"], fields["eventTime"] = "WATCH001", testSecret, at
+		fields["deviceNo"], fields["secret"], fields["beTime"] = "WATCH001", testSecret, at
 		api(t, h.deviceReport, fields)
 	}
 	check := func(times, hrs, bps []any, title string) {
 		t.Helper()
 		for _, principal := range roles {
-			out := api(t, withHealthPrincipal(h, principal, h.getVitalChart), map[string]any{"residentId": 1})
+			out := api(t, withHealthPrincipal(h, principal, h.getVitalChart), map[string]any{"oldId": 1})
 			if !reflect.DeepEqual(out["createTimes"], times) || !reflect.DeepEqual(out["hrs"], hrs) || !reflect.DeepEqual(out["bps"], bps) || out["time"] != title {
 				t.Errorf("role=%s chart times or metric alignment incorrect: %v", principal.Role, out)
 			}
@@ -54,12 +54,12 @@ func TestContinuousSleepHistoryLabelsKeepFullCalendarDate(t *testing.T) {
 		at     string
 		fields map[string]any
 	}{{"2026-09-30 08:00:00", map[string]any{"sleep": 8}}, {"2026-10-01 08:00:00", map[string]any{"sleep": 7}}, {"2025-12-31 08:00:00", map[string]any{"sleep": 0}}, {"2026-01-01 08:00:00", map[string]any{"step": 100}}} {
-		point.fields["deviceNo"], point.fields["secret"], point.fields["eventTime"] = "WATCH001", testSecret, point.at
+		point.fields["deviceNo"], point.fields["secret"], point.fields["beTime"] = "WATCH001", testSecret, point.at
 		api(t, h.deviceReport, point.fields)
 	}
 	want := []any{"2025-12-31", "2026-01-01", "2026-09-30", "2026-10-01"}
-	for _, principal := range []session.Principal{{Role: auth.RoleAdmin, ID: 1}, {Role: auth.RoleFamily, ID: 1, ResidentID: 1}} {
-		out := api(t, withHealthPrincipal(h, principal, h.getActivityChart), map[string]any{"residentId": 1})
+	for _, principal := range []session.Principal{{Role: auth.RoleAdmin, ID: 1}, {Role: auth.RoleFamily, ID: 1, OldID: 1}} {
+		out := api(t, withHealthPrincipal(h, principal, h.getActivityChart), map[string]any{"oldId": 1})
 		if !reflect.DeepEqual(out["createTime"], want) || !reflect.DeepEqual(out["sleep"], []any{0.0, nil, 8.0, 7.0}) {
 			t.Errorf("role=%s sleep dates or values misaligned: %v", principal.Role, out)
 		}

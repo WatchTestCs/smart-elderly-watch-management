@@ -4,46 +4,46 @@ run(async({page,base,report,setRole,setSignedIn})=>{
  const withTimeout=(promise,ms,message)=>Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error(message)),ms))]);
  const visit=async(route,role)=>{setRole(role);setSignedIn(true);await page.goto(base+'/?lifecycle='+Date.now()+'#'+route);await page.locator('.care-app').waitFor();};
  // Exercise real Axios/XHR cancellation against held mock responses.
- let guardianMode='normal';const guardianRequests=[];
+ let customerMode='normal';const customerRequests=[];
  await page.route('**/api/v1/guardians/list',route=>{
-  guardianRequests.push(route.request());
-  if(guardianMode==='hold')return;
-  if(guardianMode==='error')return route.fulfill({status:503,json:{returnCode:'0000',code:'SERVICE_UNAVAILABLE',message:'请求未完成',}});
-  return route.fulfill({json:{returnCode:'1111',guardians:[{guardianId:1,guardianName:'F02当前监护人',guardianPhone:'19912345678',guardianAge:70}],total:1}});
+  customerRequests.push(route.request());
+  if(customerMode==='hold')return;
+  if(customerMode==='error')return route.fulfill({status:503,json:{returnCode:'0000',code:'SERVICE_UNAVAILABLE',message:'请求未完成',}});
+  return route.fulfill({json:{returnCode:'1111',customers:[{customerId:1,customerName:'F02当前监护人',customerPhone:'19912345678',customerAge:70}],total:1}});
  });
  await visit('/operations/guardians','ADMIN');
  await page.getByText('F02当前监护人',{exact:true}).first().waitFor();
- const searchGuardian=async(name)=>{
+ const searchCustomer=async(name)=>{
   await page.getByLabel('监护人姓名',{exact:true}).fill(name);
-  const requested=page.waitForRequest(r=>r.url().endsWith('/api/v1/guardians/list')&&r.postDataJSON().guardianName===name);
+  const requested=page.waitForRequest(r=>r.url().endsWith('/api/v1/guardians/list')&&r.postDataJSON().customerName===name);
   await page.getByRole('button',{name:'查询监护人姓名',exact:true}).click();
   return requested;
  };
- guardianMode='hold';const superseded=await searchGuardian('F02旧查询');
+ customerMode='hold';const superseded=await searchCustomer('F02旧查询');
  const canceled=page.waitForEvent('requestfailed',{predicate:r=>r===superseded});
- guardianMode='normal';await searchGuardian('F02新查询');await canceled;
+ customerMode='normal';await searchCustomer('F02新查询');await canceled;
  await page.locator('.roles[aria-busy="false"]').waitFor();
  check('New guardian query aborts a hung XHR and displays its own result',await page.getByText('F02当前监护人',{exact:true}).count()>0);
- check('Read cancellation preserves the CSRF header',guardianRequests.every(r=>r.headers()['x-csrf-token']==='mock-csrf-token'));
- guardianMode='hold';const timedOut=await searchGuardian('F02超时');
+ check('Read cancellation preserves the CSRF header',customerRequests.every(r=>r.headers()['x-csrf-token']==='mock-csrf-token'));
+ customerMode='hold';const timedOut=await searchCustomer('F02超时');
  const timeoutCanceled=page.waitForEvent('requestfailed',{predicate:r=>r===timedOut});
  await page.getByRole('alert').filter({hasText:'监护人信息暂时无法加载'}).waitFor({timeout:15000});await timeoutCanceled;
  check('Guardian timeout aborts XHR and ends loading',await page.locator('.roles').getAttribute('aria-busy')==='false');
- guardianMode='normal';await searchGuardian('F02恢复');
+ customerMode='normal';await searchCustomer('F02恢复');
  await page.getByText('F02当前监护人',{exact:true}).first().waitFor();
  check('A fresh query recovers after timeout',await page.getByRole('alert').filter({hasText:'监护人信息暂时无法加载'}).count()===0);
- guardianMode='error';await searchGuardian('F02当前错误');
+ customerMode='error';await searchCustomer('F02当前错误');
  await page.getByRole('alert').filter({hasText:'请求未完成'}).waitFor();
  check('A current HTTP failure ends loading and remains visible',await page.locator('.roles').getAttribute('aria-busy')==='false');
- guardianMode='hold';const leaving=await searchGuardian('F02离页');
+ customerMode='hold';const leaving=await searchCustomer('F02离页');
  const unmounted=page.waitForEvent('requestfailed',{predicate:r=>r===leaving});
  await page.evaluate(()=>{location.hash='/operations/overview'});await unmounted;
  await page.getByRole('heading',{name:'运营总览',exact:true}).waitFor();
- const countAfterLeaving=guardianRequests.length;await page.waitForTimeout(100);
- check('Navigation aborts the guardian read without starting a replacement',guardianRequests.length===countAfterLeaving);
+ const countAfterLeaving=customerRequests.length;await page.waitForTimeout(100);
+ check('Navigation aborts the guardian read without starting a replacement',customerRequests.length===countAfterLeaving);
  await page.unroute('**/api/v1/guardians/list');
 
- await page.route('**/api/v1/care/incidents',route=>route.fulfill({json:{returnCode:'1111',items:[{id:1,residentName:'F02照护任务',state:'received'}],total:1,duty:'supervisor',actorId:1}}));
+ await page.route('**/api/v1/care/incidents',route=>route.fulfill({json:{returnCode:'1111',items:[{id:1,oldPersonName:'F02照护任务',state:'received'}],total:1,duty:'supervisor',actorId:1}}));
  const historyRequests=[];
  await page.route('**/api/v1/care/events',route=>{historyRequests.push(route.request())});
  await visit('/operations/overview','ADMIN');await page.locator('.care-task').first().waitFor();

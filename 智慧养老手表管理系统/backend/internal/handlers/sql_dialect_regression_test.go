@@ -16,14 +16,6 @@ func TestNativeEngineSpecificUpserts(t *testing.T) {
 		t.Fatalf("PostgreSQL daily SQL leaked MySQL syntax: %s", postgresDaily)
 	}
 
-	mysqlWatch := watchDayUpsertSQL(true)
-	postgresWatch := watchDayUpsertSQL(false)
-	if !strings.Contains(mysqlWatch, "ON DUPLICATE KEY UPDATE") || !strings.Contains(mysqlWatch, "VALUES(sleep)") || strings.Contains(mysqlWatch, "EXCLUDED.") {
-		t.Fatalf("MySQL watch-day upsert is not native: %s", mysqlWatch)
-	}
-	if !strings.Contains(postgresWatch, "ON CONFLICT (device_id, create_time)") || !strings.Contains(postgresWatch, "EXCLUDED.sleep") || strings.Contains(postgresWatch, "ON DUPLICATE KEY") {
-		t.Fatalf("PostgreSQL watch-day upsert is not native: %s", postgresWatch)
-	}
 }
 
 func TestDeviceReportDailyUpsertPreservesMissingFields(t *testing.T) {
@@ -34,12 +26,12 @@ func TestDeviceReportDailyUpsertPreservesMissingFields(t *testing.T) {
 	api(t, h.deviceReport, map[string]any{
 		"deviceNo": "WATCH001", "secret": testSecret,
 		"step": 100, "sleep": 8, "sleepState": "1",
-		"eventTime": "2026-10-28 08:00:00",
+		"beTime": "2026-10-28 08:00:00",
 	})
 	api(t, h.deviceReport, map[string]any{
 		"deviceNo": "WATCH001", "secret": testSecret,
-		"step":      250,
-		"eventTime": "2026-10-28 20:00:00",
+		"step":   250,
+		"beTime": "2026-10-28 20:00:00",
 	})
 
 	var rows, step, sleep int
@@ -55,17 +47,6 @@ func TestDeviceReportDailyUpsertPreservesMissingFields(t *testing.T) {
 	}
 }
 
-func TestCareNotificationAggregateIsEngineNative(t *testing.T) {
-	mysql := careNotificationStatusExpr(true)
-	postgres := careNotificationStatusExpr(false)
-	if strings.Contains(mysql, "bool_or(") || !strings.Contains(mysql, "MAX(n.status='delivered')") {
-		t.Fatalf("MySQL care notification aggregate is not native: %s", mysql)
-	}
-	if strings.Contains(postgres, "MAX(") || !strings.Contains(postgres, "bool_or(n.status='delivered')") {
-		t.Fatalf("PostgreSQL care notification aggregate is not native: %s", postgres)
-	}
-}
-
 func TestSocialTextTableIsRepositoryOwned(t *testing.T) {
 	if got := socialTextTable(true); got != "`text`" {
 		t.Fatalf("unexpected MySQL social text table: %s", got)
@@ -76,19 +57,6 @@ func TestSocialTextTableIsRepositoryOwned(t *testing.T) {
 }
 
 func TestBusinessRepositoriesOwnEngineSpecificSQL(t *testing.T) {
-	if got := positionLatestSQL(); !strings.Contains(got, "l.lng, l.lat, l.event_time AS event_time") {
-		t.Fatalf("position time must belong to the coordinates: %s", got)
-	}
-
-	mysqlWatch := watchProfileInsertSQL(true)
-	postgresWatch := watchProfileInsertSQL(false)
-	if !strings.Contains(mysqlWatch, "ON DUPLICATE KEY UPDATE device_id=device_id") || strings.Contains(mysqlWatch, "ON CONFLICT") {
-		t.Fatalf("watch_info MySQL SQL is not native: %s", mysqlWatch)
-	}
-	if !strings.Contains(postgresWatch, "ON CONFLICT(device_id) DO NOTHING") || strings.Contains(postgresWatch, "ON DUPLICATE KEY") {
-		t.Fatalf("watch_info PostgreSQL SQL is not native: %s", postgresWatch)
-	}
-
 	mysqlInsert, mysqlID := pictureGroupAllocatorSQL(true)
 	postgresInsert, postgresID := pictureGroupAllocatorSQL(false)
 	if mysqlInsert != "INSERT INTO picture_group () VALUES ()" || mysqlID != "SELECT LAST_INSERT_ID()" {

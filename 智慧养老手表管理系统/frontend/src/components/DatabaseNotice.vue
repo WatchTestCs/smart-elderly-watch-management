@@ -4,7 +4,7 @@
   <slot v-else />
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { authState } from '../auth'
 </script>
 

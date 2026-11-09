@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"suining-care/internal/db"
 	"suining-care/internal/securestore"
 	"sync"
@@ -35,7 +36,7 @@ func (d *Worker) tick(ctx context.Context) (bool, error) {
 // drain separate SKIP LOCKED batches while slow HTTP requests are in flight.
 // The default preserves the existing single-worker deployment behavior.
 func drainConcurrency() int {
-	n, err := strconv.Atoi(os.Getenv("NOTIFY_DRAIN_CONCURRENCY"))
+	n, err := strconv.Atoi(strings.TrimSpace(os.Getenv("NOTIFY_DRAIN_CONCURRENCY")))
 	if err != nil || n < 1 || n > 8 {
 		return 1
 	}
@@ -48,7 +49,7 @@ func Run(ctx context.Context, pool *db.Database, box *securestore.Box) {
 	transport.MaxIdleConnsPerHost = 64
 	transport.MaxConnsPerHost = 64
 	defer transport.CloseIdleConnections()
-	d := Worker{DB: pool, Box: box, URL: os.Getenv("NOTIFY_WEBHOOK_URL"), BulkURL: os.Getenv("NOTIFY_BULK_WEBHOOK_URL"), Token: os.Getenv("NOTIFY_WEBHOOK_TOKEN"), Client: &http.Client{Timeout: 10 * time.Second, Transport: transport}}
+	d := Worker{DB: pool, Box: box, URL: strings.TrimSpace(os.Getenv("NOTIFY_WEBHOOK_URL")), BulkURL: strings.TrimSpace(os.Getenv("NOTIFY_BULK_WEBHOOK_URL")), Token: os.Getenv("NOTIFY_WEBHOOK_TOKEN"), Client: &http.Client{Timeout: 10 * time.Second, Transport: transport}}
 	var workers sync.WaitGroup
 	for range drainConcurrency() {
 		workers.Go(func() {
@@ -64,7 +65,7 @@ func Run(ctx context.Context, pool *db.Database, box *securestore.Box) {
 					processed, err := d.Drain(cycle, 512)
 					if err != nil {
 						if cycle.Err() == nil {
-							slog.Warn("message_outbox_cycle_failed")
+							slog.Warn("message_outbox_cycle_failed", "error", err)
 						}
 						break
 					}

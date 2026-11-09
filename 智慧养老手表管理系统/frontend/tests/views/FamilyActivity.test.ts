@@ -10,7 +10,7 @@ it.each([
   [null, '暂无数据'],
   [undefined, '暂无数据']
 ])('distinguishes reported sleep %s from missing data in family cards', async (sleep, expected) => {
-  vi.spyOn(axios, 'post').mockResolvedValue({ data: { activityRecords: [{ residentId: 1, name: '长者', step: 0, sleep }] } })
+  vi.spyOn(axios, 'post').mockResolvedValue({ data: { activityRecords: [{ oldId: 1, name: '长者', step: 0, sleep }] } })
   const view = shallowMount(FamilyActivity, {
     global: {
       stubs: { ElTable: true, ElTableColumn: true, ElButton: true, ElAlert: true, ElDialog: true },

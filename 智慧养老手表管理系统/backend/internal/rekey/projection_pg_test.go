@@ -97,7 +97,7 @@ func TestProjectionRekeyPostgres(t *testing.T) {
 		return value
 	}
 	payload := func(lng, lat any) string {
-		b, _ := json.Marshal(map[string]any{"lng": lng, "lat": lat, "source": "gps", "resident_id": 7, "future": 1})
+		b, _ := json.Marshal(map[string]any{"lng": lng, "lat": lat, "source": "gps", "old_id": 7, "future": 1})
 		return string(b)
 	}
 	oldLng, oldLat := sealed(t, old, "113.123", "location"), sealed(t, old, "28.123", "location")

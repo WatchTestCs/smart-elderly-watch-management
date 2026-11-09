@@ -4,7 +4,7 @@ const load = require('./load-ets.cjs');
 const p = load('model/Protocol');
 const { NativeSampling } = load('model/NativeSampling');
 const config = p.normalizeConfig('https://care.example.com', 'WATCH001');
-const binding = p.bindingFrom(config, { bound: 1, residentId: 7, bindingVersion: 1 });
+const binding = p.bindingFrom(config, { bound: 1, oldId: 7, bindingVersion: 1 });
 const observation = (value, seconds, metric = 'steps') => ({ metric, value, receivedAt: 1800000000000 + seconds * 1000, sensorTimestamp: seconds * 1000000000 });
 
 test('native counters anchor, produce intervals, and reset across reboot, rollback and rebind', () => {

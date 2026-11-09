@@ -44,7 +44,7 @@ func TestHealthLatestPreservesSourcesPrecisionAndVersions(t *testing.T) {
 			t.Fatal(err)
 		}
 		defer tx.Rollback(context.Background())
-		if _, _, err = health.SaveBatch(context.Background(), tx, health.Owner{ResidentID: 1, DeviceID: &deviceID, Epoch: 1}, samples); err != nil {
+		if _, _, err = health.SaveBatch(context.Background(), tx, health.Owner{OldID: 1, DeviceID: &deviceID, Epoch: 1}, samples); err != nil {
 			t.Fatal(err)
 		}
 		if err = tx.Commit(context.Background()); err != nil {
@@ -55,7 +55,7 @@ func TestHealthLatestPreservesSourcesPrecisionAndVersions(t *testing.T) {
 	read := latestHealthRoute(h, session.Principal{Role: auth.RoleAdmin, ID: 1})
 	check := func(want float64) {
 		t.Helper()
-		out := api(t, read, map[string]any{"residentId": 1})
+		out := api(t, read, map[string]any{"oldId": 1})
 		encoded, _ := json.Marshal(out["items"])
 		var records []health.Record
 		if err := json.Unmarshal(encoded, &records); err != nil || len(records) != 6 {
@@ -64,7 +64,7 @@ func TestHealthLatestPreservesSourcesPrecisionAndVersions(t *testing.T) {
 		found := false
 		wantValues := map[string]float64{"WATCH/A/heart_rate/instant": 91, "watch/A /heart_rate/instant": 92, "watch/A/heart_rate/instant": want, "watch/A/steps/interval": 0, "watch/A/steps/daily_total": 10, "watch/A/sleep_stage/interval": 60}
 		for _, record := range records {
-			if record.ResidentID != 1 || record.Epoch != 1 || record.DeviceID == nil || *record.DeviceID != 1 || record.Revision < 1 || record.SampleID == "" || record.Sample.Deleted {
+			if record.OldID != 1 || record.Epoch != 1 || record.DeviceID == nil || *record.DeviceID != 1 || record.Revision < 1 || record.SampleID == "" || record.Sample.Deleted {
 				t.Fatalf("provenance lost: %+v", record)
 			}
 			s := record.Sample
@@ -105,16 +105,16 @@ func TestHealthLatestUsesCurrentFamilyOwnership(t *testing.T) {
 	seedDevice(t, pool)
 	h := testHandler(t, pool)
 	mustExec(t, pool, "INSERT INTO family(family_id,family_phone) VALUES(1,'13800000001'),(2,'13800000002')")
-	mustExec(t, pool, "UPDATE resident SET family_id=1 WHERE resident_id=1")
-	read := latestHealthRoute(h, session.Principal{Role: auth.RoleFamily, ID: 1, ResidentID: 1})
+	mustExec(t, pool, "UPDATE oldperson SET family_id=1 WHERE old_id=1")
+	read := latestHealthRoute(h, session.Principal{Role: auth.RoleFamily, ID: 1, OldID: 1})
 	if items := api(t, read, map[string]any{})["items"].([]any); len(items) != 0 {
 		t.Fatal(items)
 	}
-	other := latestHealthRoute(h, session.Principal{Role: auth.RoleFamily, ID: 2, ResidentID: 1})
-	if out := callAPI(other, map[string]any{"residentId": 1}); out.Code != 403 {
+	other := latestHealthRoute(h, session.Principal{Role: auth.RoleFamily, ID: 2, OldID: 1})
+	if out := callAPI(other, map[string]any{"oldId": 1}); out.Code != 403 {
 		t.Fatalf("other family accepted: HTTP %d %s", out.Code, out.Body.String())
 	}
-	mustExec(t, pool, "UPDATE resident SET family_id=2 WHERE resident_id=1")
+	mustExec(t, pool, "UPDATE oldperson SET family_id=2 WHERE old_id=1")
 	if out := callAPI(read, map[string]any{}); out.Code != 403 {
 		t.Fatalf("stale family ownership accepted: HTTP %d %s", out.Code, out.Body.String())
 	}

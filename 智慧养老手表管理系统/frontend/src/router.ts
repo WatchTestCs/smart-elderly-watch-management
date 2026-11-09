@@ -1,7 +1,8 @@
 import type { Component } from 'vue'
 import { createRouter, createWebHashHistory, type RouteRecordRaw } from 'vue-router'
-import { loadSession, authState } from './auth'
+import { loadSession, authState, type SessionAccount } from './auth'
 import { documentTitle, recoverFromChunkError } from './appGuards'
+import { isRestrictedAdmin } from './domain/permissions'
 
 const NoticeEditor = () => import('./components/NoticeEditor.vue')
 type Page = [path: string, title: string, component: () => Promise<{ default: Component }>, props?: Record<string, boolean>]
@@ -56,13 +57,17 @@ const router = createRouter({
   ]
 })
 
-type SessionAccount = { role: string; duty?: string }
+function portalHome(account: SessionAccount): string {
+  return account.role === 'FAMILY' ? '/family-portal/overview' : '/operations/overview'
+}
+
+function wrongPortal(account: SessionAccount, familyPage: boolean): boolean {
+  return (account.role === 'FAMILY') !== familyPage
+}
 
 router.beforeEach(async to => {
   const publicPage = to.path === '/sign-in' || to.path === '/join-family'
   const familyPage = to.matched.some(route => route.path === '/family-portal')
-  const isOtherPortal = (account: SessionAccount) => (account.role === 'FAMILY') !== familyPage
-  const portalHome = (account: SessionAccount) => account.role === 'FAMILY' ? '/family-portal/overview' : '/operations/overview'
 
   try {
     const account: SessionAccount | null = await loadSession()
@@ -71,15 +76,15 @@ router.beforeEach(async to => {
     if (publicPage) return
     if (!account) return '/sign-in'
     if (to.name === 'not-found') return
-    if (isOtherPortal(account)) return portalHome(account)
-    if (account.role === 'ADMIN' && (account.duty === 'caregiver' || account.duty === 'auditor') && !['/operations/overview', '/operations'].includes(to.path)) return '/operations/overview'
+    if (wrongPortal(account, familyPage)) return portalHome(account)
+    if (isRestrictedAdmin(account) && !['/operations/overview', '/operations'].includes(to.path)) return '/operations/overview'
   } catch (error) {
     const response = (error as { response?: { status?: number; data?: { code?: string } } } | null)?.response
     const unavailable = response?.data?.code === 'DATABASE_UNAVAILABLE'
     const transient = unavailable || response?.status === 502 || response?.status === 503 || response?.status === 504 || !response
-    const account = authState.account as SessionAccount | null
+    const account = authState.account
     if (transient && account) {
-      if (!publicPage && to.name !== 'not-found' && to.path !== '/setup' && isOtherPortal(account)) return portalHome(account)
+      if (!publicPage && to.name !== 'not-found' && to.path !== '/setup' && wrongPortal(account, familyPage)) return portalHome(account)
       return to.path === '/setup' ? '/sign-in' : undefined
     }
     return publicPage || (to.path === '/setup' && unavailable) ? undefined : '/sign-in'

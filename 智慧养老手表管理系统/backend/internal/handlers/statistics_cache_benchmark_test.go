@@ -26,7 +26,7 @@ import (
 func BenchmarkHealthStatisticsHybrid(b *testing.B) {
 	pool := benchmarkStatisticsDatabase(b)
 	ctx := context.Background()
-	if _, err := pool.Exec(ctx, "INSERT INTO resident(resident_id,name) VALUES(1,'benchmark')"); err != nil {
+	if _, err := pool.Exec(ctx, "INSERT INTO oldperson(old_id,name) VALUES(1,'benchmark')"); err != nil {
 		b.Fatal(err)
 	}
 	from := time.Date(2026, 10, 22, 0, 0, 0, 0, time.UTC)
@@ -48,7 +48,7 @@ func BenchmarkHealthStatisticsHybrid(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		if _, _, err = health.SaveBatch(ctx, tx, health.Owner{ResidentID: 1}, samples); err != nil {
+		if _, _, err = health.SaveBatch(ctx, tx, health.Owner{OldID: 1}, samples); err != nil {
 			tx.Rollback(ctx)
 			b.Fatal(err)
 		}
@@ -58,7 +58,7 @@ func BenchmarkHealthStatisticsHybrid(b *testing.B) {
 		}
 	}
 	query, err := json.Marshal(map[string]any{
-		"residentId": 1, "source": "watch", "sourceDevice": "BENCHMARK",
+		"oldId": 1, "source": "watch", "sourceDevice": "BENCHMARK",
 		"metric": "heart_rate", "semantics": "instant", "from": from, "to": from.Add(24 * time.Hour),
 	})
 	if err != nil {

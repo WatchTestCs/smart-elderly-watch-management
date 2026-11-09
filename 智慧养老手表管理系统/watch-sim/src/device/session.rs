@@ -20,14 +20,14 @@ impl DeviceSession {
     }
 
     /// 更新绑定身份；旧绑定队列保留，flush 会拒绝跨版本补传。
-    fn sync_binding(&mut self, version: i64, resident_id: i64, old_name: String) -> bool {
+    fn sync_binding(&mut self, version: i64, old_id: i64, old_name: String) -> bool {
         let changed = self
             .binding
             .as_ref()
             .map(|b| b.version != version)
             .unwrap_or(false);
         self.binding = Some(Binding {
-            resident_id,
+            old_id,
             old_name,
             version,
         });
@@ -68,15 +68,15 @@ impl DeviceSession {
             }
             let version = reply.binding_version().unwrap_or(0);
             if reply.bound() && version > 0 {
-                let resident_id = reply.get_i64("residentId").unwrap_or(0);
-                let old_name = reply.get_str("residentName").unwrap_or_default();
-                if resident_id <= 0 {
+                let old_id = reply.get_i64("oldId").unwrap_or(0);
+                let old_name = reply.get_str("oldPersonName").unwrap_or_default();
+                if old_id <= 0 {
                     return Err(Failure::Rejected {
                         code: "INVALID_RESPONSE".into(),
                         message: "登录缺少有效长者身份".into(),
                     });
                 }
-                self.sync_binding(version, resident_id, old_name);
+                self.sync_binding(version, old_id, old_name);
             } else {
                 self.binding = None;
             }
@@ -120,11 +120,11 @@ impl DeviceSession {
             self.binding = None;
         } else if let (Some(v), Some(id)) = (
             reply.binding_version().filter(|v| *v > 0),
-            reply.get_i64("residentId").filter(|v| *v > 0),
+            reply.get_i64("oldId").filter(|v| *v > 0),
         ) {
             let name = previous
                 .as_ref()
-                .filter(|b| b.resident_id == id)
+                .filter(|b| b.old_id == id)
                 .map(|b| b.old_name.clone())
                 .unwrap_or_default();
             self.sync_binding(v, id, name);

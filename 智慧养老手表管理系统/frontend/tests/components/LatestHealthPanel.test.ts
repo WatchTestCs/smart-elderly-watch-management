@@ -9,7 +9,7 @@ const mountPanel = () => mount(LatestHealthPanel, { global: { stubs: { ElButton:
 const sample = { recordId: 'r', source: 'watch', sourceDevice: 'A', metric: 'steps', semantics: 'daily_total', unit: 'count', value: 0, start: '2026-10-20T09:00:00Z', end: '2026-10-20T09:00:00Z' }
 
 it('shows separate sources, zero values and original sampling intervals', async () => {
-  const post = vi.spyOn(axios, 'post').mockResolvedValue({ data: { returnCode: '1111', residentId: 1, items: [
+  const post = vi.spyOn(axios, 'post').mockResolvedValue({ data: { returnCode: '1111', oldId: 1, items: [
     { sampleId: 'a', deviceId: 1, bindingVersion: 3, sample },
     { sampleId: 'b', deviceId: 2, bindingVersion: 1, sample: { ...sample, source: 'other-watch', sourceDevice: 'B', value: 50 } },
     { sampleId: 'c', deviceId: 1, bindingVersion: 3, sample: { ...sample, metric: 'sleep_stage', semantics: 'interval', unit: 'min', stage: 'deep', value: 60, end: '2026-10-20T10:00:00Z' } }

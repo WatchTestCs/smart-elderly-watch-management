@@ -22,7 +22,7 @@ func TestBatchHardwareAB(t *testing.T) {
 	}
 	pool := dbtest.MySQL(t)
 	ctx := context.Background()
-	if _, err := pool.Exec(ctx, "INSERT INTO resident(resident_id,name) VALUES(1,'perf-ab')"); err != nil {
+	if _, err := pool.Exec(ctx, "INSERT INTO oldperson(old_id,name) VALUES(1,'perf-ab')"); err != nil {
 		t.Fatal(err)
 	}
 	at := time.Date(2026, 10, 23, 0, 0, 0, 0, time.UTC)
@@ -40,7 +40,7 @@ func TestBatchHardwareAB(t *testing.T) {
 			t.Fatal(err)
 		}
 		begun := time.Now()
-		_, duplicates, err := SaveBatch(ctx, tx, Owner{ResidentID: 1}, samples)
+		_, duplicates, err := SaveBatch(ctx, tx, Owner{OldID: 1}, samples)
 		if err != nil || duplicates != 0 {
 			tx.Rollback(ctx)
 			t.Fatalf("save: duplicates=%d err=%v", duplicates, err)

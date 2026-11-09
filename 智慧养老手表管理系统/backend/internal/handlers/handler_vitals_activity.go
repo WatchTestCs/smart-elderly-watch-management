@@ -9,7 +9,7 @@ import (
 
 type activityRecord struct {
 	Name            *string `json:"name"`
-	ResidentID      *int64  `json:"residentId"`
+	OldID           *int64  `json:"oldId"`
 	Sex             *string `json:"sex"`
 	Step            *int64  `json:"step"`
 	Sleep           *int64  `json:"sleep"`
@@ -19,21 +19,21 @@ type activityRecord struct {
 
 // Keep one snapshot per owner/day, including preserved snapshots from old bindings.
 const ownedDailyRecords = `(SELECT * FROM (SELECT daily.*,
-	ROW_NUMBER() OVER (PARTITION BY device_id,resident_id,create_time ORDER BY binding_epoch DESC,id DESC) AS day_rank
+	ROW_NUMBER() OVER (PARTITION BY device_id,old_id,create_time ORDER BY binding_epoch DESC,id DESC) AS day_rank
 	FROM (SELECT * FROM watch_day_info UNION ALL SELECT * FROM watch_day_info_archive) daily
-	WHERE resident_id IS NOT NULL) ranked WHERE day_rank=1)`
+	WHERE old_id IS NOT NULL) ranked WHERE day_rank=1)`
 
 // 每位老人当前主设备的最新日记录。
-const stepLatestSelect = `SELECT o.name AS name, o.resident_id AS residentId, o.sex AS sex,` +
+const stepLatestSelect = `SELECT o.name AS name, o.old_id AS oldId, o.sex AS sex,` +
 	` w.step AS step, w.sleep AS sleep, w.sleep_sate AS sleepAlertState,` +
 	` TO_CHAR(w.create_time,'YYYY-MM-DD') AS createTime` +
-	` FROM resident o` +
-	` INNER JOIN (SELECT *, ROW_NUMBER() OVER (PARTITION BY device_id,resident_id ORDER BY create_time DESC, id DESC) AS rn FROM ` + ownedDailyRecords + ` daily) w` +
-	` ON w.device_id=o.device_id AND w.resident_id=o.resident_id AND w.rn=1`
+	` FROM oldperson o` +
+	` INNER JOIN (SELECT *, ROW_NUMBER() OVER (PARTITION BY device_id,old_id ORDER BY create_time DESC, id DESC) AS rn FROM ` + ownedDailyRecords + ` daily) w` +
+	` ON w.device_id=o.device_id AND w.old_id=o.old_id AND w.rn=1`
 
 func scanActivityRecord(rows dbstore.Rows) (activityRecord, error) {
 	var d activityRecord
-	err := rows.Scan(&d.Name, &d.ResidentID, &d.Sex, &d.Step, &d.Sleep, &d.SleepAlertState, &d.CreateTime)
+	err := rows.Scan(&d.Name, &d.OldID, &d.Sex, &d.Step, &d.Sleep, &d.SleepAlertState, &d.CreateTime)
 	return d, err
 }
 
@@ -44,14 +44,14 @@ func (h *Handler) listLatestActivity(w http.ResponseWriter, r *http.Request) {
 
 // POST /api/v1/activity/history —— 家属查询老人睡眠步数列表。
 func (h *Handler) listActivityHistory(w http.ResponseWriter, r *http.Request) {
-	residentID, ok := h.readScopedResidentID(w, r)
+	oldID, ok := h.readScopedOldID(w, r)
 	if !ok {
 		return
 	}
-	items, ok := queryRows(h, w, r.Context(), scanActivityRecord, `SELECT o.name AS name, o.resident_id AS residentId, o.sex AS sex,`+
+	items, ok := queryRows(h, w, r.Context(), scanActivityRecord, `SELECT o.name AS name, o.old_id AS oldId, o.sex AS sex,`+
 		` w.step AS step, w.sleep AS sleep, w.sleep_sate AS sleepAlertState, TO_CHAR(w.create_time,'YYYY-MM-DD') AS createTime`+
-		` FROM resident o INNER JOIN `+ownedDailyRecords+` w ON w.device_id=o.device_id AND w.resident_id=o.resident_id`+
-		` WHERE o.resident_id=$1 ORDER BY w.create_time DESC, w.id DESC LIMIT 1`, residentID)
+		` FROM oldperson o INNER JOIN `+ownedDailyRecords+` w ON w.device_id=o.device_id AND w.old_id=o.old_id`+
+		` WHERE o.old_id=$1 ORDER BY w.create_time DESC, w.id DESC LIMIT 1`, oldID)
 	if !ok {
 		return
 	}
@@ -60,17 +60,17 @@ func (h *Handler) listActivityHistory(w http.ResponseWriter, r *http.Request) {
 
 // POST /api/v1/activity/chart —— 家属查询老人睡眠明细（图表用）。
 func (h *Handler) getActivityChart(w http.ResponseWriter, r *http.Request) {
-	residentID, ok := h.readScopedResidentID(w, r)
+	oldID, ok := h.readScopedOldID(w, r)
 	if !ok {
 		return
 	}
-	items, ok := queryRows(h, w, r.Context(), scanActivityRecord, `SELECT r.name, r.residentId, r.sex, r.step, r.sleep, r.sleepAlertState,`+
+	items, ok := queryRows(h, w, r.Context(), scanActivityRecord, `SELECT r.name, r.oldId, r.sex, r.step, r.sleep, r.sleepAlertState,`+
 		` TO_CHAR(r.create_time,'YYYY-MM-DD') AS createTime FROM (`+
-		` SELECT o.name AS name, o.resident_id AS residentId, o.sex AS sex, w.step AS step, w.sleep AS sleep,`+
+		` SELECT o.name AS name, o.old_id AS oldId, o.sex AS sex, w.step AS step, w.sleep AS sleep,`+
 		` w.sleep_sate AS sleepAlertState, w.create_time, w.id`+
-		` FROM resident o INNER JOIN `+ownedDailyRecords+` w ON w.device_id=o.device_id AND w.resident_id=o.resident_id`+
-		` WHERE o.resident_id=$1 ORDER BY w.create_time DESC, w.id DESC LIMIT 7) r`+
-		` ORDER BY r.create_time ASC, r.id ASC`, residentID)
+		` FROM oldperson o INNER JOIN `+ownedDailyRecords+` w ON w.device_id=o.device_id AND w.old_id=o.old_id`+
+		` WHERE o.old_id=$1 ORDER BY w.create_time DESC, w.id DESC LIMIT 7) r`+
+		` ORDER BY r.create_time ASC, r.id ASC`, oldID)
 	if !ok {
 		return
 	}

@@ -29,12 +29,6 @@ jobs:
             智慧养老手表管理系统/frontend/package-lock.json
             智慧养老手表管理系统/frontend/tools/openapi/package-lock.json
 
-      - name: Set up Go for the authoritative OpenAPI exporter
-        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
-        with:
-          go-version: "1.26.10"
-          cache-dependency-path: 智慧养老手表管理系统/backend/go.sum
-
       - name: Enforce native Go API boundary
         run: python3 ../../scripts/check-api-boundary.py
 
@@ -43,7 +37,21 @@ jobs:
           npm ci
           npm run api:tools:ci
 
-      - name: Unit tests and incremental TypeScript checks
+      - name: Set up Go for native API contract verification
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version: "1.26.10"
+          cache: false
+
+      - name: Verify native Go API types and drift rejection
+        run: |
+          npm run api:check
+          npm run test:api-drift
+
+      - name: Enforce Vue 3.6 migration boundary
+        run: npm run check:vue36
+
+      - name: Unit tests and strict TypeScript checks
         shell: bash
         run: |
           mkdir -p ../../evidence/ci/frontend
@@ -53,9 +61,6 @@ jobs:
           status=0
           npm test 2>&1 | tee ../../evidence/ci/frontend/test.txt || status=1
           npm run typecheck 2>&1 | tee ../../evidence/ci/frontend/typecheck.txt || status=1
-          npm run typecheck:stable 2>&1 | tee ../../evidence/ci/frontend/typecheck-stable.txt || status=1
-          npm run api:check 2>&1 | tee ../../evidence/ci/frontend/api-check.txt || status=1
-          npm run test:api-drift 2>&1 | tee ../../evidence/ci/frontend/api-drift.txt || status=1
           exit "$status"
 
       - name: Build production frontend

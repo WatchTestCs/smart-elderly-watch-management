@@ -28,7 +28,7 @@ func TestContinuousStatisticsSubmicrosecondWindow(t *testing.T) {
 		end         time.Time
 		count, mean float64
 	}{{at.Add(900 * time.Nanosecond), 1, 60}, {at.Add(time.Second), 2, 75}} {
-		query := map[string]any{"residentId": 1, "source": "watch", "sourceDevice": "WATCH001", "metric": "heart_rate", "semantics": "instant", "from": at.Add(500 * time.Nanosecond), "to": tc.end}
+		query := map[string]any{"oldId": 1, "source": "watch", "sourceDevice": "WATCH001", "metric": "heart_rate", "semantics": "instant", "from": at.Add(500 * time.Nanosecond), "to": tc.end}
 		for range 2 {
 			out := api(t, admin, query)["statistics"].(map[string]any)
 			if out["count"] != tc.count || out["mean"] != tc.mean {
@@ -48,8 +48,8 @@ func TestContinuousDailySubmicrosecondInterval(t *testing.T) {
 		{RecordID: "ends-at-midnight", Source: "watch", SourceDevice: "WATCH001", Metric: "steps", Unit: "count", Value: health.Number(20), Start: from.Add(-2 * time.Microsecond), End: from, Semantics: "interval", Version: 1},
 	}
 	api(t, h.healthBatch, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "bindingVersion": 1, "samples": samples})
-	key := health.DailyKey{ResidentID: 1, Source: "watch", SourceDevice: "WATCH001", Metric: "steps", Semantics: "interval", Day: "2026-10-20"}
-	query := map[string]any{"residentId": 1, "source": "watch", "sourceDevice": "WATCH001", "metric": "steps", "semantics": "interval", "day": key.Day, "offsetMinutes": 0, "days": 1}
+	key := health.DailyKey{OldID: 1, Source: "watch", SourceDevice: "WATCH001", Metric: "steps", Semantics: "interval", Day: "2026-10-20"}
+	query := map[string]any{"oldId": 1, "source": "watch", "sourceDevice": "WATCH001", "metric": "steps", "semantics": "interval", "day": key.Day, "offsetMinutes": 0, "days": 1}
 	admin := withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 1}, h.healthDaily)
 	api(t, admin, query)
 	if err := health.RefreshDaily(context.Background(), pool, key.ID()); err != nil {

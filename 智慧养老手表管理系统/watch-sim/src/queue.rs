@@ -8,6 +8,22 @@ use std::collections::VecDeque;
 
 use crate::protocol::{HealthSample, MAX_BATCH_SIZE};
 
+// Alert samples get priority when the bounded offline queue is congested.
+fn is_priority_alert_sample(sample: &HealthSample) -> bool {
+    let metric = sample.metric.as_ref();
+    let semantics = sample.semantics.as_ref();
+    if ["sos", "fall", "alert", "emergency"]
+        .iter()
+        .any(|tag| semantics.contains(tag) || metric.contains(tag))
+    {
+        return true;
+    }
+    if metric.contains("heart_rate") && (sample.value < 45.0 || sample.value > 130.0) {
+        return true;
+    }
+    (metric.contains("spo2") || metric.contains("oxygen")) && sample.value < 90.0
+}
+
 #[derive(Debug)]
 pub struct OfflineQueue {
     capacity: usize,
@@ -52,11 +68,26 @@ impl OfflineQueue {
 
     /// 入队。队列满时丢最旧的一条并计数，而不是静默拒绝。
     pub fn push(&mut self, sample: HealthSample, epoch: i64) {
+        if self.epoch.is_some_and(|current| current != epoch) {
+            self.clear();
+        }
         if self.epoch.is_none() {
             self.epoch = Some(epoch);
         }
         if self.items.len() >= self.capacity {
-            self.items.pop_front();
+            if let Some(index) = self
+                .items
+                .iter()
+                .position(|existing| !is_priority_alert_sample(existing))
+            {
+                self.items.remove(index);
+            } else if is_priority_alert_sample(&sample) {
+                self.items.pop_front();
+            } else {
+                // Never evict a critical alert to admit routine telemetry.
+                self.dropped += 1;
+                return;
+            }
             self.dropped += 1;
         }
         self.items.push_back(sample);
@@ -102,5 +133,63 @@ impl OfflineQueue {
     /// 队列内容是否属于旧绑定（决定重连后能不能补传）。
     pub fn is_stale_for(&self, current: i64) -> bool {
         matches!(self.epoch, Some(e) if e != current)
+    }
+}
+
+#[cfg(test)]
+mod priority_eviction_tests {
+    use super::*;
+
+    #[test]
+    fn preserves_alert_over_oldest_routine_sample() {
+        let mut q = OfflineQueue::new(2);
+        q.push(
+            HealthSample::heart_rate("alert".into(), "watch-1", 155, "2026-11-09T00:00:01Z"),
+            1,
+        );
+        q.push(
+            HealthSample::steps(
+                "routine".into(),
+                "watch-1",
+                100,
+                "2026-11-09T00:00:00Z",
+                "2026-11-09T00:00:02Z",
+            ),
+            1,
+        );
+        q.push(
+            HealthSample::steps(
+                "new".into(),
+                "watch-1",
+                120,
+                "2026-11-09T00:00:00Z",
+                "2026-11-09T00:00:03Z",
+            ),
+            1,
+        );
+        let ids: Vec<String> = q.peek(2).into_iter().map(|item| item.record_id).collect();
+        assert_eq!(ids, ["alert", "new"]);
+        assert_eq!(q.dropped(), 1);
+    }
+
+    #[test]
+    fn drops_new_routine_when_only_critical_alerts_remain() {
+        let mut q = OfflineQueue::new(1);
+        q.push(
+            HealthSample::heart_rate("alert".into(), "watch-1", 155, "2026-11-09T00:00:01Z"),
+            1,
+        );
+        q.push(
+            HealthSample::steps(
+                "routine".into(),
+                "watch-1",
+                100,
+                "2026-11-09T00:00:00Z",
+                "2026-11-09T00:00:02Z",
+            ),
+            1,
+        );
+        assert_eq!(q.peek(1)[0].record_id, "alert");
+        assert_eq!(q.dropped(), 1);
     }
 }

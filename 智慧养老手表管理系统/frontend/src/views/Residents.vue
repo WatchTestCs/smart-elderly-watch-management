@@ -1,8 +1,8 @@
 <template>
-  <div class="roles" v-loading="isLoading" element-loading-text="正在加载老人档案…" :aria-busy="String(isLoading)">
+  <div class="roles" v-loading="isLoading" element-loading-text="正在加载老人档案…" :aria-busy="isLoading">
     
     <div class="sys-research">
-      <form class="row-search" role="search" @submit.prevent="loadResidents">
+      <form class="row-search" role="search" @submit.prevent="loadResidents()">
         <div class="search-field">
           
           <label class="table-search-label" for="search-person">长者姓名</label>
@@ -18,7 +18,7 @@
         </div>
         <div class="toolbar-actions">
           <el-button plain @click="exportCurrentPage">导出本页</el-button>
-          <el-button plain @click="oldDialogVisible = true">添加老人</el-button>
+          <el-button plain @click="createDialogVisible = true">添加老人</el-button>
         </div>
 		
       </form>
@@ -26,29 +26,29 @@
     
     <el-dialog :close-on-click-modal="false"
       title="老人添加"
-      v-model="oldDialogVisible"
-      @open="addGuardianList"
-      @close="closeRoleAddDialog">
-      <ResidentForm :draft="oldForm" :rules="rules" ref="addoldFormRef" :options="options" :guardian-loading="guardianLoading" :guardian-error="guardianError" @retry-guardians="addGuardianList" />
+      v-model="createDialogVisible"
+      @open="loadGuardianOptions"
+      @close="resetCreateForm">
+      <ResidentForm :draft="createForm" :rules="rules" ref="createFormRef" :options="guardianOptions" :customer-loading="guardianLoading" :customer-error="guardianError" @retry-guardians="loadGuardianOptions" />
       <template #footer><span  class="dialog-footer">
-      <el-button @click="oldDialogVisible = false">取 消</el-button>
-      <el-button type="primary" @click="createResident('addoldFormRef')">确 定</el-button>
+      <el-button @click="createDialogVisible = false">取 消</el-button>
+      <el-button type="primary" @click="createResident()">确 定</el-button>
     </span></template>
     </el-dialog>
 
     <el-dialog :close-on-click-modal="false"
       title="老人编辑"
-      v-model="oldEditDialogVisible"
-      @open="addGuardianList">
-      <ResidentForm editing :draft="oldEditForm" :rules="rules" ref="editoldFormRef" :options="options" :guardian-loading="guardianLoading" :guardian-error="guardianError" @retry-guardians="addGuardianList" />
+      v-model="editDialogVisible"
+      @open="loadGuardianOptions">
+      <ResidentForm editing :draft="editForm" :rules="rules" ref="editFormRef" :options="guardianOptions" :customer-loading="guardianLoading" :customer-error="guardianError" @retry-guardians="loadGuardianOptions" />
       <template #footer><span  class="dialog-footer">
-      <el-button @click="oldEditDialogVisible = false">取 消</el-button>
-      <el-button type="primary" @click="editResident">确 定</el-button>
+      <el-button @click="editDialogVisible = false">取 消</el-button>
+      <el-button type="primary" @click="updateResident">确 定</el-button>
     </span></template>
     </el-dialog>
 
     <div v-if="loadError" class="collection-feedback" role="alert"><span>{{ loadError }}</span><el-button plain :loading="isLoading" @click="loadResidents(true)">重新加载</el-button></div>
-    <el-table v-if="!mobileLayout && !loadError" class="adaptive-record-table" :data="personDetailList"
+    <el-table v-if="!mobileLayout && !loadError" class="adaptive-record-table" :data="residentList"
     style="width: 100%" border>
     <template #empty><div  class="care-empty-state"><strong>暂无老人档案</strong><span>添加老人或调整搜索条件后，档案会显示在这里。</span></div></template>
 
@@ -58,7 +58,7 @@
 				<p>关系:{{prop.row.familyRelation}}</p><p>家属电话:{{prop.row.familyPhone}}</p>
 				<p>家属地址:{{prop.row.familyAddress}}</p><p>过敏:{{prop.row.warn}}</p>
 				<p>喜好食物:{{prop.row.foodLike}}</p><p>忌口食物:{{prop.row.foodHate}}</p>
-				<p>常用药物:{{prop.row.drug}}</p><p>病史:{{prop.row.illness}}</p>
+				<p>常用药物:{{prop.row.drag}}</p><p>病史:{{prop.row.illness}}</p>
 				
 			  </template>
 	  
@@ -66,36 +66,36 @@
       
       <el-table-column type="index" width="100" align="center"></el-table-column>
       <el-table-column prop="name" label="姓名" width="100" align="center"></el-table-column>
-      <el-table-column prop="birthdate" label="出生日期" width="120" align="center"></el-table-column>
+      <el-table-column prop="bothdate" label="出生日期" width="120" align="center"></el-table-column>
 	  <el-table-column prop="sex" label="性别" width="100" align="center"></el-table-column>
 	  <el-table-column prop="phone" label="电话" width="120" align="center"></el-table-column>
 	  <el-table-column prop="room" label="房间" width="100" align="center"></el-table-column>
-	  <el-table-column prop="eventTime" label="入院时间" width="100" align="center"></el-table-column>
+	  <el-table-column prop="beTime" label="入院时间" width="100" align="center"></el-table-column>
 	  
-		<el-table-column prop="guardianName" label="监护人" width="100" align="center"></el-table-column>
+		<el-table-column prop="customerName" label="监护人" width="100" align="center"></el-table-column>
 		<el-table-column prop="deviceId" label="手表编号" width="100" align="center"></el-table-column>
 
       <el-table-column label="操作" width="200" align="center" fixed="right">
         <template #default="scope" >
           <el-button size="small" plain type="primary" :icon="Edit"
-                     @click="handleeditResident(scope.$index, scope.row)">编辑
+                     @click="openResidentEdit(scope.$index, scope.row)">编辑
           </el-button>
-          <el-button size="small" plain type="danger" :icon="Delete" @click="deleteResident(scope.row.residentId)">删除
+          <el-button size="small" plain type="danger" :icon="Delete" @click="deleteResident(scope.row.oldId)">删除
           </el-button>
           
         </template>
       </el-table-column>
     </el-table>
-    <record-cards v-if="mobileLayout && !loadError" :records="personDetailList" :fields='[{"key":"birthdate","label":"出生日期"},{"key":"sex","label":"性别"},{"key":"phone","label":"电话"},{"key":"room","label":"房间"},{"key":"eventTime","label":"入院时间"},{"key":"familyName","label":"家属姓名"},{"key":"familyRelation","label":"关系"},{"key":"familyPhone","label":"家属电话"},{"key":"familyAddress","label":"家属地址"},{"key":"familySex","label":"家属性别"},{"key":"guardianName","label":"监护人"},{"key":"deviceId","label":"手表编号"},{"key":"illness","label":"病史"},{"key":"warn","label":"过敏"},{"key":"foodLike","label":"喜好食物"},{"key":"foodHate","label":"忌口食物"},{"key":"drug","label":"常用药物"}]' label="老人档案" empty-title="暂无老人档案" title-key="name" key-field="residentId">
+    <record-cards v-if="mobileLayout && !loadError" :records="residentList" :fields='[{"key":"bothdate","label":"出生日期"},{"key":"sex","label":"性别"},{"key":"phone","label":"电话"},{"key":"room","label":"房间"},{"key":"beTime","label":"入院时间"},{"key":"familyName","label":"家属姓名"},{"key":"familyRelation","label":"关系"},{"key":"familyPhone","label":"家属电话"},{"key":"familyAddress","label":"家属地址"},{"key":"familySex","label":"家属性别"},{"key":"customerName","label":"监护人"},{"key":"deviceId","label":"手表编号"},{"key":"illness","label":"病史"},{"key":"warn","label":"过敏"},{"key":"foodLike","label":"喜好食物"},{"key":"foodHate","label":"忌口食物"},{"key":"drag","label":"常用药物"}]' label="老人档案" empty-title="暂无老人档案" title-key="name" key-field="oldId">
       <template #actions="scope"  ><el-button size="small" plain type="primary" :icon="Edit"
-                     @click="handleeditResident(scope.$index, scope.row)">编辑
+                     @click="openResidentEdit(scope.$index, scope.row)">编辑
           </el-button>
-<el-button size="small" plain type="danger" :icon="Delete" @click="deleteResident(scope.row.residentId)">删除
+<el-button size="small" plain type="danger" :icon="Delete" @click="deleteResident(scope.row.oldId)">删除
           </el-button></template>
     </record-cards>
     
     <div v-if="!loadError" style="margin-top: 10px;text-align: center">
-      <pager-bar
+      <el-pagination layout="total, sizes, prev, pager, next, jumper"
         @size-change="handleSizeChange"
         @current-change="changePage"
         v-model:current-page="currentPage"
@@ -105,10 +105,10 @@
   </div>
 
 </template>
-<script setup>
+<script setup lang="ts">
 import { Delete, Edit, Search } from '@element-plus/icons-vue'
 import { reactive, ref } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, type FormItemRule } from 'element-plus'
 import { usePagedRecords } from '@/composables/usePagedRecords'
 import { useCollectionLayout } from '@/composables/useCollectionLayout'
 import { writeRecord, deleteRecord } from '@/composables/recordActions'
@@ -119,61 +119,71 @@ import { downloadCsv } from '../utils/csv'
 import RecordCards from '@/components/RecordCards.vue'
 import ResidentForm from '@/components/records/ResidentForm.vue'
 
+interface ResidentRecord extends Record<string, unknown> {
+  oldId: string | number
+  name: string
+  customerName?: string
+  deviceId?: string
+}
+interface GuardianOption extends Record<string, unknown> {
+  customerId: string | number
+  customerName: string
+}
 const searchText = ref('')
 const mobileLayout = useCollectionLayout(900)
 const {
-  records: personDetailList, isLoading, loadError, total, pageSize, currentPage,
+  records: residentList, isLoading, loadError, total, pageSize, currentPage,
   load: loadResidents, handleSizeChange, changePage
-} = usePagedRecords({
+} = usePagedRecords<ResidentRecord>({
   path: 'api/v1/residents/details',
-  responseKey: 'residentDetails',
+  responseKey: 'oldPersonDetails',
   buildQuery: () => ({ name: searchText.value }),
   failure: '老人档案暂时无法加载，请检查服务连接后重试。'
 })
 
 const emptyResident = () => ({
-  name: '', birthdate: '', sex: '', phone: '', room: '',
-  eventTime: '', guardianId: '', illness: '', warn: '',
-  foodLike: '', foodHate: '', drug: ''
+  name: '', bothdate: '', sex: '', phone: '', room: '',
+  beTime: '', customerId: '', illness: '', warn: '',
+  foodLike: '', foodHate: '', drag: ''
 })
-const oldDialogVisible = ref(false)
-const oldEditDialogVisible = ref(false)
-const oldForm = reactive(emptyResident())
-const oldEditForm = ref({ ...emptyResident(), residentId: '', guardianName: '', deviceId: '' })
-const addoldFormRef = ref(null)
-const editoldFormRef = ref(null)
-const options = ref([])
+const createDialogVisible = ref(false)
+const editDialogVisible = ref(false)
+const createForm = reactive(emptyResident())
+const editForm = ref({ ...emptyResident(), oldId: '' as string | number, customerName: '', deviceId: '' })
+const createFormRef = ref<InstanceType<typeof ResidentForm> | null>(null)
+const editFormRef = ref<InstanceType<typeof ResidentForm> | null>(null)
+const guardianOptions = ref<GuardianOption[]>([])
 const guardianLoading = ref(false)
 const guardianError = ref('')
 
-const checkPhone = (_rule, value, callback) => {
+const checkPhone: NonNullable<FormItemRule['validator']> = (_rule, value, callback) => {
   if (!value) return callback(new Error('电话号码不能为空'))
   if (!/^1[3-9]\d{9}$/.test(String(value))) return callback(new Error('电话号码格式不正确'))
   callback()
 }
 const rules = { phone: [{ validator: checkPhone, trigger: 'blur' }] }
 
-async function addGuardianList() {
+async function loadGuardianOptions() {
   if (guardianLoading.value) return
   guardianLoading.value = true
   guardianError.value = ''
   try {
-    const residents = []
+    const residents: GuardianOption[] = []
     let page = 1
     let total = 0
     do {
-      const { data } = await requestClient.post('api/v1/guardians/list', { guardianName: '', page, pageSize: 100 })
-      if (!Array.isArray(data.guardians)) throw new Error('invalid guardians')
-      total = data.total ?? data.guardians.length
-      if (!Number.isInteger(total) || total < 0 || (!data.guardians.length && residents.length < total)) {
+      const { data } = await requestClient.post<{ customers: GuardianOption[]; total?: number }>('api/v1/guardians/list', { customerName: '', page, pageSize: 100 })
+      if (!Array.isArray(data.customers)) throw new Error('invalid guardians')
+      total = data.total ?? data.customers.length
+      if (!Number.isInteger(total) || total < 0 || (!data.customers.length && residents.length < total)) {
         throw new Error('incomplete guardians')
       }
-      residents.push(...data.guardians)
+      residents.push(...data.customers)
       page += 1
     } while (residents.length < total)
-    options.value = residents
+    guardianOptions.value = residents
   } catch (error) {
-    options.value = []
+    guardianOptions.value = []
     guardianError.value = apiErrorMessage(error, '监护人选项暂时无法加载，请重试。')
   } finally {
     guardianLoading.value = false
@@ -181,47 +191,47 @@ async function addGuardianList() {
 }
 
 function createResident() {
-  addoldFormRef.value?.validate(valid => {
+  createFormRef.value?.validate((valid: boolean) => {
     if (!valid) return
-    return writeRecord('api/v1/residents/create', editableResident(oldForm), '添加老人成功', async () => {
-      oldDialogVisible.value = false
+    void writeRecord('api/v1/residents/create', editableResident(createForm), '添加老人成功', async () => {
+      createDialogVisible.value = false
       await loadResidents(true)
     })
   })
 }
-function editResident() {
-  editoldFormRef.value?.validate(valid => {
+function updateResident() {
+  editFormRef.value?.validate((valid: boolean) => {
     if (!valid) return
-    const draft = oldEditForm.value
-    return writeRecord('api/v1/residents/update', {
-      ...editableResident(draft), residentId: draft.residentId
+    const draft = editForm.value
+    void writeRecord('api/v1/residents/update', {
+      ...editableResident(draft), oldId: draft.oldId
     }, '编辑老人信息成功', async () => {
-      oldEditDialogVisible.value = false
+      editDialogVisible.value = false
       await loadResidents(true)
     })
   })
 }
-function deleteResident(residentId) {
-  return deleteRecord('api/v1/residents/delete', { residentId }, '此操作将永久删除该长者信息，是否继续？', () => loadResidents(true))
+function deleteResident(oldId: number | string) {
+  return deleteRecord('api/v1/residents/delete', { oldId }, '此操作将永久删除该长者信息，是否继续？', () => loadResidents(true))
 }
-function closeRoleAddDialog() {
-  addoldFormRef.value?.resetFields()
+function resetCreateForm() {
+  createFormRef.value?.resetFields()
 }
-function handleeditResident(_index, row) {
-  oldEditForm.value = { ...row }
-  oldEditDialogVisible.value = true
+function openResidentEdit(_index: number, row: ResidentRecord) {
+  editForm.value = { ...emptyResident(), ...row, oldId: row.oldId, customerName: row.customerName || '', deviceId: row.deviceId || '' }
+  editDialogVisible.value = true
 }
 function exportCurrentPage() {
-  if (!personDetailList.value.length) { ElMessage.warning('当前没有可导出的数据'); return }
+  if (!residentList.value.length) { ElMessage.warning('当前没有可导出的数据'); return }
   downloadCsv(`老人档案-${new Date().toISOString().slice(0, 10)}.csv`, [
     { key: 'name', label: '姓名' },
-    { key: 'birthdate', label: '出生日期' },
+    { key: 'bothdate', label: '出生日期' },
     { key: 'sex', label: '性别' },
     { key: 'phone', label: '电话' },
     { key: 'room', label: '房间' },
-    { key: 'eventTime', label: '入院时间' },
-    { key: 'guardianName', label: '监护人' },
+    { key: 'beTime', label: '入院时间' },
+    { key: 'customerName', label: '监护人' },
     { key: 'deviceId', label: '手表编号' }
-  ], personDetailList.value)
+  ], residentList.value)
 }
 </script>

@@ -26,7 +26,7 @@
       </el-table-column>
     </el-table>
     <section v-if="mobileLayout && stepList.length" class="family-record-cards" aria-label="活动和睡眠记录">
-      <article v-for="item in stepList" :key="item.residentId" class="family-record-card">
+      <article v-for="item in stepList" :key="item.oldId" class="family-record-card">
         <h2>{{ item.name || '活动记录' }}</h2>
         <dl>
           <dt>今日步数</dt><dd>{{ item.step == null ? '暂无数据' : item.step + ' 步' }}</dd>
@@ -53,9 +53,9 @@
 
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { Check, Refresh } from '@element-plus/icons-vue'
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, shallowRef } from 'vue'
 import { authState } from '../auth'
 import { useCollectionLayout } from '@/composables/useCollectionLayout'
 import { useRecordCharts } from '@/composables/useRecordCharts'
@@ -66,14 +66,22 @@ import { apiErrorMessage } from '../api/httpContract'
 const mobileLayout = useCollectionLayout()
 const {
   detailsVisible, chartLoading, chartError, chartName,
-  primaryChartElement, secondaryChartElement, showRecordDetails, resizeCharts, disposeCharts
+  primaryChartElement, showRecordDetails, resizeCharts, disposeCharts
 } = useRecordCharts()
-const residentId = computed(() => String(authState.account?.residentId ?? ''))
-const stepList = ref([])
+const oldId = computed(() => String(authState.account?.oldId ?? ''))
+interface ActivityRecord {
+  oldId?: string | number
+  name: string
+  step?: number | null
+  sleep?: string | number | null
+  sleepAlertState?: string | number | null
+  createTime?: string
+}
+const stepList = shallowRef<ActivityRecord[]>([])
 const isLoading = ref(false)
 const loadError = ref('')
 const reads = createLatestRead(
-  (query, signal) => api.post('api/v1/activity/history', query, { signal }),
+  (query: { oldId: string }, signal: AbortSignal) => api.post<{ activityRecords?: ActivityRecord[] }>('api/v1/activity/history', query, { signal }),
   ({ data }) => {
     stepList.value = Array.isArray(data.activityRecords) ? data.activityRecords : []
     loadError.value = ''
@@ -84,19 +92,19 @@ const reads = createLatestRead(
   },
   loading => { isLoading.value = loading }
 )
-function searchStep() { return reads.run({ residentId: residentId.value }) }
-function stateLabel(value) {
+function searchStep() { return reads.run({ oldId: oldId.value }) }
+function stateLabel(value: string | number | null | undefined) {
   if (value === 1 || value === '1') return '异常'
   if (value === 0 || value === '0') return '正常'
   return '暂无状态'
 }
-function stateClass(value) {
+function stateClass(value: string | number | null | undefined) {
   if (value === 1 || value === '1') return 'status-danger'
   if (value === 0 || value === '0') return 'status-normal'
   return 'unknown-state'
 }
-function showDetails(row) {
-  return showRecordDetails('activity', residentId.value, row.name)
+function showDetails(row: Pick<ActivityRecord, 'name'>) {
+  return showRecordDetails('activity', oldId.value, row.name)
 }
 onMounted(() => { void searchStep() })
 onBeforeUnmount(reads.dispose)

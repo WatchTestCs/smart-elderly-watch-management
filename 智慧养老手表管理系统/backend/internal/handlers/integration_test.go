@@ -3,9 +3,6 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	dbstore "suining-care/internal/db"
-	"suining-care/internal/db/dbtest"
-
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -15,15 +12,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
+
 	"suining-care/internal/auth"
 	"suining-care/internal/config"
 	"suining-care/internal/csrf"
 	"suining-care/internal/db"
-
-	"github.com/google/uuid"
+	dbstore "suining-care/internal/db"
+	"suining-care/internal/db/dbtest"
+	"suining-care/internal/devicecredential"
 	"suining-care/internal/session"
-
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // Each test uses a separate temporary schema in a dedicated test database.
@@ -133,19 +132,19 @@ func TestIntegrationMigrationsAndBindingConstraint(t *testing.T) {
 	if err := pool.QueryRow(ctx, "SELECT count(*) FROM schema_migrations").Scan(&count); err != nil || count != want {
 		t.Fatalf("migrations=%d want=%d err=%v", count, want, err)
 	}
-	_, err := pool.Exec(ctx, "INSERT INTO device(device_no,secret,resident_id) VALUES('orphan','unused',999)")
+	_, err := pool.Exec(ctx, "INSERT INTO device(device_no,secret,old_id) VALUES('orphan','unused',999)")
 
 	if !db.IsForeignKey(err) {
 		t.Fatalf("orphan was not rejected: %v", err)
 	}
-	mustExec(t, pool, "INSERT INTO resident(resident_id,name) VALUES(1,'长者')")
-	mustExec(t, pool, "INSERT INTO device(device_no,secret,resident_id) VALUES('bound','unused',1)")
-	out := callAPI(testHandler(t, pool).deleteResident, map[string]any{"residentId": 1})
+	mustExec(t, pool, "INSERT INTO oldperson(old_id,name) VALUES(1,'长者')")
+	mustExec(t, pool, "INSERT INTO device(device_no,secret,old_id) VALUES('bound','unused',1)")
+	out := callAPI(testHandler(t, pool).deleteResident, map[string]any{"oldId": 1})
 	if out.Code != 409 {
 		t.Fatalf("bound elder deletion: HTTP %d %s", out.Code, out.Body.String())
 	}
-	mustExec(t, pool, "UPDATE device SET resident_id=NULL WHERE device_no='bound'")
-	result := api(t, testHandler(t, pool).deleteResident, map[string]any{"residentId": 1})
+	mustExec(t, pool, "UPDATE device SET old_id=NULL WHERE device_no='bound'")
+	result := api(t, testHandler(t, pool).deleteResident, map[string]any{"oldId": 1})
 	if result["returnCode"] != "1111" {
 		t.Fatal(result)
 	}
@@ -154,15 +153,15 @@ func TestIntegrationMigrationsAndBindingConstraint(t *testing.T) {
 func TestIntegrationListContractsAndNumericAge(t *testing.T) {
 	pool := testDatabase(t)
 	h := testHandler(t, pool)
-	mustExec(t, pool, "INSERT INTO guardian(guardian_id,guardian_name,guardian_age,guardian_sex,guardian_phone,guardian_address) VALUES(1,'监护人',40,'女','13800000001','本地')")
+	mustExec(t, pool, "INSERT INTO customer(customer_id,customer_name,customer_age,customer_sex,customer_phone,customer_address) VALUES(1,'监护人',40,'女','13800000001','本地')")
 	mustExec(t, pool, "INSERT INTO family(family_id,family_name) VALUES(1,'家属')")
-	mustExec(t, pool, "INSERT INTO resident(resident_id,name,family_id) VALUES(1,'长者',1)")
+	mustExec(t, pool, "INSERT INTO oldperson(old_id,name,family_id) VALUES(1,'长者',1)")
 	for _, test := range []struct {
 		name    string
 		handler http.HandlerFunc
 		key     string
 	}{
-		{"guardians", h.listGuardians, "guardians"}, {"family", h.familySelect, "familyDtos"},
+		{"customers", h.listGuardians, "customers"}, {"family", h.familySelect, "familyDtos"},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			out := api(t, test.handler, map[string]any{"page": 1, "pageSize": 20})
@@ -175,7 +174,7 @@ func TestIntegrationListContractsAndNumericAge(t *testing.T) {
 			}
 		})
 	}
-	result := api(t, h.updateGuardian, map[string]any{"guardianId": 1, "guardianName": "监护人", "guardianAge": 40, "guardianSex": "女", "guardianPhone": "13800000001", "guardianAddress": "本地"})
+	result := api(t, h.updateGuardian, map[string]any{"customerId": 1, "customerName": "监护人", "customerAge": 40, "customerSex": "女", "customerPhone": "13800000001", "customerAddress": "本地"})
 	if result["returnCode"] != "1111" {
 		t.Fatal(result)
 	}
@@ -184,14 +183,14 @@ func TestIntegrationListContractsAndNumericAge(t *testing.T) {
 func TestIntegrationEditPreservesFamily(t *testing.T) {
 	pool := testDatabase(t)
 	h := testHandler(t, pool)
-	mustExec(t, pool, "INSERT INTO guardian(guardian_id,guardian_name) VALUES(1,'监护人')")
-	mustExec(t, pool, "INSERT INTO resident(resident_id,name,family_id) VALUES(1,'长者',7)")
-	out := api(t, h.updateResident, map[string]any{"residentId": 1, "name": "新姓名", "birthdate": "1950-01-01", "sex": "女", "phone": "13800000000", "room": "101", "illness": "", "warn": "", "foodLike": "", "foodHate": "", "drug": "", "guardianName": "1"})
+	mustExec(t, pool, "INSERT INTO customer(customer_id,customer_name) VALUES(1,'监护人')")
+	mustExec(t, pool, "INSERT INTO oldperson(old_id,name,family_id) VALUES(1,'长者',7)")
+	out := api(t, h.updateResident, map[string]any{"oldId": 1, "name": "新姓名", "bothdate": "1950-01-01", "sex": "女", "phone": "13800000000", "room": "101", "illness": "", "warn": "", "foodLike": "", "foodHate": "", "drag": "", "customerName": "1"})
 	if out["returnCode"] != "1111" {
 		t.Fatal(out)
 	}
 	var familyID *int64
-	if err := pool.QueryRow(context.Background(), "SELECT family_id FROM resident WHERE resident_id=1").Scan(&familyID); err != nil || familyID == nil || *familyID != 7 {
+	if err := pool.QueryRow(context.Background(), "SELECT family_id FROM oldperson WHERE old_id=1").Scan(&familyID); err != nil || familyID == nil || *familyID != 7 {
 		t.Fatalf("binding changed: %v err=%v", familyID, err)
 	}
 }
@@ -200,12 +199,12 @@ const testSecret = "test-device-secret-1234567890"
 
 func seedDevice(t *testing.T, pool *dbstore.Database) {
 	t.Helper()
-	hash, err := secretHash(testSecret)
+	hash, err := devicecredential.Hash(testSecret)
 	if err != nil {
 		t.Fatal(err)
 	}
-	mustExec(t, pool, "INSERT INTO resident(resident_id,name) VALUES(1,'长者')")
-	mustExec(t, pool, "INSERT INTO device(device_id,device_no,secret,resident_id) VALUES(1,'WATCH001',$1,1)", hash)
+	mustExec(t, pool, "INSERT INTO oldperson(old_id,name) VALUES(1,'长者')")
+	mustExec(t, pool, "INSERT INTO device(device_id,device_no,secret,old_id) VALUES(1,'WATCH001',$1,1)", hash)
 }
 
 func TestIntegrationCoordinatesAndSOS(t *testing.T) {
@@ -218,7 +217,7 @@ func TestIntegrationCoordinatesAndSOS(t *testing.T) {
 		t.Fatal(out)
 	}
 	var lng, lat *string
-	if err := pool.QueryRow(context.Background(), "SELECT lng,lat FROM alarm_event ORDER BY id DESC LIMIT 1").Scan(&lng, &lat); err != nil || lng != nil || lat != nil {
+	if err := pool.QueryRow(context.Background(), "SELECT lng,lat FROM alarm_precess ORDER BY id DESC LIMIT 1").Scan(&lng, &lat); err != nil || lng != nil || lat != nil {
 		t.Fatalf("missing position must be NULL: %v %v err=%v", lng, lat, err)
 	}
 	// Real handlers must accept numeric decimal coordinates for reports and SOS.
@@ -242,15 +241,15 @@ func TestIntegrationDistinctInvitesCannotOverwriteFamily(t *testing.T) {
 	pool := testDatabase(t)
 	h := testHandler(t, pool)
 	ctx := context.Background()
-	mustExec(t, pool, "INSERT INTO resident(resident_id,name) VALUES(1,'长者')")
-	mustExec(t, pool, "INSERT INTO invite_code(code,resident_id,expire_time) VALUES('AAAAAA',1,now()+interval '1 day'),('BBBBBB',1,now()+interval '1 day')")
+	mustExec(t, pool, "INSERT INTO oldperson(old_id,name) VALUES(1,'长者')")
+	mustExec(t, pool, "INSERT INTO invite_code(code,old_id,expire_time) VALUES('AAAAAA',1,now()+interval '1 day'),('BBBBBB',1,now()+interval '1 day')")
 	// Hold the parent row so both registrations contend on the same elder.
 	blocker, err := pool.Begin(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer blocker.Rollback(ctx)
-	if _, err = blocker.Exec(ctx, "SELECT resident_id FROM resident WHERE resident_id=1 FOR UPDATE"); err != nil {
+	if _, err = blocker.Exec(ctx, "SELECT old_id FROM oldperson WHERE old_id=1 FOR UPDATE"); err != nil {
 		t.Fatal(err)
 	}
 	start := make(chan struct{})
@@ -302,7 +301,7 @@ func TestIntegrationDistinctInvitesCannotOverwriteFamily(t *testing.T) {
 		t.Fatalf("success=%d accounts=%d used=%d", success, families, used)
 	}
 	var bound bool
-	if err = pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM resident o JOIN family f ON f.family_id=o.family_id WHERE o.resident_id=1)").Scan(&bound); err != nil || !bound {
+	if err = pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM oldperson o JOIN family f ON f.family_id=o.family_id WHERE o.old_id=1)").Scan(&bound); err != nil || !bound {
 		t.Fatalf("missing winning binding: %v", err)
 	}
 }
@@ -337,18 +336,18 @@ func TestIntegrationBindDeleteRace(t *testing.T) {
 	pool := testDatabase(t)
 	h := testHandler(t, pool)
 	ctx := context.Background()
-	mustExec(t, pool, "INSERT INTO resident(resident_id,name) VALUES(1,'长者')")
+	mustExec(t, pool, "INSERT INTO oldperson(old_id,name) VALUES(1,'长者')")
 	mustExec(t, pool, "INSERT INTO device(device_no,secret) VALUES('racing','unused')")
 	binding, err := pool.Begin(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer binding.Rollback(ctx)
-	if _, err = binding.Exec(ctx, "UPDATE device SET resident_id=1 WHERE device_no='racing'"); err != nil {
+	if _, err = binding.Exec(ctx, "UPDATE device SET old_id=1 WHERE device_no='racing'"); err != nil {
 		t.Fatal(err)
 	}
 	result := make(chan *httptest.ResponseRecorder, 1)
-	go func() { result <- callAPI(h.deleteResident, map[string]any{"residentId": 1}) }()
+	go func() { result <- callAPI(h.deleteResident, map[string]any{"oldId": 1}) }()
 	deadline := time.Now().Add(10 * time.Second)
 	for {
 		var waiting int
@@ -371,7 +370,7 @@ func TestIntegrationBindDeleteRace(t *testing.T) {
 		t.Fatalf("racing deletion: HTTP %d %s", response.Code, response.Body.String())
 	}
 	var intact bool
-	if err = pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM device d JOIN resident o ON o.resident_id=d.resident_id WHERE d.device_no='racing')").Scan(&intact); err != nil || !intact {
+	if err = pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM device d JOIN oldperson o ON o.old_id=d.old_id WHERE d.device_no='racing')").Scan(&intact); err != nil || !intact {
 		t.Fatalf("binding became orphaned: %v", err)
 	}
 }
@@ -435,11 +434,11 @@ func expectedMigrations(pool *db.Database) (int, error) {
 
 func lockWaitQuery(pool *dbstore.Database, deleting bool) string {
 	if pool.IsMySQL() {
-		return "SELECT count(*) FROM performance_schema.data_lock_waits w JOIN performance_schema.data_locks l ON l.ENGINE_LOCK_ID=w.REQUESTING_ENGINE_LOCK_ID AND l.ENGINE=w.ENGINE WHERE l.OBJECT_SCHEMA=DATABASE() AND l.OBJECT_NAME='resident'"
+		return "SELECT count(*) FROM performance_schema.data_lock_waits w JOIN performance_schema.data_locks l ON l.ENGINE_LOCK_ID=w.REQUESTING_ENGINE_LOCK_ID AND l.ENGINE=w.ENGINE WHERE l.OBJECT_SCHEMA=DATABASE() AND l.OBJECT_NAME='oldperson'"
 	}
-	pattern := "%resident%"
+	pattern := "%oldperson%"
 	if deleting {
-		pattern = "DELETE FROM resident%"
+		pattern = "DELETE FROM oldperson%"
 	}
 	return "SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock' AND query LIKE '" + pattern + "' AND pid<>pg_backend_pid()"
 }

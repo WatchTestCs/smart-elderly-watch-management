@@ -1,12 +1,12 @@
 package handlers
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
 	"os"
 	"time"
 
+	"suining-care/internal/devicecredential"
 	"suining-care/internal/health"
 	"suining-care/internal/response"
 )
@@ -17,6 +17,18 @@ func (h *Handler) routeHealth(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/v1/health/statistics", h.healthStatistics)
 	mux.HandleFunc("POST /api/v1/health/latest", h.healthLatest)
 	mux.HandleFunc("POST /api/v1/health/baseline", h.healthBaseline)
+}
+
+func checkHealthDeviceCredential(w http.ResponseWriter, supplied, stored string, status *int) bool {
+	switch devicecredential.Check(supplied, stored, status) {
+	case devicecredential.InvalidSecret:
+		hwFail(w, "DEVICE_AUTH_FAILED", "设备号或密钥不正确")
+		return false
+	case devicecredential.Disabled:
+		hwFail(w, "DEVICE_DISABLED", "设备已停用")
+		return false
+	}
+	return true
 }
 
 func (h *Handler) healthBatch(w http.ResponseWriter, r *http.Request) {
@@ -65,16 +77,15 @@ func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Reques
 		hwFail(w, "DEVICE_AUTH_FAILED", "设备号或密钥不正确，或设备已停用")
 		return
 	}
-	if code, msg = deviceCredentialFailure(req.Secret, d.Secret, d.Status, "设备已停用"); code != "" {
-		hwFail(w, code, msg)
+	if !checkHealthDeviceCredential(w, req.Secret, d.Secret, d.Status) {
 		return
 	}
-	if d.ResidentID == nil || d.HealthEpoch != req.BindingVersion {
+	if d.OldID == nil || d.HealthEpoch != req.BindingVersion {
 		conflict409(w, "绑定已变化，请重新登录；旧绑定数据不能归入新老人")
 		return
 	}
-	expectedOwner := *d.ResidentID
-	owner := health.Owner{ResidentID: expectedOwner, DeviceID: &d.ID, Epoch: d.HealthEpoch}
+	expectedOwner := *d.OldID
+	owner := health.Owner{OldID: expectedOwner, DeviceID: &d.ID, Epoch: d.HealthEpoch}
 	cursor, duplicates, err := batch.Save(ctx, tx, owner)
 	if err != nil {
 		if errors.Is(err, health.ErrConflict) {
@@ -94,11 +105,10 @@ func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Reques
 			hwFail(w, "DEVICE_AUTH_FAILED", "设备号或密钥不正确")
 			return
 		}
-		if code, msg = deviceCredentialFailure(req.Secret, d.Secret, d.Status, "设备已停用"); code != "" {
-			hwFail(w, code, msg)
+		if !checkHealthDeviceCredential(w, req.Secret, d.Secret, d.Status) {
 			return
 		}
-		if d.ResidentID == nil || *d.ResidentID != expectedOwner || d.HealthEpoch != req.BindingVersion {
+		if d.OldID == nil || *d.OldID != expectedOwner || d.HealthEpoch != req.BindingVersion {
 			conflict409(w, "绑定已变化，请重新登录；旧绑定数据不能归入新老人")
 			return
 		}
@@ -115,9 +125,9 @@ func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Reques
 
 func (h *Handler) healthChanges(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		ResidentID int64 `json:"residentId"`
-		After      int64 `json:"after"`
-		Limit      int   `json:"limit"`
+		OldID int64 `json:"oldId"`
+		After int64 `json:"after"`
+		Limit int   `json:"limit"`
 	}
 	if !decodeHealth(w, r, &req) {
 		return
@@ -129,39 +139,18 @@ func (h *Handler) healthChanges(w http.ResponseWriter, r *http.Request) {
 	if req.Limit == 0 {
 		req.Limit = 100
 	}
-	residentID, ok := h.resolveOptionalResidentID(w, r, req.ResidentID)
+	oldID, ok := h.resolveOptionalOldID(w, r, req.OldID)
 	if !ok {
 		return
 	}
-	rows, err := h.DB.Query(r.Context(), `SELECT revision,payload FROM health_change WHERE resident_id=$1 AND revision>$2 ORDER BY revision LIMIT $3`, residentID, req.After, req.Limit+1)
+	changes, err := health.ListChanges(r.Context(), h.DB, oldID, req.After, req.Limit)
 	if internalError(w, err) {
 		return
 	}
-	defer rows.Close()
-	items := []json.RawMessage{}
-	cursor := req.After
-	hasMore := false
-	for rows.Next() {
-		var rev int64
-		var b []byte
-		if err = rows.Scan(&rev, &b); internalError(w, err) {
-			return
-		}
-		if rev < 0 || rev > health.MaxRevision {
-			response.Error500(w, ref())
-			return
-		}
-		if len(items) == req.Limit {
-			hasMore = true
-			break
-		}
-		items = append(items, json.RawMessage(b))
-		cursor = rev
-	}
-	if !rowsOK(w, rows) {
-		return
-	}
-	response.OK(w, map[string]any{"changes": items, "nextCursor": cursor, "hasMore": hasMore, "residentId": residentID})
+	response.OK(w, map[string]any{
+		"changes": changes.Items, "nextCursor": changes.NextCursor,
+		"hasMore": changes.HasMore, "oldId": oldID,
+	})
 }
 
 type healthBatchRequest struct {

@@ -12,8 +12,8 @@ pub struct ReportPayload {
     #[serde(rename = "deviceNo")]
     pub device_no: String,
     pub secret: String,
-    #[serde(rename = "eventTime", skip_serializing_if = "String::is_empty")]
-    pub event_time: String,
+    #[serde(rename = "beTime", skip_serializing_if = "String::is_empty")]
+    pub be_time: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub step: Option<i64>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -43,7 +43,7 @@ pub struct ReportPayload {
     pub position_sampled_at: Option<String>,
     #[serde(rename = "positionAccuracy", skip_serializing_if = "Option::is_none")]
     pub position_accuracy: Option<f64>,
-    /// 带上它就进入后端持久队列分支（需服务端 `SUINING_DURABLE_TELEMETRY=1`）。
+    /// 带上它就进入后端持久队列分支（需服务端 `CAREOLD_DURABLE_TELEMETRY=1`）。
     #[serde(rename = "requestId", skip_serializing_if = "Option::is_none")]
     pub request_id: Option<String>,
     #[serde(rename = "bindingVersion", skip_serializing_if = "Option::is_none")]
@@ -51,21 +51,21 @@ pub struct ReportPayload {
 }
 
 impl ReportPayload {
-    pub fn new(cred: &Credentials, event_time: String) -> Self {
+    pub fn new(cred: &Credentials, be_time: String) -> Self {
         ReportPayload {
             device_no: cred.device_no.clone(),
             secret: cred.secret.clone(),
-            event_time,
+            be_time,
             ..Default::default()
         }
     }
 
     /// 本地预校验，把后端会 400 的情况提前拦下来，压测时不必浪费往返。
     pub fn validate(&self) -> Result<(), String> {
-        if !self.event_time.is_empty() && self.event_time.len() != 19 {
+        if !self.be_time.is_empty() && self.be_time.len() != 19 {
             return Err(format!(
-                "eventTime 必须是 yyyy-MM-dd HH:mm:ss，实际 {:?}",
-                self.event_time
+                "beTime 必须是 yyyy-MM-dd HH:mm:ss，实际 {:?}",
+                self.be_time
             ));
         }
         check_metric("hr", self.hr, 20, 250)?;

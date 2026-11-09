@@ -15,7 +15,7 @@ func familyPhoneValidationHandler(t *testing.T) *Handler {
 		t.Fatal(err)
 	}
 	mustExec(t, h.DB, "INSERT INTO family(family_name,family_phone,family_password,family_address) VALUES('原家属','13800000001',$1,'原地址')", hash)
-	mustExec(t, h.DB, "INSERT INTO resident(resident_id,name,family_id,phone) VALUES(1,'已关联',1,'13800000009'),(2,'待关联',NULL,'13800000008')")
+	mustExec(t, h.DB, "INSERT INTO oldperson(old_id,name,family_id,phone) VALUES(1,'已关联',1,'13800000009'),(2,'待关联',NULL,'13800000008')")
 	return h
 }
 
@@ -50,7 +50,7 @@ func TestContinuousFamilyPhoneFormatValidation(t *testing.T) {
 	if err := h.DB.QueryRow(context.Background(), "SELECT count(*) FROM family").Scan(&count); err != nil || count != 1 {
 		t.Errorf("invalid add created an account: count=%d err=%v", count, err)
 	}
-	if err := h.DB.QueryRow(context.Background(), "SELECT family_id FROM resident WHERE resident_id=2").Scan(&bound); err != nil || bound != nil {
+	if err := h.DB.QueryRow(context.Background(), "SELECT family_id FROM oldperson WHERE old_id=2").Scan(&bound); err != nil || bound != nil {
 		t.Fatalf("invalid phone changed elder binding: family=%v err=%v", bound, err)
 	}
 }
@@ -76,7 +76,7 @@ func TestContinuousFamilyPhoneEditRejectsOtherAccounts(t *testing.T) {
 		t.Fatalf("updated account cannot log in: HTTP %d %s", loggedIn.Code, loggedIn.Body.String())
 	}
 	current := h.Sessions.Get(loggedIn.Result().Cookies()[0].Value)
-	if current == nil || current.Principal.Role != auth.RoleFamily || current.Principal.ID != 1 || current.Principal.ResidentID != 1 {
+	if current == nil || current.Principal.Role != auth.RoleFamily || current.Principal.ID != 1 || current.Principal.OldID != 1 {
 		t.Fatalf("phone update changed account ownership: %+v", current)
 	}
 }

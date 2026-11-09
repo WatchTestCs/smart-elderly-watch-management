@@ -8,7 +8,7 @@ import (
 )
 
 func referenceIdentity(o Owner, s Sample) string {
-	b, _ := json.Marshal([]any{o.ResidentID, o.DeviceID, o.Epoch, s.Source, s.SourceDevice, s.RecordID, s.Metric})
+	b, _ := json.Marshal([]any{o.OldID, o.DeviceID, o.Epoch, s.Source, s.SourceDevice, s.RecordID, s.Metric})
 	return Digest(b)
 }
 func TestIdentityDigestEquivalent(t *testing.T) {
@@ -19,7 +19,7 @@ func TestIdentityDigestEquivalent(t *testing.T) {
 	cases := 0
 	for _, e := range edge {
 		for i := 0; i < 4; i++ {
-			o := Owner{ResidentID: int64(i - 3), Epoch: int64(i)}
+			o := Owner{OldID: int64(i - 3), Epoch: int64(i)}
 			if i%2 == 0 {
 				o.DeviceID = &device
 			}
@@ -46,7 +46,7 @@ func TestIdentityDigestEquivalent(t *testing.T) {
 		sample.Source = string(s)
 		sample.SourceDevice = string(s)
 		sample.RecordID = string(s)
-		o := Owner{ResidentID: random.Int63(), Epoch: int64(random.Intn(1000))}
+		o := Owner{OldID: random.Int63(), Epoch: int64(random.Intn(1000))}
 		if i%2 == 0 {
 			o.DeviceID = &device
 		}
@@ -64,7 +64,7 @@ func TestIdentityDigestEquivalent(t *testing.T) {
 var identitySink string
 
 func BenchmarkIdentityLegacy(b *testing.B) {
-	o := Owner{ResidentID: 456, Epoch: 1}
+	o := Owner{OldID: 456, Epoch: 1}
 	dev := int64(124)
 	o.DeviceID = &dev
 	s := Sample{Source: "watch", SourceDevice: "WATCH-123456", RecordID: "sample-123456", Metric: "heart_rate"}
@@ -74,7 +74,7 @@ func BenchmarkIdentityLegacy(b *testing.B) {
 	}
 }
 func BenchmarkIdentityOptimized(b *testing.B) {
-	o := Owner{ResidentID: 456, Epoch: 1}
+	o := Owner{OldID: 456, Epoch: 1}
 	dev := int64(124)
 	o.DeviceID = &dev
 	s := Sample{Source: "watch", SourceDevice: "WATCH-123456", RecordID: "sample-123456", Metric: "heart_rate"}
@@ -84,7 +84,7 @@ func BenchmarkIdentityOptimized(b *testing.B) {
 	}
 }
 func BenchmarkIdentityOptimizedUnicode(b *testing.B) {
-	o := Owner{ResidentID: 456, Epoch: 1}
+	o := Owner{OldID: 456, Epoch: 1}
 	dev := int64(124)
 	o.DeviceID = &dev
 	s := Sample{Source: "watch", SourceDevice: "老人手表-A1", RecordID: "记录\u2028ONE", Metric: "heart_rate"}

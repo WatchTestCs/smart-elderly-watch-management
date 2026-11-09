@@ -2,7 +2,7 @@
   <div class="roles">
     
     <div class="sys-research">
-      <form class="row-search" role="search" @submit.prevent="searchStep">
+      <form class="row-search" role="search" @submit.prevent="searchStep()">
         <div class="search-field">
           
           <label class="table-search-label" for="search-step">长者姓名</label>
@@ -46,14 +46,14 @@
         </template>
       </el-table-column>
     </el-table>
-    <record-cards v-if="mobileLayout" :records="stepList" :fields='[{"key":"sex","label":"性别"},{"key":"step","label":"今日步数"},{"key":"sleep","label":"睡眠时间"},{"key":"sleepAlertState","label":"睡眠情况","state":"health"}]' label="睡眠与步数记录" title-key="name" key-field="residentId" time-key="createTime">
+    <record-cards v-if="mobileLayout" :records="stepList" :fields='[{"key":"sex","label":"性别"},{"key":"step","label":"今日步数"},{"key":"sleep","label":"睡眠时间"},{"key":"sleepAlertState","label":"睡眠情况","state":"health"}]' label="睡眠与步数记录" title-key="name" key-field="oldId" time-key="createTime">
       <template #actions="scope"  ><el-button size="small" plain type="success" :icon="Check" aria-label="查看睡眠详情" @click="showRoleDialog(scope.row)">
             查看睡眠详情
           </el-button></template>
     </record-cards>
     
     <div style="margin-top: 10px;text-align: center">
-      <pager-bar
+      <el-pagination layout="total, sizes, prev, pager, next, jumper"
         @size-change="handleSizeChange"
         @current-change="changePage"
         v-model:current-page="currentPage"
@@ -70,7 +70,7 @@
 
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { Check, Search } from '@element-plus/icons-vue'
 import { onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
@@ -82,31 +82,35 @@ import { apiErrorMessage } from '../api/httpContract'
 import RecordCards from '@/components/RecordCards.vue'
 
 const searchText = ref('')
-const stepCount = ref('')
+const stepCount = ref<string | number>('')
 const mobileLayout = useCollectionLayout(900)
 const {
-  detailsVisible, chartLoading, chartError, chartName,
-  primaryChartElement, secondaryChartElement, showRecordDetails, resizeCharts, disposeCharts
+  detailsVisible, chartLoading, chartError,
+  primaryChartElement, showRecordDetails, resizeCharts, disposeCharts
 } = useRecordCharts()
+interface ActivityRecord {
+  oldId: number | string
+  name: string
+}
 const {
   records: stepList, isLoading, loadError, total,
   pageSize, currentPage, load: searchStep,
   handleSizeChange, changePage
-} = usePagedRecords({
+} = usePagedRecords<ActivityRecord>({
   path: 'api/v1/activity/latest',
   responseKey: 'activityRecords',
   buildQuery: () => ({ name: searchText.value, timeFirst: '', timeLast: '' })
 })
 async function getCount() {
   try {
-    const { data } = await requestClient.post('api/v1/activity/alerts/device-counts', {})
+    const { data } = await requestClient.post<{ sleep: number | string }>('api/v1/activity/alerts/device-counts', {})
     stepCount.value = data.sleep
   } catch (error) {
     ElMessage.error(apiErrorMessage(error, '请求未完成，请重试'))
   }
 }
-function showRoleDialog(row) {
-  return showRecordDetails('activity', row.residentId, row.name)
+function showRoleDialog(row: ActivityRecord) {
+  return showRecordDetails('activity', row.oldId, row.name)
 }
 onMounted(() => { void getCount() })
 </script>

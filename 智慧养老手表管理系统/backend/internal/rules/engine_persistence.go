@@ -45,7 +45,7 @@ func (e *Engine) persist(ctx context.Context, tx *db.Transaction, device, old, e
 	}
 	if c.Breach && streak >= c.Required && !active {
 		var id int64
-		err = tx.QueryRow(ctx, "INSERT INTO care_incident(resident_id,device_id,kind,severity) VALUES($1,$2,$3,$4) RETURNING id", old, device, "rule_"+c.Kind, c.Severity).Scan(&id)
+		err = tx.QueryRow(ctx, "INSERT INTO care_incident(old_id,device_id,kind,severity) VALUES($1,$2,$3,$4) RETURNING id", old, device, "rule_"+c.Kind, c.Severity).Scan(&id)
 		if err != nil {
 			return err
 		}

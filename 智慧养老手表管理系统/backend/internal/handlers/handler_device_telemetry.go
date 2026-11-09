@@ -6,7 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jackc/pgx/v5"
+	"suining-care/internal/careworkflow"
+	"suining-care/internal/deviceworkflow"
+	"suining-care/internal/observability"
 	"suining-care/internal/response"
 )
 
@@ -51,25 +53,34 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 		parsed.requestID = requestID
 	}
 	ctx := r.Context()
+	// Authenticate before opening a transaction. The locked row is rechecked
+	// below, so no owner-scoped writes can escape a concurrent bind or revoke.
+	// The report needs no decrypted last-known coordinates.
+	authAt := time.Now()
+	d, authFailure, err := deviceworkflow.Authenticate(ctx, h.DB, deviceNo, secret)
+	observability.Default.Add("suining_device_report_auth_seconds_total", time.Since(authAt).Seconds())
+	if internalError(w, err) {
+		return
+	}
+	if d == nil {
+		message := "设备号或密钥不正确"
+		if authFailure == deviceworkflow.DeviceDisabled {
+			message = "设备已停用"
+		}
+		hwFail(w, string(authFailure), message)
+		return
+	}
+	if d.OldID == nil {
+		hwFail(w, "DEVICE_NOT_BOUND", "设备还未绑定老人，请先在手表上输入绑定码")
+		return
+	}
+	beginAt := time.Now()
 	tx, err := h.DB.Begin(ctx)
+	observability.Default.Add("suining_device_report_begin_seconds_total", time.Since(beginAt).Seconds())
 	if internalError(w, err) {
 		return
 	}
 	rollback := func() { _ = tx.Rollback(ctx) }
-	d, code, msg, err := h.hwAuth(ctx, tx, deviceNo, secret, "设备已停用")
-	if rollbackOnError(w, rollback, err) {
-		return
-	}
-	if d == nil {
-		rollback()
-		hwFail(w, code, msg)
-		return
-	}
-	if d.ResidentID == nil {
-		rollback()
-		hwFail(w, "DEVICE_NOT_BOUND", "设备还未绑定老人，请先在手表上输入绑定码")
-		return
-	}
 	// A report writes owner-scoped vitals, history and locations. Read-only
 	// authentication above is not enough: unbind can commit between that read
 	// and persistence. Take the same elder -> device locks as bind/SOS before
@@ -84,16 +95,23 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 		// recheck this snapshot's epoch under the row lock before writing.
 		bindingVersion = d.HealthEpoch
 	}
-	locked, lockedCode, lockedMsg, lockErr := h.lockSOSDevice(ctx, tx, deviceNo, secret, bindingVersion)
+	lockAt := time.Now()
+	locked, failure, lockErr := deviceworkflow.LockAuthenticatedDevice(ctx, tx, d, deviceNo, secret, bindingVersion)
+	observability.Default.Add("suining_device_report_binding_lock_seconds_total", time.Since(lockAt).Seconds())
 	if rollbackOnError(w, rollback, lockErr) {
 		return
 	}
 	if locked == nil {
 		rollback()
-		if lockedCode == "409" {
-			conflict409(w, lockedMsg)
-		} else {
-			hwFail(w, lockedCode, lockedMsg)
+		switch failure {
+		case deviceworkflow.BindingChanged:
+			conflict409(w, "绑定已变化，请重新登录；旧绑定求助不能归入新老人")
+		case deviceworkflow.DeviceUnbound:
+			hwFail(w, "DEVICE_NOT_BOUND", "设备还未绑定老人")
+		case deviceworkflow.DeviceDisabled:
+			hwFail(w, "DEVICE_DISABLED", "设备已停用")
+		default:
+			hwFail(w, "DEVICE_AUTH_FAILED", "设备号或密钥不正确")
 		}
 		return
 	}
@@ -137,30 +155,26 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 	}
 	if isAlarm {
 		if requestID != "" {
-			var priorID, priorOwner int64
-			var priorKind, priorState string
-			err := tx.QueryRow(ctx, `SELECT id,resident_id,kind,state FROM care_incident
-				WHERE device_id=$1 AND request_id=$2 FOR UPDATE`, d.ID, requestID).
-				Scan(&priorID, &priorOwner, &priorKind, &priorState)
-			if err == nil {
+			prior, err := careworkflow.FindReportRetry(ctx, tx, d.ID, requestID)
+			if err != nil {
+				rollback()
+				response.Error500(w, ref())
+				return
+			}
+			if prior != nil {
 				rollback()
 				kind := "device_alarm"
 				if strings.EqualFold(parsed.alarm, "fall") {
 					kind = "fall"
 				}
-				if priorOwner != *d.ResidentID || priorKind != kind {
+				if prior.ResidentID != *d.OldID || prior.Kind != kind {
 					conflict409(w, "设备上报编号已被其他事件或绑定使用")
 					return
 				}
 				response.OK(w, map[string]any{
-					"incidentId": priorID, "incidentState": priorState,
+					"incidentId": prior.ID, "incidentState": prior.State,
 					"duplicate": true, "message": "设备告警已接收（重复请求）",
 				})
-				return
-			}
-			if err != pgx.ErrNoRows {
-				rollback()
-				response.Error500(w, ref())
 				return
 			}
 		}
@@ -195,7 +209,9 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 		response.OK(w, queuedResult)
 		return
 	}
+	persistAt := time.Now()
 	persisted, err := (telemetryRepository{box: h.Box}).PersistDeviceReport(ctx, tx, d, parsed)
+	observability.Default.Add("suining_device_report_persist_seconds_total", time.Since(persistAt).Seconds())
 	if rollbackOnError(w, rollback, err) {
 		return
 	}

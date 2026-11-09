@@ -2,10 +2,15 @@
 package handlers
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"net/http"
-	dbstore "suining-care/internal/db"
+	"suining-care/internal/blob"
+	"suining-care/internal/db"
 	"suining-care/internal/response"
+	"suining-care/internal/socialrepo"
+	"suining-care/internal/socialworkflow"
 	"time"
 	"unicode/utf8"
 )
@@ -31,42 +36,6 @@ func (h *Handler) routeSocial(mux *http.ServeMux) {
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
 
-type noticeComment struct {
-	SaidID     *int64  `json:"saidId"`
-	Said       *string `json:"said"`
-	TextID     *int64  `json:"textId"`
-	Back       *string `json:"back"`
-	SaidTime   *string `json:"saidTime"`
-	BackTime   *string `json:"backTime"`
-	PersonName *string `json:"personName"`
-	NiceCount  *int64  `json:"niceCount"`
-	SaidPhone  *string `json:"saidPhone"`
-	TouPic     *string `json:"touPic"`
-	Good       *string `json:"good"`
-}
-
-type moderatedNoticeComment struct {
-	SaidID     *int64  `json:"saidId"`
-	Said       *string `json:"said"`
-	Back       *string `json:"back"`
-	SaidTime   *string `json:"saidTime"`
-	BackTime   *string `json:"backTime"`
-	PersonName *string `json:"personName"`
-	TouPic     *string `json:"touPic"`
-	Title      *string `json:"title"`
-}
-
-// maskPhone 将评论作者手机号脱敏为 138****1234：said/select 面向任意登录家属，
-// 原样返回会批量暴露全体用户的登录账号（手机号）。非 11 位号码一律不返回。
-func maskPhone(phone *string) *string {
-	if phone == nil || len(*phone) != 11 {
-		return nil
-	}
-	v := *phone
-	masked := v[:3] + "****" + v[7:]
-	return &masked
-}
-
 // POST /api/v1/notice-comments/list —— 查询某公告下的说说/评论（含当前人点赞状态）。
 func (h *Handler) listNoticeComments(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
@@ -82,27 +51,8 @@ func (h *Handler) listNoticeComments(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	sql := `SELECT s.said_id, s.said, s.text_id, s.back,` +
-		` TO_CHAR(s.said_time,'YYYY-MM-DD HH24:MI:SS.MS') AS saidTime,` +
-		` TO_CHAR(s.back_time,'YYYY-MM-DD HH24:MI:SS.MS') AS backTime,` +
-		` s.person_name, s.nice_count, s.said_phone, s.tou_pic,` +
-		` CASE WHEN EXISTS (SELECT 1 FROM nice_count n WHERE n.said_id=s.said_id AND n.phone=$1) THEN '1' ELSE '0' END AS good` +
-		` FROM said s`
-	args := []any{p.Phone}
-	if textID != 0 {
-		sql += " WHERE s.text_id=$2"
-		args = append(args, textID)
-	}
-	items, ok := queryRows(h, w, r.Context(), func(rows dbstore.Rows) (noticeComment, error) {
-		var d noticeComment
-		if err := rows.Scan(&d.SaidID, &d.Said, &d.TextID, &d.Back, &d.SaidTime, &d.BackTime,
-			&d.PersonName, &d.NiceCount, &d.SaidPhone, &d.TouPic, &d.Good); err != nil {
-			return d, err
-		}
-		d.SaidPhone = maskPhone(d.SaidPhone)
-		return d, nil
-	}, sql, args...)
-	if !ok {
+	items, err := socialrepo.ListComments(r.Context(), h.DB, p.Phone, textID)
+	if internalError(w, err) {
 		return
 	}
 	response.JSON(w, http.StatusOK, map[string]any{"comments": items})
@@ -118,24 +68,10 @@ func (h *Handler) searchNoticeComments(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	sql := `SELECT said_id, said, back,` +
-		` TO_CHAR(said_time,'YYYY-MM-DD HH24:MI:SS.MS') AS saidTime,` +
-		` TO_CHAR(back_time,'YYYY-MM-DD HH24:MI:SS.MS') AS backTime,` +
-		` person_name, tou_pic, title FROM said INNER JOIN ` + socialTextTable(h.DB.IsMySQL()) + ` ON said.text_id=` + socialTextTable(h.DB.IsMySQL()) + `.text_id` +
-		` ORDER BY said_time DESC, said_id DESC`
-	total, ok := h.pagedTotal(w, r, sql, nil)
-	if !ok {
-		return
-	}
-	limitSQL, fullArgs := pageArgs(nil, page, pageSize)
-	items, ok := queryRows(h, w, r.Context(), func(rows dbstore.Rows) (moderatedNoticeComment, error) {
-		var d moderatedNoticeComment
-		if err := rows.Scan(&d.SaidID, &d.Said, &d.Back, &d.SaidTime, &d.BackTime, &d.PersonName, &d.TouPic, &d.Title); err != nil {
-			return d, err
-		}
-		return d, nil
-	}, sql+limitSQL, fullArgs...)
-	if !ok {
+	items, total, err := socialrepo.SearchModeratedComments(
+		r.Context(), h.DB, socialTextTable(h.DB.IsMySQL()), page, pageSize,
+	)
+	if internalError(w, err) {
 		return
 	}
 	response.JSON(w, http.StatusOK, map[string]any{
@@ -154,11 +90,11 @@ func (h *Handler) deleteNoticeComment(w http.ResponseWriter, r *http.Request) {
 		response.Fail(w, "参数不正确")
 		return
 	}
-	ct, err := h.DB.Exec(r.Context(), "DELETE FROM said WHERE said_id=$1", saidID)
+	deleted, err := socialrepo.DeleteComment(r.Context(), h.DB, saidID)
 	if internalError(w, err) {
 		return
 	}
-	writeCode(w, ct.RowsAffected() == 1)
+	writeCode(w, deleted)
 }
 
 // POST /api/v1/notice-comments/create —— 发表说说/评论。
@@ -192,32 +128,25 @@ func (h *Handler) createNoticeComment(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	tx, err := h.DB.Begin(r.Context())
+	inserted, err := socialworkflow.CreateComment(r.Context(), h.DB,
+		func(ctx context.Context, tx *db.Transaction, names []string) error {
+			manager, err := h.images()
+			if err != nil {
+				return err
+			}
+			return manager.Require(ctx, tx, names)
+		}, socialrepo.NewComment{
+			NoticeID: textID, Content: saidContent, CreatedAt: time.Now(),
+			AuthorName: p.DisplayName, AuthorPhone: p.Phone,
+		})
+	if errors.Is(err, blob.ErrNotFound) {
+		write400(w, "图片不存在或已回收，请重新上传")
+		return
+	}
 	if internalError(w, err) {
 		return
 	}
-	defer tx.Rollback(r.Context())
-	touPic := ""
-	var pic *string
-	if err := tx.QueryRow(r.Context(), "SELECT family_tou_pic FROM family WHERE family_phone=$1", p.Phone).Scan(&pic); err == nil && pic != nil {
-		touPic = *pic
-	} else if err != nil && !isNotFound(err) {
-		response.Error500(w, ref())
-		return
-	}
-	if touPic != "" && !h.lockImages(w, r.Context(), tx, []string{touPic}) {
-		return
-	}
-	ct, err := tx.Exec(r.Context(),
-		"INSERT INTO said(said,text_id,said_time,person_name,said_phone,tou_pic) VALUES($1,$2,$3,$4,$5,$6)",
-		saidContent, textID, time.Now(), p.DisplayName, p.Phone, touPic)
-	if internalError(w, err) {
-		return
-	}
-	if err = tx.Commit(r.Context()); internalError(w, err) {
-		return
-	}
-	writeCode(w, ct.RowsAffected() == 1)
+	writeCode(w, inserted)
 }
 
 // POST /api/v1/notice-comments/reply —— 管理员回复说说。
@@ -237,11 +166,11 @@ func (h *Handler) replyToNoticeComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	back, _ := v.(string)
-	ct, err := h.DB.Exec(r.Context(), "UPDATE said SET back=$1, back_time=$2 WHERE said_id=$3", back, time.Now(), saidID)
+	updated, err := socialrepo.ReplyComment(r.Context(), h.DB, saidID, back, time.Now())
 	if internalError(w, err) {
 		return
 	}
-	writeCode(w, ct.RowsAffected() == 1)
+	writeCode(w, updated)
 }
 
 // POST /api/v1/notice-comments/toggle-like —— 点赞/取消点赞（事务内执行，行锁防并发）。
@@ -259,48 +188,15 @@ func (h *Handler) toggleNoticeCommentLike(w http.ResponseWriter, r *http.Request
 	if !ok {
 		return
 	}
-	tx, err := h.DB.Begin(r.Context())
+	changed, err := socialrepo.ToggleLike(r.Context(), h.DB, saidID, p.Phone)
+	if isNotFound(err) {
+		response.JSON(w, http.StatusNotFound, map[string]any{"message": "评论不存在"})
+		return
+	}
 	if internalError(w, err) {
 		return
 	}
-	defer tx.Rollback(r.Context())
-	var locked int64
-	if err := tx.QueryRow(r.Context(), "SELECT said_id FROM said WHERE said_id=$1 FOR UPDATE", saidID).Scan(&locked); err != nil {
-		if isNotFound(err) {
-			response.JSON(w, http.StatusNotFound, map[string]any{"message": "评论不存在"})
-			return
-		}
-		response.Error500(w, ref())
-		return
-	}
-	var cnt int64
-	if internalError(w, tx.QueryRow(r.Context(), "SELECT COUNT(1) FROM nice_count WHERE said_id=$1 AND phone=$2", saidID, p.Phone).Scan(&cnt)) {
-		return
-	}
-	var rows int64
-	if cnt > 0 {
-		ct, err := tx.Exec(r.Context(), "DELETE FROM nice_count WHERE said_id=$1 AND phone=$2", saidID, p.Phone)
-		if internalError(w, err) {
-			return
-		}
-		rows = ct.RowsAffected()
-		if _, err := tx.Exec(r.Context(), "UPDATE said SET nice_count=nice_count-1 WHERE said_id=$1", saidID); internalError(w, err) {
-			return
-		}
-	} else {
-		ct, err := tx.Exec(r.Context(), "INSERT INTO nice_count(said_id,phone) VALUES($1,$2)", saidID, p.Phone)
-		if internalError(w, err) {
-			return
-		}
-		rows = ct.RowsAffected()
-		if _, err := tx.Exec(r.Context(), "UPDATE said SET nice_count=nice_count+1 WHERE said_id=$1", saidID); internalError(w, err) {
-			return
-		}
-	}
-	if internalError(w, tx.Commit(r.Context())) {
-		return
-	}
-	writeCode(w, rows == 1)
+	writeCode(w, changed)
 }
 
 // ---------------------------------------------------------------------------

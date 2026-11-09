@@ -47,7 +47,7 @@ async function main () {
   try {
     await login('13800000001')
     check('real login establishes a server session', await page.locator('.care-inbox').count() === 1)
-    await post('guardian/add', { guardianName: '张女士', guardianAge: 50, guardianSex: '女', guardianPhone: '13800000003', guardianAddress: '测试地址' })
+    await post('customer/add', { customerName: '张女士', customerAge: 50, customerSex: '女', customerPhone: '13800000003', customerAddress: '测试地址' })
     await page.goto(base + '/#/operations/residents')
     await page.getByRole('button', { name: '添加老人', exact: true }).click()
     const elderDialog = page.getByRole('dialog', { name: '老人添加' })
@@ -61,16 +61,16 @@ async function main () {
     await page.getByRole('option', { name: '张女士', exact: true }).click()
     await elderDialog.getByRole('button', { name: '确 定', exact: true }).click()
     await elderDialog.waitFor({ state: 'hidden' })
-    const details = (await post('resident/selectDetail', { name: '测试长者' })).residentDetails[0]
+    const details = (await post('oldPerson/selectDetail', { name: '测试长者' })).oldPersonDetails[0]
     check('elder can be created in the real UI before a watch exists', details.deviceId === null)
-    check('real stored diet and medication keep their field meanings', details.foodLike === '米饭' && details.foodHate === '花生' && details.drug === '常用药')
-    const device = await post('device/create', { alias: '测试手表', model: 'QA', residentId: '' })
-    const code = await post('device/createBindCode', { residentId: details.residentId, expireDays: '1' })
+    check('real stored diet and medication keep their field meanings', details.foodLike === '米饭' && details.foodHate === '花生' && details.drag === '常用药')
+    const device = await post('device/create', { alias: '测试手表', model: 'QA', oldId: '' })
+    const code = await post('device/createBindCode', { oldId: details.oldId, expireDays: '1' })
     await post('device/bind', { deviceNo: device.deviceNo, secret: device.secret, code: code.code })
     const deviceSession = await post('device/login', { deviceNo: device.deviceNo, secret: device.secret })
     const bound = (await post('device/list', {})).devices[0]
-    const linked = (await post('resident/selectDetail', { name: '测试长者' })).residentDetails[0]
-    check('binding keeps both inventory and elder references consistent', bound.residentId === details.residentId && linked.deviceId === device.deviceId)
+    const linked = (await post('oldPerson/selectDetail', { name: '测试长者' })).oldPersonDetails[0]
+    check('binding keeps both inventory and elder references consistent', bound.oldId === details.oldId && linked.deviceId === device.deviceId)
     await page.goto(base + '/#/operations/monitoring-profiles')
     await page.locator('.adaptive-record-table').getByRole('button', { name: '编辑', exact: true }).click()
     const watchDialog = page.getByRole('dialog', { name: '设备编辑' })

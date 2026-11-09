@@ -127,14 +127,14 @@ func fixture(ctx context.Context, pool *db.Database, cfg config.Config) error {
 	for _, sql := range []string{
 		"INSERT INTO users(user_id,user_name,role,user_phone) VALUES(1,'caregiver','1','13800000011'),(2,'reviewer','1','13800000012')",
 		"INSERT INTO family(family_id,family_name,family_phone) VALUES(1,'synthetic','13800000001')",
-		"INSERT INTO resident(resident_id,name,family_id) VALUES(1,'synthetic',1)",
+		"INSERT INTO oldperson(old_id,name,family_id) VALUES(1,'synthetic',1)",
 		"INSERT INTO care_staff_permission(admin_id,duty,assigned_by) VALUES(1,'caregiver',2),(2,'supervisor',2)",
 	} {
 		if _, err = tx.Exec(ctx, sql); err != nil {
 			return err
 		}
 	}
-	if _, err = tx.Exec(ctx, "INSERT INTO device(device_id,device_no,secret,resident_id) VALUES(1,'LAB-WATCH',$1,1)", "sha256$"+base64.RawURLEncoding.EncodeToString(hash[:])); err != nil {
+	if _, err = tx.Exec(ctx, "INSERT INTO device(device_id,device_no,secret,old_id) VALUES(1,'LAB-WATCH',$1,1)", "sha256$"+base64.RawURLEncoding.EncodeToString(hash[:])); err != nil {
 		return err
 	}
 	if err = tx.Commit(ctx); err != nil {

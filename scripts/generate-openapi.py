@@ -57,8 +57,8 @@ fields = {
     "/api/v1/device-commands": {"deviceId": "integer", "action": "string", "requestKey": "string", "ttlSeconds": "integer"},
     "/api/v1/device-command-profiles": {"deviceId": "integer", "wireType": "string", "protocol": "string", "enabled": "boolean"},
     "/api/v1/device-commands/search": {"deviceId": "integer", "after": "integer"},
-    "/api/v1/health/daily-query": {"residentId": "integer", "source": "string", "sourceDevice": "string", "metric": "string", "semantics": "string", "day": "string", "offsetMinutes": "integer", "days": "integer"},
-    "/api/v1/health/latest": {"residentId": "integer"},
+    "/api/v1/health/daily-query": {"oldId": "integer", "source": "string", "sourceDevice": "string", "metric": "string", "semantics": "string", "day": "string", "offsetMinutes": "integer", "days": "integer"},
+    "/api/v1/health/latest": {"oldId": "integer"},
     "/api/v1/alert-reviews": {"recordId": "integer", "kind": "string", "verdict": "string", "reason": "string", "expectedReviewId": "integer"},
     "/api/v1/alert-reviews/search": {"entity": "string", "recordId": "integer", "kind": "string", "after": "integer"},
 }
@@ -113,12 +113,12 @@ for file in sorted((backend / "internal/handlers").glob("*.go")):
                 "Invalid credentials return 401 with code=DEVICE_AUTH_FAILED; disabled devices return 403."
             )
         if path == "/api/v1/health/latest":
-            schema["properties"]["residentId"]["minimum"] = 1
+            schema["properties"]["oldId"]["minimum"] = 1
             operation["description"] = (
                 "Latest nondeleted stored sample per exact source/sourceDevice/metric/semantics. "
                 "Order by exact sample.start descending, then revision descending. "
                 "Intervals retain both endpoints; daily totals are snapshots, not today's aggregate. "
-                "FAMILY may omit residentId and is checked against current ownership; ADMIN supplies residentId. "
+                "FAMILY may omit oldId and is checked against current ownership; ADMIN supplies oldId. "
                 "Historical binding/version and sampling time are preserved; no freshness guarantee or cross-source merging."
             )
             sample_properties = {name: {"type": "string"} for name in (
@@ -130,17 +130,17 @@ for file in sorted((backend / "internal/handlers").glob("*.go")):
                 "end": {"type": "string", "format": "date-time"},
                 "version": {"type": "integer"},
             })
-            record_properties = {name: {"type": "integer"} for name in ("residentId", "bindingVersion", "revision")}
+            record_properties = {name: {"type": "integer"} for name in ("oldId", "bindingVersion", "revision")}
             record_properties.update({
                 "sampleId": {"type": "string"},
                 "deviceId": {"type": ["integer", "null"]},
                 "sample": {"type": "object", "additionalProperties": True, "properties": sample_properties},
             })
             operation["responses"]["200"]["content"]["application/json"]["schema"] = {
-                "type": "object", "required": ["returnCode", "residentId", "items"], "additionalProperties": False,
+                "type": "object", "required": ["returnCode", "oldId", "items"], "additionalProperties": False,
                 "properties": {
                     "returnCode": {"type": "string", "const": "1111"},
-                    "residentId": {"type": "integer"},
+                    "oldId": {"type": "integer"},
                     "items": {"type": "array", "items": {"type": "object", "additionalProperties": False,
                         "required": list(record_properties), "properties": record_properties}},
                 },
@@ -213,7 +213,7 @@ components["parameters"] = {"CsrfToken": csrf_header}
 
 shared_request_fields = {
     "JsonObject": (),
-    "ResidentId": ("residentId",),
+    "ResidentId": ("oldId",),
     "DeviceId": ("deviceId",),
     "NoticeId": ("textId",),
     "NamePage": ("name", "page", "pageSize"),

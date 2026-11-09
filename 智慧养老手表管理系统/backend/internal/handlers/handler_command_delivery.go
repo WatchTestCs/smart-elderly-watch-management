@@ -37,8 +37,8 @@ func (h *Handler) commandPull(w http.ResponseWriter, r *http.Request) {
 	var action, wire, channel string
 	var expires time.Time
 	err = tx.QueryRow(ctx, `SELECT id,action,wire_action,channel,expires_at FROM device_command
- WHERE device_id=$1 AND epoch=$2 AND resident_id=$3 AND status='pending' AND retry_at<=now() AND expires_at>now()
- ORDER BY id LIMIT 1 FOR UPDATE`, d.ID, d.HealthEpoch, *d.ResidentID).Scan(&id, &action, &wire, &channel, &expires)
+ WHERE device_id=$1 AND epoch=$2 AND old_id=$3 AND status='pending' AND retry_at<=now() AND expires_at>now()
+ ORDER BY id LIMIT 1 FOR UPDATE`, d.ID, d.HealthEpoch, *d.OldID).Scan(&id, &action, &wire, &channel, &expires)
 	if err == pgx.ErrNoRows {
 		response.OK(w, map[string]any{"command": nil})
 		return
@@ -84,7 +84,7 @@ func (h *Handler) commandAck(w http.ResponseWriter, r *http.Request) {
 	var status string
 	var token *string
 	var expires time.Time
-	err = tx.QueryRow(ctx, "SELECT status,delivery_token,expires_at FROM device_command WHERE id=$1 AND device_id=$2 AND epoch=$3 AND resident_id=$4 FOR UPDATE", req.CommandID, d.ID, d.HealthEpoch, *d.ResidentID).Scan(&status, &token, &expires)
+	err = tx.QueryRow(ctx, "SELECT status,delivery_token,expires_at FROM device_command WHERE id=$1 AND device_id=$2 AND epoch=$3 AND old_id=$4 FOR UPDATE", req.CommandID, d.ID, d.HealthEpoch, *d.OldID).Scan(&status, &token, &expires)
 	want := "acked"
 	if req.Result == "failed" {
 		want = "failed"

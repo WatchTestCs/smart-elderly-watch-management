@@ -10,6 +10,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	dbstore "suining-care/internal/db"
+	"suining-care/internal/devicerepo"
 	"suining-care/internal/response"
 )
 
@@ -55,7 +56,7 @@ func recordDeviceReportReceipt(ctx context.Context, tx *dbstore.Transaction, dev
 
 // stageDeviceReportReceipt writes the acknowledgement before commit. Reports
 // without a valid request ID keep their previous, non-idempotent behaviour.
-func stageDeviceReportReceipt(w http.ResponseWriter, ctx context.Context, tx *dbstore.Transaction, rollback func(), d *deviceRecord, requestID, digest string, result map[string]any) bool {
+func stageDeviceReportReceipt(w http.ResponseWriter, ctx context.Context, tx *dbstore.Transaction, rollback func(), d *devicerepo.DeviceRecord, requestID, digest string, result map[string]any) bool {
 	if digest == "" {
 		return true
 	}

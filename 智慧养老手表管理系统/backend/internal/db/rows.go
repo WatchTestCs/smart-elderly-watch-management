@@ -2,6 +2,11 @@ package db
 
 import "context"
 
+// RowQuerier is the read-only query capability shared by databases and transactions.
+type RowQuerier interface {
+	QueryRow(context.Context, string, ...any) Row
+}
+
 type rowsQuerier interface {
 	Query(context.Context, string, ...any) (Rows, error)
 }

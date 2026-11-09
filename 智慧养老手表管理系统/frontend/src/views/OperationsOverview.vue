@@ -2,7 +2,7 @@
   <div class="dashboard">
     <div class="page-heading">
       <div><h1>{{ isRestricted ? '照护工作台' : '运营总览' }}</h1><p class="page-subtitle">{{ isRestricted ? '按职责接单、处置和复核，不展示无权限的后台统计。' : '查看设备异常与平台公告，及时跟进照护事项。' }}</p></div>
-      <el-button v-if="!isRestricted" type="primary" :icon="Plus" @click="addtext">发布公告</el-button>
+      <el-button v-if="!isRestricted" type="primary" :icon="Plus" @click="openNoticeEditor">发布公告</el-button>
     </div>
     <care-inbox />
     <div v-if="!isRestricted" class="dashboard-panels">
@@ -15,7 +15,7 @@
       <article class="overview-card fall-card" v-loading="positionLoading" :aria-busy="positionLoading">
         <div class="metric-icon rose"><el-icon><WarningFilled /></el-icon></div>
         <div class="metric-copy"><span>紧急告警</span><strong v-if="!positionError">{{ num == null ? '—' : num }}</strong><strong v-else class="metric-error" role="status">{{ positionError }}</strong><small v-if="positionTotal != null">{{ positionTotal ? num + ' / ' + positionTotal + ' 位长者有紧急告警' : '暂无长者位置记录' }}</small><small>根据最近告警记录统计</small></div>
-        <el-button v-if="positionError" link @click="searchposition">重新加载告警统计</el-button><el-button v-else link @click="router.push('/operations/locations')">查看位置 <el-icon><ArrowRight /></el-icon></el-button>
+        <el-button v-if="positionError" link @click="loadLocationAlertSummary">重新加载告警统计</el-button><el-button v-else link @click="router.push('/operations/locations')">查看位置 <el-icon><ArrowRight /></el-icon></el-button>
       </article>
       <article class="overview-note">
         <span class="note-icon"><el-icon><InfoFilled /></el-icon></span>
@@ -104,13 +104,18 @@ import { apiErrorMessage } from '../api/httpContract'
 import { createLatestRead } from '../composables/latestRead'
 import CareInbox from '@/components/CareInbox.vue'
 import { authState } from '@/auth'
+import { isRestrictedAdmin } from '@/domain/permissions'
 import store from '@/store'
+import type { NoticeRecord } from '../domain/notices'
 
-type NoticeRow = Record<string, any>
+interface NoticeListResponse {
+  texts: NoticeRecord[]
+  total?: number
+}
 const router = useRouter()
 const searchText = ref('')
 const appliedSearch = ref('')
-const notices = ref<NoticeRow[]>([])
+const notices = ref<NoticeRecord[]>([])
 const total = ref(0)
 const isLoading = ref(false)
 const loadError = ref('')
@@ -126,10 +131,7 @@ const countError = ref('')
 const positionError = ref('')
 let positionNeedsRefresh = false
 
-const isRestricted = computed(() => {
-  const account = authState.account as { role: string; duty?: string } | null
-  return account?.role === 'ADMIN' && ['caregiver','auditor'].includes(account.duty || '')
-})
+const isRestricted = computed(() => isRestrictedAdmin(authState.account))
 const emptyTitle = computed(() => loadError.value ? '公告暂时无法加载' :
   appliedSearch.value ? '没有找到相关公告' : '暂时没有公告')
 const emptyDescription = computed(() => loadError.value || (appliedSearch.value
@@ -138,11 +140,12 @@ const emptyDescription = computed(() => loadError.value || (appliedSearch.value
 
 const noticeReads = createLatestRead(
   (query: { page: number; pageSize: number; title: string }, signal: AbortSignal) =>
-    api.post<Record<string, any>>('api/v1/notices/list', query, { signal }),
+    api.post<NoticeListResponse>('api/v1/notices/list', query, { signal }),
   ({ data }) => {
     if (!Array.isArray(data.texts)) throw new Error('missing notices')
     notices.value = data.texts
-    total.value = Number.isSafeInteger(data.total) ? data.total : data.texts.length
+    if (data.total !== undefined && (!Number.isSafeInteger(data.total) || data.total < 0)) throw new Error('invalid notice count')
+    total.value = data.total ?? data.texts.length
     loadError.value = ''
   },
   error => {
@@ -170,10 +173,10 @@ function changePage(value: number) {
   currentPage.value = value
   void loadNotices(true)
 }
-function getDetail(row: NoticeRow) {
+function getDetail(row: NoticeRecord) {
   void router.push({ path: '/operations/notices/detail', query: { textId: row.textId, picId: row.picId } })
 }
-function addtext() { void router.push('/operations/notices/new') }
+function openNoticeEditor() { void router.push('/operations/notices/new') }
 
 async function getCount() {
   if (countLoading.value || isRestricted.value) return
@@ -195,7 +198,7 @@ async function getCount() {
     countError.value = apiErrorMessage(error, '设备统计暂时无法加载')
   } finally { countLoading.value = false }
 }
-async function searchposition() {
+async function loadLocationAlertSummary() {
   if (isRestricted.value || positionLoading.value) return
   positionLoading.value = true
   positionError.value = ''
@@ -218,20 +221,20 @@ async function searchposition() {
     positionLoading.value = false
     if (positionNeedsRefresh) {
       positionNeedsRefresh = false
-      void searchposition()
+      void loadLocationAlertSummary()
     }
   }
 }
 watch(() => store.state.alertRevision, () => {
   if (isRestricted.value) return
   if (positionLoading.value) positionNeedsRefresh = true
-  else void searchposition()
+  else void loadLocationAlertSummary()
 })
 onMounted(() => {
   if (!isRestricted.value) {
     void loadNotices()
     void getCount()
-    void searchposition()
+    void loadLocationAlertSummary()
   }
 })
 onBeforeUnmount(noticeReads.dispose)

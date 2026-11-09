@@ -2,7 +2,7 @@
   <div class="roles">
     
     <div class="sys-research">
-      <form class="row-search" role="search" @submit.prevent="searchposition()">
+      <form class="row-search" role="search" @submit.prevent="loadLocationRecords()">
 		  
         <div class="search-field">
           
@@ -43,7 +43,7 @@
 	  <el-table-column prop="lng" label="经度" width="160" align="center"></el-table-column>
 	  <el-table-column prop="lat" label="纬度" width="160" align="center"></el-table-column>
       <el-table-column label="定位来源与采样" width="240" align="left"><template #default="scope"><span class="position-context">{{ describePositionContext(scope.row) }}</span></template></el-table-column>
-	  <el-table-column prop="eventTime" label="上报时间" width="auto" align="center"></el-table-column>
+	  <el-table-column prop="beTime" label="上报时间" width="auto" align="center"></el-table-column>
       <el-table-column label="操作" align="center">
       	<template #default="scope" >
       		<el-button v-if="scope.row.status==1" size="small" plain type="danger" :icon="WarningFilled"
@@ -56,7 +56,7 @@
       	</template>
       </el-table-column>
     </el-table>
-    <record-cards v-if="mobileLayout" :records="positionList" :fields='[{"key":"sex","label":"性别"},{"key":"status","label":"告警状态","state":"fall"},{"key":"lng","label":"经度"},{"key":"lat","label":"纬度"}]' label="位置与告警记录" title-key="name" key-field="residentId" time-key="eventTime">
+    <record-cards v-if="mobileLayout" :records="positionList" :fields='[{"key":"sex","label":"性别"},{"key":"status","label":"告警状态","state":"fall"},{"key":"lng","label":"经度"},{"key":"lat","label":"纬度"}]' label="位置与告警记录" title-key="name" key-field="oldId" time-key="beTime">
       <template #actions="scope"  ><span class="position-context">{{ describePositionContext(scope.row) }}</span><el-button v-if="scope.row.status==1" size="small" plain type="danger" :icon="WarningFilled"
                        @click="showFallReason(scope.row)">告警记录与处理</el-button>
 <el-button v-if="scope.row.status==1" size="small" plain type="primary" :icon="Check"
@@ -67,7 +67,7 @@
     </record-cards>
     
     <div style="margin-top: 10px;text-align: center">
-      <pager-bar
+      <el-pagination layout="total, sizes, prev, pager, next, jumper"
         @size-change="handleSizeChange"
         @current-change="changePage"
         v-model:current-page="currentPage"
@@ -91,14 +91,22 @@ import store from '@/store'
 import PositionMap from '@/components/PositionMap.vue'
 import RecordCards from '@/components/RecordCards.vue'
 import { describePositionContext } from '../utils/positionContext'
-import { positionAlertMessage } from './positionAlertMessage'
+import { positionAlertMessage, type PositionAlarm } from './positionAlertMessage'
 
-type PositionRow = Record<string, any>
+interface PositionRow extends PositionAlarm {
+  oldId: number | string
+  name: string
+  sex?: string
+  status?: number | string
+  lng?: number | string | null
+  lat?: number | string | null
+  beTime?: string
+}
 const searchText = ref('')
 const mobileLayout = useCollectionLayout(900)
 const {
   records: positionList, isLoading, loadError, total,
-  pageSize, currentPage, load: searchposition,
+  pageSize, currentPage, load: loadLocationRecords,
   handleSizeChange, changePage
 } = usePagedRecords<PositionRow, { name: string }>({
   path: 'api/v1/position/select',
@@ -109,10 +117,10 @@ const {
 const selectedLocation = ref<PositionRow | null>(null)
 const num = computed(() => positionList.value.filter(row => row.status === 1 || row.status === '1').length)
 
-watch(() => store.state.alertRevision, () => { void searchposition(true) })
+watch(() => store.state.alertRevision, () => { void loadLocationRecords(true) })
 watch(positionList, rows => {
   const id = store.state.selectedResidentId
-  const selected = id == null ? null : rows.find(row => String(row.residentId) === id)
+  const selected = id == null ? null : rows.find(row => String(row.oldId) === id)
   if (selected) selectedLocation.value = { ...selected }
 })
 function showFallReason(row: PositionRow) {
@@ -128,7 +136,7 @@ async function handleFall(row: PositionRow) {
     )
   } catch { return }
   try {
-    const { data } = await api.post<Envelope>('api/v1/locations/alerts/resolve-latest', { residentId: row.residentId })
+    const { data } = await api.post<Envelope>('api/v1/locations/alerts/resolve-latest', { oldId: row.oldId })
     accepted(data)
     ElMessage({ type: 'success', message: '已处理，告警红点已消除' })
     store.notifyAlertsChanged()
@@ -138,7 +146,7 @@ async function handleFall(row: PositionRow) {
 }
 function showRoleDialog(row: PositionRow) {
   selectedLocation.value = { ...row }
-  store.selectResident(row.residentId)
+  store.selectResident(row.oldId)
 }
 </script>
 

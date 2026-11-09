@@ -17,29 +17,29 @@
           </el-input>
         </div>
         <div class="toolbar-actions">
-          <el-button plain @click="watchDialogVisible = true">添加手表</el-button>
+          <el-button plain @click="createDialogVisible = true">添加手表</el-button>
         </div>
       </form>
     </div>
     
     <el-dialog :close-on-click-modal="false"
       title="设备添加"
-      v-model="watchDialogVisible"
-      @close="closeRoleAddDialog">
-      <ThresholdForm :draft="watchForm" :rules="rules" ref="addwatchFormRef" />
+      v-model="createDialogVisible"
+      @close="resetWatchForm">
+      <ThresholdForm :draft="createForm" :rules="rules" ref="createFormRef" />
       <template #footer><span  class="dialog-footer">
-      <el-button @click="watchDialogVisible = false">取 消</el-button>
-      <el-button type="primary" @click="addWatchs()">确 定</el-button>
+      <el-button @click="createDialogVisible = false">取 消</el-button>
+      <el-button type="primary" @click="createProfile()">确 定</el-button>
     </span></template>
     </el-dialog>
 
     <el-dialog :close-on-click-modal="false"
       title="设备编辑"
-      v-model="watchEditDialogVisible">
-      <ThresholdForm editing :draft="watchEditForm" :rules="rules" ref="editwatchFormRef" />
+      v-model="editDialogVisible">
+      <ThresholdForm editing :draft="editForm" :rules="rules" ref="editFormRef" />
       <template #footer><span  class="dialog-footer">
-      <el-button @click="watchEditDialogVisible = false">取 消</el-button>
-      <el-button type="primary" @click="editWatch">确 定</el-button>
+      <el-button @click="editDialogVisible = false">取 消</el-button>
+      <el-button type="primary" @click="updateProfile">确 定</el-button>
     </span></template>
     </el-dialog>
 
@@ -59,9 +59,9 @@
       <el-table-column label="操作" align="center">
         <template #default="scope" >
           <el-button size="small" plain type="primary" :icon="Edit"
-                     @click="handleEditwatch(scope.$index, scope.row)">编辑
+                     @click="openProfileEdit(scope.$index, scope.row)">编辑
           </el-button>
-          <el-button size="small" plain type="danger" :icon="Delete" @click="deleteRole(scope.row.deviceId)">删除
+          <el-button size="small" plain type="danger" :icon="Delete" @click="deleteProfile(scope.row.deviceId)">删除
           </el-button>
           
         </template>
@@ -69,14 +69,14 @@
     </el-table>
     <record-cards v-if="mobileLayout && !loadError" :records="monitoringProfiles" :fields='[{"key":"deviceId","label":"手表ID"},{"key":"bpf","label":"血压高值"},{"key":"bpl","label":"血压低值"},{"key":"hrf","label":"心率高值"},{"key":"hrl","label":"心率低值"}]' label="监测阈值档案" title-key="name" key-field="deviceId" time-key="opTime">
       <template #actions="scope"  ><el-button size="small" plain type="primary" :icon="Edit"
-                     @click="handleEditwatch(scope.$index, scope.row)">编辑
+                     @click="openProfileEdit(scope.$index, scope.row)">编辑
           </el-button>
-<el-button size="small" plain type="danger" :icon="Delete" @click="deleteRole(scope.row.deviceId)">删除
+<el-button size="small" plain type="danger" :icon="Delete" @click="deleteProfile(scope.row.deviceId)">删除
           </el-button></template>
     </record-cards>
     
     <div v-if="!loadError" style="margin-top: 10px;text-align: center">
-      <pager-bar
+      <el-pagination layout="total, sizes, prev, pager, next, jumper"
         @size-change="handleSizeChange"
         @current-change="changePage"
         v-model:current-page="currentPage"
@@ -97,7 +97,13 @@ import { checkThreshold } from './watch.validation'
 import RecordCards from '@/components/RecordCards.vue'
 import ThresholdForm from '@/components/records/ThresholdForm.vue'
 
-type MonitorRow = Record<string, any>
+interface MonitorRow extends Record<string, unknown> {
+  deviceId: number | string
+  bpf?: string | number | null
+  bpl?: string | number | null
+  hrf?: string | number | null
+  hrl?: string | number | null
+}
 const searchText = ref('')
 const mobileLayout = useCollectionLayout(900)
 const {
@@ -111,12 +117,12 @@ const {
   failure: '监测阈值档案暂时无法加载，请检查服务连接后重试。'
 })
 const emptyForm = () => ({ deviceId: '', bpf: '', bpl: '', hrf: '', hrl: '' })
-const watchDialogVisible = ref(false)
-const watchEditDialogVisible = ref(false)
-const watchForm = ref(emptyForm())
-const watchEditForm = ref(emptyForm())
-const addwatchFormRef = ref<any>(null)
-const editwatchFormRef = ref<any>(null)
+const createDialogVisible = ref(false)
+const editDialogVisible = ref(false)
+const createForm = ref(emptyForm())
+const editForm = ref(emptyForm())
+const createFormRef = ref<InstanceType<typeof ThresholdForm> | null>(null)
+const editFormRef = ref<InstanceType<typeof ThresholdForm> | null>(null)
 const rules = {
   deviceId: [{ required: true, message: '请输入手表Id', trigger: 'blur' }],
   bpf: [{ validator: checkThreshold, trigger: 'blur' }],
@@ -124,30 +130,34 @@ const rules = {
   hrf: [{ validator: checkThreshold, trigger: 'blur' }],
   hrl: [{ validator: checkThreshold, trigger: 'blur' }]
 }
-function closeRoleAddDialog() { addwatchFormRef.value?.resetFields() }
+function resetWatchForm() { createFormRef.value?.resetFields() }
 function saveProfile(editing: boolean) {
-  const form = editing ? editwatchFormRef.value : addwatchFormRef.value
+  const form = editing ? editFormRef.value : createFormRef.value
   form?.validate((valid: boolean) => {
     if (!valid) return
     const path = editing ? 'api/v1/monitoring-profiles/update' : 'api/v1/monitoring-profiles/create'
-    const body = editing ? watchEditForm.value : watchForm.value
+    const body = editing ? editForm.value : createForm.value
     void writeRecord(path, body, '监测档案已保存', async () => {
-      if (editing) watchEditDialogVisible.value = false
-      else watchDialogVisible.value = false
+      if (editing) editDialogVisible.value = false
+      else createDialogVisible.value = false
       await loadMonitoringProfiles(true)
     })
   })
 }
-function addWatchs() { saveProfile(false) }
-function editWatch() { saveProfile(true) }
-function deleteRole(deviceId: number | string) {
+function createProfile() { saveProfile(false) }
+function updateProfile() { saveProfile(true) }
+function deleteProfile(deviceId: number | string) {
   return deleteRecord('api/v1/monitoring-profiles/delete', { deviceId },
     '确认删除该监测档案？', () => loadMonitoringProfiles(true))
 }
-function handleEditwatch(_index: number, row: MonitorRow) {
-  watchEditForm.value = Object.fromEntries(
-    ['deviceId','bpf','bpl','hrf','hrl'].map(key => [key, row[key]])
-  ) as ReturnType<typeof emptyForm>
-  watchEditDialogVisible.value = true
+function openProfileEdit(_index: number, row: MonitorRow) {
+  editForm.value = {
+    deviceId: String(row.deviceId),
+    bpf: String(row.bpf ?? ''),
+    bpl: String(row.bpl ?? ''),
+    hrf: String(row.hrf ?? ''),
+    hrl: String(row.hrl ?? '')
+  }
+  editDialogVisible.value = true
 }
 </script>

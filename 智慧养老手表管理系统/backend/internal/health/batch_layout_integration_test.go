@@ -15,7 +15,7 @@ import (
 func TestIndexedBatchPersistsAllVersionsAndTombstones(t *testing.T) {
 	pool := dbtest.MySQL(t)
 	ctx := context.Background()
-	if _, err := pool.Exec(ctx, "INSERT INTO resident(resident_id,name) VALUES(1,'layout')"); err != nil {
+	if _, err := pool.Exec(ctx, "INSERT INTO oldperson(old_id,name) VALUES(1,'layout')"); err != nil {
 		t.Fatal(err)
 	}
 	_, base := sampleBenchmarkInput()
@@ -37,7 +37,7 @@ func TestIndexedBatchPersistsAllVersionsAndTombstones(t *testing.T) {
 			t.Fatal(err)
 		}
 		defer tx.Rollback(ctx)
-		rev, duplicates, err := SaveBatch(ctx, tx, Owner{ResidentID: 1}, samples)
+		rev, duplicates, err := SaveBatch(ctx, tx, Owner{OldID: 1}, samples)
 		if err != nil || rev != 200 || duplicates != wantDuplicates {
 			t.Fatalf("rev=%d duplicates=%d err=%v", rev, duplicates, err)
 		}
@@ -107,7 +107,7 @@ func TestIndexedBatchPersistsAllVersionsAndTombstones(t *testing.T) {
 func TestConditionalPreviousPayloadPreservesMixedVersionsAndConflicts(t *testing.T) {
 	pool := dbtest.MySQL(t)
 	ctx := context.Background()
-	if _, err := pool.Exec(ctx, "INSERT INTO resident(resident_id,name) VALUES(1,'pruned')"); err != nil {
+	if _, err := pool.Exec(ctx, "INSERT INTO oldperson(old_id,name) VALUES(1,'pruned')"); err != nil {
 		t.Fatal(err)
 	}
 	_, a := sampleBenchmarkInput()
@@ -117,7 +117,7 @@ func TestConditionalPreviousPayloadPreservesMixedVersionsAndConflicts(t *testing
 	b := a
 	b.RecordID = "b"
 	b.Version = 12
-	owner := Owner{ResidentID: 1}
+	owner := Owner{OldID: 1}
 	save := func(samples []Sample) (int64, int, error) {
 		tx, err := pool.Begin(ctx)
 		if err != nil {

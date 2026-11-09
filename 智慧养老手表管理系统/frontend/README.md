@@ -14,6 +14,27 @@
 
 前端所有数据均通过 Go `/api/v1/` 接口读写，不直接连接 MySQL 或 PostgreSQL。
 
+### 数据流及代码所有权
+
+| 层 | 入口 | 职责 |
+| --- | --- | --- |
+| 后端契约 | `src/api/generated-api.d.ts`、`contractClient.ts` | Go OpenAPI 生成的请求与响应类型；生产请求仍经 HTTP 安全中间件 |
+| 邀请数据 | `src/api/invitations.ts` | 邀请记录、可绑定长者 DTO；分页总数在读取边界验证 |
+| 公告数据 | `src/domain/notices.ts` | 文章、附件和评论 DTO；家属端与管理端共用绝对路径图片 URL |
+| 监护人状态 | `src/composables/useGuardians.ts` | 监护人查询、创建、编辑和删除；后端继续沿用 `customerId` 等 API 字段 |
+| 网络与会话 | `src/api/client.ts`、`src/auth.ts` | API 路径、Cookie、CSRF、统一响应校验及连接状态 |
+| 读取调度 | `src/composables/latestRead.ts`、`usePagedRecords.ts` | 取消过期读取，避免迟到响应覆盖当前列表 |
+| 设备领域数据 | `src/composables/deviceModels.ts` | 设备、告警、绑定码 DTO；独立组件实例的初始状态 |
+| 设备绑定流程 | `src/composables/useDeviceBindings.ts` | 绑定码查询、创建、作废与切换长者时的响应隔离 |
+| 设备页面编排 | `src/composables/useDevices.ts` | 设备与告警读取、过滤分页、定时刷新和页面事件 |
+| 展示层 | `src/views/DeviceManagement.vue` | 渲染设备列表及对话框，不承担后端数据转换 |
+| 照护领域规则 | `src/domain/care.ts` | 工单与履历 DTO、优先级、状态及通知显示规则；无组件依赖 |
+| 照护页面 | `src/components/CareInbox.vue` | 接单与复核交互、异步读取、页面可见性和任务事件响应 |
+| 图表配置 | `src/charts/recordChartOptions.ts` | ECharts 心率、血压、睡眠渲染参数与无障碍/动画设置 |
+| 图表生命周期 | `src/composables/useRecordCharts.ts` | 健康数据读取、取消过期请求、图表实例回收与尺寸监听 |
+
+读路径是 **Go API → Axios/会话拦截器 → 领域组合式函数 → Vue 模板**。 设备异常工作台最多同时读取 6 个告警明细，防止设备数增长造成无界网络并发；请求总量仍取决于存在告警的设备与类别。写请求由用户操作触发，成功后显式重新读取；不得在读取失败或页面恢复可见时自动重放写操作。当前 `useDevices()` 的页面接口保持不变；新设备功能优先沿现有领域边界扩展，不把响应 DTO、持久状态和 DOM 事件混写在同一个文件。
+
 ## 本地开发与构建
 
 请使用 Node.js `^20.19.0 || >=22.12.0`，并通过 `package-lock.json` 安装固定版本依赖：

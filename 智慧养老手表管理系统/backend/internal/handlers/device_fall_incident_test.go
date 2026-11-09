@@ -11,7 +11,7 @@ func TestFallReportCreatesActionableCareIncidentWithoutDuplicateNotifications(t 
 	pool := testDatabase(t)
 	seedDevice(t, pool)
 	mustExec(t, pool, "INSERT INTO family(family_id,family_name,family_phone) VALUES(1,'测试家属','13800000001')")
-	mustExec(t, pool, "UPDATE resident SET family_id=1 WHERE resident_id=1")
+	mustExec(t, pool, "UPDATE oldperson SET family_id=1 WHERE old_id=1")
 	h := testHandler(t, pool)
 	payload := map[string]any{
 		"deviceNo": "WATCH001", "secret": testSecret,
@@ -68,8 +68,8 @@ func TestFallReportCreatesActionableCareIncidentWithoutDuplicateNotifications(t 
 
 	// MySQL/PostgreSQL triggers own health_epoch: manually assigning it is
 	// intentionally ignored. A real owner change must increment the epoch.
-	mustExec(t, pool, "UPDATE device SET resident_id=NULL WHERE device_id=1")
-	mustExec(t, pool, "UPDATE device SET resident_id=1 WHERE device_id=1")
+	mustExec(t, pool, "UPDATE device SET old_id=NULL WHERE device_id=1")
+	mustExec(t, pool, "UPDATE device SET old_id=1 WHERE device_id=1")
 	var recordedEpoch int64
 	if err := pool.QueryRow(ctx, "SELECT health_epoch FROM device WHERE device_id=1").Scan(&recordedEpoch); err != nil || recordedEpoch != 3 {
 		t.Fatalf("owner changes did not increment binding epoch: got=%d err=%v", recordedEpoch, err)

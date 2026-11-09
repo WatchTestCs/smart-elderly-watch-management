@@ -1,14 +1,18 @@
 package handlers
 
 import (
-	"context"
-	"github.com/jackc/pgx/v5"
+	"errors"
 	"net/http"
 	"strings"
-	dbstore "suining-care/internal/db"
-	"suining-care/internal/response"
 	"time"
 	"unicode/utf8"
+
+	"github.com/jackc/pgx/v5"
+
+	"suining-care/internal/devicerepo"
+	"suining-care/internal/deviceworkflow"
+	"suining-care/internal/response"
+	"suining-care/internal/telemetryrepo"
 )
 
 func checkDeviceCredentials(w http.ResponseWriter, m map[string]any) (string, string, bool) {
@@ -67,71 +71,36 @@ func (h *Handler) deviceLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	now := time.Now()
-	if internalError(w, touchDevice(ctx, h.DB, d.ID, nil, nil, now)) {
+	if internalError(w, telemetryrepo.TouchDevice(ctx, h.DB, d.ID, nil, nil, now)) {
 		return
 	}
 	bound := 0
 	fields := map[string]any{
 		"deviceId": d.ID, "deviceNo": d.No, "alias": d.Alias,
-		"bound": bound, "residentId": d.ResidentID, "bindingVersion": d.HealthEpoch,
+		"bound": bound, "oldId": d.OldID, "bindingVersion": d.HealthEpoch,
 	}
 	if harmony {
 		fields["protocolVersion"] = 1
 		fields["maxBatchSize"] = 200
 	}
-	if d.ResidentID != nil {
+	if d.OldID != nil {
 		bound = 1
 		fields["bound"] = bound
-		var oldName *string
-		if err := h.DB.QueryRow(ctx, `SELECT name FROM resident WHERE resident_id=$1`, *d.ResidentID).Scan(&oldName); err != nil && err != pgx.ErrNoRows {
+		oldName, err := devicerepo.ResidentName(ctx, h.DB, *d.OldID)
+		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 			response.Error500(w, ref())
 			return
 		}
 		if oldName != nil {
-			fields["residentName"] = *oldName
+			fields["oldPersonName"] = *oldName
 		} else {
-			fields["residentName"] = ""
+			fields["oldPersonName"] = ""
 		}
 	}
 	response.OK(w, fields)
 }
 
-type bindCodeRow struct {
-	ID         int64
-	Code       string
-	ResidentID *int64
-	FamilyID   *int64
-	CreateUser *string
-	ExpireTime *time.Time
-	Used       int
-	UsedTime   *time.Time
-	UsedDevID  *int64
-}
-
-func scanBindCode(row dbstore.Row) (*bindCodeRow, error) {
-	var b bindCodeRow
-	if err := row.Scan(&b.ID, &b.Code, &b.ResidentID, &b.FamilyID, &b.CreateUser,
-		&b.ExpireTime, &b.Used, &b.UsedTime, &b.UsedDevID); err != nil {
-		return nil, err
-	}
-	return &b, nil
-}
-
-const bindCodeCols = `id, code, resident_id, family_id, create_user, expire_time, used, used_time, used_device_id`
-
-func (h *Handler) findBindCode(ctx context.Context, q deviceQueries, code string) (*bindCodeRow, error) {
-	b, err := scanBindCode(q.QueryRow(ctx,
-		`SELECT `+bindCodeCols+` FROM bind_code WHERE code=$1`, code))
-	if err != nil {
-		if err == pgx.ErrNoRows {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return b, nil
-}
-
-// POST /api/v1/device/bind —— 设备绑定老人（公开，事务）。
+// POST /api/v1/device/bind: device binding owns its database transaction.
 func (h *Handler) deviceBind(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -146,113 +115,38 @@ func (h *Handler) deviceBind(w http.ResponseWriter, r *http.Request) {
 		writeValidation400(w)
 		return
 	}
-	ctx := r.Context()
-	tx, err := h.DB.Begin(ctx)
+	now := time.Now()
+	result, failure, err := deviceworkflow.Bind(r.Context(), h.DB, deviceworkflow.BindInput{
+		Number: deviceNo, Secret: secret, Code: normalizeCode(codeRaw),
+		At: now, ProfileDay: siteDay(now),
+	})
 	if internalError(w, err) {
 		return
 	}
-	rollback := func() { _ = tx.Rollback(ctx) }
-	d, code, msg, err := h.hwAuth(ctx, tx, deviceNo, secret, "设备已停用")
-	if rollbackOnError(w, rollback, err) {
-		return
-	}
-	if d == nil {
-		rollback()
-		hwFail(w, code, msg)
-		return
-	}
-	bindCode := normalizeCode(codeRaw)
-	if bindCode == "" {
-		rollback()
-		hwFail(w, "BIND_CODE_REQUIRED", "请输入绑定码")
-		return
-	}
-	bc, err := h.findBindCode(ctx, tx, bindCode)
-	if rollbackOnError(w, rollback, err) {
-		return
-	}
-	if code, msg := bindCodeFailure(bc); code != "" {
-		rollback()
-		hwFail(w, code, msg)
-		return
-	}
-	var oldName *string
-	var oldDeviceID, oldFamilyID *int64
-	err = tx.QueryRow(ctx, `SELECT name, device_id, family_id FROM resident WHERE resident_id=$1 FOR UPDATE`, *bc.ResidentID).
-		Scan(&oldName, &oldDeviceID, &oldFamilyID)
-	if err != nil {
-		rollback()
-		if err == pgx.ErrNoRows {
-			hwFail(w, "NOT_FOUND", "绑定码对应的老人不存在")
-		} else {
-			response.Error500(w, ref())
-		}
-		return
-	}
-	// Lock the elder before the device, matching unbind/delete lock order.
-	// Changing owners requires an explicit unbind so the old primary reference
-	// cannot be left pointing at a device that now reports for someone else.
-	locked, err := scanDeviceRecord(tx.QueryRow(ctx,
-		`SELECT `+deviceRecordColumns+` FROM device WHERE device_id=$1 FOR UPDATE`, d.ID))
-	if rollbackOnError(w, rollback, err) {
-		return
-	}
-	d, code, msg, err = checkDeviceAuth(locked, secret, "设备已停用")
-	if rollbackOnError(w, rollback, err) {
-		return
-	}
-	if d == nil || d.No != deviceNo {
-		rollback()
-		if d != nil {
-			hwFail(w, "DEVICE_AUTH_FAILED", "设备号或密钥不正确")
-		} else {
-			hwFail(w, code, msg)
-		}
-		return
-	}
-	if d.ResidentID != nil && *d.ResidentID != *bc.ResidentID {
-		rollback()
+	switch failure {
+	case "":
+		response.OK(w, map[string]any{"oldId": result.ResidentID, "oldPersonName": result.Name})
+	case deviceworkflow.AlreadyBound:
 		conflict409(w, "设备已绑定其他长者，请先在设备管理解除绑定")
-		return
-	}
-	now := time.Now()
-	// The locked row is authoritative: never restore stale admin settings,
-	// location, telemetry, or disabled status from the initial auth snapshot.
-	ct, err := tx.Exec(ctx,
-		`UPDATE device SET resident_id=$1, family_id=$2, bind_time=$3,
-		 last_time=GREATEST(COALESCE(last_time,$3),$3) WHERE device_id=$4`,
-		*bc.ResidentID, bc.FamilyID, now, d.ID)
-	if rollbackOnError(w, rollback, err) {
-		return
-	}
-	if ct.RowsAffected() != 1 {
-		rollback()
+	case deviceworkflow.BindFailed:
 		conflict409(w, "设备绑定失败")
-		return
-	}
-	if err := linkBoundDevice(ctx, tx, d.ID, bc, oldDeviceID, oldFamilyID, now); rollbackOnError(w, rollback, err) {
-		return
-	}
-	// 标记绑定码已用（used=0 乐观锁）。
-	ct, err = tx.Exec(ctx,
-		`UPDATE bind_code SET used=1, used_device_id=$1, used_time=$2 WHERE id=$3 AND used=0`,
-		d.ID, now, bc.ID)
-	if rollbackOnError(w, rollback, err) {
-		return
-	}
-	if ct.RowsAffected() != 1 {
-		rollback()
+	case deviceworkflow.CodeUsed:
+		hwFail(w, "BIND_CODE_USED", "该绑定码已被使用")
+	case deviceworkflow.CodeRace:
 		conflict409(w, "该绑定码已被使用")
-		return
+	case deviceworkflow.CodeRequired:
+		hwFail(w, "BIND_CODE_REQUIRED", "请输入绑定码")
+	case deviceworkflow.CodeNotFound:
+		hwFail(w, "BIND_CODE_NOT_FOUND", "绑定码不存在，请在系统里重新生成")
+	case deviceworkflow.CodeExpired:
+		hwFail(w, "BIND_CODE_EXPIRED", "该绑定码已过期，请重新生成")
+	case deviceworkflow.ResidentMissing:
+		hwFail(w, "NOT_FOUND", "绑定码对应的老人不存在")
+	case deviceworkflow.DeviceDisabled:
+		hwFail(w, "DEVICE_DISABLED", "设备已停用")
+	default:
+		hwFail(w, "DEVICE_AUTH_FAILED", "设备号或密钥不正确")
 	}
-	if internalError(w, tx.Commit(ctx)) {
-		return
-	}
-	nm := ""
-	if oldName != nil {
-		nm = *oldName
-	}
-	response.OK(w, map[string]any{"residentId": *bc.ResidentID, "residentName": nm})
 }
 
 // POST /api/v1/device/heartbeat —— 设备心跳（公开）。
@@ -285,46 +179,15 @@ func (h *Handler) deviceHeartbeat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	now := time.Now()
-	if internalError(w, touchDevice(ctx, h.DB, d.ID, battery, appVersion, now)) {
+	if internalError(w, telemetryrepo.TouchDevice(ctx, h.DB, d.ID, battery, appVersion, now)) {
 		return
 	}
 	bound := 0
-	if d.ResidentID != nil {
+	if d.OldID != nil {
 		bound = 1
 	}
 	response.OK(w, map[string]any{
-		"serverTime": now.Format(tsLayout), "bound": bound, "residentId": d.ResidentID, "bindingVersion": d.HealthEpoch,
+		"serverTime": now.Format(tsLayout), "bound": bound, "oldId": d.OldID, "bindingVersion": d.HealthEpoch,
 		"reportInterval": 5, "pendingAlarm": 0,
 	})
-}
-
-func bindCodeFailure(bc *bindCodeRow) (string, string) {
-	if bc == nil {
-		return "BIND_CODE_NOT_FOUND", "绑定码不存在，请在系统里重新生成"
-	}
-	if bc.Used == 1 {
-		return "BIND_CODE_USED", "该绑定码已被使用"
-	}
-	if bc.ExpireTime != nil && !bc.ExpireTime.After(time.Now()) {
-		return "BIND_CODE_EXPIRED", "该绑定码已过期，请重新生成"
-	}
-	if bc.ResidentID == nil {
-		return "NOT_FOUND", "绑定码对应的老人不存在"
-	}
-	return "", ""
-}
-
-func linkBoundDevice(ctx context.Context, tx *dbstore.Transaction, deviceID int64, bc *bindCodeRow, oldDeviceID, oldFamilyID *int64, now time.Time) error {
-	// 老人档案 device_id 只填一次，防止后绑定的表顶掉。
-	if oldDeviceID == nil {
-		if _, err := tx.Exec(ctx, `UPDATE resident SET device_id=$1 WHERE resident_id=$2`, deviceID, *bc.ResidentID); err != nil {
-			return err
-		}
-	}
-	if oldFamilyID == nil && bc.FamilyID != nil {
-		if _, err := tx.Exec(ctx, `UPDATE resident SET family_id=$1 WHERE resident_id=$2`, *bc.FamilyID, *bc.ResidentID); err != nil {
-			return err
-		}
-	}
-	return saveDefaultWatchProfile(ctx, tx, deviceID, now)
 }

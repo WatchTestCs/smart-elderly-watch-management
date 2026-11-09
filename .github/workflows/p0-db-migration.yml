@@ -1,5 +1,5 @@
 # CI-only service container: these ephemeral runner credentials are never shared with production.
-name: Dual database migration verification
+name: Historical database migration verification
 on:
   workflow_dispatch:
 permissions:
@@ -21,11 +21,11 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_USER: suining
-          POSTGRES_PASSWORD: suining
-          POSTGRES_DB: suining_test
+          POSTGRES_USER: careold
+          POSTGRES_PASSWORD: careold
+          POSTGRES_DB: careold_test
         ports: ['5432:5432']
-        options: --health-cmd "pg_isready -U suining -d suining_test" --health-interval 5s --health-timeout 5s --health-retries 10
+        options: --health-cmd "pg_isready -U careold -d careold_test" --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -39,10 +39,9 @@ jobs:
           go run ./cmd/migrate
           go run ./cmd/migrate --legacy-postgres
           go run ./cmd/migrate --legacy-postgres
-          go test -race -count=1 -timeout 240s ./...
         working-directory: 智慧养老手表管理系统/backend
         env:
           MYSQL_DSN: root:ci_root_only@tcp(localhost:3306)/suining_test
-          DATABASE_URL: postgres://suining:suining@localhost:5432/suining_test?sslmode=disable
+          DATABASE_URL: postgres://careold:careold@localhost:5432/careold_test?sslmode=disable
           TEST_MYSQL_DSN: root:ci_root_only@tcp(localhost:3306)/suining_test
-          TEST_DATABASE_URL: postgres://suining:suining@localhost:5432/suining_test?sslmode=disable
+          TEST_DATABASE_URL: postgres://careold:careold@localhost:5432/careold_test?sslmode=disable

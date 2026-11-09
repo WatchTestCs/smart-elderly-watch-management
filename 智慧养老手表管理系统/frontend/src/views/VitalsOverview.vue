@@ -23,11 +23,11 @@
 		<el-badge :value="preCount" :hidden="preCount === 0" class="item">
 			<el-button size="small" :type="Number(preCount) > 0 ? 'danger' : 'default'" plain @click="showAlertByKind('pre')">血压异常</el-button>
 		</el-badge>
-		<el-button size="small" plain type="primary" @click="openWorkbench">只看待处理异常</el-button>
+		<el-button size="small" plain type="primary" @click="togglePendingAlerts">{{ onlyPendingAlerts ? '显示本页全部记录' : '只看本页待处理异常' }}</el-button>
       </form>
     </div>
 
-    <el-table v-if="!mobileLayout" class="adaptive-record-table" :data="vitalRecords"
+    <el-table v-if="!mobileLayout" class="adaptive-record-table" :data="displayedVitals"
     style="width: 100%" border>
     <template #empty><div  class="care-empty-state"><strong>暂无健康记录</strong><span>最新上报的心率与血压数据会显示在这里。</span></div></template>
 
@@ -64,7 +64,7 @@
         </template>
       </el-table-column>
     </el-table>
-    <record-cards v-if="mobileLayout" :records="vitalRecords" :fields='[{"key":"preState","label":"血压状态","state":"health","handled":"preHandled"},{"key":"rateState","label":"心率状态","state":"health","handled":"rateHandled"},{"key":"residentId","label":"长者编号"},{"key":"sex","label":"性别"}]' label="心率与血压记录" title-key="name" key-field="residentId" time-key="createTime">
+    <record-cards v-if="mobileLayout" :records="displayedVitals" :fields='[{"key":"preState","label":"血压状态","state":"health","handled":"preHandled"},{"key":"rateState","label":"心率状态","state":"health","handled":"rateHandled"},{"key":"oldId","label":"长者编号"},{"key":"sex","label":"性别"}]' label="心率与血压记录" title-key="name" key-field="oldId" time-key="createTime">
       <template #actions="scope"  ><el-button v-if="scope.row.rateState==1 || scope.row.preState==1"
                      size="small" plain type="danger" :icon="WarningFilled"
                      @click="showAlertRow(scope.row)">查看原因</el-button>
@@ -77,7 +77,7 @@
     </record-cards>
 
     <div style="margin-top: 10px;text-align: center">
-      <pager-bar
+      <el-pagination layout="total, sizes, prev, pager, next, jumper"
         @size-change="handleSizeChange"
         @current-change="changePage"
         v-model:current-page="currentPage"
@@ -98,7 +98,7 @@
 
 <script setup lang="ts">
 import { Check, Search, WarningFilled } from '@element-plus/icons-vue'
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { usePagedRecords } from '@/composables/usePagedRecords'
 import { useCollectionLayout } from '@/composables/useCollectionLayout'
@@ -108,9 +108,10 @@ import { api, accepted, type Envelope } from '../api/client'
 import { apiErrorMessage } from '../api/httpContract'
 import RecordCards from '@/components/RecordCards.vue'
 import HealthAlertDialog from '@/components/records/HealthAlertDialog.vue'
+import type { VitalAlertDetail, VitalAlertState } from '@/domain/vitals'
 
 interface VitalRow {
-  residentId: number | string
+  oldId: number | string
   name: string
   recordId?: number | string
   rateState?: number | string
@@ -121,7 +122,7 @@ const rateCount = ref<number | string>('')
 const preCount = ref<number | string>('')
 const mobileLayout = useCollectionLayout(900)
 const {
-  detailsVisible, chartLoading, chartError, chartName,
+  detailsVisible, chartLoading, chartError,
   primaryChartElement, secondaryChartElement, showRecordDetails, resizeCharts, disposeCharts
 } = useRecordCharts()
 const {
@@ -133,16 +134,21 @@ const {
   responseKey: 'vitalRecords',
   buildQuery: () => ({ name: searchText.value, timeFirst: '', timeLast: '' })
 })
-function emptyAlert() {
+const onlyPendingAlerts = ref(false)
+const displayedVitals = computed(() => onlyPendingAlerts.value
+  ? vitalRecords.value.filter(row => row.rateState == 1 || row.preState == 1)
+  : vitalRecords.value)
+
+function emptyAlert(): VitalAlertState {
   return {
     visible: false, loading: false, resolving: false, hasAlert: 1,
     title: '异常原因与处理', recordId: null,
-    residentName: '', hr: '', bp: '', rateBad: 0,
+    oldPersonName: '', hr: '', bp: '', rateBad: 0,
     preBad: 0, reason: '', detail: '', occurTime: '',
     advice: '', message: ''
   }
 }
-const alertDialog = ref<Record<string, any>>(emptyAlert())
+const alertDialog = ref<VitalAlertState>(emptyAlert())
 
 async function loadAlertCount() {
   try {
@@ -157,15 +163,15 @@ async function loadAlertCount() {
 }
 const getCount = loadAlertCount
 const alertReads = createLatestRead(
-  (query: { recordId?: number | string; residentId?: number | string; kind?: string }, signal: AbortSignal) =>
-    api.post<Record<string, any>>('api/v1/vitals/alerts/detail', query, { signal }),
+  (query: { recordId?: number | string; oldId?: number | string; kind?: string }, signal: AbortSignal) =>
+    api.post<VitalAlertDetail>('api/v1/vitals/alerts/detail', query, { signal }),
   ({ data }) => {
     Object.assign(alertDialog.value, {
       hasAlert: data.hasAlert ?? 1,
       message: data.message || '',
       recordId: data.recordId ?? null,
-      residentName: data.residentName || alertDialog.value.residentName,
-      hr: data.hr, bp: data.bp,
+      oldPersonName: data.oldPersonName || alertDialog.value.oldPersonName,
+      hr: data.hr ?? '', bp: data.bp ?? '',
       rateBad: data.rateBad || 0, preBad: data.preBad || 0,
       reason: data.reason || '', detail: data.detail || '',
       occurTime: data.occurTime || '', advice: data.advice || ''
@@ -178,13 +184,13 @@ const alertReads = createLatestRead(
   loading => { alertDialog.value.loading = loading }
 )
 function loadAlertDetail(
-  recordId: number | string | null, name: string, residentId: number | string, kind = ''
+  recordId: number | string | null, name: string, oldId: number | string, kind = ''
 ) {
-  alertDialog.value = { ...emptyAlert(), visible: true, loading: true, recordId, residentName: name || '' }
-  return alertReads.run(recordId ? { recordId } : { residentId, kind })
+  alertDialog.value = { ...emptyAlert(), visible: true, loading: true, recordId, oldPersonName: name || '' }
+  return alertReads.run(recordId !== null ? { recordId } : { oldId, kind })
 }
 function showAlertRow(row: VitalRow) {
-  return loadAlertDetail(null, row.name, row.residentId)
+  return loadAlertDetail(null, row.name, row.oldId)
 }
 function showAlertByKind(kind: string) {
   const target = vitalRecords.value.find(row =>
@@ -194,7 +200,7 @@ function showAlertByKind(kind: string) {
     ElMessage({ type: 'success', message: '当前没有未处理的' + (kind === 'rate' ? '心率' : '血压') + '异常' })
     return
   }
-  void loadAlertDetail(null, target.name, target.residentId, kind)
+  void loadAlertDetail(null, target.name, target.oldId, kind)
 }
 async function resolveAlert(kind: string) {
   if (alertDialog.value.resolving) return
@@ -228,18 +234,19 @@ async function resolveRow(row: VitalRow) {
   })
   await Promise.all([loadVitals(true), getCount()])
 }
-function openWorkbench() {
-  const rows = vitalRecords.value.filter(row => row.rateState == 1 || row.preState == 1)
-  if (!rows.length) {
-    ElMessage({ type: 'success', message: '当前没有待处理的异常' })
+function togglePendingAlerts() {
+  if (onlyPendingAlerts.value) {
+    onlyPendingAlerts.value = false
     return
   }
-  vitalRecords.value = rows
-  total.value = rows.length
-  ElMessage({ type: 'info', message: '已筛选出 ' + rows.length + ' 条待处理异常，点「查看原因」了解处理办法' })
+  if (!vitalRecords.value.some(row => row.rateState == 1 || row.preState == 1)) {
+    ElMessage({ type: 'info', message: '本页没有待处理异常' })
+    return
+  }
+  onlyPendingAlerts.value = true
 }
 function showRoleDialog(row: VitalRow) {
-  return showRecordDetails('vitals', row.residentId, row.name)
+  return showRecordDetails('vitals', row.oldId, row.name)
 }
 onMounted(() => { void loadAlertCount() })
 onBeforeUnmount(alertReads.dispose)

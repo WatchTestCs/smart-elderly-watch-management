@@ -17,7 +17,7 @@ import (
 // twice. /api/v1/care/receipt is tagged Device in the access registry but uses
 // a separate gateway HMAC, so it is excluded as well.
 //
-// The gate is opt-in via SUINING_REQUIRE_SIGNED_DEVICE=1 so existing unsigned
+// The gate is opt-in via CAREOLD_REQUIRE_SIGNED_DEVICE=1 so existing unsigned
 // firmware keeps working. Any signature that is present must still verify.
 func (h *Handler) EnforceDeviceSignatures(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

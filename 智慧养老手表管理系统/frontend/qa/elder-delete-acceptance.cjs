@@ -15,7 +15,7 @@ run(async ({ page, context, base, report, setRole }) => {
   await context.route('**/api/v1/residents/delete', async route => {
     requests++;
     assert.equal(route.request().headers()['x-csrf-token'], 'mock-csrf-token');
-    assert.equal(route.request().postDataJSON().residentId, 1);
+    assert.equal(route.request().postDataJSON().oldId, 1);
     await route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
   });
   await page.goto(base + '/#/operations/residents');

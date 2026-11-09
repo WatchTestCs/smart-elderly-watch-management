@@ -57,14 +57,14 @@ func TestReadLatencyAudit(t *testing.T) {
 	seedDevice(t, pool)
 	for i := 1; i <= 30; i++ {
 		mustExec(t, pool, "INSERT INTO family(family_id,family_name) VALUES($1,'synthetic')", i)
-		mustExec(t, pool, "INSERT INTO guardian(guardian_id,guardian_name,guardian_age) VALUES($1,'synthetic',40)", i)
+		mustExec(t, pool, "INSERT INTO customer(customer_id,customer_name,customer_age) VALUES($1,'synthetic',40)", i)
 		mustExec(t, pool, "INSERT INTO text(title,text_main,time) VALUES('synthetic','synthetic',now())")
 		if i > 1 {
-			mustExec(t, pool, "INSERT INTO resident(resident_id,name,family_id) VALUES($1,'synthetic',$1)", i)
-			mustExec(t, pool, "INSERT INTO device(device_id,device_no,secret,resident_id) VALUES($1,$2,'synthetic-only',$1)", i, fmt.Sprintf("AUDIT%03d", i))
+			mustExec(t, pool, "INSERT INTO oldperson(old_id,name,family_id) VALUES($1,'synthetic',$1)", i)
+			mustExec(t, pool, "INSERT INTO device(device_id,device_no,secret,old_id) VALUES($1,$2,'synthetic-only',$1)", i, fmt.Sprintf("AUDIT%03d", i))
 		}
 	}
-	mustExec(t, pool, "UPDATE resident SET family_id=1 WHERE resident_id=1")
+	mustExec(t, pool, "UPDATE oldperson SET family_id=1 WHERE old_id=1")
 	for i := 0; i < 100; i++ {
 		mustExec(t, pool, "INSERT INTO message_outbox(topic,source_key,family_id,channel,recipient) VALUES('audit',$1,1,'in_app','synthetic')", fmt.Sprint(i))
 	}
@@ -79,7 +79,7 @@ func TestReadLatencyAudit(t *testing.T) {
 		if e != nil {
 			t.Fatal(e)
 		}
-		_, duplicates, e := health.SaveBatch(ctx, tx, health.Owner{ResidentID: 1}, samples)
+		_, duplicates, e := health.SaveBatch(ctx, tx, health.Owner{OldID: 1}, samples)
 		if e != nil || duplicates != 0 {
 			tx.Rollback(ctx)
 			t.Fatalf("seed: duplicates=%d err=%v", duplicates, e)
@@ -160,16 +160,16 @@ func TestReadLatencyAudit(t *testing.T) {
 		cold       bool
 	}
 	page := map[string]any{"page": 1, "pageSize": 20, "name": ""}
-	stats := map[string]any{"residentId": 1, "source": "watch", "sourceDevice": "AUDIT", "metric": "heart_rate", "semantics": "instant", "from": from, "to": from.Add(24 * time.Hour)}
+	stats := map[string]any{"oldId": 1, "source": "watch", "sourceDevice": "AUDIT", "metric": "heart_rate", "semantics": "instant", "from": from, "to": from.Add(24 * time.Hour)}
 	endpoints := []endpoint{
 		{"authenticated_probe", "/api/v1/audit/probe", map[string]any{}, "", 0, false},
 		{"text/select", "/api/v1/notices/list", page, "texts", 20, false},
-		{"guardian/select", "/api/v1/guardians/list", page, "guardians", 20, false},
-		{"resident/select", "/api/v1/residents/list", page, "residents", 20, false},
+		{"customer/select", "/api/v1/guardians/list", page, "customers", 20, false},
+		{"oldPerson/select", "/api/v1/residents/list", page, "oldPeople", 20, false},
 		{"family/select", "/api/v1/family/select", page, "familyDtos", 20, false},
 		{"device/list", "/api/v1/device/list", page, "devices", 20, false},
 		{"notification/list", "/api/v1/notifications/search", map[string]any{"familyId": 1}, "items", 100, false},
-		{"health/changes", "/api/v1/health/changes", map[string]any{"residentId": 1, "limit": 100}, "changes", 100, false},
+		{"health/changes", "/api/v1/health/changes", map[string]any{"oldId": 1, "limit": 100}, "changes", 100, false},
 		{"statistics_hot", "/api/v1/health/statistics", stats, "statistics", 10000, false},
 		{"statistics_uncached", "/api/v1/health/statistics", stats, "statistics", 10000, true},
 	}

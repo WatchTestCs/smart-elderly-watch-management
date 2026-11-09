@@ -14,10 +14,10 @@ run(async ({ page, context, base, report, setRole, setSignedIn }) => {
   setRole('ADMIN')
   await context.route('**/api/v1/care/incidents', route => route.fulfill({ json: {returnCode:'1111', items: [], total: 0, page: 1, pageSize: 20, duty: 'supervisor', actorId: 1 } }))
   await context.route('**/api/v1/care/diagnostics', route => route.fulfill({ status: 403, json: {returnCode:'0000',code:'INVALID_REQUEST',message:'请求未完成',} }))
-  const elder = { residentId: 1, name: '李奶奶', birthdate: '1948-03-01', sex: '女', phone: '13000000000', room: '301', eventTime: '2026-10-01', guardianName: '张女士', deviceId: 1, familyName: '小明', familySex: '男', familyRelation: '子女', familyPhone: '13900000000', familyAddress: '很长的家属联系地址'.repeat(12), illness: '病史资料'.repeat(30), warn: '青霉素', foodLike: '米饭', foodHate: '花生', drug: '常用药物资料' }
+  const elder = { oldId: 1, name: '李奶奶', bothdate: '1948-03-01', sex: '女', phone: '13000000000', room: '301', beTime: '2026-10-01', customerName: '张女士', deviceId: 1, familyName: '小明', familySex: '男', familyRelation: '子女', familyPhone: '13900000000', familyAddress: '很长的家属联系地址'.repeat(12), illness: '病史资料'.repeat(30), warn: '青霉素', foodLike: '米饭', foodHate: '花生', drag: '常用药物资料' }
   const lists = [
-    ['/operations/residents', 'resident/selectDetail', 'residentDetails', elder],
-    ['/operations/guardians', 'guardian/select', 'guardians', { guardianId: 1, guardianName: '张女士' }],
+    ['/operations/residents', 'oldPerson/selectDetail', 'oldPersonDetails', elder],
+    ['/operations/guardians', 'customer/select', 'customers', { customerId: 1, customerName: '张女士' }],
     ['/operations/families', 'family/select', 'familyDtos', { familyId: 1, familyName: '小明' }],
     ['/operations/monitoring-profiles', 'watchInfo/select', 'watchDtos', { deviceId: 1, name: '李奶奶' }],
     ['/operations/comments', 'said/selectByUser', 'moderatedComments', { saidId: 1, personName: '小明', said: '请及时联系家属', touPic: '' }]
@@ -92,7 +92,7 @@ run(async ({ page, context, base, report, setRole, setSignedIn }) => {
   }
   await visit('/operations/residents')
   await page.locator('.adaptive-record-table .el-table__body tr').first().waitFor()
-  failure = 'resident/selectDetail'
+  failure = 'oldPerson/selectDetail'
   await page.getByRole('button', { name: '查询长者姓名', exact: true }).click()
   await page.locator('.roles [role="alert"]').waitFor()
   check('failed search clears the previous record and its actions', await page.locator('.admin-record').count() === 0 && await page.locator('.adaptive-record-table').count() === 0)

@@ -12,10 +12,10 @@ func TestOrdinaryReportRejectsStaleBindingVersionWithoutPersisting(t *testing.T)
 	pool := testDatabase(t)
 	seedDevice(t, pool)
 	h := testHandler(t, pool)
-	// Both database engines advance health_epoch through resident_id change
+	// Both database engines advance health_epoch through old_id change
 	// triggers; direct assignment to health_epoch is deliberately ignored.
-	mustExec(t, pool, "UPDATE device SET resident_id=NULL WHERE device_id=1")
-	mustExec(t, pool, "UPDATE device SET resident_id=1 WHERE device_id=1")
+	mustExec(t, pool, "UPDATE device SET old_id=NULL WHERE device_id=1")
+	mustExec(t, pool, "UPDATE device SET old_id=1 WHERE device_id=1")
 	stale := callAPI(h.deviceReport, map[string]any{
 		"deviceNo": "WATCH001", "secret": testSecret,
 		"bindingVersion": 1, "hr": 74, "step": 12,
@@ -43,7 +43,7 @@ func TestOrdinaryReportRejectsStaleBindingVersionWithoutPersisting(t *testing.T)
 func TestOrdinaryReportConcurrentRebindCannotWriteOldOwner(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
-	mustExec(t, pool, "INSERT INTO resident(resident_id,name) VALUES(2,'new owner')")
+	mustExec(t, pool, "INSERT INTO oldperson(old_id,name) VALUES(2,'new owner')")
 	h := testHandler(t, pool)
 	ctx, cancel := context.WithTimeout(context.Background(), 12*time.Second)
 	defer cancel()
@@ -53,7 +53,7 @@ func TestOrdinaryReportConcurrentRebindCannotWriteOldOwner(t *testing.T) {
 	}
 	defer tx.Rollback(context.Background())
 	var ownerID int64
-	if err := tx.QueryRow(ctx, "SELECT resident_id FROM resident WHERE resident_id=1 FOR UPDATE").Scan(&ownerID); err != nil {
+	if err := tx.QueryRow(ctx, "SELECT old_id FROM oldperson WHERE old_id=1 FOR UPDATE").Scan(&ownerID); err != nil {
 		t.Fatal(err)
 	}
 	result := make(chan *httptest.ResponseRecorder, 1)
@@ -67,10 +67,10 @@ func TestOrdinaryReportConcurrentRebindCannotWriteOldOwner(t *testing.T) {
 	// request is demonstrably blocked on the old owner's row.
 	waits := `SELECT count(*) FROM performance_schema.data_lock_waits w
 		JOIN performance_schema.data_locks l ON l.ENGINE_LOCK_ID=w.REQUESTING_ENGINE_LOCK_ID AND l.ENGINE=w.ENGINE
-		WHERE l.OBJECT_SCHEMA=DATABASE() AND l.OBJECT_NAME='resident'`
+		WHERE l.OBJECT_SCHEMA=DATABASE() AND l.OBJECT_NAME='oldperson'`
 	if !pool.IsMySQL() {
 		waits = `SELECT count(*) FROM pg_stat_activity WHERE datname=current_database()
-			AND wait_event_type='Lock' AND query LIKE '%SELECT resident_id FROM resident WHERE resident_id=%FOR UPDATE%'
+			AND wait_event_type='Lock' AND query LIKE '%SELECT old_id FROM oldperson WHERE old_id=%FOR UPDATE%'
 			AND pid<>pg_backend_pid()`
 	}
 	for {
@@ -86,7 +86,7 @@ func TestOrdinaryReportConcurrentRebindCannotWriteOldOwner(t *testing.T) {
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
-	if _, err := tx.Exec(ctx, "UPDATE device SET resident_id=2 WHERE device_id=1"); err != nil {
+	if _, err := tx.Exec(ctx, "UPDATE device SET old_id=2 WHERE device_id=1"); err != nil {
 		t.Fatal(err)
 	}
 	if err := tx.Commit(ctx); err != nil {

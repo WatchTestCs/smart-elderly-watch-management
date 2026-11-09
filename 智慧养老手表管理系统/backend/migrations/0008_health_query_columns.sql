@@ -18,4 +18,4 @@ ALTER TABLE health_sample ALTER COLUMN semantics SET NOT NULL;
 ALTER TABLE health_sample ALTER COLUMN sample_start SET NOT NULL;
 ALTER TABLE health_sample ALTER COLUMN sample_end SET NOT NULL;
 ALTER TABLE health_sample ALTER COLUMN deleted SET NOT NULL;
-CREATE INDEX idx_health_time ON health_sample(resident_id,sample_start);
+CREATE INDEX idx_health_time ON health_sample(old_id,sample_start);

@@ -15,7 +15,7 @@ import (
 )
 
 func elderPayload() map[string]any {
-	return map[string]any{"name": "长者", "birthdate": "1950-01-01", "sex": "女", "phone": "13800000000", "room": "101", "illness": "", "warn": "", "foodLike": "", "foodHate": "", "drug": "", "guardianId": 1, "guardianName": "监护人"}
+	return map[string]any{"name": "长者", "bothdate": "1950-01-01", "sex": "女", "phone": "13800000000", "room": "101", "illness": "", "warn": "", "foodLike": "", "foodHate": "", "drag": "", "customerId": 1, "customerName": "监护人"}
 }
 
 func careRequest(t *testing.T, h *Handler, handler http.HandlerFunc, actor int64, body map[string]any) *httptest.ResponseRecorder {
@@ -45,9 +45,9 @@ func TestArchitectureWatchProfileContract(t *testing.T) {
 func TestArchitectureFormattedRecordsAcrossDatabases(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
-	mustExec(t, pool, "UPDATE resident SET device_id=1 WHERE resident_id=1")
-	mustExec(t, pool, "INSERT INTO ratepre(resident_id,device_id,hr,rate_state,create_time) VALUES(1,1,72,'1',now())")
-	mustExec(t, pool, "INSERT INTO watch_day_info(device_id,step,create_time,resident_id,binding_epoch) VALUES(1,100,'2026-10-19',1,1)")
+	mustExec(t, pool, "UPDATE oldperson SET device_id=1 WHERE old_id=1")
+	mustExec(t, pool, "INSERT INTO ratepre(old_id,device_id,hr,rate_state,create_time) VALUES(1,1,72,'1',now())")
+	mustExec(t, pool, "INSERT INTO watch_day_info(device_id,step,create_time,old_id,binding_epoch) VALUES(1,100,'2026-10-19',1,1)")
 	mustExec(t, pool, "INSERT INTO text(title,text_main,time) VALUES('公告','内容','2026-10-19 08:01:02.123')")
 	mustExec(t, pool, "INSERT INTO said(said,said_time) VALUES('评论','2026-10-19 08:01:02.123')")
 	h := testHandler(t, pool)
@@ -69,23 +69,23 @@ func TestArchitectureFormattedRecordsAcrossDatabases(t *testing.T) {
 
 func TestArchitectureLifestyleFieldsKeepTheirMeaning(t *testing.T) {
 	pool := testDatabase(t)
-	mustExec(t, pool, "INSERT INTO resident(name,food_like,food_hate,drug) VALUES('长者','米饭','花生','常用药')")
+	mustExec(t, pool, "INSERT INTO oldperson(name,food_like,food_hate,drag) VALUES('长者','米饭','花生','常用药')")
 	out := api(t, testHandler(t, pool).listResidents, map[string]any{"name": ""})
-	row := out["residents"].([]any)[0].(map[string]any)
-	if row["foodLike"] != "米饭" || row["foodHate"] != "花生" || row["drug"] != "常用药" {
+	row := out["oldPeople"].([]any)[0].(map[string]any)
+	if row["foodLike"] != "米饭" || row["foodHate"] != "花生" || row["drag"] != "常用药" {
 		t.Fatalf("diet and medication fields were interchanged: %+v", row)
 	}
 }
 
 func TestArchitectureUnboundElderCreation(t *testing.T) {
 	pool := testDatabase(t)
-	mustExec(t, pool, "INSERT INTO guardian(guardian_id,guardian_name) VALUES(1,'监护人')")
+	mustExec(t, pool, "INSERT INTO customer(customer_id,customer_name) VALUES(1,'监护人')")
 	out := callAPI(testHandler(t, pool).createResident, elderPayload())
 	if out.Code != 200 || architectureBody(t, out)["returnCode"] != "1111" {
 		t.Fatalf("elder creation must precede device binding: %d %s", out.Code, out.Body.String())
 	}
 	var unbound bool
-	if err := pool.QueryRow(context.Background(), "SELECT device_id IS NULL FROM resident").Scan(&unbound); err != nil || !unbound {
+	if err := pool.QueryRow(context.Background(), "SELECT device_id IS NULL FROM oldperson").Scan(&unbound); err != nil || !unbound {
 		t.Fatalf("new elder must remain unbound: %v %v", unbound, err)
 	}
 }
@@ -101,19 +101,19 @@ func architectureBody(t *testing.T, recorder *httptest.ResponseRecorder) map[str
 
 func TestArchitectureElderEditCannotRewriteBinding(t *testing.T) {
 	pool := testDatabase(t)
-	mustExec(t, pool, "INSERT INTO guardian(guardian_id,guardian_name) VALUES(1,'监护人')")
+	mustExec(t, pool, "INSERT INTO customer(customer_id,customer_name) VALUES(1,'监护人')")
 	seedDevice(t, pool)
-	mustExec(t, pool, "INSERT INTO resident(resident_id,name,device_id) VALUES(2,'另一长者',2)")
-	mustExec(t, pool, "INSERT INTO device(device_id,device_no,secret,resident_id) VALUES(2,'OTHER','unused',2)")
-	mustExec(t, pool, "UPDATE resident SET device_id=1 WHERE resident_id=1")
+	mustExec(t, pool, "INSERT INTO oldperson(old_id,name,device_id) VALUES(2,'另一长者',2)")
+	mustExec(t, pool, "INSERT INTO device(device_id,device_no,secret,old_id) VALUES(2,'OTHER','unused',2)")
+	mustExec(t, pool, "UPDATE oldperson SET device_id=1 WHERE old_id=1")
 	body := elderPayload()
-	body["residentId"], body["deviceId"] = 1, 2
+	body["oldId"], body["deviceId"] = 1, 2
 	out := callAPI(testHandler(t, pool).updateResident, body)
 	if out.Code != http.StatusConflict {
 		t.Fatalf("record editing rewrote another device association: %d %s", out.Code, out.Body.String())
 	}
 	var primary int
-	if err := pool.QueryRow(context.Background(), "SELECT device_id FROM resident WHERE resident_id=1").Scan(&primary); err != nil || primary != 1 {
+	if err := pool.QueryRow(context.Background(), "SELECT device_id FROM oldperson WHERE old_id=1").Scan(&primary); err != nil || primary != 1 {
 		t.Fatalf("primary device changed: %d %v", primary, err)
 	}
 }
@@ -121,15 +121,15 @@ func TestArchitectureElderEditCannotRewriteBinding(t *testing.T) {
 func TestArchitectureBoundDeviceCannotBeTakenOver(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
-	mustExec(t, pool, "UPDATE resident SET device_id=1 WHERE resident_id=1")
-	mustExec(t, pool, "INSERT INTO resident(resident_id,name) VALUES(2,'另一长者')")
-	mustExec(t, pool, "INSERT INTO bind_code(code,resident_id,used) VALUES('OTHER',2,0)")
+	mustExec(t, pool, "UPDATE oldperson SET device_id=1 WHERE old_id=1")
+	mustExec(t, pool, "INSERT INTO oldperson(old_id,name) VALUES(2,'另一长者')")
+	mustExec(t, pool, "INSERT INTO bind_code(code,old_id,used) VALUES('OTHER',2,0)")
 	out := callAPI(testHandler(t, pool).deviceBind, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "code": "OTHER"})
 	if out.Code != http.StatusConflict {
 		t.Fatalf("binding stole an assigned device: %d %s", out.Code, out.Body.String())
 	}
 	var owner, used int
-	if err := pool.QueryRow(context.Background(), "SELECT resident_id FROM device WHERE device_id=1").Scan(&owner); err != nil || owner != 1 {
+	if err := pool.QueryRow(context.Background(), "SELECT old_id FROM device WHERE device_id=1").Scan(&owner); err != nil || owner != 1 {
 		t.Fatalf("owner changed: %d %v", owner, err)
 	}
 	if err := pool.QueryRow(context.Background(), "SELECT used FROM bind_code WHERE code='OTHER'").Scan(&used); err != nil || used != 0 {
@@ -140,9 +140,9 @@ func TestArchitectureBoundDeviceCannotBeTakenOver(t *testing.T) {
 func TestArchitectureBindingKeepsCustomizedThresholds(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
-	mustExec(t, pool, "UPDATE device SET resident_id=NULL WHERE device_id=1")
+	mustExec(t, pool, "UPDATE device SET old_id=NULL WHERE device_id=1")
 	mustExec(t, pool, "INSERT INTO watch_info(device_id,hrf,hrl,bpf,bpl) VALUES(1,125,65,150,95)")
-	mustExec(t, pool, "INSERT INTO bind_code(code,resident_id,used) VALUES('FIRST',1,0)")
+	mustExec(t, pool, "INSERT INTO bind_code(code,old_id,used) VALUES('FIRST',1,0)")
 	out := api(t, testHandler(t, pool).deviceBind, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "code": "FIRST"})
 	if out["returnCode"] != "1111" {
 		t.Fatal(out)
@@ -172,10 +172,10 @@ func TestArchitectureConcurrentBindAndUnbind(t *testing.T) {
 	seedDevice(t, pool)
 	h := testHandler(t, pool)
 	for n := 0; n < 20; n++ {
-		mustExec(t, pool, "UPDATE device SET resident_id=1 WHERE device_id=1")
-		mustExec(t, pool, "UPDATE resident SET device_id=1 WHERE resident_id=1")
+		mustExec(t, pool, "UPDATE device SET old_id=1 WHERE device_id=1")
+		mustExec(t, pool, "UPDATE oldperson SET device_id=1 WHERE old_id=1")
 		code := fmt.Sprintf("RACE%d", n)
-		mustExec(t, pool, "INSERT INTO bind_code(code,resident_id,used) VALUES($1,1,0)", code)
+		mustExec(t, pool, "INSERT INTO bind_code(code,old_id,used) VALUES($1,1,0)", code)
 		start := make(chan struct{})
 		results := make(chan *httptest.ResponseRecorder, 2)
 		go func() {
@@ -191,7 +191,7 @@ func TestArchitectureConcurrentBindAndUnbind(t *testing.T) {
 			}
 		}
 		var consistent bool
-		if err := pool.QueryRow(context.Background(), `SELECT (o.device_id IS NULL AND d.resident_id IS NULL) OR (o.device_id=d.device_id AND d.resident_id=o.resident_id) FROM resident o,device d WHERE o.resident_id=1 AND d.device_id=1`).Scan(&consistent); err != nil || !consistent {
+		if err := pool.QueryRow(context.Background(), `SELECT (o.device_id IS NULL AND d.old_id IS NULL) OR (o.device_id=d.device_id AND d.old_id=o.old_id) FROM oldperson o,device d WHERE o.old_id=1 AND d.device_id=1`).Scan(&consistent); err != nil || !consistent {
 			t.Fatalf("concurrent lifecycle split ownership: %v %v", consistent, err)
 		}
 	}
@@ -200,11 +200,11 @@ func TestArchitectureConcurrentBindAndUnbind(t *testing.T) {
 func TestArchitectureUnbindingKeepsRemainingPrimary(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
-	mustExec(t, pool, "UPDATE resident SET device_id=1 WHERE resident_id=1")
-	mustExec(t, pool, "INSERT INTO device(device_id,device_no,secret,resident_id) VALUES(2,'SECOND','unused',1)")
+	mustExec(t, pool, "UPDATE oldperson SET device_id=1 WHERE old_id=1")
+	mustExec(t, pool, "INSERT INTO device(device_id,device_no,secret,old_id) VALUES(2,'SECOND','unused',1)")
 	api(t, testHandler(t, pool).deviceUnbind, map[string]any{"deviceId": 1})
 	var primary *int64
-	if err := pool.QueryRow(context.Background(), "SELECT device_id FROM resident WHERE resident_id=1").Scan(&primary); err != nil || primary == nil || *primary != 2 {
+	if err := pool.QueryRow(context.Background(), "SELECT device_id FROM oldperson WHERE old_id=1").Scan(&primary); err != nil || primary == nil || *primary != 2 {
 		t.Fatalf("remaining attached device lost its primary reference: %v %v", primary, err)
 	}
 }
@@ -219,7 +219,7 @@ func TestArchitectureCareQueuePaginationAndDuty(t *testing.T) {
 		if n > 55 {
 			state = "verified"
 		}
-		mustExec(t, pool, "INSERT INTO care_incident(resident_id,device_id,kind,state,severity,due_at) VALUES(1,1,'sos',$1,'critical',now())", state)
+		mustExec(t, pool, "INSERT INTO care_incident(old_id,device_id,kind,state,severity,due_at) VALUES(1,1,'sos',$1,'critical',now())", state)
 	}
 	h := testHandler(t, pool)
 	out := careRequest(t, h, h.careIncidents, 2, map[string]any{"page": 2, "pageSize": 20, "state": "active"})
@@ -237,8 +237,8 @@ func TestArchitectureCareQueuePaginationAndDuty(t *testing.T) {
 func TestArchitectureVerificationClearsOnlyLinkedAlarm(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
-	mustExec(t, pool, "INSERT INTO alarm_event(id,resident_id,device_id,status,event_time) VALUES(1,1,1,'1',now()),(2,1,1,'1',now())")
-	mustExec(t, pool, `INSERT INTO care_incident(id,resident_id,device_id,kind,state,severity,due_at,resolved_by,source_alarm_id)
+	mustExec(t, pool, "INSERT INTO alarm_precess(id,old_id,device_id,status,be_time) VALUES(1,1,1,'1',now()),(2,1,1,'1',now())")
+	mustExec(t, pool, `INSERT INTO care_incident(id,old_id,device_id,kind,state,severity,due_at,resolved_by,source_alarm_id)
 		VALUES(1,1,1,'sos','resolved','critical',now(),'1',1)`)
 	h := testHandler(t, pool)
 	out := careRequest(t, h, h.careTransition, 2, map[string]any{"id": "1", "action": "verify", "note": "已独立复核"})
@@ -246,7 +246,7 @@ func TestArchitectureVerificationClearsOnlyLinkedAlarm(t *testing.T) {
 		t.Fatal(out.Body.String())
 	}
 	var first, second string
-	if err := pool.QueryRow(context.Background(), "SELECT a.status,b.status FROM alarm_event a,alarm_event b WHERE a.id=1 AND b.id=2").Scan(&first, &second); err != nil || first != "0" || second != "1" {
+	if err := pool.QueryRow(context.Background(), "SELECT a.status,b.status FROM alarm_precess a,alarm_precess b WHERE a.id=1 AND b.id=2").Scan(&first, &second); err != nil || first != "0" || second != "1" {
 		t.Fatalf("verification did not clear precisely its own alarm: %s %s %v", first, second, err)
 	}
 }
@@ -254,7 +254,7 @@ func TestArchitectureVerificationClearsOnlyLinkedAlarm(t *testing.T) {
 func TestArchitectureCareHistoryHasNoSilentLimit(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
-	mustExec(t, pool, "INSERT INTO care_incident(id,resident_id,device_id,kind,severity,due_at) VALUES(1,1,1,'sos','critical',now())")
+	mustExec(t, pool, "INSERT INTO care_incident(id,old_id,device_id,kind,severity,due_at) VALUES(1,1,1,'sos','critical',now())")
 	for n := 1; n <= 105; n++ {
 		mustExec(t, pool, "INSERT INTO care_incident_event(incident_id,actor,action,note) VALUES(1,'1','note',$1)", fmt.Sprint(n))
 	}
@@ -269,7 +269,7 @@ func TestArchitectureCareHistoryHasNoSilentLimit(t *testing.T) {
 func TestArchitectureCareNoteAcceptsChineseCharacters(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
-	mustExec(t, pool, "INSERT INTO care_incident(id,resident_id,device_id,kind,state,severity,due_at) VALUES(1,1,1,'sos','in_progress','critical',now())")
+	mustExec(t, pool, "INSERT INTO care_incident(id,old_id,device_id,kind,state,severity,due_at) VALUES(1,1,1,'sos','in_progress','critical',now())")
 	h := testHandler(t, pool)
 	out := careRequest(t, h, h.careTransition, 1, map[string]any{"id": "1", "action": "resolve", "note": strings.Repeat("护理记录", 300)})
 	if out.Code != 200 {

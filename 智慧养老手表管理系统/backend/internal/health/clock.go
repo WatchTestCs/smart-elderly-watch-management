@@ -22,12 +22,12 @@ type ownerClock struct {
 
 // LockOwner serializes sample writes and daily cache snapshots for one owner.
 // Its lock lasts until the caller commits or rolls back the transaction.
-func LockOwner(ctx context.Context, tx *db.Transaction, residentID int64) (int64, error) {
-	clock, err := lockOwner(ctx, tx, residentID)
+func LockOwner(ctx context.Context, tx *db.Transaction, oldID int64) (int64, error) {
+	clock, err := lockOwner(ctx, tx, oldID)
 	return clock.revision, err
 }
 
-func lockOwner(ctx context.Context, tx *db.Transaction, residentID int64) (ownerClock, error) {
+func lockOwner(ctx context.Context, tx *db.Transaction, oldID int64) (ownerClock, error) {
 	var clock ownerClock
 	if !tx.IsMySQL() {
 		err := tx.QueryRow(ctx, "SELECT revision FROM health_clock WHERE id=1 FOR UPDATE").Scan(&clock.revision)
@@ -37,7 +37,7 @@ func lockOwner(ctx context.Context, tx *db.Transaction, residentID int64) (owner
 		}
 		return clock, err
 	}
-	err := tx.QueryRow(ctx, "SELECT revision,range_end FROM health_owner_clock WHERE resident_id=$1 FOR UPDATE", residentID).Scan(&clock.revision, &clock.rangeEnd)
+	err := tx.QueryRow(ctx, "SELECT revision,range_end FROM health_owner_clock WHERE old_id=$1 FOR UPDATE", oldID).Scan(&clock.revision, &clock.rangeEnd)
 	if errors.Is(err, pgx.ErrNoRows) {
 		// A new owner has no reserved range. Read the existing high-water mark
 		// without locking it; a later reservation always locks and rereads it.
@@ -45,10 +45,10 @@ func lockOwner(ctx context.Context, tx *db.Transaction, residentID int64) (owner
 		if err = tx.QueryRow(ctx, "SELECT revision FROM health_clock WHERE id=1").Scan(&high); err != nil {
 			return clock, err
 		}
-		if _, err = tx.Exec(ctx, "INSERT INTO health_owner_clock(resident_id,revision,range_end) VALUES($1,$2,$2) ON DUPLICATE KEY UPDATE resident_id=resident_id", residentID, high); err != nil {
+		if _, err = tx.Exec(ctx, "INSERT INTO health_owner_clock(old_id,revision,range_end) VALUES($1,$2,$2) ON DUPLICATE KEY UPDATE old_id=old_id", oldID, high); err != nil {
 			return clock, err
 		}
-		err = tx.QueryRow(ctx, "SELECT revision,range_end FROM health_owner_clock WHERE resident_id=$1 FOR UPDATE", residentID).Scan(&clock.revision, &clock.rangeEnd)
+		err = tx.QueryRow(ctx, "SELECT revision,range_end FROM health_owner_clock WHERE old_id=$1 FOR UPDATE", oldID).Scan(&clock.revision, &clock.rangeEnd)
 	}
 	if err == nil && (clock.revision < 0 || clock.rangeEnd < clock.revision || clock.rangeEnd > maxSafeRevision) {
 		err = fmt.Errorf("health revision exceeds safe cursor range")
@@ -58,7 +58,7 @@ func lockOwner(ctx context.Context, tx *db.Transaction, residentID int64) (owner
 
 // reserve returns the revision immediately before this batch. A range is unique
 // globally, while its owner lock preserves commit ordering within read cursors.
-func (c ownerClock) reserve(ctx context.Context, tx *db.Transaction, residentID int64, count int) (int64, error) {
+func (c ownerClock) reserve(ctx context.Context, tx *db.Transaction, oldID int64, count int) (int64, error) {
 	start, end := c.revision, c.rangeEnd
 	if start < 0 || start > maxSafeRevision-int64(count) {
 		return 0, fmt.Errorf("health revision exceeds safe cursor range")
@@ -76,7 +76,7 @@ func (c ownerClock) reserve(ctx context.Context, tx *db.Transaction, residentID 
 		}
 	}
 	if tx.IsMySQL() {
-		_, err := tx.Exec(ctx, "UPDATE health_owner_clock SET revision=$2,range_end=$3 WHERE resident_id=$1", residentID, start+int64(count), end)
+		_, err := tx.Exec(ctx, "UPDATE health_owner_clock SET revision=$2,range_end=$3 WHERE old_id=$1", oldID, start+int64(count), end)
 		return start, err
 	}
 	_, err := tx.Exec(ctx, "UPDATE health_clock SET revision=$1 WHERE id=1", start+int64(count))

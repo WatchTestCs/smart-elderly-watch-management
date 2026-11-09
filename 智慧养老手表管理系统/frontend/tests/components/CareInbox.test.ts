@@ -2,13 +2,14 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { defineComponent } from 'vue'
 import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest'
 import CareInbox from '@/components/CareInbox.vue'
+import store from '@/store'
 
 const { post } = vi.hoisted(() => ({ post: vi.fn() }))
 vi.mock('axios', async (importOriginal) => ({ ...await importOriginal<typeof import('axios')>(), default: { post } }))
 const Pagination = defineComponent({ name: 'Pagination', emits: ['current-change'], template: '<nav />' })
 const Button = defineComponent({ emits: ['click'], template: '<button @click="$emit(\'click\')"><slot /></button>' })
 const Dialog = defineComponent({ props: ['modelValue'], emits: ['close', 'update:modelValue'], template: '<section v-if="modelValue" class="test-dialog"><slot /><slot name="footer" /><button class="close-dialog" @click="$emit(\'update:modelValue\', false); $emit(\'close\')">关闭</button></section>' })
-const fixture = (name: string, total = 100) => ({ data: { items: [{ id: name, residentName: name, state: 'received' }], total, duty: 'supervisor', actorId: 7 } })
+const fixture = (name: string, total = 100) => ({ data: { items: [{ id: name, oldPersonName: name, state: 'received' }], total, duty: 'supervisor', actorId: 7 } })
 function mountInbox() {
   return mount(CareInbox, { global: {
     stubs: { 'el-pagination': Pagination, 'el-select': true, 'el-option': true, 'el-button': Button, 'el-dialog': Dialog, 'el-input': true, CareOperationsPanel: true },
@@ -19,6 +20,45 @@ function mountInbox() {
 describe('care task read scheduling', () => {
   beforeEach(() => { post.mockReset() })
   afterEach(() => { vi.useRealTimers() })
+
+  it('refreshes the care inbox on an external alert revision', async () => {
+    post.mockResolvedValueOnce(fixture('旧任务')).mockResolvedValueOnce(fixture('新求助'))
+    const view = mountInbox()
+    await flushPromises()
+    store.notifyAlertsChanged()
+    await flushPromises()
+    expect(post).toHaveBeenCalledTimes(2)
+    expect(view.text()).toContain('新求助')
+    expect(view.text()).not.toContain('旧任务')
+    view.unmount()
+  })
+
+  it('refreshes tasks on tab visibility restoration and unregisters the listener', async () => {
+    const visibility = vi.spyOn(document, 'hidden', 'get').mockReturnValue(true)
+    try {
+      post.mockResolvedValueOnce(fixture('旧任务')).mockResolvedValueOnce(fixture('最新任务'))
+      const view = mountInbox()
+      await flushPromises()
+      expect(view.text()).toContain('旧任务')
+      document.dispatchEvent(new Event('visibilitychange'))
+      await flushPromises()
+      expect(post).toHaveBeenCalledTimes(1)
+
+      visibility.mockReturnValue(false)
+      document.dispatchEvent(new Event('visibilitychange'))
+      await flushPromises()
+      expect(post).toHaveBeenCalledTimes(2)
+      expect(view.text()).toContain('最新任务')
+      expect(view.text()).not.toContain('旧任务')
+
+      view.unmount()
+      document.dispatchEvent(new Event('visibilitychange'))
+      await flushPromises()
+      expect(post).toHaveBeenCalledTimes(2)
+    } finally {
+      visibility.mockRestore()
+    }
+  })
 
   it('aborts a hung task page on timeout and can poll successfully afterwards', async () => {
     vi.useFakeTimers()
@@ -31,7 +71,7 @@ describe('care task read scheduling', () => {
     await vi.advanceTimersByTimeAsync(5000)
     expect(view.text()).toContain('恢复任务')
     expect(view.text()).not.toContain('照护任务暂时无法加载')
-    expect(post.mock.calls.every(([path]) => path === 'api/v1/care/incidents')).toBe(true)
+    expect(post.mock.calls.every(([path]) => path === '/api/v1/care/incidents')).toBe(true)
     view.unmount()
     expect(vi.getTimerCount()).toBe(0)
   })
@@ -51,8 +91,8 @@ describe('care task read scheduling', () => {
   it('replaces a hung history read and cancels another read when its dialog closes', async () => {
     let finishOld!: (value: unknown) => void
     post.mockResolvedValueOnce({ data: { ...fixture('first').data, items: [
-      { id: 'first', residentName: '第一位', state: 'received' },
-      { id: 'second', residentName: '第二位', state: 'received' }
+      { id: 'first', oldPersonName: '第一位', state: 'received' },
+      { id: 'second', oldPersonName: '第二位', state: 'received' }
     ] } })
       .mockReturnValueOnce(new Promise(resolve => { finishOld = resolve }))
       .mockResolvedValueOnce({ data: { events: [{ action: '最新履历' }], total: 1 } })
@@ -66,6 +106,7 @@ describe('care task read scheduling', () => {
     await flushPromises()
     expect(post.mock.calls[1][2].signal.aborted).toBe(true)
     expect(post.mock.calls[2][1]).toMatchObject({ id: 'second', page: 1 })
+    expect(post.mock.calls[2][0]).toBe('/api/v1/care/events')
     expect(view.text()).toContain('最新履历')
     finishOld({ data: { events: [{ action: '过期履历' }], total: 99 } })
     await flushPromises()
@@ -101,7 +142,7 @@ describe('care task read scheduling', () => {
   })
 
   it('keeps delivered notifications visibly unclaimed until a person acknowledges', async () => {
-    post.mockResolvedValueOnce({ data: { items: [{ id: 'delivery-only', residentName: '送达待接单', state: 'notified', notificationState: 'delivered', acknowledgedBy: null }], total: 1, duty: 'supervisor', actorId: 7 } })
+    post.mockResolvedValueOnce({ data: { items: [{ id: 'delivery-only', oldPersonName: '送达待接单', state: 'notified', notificationState: 'delivered', acknowledgedBy: null }], total: 1, duty: 'supervisor', actorId: 7 } })
     const view = mountInbox()
     await flushPromises()
     expect(view.text()).toContain('已确认送达')

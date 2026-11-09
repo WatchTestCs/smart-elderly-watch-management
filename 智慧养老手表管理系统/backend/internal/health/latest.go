@@ -1,0 +1,251 @@
+package health
+
+import (
+	"cmp"
+	"context"
+	"crypto/sha256"
+	"encoding/binary"
+	"encoding/json"
+	"errors"
+	"sort"
+
+	"github.com/jackc/pgx/v5"
+	"suining-care/internal/db"
+)
+
+var ErrLatestTooManySeries = errors.New("health latest candidates exceed 10000")
+
+type latestQuerier interface {
+	Query(context.Context, string, ...any) (db.Rows, error)
+	QueryRow(context.Context, string, ...any) db.Row
+}
+
+func latestReady(ctx context.Context, q latestQuerier, oldID int64) (bool, error) {
+	var id int64
+	err := q.QueryRow(ctx, "SELECT old_id FROM health_latest_ready WHERE old_id=$1", oldID).Scan(&id)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return false, nil
+	}
+	return err == nil, err
+}
+
+func Latest(ctx context.Context, store *db.Database, oldID int64) ([]Record, error) {
+	ready, err := latestReady(ctx, store, oldID)
+	if err != nil {
+		return nil, err
+	}
+	if ready {
+		return readLatest(ctx, store, oldID)
+	}
+	tx, err := store.Begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(ctx)
+	if _, err = LockOwner(ctx, tx, oldID); err != nil {
+		return nil, err
+	}
+	ready, err = latestReady(ctx, tx, oldID)
+	if err != nil {
+		return nil, err
+	}
+	if ready {
+		items, readErr := readLatest(ctx, tx, oldID)
+		if readErr != nil {
+			return nil, readErr
+		}
+		if err = tx.Commit(ctx); err != nil {
+			return nil, err
+		}
+		return items, nil
+	}
+	items, err := buildLatest(ctx, tx, oldID)
+	if err != nil {
+		return nil, err
+	}
+	for _, item := range items {
+		payload, marshalErr := json.Marshal(item.Sample)
+		if marshalErr != nil {
+			return nil, marshalErr
+		}
+		if err = insertLatest(ctx, tx, item, payload); err != nil {
+			return nil, err
+		}
+	}
+	if _, err = tx.Exec(ctx, "INSERT INTO health_latest_ready(old_id) VALUES($1)", oldID); err != nil {
+		return nil, err
+	}
+	if err = tx.Commit(ctx); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+func readLatest(ctx context.Context, q latestQuerier, oldID int64) ([]Record, error) {
+	rows, err := q.Query(ctx, "SELECT sample_id,device_id,epoch,revision,payload FROM health_sample_latest WHERE old_id=$1 LIMIT 10001", oldID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := make([]Record, 0, 16)
+	for rows.Next() {
+		if len(items) == 10000 {
+			return nil, ErrLatestTooManySeries
+		}
+		rec := Record{OldID: oldID}
+		var payload []byte
+		if err = rows.Scan(&rec.SampleID, &rec.DeviceID, &rec.Epoch, &rec.Revision, &payload); err != nil {
+			return nil, err
+		}
+		if err = json.Unmarshal(payload, &rec.Sample); err != nil {
+			return nil, err
+		}
+		items = append(items, rec)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	sortLatest(items)
+	return items, nil
+}
+
+func buildLatest(ctx context.Context, q *db.Transaction, oldID int64) ([]Record, error) {
+	partition := "source,source_device,metric,semantics"
+	if q.IsMySQL() {
+		partition = "BINARY source,BINARY source_device,BINARY metric,BINARY semantics"
+	}
+	sql := "SELECT s.sample_id,s.device_id,s.epoch,s.revision,s.payload FROM health_sample s INNER JOIN (" +
+		"SELECT sample_id,RANK() OVER (PARTITION BY " + partition + " ORDER BY sample_start DESC) AS latest_rank " +
+		"FROM health_sample WHERE old_id=$1 AND NOT deleted) ranked ON ranked.sample_id=s.sample_id " +
+		"WHERE ranked.latest_rank=1 ORDER BY s.sample_id LIMIT 10001"
+	rows, err := q.Query(ctx, sql, oldID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	type series struct{ source, device, metric, semantics string }
+	selected := make(map[series]Record)
+	count := 0
+	for rows.Next() {
+		count++
+		if count > 10000 {
+			return nil, ErrLatestTooManySeries
+		}
+		rec := Record{OldID: oldID}
+		var payload []byte
+		if err = rows.Scan(&rec.SampleID, &rec.DeviceID, &rec.Epoch, &rec.Revision, &payload); err != nil {
+			return nil, err
+		}
+		if err = json.Unmarshal(payload, &rec.Sample); err != nil {
+			return nil, err
+		}
+		s := rec.Sample
+		key := series{s.Source, s.SourceDevice, s.Metric, s.Semantics}
+		prior, exists := selected[key]
+		if !exists || s.Start.After(prior.Sample.Start) || (s.Start.Equal(prior.Sample.Start) && rec.Revision > prior.Revision) {
+			selected[key] = rec
+		}
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	items := make([]Record, 0, len(selected))
+	for _, rec := range selected {
+		items = append(items, rec)
+	}
+	sortLatest(items)
+	return items, nil
+}
+
+func sortLatest(items []Record) {
+	sort.Slice(items, func(i, j int) bool {
+		a, b := items[i].Sample, items[j].Sample
+		return cmp.Or(cmp.Compare(a.Source, b.Source), cmp.Compare(a.SourceDevice, b.SourceDevice), cmp.Compare(a.Metric, b.Metric), cmp.Compare(a.Semantics, b.Semantics)) < 0
+	})
+}
+
+func latestKey(s Sample) [32]byte {
+	var buf []byte
+	for _, part := range [...]string{s.Source, s.SourceDevice, s.Metric, s.Semantics} {
+		buf = binary.LittleEndian.AppendUint32(buf, uint32(len(part)))
+		buf = append(buf, part...)
+	}
+	return sha256.Sum256(buf)
+}
+
+func insertLatest(ctx context.Context, tx *db.Transaction, rec Record, payload []byte) error {
+	key := latestKey(rec.Sample)
+	_, err := tx.Exec(ctx, "INSERT INTO health_sample_latest(old_id,series_key,sample_id,device_id,epoch,revision,payload) VALUES($1,$2,$3,$4,$5,$6,$7)",
+		rec.OldID, key[:], rec.SampleID, rec.DeviceID, rec.Epoch, rec.Revision, payload)
+	return err
+}
+
+func refreshLatest(ctx context.Context, tx *db.Transaction, o Owner, input []preparedSample, final []uint8) error {
+	ready, err := latestReady(ctx, tx, o.OldID)
+	if err != nil || !ready {
+		return err
+	}
+	seen := make(map[[32]byte]struct{}, len(final))
+	for _, index := range final {
+		sample := input[index].sample
+		key := latestKey(sample)
+		if _, exists := seen[key]; exists {
+			continue
+		}
+		seen[key] = struct{}{}
+		if err = refreshLatestSeries(ctx, tx, o.OldID, sample, key); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func refreshLatestSeries(ctx context.Context, tx *db.Transaction, oldID int64, s Sample, key [32]byte) error {
+	filter := "source=$2 AND source_device=$3 AND metric=$4 AND semantics=$5"
+	if tx.IsMySQL() {
+		filter = "BINARY source=BINARY $2 AND BINARY source_device=BINARY $3 AND BINARY metric=BINARY $4 AND BINARY semantics=BINARY $5"
+	}
+	sql := "SELECT sample_id,device_id,epoch,revision,sample_start,payload FROM health_sample WHERE old_id=$1 AND " +
+		filter + " AND NOT deleted ORDER BY sample_start DESC,revision DESC,sample_id DESC"
+	rows, err := tx.Query(ctx, sql, oldID, s.Source, s.SourceDevice, s.Metric, s.Semantics)
+	if err != nil {
+		return err
+	}
+	var winner *Record
+	var winnerPayload []byte
+	var maxMicro int64
+	for rows.Next() {
+		rec := Record{OldID: oldID}
+		var micro int64
+		var payload []byte
+		if err = rows.Scan(&rec.SampleID, &rec.DeviceID, &rec.Epoch, &rec.Revision, &micro, &payload); err != nil {
+			break
+		}
+		if winner != nil && micro < maxMicro {
+			break
+		}
+		if err = json.Unmarshal(payload, &rec.Sample); err != nil {
+			break
+		}
+		if winner == nil || rec.Sample.Start.After(winner.Sample.Start) || (rec.Sample.Start.Equal(winner.Sample.Start) && rec.Revision > winner.Revision) {
+			copyRec := rec
+			winner = &copyRec
+			winnerPayload = payload
+			maxMicro = micro
+		}
+	}
+	if err == nil {
+		err = rows.Err()
+	}
+	rows.Close()
+	if err != nil {
+		return err
+	}
+	if _, err = tx.Exec(ctx, "DELETE FROM health_sample_latest WHERE old_id=$1 AND series_key=$2", oldID, key[:]); err != nil {
+		return err
+	}
+	if winner != nil {
+		return insertLatest(ctx, tx, *winner, winnerPayload)
+	}
+	return nil
+}

@@ -16,10 +16,10 @@ func Backfill(ctx context.Context, primary *db.Database) (int64, error) {
 		table   string
 		columns string
 	}{
-		{"ratepre", "device_id,resident_id,hr,bp,rate_state,pre_state,create_time"},
+		{"ratepre", "device_id,old_id,hr,bp,rate_state,pre_state,create_time"},
 		{"watch_day_info", "device_id,sleep,step,sleep_sate,create_time"},
-		{"device_location", "device_id,resident_id,lng,lat,source,event_time,create_time"},
-		{"care_incident", "resident_id,device_id,kind,state,severity,created_at,updated_at,due_at,resolved_at,verified_at"},
+		{"device_location", "device_id,old_id,lng,lat,source,be_time,create_time"},
+		{"care_incident", "old_id,device_id,kind,state,severity,created_at,updated_at,due_at,resolved_at,verified_at"},
 		{"care_incident_event", "incident_id,action,created_at"},
 	}
 	var total int64

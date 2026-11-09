@@ -11,10 +11,10 @@ import (
 )
 
 type ruleDevice struct {
-	id, residentID, epoch int64
-	no                    string
-	last, bound           *time.Time
-	battery               *float64
+	id, oldID, epoch int64
+	no               string
+	last, bound      *time.Time
+	battery          *float64
 }
 
 func readRulePolicy(ctx context.Context, tx *db.Transaction, id int64) (Policy, error) {
@@ -76,7 +76,7 @@ func collectRuleInput(ctx context.Context, tx *db.Transaction, device ruleDevice
 }
 
 func readLatestRuleObservations(ctx context.Context, tx *db.Transaction, device ruleDevice, p Policy, in *Input) error {
-	id, residentID, epoch := device.id, device.residentID, device.epoch
+	id, oldID, epoch := device.id, device.oldID, device.epoch
 	now := in.Now
 	var err error
 	// Fetch one latest observation per metric so a heart-rate burst cannot hide
@@ -89,7 +89,7 @@ func readLatestRuleObservations(ctx context.Context, tx *db.Transaction, device 
 		var sampleID string
 		var revision int64
 		var b []byte
-		err = tx.QueryRow(ctx, latestSampleSQL, residentID, id, epoch, metric, now.Add(-window).UnixMicro(), now.UnixMicro()).Scan(&sampleID, &revision, &b)
+		err = tx.QueryRow(ctx, latestSampleSQL, oldID, id, epoch, metric, now.Add(-window).UnixMicro(), now.UnixMicro()).Scan(&sampleID, &revision, &b)
 		if err == pgx.ErrNoRows {
 			continue
 		}
@@ -120,14 +120,14 @@ func readLatestRuleObservations(ctx context.Context, tx *db.Transaction, device 
 }
 
 func readLegacyRuleVitals(ctx context.Context, tx *db.Transaction, device ruleDevice, p Policy, in *Input) error {
-	id, residentID, no := device.id, device.residentID, device.no
+	id, oldID, no := device.id, device.oldID, device.no
 	now := in.Now
 	var err error
 	if in.Heart == nil || in.Blood == nil {
 		var record int64
 		var at time.Time
 		var hr, bp *float64
-		err = tx.QueryRow(ctx, "SELECT id,create_time,hr,bp FROM ratepre WHERE device_id=$1 AND resident_id=$2 AND create_time>=$3 ORDER BY create_time DESC,id DESC LIMIT 1", id, residentID, now.Add(-5*time.Minute)).Scan(&record, &at, &hr, &bp)
+		err = tx.QueryRow(ctx, "SELECT id,create_time,hr,bp FROM ratepre WHERE device_id=$1 AND old_id=$2 AND create_time>=$3 ORDER BY create_time DESC,id DESC LIMIT 1", id, oldID, now.Add(-5*time.Minute)).Scan(&record, &at, &hr, &bp)
 		if err != nil && err != pgx.ErrNoRows {
 			return err
 		}
@@ -145,7 +145,7 @@ func readLegacyRuleVitals(ctx context.Context, tx *db.Transaction, device ruleDe
 }
 
 func readRuleBaselines(ctx context.Context, tx *db.Transaction, device ruleDevice, p Policy, in *Input) error {
-	id, residentID := device.id, device.residentID
+	id, oldID := device.id, device.oldID
 	now := in.Now
 	var err error
 	for _, item := range []struct {
@@ -157,7 +157,7 @@ func readRuleBaselines(ctx context.Context, tx *db.Transaction, device ruleDevic
 		}
 		var base Baseline
 		query := `SELECT count(*),COALESCE(avg(CAST(JSON_UNQUOTE(JSON_EXTRACT(payload,'$.value')) AS DOUBLE)),0),COALESCE(stddev_pop(CAST(JSON_UNQUOTE(JSON_EXTRACT(payload,'$.value')) AS DOUBLE)),0)
- FROM health_sample WHERE resident_id=$1 AND device_id=$2 AND metric=$3 AND deleted=false
+ FROM health_sample WHERE old_id=$1 AND device_id=$2 AND metric=$3 AND deleted=false
  AND source=$4 AND source_device=$5 AND BINARY source=BINARY $4 AND BINARY source_device=BINARY $5
  AND sample_start>=$6 AND sample_start<$7 AND (JSON_UNQUOTE(JSON_EXTRACT(payload,'$.timeBasis')) IS NULL OR JSON_UNQUOTE(JSON_EXTRACT(payload,'$.timeBasis'))<>'legacy-unzoned')`
 		if tx.IsMySQL() && len(item.v.Device) <= 64 {
@@ -165,7 +165,7 @@ func readRuleBaselines(ctx context.Context, tx *db.Transaction, device ruleDevic
 			// payload reads while holding the device lock as history grows.
 			query = baselineCoverSQL
 		}
-		err = tx.QueryRow(ctx, query, residentID, id, item.metric, item.v.Source, item.v.Device, now.AddDate(0, 0, -p.BaselineDays).UnixMicro(), now.Add(-15*time.Minute).UnixMicro()).Scan(&base.Count, &base.Mean, &base.Deviation)
+		err = tx.QueryRow(ctx, query, oldID, id, item.metric, item.v.Source, item.v.Device, now.AddDate(0, 0, -p.BaselineDays).UnixMicro(), now.Add(-15*time.Minute).UnixMicro()).Scan(&base.Count, &base.Mean, &base.Deviation)
 		if err != nil {
 			return err
 		}
@@ -176,12 +176,12 @@ func readRuleBaselines(ctx context.Context, tx *db.Transaction, device ruleDevic
 }
 
 func readRuleActivity(ctx context.Context, tx *db.Transaction, device ruleDevice, p Policy, in *Input) error {
-	id, residentID, epoch := device.id, device.residentID, device.epoch
+	id, oldID, epoch := device.id, device.oldID, device.epoch
 	now := in.Now
 	if in.Activity != nil {
 		v := in.Activity
 		start := now.Add(-time.Duration(p.ActivityMinutes) * time.Minute)
-		rows, err := tx.Query(ctx, `SELECT payload FROM health_sample WHERE resident_id=$1 AND device_id=$2 AND epoch=$3 AND metric='steps' AND NOT deleted AND BINARY source=BINARY $4 AND BINARY source_device=BINARY $5 AND sample_start<=$7 AND (sample_start>=$6 OR sample_end>$6) ORDER BY sample_start,revision LIMIT 1001`, residentID, id, epoch, v.Source, v.Device, start.UnixMicro(), now.UnixMicro())
+		rows, err := tx.Query(ctx, `SELECT payload FROM health_sample WHERE old_id=$1 AND device_id=$2 AND epoch=$3 AND metric='steps' AND NOT deleted AND BINARY source=BINARY $4 AND BINARY source_device=BINARY $5 AND sample_start<=$7 AND (sample_start>=$6 OR sample_end>$6) ORDER BY sample_start,revision LIMIT 1001`, oldID, id, epoch, v.Source, v.Device, start.UnixMicro(), now.UnixMicro())
 		if err != nil {
 			return err
 		}

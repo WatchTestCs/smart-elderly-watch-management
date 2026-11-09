@@ -18,10 +18,10 @@ func seed(t *testing.T) (*db.Database, time.Time) {
 	p := dbtest.MySQL(t)
 	now := time.Date(2026, 10, 20, 15, 30, 0, 0, time.UTC)
 	ctx := context.Background()
-	if _, err := p.Exec(ctx, "INSERT INTO resident(resident_id,name) VALUES(1,'长者')"); err != nil {
+	if _, err := p.Exec(ctx, "INSERT INTO oldperson(old_id,name) VALUES(1,'长者')"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := p.Exec(ctx, "INSERT INTO device(device_id,device_no,secret,resident_id,last_time,bind_time) VALUES(1,'RULE001','unused',1,$1,$1)", now); err != nil {
+	if _, err := p.Exec(ctx, "INSERT INTO device(device_id,device_no,secret,old_id,last_time,bind_time) VALUES(1,'RULE001','unused',1,$1,$1)", now); err != nil {
 		t.Fatal(err)
 	}
 	return p, now
@@ -34,7 +34,7 @@ func save(t *testing.T, p *db.Database, s health.Sample) {
 		t.Fatal(err)
 	}
 	id := int64(1)
-	if _, _, err = health.Save(ctx, tx, health.Owner{ResidentID: 1, DeviceID: &id, Epoch: 1}, s); err != nil {
+	if _, _, err = health.Save(ctx, tx, health.Owner{OldID: 1, DeviceID: &id, Epoch: 1}, s); err != nil {
 		tx.Rollback(ctx)
 		t.Fatal(err)
 	}
@@ -230,7 +230,7 @@ func TestTickPagesAndRetriesBeforeFailedDevice(t *testing.T) {
 	p, now := seed(t)
 	ctx := context.Background()
 	for id := 2; id <= 102; id++ {
-		if _, err := p.Exec(ctx, "INSERT INTO device(device_id,device_no,secret,resident_id,last_time,bind_time) VALUES($1,$2,'unused',1,$3,$3)", id, fmt.Sprintf("RULE%03d", id), now); err != nil {
+		if _, err := p.Exec(ctx, "INSERT INTO device(device_id,device_no,secret,old_id,last_time,bind_time) VALUES($1,$2,'unused',1,$3,$3)", id, fmt.Sprintf("RULE%03d", id), now); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -290,7 +290,7 @@ func TestNightIncidentUpgradeRemainsIdempotent(t *testing.T) {
 		t.Run(kind, func(t *testing.T) {
 			p, now := seed(t)
 			ctx := context.Background()
-			if _, err := p.Exec(ctx, "INSERT INTO care_incident(resident_id,device_id,kind,severity,created_at) VALUES(1,1,$1,'high',$2)", kind, now); err != nil {
+			if _, err := p.Exec(ctx, "INSERT INTO care_incident(old_id,device_id,kind,severity,created_at) VALUES(1,1,$1,'high',$2)", kind, now); err != nil {
 				t.Fatal(err)
 			}
 			e := Engine{DB: p}

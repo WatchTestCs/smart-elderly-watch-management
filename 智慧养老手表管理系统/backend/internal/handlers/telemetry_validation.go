@@ -13,7 +13,7 @@ var telemetryTextLimits = [...]struct {
 }{
 	{"hr", 12}, {"bp", 12}, {"step", 12}, {"sleep", 12},
 	{"sleepState", 1}, {"lng", 20}, {"lat", 20},
-	{"source", 20}, {"eventTime", 19}, {"battery", 3},
+	{"source", 20}, {"beTime", 19}, {"battery", 3},
 	{"appVersion", 20},
 }
 

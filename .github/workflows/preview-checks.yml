@@ -1,12 +1,17 @@
-name: Additional preview UI checks
+name: Extended browser acceptance
+
 on:
   workflow_dispatch:
+
 permissions:
   contents: read
+
 jobs:
-  verify:
+  browser:
+    name: Full browser QA (manual)
     if: github.ref == 'refs/heads/preview'
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -14,9 +19,26 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
         with:
           node-version: '24'
-      - run: npm ci && npm run build
+          cache: npm
+          cache-dependency-path: |
+            智慧养老手表管理系统/frontend/package-lock.json
+            智慧养老手表管理系统/frontend/qa/package-lock.json
+      - name: Build current frontend once
         working-directory: 智慧养老手表管理系统/frontend
-      - run: npm ci && npx playwright install --with-deps chromium && npm test
+        run: |
+          npm ci
+          npm run build
+      - name: Run all browser acceptance suites
         working-directory: 智慧养老手表管理系统/frontend/qa
-      - run: cargo test --locked --all-targets
-        working-directory: 智慧养老手表管理系统/watch-sim
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+          npm test
+      - name: Preserve browser acceptance reports
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: extended-browser-qa-${{ github.sha }}
+          path: 智慧养老手表管理系统/frontend/qa/artifacts/
+          if-no-files-found: warn
+          retention-days: 14

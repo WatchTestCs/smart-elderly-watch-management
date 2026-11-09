@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"suining-care/internal/config"
+	"suining-care/internal/devicerepo"
 	"suining-care/internal/ratelimit"
 	"suining-care/internal/securestore"
 )
@@ -68,7 +69,7 @@ func TestWrongCoordinateKeyFailsClosed(t *testing.T) {
 	mustExec(t, pool, "UPDATE device SET last_lng=$1,last_lat=$1 WHERE device_id=1", sealed)
 	h := testHandler(t, pool)
 	h.Box = b
-	if _, err = h.findDeviceByNo(context.Background(), pool, "WATCH001"); err == nil {
+	if _, err = h.readDeviceRecord(devicerepo.FindDeviceByNo(context.Background(), pool, "WATCH001")); err == nil {
 		t.Fatal("device read ignored unavailable coordinate key")
 	}
 }

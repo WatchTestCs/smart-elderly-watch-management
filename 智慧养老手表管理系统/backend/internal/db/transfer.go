@@ -15,7 +15,7 @@ import (
 // Source data is read from one read-only snapshot. Target writes (including
 // analytics outbox triggers) commit together, after every table count matches.
 func TransferLegacy(ctx context.Context, source *pgxpool.Pool, target *Database, apply bool) (map[string]int64, error) {
-	tables := []string{"guardian", "family", "users", "resident", "device", "watch_info", "invite_code", "bind_code", "pic", "pic_show", "text", "said", "nice_count", "ratepre", "watch_day_info", "watch_day_info_archive", "alarm_event", "alarm_process", "device_location", "care_incident", "care_incident_event", "care_notification_outbox", "care_staff_permission", "care_access_audit", "care_sensitive_access_audit", "care_worker_heartbeat"}
+	tables := []string{"customer", "family", "users", "oldperson", "device", "watch_info", "invite_code", "bind_code", "pic", "pic_show", "text", "said", "nice_count", "ratepre", "watch_day_info", "watch_day_info_archive", "alarm_precess", "alarm_process", "device_location", "care_incident", "care_incident_event", "care_notification_outbox", "care_staff_permission", "care_access_audit", "care_sensitive_access_audit", "care_worker_heartbeat"}
 	read, err := source.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.RepeatableRead, AccessMode: pgx.ReadOnly})
 	if err != nil {
 		return nil, err

@@ -14,7 +14,7 @@ func TestContinuousZeroBatteryAlert(t *testing.T) {
 	now := time.Now()
 	id := int64(1)
 	low, high := 55, 110
-	pr := personRow{deviceID: 1, residentID: &id, lastTime: &now, hrf: &high, hrl: &low, bpf: &high, bpl: &low}
+	pr := personRow{deviceID: 1, oldID: &id, lastTime: &now, hrf: &high, hrl: &low, bpf: &high, bpl: &low}
 	for _, battery := range []int{-1, 0, 19, 20} {
 		pr.battery = &battery
 		if battery == -1 {
@@ -34,7 +34,7 @@ func TestContinuousConfiguredThresholdExplanation(t *testing.T) {
 	seedDevice(t, pool)
 	mustExec(t, pool, "INSERT INTO watch_info(device_id,hrf,hrl,bpf,bpl) VALUES(1,75,55,200,180)")
 	api(t, h.deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "hr": 80, "bp": 170})
-	for _, body := range []map[string]any{{"residentId": 1}, {"recordId": 1}} {
+	for _, body := range []map[string]any{{"oldId": 1}, {"recordId": 1}} {
 		out := api(t, h.getVitalAlert, body)
 		reason, _ := out["reason"].(string)
 		detail, _ := out["detail"].(string)
@@ -59,7 +59,7 @@ func TestContinuousStatisticsExactSource(t *testing.T) {
 		source, device string
 		count          float64
 	}{{"watch", "WATCH001", 1}, {"watch ", "WATCH001", 0}, {"watch", "WATCH001 ", 0}, {"WATCH", "WATCH001", 0}} {
-		result := api(t, admin, map[string]any{"residentId": 1, "source": tc.source, "sourceDevice": tc.device, "metric": "heart_rate", "semantics": "instant", "from": at.Add(-time.Hour), "to": at.Add(time.Hour)})["statistics"].(map[string]any)
+		result := api(t, admin, map[string]any{"oldId": 1, "source": tc.source, "sourceDevice": tc.device, "metric": "heart_rate", "semantics": "instant", "from": at.Add(-time.Hour), "to": at.Add(time.Hour)})["statistics"].(map[string]any)
 		if result["count"] != tc.count {
 			t.Errorf("source=%q device=%q statistics=%v want count=%v", tc.source, tc.device, result, tc.count)
 		}

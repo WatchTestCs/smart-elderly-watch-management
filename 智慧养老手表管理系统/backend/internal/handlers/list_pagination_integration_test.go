@@ -9,10 +9,10 @@ import (
 func TestIntegrationListPageTotals(t *testing.T) {
 	pool := testDatabase(t)
 	h := testHandler(t, pool)
-	mustExec(t, pool, `INSERT INTO guardian(guardian_id,guardian_name) VALUES
+	mustExec(t, pool, `INSERT INTO customer(customer_id,customer_name) VALUES
 		(4,'match A'),(7,'match B'),(9,'other'),(12,'match C')`)
 	mustExec(t, pool, `INSERT INTO family(family_id,family_name,family_tou_pic) VALUES (2,'match fam',NULL),(3,'other',NULL)`)
-	mustExec(t, pool, `INSERT INTO resident(resident_id,name,family_id) VALUES
+	mustExec(t, pool, `INSERT INTO oldperson(old_id,name,family_id) VALUES
 		(4,NULL,2),(7,'second',2),(9,'other',3),(12,'third',2),(15,'unbound',NULL)`)
 	mustExec(t, pool, `INSERT INTO text(text_id,title,time) VALUES
 		(4,'match A','2026-10-19 08:01:02.123'),(7,'match B','2026-10-19 08:01:02.123'),
@@ -28,10 +28,10 @@ func TestIntegrationListPageTotals(t *testing.T) {
 		nullKeys                    []string
 		emptySQL                    string
 	}{
-		{"guardians", "guardians", "guardianId", "guardianName", h.listGuardians,
-			[]int{4, 7, 9, 12}, []int{4, 7, 12}, []string{"guardianAge", "guardianAddress"}, "DELETE FROM guardian"},
-		{"family", "familyDtos", "residentId", "familyName", h.familySelect,
-			[]int{4, 7, 9, 12}, []int{4, 7, 12}, []string{"familyAddress", "familyTouPic"}, "DELETE FROM resident"},
+		{"customers", "customers", "customerId", "customerName", h.listGuardians,
+			[]int{4, 7, 9, 12}, []int{4, 7, 12}, []string{"customerAge", "customerAddress"}, "DELETE FROM customer"},
+		{"family", "familyDtos", "oldId", "familyName", h.familySelect,
+			[]int{4, 7, 9, 12}, []int{4, 7, 12}, []string{"familyAddress", "familyTouPic"}, "DELETE FROM oldperson"},
 		{"texts", "texts", "textId", "title", h.listNotices,
 			textOrder, []int{7, 4, 12}, []string{"textMain", "picId"}, "DELETE FROM text"},
 	} {

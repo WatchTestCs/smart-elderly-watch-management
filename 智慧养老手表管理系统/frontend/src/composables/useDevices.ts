@@ -4,151 +4,38 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { accepted, api, type Envelope } from '../api/client'
 import { apiErrorMessage } from '../api/httpContract'
 import { copyText } from '../utils/clipboard'
-
-type DeviceId = number | string
-
-export interface DeviceRecord {
-  deviceId: DeviceId
-  deviceNo: string
-  residentId?: DeviceId | null
-  alias?: string
-  online?: number | string
-  battery?: number | string
-  model?: string
-  residentName?: string
-  lastTime?: string
-  lastLng?: number | string | null
-  lastLat?: number | string | null
-  kind?: string
-  kindText?: string
-  reason?: string
-  recordId?: DeviceId
-}
-interface ResidentRecord { residentId: DeviceId; name: string }
-interface DeviceBindCode { id: DeviceId; code: string; expireTime: string; used: number }
-interface DeviceAlertCounts { personCount: number; rateCount: number; preCount: number }
-interface DeviceAlertCountRecord extends DeviceAlertCounts { deviceId: DeviceId }
-interface AlertCountsResponse {
-  items: DeviceAlertCountRecord[]
-  total: number
-  personTotal?: number
-  rateTotal?: number
-  preTotal?: number
-}
-interface DeviceListResponse { devices: DeviceRecord[]; total?: number; onlineCount?: number }
-interface AlertDetailResponse {
-  hasAlert?: number
-  message?: string
-  residentName?: string
-  reason?: string
-  detail?: string
-  value?: string | number | null
-  threshold?: string
-  occurTime?: string
-  advice?: string
-  recordId?: DeviceId
-  deviceNo?: string
-  alias?: string
-  kindText?: string
-}
-interface CreatedDeviceResponse { deviceNo: string; secret: string }
-interface BindCodeListResponse { bindCodes?: DeviceBindCode[] }
-interface NewBindCodeResponse { code: string; expireTime: string }
-interface DeviceMutationResponse { secret?: string }
-interface DeviceAlert {
-  visible: boolean
-  loading: boolean
-  resolving: boolean
-  hasAlert: number
-  title: string
-  kind: string
-  deviceId: DeviceId | null
-  deviceNo: string
-  alias: string
-  residentName: string
-  reason: string
-  detail: string
-  value: string | number
-  threshold: string
-  occurTime: string
-  advice: string
-  recordId: DeviceId | null
-  message: string
-}
-interface DeviceState {
-  deviceList: DeviceRecord[]
-  deviceTotal: number
-  serverOnlineCount: number
-  currentPage: number
-  pageSize: number
-  reloadPending: boolean
-  deviceDetailVisible: boolean
-  detailDevice: DeviceRecord | null
-  deviceQuery: string
-  deviceState: string
-  deviceLoading: boolean
-  deviceLoadError: string
-  alertLoadError: string
-  alertsReady: boolean
-  creating: boolean
-  residents: ResidentRecord[]
-  autoRefresh: boolean
-  createDialogVisible: boolean
-  bindCodeDialogVisible: boolean
-  createdDevice: CreatedDeviceResponse | null
-  currentDevice: DeviceRecord | null
-  bindCodeList: DeviceBindCode[]
-  newBindCode: NewBindCodeResponse | null
-  bindResidentId: DeviceId | ''
-  bindExpireDays: string
-  createForm: { alias: string; model: string; residentId: DeviceId | '' }
-  alertCounts: Record<string, DeviceAlertCounts>
-  alertTotals: { personTotal: number; rateTotal: number; preTotal: number; total: number }
-  alertDialog: DeviceAlert
-  workbench: { visible: boolean; list: DeviceRecord[] }
-}
-
+import { createDeviceState, emptyDeviceAlert, isValidCount } from './deviceModels'
+import { useDeviceBindings } from './useDeviceBindings'
+import { useDeviceWorkbench } from './useDeviceWorkbench'
+export type { DeviceRecord } from './deviceModels'
+import type {
+  DeviceId, DeviceRecord, ResidentRecord, DeviceAlertCounts, AlertCountsResponse,
+  DeviceListResponse, AlertDetailResponse, CreatedDeviceResponse,
+  DeviceMutationResponse, DeviceState
+} from './deviceModels'
 
 const post = <T extends object = Record<string, never>>(path: string, params: Record<string, unknown> = {}) => api.post<Envelope & T>('/api/v1/device/' + path, params)
 
-function emptyAlert(): DeviceAlert {
-  return {
-    visible: false, loading: false, resolving: false, hasAlert: 1,
-    title: '异常原因', kind: 'person', deviceId: null, deviceNo: '',
-    alias: '', residentName: '', reason: '', detail: '', value: '',
-    threshold: '', occurTime: '', advice: '', recordId: null, message: ''
-  }
-}
-
 export function useDevices() {
   const router = useRouter()
-  const state = reactive<DeviceState>({
-    deviceList: [], deviceTotal: 0, serverOnlineCount: 0,
-    currentPage: 1, pageSize: 20, reloadPending: false,
-    deviceDetailVisible: false, detailDevice: null,
-    deviceQuery: '', deviceState: 'all', deviceLoading: false,
-    deviceLoadError: '', alertLoadError: '', alertsReady: false,
-    creating: false, residents: [], autoRefresh: true,
-    createDialogVisible: false, bindCodeDialogVisible: false,
-    createdDevice: null, currentDevice: null, bindCodeList: [], newBindCode: null,
-    bindResidentId: '', bindExpireDays: '1',
-    createForm: { alias: '', model: 'HarmonyOS-Wear', residentId: '' },
-    alertCounts: {},
-    alertTotals: { personTotal: 0, rateTotal: 0, preTotal: 0, total: 0 },
-    alertDialog: emptyAlert(),
-    workbench: { visible: false, list: [] }
-  })
+  const state = reactive<DeviceState>(createDeviceState())
   const visibleDevices = computed(() => state.deviceList)
   const onlineCount = computed(() => state.serverOnlineCount)
+  const { openBindCodeDialog, loadBindCodes, createBindCode, deleteBindCode } = useDeviceBindings(state, post)
+  const { openWorkbench, disposeWorkbench } = useDeviceWorkbench(state, async (deviceId, kind, signal) => {
+    const { data } = await api.post<Envelope & AlertDetailResponse>(
+      '/api/v1/device/alertDetail',
+      { deviceId, kind },
+      { signal }
+    )
+    return data
+  })
   let filterTimer: ReturnType<typeof setTimeout> | undefined
   let refreshTimer: ReturnType<typeof setTimeout> | undefined
   let disposed = false
   // Only the newest read may publish state, even if an older request ignores cancellation.
   let alertRequest = 0
   let alertCountsRequest = 0
-  let workbenchRequest = 0
-  let bindCodeRequest = 0
-  let bindDialogRevision = 0
 
   async function loadAlertCounts() {
     const revision = ++alertCountsRequest
@@ -157,7 +44,11 @@ export function useDevices() {
     try {
       const { data } = await post<AlertCountsResponse>('alertCounts')
       if (disposed || revision !== alertCountsRequest) return
-      if (!Array.isArray(data.items) || typeof data.total !== 'number' || !Number.isSafeInteger(data.total)) throw new Error('missing alerts')
+      if (!Array.isArray(data.items) || !isValidCount(data.total) ||
+        !data.items.every(item => isValidCount(item.personCount) && isValidCount(item.rateCount) && isValidCount(item.preCount)) ||
+        ![data.personTotal, data.rateTotal, data.preTotal].every(count => count === undefined || isValidCount(count))) {
+        throw new Error('invalid alert counters')
+      }
       state.alertCounts = Object.fromEntries(data.items.map(item => [item.deviceId, item]))
       state.alertTotals = {
         personTotal: data.personTotal ?? 0, rateTotal: data.rateTotal ?? 0,
@@ -194,10 +85,22 @@ export function useDevices() {
             state.reloadPending = true
             return
           }
-          if (!Array.isArray(data.devices)) throw new Error('missing devices')
+          if (!Array.isArray(data.devices) ||
+             (data.total !== undefined && !isValidCount(data.total)) ||
+             (data.onlineCount !== undefined && !isValidCount(data.onlineCount))) {
+             throw new Error('invalid device list')
+           }
+          if (data.total !== undefined) {
+            const lastPage = Math.max(1, Math.ceil(data.total / state.pageSize))
+            if (state.currentPage > lastPage) {
+              state.currentPage = lastPage
+              state.reloadPending = true
+              return
+            }
+          }
           state.deviceList = data.devices
-          state.deviceTotal = typeof data.total === 'number' ? data.total : data.devices.length
-          state.serverOnlineCount = typeof data.onlineCount === 'number' ? data.onlineCount :
+          state.deviceTotal = data.total ?? data.devices.length
+          state.serverOnlineCount = data.onlineCount ??
             data.devices.filter(item => item.online === 1 || item.online === '1').length
         }).catch(error => {
           if (disposed) return
@@ -244,7 +147,7 @@ export function useDevices() {
   async function showAlert(row: DeviceRecord, kind: string) {
     const revision = ++alertRequest
     state.alertDialog = {
-      ...emptyAlert(), visible: true, loading: true,
+      ...emptyDeviceAlert(), visible: true, loading: true,
       title: kind === 'rate' ? '心率不合格 · 原因与处理' :
         kind === 'pre' ? '血压不合格 · 原因与处理' : '人员不合格 · 原因与处理',
       kind, deviceId: row.deviceId, deviceNo: row.deviceNo, alias: row.alias || ''
@@ -254,7 +157,7 @@ export function useDevices() {
       if (revision !== alertRequest || disposed) return
       Object.assign(state.alertDialog, {
         loading: false, hasAlert: data.hasAlert === undefined ? 1 : data.hasAlert,
-        message: data.message || '', residentName: data.residentName || '',
+        message: data.message || '', oldPersonName: data.oldPersonName || '',
         reason: data.reason || '', detail: data.detail || '',
         value: data.value == null ? '' : data.value, threshold: data.threshold || '',
         occurTime: data.occurTime || '', advice: data.advice || '',
@@ -286,7 +189,7 @@ export function useDevices() {
   async function resolveAlertRow(row: DeviceRecord) {
     try {
       const { data } = await post('resolveAlert', {
-        deviceId: row.deviceId, kind: row.kind, recordId: row.recordId || ''
+        deviceId: row.deviceId, kind: row.kind, recordId: row.recordId ?? ''
       })
       accepted(data)
       ElMessage({ type: 'success', message: '已处理，红点已消除' })
@@ -296,42 +199,15 @@ export function useDevices() {
       ElMessage({ type: 'error', message: apiErrorMessage(error, '处理失败') })
     }
   }
-  async function openWorkbench() {
-    const revision = ++workbenchRequest
-    state.workbench.visible = true
-    const kinds = ['person', 'rate', 'pre']
-    const requests: Promise<DeviceRecord | null>[] = []
-    for (const device of state.deviceList) {
-      for (const kind of kinds) {
-        const counts = alertOf(device.deviceId)
-        const count = kind === 'person' ? counts.personCount :
-          kind === 'rate' ? counts.rateCount : counts.preCount
-        if (count < 1) continue
-        requests.push(post<AlertDetailResponse>('alertDetail', { deviceId: device.deviceId, kind }).then(({ data }) =>
-          data.hasAlert === 1 ? {
-            deviceId: device.deviceId, deviceNo: data.deviceNo || device.deviceNo,
-            alias: data.alias ?? device.alias ?? '', residentName: data.residentName ?? device.residentName ?? '',
-            kind, kindText: data.kindText, reason: data.reason, recordId: data.recordId
-          } : null))
-      }
-    }
-    try {
-      const rows = (await Promise.all(requests)).filter((row): row is DeviceRecord => row !== null)
-      if (!disposed && revision === workbenchRequest) state.workbench.list = rows
-    } catch (error) {
-      if (disposed || revision !== workbenchRequest) return
-      ElMessage({ type: 'error', message: apiErrorMessage(error, '读取异常工作台失败') })
-    }
-  }
   function gotoPage(kind: string) {
     void router.push(kind === 'person' ? '/operations/monitoring-profiles' : '/operations/vitals')
     state.alertDialog.visible = false
   }
 
-  async function loadResidents() {
+  async function loadOldPeople() {
     try {
-      const { data } = await api.post<{ residents: ResidentRecord[] }>('/api/v1/inviteCode/residentList', {})
-      if (!disposed) state.residents = Array.isArray(data.residents) ? data.residents : []
+      const { data } = await api.post<{ oldPeople: ResidentRecord[] }>('/api/v1/inviteCode/oldPersonList', {})
+      if (!disposed) state.oldPeople = Array.isArray(data.oldPeople) ? data.oldPeople : []
     } catch (error) {
       if (!disposed) ElMessage({ type: 'error', message: apiErrorMessage(error, '读取老人列表失败') })
     }
@@ -358,7 +234,7 @@ export function useDevices() {
   function closeCreateDialog() {
     state.createDialogVisible = false
     state.createdDevice = null
-    state.createForm = { alias: '', model: 'HarmonyOS-Wear', residentId: '' }
+    state.createForm = { alias: '', model: 'HarmonyOS-Wear', oldId: '' }
   }
   async function createDevice() {
     if (state.creating) return
@@ -367,7 +243,7 @@ export function useDevices() {
       const { data } = await post<CreatedDeviceResponse>('create', {
         alias: state.createForm.alias || '新手表',
         model: state.createForm.model || 'HarmonyOS-Wear',
-        residentId: state.createForm.residentId === '' ? '' : state.createForm.residentId
+        oldId: state.createForm.oldId === '' ? '' : state.createForm.oldId
       })
       accepted(data)
       if (typeof data.deviceNo !== 'string' || typeof data.secret !== 'string') throw new Error('invalid device registration response')
@@ -378,72 +254,6 @@ export function useDevices() {
       ElMessage({ type: 'error', message: apiErrorMessage(error, '登记失败') })
     } finally { state.creating = false }
   }
-  function openBindCodeDialog(row: DeviceRecord) {
-    const wasVisible = state.bindCodeDialogVisible
-    const residentId = row.residentId ?? ''
-    const residentChanged = String(state.bindResidentId) !== String(residentId)
-    bindDialogRevision++
-    state.currentDevice = row
-    state.bindResidentId = residentId
-    state.bindExpireDays = '1'
-    state.newBindCode = null
-    state.bindCodeList = []
-    state.bindCodeDialogVisible = true
-    if (!wasVisible || !residentChanged) void loadBindCodes(residentId)
-  }
-  async function loadBindCodes(residentId: DeviceId | '') {
-    const revision = ++bindCodeRequest
-    if (disposed) return
-    if (!residentId) {
-      state.bindCodeList = []
-      return
-    }
-    try {
-      const { data } = await post<BindCodeListResponse>('bindCodeList', { residentId })
-      // The dialog may now belong to another resident.
-      if (disposed || revision !== bindCodeRequest || !state.bindCodeDialogVisible || String(state.bindResidentId) !== String(residentId)) return
-      state.bindCodeList = Array.isArray(data.bindCodes) ? data.bindCodes : []
-    } catch (error) {
-      if (!disposed && revision === bindCodeRequest && state.bindCodeDialogVisible) {
-        ElMessage({ type: 'error', message: apiErrorMessage(error, '请求未完成，请重试') })
-      }
-    }
-  }
-  async function createBindCode() {
-    const residentId = state.bindResidentId
-    if (!residentId) {
-      ElMessage({ type: 'warning', message: '请先选择要绑定的老人' })
-      return
-    }
-    if (!/^\d+$/.test(state.bindExpireDays)) {
-      ElMessage({ type: 'warning', message: '有效天数只能填数字' })
-      return
-    }
-    const revision = bindDialogRevision
-    try {
-      const { data } = await post<NewBindCodeResponse>('createBindCode', { residentId, expireDays: state.bindExpireDays })
-      accepted(data)
-      if (disposed || revision !== bindDialogRevision || !state.bindCodeDialogVisible || String(state.bindResidentId) !== String(residentId)) return
-      if (typeof data.code !== 'string' || typeof data.expireTime !== 'string') throw new Error('invalid binding code response')
-      state.newBindCode = { code: data.code, expireTime: data.expireTime }
-      await loadBindCodes(residentId)
-    } catch (error) {
-      if (!disposed && revision === bindDialogRevision && state.bindCodeDialogVisible && String(state.bindResidentId) === String(residentId)) {
-        ElMessage({ type: 'error', message: apiErrorMessage(error, '生成失败') })
-      }
-    }
-  }
-  async function deleteBindCode(row: { id: DeviceId }) {
-    try {
-      const { data } = await post('deleteBindCode', { id: row.id })
-      accepted(data)
-      ElMessage({ type: 'success', message: '已作废' })
-      await loadBindCodes(state.bindResidentId)
-    } catch (error) {
-      ElMessage({ type: 'error', message: apiErrorMessage(error, '请求未完成，请重试') })
-    }
-  }
-
   async function destructiveOperation(row: DeviceRecord, prompt: string, path: string, success: string, onSuccess?: (data: Envelope & DeviceMutationResponse) => unknown | Promise<unknown>) {
     try {
       await ElMessageBox.confirm(prompt, '提示', {
@@ -486,25 +296,12 @@ export function useDevices() {
     }
   }
 
-  watch(() => state.bindResidentId, residentId => {
-    if (!state.bindCodeDialogVisible) return
-    bindDialogRevision++
-    state.bindCodeList = []
-    state.newBindCode = null
-    void loadBindCodes(residentId)
-  }, { flush: 'sync' })
-  watch(() => state.bindCodeDialogVisible, visible => {
-    if (!visible) {
-      bindCodeRequest++
-      bindDialogRevision++
-    }
-  })
   watch(() => state.deviceQuery, scheduleFilter)
   watch(() => state.deviceState, scheduleFilter)
   watch(() => state.autoRefresh, enabled => enabled ? startTimer() : stopTimer())
   onMounted(() => {
     void loadDevices()
-    void loadResidents()
+    void loadOldPeople()
     document.addEventListener('visibilitychange', handleVisibilityChange)
     startTimer()
   })
@@ -512,9 +309,7 @@ export function useDevices() {
     disposed = true
     alertRequest++
     alertCountsRequest++
-    workbenchRequest++
-    bindCodeRequest++
-    bindDialogRevision++
+    disposeWorkbench()
     clearTimeout(filterTimer)
     document.removeEventListener('visibilitychange', handleVisibilityChange)
     stopTimer()
@@ -523,7 +318,7 @@ export function useDevices() {
     ...toRefs(state), visibleDevices, onlineCount,
     loadDevices, loadAlertCounts, scheduleFilter, changeDevicePage, handleDeviceCommand,
     alertOf, showAlert, resolveAlert, resolveAlertRow, openWorkbench, gotoPage,
-    loadResidents, startTimer, stopTimer, handleVisibilityChange,
+    loadOldPeople, startTimer, stopTimer, handleVisibilityChange,
     closeCreateDialog, createDevice, openBindCodeDialog, loadBindCodes,
     createBindCode, deleteBindCode, resetSecret, unbind, deleteDevice, copy
   }

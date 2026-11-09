@@ -2,11 +2,13 @@ package handlers
 
 import (
 	"context"
-	"github.com/jackc/pgx/v5"
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
 	dbstore "suining-care/internal/db"
+	"suining-care/internal/devicealertworkflow"
+	"suining-care/internal/devicerepo"
 	"suining-care/internal/response"
 	"time"
 )
@@ -69,7 +71,7 @@ func (h *Handler) deviceAlertDetail(w http.ResponseWriter, r *http.Request) {
 		kind = "person"
 	}
 	ctx := r.Context()
-	d, err := h.findDeviceByID(ctx, h.DB, deviceID)
+	d, err := h.readDeviceRecord(devicerepo.FindDeviceByID(ctx, h.DB, deviceID))
 	if internalError(w, err) {
 		return
 	}
@@ -78,18 +80,19 @@ func (h *Handler) deviceAlertDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	oldName := "（未绑定）"
-	if d.ResidentID != nil {
-		var nm *string
-		if err := h.DB.QueryRow(ctx, `SELECT name FROM resident WHERE resident_id=$1`, *d.ResidentID).Scan(&nm); err != nil && err != pgx.ErrNoRows {
+	if d.OldID != nil {
+		nm, err := devicerepo.ResidentName(ctx, h.DB, *d.OldID)
+		if err != nil && !isNotFound(err) {
 			response.Error500(w, ref())
 			return
-		} else if nm != nil {
+		}
+		if nm != nil {
 			oldName = *nm
 		}
 	}
 	fields := map[string]any{
 		"deviceId": d.ID, "deviceNo": d.No, "alias": d.Alias,
-		"residentName": oldName, "personHandled": d.PersonHandled,
+		"oldPersonName": oldName, "personHandled": d.PersonHandled,
 		"rateHandled": d.RateHandled, "preHandled": d.PreHandled,
 	}
 	var alert map[string]any
@@ -135,62 +138,25 @@ func (h *Handler) deviceResolveAlert(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	deviceID, kind, recordID := req.deviceID, req.kind, req.recordID
-	ctx := r.Context()
-	tx, err := h.DB.Begin(ctx)
-	if internalError(w, err) {
-		return
-	}
-	rollback := func() { _ = tx.Rollback(ctx) }
-	var exists bool
-	if err := tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM device WHERE device_id=$1)`, deviceID).Scan(&exists); rollbackOnError(w, rollback, err) {
-		return
-	}
-	if !exists {
-		rollback()
+	before, err := devicealertworkflow.Resolve(r.Context(), h.DB, req.deviceID, req.kind, req.recordID, h.alertResolutionReason)
+	switch {
+	case errors.Is(err, devicealertworkflow.ErrDeviceMissing):
 		response.Fail(w, "设备不存在")
-		return
-	}
-	before, err := h.alertResolutionReason(ctx, tx, deviceID, kind, recordID)
-	if rollbackOnError(w, rollback, err) {
-		return
-	}
-	var rows int64
-	switch kind {
-	case "rate", "pre":
-		rows, err = h.resolveVitalAlert(ctx, tx, deviceID, kind, recordID)
-		if rollbackOnError(w, rollback, err) {
-			return
-		}
-	case "person":
-		// 记录"已确认过的掉线次数"：只有设备重新上线后又掉线（boot_seq 增长）才会再次报警。
-		ct, err := tx.Exec(ctx,
-			`UPDATE device SET person_handled=1, person_handled_at=now(), handled_seq=boot_seq
-			 WHERE device_id=$1`, deviceID)
-		if rollbackOnError(w, rollback, err) {
-			return
-		}
-		rows = ct.RowsAffected()
-	default:
-		rollback()
-		response.Fail(w, "未知的异常类型："+kind)
-		return
-	}
-	if rows < 1 {
-		rollback()
-		if recordID != nil {
+	case errors.Is(err, devicealertworkflow.ErrUnknownKind):
+		response.Fail(w, "未知的异常类型："+req.kind)
+	case errors.Is(err, devicealertworkflow.ErrNoPendingAlert):
+		if req.recordID != nil {
 			response.Fail(w, "记录不存在或不属于该设备，处置失败")
 		} else {
 			response.Fail(w, "没有可处置的异常记录")
 		}
+	case internalError(w, err):
 		return
+	default:
+		response.OK(w, map[string]any{
+			"handledReason": before, "message": "已处置，红点已消除",
+		})
 	}
-	if internalError(w, tx.Commit(ctx)) {
-		return
-	}
-	response.OK(w, map[string]any{
-		"handledReason": before, "message": "已处置，红点已消除",
-	})
 }
 
 type alertResolution struct {
@@ -248,33 +214,4 @@ func (h *Handler) alertResolutionReason(ctx context.Context, tx *dbstore.Transac
 		}
 	}
 	return before, nil
-}
-
-func (h *Handler) resolveVitalAlert(ctx context.Context, tx *dbstore.Transaction, deviceID int64, kind string, recordID *int64) (int64, error) {
-	handled, pending := "rate_handled", pendingRate
-	if kind == "pre" {
-		handled, pending = "pre_handled", pendingPressure
-	}
-	query := vitalAlertUpdate(kind) + " WHERE device_id=$1 AND "
-	args := []any{deviceID}
-	if recordID != nil {
-		query += "id=$2"
-		args = append(args, *recordID)
-	} else {
-		query += pending
-	}
-	result, err := tx.Exec(ctx, query, args...)
-	if err != nil {
-		return 0, err
-	}
-	var hasPending bool
-	if err := tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM ratepre r WHERE r.device_id=$1 AND "+pending+")", deviceID).Scan(&hasPending); err != nil {
-		return 0, err
-	}
-	if !hasPending {
-		if _, err := tx.Exec(ctx, "UPDATE device SET "+handled+"=1 WHERE device_id=$1", deviceID); err != nil {
-			return 0, err
-		}
-	}
-	return result.RowsAffected(), nil
 }

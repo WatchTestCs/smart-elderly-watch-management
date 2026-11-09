@@ -4,19 +4,16 @@ package handlers
 import (
 	"context"
 	"crypto/subtle"
+	"errors"
 	"net/http"
 	"os"
-	"strings"
 	"time"
-	"unicode/utf8"
-
-	"github.com/jackc/pgx/v5/pgtype"
 
 	"suining-care/internal/auth"
+	"suining-care/internal/authrepo"
 	"suining-care/internal/csrf"
 	"suining-care/internal/response"
 	"suining-care/internal/session"
-	"suining-care/internal/userphone"
 )
 
 func (h *Handler) routeAuth(mux *http.ServeMux) {
@@ -26,11 +23,6 @@ func (h *Handler) routeAuth(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/v1/setup", h.setup)
 	mux.HandleFunc("POST /api/v1/desktop/exit", h.desktopExit)
 }
-
-// timingDummyHash 是一条与本哈希同 cost（12）的无效 bcrypt 记录：手机号在
-// users/family 两表都不存在时也执行一次口令比较，使"账号是否存在"无法通过
-// 响应时间区分。它不是任何账号的凭据。
-const timingDummyHash = "$2a$12$S1k/y1BsWtNAy/eeN.zaleT.hNjDpyRQ/1S7MCXu5Y8GN61EoKbMK"
 
 // MountDesktopExit allows closing the desktop even before the database is ready.
 func (h *Handler) MountDesktopExit(mux *http.ServeMux) {
@@ -67,7 +59,7 @@ func (h *Handler) sessionInfo(w http.ResponseWriter, r *http.Request) {
 		p := sess.Principal
 		account = map[string]any{
 			"role": p.Role, "id": p.ID, "phone": p.Phone,
-			"residentId": p.ResidentID, "displayName": p.DisplayName,
+			"oldId": p.OldID, "displayName": p.DisplayName,
 		}
 		if p.Role == auth.RoleAdmin {
 			duty, ok := h.careDuty(w, r, p.ID)
@@ -86,15 +78,6 @@ func (h *Handler) sessionInfo(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// Try the administrator account first when both roles share a phone number.
-var loginAccounts = [...]struct{ role, query string }{
-	{auth.RoleAdmin, `SELECT user_id,user_name,user_phone,password,NULL,user_phone_cipher,user_phone_lookup,user_phone_protected
- FROM users WHERE (user_phone_protected=false AND user_phone=$1) OR (user_phone_protected=true AND user_phone_lookup=$2)`},
-	{auth.RoleFamily, `SELECT f.family_id, f.family_name, f.family_phone, f.family_password, o.resident_id, NULL, NULL, false
-  FROM family f LEFT JOIN resident o ON o.family_id=f.family_id
-  WHERE f.family_phone=$1 ORDER BY o.resident_id LIMIT 1`},
-}
-
 // login 处理 POST /api/v1/auth/login：公开；先查 users（管理员），再查 family（家属）。
 func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
@@ -109,65 +92,25 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if decision := h.Risk.BeforeLogin(h.clientIP(r), phone); !decision.Allowed() {
-		h.Risk.RecordDenied(h.clientIP(r), phone, "login_restricted", r.UserAgent(), r.Header.Get("Sec-CH-UA-Model"), r.Header.Get("X-App-Device-ID"))
+		h.Risk.RecordDenied(h.clientIP(r), phone, "login_restricted", r.UserAgent(),
+			r.Header.Get("Sec-CH-UA-Model"), r.Header.Get("X-App-Device-ID"))
 		h.riskDeniedLogin(w)
 		return
 	}
-
 	if !h.loginAllowed(w, r, phone) {
 		return
 	}
-	lookup, err := userphone.SearchIndex(r.Context(), h.DB, h.Box, phone)
+	match, err := authrepo.Authenticate(r.Context(), h.DB, h.Box, phone, password)
 	if internalError(w, err) {
 		return
 	}
-	compared := false
-	for _, account := range loginAccounts {
-		var id int64
-		var name, storedPhone, hash pgtype.Text
-		var residentID pgtype.Int8
-		var protected userphone.Record
-		args := []any{phone}
-		if account.role == auth.RoleAdmin {
-			args = append(args, lookup)
-		}
-		err := h.DB.QueryRow(r.Context(), account.query, args...).Scan(&id, &name, &storedPhone, &hash, &residentID, &protected.Cipher, &protected.Lookup, &protected.Protected)
-		if isNotFound(err) {
-			continue
-		}
-		if internalError(w, err) {
-			return
-		}
-		if account.role == auth.RoleAdmin {
-			if storedPhone.Valid {
-				protected.Legacy = &storedPhone.String
-			}
-			opened, err := protected.OpenStored(h.Box, id)
-			if internalError(w, err) {
-				return
-			}
-			storedPhone = pgtype.Text{}
-			if opened != nil {
-				storedPhone = pgtype.Text{String: *opened, Valid: true}
-			}
-		}
-		compared = true
-		if !auth.Matches(password, hash.String) {
-			continue
-		}
-		if account.role == auth.RoleFamily && !residentID.Valid {
-			response.JSON(w, http.StatusForbidden, map[string]any{"code": "ACCOUNT_UNLINKED", "message": "该家属账号尚未关联老人，请联系管理员"})
-			return
-		}
-		h.finishAccountLogin(w, r, m, session.Principal{
-			Role: account.role, ID: id, Phone: storedPhone.String, ResidentID: residentID.Int64, DisplayName: name.String,
-		}, phone)
+	if match.Unlinked {
+		response.JSON(w, http.StatusForbidden, map[string]any{"code": "ACCOUNT_UNLINKED", "message": "该家属账号尚未关联老人，请联系管理员"})
 		return
 	}
-
-	if !compared {
-		// 两次查询都未命中：补一次等价 bcrypt 比较，消除账号枚举计时侧信道。
-		_ = auth.Matches(password, timingDummyHash)
+	if match.Authenticated {
+		h.finishAccountLogin(w, r, m, match.Principal, phone)
+		return
 	}
 	if internalError(w, h.loginAudit(r, phone, "", 0, "invalid_credentials")) {
 		return
@@ -226,72 +169,17 @@ func (h *Handler) setup(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	phone := str(m, "phone")
-	name := str(m, "name")
-	password := str(m, "password")
-
-	ctx := r.Context()
-	tx, err := h.DB.Begin(ctx)
-	if internalError(w, err) {
-		return
-	}
-	defer tx.Rollback(ctx)
-
-	// 行锁串行化，防止并发重复初始化。
-	var metaID int64
-	if internalError(w, tx.QueryRow(ctx, "SELECT id FROM app_metadata WHERE id=1 FOR UPDATE").Scan(&metaID)) {
-		return
-	}
-	var count int64
-	if internalError(w, tx.QueryRow(ctx, "SELECT COUNT(*) FROM users").Scan(&count)) {
-		return
-	}
-	if count != 0 {
+	err := authrepo.InitializeAdmin(r.Context(), h.DB, h.Box, str(m, "name"), str(m, "phone"), str(m, "password"))
+	switch {
+	case errors.Is(err, authrepo.ErrAlreadyInitialized):
 		response.JSON(w, http.StatusConflict, map[string]any{"message": "管理员已创建"})
-		return
-	}
-	if !auth.ValidPhone(phone) || strings.TrimSpace(name) == "" ||
-		utf8.RuneCountInString(name) > 10 || !auth.ValidNewPassword(password) {
+	case errors.Is(err, authrepo.ErrInvalidAdmin):
 		response.JSON(w, http.StatusBadRequest, map[string]any{"message": "请检查姓名、手机号和密码"})
+	case internalError(w, err):
 		return
+	default:
+		response.OK(w, nil)
 	}
-	hashed, err := auth.Hash(password)
-	if internalError(w, err) {
-		return
-	}
-	if h.Box == nil {
-		// Staged rollout: without a configured encryption key, keep the original
-		// plaintext write so first-run setup stays available on deployments that
-		// have not enabled administrator phone protection yet. Existing legacy
-		// rows remain readable through the unprotected login branch.
-		if _, err := tx.Exec(ctx,
-			"INSERT INTO users(user_name,user_phone,password,role) VALUES($1,$2,$3,'1')",
-			name, phone, hashed); internalError(w, err) {
-			return
-		}
-	} else {
-		var id int64
-		if err := tx.QueryRow(ctx,
-			"INSERT INTO users(user_name,password,role) VALUES($1,$2,'1') RETURNING user_id",
-			name, hashed).Scan(&id); internalError(w, err) {
-			return
-		}
-		protected, err := userphone.Protect(h.Box, id, phone)
-		if internalError(w, err) {
-			return
-		}
-		if internalError(w, userphone.BindLookupKey(ctx, tx, h.Box)) {
-			return
-		}
-		if _, err = tx.Exec(ctx, `UPDATE users SET user_phone_cipher=$1,user_phone_lookup=$2,user_phone_protected=true WHERE user_id=$3`,
-			protected.Ciphertext, protected.Lookup, id); internalError(w, err) {
-			return
-		}
-	}
-	if internalError(w, tx.Commit(ctx)) {
-		return
-	}
-	response.OK(w, nil)
 }
 
 // desktopExit 处理 POST /api/v1/desktop/exit：公开 + 桌面 token；通过后延迟退出进程。

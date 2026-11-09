@@ -14,7 +14,8 @@
     "test:watch": "vitest",
     "typecheck": "node scripts/check-typescript-scope.mjs && vue-tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.node.json && vue-tsc --noEmit -p tsconfig.test.json",
     "typecheck:stable": "node scripts/check-typescript-scope.mjs && vue-tsc --noEmit --stableTypeOrdering -p tsconfig.app.json && tsc --noEmit --stableTypeOrdering -p tsconfig.node.json && vue-tsc --noEmit --stableTypeOrdering -p tsconfig.test.json",
-    "api:tools:ci": "npm ci --prefix tools/openapi --ignore-scripts --no-audit --no-fund"
+    "api:tools:ci": "npm ci --prefix tools/openapi --ignore-scripts --no-audit --no-fund",
+    "check:vue36": "node scripts/check-vue36-readiness.mjs"
   },
   "dependencies": {
     "@element-plus/icons-vue": "2.3.2",
@@ -35,7 +36,8 @@
     "typescript": "6.0.3",
     "vite": "8.3.4",
     "vitest": "5.0.5",
-    "vue-tsc": "3.3.13"
+    "vue-tsc": "3.3.13",
+    "@types/leaflet": "1.9.22"
   },
   "engines": {
     "node": "^20.19.0 || >=22.12.0"

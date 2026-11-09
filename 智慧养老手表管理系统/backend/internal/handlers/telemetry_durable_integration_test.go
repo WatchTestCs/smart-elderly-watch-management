@@ -10,10 +10,11 @@ import (
 	"time"
 
 	"suining-care/internal/securestore"
+	"suining-care/internal/telemetryrepo"
 )
 
 func TestDurableTelemetryPersistsBeforeAckAndReplaysSafely(t *testing.T) {
-	t.Setenv("SUINING_DURABLE_TELEMETRY", "1")
+	t.Setenv("CAREOLD_DURABLE_TELEMETRY", "1")
 	pool := testDatabase(t)
 	seedDevice(t, pool)
 	h := testHandler(t, pool)
@@ -25,7 +26,7 @@ func TestDurableTelemetryPersistsBeforeAckAndReplaysSafely(t *testing.T) {
 	payload := map[string]any{
 		"deviceNo": "WATCH001", "secret": testSecret,
 		"requestId": "durable-step-001", "step": "1200", "sleep": "8",
-		"eventTime": "2026-10-28 09:00:00",
+		"beTime": "2026-10-28 09:00:00",
 	}
 	requestStarted := time.Now().Add(-5 * time.Second)
 	first := callAPI(h.deviceReport, payload)
@@ -76,7 +77,7 @@ func TestDurableTelemetryPersistsBeforeAckAndReplaysSafely(t *testing.T) {
 }
 
 func TestDurableTelemetryRetainsCorruptQueuePayload(t *testing.T) {
-	t.Setenv("SUINING_DURABLE_TELEMETRY", "1")
+	t.Setenv("CAREOLD_DURABLE_TELEMETRY", "1")
 	pool := testDatabase(t)
 	seedDevice(t, pool)
 	h := testHandler(t, pool)
@@ -108,10 +109,10 @@ func TestTouchDeviceTimeNeverRegresses(t *testing.T) {
 	seedDevice(t, pool)
 	ctx := context.Background()
 	now := time.Now().UTC().Truncate(time.Second)
-	if err := touchDevice(ctx, pool, 1, nil, nil, now); err != nil {
+	if err := telemetryrepo.TouchDevice(ctx, pool, 1, nil, nil, now); err != nil {
 		t.Fatal(err)
 	}
-	if err := touchDevice(ctx, pool, 1, nil, nil, now.Add(-time.Hour)); err != nil {
+	if err := telemetryrepo.TouchDevice(ctx, pool, 1, nil, nil, now.Add(-time.Hour)); err != nil {
 		t.Fatal(err)
 	}
 	var stored time.Time

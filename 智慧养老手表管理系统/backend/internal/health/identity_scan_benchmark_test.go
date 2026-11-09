@@ -19,7 +19,7 @@ func identityDigestScalarReference(o Owner, s Sample) string {
 	var stack [512]byte
 	b := stack[:0]
 	b = append(b, '[')
-	b = strconv.AppendInt(b, o.ResidentID, 10)
+	b = strconv.AppendInt(b, o.OldID, 10)
 	b = append(b, ',')
 	if o.DeviceID == nil {
 		b = append(b, "null"...)
@@ -57,7 +57,7 @@ func appendJSONStringScalarReference(b []byte, value string) []byte {
 
 func BenchmarkIdentityScan(b *testing.B) {
 	for _, n := range []int{8, 32, 64, 256} {
-		o := Owner{ResidentID: 456, Epoch: 1}
+		o := Owner{OldID: 456, Epoch: 1}
 		s := Sample{Source: "watch", SourceDevice: strings.Repeat("d", n), RecordID: strings.Repeat("r", n), Metric: "heart_rate"}
 		b.Run(fmt.Sprintf("%d/Original", n), func(b *testing.B) {
 			b.ReportAllocs()

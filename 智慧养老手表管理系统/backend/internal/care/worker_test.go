@@ -57,9 +57,9 @@ func testCareDB(t *testing.T) *dbstore.Database {
 func seedCareDB(t *testing.T, pool *dbstore.Database) *dbstore.Database {
 	ctx := context.Background()
 	for _, sql := range []string{
-		"INSERT INTO resident(resident_id,name) VALUES(1,'长者')",
-		"INSERT INTO device(device_id,device_no,secret,resident_id) VALUES(1,'TEST001','unused',1)",
-		"INSERT INTO care_incident(id,resident_id,device_id,due_at) VALUES(1,1,1,now()+interval '5 minutes')",
+		"INSERT INTO oldperson(old_id,name) VALUES(1,'长者')",
+		"INSERT INTO device(device_id,device_no,secret,old_id) VALUES(1,'TEST001','unused',1)",
+		"INSERT INTO care_incident(id,old_id,device_id,due_at) VALUES(1,1,1,now()+interval '5 minutes')",
 	} {
 		if _, err := pool.Exec(ctx, sql); err != nil {
 			t.Fatal(err)

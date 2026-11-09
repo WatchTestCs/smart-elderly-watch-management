@@ -11,7 +11,7 @@ export interface paths {
         put?: never;
         /**
          * health/latest
-         * @description Latest nondeleted stored sample per exact source/sourceDevice/metric/semantics. Order by exact sample.start descending, then revision descending. Intervals retain both endpoints; daily totals are snapshots, not today's aggregate. FAMILY may omit residentId and is checked against current ownership; ADMIN supplies residentId. Historical binding/version and sampling time are preserved; no freshness guarantee or cross-source merging.
+         * @description Latest nondeleted stored sample per exact source/sourceDevice/metric/semantics. Order by exact sample.start descending, then revision descending. Intervals retain both endpoints; daily totals are snapshots, not today's aggregate. FAMILY may omit oldId and is checked against current ownership; ADMIN supplies oldId. Historical binding/version and sampling time are preserved; no freshness guarantee or cross-source merging.
          */
         post: {
             parameters: {
@@ -25,7 +25,7 @@ export interface paths {
             requestBody: {
                 content: {
                     "application/json": {
-                        residentId?: number;
+                        oldId?: number;
                     };
                 };
             };
@@ -40,7 +40,7 @@ export interface paths {
                             items: {
                                 bindingVersion: number;
                                 deviceId: number | null;
-                                residentId: number;
+                                oldId: number;
                                 revision: number;
                                 sample: {
                                     deleted?: boolean;
@@ -66,7 +66,7 @@ export interface paths {
                                 };
                                 sampleId: string;
                             }[];
-                            residentId: number;
+                            oldId: number;
                             /** @constant */
                             returnCode: "1111";
                         };

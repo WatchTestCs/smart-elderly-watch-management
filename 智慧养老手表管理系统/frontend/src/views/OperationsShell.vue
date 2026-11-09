@@ -6,7 +6,7 @@
       <Slider class="workspace-sidebar"></Slider>
       <main ref="workspaceMain" id="admin-main" class="workspace-main" tabindex="-1">
         <div class="workspace-tabs" v-if="openTab.length">
-          <el-tabs v-model="activeIndex" @tab-click="tabClick" @tab-remove="tabRemove">
+          <el-tabs :model-value="activeIndex" @tab-click="tabClick" @tab-remove="tabRemove">
             <el-tab-pane v-for="item in openTab" :key="item.route" :label="item.name" :name="item.route" :closable="item.route !== '/operations/overview'"></el-tab-pane>
           </el-tabs>
         </div>
@@ -17,15 +17,17 @@
             <h1>{{ route.meta.title }}</h1>
             <p class="view-description">{{ pageDescription }}</p>
           </header>
-          <router-view v-slot="{ Component }"><transition name="care-view" mode="out-in"><component :is="Component" :key="route.path" /></transition></router-view>
+          <router-view v-slot="{ Component }"><transition name="care-view" mode="out-in"><ErrorBoundary :key="route.path"><component :is="Component" /></ErrorBoundary></transition></router-view>
         </section>
       </main>
     </div>
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ArrowRight } from '@element-plus/icons-vue'
+import type { TabsPaneContext } from 'element-plus'
+import ErrorBoundary from '@/components/ErrorBoundary.vue'
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Slider from '@/components/Slider.vue'
@@ -34,15 +36,12 @@ import store from '@/store'
 
 const route = useRoute()
 const router = useRouter()
-const workspaceMain = ref(null)
+const workspaceMain = ref<HTMLElement | null>(null)
 const openTab = computed(() => store.state.openTab)
-const activeIndex = computed({
-  get: () => store.state.activeIndex,
-  set: value => store.activate(value)
-})
+const activeIndex = computed(() => store.state.activeIndex)
 const noIntro = ['/operations/overview', '/operations/devices', '/operations/invitations']
 const showPageIntro = computed(() => !noIntro.includes(route.path))
-const descriptions = {
+const descriptions: Record<string, string> = {
   '/operations/vitals': '查看近期心率与单项血压记录，异常状态以设备上报为准。',
   '/operations/activity': '查看手表上报的睡眠与每日步数记录。',
   '/operations/locations': '查看设备最近一次上报的位置与安全告警。',
@@ -59,16 +58,21 @@ const descriptions = {
 }
 const pageDescription = computed(() => descriptions[route.path] || '在这里查看和管理照护信息。')
 function focusMain() { workspaceMain.value?.focus() }
-function tabClick() { void router.push({ path: activeIndex.value }) }
-function tabRemove(target) {
-  if (target === '/operations/overview') return
-  store.removeTab(target)
-  if (activeIndex.value === target) {
+function tabClick(tab: TabsPaneContext) {
+  if (typeof tab.paneName === 'string' && tab.paneName !== route.path) {
+    void router.push({ path: tab.paneName })
+  }
+}
+function tabRemove(target: string | number) {
+  const routeName = String(target)
+  if (routeName === '/operations/overview') return
+  store.removeTab(routeName)
+  if (activeIndex.value === routeName) {
     const next = openTab.value[openTab.value.length - 1]
     void router.push({ path: next?.route || '/operations/overview' })
   }
 }
-function addCurrentTab(nextRoute) {
+function addCurrentTab(nextRoute: ReturnType<typeof useRoute>) {
   if (!nextRoute.path || nextRoute.path === '/operations') return
   store.addTab({ route: nextRoute.path, name: String(nextRoute.meta.title || '运营总览') })
   store.activate(nextRoute.path)
