@@ -135,7 +135,7 @@ fn hex_lower(bytes: &[u8]) -> String {
 
 fn write_hex(bytes: &[u8], output: &mut [u8]) {
     const HEX: &[u8; 16] = b"0123456789abcdef";
-    for (pair, byte) in output.chunks_exact_mut(2).zip(bytes) {
+    for (pair, byte) in output.as_chunks_mut::<2>().0.iter_mut().zip(bytes) {
         pair[0] = HEX[(byte >> 4) as usize];
         pair[1] = HEX[(byte & 0x0f) as usize];
     }
