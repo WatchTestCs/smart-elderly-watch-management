@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"suining-care/internal/db"
+	"suining-care/internal/observability"
 )
 
 type DurableMessage struct {
@@ -42,9 +43,12 @@ type DurableItem struct {
 // All locks remain held by the caller until its transaction commits or rolls back.
 func LockDurableBatch(ctx context.Context, tx *db.Transaction, limit int) ([]DurableItem, error) {
 	var guard int
+	guardStarted := time.Now()
 	err := tx.QueryRow(ctx,
 		"SELECT id FROM telemetry_inbox_guard WHERE id=1 FOR UPDATE SKIP LOCKED").Scan(&guard)
+	observability.Default.Add("suining_telemetry_guard_acquire_seconds_total", time.Since(guardStarted).Seconds())
 	if errors.Is(err, pgx.ErrNoRows) || errors.Is(err, sql.ErrNoRows) {
+		observability.Default.Add("suining_telemetry_guard_busy_total", 1)
 		return nil, nil
 	}
 	if err != nil {
