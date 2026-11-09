@@ -14,8 +14,8 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 
 	dbstore "suining-care/internal/db"
-	"suining-care/internal/observability"
 	"suining-care/internal/devicerepo"
+	"suining-care/internal/observability"
 	"suining-care/internal/securestore"
 	"suining-care/internal/telemetryrepo"
 )
