@@ -132,7 +132,7 @@ impl DeviceSession {
         }
         let epoch_changed = previous != self.binding;
         Ok(HeartbeatOutcome {
-            // 后端下发上报节奏，旧版直接丢掉了。
+            // 后端协商的上报间隔。
             report_interval: reply.get_i64("reportInterval").unwrap_or(5).max(1) as u64,
             pending_alarm: reply.get_i64("pendingAlarm").unwrap_or(0),
             bound: reply.bound() || reply.get_i64("bound") == Some(1),

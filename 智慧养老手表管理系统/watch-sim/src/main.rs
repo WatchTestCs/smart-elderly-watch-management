@@ -187,7 +187,7 @@ fn run() -> Result<(), String> {
             if c.harmonyos {
                 Platform::HarmonyOs
             } else {
-                Platform::Legacy
+                Platform::Unspecified
             },
             c.app_version.clone(),
         );

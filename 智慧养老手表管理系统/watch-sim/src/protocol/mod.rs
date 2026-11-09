@@ -64,8 +64,8 @@ impl Credentials {
 /// 登录时声明的平台。`HarmonyOs` 会让后端回 `protocolVersion` 与 `maxBatchSize`。
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Platform {
-    /// 不传 platform，走旧合同。
-    Legacy,
+    /// 未指定设备平台，不协商 HarmonyOS 专用批量能力。
+    Unspecified,
     /// platform=harmonyos + protocolVersion=1。
     HarmonyOs,
 }

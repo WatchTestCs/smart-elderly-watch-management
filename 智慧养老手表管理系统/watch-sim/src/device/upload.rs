@@ -17,7 +17,7 @@ struct QueuedBatch<'a> {
 }
 
 impl DeviceSession {
-    /// 旧版扁平遥测。带 `requestId` 且满足后端条件时会走持久队列分支。
+    /// 设备状态上报。携带 `requestId` 时由后端处理持久化与幂等。
     pub fn report(&mut self, payload: &ReportPayload) -> Result<ReportOutcome, Failure> {
         payload.validate().map_err(|m| Failure::Rejected {
             code: "CLIENT".into(),
