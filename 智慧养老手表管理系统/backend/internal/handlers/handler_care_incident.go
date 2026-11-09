@@ -127,9 +127,9 @@ func (h *Handler) careTransition(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	verdict := str(m, "verdict")
-	if action == "verify" && h.DB.IsMySQL() {
-		// Older clients submit no verdict: retain their explicit verification as
-		// confirmed. Never invent conclusions for historical verified incidents.
+	if action == "verify" {
+		// Empty verification verdict means confirmed; preserve the current API
+		// contract while keeping review writes in the same incident transaction.
 		if verdict == "" {
 			verdict = "confirmed"
 		}

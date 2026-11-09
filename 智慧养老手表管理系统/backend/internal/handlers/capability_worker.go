@@ -13,16 +13,14 @@ import (
 // CapabilityTick performs no external I/O and is safe with concurrent instances.
 func (h *Handler) CapabilityTick(ctx context.Context) error {
 	var carePending, messagesPending, rulesActive int64
-	if h.DB.IsMySQL() {
-		if err := h.DB.QueryRow(ctx, `SELECT (SELECT count(*) FROM care_notification_outbox WHERE status IN ('pending','failed','sending') AND exhausted=false),
+	if err := h.DB.QueryRow(ctx, `SELECT (SELECT count(*) FROM care_notification_outbox WHERE status IN ('pending','failed','sending') AND exhausted=false),
  (SELECT count(*) FROM message_outbox WHERE status IN ('pending','failed','sending')),(SELECT count(*) FROM rule_state WHERE active=true)`).Scan(&carePending, &messagesPending, &rulesActive); err != nil {
-			return err
-		}
-		observability.Default.Set(`suining_outbox_backlog{queue="care"}`, float64(carePending))
-		observability.Default.Set(`suining_outbox_backlog{queue="message"}`, float64(messagesPending))
-		observability.Default.Set("suining_rules_active", float64(rulesActive))
-		observability.Default.Set("suining_capability_heartbeat_timestamp_seconds", float64(time.Now().Unix()))
+		return err
 	}
+	observability.Default.Set(`suining_outbox_backlog{queue="care"}`, float64(carePending))
+	observability.Default.Set(`suining_outbox_backlog{queue="message"}`, float64(messagesPending))
+	observability.Default.Set("suining_rules_active", float64(rulesActive))
+	observability.Default.Set("suining_capability_heartbeat_timestamp_seconds", float64(time.Now().Unix()))
 	// Binding changes invalidate pending commands; expiration never means success.
 	for _, query := range [...]string{
 		`UPDATE device_command SET status='cancelled' WHERE status IN ('pending','sent') AND NOT EXISTS

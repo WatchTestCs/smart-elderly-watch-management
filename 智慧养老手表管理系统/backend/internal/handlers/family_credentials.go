@@ -73,12 +73,9 @@ func (h *Handler) familyUpdatePassword(w http.ResponseWriter, r *http.Request) {
 	if _, err := tx.Exec(ctx, "UPDATE family SET family_password=$1 WHERE family_id=$2", nh, familyID); internalError(w, err) {
 		return
 	}
-	if tx.IsMySQL() {
-		// Persisted sessions must be revoked in the same transaction as the
-		// credential change, so replicas cannot reuse a former password session.
-		if _, err := tx.Exec(ctx, "DELETE FROM web_session WHERE role='FAMILY' AND actor_id=$1", familyID); internalError(w, err) {
-			return
-		}
+	// Revoke persisted sessions atomically with the credential change.
+	if _, err := tx.Exec(ctx, "DELETE FROM web_session WHERE role='FAMILY' AND actor_id=$1", familyID); internalError(w, err) {
+		return
 	}
 	if internalError(w, tx.Commit(ctx)) {
 		return

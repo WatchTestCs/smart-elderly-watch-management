@@ -98,7 +98,7 @@ func (h *Handler) careDiagnostics(w http.ResponseWriter, r *http.Request) {
 		"staleSending": stale, "overdueIncidents": overdue,
 		"oldestOutstandingAt": oldest,
 		"workerHealthy":       workerHealthy, "workerLastSeenAt": workerSeen, "workerStartedAt": workerStarted,
-		"primaryEngine": h.primaryEngine(), "analytics": h.analyticsStatus(),
+		"primaryEngine": "mysql", "analytics": h.analyticsStatus(),
 		"notificationConfigured": care.NotificationConfigured(), "receiptConfigured": len(os.Getenv("CARE_RECEIPT_SECRET")) >= 32,
 		"note": "数据库统计不是网关送达或值班到岗证明",
 	})
@@ -109,11 +109,4 @@ func (h *Handler) analyticsStatus() any {
 		return map[string]any{"configured": h.Cfg.PGAnalyticsURL != "", "ready": false, "pending": nil}
 	}
 	return h.Analytics.Snapshot()
-}
-
-func (h *Handler) primaryEngine() string {
-	if h.DB.IsMySQL() {
-		return "mysql"
-	}
-	return "postgres-legacy"
 }
