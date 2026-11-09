@@ -257,7 +257,7 @@ mod tests {
 
     #[test]
     fn borrowed_batch_matches_existing_wire_contract() {
-        let cred = Credentials::new("watch-1".into(), "secret".into());
+        let cred = Credentials::new("watch-1", "secret");
         let samples = vec![HealthSample::heart_rate(
             "sample-1".into(),
             "watch-1",

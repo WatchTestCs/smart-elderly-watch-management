@@ -19,7 +19,8 @@
     },
     "noEmit": true,
     "isolatedModules": true,
-    "verbatimModuleSyntax": true
+    "verbatimModuleSyntax": true,
+    "noUncheckedSideEffectImports": true
   },
   "extends": "@vue/tsconfig/tsconfig.json"
 }
