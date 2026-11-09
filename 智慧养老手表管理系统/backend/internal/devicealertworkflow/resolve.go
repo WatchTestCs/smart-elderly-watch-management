@@ -10,8 +10,8 @@ import (
 )
 
 var (
-	ErrDeviceMissing = errors.New("device not found")
-	ErrUnknownKind = errors.New("unknown alert kind")
+	ErrDeviceMissing   = errors.New("device not found")
+	ErrUnknownKind    = errors.New("unknown alert kind")
 	ErrNoPendingAlert = errors.New("no pending alert")
 )
 
