@@ -27,7 +27,79 @@ try {
  if($LASTEXITCODE -ne 0){throw 'Backend tests failed'}
  go vet ./...
  if($LASTEXITCODE -ne 0){throw 'Backend static checks failed'}
- go build -trimpath -ldflags '-s -w' -o $bin ./cmd/server
+ $env:CGO_ENABLED='0'
+ $profile=Join-Path $env:TEMP 'suining-build-default.pgo'
+ go test -run '^
+ if($LASTEXITCODE -ne 0){throw 'Go sidecar build failed'}
+} finally { Pop-Location }
+if($SelfSign){& (Join-Path $PSScriptRoot 'sign.ps1') -FilePath $bin | Set-Content (Join-Path $out 'backend-signature.json')}
+$hash=(Get-FileHash $bin -Algorithm SHA256).Hash.ToLowerInvariant()
+[IO.File]::WriteAllText((Join-Path $PSScriptRoot 'backend-sha256.txt'),$hash+"`n",[Text.UTF8Encoding]::new($false))
+Push-Location $PSScriptRoot
+try {
+ npm ci
+ if($LASTEXITCODE -ne 0){throw 'Tauri tooling installation failed'}
+ node (Join-Path $PSScriptRoot 'node_modules/@tauri-apps/cli/tauri.js') build --no-bundle --ci -- --locked
+ if($LASTEXITCODE -ne 0){throw 'Tauri native build failed'}
+ if($SelfSign){& (Join-Path $PSScriptRoot 'sign.ps1') -FilePath (Join-Path $cargoTarget 'release/suining.exe') | Set-Content (Join-Path $out 'application-signature.json')}
+ $previousTemp=$env:TEMP
+ $previousTmp=$env:TMP
+ $bundleTemp=Join-Path $out 'bundle-temp'
+ New-Item -ItemType Directory -Force $bundleTemp|Out-Null
+ try {
+  $env:TEMP=$bundleTemp
+  $env:TMP=$bundleTemp
+  node (Join-Path $PSScriptRoot 'node_modules/@tauri-apps/cli/tauri.js') bundle --bundles nsis --ci --no-binary-patching
+  if($LASTEXITCODE -ne 0){throw 'Tauri Windows installer bundling failed'}
+ } finally {
+  $env:TEMP=$previousTemp
+  $env:TMP=$previousTmp
+ }
+} finally { Pop-Location }
+$setup=Get-ChildItem (Join-Path $cargoTarget 'release/bundle/nsis') -Filter '*-setup.exe'|Sort-Object LastWriteTime -Descending|Select-Object -First 1
+if(!$setup){throw 'NSIS installer missing'}
+$destination=Join-Path $out ("Suining-Setup-{0}-win-x64.exe" -f $meta.version)
+Copy-Item -LiteralPath $setup.FullName -Destination $destination -Force
+if($SelfSign){& (Join-Path $PSScriptRoot 'sign.ps1') -FilePath $destination | Set-Content (Join-Path $out 'installer-signature.json')}
+Get-FileHash -LiteralPath $destination -Algorithm SHA256|ForEach-Object {"{0}  {1}" -f $_.Hash.ToLowerInvariant(),(Split-Path $_.Path -Leaf)}|Set-Content (Join-Path $out 'SHA256SUMS.txt')
+Write-Host "Built Windows installer: $destination"
+ -bench '^BenchmarkSafe
+ if($LASTEXITCODE -ne 0){throw 'Go sidecar build failed'}
+} finally { Pop-Location }
+if($SelfSign){& (Join-Path $PSScriptRoot 'sign.ps1') -FilePath $bin | Set-Content (Join-Path $out 'backend-signature.json')}
+$hash=(Get-FileHash $bin -Algorithm SHA256).Hash.ToLowerInvariant()
+[IO.File]::WriteAllText((Join-Path $PSScriptRoot 'backend-sha256.txt'),$hash+"`n",[Text.UTF8Encoding]::new($false))
+Push-Location $PSScriptRoot
+try {
+ npm ci
+ if($LASTEXITCODE -ne 0){throw 'Tauri tooling installation failed'}
+ node (Join-Path $PSScriptRoot 'node_modules/@tauri-apps/cli/tauri.js') build --no-bundle --ci -- --locked
+ if($LASTEXITCODE -ne 0){throw 'Tauri native build failed'}
+ if($SelfSign){& (Join-Path $PSScriptRoot 'sign.ps1') -FilePath (Join-Path $cargoTarget 'release/suining.exe') | Set-Content (Join-Path $out 'application-signature.json')}
+ $previousTemp=$env:TEMP
+ $previousTmp=$env:TMP
+ $bundleTemp=Join-Path $out 'bundle-temp'
+ New-Item -ItemType Directory -Force $bundleTemp|Out-Null
+ try {
+  $env:TEMP=$bundleTemp
+  $env:TMP=$bundleTemp
+  node (Join-Path $PSScriptRoot 'node_modules/@tauri-apps/cli/tauri.js') bundle --bundles nsis --ci --no-binary-patching
+  if($LASTEXITCODE -ne 0){throw 'Tauri Windows installer bundling failed'}
+ } finally {
+  $env:TEMP=$previousTemp
+  $env:TMP=$previousTmp
+ }
+} finally { Pop-Location }
+$setup=Get-ChildItem (Join-Path $cargoTarget 'release/bundle/nsis') -Filter '*-setup.exe'|Sort-Object LastWriteTime -Descending|Select-Object -First 1
+if(!$setup){throw 'NSIS installer missing'}
+$destination=Join-Path $out ("Suining-Setup-{0}-win-x64.exe" -f $meta.version)
+Copy-Item -LiteralPath $setup.FullName -Destination $destination -Force
+if($SelfSign){& (Join-Path $PSScriptRoot 'sign.ps1') -FilePath $destination | Set-Content (Join-Path $out 'installer-signature.json')}
+Get-FileHash -LiteralPath $destination -Algorithm SHA256|ForEach-Object {"{0}  {1}" -f $_.Hash.ToLowerInvariant(),(Split-Path $_.Path -Leaf)}|Set-Content (Join-Path $out 'SHA256SUMS.txt')
+Write-Host "Built Windows installer: $destination"
+ -benchtime=100ms -cpuprofile $profile ./internal/jsonscan
+ if($LASTEXITCODE -ne 0){throw 'PGO profile generation failed'}
+ go build -trimpath -pgo=$profile -ldflags '-s -w' -o $bin ./cmd/server
  if($LASTEXITCODE -ne 0){throw 'Go sidecar build failed'}
 } finally { Pop-Location }
 if($SelfSign){& (Join-Path $PSScriptRoot 'sign.ps1') -FilePath $bin | Set-Content (Join-Path $out 'backend-signature.json')}
