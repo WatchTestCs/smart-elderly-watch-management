@@ -6,7 +6,6 @@ import (
 	"database/sql"
 	"errors"
 
-
 	"suining-care/internal/auth"
 	"suining-care/internal/db"
 	"suining-care/internal/securestore"

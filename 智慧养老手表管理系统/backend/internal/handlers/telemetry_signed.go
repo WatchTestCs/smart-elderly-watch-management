@@ -17,9 +17,9 @@ import (
 	"strings"
 	"time"
 
-	mysqlDriver "github.com/go-sql-driver/mysql"
-	dbstore "suining-care/internal/db"
 	"suining-care/internal/response"
+	dbstore "suining-care/internal/db"
+	mysqlDriver "github.com/go-sql-driver/mysql"
 )
 
 const signedDeviceWindow = 5 * time.Minute

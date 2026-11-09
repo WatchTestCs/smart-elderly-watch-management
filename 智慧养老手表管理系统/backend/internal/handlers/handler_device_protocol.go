@@ -6,7 +6,6 @@ import (
 	"time"
 	"unicode/utf8"
 
-
 	"suining-care/internal/devicerepo"
 	"suining-care/internal/deviceworkflow"
 	"suining-care/internal/response"

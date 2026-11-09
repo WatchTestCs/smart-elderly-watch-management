@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"errors"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"suining-care/internal/response"
 	"suining-care/internal/rules"

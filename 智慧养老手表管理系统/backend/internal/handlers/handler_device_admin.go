@@ -10,11 +10,10 @@ import (
 	"time"
 	"unicode/utf8"
 
-
-	dbstore "suining-care/internal/db"
 	"suining-care/internal/devicerepo"
 	"suining-care/internal/response"
 	"suining-care/internal/securecode"
+	dbstore "suining-care/internal/db"
 )
 
 // ---------------------------------------------------------------------------

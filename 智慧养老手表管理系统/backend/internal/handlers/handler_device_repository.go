@@ -4,11 +4,10 @@ import (
 	"context"
 	"net/http"
 
-
-	dbstore "suining-care/internal/db"
 	"suining-care/internal/devicerepo"
 	"suining-care/internal/deviceworkflow"
 	"suining-care/internal/response"
+	dbstore "suining-care/internal/db"
 )
 
 func (h *Handler) readDeviceRecord(device *devicerepo.DeviceRecord, err error) (*devicerepo.DeviceRecord, error) {

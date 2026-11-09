@@ -5,7 +5,7 @@ import (
 	"database/sql"
 )
 
-func (d *Database) SQL() *sql.DB     { return d.myPool }
+func (d *Database) SQL() *sql.DB { return d.myPool }
 
 func (d *Database) Close() {
 	if d.healthPool != nil {

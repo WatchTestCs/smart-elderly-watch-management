@@ -1,17 +1,17 @@
 package handlers
 
 import (
-	"database/sql"
 	"context"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"net/http"
 
-	dbstore "suining-care/internal/db"
 	"suining-care/internal/devicerepo"
 	"suining-care/internal/response"
+	dbstore "suining-care/internal/db"
 )
 
 // reportPayloadDigest hashes the decoded request body. encoding/json sorts

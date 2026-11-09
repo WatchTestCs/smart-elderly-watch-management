@@ -1,13 +1,13 @@
 package handlers
 
 import (
-	"errors"
 	"database/sql"
+	"errors"
 	"net/http"
 	"strconv"
-	dbstore "suining-care/internal/db"
 	"suining-care/internal/response"
 	"time"
+	dbstore "suining-care/internal/db"
 )
 
 // POST /api/v1/residents/create —— 新增老人档案（ADMIN）。
