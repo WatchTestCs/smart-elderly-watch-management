@@ -6,7 +6,6 @@ import (
 	"errors"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 
 	"suining-care/internal/db"
 )
@@ -48,7 +47,7 @@ func FindPendingDeviceAlert(ctx context.Context, store db.RowQuerier, deviceID i
 		Scan(&alert.ID, &alert.HR, &alert.BP, &alert.OccurredAt,
 			&alert.ResidentID, &alert.ResidentName, &alert.HRHigh,
 			&alert.HRLow, &alert.BPHigh, &alert.BPLow)
-	if errors.Is(err, pgx.ErrNoRows) || errors.Is(err, sql.ErrNoRows) {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
 	if err != nil {

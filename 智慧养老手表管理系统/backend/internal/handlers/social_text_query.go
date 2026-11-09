@@ -1,7 +1,8 @@
 package handlers
 
 import (
-	"github.com/jackc/pgx/v5"
+	"errors"
+	"database/sql"
 	"net/http"
 	dbstore "suining-care/internal/db"
 	"suining-care/internal/response"
@@ -75,7 +76,7 @@ func (h *Handler) getNotice(w http.ResponseWriter, r *http.Request) {
 	var t noticeRecord
 	err := h.DB.QueryRow(r.Context(), "SELECT "+textColumns+" FROM "+socialTextTable+" WHERE text_id=$1", textID).Scan(
 		&t.TextID, &t.Title, &t.TextMain, &t.Time, &t.PicID)
-	if err == pgx.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		recordNotFound(w)
 		return
 	}

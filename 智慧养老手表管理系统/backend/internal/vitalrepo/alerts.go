@@ -2,10 +2,10 @@
 package vitalrepo
 
 import (
+	"database/sql"
 	"context"
 	"errors"
 
-	"github.com/jackc/pgx/v5"
 
 	"suining-care/internal/db"
 )
@@ -33,7 +33,7 @@ func updateSQL(kind string) string {
 func ResolveAlert(ctx context.Context, store *db.Database, recordID int64, kind string) (bool, error) {
 	var exists int
 	err := store.QueryRow(ctx, "SELECT 1 FROM ratepre WHERE id=$1", recordID).Scan(&exists)
-	if errors.Is(err, pgx.ErrNoRows) {
+	if errors.Is(err, sql.ErrNoRows) {
 		return false, ErrAlertNotFound
 	}
 	if err != nil {

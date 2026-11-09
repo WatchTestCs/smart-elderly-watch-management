@@ -1,11 +1,11 @@
 package telemetryrepo
 
 import (
+	"database/sql"
 	"context"
 	"errors"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 
 	"suining-care/internal/db"
 )
@@ -23,7 +23,7 @@ func ReadThresholds(ctx context.Context, tx *db.Transaction, deviceID int64) (Th
 	var bounds Thresholds
 	err := tx.QueryRow(ctx, `SELECT hrf, hrl, bpf, bpl FROM watch_info WHERE device_id=$1`, deviceID).
 		Scan(&bounds.HeartRateLow, &bounds.HeartRateHigh, &bounds.PressureLow, &bounds.PressureHigh)
-	if errors.Is(err, pgx.ErrNoRows) {
+	if errors.Is(err, sql.ErrNoRows) {
 		return bounds, nil
 	}
 	return bounds, err

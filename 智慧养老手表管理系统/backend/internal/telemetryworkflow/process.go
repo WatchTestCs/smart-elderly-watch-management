@@ -6,7 +6,6 @@ import (
 	"errors"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 
 	"suining-care/internal/db"
 	"suining-care/internal/devicerepo"
@@ -27,14 +26,14 @@ func ProcessItem(ctx context.Context, tx *db.Transaction, box *securestore.Box, 
 	}
 	var owner int64
 	err = tx.QueryRow(ctx, "SELECT old_id FROM oldperson WHERE old_id=$1 FOR UPDATE", item.ResidentID).Scan(&owner)
-	if errors.Is(err, pgx.ErrNoRows) || errors.Is(err, sql.ErrNoRows) {
+	if errors.Is(err, sql.ErrNoRows) {
 		return telemetryrepo.MarkDurableStale(ctx, tx, item.ID, "elder removed")
 	}
 	if err != nil {
 		return err
 	}
 	device, err := devicerepo.ScanDeviceRecord(devicerepo.LockedDeviceRow(ctx, tx, item.DeviceID))
-	if errors.Is(err, pgx.ErrNoRows) || errors.Is(err, sql.ErrNoRows) {
+	if errors.Is(err, sql.ErrNoRows) {
 		return telemetryrepo.MarkDurableStale(ctx, tx, item.ID, "device removed")
 	}
 	if err != nil {

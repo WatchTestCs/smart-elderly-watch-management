@@ -6,7 +6,6 @@ import (
 	"errors"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 
 	"suining-care/internal/db"
 	"suining-care/internal/observability"
@@ -47,7 +46,7 @@ func LockDurableBatch(ctx context.Context, tx *db.Transaction, limit int) ([]Dur
 	err := tx.QueryRow(ctx,
 		"SELECT id FROM telemetry_inbox_guard WHERE id=1 FOR UPDATE SKIP LOCKED").Scan(&guard)
 	observability.Default.Add("suining_telemetry_guard_acquire_seconds_total", time.Since(guardStarted).Seconds())
-	if errors.Is(err, pgx.ErrNoRows) || errors.Is(err, sql.ErrNoRows) {
+	if errors.Is(err, sql.ErrNoRows) {
 		observability.Default.Add("suining_telemetry_guard_busy_total", 1)
 		return nil, nil
 	}

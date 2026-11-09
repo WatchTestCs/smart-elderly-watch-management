@@ -1,9 +1,10 @@
 package telemetryrepo
 
 import (
+	"errors"
+	"database/sql"
 	"context"
 
-	"github.com/jackc/pgx/v5"
 	dbstore "suining-care/internal/db"
 )
 
@@ -37,7 +38,7 @@ func PersistDay(ctx context.Context, tx *dbstore.Transaction, deviceID, oldID, h
 		var owner *int64
 		err := tx.QueryRow(ctx, `SELECT id,old_id,binding_epoch FROM watch_day_info
 		 WHERE device_id=$1 AND create_time=$2 FOR UPDATE`, deviceID, day).Scan(&rowID, &owner, &epoch)
-		if err != nil && err != pgx.ErrNoRows {
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
 			return err
 		}
 		if err == nil && (owner == nil || *owner != oldID || epoch != healthEpoch) {

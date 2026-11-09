@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
@@ -8,7 +9,6 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/jackc/pgx/v5"
 	dbstore "suining-care/internal/db"
 	"suining-care/internal/devicerepo"
 	"suining-care/internal/response"
@@ -32,7 +32,7 @@ func lookupDeviceReportReceipt(ctx context.Context, tx *dbstore.Transaction, dev
 	err = tx.QueryRow(ctx, `SELECT payload_digest,result_json FROM device_report_receipt
 		WHERE device_id=$1 AND binding_epoch=$2 AND request_id=$3`, deviceID, epoch, requestID).
 		Scan(&digest, &result)
-	if errors.Is(err, pgx.ErrNoRows) {
+	if errors.Is(err, sql.ErrNoRows) {
 		return "", "", false, nil
 	}
 	if err != nil {

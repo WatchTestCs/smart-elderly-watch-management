@@ -1,8 +1,9 @@
 package handlers
 
 import (
+	"errors"
+	"database/sql"
 	"encoding/json"
-	"github.com/jackc/pgx/v5"
 	"net/http"
 	"suining-care/internal/response"
 	"suining-care/internal/rules"
@@ -38,7 +39,7 @@ func (h *Handler) rulePolicy(w http.ResponseWriter, r *http.Request) {
 	var b []byte
 	var revision int64
 	err = tx.QueryRow(ctx, "SELECT revision,payload FROM rule_policy WHERE device_id=$1 FOR UPDATE", id).Scan(&revision, &b)
-	if err != nil && err != pgx.ErrNoRows {
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		response.Error500(w, ref())
 		return
 	}

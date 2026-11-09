@@ -1,7 +1,8 @@
 package handlers
 
 import (
-	"github.com/jackc/pgx/v5"
+	"errors"
+	"database/sql"
 	"net/http"
 	"strconv"
 	dbstore "suining-care/internal/db"
@@ -87,7 +88,7 @@ func (h *Handler) saveResident(w http.ResponseWriter, r *http.Request, update bo
 	if update {
 		var device *int64
 		err := tx.QueryRow(ctx, "SELECT device_id FROM oldperson WHERE old_id=$1 FOR UPDATE", oldID).Scan(&device)
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			response.Fail(w, "长者档案不存在")
 			return
 		}

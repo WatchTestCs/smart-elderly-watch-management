@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/jackc/pgx/v5"
 
 	"suining-care/internal/db"
 	"suining-care/internal/socialrepo"
@@ -23,7 +22,7 @@ func CreateComment(ctx context.Context, store *db.Database, lockImages ImageLock
 	}
 	defer tx.Rollback(ctx)
 	avatar, err := socialrepo.AuthorAvatar(ctx, tx, comment.AuthorPhone)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) && !errors.Is(err, pgx.ErrNoRows) {
+	if err != nil && !errors.Is(err, sql.ErrNoRows) && !errors.Is(err, sql.ErrNoRows) {
 		return false, err
 	}
 	if avatar != "" {

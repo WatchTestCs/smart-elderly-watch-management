@@ -6,7 +6,6 @@ import (
 	"errors"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 	"suining-care/internal/db"
 	"suining-care/internal/devicecredential"
 )
@@ -33,7 +32,7 @@ func scanHealthDevice(row db.Row) (*healthDevice, error) {
 }
 func (h *Handler) healthDeviceAuth(ctx context.Context, q db.RowQuerier, deviceNo, secret, disabledMsg string) (*healthDevice, string, string, error) {
 	d, err := scanHealthDevice(q.QueryRow(ctx, `SELECT `+healthDeviceCols+` FROM device WHERE device_no=$1`, deviceNo))
-	if errors.Is(err, pgx.ErrNoRows) || errors.Is(err, sql.ErrNoRows) {
+	if errors.Is(err, sql.ErrNoRows) {
 		d = nil
 		err = nil
 	}

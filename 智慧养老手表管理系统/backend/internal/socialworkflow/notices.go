@@ -6,7 +6,6 @@ import (
 	"errors"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 
 	"suining-care/internal/blob"
 	"suining-care/internal/db"
@@ -24,7 +23,7 @@ func noticeTable(mysql bool) string {
 func noticePictureGroup(ctx context.Context, tx *db.Transaction, id int64) (*int64, error) {
 	var group *int64
 	err := tx.QueryRow(ctx, "SELECT pic_id FROM "+noticeTable(tx.IsMySQL())+" WHERE text_id=$1 FOR UPDATE", id).Scan(&group)
-	if errors.Is(err, pgx.ErrNoRows) || errors.Is(err, sql.ErrNoRows) {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNoticeNotFound
 	}
 	return group, err
