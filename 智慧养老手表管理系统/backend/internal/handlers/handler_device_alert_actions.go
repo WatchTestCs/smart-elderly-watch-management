@@ -66,17 +66,17 @@ func (h *Handler) deviceAlertDetail(w http.ResponseWriter, r *http.Request) {
 	}
 	kind, _ := vstr(m, "kind")
 	kind = strings.ToLower(kind)
-	// 规格：kind 默认 person；非法值按 person 处理。
 	if kind != "person" && kind != "rate" && kind != "pre" {
-		kind = "person"
-	}
-	ctx := r.Context()
-	d, err := h.readDeviceRecord(devicerepo.FindDeviceByID(ctx, h.DB, deviceID))
-	if internalError(w, err) {
+		write400(w, "kind 必须为 person、rate 或 pre")
 		return
 	}
-	if d == nil {
+	ctx := r.Context()
+	d, err := devicerepo.FindDeviceByID(ctx, h.DB, deviceID)
+	if isNotFound(err) {
 		response.Fail(w, "设备不存在")
+		return
+	}
+	if internalError(w, err) {
 		return
 	}
 	oldName := "（未绑定）"
