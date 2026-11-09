@@ -10,9 +10,9 @@ import (
 )
 
 var (
-	ErrDeviceMissing	= errors.New("device not found")
-	ErrUnknownKind	= errors.New("unknown alert kind")
-	ErrNoPendingAlert	= errors.New("no pending alert")
+	ErrDeviceMissing  = errors.New("device not found")
+	ErrUnknownKind    = errors.New("unknown alert kind")
+	ErrNoPendingAlert = errors.New("no pending alert")
 )
 
 // ReasonReader runs inside the same transaction so the response describes
