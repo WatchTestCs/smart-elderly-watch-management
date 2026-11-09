@@ -40,9 +40,8 @@ func (h *Handler) createNotice(w http.ResponseWriter, r *http.Request) {
 	if !insertNoticePictures(w, r.Context(), tx, picID, fileList) {
 		return
 	}
-	var textID int64
-	err = tx.QueryRow(r.Context(), "INSERT INTO "+socialTextTable(tx.IsMySQL())+"(title,text_main,time,pic_id) VALUES($1,$2,$3,$4) RETURNING text_id",
-		title, textMain, time.Now(), picID).Scan(&textID)
+	textID, err := tx.InsertID(r.Context(), "INSERT INTO `text`(title,text_main,time,pic_id) VALUES($1,$2,$3,$4)",
+		title, textMain, time.Now(), picID)
 	if internalError(w, err) {
 		return
 	}
@@ -114,7 +113,7 @@ func (h *Handler) updateNotice(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) noticePictureGroup(w http.ResponseWriter, r *http.Request, id int64) (*int64, bool) {
 	var pictures *int64
-	err := h.DB.QueryRow(r.Context(), "SELECT pic_id FROM "+socialTextTable(h.DB.IsMySQL())+" WHERE text_id=$1", id).Scan(&pictures)
+	err := h.DB.QueryRow(r.Context(), "SELECT pic_id FROM "+socialTextTable+" WHERE text_id=$1", id).Scan(&pictures)
 	if isNotFound(err) {
 		writeCode(w, false)
 		return nil, false

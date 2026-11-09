@@ -6,16 +6,10 @@ import (
 	"testing"
 )
 
-func TestNativeEngineSpecificUpserts(t *testing.T) {
-	mysqlDaily := metricDailyEnsureSQL(true)
-	postgresDaily := metricDailyEnsureSQL(false)
-	if !strings.Contains(mysqlDaily, "ON DUPLICATE KEY UPDATE") || strings.Contains(mysqlDaily, "ON CONFLICT") {
-		t.Fatalf("MySQL daily SQL leaked PostgreSQL syntax: %s", mysqlDaily)
+func TestDailyUpsertUsesNativeMySQL(t *testing.T) {
+	if !strings.Contains(metricDailyEnsureSQL, "ON DUPLICATE KEY UPDATE") || strings.Contains(metricDailyEnsureSQL, "ON CONFLICT") {
+		t.Fatalf("daily SQL is not native MySQL: %s", metricDailyEnsureSQL)
 	}
-	if !strings.Contains(postgresDaily, "ON CONFLICT(cache_key) DO NOTHING") || strings.Contains(postgresDaily, "ON DUPLICATE KEY") {
-		t.Fatalf("PostgreSQL daily SQL leaked MySQL syntax: %s", postgresDaily)
-	}
-
 }
 
 func TestDeviceReportDailyUpsertPreservesMissingFields(t *testing.T) {
@@ -44,25 +38,5 @@ func TestDeviceReportDailyUpsertPreservesMissingFields(t *testing.T) {
 	}
 	if rows != 1 || step != 250 || sleep != 8 || state != "1" {
 		t.Fatalf("daily upsert lost prior fields: rows=%d step=%d sleep=%d state=%q", rows, step, sleep, state)
-	}
-}
-
-func TestSocialTextTableIsRepositoryOwned(t *testing.T) {
-	if got := socialTextTable(true); got != "`text`" {
-		t.Fatalf("unexpected MySQL social text table: %s", got)
-	}
-	if got := socialTextTable(false); got != "text" {
-		t.Fatalf("unexpected PostgreSQL social text table: %s", got)
-	}
-}
-
-func TestBusinessRepositoriesOwnEngineSpecificSQL(t *testing.T) {
-	mysqlInsert, mysqlID := pictureGroupAllocatorSQL(true)
-	postgresInsert, postgresID := pictureGroupAllocatorSQL(false)
-	if mysqlInsert != "INSERT INTO picture_group () VALUES ()" || mysqlID != "SELECT LAST_INSERT_ID()" {
-		t.Fatalf("unexpected MySQL picture-group allocation SQL: %q / %q", mysqlInsert, mysqlID)
-	}
-	if postgresInsert != "" || postgresID != "SELECT nextval('picture_group')" {
-		t.Fatalf("unexpected PostgreSQL picture-group allocation SQL: %q / %q", postgresInsert, postgresID)
 	}
 }

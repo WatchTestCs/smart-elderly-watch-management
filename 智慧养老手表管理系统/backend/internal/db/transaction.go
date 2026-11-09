@@ -42,6 +42,19 @@ func (t *Transaction) Rollback(context.Context) error {
 	return t.myTx.Rollback()
 }
 
+// InsertID executes one MySQL INSERT and returns its auto-increment identifier.
+func (t *Transaction) InsertID(ctx context.Context, query string, args ...any) (int64, error) {
+	q, bound, err := mysqlQuery(query, args)
+	if err != nil {
+		return 0, err
+	}
+	result, err := t.myTx.ExecContext(ctx, q, bound...)
+	if err != nil {
+		return 0, err
+	}
+	return result.LastInsertId()
+}
+
 func (e executor) Exec(ctx context.Context, query string, args ...any) (pgconn.CommandTag, error) {
 	return e.exec(ctx, query, args, false)
 }

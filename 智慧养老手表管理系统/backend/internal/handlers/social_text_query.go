@@ -33,7 +33,7 @@ func (h *Handler) listNotices(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	title := str(m, "title")
-	filter := " FROM " + socialTextTable(h.DB.IsMySQL()) + " WHERE ($1='' OR title LIKE $2)"
+	filter := " FROM " + socialTextTable + " WHERE ($1='' OR title LIKE $2)"
 	countSQL := "SELECT COUNT(*) AS total" + filter
 	sql := "SELECT " + textColumns + filter + " ORDER BY time DESC, text_id DESC"
 	args := []any{title, "%" + title + "%"}
@@ -73,7 +73,7 @@ func (h *Handler) getNotice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var t noticeRecord
-	err := h.DB.QueryRow(r.Context(), "SELECT "+textColumns+" FROM "+socialTextTable(h.DB.IsMySQL())+" WHERE text_id=$1", textID).Scan(
+	err := h.DB.QueryRow(r.Context(), "SELECT "+textColumns+" FROM "+socialTextTable+" WHERE text_id=$1", textID).Scan(
 		&t.TextID, &t.Title, &t.TextMain, &t.Time, &t.PicID)
 	if err == pgx.ErrNoRows {
 		recordNotFound(w)

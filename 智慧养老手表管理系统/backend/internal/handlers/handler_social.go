@@ -69,7 +69,7 @@ func (h *Handler) searchNoticeComments(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	items, total, err := socialrepo.SearchModeratedComments(
-		r.Context(), h.DB, socialTextTable(h.DB.IsMySQL()), page, pageSize,
+		r.Context(), h.DB, socialTextTable, page, pageSize,
 	)
 	if internalError(w, err) {
 		return
