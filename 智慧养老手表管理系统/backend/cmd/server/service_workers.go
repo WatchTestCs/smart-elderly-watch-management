@@ -11,6 +11,7 @@ import (
 	"suining-care/internal/notify"
 	"suining-care/internal/rules"
 	"suining-care/internal/securestore"
+	"suining-care/internal/telemetryworkflow"
 )
 
 type databaseWorkerDeps struct {
@@ -19,6 +20,7 @@ type databaseWorkerDeps struct {
 	runCapabilities func(context.Context)
 	analyticsURL    string
 	analyticsState  *analytics.State
+	heartbeats      *telemetryworkflow.HeartbeatBuffer
 }
 
 func startDatabaseWorkers(ctx context.Context, deps databaseWorkerDeps) <-chan struct{} {
@@ -26,7 +28,7 @@ func startDatabaseWorkers(ctx context.Context, deps databaseWorkerDeps) <-chan s
 	go func() {
 		defer close(done)
 		var jobs sync.WaitGroup
-		jobs.Add(7)
+		jobs.Add(8)
 		go func() { defer jobs.Done(); rules.Run(ctx, deps.pool, deps.box) }()
 		go func() { defer jobs.Done(); notify.Run(ctx, deps.pool, deps.box) }()
 		go func() {
@@ -39,6 +41,12 @@ func startDatabaseWorkers(ctx context.Context, deps databaseWorkerDeps) <-chan s
 		go func() { defer jobs.Done(); analytics.Run(ctx, deps.pool, deps.analyticsURL, deps.analyticsState) }()
 		go func() { defer jobs.Done(); handlers.RunSignedDeviceNonceCleanup(ctx, deps.pool) }()
 		go func() { defer jobs.Done(); handlers.RunDurableTelemetry(ctx, deps.pool, deps.box) }()
+		go func() {
+			defer jobs.Done()
+			if deps.heartbeats != nil {
+				deps.heartbeats.Run(ctx)
+			}
+		}()
 		jobs.Wait()
 	}()
 	return done

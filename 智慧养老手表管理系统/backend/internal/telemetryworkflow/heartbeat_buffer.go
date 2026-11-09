@@ -1,0 +1,170 @@
+package telemetryworkflow
+
+import (
+	"context"
+	"strings"
+	"sync"
+	"time"
+
+	"suining-care/internal/db"
+	"suining-care/internal/observability"
+)
+
+const heartbeatFlushInterval = 15 * time.Second
+const heartbeatFlushBatch = 128
+
+type nativeHeartbeatStore interface {
+	ExecNative(context.Context, string, ...any) (db.CommandResult, error)
+}
+
+type heartbeatState struct {
+	deviceID   int64
+	seenAt     time.Time
+	battery    int
+	hasBattery bool
+	appVersion string
+	hasVersion bool
+}
+
+// HeartbeatBuffer coalesces replaceable device liveness writes.
+// Safety-critical events never enter this buffer.
+type HeartbeatBuffer struct {
+	store nativeHeartbeatStore
+	mu    sync.Mutex
+	items map[int64]heartbeatState
+}
+
+func NewHeartbeatBuffer(store nativeHeartbeatStore) *HeartbeatBuffer {
+	return &HeartbeatBuffer{store: store, items: make(map[int64]heartbeatState)}
+}
+
+func (b *HeartbeatBuffer) Record(deviceID int64, battery *int, appVersion *string, seenAt time.Time) {
+	if b == nil || b.store == nil || deviceID < 1 {
+		return
+	}
+	seenAt = seenAt.UTC()
+	b.mu.Lock()
+	state := b.items[deviceID]
+	state.deviceID = deviceID
+	newest := state.seenAt.IsZero() || !seenAt.Before(state.seenAt)
+	if newest {
+		state.seenAt = seenAt
+		if battery != nil {
+			state.battery, state.hasBattery = *battery, true
+		}
+		if appVersion != nil {
+			state.appVersion, state.hasVersion = *appVersion, true
+		}
+	}
+	b.items[deviceID] = state
+	b.mu.Unlock()
+	observability.Default.Add("suining_heartbeat_buffered_total", 1)
+}
+
+func (b *HeartbeatBuffer) drain(max int) []heartbeatState {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if len(b.items) == 0 {
+		return nil
+	}
+	items := make([]heartbeatState, 0, min(max, len(b.items)))
+	for id, state := range b.items {
+		items = append(items, state)
+		delete(b.items, id)
+		if len(items) == max {
+			break
+		}
+	}
+	return items
+}
+
+func (b *HeartbeatBuffer) requeue(items []heartbeatState) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	for _, stale := range items {
+		current, ok := b.items[stale.deviceID]
+		if !ok {
+			b.items[stale.deviceID] = stale
+			continue
+		}
+		if stale.seenAt.After(current.seenAt) {
+			current.seenAt = stale.seenAt
+		}
+		if !current.hasBattery && stale.hasBattery {
+			current.battery, current.hasBattery = stale.battery, true
+		}
+		if !current.hasVersion && stale.hasVersion {
+			current.appVersion, current.hasVersion = stale.appVersion, true
+		}
+		b.items[stale.deviceID] = current
+	}
+}
+
+func heartbeatBatchSQL(count int) string {
+	var q strings.Builder
+	q.Grow(256 + count*48)
+	q.WriteString("UPDATE device d JOIN (")
+	for i := 0; i < count; i++ {
+		if i == 0 {
+			q.WriteString("SELECT CAST(? AS SIGNED) device_id,CAST(? AS DATETIME(6)) seen_at,CAST(? AS SIGNED) battery,CAST(? AS CHAR(20)) app_version")
+		} else {
+			q.WriteString(" UNION ALL SELECT CAST(? AS SIGNED),CAST(? AS DATETIME(6)),CAST(? AS SIGNED),CAST(? AS CHAR(20))")
+		}
+	}
+	q.WriteString(") h ON h.device_id=d.device_id SET d.last_time=GREATEST(COALESCE(d.last_time,h.seen_at),h.seen_at),d.last_online_at=GREATEST(COALESCE(d.last_online_at,h.seen_at),h.seen_at),d.battery=COALESCE(h.battery,d.battery),d.app_version=COALESCE(h.app_version,d.app_version)")
+	return q.String()
+}
+
+func (b *HeartbeatBuffer) flushBatch(ctx context.Context, items []heartbeatState) error {
+	args := make([]any, 0, len(items)*4)
+	for _, item := range items {
+		var battery, version any
+		if item.hasBattery {
+			battery = item.battery
+		}
+		if item.hasVersion {
+			version = item.appVersion
+		}
+		args = append(args, item.deviceID, item.seenAt, battery, version)
+	}
+	result, err := b.store.ExecNative(ctx, heartbeatBatchSQL(len(items)), args...)
+	if err != nil {
+		return err
+	}
+	observability.Default.Add("suining_heartbeat_db_rows_total", float64(result.RowsAffected()))
+	observability.Default.Add("suining_heartbeat_flush_batches_total", 1)
+	return nil
+}
+
+func (b *HeartbeatBuffer) Flush(ctx context.Context) (int, error) {
+	total := 0
+	for {
+		items := b.drain(heartbeatFlushBatch)
+		if len(items) == 0 {
+			return total, nil
+		}
+		if err := b.flushBatch(ctx, items); err != nil {
+			b.requeue(items)
+			return total, err
+		}
+		total += len(items)
+	}
+}
+
+func (b *HeartbeatBuffer) Run(ctx context.Context) {
+	ticker := time.NewTicker(heartbeatFlushInterval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			final, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+			_, _ = b.Flush(final)
+			cancel()
+			return
+		case <-ticker.C:
+			run, cancel := context.WithTimeout(ctx, 5*time.Second)
+			_, _ = b.Flush(run)
+			cancel()
+		}
+	}
+}

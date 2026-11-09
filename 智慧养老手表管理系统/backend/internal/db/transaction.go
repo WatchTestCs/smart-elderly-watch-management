@@ -54,6 +54,17 @@ func (e executor) Exec(ctx context.Context, query string, args ...any) (CommandR
 	return e.exec(ctx, query, args, false)
 }
 
+// ExecNative executes already-native MySQL SQL without the legacy placeholder translator.
+func (e executor) ExecNative(ctx context.Context, query string, args ...any) (CommandResult, error) {
+	r, err := e.my.ExecContext(ctx, query, args...)
+	if err != nil {
+		return CommandResult{}, err
+	}
+	n, err := r.RowsAffected()
+	return CommandResult{rowsAffected: n}, err
+}
+
+
 // ExecBatch preserves Exec semantics while enabling bounded MySQL transport reuse.
 func (e executor) ExecBatch(ctx context.Context, query string, args ...any) (CommandResult, error) {
 	return e.exec(ctx, query, args, e.packed)

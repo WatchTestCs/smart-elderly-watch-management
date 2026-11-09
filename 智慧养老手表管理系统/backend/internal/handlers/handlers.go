@@ -17,6 +17,7 @@ import (
 	"suining-care/internal/config"
 	"suining-care/internal/securestore"
 	"suining-care/internal/session"
+	"suining-care/internal/telemetryworkflow"
 )
 
 var sharedRisk = risk.New()
@@ -35,6 +36,7 @@ type Handler struct {
 	imageError   error
 	clientIP     func(*http.Request) string
 	Risk         *risk.Manager
+	Heartbeats   *telemetryworkflow.HeartbeatBuffer
 }
 
 func New(pool *dbstore.Database, sessions *session.Store, cfg config.Config) *Handler {
