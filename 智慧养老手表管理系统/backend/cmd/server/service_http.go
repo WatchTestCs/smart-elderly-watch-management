@@ -113,4 +113,3 @@ func boolNumber(value bool) float64 {
 	}
 	return 0
 }
-
