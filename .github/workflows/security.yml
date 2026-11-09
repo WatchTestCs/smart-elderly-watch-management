@@ -2,7 +2,7 @@ name: Security
 
 on:
   push:
-    branches: [preview, 'codex/**']
+    branches: [preview]
   pull_request:
     branches: [preview]
   workflow_dispatch:
