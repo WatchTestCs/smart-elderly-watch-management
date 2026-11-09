@@ -1,16 +1,17 @@
 package handlers
 
 import (
-	"suining-care/internal/vitalpolicy"
 	"context"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
+
 	dbstore "suining-care/internal/db"
 	"suining-care/internal/response"
 	"suining-care/internal/telemetryrepo"
+	"suining-care/internal/vitalpolicy"
 	"suining-care/internal/vitalrepo"
-	"time"
 )
 
 // POST /api/v1/locations/alerts/resolve-latest —— 处置某老人最近一条告警（ADMIN）。
