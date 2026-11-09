@@ -85,7 +85,7 @@ impl DeviceSession {
         self.wire.clear();
         self.wire.reserve(count * 400 + 200);
         {
-            let batch: Vec<_> = self.queue.peek_refs(self.max_batch_size).collect();
+            let batch: Vec<_> = self.queue.iter_pending(self.max_batch_size).collect();
             let request = QueuedBatch {
                 device_no: &self.cred.device_no,
                 secret: &self.cred.secret,

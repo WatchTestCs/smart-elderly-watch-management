@@ -94,7 +94,7 @@ impl OfflineQueue {
     }
 
     /// 借用待上传样本，避免弱网重试时复制整批记录。
-    pub fn peek_refs(&self, max: usize) -> impl Iterator<Item = &HealthSample> {
+    pub fn iter_pending(&self, max: usize) -> impl Iterator<Item = &HealthSample> {
         self.items.iter().take(max.min(self.capacity))
     }
 
@@ -163,7 +163,7 @@ mod priority_eviction_tests {
             ),
             1,
         );
-        let ids: Vec<&str> = q.peek_refs(2).map(|item| item.record_id.as_str()).collect();
+        let ids: Vec<&str> = q.iter_pending(2).map(|item| item.record_id.as_str()).collect();
         assert_eq!(ids, ["alert", "new"]);
         assert_eq!(q.dropped(), 1);
     }
@@ -185,7 +185,7 @@ mod priority_eviction_tests {
             ),
             1,
         );
-        assert_eq!(q.peek_refs(1).next().unwrap().record_id.as_str(), "alert");
+        assert_eq!(q.iter_pending(1).next().unwrap().record_id.as_str(), "alert");
         assert_eq!(q.dropped(), 1);
     }
 }
