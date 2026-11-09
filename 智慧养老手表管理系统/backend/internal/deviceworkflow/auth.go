@@ -57,6 +57,15 @@ func LockBoundDevice(ctx context.Context, tx *db.Transaction, number, secret str
 	if err != nil || device == nil {
 		return nil, failure, err
 	}
+	return LockAuthenticatedDevice(ctx, tx, device, number, secret, epoch)
+}
+
+// LockAuthenticatedDevice reuses an already verified, unlocked snapshot.
+// The resident and device are still locked and revalidated before any write.
+func LockAuthenticatedDevice(ctx context.Context, tx *db.Transaction, device *devicerepo.DeviceRecord, number, secret string, epoch int64) (*devicerepo.DeviceRecord, Failure, error) {
+	if device == nil {
+		return nil, InvalidCredential, nil
+	}
 	if device.OldID == nil {
 		return nil, DeviceUnbound, nil
 	}
