@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"suining-care/internal/vitalpolicy"
 	"context"
 	"net/http"
 	"strconv"
@@ -181,7 +182,7 @@ func (h *Handler) findRatepreAlert(ctx context.Context, q dbstore.RowQuerier, de
 	if value != nil {
 		measurement = *value
 	}
-	low, high = alertThresholds(first, last, low, high)
+	low, high = vitalpolicy.Thresholds(first, last, low, high)
 	oldName := "（未绑定）"
 	if record.ResidentID != nil {
 		oldName = ""
@@ -190,7 +191,7 @@ func (h *Handler) findRatepreAlert(ctx context.Context, q dbstore.RowQuerier, de
 		}
 	}
 	return map[string]any{
-		"kind": kind, "kindText": kindTextOf(kind), "reason": vitalAlertReason(metric, measurement, low, high),
+		"kind": kind, "kindText": kindTextOf(kind), "reason": vitalpolicy.Reason(metric, measurement, low, high),
 		"detail": "当前档案范围 " + strconv.Itoa(low) + "-" + strconv.Itoa(high) + " " + unit +
 			"，本次测量 " + strconv.Itoa(measurement) + " " + unit + "。",
 		"value": measurement, "threshold": strconv.Itoa(low) + "-" + strconv.Itoa(high),
