@@ -2,10 +2,13 @@
 package handlers
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
+	"suining-care/internal/blob"
 	"suining-care/internal/response"
 	"suining-care/internal/socialrepo"
+	"suining-care/internal/socialworkflow"
 	"time"
 	"unicode/utf8"
 )
@@ -123,27 +126,19 @@ func (h *Handler) createNoticeComment(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	tx, err := h.DB.Begin(r.Context())
+	manager, err := h.images()
 	if internalError(w, err) {
 		return
 	}
-	defer tx.Rollback(r.Context())
-	touPic, err := socialrepo.AuthorAvatar(r.Context(), tx, p.Phone)
-	if err != nil && !isNotFound(err) {
-		response.Error500(w, ref())
-		return
-	}
-	if touPic != "" && !h.lockImages(w, r.Context(), tx, []string{touPic}) {
-		return
-	}
-	inserted, err := socialrepo.InsertComment(r.Context(), tx, socialrepo.NewComment{
+	inserted, err := socialworkflow.CreateComment(r.Context(), h.DB, manager, socialrepo.NewComment{
 		NoticeID: textID, Content: saidContent, CreatedAt: time.Now(),
-		AuthorName: p.DisplayName, AuthorPhone: p.Phone, Avatar: touPic,
+		AuthorName: p.DisplayName, AuthorPhone: p.Phone,
 	})
-	if internalError(w, err) {
+	if errors.Is(err, blob.ErrNotFound) {
+		write400(w, "图片不存在或已回收，请重新上传")
 		return
 	}
-	if err = tx.Commit(r.Context()); internalError(w, err) {
+	if internalError(w, err) {
 		return
 	}
 	writeCode(w, inserted)
