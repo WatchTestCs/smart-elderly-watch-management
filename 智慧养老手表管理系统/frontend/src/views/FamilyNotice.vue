@@ -38,6 +38,7 @@ const submitting = ref(false)
 const submitError = ref('')
 const submitSuccess = ref('')
 const likingId = ref<number | string | null>(null)
+let noticeRevision = 0
 
 const details = createLatestRead(
   (query: { textId: unknown }, signal: AbortSignal) =>
@@ -83,34 +84,49 @@ function searchSaid() {
 }
 async function onSubmit() {
   if (!formSaid.said.trim() || submitting.value || !route.query.textId) return
+  const textId = route.query.textId
+  const revision = noticeRevision
   submitting.value = true
   submitError.value = ''
   submitSuccess.value = ''
   try {
     const { data } = await api.post<Envelope>('api/v1/notice-comments/create', {
-      said: formSaid.said.trim(), textId: route.query.textId
+      said: formSaid.said.trim(), textId
     })
     accepted(data)
+    if (revision !== noticeRevision) return
     formSaid.said = ''
     submitSuccess.value = '留言已发表。'
     await searchSaid()
   } catch (error) {
+    if (revision !== noticeRevision) return
     submitError.value = apiErrorMessage(error, '留言未能发表，内容已保留，请重试。')
-  } finally { submitting.value = false }
+  } finally { if (revision === noticeRevision) submitting.value = false }
 }
 async function toggleCommentLike(item: NoticeComment) {
+  const revision = noticeRevision
   if (likingId.value !== null) return
   likingId.value = item.saidId
   submitError.value = ''
   try {
     const { data } = await api.post<Envelope>('api/v1/notice-comments/toggle-like', { saidId: item.saidId })
     accepted(data)
+    if (revision !== noticeRevision) return
     await searchSaid()
   } catch (error) {
+    if (revision !== noticeRevision) return
     submitError.value = apiErrorMessage(error, '赞同操作未完成，请重试。')
-  } finally { likingId.value = null }
+  } finally { if (revision === noticeRevision) likingId.value = null }
 }
-function reload() { void searchDetail(); void searchSaid() }
+function reload() {
+  noticeRevision++
+  formSaid.said = ''
+  submitError.value = ''
+  submitSuccess.value = ''
+  submitting.value = false
+  likingId.value = null
+  void searchDetail(); void searchSaid()
+}
 onMounted(reload)
 watch(() => route.query.textId, reload)
 onBeforeUnmount(() => { details.dispose(); comments.dispose() })
