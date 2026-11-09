@@ -30,7 +30,7 @@ const (
 	WrongPassword  FactorFailure = "wrong_password"
 	AlreadyEnabled FactorFailure = "already_enabled"
 	InvalidState   FactorFailure = "invalid_state"
-	InvalidOTP      FactorFailure = "invalid_otp"
+	InvalidOTP     FactorFailure = "invalid_otp"
 	InvalidAction  FactorFailure = "invalid_action"
 )
 
