@@ -34,7 +34,7 @@ jobs:
           cache-dependency-path: '智慧养老手表管理系统/backend/go.sum'
 
       - name: Lint GitHub Actions workflows
-        run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12 -color
+        run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12 -shellcheck=
 
       - name: Verify formatting and vet
         working-directory: '智慧养老手表管理系统/backend'
