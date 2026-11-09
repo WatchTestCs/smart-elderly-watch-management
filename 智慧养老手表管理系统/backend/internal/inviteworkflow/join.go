@@ -44,6 +44,11 @@ func missing(err error) bool {
 // Join owns the invitation lock, resident lock, account creation and code
 // consumption as a single transaction. No HTTP or response types cross this boundary.
 func Join(ctx context.Context, store *db.Database, box *securestore.Box, input Registration) (Result, Failure, error) {
+	// Password hashing is CPU-expensive and needs no database locks.
+	hash, err := auth.Hash(input.Password)
+	if err != nil {
+		return Result{}, "", err
+	}
 	tx, err := store.Begin(ctx)
 	if err != nil {
 		return Result{}, "", err
@@ -94,10 +99,6 @@ func Join(ctx context.Context, store *db.Database, box *securestore.Box, input R
 		}
 	} else if dup {
 		return Result{}, FamilyMismatch, nil
-	}
-	hash, err := auth.Hash(input.Password)
-	if err != nil {
-		return Result{}, "", err
 	}
 	familyID, applied, err := inviterepo.SaveFamily(ctx, tx, inviterepo.FamilyRegistration{
 		Name: input.Name, Phone: input.Phone, PasswordHash: hash,
