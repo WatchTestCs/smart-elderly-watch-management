@@ -5,7 +5,7 @@ on:
     branches: [preview]
     paths:
       - '智慧养老手表管理系统/backend/**'
-      - '.github/workflows/free-pr-review.yml'
+      - '.github/workflows/**'
   workflow_dispatch:
 
 permissions:
@@ -32,6 +32,9 @@ jobs:
         with:
           go-version-file: '智慧养老手表管理系统/backend/go.mod'
           cache-dependency-path: '智慧养老手表管理系统/backend/go.sum'
+
+      - name: Lint GitHub Actions workflows
+        run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12 -color
 
       - name: Verify formatting and vet
         working-directory: '智慧养老手表管理系统/backend'
