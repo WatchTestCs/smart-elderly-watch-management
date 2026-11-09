@@ -16,7 +16,7 @@ Go 模块名为 `suining-care`，使用 Go 1.27.3。HTTP 层基于标准库 `net
 | `internal/care` | 告警通知投递、超时升级与照护工单后台作业 |
 | `internal/db` | MySQL 连接池、事务封装、SQL 方言适配与数据库迁移 |
 | `internal/analytics` | PostgreSQL 分析表结构、outbox 异步同步、事件去重、删除墓碑与历史数据回填 |
-| `cmd/migrate` | 数据库迁移命令行工具，默认迁移 MySQL，可通过参数指定迁移 PG |
+| `cmd/migrate` | MySQL 业务库的独立迁移命令 |
 | `cmd/analytics-backfill` | 将现有 MySQL 业务数据批量加入 PG 分析回填队列 |
 | `migrations` / `VERSION` | 编译期通过 `embed` 内嵌的 SQL 迁移脚本与统一版本号文件 |
 

@@ -1,5 +1,5 @@
-# CI-only service container: these ephemeral runner credentials are never shared with production.
-name: Historical database migration verification
+# CI-only credentials; do not share these ephemeral services with production.
+name: MySQL migration verification
 on:
   workflow_dispatch:
 permissions:
@@ -18,14 +18,6 @@ jobs:
         options: >-
           --health-cmd "mysqladmin ping -h 127.0.0.1 -u root -pci_root_only --silent"
           --health-interval 5s --health-timeout 5s --health-retries 20
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: suining
-          POSTGRES_PASSWORD: suining
-          POSTGRES_DB: suining_test
-        ports: ['5432:5432']
-        options: --health-cmd "pg_isready -U suining -d suining_test" --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -37,11 +29,7 @@ jobs:
       - run: |
           go run ./cmd/migrate
           go run ./cmd/migrate
-          go run ./cmd/migrate --legacy-postgres
-          go run ./cmd/migrate --legacy-postgres
         working-directory: 智慧养老手表管理系统/backend
         env:
           MYSQL_DSN: root:ci_root_only@tcp(localhost:3306)/suining_test
-          DATABASE_URL: postgres://suining:suining@localhost:5432/suining_test?sslmode=disable
           TEST_MYSQL_DSN: root:ci_root_only@tcp(localhost:3306)/suining_test
-          TEST_DATABASE_URL: postgres://suining:suining@localhost:5432/suining_test?sslmode=disable

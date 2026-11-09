@@ -48,7 +48,7 @@ $env:SUINING_PG_ANALYTICS_URL=$env:PG_ANALYTICS_URL
 
 服务强制参数绑定、utf8mb4、UTC 时间、时间值解析与严格 SQL 模式。保留微秒精度，避免刚入队的通知因时间截断而无法立即领取。SQL 适配覆盖本应用的重复参数、upsert、自增 ID、日期格式、拼接和锁语句，不是任意 PG SQL 的通用翻译器。
 
-当前业务服务不读取旧的 `DATABASE_URL` / `SUINING_DATABASE_URL` 作为主库回退。旧 PG 迁移须显式运行 `go run ./cmd/migrate --legacy-postgres`，仅该工具读取 `DATABASE_URL`。
+正式业务迁移入口 `go run ./cmd/migrate` 只处理 MySQL，不接受 PostgreSQL 业务库连接串。
 
 仓库提供 [Compose 模板](../deploy/dual-db.compose.yml) 和 [环境变量模板](../deploy/dual-db.env.example)。从仓库根目录执行：
 
