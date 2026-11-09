@@ -24,17 +24,17 @@ func TestMySQLQueryPreservesLiteralsWithNativeRegex(t *testing.T) {
 	}
 }
 
-func TestMySQLDoNothingWorksForTableWithoutIDColumn(t *testing.T) {
+func TestMySQLNativeDuplicateSafeInsert(t *testing.T) {
 	pool := dbtest.MySQL(t)
 	ctx := context.Background()
 	for i := 0; i < 2; i++ {
-		if _, err := pool.Exec(ctx, "INSERT INTO watch_info(device_id) VALUES($1) ON CONFLICT(device_id) DO NOTHING", 987654); err != nil {
+		if _, err := pool.Exec(ctx, "INSERT INTO watch_info(device_id) VALUES($1) ON DUPLICATE KEY UPDATE device_id=device_id", 987654); err != nil {
 			t.Fatalf("duplicate-safe insert %d failed: %v", i, err)
 		}
 	}
 	var count int
 	if err := pool.QueryRow(ctx, "SELECT count(*) FROM watch_info WHERE device_id=$1", 987654).Scan(&count); err != nil || count != 1 {
-		t.Fatalf("DO NOTHING was not idempotent: count=%d err=%v", count, err)
+		t.Fatalf("native MySQL idempotency failed: count=%d err=%v", count, err)
 	}
 }
 

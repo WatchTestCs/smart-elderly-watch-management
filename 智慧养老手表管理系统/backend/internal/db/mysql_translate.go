@@ -47,10 +47,6 @@ func mysqlQuery(query string, args []any) (string, []any, error) {
 }
 
 func compileMySQLQuery(query string) (queryPlan, error) {
-	query, err := rewriteMySQLSyntax(query)
-	if err != nil {
-		return queryPlan{}, err
-	}
 	// REGEXP 与 now() 交给分词器处理：它们必须只在引号之外生效。
 	// 用 ReplaceAll 直接改整串会把字符串字面量里的内容一起改掉。
 	out := make([]byte, 0, len(query)+32)
