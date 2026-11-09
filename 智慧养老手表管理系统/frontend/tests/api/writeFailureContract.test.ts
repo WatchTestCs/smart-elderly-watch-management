@@ -149,4 +149,22 @@ describe('write failure exit guard', () => {
     }
     expect(violations).toEqual([])
   })
+
+  it('keeps one-shot setup failures on the staged classifier', () => {
+    const consumers: string[] = []
+    const classifier = /from ['"][^'"]*domain\/setup['"]/
+    const violations: string[] = []
+    for (const file of sourceFiles(SRC)) {
+      const source = fs.readFileSync(file, 'utf8')
+      if (!classifier.test(source)) continue
+      consumers.push(path.relative(SRC, file))
+      for (const block of catchBlocks(source)) {
+        if (!/setupFailureMessage\s*\(/.test(block.text)) violations.push(path.relative(SRC, file))
+      }
+    }
+    // Derived from imports, not a file list: dropping the classifier entirely
+    // also fails this guard.
+    expect(consumers.length).toBeGreaterThan(0)
+    expect(violations).toEqual([])
+  })
 })

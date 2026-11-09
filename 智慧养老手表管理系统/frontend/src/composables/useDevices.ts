@@ -247,11 +247,12 @@ export function useDevices() {
       })
       accepted(data)
       if (typeof data.deviceNo !== 'string' || typeof data.secret !== 'string') throw new Error('invalid device registration response')
+      if (disposed) return
       state.createdDevice = { deviceNo: data.deviceNo, secret: data.secret }
       ElMessage({ type: 'success', message: '设备登记成功' })
       await loadDevices()
     } catch (error) {
-      ElMessage({ type: 'error', message: apiErrorMessage(error, '登记失败') })
+      if (!disposed) ElMessage({ type: 'error', message: apiErrorMessage(error, '登记失败') })
     } finally { state.creating = false }
   }
   async function destructiveOperation(row: DeviceRecord, prompt: string, path: string, success: string, onSuccess?: (data: Envelope & DeviceMutationResponse) => unknown | Promise<unknown>) {
@@ -263,11 +264,12 @@ export function useDevices() {
     try {
       const { data } = await post<DeviceMutationResponse>(path, { deviceId: row.deviceId })
       accepted(data)
+      if (disposed) return
       if (onSuccess) await onSuccess(data)
       else ElMessage({ type: 'success', message: success })
       await loadDevices()
     } catch (error) {
-      ElMessage({ type: 'error', message: apiErrorMessage(error, '设备操作未完成，请重试') })
+      if (!disposed) ElMessage({ type: 'error', message: apiErrorMessage(error, '设备操作未完成，请重试') })
     }
   }
   function resetSecret(row: DeviceRecord) {

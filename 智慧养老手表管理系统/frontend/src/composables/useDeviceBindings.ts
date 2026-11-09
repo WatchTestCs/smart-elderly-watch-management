@@ -13,6 +13,7 @@ export function useDeviceBindings(state: DeviceState, post: DevicePost) {
   let disposed = false
   let bindCodeRequest = 0
   let bindDialogRevision = 0
+  let creatingCode = false
 
   function openBindCodeDialog(row: DeviceRecord) {
     const wasVisible = state.bindCodeDialogVisible
@@ -46,6 +47,7 @@ export function useDeviceBindings(state: DeviceState, post: DevicePost) {
     }
   }
   async function createBindCode() {
+    if (creatingCode) return
     const oldId = state.bindOldId
     if (!oldId) {
       ElMessage({ type: 'warning', message: '请先选择要绑定的老人' })
@@ -55,6 +57,7 @@ export function useDeviceBindings(state: DeviceState, post: DevicePost) {
       ElMessage({ type: 'warning', message: '有效天数只能填数字' })
       return
     }
+    creatingCode = true
     const revision = bindDialogRevision
     try {
       const { data } = await post<NewBindCodeResponse>('createBindCode', { oldId, expireDays: state.bindExpireDays })
@@ -67,15 +70,17 @@ export function useDeviceBindings(state: DeviceState, post: DevicePost) {
       if (!disposed && revision === bindDialogRevision && state.bindCodeDialogVisible && String(state.bindOldId) === String(oldId)) {
         ElMessage({ type: 'error', message: apiErrorMessage(error, '生成失败') })
       }
-    }
+    } finally { creatingCode = false }
   }
   async function deleteBindCode(row: { id: DeviceId }) {
     try {
       const { data } = await post('deleteBindCode', { id: row.id })
       accepted(data)
+      if (disposed || !state.bindCodeDialogVisible) return
       ElMessage({ type: 'success', message: '已作废' })
       await loadBindCodes(state.bindOldId)
     } catch (error) {
+      if (disposed || !state.bindCodeDialogVisible) return
       ElMessage({ type: 'error', message: apiErrorMessage(error, '请求未完成，请重试') })
     }
   }
