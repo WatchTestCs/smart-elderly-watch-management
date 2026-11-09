@@ -14,6 +14,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 
 	dbstore "suining-care/internal/db"
+	"suining-care/internal/observability"
 	"suining-care/internal/devicerepo"
 	"suining-care/internal/securestore"
 	"suining-care/internal/telemetryrepo"
@@ -114,6 +115,10 @@ func DrainDurableTelemetryBatch(ctx context.Context, db *dbstore.Database, box *
 	if box == nil {
 		return 0, errors.New("missing telemetry encryption key")
 	}
+	batchStarted := time.Now()
+	defer func() {
+		observability.Default.Add("suining_telemetry_drain_seconds_total", time.Since(batchStarted).Seconds())
+	}()
 	tx, err := db.Begin(ctx)
 	if err != nil {
 		return 0, err
@@ -156,6 +161,7 @@ func DrainDurableTelemetryBatch(ctx context.Context, db *dbstore.Database, box *
 	if err := tx.Commit(ctx); err != nil {
 		return 0, err
 	}
+	observability.Default.Add("suining_telemetry_drain_processed_total", float64(processed))
 	return processed, nil
 }
 
