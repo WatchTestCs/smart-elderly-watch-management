@@ -171,7 +171,7 @@ jobs:
           npm ci --prefix SuiningWatch
           (cd 智慧养老手表管理系统/backend && go build -o "$RUNNER_TEMP/watch-e2e-server" ./cmd/server)
           export DATA_ENCRYPTION_KEY="$(openssl rand -base64 32)"
-          export DESKTOP_TOKEN="$(openssl rand -hex 32)"
+          export SUINING_DESKTOP_TOKEN="$(openssl rand -hex 32)"
           export IMAGE_DIR="$RUNNER_TEMP/watch-e2e-images"
           "$RUNNER_TEMP/watch-e2e-server" > evidence/ci/watch-integration/server.log 2>&1 &
           server_pid=$!
@@ -183,7 +183,7 @@ jobs:
             sleep 1
           done
           export WATCH_TEST_URL="http://$ADDR"
-          export WATCH_TEST_SETUP_TOKEN="$DESKTOP_TOKEN"
+          export WATCH_TEST_SETUP_TOKEN="$SUINING_DESKTOP_TOKEN"
           npm run test:e2e --prefix SuiningWatch 2>&1 | tee evidence/ci/watch-integration/result.txt
       - if: always()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
