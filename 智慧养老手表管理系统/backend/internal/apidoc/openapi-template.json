@@ -1229,10 +1229,10 @@
                   "properties": {
                     "bindingVersion": {},
                     "bound": {},
+                    "residentId": {},
                     "pendingAlarm": {},
                     "reportInterval": {},
-                    "serverTime": {},
-                    "residentId": {}
+                    "serverTime": {}
                   }
                 }
               }
@@ -1307,10 +1307,10 @@
                     "bound": {},
                     "deviceId": {},
                     "deviceNo": {},
-                    "protocolVersion": {},
-                    "maxBatchSize": {},
                     "residentId": {},
-                    "residentName": {}
+                    "residentName": {},
+                    "protocolVersion": {},
+                    "maxBatchSize": {}
                   }
                 }
               }

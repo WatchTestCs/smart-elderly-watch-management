@@ -344,8 +344,8 @@
       "secret"
     ],
     "response": [
-      "oldId",
-      "oldPersonName",
+      "residentId",
+      "residentName",
       "returnCode"
     ]
   },
@@ -476,7 +476,7 @@
     "response": [
       "bindingVersion",
       "bound",
-      "oldId",
+      "residentId",
       "pendingAlarm",
       "reportInterval",
       "returnCode",
@@ -514,9 +514,9 @@
       "bound",
       "deviceId",
       "deviceNo",
-      "oldId",
+      "residentId",
       "returnCode",
-      "oldPersonName",
+      "residentName",
       "protocolVersion",
       "maxBatchSize"
     ]
@@ -870,8 +870,27 @@
   },
   "POST /api/v1/health/baseline": {
     "file": "智慧养老手表管理系统/backend/internal/handlers/handler_health_baseline.go",
-    "request": ["oldId"],
-    "response": ["returnCode", "oldId", "metric", "ready", "sampleDays", "trustedDays", "rejectedDays", "confidence", "reason", "observedAt", "value", "baseline", "scale", "score", "direction", "anomalous"]
+    "request": [
+      "oldId"
+    ],
+    "response": [
+      "returnCode",
+      "oldId",
+      "metric",
+      "ready",
+      "sampleDays",
+      "trustedDays",
+      "rejectedDays",
+      "confidence",
+      "reason",
+      "observedAt",
+      "value",
+      "baseline",
+      "scale",
+      "score",
+      "direction",
+      "anomalous"
+    ]
   },
   "POST /api/v1/health/latest": {
     "file": "智慧养老手表管理系统/backend/internal/handlers/handler_health_latest.go",

@@ -109,7 +109,7 @@ for file in sorted((backend / "internal/handlers").glob("*.go")):
                 " HarmonyOS clients send optional platform=harmonyos with protocolVersion=1; "
                 "both are required together when platform is supplied. Authenticated success returns "
                 "protocolVersion=1 and maxBatchSize=200 plus the existing bindingVersion/owner. "
-                "Unsupported platform/version returns 400. Omit platform for the legacy login contract. "
+                "Unsupported platform/version returns 400. Omit platform when platform-specific capability negotiation is not needed. "
                 "Invalid credentials return 401 with code=DEVICE_AUTH_FAILED; disabled devices return 403."
             )
         if path == "/api/v1/health/latest":
