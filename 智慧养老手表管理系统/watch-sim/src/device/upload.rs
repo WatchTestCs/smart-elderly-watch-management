@@ -271,7 +271,7 @@ mod tests {
             binding_version: 3,
             samples: &refs,
         };
-        let owned = BatchRequest::new(&cred, 3, samples);
+        let owned = BatchRequest::new(&cred, 3, samples.clone());
         assert_eq!(
             serde_json::to_value(borrowed).unwrap(),
             serde_json::to_value(owned).unwrap()
