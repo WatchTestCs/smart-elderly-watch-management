@@ -8,8 +8,8 @@ import (
 	"encoding/json"
 	"time"
 
-	"suining-care/internal/securestore"
 	"suining-care/internal/observability"
+	"suining-care/internal/securestore"
 )
 
 const operationTimeout = 3 * time.Second
