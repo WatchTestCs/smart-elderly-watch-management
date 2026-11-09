@@ -6,7 +6,6 @@ import (
 	"errors"
 	"time"
 
-
 	"suining-care/internal/auth"
 	"suining-care/internal/db"
 	"suining-care/internal/inviterepo"
@@ -37,7 +36,7 @@ const (
 )
 
 func missing(err error) bool {
-	return errors.Is(err, sql.ErrNoRows) || errors.Is(err, sql.ErrNoRows)
+	return errors.Is(err, sql.ErrNoRows)
 }
 
 // Join owns the invitation lock, resident lock, account creation and code
