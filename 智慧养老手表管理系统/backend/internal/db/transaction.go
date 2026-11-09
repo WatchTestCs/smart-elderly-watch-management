@@ -13,53 +13,33 @@ func (t *Transaction) IsMySQL() bool { return t.myTx != nil }
 func (d *Database) SQL() *sql.DB     { return d.myPool }
 
 func (d *Database) Close() {
-	if d.myPool != nil {
-		if d.healthPool != nil {
-			d.healthPool.Close()
-		}
-		d.myPool.Close()
-	} else {
-		d.pgPool.Close()
+	if d.healthPool != nil {
+		d.healthPool.Close()
 	}
+	d.myPool.Close()
 }
 
 func (d *Database) Ping(ctx context.Context) error {
-	if d.myPool != nil {
-		if d.healthPool != nil {
-			return d.healthPool.PingContext(ctx)
-		}
-		return d.myPool.PingContext(ctx)
+	if d.healthPool != nil {
+		return d.healthPool.PingContext(ctx)
 	}
-	return d.pgPool.Ping(ctx)
+	return d.myPool.PingContext(ctx)
 }
 
 func (d *Database) Begin(ctx context.Context) (*Transaction, error) {
-	if d.myPool != nil {
-		tx, err := d.myPool.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
-		if err != nil {
-			return nil, err
-		}
-		return &Transaction{executor: executor{my: tx, packed: d.packed}, myTx: tx}, nil
-	}
-	tx, err := d.pgPool.Begin(ctx)
+	tx, err := d.myPool.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		return nil, err
 	}
-	return &Transaction{executor: executor{pg: tx}, pgTx: tx}, nil
+	return &Transaction{executor: executor{my: tx, packed: d.packed}, myTx: tx}, nil
 }
 
-func (t *Transaction) Commit(ctx context.Context) error {
-	if t.myTx != nil {
-		return t.myTx.Commit()
-	}
-	return t.pgTx.Commit(ctx)
+func (t *Transaction) Commit(context.Context) error {
+	return t.myTx.Commit()
 }
 
-func (t *Transaction) Rollback(ctx context.Context) error {
-	if t.myTx != nil {
-		return t.myTx.Rollback()
-	}
-	return t.pgTx.Rollback(ctx)
+func (t *Transaction) Rollback(context.Context) error {
+	return t.myTx.Rollback()
 }
 
 func (e executor) Exec(ctx context.Context, query string, args ...any) (pgconn.CommandTag, error) {
@@ -71,9 +51,6 @@ func (e executor) ExecBatch(ctx context.Context, query string, args ...any) (pgc
 	return e.exec(ctx, query, args, e.packed)
 }
 func (e executor) exec(ctx context.Context, query string, args []any, packed bool) (pgconn.CommandTag, error) {
-	if e.pg != nil {
-		return e.pg.Exec(ctx, query, args...)
-	}
 	q, a, err := mysqlQuery(query, args)
 	if err != nil {
 		return pgconn.CommandTag{}, err
@@ -90,9 +67,6 @@ func (e executor) exec(ctx context.Context, query string, args []any, packed boo
 }
 
 func (e executor) Query(ctx context.Context, query string, args ...any) (Rows, error) {
-	if e.pg != nil {
-		return e.pg.Query(ctx, query, args...)
-	}
 	q, a, err := mysqlQuery(query, args)
 	if err != nil {
 		return nil, err

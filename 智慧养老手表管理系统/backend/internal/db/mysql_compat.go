@@ -10,7 +10,6 @@ import (
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 )
 
 var insertReturning = regexp.MustCompile("(?is)^\\s*(INSERT\\s+INTO\\s+(?:`([^`]+)`|([a-z_][a-z0-9_]*))(?:\\s|\\().*)\\s+RETURNING\\s+([a-z_][a-z0-9_]*)\\s*$")
@@ -54,9 +53,6 @@ func validateMySQLReturning(table, column, insertSQL string) error {
 }
 
 func (e executor) QueryRow(ctx context.Context, query string, args ...any) Row {
-	if e.pg != nil {
-		return e.pg.QueryRow(ctx, query, args...)
-	}
 	if match := insertReturning.FindStringSubmatch(query); match != nil {
 		table := match[2]
 		if table == "" {
@@ -123,7 +119,6 @@ func (r idRow) Scan(dst ...any) error {
 }
 
 func IsForeignKey(err error) bool {
-	var p *pgconn.PgError
 	var m *mysql.MySQLError
-	return (errors.As(err, &p) && p.Code == "23503") || (errors.As(err, &m) && (m.Number == 1451 || m.Number == 1452))
+	return errors.As(err, &m) && (m.Number == 1451 || m.Number == 1452)
 }
