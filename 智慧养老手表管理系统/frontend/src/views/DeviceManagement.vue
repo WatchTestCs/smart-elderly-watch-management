@@ -24,40 +24,7 @@
     <el-dialog title="设备详情" v-model="deviceDetailVisible"><dl v-if="detailDevice" class="device-detail-grid"><dt>设备别名</dt><dd>{{ detailDevice.alias || '未命名设备' }}</dd><dt>设备号</dt><dd>{{ detailDevice.deviceNo }}</dd><dt>设备编号</dt><dd>{{ detailDevice.deviceId }}</dd><dt>设备型号</dt><dd>{{ detailDevice.model || '暂无信息' }}</dd><dt>绑定长者</dt><dd>{{ detailDevice.oldPersonName || '尚未绑定' }}</dd><dt>最近上报</dt><dd>{{ detailDevice.lastTime || '暂无记录' }}</dd><dt>位置坐标</dt><dd>{{ detailDevice.lastLng == null || detailDevice.lastLat == null ? '暂无数据' : detailDevice.lastLng + '，' + detailDevice.lastLat }}</dd></dl><template #footer><span ><el-button type="primary" @click="deviceDetailVisible = false">关闭详情</el-button></span></template></el-dialog>
     <aside class="device-onboarding"><img src="/static/img/care-courtyard.webp" alt="" width="960" height="411"><div><p class="collection-eyebrow">从一次连接开始</p><h2>让设备，成为关爱的延伸</h2><ol><li>登记手表，获取设备号与密钥。</li><li>在手表端配置连接信息。</li><li>生成绑定码，关联需要照护的长者。</li></ol><p class="collection-caption">设备注册后，请以实际上传记录确认连接是否正常。</p></div></aside>
     
-    <el-dialog :title="alertDialog.title" v-model="alertDialog.visible" width="620px">
-      <div v-if="alertDialog.loading" style="text-align:center;padding:20px;">正在读取 ...</div>
-      <div v-else-if="alertDialog.hasAlert === 0" class="no-alert">
-        <el-icon style="color:#52BAB5;font-size:32px;"><CircleCheckFilled /></el-icon>
-        <div style="margin-top:8px;">{{ alertDialog.message }}</div>
-      </div>
-      <div v-else>
-        <el-alert :title="'问题：' + alertDialog.reason" type="error" :closable="false" show-icon></el-alert>
-
-        <table class="alert-table">
-          <tbody>
-            <tr><th>设备</th><td>{{ alertDialog.deviceNo }}（{{ alertDialog.alias }}）</td></tr>
-            <tr><th>绑定老人</th><td>{{ alertDialog.oldPersonName }}</td></tr>
-            <tr v-if="alertDialog.value !== ''"><th>本次测量</th><td>{{ alertDialog.value }}</td></tr>
-            <tr v-if="alertDialog.threshold"><th>正常范围</th><td>{{ alertDialog.threshold }}</td></tr>
-            <tr><th>发生时间</th><td>{{ alertDialog.occurTime }}</td></tr>
-            <tr><th>判断依据</th><td>{{ alertDialog.detail }}</td></tr>
-            <tr><th>怎么处理</th><td>{{ alertDialog.advice }}</td></tr>
-          </tbody>
-        </table>
-
-        <div class="alert-actions">
-          <el-button type="primary" :loading="alertDialog.resolving" @click="resolveAlert">标记已处理（消除红点）</el-button>
-          <el-button plain @click="gotoPage(alertDialog.kind)">去相关页面看看</el-button>
-        </div>
-        <div class="tip">
-          「标记已处理」表示这个问题已经人工确认/跟进过了：设备类问题会记录为已处理，
-          心率血压会同时把这条记录从"异常"改为"已处理"，红点随之消失，历史记录仍然保留。
-        </div>
-      </div>
-      <template #footer><span  class="dialog-footer">
-        <el-button @click="alertDialog.visible = false">关 闭</el-button>
-      </span></template>
-    </el-dialog>
+    <DeviceAlertDialog :alert="alertDialog" @close="alertDialog.visible = false" @resolve="resolveAlert" @navigate="gotoPage(alertDialog.kind)" />
 
     <el-dialog title="待处理异常" v-model="workbench.visible" width="760px">
       <div class="tip">共 {{ workbench.list.length }} 条未处理异常。点「查看原因」看具体问题和处理办法，处理完点「标记已处理」消除红点。</div>
@@ -163,10 +130,11 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowDown, CircleCheckFilled, Plus } from '@element-plus/icons-vue'
+import { ArrowDown, Plus } from '@element-plus/icons-vue'
 import { useCollectionLayout } from '../composables/useCollectionLayout'
 import { useDevices } from '../composables/useDevices'
 import HarmonyWatchSetup from '../components/HarmonyWatchSetup.vue'
+import DeviceAlertDialog from '../components/DeviceAlertDialog.vue'
 
 const mobileLayout = useCollectionLayout()
 const {
