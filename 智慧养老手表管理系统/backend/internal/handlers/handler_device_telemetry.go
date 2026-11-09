@@ -85,7 +85,7 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 		// recheck this snapshot's epoch under the row lock before writing.
 		bindingVersion = d.HealthEpoch
 	}
-	locked, failure, lockErr := deviceworkflow.LockBoundDevice(ctx, tx, deviceNo, secret, bindingVersion)
+	locked, failure, lockErr := deviceworkflow.LockAuthenticatedDevice(ctx, tx, d, deviceNo, secret, bindingVersion)
 	if rollbackOnError(w, rollback, lockErr) {
 		return
 	}
