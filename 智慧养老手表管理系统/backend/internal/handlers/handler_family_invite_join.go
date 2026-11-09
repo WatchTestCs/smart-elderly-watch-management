@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"suining-care/internal/auth"
 	"suining-care/internal/inviterepo"
+	"suining-care/internal/inviteworkflow"
 	"suining-care/internal/response"
-	"suining-care/internal/userphone"
 	"time"
 	"unicode/utf8"
 )
@@ -79,114 +79,36 @@ func (h *Handler) inviteJoin(w http.ResponseWriter, r *http.Request) {
 		response.Fail(w, message)
 		return
 	}
-	ctx := r.Context()
-	tx, err := h.DB.Begin(ctx)
-	if internalError(w, err) {
-		return
-	}
-	// Preserve the invitation row lock through registration and consumption.
-	inv, err := inviterepo.LockCode(ctx, tx, registration.code)
-	if err != nil {
-		_ = tx.Rollback(ctx)
-		if isNotFound(err) {
-			response.Fail(w, "邀请码不存在，请向管理员确认")
-		} else {
-			response.Error500(w, ref())
-		}
-		return
-	}
-	switch inviteStatus(inv.Used, inv.ExpireTime, time.Now()) {
-	case "used":
-		_ = tx.Rollback(ctx)
-		response.Fail(w, "该邀请码已被使用")
-		return
-	case "expired":
-		_ = tx.Rollback(ctx)
-		response.Fail(w, "该邀请码已过期，请向管理员重新获取")
-		return
-	}
-	// 手机号是否已注册
-	lookup, err := userphone.SearchIndex(ctx, tx, h.Box, registration.familyPhone)
-	if err != nil {
-		_ = tx.Rollback(ctx)
-		response.Error500(w, ref())
-		return
-	}
-	dup, err := inviterepo.PhoneRegistered(ctx, tx, registration.familyPhone, lookup)
-	if err != nil {
-		_ = tx.Rollback(ctx)
-		response.Error500(w, ref())
-		return
-	}
-	// 邀请码绑定的老人须存在
-	if inv.ResidentID == nil {
-		_ = tx.Rollback(ctx)
-		response.Fail(w, "邀请码绑定的老人不存在，请联系管理员")
-		return
-	}
-	resident, err := inviterepo.LockResident(ctx, tx, *inv.ResidentID)
-	if err != nil {
-		_ = tx.Rollback(ctx)
-		if isNotFound(err) {
-			response.Fail(w, "邀请码绑定的老人不存在，请联系管理员")
-		} else {
-			response.Error500(w, ref())
-		}
-		return
-	}
-	// An invitation may activate only the same elder's pre-created, passwordless
-	// family record. It must never reset an active account or replace a binding.
-	var familyID int64
-	if resident.FamilyID != nil {
-		familyID, err = inviterepo.LockPasswordlessFamily(ctx, tx, *resident.FamilyID, registration.familyPhone, lookup)
-		if err != nil {
-			_ = tx.Rollback(ctx)
-			if isNotFound(err) {
-				response.Fail(w, "注册失败，请核对邀请码与信息后重试")
-			} else {
-				response.Error500(w, ref())
-			}
-			return
-		}
-	} else if dup {
-		_ = tx.Rollback(ctx)
-		response.Fail(w, "注册失败，请核对邀请码与信息后重试")
-		return
-	}
-	// 建 family 账号（密码 BCrypt 哈希）
-	hash, err := auth.Hash(registration.familyPassword)
-	if err != nil {
-		_ = tx.Rollback(ctx)
-		response.Error500(w, ref())
-		return
-	}
-	familyID, applied, err := inviterepo.SaveFamily(ctx, tx, inviterepo.FamilyRegistration{
-		Name: registration.familyName, Phone: registration.familyPhone, PasswordHash: hash,
+	result, failure, err := inviteworkflow.Join(r.Context(), h.DB, h.Box, inviteworkflow.Registration{
+		Code: registration.code, Name: registration.familyName,
+		Phone: registration.familyPhone, Password: registration.familyPassword,
 		Relation: registration.familyRelation, Sex: registration.familySex,
 		Address: registration.familyAddress,
-	}, resident.FamilyID, familyID, *inv.ResidentID)
-	if err != nil || !applied {
-		_ = tx.Rollback(ctx)
-		conflict409(w, "注册失败，请重试")
-		return
-	}
-	// 原子占用邀请码（防并发）
-	claimed, err := inviterepo.ConsumeCode(ctx, tx, inv.ID, familyID, time.Now())
-	if err != nil || !claimed {
-		_ = tx.Rollback(ctx)
-		conflict409(w, "邀请码已失效，请重新获取")
-		return
-	}
-	if internalError(w, tx.Commit(ctx)) {
-		return
-	}
-	nm := ""
-	if resident.Name != nil {
-		nm = *resident.Name
-	}
-	response.OK(w, map[string]any{
-		"familyId": familyID, "familyName": registration.familyName, "oldPersonName": nm,
 	})
+	if err != nil {
+		response.Error500(w, ref())
+		return
+	}
+	switch failure {
+	case inviteworkflow.CodeMissing:
+		response.Fail(w, "邀请码不存在，请向管理员确认")
+	case inviteworkflow.CodeUsed:
+		response.Fail(w, "该邀请码已被使用")
+	case inviteworkflow.CodeExpired:
+		response.Fail(w, "该邀请码已过期，请向管理员重新获取")
+	case inviteworkflow.ResidentMissing:
+		response.Fail(w, "邀请码绑定的老人不存在，请联系管理员")
+	case inviteworkflow.FamilyMismatch:
+		response.Fail(w, "注册失败，请核对邀请码与信息后重试")
+	case inviteworkflow.RegistrationLost:
+		conflict409(w, "注册失败，请重试")
+	case inviteworkflow.CodeClaimed:
+		conflict409(w, "邀请码已失效，请重新获取")
+	default:
+		response.OK(w, map[string]any{
+			"familyId": result.FamilyID, "familyName": result.Name, "oldPersonName": result.Resident,
+		})
+	}
 }
 
 type invitationRegistration struct {
