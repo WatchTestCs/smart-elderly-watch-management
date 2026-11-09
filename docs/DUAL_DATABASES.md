@@ -31,7 +31,6 @@ MySQL DSN 未显式设置时，当前后端使用驱动的 `interpolateParams=tr
 | `MYSQL_DSN` | Go 与迁移工具，go-sql-driver/mysql 原生 DSN，必须指定业务库 |
 | `PG_ANALYTICS_URL` | Go，专用分析库的 PG URL |
 | `SUINING_MYSQL_DSN` / `SUINING_PG_ANALYTICS_URL` | Tauri，将对应配置传给 Go |
-| `LEGACY_POSTGRES_URL` | 离线导入工具的旧 PG 主库 |
 | `TEST_MYSQL_DSN` / `TEST_DATABASE_URL` | 专用测试实例；测试创建并清理随机数据库或 schema |
 
 在 backend 目录执行，私下替换占位密码：
@@ -63,24 +62,11 @@ docker compose --env-file deploy/dual-db.env -f deploy/dual-db.compose.yml up -d
 
 MySQL 账号首次迁移需要业务库 DDL、索引、外键与触发器创建权限；运行需要业务表和 outbox 读写权限。PG 分析账号需要在专用库创建 `suining_analytics` schema、表、索引、视图及投影读写权限，报表账号另行授权 SELECT。
 
-## 初始化与旧库导入
+## 数据库初始化
 
 MySQL 迁移使用连接级 `GET_LOCK` 和脚本 SHA-256；非空且无本项目迁移记录的库拒绝初始化。MySQL DDL 会隐式提交，因此采用可重复执行的语句、最后记录版本，不宣称整份 DDL 可回滚。[MySQL 官方说明](https://dev.mysql.com/doc/refman/8.4/en/implicit-commit.html)
 
 PG 分析迁移使用事务及 advisory lock，只维护分析 schema，不修改旧业务 schema。
-
-迁移旧 PG 前，备份旧库和图片，停止旧、新应用写入，准备本项目已迁移的空 MySQL：
-
-```powershell
-$env:LEGACY_POSTGRES_URL='旧版PG连接串'
-$env:MYSQL_DSN='目标空MySQL的原生DSN'
-go run ./cmd/transfer-postgres
-go run ./cmd/transfer-postgres --apply
-```
-
-默认只预检查及输出逐表行数。`--apply` 使用旧 PG 的只读、可重复读快照，按外键顺序导入 MySQL 单个事务，保留 ID、密码哈希、设备关联、时间和 NULL；逐表核对行数后提交。失败时目标业务数据及分析事件一同回滚，源库只读，目标非空拒绝导入。目标建表是独立阶段，导入失败不会删除已创建的空表。
-
-导入会生成分析事件，PG 恢复后补齐。图片需另行复制。本工具支持 PG 0001–0006 结构，以及带健康采样的 0007／0008；后两者同时导入采样、变更记录、修订时钟与设备绑定版本；迁移前必须完成预检查，不会自动修复来源库中的历史错误字段。上线前核对行数、账号、设备归属、照护履历及图片，再切换配置。
 
 ## 同步、故障与重建
 
@@ -114,7 +100,7 @@ SELECT * FROM suining_analytics.care_summary ORDER BY source_id,state;
 
 测试命令与测试库要求见 [测试指南](TESTING.md)。真实后端浏览器脚本需独立空 MySQL、服务 URL、桌面测试令牌与 `CARE_E2E_TEST_ONLY=1`，仅支持 `qa_arch_` 前缀测试库。
 
-源码：[数据库适配](../智慧养老手表管理系统/backend/internal/db/database.go) · [同步](../智慧养老手表管理系统/backend/internal/analytics/sync.go) · [离线导入](../智慧养老手表管理系统/backend/cmd/transfer-postgres/main.go) · [回填](../智慧养老手表管理系统/backend/cmd/analytics-backfill/main.go)。
+源码：[数据库适配](../智慧养老手表管理系统/backend/internal/db/database.go) · [同步](../智慧养老手表管理系统/backend/internal/analytics/sync.go) · [回填](../智慧养老手表管理系统/backend/cmd/analytics-backfill/main.go)。
 
 ## 业务连接调优
 

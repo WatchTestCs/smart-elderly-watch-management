@@ -6,7 +6,7 @@ Go 服务端负责处理业务 API、手表设备接入、服务端会话、图�
 
 ## 技术栈与代码结构
 
-Go 模块名为 `suining-care`，`go.mod` 声明最低版本为 Go 1.26.0（工具链 Go 1.26.10，CI 覆盖 Go 1.26.10 与 1.27.2）。HTTP 层基于标准库 `net/http`，MySQL 访问使用 `database/sql` 与 `go-sql-driver/mysql`，PostgreSQL 分析投影与旧库迁移工具使用 `pgx/v5`，不依赖外部消息队列或分布式事务协调器。
+Go 模块名为 `suining-care`，使用 Go 1.27.3。HTTP 层基于标准库 `net/http`，MySQL 访问使用 `database/sql` 与 `go-sql-driver/mysql`，PostgreSQL 分析投影使用 `pgx/v5`，不依赖外部消息队列或分布式事务协调器。
 
 | 目录 / 入口 | 职责说明 |
 | --- | --- |
@@ -14,10 +14,9 @@ Go 模块名为 `suining-care`，`go.mod` 声明最低版本为 Go 1.26.0（工�
 | `internal/handlers` | 账号、档案、设备、健康、公告、照护与诊断 API，以及图片读写和内嵌静态资源服务 |
 | `internal/auth` / `session` / `csrf` / `ratelimit` | 角色权限校验、BCrypt 密码哈希、会话管理（默认存数据库，可选单实例内存模式）、CSRF 防护与请求限流 |
 | `internal/care` | 告警通知投递、超时升级与照护工单后台作业 |
-| `internal/db` | MySQL 连接池、SQL 方言适配、事务封装、自动迁移与旧版 PG 兼容层 |
+| `internal/db` | MySQL 连接池、事务封装、SQL 方言适配与数据库迁移 |
 | `internal/analytics` | PostgreSQL 分析表结构、outbox 异步同步、事件去重、删除墓碑与历史数据回填 |
 | `cmd/migrate` | 数据库迁移命令行工具，默认迁移 MySQL，可通过参数指定迁移 PG |
-| `cmd/transfer-postgres` | 旧版 PG 业务库到 MySQL 的离线预检查与单事务全量导入工具 |
 | `cmd/analytics-backfill` | 将现有 MySQL 业务数据批量加入 PG 分析回填队列 |
 | `migrations` / `VERSION` | 编译期通过 `embed` 内嵌的 SQL 迁移脚本与统一版本号文件 |
 
@@ -75,16 +74,7 @@ go run ./cmd/server
 
 建档、设备绑定、SOS 求助、工单处置与主管复核均在 MySQL 事务内完成。MySQL 触发器在同一事务中写入分析事件 outbox，确保业务回滚不会产生脏分析事件。后台 worker 异步消费 outbox 并幂等写入 PostgreSQL 的 `suining_analytics.record` 表及 `daily_health`、`care_summary` 视图。
 
-服务端启动时会自动执行内嵌的 MySQL 迁移脚本（也可手动运行 `go run ./cmd/migrate`）。如需将旧版 PostgreSQL 业务库的数据迁移至 MySQL，请先停止服务写入并做好备份，配置 `LEGACY_POSTGRES_URL` 与 `MYSQL_DSN` 后执行：
-
-```powershell
-# 仅执行只读预检查
-go run ./cmd/transfer-postgres
-# 在单个目标事务中正式导入空 MySQL 库
-go run ./cmd/transfer-postgres --apply
-```
-
-该工具支持旧版 PG 0001 至 0008 schema，导入时会保留原有记录 ID、哈希值与空值，并逐表核对行数。
+服务端启动时自动执行内嵌 MySQL 迁移；运维也可通过 `go run ./cmd/migrate` 单独执行。业务数据恢复使用 MySQL 备份与恢复流程。
 
 ## 本地测试与回归
 
