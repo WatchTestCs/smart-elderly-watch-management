@@ -77,7 +77,7 @@ func BindLookupKey(ctx context.Context, tx *db.Transaction, box *securestore.Box
 		return err
 	}
 	if _, err := tx.Exec(ctx, `INSERT INTO account_phone_key_state(singleton,lookup_verifier)
- VALUES(1,$1) ON CONFLICT DO NOTHING`, fingerprint); err != nil {
+ VALUES(1,$1) ON DUPLICATE KEY UPDATE singleton=singleton`, fingerprint); err != nil {
 		return errors.New("cannot register administrator phone lookup key")
 	}
 	var actual string

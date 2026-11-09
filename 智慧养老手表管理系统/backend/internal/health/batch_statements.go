@@ -18,7 +18,7 @@ const batchLookupPrefix = `SELECT sample_id,version,revision,CASE WHEN version >
 const batchLookupSuffix = ` THEN payload ELSE NULL END FROM health_sample WHERE sample_id IN `
 const batchUpsertPrefix = `INSERT INTO health_sample(sample_id,old_id,device_id,epoch,version,revision,payload,source,source_device,metric,semantics,sample_start,sample_end,deleted) VALUES `
 const batchUpsertSuffix = `
-	 ON CONFLICT(sample_id) DO UPDATE SET version=EXCLUDED.version,revision=EXCLUDED.revision,payload=EXCLUDED.payload,source=EXCLUDED.source,source_device=EXCLUDED.source_device,metric=EXCLUDED.metric,semantics=EXCLUDED.semantics,sample_start=EXCLUDED.sample_start,sample_end=EXCLUDED.sample_end,deleted=EXCLUDED.deleted`
+	 AS new ON DUPLICATE KEY UPDATE version=new.version,revision=new.revision,payload=new.payload,source=new.source,source_device=new.source_device,metric=new.metric,semantics=new.semantics,sample_start=new.sample_start,sample_end=new.sample_end,deleted=new.deleted`
 const batchChangesPrefix = `INSERT INTO health_change(revision,old_id,sample_id,payload) VALUES `
 
 // Cache complete immutable statements, not just VALUES fragments. This avoids

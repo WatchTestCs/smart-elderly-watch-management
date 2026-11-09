@@ -27,7 +27,7 @@ type Alert struct {
 const vitalAlertSelect = `SELECT r.id, r.device_id, r.old_id, r.hr, r.bp, r.rate_state, r.pre_state,
 		COALESCE((r.rate_handled_at IS NOT NULL AND r.create_time <= r.rate_handled_at), false),
 		COALESCE((r.pre_handled_at IS NOT NULL AND r.create_time <= r.pre_handled_at), false),
-		TO_CHAR(r.create_time,'YYYY-MM-DD HH24:MI:SS'), o.name, w.hrf, w.hrl, w.bpf, w.bpl
+		DATE_FORMAT(r.create_time,'%Y-%m-%d %H:%i:%s'), o.name, w.hrf, w.hrl, w.bpf, w.bpl
 		FROM ratepre r LEFT JOIN oldperson o ON o.old_id=r.old_id
 		LEFT JOIN watch_info w ON w.device_id=r.device_id`
 

@@ -21,7 +21,7 @@ type noticeImage struct {
 	PicName *string `json:"picName"`
 }
 
-const textColumns = `text_id, title, text_main, TO_CHAR(time,'YYYY-MM-DD HH24:MI:SS.MS') AS time, pic_id`
+const textColumns = `text_id, title, text_main, LEFT(DATE_FORMAT(time,'%Y-%m-%d %H:%i:%s.%f'),23) AS time, pic_id`
 
 // POST /api/v1/notices/list —— 公告列表（标题模糊+分页）。
 func (h *Handler) listNotices(w http.ResponseWriter, r *http.Request) {

@@ -26,7 +26,7 @@ const ownedDailyRecords = `(SELECT * FROM (SELECT daily.*,
 // 每位老人当前主设备的最新日记录。
 const stepLatestSelect = `SELECT o.name AS name, o.old_id AS oldId, o.sex AS sex,` +
 	` w.step AS step, w.sleep AS sleep, w.sleep_sate AS sleepAlertState,` +
-	` TO_CHAR(w.create_time,'YYYY-MM-DD') AS createTime` +
+	` DATE_FORMAT(w.create_time,'%Y-%m-%d') AS createTime` +
 	` FROM oldperson o` +
 	` INNER JOIN (SELECT *, ROW_NUMBER() OVER (PARTITION BY device_id,old_id ORDER BY create_time DESC, id DESC) AS rn FROM ` + ownedDailyRecords + ` daily) w` +
 	` ON w.device_id=o.device_id AND w.old_id=o.old_id AND w.rn=1`
@@ -49,7 +49,7 @@ func (h *Handler) listActivityHistory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	items, ok := queryRows(h, w, r.Context(), scanActivityRecord, `SELECT o.name AS name, o.old_id AS oldId, o.sex AS sex,`+
-		` w.step AS step, w.sleep AS sleep, w.sleep_sate AS sleepAlertState, TO_CHAR(w.create_time,'YYYY-MM-DD') AS createTime`+
+		` w.step AS step, w.sleep AS sleep, w.sleep_sate AS sleepAlertState, DATE_FORMAT(w.create_time,'%Y-%m-%d') AS createTime`+
 		` FROM oldperson o INNER JOIN `+ownedDailyRecords+` w ON w.device_id=o.device_id AND w.old_id=o.old_id`+
 		` WHERE o.old_id=$1 ORDER BY w.create_time DESC, w.id DESC LIMIT 1`, oldID)
 	if !ok {
@@ -65,7 +65,7 @@ func (h *Handler) getActivityChart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	items, ok := queryRows(h, w, r.Context(), scanActivityRecord, `SELECT r.name, r.oldId, r.sex, r.step, r.sleep, r.sleepAlertState,`+
-		` TO_CHAR(r.create_time,'YYYY-MM-DD') AS createTime FROM (`+
+		` DATE_FORMAT(r.create_time,'%Y-%m-%d') AS createTime FROM (`+
 		` SELECT o.name AS name, o.old_id AS oldId, o.sex AS sex, w.step AS step, w.sleep AS sleep,`+
 		` w.sleep_sate AS sleepAlertState, w.create_time, w.id`+
 		` FROM oldperson o INNER JOIN `+ownedDailyRecords+` w ON w.device_id=o.device_id AND w.old_id=o.old_id`+

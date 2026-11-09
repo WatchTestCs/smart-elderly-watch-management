@@ -58,7 +58,7 @@ func (h *Handler) getVitalChart(w http.ResponseWriter, r *http.Request) {
 		bps = append(bps, bp)
 		createTimes = append(createTimes, ct)
 		return nil
-	}, `SELECT r.hr AS hr, r.bp AS bp, TO_CHAR(r.create_time,'YYYY-MM-DD HH24:MI:SS') AS createTime
+	}, `SELECT r.hr AS hr, r.bp AS bp, DATE_FORMAT(r.create_time,'%Y-%m-%d %H:%i:%s') AS createTime
 		FROM (SELECT id, hr, bp, create_time FROM ratepre WHERE old_id=$1 ORDER BY create_time DESC, id DESC LIMIT 30) r
 		ORDER BY r.create_time ASC, r.id ASC`, oldID)
 	if internalError(w, err) {
