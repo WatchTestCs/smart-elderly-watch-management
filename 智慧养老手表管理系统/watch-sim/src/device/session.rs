@@ -7,11 +7,7 @@ use crate::transport::TransportError;
 
 impl DeviceSession {
     pub(super) fn post_raw(&self, path: &str, raw: &[u8]) -> Result<Reply, TransportError> {
-        if let Some(signer) = self.signer.as_deref() {
-            self.client.post_raw_prepared(path, raw, signer)
-        } else {
-            self.client.post_raw(path, raw, None)
-        }
+        self.client.post_raw_prepared(path, raw, &self.signer)
     }
 
     fn post_json(&self, path: &str, body: &serde_json::Value) -> Result<Reply, TransportError> {

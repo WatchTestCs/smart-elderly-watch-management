@@ -59,7 +59,7 @@ pub struct HeartbeatOutcome {
 pub struct DeviceSession {
     cred: Credentials,
     client: Arc<Client>,
-    signer: Option<Box<crate::protocol::PreparedSigner>>,
+    signer: crate::protocol::PreparedSigner,
     platform: Platform,
     app_version: String,
     binding: Option<Binding>,
@@ -77,7 +77,7 @@ impl DeviceSession {
         platform: Platform,
         app_version: String,
     ) -> Self {
-        let signer = Some(Box::new(crate::protocol::PreparedSigner::new(&cred)));
+        let signer = crate::protocol::PreparedSigner::new(&cred);
         DeviceSession {
             cred,
             client,
