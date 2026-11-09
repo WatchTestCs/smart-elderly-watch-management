@@ -1,3 +1,5 @@
+import { readTimeoutError } from '../api/httpContract'
+
 // Read-only queue: an abandoned transport must never delay or overwrite newer state.
 export function awaitAbortable<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
   return new Promise<T>((resolve, reject) => {
@@ -44,7 +46,7 @@ export function createLatestRead<P, T>(
           if (!disposed && job.revision === revision) accept(value, job.params)
         } catch (error) {
           if (!disposed && job.revision === revision) {
-            if (timedOut) reject(new Error('查询超时'))
+            if (timedOut) reject(readTimeoutError())
             else if (!current.signal.aborted) reject(error)
           }
         } finally {

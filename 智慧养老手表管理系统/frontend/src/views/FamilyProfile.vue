@@ -185,7 +185,7 @@ async function editFamily() {
 }
 async function handleAvatarSuccess(res: { returnCode?: string; filename?: string } | null) {
   if (!res || res.returnCode !== '1111' || !res.filename) {
-    ElMessage.error('头像上传未成功，请重试')
+    ElMessage.error(apiErrorMessage({ cause: res }, '头像上传未成功'))
     return
   }
   try {

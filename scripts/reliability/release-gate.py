@@ -9,12 +9,15 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
+# The backend CI matrix is the single source of truth; the guard in
+# test_release_gate.py fails if this constant drifts from the workflow.
+BACKEND_GO_VERSION = "1.27.3"
+
 REQUIRED_CI_JOBS = (
     "Core CI / required",
     "Frontend / Build and dependency audit",
     "UI Quality / verify",
-    "Backend / Test, build and vet (Go 1.26.10)",
-    "Backend / Test, build and vet (Go 1.27.2)",
+    f"Backend / Test, build and vet (Go {BACKEND_GO_VERSION})",
     "Watch protocol / Protocol and dependency audit",
     "Watch protocol / Real backend and lost-ack recovery",
     "Watch protocol / HarmonyOS SDK compile (no hardware)",
@@ -26,7 +29,7 @@ REQUIRED_CI_JOBS = (
 )
 REQUIRED_SECURITY_JOBS = ("CodeQL / go", "CodeQL / javascript-typescript")
 REQUIRED_ARTIFACTS = (
-    "backend-1.26.10-", "backend-1.27.2-", "frontend-", "ui-quality-",
+    f"backend-{BACKEND_GO_VERSION}-", "frontend-", "ui-quality-",
     "watch-", "watch-integration-", "watch-native-", "windows-sidecar-",
     "windows-desktop-", "security-",
 )

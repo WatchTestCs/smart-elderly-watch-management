@@ -159,8 +159,8 @@ async function checkCode() {
     } else {
       codeMessage.value = data.message || '邀请码无效'
     }
-  } catch {
-    if (revision === codeRequest) codeMessage.value = '邀请码验证失败，请稍后重试'
+  } catch (error) {
+    if (revision === codeRequest) codeMessage.value = apiErrorMessage(error, '邀请码暂时无法验证')
   }
 }
 async function submitForm() {

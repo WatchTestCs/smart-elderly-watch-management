@@ -27,10 +27,10 @@ import { ArrowRight } from '@element-plus/icons-vue'
 import { reactive, ref } from 'vue'
 import type { FormInstance } from 'element-plus'
 import { useRouter } from 'vue-router'
-import { apiErrorMessage } from '../api/httpContract'
-import axios from 'axios'
+import { api } from '../api/client'
 import { loadSession } from '../auth'
 import { createAdministrator } from '../desktop'
+import { setupFailureMessage } from '../domain/setup'
 
 const router = useRouter()
 const form = ref<FormInstance | null>(null)
@@ -46,15 +46,17 @@ async function submit() {
   if (busy.value || !await form.value?.validate().catch(() => false)) return
   busy.value = true
   error.value = ''
+  let accountCreated = false
   try {
     await createAdministrator({ ...account })
-    await axios.post('/api/v1/auth/login', { phone: account.phone, password: account.password })
+    accountCreated = true
+    await api.post('/api/v1/auth/login', { phone: account.phone, password: account.password })
     account.password = ''
     const loggedIn = await loadSession(true)
     if (!loggedIn) throw new Error('Session missing')
     await router.replace('/operations/overview')
   } catch (cause) {
-    error.value = apiErrorMessage(cause, '暂时无法创建，请检查填写的信息后重试。')
+    error.value = setupFailureMessage(accountCreated, cause)
   } finally { busy.value = false }
 }
 </script>

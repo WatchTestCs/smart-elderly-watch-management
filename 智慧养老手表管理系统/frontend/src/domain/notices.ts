@@ -32,3 +32,8 @@ export interface NoticeCommentsResponse {
 export function noticeImageUrl(name: string): string {
   return '/api/v1/image/download?name=' + encodeURIComponent(name)
 }
+
+// A save is only safe for the record whose content is currently displayed.
+export function noticeEditTarget(loaded: string | null, current: string): string | null {
+  return loaded !== null && loaded === current ? loaded : null
+}

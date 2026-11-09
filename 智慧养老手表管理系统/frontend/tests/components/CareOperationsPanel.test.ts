@@ -3,6 +3,7 @@ import { defineComponent } from 'vue'
 import { expect, it, vi } from 'vitest'
 import axios from 'axios'
 import CareOperationsPanel from '@/components/CareOperationsPanel.vue'
+import { REQUEST_TIMEOUT_MS } from '@/api/client'
 
 const Button = defineComponent({ emits: ['click'], template: '<button @click="$emit(\'click\')"><slot /></button>' })
 const Select = defineComponent({ emits: ['change'], template: '<button @click="$emit(\'change\', \'caregiver\')">更改岗位</button>' })
@@ -35,6 +36,6 @@ it('ignores a late staff response after the component unmounts', async () => {
   view.unmount()
   finishStaff({ data: { staff: [{ id: 1, name: 'late', duty: 'caregiver' }] } })
   await flushPromises()
-  expect(axios.post).toHaveBeenCalledWith('/api/v1/care/staff', {}, { withCredentials: true, signal: undefined })
+  expect(axios.post).toHaveBeenCalledWith('/api/v1/care/staff', {}, { withCredentials: true, signal: undefined, timeout: REQUEST_TIMEOUT_MS })
   vi.restoreAllMocks()
 })

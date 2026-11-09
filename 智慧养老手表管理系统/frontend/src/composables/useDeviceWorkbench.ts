@@ -1,4 +1,5 @@
 import { ElMessage } from 'element-plus'
+import { readErrorMessage } from '../api/httpContract'
 import type { AlertDetailResponse, DeviceId, DeviceRecord, DeviceState } from './deviceModels'
 
 type AlertKind = 'person' | 'rate' | 'pre'
@@ -39,6 +40,7 @@ export function useDeviceWorkbench(
     const results: (DeviceRecord | null)[] = Array(pending.length).fill(null)
     let nextIndex = 0
     let failed = false
+    let firstError: unknown = null
 
     async function worker(): Promise<void> {
       while (nextIndex < pending.length && current()) {
@@ -57,9 +59,10 @@ export function useDeviceWorkbench(
             oldPersonName: detail.oldPersonName ?? device.oldPersonName ?? '',
             kind, kindText: detail.kindText, reason: detail.reason, recordId: detail.recordId
           }
-        } catch {
+        } catch (error) {
           if (!current()) return
           failed = true
+          if (firstError === null) firstError = error
         } finally {
           clearTimeout(timeout)
           activeReads.delete(controller)
@@ -70,7 +73,7 @@ export function useDeviceWorkbench(
     await Promise.all(Array.from({ length: Math.min(6, pending.length) }, () => worker()))
     if (!current()) return
     state.workbench.list = results.filter((row): row is DeviceRecord => row !== null)
-    if (failed) ElMessage({ type: 'warning', message: '部分异常详情加载失败，请刷新后重试' })
+    if (failed) ElMessage({ type: 'warning', message: readErrorMessage(firstError, '部分异常详情加载失败') })
   }
 
   function disposeWorkbench(): void {

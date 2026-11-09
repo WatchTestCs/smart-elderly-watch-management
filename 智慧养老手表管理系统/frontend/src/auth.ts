@@ -1,5 +1,6 @@
 import { reactive } from 'vue'
 import axios, { type AxiosError } from 'axios'
+import { REQUEST_TIMEOUT_MS } from './api/client'
 import { ElMessage } from 'element-plus'
 import { apiErrorMessage, assertApiResponse, isApplicationAPI } from './api/httpContract'
 import store from './store'
@@ -82,14 +83,21 @@ export function loadSession (refresh = false): Promise<SessionAccount | null> {
   return flight
 }
 
-export function endSession () {
-  return axios.post('/api/v1/auth/logout', {}, { skipSession: true, headers: { [authState.csrfHeader]: authState.csrfToken } }).then(() => {
+export async function endSession () {
+  try {
+    await axios.post('/api/v1/auth/logout', {}, { skipSession: true, timeout: REQUEST_TIMEOUT_MS, headers: { [authState.csrfHeader]: authState.csrfToken } })
+  } finally {
+    // A lost response may still mean the server destroyed the session. Keeping
+    // stale credentials would show an account that no longer exists until the
+    // next request happens to return 401.
     invalidateSession()
-  })
+  }
 }
 
 export function installHttpSecurity (router: { currentRoute: { value: { path: string } }; replace?: (path: string) => unknown }) {
   axios.defaults.withCredentials = true
+  // Covers the calls that bypass api.post (local logout, session probe).
+  axios.defaults.timeout = REQUEST_TIMEOUT_MS
   axios.interceptors.request.use(config => {
     if (config.skipSession || !isApplicationAPI(config.url)) return config
     if (['get', 'head', 'options'].includes((config.method || 'get').toLowerCase())) return config

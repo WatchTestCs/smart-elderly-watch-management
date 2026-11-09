@@ -1,5 +1,6 @@
 import copy
 import importlib.util
+import re
 from pathlib import Path
 import unittest
 import urllib.parse
@@ -10,13 +11,13 @@ spec.loader.exec_module(gate)
 SHA = "a"*40
 CI_JOBS = (
     "Core CI / required", "Frontend / Build and dependency audit", "UI Quality / verify",
-    "Backend / Test, build and vet (Go 1.26.10)", "Backend / Test, build and vet (Go 1.27.2)",
+    f"Backend / Test, build and vet (Go {gate.BACKEND_GO_VERSION})",
     "Watch protocol / Protocol and dependency audit", "Watch protocol / Real backend and lost-ack recovery",
     "Watch protocol / HarmonyOS SDK compile (no hardware)", "Watch simulator",
     "Windows sidecar contract / verify", "Windows sidecar contract / Tauri build and installation",
     "Deployment and alerts / compose-and-alert-rules", "Current-source vulnerability scan",
 )
-ARTIFACT_PREFIXES = ("backend-1.26.10-", "backend-1.27.2-", "frontend-", "ui-quality-",
+ARTIFACT_PREFIXES = (f"backend-{gate.BACKEND_GO_VERSION}-", "frontend-", "ui-quality-",
                      "watch-", "watch-integration-", "watch-native-", "windows-sidecar-",
                      "windows-desktop-", "security-")
 
@@ -55,7 +56,7 @@ class ReleaseGateTests(unittest.TestCase):
     def test_accepts_exact_source_evidence(self):
         result = gate.verify("owner/repo", "preview", SHA, self.api(self.fixture()))
         self.assertEqual(result["source_sha"], SHA)
-        self.assertEqual(len(result["artifacts"]), 10)
+        self.assertEqual(len(result["artifacts"]), len(ARTIFACT_PREFIXES))
         self.assertEqual(len(result["jobs"]), len(CI_JOBS))
 
     def test_every_required_job_must_pass_even_when_workflow_and_core_gate_are_green(self):
@@ -87,6 +88,16 @@ class ReleaseGateTests(unittest.TestCase):
                 data["artifacts"] = [a for a in data["artifacts"] if a["name"] != prefix + SHA]
                 with self.assertRaises(ValueError):
                     gate.verify("owner/repo", "preview", SHA, self.api(data))
+
+    def test_backend_go_version_matches_ci_matrix(self):
+        workflow = (Path(__file__).resolve().parents[2] / ".github/workflows/reusable-backend.yml").read_text(encoding="utf-8")
+        matrix = re.search(r"^\s*go-version:\s*\[([^]]+)\]", workflow, re.MULTILINE)
+        self.assertIsNotNone(matrix, "backend workflow must declare an explicit go-version matrix")
+        versions = re.findall(r"\d+\.\d+\.\d+", matrix.group(1))
+        self.assertEqual(versions, [gate.BACKEND_GO_VERSION])
+        self.assertEqual(len(versions), 1, "backend verification must run exactly one Go version")
+        self.assertIn(f"Backend / Test, build and vet (Go {versions[0]})", CI_JOBS)
+        self.assertIn(f"backend-{versions[0]}-", ARTIFACT_PREFIXES)
 
     def test_security_workflow_green_does_not_mask_skipped_codeql(self):
         for job in ("CodeQL / go", "CodeQL / javascript-typescript"):

@@ -129,7 +129,7 @@ describe('care task read scheduling', () => {
     const button = view.findAll('.care-task-actions button').find(button => button.text() === '处置记录')!
     await button.trigger('click')
     await vi.advanceTimersByTimeAsync(10000)
-    expect(view.text()).toContain('审计记录读取超时')
+    expect(view.text()).toContain('查询超时')
     expect(view.text()).not.toContain('正在读取记录')
     expect(post.mock.calls[1][2].signal.aborted).toBe(true)
     await button.trigger('click')

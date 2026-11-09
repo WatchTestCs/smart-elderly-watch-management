@@ -105,7 +105,7 @@ import { useCollectionLayout } from '@/composables/useCollectionLayout'
 import { useRecordCharts } from '@/composables/useRecordCharts'
 import { createLatestRead } from '@/composables/latestRead'
 import { api, accepted, type Envelope } from '../api/client'
-import { apiErrorMessage } from '../api/httpContract'
+import { apiErrorMessage, transportOutcome, UNCONFIRMED_MESSAGE } from '../api/httpContract'
 import RecordCards from '@/components/RecordCards.vue'
 import HealthAlertDialog from '@/components/records/HealthAlertDialog.vue'
 import type { VitalAlertDetail, VitalAlertState } from '@/domain/vitals'
@@ -149,6 +149,7 @@ function emptyAlert(): VitalAlertState {
   }
 }
 const alertDialog = ref<VitalAlertState>(emptyAlert())
+const resolvingRow = ref(false)
 
 async function loadAlertCount() {
   try {
@@ -218,21 +219,28 @@ async function resolveAlert(kind: string) {
   } finally { alertDialog.value.resolving = false }
 }
 async function resolveRow(row: VitalRow) {
+  if (resolvingRow.value) return
   const kinds = [
     ...(row.rateState == 1 ? ['rate'] : []),
     ...(row.preState == 1 ? ['pre'] : [])
   ]
   if (!kinds.length) return
-  const results = await Promise.allSettled(kinds.map(kind =>
-    api.post<Envelope>('api/v1/vitals/alerts/resolve', { recordId: row.recordId, kind })
-      .then(({ data }) => accepted(data))
-  ))
-  const failed = results.filter(result => result.status === 'rejected').length
-  ElMessage({
-    type: failed ? 'warning' : 'success',
-    message: failed ? '部分异常未处理完成，请核对后重试。' : '已处理，红点已消除'
-  })
-  await Promise.all([loadVitals(true), getCount()])
+  resolvingRow.value = true
+  try {
+    const results = await Promise.allSettled(kinds.map(kind =>
+      api.post<Envelope>('api/v1/vitals/alerts/resolve', { recordId: row.recordId, kind })
+        .then(({ data }) => accepted(data))
+    ))
+    const failures = results.flatMap(result => result.status === 'rejected' ? [result.reason] : [])
+    if (failures.some(error => ['timeout', 'network'].includes(transportOutcome(error)))) {
+      ElMessage({ type: 'error', message: UNCONFIRMED_MESSAGE })
+    } else if (failures.length) {
+      ElMessage({ type: 'warning', message: apiErrorMessage(failures[0], '部分异常未处理完成') })
+    } else {
+      ElMessage({ type: 'success', message: '已处理，红点已消除' })
+    }
+    await Promise.all([loadVitals(true), getCount()])
+  } finally { resolvingRow.value = false }
 }
 function togglePendingAlerts() {
   if (onlyPendingAlerts.value) {

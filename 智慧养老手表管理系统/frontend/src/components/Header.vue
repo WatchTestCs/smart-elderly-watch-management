@@ -22,6 +22,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { authState, endSession } from '../auth'
+import { apiErrorMessage } from '../api/httpContract'
 
 const router = useRouter()
 const login_username = computed(() => authState.account?.displayName || '')
@@ -44,10 +45,11 @@ async function logout() {
   } catch { return }
   try {
     await endSession()
-    await router.push('/sign-in')
-  } catch {
-    ElMessage.error('退出未能完成，请检查网络后重试')
+  } catch (error) {
+    ElMessage.error(apiErrorMessage(error, '退出未能完成'))
   }
+  // endSession invalidates local state even when the response was lost.
+  await router.push('/sign-in')
 }
 onMounted(applyTextSize)
 </script>

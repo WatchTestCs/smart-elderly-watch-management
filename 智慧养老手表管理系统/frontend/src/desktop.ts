@@ -1,4 +1,4 @@
-import axios from 'axios'
+import { api } from './api/client'
 import { invoke, isTauri } from '@tauri-apps/api/core'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 
@@ -12,7 +12,7 @@ export async function createAdministrator(account: {
   phone: string
   password: string
 }) {
-  if (!isTauri()) return axios.post('/api/v1/setup', account)
+  if (!isTauri()) return api.post('/api/v1/setup', account)
   const result = await invoke<SetupResult>('setup_admin', { account })
   if (result.status >= 400) {
     const error = new Error(result.data?.message || '暂时无法创建账号') as Error & {

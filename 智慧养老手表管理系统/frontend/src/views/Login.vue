@@ -46,6 +46,7 @@ import { onMounted, reactive, ref } from 'vue'
 import type { FormInstance, FormItemRule } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { apiErrorMessage } from '../api/httpContract'
+import { api } from '../api/client'
 import axios from 'axios'
 import { loadSession } from '../auth'
 
@@ -88,7 +89,7 @@ async function submitForm() {
   submitting.value = true
   errorMessage.value = ''
   try {
-    const { data } = await axios.post('/api/v1/auth/login', { ...loginForm })
+    const { data } = await api.post<{ authenticated?: boolean; message?: string }>('/api/v1/auth/login', { ...loginForm })
     if (data?.authenticated === true) {
       const account = await loadSession(true)
       if (!account) throw new Error('Login session not established')
