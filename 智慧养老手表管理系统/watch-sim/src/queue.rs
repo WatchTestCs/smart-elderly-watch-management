@@ -163,7 +163,10 @@ mod priority_eviction_tests {
             ),
             1,
         );
-        let ids: Vec<&str> = q.iter_pending(2).map(|item| item.record_id.as_str()).collect();
+        let ids: Vec<&str> = q
+            .iter_pending(2)
+            .map(|item| item.record_id.as_str())
+            .collect();
         assert_eq!(ids, ["alert", "new"]);
         assert_eq!(q.dropped(), 1);
     }
@@ -185,7 +188,10 @@ mod priority_eviction_tests {
             ),
             1,
         );
-        assert_eq!(q.iter_pending(1).next().unwrap().record_id.as_str(), "alert");
+        assert_eq!(
+            q.iter_pending(1).next().unwrap().record_id.as_str(),
+            "alert"
+        );
         assert_eq!(q.dropped(), 1);
     }
 }
