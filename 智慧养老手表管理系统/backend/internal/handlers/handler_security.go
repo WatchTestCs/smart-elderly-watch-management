@@ -59,15 +59,11 @@ func (h *Handler) factorLogin(w http.ResponseWriter, r *http.Request, m map[stri
 	if !h.DB.IsMySQL() {
 		return true
 	}
-	ctx := r.Context()
-	tx, err := h.DB.Begin(ctx)
-	if internalError(w, err) {
-		return false
-	}
-	defer tx.Rollback(ctx)
-	valid, generation, err := authrepo.VerifyLoginFactor(
-		ctx, tx, h.Box, role, id, factorScope(role, id),
-		str(m, "otp"), str(m, "recoveryCode"), time.Now(),
+	valid, generation, err := securityworkflow.VerifyLogin(
+		r.Context(), h.DB, h.Box, role, id, str(m, "otp"), str(m, "recoveryCode"),
+		func(tx *db.Transaction, outcome string) error {
+			return h.loginAuditTx(r, phone, role, id, outcome, tx)
+		},
 	)
 	if errors.Is(err, authrepo.ErrFactorSecretUnavailable) {
 		response.JSON(w, 503, map[string]any{"message": "安全密钥不可用"})
@@ -77,23 +73,11 @@ func (h *Handler) factorLogin(w http.ResponseWriter, r *http.Request, m map[stri
 		return false
 	}
 	if !valid {
-		if internalError(w, h.loginAuditTx(r, phone, role, id, "factor_required", tx)) {
-			return false
-		}
-		if internalError(w, tx.Commit(ctx)) {
-			return false
-		}
 		response.JSON(w, 401, map[string]any{"code": "MFA_REQUIRED", "message": "请输入有效的动态验证码或未使用的恢复码"})
 		return false
 	}
 	if generation != "" {
 		*r = *r.WithContext(context.WithValue(r.Context(), factorGenerationKey{}, generation))
-	}
-	if internalError(w, h.loginAuditTx(r, phone, role, id, "credentials_verified", tx)) {
-		return false
-	}
-	if internalError(w, tx.Commit(ctx)) {
-		return false
 	}
 	return true
 }
