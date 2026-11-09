@@ -35,8 +35,8 @@ func (s *databaseService) serveServiceStatus(w http.ResponseWriter, r *http.Requ
 	response.JSON(w, http.StatusOK, map[string]any{
 		"databaseReady": api != nil,
 		"primaryEngine": "mysql",
-		"configError": s.configErrorText(),
-		"analytics": map[string]bool{"configured": snapshot.Configured, "ready": snapshot.Ready},
+		"configError":   s.configErrorText(),
+		"analytics":     map[string]bool{"configured": snapshot.Configured, "ready": snapshot.Ready},
 	})
 }
 
