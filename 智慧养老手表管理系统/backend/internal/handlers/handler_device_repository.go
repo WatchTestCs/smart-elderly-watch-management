@@ -28,8 +28,8 @@ func (h *Handler) readDeviceRecord(device *devicerepo.DeviceRecord, err error) (
 	return device, nil
 }
 
-// hwAuth maps the device workflow's authentication result to the HTTP protocol.
-func (h *Handler) hwAuth(ctx context.Context, q dbstore.RowQuerier, deviceNo, secret, disabledMsg string) (*devicerepo.DeviceRecord, string, string, error) {
+// hwAuthIdentity authenticates a device without decrypting location data.
+func (h *Handler) hwAuthIdentity(ctx context.Context, q dbstore.RowQuerier, deviceNo, secret, disabledMsg string) (*devicerepo.DeviceRecord, string, string, error) {
 	device, failure, err := deviceworkflow.Authenticate(ctx, q, deviceNo, secret)
 	if err != nil {
 		return nil, "", "", err
@@ -39,6 +39,15 @@ func (h *Handler) hwAuth(ctx context.Context, q dbstore.RowQuerier, deviceNo, se
 		return nil, "DEVICE_AUTH_FAILED", "设备号或密钥不正确", nil
 	case deviceworkflow.DeviceDisabled:
 		return nil, "DEVICE_DISABLED", disabledMsg, nil
+	}
+	return device, "", "", nil
+}
+
+// hwAuth also opens encrypted coordinates for endpoints that need them.
+func (h *Handler) hwAuth(ctx context.Context, q dbstore.RowQuerier, deviceNo, secret, disabledMsg string) (*devicerepo.DeviceRecord, string, string, error) {
+	device, code, message, err := h.hwAuthIdentity(ctx, q, deviceNo, secret, disabledMsg)
+	if err != nil || device == nil {
+		return device, code, message, err
 	}
 	device, err = h.readDeviceRecord(device, nil)
 	return device, "", "", err

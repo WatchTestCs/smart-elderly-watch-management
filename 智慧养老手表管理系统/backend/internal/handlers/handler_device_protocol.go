@@ -62,7 +62,7 @@ func (h *Handler) deviceLogin(w http.ResponseWriter, r *http.Request) {
 		harmony = true
 	}
 	ctx := r.Context()
-	d, code, msg, err := h.hwAuth(ctx, h.DB, deviceNo, secret, "设备已停用，请联系管理员")
+	d, code, msg, err := h.hwAuthIdentity(ctx, h.DB, deviceNo, secret, "设备已停用，请联系管理员")
 	if internalError(w, err) {
 		return
 	}
@@ -170,7 +170,7 @@ func (h *Handler) deviceHeartbeat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := r.Context()
-	d, code, msg, err := h.hwAuth(ctx, h.DB, deviceNo, secret, "设备已停用")
+	d, code, msg, err := h.hwAuthIdentity(ctx, h.DB, deviceNo, secret, "设备已停用")
 	if internalError(w, err) {
 		return
 	}
