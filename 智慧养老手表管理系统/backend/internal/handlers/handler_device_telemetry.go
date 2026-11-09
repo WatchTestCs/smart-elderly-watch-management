@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"suining-care/internal/careworkflow"
+	"suining-care/internal/deviceprotocol"
 	"suining-care/internal/deviceworkflow"
 	"suining-care/internal/observability"
 	"suining-care/internal/response"
@@ -46,7 +47,7 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 	var requestID string
 	if isAlarm {
 		requestID, _ = vstr(m, "requestId")
-		if requestID != "" && !sosRequestIDOK(requestID) {
+		if requestID != "" && !deviceprotocol.ValidRequestID(requestID) {
 			writeValidation400(w)
 			return
 		}
@@ -123,7 +124,7 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 	receiptDigest := ""
 	// The durable queue already owns its replay contract (a unique key and
 	// a 409 on collision); do not turn that into a duplicate acknowledgement.
-	if receiptID != "" && sosRequestIDOK(receiptID) && !durableTelemetryEligible(parsed, receiptID, h.Box) {
+	if receiptID != "" && deviceprotocol.ValidRequestID(receiptID) && !durableTelemetryEligible(parsed, receiptID, h.Box) {
 		var digestErr error
 		receiptDigest, digestErr = reportPayloadDigest(m)
 		if digestErr != nil {
