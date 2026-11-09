@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"suining-care/internal/vitalpolicy"
 	"context"
 
 	dbstore "suining-care/internal/db"
@@ -36,8 +37,8 @@ func (repo telemetryRepository) persistReportVitals(ctx context.Context, tx *dbs
 			return telemetryPersisted{}, err
 		}
 	}
-	hrLow, hrHigh := alertThresholds(bounds.HeartRateLow, bounds.HeartRateHigh, 55, 110)
-	bpLow, bpHigh := alertThresholds(bounds.PressureLow, bounds.PressureHigh, 90, 140)
+	hrLow, hrHigh := vitalpolicy.Thresholds(bounds.HeartRateLow, bounds.HeartRateHigh, 55, 110)
+	bpLow, bpHigh := vitalpolicy.Thresholds(bounds.PressureLow, bounds.PressureHigh, 90, 140)
 	result := telemetryPersisted{rateState: measurementState(hr, hrLow, hrHigh), preState: measurementState(bp, bpLow, bpHigh)}
 	if !hasMeasurements {
 		return result, nil
