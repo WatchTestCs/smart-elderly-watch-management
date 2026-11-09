@@ -1,0 +1,89 @@
+package operationsrepo
+
+import (
+	"context"
+	"time"
+
+	"suining-care/internal/db"
+)
+
+const vitalAlertCountsSQL = `SELECT COUNT(CASE WHEN has_rate=1 THEN 1 END) AS heart_rate_count,
+	COUNT(CASE WHEN has_pressure=1 THEN 1 END) AS blood_pressure_count
+	FROM (SELECT MAX(CASE WHEN rate_state='1' THEN 1 ELSE 0 END) AS has_rate,
+		MAX(CASE WHEN pre_state='1' THEN 1 ELSE 0 END) AS has_pressure
+		FROM ratepre WHERE rate_state='1' OR pre_state='1' GROUP BY device_id) alerted`
+
+const sleepAlertCountSQL = `SELECT COUNT(*) AS sleep_count FROM (
+	SELECT w.sleep_sate, ROW_NUMBER() OVER (PARTITION BY w.device_id ORDER BY w.create_time DESC,w.id DESC) AS rn
+	FROM watch_day_info w INNER JOIN device d ON d.device_id=w.device_id
+	AND d.old_id=w.old_id AND d.health_epoch=w.binding_epoch) latest WHERE rn=1 AND sleep_sate='1'`
+
+const positionAlertSummarySQL = `SELECT COUNT(*) AS total_residents,
+	COUNT((SELECT CASE WHEN a.status='1' AND CHAR_LENGTH(a.status)=1 THEN 1 END
+		FROM alarm_precess a WHERE a.old_id=o.old_id
+		ORDER BY a.be_time DESC, a.id DESC LIMIT 1)) AS active_location_alerts
+	FROM oldperson o`
+
+type HealthAlerts struct {
+	HeartRate     int64 `json:"heartRate"`
+	BloodPressure int64 `json:"bloodPressure"`
+	Sleep         int64 `json:"sleep"`
+}
+
+type Snapshot struct {
+	Health                HealthAlerts `json:"health"`
+	TotalResidents        int64        `json:"totalResidents"`
+	ActiveLocationAlerts  int64        `json:"activeLocationAlerts"`
+	ActiveCareIncidents   int64        `json:"activeCareIncidents"`
+	OverdueCareIncidents  int64        `json:"overdueCareIncidents"`
+	PendingNotifications  int64        `json:"pendingNotifications"`
+	FailedNotifications   int64        `json:"failedNotifications"`
+	StaleNotifications    int64        `json:"staleNotifications"`
+	ActiveDevices         int64        `json:"activeDevices"`
+	OfflineDevices        int64        `json:"offlineDevices"`
+	LowBatteryDevices     int64        `json:"lowBatteryDevices"`
+	UnboundDevices        int64        `json:"unboundDevices"`
+	CapturedAt            time.Time    `json:"capturedAt"`
+}
+
+func ReadHealthAlerts(ctx context.Context, q db.RowQuerier) (HealthAlerts, error) {
+	var out HealthAlerts
+	query := `SELECT v.heart_rate_count,v.blood_pressure_count,s.sleep_count
+		FROM (` + vitalAlertCountsSQL + `) v CROSS JOIN (` + sleepAlertCountSQL + `) s`
+	err := q.QueryRow(ctx, query).Scan(&out.HeartRate, &out.BloodPressure, &out.Sleep)
+	return out, err
+}
+
+func ReadPositionAlerts(ctx context.Context, q db.RowQuerier) (total, active int64, err error) {
+	err = q.QueryRow(ctx, positionAlertSummarySQL).Scan(&total, &active)
+	return
+}
+
+// ReadSnapshot returns one consistent operational read model in one database round trip.
+func ReadSnapshot(ctx context.Context, q db.RowQuerier, now time.Time) (Snapshot, error) {
+	var out Snapshot
+	query := `SELECT
+		v.heart_rate_count,v.blood_pressure_count,s.sleep_count,
+		p.total_residents,p.active_location_alerts,
+		(SELECT COUNT(*) FROM care_incident WHERE state<>'verified'),
+		(SELECT COUNT(*) FROM care_incident WHERE state<>'verified' AND due_at < $1),
+		(SELECT COUNT(*) FROM care_notification_outbox WHERE status='pending'),
+		(SELECT COUNT(*) FROM care_notification_outbox WHERE status='failed'),
+		(SELECT COUNT(*) FROM care_notification_outbox WHERE status='sending' AND last_attempt_at < $2),
+		(SELECT COUNT(*) FROM device WHERE status<>0),
+		(SELECT COUNT(*) FROM device WHERE status<>0 AND (last_time IS NULL OR last_time < $3)),
+		(SELECT COUNT(*) FROM device WHERE status<>0 AND battery IS NOT NULL AND battery>=0 AND battery<20),
+		(SELECT COUNT(*) FROM device WHERE status<>0 AND old_id IS NULL)
+		FROM (` + vitalAlertCountsSQL + `) v
+		CROSS JOIN (` + sleepAlertCountSQL + `) s
+		CROSS JOIN (` + positionAlertSummarySQL + `) p`
+	err := q.QueryRow(ctx, query, now, now.Add(-2*time.Minute), now.Add(-2*time.Minute)).Scan(
+		&out.Health.HeartRate, &out.Health.BloodPressure, &out.Health.Sleep,
+		&out.TotalResidents, &out.ActiveLocationAlerts,
+		&out.ActiveCareIncidents, &out.OverdueCareIncidents,
+		&out.PendingNotifications, &out.FailedNotifications, &out.StaleNotifications,
+		&out.ActiveDevices, &out.OfflineDevices, &out.LowBatteryDevices, &out.UnboundDevices,
+	)
+	out.CapturedAt = now.UTC()
+	return out, err
+}

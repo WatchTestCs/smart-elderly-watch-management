@@ -1482,5 +1482,13 @@
       "returnCode",
       "total"
     ]
+  },
+  "POST /api/v1/operations/snapshot": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_operations.go",
+    "request": [],
+    "response": [
+      "snapshot",
+      "returnCode"
+    ]
   }
 }

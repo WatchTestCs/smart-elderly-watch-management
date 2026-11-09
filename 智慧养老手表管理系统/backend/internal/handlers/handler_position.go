@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"suining-care/internal/auth"
+	"suining-care/internal/operationsrepo"
 	"suining-care/internal/response"
 	"suining-care/internal/securestore"
 	"suining-care/internal/telemetryrepo"
@@ -64,7 +65,7 @@ func (h *Handler) positionSelect(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) positionAlertSummary(w http.ResponseWriter, r *http.Request) {
-	total, active, err := telemetryrepo.PositionAlertSummary(r.Context(), h.DB)
+	total, active, err := operationsrepo.ReadPositionAlerts(r.Context(), h.DB)
 	if internalError(w, err) {
 		return
 	}

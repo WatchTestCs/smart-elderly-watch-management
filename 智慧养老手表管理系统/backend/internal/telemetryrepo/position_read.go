@@ -57,15 +57,6 @@ func ListLatestPositions(ctx context.Context, store *db.Database, name string, p
 	return items, total, err
 }
 
-func PositionAlertSummary(ctx context.Context, store *db.Database) (total, active int64, err error) {
-	err = store.QueryRow(ctx, `SELECT COUNT(*),
-		COUNT((SELECT CASE WHEN a.status='1' AND CHAR_LENGTH(a.status)=1 THEN 1 END
-			FROM alarm_precess a WHERE a.old_id=o.old_id
-			ORDER BY a.be_time DESC, a.id DESC LIMIT 1))
-		FROM oldperson o`).Scan(&total, &active)
-	return
-}
-
 func ListResidentPositions(ctx context.Context, store *db.Database, residentID int64) ([]PositionRow, error) {
 	return db.QueryList(ctx, store, scanPosition,
 		`SELECT o.name, o.old_id, o.sex, l.lng, l.lat,

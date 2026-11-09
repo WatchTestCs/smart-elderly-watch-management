@@ -58,6 +58,7 @@ func (h *Handler) Routes(mux *http.ServeMux) {
 	h.routeHealth(mux)
 	h.routeCare(mux) // 照护事件队列、接单及审核状态
 	h.routeCapabilities(mux)
+	h.routeOperations(mux)
 	mux.HandleFunc("POST /api/v1/security/factor", h.securityFactor)
 	mux.HandleFunc("POST /api/v1/security/login-audit", h.securityLoginAudit)
 	mux.HandleFunc("POST /api/v1/notifications/search", h.notifications)

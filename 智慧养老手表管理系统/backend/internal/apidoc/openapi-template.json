@@ -3069,6 +3069,29 @@
         "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handlers.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
+    "/api/v1/operations/snapshot": {
+      "post": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "snapshot": {}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": null,
+          "content": null,
+          "$ref": "#/components/requestBodies/JsonObject"
+        },
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_operations.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+      }
+    },
     "/api/v1/position/select": {
       "post": {
         "responses": {
