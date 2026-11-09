@@ -143,9 +143,30 @@ mod priority_eviction_tests {
     #[test]
     fn preserves_alert_over_oldest_routine_sample() {
         let mut q = OfflineQueue::new(2);
-        q.push(HealthSample::heart_rate("alert".into(), "watch-1", 155, "2026-11-09T00:00:01Z"), 1);
-        q.push(HealthSample::steps("routine".into(), "watch-1", 100, "2026-11-09T00:00:00Z", "2026-11-09T00:00:02Z"), 1);
-        q.push(HealthSample::steps("new".into(), "watch-1", 120, "2026-11-09T00:00:00Z", "2026-11-09T00:00:03Z"), 1);
+        q.push(
+            HealthSample::heart_rate("alert".into(), "watch-1", 155, "2026-11-09T00:00:01Z"),
+            1,
+        );
+        q.push(
+            HealthSample::steps(
+                "routine".into(),
+                "watch-1",
+                100,
+                "2026-11-09T00:00:00Z",
+                "2026-11-09T00:00:02Z",
+            ),
+            1,
+        );
+        q.push(
+            HealthSample::steps(
+                "new".into(),
+                "watch-1",
+                120,
+                "2026-11-09T00:00:00Z",
+                "2026-11-09T00:00:03Z",
+            ),
+            1,
+        );
         let ids: Vec<String> = q.peek(2).into_iter().map(|item| item.record_id).collect();
         assert_eq!(ids, ["alert", "new"]);
         assert_eq!(q.dropped(), 1);
@@ -154,8 +175,20 @@ mod priority_eviction_tests {
     #[test]
     fn drops_new_routine_when_only_critical_alerts_remain() {
         let mut q = OfflineQueue::new(1);
-        q.push(HealthSample::heart_rate("alert".into(), "watch-1", 155, "2026-11-09T00:00:01Z"), 1);
-        q.push(HealthSample::steps("routine".into(), "watch-1", 100, "2026-11-09T00:00:00Z", "2026-11-09T00:00:02Z"), 1);
+        q.push(
+            HealthSample::heart_rate("alert".into(), "watch-1", 155, "2026-11-09T00:00:01Z"),
+            1,
+        );
+        q.push(
+            HealthSample::steps(
+                "routine".into(),
+                "watch-1",
+                100,
+                "2026-11-09T00:00:00Z",
+                "2026-11-09T00:00:02Z",
+            ),
+            1,
+        );
         assert_eq!(q.peek(1)[0].record_id, "alert");
         assert_eq!(q.dropped(), 1);
     }
