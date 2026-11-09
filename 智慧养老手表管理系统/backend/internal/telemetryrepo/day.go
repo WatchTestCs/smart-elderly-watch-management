@@ -1,12 +1,12 @@
 package telemetryrepo
 
 import (
-	"errors"
-	"database/sql"
 	"context"
+	"database/sql"
+	"errors"
 
-	dbstore "suining-care/internal/db"
 	"suining-care/internal/healthalertstate"
+	dbstore "suining-care/internal/db"
 )
 
 const watchDayUpsertSQL = `INSERT INTO watch_day_info(device_id, sleep, step, sleep_sate, create_time, step_observed_at, old_id, binding_epoch, sleep_observed_at, sleep_state_observed_at)

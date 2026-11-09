@@ -1,10 +1,10 @@
 package rules
 
 import (
-	"errors"
-	"database/sql"
 	"context"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"suining-care/internal/db"
 	"suining-care/internal/health"

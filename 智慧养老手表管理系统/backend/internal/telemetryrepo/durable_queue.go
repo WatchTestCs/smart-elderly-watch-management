@@ -6,7 +6,6 @@ import (
 	"errors"
 	"time"
 
-
 	"suining-care/internal/db"
 	"suining-care/internal/observability"
 )

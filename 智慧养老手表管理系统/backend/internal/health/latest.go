@@ -1,10 +1,10 @@
 package health
 
 import (
-	"database/sql"
 	"cmp"
 	"context"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/binary"
 	"encoding/json"
 	"errors"

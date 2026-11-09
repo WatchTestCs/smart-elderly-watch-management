@@ -2,10 +2,9 @@
 package vitalrepo
 
 import (
-	"database/sql"
 	"context"
+	"database/sql"
 	"errors"
-
 
 	"suining-care/internal/db"
 	"suining-care/internal/healthalertstate"

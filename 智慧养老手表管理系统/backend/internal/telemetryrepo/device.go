@@ -3,7 +3,6 @@ package telemetryrepo
 import (
 	"context"
 	"time"
-
 )
 
 type heartbeatWriter interface {

@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 
-
 	"suining-care/internal/db"
 	"suining-care/internal/socialrepo"
 )

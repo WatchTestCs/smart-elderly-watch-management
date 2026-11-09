@@ -1,9 +1,9 @@
 package rules
 
 import (
-	"errors"
-	"database/sql"
 	"context"
+	"database/sql"
+	"errors"
 	"suining-care/internal/db"
 	"suining-care/internal/observability"
 	"suining-care/internal/securestore"

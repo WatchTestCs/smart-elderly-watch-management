@@ -1,11 +1,10 @@
 package telemetryrepo
 
 import (
-	"database/sql"
 	"context"
+	"database/sql"
 	"errors"
 	"time"
-
 
 	"suining-care/internal/db"
 	"suining-care/internal/healthalertstate"
