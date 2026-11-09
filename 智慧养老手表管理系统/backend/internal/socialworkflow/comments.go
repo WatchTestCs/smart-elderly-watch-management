@@ -7,14 +7,16 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"suining-care/internal/blob"
 	"suining-care/internal/db"
 	"suining-care/internal/socialrepo"
 )
 
-// CreateComment keeps avatar ownership, blob reference locking and the comment
+// ImageLocker is invoked only when an author actually has an avatar.
+type ImageLocker func(context.Context, *db.Transaction, []string) error
+
+// CreateComment keeps avatar ownership, image references and the comment
 // insert in one transaction without exposing HTTP types to persistence.
-func CreateComment(ctx context.Context, store *db.Database, manager *blob.Manager, comment socialrepo.NewComment) (bool, error) {
+func CreateComment(ctx context.Context, store *db.Database, lockImages ImageLocker, comment socialrepo.NewComment) (bool, error) {
 	tx, err := store.Begin(ctx)
 	if err != nil {
 		return false, err
@@ -25,7 +27,7 @@ func CreateComment(ctx context.Context, store *db.Database, manager *blob.Manage
 		return false, err
 	}
 	if avatar != "" {
-		if err := manager.Require(ctx, tx, []string{avatar}); err != nil {
+		if err := lockImages(ctx, tx, []string{avatar}); err != nil {
 			return false, err
 		}
 	}
