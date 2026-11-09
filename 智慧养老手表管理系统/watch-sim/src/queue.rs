@@ -102,6 +102,11 @@ impl OfflineQueue {
             .collect()
     }
 
+    /// 借用待上传样本，避免弱网重试时复制整批记录。
+    pub fn peek_refs(&self, max: usize) -> impl Iterator<Item = &HealthSample> {
+        self.items.iter().take(max.min(self.capacity))
+    }
+
     /// 上传成功后按条数出队。后端对重复 `recordId` 返回 duplicates，
     /// 因此"确认成功"只需按已发送条数推进，不必比对内容。
     pub fn commit(&mut self, n: usize) {

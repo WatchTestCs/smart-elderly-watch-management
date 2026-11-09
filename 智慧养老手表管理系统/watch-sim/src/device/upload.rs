@@ -1,9 +1,21 @@
+use serde::Serialize;
+
 use super::failure::{classify, confirm_batch_reply};
 use super::{DeviceSession, Failure, ReportOutcome};
 use crate::protocol::{
-    BatchRequest, BatchView, HealthSample, HealthSampleData, Reply, ReportPayload, SosRequest,
+    BatchView, HealthSample, HealthSampleData, Reply, ReportPayload, SosRequest,
     MAX_BATCH_SIZE,
 };
+
+#[derive(Serialize)]
+struct QueuedBatch<'a> {
+    #[serde(rename = "deviceNo")]
+    device_no: &'a str,
+    secret: &'a str,
+    #[serde(rename = "bindingVersion")]
+    binding_version: i64,
+    samples: &'a [&'a HealthSample],
+}
 
 impl DeviceSession {
     /// 旧版扁平遥测。带 `requestId` 且满足后端条件时会走持久队列分支。
@@ -54,13 +66,13 @@ impl DeviceSession {
 
     /// 上传离线队列。绑定版本不匹配的一律不传（后端也会 409）。
     pub fn flush(&mut self) -> Result<(usize, usize), Failure> {
-        let Some(binding) = self.binding.clone() else {
+        let Some(binding_version) = self.binding.as_ref().map(|b| b.version) else {
             return Err(Failure::Rejected {
                 code: "DEVICE_NOT_BOUND".into(),
                 message: "设备尚未绑定长者".into(),
             });
         };
-        if self.queue.is_stale_for(binding.version) {
+        if self.queue.is_stale_for(binding_version) {
             return Err(Failure::Rejected {
                 code: "CONFLICT".into(),
                 message: "待传记录属于旧绑定，已停止补传；记录仍保留在本进程队列中".into(),
@@ -69,19 +81,25 @@ impl DeviceSession {
         if self.queue.is_empty() {
             return Ok((0, 0));
         }
-        let batch = self.queue.peek(self.max_batch_size);
-        let count = batch.len();
-        let request = BatchRequest::new(&self.cred, binding.version, batch);
-        request.validate().map_err(|m| Failure::Rejected {
-            code: "CLIENT".into(),
-            message: m,
-        })?;
-        let raw = serde_json::to_vec(&request).map_err(|e| Failure::Rejected {
-            code: "CLIENT".into(),
-            message: format!("批次序列化失败：{e}"),
-        })?;
+        let count = self.queue.len().min(self.max_batch_size);
+        self.batch_binding(count)?;
+        self.wire.clear();
+        self.wire.reserve(count * 400 + 200);
+        {
+            let batch: Vec<_> = self.queue.peek_refs(self.max_batch_size).collect();
+            let request = QueuedBatch {
+                device_no: &self.cred.device_no,
+                secret: &self.cred.secret,
+                binding_version,
+                samples: &batch,
+            };
+            serde_json::to_writer(&mut self.wire, &request).map_err(|e| Failure::Rejected {
+                code: "CLIENT".into(),
+                message: format!("批次序列化失败：{e}"),
+            })?;
+        }
         let result = self
-            .post_raw("api/v1/device/healthBatch", &raw)
+            .post_raw("api/v1/device/healthBatch", &self.wire)
             .map_err(Failure::Transport)
             .and_then(classify)
             .and_then(|reply| confirm_batch_reply(reply, count));
