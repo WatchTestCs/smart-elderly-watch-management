@@ -5,20 +5,12 @@ import (
 	"testing"
 )
 
-func TestDailySQLUsesNativeDialectAtCallSite(t *testing.T) {
-	mysqlCache, postgresCache := dailyCacheSelectSQL(true), dailyCacheSelectSQL(false)
-	if !strings.Contains(mysqlCache, "AS CHAR") || strings.Contains(mysqlCache, "AS varchar") {
-		t.Fatalf("MySQL daily cache query is not native: %s", mysqlCache)
+func TestDailySQLUsesNativeMySQL(t *testing.T) {
+	if !strings.Contains(dailyCacheSelectSQL, "AS CHAR") || strings.Contains(dailyCacheSelectSQL, "AS varchar") {
+		t.Fatalf("daily cache query is not native MySQL: %s", dailyCacheSelectSQL)
 	}
-	if !strings.Contains(postgresCache, "AS varchar") || strings.Contains(postgresCache, "AS CHAR") {
-		t.Fatalf("PostgreSQL daily cache query is not native: %s", postgresCache)
-	}
-
-	mysqlSamples, postgresSamples := dailySamplesSQL(true), dailySamplesSQL(false)
-	if !strings.Contains(mysqlSamples, "BINARY source=BINARY $2") {
-		t.Fatalf("MySQL source identity comparison lost binary semantics: %s", mysqlSamples)
-	}
-	if strings.Contains(postgresSamples, "BINARY ") || !strings.Contains(postgresSamples, "source=$2") {
-		t.Fatalf("PostgreSQL sample query leaked MySQL BINARY syntax: %s", postgresSamples)
+	if !strings.Contains(dailySamplesSQL, "BINARY source=BINARY $2") ||
+		strings.Contains(dailySamplesSQL, "source=$2") {
+		t.Fatalf("daily sample identity comparison lost MySQL binary semantics: %s", dailySamplesSQL)
 	}
 }

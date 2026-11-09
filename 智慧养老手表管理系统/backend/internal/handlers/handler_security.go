@@ -20,9 +20,6 @@ func (h *Handler) loginAudit(r *http.Request, phone, role string, id int64, outc
 }
 func (h *Handler) loginAuditTx(r *http.Request, phone, role string, id int64, outcome string, tx *db.Transaction) error {
 	observability.Default.Add(`suining_auth_attempts_total{outcome="`+outcome+`"}`, 1)
-	if !h.DB.IsMySQL() {
-		return nil
-	}
 	requestID := r.Header.Get("X-Request-ID")
 	if len(requestID) > 64 {
 		requestID = requestID[:64]
@@ -34,9 +31,6 @@ func (h *Handler) loginAuditTx(r *http.Request, phone, role string, id int64, ou
 }
 
 func (h *Handler) loginAllowed(w http.ResponseWriter, r *http.Request, phone string) bool {
-	if !h.DB.IsMySQL() {
-		return true
-	}
 	pair, account, err := authrepo.RecentFailureCounts(
 		r.Context(), h.DB, h.Box.Index("account", phone),
 		h.Box.Index("ip", h.clientIP(r)), time.Now().Add(-15*time.Minute),
@@ -52,9 +46,6 @@ func (h *Handler) loginAllowed(w http.ResponseWriter, r *http.Request, phone str
 	return true
 }
 func (h *Handler) factorLogin(w http.ResponseWriter, r *http.Request, m map[string]any, role string, id int64, phone string) bool {
-	if !h.DB.IsMySQL() {
-		return true
-	}
 	valid, generation, err := securityworkflow.VerifyLogin(
 		r.Context(), h.DB, h.Box, role, id, str(m, "otp"), str(m, "recoveryCode"),
 		func(tx *db.Transaction, outcome string) error {
