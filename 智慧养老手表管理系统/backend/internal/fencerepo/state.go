@@ -1,11 +1,10 @@
 package fencerepo
 
 import (
-	"database/sql"
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
-
 
 	"suining-care/internal/db"
 	"suining-care/internal/fence"
@@ -41,7 +40,7 @@ func SaveState(ctx context.Context, tx *db.Transaction, fenceID, revision int64,
 	}
 	_, err = tx.Exec(ctx,
 		`INSERT INTO fence_state(fence_id,revision,payload) VALUES($1,$2,$3)
-		 ON CONFLICT(fence_id) DO UPDATE SET revision=EXCLUDED.revision,payload=EXCLUDED.payload`,
+		 AS new ON DUPLICATE KEY UPDATE revision=new.revision,payload=new.payload`,
 		fenceID, revision, json.RawMessage(payload))
 	return err
 }

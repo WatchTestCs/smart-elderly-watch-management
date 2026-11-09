@@ -3,6 +3,7 @@ package blob
 import (
 	"context"
 	"crypto/sha256"
+	"database/sql"
 	_ "embed"
 	"encoding/hex"
 	"errors"
@@ -108,7 +109,7 @@ func (m *Manager) Require(ctx context.Context, tx *db.Transaction, keys []string
 		}
 		// Adopt existing local images without changing their bytes. An atomic
 		// insert and subsequent current read also serialize concurrent adopters.
-		_, err = tx.Exec(ctx, "INSERT INTO image_blob(name,content_sha256,size_bytes,state) VALUES($1,$2,$3,'ready') ON CONFLICT(name) DO UPDATE SET name=EXCLUDED.name", key, Digest(data), len(data))
+		_, err = tx.Exec(ctx, "INSERT INTO image_blob(name,content_sha256,size_bytes,state) VALUES($1,$2,$3,'ready') ON DUPLICATE KEY UPDATE name=name", key, Digest(data), len(data))
 		if err != nil {
 			return err
 		}
@@ -169,7 +170,7 @@ func (m *Manager) Collect(ctx context.Context, olderThan time.Time, dryRun bool)
 		if backupActive {
 			return ErrBusy
 		}
-		_, err = tx.Exec(ctx, "INSERT INTO image_blob(name,content_sha256,size_bytes,state,created_at) VALUES($1,$2,$3,'ready',$4) ON CONFLICT(name) DO UPDATE SET name=EXCLUDED.name", entry.Key, Digest(data), len(data), entry.Modified)
+		_, err = tx.Exec(ctx, "INSERT INTO image_blob(name,content_sha256,size_bytes,state,created_at) VALUES($1,$2,$3,'ready',$4) ON DUPLICATE KEY UPDATE name=name", entry.Key, Digest(data), len(data), entry.Modified)
 		if err != nil {
 			return err
 		}

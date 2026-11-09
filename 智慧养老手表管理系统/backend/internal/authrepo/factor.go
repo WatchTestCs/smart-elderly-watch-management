@@ -60,7 +60,7 @@ func SetupFactor(ctx context.Context, tx *db.Transaction, role string, actorID i
 	_, err := tx.Exec(ctx,
 		`INSERT INTO auth_factor(role,actor_id,secret,pending_until,recovery_hashes,generation)
 		 VALUES($1,$2,$3,$4,'[]',$5)
-		 ON CONFLICT(role,actor_id) DO UPDATE SET secret=EXCLUDED.secret,pending_until=EXCLUDED.pending_until,last_counter=-1,generation=EXCLUDED.generation`,
+		 AS new ON DUPLICATE KEY UPDATE secret=new.secret,pending_until=new.pending_until,last_counter=-1,generation=new.generation`,
 		role, actorID, sealed, until, generation)
 	return err
 }

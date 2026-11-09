@@ -35,7 +35,7 @@ func (h *Handler) commandProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	_, err = tx.Exec(ctx, `INSERT INTO device_command_profile(device_id,wire_type,protocol,enabled,updated_by) VALUES($1,$2,$3,$4,$5)
- ON CONFLICT(device_id) DO UPDATE SET wire_type=EXCLUDED.wire_type,protocol=EXCLUDED.protocol,enabled=EXCLUDED.enabled,updated_by=EXCLUDED.updated_by,updated_at=now()`, id, req.WireType, req.Protocol, req.Enabled, actor)
+ AS new ON DUPLICATE KEY UPDATE wire_type=new.wire_type,protocol=new.protocol,enabled=new.enabled,updated_by=new.updated_by,updated_at=CURRENT_TIMESTAMP(6)`, id, req.WireType, req.Protocol, req.Enabled, actor)
 	if err == nil {
 		_, err = tx.Exec(ctx, "UPDATE device_command SET status='cancelled' WHERE device_id=$1 AND status IN ('pending','sent')", id)
 	}

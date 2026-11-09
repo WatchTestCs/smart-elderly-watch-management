@@ -66,10 +66,10 @@ func PersistTransition(ctx context.Context, tx *db.Transaction, id int64, next, 
 	if _, err := tx.Exec(ctx, `UPDATE care_incident SET
     state=$2,updated_at=now(),
     due_at=CASE
-      WHEN $3='acknowledge' THEN now()+interval '10 minutes'
-      WHEN $3='start' THEN now()+interval '30 minutes'
-      WHEN $3='resolve' THEN now()+interval '30 minutes'
-      WHEN $3='reopen' THEN now()+interval '10 minutes'
+      WHEN $3='acknowledge' THEN TIMESTAMPADD(MINUTE,10,CURRENT_TIMESTAMP(6))
+      WHEN $3='start' THEN TIMESTAMPADD(MINUTE,30,CURRENT_TIMESTAMP(6))
+      WHEN $3='resolve' THEN TIMESTAMPADD(MINUTE,30,CURRENT_TIMESTAMP(6))
+      WHEN $3='reopen' THEN TIMESTAMPADD(MINUTE,10,CURRENT_TIMESTAMP(6))
       ELSE due_at END,
     acknowledged_by=CASE WHEN $3='acknowledge' THEN $4 ELSE acknowledged_by END,
     acknowledged_at=CASE WHEN $3='acknowledge' THEN now() ELSE acknowledged_at END,

@@ -95,8 +95,8 @@ func (h *Handler) careAssignDuty(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	_, err = tx.Exec(r.Context(), `INSERT INTO care_staff_permission(admin_id,duty,assigned_by,assigned_at)
- VALUES($1,$2,$3,now()) ON CONFLICT(admin_id) DO UPDATE
- SET duty=excluded.duty,assigned_by=excluded.assigned_by,assigned_at=now()`, target, duty, actor)
+ VALUES($1,$2,$3,CURRENT_TIMESTAMP(6)) AS new ON DUPLICATE KEY UPDATE
+ duty=new.duty,assigned_by=new.assigned_by,assigned_at=CURRENT_TIMESTAMP(6)`, target, duty, actor)
 	if internalError(w, err) {
 		return
 	}

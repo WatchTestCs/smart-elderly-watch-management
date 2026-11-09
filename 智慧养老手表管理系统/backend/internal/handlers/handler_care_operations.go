@@ -77,7 +77,7 @@ func (h *Handler) careDiagnostics(w http.ResponseWriter, r *http.Request) {
         SELECT
           (SELECT count(*) FROM care_notification_outbox WHERE status='pending'),
           (SELECT count(*) FROM care_notification_outbox WHERE status='failed'),
-          (SELECT count(*) FROM care_notification_outbox WHERE status='sending' AND last_attempt_at < now()-interval '2 minutes'),
+          (SELECT count(*) FROM care_notification_outbox WHERE status='sending' AND last_attempt_at < TIMESTAMPADD(MINUTE,-2,CURRENT_TIMESTAMP(6))),
           (SELECT count(*) FROM care_incident WHERE state NOT IN ('verified') AND due_at < now()),
           (SELECT min(created_at) FROM care_notification_outbox WHERE status IN ('pending','failed'))
     `).Scan(&pending, &failed, &stale, &overdue, &oldest)

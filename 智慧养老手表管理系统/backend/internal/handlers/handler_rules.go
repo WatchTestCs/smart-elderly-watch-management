@@ -62,7 +62,7 @@ func (h *Handler) rulePolicy(w http.ResponseWriter, r *http.Request) {
 	}
 	b, _ = json.Marshal(req.Policy)
 	revision++
-	_, err = tx.Exec(ctx, `INSERT INTO rule_policy(device_id,revision,payload,updated_by) VALUES($1,$2,$3,$4) ON CONFLICT(device_id) DO UPDATE SET revision=EXCLUDED.revision,payload=EXCLUDED.payload,updated_by=EXCLUDED.updated_by,updated_at=now()`, id, revision, json.RawMessage(b), actor)
+	_, err = tx.Exec(ctx, `INSERT INTO rule_policy(device_id,revision,payload,updated_by) VALUES($1,$2,$3,$4) AS new ON DUPLICATE KEY UPDATE revision=new.revision,payload=new.payload,updated_by=new.updated_by,updated_at=CURRENT_TIMESTAMP(6)`, id, revision, json.RawMessage(b), actor)
 	if err == nil {
 		_, err = tx.Exec(ctx, "DELETE FROM rule_state WHERE device_id=$1", id)
 	}

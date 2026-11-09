@@ -15,14 +15,14 @@ func (d *dispatcher) escalate(ctx context.Context) error {
 	ids, err := db.QueryList(ctx, tx, db.ScanValue[int64], `
 		SELECT id FROM care_incident WHERE due_at<=now()
 		  AND state IN ('received','notifying','notified','acknowledged','in_progress','resolved')
-		ORDER BY due_at,id FOR UPDATE SKIP LOCKED LIMIT 20`)
+		ORDER BY due_at,id LIMIT 20 FOR UPDATE SKIP LOCKED`)
 	if err != nil {
 		return err
 	}
 	for _, id := range ids {
 		if _, err := tx.Exec(ctx, `UPDATE care_incident
 			SET state=CASE WHEN state='resolved' THEN 'review_overdue' ELSE 'escalated' END,
-      updated_at=now(),due_at=now()+interval '10 minutes'
+      updated_at=CURRENT_TIMESTAMP(6),due_at=TIMESTAMPADD(MINUTE,10,CURRENT_TIMESTAMP(6))
 			WHERE id=$1`, id); err != nil {
 			return err
 		}
@@ -36,7 +36,7 @@ func (d *dispatcher) escalate(ctx context.Context) error {
 				return sealErr
 			}
 			if _, err := tx.Exec(ctx, `INSERT INTO care_notification_outbox(incident_id,channel,recipient,recipient_key)
-				VALUES($1,'sms',$2,$3) ON CONFLICT DO NOTHING`, id, sealed, key); err != nil {
+				VALUES($1,'sms',$2,$3) ON DUPLICATE KEY UPDATE id=id`, id, sealed, key); err != nil {
 				return err
 			}
 		}

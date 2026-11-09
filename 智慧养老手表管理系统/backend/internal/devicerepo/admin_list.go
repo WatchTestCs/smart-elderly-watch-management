@@ -29,9 +29,9 @@ type AdminDevice struct {
 	PressureHandled int
 }
 
-const adminOnlineExpr = `d.last_time >= now() - interval '60 seconds'`
+const adminOnlineExpr = `d.last_time >= TIMESTAMPADD(SECOND,-60,CURRENT_TIMESTAMP(6))`
 
-const adminFilter = `WHERE ($1='' OR LOWER(d.device_no) LIKE $2 OR LOWER(COALESCE(d.alias,'') || ' ' || COALESCE(o.name,'')) LIKE $2)
+const adminFilter = `WHERE ($1='' OR LOWER(d.device_no) LIKE $2 OR LOWER(CONCAT(COALESCE(d.alias,''),' ',COALESCE(o.name,''))) LIKE $2)
 	AND ($3='all' OR CASE WHEN ` + adminOnlineExpr + ` THEN 'online' ELSE 'offline' END = $3)`
 
 func ListAdminDevices(ctx context.Context, store *db.Database, pattern, state string, page, size int) ([]AdminDevice, int64, int64, error) {
