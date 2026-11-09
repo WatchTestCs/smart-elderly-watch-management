@@ -37,7 +37,7 @@ func OpenNotificationRecipient(box *securestore.Box, stored string) (string, err
 	return box.Open(stored, recipientScope)
 }
 
-const familyPhonePredicate = "f.family_phone REGEXP '^1[0-9]{10}
+const familyPhonePredicate = "f.family_phone REGEXP '^1[0-9]{10}$'"
 
 // QueueCareSMS 为长者的每个有效家属手机号入队一条 SMS 通知，
 // 返回实际插入的行数（0 表示无可通知的家属）。
@@ -60,41 +60,6 @@ func QueueCareSMS(ctx context.Context, tx *db.Transaction, box *securestore.Box,
 		if i > 0 {
 			values.WriteByte(',')
 		}
-		// 每个值用独立占位符，避免依赖方言改写层对重复 $n 的处理。
-		fmt.Fprintf(&values, "($%d,'sms',$%d,$%d)", 3*i+1, 3*i+2, 3*i+3)
-		args = append(args, incidentID, sealed, key)
-	}
-	ct, err := tx.Exec(ctx, `INSERT INTO care_notification_outbox(incident_id,channel,recipient,recipient_key)
-		VALUES `+values.String()+` ON DUPLICATE KEY UPDATE id=id`, args...)
-	if err != nil {
-		return 0, err
-	}
-	return ct.RowsAffected(), nil
-}
-"
-
-// QueueCareSMS 为长者的每个有效家属手机号入队一条 SMS 通知，
-// 返回实际插入的行数（0 表示无可通知的家属）。
-func QueueCareSMS(ctx context.Context, tx *db.Transaction, box *securestore.Box, incidentID, oldID int64) (int64, error) {
-	phones, err := db.QueryList(ctx, tx, db.ScanValue[string], `SELECT f.family_phone FROM oldperson o JOIN family f ON f.family_id=o.family_id
-		WHERE o.old_id=$1 AND `+familyPhonePredicate, oldID)
-	if err != nil {
-		return 0, err
-	}
-	if len(phones) == 0 {
-		return 0, nil
-	}
-	var values strings.Builder
-	args := make([]any, 0, len(phones)*3)
-	for i, phone := range phones {
-		sealed, key, err := SealNotificationRecipient(box, phone)
-		if err != nil {
-			return 0, err
-		}
-		if i > 0 {
-			values.WriteByte(',')
-		}
-		// 每个值用独立占位符，避免依赖方言改写层对重复 $n 的处理。
 		fmt.Fprintf(&values, "($%d,'sms',$%d,$%d)", 3*i+1, 3*i+2, 3*i+3)
 		args = append(args, incidentID, sealed, key)
 	}
