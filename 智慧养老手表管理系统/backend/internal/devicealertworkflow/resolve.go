@@ -20,6 +20,9 @@ var (
 type ReasonReader func(context.Context, *db.Transaction, int64, string, *int64) (string, error)
 
 func Resolve(ctx context.Context, store *db.Database, deviceID int64, kind string, recordID *int64, reason ReasonReader) (string, error) {
+	if kind != "rate" && kind != "pre" && kind != "person" {
+		return "", ErrUnknownKind
+	}
 	tx, err := store.Begin(ctx)
 	if err != nil {
 		return "", err
