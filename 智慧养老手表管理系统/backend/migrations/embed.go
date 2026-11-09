@@ -1,7 +1,7 @@
-// Package migrations contains MySQL business, PostgreSQL analytics and legacy migrations.
+// Package migrations embeds the active MySQL business and PostgreSQL analytics schemas.
 package migrations
 
 import "embed"
 
-//go:embed *.sql mysql/*.sql analytics/*.sql
+//go:embed mysql/*.sql analytics/*.sql
 var Files embed.FS
