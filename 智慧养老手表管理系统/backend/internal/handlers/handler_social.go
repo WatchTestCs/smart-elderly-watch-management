@@ -136,9 +136,9 @@ func (h *Handler) createNoticeComment(w http.ResponseWriter, r *http.Request) {
 			}
 			return manager.Require(ctx, tx, names)
 		}, socialrepo.NewComment{
-		NoticeID: textID, Content: saidContent, CreatedAt: time.Now(),
-		AuthorName: p.DisplayName, AuthorPhone: p.Phone,
-	})
+			NoticeID: textID, Content: saidContent, CreatedAt: time.Now(),
+			AuthorName: p.DisplayName, AuthorPhone: p.Phone,
+		})
 	if errors.Is(err, blob.ErrNotFound) {
 		write400(w, "图片不存在或已回收，请重新上传")
 		return
