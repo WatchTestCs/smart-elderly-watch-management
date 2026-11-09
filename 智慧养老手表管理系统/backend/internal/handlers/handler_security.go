@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"strconv"
 	"time"
 
 	"suining-care/internal/authrepo"
@@ -16,9 +15,6 @@ import (
 
 type factorGenerationKey struct{}
 
-func factorScope(role string, id int64) string {
-	return "totp:" + role + ":" + strconv.FormatInt(id, 10)
-}
 func (h *Handler) loginAudit(r *http.Request, phone, role string, id int64, outcome string) error {
 	return h.loginAuditTx(r, phone, role, id, outcome, nil)
 }
