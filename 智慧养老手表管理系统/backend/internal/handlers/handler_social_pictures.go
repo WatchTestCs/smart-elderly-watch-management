@@ -2,12 +2,16 @@ package handlers
 
 import (
 	"context"
+	"errors"
+	"net/http"
+	"strings"
+
+	"suining-care/internal/blob"
 	dbstore "suining-care/internal/db"
 	"suining-care/internal/response"
 	"suining-care/internal/socialrepo"
+	"suining-care/internal/socialworkflow"
 
-	"net/http"
-	"strings"
 )
 
 type dbQuerier interface {
@@ -49,18 +53,16 @@ func (h *Handler) replaceGallery(w http.ResponseWriter, r *http.Request) {
 		}
 		names = append(names, s)
 	}
-	tx, err := h.DB.Begin(r.Context())
+	manager, err := h.images()
 	if internalError(w, err) {
 		return
 	}
-	defer tx.Rollback(r.Context())
-	if !h.lockImages(w, r.Context(), tx, names) {
-		return
-	}
-	if internalError(w, socialrepo.ReplaceGallery(r.Context(), tx, names)) {
-		return
-	}
-	if internalError(w, tx.Commit(r.Context())) {
+	if err := socialworkflow.ReplaceGallery(r.Context(), h.DB, manager, names); err != nil {
+		if errors.Is(err, blob.ErrNotFound) {
+			write400(w, "图片不存在或已回收，请重新上传")
+		} else {
+			internalError(w, err)
+		}
 		return
 	}
 	writeCode(w, true)
