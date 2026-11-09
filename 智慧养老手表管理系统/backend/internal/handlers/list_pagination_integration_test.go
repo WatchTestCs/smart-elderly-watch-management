@@ -17,10 +17,7 @@ func TestIntegrationListPageTotals(t *testing.T) {
 	mustExec(t, pool, `INSERT INTO text(text_id,title,time) VALUES
 		(4,'match A','2026-10-19 08:01:02.123'),(7,'match B','2026-10-19 08:01:02.123'),
 		(9,'other','2026-10-20 08:01:02.123'),(12,'match C','2026-10-18 08:01:02.123'),(15,NULL,NULL)`)
-	textOrder := []int{15, 9, 7, 4, 12}
-	if pool.IsMySQL() {
-		textOrder = []int{9, 7, 4, 12, 15}
-	}
+	textOrder := []int{9, 7, 4, 12, 15}
 	for _, endpoint := range []struct {
 		name, key, idKey, filterKey string
 		handler                     http.HandlerFunc
