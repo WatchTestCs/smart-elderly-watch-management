@@ -11,4 +11,3 @@ CREATE TABLE health_sample_latest (
 CREATE TABLE health_latest_ready (
  old_id bigint PRIMARY KEY
 );
-CREATE INDEX idx_health_latest_recompute ON health_sample(old_id,source,source_device,metric,semantics,sample_start DESC);
