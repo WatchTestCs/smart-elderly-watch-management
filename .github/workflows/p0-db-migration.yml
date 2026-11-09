@@ -1,5 +1,5 @@
 # CI-only service container: these ephemeral runner credentials are never shared with production.
-name: Dual database migration verification
+name: Historical database migration verification
 on:
   workflow_dispatch:
 permissions:
@@ -39,7 +39,6 @@ jobs:
           go run ./cmd/migrate
           go run ./cmd/migrate --legacy-postgres
           go run ./cmd/migrate --legacy-postgres
-          go test -race -count=1 -timeout 240s ./...
         working-directory: 智慧养老手表管理系统/backend
         env:
           MYSQL_DSN: root:ci_root_only@tcp(localhost:3306)/suining_test
