@@ -80,9 +80,6 @@ func TestHealthDeviceLockOrderDuringOwnerClockContention(t *testing.T) {
 	}{{"original_device_first", false, false}, {"late_device_lock", true, true}} {
 		t.Run(tc.name, func(t *testing.T) {
 			pool := testDatabase(t)
-			if !pool.IsMySQL() {
-				t.Skip("MySQL row lock probe only")
-			}
 			seedDevice(t, pool)
 			h := testHandler(t, pool)
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -164,9 +161,6 @@ func TestHealthDeviceLockOrderDuringOwnerClockContention(t *testing.T) {
 
 func TestLateHealthDeviceLockRejectsConcurrentUnbind(t *testing.T) {
 	pool := testDatabase(t)
-	if !pool.IsMySQL() {
-		t.Skip("MySQL row lock probe only")
-	}
 	seedDevice(t, pool)
 	h := testHandler(t, pool)
 	t.Setenv("HEALTH_LATE_DEVICE_LOCK", "1")
@@ -226,9 +220,6 @@ func TestLateHealthDeviceLockRejectsConcurrentCredentialChanges(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			pool := testDatabase(t)
-			if !pool.IsMySQL() {
-				t.Skip("MySQL row lock probe only")
-			}
 			seedDevice(t, pool)
 			h := testHandler(t, pool)
 			t.Setenv("HEALTH_LATE_DEVICE_LOCK", "1")
@@ -284,9 +275,6 @@ func TestLateHealthDeviceLockRejectsConcurrentCredentialChanges(t *testing.T) {
 
 func TestHealthSingleAndBulkFitOneConnectionPool(t *testing.T) {
 	pool := testDatabase(t)
-	if !pool.IsMySQL() {
-		t.Skip("MySQL pool admission regression")
-	}
 	pool.SQL().SetMaxOpenConns(1)
 	pool.SQL().SetMaxIdleConns(1)
 	seedDevice(t, pool)
@@ -331,9 +319,6 @@ func TestBulkPreparationRevalidatesConcurrentDeviceChanges(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			pool := testDatabase(t)
-			if !pool.IsMySQL() {
-				t.Skip("MySQL row lock regression")
-			}
 			t.Setenv("HEALTH_LATE_DEVICE_LOCK", "0")
 			seedDevice(t, pool)
 			h := testHandler(t, pool)
