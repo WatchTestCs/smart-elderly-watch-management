@@ -26,28 +26,7 @@
     
     <DeviceAlertDialog :alert="alertDialog" @close="alertDialog.visible = false" @resolve="resolveAlert" @navigate="gotoPage(alertDialog.kind)" />
 
-    <el-dialog title="待处理异常" v-model="workbench.visible" width="760px">
-      <div class="tip">共 {{ workbench.list.length }} 条未处理异常。点「查看原因」看具体问题和处理办法，处理完点「标记已处理」消除红点。</div>
-      <el-table :data="workbench.list" size="small" border style="width:100%;margin-top:8px;">
-        <el-table-column prop="deviceNo" label="设备号" width="120" align="center"></el-table-column>
-        <el-table-column prop="alias" label="别名" width="110" align="center"></el-table-column>
-        <el-table-column label="问题" width="120" align="center">
-          <template #default="scope" >
-            <el-tag type="danger" size="small">{{ scope.row.kindText }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="reason" label="原因" align="left"></el-table-column>
-        <el-table-column label="操作" width="170" align="center">
-          <template #default="scope" >
-            <el-button size="small" plain type="primary" @click="showAlert(scope.row, scope.row.kind)">查看原因</el-button>
-            <el-button size="small" plain @click="resolveAlertRow(scope.row)">已处理</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-      <template #footer><span  class="dialog-footer">
-        <el-button @click="workbench.visible = false">关 闭</el-button>
-      </span></template>
-    </el-dialog>
+    <DeviceAlertWorkbench :workbench="workbench" @close="workbench.visible = false" @view="row => showAlert(row, row.kind || 'person')" @resolve="resolveAlertRow" />
 
     <el-dialog title="登记新设备" v-model="createDialogVisible" width="560px" :close-on-click-modal="!creating" :close-on-press-escape="!creating" :show-close="!creating" @closed="closeCreateDialog">
       <el-form label-width="100px" :model="createForm" ref="createFormRef">
@@ -135,6 +114,7 @@ import { useCollectionLayout } from '../composables/useCollectionLayout'
 import { useDevices } from '../composables/useDevices'
 import HarmonyWatchSetup from '../components/HarmonyWatchSetup.vue'
 import DeviceAlertDialog from '../components/DeviceAlertDialog.vue'
+import DeviceAlertWorkbench from '../components/DeviceAlertWorkbench.vue'
 
 const mobileLayout = useCollectionLayout()
 const {
