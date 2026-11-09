@@ -63,11 +63,9 @@ func TestContinuousSOSWithoutCoordinatesDoesNotBorrowLatestLocation(t *testing.T
 	if err := h.DB.QueryRow(context.Background(), "SELECT count(*) FROM care_incident WHERE old_id=1").Scan(&incidents); err != nil || incidents != 1 {
 		t.Errorf("malformed coordinates created an extra incident: count=%d err=%v", incidents, err)
 	}
-	if h.DB.IsMySQL() {
-		var kind string
-		if err := h.DB.QueryRow(context.Background(), "SELECT kind FROM care_incident WHERE source_alarm_id=(SELECT max(id) FROM alarm_precess WHERE old_id=1)").Scan(&kind); err != nil || kind != "sos" {
-			t.Fatalf("fixture must represent a real SOS, not a fall classification: kind=%s err=%v", kind, err)
-		}
+	var kind string
+	if err := h.DB.QueryRow(context.Background(), "SELECT kind FROM care_incident WHERE source_alarm_id=(SELECT max(id) FROM alarm_precess WHERE old_id=1)").Scan(&kind); err != nil || kind != "sos" {
+		t.Fatalf("fixture must represent a real SOS, not a fall classification: kind=%s err=%v", kind, err)
 	}
 }
 

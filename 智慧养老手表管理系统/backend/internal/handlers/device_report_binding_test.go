@@ -12,8 +12,8 @@ func TestOrdinaryReportRejectsStaleBindingVersionWithoutPersisting(t *testing.T)
 	pool := testDatabase(t)
 	seedDevice(t, pool)
 	h := testHandler(t, pool)
-	// Both database engines advance health_epoch through old_id change
-	// triggers; direct assignment to health_epoch is deliberately ignored.
+	// MySQL binding triggers advance health_epoch on old_id changes;
+	// direct assignment to health_epoch is deliberately ignored.
 	mustExec(t, pool, "UPDATE device SET old_id=NULL WHERE device_id=1")
 	mustExec(t, pool, "UPDATE device SET old_id=1 WHERE device_id=1")
 	stale := callAPI(h.deviceReport, map[string]any{
@@ -68,11 +68,6 @@ func TestOrdinaryReportConcurrentRebindCannotWriteOldOwner(t *testing.T) {
 	waits := `SELECT count(*) FROM performance_schema.data_lock_waits w
 		JOIN performance_schema.data_locks l ON l.ENGINE_LOCK_ID=w.REQUESTING_ENGINE_LOCK_ID AND l.ENGINE=w.ENGINE
 		WHERE l.OBJECT_SCHEMA=DATABASE() AND l.OBJECT_NAME='oldperson'`
-	if !pool.IsMySQL() {
-		waits = `SELECT count(*) FROM pg_stat_activity WHERE datname=current_database()
-			AND wait_event_type='Lock' AND query LIKE '%SELECT old_id FROM oldperson WHERE old_id=%FOR UPDATE%'
-			AND pid<>pg_backend_pid()`
-	}
 	for {
 		var count int
 		if err := pool.QueryRow(ctx, waits).Scan(&count); err != nil {

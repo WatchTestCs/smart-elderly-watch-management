@@ -42,13 +42,11 @@ func TestFallReportCreatesActionableCareIncidentWithoutDuplicateNotifications(t 
 	if events != 1 {
 		t.Fatalf("expected one durable received event, got %d", events)
 	}
-	if pool.IsMySQL() {
-		if err := pool.QueryRow(ctx, "SELECT count(*) FROM message_outbox WHERE topic='care' AND source_key=$1 AND channel='in_app'", fmt.Sprint(incidentID)).Scan(&inbox); err != nil {
-			t.Fatal(err)
-		}
-		if inbox != 1 {
-			t.Fatalf("missing family inbox: %d", inbox)
-		}
+	if err := pool.QueryRow(ctx, "SELECT count(*) FROM message_outbox WHERE topic='care' AND source_key=$1 AND channel='in_app'", fmt.Sprint(incidentID)).Scan(&inbox); err != nil {
+		t.Fatal(err)
+	}
+	if inbox != 1 {
+		t.Fatalf("missing family inbox: %d", inbox)
 	}
 
 	replayed := api(t, h.deviceReport, payload)
@@ -66,7 +64,7 @@ func TestFallReportCreatesActionableCareIncidentWithoutDuplicateNotifications(t 
 		t.Fatalf("duplicate care effects: incidents=%d notifications=%d", incidents, notifications)
 	}
 
-	// MySQL/PostgreSQL triggers own health_epoch: manually assigning it is
+	// MySQL binding triggers own health_epoch: manually assigning it is
 	// intentionally ignored. A real owner change must increment the epoch.
 	mustExec(t, pool, "UPDATE device SET old_id=NULL WHERE device_id=1")
 	mustExec(t, pool, "UPDATE device SET old_id=1 WHERE device_id=1")

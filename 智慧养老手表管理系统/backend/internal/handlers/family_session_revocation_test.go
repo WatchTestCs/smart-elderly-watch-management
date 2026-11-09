@@ -13,15 +13,12 @@ import (
 )
 
 // Credential and account mutations must invalidate all prior sessions, not
-// merely the one that initiated the request. The MySQL path checks the same
+// merely the one that initiated the request. The database-backed mode checks the same
 // persistent session store used by different production replicas.
 func TestFamilyCredentialMutationRevokesSessions(t *testing.T) {
 	for _, mode := range []string{"memory", "database"} {
 		t.Run(mode, func(t *testing.T) {
 			pool := testDatabase(t)
-			if mode == "database" && !pool.IsMySQL() {
-				t.Skip("database-backed session store uses MySQL; TEST_MYSQL_DSN not set in this mode")
-			}
 			h := testHandler(t, pool)
 			var replica *session.Store
 			if mode == "database" {
