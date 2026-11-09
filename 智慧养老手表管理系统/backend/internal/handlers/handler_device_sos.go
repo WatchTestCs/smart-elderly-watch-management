@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"regexp"
 	"time"
 
 	dbstore "suining-care/internal/db"
+	"suining-care/internal/deviceprotocol"
 	"suining-care/internal/devicerepo"
 	"suining-care/internal/deviceworkflow"
 	"suining-care/internal/response"
@@ -93,10 +93,6 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-var sosRequestIDPattern = regexp.MustCompile(`^[A-Za-z0-9_.:-]{1,64}$`)
-
-func sosRequestIDOK(id string) bool { return sosRequestIDPattern.MatchString(id) }
-
 type sosRequest struct {
 	deviceNo, secret, requestID string
 	bindingVersion              int64
@@ -117,7 +113,7 @@ func parseSOSRequest(w http.ResponseWriter, m map[string]any) (sosRequest, bool)
 	}
 	// SOS retry identifiers must be checked before opening a DB transaction.
 	requestID, _ := vstr(m, "requestId")
-	if requestID == "" || len(requestID) > 64 || !sosRequestIDOK(requestID) {
+	if !deviceprotocol.ValidRequestID(requestID) {
 		writeValidation400(w)
 		return sosRequest{}, false
 	}

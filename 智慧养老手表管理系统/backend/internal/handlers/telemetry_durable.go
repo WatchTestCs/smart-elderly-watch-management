@@ -5,7 +5,6 @@ import (
 	"errors"
 	"log"
 	"os"
-	"regexp"
 	"time"
 
 	"github.com/go-sql-driver/mysql"
@@ -13,18 +12,17 @@ import (
 
 	dbstore "suining-care/internal/db"
 	"suining-care/internal/devicerepo"
+	"suining-care/internal/deviceprotocol"
 	"suining-care/internal/securestore"
 	"suining-care/internal/telemetryrepo"
 	"suining-care/internal/telemetryworkflow"
 )
 
-var durableRequestIDPattern = regexp.MustCompile(`^[A-Za-z0-9_.:-]{1,64}$`)
-
 // The queue stores only encrypted measurements, never hardware credentials.
 // Emergency/SOS, vital signs and coordinates are deliberately excluded.
 func durableTelemetryEligible(parsed parsedDeviceTelemetry, requestID string, box *securestore.Box) bool {
 	return os.Getenv("SUINING_DURABLE_TELEMETRY") == "1" &&
-		box != nil && durableRequestIDPattern.MatchString(requestID) &&
+		box != nil && deviceprotocol.ValidRequestID(requestID) &&
 		parsed.hr == nil && parsed.bp == nil && parsed.alarm == "" &&
 		parsed.lng == "" && parsed.lat == "" &&
 		parsed.battery == nil && parsed.appVersion == nil &&
