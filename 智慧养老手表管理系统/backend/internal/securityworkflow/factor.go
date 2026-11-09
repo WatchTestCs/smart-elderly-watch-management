@@ -19,28 +19,28 @@ import (
 type FactorAction string
 
 const (
-	Setup   FactorAction = "setup"
-	Confirm FactorAction = "confirm"
-	Disable FactorAction = "disable"
+	Setup	FactorAction = "setup"
+	Confirm	FactorAction = "confirm"
+	Disable	FactorAction = "disable"
 )
 
 type FactorFailure string
 
 const (
-	WrongPassword   FactorFailure = "wrong_password"
-	AlreadyEnabled  FactorFailure = "already_enabled"
-	InvalidState    FactorFailure = "invalid_state"
-	InvalidOTP      FactorFailure = "invalid_otp"
-	InvalidAction   FactorFailure = "invalid_action"
+	WrongPassword	FactorFailure = "wrong_password"
+	AlreadyEnabled	FactorFailure = "already_enabled"
+	InvalidState	FactorFailure = "invalid_state"
+	InvalidOTP	FactorFailure = "invalid_otp"
+	InvalidAction	FactorFailure = "invalid_action"
 )
 
 type FactorInput struct {
-	Role             string
-	ActorID          int64
-	Action           FactorAction
-	Password         string
-	OTP              string
-	DatabaseSessions bool
+	Role	string
+	ActorID	int64
+	Action	FactorAction
+	Password	string
+	OTP	string
+	DatabaseSessions	bool
 }
 
 func ChangeFactor(ctx context.Context, store *db.Database, box *securestore.Box, input FactorInput) (map[string]any, FactorFailure, error) {
