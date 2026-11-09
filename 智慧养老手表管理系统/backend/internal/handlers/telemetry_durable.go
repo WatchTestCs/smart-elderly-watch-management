@@ -81,7 +81,7 @@ func processDurableQueueItem(ctx context.Context, tx *dbstore.Transaction, repo 
 		day := payload.ReportedAt.UTC()
 		parsed := parsedDeviceTelemetry{
 			now: payload.ReceivedAt, beTime: payload.ReportedAt,
-			day: time.Date(day.Year(), day.Month(), day.Day(), 0, 0, 0, 0, time.UTC),
+			day:  time.Date(day.Year(), day.Month(), day.Day(), 0, 0, 0, 0, time.UTC),
 			step: payload.Step, sleep: payload.Sleep, sleepState: payload.SleepState,
 			battery: payload.Battery, appVersion: payload.AppVersion,
 			sourceStr: "gps",
