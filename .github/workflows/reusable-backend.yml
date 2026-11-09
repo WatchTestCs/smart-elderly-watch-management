@@ -95,41 +95,8 @@ jobs:
           python3 ../../scripts/reliability/audit-go-results.py "$evidence/postgres.jsonl" --mode postgres --output "$evidence/postgres-summary.json"
           go build ./... > "$evidence/build.txt" 2>&1
           go vet ./... > "$evidence/vet.txt" 2>&1
-          # A reproducible baseline profile. Replace with production workload
-          # data before claiming a runtime speedup.
-          go test -run '^
-          unformatted="$(gofmt -l ./cmd ./internal ./migrations)"
-          if [ -n "$unformatted" ]; then
-            printf 'Go files requiring gofmt:\n%s\n' "$unformatted"
-            gofmt -d ./cmd ./internal ./migrations
-            exit 1
-          fi
-
-      - name: Preserve exact-source evidence including failures
-        if: always()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
-        with:
-          name: backend-1.27.3-${{ github.event.pull_request.head.sha || github.sha }}
-          path: evidence/ci/backend-1.27.3/
-          if-no-files-found: error
-          retention-days: 30
- -bench '^BenchmarkSafe
-          unformatted="$(gofmt -l ./cmd ./internal ./migrations)"
-          if [ -n "$unformatted" ]; then
-            printf 'Go files requiring gofmt:\n%s\n' "$unformatted"
-            gofmt -d ./cmd ./internal ./migrations
-            exit 1
-          fi
-
-      - name: Preserve exact-source evidence including failures
-        if: always()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
-        with:
-          name: backend-1.27.3-${{ github.event.pull_request.head.sha || github.sha }}
-          path: evidence/ci/backend-1.27.3/
-          if-no-files-found: error
-          retention-days: 30
- -benchtime=100ms -cpuprofile="$evidence/default.pgo" ./internal/jsonscan > "$evidence/pgo-training.txt" 2>&1
+          # Benchmark-derived bootstrap profile, not a production traffic profile.
+          go test -run '^$' -bench '^BenchmarkSafe$' -benchtime=100ms -cpuprofile="$evidence/default.pgo" ./internal/jsonscan > "$evidence/pgo-training.txt" 2>&1
           test -s "$evidence/default.pgo"
           CGO_ENABLED=0 go build -trimpath -pgo="$evidence/default.pgo" -ldflags='-s -w' -o "$evidence/suining-server" ./cmd/server
           if readelf -l "$evidence/suining-server" | grep -q INTERP; then
