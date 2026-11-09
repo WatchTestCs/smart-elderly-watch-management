@@ -15,11 +15,9 @@ const healthAlertCountsSQL = `SELECT
 	INNER JOIN device d ON d.device_id=s.device_id AND d.health_epoch=s.binding_epoch
 	WHERE d.status<>0`
 
-const positionAlertSummarySQL = `SELECT COUNT(*) AS total_residents,
-	COUNT((SELECT CASE WHEN a.status='1' AND CHAR_LENGTH(a.status)=1 THEN 1 END
-		FROM alarm_precess a WHERE a.old_id=o.old_id
-		ORDER BY a.be_time DESC, a.id DESC LIMIT 1)) AS active_location_alerts
-	FROM oldperson o`
+const positionAlertSummarySQL = `SELECT
+	(SELECT COUNT(*) FROM oldperson) AS total_residents,
+	(SELECT COUNT(*) FROM resident_location_alert_state WHERE active=true) AS active_location_alerts`
 
 type HealthAlerts struct {
 	HeartRate     int64 `json:"heartRate"`

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"suining-care/internal/db"
+	"suining-care/internal/locationalertstate"
 )
 
 type Location struct {
@@ -21,7 +22,7 @@ type Location struct {
 func InsertLocation(ctx context.Context, tx *db.Transaction, location Location) error {
 	_, err := tx.Exec(ctx,
 		`INSERT INTO device_location(device_id, old_id, lng, lat, source, be_time, create_time, position_metadata)
-    VALUES($1,$2,$3,$4,$5,$6,now(),$7)`,
+    VALUES($1,$2,$3,$4,$5,$6,CURRENT_TIMESTAMP(6),$7)`,
 		location.DeviceID, location.ResidentID, location.Longitude, location.Latitude,
 		location.Source, location.ObservedAt, location.PositionMetadata)
 	return err
@@ -51,8 +52,15 @@ const insertAlarm = `INSERT INTO alarm_precess(status, old_id, device_id, be_tim
 
 // InsertAlarm writes an alarm and returns its persisted identifier.
 func InsertAlarm(ctx context.Context, tx *db.Transaction, alarm Alarm) (int64, error) {
-	return tx.InsertID(ctx, insertAlarm, alarm.ResidentID, alarm.DeviceID,
+	id, err := tx.InsertID(ctx, insertAlarm, alarm.ResidentID, alarm.DeviceID,
 		alarm.ObservedAt, alarm.Longitude, alarm.Latitude, alarm.Kind, alarm.PositionMetadata)
+	if err != nil {
+		return 0, err
+	}
+	if err := locationalertstate.Record(ctx, tx, alarm.ResidentID, id, alarm.ObservedAt); err != nil {
+		return 0, err
+	}
+	return id, nil
 }
 
 type Incident struct {
