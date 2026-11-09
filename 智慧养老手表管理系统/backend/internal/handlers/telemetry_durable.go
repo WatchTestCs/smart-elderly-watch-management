@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/go-sql-driver/mysql"
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 
 	dbstore "suining-care/internal/db"
@@ -66,21 +65,6 @@ func durableQueueDuplicate(err error) bool {
 	return errors.As(err, &pg) && pg.Code == "23505"
 }
 
-func decodeQueuedTelemetry(box *securestore.Box, raw string) (parsedDeviceTelemetry, error) {
-	payload, err := telemetryworkflow.Decode(box, raw)
-	if err != nil {
-		return parsedDeviceTelemetry{}, err
-	}
-	day := payload.ReportedAt.UTC()
-	return parsedDeviceTelemetry{
-		now: payload.ReceivedAt, beTime: payload.ReportedAt,
-		day: time.Date(day.Year(), day.Month(), day.Day(), 0, 0, 0, 0, time.UTC),
-		step: payload.Step, sleep: payload.Sleep, sleepState: payload.SleepState,
-		battery: payload.Battery, appVersion: payload.AppVersion,
-		sourceStr: "gps",
-	}, nil
-}
-
 // DrainDurableTelemetryBatch retains the public API for existing integrations.
 func DrainDurableTelemetryBatch(ctx context.Context, store *dbstore.Database, box *securestore.Box) (int, error) {
 	if box == nil {
@@ -93,33 +77,18 @@ func DrainDurableTelemetryBatch(ctx context.Context, store *dbstore.Database, bo
 }
 
 func processDurableQueueItem(ctx context.Context, tx *dbstore.Transaction, repo telemetryRepository, item telemetryrepo.DurableItem) error {
-	parsed, err := decodeQueuedTelemetry(repo.box, item.Payload)
-	if err != nil {
+	return telemetryworkflow.ProcessItem(ctx, tx, repo.box, item, func(ctx context.Context, tx *dbstore.Transaction, device *devicerepo.DeviceRecord, payload telemetryworkflow.Payload) error {
+		day := payload.ReportedAt.UTC()
+		parsed := parsedDeviceTelemetry{
+			now: payload.ReceivedAt, beTime: payload.ReportedAt,
+			day: time.Date(day.Year(), day.Month(), day.Day(), 0, 0, 0, 0, time.UTC),
+			step: payload.Step, sleep: payload.Sleep, sleepState: payload.SleepState,
+			battery: payload.Battery, appVersion: payload.AppVersion,
+			sourceStr: "gps",
+		}
+		_, err := repo.PersistDeviceReport(ctx, tx, device, parsed)
 		return err
-	}
-	// Keep the same Elder -> Device lock order as SOS, bind and unbind.
-	var owner int64
-	err = tx.QueryRow(ctx, `SELECT old_id FROM oldperson WHERE old_id=$1 FOR UPDATE`, item.ResidentID).Scan(&owner)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return telemetryrepo.MarkDurableStale(ctx, tx, item.ID, "elder removed")
-	}
-	if err != nil {
-		return err
-	}
-	d, err := devicerepo.ScanDeviceRecord(devicerepo.LockedDeviceRow(ctx, tx, item.DeviceID))
-	if errors.Is(err, pgx.ErrNoRows) {
-		return telemetryrepo.MarkDurableStale(ctx, tx, item.ID, "device removed")
-	}
-	if err != nil {
-		return err
-	}
-	if d.OldID == nil || *d.OldID != item.ResidentID || d.HealthEpoch != item.BindingEpoch {
-		return telemetryrepo.MarkDurableStale(ctx, tx, item.ID, "device binding changed")
-	}
-	if _, err := repo.PersistDeviceReport(ctx, tx, d, parsed); err != nil {
-		return err
-	}
-	return telemetryrepo.MarkDurableDone(ctx, tx, item.ID, time.Now().UTC())
+	})
 }
 
 func RunDurableTelemetry(ctx context.Context, store *dbstore.Database, box *securestore.Box) {
