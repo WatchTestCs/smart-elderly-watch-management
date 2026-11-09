@@ -7,15 +7,25 @@
     <care-inbox />
     <div v-if="!isRestricted" class="dashboard-panels">
     <section class="overview-grid" aria-label="设备告警摘要">
-      <article class="overview-card alert-card" v-loading="countLoading" :aria-busy="countLoading">
+      <article class="overview-card alert-card" v-loading="snapshotLoading" :aria-busy="snapshotLoading">
         <div class="metric-icon amber"><el-icon><WarningFilled /></el-icon></div>
-        <div class="metric-copy"><span>设备异常类别计数</span><strong v-if="!countError">{{ allCount == null ? '—' : allCount }}</strong><strong v-else class="metric-error" role="status">{{ countError }}</strong><small v-if="categoryCounts">心率 {{ categoryCounts.rate }} · 血压 {{ categoryCounts.pressure }} · 睡眠 {{ categoryCounts.sleep }}</small><small>同一设备可能对应多类异常</small></div>
-        <el-button v-if="countError" link @click="getCount">重新加载设备统计</el-button><el-button v-else link @click="router.push('/operations/devices')">查看设备 <el-icon><ArrowRight /></el-icon></el-button>
+        <div class="metric-copy"><span>设备异常类别计数</span><strong v-if="!snapshotError">{{ allCount == null ? '—' : allCount }}</strong><strong v-else class="metric-error" role="status">{{ snapshotError }}</strong><small v-if="categoryCounts">心率 {{ categoryCounts.rate }} · 血压 {{ categoryCounts.pressure }} · 睡眠 {{ categoryCounts.sleep }}</small><small>同一设备可能对应多类异常</small></div>
+        <el-button v-if="snapshotError" link @click="loadSnapshot">重新加载设备统计</el-button><el-button v-else link @click="router.push('/operations/devices')">查看设备 <el-icon><ArrowRight /></el-icon></el-button>
       </article>
-      <article class="overview-card fall-card" v-loading="positionLoading" :aria-busy="positionLoading">
+      <article class="overview-card fall-card" v-loading="snapshotLoading" :aria-busy="snapshotLoading">
         <div class="metric-icon rose"><el-icon><WarningFilled /></el-icon></div>
-        <div class="metric-copy"><span>紧急告警</span><strong v-if="!positionError">{{ num == null ? '—' : num }}</strong><strong v-else class="metric-error" role="status">{{ positionError }}</strong><small v-if="positionTotal != null">{{ positionTotal ? num + ' / ' + positionTotal + ' 位长者有紧急告警' : '暂无长者位置记录' }}</small><small>根据最近告警记录统计</small></div>
-        <el-button v-if="positionError" link @click="loadLocationAlertSummary">重新加载告警统计</el-button><el-button v-else link @click="router.push('/operations/locations')">查看位置 <el-icon><ArrowRight /></el-icon></el-button>
+        <div class="metric-copy"><span>紧急告警</span><strong v-if="!snapshotError">{{ num == null ? '—' : num }}</strong><strong v-else class="metric-error" role="status">{{ snapshotError }}</strong><small v-if="positionTotal != null">{{ positionTotal ? num + ' / ' + positionTotal + ' 位长者有紧急告警' : '暂无长者位置记录' }}</small><small>根据最近告警记录统计</small></div>
+        <el-button v-if="snapshotError" link @click="loadSnapshot">重新加载告警统计</el-button><el-button v-else link @click="router.push('/operations/locations')">查看位置 <el-icon><ArrowRight /></el-icon></el-button>
+      </article>
+      <article class="overview-card care-card" v-loading="snapshotLoading" :aria-busy="snapshotLoading">
+        <div class="metric-icon rose"><el-icon><WarningFilled /></el-icon></div>
+        <div class="metric-copy"><span>照护待办</span><strong v-if="!snapshotError">{{ snapshot?.activeCareIncidents ?? '—' }}</strong><strong v-else class="metric-error" role="status">{{ snapshotError }}</strong><small v-if="snapshot">其中 {{ snapshot.overdueCareIncidents }} 项已超时 · {{ snapshot.failedNotifications }} 条通知失败</small><small>需要人工接单、处置或复核的闭环任务</small></div>
+        <el-button v-if="snapshotError" link @click="loadSnapshot">重新加载待办</el-button><el-button v-else link @click="focusCareInbox">查看待办 <el-icon><ArrowRight /></el-icon></el-button>
+      </article>
+      <article class="overview-card device-card" v-loading="snapshotLoading" :aria-busy="snapshotLoading">
+        <div class="metric-icon amber"><el-icon><WarningFilled /></el-icon></div>
+        <div class="metric-copy"><span>设备关注</span><strong v-if="!snapshotError">{{ snapshot?.offlineDevices ?? '—' }}</strong><strong v-else class="metric-error" role="status">{{ snapshotError }}</strong><small v-if="snapshot">共 {{ snapshot.activeDevices }} 台启用设备 · 低电量 {{ snapshot.lowBatteryDevices }} · 未绑定 {{ snapshot.unboundDevices }}</small><small>离线超过 2 分钟的启用设备</small></div>
+        <el-button v-if="snapshotError" link @click="loadSnapshot">重新加载设备状态</el-button><el-button v-else link @click="router.push('/operations/devices')">查看设备 <el-icon><ArrowRight /></el-icon></el-button>
       </article>
       <article class="overview-note">
         <span class="note-icon"><el-icon><InfoFilled /></el-icon></span>
@@ -60,6 +70,8 @@
 .overview-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; margin-bottom: 28px; border: 1px solid #dfe5df; border-radius: 12px; background: #fff; overflow: hidden; }
 .overview-card { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; min-height: 148px; padding: 28px; background: #fff; }
 .alert-card { border-right: 1px solid #e2e9e1; }
+.care-card { border-top: 1px solid #e2e9e1; border-right: 1px solid #e2e9e1; }
+.device-card { border-top: 1px solid #e2e9e1; }
 .metric-icon { display: grid; place-items: center; width: 44px; height: 44px; flex: 0 0 44px; border-radius: 12px; font-size: 20px; }
 .metric-icon.amber { background: #fff5e5; color: #b7791f; }
 .metric-icon.rose { background: #fff0ed; color: #b5473c; }
@@ -89,11 +101,12 @@
 @media (min-width: 1800px) {
   .dashboard-panels { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 24px; align-items: start; }
   .overview-grid { grid-template-columns: 1fr; margin-bottom: 0; }
-  .alert-card { border-right: 0; border-bottom: 1px solid #e2e9e1; }
+  .overview-card { border-right: 0; border-bottom: 1px solid #e2e9e1; }
+  .device-card { border-bottom: 0; }
   .announcement-panel { min-width: 0; }
 }
-@media (min-width: 901px) and (max-width: 1180px) { .overview-grid { grid-template-columns: 1fr; } .alert-card { border-right: 0; border-bottom: 1px solid #e2e9e1; } }
-@media (max-width: 760px) { .overview-card { padding: 22px 18px; } .alert-card { border-right: 0; border-bottom: 1px solid #e2e9e1; } .overview-note { padding: 18px; } .desktop-announcements { display: none; } .mobile-announcements { display: block; } .page-heading { align-items: flex-start; flex-direction: column; } .page-heading h1 { font-size: 25px; } .overview-grid { grid-template-columns: 1fr; } .overview-note { grid-column: auto; } .panel-heading { align-items: flex-start; flex-direction: column; } .search-box { width: 100%; } .announcement-panel { padding: 18px 14px; } .pagination-wrap { justify-content: center; overflow-x: auto; } }
+@media (min-width: 901px) and (max-width: 1180px) { .overview-grid { grid-template-columns: 1fr; } .overview-card { border-right: 0; border-bottom: 1px solid #e2e9e1; } .device-card { border-bottom: 0; } }
+@media (max-width: 760px) { .overview-card { padding: 22px 18px; border-right: 0; border-bottom: 1px solid #e2e9e1; } .device-card { border-bottom: 0; } .overview-note { padding: 18px; } .desktop-announcements { display: none; } .mobile-announcements { display: block; } .page-heading { align-items: flex-start; flex-direction: column; } .page-heading h1 { font-size: 25px; } .overview-grid { grid-template-columns: 1fr; } .overview-note { grid-column: auto; } .panel-heading { align-items: flex-start; flex-direction: column; } .search-box { width: 100%; } .announcement-panel { padding: 18px 14px; } .pagination-wrap { justify-content: center; overflow-x: auto; } }
 </style>
 <script setup lang="ts">
 import { ArrowRight, InfoFilled, Plus, Search, WarningFilled } from '@element-plus/icons-vue'
@@ -121,15 +134,36 @@ const isLoading = ref(false)
 const loadError = ref('')
 const pageSize = ref(10)
 const currentPage = ref(1)
-const allCount = ref<number | null>(null)
-const categoryCounts = ref<{ rate: number; pressure: number; sleep: number } | null>(null)
-const num = ref<number | null>(null)
-const positionTotal = ref<number | null>(null)
-const countLoading = ref(false)
-const positionLoading = ref(false)
-const countError = ref('')
-const positionError = ref('')
-let positionNeedsRefresh = false
+interface OperationsSnapshot {
+  health: { heartRate: number; bloodPressure: number; sleep: number }
+  totalResidents: number
+  activeLocationAlerts: number
+  activeCareIncidents: number
+  overdueCareIncidents: number
+  pendingNotifications: number
+  failedNotifications: number
+  staleNotifications: number
+  activeDevices: number
+  offlineDevices: number
+  lowBatteryDevices: number
+  unboundDevices: number
+  capturedAt: string
+}
+
+const snapshot = ref<OperationsSnapshot | null>(null)
+const snapshotLoading = ref(false)
+const snapshotError = ref('')
+const categoryCounts = computed(() => snapshot.value ? {
+  rate: snapshot.value.health.heartRate,
+  pressure: snapshot.value.health.bloodPressure,
+  sleep: snapshot.value.health.sleep
+} : null)
+const allCount = computed(() => snapshot.value
+  ? snapshot.value.health.heartRate + snapshot.value.health.bloodPressure + snapshot.value.health.sleep
+  : null)
+const num = computed(() => snapshot.value?.activeLocationAlerts ?? null)
+const positionTotal = computed(() => snapshot.value?.totalResidents ?? null)
+let snapshotTimer: ReturnType<typeof setInterval> | undefined
 
 const isRestricted = computed(() => isRestrictedAdmin(authState.account))
 const emptyTitle = computed(() => loadError.value ? '公告暂时无法加载' :
@@ -178,64 +212,55 @@ function getDetail(row: NoticeRecord) {
 }
 function openNoticeEditor() { void router.push('/operations/notices/new') }
 
-async function getCount() {
-  if (countLoading.value || isRestricted.value) return
-  countLoading.value = true
-  countError.value = ''
-  allCount.value = null
-  categoryCounts.value = null
-  try {
-    const { data } = await api.post<{ heartRate: number; bloodPressure: number; sleep: number }>(
-      'api/v1/health/alerts/device-counts', {}
-    )
-    const { heartRate, bloodPressure, sleep } = data
-    if (![heartRate, bloodPressure, sleep].every(value => Number.isSafeInteger(value) && value >= 0)) {
-      throw new Error('invalid counts')
+const snapshotReads = createLatestRead(
+  (_: Record<string, never>, signal: AbortSignal) =>
+    api.post<{ snapshot: OperationsSnapshot }>('api/v1/operations/snapshot', {}, { signal }),
+  ({ data }) => {
+    const value = data.snapshot
+    const counters = value && [
+      value.health.heartRate, value.health.bloodPressure, value.health.sleep,
+      value.totalResidents, value.activeLocationAlerts, value.activeCareIncidents,
+      value.overdueCareIncidents, value.pendingNotifications, value.failedNotifications,
+      value.staleNotifications, value.activeDevices, value.offlineDevices,
+      value.lowBatteryDevices, value.unboundDevices
+    ]
+    if (!value || !counters?.every(item => Number.isSafeInteger(item) && item >= 0) ||
+        value.activeLocationAlerts > value.totalResidents || value.offlineDevices > value.activeDevices) {
+      throw new Error('invalid operations snapshot')
     }
-    categoryCounts.value = { rate: heartRate, pressure: bloodPressure, sleep }
-    allCount.value = heartRate + bloodPressure + sleep
-  } catch (error) {
-    countError.value = apiErrorMessage(error, '设备统计暂时无法加载')
-  } finally { countLoading.value = false }
-}
-async function loadLocationAlertSummary() {
-  if (isRestricted.value || positionLoading.value) return
-  positionLoading.value = true
-  positionError.value = ''
-  num.value = null
-  positionTotal.value = null
-  try {
-    const { data } = await api.post<{ totalResidents: number; activeAlerts: number }>(
-      'api/v1/locations/alerts/summary', {}
-    )
-    const { totalResidents, activeAlerts } = data
-    if (!Number.isSafeInteger(totalResidents) || totalResidents < 0 ||
-        !Number.isSafeInteger(activeAlerts) || activeAlerts < 0 || activeAlerts > totalResidents) {
-      throw new Error('invalid alert summary')
-    }
-    num.value = activeAlerts
-    positionTotal.value = totalResidents
-  } catch (error) {
-    positionError.value = apiErrorMessage(error, '告警统计暂时无法加载')
-  } finally {
-    positionLoading.value = false
-    if (positionNeedsRefresh) {
-      positionNeedsRefresh = false
-      void loadLocationAlertSummary()
-    }
-  }
-}
-watch(() => store.state.alertRevision, () => {
+    snapshot.value = value
+    snapshotError.value = ''
+  },
+  error => {
+    snapshot.value = null
+    snapshotError.value = apiErrorMessage(error, '运营快照暂时无法加载')
+  },
+  loading => { snapshotLoading.value = loading }
+)
+function loadSnapshot() {
   if (isRestricted.value) return
-  if (positionLoading.value) positionNeedsRefresh = true
-  else void loadLocationAlertSummary()
-})
+  return snapshotReads.run({})
+}
+function refreshSnapshotWhenVisible() {
+  if (!document.hidden && !snapshotLoading.value) void loadSnapshot()
+}
+function focusCareInbox() {
+  document.getElementById('care-inbox-title')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+watch(() => store.state.alertRevision, refreshSnapshotWhenVisible)
 onMounted(() => {
   if (!isRestricted.value) {
     void loadNotices()
-    void getCount()
-    void loadLocationAlertSummary()
+    void loadSnapshot()
+    snapshotTimer = setInterval(refreshSnapshotWhenVisible, 30_000)
+    document.addEventListener('visibilitychange', refreshSnapshotWhenVisible)
   }
 })
-onBeforeUnmount(noticeReads.dispose)
+onBeforeUnmount(() => {
+  noticeReads.dispose()
+  snapshotReads.dispose()
+  if (snapshotTimer !== undefined) clearInterval(snapshotTimer)
+  document.removeEventListener('visibilitychange', refreshSnapshotWhenVisible)
+})
 </script>
