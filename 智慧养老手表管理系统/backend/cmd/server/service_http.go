@@ -70,7 +70,7 @@ func (s *databaseService) middleware(local http.Handler) http.Handler {
 			w.Header().Set("Retry-After", "3")
 			w.Header().Set("Cache-Control", "no-store")
 			response.JSON(w, http.StatusServiceUnavailable, map[string]any{
-				"code": "DATABASE_UNAVAILABLE",
+				"code":    "DATABASE_UNAVAILABLE",
 				"message": "数据库尚未连接，请稍后重试",
 			})
 			return
