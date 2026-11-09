@@ -77,7 +77,7 @@ func LockAuthenticatedDevice(ctx context.Context, tx *db.Transaction, device *de
 	if err != nil {
 		return nil, "", err
 	}
-	locked, failure, err = Verify(locked, secret)
+	locked, failure, err := Verify(locked, secret)
 	if err != nil || locked == nil {
 		return nil, failure, err
 	}
