@@ -28,13 +28,13 @@ type Result struct {
 type Failure string
 
 const (
-	CodeMissing     Failure = "code_missing"
-	CodeUsed        Failure = "code_used"
-	CodeExpired     Failure = "code_expired"
-	ResidentMissing Failure = "resident_missing"
-	FamilyMismatch  Failure = "family_mismatch"
+	CodeMissing      Failure = "code_missing"
+	CodeUsed         Failure = "code_used"
+	CodeExpired      Failure = "code_expired"
+	ResidentMissing  Failure = "resident_missing"
+	FamilyMismatch   Failure = "family_mismatch"
 	RegistrationLost Failure = "registration_lost"
-	CodeClaimed     Failure = "code_claimed"
+	CodeClaimed      Failure = "code_claimed"
 )
 
 func missing(err error) bool {
@@ -104,11 +104,11 @@ func Join(ctx context.Context, store *db.Database, box *securestore.Box, input R
 		Relation: input.Relation, Sex: input.Sex, Address: input.Address,
 	}, resident.FamilyID, familyID, *inv.ResidentID)
 	if err != nil || !applied {
-		return Result{}, RegistrationLost, err
+		return Result{}, RegistrationLost, nil
 	}
 	claimed, err := inviterepo.ConsumeCode(ctx, tx, inv.ID, familyID, time.Now())
 	if err != nil || !claimed {
-		return Result{}, CodeClaimed, err
+		return Result{}, CodeClaimed, nil
 	}
 	if err := tx.Commit(ctx); err != nil {
 		return Result{}, "", err
