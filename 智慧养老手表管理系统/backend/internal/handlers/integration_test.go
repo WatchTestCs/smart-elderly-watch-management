@@ -11,7 +11,6 @@ import (
 	"testing"
 	"time"
 
-
 	"suining-care/internal/auth"
 	"suining-care/internal/config"
 	"suining-care/internal/csrf"
@@ -74,7 +73,7 @@ func TestIntegrationMigrationsAndBindingConstraint(t *testing.T) {
 	errs := make(chan error, 2)
 	for range 2 {
 		wg.Add(1)
-		go func() { defer wg.Done(); errs <- migrateTestDB(ctx, pool) }()
+		go func() { defer wg.Done(); errs <- db.MigrateMySQL(ctx, pool) }()
 	}
 	wg.Wait()
 	close(errs)
@@ -83,13 +82,13 @@ func TestIntegrationMigrationsAndBindingConstraint(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	want, wantErr := expectedMigrations(pool)
+	names, wantErr := db.MySQLMigrationNames()
 	if wantErr != nil {
 		t.Fatal(wantErr)
 	}
 	var count int
-	if err := pool.QueryRow(ctx, "SELECT count(*) FROM schema_migrations").Scan(&count); err != nil || count != want {
-		t.Fatalf("migrations=%d want=%d err=%v", count, want, err)
+	if err := pool.QueryRow(ctx, "SELECT count(*) FROM schema_migrations").Scan(&count); err != nil || count != len(names) {
+		t.Fatalf("migrations=%d want=%d err=%v", count, len(names), err)
 	}
 	_, err := pool.Exec(ctx, "INSERT INTO device(device_no,secret,old_id) VALUES('orphan','unused',999)")
 
@@ -224,7 +223,7 @@ func TestIntegrationDistinctInvitesCannotOverwriteFamily(t *testing.T) {
 	deadline := time.Now().Add(10 * time.Second)
 	for {
 		var waiting int
-		if err = pool.QueryRow(ctx, lockWaitQuery(pool, false)).Scan(&waiting); err != nil {
+		if err = pool.QueryRow(ctx, lockWaitQuery()).Scan(&waiting); err != nil {
 			t.Fatal(err)
 		}
 		if waiting >= 2 {
@@ -310,7 +309,7 @@ func TestIntegrationBindDeleteRace(t *testing.T) {
 	deadline := time.Now().Add(10 * time.Second)
 	for {
 		var waiting int
-		if err = pool.QueryRow(ctx, lockWaitQuery(pool, true)).Scan(&waiting); err != nil {
+		if err = pool.QueryRow(ctx, lockWaitQuery()).Scan(&waiting); err != nil {
 			t.Fatal(err)
 		}
 		if waiting > 0 {
@@ -370,16 +369,6 @@ func TestNativeSetupRequiresDesktopToken(t *testing.T) {
 	}
 }
 
-func migrateTestDB(ctx context.Context, pool *db.Database) error {
-	return db.MigrateMySQL(ctx, pool)
-}
-
-func expectedMigrations(_ *db.Database) (int, error) {
-	names, err := db.MySQLMigrationNames()
-	return len(names), err
-}
-
-func lockWaitQuery(_ *dbstore.Database, _ bool) string {
+func lockWaitQuery() string {
 	return "SELECT count(*) FROM performance_schema.data_lock_waits w JOIN performance_schema.data_locks l ON l.ENGINE_LOCK_ID=w.REQUESTING_ENGINE_LOCK_ID AND l.ENGINE=w.ENGINE WHERE l.OBJECT_SCHEMA=DATABASE() AND l.OBJECT_NAME='oldperson'"
-
 }
