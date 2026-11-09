@@ -3,8 +3,7 @@ use serde::Serialize;
 use super::failure::{classify, confirm_batch_reply};
 use super::{DeviceSession, Failure, ReportOutcome};
 use crate::protocol::{
-    BatchView, HealthSample, HealthSampleData, Reply, ReportPayload, SosRequest,
-    MAX_BATCH_SIZE,
+    BatchView, HealthSample, HealthSampleData, Reply, ReportPayload, SosRequest, MAX_BATCH_SIZE,
 };
 
 #[derive(Serialize)]
