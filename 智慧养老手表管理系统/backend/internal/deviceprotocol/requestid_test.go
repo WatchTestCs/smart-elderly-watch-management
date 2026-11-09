@@ -4,7 +4,7 @@ import "testing"
 
 func TestValidRequestID(t *testing.T) {
 	for _, tc := range []struct {
-		id string
+		id   string
 		want bool
 	}{
 		{"sos-123_abc:1.2", true},
