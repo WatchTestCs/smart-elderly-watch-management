@@ -12,7 +12,7 @@ const mod = new Module(source, module);
 mod._compile(compiled, source);
 const p = mod.exports;
 const config = p.normalizeConfig('http://127.0.0.1:18796/', 'watch5_sim_001');
-const binding = p.bindingFrom(config, { returnCode: '1111', bound: 1, oldId: 7, bindingVersion: 3 });
+const binding = p.bindingFrom(config, { returnCode: '1111', bound: 1, residentId: 7, bindingVersion: 3 });
 const samples = p.makeSamples(config.deviceNo, 'stable-001', new Date('2026-10-25T04:00:00Z'), 72, 1280);
 
 test('server validation rejects credentials, paths and query strings', () => {
@@ -23,7 +23,7 @@ test('server validation rejects credentials, paths and query strings', () => {
 });
 test('unbound or missing binding version cannot produce an authenticated owner', () => {
   assert.throws(() => p.bindingFrom(config, { returnCode: '1111', bound: 0 }));
-  assert.throws(() => p.bindingFrom(config, { returnCode: '1111', bound: 1, oldId: 7 }));
+  assert.throws(() => p.bindingFrom(config, { returnCode: '1111', bound: 1, residentId: 7 }));
 });
 test('samples declare simulation, units, and UTC cumulative day boundary', () => {
   assert.equal(samples[0].metadata.simulated, 'true');

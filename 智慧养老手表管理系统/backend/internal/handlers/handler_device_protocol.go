@@ -77,7 +77,7 @@ func (h *Handler) deviceLogin(w http.ResponseWriter, r *http.Request) {
 	bound := 0
 	fields := map[string]any{
 		"deviceId": d.ID, "deviceNo": d.No, "alias": d.Alias,
-		"bound": bound, "oldId": d.OldID, "bindingVersion": d.HealthEpoch,
+		"bound": bound, "residentId": d.OldID, "bindingVersion": d.HealthEpoch,
 	}
 	if harmony {
 		fields["protocolVersion"] = 1
@@ -86,15 +86,15 @@ func (h *Handler) deviceLogin(w http.ResponseWriter, r *http.Request) {
 	if d.OldID != nil {
 		bound = 1
 		fields["bound"] = bound
-		oldName, err := devicerepo.ResidentName(ctx, h.DB, *d.OldID)
+		residentName, err := devicerepo.ResidentName(ctx, h.DB, *d.OldID)
 		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 			response.Error500(w, ref())
 			return
 		}
-		if oldName != nil {
-			fields["oldPersonName"] = *oldName
+		if residentName != nil {
+			fields["residentName"] = *residentName
 		} else {
-			fields["oldPersonName"] = ""
+			fields["residentName"] = ""
 		}
 	}
 	response.OK(w, fields)
@@ -125,7 +125,7 @@ func (h *Handler) deviceBind(w http.ResponseWriter, r *http.Request) {
 	}
 	switch failure {
 	case "":
-		response.OK(w, map[string]any{"oldId": result.ResidentID, "oldPersonName": result.Name})
+		response.OK(w, map[string]any{"residentId": result.ResidentID, "residentName": result.Name})
 	case deviceworkflow.AlreadyBound:
 		conflict409(w, "设备已绑定其他长者，请先在设备管理解除绑定")
 	case deviceworkflow.BindFailed:
@@ -187,7 +187,7 @@ func (h *Handler) deviceHeartbeat(w http.ResponseWriter, r *http.Request) {
 		bound = 1
 	}
 	response.OK(w, map[string]any{
-		"serverTime": now.Format(tsLayout), "bound": bound, "oldId": d.OldID, "bindingVersion": d.HealthEpoch,
+		"serverTime": now.Format(tsLayout), "bound": bound, "residentId": d.OldID, "bindingVersion": d.HealthEpoch,
 		"reportInterval": 5, "pendingAlarm": 0,
 	})
 }

@@ -11,8 +11,8 @@ export interface DeviceReply {
   message?: string;
   deviceId?: number;
   bound?: number;
-  oldId?: number;
-  oldPersonName?: string;
+  residentId?: number;
+  residentName?: string;
   bindingVersion?: number;
   accepted?: number;
   duplicates?: number;
@@ -97,11 +97,11 @@ export function verifyHandshake(reply: DeviceReply): void {
 }
 
 export function bindingFrom(config: WatchConfig, reply: DeviceReply): Binding {
-  if (reply.bound !== 1 || !reply.oldId || !reply.bindingVersion) {
+  if (reply.bound !== 1 || !reply.residentId || !reply.bindingVersion) {
     throw new Error('设备尚未绑定长者，请输入后台生成的设备绑定码');
   }
   return { server: config.server, deviceNo: config.deviceNo,
-    residentId: reply.oldId, version: reply.bindingVersion };
+    residentId: reply.residentId, version: reply.bindingVersion };
 }
 export function sameBinding(a: Binding, b: Binding): boolean {
   return a.server === b.server && a.deviceNo === b.deviceNo && a.residentId === b.residentId && a.version === b.version;

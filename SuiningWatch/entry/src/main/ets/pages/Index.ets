@@ -92,7 +92,7 @@ struct Index {
     if (reply.bound !== 1) { this.useBinding(undefined); }
     const binding = bindingFrom(config, reply);
     this.useBinding(binding);
-    this.person = reply.oldPersonName || '长者 #' + binding.residentId;
+    this.person = reply.residentName || '长者 #' + binding.residentId;
     return binding;
   }
   private async act(action: () => Promise<void>): Promise<void> {
@@ -117,7 +117,7 @@ struct Index {
     }
     const binding = bindingFrom(config, reply);
     this.useBinding(binding);
-    this.person = reply.oldPersonName || '长者 #' + binding.residentId;
+    this.person = reply.residentName || '长者 #' + binding.residentId;
     this.status = '已认证 · ' + this.person;
   }
   private async bind(): Promise<void> {

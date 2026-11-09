@@ -64,8 +64,8 @@ impl DeviceSession {
             }
             let version = reply.binding_version().unwrap_or(0);
             if reply.bound() && version > 0 {
-                let resident_id = reply.get_i64("oldId").unwrap_or(0);
-                let resident_name = reply.get_str("oldPersonName").unwrap_or_default();
+                let resident_id = reply.get_i64("residentId").unwrap_or(0);
+                let resident_name = reply.get_str("residentName").unwrap_or_default();
                 if resident_id <= 0 {
                     return Err(Failure::Rejected {
                         code: "INVALID_RESPONSE".into(),
@@ -116,7 +116,7 @@ impl DeviceSession {
             self.binding = None;
         } else if let (Some(v), Some(id)) = (
             reply.binding_version().filter(|v| *v > 0),
-            reply.get_i64("oldId").filter(|v| *v > 0),
+            reply.get_i64("residentId").filter(|v| *v > 0),
         ) {
             let name = previous
                 .as_ref()
