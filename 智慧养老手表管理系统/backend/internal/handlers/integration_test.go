@@ -6,14 +6,11 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
 
 	"suining-care/internal/auth"
 	"suining-care/internal/config"
@@ -27,46 +24,8 @@ import (
 
 // Each test uses a separate temporary schema in a dedicated test database.
 func testDatabase(t *testing.T) *dbstore.Database {
-	if os.Getenv("TEST_MYSQL_DSN") != "" {
-		return dbtest.MySQL(t)
-	}
 	t.Helper()
-	dsn := os.Getenv("TEST_DATABASE_URL")
-	if dsn == "" {
-		t.Skip("TEST_DATABASE_URL not set; PostgreSQL integration test skipped")
-	}
-	ctx := context.Background()
-	admin, err := pgxpool.New(ctx, dsn)
-	if err != nil {
-		t.Fatal(err)
-	}
-	schema := "test_" + strings.ReplaceAll(uuid.NewString(), "-", "")
-	if _, err = admin.Exec(ctx, "CREATE SCHEMA "+schema); err != nil {
-		admin.Close()
-		t.Fatal(err)
-	}
-	cfg, err := pgxpool.ParseConfig(dsn)
-	if err != nil {
-		t.Fatal(err)
-	}
-	cfg.ConnConfig.RuntimeParams["search_path"] = schema
-	cfg.MaxConns = 8
-	pool, err := pgxpool.NewWithConfig(ctx, cfg)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() {
-		pool.Close()
-		_, err := admin.Exec(ctx, "DROP SCHEMA "+schema+" CASCADE")
-		admin.Close()
-		if err != nil {
-			t.Error(err)
-		}
-	})
-	if err = db.Migrate(ctx, pool); err != nil {
-		t.Fatal(err)
-	}
-	return dbstore.Postgres(pool)
+	return dbtest.MySQL(t)
 }
 
 func api(t *testing.T, handler http.HandlerFunc, body any) map[string]any {
@@ -412,33 +371,15 @@ func TestNativeSetupRequiresDesktopToken(t *testing.T) {
 }
 
 func migrateTestDB(ctx context.Context, pool *db.Database) error {
-	if pool.IsMySQL() {
-		return db.MigrateMySQL(ctx, pool)
-	}
-	return db.Migrate(ctx, pool.LegacyPostgres())
-}
-func expectedMigrations(pool *db.Database) (int, error) {
-	if pool.IsMySQL() {
-		names, err := db.MySQLMigrationNames()
-		if err != nil {
-			return 0, err
-		}
-		return len(names), nil
-	}
-	names, err := db.LegacyMigrationNames()
-	if err != nil {
-		return 0, err
-	}
-	return len(names), nil
+	return db.MigrateMySQL(ctx, pool)
 }
 
-func lockWaitQuery(pool *dbstore.Database, deleting bool) string {
-	if pool.IsMySQL() {
-		return "SELECT count(*) FROM performance_schema.data_lock_waits w JOIN performance_schema.data_locks l ON l.ENGINE_LOCK_ID=w.REQUESTING_ENGINE_LOCK_ID AND l.ENGINE=w.ENGINE WHERE l.OBJECT_SCHEMA=DATABASE() AND l.OBJECT_NAME='oldperson'"
-	}
-	pattern := "%oldperson%"
-	if deleting {
-		pattern = "DELETE FROM oldperson%"
-	}
-	return "SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock' AND query LIKE '" + pattern + "' AND pid<>pg_backend_pid()"
+func expectedMigrations(_ *db.Database) (int, error) {
+	names, err := db.MySQLMigrationNames()
+	return len(names), err
+}
+
+func lockWaitQuery(_ *dbstore.Database, _ bool) string {
+	return "SELECT count(*) FROM performance_schema.data_lock_waits w JOIN performance_schema.data_locks l ON l.ENGINE_LOCK_ID=w.REQUESTING_ENGINE_LOCK_ID AND l.ENGINE=w.ENGINE WHERE l.OBJECT_SCHEMA=DATABASE() AND l.OBJECT_NAME='oldperson'"
+
 }

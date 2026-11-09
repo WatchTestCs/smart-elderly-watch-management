@@ -5,53 +5,17 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"os"
-	"strings"
-	dbstore "suining-care/internal/db"
-	"suining-care/internal/db/dbtest"
 	"sync/atomic"
 	"testing"
 	"time"
 
-	"suining-care/internal/db"
-
-	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
+	dbstore "suining-care/internal/db"
+	"suining-care/internal/db/dbtest"
 )
 
 func testCareDB(t *testing.T) *dbstore.Database {
-	if os.Getenv("TEST_MYSQL_DSN") != "" {
-		return seedCareDB(t, dbtest.MySQL(t))
-	}
 	t.Helper()
-	dsn := os.Getenv("TEST_DATABASE_URL")
-	if dsn == "" {
-		t.Skip("PostgreSQL integration requires TEST_DATABASE_URL")
-	}
-	ctx := context.Background()
-	admin, err := pgxpool.New(ctx, dsn)
-	if err != nil {
-		t.Fatal(err)
-	}
-	schema := "test_" + strings.ReplaceAll(uuid.NewString(), "-", "")
-	if _, err = admin.Exec(ctx, "CREATE SCHEMA "+schema); err != nil {
-		admin.Close()
-		t.Fatal(err)
-	}
-	cfg, err := pgxpool.ParseConfig(dsn)
-	if err != nil {
-		t.Fatal(err)
-	}
-	cfg.ConnConfig.RuntimeParams["search_path"] = schema
-	pool, err := pgxpool.NewWithConfig(ctx, cfg)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { pool.Close(); admin.Exec(ctx, "DROP SCHEMA "+schema+" CASCADE"); admin.Close() })
-	if err := db.Migrate(ctx, pool); err != nil {
-		t.Fatal(err)
-	}
-	return seedCareDB(t, dbstore.Postgres(pool))
+	return seedCareDB(t, dbtest.MySQL(t))
 }
 
 func seedCareDB(t *testing.T, pool *dbstore.Database) *dbstore.Database {
