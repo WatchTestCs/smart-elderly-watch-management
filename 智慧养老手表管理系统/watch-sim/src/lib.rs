@@ -112,7 +112,7 @@ fn local_offset_secs() -> i64 {
             daylight_date: SystemTime,
             daylight_bias: i32,
         }
-        extern "system" {
+        unsafe extern "system" {
             fn GetTimeZoneInformation(info: *mut c_void) -> u32;
         }
         let mut info: TimeZoneInformation = unsafe { std::mem::zeroed() };
