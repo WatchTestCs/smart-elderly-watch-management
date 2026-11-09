@@ -28,7 +28,7 @@ import { reactive, ref } from 'vue'
 import type { FormInstance } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { apiErrorMessage } from '../api/httpContract'
-import axios from 'axios'
+import { api } from '../api/client'
 import { loadSession } from '../auth'
 import { createAdministrator } from '../desktop'
 
@@ -48,7 +48,7 @@ async function submit() {
   error.value = ''
   try {
     await createAdministrator({ ...account })
-    await axios.post('/api/v1/auth/login', { phone: account.phone, password: account.password })
+    await api.post('/api/v1/auth/login', { phone: account.phone, password: account.password })
     account.password = ''
     const loggedIn = await loadSession(true)
     if (!loggedIn) throw new Error('Session missing')

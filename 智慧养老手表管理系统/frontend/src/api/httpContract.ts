@@ -23,8 +23,26 @@ export function isApplicationAPI(url: string | undefined): boolean {
   }
 }
 
+export type TransportOutcome = 'cancelled' | 'timeout' | 'network' | 'server' | 'application'
+
+// A lost response is not a safe retry: the server may already have applied
+// the request. Never tell the user to retry without telling them to check.
+export const UNCONFIRMED_MESSAGE = '未在时限内收到服务端确认，请求可能已被处理。请先核对结果，确认后再重试，避免重复操作。'
+
+export function transportOutcome(error: unknown): TransportOutcome {
+  if (isCancel(error)) return 'cancelled'
+  const failure = error as { code?: unknown; response?: unknown } | null
+  if (failure?.response) return 'server'
+  const code = typeof failure?.code === 'string' ? failure.code : ''
+  if (code === 'ECONNABORTED' || code === 'ETIMEDOUT') return 'timeout'
+  if (['ERR_NETWORK', 'ECONNREFUSED', 'ENOTFOUND', 'EAI_AGAIN'].includes(code)) return 'network'
+  return 'application'
+}
+
 export function apiErrorMessage(error: unknown, fallback = '请求未完成'): string {
   if (isCancel(error)) return '请求已取消'
+  const outcome = transportOutcome(error)
+  if (outcome === 'timeout' || outcome === 'network') return UNCONFIRMED_MESSAGE
   const failure = error as { response?: { data?: Partial<ApiFailure>; status?: number }; name?: string; message?: string; status?: number; cause?: Partial<ApiFailure> }
   let data = failure?.response?.data || (failure?.cause?.returnCode === '0000' ? failure.cause : undefined)
   if (!data && failure?.name === 'UploadAjaxError' && failure.message) {

@@ -1,5 +1,5 @@
 import type { paths } from './generated-api'
-import { api } from './client'
+import { api, type PostOptions } from './client'
 
 export type JsonPostPath = {
   [Path in keyof paths]: paths[Path]['post'] extends {
@@ -17,6 +17,6 @@ export type JsonReply<Path extends JsonPostPath> = Operation<Path> extends {
 
 // Keep the existing Axios instance, cookie/CSRF handling and cancellation. The
 // generated request/response types do not replace runtime response validation.
-export function postContract<Path extends JsonPostPath>(path: Path, body: JsonRequest<Path>, options?: { signal?: AbortSignal }) {
+export function postContract<Path extends JsonPostPath>(path: Path, body: JsonRequest<Path>, options?: PostOptions) {
   return api.post<JsonReply<Path>>(path.substring(1), body, options)
 }
