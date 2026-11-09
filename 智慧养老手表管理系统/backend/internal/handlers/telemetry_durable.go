@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/go-sql-driver/mysql"
-	"github.com/jackc/pgx/v5/pgconn"
 
 	dbstore "suining-care/internal/db"
 	"suining-care/internal/deviceprotocol"
@@ -59,8 +58,7 @@ func durableQueueDuplicate(err error) bool {
 	if errors.As(err, &my) && my.Number == 1062 {
 		return true
 	}
-	var pg *pgconn.PgError
-	return errors.As(err, &pg) && pg.Code == "23505"
+	return false
 }
 
 // DrainDurableTelemetryBatch retains the public API for existing integrations.

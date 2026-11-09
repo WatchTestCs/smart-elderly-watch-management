@@ -4,11 +4,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgconn"
 )
 
 type heartbeatWriter interface {
-	Exec(context.Context, string, ...any) (pgconn.CommandTag, error)
+	Exec(context.Context, string, ...any) (db.CommandResult, error)
 }
 
 // TouchDevice records an authenticated heartbeat without moving last-seen timestamps backwards.

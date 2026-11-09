@@ -18,7 +18,6 @@ import (
 	"time"
 
 	mysqlDriver "github.com/go-sql-driver/mysql"
-	"github.com/jackc/pgx/v5/pgconn"
 	dbstore "suining-care/internal/db"
 	"suining-care/internal/response"
 )
@@ -104,11 +103,7 @@ func persistSignedDeviceNonce(ctx context.Context, tx *dbstore.Transaction, devi
 	if errors.As(err, &myErr) && myErr.Number == 1062 {
 		return false, nil
 	}
-	var pgErr *pgconn.PgError
-	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-		return false, nil
-	}
-	return false, err
+ 	return false, err
 }
 
 func acceptSignedDeviceNonce(w http.ResponseWriter, ctx context.Context, tx *dbstore.Transaction, deviceID int64) bool {

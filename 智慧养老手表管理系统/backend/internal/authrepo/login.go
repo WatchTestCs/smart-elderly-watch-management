@@ -6,7 +6,6 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/jackc/pgx/v5/pgtype"
 
 	"suining-care/internal/auth"
 	"suining-care/internal/db"
@@ -45,8 +44,8 @@ func Authenticate(ctx context.Context, store *db.Database, box *securestore.Box,
 	compared := false
 	for _, account := range accounts {
 		var id int64
-		var name, storedPhone, hash pgtype.Text
-		var residentID pgtype.Int8
+		var name, storedPhone, hash sql.NullString
+		var residentID sql.NullInt64
 		var protected userphone.Record
 		args := []any{phone}
 		if account.role == auth.RoleAdmin {
@@ -68,9 +67,9 @@ func Authenticate(ctx context.Context, store *db.Database, box *securestore.Box,
 			if err != nil {
 				return Match{}, err
 			}
-			storedPhone = pgtype.Text{}
+			storedPhone = sql.NullString{}
 			if opened != nil {
-				storedPhone = pgtype.Text{String: *opened, Valid: true}
+				storedPhone = sql.NullString{String: *opened, Valid: true}
 			}
 		}
 		compared = true

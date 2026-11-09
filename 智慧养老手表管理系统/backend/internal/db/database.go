@@ -6,6 +6,11 @@ import (
 )
 
 type Row interface{ Scan(...any) error }
+
+type CommandResult struct{ rowsAffected int64 }
+
+func (r CommandResult) RowsAffected() int64 { return r.rowsAffected }
+
 type Rows interface {
 	Next() bool
 	Scan(...any) error

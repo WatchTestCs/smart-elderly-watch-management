@@ -3,9 +3,6 @@ package db
 import (
 	"context"
 	"database/sql"
-	"strconv"
-
-	"github.com/jackc/pgx/v5/pgconn"
 )
 
 func (d *Database) IsMySQL() bool    { return d.myPool != nil }
@@ -55,28 +52,28 @@ func (e executor) InsertID(ctx context.Context, query string, args ...any) (int6
 	return result.LastInsertId()
 }
 
-func (e executor) Exec(ctx context.Context, query string, args ...any) (pgconn.CommandTag, error) {
+func (e executor) Exec(ctx context.Context, query string, args ...any) (CommandResult, error) {
 	return e.exec(ctx, query, args, false)
 }
 
 // ExecBatch preserves Exec semantics while enabling bounded MySQL transport reuse.
-func (e executor) ExecBatch(ctx context.Context, query string, args ...any) (pgconn.CommandTag, error) {
+func (e executor) ExecBatch(ctx context.Context, query string, args ...any) (CommandResult, error) {
 	return e.exec(ctx, query, args, e.packed)
 }
-func (e executor) exec(ctx context.Context, query string, args []any, packed bool) (pgconn.CommandTag, error) {
+func (e executor) exec(ctx context.Context, query string, args []any, packed bool) (CommandResult, error) {
 	q, a, err := mysqlQuery(query, args)
 	if err != nil {
-		return pgconn.CommandTag{}, err
+		return CommandResult{}, err
 	}
 	if packed && len(a) >= 64 && len(a) <= 4096 && cacheableDML(q) {
 		a = []any{mysqlBatchArgs{values: a}}
 	}
 	r, err := e.my.ExecContext(ctx, q, a...)
 	if err != nil {
-		return pgconn.CommandTag{}, err
+		return CommandResult{}, err
 	}
 	n, err := r.RowsAffected()
-	return pgconn.NewCommandTag("UPDATE " + strconv.FormatInt(n, 10)), err
+	return CommandResult{rowsAffected: n}, err
 }
 
 func (e executor) Query(ctx context.Context, query string, args ...any) (Rows, error) {
