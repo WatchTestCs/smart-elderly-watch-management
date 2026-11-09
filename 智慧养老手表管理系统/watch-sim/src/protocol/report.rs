@@ -43,7 +43,7 @@ pub struct ReportPayload {
     pub position_sampled_at: Option<String>,
     #[serde(rename = "positionAccuracy", skip_serializing_if = "Option::is_none")]
     pub position_accuracy: Option<f64>,
-    /// 带上它就进入后端持久队列分支（需服务端 `CAREOLD_DURABLE_TELEMETRY=1`）。
+    /// 带上它就进入后端持久队列分支（需服务端 `SUINING_DURABLE_TELEMETRY=1`）。
     #[serde(rename = "requestId", skip_serializing_if = "Option::is_none")]
     pub request_id: Option<String>,
     #[serde(rename = "bindingVersion", skip_serializing_if = "Option::is_none")]

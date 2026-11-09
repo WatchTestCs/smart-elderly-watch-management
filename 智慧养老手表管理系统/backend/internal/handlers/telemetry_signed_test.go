@@ -32,7 +32,7 @@ func signedTestRequest(t *testing.T, path string, body map[string]any, nonce str
 }
 
 func TestSignedTelemetryValidationWithoutDatabase(t *testing.T) {
-	t.Setenv("CAREOLD_REQUIRE_SIGNED_DEVICE", "1")
+	t.Setenv("SUINING_REQUIRE_SIGNED_DEVICE", "1")
 	body := map[string]any{"deviceNo": "WATCH001", "secret": "existing-device-secret", "hr": "70"}
 	h := &Handler{}
 	unsigned, err := json.Marshal(body)
@@ -61,7 +61,7 @@ func TestSignedTelemetryValidationWithoutDatabase(t *testing.T) {
 }
 
 func TestSignedTelemetryReplayAcrossTransactions(t *testing.T) {
-	t.Setenv("CAREOLD_REQUIRE_SIGNED_DEVICE", "1")
+	t.Setenv("SUINING_REQUIRE_SIGNED_DEVICE", "1")
 	pool := testDatabase(t)
 	seedDevice(t, pool)
 	h := testHandler(t, pool)
@@ -88,7 +88,7 @@ func TestSignedTelemetryReplayAcrossTransactions(t *testing.T) {
 }
 
 func TestSignedSOSIdempotentRetry(t *testing.T) {
-	t.Setenv("CAREOLD_REQUIRE_SIGNED_DEVICE", "1")
+	t.Setenv("SUINING_REQUIRE_SIGNED_DEVICE", "1")
 	pool := testDatabase(t)
 	seedDevice(t, pool)
 	h := testHandler(t, pool)

@@ -14,7 +14,7 @@ import (
 )
 
 func TestDurableTelemetryPersistsBeforeAckAndReplaysSafely(t *testing.T) {
-	t.Setenv("CAREOLD_DURABLE_TELEMETRY", "1")
+	t.Setenv("SUINING_DURABLE_TELEMETRY", "1")
 	pool := testDatabase(t)
 	seedDevice(t, pool)
 	h := testHandler(t, pool)
@@ -77,7 +77,7 @@ func TestDurableTelemetryPersistsBeforeAckAndReplaysSafely(t *testing.T) {
 }
 
 func TestDurableTelemetryRetainsCorruptQueuePayload(t *testing.T) {
-	t.Setenv("CAREOLD_DURABLE_TELEMETRY", "1")
+	t.Setenv("SUINING_DURABLE_TELEMETRY", "1")
 	pool := testDatabase(t)
 	seedDevice(t, pool)
 	h := testHandler(t, pool)

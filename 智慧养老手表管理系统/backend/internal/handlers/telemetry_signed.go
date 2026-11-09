@@ -35,10 +35,10 @@ type signedDeviceNonce struct {
 }
 
 // Existing unsigned firmware continues to work unless
-// CAREOLD_REQUIRE_SIGNED_DEVICE=1. Signatures that are present must verify.
+// SUINING_REQUIRE_SIGNED_DEVICE=1. Signatures that are present must verify.
 func prepareSignedDeviceRequest(w http.ResponseWriter, r *http.Request) (*http.Request, bool) {
 	sig := strings.TrimSpace(r.Header.Get("X-Device-Signature"))
-	if sig == "" && os.Getenv("CAREOLD_REQUIRE_SIGNED_DEVICE") != "1" {
+	if sig == "" && os.Getenv("SUINING_REQUIRE_SIGNED_DEVICE") != "1" {
 		return r, true
 	}
 	fail := func() (*http.Request, bool) {
