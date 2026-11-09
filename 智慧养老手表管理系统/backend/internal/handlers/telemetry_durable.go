@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"log"
 	"os"
@@ -24,16 +23,6 @@ var durableRequestIDPattern = regexp.MustCompile(`^[A-Za-z0-9_.:-]{1,64}$`)
 
 // The queue stores only encrypted measurements, never hardware credentials.
 // Emergency/SOS, vital signs and coordinates are deliberately excluded.
-type queuedTelemetryPayload struct {
-	ReceivedAt time.Time `json:"receivedAt"`
-	ReportedAt time.Time `json:"reportedAt"`
-	Step       *int      `json:"step,omitempty"`
-	Sleep      *int      `json:"sleep,omitempty"`
-	SleepState *string   `json:"sleepState,omitempty"`
-	Battery    *int      `json:"battery,omitempty"`
-	AppVersion *string   `json:"appVersion,omitempty"`
-}
-
 func durableTelemetryEligible(parsed parsedDeviceTelemetry, requestID string, box *securestore.Box) bool {
 	return os.Getenv("CAREOLD_DURABLE_TELEMETRY") == "1" &&
 		box != nil && durableRequestIDPattern.MatchString(requestID) &&
@@ -49,15 +38,11 @@ func (repo telemetryRepository) QueueDurableReport(ctx context.Context, tx *dbst
 	if repo.box == nil {
 		return errors.New("durable telemetry requires a valid encryption key")
 	}
-	data, err := json.Marshal(queuedTelemetryPayload{
+	sealed, err := telemetryworkflow.Encode(repo.box, telemetryworkflow.Payload{
 		ReceivedAt: parsed.now, ReportedAt: parsed.beTime,
 		Step: parsed.step, Sleep: parsed.sleep, SleepState: parsed.sleepState,
 		Battery: parsed.battery, AppVersion: parsed.appVersion,
 	})
-	if err != nil {
-		return err
-	}
-	sealed, err := repo.box.Seal(string(data), "telemetry-inbox")
 	if err != nil {
 		return err
 	}
@@ -82,24 +67,14 @@ func durableQueueDuplicate(err error) bool {
 }
 
 func decodeQueuedTelemetry(box *securestore.Box, raw string) (parsedDeviceTelemetry, error) {
-	if box == nil {
-		return parsedDeviceTelemetry{}, errors.New("missing telemetry encryption key")
-	}
-	plain, err := box.Open(raw, "telemetry-inbox")
+	payload, err := telemetryworkflow.Decode(box, raw)
 	if err != nil {
 		return parsedDeviceTelemetry{}, err
-	}
-	var payload queuedTelemetryPayload
-	if err := json.Unmarshal([]byte(plain), &payload); err != nil {
-		return parsedDeviceTelemetry{}, err
-	}
-	if payload.ReportedAt.IsZero() || payload.ReceivedAt.IsZero() {
-		return parsedDeviceTelemetry{}, errors.New("missing report timestamp")
 	}
 	day := payload.ReportedAt.UTC()
 	return parsedDeviceTelemetry{
 		now: payload.ReceivedAt, beTime: payload.ReportedAt,
-		day:  time.Date(day.Year(), day.Month(), day.Day(), 0, 0, 0, 0, time.UTC),
+		day: time.Date(day.Year(), day.Month(), day.Day(), 0, 0, 0, 0, time.UTC),
 		step: payload.Step, sleep: payload.Sleep, sleepState: payload.SleepState,
 		battery: payload.Battery, appVersion: payload.AppVersion,
 		sourceStr: "gps",
