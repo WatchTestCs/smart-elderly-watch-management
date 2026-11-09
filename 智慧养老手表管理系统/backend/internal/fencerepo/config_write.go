@@ -2,10 +2,10 @@ package fencerepo
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 
-	"github.com/jackc/pgx/v5"
 
 	"suining-care/internal/db"
 )
@@ -46,7 +46,7 @@ func Save(ctx context.Context, tx *db.Transaction, actor int64, deviceID, reside
 	err = tx.QueryRow(ctx,
 		"SELECT revision FROM device_fence WHERE id=$1 AND device_id=$2 AND old_id=$3 AND epoch=$4 FOR UPDATE",
 		config.ID, deviceID, residentID, epoch).Scan(&revision)
-	if errors.Is(err, pgx.ErrNoRows) || (err == nil && revision != config.Revision) {
+	if errors.Is(err, sql.ErrNoRows) || (err == nil && revision != config.Revision) {
 		return ErrFenceRevision
 	}
 	if err != nil {

@@ -9,7 +9,6 @@ import (
 	_ "time/tzdata"
 	"unicode/utf8"
 
-	"github.com/jackc/pgx/v5"
 
 	"suining-care/internal/devicerepo"
 	"suining-care/internal/fence"
@@ -46,7 +45,7 @@ func (h *Handler) fenceSave(w http.ResponseWriter, r *http.Request) {
 	}
 	defer tx.Rollback(ctx)
 	d, err := devicerepo.ScanDeviceRecord(devicerepo.LockedDeviceRow(ctx, tx, req.DeviceID))
-	if err == pgx.ErrNoRows {
+	if isNotFound(err) {
 		response.JSON(w, 404, map[string]any{"message": "设备不存在"})
 		return
 	}

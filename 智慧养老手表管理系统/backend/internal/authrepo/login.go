@@ -6,7 +6,6 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"suining-care/internal/auth"
@@ -55,7 +54,7 @@ func Authenticate(ctx context.Context, store *db.Database, box *securestore.Box,
 		}
 		err := store.QueryRow(ctx, account.query, args...).Scan(&id, &name, &storedPhone, &hash, &residentID,
 			&protected.Cipher, &protected.Lookup, &protected.Protected)
-		if errors.Is(err, pgx.ErrNoRows) || errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, sql.ErrNoRows) {
 			continue
 		}
 		if err != nil {

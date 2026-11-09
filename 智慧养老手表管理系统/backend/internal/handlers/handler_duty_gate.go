@@ -1,10 +1,8 @@
 package handlers
 
 import (
-	"errors"
 	"net/http"
 
-	"github.com/jackc/pgx/v5"
 	"suining-care/internal/auth"
 	"suining-care/internal/response"
 )
@@ -26,7 +24,7 @@ func (h *Handler) EnforceAdminDuty(next http.Handler) http.Handler {
 		err := h.DB.QueryRow(r.Context(),
 			"SELECT duty FROM care_staff_permission WHERE admin_id=$1",
 			principal.ID).Scan(&duty)
-		if errors.Is(err, pgx.ErrNoRows) {
+		if isNotFound(err) {
 			// Preserve the documented migration behavior for unassigned ADMINs.
 			next.ServeHTTP(w, r)
 			return

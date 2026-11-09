@@ -6,7 +6,6 @@ import (
 	"errors"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 
 	"suining-care/internal/db"
 )
@@ -46,7 +45,7 @@ func FindBindCode(ctx context.Context, store db.RowQuerier, code string) (*BindC
 		 FROM bind_code WHERE code=$1`, code).
 		Scan(&row.ID, &row.Code, &row.OldID, &row.FamilyID, &row.CreateUser,
 			&row.ExpireTime, &row.Used, &row.UsedTime, &row.UsedDeviceID)
-	if errors.Is(err, pgx.ErrNoRows) || errors.Is(err, sql.ErrNoRows) {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
 	if err != nil {
