@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"errors"
 
+	"suining-care/internal/carepolicy"
+	"suining-care/internal/careworkflow"
 	"suining-care/internal/db"
 	"suining-care/internal/devicerepo"
 	"suining-care/internal/vitalrepo"
@@ -20,11 +22,11 @@ var (
 // the pre-resolution state without a second, inconsistent snapshot.
 type ReasonReader func(context.Context, *sql.Tx, int64, string, *int64) (string, error)
 
-func Resolve(ctx context.Context, store *db.Database, deviceID int64, kind string, recordID *int64, reason ReasonReader) (string, error) {
+func Resolve(ctx context.Context, store *db.Database, actorID, deviceID int64, kind string, recordID *int64, reason ReasonReader) (string, error) {
 	if kind != "rate" && kind != "pre" && kind != "person" {
 		return "", ErrUnknownKind
 	}
-	tx, err := store.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	tx, _, err := careworkflow.BeginAuthorized(ctx, store, actorID, carepolicy.HandleAlerts)
 	if err != nil {
 		return "", err
 	}
@@ -54,6 +56,9 @@ func Resolve(ctx context.Context, store *db.Database, deviceID int64, kind strin
 	}
 	if rows < 1 {
 		return "", ErrNoPendingAlert
+	}
+	if _, err := tx.ExecContext(ctx, "INSERT INTO care_access_audit(admin_id,action) VALUES(?,'device_alert_resolve')", actorID); err != nil {
+		return "", err
 	}
 	if err := tx.Commit(); err != nil {
 		return "", err
