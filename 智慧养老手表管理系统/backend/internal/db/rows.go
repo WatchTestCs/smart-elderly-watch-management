@@ -10,12 +10,13 @@ type RowQuerier interface {
 	QueryRowContext(context.Context, string, ...any) *sql.Row
 }
 
-type rowsQuerier interface {
+// RowsQuerier supports scanning rows through either a database or a transaction.
+type RowsQuerier interface {
 	QueryContext(context.Context, string, ...any) (*sql.Rows, error)
 }
 
 // QueryEach visits rows in query order and closes the result before returning.
-func QueryEach(ctx context.Context, q rowsQuerier, visit func(*sql.Rows) error, query string, args ...any) error {
+func QueryEach(ctx context.Context, q RowsQuerier, visit func(*sql.Rows) error, query string, args ...any) error {
 	rows, err := q.QueryContext(ctx, query, args...)
 	if err != nil {
 		return err
@@ -30,7 +31,7 @@ func QueryEach(ctx context.Context, q rowsQuerier, visit func(*sql.Rows) error, 
 }
 
 // QueryList scans all rows and closes the result before returning to the caller.
-func QueryList[T any](ctx context.Context, q rowsQuerier, scan func(*sql.Rows) (T, error), query string, args ...any) ([]T, error) {
+func QueryList[T any](ctx context.Context, q RowsQuerier, scan func(*sql.Rows) (T, error), query string, args ...any) ([]T, error) {
 	items := []T{}
 	err := QueryEach(ctx, q, func(rows *sql.Rows) error {
 		item, err := scan(rows)

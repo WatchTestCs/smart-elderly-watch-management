@@ -28,7 +28,7 @@ type Fields struct {
 }
 
 // List reads a page and its count together, including when the page is empty.
-func List(ctx context.Context, store interface { QueryContext(context.Context, string, ...any) (*sql.Rows, error) }, name string, page, pageSize int) ([]Guardian, int64, error) {
+func List(ctx context.Context, store db.RowsQuerier, name string, page, pageSize int) ([]Guardian, int64, error) {
 	const filter = ` FROM customer WHERE (?='' OR customer_name LIKE CONCAT('%',?,'%'))`
 	const countSQL = `SELECT COUNT(*) AS total` + filter
 	items := []Guardian{}

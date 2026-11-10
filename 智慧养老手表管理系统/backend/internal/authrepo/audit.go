@@ -40,7 +40,7 @@ func RecentFailureCounts(ctx context.Context, store *db.Database, accountHash, i
 }
 
 // ListLoginAudits returns up to 100 records after a supervisor-authorized cursor.
-func ListLoginAudits(ctx context.Context, store interface { QueryContext(context.Context, string, ...any) (*sql.Rows, error) }, after int64) ([]LoginAudit, error) {
+func ListLoginAudits(ctx context.Context, store db.RowsQuerier, after int64) ([]LoginAudit, error) {
 	return db.QueryList(ctx, store, func(rows *sql.Rows) (LoginAudit, error) {
 		var item LoginAudit
 		err := rows.Scan(&item.ID, &item.Role, &item.ActorID, &item.Outcome, &item.RequestID, &item.CreatedAt)

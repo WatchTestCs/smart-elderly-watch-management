@@ -71,7 +71,7 @@ func TestLegacySensitiveReadsRequireCurrentSupervisor(t *testing.T) {
 	h := testHandler(t, pool)
 	mustExec(t, pool, "INSERT INTO customer(customer_id,customer_name,customer_phone) VALUES(1,'保护的监护人','13800000000')")
 	for _, tc := range []struct {
-		actor int64
+		actor   int64
 		allowed bool
 	}{
 		{41, true},
@@ -81,7 +81,9 @@ func TestLegacySensitiveReadsRequireCurrentSupervisor(t *testing.T) {
 			wrapped := withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: tc.actor}, handler)
 			res := callAPI(wrapped, map[string]any{})
 			want := http.StatusForbidden
-			if tc.allowed { want = http.StatusOK }
+			if tc.allowed {
+				want = http.StatusOK
+			}
 			if res.Code != want {
 				t.Fatalf("actor=%d HTTP=%d want=%d: %s", tc.actor, res.Code, want, res.Body.String())
 			}
