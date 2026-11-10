@@ -46,6 +46,44 @@ func TestCareDutyPermissionsAndSensitiveAudit(t *testing.T) {
 	}
 }
 
+func TestRoleSpecificCarePermissions(t *testing.T) {
+	pool := testDatabase(t)
+	mustExec(t, pool, "INSERT INTO users(user_id,user_name) VALUES(11,'主管'),(12,'护理员'),(13,'审计员'),(14,'未授权')")
+	mustExec(t, pool, "INSERT INTO care_staff_permission(admin_id,duty,assigned_by) VALUES(11,'supervisor',11),(12,'caregiver',11),(13,'auditor',11)")
+	h := testHandler(t, pool)
+	req := httptest.NewRequest("POST", "/api/v1/care/incidents", nil)
+	for _, tc := range []struct {
+		actor int64
+		action string
+		allowed bool
+	}{
+		{11, "read_tasks", true},
+		{11, "manage_staff", true},
+		{11, "verify", true},
+		{12, "read_tasks", true},
+		{12, "acknowledge", true},
+		{12, "resolve", true},
+		{12, "read_audit", false},
+		{12, "verify", false},
+		{13, "read_tasks", true},
+		{13, "read_audit", true},
+		{13, "diagnostics", false},
+		{13, "resolve", false},
+		{14, "read_tasks", false},
+		{14, "read_audit", false},
+		{14, "verify", false},
+	} {
+		recorder := httptest.NewRecorder()
+		got := h.authorizeCareAction(recorder, req, tc.actor, tc.action)
+		if got != tc.allowed {
+			t.Errorf("actor %d action %s got %v want %v", tc.actor, tc.action, got, tc.allowed)
+		}
+		if !got && recorder.Code != 403 {
+			t.Errorf("actor %d action %s denied with %d, want 403", tc.actor, tc.action, recorder.Code)
+		}
+	}
+}
+
 func TestCareWorkerHeartbeatSchema(t *testing.T) {
 	pool := testDatabase(t)
 	mustExec(t, pool, "INSERT INTO care_worker_heartbeat(singleton,last_seen_at,started_at) VALUES(true,CURRENT_TIMESTAMP(6),CURRENT_TIMESTAMP(6))")
