@@ -15,12 +15,12 @@ import (
 func (h *Handler) EnforceAdminDuty(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		principal := auth.Principal(r)
-		if principal == nil || principal.Role != auth.RoleAdmin || restrictedAdminRouteAllowed(r) {
+		if principal == nil || principal.Role != auth.RoleAdmin {
 			next.ServeHTTP(w, r)
 			return
 		}
 
-		duty, err := carerepo.Duty(r.Context(), h.DB, principal.ID)
+		duty, active, err := carerepo.AccountAccess(r.Context(), h.DB, principal.ID)
 		if err != nil {
 			// An unavailable role store must not turn into an allow decision.
 			response.JSON(w, http.StatusServiceUnavailable, map[string]any{
@@ -29,7 +29,7 @@ func (h *Handler) EnforceAdminDuty(next http.Handler) http.Handler {
 			})
 			return
 		}
-		if duty != "supervisor" {
+		if !active || (!restrictedAdminRouteAllowed(r) && duty != "supervisor") {
 			// The authorization gate runs outside sensitiveCareAudit. Persist
 			// denied access separately, without recording request content, query
 			// arguments, names or unbounded paths. If the audit store is down,
