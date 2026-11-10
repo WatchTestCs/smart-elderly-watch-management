@@ -13,6 +13,8 @@ func TestNoticeModerationRequiresLiveContentCapability(t *testing.T) {
 	seedCareAdminDuty(t, store, 71, "supervisor")
 	seedCareAdminDuty(t, store, 72, "caregiver")
 	h := testHandler(t, store)
+	mustExec(t, store, "INSERT INTO `text`(text_id,title,text_main,time) VALUES(1,'公告','测试',CURRENT_TIMESTAMP(6))")
+	mustExec(t, store, "INSERT INTO said(said_id,text_id,said,said_time,person_name,said_phone) VALUES(1,1,'评论',CURRENT_TIMESTAMP(6),'家属','13800000001')")
 
 	tests := []struct {
 		name string
@@ -20,8 +22,8 @@ func TestNoticeModerationRequiresLiveContentCapability(t *testing.T) {
 		body map[string]any
 	}{
 		{"moderation_read", h.searchNoticeComments, map[string]any{"page": 1, "pageSize": 20}},
-		{"comment_delete", h.deleteNoticeComment, map[string]any{"saidId": "1"}},
 		{"comment_reply", h.replyToNoticeComment, map[string]any{"saidId": "1", "back": "reviewed"}},
+		{"comment_delete", h.deleteNoticeComment, map[string]any{"saidId": "1"}},
 		{"notice_delete", h.deleteNotice, map[string]any{"textId": "1"}},
 	}
 	sup := session.Principal{Role: auth.RoleAdmin, ID: 71}
