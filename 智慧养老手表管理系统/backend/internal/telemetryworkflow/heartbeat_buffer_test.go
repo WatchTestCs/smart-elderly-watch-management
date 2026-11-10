@@ -84,7 +84,7 @@ func TestHeartbeatBufferRequeuePrefersNewestMetadata(t *testing.T) {
 		appVersion: "4.0", hasVersion: true,
 	}})
 	state = buffer.items[7]
-	if state.battery != 80 || state.appVersion != "4.0" || !state.seenAt.Equal(base.Add(2*time.Minute)) {
+	if state.battery != 80 || state.appVersion != "4.0" || !state.seenAt.Equal(base.Add(2 * time.Minute)) {
 		t.Fatalf("newer retry was discarded: %+v", state)
 	}
 }
