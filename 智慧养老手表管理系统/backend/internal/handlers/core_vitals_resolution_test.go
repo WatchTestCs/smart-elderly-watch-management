@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"net/http"
 	"reflect"
 	"testing"
 
@@ -83,6 +84,32 @@ func TestContinuousVitalsResolutionRejectsUnknownKind(t *testing.T) {
 		if err := h.DB.QueryRowContext(context.Background(), "SELECT rate_state,pre_state FROM ratepre WHERE id=1").Scan(&rate, &pre); err != nil || rate != "0" || pre != "0" || out["returnCode"] != "1111" {
 			t.Fatalf("existing bulk operation changed: response=%v state=%s/%s err=%v", out, rate, pre, err)
 		}
+	}
+}
+
+func TestVitalAlertFamilyReadsFollowCurrentResidentOwnership(t *testing.T) {
+	pool := testDatabase(t)
+	seedDevice(t, pool)
+	mustExec(t, pool, "INSERT INTO family(family_id,family_phone) VALUES(1,'13800000001'),(2,'13800000002')")
+	mustExec(t, pool, "UPDATE oldperson SET family_id=1 WHERE old_id=1")
+	mustExec(t, pool, "INSERT INTO ratepre(id,device_id,old_id,hr,rate_state,create_time) VALUES(1,1,1,150,'1',CURRENT_TIMESTAMP(6))")
+	h := testHandler(t, pool)
+	first := withHealthPrincipal(h, session.Principal{Role: auth.RoleFamily, ID: 1, OldID: 1}, h.getVitalAlert)
+	other := withHealthPrincipal(h, session.Principal{Role: auth.RoleFamily, ID: 2, OldID: 1}, h.getVitalAlert)
+	for _, input := range []map[string]any{{"oldId": 1}, {"recordId": 1}} {
+		if got := callAPI(first, input); got.Code != 200 {
+			t.Fatalf("authorized family denied: %d %s", got.Code, got.Body.String())
+		}
+		if got := callAPI(other, input); got.Code != http.StatusForbidden {
+			t.Fatalf("other family accessed alert: %d %s", got.Code, got.Body.String())
+		}
+	}
+	mustExec(t, pool, "UPDATE oldperson SET family_id=2 WHERE old_id=1")
+	if got := callAPI(first, map[string]any{"recordId": 1}); got.Code != http.StatusForbidden {
+		t.Fatalf("former family retained alert access: %d %s", got.Code, got.Body.String())
+	}
+	if got := callAPI(other, map[string]any{"recordId": 1}); got.Code != 200 {
+		t.Fatalf("newly authorized family denied: %d %s", got.Code, got.Body.String())
 	}
 }
 
