@@ -20,6 +20,7 @@ func TestFamilyCredentialMutationRevokesSessions(t *testing.T) {
 		t.Run(mode, func(t *testing.T) {
 			pool := testDatabase(t)
 			h := testHandler(t, pool)
+			seedCareAdminDuty(t, pool, 11, "supervisor")
 			var replica *session.Store
 			if mode == "database" {
 				box, err := securestore.New(base64.StdEncoding.EncodeToString(make([]byte, 32)))
@@ -86,7 +87,7 @@ func TestFamilyCredentialMutationRevokesSessions(t *testing.T) {
 			if newSession == nil {
 				t.Fatal("could not create new session after changing password")
 			}
-			deleted := api(t, h.familyDelete, map[string]any{"familyId": 1})
+			deleted := api(t, withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.familyDelete), map[string]any{"familyId": 1})
 			if deleted["returnCode"] != "1111" {
 				t.Fatalf("family removal failed: %v", deleted)
 			}
