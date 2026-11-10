@@ -23,7 +23,9 @@ func TestContinuousPositionKeepsAlarmAndLocationSnapshotsSeparate(t *testing.T) 
 		name string
 		read func() map[string]any
 	}{
-		{"admin list", func() map[string]any { return api(t, withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.positionSelect), map[string]any{"name": ""}) }},
+		{"admin list", func() map[string]any {
+			return api(t, withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.positionSelect), map[string]any{"name": ""})
+		}},
 		{"admin detail", func() map[string]any {
 			return api(t, withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.positionSelectFamily), map[string]any{"oldId": 1})
 		}},
