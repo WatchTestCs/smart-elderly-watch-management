@@ -86,6 +86,22 @@ func TestRoleSpecificCarePermissions(t *testing.T) {
 	}
 }
 
+func TestDemotedAdminCannotReuseStoredSupervisorDuty(t *testing.T) {
+	pool := testDatabase(t)
+	seedCareAdminDuty(t, pool, 21, "supervisor")
+	mustExec(t, pool, "INSERT INTO users(user_id,user_name,role) VALUES(22,'护理员','1')")
+	mustExec(t, pool, "UPDATE users SET role='0' WHERE user_id=21")
+	h := testHandler(t, pool)
+	req := httptest.NewRequest("POST", "/api/v1/care/staff", nil)
+	w := httptest.NewRecorder()
+	if h.authorizeCareAction(w, req, 21, "manage_staff") || w.Code != 403 {
+		t.Fatalf("demoted account retained supervisor access: HTTP %d", w.Code)
+	}
+	if err := careworkflow.AssignDuty(context.Background(), pool, 21, 22, "caregiver"); !errors.Is(err, careworkflow.ErrDutyDenied) {
+		t.Fatalf("demoted account assigned staff duty: %v", err)
+	}
+}
+
 func TestCareStaffListExcludesNonAdministrators(t *testing.T) {
 	pool := testDatabase(t)
 	seedCareAdminDuty(t, pool, 11, "supervisor")

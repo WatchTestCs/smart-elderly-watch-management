@@ -12,7 +12,9 @@ import (
 // Duty returns the explicit assignment. An absent record has no privileges.
 func Duty(ctx context.Context, store db.RowQuerier, adminID int64) (string, error) {
 	var duty string
-	err := store.QueryRowContext(ctx, "SELECT duty FROM care_staff_permission WHERE admin_id=?", adminID).Scan(&duty)
+	err := store.QueryRowContext(ctx, `SELECT p.duty FROM care_staff_permission p
+ JOIN users u ON u.user_id=p.admin_id AND u.role='1'
+ WHERE p.admin_id=?`, adminID).Scan(&duty)
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", nil
 	}
@@ -24,7 +26,9 @@ func Duty(ctx context.Context, store db.RowQuerier, adminID int64) (string, erro
 func LockDuty(ctx context.Context, tx *sql.Tx, adminID int64) (string, error) {
 	var duty string
 	err := tx.QueryRowContext(ctx,
-		"SELECT duty FROM care_staff_permission WHERE admin_id=? FOR SHARE", adminID).Scan(&duty)
+		`SELECT p.duty FROM care_staff_permission p
+ JOIN users u ON u.user_id=p.admin_id AND u.role='1'
+ WHERE p.admin_id=? FOR SHARE`, adminID).Scan(&duty)
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", nil
 	}
