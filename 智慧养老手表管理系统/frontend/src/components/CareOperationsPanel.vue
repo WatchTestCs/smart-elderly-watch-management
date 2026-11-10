@@ -1,5 +1,5 @@
 <template>
-  <section v-if="!forbidden" class="care-operations" aria-labelledby="care-operations-title">
+  <section v-if="isSupervisor && !forbidden" class="care-operations" aria-labelledby="care-operations-title">
     <header class="care-operations-head">
       <div><h3 id="care-operations-title">值守与服务诊断</h3><p>以下为服务端任务统计，不代表人员到岗或通知送达。</p></div>
       <el-button plain :loading="loading" @click="refresh">检查服务</el-button>
