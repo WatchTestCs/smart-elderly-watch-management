@@ -237,17 +237,24 @@ func TestArchitectureCareQueuePaginationAndDuty(t *testing.T) {
 func TestArchitectureVerificationClearsOnlyLinkedAlarm(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
-	mustExec(t, pool, "INSERT INTO alarm_precess(id,old_id,device_id,status,be_time) VALUES(1,1,1,'1',CURRENT_TIMESTAMP(6)),(2,1,1,'1',CURRENT_TIMESTAMP(6))")
-	mustExec(t, pool, `INSERT INTO care_incident(id,old_id,device_id,kind,state,severity,due_at,resolved_by,source_alarm_id)
-		VALUES(1,1,1,'sos','resolved','critical',CURRENT_TIMESTAMP(6),'1',1)`)
 	h := testHandler(t, pool)
-	out := careRequest(t, h, h.careTransition, 2, map[string]any{"id": "1", "action": "verify", "note": "已独立复核"})
+	firstIncident := api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "requestId": "verify-first", "bindingVersion": 1})["incidentId"]
+	secondIncident := api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "requestId": "verify-second", "bindingVersion": 1})["incidentId"]
+	mustExec(t, pool, "UPDATE care_incident SET state='resolved',resolved_by='1' WHERE id=?", firstIncident)
+	out := careRequest(t, h, h.careTransition, 2, map[string]any{"id": fmt.Sprint(firstIncident), "action": "verify", "note": "已独立复核"})
 	if out.Code != 200 {
 		t.Fatal(out.Body.String())
 	}
 	var first, second string
-	if err := pool.QueryRowContext(context.Background(), "SELECT a.status,b.status FROM alarm_precess a,alarm_precess b WHERE a.id=1 AND b.id=2").Scan(&first, &second); err != nil || first != "0" || second != "1" {
+	if err := pool.QueryRowContext(context.Background(), `SELECT a.status,b.status FROM care_incident i
+		JOIN alarm_precess a ON a.id=i.source_alarm_id
+		JOIN care_incident j ON j.id=? JOIN alarm_precess b ON b.id=j.source_alarm_id
+		WHERE i.id=?`, secondIncident, firstIncident).Scan(&first, &second); err != nil || first != "0" || second != "1" {
 		t.Fatalf("verification did not clear precisely its own alarm: %s %s %v", first, second, err)
+	}
+	var active bool
+	if err := pool.QueryRowContext(context.Background(), "SELECT active FROM resident_location_alert_state WHERE old_id=1").Scan(&active); err != nil || !active {
+		t.Fatalf("verification cleared the later incident's snapshot: active=%v err=%v", active, err)
 	}
 }
 
