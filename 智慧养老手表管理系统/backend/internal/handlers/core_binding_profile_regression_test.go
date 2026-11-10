@@ -13,8 +13,9 @@ import (
 func TestContinuousAmbiguousElderPhone(t *testing.T) {
 	pool := testDatabase(t)
 	h := testHandler(t, pool)
+	seedCareAdminDuty(t, pool, 11, "supervisor")
 	mustExec(t, pool, "INSERT INTO oldperson(old_id,name,phone) VALUES(1,'甲','13800000001'),(2,'乙','13800000001')")
-	w := callAPI(h.familyAdd, map[string]any{"familyName": "家属", "familyRelation": "子女", "familySex": "女", "familyPhone": "13800000003", "oldPhone": "13800000001", "familyAddress": "测试"})
+	w := callAPI(withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.familyAdd), map[string]any{"familyName": "家属", "familyRelation": "子女", "familySex": "女", "familyPhone": "13800000003", "oldPhone": "13800000001", "familyAddress": "测试"})
 	var families, bound int
 	if err := pool.QueryRowContext(context.Background(), "SELECT count(*) FROM family").Scan(&families); err != nil {
 		t.Fatal(err)
