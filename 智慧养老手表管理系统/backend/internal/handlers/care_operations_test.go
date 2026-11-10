@@ -9,12 +9,12 @@ import (
 	"suining-care/internal/careworkflow"
 )
 
-// PostgreSQL-backed authorization regression: a family session is denied by
+// MySQL authorization regression: a family session is denied by
 // careAdmin; these checks cover assigned administrative duties.
 func TestCareDutyPermissionsAndSensitiveAudit(t *testing.T) {
 	pool := testDatabase(t)
 	mustExec(t, pool, "INSERT INTO users(user_id,user_name) VALUES(1,'主管'),(2,'护理员'),(3,'审计员')")
-	mustExec(t, pool, "INSERT INTO care_staff_permission(admin_id,duty,assigned_by) VALUES(2,'caregiver',1),(3,'auditor',1)")
+	mustExec(t, pool, "INSERT INTO care_staff_permission(admin_id,duty,assigned_by) VALUES(1,'supervisor',1),(2,'caregiver',1),(3,'auditor',1)")
 	h := testHandler(t, pool)
 	req := httptest.NewRequest("POST", "/api/v1/care/transition", nil)
 	for _, tc := range []struct {
@@ -58,6 +58,7 @@ func TestCareWorkerHeartbeatSchema(t *testing.T) {
 func TestCareDutyAssignmentTransaction(t *testing.T) {
 	pool := testDatabase(t)
 	mustExec(t, pool, "INSERT INTO users(user_id,user_name) VALUES(101,'主管'),(102,'护理员'),(103,'审计员')")
+	mustExec(t, pool, "INSERT INTO care_staff_permission(admin_id,duty,assigned_by) VALUES(101,'supervisor',101)")
 	ctx := context.Background()
 
 	if err := careworkflow.AssignDuty(ctx, pool, 101, 102, "caregiver"); err != nil {
