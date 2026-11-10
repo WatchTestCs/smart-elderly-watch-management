@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"strconv"
 	"suining-care/internal/blob"
+	"suining-care/internal/carepolicy"
+	"suining-care/internal/careworkflow"
 	"suining-care/internal/db"
 	"suining-care/internal/notify"
 	"suining-care/internal/response"
@@ -26,8 +28,12 @@ func (h *Handler) createNotice(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	tx, err := h.DB.BeginTx(r.Context(), &sql.TxOptions{Isolation: sql.LevelReadCommitted})
-	if internalError(w, err) {
+	actor, ok := careAdmin(w, r)
+	if !ok {
+		return
+	}
+	tx, ok := h.beginAdminActionTx(w, r, carepolicy.ManageContent)
+	if !ok {
 		return
 	}
 	defer tx.Rollback()
@@ -57,11 +63,16 @@ func (h *Handler) createNotice(w http.ResponseWriter, r *http.Request) {
 	if internalError(w, notify.EnqueueBatch(r.Context(), tx, h.Box, messages)) {
 		return
 	}
-	if internalError(w, tx.Commit()) {
+	if internalError(w, auditContentBeforeCommit(r.Context(), tx, actor, "notice_created")) || internalError(w, tx.Commit()) {
 		return
 	}
 	// The announcement and durable outbox commit together; network I/O is worker-owned.
 	writeCode(w, true)
+}
+
+func auditContentBeforeCommit(ctx context.Context, tx *sql.Tx, actor int64, action string) error {
+	_, err := tx.ExecContext(ctx, "INSERT INTO care_access_audit(admin_id,action) VALUES(?,?)", actor, action)
+	return err
 }
 
 // POST /api/v1/notices/delete —— 删除公告及关联图片（事务内执行）。
@@ -75,7 +86,15 @@ func (h *Handler) deleteNotice(w http.ResponseWriter, r *http.Request) {
 		response.Fail(w, "参数不正确")
 		return
 	}
-	deleted, err := socialworkflow.DeleteNotice(r.Context(), h.DB, textID)
+	actor, ok := careAdmin(w, r)
+	if !ok {
+		return
+	}
+	deleted, err := socialworkflow.DeleteNotice(r.Context(), h.DB, actor, textID)
+	if errors.Is(err, careworkflow.ErrCapabilityDenied) {
+		response.JSON(w, http.StatusForbidden, map[string]any{"code": "ACCESS_DENIED"})
+		return
+	}
 	if internalError(w, err) {
 		return
 	}
@@ -101,7 +120,15 @@ func (h *Handler) updateNotice(w http.ResponseWriter, r *http.Request) {
 	if internalError(w, err) {
 		return
 	}
-	updated, err := socialworkflow.UpdateNotice(r.Context(), h.DB, manager, textID, str(m, "title"), str(m, "textMain"), fileList)
+	actor, ok := careAdmin(w, r)
+	if !ok {
+		return
+	}
+	updated, err := socialworkflow.UpdateNotice(r.Context(), h.DB, actor, manager, textID, str(m, "title"), str(m, "textMain"), fileList)
+	if errors.Is(err, careworkflow.ErrCapabilityDenied) {
+		response.JSON(w, http.StatusForbidden, map[string]any{"code": "ACCESS_DENIED"})
+		return
+	}
 	if errors.Is(err, blob.ErrNotFound) {
 		write400(w, "图片不存在或已回收，请重新上传")
 		return
