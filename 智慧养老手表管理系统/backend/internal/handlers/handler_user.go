@@ -32,7 +32,7 @@ func (h *Handler) userSelect(w http.ResponseWriter, r *http.Request) {
 		response.Fail(w, "参数不完整")
 		return
 	}
-	tx, ok := h.beginSupervisorRead(w, r)
+	tx, ok := h.beginSupervisorTx(w, r)
 	if !ok {
 		return
 	}
@@ -73,7 +73,7 @@ func (h *Handler) listGuardians(w http.ResponseWriter, r *http.Request) {
 	}
 	name := str(m, "customerName")
 	page, pageSize := bodyPage(m)
-	tx, ok := h.beginSupervisorRead(w, r)
+	tx, ok := h.beginSupervisorTx(w, r)
 	if !ok {
 		return
 	}
@@ -97,10 +97,15 @@ func (h *Handler) createGuardian(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	affected, err := guardianrepo.Create(r.Context(), h.DB, guardianrepo.Fields{
+	tx, ok := h.beginSupervisorTx(w, r)
+	if !ok {
+		return
+	}
+	defer tx.Rollback()
+	affected, err := guardianrepo.Create(r.Context(), tx, guardianrepo.Fields{
 		Name: name, Age: age, Sex: sex, Phone: phone, Address: addr,
 	})
-	if internalError(w, err) {
+	if internalError(w, err) || internalError(w, tx.Commit()) {
 		return
 	}
 	writeSingleMutation(w, affected)
@@ -121,10 +126,15 @@ func (h *Handler) updateGuardian(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	affected, err := guardianrepo.Update(r.Context(), h.DB, id, guardianrepo.Fields{
+	tx, ok := h.beginSupervisorTx(w, r)
+	if !ok {
+		return
+	}
+	defer tx.Rollback()
+	affected, err := guardianrepo.Update(r.Context(), tx, id, guardianrepo.Fields{
 		Name: name, Age: age, Sex: sex, Phone: phone, Address: addr,
 	})
-	if internalError(w, err) {
+	if internalError(w, err) || internalError(w, tx.Commit()) {
 		return
 	}
 	writeSingleMutation(w, affected)
@@ -141,13 +151,20 @@ func (h *Handler) deleteGuardian(w http.ResponseWriter, r *http.Request) {
 		response.Error500(w, ref())
 		return
 	}
-	err := guardianrepo.Delete(r.Context(), h.DB, id)
+	tx, ok := h.beginSupervisorTx(w, r)
+	if !ok {
+		return
+	}
+	defer tx.Rollback()
+	err := guardianrepo.Delete(r.Context(), tx, id)
 	switch {
 	case errors.Is(err, guardianrepo.ErrGuardianNotFound):
 		response.Fail(w, "监护人不存在，请刷新后重新选择")
 	case errors.Is(err, guardianrepo.ErrGuardianAssigned):
 		response.Fail(w, "该监护人仍关联长者，请先调整长者档案")
 	case internalError(w, err):
+		return
+	case internalError(w, tx.Commit()):
 		return
 	default:
 		response.OK(w, nil)

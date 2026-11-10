@@ -53,9 +53,9 @@ func (h *Handler) EnforceAdminDuty(next http.Handler) http.Handler {
 	})
 }
 
-// beginSupervisorRead checks live supervisor authority and holds the duty lock
-// while one legacy sensitive read runs. Its caller commits before responding.
-func (h *Handler) beginSupervisorRead(w http.ResponseWriter, r *http.Request) (*sql.Tx, bool) {
+// beginSupervisorTx locks the live supervisor duty for one sensitive read or write.
+// Its caller commits the business transaction before responding.
+func (h *Handler) beginSupervisorTx(w http.ResponseWriter, r *http.Request) (*sql.Tx, bool) {
 	actor, ok := careAdmin(w, r)
 	if !ok {
 		return nil, false

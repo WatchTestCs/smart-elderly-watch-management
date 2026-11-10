@@ -15,6 +15,12 @@ type RowsQuerier interface {
 	QueryContext(context.Context, string, ...any) (*sql.Rows, error)
 }
 
+// ReadQuerier supports both row and collection reads inside a database or transaction.
+type ReadQuerier interface {
+	RowQuerier
+	RowsQuerier
+}
+
 // QueryEach visits rows in query order and closes the result before returning.
 func QueryEach(ctx context.Context, q RowsQuerier, visit func(*sql.Rows) error, query string, args ...any) error {
 	rows, err := q.QueryContext(ctx, query, args...)

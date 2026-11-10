@@ -51,7 +51,7 @@ func List(ctx context.Context, store db.RowsQuerier, name string, page, pageSize
 	return items, total, err
 }
 
-func Create(ctx context.Context, store *db.Database, fields Fields) (int64, error) {
+func Create(ctx context.Context, store *sql.Tx, fields Fields) (int64, error) {
 	result, err := store.ExecContext(ctx,
 		`INSERT INTO customer(customer_name,customer_age,customer_sex,customer_phone,customer_address)
 		 VALUES(?,?,?,?,?)`,
@@ -62,7 +62,7 @@ func Create(ctx context.Context, store *db.Database, fields Fields) (int64, erro
 	return result.RowsAffected()
 }
 
-func Update(ctx context.Context, store *db.Database, id int64, fields Fields) (int64, error) {
+func Update(ctx context.Context, store *sql.Tx, id int64, fields Fields) (int64, error) {
 	result, err := store.ExecContext(ctx,
 		`UPDATE customer SET customer_name=?,customer_age=?,customer_sex=?,
 		 customer_phone=?,customer_address=? WHERE customer_id=?`,
@@ -77,12 +77,7 @@ var ErrGuardianNotFound = errors.New("guardian not found")
 var ErrGuardianAssigned = errors.New("guardian has assigned residents")
 
 // Delete locks the guardian before checking resident assignments and removing it.
-func Delete(ctx context.Context, store *db.Database, id int64) error {
-	tx, err := store.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
+func Delete(ctx context.Context, tx *sql.Tx, id int64) error {
 
 	var found int64
 	if err := tx.QueryRowContext(ctx, "SELECT customer_id FROM customer WHERE customer_id=? FOR UPDATE", id).Scan(&found); err != nil {
@@ -109,5 +104,5 @@ func Delete(ctx context.Context, store *db.Database, id int64) error {
 	if affected != 1 {
 		return ErrGuardianNotFound
 	}
-	return tx.Commit()
+	return nil
 }

@@ -119,7 +119,7 @@ func (h *Handler) securityFactor(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) securityLoginAudit(w http.ResponseWriter, r *http.Request) {
-	tx, ok := h.beginSupervisorRead(w, r)
+	tx, ok := h.beginSupervisorTx(w, r)
 	if !ok {
 		return
 	}

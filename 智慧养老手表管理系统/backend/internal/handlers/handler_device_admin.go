@@ -83,8 +83,13 @@ func (h *Handler) deviceList(w http.ResponseWriter, r *http.Request) {
 	if query != "" {
 		pattern = "%" + query + "%"
 	}
+	tx, ok := h.beginSupervisorTx(w, r)
+	if !ok {
+		return
+	}
+	defer tx.Rollback()
 	ctx := r.Context()
-	items, total, onlineCount, err := devicerepo.ListAdminDevices(ctx, h.DB, pattern, state, p, ps)
+	items, total, onlineCount, err := devicerepo.ListAdminDevices(ctx, tx, pattern, state, p, ps)
 	if internalError(w, err) {
 		return
 	}
@@ -96,6 +101,9 @@ func (h *Handler) deviceList(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		list = append(list, view)
+	}
+	if internalError(w, tx.Commit()) {
+		return
 	}
 	response.OK(w, map[string]any{
 		"total": total, "onlineCount": onlineCount, "page": p, "pageSize": ps,

@@ -35,7 +35,7 @@ const adminOnlineExpr = `d.last_time >= TIMESTAMPADD(SECOND,-60,CURRENT_TIMESTAM
 const adminFilter = `WHERE (?='' OR LOWER(d.device_no) LIKE ? OR LOWER(CONCAT(COALESCE(d.alias,''),' ',COALESCE(o.name,''))) LIKE ?)
 	AND (?='all' OR CASE WHEN ` + adminOnlineExpr + ` THEN 'online' ELSE 'offline' END = ?)`
 
-func ListAdminDevices(ctx context.Context, store *db.Database, pattern, state string, page, size int) ([]AdminDevice, int64, int64, error) {
+func ListAdminDevices(ctx context.Context, store db.ReadQuerier, pattern, state string, page, size int) ([]AdminDevice, int64, int64, error) {
 	var total, onlineCount int64
 	err := store.QueryRowContext(ctx,
 		`SELECT COUNT(*), COALESCE(SUM(CASE WHEN `+adminOnlineExpr+` THEN 1 ELSE 0 END),0)
