@@ -68,7 +68,7 @@ type ModeratedComment struct {
 }
 
 // SearchModeratedComments returns one page and the full count of comments.
-func SearchModeratedComments(ctx context.Context, store *db.Database, noticeTable string, page, pageSize int) ([]ModeratedComment, int64, error) {
+func SearchModeratedComments(ctx context.Context, store db.ReadQuerier, noticeTable string, page, pageSize int) ([]ModeratedComment, int64, error) {
 	query := `SELECT said_id, said, back,` +
 		` LEFT(DATE_FORMAT(said_time,'%Y-%m-%d %H:%i:%s.%f'),23) AS saidTime,` +
 		` LEFT(DATE_FORMAT(back_time,'%Y-%m-%d %H:%i:%s.%f'),23) AS backTime,` +
