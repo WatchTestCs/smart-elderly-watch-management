@@ -18,7 +18,7 @@ var (
 // Locking the actor's permission row prevents a concurrent demotion from racing
 // an already-authorized assignment.
 func AssignDuty(ctx context.Context, store *db.Database, actor, target int64, duty string) error {
-	if actor < 1 || target < 1 || (duty != "supervisor" && duty != "caregiver" && duty != "auditor") {
+	if actor < 1 || target < 1 || (duty != "supervisor" && duty != "caregiver" && duty != "auditor" && duty != "unassigned") {
 		return ErrDutyDenied
 	}
 	if actor == target && duty != "supervisor" {
