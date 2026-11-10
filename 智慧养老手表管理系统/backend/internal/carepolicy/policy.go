@@ -21,6 +21,8 @@ const (
 	ReadOperations    Action = "read_operations"
 	ReadMessages      Action = "read_messages"
 	ReadContacts      Action = "read_contacts"
+	ReadInvites       Action = "read_invites"
+	ManageInvites     Action = "manage_invites"
 	ReadDevices       Action = "read_devices"
 	ManageDevices     Action = "manage_devices"
 	ReadAlerts        Action = "read_device_alerts"
@@ -60,7 +62,8 @@ func Allowed(duty Duty, action Action) bool {
 		case ReadTasks, ReadAudit, ManageStaff, Diagnostics, Acknowledge, Start,
 			Resolve, Escalate, Verify, Reopen, ReadCommands, IssueCommands,
 			ConfigureCommands, ReadReviews, ReviewAlerts, ReadRules, ManageRules,
-			ReadOperations, ReadMessages, ReadContacts, ReadDevices, ManageDevices,
+			ReadOperations, ReadMessages, ReadContacts, ReadInvites, ManageInvites,
+			ReadDevices, ManageDevices,
 			ReadAlerts, HandleAlerts, ReadThresholds, ManageThresholds,
 			ReadGeofences, ManageGeofences:
 			return true
