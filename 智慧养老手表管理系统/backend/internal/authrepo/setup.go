@@ -43,10 +43,12 @@ func InitializeAdmin(ctx context.Context, store *db.Database, box *securestore.B
 	if err != nil {
 		return err
 	}
+	var adminID int64
 	if box == nil {
-		if _, err := tx.ExecContext(ctx,
+		adminID, err = db.InsertID(ctx, tx,
 			"INSERT INTO users(user_name,user_phone,password,role) VALUES(?,?,?,'1')",
-			name, phone, hashed); err != nil {
+			name, phone, hashed)
+		if err != nil {
 			return err
 		}
 	} else {
@@ -56,6 +58,7 @@ func InitializeAdmin(ctx context.Context, store *db.Database, box *securestore.B
 		if err != nil {
 			return err
 		}
+		adminID = id
 		protected, err := userphone.Protect(box, id, phone)
 		if err != nil {
 			return err
@@ -68,6 +71,18 @@ func InitializeAdmin(ctx context.Context, store *db.Database, box *securestore.B
 			protected.Ciphertext, protected.Lookup, id); err != nil {
 			return err
 		}
+	}
+	// First-run administrator and the first explicit supervisor are one
+	// atomic identity/authorization/audit operation.
+	if _, err := tx.ExecContext(ctx,
+		"INSERT INTO care_staff_permission(admin_id,duty,assigned_by) VALUES(?,'supervisor',?)",
+		adminID, adminID); err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx,
+		"INSERT INTO care_access_audit(admin_id,action,subject_admin_id) VALUES(?,'supervisor_initialized',?)",
+		adminID, adminID); err != nil {
+		return err
 	}
 	return tx.Commit()
 }
