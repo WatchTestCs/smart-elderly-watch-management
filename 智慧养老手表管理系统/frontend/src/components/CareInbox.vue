@@ -23,6 +23,7 @@
           <el-button v-if="canAct('acknowledge') && ['received','notifying','notified','escalated'].includes(task.state)" type="primary" @click="begin(task,'acknowledge')">接单</el-button>
           <el-button v-if="canAct('start') && task.state==='acknowledged'" type="primary" @click="begin(task,'start')">开始处置</el-button>
           <el-button v-if="canAct('resolve') && task.state==='in_progress'" type="primary" @click="begin(task,'resolve')">登记处置</el-button>
+          <el-button v-if="canAct('escalate') && ['received','notifying','notified','acknowledged','in_progress'].includes(task.state)" plain @click="begin(task,'escalate')">升级跟进</el-button>
           <el-button v-if="canAct('verify') && String(task.resolvedBy) !== String(actorId) && ['resolved','review_overdue'].includes(task.state)" type="primary" @click="begin(task,'verify')">复核关闭</el-button>
           <el-button v-if="canAct('reopen') && ['resolved','review_overdue'].includes(task.state)" plain @click="begin(task,'reopen')">重新开启</el-button>
         </div>
