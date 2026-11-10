@@ -24,11 +24,15 @@ func (h *Handler) createNotice(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	manager, err := h.images()
-	if internalError(w, err) {
-		return
+	var manager *blob.Manager
+	if len(files) > 0 {
+		var err error
+		manager, err = h.images()
+		if internalError(w, err) {
+			return
+		}
 	}
-	err = socialworkflow.PublishAnnouncement(r.Context(), h.DB, actor, manager, h.Box, str(m, "title"), str(m, "textMain"), files)
+	err := socialworkflow.PublishAnnouncement(r.Context(), h.DB, actor, manager, h.Box, str(m, "title"), str(m, "textMain"), files)
 	switch {
 	case errors.Is(err, careworkflow.ErrCapabilityDenied):
 		response.JSON(w, http.StatusForbidden, map[string]any{"code": "ACCESS_DENIED"})
