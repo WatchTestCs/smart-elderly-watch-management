@@ -21,8 +21,8 @@
         <div class="care-task-actions">
           <el-button plain @click="viewHistory(task)">处置记录</el-button>
           <el-button v-if="canAct('acknowledge') && ['received','notifying','notified','escalated'].includes(task.state)" type="primary" @click="begin(task,'acknowledge')">接单</el-button>
-          <el-button v-if="canAct('start') && task.state==='acknowledged'" type="primary" @click="begin(task,'start')">开始处置</el-button>
-          <el-button v-if="canAct('resolve') && task.state==='in_progress'" type="primary" @click="begin(task,'resolve')">登记处置</el-button>
+          <el-button v-if="canAct('start') && canContinue(task) && task.state==='acknowledged'" type="primary" @click="begin(task,'start')">开始处置</el-button>
+          <el-button v-if="canAct('resolve') && canContinue(task) && task.state==='in_progress'" type="primary" @click="begin(task,'resolve')">登记处置</el-button>
           <el-button v-if="canAct('escalate') && ['received','notifying','notified','acknowledged','in_progress'].includes(task.state)" plain @click="begin(task,'escalate')">升级跟进</el-button>
           <el-button v-if="canAct('verify') && String(task.resolvedBy) !== String(actorId) && ['resolved','review_overdue'].includes(task.state)" type="primary" @click="begin(task,'verify')">复核关闭</el-button>
           <el-button v-if="canAct('reopen') && ['resolved','review_overdue'].includes(task.state)" plain @click="begin(task,'reopen')">重新开启</el-button>
@@ -80,6 +80,8 @@ const pageSize = 20
 const dialog = ref<{ visible: boolean; id: string | number | null; action: string; note: string; error: string }>({visible:false,id:null,action:'',note:'',error:''})
 const history = ref<HistoryState>({visible:false,loading:false,error:'',events:[],id:null,page:1,total:0})
 const canAct = (action: string) => !error.value && (duty.value === 'supervisor' || (duty.value === 'caregiver' && ['acknowledge','start','resolve'].includes(action)))
+const canContinue = (task: CareTask) =>
+  duty.value === 'supervisor' || String(task.acknowledgedBy ?? '') === String(actorId.value)
 
 let timer: ReturnType<typeof setInterval> | undefined
 const reads = createLatestRead(
