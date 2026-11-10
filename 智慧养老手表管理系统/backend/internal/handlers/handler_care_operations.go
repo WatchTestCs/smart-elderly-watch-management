@@ -55,12 +55,7 @@ func (h *Handler) careDiagnostics(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	duty, ok := h.careDuty(w, r, actor)
-	if !ok {
-		return
-	}
-	if duty != "supervisor" {
-		response.JSON(w, http.StatusForbidden, map[string]any{"message": "只有主管可查看服务诊断"})
+	if !h.authorizeCareAction(w, r, actor, "diagnostics") {
 		return
 	}
 	if !h.auditCareAccess(w, r, actor, "service_diagnostics", nil) {
