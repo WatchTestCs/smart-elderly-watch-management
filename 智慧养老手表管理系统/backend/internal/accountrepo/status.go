@@ -15,7 +15,7 @@ type Account struct {
 func Lock(ctx context.Context, tx *sql.Tx, id int64) (Account, error) {
 	var account Account
 	err := tx.QueryRowContext(ctx,
-		"SELECT role,account_status FROM users WHERE user_id=? FOR UPDATE", id).
+		"SELECT COALESCE(role,''),account_status FROM users WHERE user_id=? FOR UPDATE", id).
 		Scan(&account.Role, &account.Status)
 	return account, err
 }
