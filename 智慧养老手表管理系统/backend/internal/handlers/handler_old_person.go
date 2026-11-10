@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"suining-care/internal/carepolicy"
 	dbstore "suining-care/internal/db"
 	"suining-care/internal/response"
 )
@@ -74,7 +75,7 @@ func (h *Handler) saveResident(w http.ResponseWriter, r *http.Request, update bo
 		return
 	}
 	ctx := r.Context()
-	tx, ok := h.beginSupervisorTx(w, r)
+	tx, ok := h.beginAdminActionTx(w, r, carepolicy.ManageResidents)
 	if !ok {
 		return
 	}
@@ -137,7 +138,7 @@ func (h *Handler) deleteResident(w http.ResponseWriter, r *http.Request) {
 	}
 	oldID, _ := strconv.ParseInt(oldIDStr, 10, 64)
 	ctx := r.Context()
-	tx, ok := h.beginSupervisorTx(w, r)
+	tx, ok := h.beginAdminActionTx(w, r, carepolicy.ManageResidents)
 	if !ok {
 		return
 	}
