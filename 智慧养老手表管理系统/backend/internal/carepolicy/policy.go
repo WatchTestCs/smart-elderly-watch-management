@@ -44,7 +44,7 @@ const (
 	ManageResidents   Action = "manage_residents"
 	ReadLocations     Action = "read_locations"
 	ReadLoginAudit    Action = "read_login_audit"
-		ManageContent     Action = "manage_content"
+	ManageContent     Action = "manage_content"
 	ReadModeration    Action = "read_moderation"
 	Diagnostics       Action = "diagnostics"
 	Acknowledge       Action = "acknowledge"
