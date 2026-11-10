@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"suining-care/internal/authrepo"
 	"suining-care/internal/careworkflow"
 )
 
@@ -83,5 +84,25 @@ func TestCareDutyAssignmentTransaction(t *testing.T) {
 	err = pool.QueryRowContext(ctx, "SELECT count(*) FROM care_access_audit WHERE admin_id=101 AND action='staff_duty_changed'").Scan(&audits)
 	if err != nil || audits != 1 {
 		t.Fatalf("failed assignment wrote an audit: %d %v", audits, err)
+	}
+}
+
+func TestFirstAdministratorReceivesExplicitSupervisor(t *testing.T) {
+	pool := testDatabase(t)
+	ctx := context.Background()
+	if err := authrepo.InitializeAdmin(ctx, pool, nil, "主管", "13900001111", "SecureCare2026"); err != nil {
+		t.Fatal(err)
+	}
+	var adminID int64
+	var duty string
+	if err := pool.QueryRowContext(ctx, "SELECT u.user_id,p.duty FROM users u JOIN care_staff_permission p ON p.admin_id=u.user_id WHERE u.user_phone=?", "13900001111").Scan(&adminID, &duty); err != nil || duty != "supervisor" {
+		t.Fatalf("first administrator lacks explicit supervisor: id=%d duty=%q err=%v", adminID, duty, err)
+	}
+	var count int
+	if err := pool.QueryRowContext(ctx, "SELECT count(*) FROM care_access_audit WHERE admin_id=? AND action='supervisor_initialized' AND subject_admin_id=?", adminID, adminID).Scan(&count); err != nil || count != 1 {
+		t.Fatalf("initial supervisor audit missing: %d %v", count, err)
+	}
+	if err := authrepo.InitializeAdmin(ctx, pool, nil, "后续", "13900002222", "SecureCare2026"); !errors.Is(err, authrepo.ErrAlreadyInitialized) {
+		t.Fatalf("first-run setup remained open: %v", err)
 	}
 }
