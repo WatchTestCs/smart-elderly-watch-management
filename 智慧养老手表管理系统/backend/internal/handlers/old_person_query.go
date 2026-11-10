@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"suining-care/internal/carepolicy"
 	"suining-care/internal/db"
 	"suining-care/internal/response"
 )
@@ -37,7 +38,7 @@ func (h *Handler) listResidents(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	tx, ok := h.beginSupervisorTx(w, r)
+	tx, ok := h.beginAdminActionTx(w, r, carepolicy.ReadResidents)
 	if !ok {
 		return
 	}
@@ -63,7 +64,7 @@ func (h *Handler) getResidentDetails(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	tx, ok := h.beginSupervisorTx(w, r)
+	tx, ok := h.beginAdminActionTx(w, r, carepolicy.ReadResidents)
 	if !ok {
 		return
 	}
