@@ -33,9 +33,9 @@ func TestHeartbeatBufferCoalescesLatestState(t *testing.T) {
 	base := time.Date(2026, 11, 10, 0, 0, 0, 0, time.UTC)
 	battery := 71
 	version := "2.1.0"
-	buffer.Record(7, 1, &battery, nil, base)
-	buffer.Record(7, 1, nil, &version, base.Add(5*time.Second))
-	buffer.Record(8, 1, nil, nil, base.Add(2*time.Second))
+	buffer.Record(context.Background(), 7, 1, &battery, nil, base)
+	buffer.Record(context.Background(), 7, 1, nil, &version, base.Add(5*time.Second))
+	buffer.Record(context.Background(), 8, 1, nil, nil, base.Add(2*time.Second))
 	if n, err := buffer.Flush(context.Background()); err != nil || n != 2 {
 		t.Fatalf("Flush() = %d, %v; want 2, nil", n, err)
 	}
@@ -54,7 +54,7 @@ func TestHeartbeatBufferCoalescesLatestState(t *testing.T) {
 func TestHeartbeatBufferRequeuesFailedBatch(t *testing.T) {
 	store := &heartbeatStoreStub{fail: true}
 	buffer := NewHeartbeatBuffer(store)
-	buffer.Record(7, 1, nil, nil, time.Now())
+	buffer.Record(context.Background(), 7, 1, nil, nil, time.Now())
 	if n, err := buffer.Flush(context.Background()); err == nil || n != 0 {
 		t.Fatalf("failed Flush() = %d, %v", n, err)
 	}
@@ -69,7 +69,7 @@ func TestHeartbeatBufferRequeuePrefersNewestMetadata(t *testing.T) {
 	base := time.Date(2026, 11, 10, 0, 0, 0, 0, time.UTC)
 	newBattery, oldBattery := 90, 20
 	newVersion, oldVersion := "3.0", "2.0"
-	buffer.Record(7, 1, &newBattery, &newVersion, base.Add(time.Minute))
+	buffer.Record(context.Background(), 7, 1, &newBattery, &newVersion, base.Add(time.Minute))
 	buffer.requeue([]heartbeatState{{
 		deviceID: 7, bindingEpoch: 1, seenAt: base, battery: oldBattery, hasBattery: true,
 		appVersion: oldVersion, hasVersion: true,
@@ -101,9 +101,9 @@ func TestHeartbeatBufferSeparatesBindingEpochs(t *testing.T) {
 	buffer := NewHeartbeatBuffer(store)
 	base := time.Date(2026, 11, 10, 0, 0, 0, 0, time.UTC)
 	oldBattery, newBattery := 10, 90
-	buffer.Record(7, 1, &oldBattery, nil, base)
-	buffer.Record(7, 2, &newBattery, nil, base.Add(time.Second))
-	buffer.Record(7, 1, &oldBattery, nil, base.Add(2*time.Second))
+	buffer.Record(context.Background(), 7, 1, &oldBattery, nil, base)
+	buffer.Record(context.Background(), 7, 2, &newBattery, nil, base.Add(time.Second))
+	buffer.Record(context.Background(), 7, 1, &oldBattery, nil, base.Add(2*time.Second))
 	buffer.requeue([]heartbeatState{
 		{deviceID: 7, bindingEpoch: 1, seenAt: base.Add(3 * time.Second), battery: oldBattery, hasBattery: true},
 	})
@@ -116,5 +116,27 @@ func TestHeartbeatBufferSeparatesBindingEpochs(t *testing.T) {
 	}
 	if len(store.args) != 5 || store.args[1] != int64(2) || store.args[3] != newBattery {
 		t.Fatalf("unexpected epoch-fenced SQL arguments: %+v", store.args)
+	}
+}
+
+func TestHeartbeatBufferCapacityUsesFencedDirectWrite(t *testing.T) {
+	store := &heartbeatStoreStub{}
+	buffer := NewHeartbeatBuffer(store)
+	for id := int64(1); id <= heartbeatBufferCapacity; id++ {
+		buffer.items[id] = heartbeatState{deviceID: id, bindingEpoch: 1}
+	}
+	battery := 75
+	if err := buffer.Record(context.Background(), heartbeatBufferCapacity+1, 2, &battery, nil, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	if len(buffer.items) != heartbeatBufferCapacity || store.calls != 1 {
+		t.Fatalf("unbounded buffer or missing backpressure: size=%d calls=%d", len(buffer.items), store.calls)
+	}
+	if !strings.Contains(store.query, "health_epoch=?") || store.args[7] != int64(2) {
+		t.Fatalf("direct overflow write lacks binding fence: %s %#v", store.query, store.args)
+	}
+	store.fail = true
+	if err := buffer.Record(context.Background(), heartbeatBufferCapacity+2, 2, nil, nil, time.Now()); err == nil {
+		t.Fatal("failed overflow write must not be acknowledged")
 	}
 }
