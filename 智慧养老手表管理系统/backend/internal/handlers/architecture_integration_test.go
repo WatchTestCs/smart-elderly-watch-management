@@ -205,7 +205,8 @@ func TestArchitectureUnbindingKeepsRemainingPrimary(t *testing.T) {
 	seedCareAdminDuty(t, pool, 11, "supervisor")
 	mustExec(t, pool, "UPDATE oldperson SET device_id=1 WHERE old_id=1")
 	mustExec(t, pool, "INSERT INTO device(device_id,device_no,secret,old_id) VALUES(2,'SECOND','unused',1)")
-	api(t, withHealthPrincipal(testHandler(t, pool), session.Principal{Role: auth.RoleAdmin, ID: 11}, testHandler(t, pool).deviceUnbind), map[string]any{"deviceId": 1})
+	h := testHandler(t, pool)
+	api(t, withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.deviceUnbind), map[string]any{"deviceId": 1})
 	var primary *int64
 	if err := pool.QueryRowContext(context.Background(), "SELECT device_id FROM oldperson WHERE old_id=1").Scan(&primary); err != nil || primary == nil || *primary != 2 {
 		t.Fatalf("remaining attached device lost its primary reference: %v %v", primary, err)
