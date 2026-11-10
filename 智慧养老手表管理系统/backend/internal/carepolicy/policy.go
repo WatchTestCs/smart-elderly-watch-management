@@ -11,7 +11,18 @@ const (
 	Caregiver  Duty = "caregiver"
 	Auditor    Duty = "auditor"
 
-	ReadTasks   Action = "read_tasks"
+	ReadTasks        Action = "read_tasks"
+	ReadCommands     Action = "read_commands"
+	IssueCommands    Action = "issue_commands"
+	ConfigureCommands Action = "configure_commands"
+	ReadReviews      Action = "read_alert_reviews"
+	ReviewAlerts     Action = "review_alerts"
+	ReadRules        Action = "read_rules"
+	ManageRules      Action = "manage_rules"
+	ReadOperations   Action = "read_operations"
+	ReadMessages     Action = "read_messages"
+	ReadGeofences    Action = "read_geofences"
+	ManageGeofences  Action = "manage_geofences"
 	ReadAudit   Action = "read_audit"
 	ManageStaff Action = "manage_staff"
 	Diagnostics Action = "diagnostics"
@@ -41,7 +52,9 @@ func Allowed(duty Duty, action Action) bool {
 	case Supervisor:
 		switch action {
 		case ReadTasks, ReadAudit, ManageStaff, Diagnostics, Acknowledge, Start,
-			Resolve, Escalate, Verify, Reopen:
+			Resolve, Escalate, Verify, Reopen, ReadCommands, IssueCommands,
+			ConfigureCommands, ReadReviews, ReviewAlerts, ReadRules, ManageRules,
+			ReadOperations, ReadMessages, ReadGeofences, ManageGeofences:
 			return true
 		}
 	case Caregiver:
