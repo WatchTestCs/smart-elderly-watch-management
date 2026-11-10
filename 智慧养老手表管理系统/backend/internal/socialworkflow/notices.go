@@ -64,8 +64,10 @@ func UpdateNotice(ctx context.Context, store *db.Database, actor int64, manager 
 	if err != nil {
 		return false, err
 	}
-	if err := manager.Require(ctx, tx, names); err != nil {
-		return false, err
+	if len(names) > 0 {
+		if err := manager.Require(ctx, tx, names); err != nil {
+			return false, err
+		}
 	}
 	var groupID int64
 	if group == nil {
@@ -91,9 +93,6 @@ func UpdateNotice(ctx context.Context, store *db.Database, actor int64, manager 
 		return false, nil
 	}
 	if err := auditContentChange(ctx, tx, actor, "notice_updated"); err != nil {
-		return false, err
-	}
-	if err := auditContentChange(ctx, tx, actor, "notice_deleted"); err != nil {
 		return false, err
 	}
 	return true, tx.Commit()
@@ -127,6 +126,9 @@ func DeleteNotice(ctx context.Context, store *db.Database, actor, id int64) (boo
 		if _, err := tx.ExecContext(ctx, "DELETE FROM pic WHERE pic_id=?", *group); err != nil {
 			return false, err
 		}
+	}
+	if err := auditContentChange(ctx, tx, actor, "notice_deleted"); err != nil {
+		return false, err
 	}
 	return true, tx.Commit()
 }
