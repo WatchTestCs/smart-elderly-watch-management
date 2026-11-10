@@ -280,11 +280,19 @@ func TestArchitectureCareHistoryHasNoSilentLimit(t *testing.T) {
 func TestArchitectureCareNoteAcceptsChineseCharacters(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
-	mustExec(t, pool, "INSERT INTO users(user_id,user_name) VALUES(1,'现场护理员')")
-	mustExec(t, pool, "INSERT INTO care_staff_permission(admin_id,duty,assigned_by) VALUES(1,'caregiver',1)")
+	mustExec(t, pool, "INSERT INTO users(user_id,user_name) VALUES(1,'现场护理员'),(2,'其他护理员')")
+	mustExec(t, pool, "INSERT INTO care_staff_permission(admin_id,duty,assigned_by) VALUES(1,'caregiver',1),(2,'caregiver',1)")
 	mustExec(t, pool, "INSERT INTO care_incident(id,old_id,device_id,kind,state,severity,due_at) VALUES(1,1,1,'sos','in_progress','critical',CURRENT_TIMESTAMP(6))")
 	mustExec(t, pool, "UPDATE care_incident SET acknowledged_by='1' WHERE id=1")
 	h := testHandler(t, pool)
+	denied := careRequest(t, h, h.careTransition, 2, map[string]any{"id": "1", "action": "resolve", "note": "代他人结案"})
+	if denied.Code != http.StatusForbidden {
+		t.Fatalf("unassigned caregiver changed another caregiver's task: %d %s", denied.Code, denied.Body.String())
+	}
+	var before string
+	if err := pool.QueryRowContext(context.Background(), "SELECT state FROM care_incident WHERE id=1").Scan(&before); err != nil || before != "in_progress" {
+		t.Fatalf("denied resolve changed incident: %q %v", before, err)
+	}
 	out := careRequest(t, h, h.careTransition, 1, map[string]any{"id": "1", "action": "resolve", "note": strings.Repeat("护理记录", 300)})
 	if out.Code != 200 {
 		t.Fatalf("1200 Chinese characters must fit the 2000-character limit: %d", out.Code)
