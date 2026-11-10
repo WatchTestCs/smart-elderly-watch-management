@@ -53,15 +53,20 @@ func (h *Handler) EnforceAdminDuty(next http.Handler) http.Handler {
 	})
 }
 
-// beginSupervisorTx locks the live supervisor duty for one sensitive read or write.
-// Its caller commits the business transaction before responding.
-func (h *Handler) beginSupervisorTx(w http.ResponseWriter, r *http.Request) (*sql.Tx, bool) {
+// beginAdminActionTx makes the requested capability part of the live-duty lock.
+// The caller commits before responding or rolls back on failure.
+func (h *Handler) beginAdminActionTx(w http.ResponseWriter, r *http.Request, action carepolicy.Action) (*sql.Tx, bool) {
 	actor, ok := careAdmin(w, r)
 	if !ok {
 		return nil, false
 	}
-	tx, _, ok := h.beginCareRead(w, r, actor, carepolicy.ManageStaff)
+	tx, _, ok := h.beginCareRead(w, r, actor, action)
 	return tx, ok
+}
+
+// Legacy staff-management handlers use the same locked authorization boundary.
+func (h *Handler) beginSupervisorTx(w http.ResponseWriter, r *http.Request) (*sql.Tx, bool) {
+	return h.beginAdminActionTx(w, r, carepolicy.ManageStaff)
 }
 
 // Every care endpoint below performs its own fine-grained duty checks.
