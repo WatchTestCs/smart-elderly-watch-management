@@ -44,7 +44,15 @@ func TestConcurrentDutyReassignmentsPreserveSupervisor(t *testing.T) {
  WHERE p.duty='supervisor'`).Scan(&remainingID); err != nil {
 		t.Fatalf("supervisor disappeared: %v", err)
 	}
-	tx, err := pool.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	removedID := int64(143) - remainingID
+	if err := AssignDuty(ctx, pool, remainingID, removedID, "unassigned"); err != nil {
+		t.Fatalf("supervisor could not revoke a caregiver assignment: %v", err)
+	}
+	var assignments int
+	if err := pool.QueryRowContext(ctx, "SELECT COUNT(*) FROM care_staff_permission WHERE admin_id=?", removedID).Scan(&assignments); err != nil || assignments != 0 {
+		t.Fatalf("unassigned caregiver retained a permission row: count=%d err=%v", assignments, err)
+	}
+		tx, err := pool.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -52,7 +60,7 @@ func TestConcurrentDutyReassignmentsPreserveSupervisor(t *testing.T) {
 	if err := carerepo.LockAuthority(ctx, tx); err != nil {
 		t.Fatal(err)
 	}
-	if err := carerepo.SetDuty(ctx, tx, remainingID, remainingID, "auditor"); !errors.Is(err, carerepo.ErrLastSupervisor) {
+	if err := carerepo.SetDuty(ctx, tx, remainingID, remainingID, "unassigned"); !errors.Is(err, carerepo.ErrLastSupervisor) {
 		t.Fatalf("last supervisor could be removed: %v", err)
 	}
 }
