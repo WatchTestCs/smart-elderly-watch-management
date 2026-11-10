@@ -15,7 +15,7 @@ var ErrAlertNotFound = errors.New("vital alert record not found")
 const pendingRate = "(r.rate_state='1' AND (r.rate_handled_at IS NULL OR r.create_time > r.rate_handled_at))"
 const pendingPressure = "(r.pre_state='1' AND (r.pre_handled_at IS NULL OR r.create_time > r.pre_handled_at))"
 
-func AlertCounts(ctx context.Context, store *db.Database) (rate, pressure int64, err error) {
+func AlertCounts(ctx context.Context, store db.RowQuerier) (rate, pressure int64, err error) {
 	err = store.QueryRowContext(ctx, `SELECT
 		(SELECT COUNT(*) FROM ratepre r WHERE `+pendingRate+`),
 		(SELECT COUNT(*) FROM ratepre r WHERE `+pendingPressure+`)`).Scan(&rate, &pressure)

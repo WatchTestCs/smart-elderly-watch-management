@@ -48,8 +48,13 @@ func (h *Handler) countVitalAlerts(w http.ResponseWriter, r *http.Request) {
 	if _, ok := optBody(w, r); !ok {
 		return
 	}
-	rate, pressure, err := vitalrepo.AlertCounts(r.Context(), h.DB)
-	if internalError(w, err) {
+	tx, ok := h.beginSupervisorTx(w, r)
+	if !ok {
+		return
+	}
+	defer tx.Rollback()
+	rate, pressure, err := vitalrepo.AlertCounts(r.Context(), tx)
+	if internalError(w, err) || internalError(w, tx.Commit()) {
 		return
 	}
 	response.OK(w, map[string]any{"rateTotal": rate, "preTotal": pressure, "total": rate + pressure})

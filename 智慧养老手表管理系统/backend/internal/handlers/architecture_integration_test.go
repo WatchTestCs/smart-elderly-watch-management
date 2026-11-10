@@ -54,7 +54,7 @@ func TestArchitectureFormattedRecordsAcrossDatabases(t *testing.T) {
 	h := testHandler(t, pool)
 	admin := session.Principal{Role: auth.RoleAdmin, ID: 11}
 	for _, handler := range []http.HandlerFunc{
-		withHealthPrincipal(h, admin, h.listLatestVitals), h.countVitalAlertDevices,
+		withHealthPrincipal(h, admin, h.listLatestVitals), withHealthPrincipal(h, admin, h.countVitalAlertDevices),
 		withHealthPrincipal(h, admin, h.listLatestActivity), h.listNotices,
 	} {
 		out := callAPI(handler, map[string]any{})
