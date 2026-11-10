@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 
+	"suining-care/internal/carerepo"
 	"suining-care/internal/db"
 )
 
@@ -29,27 +30,24 @@ func AssignDuty(ctx context.Context, store *db.Database, actor, target int64, du
 	}
 	defer tx.Rollback()
 
-	var actorDuty string
-	err = tx.QueryRowContext(ctx, "SELECT duty FROM care_staff_permission WHERE admin_id=? FOR UPDATE", actor).Scan(&actorDuty)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+	if err := carerepo.LockAuthority(ctx, tx); err != nil {
 		return err
 	}
-	if errors.Is(err, sql.ErrNoRows) {
-		actorDuty = "supervisor"
+	actorDuty, err := carerepo.Duty(ctx, tx, actor)
+	if err != nil {
+		return err
 	}
 	if actorDuty != "supervisor" {
 		return ErrDutyDenied
 	}
-	var exists bool
-	if err := tx.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM users WHERE user_id=?)", target).Scan(&exists); err != nil {
+	exists, err := carerepo.AccountExists(ctx, tx, target)
+	if err != nil {
 		return err
 	}
 	if !exists {
 		return ErrStaffMissing
 	}
-	if _, err := tx.ExecContext(ctx, `INSERT INTO care_staff_permission(admin_id,duty,assigned_by,assigned_at)
- VALUES(?,?,?,CURRENT_TIMESTAMP(6)) AS new ON DUPLICATE KEY UPDATE
- duty=new.duty,assigned_by=new.assigned_by,assigned_at=CURRENT_TIMESTAMP(6)`, target, duty, actor); err != nil {
+	if err := carerepo.SetDuty(ctx, tx, target, actor, duty); err != nil {
 		return err
 	}
 	if _, err := tx.ExecContext(ctx, `INSERT INTO care_access_audit(admin_id,action,subject_admin_id)
