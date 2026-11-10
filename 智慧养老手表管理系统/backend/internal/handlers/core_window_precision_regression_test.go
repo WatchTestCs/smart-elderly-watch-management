@@ -43,6 +43,7 @@ func TestContinuousDailySubmicrosecondInterval(t *testing.T) {
 	pool := dbtest.MySQL(t)
 	h := testHandler(t, pool)
 	seedDevice(t, pool)
+	seedCareAdminDuty(t, pool, 11, "supervisor")
 	from := time.Date(2026, 10, 20, 0, 0, 0, 0, time.UTC)
 	samples := []health.Sample{
 		{RecordID: "cross-midnight", Source: "watch", SourceDevice: "WATCH001", Metric: "steps", Unit: "count", Value: health.Number(10), Start: from.Add(-100 * time.Nanosecond), End: from.Add(900 * time.Nanosecond), Semantics: "interval", Version: 1},
@@ -51,7 +52,7 @@ func TestContinuousDailySubmicrosecondInterval(t *testing.T) {
 	api(t, h.healthBatch, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "bindingVersion": 1, "samples": samples})
 	key := health.DailyKey{OldID: 1, Source: "watch", SourceDevice: "WATCH001", Metric: "steps", Semantics: "interval", Day: "2026-10-20"}
 	query := map[string]any{"oldId": 1, "source": "watch", "sourceDevice": "WATCH001", "metric": "steps", "semantics": "interval", "day": key.Day, "offsetMinutes": 0, "days": 1}
-	admin := withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 1}, h.healthDaily)
+	admin := withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.healthDaily)
 	api(t, admin, query)
 	if err := health.RefreshDaily(context.Background(), pool, key.ID()); err != nil {
 		t.Fatal(err)
