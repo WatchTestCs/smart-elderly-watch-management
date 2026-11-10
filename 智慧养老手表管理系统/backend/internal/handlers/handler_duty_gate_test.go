@@ -126,6 +126,8 @@ func TestLegacyDeviceHealthAndGuardianAccessAfterDutyRevocation(t *testing.T) {
 			body    map[string]any
 		}{
 			{"device_list", h.deviceList, map[string]any{}},
+			{"resident_list", h.listResidents, map[string]any{"name": ""}},
+			{"resident_details", h.getResidentDetails, map[string]any{"name": ""}},
 			{"health_statistics", h.healthStatistics, healthQuery},
 			{"health_changes", h.healthChanges, map[string]any{"oldId": 1}},
 			{"health_latest", h.healthLatest, map[string]any{"oldId": 1}},
