@@ -12,6 +12,7 @@ import (
 var (
 	ErrStaffMissing = errors.New("care staff account not found")
 	ErrDutyDenied   = errors.New("care duty assignment denied")
+	ErrSelfDemotion = errors.New("care supervisor cannot demote self")
 )
 
 // AssignDuty owns authorization, the permission mutation and its audit commit.
@@ -22,7 +23,7 @@ func AssignDuty(ctx context.Context, store *db.Database, actor, target int64, du
 		return ErrDutyDenied
 	}
 	if actor == target && duty != "supervisor" {
-		return ErrDutyDenied
+		return ErrSelfDemotion
 	}
 	tx, err := store.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
