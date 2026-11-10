@@ -2,6 +2,7 @@ package devicerepo
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"suining-care/internal/db"
@@ -31,19 +32,19 @@ type AdminDevice struct {
 
 const adminOnlineExpr = `d.last_time >= TIMESTAMPADD(SECOND,-60,CURRENT_TIMESTAMP(6))`
 
-const adminFilter = `WHERE ($1='' OR LOWER(d.device_no) LIKE $2 OR LOWER(CONCAT(COALESCE(d.alias,''),' ',COALESCE(o.name,''))) LIKE $2)
-	AND ($3='all' OR CASE WHEN ` + adminOnlineExpr + ` THEN 'online' ELSE 'offline' END = $3)`
+const adminFilter = `WHERE (?='' OR LOWER(d.device_no) LIKE ? OR LOWER(CONCAT(COALESCE(d.alias,''),' ',COALESCE(o.name,''))) LIKE ?)
+	AND (?='all' OR CASE WHEN ` + adminOnlineExpr + ` THEN 'online' ELSE 'offline' END = ?)`
 
 func ListAdminDevices(ctx context.Context, store *db.Database, pattern, state string, page, size int) ([]AdminDevice, int64, int64, error) {
 	var total, onlineCount int64
-	err := store.QueryRow(ctx,
+	err := store.QueryRowContext(ctx,
 		`SELECT COUNT(*), COALESCE(SUM(CASE WHEN `+adminOnlineExpr+` THEN 1 ELSE 0 END),0)
 		 FROM device d LEFT JOIN oldperson o ON o.old_id=d.old_id `+adminFilter,
-		pattern, pattern, state).Scan(&total, &onlineCount)
+		pattern, pattern, pattern, state, state).Scan(&total, &onlineCount)
 	if err != nil {
 		return nil, 0, 0, err
 	}
-	items, err := db.QueryList(ctx, store, func(rows db.Rows) (AdminDevice, error) {
+	items, err := db.QueryList(ctx, store, func(rows *sql.Rows) (AdminDevice, error) {
 		var item AdminDevice
 		err := rows.Scan(&item.ID, &item.Number, &item.Alias, &item.Model, &item.AppVersion,
 			&item.Battery, &item.ResidentID, &item.ResidentName, &item.ResidentPhone,
@@ -54,7 +55,7 @@ func ListAdminDevices(ctx context.Context, store *db.Database, pattern, state st
 		d.old_id, o.name, o.phone, d.bind_time, d.last_time, d.last_lng, d.last_lat,
 		d.status, d.person_handled, d.rate_handled, d.pre_handled
 		FROM device d LEFT JOIN oldperson o ON o.old_id = d.old_id `+adminFilter+
-		` ORDER BY d.device_id LIMIT $4 OFFSET $5`,
-		pattern, pattern, state, size, (page-1)*size)
+		` ORDER BY d.device_id LIMIT ? OFFSET ?`,
+		pattern, pattern, pattern, state, state, size, (page-1)*size)
 	return items, total, onlineCount, err
 }

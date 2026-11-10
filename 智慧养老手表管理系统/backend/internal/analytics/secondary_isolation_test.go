@@ -74,10 +74,10 @@ func TestUnavailablePostgresDoesNotBlockMySQLTransactions(t *testing.T) {
 	// Even while the secondary is unavailable, the MySQL write and its
 	// trigger-generated outbox event must commit independently.
 	writeCtx, stop := context.WithTimeout(context.Background(), 5*time.Second)
-	_, err := primary.Exec(writeCtx, "INSERT INTO ratepre(id,hr,create_time) VALUES(1,75,now())")
+	_, err := primary.ExecContext(writeCtx, "INSERT INTO ratepre(id,hr,create_time) VALUES(1,75,CURRENT_TIMESTAMP(6))")
 	if err == nil {
 		var count int
-		err = primary.QueryRow(writeCtx, "SELECT count(*) FROM analytics_outbox").Scan(&count)
+		err = primary.QueryRowContext(writeCtx, "SELECT count(*) FROM analytics_outbox").Scan(&count)
 		if err == nil && count != 1 {
 			t.Errorf("expected one durable primary event during PG outage, got %d", count)
 		}

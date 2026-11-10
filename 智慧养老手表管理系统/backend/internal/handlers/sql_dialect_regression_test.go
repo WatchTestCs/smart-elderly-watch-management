@@ -30,7 +30,7 @@ func TestDeviceReportDailyUpsertPreservesMissingFields(t *testing.T) {
 
 	var rows, step, sleep int
 	var state string
-	err := pool.QueryRow(context.Background(),
+	err := pool.QueryRowContext(context.Background(),
 		"SELECT count(*),max(step),max(sleep),max(sleep_sate) FROM watch_day_info WHERE device_id=1").
 		Scan(&rows, &step, &sleep, &state)
 	if err != nil {

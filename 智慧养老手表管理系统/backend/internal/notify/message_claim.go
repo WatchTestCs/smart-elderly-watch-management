@@ -2,8 +2,9 @@ package notify
 
 import (
 	"context"
+	"database/sql"
 	"github.com/google/uuid"
-	"suining-care/internal/db"
+
 	"time"
 )
 
@@ -12,11 +13,11 @@ func (d *Worker) claimMessages(ctx context.Context, limit int) (claimedMessageBa
 		return claimedMessageBatch{}, nil
 	}
 	limit = min(limit, 512)
-	tx, err := d.DB.Begin(ctx)
+	tx, err := d.DB.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		return claimedMessageBatch{}, err
 	}
-	defer tx.Rollback(ctx)
+	defer tx.Rollback()
 	condition := ""
 	if deadline, ok := ctx.Deadline(); ok {
 		timeout := 30 * time.Second
@@ -56,15 +57,15 @@ func (d *Worker) claimMessages(ctx context.Context, limit int) (claimedMessageBa
 			continue
 		}
 		ids, args := messageIDs(group.jobs, []any{token})
-		query := "UPDATE message_outbox SET status='" + group.state + "',attempts=attempts+1,lease_token=$1,last_attempt_at=now()"
+		query := "UPDATE message_outbox SET status='" + group.state + "',attempts=attempts+1,lease_token=?,last_attempt_at=CURRENT_TIMESTAMP(6)"
 		if group.state == "delivered" {
-			query += ",delivered_at=now(),last_error=NULL"
+			query += ",delivered_at=CURRENT_TIMESTAMP(6),last_error=NULL"
 		}
-		if _, err = tx.Exec(ctx, query+" WHERE id IN ("+ids+")", args...); err != nil {
+		if _, err = tx.ExecContext(ctx, query+" WHERE id IN ("+ids+")", args...); err != nil {
 			return claimedMessageBatch{}, err
 		}
 	}
-	if err = tx.Commit(ctx); err != nil {
+	if err = tx.Commit(); err != nil {
 		return claimedMessageBatch{}, err
 	}
 	return claimedMessageBatch{processed: len(selected.local) + len(selected.external), external: selected.external, token: token, useBulk: useBulk}, nil
@@ -73,8 +74,8 @@ func (d *Worker) claimMessages(ctx context.Context, limit int) (claimedMessageBa
 
 type messageSelection struct{ local, external []messageJob }
 
-func (s *messageSelection) read(ctx context.Context, tx *db.Transaction, query string, args ...any) error {
-	rows, err := tx.Query(ctx, query, args...)
+func (s *messageSelection) read(ctx context.Context, tx *sql.Tx, query string, args ...any) error {
+	rows, err := tx.QueryContext(ctx, query, args...)
 	if err != nil {
 		return err
 	}
@@ -94,7 +95,7 @@ func (s *messageSelection) read(ctx context.Context, tx *db.Transaction, query s
 	return rows.Err()
 }
 
-func (s *messageSelection) selectJobs(ctx context.Context, tx *db.Transaction, capacity int, condition string, onlyLocal bool, exclude []messageJob) error {
+func (s *messageSelection) selectJobs(ctx context.Context, tx *sql.Tx, capacity int, condition string, onlyLocal bool, exclude []messageJob) error {
 	before := len(s.local) + len(s.external)
 	// Each status is an equality range with its own ordered index scan.
 	// A single OR predicate requires a full scan/filesort on real MySQL.
@@ -111,13 +112,14 @@ func (s *messageSelection) selectJobs(ctx context.Context, tx *db.Transaction, c
 		if onlyLocal && filter == "" {
 			filter = " AND channel='in_app'"
 		}
-		args := []any{phase.cutoff, remaining}
+		args := []any{phase.cutoff}
 		if len(exclude) > 0 {
 			var ids string
 			ids, args = messageIDs(exclude, args)
 			filter += " AND id NOT IN (" + ids + ")"
 		}
-		query := `SELECT id,family_id,topic,source_key,channel,recipient,attempts FROM message_outbox WHERE status='` + phase.status + `' AND ` + phase.column + `<=$1` + filter + ` ORDER BY ` + phase.column + `,id LIMIT $2 FOR UPDATE SKIP LOCKED`
+		args = append(args, remaining)
+		query := `SELECT id,family_id,topic,source_key,channel,recipient,attempts FROM message_outbox WHERE status='` + phase.status + `' AND ` + phase.column + `<=?` + filter + ` ORDER BY ` + phase.column + `,id LIMIT ? FOR UPDATE SKIP LOCKED`
 		if err := s.read(ctx, tx, query, args...); err != nil {
 			return err
 		}

@@ -66,9 +66,9 @@ func BenchmarkCompleteBatchSQL(b *testing.B) {
 func expectedLookupSQL(rows int) string {
 	parameters := make([]string, rows)
 	for i := range parameters {
-		parameters[i] = fmt.Sprintf("$%d", i+2)
+		parameters[i] = "?"
 	}
-	return batchLookupPrefix + "$1" + batchLookupSuffix + "(" + strings.Join(parameters, ",") + ")"
+	return batchLookupPrefix + "?" + batchLookupSuffix + "(" + strings.Join(parameters, ",") + ")"
 }
 
 // BenchmarkCompleteBatchSQL compares this retired fragment cache with complete statements.

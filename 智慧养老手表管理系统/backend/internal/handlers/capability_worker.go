@@ -13,7 +13,7 @@ import (
 // CapabilityTick performs no external I/O and is safe with concurrent instances.
 func (h *Handler) CapabilityTick(ctx context.Context) error {
 	var carePending, messagesPending, rulesActive int64
-	if err := h.DB.QueryRow(ctx, `SELECT (SELECT count(*) FROM care_notification_outbox WHERE status IN ('pending','failed','sending') AND exhausted=false),
+	if err := h.DB.QueryRowContext(ctx, `SELECT (SELECT count(*) FROM care_notification_outbox WHERE status IN ('pending','failed','sending') AND exhausted=false),
  (SELECT count(*) FROM message_outbox WHERE status IN ('pending','failed','sending')),(SELECT count(*) FROM rule_state WHERE active=true)`).Scan(&carePending, &messagesPending, &rulesActive); err != nil {
 		return err
 	}
@@ -25,10 +25,10 @@ func (h *Handler) CapabilityTick(ctx context.Context) error {
 	for _, query := range [...]string{
 		`UPDATE device_command SET status='cancelled' WHERE status IN ('pending','sent') AND NOT EXISTS
  (SELECT 1 FROM device d WHERE d.device_id=device_command.device_id AND d.old_id=device_command.old_id AND d.health_epoch=device_command.epoch AND d.status<>0)`,
-		`UPDATE device_command SET status='timeout' WHERE status IN ('pending','sent') AND (expires_at<=now() OR (status='sent' AND retry_at<=now() AND attempts>=max_attempts))`,
-		`UPDATE device_command SET status='pending',delivery_token=NULL WHERE status='sent' AND retry_at<=now() AND expires_at>now() AND attempts<max_attempts`,
+		`UPDATE device_command SET status='timeout' WHERE status IN ('pending','sent') AND (expires_at<=CURRENT_TIMESTAMP(6) OR (status='sent' AND retry_at<=CURRENT_TIMESTAMP(6) AND attempts>=max_attempts))`,
+		`UPDATE device_command SET status='pending',delivery_token=NULL WHERE status='sent' AND retry_at<=CURRENT_TIMESTAMP(6) AND expires_at>CURRENT_TIMESTAMP(6) AND attempts<max_attempts`,
 	} {
-		if _, err := h.DB.Exec(ctx, query); err != nil {
+		if _, err := h.DB.ExecContext(ctx, query); err != nil {
 			return err
 		}
 	}

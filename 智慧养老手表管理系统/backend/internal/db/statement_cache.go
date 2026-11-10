@@ -53,7 +53,6 @@ func (c statementConnector) Connect(ctx context.Context) (driver.Conn, error) {
 
 type statementConn struct {
 	mysqlWireConn
-	batchScratch         []driver.NamedValue
 	plans                map[string]mysqlWireStmt
 	keys                 []string
 	next                 int
@@ -179,17 +178,6 @@ func (c *statementConn) clearStatements() error {
 	return first
 }
 func (c *statementConn) ExecContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Result, error) {
-	var originals []any
-	if len(args) == 1 {
-		if batch, ok := args[0].Value.(mysqlBatchArgs); ok {
-			originals = batch.values
-			defer c.clearBatchArgs()
-		}
-	}
-	args, err := c.expandBatchArgs(args)
-	if err != nil {
-		return nil, err
-	}
 	if !sessionNeutralSQL(query) {
 		c.readCommittedSession = false
 	}
@@ -197,11 +185,11 @@ func (c *statementConn) ExecContext(ctx context.Context, query string, args []dr
 		if err := c.clearStatements(); err != nil {
 			return nil, err
 		}
-		return c.execBatchDirect(ctx, query, args, originals)
+		return c.mysqlWireConn.ExecContext(ctx, query, args)
 	}
 	stmt, err := c.statement(ctx, query, len(args))
 	if unsupportedPrepare(err) {
-		return c.execBatchDirect(ctx, query, args, originals)
+		return c.mysqlWireConn.ExecContext(ctx, query, args)
 	}
 	if err != nil {
 		return nil, err
@@ -236,8 +224,6 @@ func (c *statementConn) QueryContext(ctx context.Context, query string, args []d
 func (c *statementConn) Close() error {
 	// COM_QUIT frees all server-side handles in one operation. The private Stmts
 	// never escape the wrapper, so no individual COM_STMT_CLOSE packets are needed.
-	clear(c.batchScratch[:cap(c.batchScratch)])
-	c.batchScratch = nil
 	c.plans = nil
 	c.keys = nil
 	return c.mysqlWireConn.Close()

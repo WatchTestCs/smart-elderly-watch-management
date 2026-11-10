@@ -1,8 +1,9 @@
 package handlers
 
 import (
+	"database/sql"
 	"net/http"
-	dbstore "suining-care/internal/db"
+
 	"suining-care/internal/response"
 	"time"
 )
@@ -10,7 +11,7 @@ import (
 const oldPersonCols = `old_id, name, age, sex, phone, room, illness, warn, food_like,
 	food_hate, drag, family_id, customer_id, be_time, bothdate, device_id`
 
-func scanOldPersonRow(row dbstore.Rows) (map[string]any, error) {
+func scanOldPersonRow(row *sql.Rows) (map[string]any, error) {
 	var id int64
 	var name, sex, phone, room, illness, warn, drag, foodLike, foodHate *string
 	var age *int
@@ -36,12 +37,12 @@ func (h *Handler) listResidents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := r.Context()
-	base := `SELECT ` + oldPersonCols + ` FROM oldperson WHERE ($1='' OR name LIKE '%'||$1||'%') ORDER BY old_id`
+	base := `SELECT ` + oldPersonCols + ` FROM oldperson WHERE (?='' OR name LIKE CONCAT('%',?,'%')) ORDER BY old_id`
 	var total int64
-	if internalError(w, h.DB.QueryRow(ctx, `SELECT COUNT(*) FROM (`+base+`) AS t`, name).Scan(&total)) {
+	if internalError(w, h.DB.QueryRowContext(ctx, `SELECT COUNT(*) FROM (`+base+`) AS t`, name, name).Scan(&total)) {
 		return
 	}
-	list, ok := queryRows(h, w, ctx, scanOldPersonRow, base+` LIMIT $2 OFFSET $3`, name, ps, (p-1)*ps)
+	list, ok := queryRows(h, w, ctx, scanOldPersonRow, base+` LIMIT ? OFFSET ?`, name, name, ps, (p-1)*ps)
 	if !ok {
 		return
 	}
@@ -63,12 +64,12 @@ func (h *Handler) getResidentDetails(w http.ResponseWriter, r *http.Request) {
 		f.family_address, c.customer_name
 		FROM oldperson o LEFT JOIN family f ON f.family_id=o.family_id
 		LEFT JOIN customer c ON c.customer_id=o.customer_id
-		WHERE ($1='' OR o.name LIKE '%'||$1||'%') ORDER BY o.old_id`
+		WHERE (?='' OR o.name LIKE CONCAT('%',?,'%')) ORDER BY o.old_id`
 	var total int64
-	if internalError(w, h.DB.QueryRow(ctx, `SELECT COUNT(*) FROM (`+base+`) AS t`, name).Scan(&total)) {
+	if internalError(w, h.DB.QueryRowContext(ctx, `SELECT COUNT(*) FROM (`+base+`) AS t`, name, name).Scan(&total)) {
 		return
 	}
-	list, ok := queryRows(h, w, ctx, func(rows dbstore.Rows) (map[string]any, error) {
+	list, ok := queryRows(h, w, ctx, func(rows *sql.Rows) (map[string]any, error) {
 		var id int64
 		var name, sex, phone, room, illness, warn, drag, foodLike, foodHate *string
 		var age *int
@@ -90,7 +91,7 @@ func (h *Handler) getResidentDetails(w http.ResponseWriter, r *http.Request) {
 			"familyPhone": familyPhone, "familySex": familySex,
 			"familyAddress": familyAddress, "customerName": customerName,
 		}, nil
-	}, base+` LIMIT $2 OFFSET $3`, name, ps, (p-1)*ps)
+	}, base+` LIMIT ? OFFSET ?`, name, name, ps, (p-1)*ps)
 	if !ok {
 		return
 	}

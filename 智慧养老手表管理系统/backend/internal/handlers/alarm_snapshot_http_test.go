@@ -69,18 +69,18 @@ func TestAlarmSnapshotHTTPNeverBorrowsHistory(t *testing.T) {
 				report("11:30:00", fields, 400)
 			}
 			var count int
-			if err := h.DB.QueryRow(context.Background(), "SELECT count(*) FROM alarm_precess").Scan(&count); err != nil || count != 1 {
+			if err := h.DB.QueryRowContext(context.Background(), "SELECT count(*) FROM alarm_precess").Scan(&count); err != nil || count != 1 {
 				t.Fatalf("invalid partial point wrote alarms: count=%d err=%v", count, err)
 			}
 			// A later ordinary position must not add coordinates to the earlier alarm.
 			report("12:00:00", map[string]any{"lng": "122", "lat": "32"}, 200)
 			var lng, lat *string
-			if err := h.DB.QueryRow(context.Background(), "SELECT lng,lat FROM alarm_precess ORDER BY id LIMIT 1").Scan(&lng, &lat); err != nil || lng != nil || lat != nil {
+			if err := h.DB.QueryRowContext(context.Background(), "SELECT lng,lat FROM alarm_precess ORDER BY id LIMIT 1").Scan(&lng, &lat); err != nil || lng != nil || lat != nil {
 				t.Errorf("unknown alarm snapshot changed: lng=%v lat=%v err=%v", lng, lat, err)
 			}
 			// A valid explicit zero pair is a real point, not missing data.
 			report("13:00:00", map[string]any{"alarm": "fall", "lng": "0", "lat": "0"}, 200)
-			if err := h.DB.QueryRow(context.Background(), "SELECT lng,lat FROM alarm_precess ORDER BY id DESC LIMIT 1").Scan(&lng, &lat); err != nil || lng == nil || lat == nil || *lng == "0" || *lat == "0" {
+			if err := h.DB.QueryRowContext(context.Background(), "SELECT lng,lat FROM alarm_precess ORDER BY id DESC LIMIT 1").Scan(&lng, &lat); err != nil || lng == nil || lat == nil || *lng == "0" || *lat == "0" {
 				t.Fatalf("fresh point missing or not encrypted: lng=%v lat=%v err=%v", lng, lat, err)
 			}
 			lng, lat, err := openCoordinates(h.Box, lng, lat)

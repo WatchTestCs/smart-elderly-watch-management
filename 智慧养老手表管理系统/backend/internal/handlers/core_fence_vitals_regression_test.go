@@ -41,7 +41,7 @@ func TestContinuousZeroVitalsAreMissing(t *testing.T) {
 		out := api(t, h.deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "hr": tc.hr, "bp": tc.bp})
 		var hr, bp *int
 		var rate, pre *string
-		if err := pool.QueryRow(context.Background(), "SELECT hr,bp,rate_state,pre_state FROM ratepre WHERE id=$1", i+1).Scan(&hr, &bp, &rate, &pre); err != nil {
+		if err := pool.QueryRowContext(context.Background(), "SELECT hr,bp,rate_state,pre_state FROM ratepre WHERE id=?", i+1).Scan(&hr, &bp, &rate, &pre); err != nil {
 			t.Fatal(err)
 		}
 		if (hr == nil) != tc.hrMissing || (bp == nil) != tc.bpMissing || (rate == nil) != tc.hrMissing || (pre == nil) != tc.bpMissing || out["rateState"] == "1" || out["preState"] == "1" {
@@ -50,7 +50,7 @@ func TestContinuousZeroVitalsAreMissing(t *testing.T) {
 	}
 	out := api(t, h.deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "hr": 0, "bp": 0})
 	var count int
-	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM ratepre").Scan(&count); err != nil {
+	if err := pool.QueryRowContext(context.Background(), "SELECT count(*) FROM ratepre").Scan(&count); err != nil {
 		t.Fatal(err)
 	}
 	if count != 2 || out["rateState"] != nil || out["preState"] != nil {

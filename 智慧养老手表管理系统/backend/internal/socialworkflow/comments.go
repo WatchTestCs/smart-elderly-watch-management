@@ -10,16 +10,16 @@ import (
 )
 
 // ImageLocker is invoked only when an author actually has an avatar.
-type ImageLocker func(context.Context, *db.Transaction, []string) error
+type ImageLocker func(context.Context, *sql.Tx, []string) error
 
 // CreateComment keeps avatar ownership, image references and the comment
 // insert in one transaction without exposing HTTP types to persistence.
 func CreateComment(ctx context.Context, store *db.Database, lockImages ImageLocker, comment socialrepo.NewComment) (bool, error) {
-	tx, err := store.Begin(ctx)
+	tx, err := store.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		return false, err
 	}
-	defer tx.Rollback(ctx)
+	defer tx.Rollback()
 	avatar, err := socialrepo.AuthorAvatar(ctx, tx, comment.AuthorPhone)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) && !errors.Is(err, sql.ErrNoRows) {
 		return false, err
@@ -34,7 +34,7 @@ func CreateComment(ctx context.Context, store *db.Database, lockImages ImageLock
 	if err != nil {
 		return false, err
 	}
-	if err := tx.Commit(ctx); err != nil {
+	if err := tx.Commit(); err != nil {
 		return false, err
 	}
 	return created, nil

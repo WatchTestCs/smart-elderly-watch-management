@@ -27,18 +27,18 @@ func (h *Handler) rulePolicy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := r.Context()
-	tx, err := h.DB.Begin(ctx)
+	tx, err := h.DB.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if internalError(w, err) {
 		return
 	}
-	defer tx.Rollback(ctx)
+	defer tx.Rollback()
 	id := req.DeviceID
 	if !lockDeviceID(w, ctx, tx, id) {
 		return
 	}
 	var b []byte
 	var revision int64
-	err = tx.QueryRow(ctx, "SELECT revision,payload FROM rule_policy WHERE device_id=$1 FOR UPDATE", id).Scan(&revision, &b)
+	err = tx.QueryRowContext(ctx, "SELECT revision,payload FROM rule_policy WHERE device_id=? FOR UPDATE", id).Scan(&revision, &b)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		response.Error500(w, ref())
 		return
@@ -62,9 +62,9 @@ func (h *Handler) rulePolicy(w http.ResponseWriter, r *http.Request) {
 	}
 	b, _ = json.Marshal(req.Policy)
 	revision++
-	_, err = tx.Exec(ctx, `INSERT INTO rule_policy(device_id,revision,payload,updated_by) VALUES($1,$2,$3,$4) AS new ON DUPLICATE KEY UPDATE revision=new.revision,payload=new.payload,updated_by=new.updated_by,updated_at=CURRENT_TIMESTAMP(6)`, id, revision, json.RawMessage(b), actor)
+	_, err = tx.ExecContext(ctx, `INSERT INTO rule_policy(device_id,revision,payload,updated_by) VALUES(?,?,?,?) AS new ON DUPLICATE KEY UPDATE revision=new.revision,payload=new.payload,updated_by=new.updated_by,updated_at=CURRENT_TIMESTAMP(6)`, id, revision, json.RawMessage(b), actor)
 	if err == nil {
-		_, err = tx.Exec(ctx, "DELETE FROM rule_state WHERE device_id=$1", id)
+		_, err = tx.ExecContext(ctx, "DELETE FROM rule_state WHERE device_id=?", id)
 	}
 	if err == nil {
 		err = commitCareChange(ctx, tx, actor, "rule_policy")

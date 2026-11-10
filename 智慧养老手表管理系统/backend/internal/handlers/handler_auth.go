@@ -40,7 +40,7 @@ func (h *Handler) MountLocalLogout(mux *http.ServeMux) {
 func (h *Handler) sessionInfo(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	var count int64
-	if internalError(w, h.DB.QueryRow(ctx, "SELECT COUNT(*) FROM users").Scan(&count)) {
+	if internalError(w, h.DB.QueryRowContext(ctx, "SELECT COUNT(*) FROM users").Scan(&count)) {
 		return
 	}
 

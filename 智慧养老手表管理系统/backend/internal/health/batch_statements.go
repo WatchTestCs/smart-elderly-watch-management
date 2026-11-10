@@ -1,7 +1,6 @@
 package health
 
 import (
-	"strconv"
 	"strings"
 	"sync/atomic"
 )
@@ -31,14 +30,13 @@ func buildBatchSQL(kind batchSQLKind, rows int) string {
 	case batchLookup:
 		var out strings.Builder
 		out.Grow(len(batchLookupPrefix) + len(batchLookupSuffix) + rows*6 + 4)
-		out.WriteString(batchLookupPrefix + "$1" + batchLookupSuffix)
+		out.WriteString(batchLookupPrefix + "?" + batchLookupSuffix)
 		out.WriteByte('(')
 		for i := 0; i < rows; i++ {
 			if i > 0 {
 				out.WriteByte(',')
 			}
-			out.WriteByte('$')
-			out.WriteString(strconv.Itoa(i + 2))
+			out.WriteByte('?')
 		}
 		out.WriteByte(')')
 		return out.String()
@@ -69,7 +67,6 @@ func batchSQL(kind batchSQLKind, rows int) string {
 func buildValueRows(rows, columns int) string {
 	var out strings.Builder
 	out.Grow(rows * (columns*6 + 3))
-	var digits [20]byte
 	for i := 0; i < rows; i++ {
 		if i > 0 {
 			out.WriteByte(',')
@@ -79,8 +76,7 @@ func buildValueRows(rows, columns int) string {
 			if j > 0 {
 				out.WriteByte(',')
 			}
-			out.WriteByte('$')
-			out.Write(strconv.AppendInt(digits[:0], int64(i*columns+j+1), 10))
+			out.WriteByte('?')
 		}
 		out.WriteByte(')')
 	}

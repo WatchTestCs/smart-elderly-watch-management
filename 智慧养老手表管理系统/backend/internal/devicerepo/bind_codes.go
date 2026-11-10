@@ -29,8 +29,8 @@ type ResidentBinding struct {
 
 func LockResidentBinding(ctx context.Context, store db.RowQuerier, residentID int64) (ResidentBinding, error) {
 	var binding ResidentBinding
-	err := store.QueryRow(ctx,
-		"SELECT name, device_id, family_id FROM oldperson WHERE old_id=$1 FOR UPDATE",
+	err := store.QueryRowContext(ctx,
+		"SELECT name, device_id, family_id FROM oldperson WHERE old_id=? FOR UPDATE",
 		residentID).Scan(&binding.Name, &binding.DeviceID, &binding.FamilyID)
 	return binding, err
 }
@@ -39,9 +39,9 @@ func LockResidentBinding(ctx context.Context, store db.RowQuerier, residentID in
 // distinguish unknown, consumed and expired binding codes without leaking SQL.
 func FindBindCode(ctx context.Context, store db.RowQuerier, code string) (*BindCode, error) {
 	var row BindCode
-	err := store.QueryRow(ctx,
+	err := store.QueryRowContext(ctx,
 		`SELECT id,code,old_id,family_id,create_user,expire_time,used,used_time,used_device_id
-		 FROM bind_code WHERE code=$1`, code).
+		 FROM bind_code WHERE code=?`, code).
 		Scan(&row.ID, &row.Code, &row.OldID, &row.FamilyID, &row.CreateUser,
 			&row.ExpireTime, &row.Used, &row.UsedTime, &row.UsedDeviceID)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -55,36 +55,37 @@ func FindBindCode(ctx context.Context, store db.RowQuerier, code string) (*BindC
 
 func CodeExists(ctx context.Context, store db.RowQuerier, code string) (bool, error) {
 	var exists bool
-	err := store.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM bind_code WHERE code=$1)", code).Scan(&exists)
+	err := store.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM bind_code WHERE code=?)", code).Scan(&exists)
 	return exists, err
 }
 
 func ResidentName(ctx context.Context, store *db.Database, residentID int64) (*string, error) {
 	var name *string
-	err := store.QueryRow(ctx, "SELECT name FROM oldperson WHERE old_id=$1", residentID).Scan(&name)
+	err := store.QueryRowContext(ctx, "SELECT name FROM oldperson WHERE old_id=?", residentID).Scan(&name)
 	return name, err
 }
 
 func CreateBindCode(ctx context.Context, store *db.Database, code string, residentID int64, creator string, createdAt, expiresAt time.Time) (int64, error) {
-	return store.InsertID(ctx,
+	return db.InsertID(ctx, store,
 		`INSERT INTO bind_code(code, old_id, family_id, create_user, create_time, expire_time, used)
-		 VALUES($1,$2,NULL,$3,$4,$5,0)`,
+		 VALUES(?,?,NULL,?,?,?,0)`,
 		code, residentID, creator, createdAt, expiresAt)
 }
 
 func ListBindCodes(ctx context.Context, store *db.Database, residentID int64) ([]BindCode, error) {
-	return db.QueryList(ctx, store, func(rows db.Rows) (BindCode, error) {
+	return db.QueryList(ctx, store, func(rows *sql.Rows) (BindCode, error) {
 		var item BindCode
 		err := rows.Scan(&item.ID, &item.Code, &item.ExpireTime, &item.Used, &item.UsedTime, &item.UsedDeviceID)
 		return item, err
 	}, `SELECT id,code,expire_time,used,used_time,used_device_id
-	 FROM bind_code WHERE old_id=$1 ORDER BY id DESC LIMIT 20`, residentID)
+	 FROM bind_code WHERE old_id=? ORDER BY id DESC LIMIT 20`, residentID)
 }
 
 func DeleteUnusedBindCode(ctx context.Context, store *db.Database, id int64) (bool, error) {
-	affected, err := store.Exec(ctx, "DELETE FROM bind_code WHERE id=$1 AND used=0", id)
+	affected, err := store.ExecContext(ctx, "DELETE FROM bind_code WHERE id=? AND used=0", id)
 	if err != nil {
 		return false, err
 	}
-	return affected.RowsAffected() == 1, nil
+	changed, err := affected.RowsAffected()
+	return changed == 1, err
 }

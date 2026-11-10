@@ -12,10 +12,10 @@ import (
 func TestFenceNotificationPreservesIncidentKind(t *testing.T) {
 	pool := testCareDB(t)
 	ctx := context.Background()
-	if _, err := pool.Exec(ctx, "UPDATE care_incident SET kind='fence_exit' WHERE id=1"); err != nil {
+	if _, err := pool.ExecContext(ctx, "UPDATE care_incident SET kind='fence_exit' WHERE id=1"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := pool.Exec(ctx, "INSERT INTO care_notification_outbox(incident_id,channel,recipient) VALUES(1,'sms','13800000001')"); err != nil {
+	if _, err := pool.ExecContext(ctx, "INSERT INTO care_notification_outbox(incident_id,channel,recipient) VALUES(1,'sms','13800000001')"); err != nil {
 		t.Fatal(err)
 	}
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -34,7 +34,7 @@ func TestFenceNotificationPreservesIncidentKind(t *testing.T) {
 		t.Fatal(err)
 	}
 	var state string
-	if err := pool.QueryRow(ctx, "SELECT status FROM care_notification_outbox").Scan(&state); err != nil || state != "sent" {
+	if err := pool.QueryRowContext(ctx, "SELECT status FROM care_notification_outbox").Scan(&state); err != nil || state != "sent" {
 		t.Fatal(state, err)
 	}
 }

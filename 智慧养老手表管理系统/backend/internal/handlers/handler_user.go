@@ -1,11 +1,11 @@
 package handlers
 
 import (
+	"database/sql"
 	"errors"
 	"net/http"
 	"strconv"
 
-	dbstore "suining-care/internal/db"
 	"suining-care/internal/guardianrepo"
 	"suining-care/internal/response"
 	"suining-care/internal/userphone"
@@ -35,7 +35,7 @@ func (h *Handler) userSelect(w http.ResponseWriter, r *http.Request) {
 	if internalError(w, err) {
 		return
 	}
-	list, ok := queryRows(h, w, r.Context(), func(rows dbstore.Rows) (map[string]any, error) {
+	list, ok := queryRows(h, w, r.Context(), func(rows *sql.Rows) (map[string]any, error) {
 		var id int64
 		var name, uphone, role *string
 		var protected userphone.Record
@@ -52,7 +52,7 @@ func (h *Handler) userSelect(w http.ResponseWriter, r *http.Request) {
 			"role": role, "password": nil,
 		}, nil
 	}, `SELECT user_id,user_name,user_phone,role,user_phone_cipher,user_phone_lookup,user_phone_protected FROM users
- WHERE (user_phone_protected=false AND user_phone=$1) OR (user_phone_protected=true AND user_phone_lookup=$2)`, phone, lookup)
+ WHERE (user_phone_protected=false AND user_phone=?) OR (user_phone_protected=true AND user_phone_lookup=?)`, phone, lookup)
 	if !ok {
 		return
 	}
@@ -144,9 +144,9 @@ func (h *Handler) deleteGuardian(w http.ResponseWriter, r *http.Request) {
 }
 
 // Profile assignment and guardian deletion lock the same parent before changing references.
-func lockCustomer(w http.ResponseWriter, r *http.Request, tx *dbstore.Transaction, id int64) bool {
+func lockCustomer(w http.ResponseWriter, r *http.Request, tx *sql.Tx, id int64) bool {
 	var found int64
-	if err := tx.QueryRow(r.Context(), "SELECT customer_id FROM customer WHERE customer_id=$1 FOR UPDATE", id).Scan(&found); err != nil {
+	if err := tx.QueryRowContext(r.Context(), "SELECT customer_id FROM customer WHERE customer_id=? FOR UPDATE", id).Scan(&found); err != nil {
 		if isNotFound(err) {
 			response.Fail(w, "监护人不存在，请刷新后重新选择")
 		} else {

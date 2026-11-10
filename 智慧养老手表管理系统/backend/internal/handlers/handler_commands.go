@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"net/http"
 	"strings"
 	"suining-care/internal/commands"
@@ -29,11 +30,11 @@ func (h *Handler) commandCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := r.Context()
-	tx, err := h.DB.Begin(ctx)
+	tx, err := h.DB.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if internalError(w, err) {
 		return
 	}
-	defer tx.Rollback(ctx)
+	defer tx.Rollback()
 	d, err := devicerepo.ScanDeviceRecord(devicerepo.LockedDeviceRow(ctx, tx, req.DeviceID))
 	if isNotFound(err) {
 		response.JSON(w, 404, map[string]any{"message": "设备不存在"})
@@ -49,7 +50,7 @@ func (h *Handler) commandCreate(w http.ResponseWriter, r *http.Request) {
 	var id int64
 	var oldAction, status string
 	var oldTTL int
-	err = tx.QueryRow(ctx, "SELECT id,action,status,ttl_seconds FROM device_command WHERE device_id=$1 AND epoch=$2 AND request_key=$3", d.ID, d.HealthEpoch, req.RequestKey).Scan(&id, &oldAction, &status, &oldTTL)
+	err = tx.QueryRowContext(ctx, "SELECT id,action,status,ttl_seconds FROM device_command WHERE device_id=? AND epoch=? AND request_key=?", d.ID, d.HealthEpoch, req.RequestKey).Scan(&id, &oldAction, &status, &oldTTL)
 	if err == nil {
 		if oldAction != req.Action || oldTTL != req.TTL {
 			conflict409(w, "幂等键已用于另一动作")
@@ -63,7 +64,7 @@ func (h *Handler) commandCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var typ string
-	err = tx.QueryRow(ctx, "SELECT wire_type FROM device_command_profile WHERE device_id=$1 AND enabled=true AND protocol='suining-pull-v1'", d.ID).Scan(&typ)
+	err = tx.QueryRowContext(ctx, "SELECT wire_type FROM device_command_profile WHERE device_id=? AND enabled=true AND protocol='suining-pull-v1'", d.ID).Scan(&typ)
 	if isNotFound(err) {
 		conflict409(w, "设备尚未启用岁宁指令协议")
 		return
@@ -81,10 +82,10 @@ func (h *Handler) commandCreate(w http.ResponseWriter, r *http.Request) {
 		maxAttempts = 3
 	}
 	now := time.Now().UTC()
-	id, err = tx.InsertID(ctx, `INSERT INTO device_command(device_id,old_id,epoch,request_key,action,wire_type,channel,wire_action,max_attempts,retry_at,expires_at,created_by,ttl_seconds)
- VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`, d.ID, *d.OldID, d.HealthEpoch, req.RequestKey, req.Action, typ, channel, wire, maxAttempts, now, now.Add(time.Duration(req.TTL)*time.Second), actor, req.TTL)
+	id, err = dbstore.InsertID(ctx, tx, `INSERT INTO device_command(device_id,old_id,epoch,request_key,action,wire_type,channel,wire_action,max_attempts,retry_at,expires_at,created_by,ttl_seconds)
+ VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`, d.ID, *d.OldID, d.HealthEpoch, req.RequestKey, req.Action, typ, channel, wire, maxAttempts, now, now.Add(time.Duration(req.TTL)*time.Second), actor, req.TTL)
 	if err == nil {
-		err = tx.Commit(ctx)
+		err = tx.Commit()
 	}
 	if internalError(w, err) {
 		return
@@ -107,7 +108,7 @@ func (h *Handler) commandList(w http.ResponseWriter, r *http.Request) {
 		write400(w, "设备或游标无效")
 		return
 	}
-	items, ok := queryRows(h, w, r.Context(), func(rows dbstore.Rows) (map[string]any, error) {
+	items, ok := queryRows(h, w, r.Context(), func(rows *sql.Rows) (map[string]any, error) {
 		var id int64
 		var action, status string
 		var attempts int
@@ -117,7 +118,7 @@ func (h *Handler) commandList(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 		return map[string]any{"commandId": id, "action": action, "status": status, "attempts": attempts, "createdAt": created, "expiresAt": expires, "ackedAt": ack}, nil
-	}, `SELECT id,action,status,attempts,created_at,expires_at,acked_at FROM device_command WHERE device_id=$1 AND id>$2 ORDER BY id LIMIT 100`, req.DeviceID, req.After)
+	}, `SELECT id,action,status,attempts,created_at,expires_at,acked_at FROM device_command WHERE device_id=? AND id>? ORDER BY id LIMIT 100`, req.DeviceID, req.After)
 	if !ok {
 		return
 	}

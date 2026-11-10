@@ -58,7 +58,7 @@ func TestCommandQueueReceiptsAndBinding(t *testing.T) {
 	}
 	api(t, h.deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "hr": 72})
 	var state string
-	if err := h.DB.QueryRow(context.Background(), "SELECT status FROM device_command WHERE id=$1", id).Scan(&state); err != nil || state != "sent" {
+	if err := h.DB.QueryRowContext(context.Background(), "SELECT status FROM device_command WHERE id=?", id).Scan(&state); err != nil || state != "sent" {
 		t.Fatal("telemetry acknowledged command", state, err)
 	}
 	ack := commandCredentials()
@@ -79,11 +79,11 @@ func TestCommandQueueReceiptsAndBinding(t *testing.T) {
 	req["action"] = "restart"
 	next := api(t, create, req)["commandId"]
 	api(t, h.commandPull, commandCredentials())
-	mustExec(t, h.DB, "UPDATE device_command SET retry_at=$1 WHERE id=$2", time.Now().Add(-time.Minute), next)
+	mustExec(t, h.DB, "UPDATE device_command SET retry_at=? WHERE id=?", time.Now().Add(-time.Minute), next)
 	if err := h.CapabilityTick(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	if err := h.DB.QueryRow(context.Background(), "SELECT status FROM device_command WHERE id=$1", next).Scan(&state); err != nil || state != "timeout" {
+	if err := h.DB.QueryRowContext(context.Background(), "SELECT status FROM device_command WHERE id=?", next).Scan(&state); err != nil || state != "timeout" {
 		t.Fatal("unsafe retry", state, err)
 	}
 	req["requestKey"] = "three"
@@ -96,7 +96,7 @@ func TestCommandQueueReceiptsAndBinding(t *testing.T) {
 	if err := h.CapabilityTick(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	if err := h.DB.QueryRow(context.Background(), "SELECT status FROM device_command WHERE request_key='three'").Scan(&state); err != nil || state != "cancelled" {
+	if err := h.DB.QueryRowContext(context.Background(), "SELECT status FROM device_command WHERE request_key='three'").Scan(&state); err != nil || state != "cancelled" {
 		t.Fatal(state, err)
 	}
 }
@@ -128,7 +128,7 @@ func TestConcurrentPullAndSafeRedelivery(t *testing.T) {
 	if count != 1 {
 		t.Fatal("multiple claims", count)
 	}
-	mustExec(t, h.DB, "UPDATE device_command SET retry_at=$1", time.Now().Add(-time.Minute))
+	mustExec(t, h.DB, "UPDATE device_command SET retry_at=?", time.Now().Add(-time.Minute))
 	if err := h.CapabilityTick(context.Background()); err != nil {
 		t.Fatal(err)
 	}
@@ -255,7 +255,7 @@ func TestFenceDebounceEventsAndCareLink(t *testing.T) {
 		t.Fatal("old point changed state", got)
 	}
 	var kind, state string
-	if err := pool.QueryRow(context.Background(), "SELECT kind,state FROM care_incident WHERE id=$1", event["incidentId"]).Scan(&kind, &state); err != nil || kind != "fence_exit" || state != "received" {
+	if err := pool.QueryRowContext(context.Background(), "SELECT kind,state FROM care_incident WHERE id=?", event["incidentId"]).Scan(&kind, &state); err != nil || kind != "fence_exit" || state != "received" {
 		t.Fatal(kind, state, err)
 	}
 	req["id"] = saved["id"]
@@ -295,7 +295,7 @@ func TestCareVerdictAndVitalReviewAudit(t *testing.T) {
 	}
 	api(t, h.deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "hr": 200})
 	var record int64
-	if err := pool.QueryRow(context.Background(), "SELECT id FROM ratepre WHERE rate_state='1' ORDER BY id DESC LIMIT 1").Scan(&record); err != nil {
+	if err := pool.QueryRowContext(context.Background(), "SELECT id FROM ratepre WHERE rate_state='1' ORDER BY id DESC LIMIT 1").Scan(&record); err != nil {
 		t.Fatal(err)
 	}
 	req := map[string]any{"recordId": record, "kind": "rate", "verdict": "false_alarm", "reason": "复测正常", "expectedReviewId": 0}

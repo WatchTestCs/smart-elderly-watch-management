@@ -48,10 +48,10 @@ func TestDeviceRequestIDCannotAliasDifferentIncidentKinds(t *testing.T) {
 			}
 			var incidents, alarms int
 			ctx := context.Background()
-			if err := pool.QueryRow(ctx, "SELECT count(*) FROM care_incident WHERE device_id=1").Scan(&incidents); err != nil {
+			if err := pool.QueryRowContext(ctx, "SELECT count(*) FROM care_incident WHERE device_id=1").Scan(&incidents); err != nil {
 				t.Fatal(err)
 			}
-			if err := pool.QueryRow(ctx, "SELECT count(*) FROM alarm_precess WHERE device_id=1").Scan(&alarms); err != nil {
+			if err := pool.QueryRowContext(ctx, "SELECT count(*) FROM alarm_precess WHERE device_id=1").Scan(&alarms); err != nil {
 				t.Fatal(err)
 			}
 			if incidents != 1 || alarms != 1 {

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"net/http"
 	"strconv"
@@ -25,11 +26,11 @@ func (h *Handler) createNotice(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	tx, err := h.DB.Begin(r.Context())
+	tx, err := h.DB.BeginTx(r.Context(), &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if internalError(w, err) {
 		return
 	}
-	defer tx.Rollback(r.Context())
+	defer tx.Rollback()
 	if !h.lockImages(w, r.Context(), tx, fileList) {
 		return
 	}
@@ -40,7 +41,7 @@ func (h *Handler) createNotice(w http.ResponseWriter, r *http.Request) {
 	if !insertNoticePictures(w, r.Context(), tx, picID, fileList) {
 		return
 	}
-	textID, err := tx.InsertID(r.Context(), "INSERT INTO `text`(title,text_main,time,pic_id) VALUES($1,$2,$3,$4)",
+	textID, err := db.InsertID(r.Context(), tx, "INSERT INTO `text`(title,text_main,time,pic_id) VALUES(?,?,?,?)",
 		title, textMain, time.Now(), picID)
 	if internalError(w, err) {
 		return
@@ -56,7 +57,7 @@ func (h *Handler) createNotice(w http.ResponseWriter, r *http.Request) {
 	if internalError(w, notify.EnqueueBatch(r.Context(), tx, h.Box, messages)) {
 		return
 	}
-	if internalError(w, tx.Commit(r.Context())) {
+	if internalError(w, tx.Commit()) {
 		return
 	}
 	// The announcement and durable outbox commit together; network I/O is worker-owned.
@@ -113,7 +114,7 @@ func (h *Handler) updateNotice(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) noticePictureGroup(w http.ResponseWriter, r *http.Request, id int64) (*int64, bool) {
 	var pictures *int64
-	err := h.DB.QueryRow(r.Context(), "SELECT pic_id FROM "+socialTextTable+" WHERE text_id=$1", id).Scan(&pictures)
+	err := h.DB.QueryRowContext(r.Context(), "SELECT pic_id FROM "+socialTextTable+" WHERE text_id=?", id).Scan(&pictures)
 	if isNotFound(err) {
 		writeCode(w, false)
 		return nil, false
@@ -121,10 +122,17 @@ func (h *Handler) noticePictureGroup(w http.ResponseWriter, r *http.Request, id 
 	return pictures, !internalError(w, err)
 }
 
-func insertNoticePictures(w http.ResponseWriter, ctx context.Context, tx *db.Transaction, id int64, names []string) bool {
+func insertNoticePictures(w http.ResponseWriter, ctx context.Context, tx *sql.Tx, id int64, names []string) bool {
 	for _, name := range names {
-		result, err := tx.Exec(ctx, "INSERT INTO pic(pic_id,pic_name) VALUES($1,$2)", id, name)
-		if err != nil || result.RowsAffected() != 1 {
+		result, err := tx.ExecContext(ctx, "INSERT INTO pic(pic_id,pic_name) VALUES(?,?)", id, name)
+		if internalError(w, err) {
+			return false
+		}
+		affected, err := result.RowsAffected()
+		if internalError(w, err) {
+			return false
+		}
+		if affected != 1 {
 			response.Error500(w, ref())
 			return false
 		}

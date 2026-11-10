@@ -2,11 +2,12 @@ package handlers
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"net/http"
 	"strconv"
 	"strings"
-	dbstore "suining-care/internal/db"
+
 	"suining-care/internal/devicealertworkflow"
 	"suining-care/internal/devicerepo"
 	"suining-care/internal/response"
@@ -15,7 +16,7 @@ import (
 
 func (h *Handler) deviceAlertCounts(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	rows, err := h.DB.Query(ctx,
+	rows, err := h.DB.QueryContext(ctx,
 		`SELECT `+personCols+`,
 			(SELECT COUNT(1) FROM ratepre r WHERE r.device_id = d.device_id AND `+pendingRate+`) AS rate_count,
 			(SELECT COUNT(1) FROM ratepre r WHERE r.device_id = d.device_id AND `+pendingPressure+`) AS pre_count
@@ -97,8 +98,8 @@ func (h *Handler) deviceAlertDetail(w http.ResponseWriter, r *http.Request) {
 	}
 	var alert map[string]any
 	if kind == "person" {
-		pr, err := scanPersonRow(h.DB.QueryRow(ctx,
-			`SELECT `+personCols+` `+personFrom+` WHERE d.device_id=$1`, deviceID))
+		pr, err := scanPersonRow(h.DB.QueryRowContext(ctx,
+			`SELECT `+personCols+` `+personFrom+` WHERE d.device_id=?`, deviceID))
 		if internalError(w, err) {
 			return
 		}
@@ -191,13 +192,13 @@ func parseAlertResolution(w http.ResponseWriter, m map[string]any) (alertResolut
 	return alertResolution{deviceID, kind, recordID}, true
 }
 
-func (h *Handler) alertResolutionReason(ctx context.Context, tx *dbstore.Transaction, deviceID int64, kind string, recordID *int64) (string, error) {
+func (h *Handler) alertResolutionReason(ctx context.Context, tx *sql.Tx, deviceID int64, kind string, recordID *int64) (string, error) {
 	// 处置前的 reason，用于 handledReason 回显。
 	var before string
 	switch kind {
 	case "person":
-		pr, err := scanPersonRow(tx.QueryRow(ctx,
-			`SELECT `+personCols+` `+personFrom+` WHERE d.device_id=$1`, deviceID))
+		pr, err := scanPersonRow(tx.QueryRowContext(ctx,
+			`SELECT `+personCols+` `+personFrom+` WHERE d.device_id=?`, deviceID))
 		if err != nil {
 			return "", err
 		}

@@ -62,7 +62,7 @@ func TestAnalyticsConsumerAB(t *testing.T) {
 	for trial, mode := range []string{"single", "batch", "batch", "single"} {
 		// Seeding is outside the measured interval, with the same triggers.
 		for _, table := range []string{"ratepre", "analytics_outbox"} {
-			if _, err := primary.Exec(ctx, "TRUNCATE TABLE "+table); err != nil {
+			if _, err := primary.ExecContext(ctx, "TRUNCATE TABLE "+table); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -70,12 +70,12 @@ func TestAnalyticsConsumerAB(t *testing.T) {
 			t.Fatal(err)
 		}
 		for first := 1; first <= records; first += 100 {
-			if err := insertProducerBatch(ctx, primary.SQL(), "trigger", first, first+99, "2026-10-22 00:00:00.000000"); err != nil {
+			if err := insertProducerBatch(ctx, primary.DB, "trigger", first, first+99, "2026-10-22 00:00:00.000000"); err != nil {
 				t.Fatal(err)
 			}
 		}
 		var queued int
-		if err := primary.QueryRow(ctx, "SELECT count(*) FROM analytics_outbox").Scan(&queued); err != nil || queued != records {
+		if err := primary.QueryRowContext(ctx, "SELECT count(*) FROM analytics_outbox").Scan(&queued); err != nil || queued != records {
 			t.Fatalf("benchmark seed incomplete: %d %v", queued, err)
 		}
 
@@ -107,7 +107,7 @@ func TestAnalyticsConsumerAB(t *testing.T) {
 		if err := pg.QueryRow(ctx, "SELECT count(*) FROM suining_analytics.record WHERE entity='ratepre' AND NOT deleted").Scan(&projected); err != nil {
 			t.Fatal(err)
 		}
-		if err := primary.QueryRow(ctx, "SELECT count(*) FROM analytics_outbox").Scan(&pending); err != nil {
+		if err := primary.QueryRowContext(ctx, "SELECT count(*) FROM analytics_outbox").Scan(&pending); err != nil {
 			t.Fatal(err)
 		}
 		if acknowledged != records || projected != records || pending != 0 {
@@ -136,7 +136,7 @@ func TestAnalyticsConsumerAB(t *testing.T) {
 // the event; last_event_id prevents duplicates and stale resurrection. A failed
 // PG write leaves the outbox intact. No cross-database transaction is claimed.
 func syncOneReference(ctx context.Context, primary *db.Database, pg *pgxpool.Pool) (bool, error) {
-	tx, err := primary.SQL().BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	tx, err := primary.DB.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		return false, err
 	}

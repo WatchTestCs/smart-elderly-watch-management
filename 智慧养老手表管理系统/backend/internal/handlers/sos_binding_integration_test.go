@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -25,10 +26,10 @@ func TestSOSRejectsStaleBinding(t *testing.T) {
 		t.Fatalf("old binding SOS: HTTP %d, want 409: %s", response.Code, response.Body.String())
 	}
 	var incidents, alarms int
-	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM care_incident").Scan(&incidents); err != nil {
+	if err := pool.QueryRowContext(context.Background(), "SELECT count(*) FROM care_incident").Scan(&incidents); err != nil {
 		t.Fatal(err)
 	}
-	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM alarm_precess").Scan(&alarms); err != nil {
+	if err := pool.QueryRowContext(context.Background(), "SELECT count(*) FROM alarm_precess").Scan(&alarms); err != nil {
 		t.Fatal(err)
 	}
 	if incidents != 0 || alarms != 0 {
@@ -40,7 +41,7 @@ func TestSOSRejectsStaleBinding(t *testing.T) {
 	if response.Code != http.StatusBadRequest {
 		t.Fatalf("unversioned SOS after rebind: HTTP %d, want 400", response.Code)
 	}
-	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM care_incident").Scan(&incidents); err != nil || incidents != 0 {
+	if err := pool.QueryRowContext(context.Background(), "SELECT count(*) FROM care_incident").Scan(&incidents); err != nil || incidents != 0 {
 		t.Fatalf("unversioned request created incidents=%d err=%v", incidents, err)
 	}
 }
@@ -51,12 +52,12 @@ func TestSOSConcurrentRebind(t *testing.T) {
 	mustExec(t, pool, "INSERT INTO oldperson(old_id,name) VALUES(2,'new owner')")
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
-	tx, err := pool.Begin(ctx)
+	tx, err := pool.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer tx.Rollback(context.Background())
-	if _, err := tx.Exec(ctx, "SELECT old_id FROM oldperson WHERE old_id=1 FOR UPDATE"); err != nil {
+	defer tx.Rollback()
+	if _, err := tx.ExecContext(ctx, "SELECT old_id FROM oldperson WHERE old_id=1 FOR UPDATE"); err != nil {
 		t.Fatal(err)
 	}
 	h := testHandler(t, pool)
@@ -67,14 +68,9 @@ func TestSOSConcurrentRebind(t *testing.T) {
 	waits := `SELECT count(*) FROM performance_schema.data_lock_waits w
 		JOIN performance_schema.data_locks l ON l.ENGINE_LOCK_ID=w.REQUESTING_ENGINE_LOCK_ID AND l.ENGINE=w.ENGINE
 		WHERE l.OBJECT_SCHEMA=DATABASE() AND l.OBJECT_NAME='oldperson'`
-	if !pool.IsMySQL() {
-		waits = `SELECT count(*) FROM pg_stat_activity WHERE datname=current_database()
-			AND wait_event_type='Lock' AND query LIKE '%SELECT old_id FROM oldperson WHERE old_id=%FOR UPDATE%'
-			AND pid<>pg_backend_pid()`
-	}
 	for {
 		var n int
-		if err := pool.QueryRow(ctx, waits).Scan(&n); err != nil {
+		if err := pool.QueryRowContext(ctx, waits).Scan(&n); err != nil {
 			t.Fatal(err)
 		}
 		if n > 0 {
@@ -87,10 +83,10 @@ func TestSOSConcurrentRebind(t *testing.T) {
 			time.Sleep(10 * time.Millisecond)
 		}
 	}
-	if _, err := tx.Exec(ctx, "UPDATE device SET old_id=2 WHERE device_id=1"); err != nil {
+	if _, err := tx.ExecContext(ctx, "UPDATE device SET old_id=2 WHERE device_id=1"); err != nil {
 		t.Fatal(err)
 	}
-	if err := tx.Commit(ctx); err != nil {
+	if err := tx.Commit(); err != nil {
 		t.Fatal(err)
 	}
 	select {
@@ -102,7 +98,7 @@ func TestSOSConcurrentRebind(t *testing.T) {
 		t.Fatal(ctx.Err())
 	}
 	var n int
-	if err := pool.QueryRow(ctx, "SELECT count(*) FROM care_incident").Scan(&n); err != nil || n != 0 {
+	if err := pool.QueryRowContext(ctx, "SELECT count(*) FROM care_incident").Scan(&n); err != nil || n != 0 {
 		t.Fatalf("incidents=%d err=%v", n, err)
 	}
 }
@@ -176,10 +172,10 @@ func TestSOSConcurrentDuplicateRequests(t *testing.T) {
 		t.Fatalf("duplicate acknowledgements=%d, want 7", duplicates)
 	}
 	var incidents, alarms int
-	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM care_incident").Scan(&incidents); err != nil {
+	if err := pool.QueryRowContext(context.Background(), "SELECT count(*) FROM care_incident").Scan(&incidents); err != nil {
 		t.Fatal(err)
 	}
-	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM alarm_precess").Scan(&alarms); err != nil {
+	if err := pool.QueryRowContext(context.Background(), "SELECT count(*) FROM alarm_precess").Scan(&alarms); err != nil {
 		t.Fatal(err)
 	}
 	if incidents != 1 || alarms != 1 {
@@ -192,26 +188,26 @@ func TestSOSPersistenceRollbackLeavesNoPartialRows(t *testing.T) {
 	seedDevice(t, pool)
 	ctx := context.Background()
 
-	tx, err := pool.Begin(ctx)
+	tx, err := pool.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		t.Fatal(err)
 	}
 	d, err := devicerepo.ScanDeviceRecord(devicerepo.LockedDeviceRow(ctx, tx, 1))
 	if err != nil {
-		_ = tx.Rollback(ctx)
+		_ = tx.Rollback()
 		t.Fatal(err)
 	}
 	if _, err = (telemetryRepository{}).PersistSOSIncident(ctx, tx, d, "", "", "rollback-probe", positionMetadata{Version: 1, Validity: "missing"}, time.Now()); err != nil {
-		_ = tx.Rollback(ctx)
+		_ = tx.Rollback()
 		t.Fatal(err)
 	}
-	if err = tx.Rollback(ctx); err != nil {
+	if err = tx.Rollback(); err != nil {
 		t.Fatal(err)
 	}
 
 	for _, table := range []string{"alarm_precess", "care_incident", "care_incident_event"} {
 		var count int
-		if err := pool.QueryRow(ctx, "SELECT count(*) FROM "+table).Scan(&count); err != nil {
+		if err := pool.QueryRowContext(ctx, "SELECT count(*) FROM "+table).Scan(&count); err != nil {
 			t.Fatal(err)
 		}
 		if count != 0 {

@@ -15,7 +15,7 @@ func TestContinuousElderGuardianMustExist(t *testing.T) {
 		t.Error("elder creation accepted a nonexistent guardian")
 	}
 	var count int
-	if err := h.DB.QueryRow(context.Background(), "SELECT count(*) FROM oldperson").Scan(&count); err != nil || count != 0 {
+	if err := h.DB.QueryRowContext(context.Background(), "SELECT count(*) FROM oldperson").Scan(&count); err != nil || count != 0 {
 		t.Fatalf("invalid guardian wrote an elder: count=%d err=%v", count, err)
 	}
 	body["customerId"] = 1
@@ -23,7 +23,7 @@ func TestContinuousElderGuardianMustExist(t *testing.T) {
 		t.Fatal(out)
 	}
 	var oldID int64
-	if err := h.DB.QueryRow(context.Background(), "SELECT old_id FROM oldperson").Scan(&oldID); err != nil {
+	if err := h.DB.QueryRowContext(context.Background(), "SELECT old_id FROM oldperson").Scan(&oldID); err != nil {
 		t.Fatal(err)
 	}
 	body["oldId"], body["customerId"], body["name"] = oldID, 999, "不应写入"
@@ -32,7 +32,7 @@ func TestContinuousElderGuardianMustExist(t *testing.T) {
 	}
 	var guardian int64
 	var name string
-	if err := h.DB.QueryRow(context.Background(), "SELECT customer_id,name FROM oldperson WHERE old_id=$1", oldID).Scan(&guardian, &name); err != nil || guardian != 1 || name != "长者" {
+	if err := h.DB.QueryRowContext(context.Background(), "SELECT customer_id,name FROM oldperson WHERE old_id=?", oldID).Scan(&guardian, &name); err != nil || guardian != 1 || name != "长者" {
 		t.Fatalf("rejected edit changed the profile: guardian=%d name=%s err=%v", guardian, name, err)
 	}
 	body["customerId"], body["name"] = 2, "长者"
@@ -53,7 +53,7 @@ func TestContinuousGuardianDeleteKeepsAssignedProfiles(t *testing.T) {
 		t.Error("deleted a guardian still assigned to an elder")
 	}
 	var count int
-	if err := h.DB.QueryRow(context.Background(), "SELECT count(*) FROM oldperson o JOIN customer c ON c.customer_id=o.customer_id WHERE o.old_id=1").Scan(&count); err != nil || count != 1 {
+	if err := h.DB.QueryRowContext(context.Background(), "SELECT count(*) FROM oldperson o JOIN customer c ON c.customer_id=o.customer_id WHERE o.old_id=1").Scan(&count); err != nil || count != 1 {
 		t.Fatalf("guardian reference became dangling: count=%d err=%v", count, err)
 	}
 	if out := api(t, h.deleteGuardian, map[string]any{"customerId": 2}); out["returnCode"] != "1111" {
@@ -84,10 +84,10 @@ func TestContinuousGuardianAgeBoundsDoNotWriteInvalidProfiles(t *testing.T) {
 	}
 	var count, age int
 	var name string
-	if err := h.DB.QueryRow(context.Background(), "SELECT count(*) FROM customer").Scan(&count); err != nil || count != 1 {
+	if err := h.DB.QueryRowContext(context.Background(), "SELECT count(*) FROM customer").Scan(&count); err != nil || count != 1 {
 		t.Fatalf("invalid ages created guardians: count=%d err=%v", count, err)
 	}
-	if err := h.DB.QueryRow(context.Background(), "SELECT customer_age,customer_name FROM customer WHERE customer_id=1").Scan(&age, &name); err != nil || age != 40 || name != "原姓名" {
+	if err := h.DB.QueryRowContext(context.Background(), "SELECT customer_age,customer_name FROM customer WHERE customer_id=1").Scan(&age, &name); err != nil || age != 40 || name != "原姓名" {
 		t.Fatalf("invalid ages overwrote a guardian: age=%d name=%s err=%v", age, name, err)
 	}
 	for _, valid := range []any{0, "150"} {
@@ -123,7 +123,7 @@ func TestContinuousGuardianCreateAndDeleteKeepReferencesValid(t *testing.T) {
 		t.Fatalf("assignment and parent deletion must have exactly one winner: create=%v delete=%v", createResult, deleteResult)
 	}
 	var dangling int
-	if err := h.DB.QueryRow(context.Background(), "SELECT count(*) FROM oldperson o LEFT JOIN customer c ON c.customer_id=o.customer_id WHERE o.customer_id IS NOT NULL AND c.customer_id IS NULL").Scan(&dangling); err != nil || dangling != 0 {
+	if err := h.DB.QueryRowContext(context.Background(), "SELECT count(*) FROM oldperson o LEFT JOIN customer c ON c.customer_id=o.customer_id WHERE o.customer_id IS NOT NULL AND c.customer_id IS NULL").Scan(&dangling); err != nil || dangling != 0 {
 		t.Fatalf("concurrent requests left dangling references: count=%d err=%v", dangling, err)
 	}
 }

@@ -2,6 +2,7 @@ package telemetryrepo
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"suining-care/internal/db"
@@ -36,7 +37,7 @@ const latestPositionsSQL = `SELECT o.name, o.old_id, o.sex, l.lng, l.lat, l.be_t
 		ROW_NUMBER() OVER (PARTITION BY old_id ORDER BY be_time DESC, id DESC) AS rn FROM alarm_precess) a
 		ON a.old_id = o.old_id AND a.rn = 1`
 
-func scanPosition(rows db.Rows) (PositionRow, error) {
+func scanPosition(rows *sql.Rows) (PositionRow, error) {
 	var item PositionRow
 	err := rows.Scan(&item.Name, &item.ResidentID, &item.Sex,
 		&item.Longitude, &item.Latitude, &item.ObservedAt, &item.Status,
@@ -46,14 +47,14 @@ func scanPosition(rows db.Rows) (PositionRow, error) {
 }
 
 func ListLatestPositions(ctx context.Context, store *db.Database, name string, page, pageSize int) ([]PositionRow, int64, error) {
-	const filter = " WHERE ($1='' OR o.name LIKE '%'||$1||'%')"
+	const filter = " WHERE (?='' OR o.name LIKE CONCAT('%',?,'%'))"
 	var total int64
-	if err := store.QueryRow(ctx, "SELECT COUNT(*) FROM oldperson o"+filter, name).Scan(&total); err != nil {
+	if err := store.QueryRowContext(ctx, "SELECT COUNT(*) FROM oldperson o"+filter, name, name).Scan(&total); err != nil {
 		return nil, 0, err
 	}
 	items, err := db.QueryList(ctx, store, scanPosition,
-		latestPositionsSQL+filter+" ORDER BY be_time DESC, o.old_id LIMIT $2 OFFSET $3",
-		name, pageSize, (page-1)*pageSize)
+		latestPositionsSQL+filter+" ORDER BY be_time DESC, o.old_id LIMIT ? OFFSET ?",
+		name, name, pageSize, (page-1)*pageSize)
 	return items, total, err
 }
 
@@ -66,8 +67,8 @@ func ListResidentPositions(ctx context.Context, store *db.Database, residentID i
 			COALESCE(a.kind,'unknown') AS alarm_kind
 		 FROM oldperson o
 		 LEFT JOIN (SELECT old_id, lng, lat, be_time, position_metadata FROM device_location
-			WHERE old_id=$1 ORDER BY be_time DESC, id DESC LIMIT 1) l ON l.old_id=o.old_id
+			WHERE old_id=? ORDER BY be_time DESC, id DESC LIMIT 1) l ON l.old_id=o.old_id
 		 LEFT JOIN (SELECT old_id, status, be_time, lng, lat, kind, position_metadata
-			FROM alarm_precess WHERE old_id=$2 ORDER BY be_time DESC, id DESC LIMIT 1) a ON a.old_id=o.old_id
-		 WHERE o.old_id=$3`, residentID, residentID, residentID)
+			FROM alarm_precess WHERE old_id=? ORDER BY be_time DESC, id DESC LIMIT 1) a ON a.old_id=o.old_id
+		 WHERE o.old_id=?`, residentID, residentID, residentID)
 }

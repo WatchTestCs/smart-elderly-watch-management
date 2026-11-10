@@ -2,6 +2,7 @@ package telemetryrepo
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"suining-care/internal/db"
@@ -19,21 +20,20 @@ type Location struct {
 }
 
 // InsertLocation appends a sealed device location within the caller's transaction.
-func InsertLocation(ctx context.Context, tx *db.Transaction, location Location) error {
-	_, err := tx.Exec(ctx,
+func InsertLocation(ctx context.Context, tx *sql.Tx, location Location) error {
+	_, err := tx.ExecContext(ctx,
 		`INSERT INTO device_location(device_id, old_id, lng, lat, source, be_time, create_time, position_metadata)
-    VALUES($1,$2,$3,$4,$5,$6,CURRENT_TIMESTAMP(6),$7)`,
+    VALUES(?,?,?,?,?,?,CURRENT_TIMESTAMP(6),?)`,
 		location.DeviceID, location.ResidentID, location.Longitude, location.Latitude,
 		location.Source, location.ObservedAt, location.PositionMetadata)
 	return err
 }
 
 // UpdateLatestLocation prevents older observations from replacing current coordinates.
-func UpdateLatestLocation(ctx context.Context, tx *db.Transaction, location Location) error {
-	_, err := tx.Exec(ctx, `UPDATE device SET last_lng=$1, last_lat=$2 WHERE device_id=$3
-	 AND NOT EXISTS(SELECT 1 FROM device_location WHERE device_id=$3 AND old_id=$5 AND be_time>$4)`,
-		location.Longitude, location.Latitude, location.DeviceID,
-		location.ObservedAt, location.ResidentID)
+func UpdateLatestLocation(ctx context.Context, tx *sql.Tx, location Location) error {
+	_, err := tx.ExecContext(ctx, `UPDATE device SET last_lng=?, last_lat=? WHERE device_id=?
+	 AND NOT EXISTS(SELECT 1 FROM device_location WHERE device_id=? AND old_id=? AND be_time>?)`,
+		location.Longitude, location.Latitude, location.DeviceID, location.DeviceID, location.ResidentID, location.ObservedAt)
 	return err
 }
 
@@ -48,11 +48,11 @@ type Alarm struct {
 }
 
 const insertAlarm = `INSERT INTO alarm_precess(status, old_id, device_id, be_time, lng, lat, kind, position_metadata)
- VALUES('1',$1,$2,$3,$4,$5,$6,$7)`
+ VALUES('1',?,?,?,?,?,?,?)`
 
 // InsertAlarm writes an alarm and returns its persisted identifier.
-func InsertAlarm(ctx context.Context, tx *db.Transaction, alarm Alarm) (int64, error) {
-	id, err := tx.InsertID(ctx, insertAlarm, alarm.ResidentID, alarm.DeviceID,
+func InsertAlarm(ctx context.Context, tx *sql.Tx, alarm Alarm) (int64, error) {
+	id, err := db.InsertID(ctx, tx, insertAlarm, alarm.ResidentID, alarm.DeviceID,
 		alarm.ObservedAt, alarm.Longitude, alarm.Latitude, alarm.Kind, alarm.PositionMetadata)
 	if err != nil {
 		return 0, err
@@ -72,32 +72,32 @@ type Incident struct {
 }
 
 // InsertIncident persists the care incident associated with an alarm.
-func InsertIncident(ctx context.Context, tx *db.Transaction, incident Incident) (int64, error) {
-	return tx.InsertID(ctx,
+func InsertIncident(ctx context.Context, tx *sql.Tx, incident Incident) (int64, error) {
+	return db.InsertID(ctx, tx,
 		`INSERT INTO care_incident(source_alarm_id,old_id,device_id,kind,request_id)
-		 VALUES($1,$2,$3,$4,$5)`,
+		 VALUES(?,?,?,?,?)`,
 		incident.AlarmID, incident.ResidentID, incident.DeviceID,
 		incident.Kind, incident.RequestID)
 }
 
 // InsertSOSEvent creates the required receipt evidence, not a delivery confirmation.
-func InsertSOSEvent(ctx context.Context, tx *db.Transaction, incidentID int64) error {
-	_, err := tx.Exec(ctx, `INSERT INTO care_incident_event(incident_id, actor, action, note)
-	 VALUES($1,'device','received','SOS 已持久化，尚无通知送达或人工接单确认')`, incidentID)
+func InsertSOSEvent(ctx context.Context, tx *sql.Tx, incidentID int64) error {
+	_, err := tx.ExecContext(ctx, `INSERT INTO care_incident_event(incident_id, actor, action, note)
+	 VALUES(?,'device','received','SOS 已持久化，尚无通知送达或人工接单确认')`, incidentID)
 	return err
 }
 
 // InsertAlarmEvent records a non-SOS alert before notification is queued.
-func InsertAlarmEvent(ctx context.Context, tx *db.Transaction, incidentID int64) error {
-	_, err := tx.Exec(ctx, `INSERT INTO care_incident_event(incident_id,actor,action,note)
-	 VALUES($1,'device','received','设备异常已持久化；等待通知和人工处置')`, incidentID)
+func InsertAlarmEvent(ctx context.Context, tx *sql.Tx, incidentID int64) error {
+	_, err := tx.ExecContext(ctx, `INSERT INTO care_incident_event(incident_id,actor,action,note)
+	 VALUES(?,'device','received','设备异常已持久化；等待通知和人工处置')`, incidentID)
 	return err
 }
 
 // InsertSOSIncident retains the SOS-specific database default for incident kind.
-func InsertSOSIncident(ctx context.Context, tx *db.Transaction, alarmID, residentID, deviceID int64, requestID any) (int64, error) {
-	return tx.InsertID(ctx,
+func InsertSOSIncident(ctx context.Context, tx *sql.Tx, alarmID, residentID, deviceID int64, requestID any) (int64, error) {
+	return db.InsertID(ctx, tx,
 		`INSERT INTO care_incident(source_alarm_id, old_id, device_id, request_id)
-		 VALUES($1,$2,$3,$4)`,
+		 VALUES(?,?,?,?)`,
 		alarmID, residentID, deviceID, requestID)
 }

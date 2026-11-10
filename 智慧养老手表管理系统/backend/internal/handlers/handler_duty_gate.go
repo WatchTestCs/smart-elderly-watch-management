@@ -21,8 +21,8 @@ func (h *Handler) EnforceAdminDuty(next http.Handler) http.Handler {
 		}
 
 		var duty string
-		err := h.DB.QueryRow(r.Context(),
-			"SELECT duty FROM care_staff_permission WHERE admin_id=$1",
+		err := h.DB.QueryRowContext(r.Context(),
+			"SELECT duty FROM care_staff_permission WHERE admin_id=?",
 			principal.ID).Scan(&duty)
 		if isNotFound(err) {
 			// Preserve the documented migration behavior for unassigned ADMINs.
@@ -42,8 +42,8 @@ func (h *Handler) EnforceAdminDuty(next http.Handler) http.Handler {
 			// denied access separately, without recording request content, query
 			// arguments, names or unbounded paths. If the audit store is down,
 			// remain fail-closed.
-			if _, err := h.DB.Exec(r.Context(), `INSERT INTO care_sensitive_access_audit
-				(actor_id,actor_role,resource,method) VALUES($1,$2,$3,$4)`,
+			if _, err := h.DB.ExecContext(r.Context(), `INSERT INTO care_sensitive_access_audit
+				(actor_id,actor_role,resource,method) VALUES(?,?,?,?)`,
 				principal.ID, principal.Role, "/api/v1/legacy-admin-denied", r.Method); err != nil {
 				response.JSON(w, http.StatusServiceUnavailable, map[string]any{
 					"code":    "AUTHZ_AUDIT_UNAVAILABLE",

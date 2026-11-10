@@ -58,7 +58,7 @@ func run() error {
 		return errors.New("cannot open explicitly configured MySQL")
 	}
 	defer pool.Close()
-	report, operationErr := rekey.Run(ctx, pool.SQL(), current, previous, rekey.Options{Apply: *apply, BatchSize: *batch, MaxRowsPerColumn: *maxRows, Pause: *pause})
+	report, operationErr := rekey.Run(ctx, pool.DB, current, previous, rekey.Options{Apply: *apply, BatchSize: *batch, MaxRowsPerColumn: *maxRows, Pause: *pause})
 	if err := json.NewEncoder(os.Stdout).Encode(report); err != nil {
 		return errors.New("cannot write rekey aggregate report")
 	}

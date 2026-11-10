@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"net/http"
 	dbstore "suining-care/internal/db"
 	"suining-care/internal/response"
@@ -18,7 +19,7 @@ func (h *Handler) listVitalHistory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sql := vitalRecordSelect +
-		` INNER JOIN (SELECT * FROM ratepre WHERE old_id=$1 ORDER BY create_time DESC, id DESC LIMIT 1) r ON r.old_id=o.old_id` +
+		` INNER JOIN (SELECT * FROM ratepre WHERE old_id=? ORDER BY create_time DESC, id DESC LIMIT 1) r ON r.old_id=o.old_id` +
 		` ORDER BY createTime DESC`
 	items, ok := queryRows(h, w, r.Context(), scanVitalRecord, sql, oldID)
 	if !ok {
@@ -38,7 +39,7 @@ func (h *Handler) getVitalChart(w http.ResponseWriter, r *http.Request) {
 	bps := make([]*int64, 0, 30)
 	createTimes := make([]string, 0, 30)
 	var timeStr, lastDay string
-	err := dbstore.QueryEach(r.Context(), h.DB, func(rows dbstore.Rows) error {
+	err := dbstore.QueryEach(r.Context(), h.DB, func(rows *sql.Rows) error {
 		var hr, bp *int64
 		var createTime *string
 		if err := rows.Scan(&hr, &bp, &createTime); err != nil {
@@ -59,7 +60,7 @@ func (h *Handler) getVitalChart(w http.ResponseWriter, r *http.Request) {
 		createTimes = append(createTimes, ct)
 		return nil
 	}, `SELECT r.hr AS hr, r.bp AS bp, DATE_FORMAT(r.create_time,'%Y-%m-%d %H:%i:%s') AS createTime
-		FROM (SELECT id, hr, bp, create_time FROM ratepre WHERE old_id=$1 ORDER BY create_time DESC, id DESC LIMIT 30) r
+		FROM (SELECT id, hr, bp, create_time FROM ratepre WHERE old_id=? ORDER BY create_time DESC, id DESC LIMIT 30) r
 		ORDER BY r.create_time ASC, r.id ASC`, oldID)
 	if internalError(w, err) {
 		return

@@ -14,8 +14,8 @@ import (
 func TestAdminDutyGateRestrictsLegacyRoutes(t *testing.T) {
 	pool := testDatabase(t)
 	const adminID int64 = 987654
-	mustExec(t, pool, "INSERT INTO users(user_id,user_name,role,user_phone) VALUES($1,'GateTest','1','13900009876')", adminID)
-	mustExec(t, pool, "INSERT INTO care_staff_permission(admin_id,duty,assigned_by) VALUES($1,'caregiver',$1)", adminID)
+	mustExec(t, pool, "INSERT INTO users(user_id,user_name,role,user_phone) VALUES(?,'GateTest','1','13900009876')", adminID)
+	mustExec(t, pool, "INSERT INTO care_staff_permission(admin_id,duty,assigned_by) VALUES(?,'caregiver',?)", adminID, adminID)
 
 	store := session.NewStore(time.Hour)
 	sess := store.Create(session.Principal{Role: auth.RoleAdmin, ID: adminID})
@@ -38,7 +38,7 @@ func TestAdminDutyGateRestrictsLegacyRoutes(t *testing.T) {
 		}
 	}
 	for _, duty := range []string{"caregiver", "auditor"} {
-		mustExec(t, pool, "UPDATE care_staff_permission SET duty=$1 WHERE admin_id=$2", duty, adminID)
+		mustExec(t, pool, "UPDATE care_staff_permission SET duty=? WHERE admin_id=?", duty, adminID)
 		check("/api/v1/guardians/delete", http.StatusForbidden)
 		check("/api/v1/device/list", http.StatusForbidden)
 		check("/api/v1/health/statistics", http.StatusForbidden)
@@ -46,18 +46,18 @@ func TestAdminDutyGateRestrictsLegacyRoutes(t *testing.T) {
 		check("/api/v1/security/factor", http.StatusNoContent)
 	}
 	var deniedAuditCount int
-	if err := pool.QueryRow(
+	if err := pool.QueryRowContext(
 		context.Background(),
-		"SELECT count(*) FROM care_sensitive_access_audit WHERE actor_id=$1 AND resource='/api/v1/legacy-admin-denied'",
+		"SELECT count(*) FROM care_sensitive_access_audit WHERE actor_id=? AND resource='/api/v1/legacy-admin-denied'",
 		adminID,
 	).Scan(&deniedAuditCount); err != nil || deniedAuditCount != 6 {
 		t.Fatalf("expected one privacy-safe access audit for each denied request, got %d: %v", deniedAuditCount, err)
 	}
-	mustExec(t, pool, "UPDATE care_staff_permission SET duty='supervisor' WHERE admin_id=$1", adminID)
+	mustExec(t, pool, "UPDATE care_staff_permission SET duty='supervisor' WHERE admin_id=?", adminID)
 	check("/api/v1/guardians/delete", http.StatusNoContent)
 
 	// Migration compatibility is intentional until each legacy ADMIN has a duty.
-	mustExec(t, pool, "DELETE FROM care_staff_permission WHERE admin_id=$1", adminID)
+	mustExec(t, pool, "DELETE FROM care_staff_permission WHERE admin_id=?", adminID)
 	check("/api/v1/device/list", http.StatusNoContent)
 }
 
@@ -82,8 +82,8 @@ func TestRestrictedAdminRouteAllowlist(t *testing.T) {
 func TestRestrictedAdminGateFailsClosedWithoutAuditStore(t *testing.T) {
 	pool := testDatabase(t)
 	const id int64 = 987655
-	mustExec(t, pool, "INSERT INTO users(user_id,user_name,role,user_phone) VALUES($1,'AuditFail','1','13900009875')", id)
-	mustExec(t, pool, "INSERT INTO care_staff_permission(admin_id,duty,assigned_by) VALUES($1,'auditor',$1)", id)
+	mustExec(t, pool, "INSERT INTO users(user_id,user_name,role,user_phone) VALUES(?,'AuditFail','1','13900009875')", id)
+	mustExec(t, pool, "INSERT INTO care_staff_permission(admin_id,duty,assigned_by) VALUES(?,'auditor',?)", id, id)
 	// This is an isolated per-test database, never production.
 	mustExec(t, pool, "DROP TABLE care_sensitive_access_audit")
 	sessions := session.NewStore(time.Hour)

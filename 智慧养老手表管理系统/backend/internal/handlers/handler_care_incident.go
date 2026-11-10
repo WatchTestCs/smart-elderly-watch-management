@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"net/http"
 	"strconv"
 	"strings"
@@ -92,11 +93,11 @@ func (h *Handler) careTransition(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := r.Context()
-	tx, err := h.DB.Begin(ctx)
+	tx, err := h.DB.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if internalError(w, err) {
 		return
 	}
-	defer tx.Rollback(ctx)
+	defer tx.Rollback()
 	before, resolver, err := careworkflow.LockedIncidentState(ctx, tx, id)
 	if err != nil {
 		if isNotFound(err) {
@@ -142,7 +143,7 @@ func (h *Handler) careTransition(w http.ResponseWriter, r *http.Request) {
 	if internalError(w, careworkflow.PersistTransition(ctx, tx, id, next, action, strconv.FormatInt(actor, 10), note)) {
 		return
 	}
-	if internalError(w, tx.Commit(ctx)) {
+	if internalError(w, tx.Commit()) {
 		return
 	}
 	response.OK(w, map[string]any{"id": id, "state": next})

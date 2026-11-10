@@ -42,11 +42,11 @@ type FactorInput struct {
 }
 
 func ChangeFactor(ctx context.Context, store *db.Database, box *securestore.Box, input FactorInput) (map[string]any, FactorFailure, error) {
-	tx, err := store.Begin(ctx)
+	tx, err := store.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		return nil, "", err
 	}
-	defer tx.Rollback(ctx)
+	defer tx.Rollback()
 	password, passwordErr := authrepo.LockPassword(ctx, tx, input.Role, input.ActorID)
 	if passwordErr != nil || !auth.Matches(input.Password, password) {
 		return nil, WrongPassword, nil
@@ -105,7 +105,7 @@ func ChangeFactor(ctx context.Context, store *db.Database, box *securestore.Box,
 			return nil, "", err
 		}
 	}
-	if err := tx.Commit(ctx); err != nil {
+	if err := tx.Commit(); err != nil {
 		return nil, "", err
 	}
 	return result, "", nil

@@ -17,14 +17,14 @@ func TestContinuousBindingCodeExpiry(t *testing.T) {
 		}
 	}
 	var count int
-	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM bind_code").Scan(&count); err != nil || count != 0 {
+	if err := pool.QueryRowContext(context.Background(), "SELECT count(*) FROM bind_code").Scan(&count); err != nil || count != 0 {
 		t.Errorf("invalid expiry created codes: count=%d err=%v", count, err)
 	}
 	api(t, h.deviceUnbind, map[string]any{"deviceId": 1})
 	for _, body := range []map[string]any{{"oldId": 1}, {"oldId": 1, "expireDays": ""}} {
 		created := api(t, h.deviceCreateBindCode, body)
 		var expiry, issued time.Time
-		if err := pool.QueryRow(context.Background(), "SELECT expire_time,create_time FROM bind_code WHERE code=$1", created["code"]).Scan(&expiry, &issued); err != nil {
+		if err := pool.QueryRowContext(context.Background(), "SELECT expire_time,create_time FROM bind_code WHERE code=?", created["code"]).Scan(&expiry, &issued); err != nil {
 			t.Fatal(err)
 		}
 		if validity := expiry.Sub(issued); validity < 23*time.Hour || validity > 25*time.Hour {
@@ -48,13 +48,13 @@ func TestContinuousInviteCodeExpiry(t *testing.T) {
 		}
 	}
 	var count int
-	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM invite_code").Scan(&count); err != nil || count != 0 {
+	if err := pool.QueryRowContext(context.Background(), "SELECT count(*) FROM invite_code").Scan(&count); err != nil || count != 0 {
 		t.Errorf("invalid expiry created invites: count=%d err=%v", count, err)
 	}
 	for _, valid := range []any{"", nil, 0, "2"} {
 		api(t, h.inviteCreate, map[string]any{"oldId": 1, "expireDays": valid})
 	}
-	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM invite_code WHERE expire_time IS NULL").Scan(&count); err != nil || count != 3 {
+	if err := pool.QueryRowContext(context.Background(), "SELECT count(*) FROM invite_code WHERE expire_time IS NULL").Scan(&count); err != nil || count != 3 {
 		t.Fatalf("legacy indefinite expiry contract changed: count=%d err=%v", count, err)
 	}
 }

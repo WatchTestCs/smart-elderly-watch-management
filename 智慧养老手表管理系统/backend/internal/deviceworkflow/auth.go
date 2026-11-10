@@ -50,7 +50,7 @@ func Verify(device *devicerepo.DeviceRecord, secret string) (*devicerepo.DeviceR
 }
 
 // LockBoundDevice uses the same resident-then-device order for SOS and telemetry.
-func LockBoundDevice(ctx context.Context, tx *db.Transaction, number, secret string, epoch int64) (*devicerepo.DeviceRecord, Failure, error) {
+func LockBoundDevice(ctx context.Context, tx *sql.Tx, number, secret string, epoch int64) (*devicerepo.DeviceRecord, Failure, error) {
 	device, failure, err := Authenticate(ctx, tx, number, secret)
 	if err != nil || device == nil {
 		return nil, failure, err
@@ -60,7 +60,7 @@ func LockBoundDevice(ctx context.Context, tx *db.Transaction, number, secret str
 
 // LockAuthenticatedDevice reuses an already verified, unlocked snapshot.
 // The resident and device are still locked and revalidated before any write.
-func LockAuthenticatedDevice(ctx context.Context, tx *db.Transaction, device *devicerepo.DeviceRecord, number, secret string, epoch int64) (*devicerepo.DeviceRecord, Failure, error) {
+func LockAuthenticatedDevice(ctx context.Context, tx *sql.Tx, device *devicerepo.DeviceRecord, number, secret string, epoch int64) (*devicerepo.DeviceRecord, Failure, error) {
 	if device == nil {
 		return nil, InvalidCredential, nil
 	}

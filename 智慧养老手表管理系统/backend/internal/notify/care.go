@@ -6,7 +6,7 @@ package notify
 
 import (
 	"context"
-	"fmt"
+	"database/sql"
 	"strings"
 
 	"suining-care/internal/db"
@@ -41,9 +41,9 @@ const familyPhonePredicate = "f.family_phone REGEXP '^1[0-9]{10}$'"
 
 // QueueCareSMS 为长者的每个有效家属手机号入队一条 SMS 通知，
 // 返回实际插入的行数（0 表示无可通知的家属）。
-func QueueCareSMS(ctx context.Context, tx *db.Transaction, box *securestore.Box, incidentID, oldID int64) (int64, error) {
+func QueueCareSMS(ctx context.Context, tx *sql.Tx, box *securestore.Box, incidentID, oldID int64) (int64, error) {
 	phones, err := db.QueryList(ctx, tx, db.ScanValue[string], `SELECT f.family_phone FROM oldperson o JOIN family f ON f.family_id=o.family_id
-		WHERE o.old_id=$1 AND `+familyPhonePredicate, oldID)
+		WHERE o.old_id=? AND `+familyPhonePredicate, oldID)
 	if err != nil {
 		return 0, err
 	}
@@ -60,13 +60,13 @@ func QueueCareSMS(ctx context.Context, tx *db.Transaction, box *securestore.Box,
 		if i > 0 {
 			values.WriteByte(',')
 		}
-		fmt.Fprintf(&values, "($%d,'sms',$%d,$%d)", 3*i+1, 3*i+2, 3*i+3)
+		values.WriteString("(?,'sms',?,?)")
 		args = append(args, incidentID, sealed, key)
 	}
-	ct, err := tx.Exec(ctx, `INSERT INTO care_notification_outbox(incident_id,channel,recipient,recipient_key)
+	ct, err := tx.ExecContext(ctx, `INSERT INTO care_notification_outbox(incident_id,channel,recipient,recipient_key)
 		VALUES `+values.String()+` ON DUPLICATE KEY UPDATE id=id`, args...)
 	if err != nil {
 		return 0, err
 	}
-	return ct.RowsAffected(), nil
+	return ct.RowsAffected()
 }

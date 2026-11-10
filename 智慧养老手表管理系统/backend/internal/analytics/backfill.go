@@ -30,7 +30,7 @@ func Backfill(ctx context.Context, primary *db.Database) (int64, error) {
 		}
 		var last int64
 		for {
-			tx, err := primary.SQL().BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+			tx, err := primary.DB.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 			if err != nil {
 				return total, err
 			}

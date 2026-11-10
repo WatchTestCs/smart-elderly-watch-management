@@ -3,6 +3,7 @@ package health
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -15,7 +16,7 @@ import (
 func TestIndexedBatchPersistsAllVersionsAndTombstones(t *testing.T) {
 	pool := dbtest.MySQL(t)
 	ctx := context.Background()
-	if _, err := pool.Exec(ctx, "INSERT INTO oldperson(old_id,name) VALUES(1,'layout')"); err != nil {
+	if _, err := pool.ExecContext(ctx, "INSERT INTO oldperson(old_id,name) VALUES(1,'layout')"); err != nil {
 		t.Fatal(err)
 	}
 	_, base := sampleBenchmarkInput()
@@ -32,22 +33,22 @@ func TestIndexedBatchPersistsAllVersionsAndTombstones(t *testing.T) {
 		samples[i] = s
 	}
 	save := func(wantDuplicates int) {
-		tx, err := pool.Begin(ctx)
+		tx, err := pool.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 		if err != nil {
 			t.Fatal(err)
 		}
-		defer tx.Rollback(ctx)
+		defer tx.Rollback()
 		rev, duplicates, err := SaveBatch(ctx, tx, Owner{OldID: 1}, samples)
 		if err != nil || rev != 200 || duplicates != wantDuplicates {
 			t.Fatalf("rev=%d duplicates=%d err=%v", rev, duplicates, err)
 		}
-		if err := tx.Commit(ctx); err != nil {
+		if err := tx.Commit(); err != nil {
 			t.Fatal(err)
 		}
 	}
 	save(0)
 	save(200)
-	rows, err := pool.Query(ctx, "SELECT revision,payload FROM health_change ORDER BY revision")
+	rows, err := pool.QueryContext(ctx, "SELECT revision,payload FROM health_change ORDER BY revision")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -75,7 +76,7 @@ func TestIndexedBatchPersistsAllVersionsAndTombstones(t *testing.T) {
 	if count != 200 {
 		t.Fatalf("history collapsed to %d", count)
 	}
-	rows, err = pool.Query(ctx, "SELECT revision,payload FROM health_sample ORDER BY revision")
+	rows, err = pool.QueryContext(ctx, "SELECT revision,payload FROM health_sample ORDER BY revision")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -107,7 +108,7 @@ func TestIndexedBatchPersistsAllVersionsAndTombstones(t *testing.T) {
 func TestConditionalPreviousPayloadPreservesMixedVersionsAndConflicts(t *testing.T) {
 	pool := dbtest.MySQL(t)
 	ctx := context.Background()
-	if _, err := pool.Exec(ctx, "INSERT INTO oldperson(old_id,name) VALUES(1,'pruned')"); err != nil {
+	if _, err := pool.ExecContext(ctx, "INSERT INTO oldperson(old_id,name) VALUES(1,'pruned')"); err != nil {
 		t.Fatal(err)
 	}
 	_, a := sampleBenchmarkInput()
@@ -119,21 +120,21 @@ func TestConditionalPreviousPayloadPreservesMixedVersionsAndConflicts(t *testing
 	b.Version = 12
 	owner := Owner{OldID: 1}
 	save := func(samples []Sample) (int64, int, error) {
-		tx, err := pool.Begin(ctx)
+		tx, err := pool.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 		if err != nil {
 			t.Fatal(err)
 		}
-		defer tx.Rollback(ctx)
+		defer tx.Rollback()
 		rev, duplicates, err := SaveBatch(ctx, tx, owner, samples)
 		if err == nil {
-			err = tx.Commit(ctx)
+			err = tx.Commit()
 		}
 		return rev, duplicates, err
 	}
 	if _, d, err := save([]Sample{a, b}); err != nil || d != 0 {
 		t.Fatal(d, err)
 	}
-	rows, err := pool.Query(ctx, batchSQL(batchLookup, 2), int64(10), identityDigest(owner, a), identityDigest(owner, b))
+	rows, err := pool.QueryContext(ctx, batchSQL(batchLookup, 2), int64(10), identityDigest(owner, a), identityDigest(owner, b))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -169,10 +170,10 @@ func TestConditionalPreviousPayloadPreservesMixedVersionsAndConflicts(t *testing
 		t.Fatal("equal-version conflict lost", err)
 	}
 	var count, version int64
-	if err := pool.QueryRow(ctx, "SELECT count(*) FROM health_change").Scan(&count); err != nil || count != 3 {
+	if err := pool.QueryRowContext(ctx, "SELECT count(*) FROM health_change").Scan(&count); err != nil || count != 3 {
 		t.Fatal("failed batch persisted history", count, err)
 	}
-	if err := pool.QueryRow(ctx, "SELECT version FROM health_sample WHERE sample_id=$1", identityDigest(owner, a)).Scan(&version); err != nil || version != 5 {
+	if err := pool.QueryRowContext(ctx, "SELECT version FROM health_sample WHERE sample_id=?", identityDigest(owner, a)).Scan(&version); err != nil || version != 5 {
 		t.Fatal("failed batch persisted current row", version, err)
 	}
 }

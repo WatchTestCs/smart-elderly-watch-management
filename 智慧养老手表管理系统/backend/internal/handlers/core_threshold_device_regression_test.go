@@ -56,7 +56,7 @@ func TestContinuousThresholdSearchIncludesSecondaryDevice(t *testing.T) {
 		t.Fatalf("secondary device did not use edited threshold: %v", reported)
 	}
 	var primary int
-	if err := pool.QueryRow(context.Background(), "SELECT device_id FROM oldperson WHERE old_id=1").Scan(&primary); err != nil || primary != 1 {
+	if err := pool.QueryRowContext(context.Background(), "SELECT device_id FROM oldperson WHERE old_id=1").Scan(&primary); err != nil || primary != 1 {
 		t.Fatalf("profile lookup changed primary binding: primary=%d err=%v", primary, err)
 	}
 }
@@ -70,7 +70,7 @@ func TestContinuousThresholdCreationRequiresRegisteredDevice(t *testing.T) {
 		t.Error("threshold profile created for an unregistered device")
 	}
 	var count int
-	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM watch_info").Scan(&count); err != nil || count != 0 {
+	if err := pool.QueryRowContext(context.Background(), "SELECT count(*) FROM watch_info").Scan(&count); err != nil || count != 0 {
 		t.Fatalf("invalid device left a threshold row: count=%d err=%v", count, err)
 	}
 	seedDevice(t, pool)

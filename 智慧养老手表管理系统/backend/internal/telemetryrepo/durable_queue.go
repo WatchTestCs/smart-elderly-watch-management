@@ -6,7 +6,6 @@ import (
 	"errors"
 	"time"
 
-	"suining-care/internal/db"
 	"suining-care/internal/observability"
 )
 
@@ -19,11 +18,11 @@ type DurableMessage struct {
 	ReceivedAt   time.Time
 }
 
-func EnqueueDurable(ctx context.Context, tx *db.Transaction, message DurableMessage) error {
-	_, err := tx.Exec(ctx,
+func EnqueueDurable(ctx context.Context, tx *sql.Tx, message DurableMessage) error {
+	_, err := tx.ExecContext(ctx,
 		`INSERT INTO telemetry_inbox(device_id,elder_id,binding_epoch,request_id,payload,status,created_at,next_retry_at)
-		 VALUES($1,$2,$3,$4,$5,'pending',$6,$6)`,
-		message.DeviceID, message.ResidentID, message.BindingEpoch, message.RequestID, message.Payload, message.ReceivedAt)
+		 VALUES(?,?,?,?,?,'pending',?,?)`,
+		message.DeviceID, message.ResidentID, message.BindingEpoch, message.RequestID, message.Payload, message.ReceivedAt, message.ReceivedAt)
 	return err
 }
 
@@ -39,10 +38,10 @@ type DurableItem struct {
 
 // LockDurableBatch elects one worker and locks the oldest pending records.
 // All locks remain held by the caller until its transaction commits or rolls back.
-func LockDurableBatch(ctx context.Context, tx *db.Transaction, limit int) ([]DurableItem, error) {
+func LockDurableBatch(ctx context.Context, tx *sql.Tx, limit int) ([]DurableItem, error) {
 	var guard int
 	guardStarted := time.Now()
-	err := tx.QueryRow(ctx,
+	err := tx.QueryRowContext(ctx,
 		"SELECT id FROM telemetry_inbox_guard WHERE id=1 FOR UPDATE SKIP LOCKED").Scan(&guard)
 	observability.Default.Add("suining_telemetry_guard_acquire_seconds_total", time.Since(guardStarted).Seconds())
 	if errors.Is(err, sql.ErrNoRows) {
@@ -52,10 +51,10 @@ func LockDurableBatch(ctx context.Context, tx *db.Transaction, limit int) ([]Dur
 	if err != nil {
 		return nil, err
 	}
-	rows, err := tx.Query(ctx,
+	rows, err := tx.QueryContext(ctx,
 		`SELECT id,device_id,elder_id,binding_epoch,payload,next_retry_at,attempts
 		 FROM telemetry_inbox WHERE status='pending'
-		 ORDER BY id LIMIT $1 FOR UPDATE SKIP LOCKED`, limit)
+		 ORDER BY id LIMIT ? FOR UPDATE SKIP LOCKED`, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +73,7 @@ func LockDurableBatch(ctx context.Context, tx *db.Transaction, limit int) ([]Dur
 
 // MarkDurableFailure retains the encrypted payload and schedules bounded
 // exponential retry. Permanent failures remain inspectable as dead letters.
-func MarkDurableFailure(ctx context.Context, tx *db.Transaction, item DurableItem, reason string) error {
+func MarkDurableFailure(ctx context.Context, tx *sql.Tx, item DurableItem, reason string) error {
 	if len(reason) > 500 {
 		reason = reason[:500]
 	}
@@ -83,21 +82,21 @@ func MarkDurableFailure(ctx context.Context, tx *db.Transaction, item DurableIte
 	if item.Attempts >= 11 {
 		status = "failed"
 	}
-	_, err := tx.Exec(ctx,
-		"UPDATE telemetry_inbox SET attempts=$1,status=$2,next_retry_at=$3,last_error=$4 WHERE id=$5",
+	_, err := tx.ExecContext(ctx,
+		"UPDATE telemetry_inbox SET attempts=?,status=?,next_retry_at=?,last_error=? WHERE id=?",
 		item.Attempts+1, status, next, reason, item.ID)
 	return err
 }
 
-func MarkDurableStale(ctx context.Context, tx *db.Transaction, itemID int64, reason string) error {
-	_, err := tx.Exec(ctx,
-		"UPDATE telemetry_inbox SET status='stale',last_error=$2 WHERE id=$1", itemID, reason)
+func MarkDurableStale(ctx context.Context, tx *sql.Tx, itemID int64, reason string) error {
+	_, err := tx.ExecContext(ctx,
+		"UPDATE telemetry_inbox SET status='stale',last_error=? WHERE id=?", reason, itemID)
 	return err
 }
 
-func MarkDurableDone(ctx context.Context, tx *db.Transaction, itemID int64, at time.Time) error {
-	_, err := tx.Exec(ctx,
-		"UPDATE telemetry_inbox SET status='done',completed_at=$1,last_error=NULL WHERE id=$2",
+func MarkDurableDone(ctx context.Context, tx *sql.Tx, itemID int64, at time.Time) error {
+	_, err := tx.ExecContext(ctx,
+		"UPDATE telemetry_inbox SET status='done',completed_at=?,last_error=NULL WHERE id=?",
 		at, itemID)
 	return err
 }

@@ -19,7 +19,7 @@ func TestContinuousSleepFieldsKeepObservationOrder(t *testing.T) {
 		t.Helper()
 		var sleep int
 		var state string
-		if err := pool.QueryRow(context.Background(), "SELECT sleep,sleep_sate FROM watch_day_info WHERE device_id=1").Scan(&sleep, &state); err != nil {
+		if err := pool.QueryRowContext(context.Background(), "SELECT sleep,sleep_sate FROM watch_day_info WHERE device_id=1").Scan(&sleep, &state); err != nil {
 			t.Fatal(err)
 		}
 		if sleep != wantSleep || state != wantState {
@@ -50,21 +50,21 @@ func TestContinuousRebindLocationSnapshotUsesCurrentOwner(t *testing.T) {
 	}
 	api(t, h.deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "alarm": "1", "bindingVersion": bindingVersion, "beTime": "2026-10-20 09:30:00"})
 	var lng, lat *string
-	if err := h.DB.QueryRow(context.Background(), "SELECT last_lng,last_lat FROM device WHERE device_id=1").Scan(&lng, &lat); err != nil {
+	if err := h.DB.QueryRowContext(context.Background(), "SELECT last_lng,last_lat FROM device WHERE device_id=1").Scan(&lng, &lat); err != nil {
 		t.Fatal(err)
 	}
 	lng, lat, err := openCoordinates(h.Box, lng, lat)
 	if err != nil || lng == nil || lat == nil || *lng != "110" || *lat != "20" {
 		t.Fatalf("current-owner history lost or replaced by older owner/report: lng=%v lat=%v err=%v", lng, lat, err)
 	}
-	if err := h.DB.QueryRow(context.Background(), "SELECT lng,lat FROM alarm_precess WHERE old_id=2 ORDER BY id DESC LIMIT 1").Scan(&lng, &lat); err != nil {
+	if err := h.DB.QueryRowContext(context.Background(), "SELECT lng,lat FROM alarm_precess WHERE old_id=2 ORDER BY id DESC LIMIT 1").Scan(&lng, &lat); err != nil {
 		t.Fatal(err)
 	}
 	if lng != nil || lat != nil {
 		t.Fatalf("alarm borrowed a historical point from either owner: lng=%v lat=%v", lng, lat)
 	}
 	api(t, h.deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "alarm": "1", "bindingVersion": bindingVersion, "lng": "112", "lat": "22", "beTime": "2026-10-20 09:40:00"})
-	if err := h.DB.QueryRow(context.Background(), "SELECT lng,lat FROM alarm_precess WHERE old_id=2 ORDER BY id DESC LIMIT 1").Scan(&lng, &lat); err != nil {
+	if err := h.DB.QueryRowContext(context.Background(), "SELECT lng,lat FROM alarm_precess WHERE old_id=2 ORDER BY id DESC LIMIT 1").Scan(&lng, &lat); err != nil {
 		t.Fatal(err)
 	}
 	lng, lat, err = openCoordinates(h.Box, lng, lat)

@@ -2,9 +2,9 @@ package handlers
 
 import (
 	"context"
+	"database/sql"
 	"strings"
 
-	dbstore "suining-care/internal/db"
 	"suining-care/internal/devicerepo"
 	"suining-care/internal/securestore"
 	"suining-care/internal/telemetryrepo"
@@ -22,7 +22,7 @@ type telemetryPersisted struct {
 	careIncidentID int64
 }
 
-func (repo telemetryRepository) PersistDeviceReport(ctx context.Context, tx *dbstore.Transaction, d *devicerepo.DeviceRecord, parsed parsedDeviceTelemetry) (telemetryPersisted, error) {
+func (repo telemetryRepository) PersistDeviceReport(ctx context.Context, tx *sql.Tx, d *devicerepo.DeviceRecord, parsed parsedDeviceTelemetry) (telemetryPersisted, error) {
 	oldID := *d.OldID
 	var position string
 	if parsed.lng != "" || parsed.alarm == "1" || strings.EqualFold(parsed.alarm, "fall") {

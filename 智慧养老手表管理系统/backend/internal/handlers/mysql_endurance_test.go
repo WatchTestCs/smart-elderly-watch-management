@@ -89,7 +89,7 @@ func TestMySQLTwentyMinuteSoak(t *testing.T) {
 				mu.Lock()
 				point := map[string]any{"elapsed_seconds": time.Since(started).Seconds(), "requests": count, "acknowledged_requests": ack, "request_errors": requestErrors, "rule_errors": ruleErrors, "http_500": statuses["500"], "http_503": statuses["503"]}
 				mu.Unlock()
-				stat := pool.SQL().Stats()
+				stat := pool.DB.Stats()
 				var mem runtime.MemStats
 				runtime.ReadMemStats(&mem)
 				point["pool_in_use"] = stat.InUse
@@ -186,8 +186,8 @@ func TestMySQLTwentyMinuteSoak(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	var persisted, changes int64
-	errSample := pool.QueryRow(ctx, "SELECT COUNT(*) FROM health_sample").Scan(&persisted)
-	errChange := pool.QueryRow(ctx, "SELECT COUNT(*) FROM health_change").Scan(&changes)
+	errSample := pool.QueryRowContext(ctx, "SELECT COUNT(*) FROM health_sample").Scan(&persisted)
+	errChange := pool.QueryRowContext(ctx, "SELECT COUNT(*) FROM health_change").Scan(&changes)
 	record["persisted_samples"] = persisted
 	record["persisted_changes"] = changes
 	if errSample != nil {

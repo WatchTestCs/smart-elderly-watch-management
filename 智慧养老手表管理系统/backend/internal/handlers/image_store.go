@@ -2,11 +2,12 @@ package handlers
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"net/http"
 
 	"suining-care/internal/blob"
-	"suining-care/internal/db"
+
 	"suining-care/internal/response"
 )
 
@@ -32,7 +33,7 @@ func (h *Handler) images() (*blob.Manager, error) {
 	return h.imageManager, h.imageError
 }
 
-func (h *Handler) lockImages(w http.ResponseWriter, ctx context.Context, tx *db.Transaction, names []string) bool {
+func (h *Handler) lockImages(w http.ResponseWriter, ctx context.Context, tx *sql.Tx, names []string) bool {
 	if len(names) == 0 {
 		return true
 	}

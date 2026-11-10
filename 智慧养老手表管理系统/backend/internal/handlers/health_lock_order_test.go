@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -17,26 +18,26 @@ import (
 
 func holdHealthOwnerClock(t *testing.T, ctx context.Context, pool *dbstore.Database) func() {
 	t.Helper()
-	init, err := pool.Begin(ctx)
+	init, err := pool.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if _, err := health.LockOwner(ctx, init, 1); err != nil {
-		_ = init.Rollback(ctx)
+		_ = init.Rollback()
 		t.Fatal(err)
 	}
-	if err := init.Commit(ctx); err != nil {
+	if err := init.Commit(); err != nil {
 		t.Fatal(err)
 	}
-	holder, err := pool.Begin(ctx)
+	holder, err := pool.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if _, err := health.LockOwner(ctx, holder, 1); err != nil {
-		_ = holder.Rollback(ctx)
+		_ = holder.Rollback()
 		t.Fatal(err)
 	}
-	return func() { _ = holder.Rollback(context.Background()) }
+	return func() { _ = holder.Rollback() }
 }
 
 func waitHealthClockContention(ctx context.Context, pool *dbstore.Database) error {
@@ -46,7 +47,7 @@ func waitHealthClockContention(ctx context.Context, pool *dbstore.Database) erro
 		WHERE l.OBJECT_SCHEMA=DATABASE() AND l.OBJECT_NAME='health_owner_clock'`
 	for {
 		var waiters int
-		if err := pool.QueryRow(ctx, query).Scan(&waiters); err != nil {
+		if err := pool.QueryRowContext(ctx, query).Scan(&waiters); err != nil {
 			return err
 		}
 		if waiters > 0 {
@@ -144,10 +145,10 @@ func TestHealthDeviceLockOrderDuringOwnerClockContention(t *testing.T) {
 				t.Fatal(ctx.Err())
 			}
 			var saved, changes int
-			if err := pool.QueryRow(ctx, "SELECT count(*) FROM health_sample").Scan(&saved); err != nil {
+			if err := pool.QueryRowContext(ctx, "SELECT count(*) FROM health_sample").Scan(&saved); err != nil {
 				t.Fatal(err)
 			}
-			if err := pool.QueryRow(ctx, "SELECT count(*) FROM health_change").Scan(&changes); err != nil {
+			if err := pool.QueryRowContext(ctx, "SELECT count(*) FROM health_change").Scan(&changes); err != nil {
 				t.Fatal(err)
 			}
 			if saved != 1 || changes != 1 {
@@ -183,7 +184,7 @@ func TestLateHealthDeviceLockRejectsConcurrentUnbind(t *testing.T) {
 	// Simulate a rebind event while the health write is uncommitted but has not
 	// acquired the device lock. The late path MUST abort upon epoch mismatch.
 	updateCtx, stopUpdate := context.WithTimeout(ctx, time.Second)
-	_, err = pool.Exec(updateCtx, "UPDATE device SET old_id=NULL WHERE device_id=1")
+	_, err = pool.ExecContext(updateCtx, "UPDATE device SET old_id=NULL WHERE device_id=1")
 	stopUpdate()
 	if err != nil {
 		release()
@@ -199,10 +200,10 @@ func TestLateHealthDeviceLockRejectsConcurrentUnbind(t *testing.T) {
 		t.Fatal(ctx.Err())
 	}
 	var samples, changes int
-	if err := pool.QueryRow(ctx, "SELECT count(*) FROM health_sample").Scan(&samples); err != nil {
+	if err := pool.QueryRowContext(ctx, "SELECT count(*) FROM health_sample").Scan(&samples); err != nil {
 		t.Fatal(err)
 	}
-	if err := pool.QueryRow(ctx, "SELECT count(*) FROM health_change").Scan(&changes); err != nil {
+	if err := pool.QueryRowContext(ctx, "SELECT count(*) FROM health_change").Scan(&changes); err != nil {
 		t.Fatal(err)
 	}
 	if samples != 0 || changes != 0 {
@@ -215,7 +216,7 @@ func TestLateHealthDeviceLockRejectsConcurrentCredentialChanges(t *testing.T) {
 		name, update string
 		rotate       bool
 	}{
-		{"secret_rotation", "UPDATE device SET secret=$1 WHERE device_id=1", true},
+		{"secret_rotation", "UPDATE device SET secret=? WHERE device_id=1", true},
 		{"device_disabled", "UPDATE device SET status=0 WHERE device_id=1", false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -245,7 +246,7 @@ func TestLateHealthDeviceLockRejectsConcurrentCredentialChanges(t *testing.T) {
 				}
 				args = append(args, hash)
 			}
-			if _, err := pool.Exec(ctx, tc.update, args...); err != nil {
+			if _, err := pool.ExecContext(ctx, tc.update, args...); err != nil {
 				release()
 				t.Fatal(err)
 			}
@@ -263,10 +264,10 @@ func TestLateHealthDeviceLockRejectsConcurrentCredentialChanges(t *testing.T) {
 				t.Fatal(ctx.Err())
 			}
 			var n int
-			if err := pool.QueryRow(ctx, "SELECT count(*) FROM health_sample").Scan(&n); err != nil || n != 0 {
+			if err := pool.QueryRowContext(ctx, "SELECT count(*) FROM health_sample").Scan(&n); err != nil || n != 0 {
 				t.Fatalf("unauthorized sample persisted %d %v", n, err)
 			}
-			if err := pool.QueryRow(ctx, "SELECT count(*) FROM health_change").Scan(&n); err != nil || n != 0 {
+			if err := pool.QueryRowContext(ctx, "SELECT count(*) FROM health_change").Scan(&n); err != nil || n != 0 {
 				t.Fatalf("unauthorized change persisted %d %v", n, err)
 			}
 		})
@@ -275,8 +276,8 @@ func TestLateHealthDeviceLockRejectsConcurrentCredentialChanges(t *testing.T) {
 
 func TestHealthSingleAndBulkFitOneConnectionPool(t *testing.T) {
 	pool := testDatabase(t)
-	pool.SQL().SetMaxOpenConns(1)
-	pool.SQL().SetMaxIdleConns(1)
+	pool.DB.SetMaxOpenConns(1)
+	pool.DB.SetMaxIdleConns(1)
 	seedDevice(t, pool)
 	h := testHandler(t, pool)
 	for _, size := range []int{1, 2} {
@@ -313,7 +314,7 @@ func TestBulkPreparationRevalidatesConcurrentDeviceChanges(t *testing.T) {
 		code         int
 		factor       string
 	}{
-		{"rotation", "UPDATE device SET secret=$1 WHERE device_id=1", 401, "DEVICE_AUTH_FAILED"},
+		{"rotation", "UPDATE device SET secret=? WHERE device_id=1", 401, "DEVICE_AUTH_FAILED"},
 		{"disabled", "UPDATE device SET status=0 WHERE device_id=1", 403, "DEVICE_DISABLED"},
 		{"unbind", "UPDATE device SET old_id=NULL WHERE device_id=1", 409, ""},
 	} {
@@ -324,11 +325,11 @@ func TestBulkPreparationRevalidatesConcurrentDeviceChanges(t *testing.T) {
 			h := testHandler(t, pool)
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
-			holder, err := pool.Begin(ctx)
+			holder, err := pool.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 			if err != nil {
 				t.Fatal(err)
 			}
-			defer holder.Rollback(context.Background())
+			defer holder.Rollback()
 			var args []any
 			if tc.name == "rotation" {
 				hash, err := devicecredential.Hash("another-test-secret-123456789012")
@@ -337,7 +338,7 @@ func TestBulkPreparationRevalidatesConcurrentDeviceChanges(t *testing.T) {
 				}
 				args = append(args, hash)
 			}
-			if _, err = holder.Exec(ctx, tc.update, args...); err != nil {
+			if _, err = holder.ExecContext(ctx, tc.update, args...); err != nil {
 				t.Fatal(err)
 			}
 			body := healthLockOrderBody("bulk-" + tc.name)
@@ -358,7 +359,7 @@ func TestBulkPreparationRevalidatesConcurrentDeviceChanges(t *testing.T) {
 			}()
 			for {
 				var waiters int
-				err = pool.QueryRow(ctx, `SELECT count(*) FROM performance_schema.data_lock_waits w JOIN performance_schema.data_locks l ON l.ENGINE_LOCK_ID=w.REQUESTING_ENGINE_LOCK_ID AND l.ENGINE=w.ENGINE WHERE l.OBJECT_SCHEMA=DATABASE() AND l.OBJECT_NAME='device'`).Scan(&waiters)
+				err = pool.QueryRowContext(ctx, `SELECT count(*) FROM performance_schema.data_lock_waits w JOIN performance_schema.data_locks l ON l.ENGINE_LOCK_ID=w.REQUESTING_ENGINE_LOCK_ID AND l.ENGINE=w.ENGINE WHERE l.OBJECT_SCHEMA=DATABASE() AND l.OBJECT_NAME='device'`).Scan(&waiters)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -370,7 +371,7 @@ func TestBulkPreparationRevalidatesConcurrentDeviceChanges(t *testing.T) {
 				}
 				time.Sleep(5 * time.Millisecond)
 			}
-			if err = holder.Commit(ctx); err != nil {
+			if err = holder.Commit(); err != nil {
 				t.Fatal(err)
 			}
 			select {
@@ -384,7 +385,7 @@ func TestBulkPreparationRevalidatesConcurrentDeviceChanges(t *testing.T) {
 			}
 			for _, table := range []string{"health_sample", "health_change"} {
 				var count int
-				if err = pool.QueryRow(ctx, "SELECT count(*) FROM "+table).Scan(&count); err != nil || count != 0 {
+				if err = pool.QueryRowContext(ctx, "SELECT count(*) FROM "+table).Scan(&count); err != nil || count != 0 {
 					t.Fatal("unauthorized bulk data persisted", table, count, err)
 				}
 			}

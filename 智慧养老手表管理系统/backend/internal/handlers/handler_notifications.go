@@ -1,9 +1,10 @@
 package handlers
 
 import (
+	"database/sql"
 	"net/http"
 	"suining-care/internal/auth"
-	dbstore "suining-care/internal/db"
+
 	"suining-care/internal/response"
 	"time"
 )
@@ -27,7 +28,7 @@ func (h *Handler) notifications(w http.ResponseWriter, r *http.Request) {
 		write400(w, "消息范围或游标无效")
 		return
 	}
-	items, ok := queryRows(h, w, r.Context(), func(rows dbstore.Rows) (map[string]any, error) {
+	items, ok := queryRows(h, w, r.Context(), func(rows *sql.Rows) (map[string]any, error) {
 		var id int64
 		var topic, key, state string
 		var at time.Time
@@ -35,7 +36,7 @@ func (h *Handler) notifications(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 		return map[string]any{"id": id, "topic": topic, "sourceId": key, "state": state, "createdAt": at}, nil
-	}, "SELECT id,topic,source_key,status,created_at FROM message_outbox WHERE family_id=$1 AND channel='in_app' AND id>$2 ORDER BY id LIMIT 100", req.FamilyID, req.After)
+	}, "SELECT id,topic,source_key,status,created_at FROM message_outbox WHERE family_id=? AND channel='in_app' AND id>? ORDER BY id LIMIT 100", req.FamilyID, req.After)
 	if !ok {
 		return
 	}

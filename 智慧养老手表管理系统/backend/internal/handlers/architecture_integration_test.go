@@ -46,7 +46,7 @@ func TestArchitectureFormattedRecordsAcrossDatabases(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
 	mustExec(t, pool, "UPDATE oldperson SET device_id=1 WHERE old_id=1")
-	mustExec(t, pool, "INSERT INTO ratepre(old_id,device_id,hr,rate_state,create_time) VALUES(1,1,72,'1',now())")
+	mustExec(t, pool, "INSERT INTO ratepre(old_id,device_id,hr,rate_state,create_time) VALUES(1,1,72,'1',CURRENT_TIMESTAMP(6))")
 	mustExec(t, pool, "INSERT INTO watch_day_info(device_id,step,create_time,old_id,binding_epoch) VALUES(1,100,'2026-10-19',1,1)")
 	mustExec(t, pool, "INSERT INTO text(title,text_main,time) VALUES('公告','内容','2026-10-19 08:01:02.123')")
 	mustExec(t, pool, "INSERT INTO said(said,said_time) VALUES('评论','2026-10-19 08:01:02.123')")
@@ -85,7 +85,7 @@ func TestArchitectureUnboundElderCreation(t *testing.T) {
 		t.Fatalf("elder creation must precede device binding: %d %s", out.Code, out.Body.String())
 	}
 	var unbound bool
-	if err := pool.QueryRow(context.Background(), "SELECT device_id IS NULL FROM oldperson").Scan(&unbound); err != nil || !unbound {
+	if err := pool.QueryRowContext(context.Background(), "SELECT device_id IS NULL FROM oldperson").Scan(&unbound); err != nil || !unbound {
 		t.Fatalf("new elder must remain unbound: %v %v", unbound, err)
 	}
 }
@@ -113,7 +113,7 @@ func TestArchitectureElderEditCannotRewriteBinding(t *testing.T) {
 		t.Fatalf("record editing rewrote another device association: %d %s", out.Code, out.Body.String())
 	}
 	var primary int
-	if err := pool.QueryRow(context.Background(), "SELECT device_id FROM oldperson WHERE old_id=1").Scan(&primary); err != nil || primary != 1 {
+	if err := pool.QueryRowContext(context.Background(), "SELECT device_id FROM oldperson WHERE old_id=1").Scan(&primary); err != nil || primary != 1 {
 		t.Fatalf("primary device changed: %d %v", primary, err)
 	}
 }
@@ -129,10 +129,10 @@ func TestArchitectureBoundDeviceCannotBeTakenOver(t *testing.T) {
 		t.Fatalf("binding stole an assigned device: %d %s", out.Code, out.Body.String())
 	}
 	var owner, used int
-	if err := pool.QueryRow(context.Background(), "SELECT old_id FROM device WHERE device_id=1").Scan(&owner); err != nil || owner != 1 {
+	if err := pool.QueryRowContext(context.Background(), "SELECT old_id FROM device WHERE device_id=1").Scan(&owner); err != nil || owner != 1 {
 		t.Fatalf("owner changed: %d %v", owner, err)
 	}
-	if err := pool.QueryRow(context.Background(), "SELECT used FROM bind_code WHERE code='OTHER'").Scan(&used); err != nil || used != 0 {
+	if err := pool.QueryRowContext(context.Background(), "SELECT used FROM bind_code WHERE code='OTHER'").Scan(&used); err != nil || used != 0 {
 		t.Fatalf("rejected binding consumed its code: %d %v", used, err)
 	}
 }
@@ -148,7 +148,7 @@ func TestArchitectureBindingKeepsCustomizedThresholds(t *testing.T) {
 		t.Fatal(out)
 	}
 	var high, low int
-	if err := pool.QueryRow(context.Background(), "SELECT hrf,hrl FROM watch_info WHERE device_id=1").Scan(&high, &low); err != nil || high != 125 || low != 65 {
+	if err := pool.QueryRowContext(context.Background(), "SELECT hrf,hrl FROM watch_info WHERE device_id=1").Scan(&high, &low); err != nil || high != 125 || low != 65 {
 		t.Fatalf("binding reset customized thresholds: %d %d %v", high, low, err)
 	}
 }
@@ -158,11 +158,11 @@ func TestArchitectureMissingMetricRemainsUnknown(t *testing.T) {
 	seedDevice(t, pool)
 	api(t, testHandler(t, pool).deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "hr": 72})
 	var missing bool
-	if err := pool.QueryRow(context.Background(), "SELECT bp IS NULL AND pre_state IS NULL FROM ratepre").Scan(&missing); err != nil || !missing {
+	if err := pool.QueryRowContext(context.Background(), "SELECT bp IS NULL AND pre_state IS NULL FROM ratepre").Scan(&missing); err != nil || !missing {
 		t.Fatalf("absent blood pressure became a normal zero: %v %v", missing, err)
 	}
 	api(t, testHandler(t, pool).deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "step": 200})
-	if err := pool.QueryRow(context.Background(), "SELECT sleep IS NULL AND sleep_sate IS NULL FROM watch_day_info").Scan(&missing); err != nil || !missing {
+	if err := pool.QueryRowContext(context.Background(), "SELECT sleep IS NULL AND sleep_sate IS NULL FROM watch_day_info").Scan(&missing); err != nil || !missing {
 		t.Fatalf("steps-only report invented a normal sleep value: %v %v", missing, err)
 	}
 }
@@ -175,7 +175,7 @@ func TestArchitectureConcurrentBindAndUnbind(t *testing.T) {
 		mustExec(t, pool, "UPDATE device SET old_id=1 WHERE device_id=1")
 		mustExec(t, pool, "UPDATE oldperson SET device_id=1 WHERE old_id=1")
 		code := fmt.Sprintf("RACE%d", n)
-		mustExec(t, pool, "INSERT INTO bind_code(code,old_id,used) VALUES($1,1,0)", code)
+		mustExec(t, pool, "INSERT INTO bind_code(code,old_id,used) VALUES(?,1,0)", code)
 		start := make(chan struct{})
 		results := make(chan *httptest.ResponseRecorder, 2)
 		go func() {
@@ -191,7 +191,7 @@ func TestArchitectureConcurrentBindAndUnbind(t *testing.T) {
 			}
 		}
 		var consistent bool
-		if err := pool.QueryRow(context.Background(), `SELECT (o.device_id IS NULL AND d.old_id IS NULL) OR (o.device_id=d.device_id AND d.old_id=o.old_id) FROM oldperson o,device d WHERE o.old_id=1 AND d.device_id=1`).Scan(&consistent); err != nil || !consistent {
+		if err := pool.QueryRowContext(context.Background(), `SELECT (o.device_id IS NULL AND d.old_id IS NULL) OR (o.device_id=d.device_id AND d.old_id=o.old_id) FROM oldperson o,device d WHERE o.old_id=1 AND d.device_id=1`).Scan(&consistent); err != nil || !consistent {
 			t.Fatalf("concurrent lifecycle split ownership: %v %v", consistent, err)
 		}
 	}
@@ -204,7 +204,7 @@ func TestArchitectureUnbindingKeepsRemainingPrimary(t *testing.T) {
 	mustExec(t, pool, "INSERT INTO device(device_id,device_no,secret,old_id) VALUES(2,'SECOND','unused',1)")
 	api(t, testHandler(t, pool).deviceUnbind, map[string]any{"deviceId": 1})
 	var primary *int64
-	if err := pool.QueryRow(context.Background(), "SELECT device_id FROM oldperson WHERE old_id=1").Scan(&primary); err != nil || primary == nil || *primary != 2 {
+	if err := pool.QueryRowContext(context.Background(), "SELECT device_id FROM oldperson WHERE old_id=1").Scan(&primary); err != nil || primary == nil || *primary != 2 {
 		t.Fatalf("remaining attached device lost its primary reference: %v %v", primary, err)
 	}
 }
@@ -219,7 +219,7 @@ func TestArchitectureCareQueuePaginationAndDuty(t *testing.T) {
 		if n > 55 {
 			state = "verified"
 		}
-		mustExec(t, pool, "INSERT INTO care_incident(old_id,device_id,kind,state,severity,due_at) VALUES(1,1,'sos',$1,'critical',now())", state)
+		mustExec(t, pool, "INSERT INTO care_incident(old_id,device_id,kind,state,severity,due_at) VALUES(1,1,'sos',?,'critical',CURRENT_TIMESTAMP(6))", state)
 	}
 	h := testHandler(t, pool)
 	out := careRequest(t, h, h.careIncidents, 2, map[string]any{"page": 2, "pageSize": 20, "state": "active"})
@@ -237,16 +237,16 @@ func TestArchitectureCareQueuePaginationAndDuty(t *testing.T) {
 func TestArchitectureVerificationClearsOnlyLinkedAlarm(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
-	mustExec(t, pool, "INSERT INTO alarm_precess(id,old_id,device_id,status,be_time) VALUES(1,1,1,'1',now()),(2,1,1,'1',now())")
+	mustExec(t, pool, "INSERT INTO alarm_precess(id,old_id,device_id,status,be_time) VALUES(1,1,1,'1',CURRENT_TIMESTAMP(6)),(2,1,1,'1',CURRENT_TIMESTAMP(6))")
 	mustExec(t, pool, `INSERT INTO care_incident(id,old_id,device_id,kind,state,severity,due_at,resolved_by,source_alarm_id)
-		VALUES(1,1,1,'sos','resolved','critical',now(),'1',1)`)
+		VALUES(1,1,1,'sos','resolved','critical',CURRENT_TIMESTAMP(6),'1',1)`)
 	h := testHandler(t, pool)
 	out := careRequest(t, h, h.careTransition, 2, map[string]any{"id": "1", "action": "verify", "note": "已独立复核"})
 	if out.Code != 200 {
 		t.Fatal(out.Body.String())
 	}
 	var first, second string
-	if err := pool.QueryRow(context.Background(), "SELECT a.status,b.status FROM alarm_precess a,alarm_precess b WHERE a.id=1 AND b.id=2").Scan(&first, &second); err != nil || first != "0" || second != "1" {
+	if err := pool.QueryRowContext(context.Background(), "SELECT a.status,b.status FROM alarm_precess a,alarm_precess b WHERE a.id=1 AND b.id=2").Scan(&first, &second); err != nil || first != "0" || second != "1" {
 		t.Fatalf("verification did not clear precisely its own alarm: %s %s %v", first, second, err)
 	}
 }
@@ -254,9 +254,9 @@ func TestArchitectureVerificationClearsOnlyLinkedAlarm(t *testing.T) {
 func TestArchitectureCareHistoryHasNoSilentLimit(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
-	mustExec(t, pool, "INSERT INTO care_incident(id,old_id,device_id,kind,severity,due_at) VALUES(1,1,1,'sos','critical',now())")
+	mustExec(t, pool, "INSERT INTO care_incident(id,old_id,device_id,kind,severity,due_at) VALUES(1,1,1,'sos','critical',CURRENT_TIMESTAMP(6))")
 	for n := 1; n <= 105; n++ {
-		mustExec(t, pool, "INSERT INTO care_incident_event(incident_id,actor,action,note) VALUES(1,'1','note',$1)", fmt.Sprint(n))
+		mustExec(t, pool, "INSERT INTO care_incident_event(incident_id,actor,action,note) VALUES(1,'1','note',?)", fmt.Sprint(n))
 	}
 	h := testHandler(t, pool)
 	out := careRequest(t, h, h.careEvents, 1, map[string]any{"id": "1", "page": 3, "pageSize": 50})
@@ -269,7 +269,7 @@ func TestArchitectureCareHistoryHasNoSilentLimit(t *testing.T) {
 func TestArchitectureCareNoteAcceptsChineseCharacters(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
-	mustExec(t, pool, "INSERT INTO care_incident(id,old_id,device_id,kind,state,severity,due_at) VALUES(1,1,1,'sos','in_progress','critical',now())")
+	mustExec(t, pool, "INSERT INTO care_incident(id,old_id,device_id,kind,state,severity,due_at) VALUES(1,1,1,'sos','in_progress','critical',CURRENT_TIMESTAMP(6))")
 	h := testHandler(t, pool)
 	out := careRequest(t, h, h.careTransition, 1, map[string]any{"id": "1", "action": "resolve", "note": strings.Repeat("护理记录", 300)})
 	if out.Code != 200 {
@@ -279,7 +279,7 @@ func TestArchitectureCareNoteAcceptsChineseCharacters(t *testing.T) {
 
 func TestArchitectureDiagnosticsExposeMissingGateway(t *testing.T) {
 	pool := testDatabase(t)
-	mustExec(t, pool, "INSERT INTO care_worker_heartbeat(singleton,last_seen_at,started_at) VALUES(true,now(),now())")
+	mustExec(t, pool, "INSERT INTO care_worker_heartbeat(singleton,last_seen_at,started_at) VALUES(true,CURRENT_TIMESTAMP(6),CURRENT_TIMESTAMP(6))")
 	t.Setenv("CARE_NOTIFY_WEBHOOK_URL", "")
 	t.Setenv("CARE_NOTIFY_WEBHOOK_TOKEN", "")
 	t.Setenv("CARE_RECEIPT_SECRET", "")

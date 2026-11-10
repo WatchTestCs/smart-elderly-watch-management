@@ -3,6 +3,7 @@ package fencerepo
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"time"
 
@@ -41,7 +42,7 @@ type Event struct {
 
 // ListConfigured selects only definitions belonging to the current device binding epoch.
 func ListConfigured(ctx context.Context, store *db.Database, deviceID int64) ([]Config, error) {
-	return db.QueryList(ctx, store, func(rows db.Rows) (Config, error) {
+	return db.QueryList(ctx, store, func(rows *sql.Rows) (Config, error) {
 		var item Config
 		var data []byte
 		if err := rows.Scan(&item.ID, &item.DeviceID, &item.Revision, &item.Name, &item.Enabled, &data,
@@ -53,12 +54,12 @@ func ListConfigured(ctx context.Context, store *db.Database, deviceID int64) ([]
 	}, `SELECT f.id,f.device_id,f.revision,f.name,f.enabled,f.coordinates,f.coordinate_system,f.timezone,
 	 f.time_begin,f.time_end,f.min_points,f.dwell_seconds,f.max_accuracy
 	 FROM device_fence f JOIN device d ON d.device_id=f.device_id AND d.old_id=f.old_id AND d.health_epoch=f.epoch
-	 WHERE f.device_id=$1 ORDER BY f.id`, deviceID)
+	 WHERE f.device_id=? ORDER BY f.id`, deviceID)
 }
 
 // ListActive locks all enabled definitions until the caller commits its observation transaction.
-func ListActive(ctx context.Context, tx *db.Transaction, deviceID, residentID, epoch int64) ([]Config, error) {
-	return db.QueryList(ctx, tx, func(rows db.Rows) (Config, error) {
+func ListActive(ctx context.Context, tx *sql.Tx, deviceID, residentID, epoch int64) ([]Config, error) {
+	return db.QueryList(ctx, tx, func(rows *sql.Rows) (Config, error) {
 		var item Config
 		var data []byte
 		if err := rows.Scan(&item.ID, &item.Revision, &data, &item.Timezone,
@@ -68,17 +69,17 @@ func ListActive(ctx context.Context, tx *db.Transaction, deviceID, residentID, e
 		}
 		return item, json.Unmarshal(data, &item.Coordinates)
 	}, `SELECT id,revision,coordinates,timezone,time_begin,time_end,min_points,dwell_seconds,max_accuracy
-	 FROM device_fence WHERE device_id=$1 AND old_id=$2 AND epoch=$3 AND enabled=true ORDER BY id FOR UPDATE`,
+	 FROM device_fence WHERE device_id=? AND old_id=? AND epoch=? AND enabled=true ORDER BY id FOR UPDATE`,
 		deviceID, residentID, epoch)
 }
 
 func ListEvents(ctx context.Context, store *db.Database, residentID, after int64) ([]Event, error) {
-	return db.QueryList(ctx, store, func(rows db.Rows) (Event, error) {
+	return db.QueryList(ctx, store, func(rows *sql.Rows) (Event, error) {
 		var item Event
 		err := rows.Scan(&item.ID, &item.FenceID, &item.FenceRevision, &item.DeviceID,
 			&item.Direction, &item.Longitude, &item.Latitude, &item.Accuracy, &item.OccurredAt,
 			&item.IncidentID)
 		return item, err
 	}, `SELECT id,fence_id,fence_revision,device_id,direction,lng,lat,accuracy,occurred_at,incident_id
-	 FROM fence_event WHERE old_id=$1 AND id>$2 ORDER BY id LIMIT 100`, residentID, after)
+	 FROM fence_event WHERE old_id=? AND id>? ORDER BY id LIMIT 100`, residentID, after)
 }

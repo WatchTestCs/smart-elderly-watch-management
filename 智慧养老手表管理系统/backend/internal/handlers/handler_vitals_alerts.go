@@ -1,12 +1,12 @@
 package handlers
 
 import (
+	"database/sql"
 	"errors"
 	"net/http"
 	"strconv"
 	"strings"
 
-	dbstore "suining-care/internal/db"
 	"suining-care/internal/response"
 	"suining-care/internal/vitalpolicy"
 	"suining-care/internal/vitalrepo"
@@ -37,7 +37,7 @@ const latestVitalsQuery = vitalRecordSelect +
 	` INNER JOIN (SELECT *, ROW_NUMBER() OVER (PARTITION BY old_id ORDER BY create_time DESC, id DESC) AS rn FROM ratepre) r` +
 	` ON r.old_id=o.old_id AND r.rn=1`
 
-func scanVitalRecord(rows dbstore.Rows) (vitalRecord, error) {
+func scanVitalRecord(rows *sql.Rows) (vitalRecord, error) {
 	var d vitalRecord
 	err := rows.Scan(&d.Name, &d.OldID, &d.Sex, &d.RateState, &d.PreState, &d.Hr, &d.Bp, &d.RecordID, &d.RateHandled, &d.PreHandled, &d.CreateTime)
 	return d, err

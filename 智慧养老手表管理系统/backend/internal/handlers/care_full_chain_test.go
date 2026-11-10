@@ -108,7 +108,7 @@ func TestCareFullHTTPChainAfterRealGatewayTimeout(t *testing.T) {
 	deadline := time.Now().Add(20 * time.Second)
 	var status string
 	for {
-		if err := pool.QueryRow(ctx, "SELECT status FROM care_notification_outbox WHERE id=$1", notificationID).Scan(&status); err != nil {
+		if err := pool.QueryRowContext(ctx, "SELECT status FROM care_notification_outbox WHERE id=?", notificationID).Scan(&status); err != nil {
 			t.Fatal(err)
 		}
 		if status == "failed" {
@@ -130,7 +130,7 @@ func TestCareFullHTTPChainAfterRealGatewayTimeout(t *testing.T) {
 	}
 	var state string
 	var acknowledged *string
-	if err := pool.QueryRow(ctx, "SELECT i.state,i.acknowledged_by,o.status FROM care_incident i JOIN care_notification_outbox o ON o.incident_id=i.id WHERE i.id=$1", id).Scan(&state, &acknowledged, &status); err != nil {
+	if err := pool.QueryRowContext(ctx, "SELECT i.state,i.acknowledged_by,o.status FROM care_incident i JOIN care_notification_outbox o ON o.incident_id=i.id WHERE i.id=?", id).Scan(&state, &acknowledged, &status); err != nil {
 		t.Fatal(err)
 	}
 	if state != "notified" || acknowledged != nil || status != "delivered" {
@@ -158,7 +158,7 @@ func TestCareFullHTTPChainAfterRealGatewayTimeout(t *testing.T) {
 	if code := act(2, "verify"); code != 200 {
 		t.Fatalf("second person verification HTTP %d", code)
 	}
-	rows, err := pool.Query(ctx, "SELECT action FROM care_incident_event WHERE incident_id=$1 ORDER BY id", id)
+	rows, err := pool.QueryContext(ctx, "SELECT action FROM care_incident_event WHERE incident_id=? ORDER BY id", id)
 	if err != nil {
 		t.Fatal(err)
 	}

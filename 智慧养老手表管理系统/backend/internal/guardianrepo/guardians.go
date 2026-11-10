@@ -29,11 +29,11 @@ type Fields struct {
 
 // List reads a page and its count together, including when the page is empty.
 func List(ctx context.Context, store *db.Database, name string, page, pageSize int) ([]Guardian, int64, error) {
-	const filter = ` FROM customer WHERE ($1='' OR customer_name LIKE '%'||$1||'%')`
+	const filter = ` FROM customer WHERE (?='' OR customer_name LIKE CONCAT('%',?,'%'))`
 	const countSQL = `SELECT COUNT(*) AS total` + filter
 	items := []Guardian{}
 	var total int64
-	err := db.QueryEach(ctx, store, func(rows db.Rows) error {
+	err := db.QueryEach(ctx, store, func(rows *sql.Rows) error {
 		var id *int64
 		var item Guardian
 		if err := rows.Scan(&id, &item.Name, &item.Age, &item.Sex, &item.Phone, &item.Address, &total); err != nil {
@@ -46,31 +46,31 @@ func List(ctx context.Context, store *db.Database, name string, page, pageSize i
 		return nil
 	}, `SELECT page.*, totals.total FROM (`+countSQL+`) AS totals LEFT JOIN (
 		 SELECT customer_id,customer_name,customer_age,customer_sex,customer_phone,customer_address`+filter+`
-		 ORDER BY customer_id LIMIT $2 OFFSET $3) AS page
-		 ON TRUE ORDER BY page.customer_id`, name, pageSize, (page-1)*pageSize)
+		 ORDER BY customer_id LIMIT ? OFFSET ?) AS page
+		 ON TRUE ORDER BY page.customer_id`, name, name, name, name, pageSize, (page-1)*pageSize)
 	return items, total, err
 }
 
 func Create(ctx context.Context, store *db.Database, fields Fields) (int64, error) {
-	result, err := store.Exec(ctx,
+	result, err := store.ExecContext(ctx,
 		`INSERT INTO customer(customer_name,customer_age,customer_sex,customer_phone,customer_address)
-		 VALUES($1,$2,$3,$4,$5)`,
+		 VALUES(?,?,?,?,?)`,
 		fields.Name, fields.Age, fields.Sex, fields.Phone, fields.Address)
 	if err != nil {
 		return 0, err
 	}
-	return result.RowsAffected(), nil
+	return result.RowsAffected()
 }
 
 func Update(ctx context.Context, store *db.Database, id int64, fields Fields) (int64, error) {
-	result, err := store.Exec(ctx,
-		`UPDATE customer SET customer_name=$1,customer_age=$2,customer_sex=$3,
-		 customer_phone=$4,customer_address=$5 WHERE customer_id=$6`,
+	result, err := store.ExecContext(ctx,
+		`UPDATE customer SET customer_name=?,customer_age=?,customer_sex=?,
+		 customer_phone=?,customer_address=? WHERE customer_id=?`,
 		fields.Name, fields.Age, fields.Sex, fields.Phone, fields.Address, id)
 	if err != nil {
 		return 0, err
 	}
-	return result.RowsAffected(), nil
+	return result.RowsAffected()
 }
 
 var ErrGuardianNotFound = errors.New("guardian not found")
@@ -78,32 +78,36 @@ var ErrGuardianAssigned = errors.New("guardian has assigned residents")
 
 // Delete locks the guardian before checking resident assignments and removing it.
 func Delete(ctx context.Context, store *db.Database, id int64) error {
-	tx, err := store.Begin(ctx)
+	tx, err := store.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback(ctx)
+	defer tx.Rollback()
 
 	var found int64
-	if err := tx.QueryRow(ctx, "SELECT customer_id FROM customer WHERE customer_id=$1 FOR UPDATE", id).Scan(&found); err != nil {
+	if err := tx.QueryRowContext(ctx, "SELECT customer_id FROM customer WHERE customer_id=? FOR UPDATE", id).Scan(&found); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrGuardianNotFound
 		}
 		return err
 	}
 	var assigned bool
-	if err := tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM oldperson WHERE customer_id=$1)", id).Scan(&assigned); err != nil {
+	if err := tx.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM oldperson WHERE customer_id=?)", id).Scan(&assigned); err != nil {
 		return err
 	}
 	if assigned {
 		return ErrGuardianAssigned
 	}
-	result, err := tx.Exec(ctx, "DELETE FROM customer WHERE customer_id=$1", id)
+	result, err := tx.ExecContext(ctx, "DELETE FROM customer WHERE customer_id=?", id)
 	if err != nil {
 		return err
 	}
-	if result.RowsAffected() != 1 {
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected != 1 {
 		return ErrGuardianNotFound
 	}
-	return tx.Commit(ctx)
+	return tx.Commit()
 }

@@ -4,8 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-
-	"suining-care/internal/db"
 )
 
 type SOSRetry struct {
@@ -18,12 +16,12 @@ type SOSRetry struct {
 
 // FindSOSRetry locks an existing request before a device retry is acknowledged.
 // The caller holds the elder/device locks and owns the surrounding transaction.
-func FindSOSRetry(ctx context.Context, tx *db.Transaction, deviceID int64, requestID string) (*SOSRetry, error) {
+func FindSOSRetry(ctx context.Context, tx *sql.Tx, deviceID int64, requestID string) (*SOSRetry, error) {
 	var found SOSRetry
-	err := tx.QueryRow(ctx, `SELECT i.id,i.old_id,i.kind,i.state,
+	err := tx.QueryRowContext(ctx, `SELECT i.id,i.old_id,i.kind,i.state,
 		COALESCE((SELECT min(n.status) FROM care_notification_outbox n
 		WHERE n.incident_id=i.id),'no_recipient')
-		FROM care_incident i WHERE i.device_id=$1 AND i.request_id=$2 FOR UPDATE`,
+		FROM care_incident i WHERE i.device_id=? AND i.request_id=? FOR UPDATE`,
 		deviceID, requestID).Scan(&found.ID, &found.ResidentID, &found.Kind, &found.State, &found.NotificationState)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil

@@ -9,7 +9,7 @@ CREATE TABLE resident_location_alert_state (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 INSERT INTO resident_location_alert_state(old_id,alarm_id,active,observed_at)
-SELECT old_id,id,(status='1' AND CHAR_LENGTH(status)=1),be_time
+SELECT old_id,id,COALESCE(status='1' AND CHAR_LENGTH(status)=1,false),be_time
 FROM (
  SELECT old_id,id,status,be_time,
   ROW_NUMBER() OVER (PARTITION BY old_id ORDER BY be_time DESC,id DESC) AS rn

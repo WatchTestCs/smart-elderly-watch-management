@@ -71,23 +71,23 @@ func (k DailyKey) Bounds() (time.Time, time.Time, error) {
 	return from, from.AddDate(0, 0, 1), nil
 }
 
-const dailyCacheSelectSQL = `SELECT old_id,source,source_device,metric,semantics,CAST(record_day AS CHAR),offset_minutes,dirty FROM metric_daily WHERE cache_key=$1 FOR UPDATE`
+const dailyCacheSelectSQL = `SELECT old_id,source,source_device,metric,semantics,CAST(record_day AS CHAR),offset_minutes,dirty FROM metric_daily WHERE cache_key=? FOR UPDATE`
 
-const dailySamplesSQL = `SELECT payload FROM health_sample WHERE old_id=$1 AND BINARY source=BINARY $2 AND BINARY source_device=BINARY $3 AND BINARY metric=BINARY $4 AND BINARY semantics=BINARY $5 AND NOT deleted
- AND sample_start<$7 AND (sample_start>=$6 OR ($5='interval' AND sample_end>=$6)) ORDER BY revision LIMIT 100001`
+const dailySamplesSQL = `SELECT payload FROM health_sample WHERE old_id=? AND BINARY source=BINARY ? AND BINARY source_device=BINARY ? AND BINARY metric=BINARY ? AND BINARY semantics=BINARY ? AND NOT deleted
+ AND sample_start<? AND (sample_start>=? OR (?='interval' AND sample_end>=?)) ORDER BY revision LIMIT 100001`
 
 // RefreshDaily is serialized with Save's owner clock, so a completed result
 // cannot overwrite a concurrent invalidation. Error results are explicit, never 0.
 func RefreshDaily(ctx context.Context, pool *db.Database, id string) error {
-	tx, err := pool.Begin(ctx)
+	tx, err := pool.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback(ctx)
+	defer tx.Rollback()
 	// Read the immutable owner before taking its clock lock. Keep the same lock
 	// order as sample invalidation: owner clock, then daily cache row.
 	var oldID int64
-	if err = tx.QueryRow(ctx, "SELECT old_id FROM metric_daily WHERE cache_key=$1", id).Scan(&oldID); errors.Is(err, sql.ErrNoRows) {
+	if err = tx.QueryRowContext(ctx, "SELECT old_id FROM metric_daily WHERE cache_key=?", id).Scan(&oldID); errors.Is(err, sql.ErrNoRows) {
 		return nil
 	} else if err != nil {
 		return err
@@ -98,7 +98,7 @@ func RefreshDaily(ctx context.Context, pool *db.Database, id string) error {
 	}
 	var k DailyKey
 	var dirty bool
-	err = tx.QueryRow(ctx, dailyCacheSelectSQL, id).Scan(&k.OldID, &k.Source, &k.SourceDevice, &k.Metric, &k.Semantics, &k.Day, &k.OffsetMinutes, &dirty)
+	err = tx.QueryRowContext(ctx, dailyCacheSelectSQL, id).Scan(&k.OldID, &k.Source, &k.SourceDevice, &k.Metric, &k.Semantics, &k.Day, &k.OffsetMinutes, &dirty)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil
 	}
@@ -112,7 +112,7 @@ func RefreshDaily(ctx context.Context, pool *db.Database, id string) error {
 	if err != nil {
 		return err
 	}
-	rows, err := tx.Query(ctx, dailySamplesSQL, k.OldID, k.Source, k.SourceDevice, k.Metric, k.Semantics, from.UnixMicro(), to.UnixMicro())
+	rows, err := tx.QueryContext(ctx, dailySamplesSQL, k.OldID, k.Source, k.SourceDevice, k.Metric, k.Semantics, to.UnixMicro(), from.UnixMicro(), k.Semantics, from.UnixMicro())
 	if err != nil {
 		return err
 	}
@@ -151,9 +151,9 @@ func RefreshDaily(ctx context.Context, pool *db.Database, id string) error {
 		message = computation.Error()
 		b = []byte("null")
 	}
-	_, err = tx.Exec(ctx, "UPDATE metric_daily SET result=$2,error_text=$3,computed_revision=$4,dirty=false,updated_at=now() WHERE cache_key=$1", id, json.RawMessage(b), message, revision)
+	_, err = tx.ExecContext(ctx, "UPDATE metric_daily SET result=?,error_text=?,computed_revision=?,dirty=false,updated_at=CURRENT_TIMESTAMP(6) WHERE cache_key=?", json.RawMessage(b), message, revision, id)
 	if err != nil {
 		return err
 	}
-	return tx.Commit(ctx)
+	return tx.Commit()
 }

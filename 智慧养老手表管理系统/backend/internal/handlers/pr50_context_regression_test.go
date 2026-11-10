@@ -32,7 +32,7 @@ func TestPR50AlarmContextRetainsDeclaredMetadataAndKind(t *testing.T) {
 		}
 	}
 	var raw string
-	if err := h.DB.QueryRow(context.Background(), "SELECT position_metadata FROM alarm_precess ORDER BY id LIMIT 1").Scan(&raw); err != nil || !strings.HasPrefix(raw, securestore.Prefix) {
+	if err := h.DB.QueryRowContext(context.Background(), "SELECT position_metadata FROM alarm_precess ORDER BY id LIMIT 1").Scan(&raw); err != nil || !strings.HasPrefix(raw, securestore.Prefix) {
 		t.Fatalf("location metadata must use existing field encryption: raw=%q err=%v", raw, err)
 	}
 	api(t, h.deviceReport, map[string]any{
@@ -73,7 +73,7 @@ func TestPR50InvalidPositionMetadataDoesNotWriteEvents(t *testing.T) {
 	}
 	for _, table := range []string{"alarm_precess", "device_location", "care_incident"} {
 		var count int
-		if err := h.DB.QueryRow(context.Background(), "SELECT count(*) FROM "+table).Scan(&count); err != nil || count != 0 {
+		if err := h.DB.QueryRowContext(context.Background(), "SELECT count(*) FROM "+table).Scan(&count); err != nil || count != 0 {
 			t.Errorf("invalid metadata wrote %s: count=%d err=%v", table, count, err)
 		}
 	}

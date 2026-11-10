@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"database/sql"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -15,15 +16,15 @@ func TestBindingRechecksDisabledDeviceAfterElderLock(t *testing.T) {
 	seedDevice(t, pool)
 	h := testHandler(t, pool)
 	mustExec(t, pool, `INSERT INTO bind_code(code,old_id,expire_time,used)
-		VALUES('RACE01',1,now()+interval '1 day',0)`)
+		VALUES('RACE01',1,CURRENT_TIMESTAMP(6)+INTERVAL 1 DAY,0)`)
 	ctx := context.Background()
-	gate, err := pool.Begin(ctx)
+	gate, err := pool.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer gate.Rollback(ctx)
+	defer gate.Rollback()
 	var elderID int64
-	if err := gate.QueryRow(ctx, "SELECT old_id FROM oldperson WHERE old_id=1 FOR UPDATE").Scan(&elderID); err != nil {
+	if err := gate.QueryRowContext(ctx, "SELECT old_id FROM oldperson WHERE old_id=1 FOR UPDATE").Scan(&elderID); err != nil {
 		t.Fatal(err)
 	}
 	result := make(chan *httptest.ResponseRecorder, 1)
@@ -36,7 +37,7 @@ func TestBindingRechecksDisabledDeviceAfterElderLock(t *testing.T) {
 	// Both an early rejection and a post-lock rejection must fail closed.
 	time.Sleep(80 * time.Millisecond)
 	mustExec(t, pool, "UPDATE device SET status=0,alias='disabled-by-admin' WHERE device_id=1")
-	if err := gate.Commit(ctx); err != nil {
+	if err := gate.Commit(); err != nil {
 		t.Fatal(err)
 	}
 	select {
@@ -49,10 +50,10 @@ func TestBindingRechecksDisabledDeviceAfterElderLock(t *testing.T) {
 	}
 	var status, used int
 	var alias string
-	if err := pool.QueryRow(ctx, "SELECT status,alias FROM device WHERE device_id=1").Scan(&status, &alias); err != nil {
+	if err := pool.QueryRowContext(ctx, "SELECT status,alias FROM device WHERE device_id=1").Scan(&status, &alias); err != nil {
 		t.Fatal(err)
 	}
-	if err := pool.QueryRow(ctx, "SELECT used FROM bind_code WHERE code='RACE01'").Scan(&used); err != nil {
+	if err := pool.QueryRowContext(ctx, "SELECT used FROM bind_code WHERE code='RACE01'").Scan(&used); err != nil {
 		t.Fatal(err)
 	}
 	if status != 0 || alias != "disabled-by-admin" || used != 0 {

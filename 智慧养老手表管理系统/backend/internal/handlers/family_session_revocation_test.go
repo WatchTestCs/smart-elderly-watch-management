@@ -26,10 +26,10 @@ func TestFamilyCredentialMutationRevokesSessions(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				h.Sessions.UseDatabase(pool.SQL(), box)
+				h.Sessions.UseDatabase(pool.DB, box)
 				replica = session.NewStore(time.Hour)
 				t.Cleanup(replica.Close)
-				replica.UseDatabase(pool.SQL(), box)
+				replica.UseDatabase(pool.DB, box)
 			}
 			const before = "BeforePassword123"
 			const after = "ChangedPassword123"
@@ -37,7 +37,7 @@ func TestFamilyCredentialMutationRevokesSessions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			mustExec(t, pool, "INSERT INTO family(family_id,family_name,family_phone,family_password) VALUES(1,'家属','13800000001',$1)", hash)
+			mustExec(t, pool, "INSERT INTO family(family_id,family_name,family_phone,family_password) VALUES(1,'家属','13800000001',?)", hash)
 			owner := session.Principal{Role: auth.RoleFamily, ID: 1, Phone: "13800000001"}
 			first := h.Sessions.Create(owner)
 			second := h.Sessions.Create(owner)
@@ -59,7 +59,7 @@ func TestFamilyCredentialMutationRevokesSessions(t *testing.T) {
 				t.Fatalf("password change failed: %v", out)
 			}
 			var updated string
-			if err := pool.QueryRow(context.Background(), "SELECT family_password FROM family WHERE family_id=1").Scan(&updated); err != nil {
+			if err := pool.QueryRowContext(context.Background(), "SELECT family_password FROM family WHERE family_id=1").Scan(&updated); err != nil {
 				t.Fatal(err)
 			}
 			if !auth.Matches(after, updated) || auth.Matches(before, updated) {
@@ -78,7 +78,7 @@ func TestFamilyCredentialMutationRevokesSessions(t *testing.T) {
 			}
 			if mode == "database" {
 				var stale int
-				if err := pool.QueryRow(context.Background(), "SELECT COUNT(*) FROM web_session WHERE role='FAMILY' AND actor_id=1").Scan(&stale); err != nil || stale != 0 {
+				if err := pool.QueryRowContext(context.Background(), "SELECT COUNT(*) FROM web_session WHERE role='FAMILY' AND actor_id=1").Scan(&stale); err != nil || stale != 0 {
 					t.Fatalf("persisted old sessions=%d err=%v", stale, err)
 				}
 			}

@@ -5,6 +5,7 @@ package main
 import (
 	"context"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -85,7 +86,7 @@ func run() error {
 			return errors.New("GC grace must be at least 24h")
 		}
 		var now time.Time
-		if err = pool.QueryRow(ctx, "SELECT now()").Scan(&now); err != nil {
+		if err = pool.QueryRowContext(ctx, "SELECT CURRENT_TIMESTAMP(6)").Scan(&now); err != nil {
 			return err
 		}
 		count, err := manager.Collect(ctx, now.Add(-*grace), !*apply)
@@ -104,7 +105,7 @@ func run() error {
 
 func fixture(ctx context.Context, pool *db.Database, cfg config.Config) error {
 	var tables int
-	if err := pool.QueryRow(ctx, "SELECT count(*) FROM information_schema.tables WHERE table_schema=DATABASE()").Scan(&tables); err != nil {
+	if err := pool.QueryRowContext(ctx, "SELECT count(*) FROM information_schema.tables WHERE table_schema=DATABASE()").Scan(&tables); err != nil {
 		return err
 	}
 	if tables != 0 {
@@ -119,25 +120,25 @@ func fixture(ctx context.Context, pool *db.Database, cfg config.Config) error {
 		return err
 	}
 	hash := sha256.Sum256([]byte("suining-device-secret-v1\x00" + secret))
-	tx, err := pool.Begin(ctx)
+	tx, err := pool.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback(ctx)
+	defer tx.Rollback()
 	for _, sql := range []string{
 		"INSERT INTO users(user_id,user_name,role,user_phone) VALUES(1,'caregiver','1','13800000011'),(2,'reviewer','1','13800000012')",
 		"INSERT INTO family(family_id,family_name,family_phone) VALUES(1,'synthetic','13800000001')",
 		"INSERT INTO oldperson(old_id,name,family_id) VALUES(1,'synthetic',1)",
 		"INSERT INTO care_staff_permission(admin_id,duty,assigned_by) VALUES(1,'caregiver',2),(2,'supervisor',2)",
 	} {
-		if _, err = tx.Exec(ctx, sql); err != nil {
+		if _, err = tx.ExecContext(ctx, sql); err != nil {
 			return err
 		}
 	}
-	if _, err = tx.Exec(ctx, "INSERT INTO device(device_id,device_no,secret,old_id) VALUES(1,'LAB-WATCH',$1,1)", "sha256$"+base64.RawURLEncoding.EncodeToString(hash[:])); err != nil {
+	if _, err = tx.ExecContext(ctx, "INSERT INTO device(device_id,device_no,secret,old_id) VALUES(1,'LAB-WATCH',?,1)", "sha256$"+base64.RawURLEncoding.EncodeToString(hash[:])); err != nil {
 		return err
 	}
-	if err = tx.Commit(ctx); err != nil {
+	if err = tx.Commit(); err != nil {
 		return err
 	}
 	box, err := securestore.New(cfg.DataKey)
@@ -146,7 +147,7 @@ func fixture(ctx context.Context, pool *db.Database, cfg config.Config) error {
 	}
 	store := session.NewStore(time.Hour)
 	defer store.Close()
-	store.UseDatabase(pool.SQL(), box)
+	store.UseDatabase(pool.DB, box)
 	var accounts []map[string]any
 	for _, id := range []int64{1, 2} {
 		sess := store.Create(session.Principal{Role: auth.RoleAdmin, ID: id})
@@ -216,13 +217,13 @@ func isolatedReliabilityOperation(ctx context.Context, pool *db.Database, cfg *c
 	if hold < time.Second || hold > 5*time.Minute {
 		return errors.New("heartbeat lock must be 1s..5m")
 	}
-	tx, err := pool.Begin(ctx)
+	tx, err := pool.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback(ctx)
+	defer tx.Rollback()
 	var singleton bool
-	if err = tx.QueryRow(ctx, "SELECT singleton FROM care_worker_heartbeat FOR UPDATE").Scan(&singleton); err != nil {
+	if err = tx.QueryRowContext(ctx, "SELECT singleton FROM care_worker_heartbeat FOR UPDATE").Scan(&singleton); err != nil {
 		return err
 	}
 	fmt.Println("HEARTBEAT_ROW_LOCKED (no task state changed)")

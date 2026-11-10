@@ -2,6 +2,7 @@ package socialrepo
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 
 	"suining-care/internal/db"
@@ -13,7 +14,7 @@ type GalleryImage struct {
 }
 
 func ListGallery(ctx context.Context, store *db.Database) ([]GalleryImage, error) {
-	return db.QueryList(ctx, store, func(row db.Rows) (GalleryImage, error) {
+	return db.QueryList(ctx, store, func(row *sql.Rows) (GalleryImage, error) {
 		var image GalleryImage
 		err := row.Scan(&image.ID, &image.PicName)
 		return image, err
@@ -24,16 +25,20 @@ var ErrGalleryInsert = errors.New("gallery image insert affected unexpected numb
 
 // ReplaceGallery runs inside the upload manager's image lock transaction.
 // The caller validates and pins referenced images before replacing the list.
-func ReplaceGallery(ctx context.Context, tx *db.Transaction, names []string) error {
-	if _, err := tx.Exec(ctx, "DELETE FROM pic_show"); err != nil {
+func ReplaceGallery(ctx context.Context, tx *sql.Tx, names []string) error {
+	if _, err := tx.ExecContext(ctx, "DELETE FROM pic_show"); err != nil {
 		return err
 	}
 	for _, name := range names {
-		result, err := tx.Exec(ctx, "INSERT INTO pic_show(pic_name) VALUES($1)", name)
+		result, err := tx.ExecContext(ctx, "INSERT INTO pic_show(pic_name) VALUES(?)", name)
 		if err != nil {
 			return err
 		}
-		if result.RowsAffected() != 1 {
+		affected, err := result.RowsAffected()
+		if err != nil {
+			return err
+		}
+		if affected != 1 {
 			return ErrGalleryInsert
 		}
 	}

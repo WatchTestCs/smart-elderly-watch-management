@@ -12,7 +12,7 @@ import (
 func TestDeliveryPoolHasBoundedConcurrencyAndCancels(t *testing.T) {
 	p := testCareDB(t)
 	ctx := context.Background()
-	if _, err := p.Exec(ctx, "INSERT INTO care_notification_outbox(incident_id,channel,recipient) VALUES(1,'sms','13800000001'),(1,'voice','13800000001')"); err != nil {
+	if _, err := p.ExecContext(ctx, "INSERT INTO care_notification_outbox(incident_id,channel,recipient) VALUES(1,'sms','13800000001'),(1,'voice','13800000001')"); err != nil {
 		t.Fatal(err)
 	}
 	arrived := make(chan struct{}, 2)

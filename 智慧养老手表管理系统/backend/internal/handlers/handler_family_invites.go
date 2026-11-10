@@ -2,13 +2,14 @@ package handlers
 
 import (
 	"context"
+	"database/sql"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
 	"suining-care/internal/auth"
-	"suining-care/internal/db"
+
 	"suining-care/internal/inviterepo"
 	"suining-care/internal/response"
 	"suining-care/internal/securecode"
@@ -137,7 +138,7 @@ func (h *Handler) inviteCreate(w http.ResponseWriter, r *http.Request) {
 	}
 	createUser := creatorName(r)
 
-	tx, err := h.DB.Begin(ctx)
+	tx, err := h.DB.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if internalError(w, err) {
 		return
 	}
@@ -157,11 +158,11 @@ func (h *Handler) inviteCreate(w http.ResponseWriter, r *http.Request) {
 		codes = append(codes, code)
 	}
 	if failed {
-		_ = tx.Rollback(ctx)
+		_ = tx.Rollback()
 		response.Error500(w, ref())
 		return
 	}
-	if internalError(w, tx.Commit(ctx)) {
+	if internalError(w, tx.Commit()) {
 		return
 	}
 	var expAny any
@@ -218,7 +219,7 @@ func parseInvitationExpiry(m map[string]any) (*time.Time, bool) {
 	return expire, true
 }
 
-func unusedInvitationCode(ctx context.Context, tx *db.Transaction) (string, error) {
+func unusedInvitationCode(ctx context.Context, tx *sql.Tx) (string, error) {
 	code := ""
 	for a := 0; a < 20; a++ { // 最多 20 次重试保唯一
 		c, err := securecode.Generate(8)

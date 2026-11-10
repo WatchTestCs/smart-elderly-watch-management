@@ -39,14 +39,14 @@ func TestDurableTelemetryPersistsBeforeAckAndReplaysSafely(t *testing.T) {
 	}
 	var stored, projected int
 	ctx := context.Background()
-	if err := pool.QueryRow(ctx, "SELECT count(*) FROM telemetry_inbox WHERE status='pending'").Scan(&stored); err != nil || stored != 1 {
+	if err := pool.QueryRowContext(ctx, "SELECT count(*) FROM telemetry_inbox WHERE status='pending'").Scan(&stored); err != nil || stored != 1 {
 		t.Fatalf("durable queue before flush: %d: %v", stored, err)
 	}
-	if err := pool.QueryRow(ctx, "SELECT count(*) FROM watch_day_info").Scan(&projected); err != nil || projected != 0 {
+	if err := pool.QueryRowContext(ctx, "SELECT count(*) FROM watch_day_info").Scan(&projected); err != nil || projected != 0 {
 		t.Fatalf("projection occurred before queue flush: %d: %v", projected, err)
 	}
 	var lastTime, lastOnline *time.Time
-	if err := pool.QueryRow(ctx, "SELECT last_time,last_online_at FROM device WHERE device_id=1").Scan(&lastTime, &lastOnline); err != nil {
+	if err := pool.QueryRowContext(ctx, "SELECT last_time,last_online_at FROM device WHERE device_id=1").Scan(&lastTime, &lastOnline); err != nil {
 		t.Fatal(err)
 	}
 	if lastTime == nil || lastOnline == nil {
@@ -64,10 +64,10 @@ func TestDurableTelemetryPersistsBeforeAckAndReplaysSafely(t *testing.T) {
 	if err != nil || count != 1 {
 		t.Fatalf("drain: %d: %v", count, err)
 	}
-	if err := pool.QueryRow(ctx, "SELECT count(*) FROM telemetry_inbox WHERE status='done'").Scan(&stored); err != nil || stored != 1 {
+	if err := pool.QueryRowContext(ctx, "SELECT count(*) FROM telemetry_inbox WHERE status='done'").Scan(&stored); err != nil || stored != 1 {
 		t.Fatalf("done row missing: %d: %v", stored, err)
 	}
-	if err := pool.QueryRow(ctx, "SELECT count(*) FROM watch_day_info").Scan(&projected); err != nil || projected != 1 {
+	if err := pool.QueryRowContext(ctx, "SELECT count(*) FROM watch_day_info").Scan(&projected); err != nil || projected != 1 {
 		t.Fatalf("daily projection missing: %d: %v", projected, err)
 	}
 	count, err = DrainDurableTelemetryBatch(ctx, pool, h.Box)
@@ -86,8 +86,8 @@ func TestDurableTelemetryRetainsCorruptQueuePayload(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = pool.Exec(context.Background(), `INSERT INTO telemetry_inbox(device_id,elder_id,binding_epoch,request_id,payload,status,created_at,next_retry_at)
-		VALUES($1,$2,$3,$4,$5,'pending',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`, 1, 1, 1, "corrupt-encrypted-payload", "not-an-envelope")
+	_, err = pool.ExecContext(context.Background(), `INSERT INTO telemetry_inbox(device_id,elder_id,binding_epoch,request_id,payload,status,created_at,next_retry_at)
+		VALUES(?,?,?,?,?,'pending',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`, 1, 1, 1, "corrupt-encrypted-payload", "not-an-envelope")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -97,7 +97,7 @@ func TestDurableTelemetryRetainsCorruptQueuePayload(t *testing.T) {
 	}
 	var attempts int
 	var status string
-	if err := pool.QueryRow(context.Background(), "SELECT status,attempts FROM telemetry_inbox WHERE request_id='corrupt-encrypted-payload'").Scan(&status, &attempts); err != nil || status != "pending" || attempts != 1 {
+	if err := pool.QueryRowContext(context.Background(), "SELECT status,attempts FROM telemetry_inbox WHERE request_id='corrupt-encrypted-payload'").Scan(&status, &attempts); err != nil || status != "pending" || attempts != 1 {
 		t.Fatalf("corrupt item was lost: status=%s attempts=%d err=%v", status, attempts, err)
 	}
 }
@@ -116,7 +116,7 @@ func TestTouchDeviceTimeNeverRegresses(t *testing.T) {
 		t.Fatal(err)
 	}
 	var stored time.Time
-	if err := pool.QueryRow(ctx, "SELECT last_time FROM device WHERE device_id=$1", 1).Scan(&stored); err != nil {
+	if err := pool.QueryRowContext(ctx, "SELECT last_time FROM device WHERE device_id=?", 1).Scan(&stored); err != nil {
 		t.Fatal(err)
 	}
 	if !stored.Equal(now) {

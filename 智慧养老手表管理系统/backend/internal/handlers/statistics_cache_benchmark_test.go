@@ -26,7 +26,7 @@ import (
 func BenchmarkHealthStatisticsHybrid(b *testing.B) {
 	pool := benchmarkStatisticsDatabase(b)
 	ctx := context.Background()
-	if _, err := pool.Exec(ctx, "INSERT INTO oldperson(old_id,name) VALUES(1,'benchmark')"); err != nil {
+	if _, err := pool.ExecContext(ctx, "INSERT INTO oldperson(old_id,name) VALUES(1,'benchmark')"); err != nil {
 		b.Fatal(err)
 	}
 	from := time.Date(2026, 10, 22, 0, 0, 0, 0, time.UTC)
@@ -44,16 +44,16 @@ func BenchmarkHealthStatisticsHybrid(b *testing.B) {
 			}
 			samples[i] = sample
 		}
-		tx, err := pool.Begin(ctx)
+		tx, err := pool.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 		if err != nil {
 			b.Fatal(err)
 		}
 		if _, _, err = health.SaveBatch(ctx, tx, health.Owner{OldID: 1}, samples); err != nil {
-			tx.Rollback(ctx)
+			tx.Rollback()
 			b.Fatal(err)
 		}
-		if err = tx.Commit(ctx); err != nil {
-			tx.Rollback(ctx)
+		if err = tx.Commit(); err != nil {
+			tx.Rollback()
 			b.Fatal(err)
 		}
 	}
@@ -117,7 +117,7 @@ func benchmarkStatisticsDatabase(b *testing.B) *db.Database {
 		b.Fatal(err)
 	}
 	name := "suining_bench_" + uuid.NewString()[:8]
-	if _, err = admin.Exec("CREATE DATABASE `" + name + "` CHARACTER SET utf8mb4 COLLATE utf8mb4_bin"); err != nil {
+	if _, err = admin.ExecContext(context.Background(), "CREATE DATABASE `"+name+"` CHARACTER SET utf8mb4 COLLATE utf8mb4_bin"); err != nil {
 		admin.Close()
 		b.Fatal(err)
 	}
@@ -126,7 +126,7 @@ func benchmarkStatisticsDatabase(b *testing.B) *db.Database {
 		if pool != nil {
 			pool.Close()
 		}
-		_, err := admin.Exec("DROP DATABASE `" + name + "`")
+		_, err := admin.ExecContext(context.Background(), "DROP DATABASE `"+name+"`")
 		admin.Close()
 		if err != nil {
 			b.Error(err)

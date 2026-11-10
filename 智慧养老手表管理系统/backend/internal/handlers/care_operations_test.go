@@ -37,17 +37,17 @@ func TestCareDutyPermissionsAndSensitiveAudit(t *testing.T) {
 		t.Fatalf("audit failed: %s", w.Body.String())
 	}
 	var count int64
-	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM care_access_audit WHERE admin_id=2 AND action='incident_list'").Scan(&count); err != nil || count != 1 {
+	if err := pool.QueryRowContext(context.Background(), "SELECT count(*) FROM care_access_audit WHERE admin_id=2 AND action='incident_list'").Scan(&count); err != nil || count != 1 {
 		t.Fatalf("audit not durable: count=%d err=%v", count, err)
 	}
 }
 
 func TestCareWorkerHeartbeatSchema(t *testing.T) {
 	pool := testDatabase(t)
-	mustExec(t, pool, "INSERT INTO care_worker_heartbeat(singleton,last_seen_at,started_at) VALUES(true,now(),now())")
+	mustExec(t, pool, "INSERT INTO care_worker_heartbeat(singleton,last_seen_at,started_at) VALUES(true,CURRENT_TIMESTAMP(6),CURRENT_TIMESTAMP(6))")
 	var healthy bool
-	if err := pool.QueryRow(context.Background(),
-		"SELECT last_seen_at > now()-interval '30 seconds' FROM care_worker_heartbeat WHERE singleton=true").Scan(&healthy); err != nil || !healthy {
+	if err := pool.QueryRowContext(context.Background(),
+		"SELECT last_seen_at > CURRENT_TIMESTAMP(6)-INTERVAL 30 SECOND FROM care_worker_heartbeat WHERE singleton=true").Scan(&healthy); err != nil || !healthy {
 		t.Fatalf("worker heartbeat unavailable: %v", err)
 	}
 }

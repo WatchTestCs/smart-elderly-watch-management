@@ -19,7 +19,7 @@ func BenchmarkListPagination(b *testing.B) {
 		b.Run(strconv.Itoa(count), func(b *testing.B) {
 			pool := benchmarkStatisticsDatabase(b)
 			ctx := context.Background()
-			if _, err := pool.Exec(ctx, "INSERT INTO family(family_id,family_name) VALUES(1,'selected'),(2,'other')"); err != nil {
+			if _, err := pool.ExecContext(ctx, "INSERT INTO family(family_id,family_name) VALUES(1,'selected'),(2,'other')"); err != nil {
 				b.Fatal(err)
 			}
 			for start := 1; start <= count; start += 100 {
@@ -38,7 +38,7 @@ func BenchmarkListPagination(b *testing.B) {
 					"INSERT INTO oldperson(old_id,name,family_id) VALUES" + strings.Join(elders, ","),
 					"INSERT INTO text(text_id,title,text_main,time) VALUES" + strings.Join(texts, ","),
 				} {
-					if _, err := pool.Exec(ctx, query); err != nil {
+					if _, err := pool.ExecContext(ctx, query); err != nil {
 						b.Fatal(err)
 					}
 				}

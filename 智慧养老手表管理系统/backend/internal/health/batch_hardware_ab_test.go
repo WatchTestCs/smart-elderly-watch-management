@@ -2,6 +2,7 @@ package health
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -22,7 +23,7 @@ func TestBatchHardwareAB(t *testing.T) {
 	}
 	pool := dbtest.MySQL(t)
 	ctx := context.Background()
-	if _, err := pool.Exec(ctx, "INSERT INTO oldperson(old_id,name) VALUES(1,'perf-ab')"); err != nil {
+	if _, err := pool.ExecContext(ctx, "INSERT INTO oldperson(old_id,name) VALUES(1,'perf-ab')"); err != nil {
 		t.Fatal(err)
 	}
 	at := time.Date(2026, 10, 23, 0, 0, 0, 0, time.UTC)
@@ -35,18 +36,18 @@ func TestBatchHardwareAB(t *testing.T) {
 			samples[i].Version = version
 		}
 		started := time.Now()
-		tx, err := pool.Begin(ctx)
+		tx, err := pool.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 		if err != nil {
 			t.Fatal(err)
 		}
 		begun := time.Now()
 		_, duplicates, err := SaveBatch(ctx, tx, Owner{OldID: 1}, samples)
 		if err != nil || duplicates != 0 {
-			tx.Rollback(ctx)
+			tx.Rollback()
 			t.Fatalf("save: duplicates=%d err=%v", duplicates, err)
 		}
 		written := time.Now()
-		if err := tx.Commit(ctx); err != nil {
+		if err := tx.Commit(); err != nil {
 			t.Fatal(err)
 		}
 		return [3]time.Duration{begun.Sub(started), written.Sub(begun), time.Since(written)}
@@ -69,10 +70,10 @@ func TestBatchHardwareAB(t *testing.T) {
 	elapsed := time.Since(start)
 	runtime.ReadMemStats(&after)
 	var sampleCount, eventCount int64
-	if err := pool.QueryRow(ctx, "SELECT count(*) FROM health_sample").Scan(&sampleCount); err != nil {
+	if err := pool.QueryRowContext(ctx, "SELECT count(*) FROM health_sample").Scan(&sampleCount); err != nil {
 		t.Fatal(err)
 	}
-	if err := pool.QueryRow(ctx, "SELECT count(*) FROM health_change").Scan(&eventCount); err != nil {
+	if err := pool.QueryRowContext(ctx, "SELECT count(*) FROM health_change").Scan(&eventCount); err != nil {
 		t.Fatal(err)
 	}
 	if sampleCount != 200 || eventCount != (warmup+batches)*200 {

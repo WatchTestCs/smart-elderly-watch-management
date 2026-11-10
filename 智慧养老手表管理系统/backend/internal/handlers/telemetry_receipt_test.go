@@ -52,7 +52,7 @@ func TestNumberedReportReplayReturnsCommittedAck(t *testing.T) {
 		t.Fatalf("replay did not return the committed acknowledgement: %v", second)
 	}
 	var count int
-	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM ratepre").Scan(&count); err != nil || count != 1 {
+	if err := pool.QueryRowContext(context.Background(), "SELECT count(*) FROM ratepre").Scan(&count); err != nil || count != 1 {
 		t.Fatalf("replay wrote %d samples, err=%v", count, err)
 	}
 }
@@ -84,7 +84,7 @@ func TestUnnumberedReportKeepsLegacyBehaviour(t *testing.T) {
 		t.Fatalf("unnumbered report unexpectedly deduplicated: %v / %v", first, second)
 	}
 	var count int
-	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM device_report_receipt").Scan(&count); err != nil || count != 0 {
+	if err := pool.QueryRowContext(context.Background(), "SELECT count(*) FROM device_report_receipt").Scan(&count); err != nil || count != 0 {
 		t.Fatalf("unnumbered report stored %d receipts, err=%v", count, err)
 	}
 }

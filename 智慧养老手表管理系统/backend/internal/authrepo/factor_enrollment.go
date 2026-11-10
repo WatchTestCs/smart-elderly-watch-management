@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/base32"
 	"encoding/hex"
 	"net/url"
@@ -12,13 +13,12 @@ import (
 
 	"github.com/google/uuid"
 
-	"suining-care/internal/db"
 	"suining-care/internal/securestore"
 )
 
 // CreateFactorSetup generates an unshared TOTP seed and persists only its
 // encrypted representation in the caller's authenticated transaction.
-func CreateFactorSetup(ctx context.Context, tx *db.Transaction, box *securestore.Box, role string, actorID int64, scope string, now time.Time) (map[string]any, error) {
+func CreateFactorSetup(ctx context.Context, tx *sql.Tx, box *securestore.Box, role string, actorID int64, scope string, now time.Time) (map[string]any, error) {
 	var seed [20]byte
 	if _, err := rand.Read(seed[:]); err != nil {
 		return nil, err

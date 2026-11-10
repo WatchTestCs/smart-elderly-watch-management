@@ -2,6 +2,7 @@ package socialrepo
 
 import (
 	"context"
+	"database/sql"
 
 	"suining-care/internal/db"
 )
@@ -37,14 +38,14 @@ func ListComments(ctx context.Context, store *db.Database, viewerPhone string, n
 		` LEFT(DATE_FORMAT(s.said_time,'%Y-%m-%d %H:%i:%s.%f'),23) AS saidTime,` +
 		` LEFT(DATE_FORMAT(s.back_time,'%Y-%m-%d %H:%i:%s.%f'),23) AS backTime,` +
 		` s.person_name, s.nice_count, s.said_phone, s.tou_pic,` +
-		` CASE WHEN EXISTS (SELECT 1 FROM nice_count n WHERE n.said_id=s.said_id AND n.phone=$1) THEN '1' ELSE '0' END AS good` +
+		` CASE WHEN EXISTS (SELECT 1 FROM nice_count n WHERE n.said_id=s.said_id AND n.phone=?) THEN '1' ELSE '0' END AS good` +
 		` FROM said s`
 	args := []any{viewerPhone}
 	if noticeID != 0 {
-		query += " WHERE s.text_id=$2"
+		query += " WHERE s.text_id=?"
 		args = append(args, noticeID)
 	}
-	return db.QueryList(ctx, store, func(rows db.Rows) (Comment, error) {
+	return db.QueryList(ctx, store, func(rows *sql.Rows) (Comment, error) {
 		var item Comment
 		err := rows.Scan(&item.SaidID, &item.Said, &item.TextID, &item.Back, &item.SaidTime, &item.BackTime,
 			&item.PersonName, &item.NiceCount, &item.SaidPhone, &item.TouPic, &item.Good)
@@ -75,13 +76,13 @@ func SearchModeratedComments(ctx context.Context, store *db.Database, noticeTabl
 		` ON said.text_id=` + noticeTable + `.text_id` +
 		` ORDER BY said_time DESC, said_id DESC`
 	var total int64
-	if err := store.QueryRow(ctx, "SELECT COUNT(*) FROM ("+query+") AS paged_total").Scan(&total); err != nil {
+	if err := store.QueryRowContext(ctx, "SELECT COUNT(*) FROM ("+query+") AS paged_total").Scan(&total); err != nil {
 		return nil, 0, err
 	}
-	items, err := db.QueryList(ctx, store, func(rows db.Rows) (ModeratedComment, error) {
+	items, err := db.QueryList(ctx, store, func(rows *sql.Rows) (ModeratedComment, error) {
 		var item ModeratedComment
 		err := rows.Scan(&item.SaidID, &item.Said, &item.Back, &item.SaidTime, &item.BackTime, &item.PersonName, &item.TouPic, &item.Title)
 		return item, err
-	}, query+" LIMIT $1 OFFSET $2", pageSize, (page-1)*pageSize)
+	}, query+" LIMIT ? OFFSET ?", pageSize, (page-1)*pageSize)
 	return items, total, err
 }

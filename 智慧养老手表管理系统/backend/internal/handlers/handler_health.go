@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"errors"
 	"net/http"
 	"os"
@@ -51,11 +52,11 @@ func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	ctx := r.Context()
-	tx, err := h.DB.Begin(ctx)
+	tx, err := h.DB.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if internalError(w, err) {
 		return
 	}
-	defer tx.Rollback(ctx)
+	defer tx.Rollback()
 	d, code, msg, err := h.healthDeviceAuth(ctx, tx, req.DeviceNo, req.Secret, "设备已停用")
 	if internalError(w, err) {
 		return
@@ -68,7 +69,7 @@ func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Reques
 	// under the owner-clock lock before locking the device row. Revalidate the
 	// full device binding under FOR UPDATE before committing anything.
 	if !lateDeviceLock {
-		d, err = scanHealthDevice(tx.QueryRow(ctx, `SELECT `+healthDeviceCols+` FROM device WHERE device_id=$1 FOR UPDATE`, d.ID))
+		d, err = scanHealthDevice(tx.QueryRowContext(ctx, `SELECT `+healthDeviceCols+` FROM device WHERE device_id=? FOR UPDATE`, d.ID))
 		if internalError(w, err) {
 			return
 		}
@@ -96,7 +97,7 @@ func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	if lateDeviceLock {
-		locked, lockErr := scanHealthDevice(tx.QueryRow(ctx, `SELECT `+healthDeviceCols+` FROM device WHERE device_id=$1 FOR UPDATE`, d.ID))
+		locked, lockErr := scanHealthDevice(tx.QueryRowContext(ctx, `SELECT `+healthDeviceCols+` FROM device WHERE device_id=? FOR UPDATE`, d.ID))
 		if internalError(w, lockErr) {
 			return
 		}
@@ -116,7 +117,7 @@ func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Reques
 	if err = touchHealthDevice(ctx, tx, d.ID, time.Now()); internalError(w, err) {
 		return
 	}
-	if err = tx.Commit(ctx); internalError(w, err) {
+	if err = tx.Commit(); internalError(w, err) {
 		return
 	}
 	// This is a write acknowledgement, not the client's read cursor.

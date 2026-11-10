@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"errors"
 	"math"
 	"net/http"
@@ -38,11 +39,11 @@ func (h *Handler) fenceSave(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := r.Context()
-	tx, err := h.DB.Begin(ctx)
+	tx, err := h.DB.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if internalError(w, err) {
 		return
 	}
-	defer tx.Rollback(ctx)
+	defer tx.Rollback()
 	d, err := devicerepo.ScanDeviceRecord(devicerepo.LockedDeviceRow(ctx, tx, req.DeviceID))
 	if isNotFound(err) {
 		response.JSON(w, 404, map[string]any{"message": "设备不存在"})
@@ -104,11 +105,11 @@ func (h *Handler) fencePoint(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := r.Context()
-	tx, err := h.DB.Begin(ctx)
+	tx, err := h.DB.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if internalError(w, err) {
 		return
 	}
-	defer tx.Rollback(ctx)
+	defer tx.Rollback()
 	d := h.capabilityDevice(w, r, tx, req.capabilityCredentials)
 	if d == nil {
 		return
@@ -146,7 +147,7 @@ func (h *Handler) fencePoint(w http.ResponseWriter, r *http.Request) {
 	if err = telemetryrepo.TouchDevice(ctx, tx, d.ID, nil, nil, time.Now()); internalError(w, err) {
 		return
 	}
-	if err = tx.Commit(ctx); internalError(w, err) {
+	if err = tx.Commit(); internalError(w, err) {
 		return
 	}
 	response.OK(w, map[string]any{"events": events})

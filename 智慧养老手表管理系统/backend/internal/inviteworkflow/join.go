@@ -47,11 +47,11 @@ func Join(ctx context.Context, store *db.Database, box *securestore.Box, input R
 	if err != nil {
 		return Result{}, "", err
 	}
-	tx, err := store.Begin(ctx)
+	tx, err := store.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		return Result{}, "", err
 	}
-	defer tx.Rollback(ctx)
+	defer tx.Rollback()
 
 	inv, err := inviterepo.LockCode(ctx, tx, input.Code)
 	if missing(err) {
@@ -109,7 +109,7 @@ func Join(ctx context.Context, store *db.Database, box *securestore.Box, input R
 	if err != nil || !claimed {
 		return Result{}, CodeClaimed, nil
 	}
-	if err := tx.Commit(ctx); err != nil {
+	if err := tx.Commit(); err != nil {
 		return Result{}, "", err
 	}
 	result := Result{FamilyID: familyID, Name: input.Name}

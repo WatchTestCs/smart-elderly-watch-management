@@ -16,13 +16,13 @@ import (
 var ErrLatestTooManySeries = errors.New("health latest candidates exceed 10000")
 
 type latestQuerier interface {
-	Query(context.Context, string, ...any) (db.Rows, error)
-	QueryRow(context.Context, string, ...any) db.Row
+	QueryContext(context.Context, string, ...any) (*sql.Rows, error)
+	QueryRowContext(context.Context, string, ...any) *sql.Row
 }
 
 func latestReady(ctx context.Context, q latestQuerier, oldID int64) (bool, error) {
 	var id int64
-	err := q.QueryRow(ctx, "SELECT old_id FROM health_latest_ready WHERE old_id=$1", oldID).Scan(&id)
+	err := q.QueryRowContext(ctx, "SELECT old_id FROM health_latest_ready WHERE old_id=?", oldID).Scan(&id)
 	if errors.Is(err, sql.ErrNoRows) {
 		return false, nil
 	}
@@ -37,11 +37,11 @@ func Latest(ctx context.Context, store *db.Database, oldID int64) ([]Record, err
 	if ready {
 		return readLatest(ctx, store, oldID)
 	}
-	tx, err := store.Begin(ctx)
+	tx, err := store.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		return nil, err
 	}
-	defer tx.Rollback(ctx)
+	defer tx.Rollback()
 	if _, err = LockOwner(ctx, tx, oldID); err != nil {
 		return nil, err
 	}
@@ -54,7 +54,7 @@ func Latest(ctx context.Context, store *db.Database, oldID int64) ([]Record, err
 		if readErr != nil {
 			return nil, readErr
 		}
-		if err = tx.Commit(ctx); err != nil {
+		if err = tx.Commit(); err != nil {
 			return nil, err
 		}
 		return items, nil
@@ -72,17 +72,17 @@ func Latest(ctx context.Context, store *db.Database, oldID int64) ([]Record, err
 			return nil, err
 		}
 	}
-	if _, err = tx.Exec(ctx, "INSERT INTO health_latest_ready(old_id) VALUES($1)", oldID); err != nil {
+	if _, err = tx.ExecContext(ctx, "INSERT INTO health_latest_ready(old_id) VALUES(?)", oldID); err != nil {
 		return nil, err
 	}
-	if err = tx.Commit(ctx); err != nil {
+	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 	return items, nil
 }
 
 func readLatest(ctx context.Context, q latestQuerier, oldID int64) ([]Record, error) {
-	rows, err := q.Query(ctx, "SELECT sample_id,device_id,epoch,revision,payload FROM health_sample_latest WHERE old_id=$1 LIMIT 10001", oldID)
+	rows, err := q.QueryContext(ctx, "SELECT sample_id,device_id,epoch,revision,payload FROM health_sample_latest WHERE old_id=? LIMIT 10001", oldID)
 	if err != nil {
 		return nil, err
 	}
@@ -109,13 +109,13 @@ func readLatest(ctx context.Context, q latestQuerier, oldID int64) ([]Record, er
 	return items, nil
 }
 
-func buildLatest(ctx context.Context, q *db.Transaction, oldID int64) ([]Record, error) {
+func buildLatest(ctx context.Context, q *sql.Tx, oldID int64) ([]Record, error) {
 	partition := "BINARY source,BINARY source_device,BINARY metric,BINARY semantics"
 	sql := "SELECT s.sample_id,s.device_id,s.epoch,s.revision,s.payload FROM health_sample s INNER JOIN (" +
 		"SELECT sample_id,RANK() OVER (PARTITION BY " + partition + " ORDER BY sample_start DESC) AS latest_rank " +
-		"FROM health_sample WHERE old_id=$1 AND NOT deleted) ranked ON ranked.sample_id=s.sample_id " +
+		"FROM health_sample WHERE old_id=? AND NOT deleted) ranked ON ranked.sample_id=s.sample_id " +
 		"WHERE ranked.latest_rank=1 ORDER BY s.sample_id LIMIT 10001"
-	rows, err := q.Query(ctx, sql, oldID)
+	rows, err := q.QueryContext(ctx, sql, oldID)
 	if err != nil {
 		return nil, err
 	}
@@ -170,14 +170,14 @@ func latestKey(s Sample) [32]byte {
 	return sha256.Sum256(buf)
 }
 
-func insertLatest(ctx context.Context, tx *db.Transaction, rec Record, payload []byte) error {
+func insertLatest(ctx context.Context, tx *sql.Tx, rec Record, payload []byte) error {
 	key := latestKey(rec.Sample)
-	_, err := tx.Exec(ctx, "INSERT INTO health_sample_latest(old_id,series_key,sample_id,device_id,epoch,revision,payload) VALUES($1,$2,$3,$4,$5,$6,$7)",
+	_, err := tx.ExecContext(ctx, "INSERT INTO health_sample_latest(old_id,series_key,sample_id,device_id,epoch,revision,payload) VALUES(?,?,?,?,?,?,?)",
 		rec.OldID, key[:], rec.SampleID, rec.DeviceID, rec.Epoch, rec.Revision, payload)
 	return err
 }
 
-func refreshLatest(ctx context.Context, tx *db.Transaction, o Owner, input []preparedSample, final []uint8) error {
+func refreshLatest(ctx context.Context, tx *sql.Tx, o Owner, input []preparedSample, final []uint8) error {
 	ready, err := latestReady(ctx, tx, o.OldID)
 	if err != nil || !ready {
 		return err
@@ -197,11 +197,11 @@ func refreshLatest(ctx context.Context, tx *db.Transaction, o Owner, input []pre
 	return nil
 }
 
-func refreshLatestSeries(ctx context.Context, tx *db.Transaction, oldID int64, s Sample, key [32]byte) error {
-	filter := "BINARY source=BINARY $2 AND BINARY source_device=BINARY $3 AND BINARY metric=BINARY $4 AND BINARY semantics=BINARY $5"
-	sql := "SELECT sample_id,device_id,epoch,revision,sample_start,payload FROM health_sample WHERE old_id=$1 AND " +
+func refreshLatestSeries(ctx context.Context, tx *sql.Tx, oldID int64, s Sample, key [32]byte) error {
+	filter := "BINARY source=BINARY ? AND BINARY source_device=BINARY ? AND BINARY metric=BINARY ? AND BINARY semantics=BINARY ?"
+	sql := "SELECT sample_id,device_id,epoch,revision,sample_start,payload FROM health_sample WHERE old_id=? AND " +
 		filter + " AND NOT deleted ORDER BY sample_start DESC,revision DESC,sample_id DESC"
-	rows, err := tx.Query(ctx, sql, oldID, s.Source, s.SourceDevice, s.Metric, s.Semantics)
+	rows, err := tx.QueryContext(ctx, sql, oldID, s.Source, s.SourceDevice, s.Metric, s.Semantics)
 	if err != nil {
 		return err
 	}
@@ -235,7 +235,7 @@ func refreshLatestSeries(ctx context.Context, tx *db.Transaction, oldID int64, s
 	if err != nil {
 		return err
 	}
-	if _, err = tx.Exec(ctx, "DELETE FROM health_sample_latest WHERE old_id=$1 AND series_key=$2", oldID, key[:]); err != nil {
+	if _, err = tx.ExecContext(ctx, "DELETE FROM health_sample_latest WHERE old_id=? AND series_key=?", oldID, key[:]); err != nil {
 		return err
 	}
 	if winner != nil {

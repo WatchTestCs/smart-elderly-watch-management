@@ -2,12 +2,13 @@ package handlers
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"net/http"
 	"time"
 
 	"suining-care/internal/authrepo"
-	"suining-care/internal/db"
+
 	"suining-care/internal/observability"
 	"suining-care/internal/response"
 	"suining-care/internal/securityworkflow"
@@ -18,7 +19,7 @@ type factorGenerationKey struct{}
 func (h *Handler) loginAudit(r *http.Request, phone, role string, id int64, outcome string) error {
 	return h.loginAuditTx(r, phone, role, id, outcome, nil)
 }
-func (h *Handler) loginAuditTx(r *http.Request, phone, role string, id int64, outcome string, tx *db.Transaction) error {
+func (h *Handler) loginAuditTx(r *http.Request, phone, role string, id int64, outcome string, tx *sql.Tx) error {
 	observability.Default.Add(`suining_auth_attempts_total{outcome="`+outcome+`"}`, 1)
 	requestID := r.Header.Get("X-Request-ID")
 	if len(requestID) > 64 {
@@ -48,7 +49,7 @@ func (h *Handler) loginAllowed(w http.ResponseWriter, r *http.Request, phone str
 func (h *Handler) factorLogin(w http.ResponseWriter, r *http.Request, m map[string]any, role string, id int64, phone string) bool {
 	valid, generation, err := securityworkflow.VerifyLogin(
 		r.Context(), h.DB, h.Box, role, id, str(m, "otp"), str(m, "recoveryCode"),
-		func(tx *db.Transaction, outcome string) error {
+		func(tx *sql.Tx, outcome string) error {
 			return h.loginAuditTx(r, phone, role, id, outcome, tx)
 		},
 	)

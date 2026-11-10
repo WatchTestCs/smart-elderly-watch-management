@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"testing"
@@ -39,15 +40,15 @@ func TestHealthLatestPreservesSourcesPrecisionAndVersions(t *testing.T) {
 	deviceID := int64(1)
 	save := func(samples ...health.Sample) {
 		t.Helper()
-		tx, err := pool.Begin(context.Background())
+		tx, err := pool.BeginTx(context.Background(), &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 		if err != nil {
 			t.Fatal(err)
 		}
-		defer tx.Rollback(context.Background())
+		defer tx.Rollback()
 		if _, _, err = health.SaveBatch(context.Background(), tx, health.Owner{OldID: 1, DeviceID: &deviceID, Epoch: 1}, samples); err != nil {
 			t.Fatal(err)
 		}
-		if err = tx.Commit(context.Background()); err != nil {
+		if err = tx.Commit(); err != nil {
 			t.Fatal(err)
 		}
 	}

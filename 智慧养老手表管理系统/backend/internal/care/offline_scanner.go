@@ -2,7 +2,7 @@ package care
 
 import (
 	"context"
-	"fmt"
+	"database/sql"
 	"strings"
 	dbstore "suining-care/internal/db"
 )
@@ -22,17 +22,17 @@ func scanOffline(ctx context.Context, pool *dbstore.Database) error {
 }
 
 func scanOfflinePage(ctx context.Context, pool *dbstore.Database, after int64) (int64, int, error) {
-	tx, err := pool.Begin(ctx)
+	tx, err := pool.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		return after, 0, err
 	}
-	defer tx.Rollback(ctx)
+	defer tx.Rollback()
 	// Skip busy devices instead of holding a table-wide UPDATE's earlier locks
 	// while waiting for an ingest/rule transaction. Retry skipped rows next tick.
-	rows, err := tx.Query(ctx, `SELECT device_id FROM device
-		WHERE device_id>$1 AND status=1 AND last_online_at IS NOT NULL AND last_time IS NOT NULL
+	rows, err := tx.QueryContext(ctx, `SELECT device_id FROM device
+		WHERE device_id>? AND status=1 AND last_online_at IS NOT NULL AND last_time IS NOT NULL
 		AND last_online_at >= last_time
-		AND last_time < now() - interval '120 seconds'
+		AND last_time < CURRENT_TIMESTAMP(6) - INTERVAL 120 SECOND
 		ORDER BY device_id LIMIT 100 FOR UPDATE SKIP LOCKED`, after)
 	if err != nil {
 		return after, 0, err
@@ -44,7 +44,7 @@ func scanOfflinePage(ctx context.Context, pool *dbstore.Database, after int64) (
 			break
 		}
 		args = append(args, after)
-		placeholders = append(placeholders, fmt.Sprintf("$%d", len(args)))
+		placeholders = append(placeholders, "?")
 	}
 	if err == nil {
 		err = rows.Err()
@@ -54,11 +54,11 @@ func scanOfflinePage(ctx context.Context, pool *dbstore.Database, after int64) (
 		return after, 0, err
 	}
 	if len(args) != 0 {
-		_, err = tx.Exec(ctx, `UPDATE device SET boot_seq=boot_seq+1,person_handled=0,last_online_at=NULL
+		_, err = tx.ExecContext(ctx, `UPDATE device SET boot_seq=boot_seq+1,person_handled=0,last_online_at=NULL
 		WHERE device_id IN (`+strings.Join(placeholders, ",")+`)`, args...)
 		if err != nil {
 			return after, 0, err
 		}
 	}
-	return after, len(args), tx.Commit(ctx)
+	return after, len(args), tx.Commit()
 }

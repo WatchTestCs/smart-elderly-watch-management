@@ -2,6 +2,7 @@ package devicerepo
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"suining-care/internal/db"
@@ -33,7 +34,7 @@ type DeviceRecord struct {
 	HandledSeq    int
 }
 
-func ScanDeviceRecord(row db.Row) (*DeviceRecord, error) {
+func ScanDeviceRecord(row *sql.Row) (*DeviceRecord, error) {
 	var d DeviceRecord
 	if err := row.Scan(&d.ID, &d.No, &d.Secret, &d.Alias, &d.Model, &d.AppVersion,
 		&d.Battery, &d.OldID, &d.FamilyID, &d.Status, &d.BindTime, &d.LastTime,
@@ -45,9 +46,9 @@ func ScanDeviceRecord(row db.Row) (*DeviceRecord, error) {
 }
 
 func FindDeviceByNo(ctx context.Context, store db.RowQuerier, number string) (*DeviceRecord, error) {
-	return ScanDeviceRecord(store.QueryRow(ctx, "SELECT "+deviceRecordColumns+" FROM device WHERE device_no=$1", number))
+	return ScanDeviceRecord(store.QueryRowContext(ctx, "SELECT "+deviceRecordColumns+" FROM device WHERE device_no=?", number))
 }
 
 func FindDeviceByID(ctx context.Context, store db.RowQuerier, id int64) (*DeviceRecord, error) {
-	return ScanDeviceRecord(store.QueryRow(ctx, "SELECT "+deviceRecordColumns+" FROM device WHERE device_id=$1", id))
+	return ScanDeviceRecord(store.QueryRowContext(ctx, "SELECT "+deviceRecordColumns+" FROM device WHERE device_id=?", id))
 }

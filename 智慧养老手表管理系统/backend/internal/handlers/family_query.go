@@ -1,9 +1,10 @@
 package handlers
 
 import (
+	"database/sql"
 	"net/http"
 	"suining-care/internal/auth"
-	dbstore "suining-care/internal/db"
+
 	"suining-care/internal/response"
 )
 
@@ -18,9 +19,9 @@ func (h *Handler) familySelect(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	var total int64
 	const filter = ` FROM oldperson o JOIN family f ON o.family_id=f.family_id
-		 WHERE ($1='' OR f.family_name LIKE '%'||$1||'%')`
+		 WHERE (?='' OR f.family_name LIKE CONCAT('%',?,'%'))`
 	const countSQL = `SELECT COUNT(*) AS total` + filter
-	list, ok := queryRows(h, w, ctx, func(rows dbstore.Rows) (map[string]any, error) {
+	list, ok := queryRows(h, w, ctx, func(rows *sql.Rows) (map[string]any, error) {
 		var oldID, familyID int64
 		var oldName, fname, frel, fsex, fphone, faddr, fpic *string
 		if err := rows.Scan(&oldID, &oldName, &familyID, &fname, &frel, &fsex, &fphone, &faddr, &fpic); err != nil {
@@ -34,7 +35,7 @@ func (h *Handler) familySelect(w http.ResponseWriter, r *http.Request) {
 	},
 		`SELECT o.old_id,o.name,f.family_id,f.family_name,f.family_relation,
 		        f.family_sex,f.family_phone,f.family_address,f.family_tou_pic`+filter+`
-		 ORDER BY o.old_id LIMIT $2 OFFSET $3`, name, ps, (p-1)*ps)
+		 ORDER BY o.old_id LIMIT ? OFFSET ?`, name, name, ps, (p-1)*ps)
 	if !ok {
 		return
 	}
@@ -42,7 +43,7 @@ func (h *Handler) familySelect(w http.ResponseWriter, r *http.Request) {
 	if len(list) < ps && (p == 1 || len(list) > 0) {
 		total = int64((p-1)*ps + len(list))
 	} else {
-		if internalError(w, h.DB.QueryRow(ctx, countSQL, name).Scan(&total)) {
+		if internalError(w, h.DB.QueryRowContext(ctx, countSQL, name, name).Scan(&total)) {
 			return
 		}
 	}
@@ -68,9 +69,9 @@ func (h *Handler) familySelectTwo(w http.ResponseWriter, r *http.Request) {
 	}
 	var id int64
 	var name, sex, addr, pic *string
-	err := h.DB.QueryRow(r.Context(),
+	err := h.DB.QueryRowContext(r.Context(),
 		`SELECT family_id,family_name,family_sex,family_address,family_tou_pic
-		 FROM family WHERE family_phone=$1 AND ($2=0 OR family_id=$2)`, phone, familySelfID(auth.Principal(r))).Scan(&id, &name, &sex, &addr, &pic)
+		 FROM family WHERE family_phone=? AND (?=0 OR family_id=?)`, phone, familySelfID(auth.Principal(r)), familySelfID(auth.Principal(r))).Scan(&id, &name, &sex, &addr, &pic)
 	if err != nil {
 		if isNotFound(err) {
 			response.JSON(w, http.StatusOK, map[string]any{"familyDto2": nil})

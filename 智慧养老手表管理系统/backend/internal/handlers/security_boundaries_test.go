@@ -17,9 +17,6 @@ import (
 
 func TestLoginAuditBoundarySharedAcrossReplicasAndIPs(t *testing.T) {
 	pool := testDatabase(t)
-	if !pool.IsMySQL() {
-		t.Skip("MySQL row lock regression")
-	}
 	cfg := config.Config{DataKey: base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{1}, 32)), RateLimit: ratelimit.Options{TrustedProxyCIDRs: []string{"10.0.0.0/8"}}}
 	a, b := New(pool, nil, cfg), New(pool, nil, cfg)
 	r := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", nil)
@@ -66,7 +63,7 @@ func TestWrongCoordinateKeyFailsClosed(t *testing.T) {
 	}
 	pool := testDatabase(t)
 	seedDevice(t, pool)
-	mustExec(t, pool, "UPDATE device SET last_lng=$1,last_lat=$1 WHERE device_id=1", sealed)
+	mustExec(t, pool, "UPDATE device SET last_lng=?,last_lat=? WHERE device_id=1", sealed, sealed)
 	h := testHandler(t, pool)
 	h.Box = b
 	if _, err = h.readDeviceRecord(devicerepo.FindDeviceByNo(context.Background(), pool, "WATCH001")); err == nil {

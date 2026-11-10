@@ -1,9 +1,9 @@
 package handlers
 
 import (
+	"database/sql"
 	"net/http"
 
-	"suining-care/internal/db"
 	"suining-care/internal/devicerepo"
 	"suining-care/internal/deviceworkflow"
 )
@@ -15,7 +15,7 @@ type capabilityCredentials struct {
 }
 
 // Every capability request rechecks its owner and credential under resident-then-device locks.
-func (h *Handler) capabilityDevice(w http.ResponseWriter, r *http.Request, tx *db.Transaction, c capabilityCredentials) *devicerepo.DeviceRecord {
+func (h *Handler) capabilityDevice(w http.ResponseWriter, r *http.Request, tx *sql.Tx, c capabilityCredentials) *devicerepo.DeviceRecord {
 	device, failure, err := deviceworkflow.LockBoundDevice(r.Context(), tx, c.DeviceNo, c.Secret, c.BindingVersion)
 	if internalError(w, err) {
 		return nil

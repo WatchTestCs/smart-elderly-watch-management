@@ -1,9 +1,9 @@
 package handlers
 
 import (
+	"database/sql"
 	"net/http"
 	"strconv"
-	dbstore "suining-care/internal/db"
 
 	"suining-care/internal/response"
 )
@@ -31,10 +31,10 @@ func (h *Handler) careStaff(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	if _, err := h.DB.Exec(r.Context(), "INSERT INTO care_access_audit(admin_id,action) VALUES($1,'staff_list')", actor); internalError(w, err) {
+	if _, err := h.DB.ExecContext(r.Context(), "INSERT INTO care_access_audit(admin_id,action) VALUES(?,'staff_list')", actor); internalError(w, err) {
 		return
 	}
-	list, ok := queryRows(h, w, r.Context(), func(rows dbstore.Rows) (map[string]any, error) {
+	list, ok := queryRows(h, w, r.Context(), func(rows *sql.Rows) (map[string]any, error) {
 		var id int64
 		var name *string
 		var duty string
@@ -81,31 +81,31 @@ func (h *Handler) careAssignDuty(w http.ResponseWriter, r *http.Request) {
 		write400(w, "主管不能降低自己的岗位权限")
 		return
 	}
-	tx, err := h.DB.Begin(r.Context())
+	tx, err := h.DB.BeginTx(r.Context(), &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if internalError(w, err) {
 		return
 	}
-	defer tx.Rollback(r.Context())
+	defer tx.Rollback()
 	var exists bool
-	if internalError(w, tx.QueryRow(r.Context(), "SELECT EXISTS(SELECT 1 FROM users WHERE user_id=$1)", target).Scan(&exists)) {
+	if internalError(w, tx.QueryRowContext(r.Context(), "SELECT EXISTS(SELECT 1 FROM users WHERE user_id=?)", target).Scan(&exists)) {
 		return
 	}
 	if !exists {
 		response.Fail(w, "管理员账号不存在")
 		return
 	}
-	_, err = tx.Exec(r.Context(), `INSERT INTO care_staff_permission(admin_id,duty,assigned_by,assigned_at)
- VALUES($1,$2,$3,CURRENT_TIMESTAMP(6)) AS new ON DUPLICATE KEY UPDATE
+	_, err = tx.ExecContext(r.Context(), `INSERT INTO care_staff_permission(admin_id,duty,assigned_by,assigned_at)
+ VALUES(?,?,?,CURRENT_TIMESTAMP(6)) AS new ON DUPLICATE KEY UPDATE
  duty=new.duty,assigned_by=new.assigned_by,assigned_at=CURRENT_TIMESTAMP(6)`, target, duty, actor)
 	if internalError(w, err) {
 		return
 	}
-	_, err = tx.Exec(r.Context(), `INSERT INTO care_access_audit(admin_id,action,subject_admin_id)
- VALUES($1,'staff_duty_changed',$2)`, actor, target)
+	_, err = tx.ExecContext(r.Context(), `INSERT INTO care_access_audit(admin_id,action,subject_admin_id)
+ VALUES(?,'staff_duty_changed',?)`, actor, target)
 	if internalError(w, err) {
 		return
 	}
-	if internalError(w, tx.Commit(r.Context())) {
+	if internalError(w, tx.Commit()) {
 		return
 	}
 	response.OK(w, map[string]any{"adminId": target, "duty": duty})
@@ -116,10 +116,10 @@ func (h *Handler) careAccessAudit(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	if _, err := h.DB.Exec(r.Context(), "INSERT INTO care_access_audit(admin_id,action) VALUES($1,'audit_view')", actor); internalError(w, err) {
+	if _, err := h.DB.ExecContext(r.Context(), "INSERT INTO care_access_audit(admin_id,action) VALUES(?,'audit_view')", actor); internalError(w, err) {
 		return
 	}
-	items, ok := queryRows(h, w, r.Context(), func(rows dbstore.Rows) (map[string]any, error) {
+	items, ok := queryRows(h, w, r.Context(), func(rows *sql.Rows) (map[string]any, error) {
 		var id int64
 		var role, resource, method string
 		var created interface{}

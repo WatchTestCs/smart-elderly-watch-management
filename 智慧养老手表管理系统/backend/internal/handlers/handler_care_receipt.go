@@ -3,6 +3,7 @@ package handlers
 import (
 	"crypto/hmac"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"io"
@@ -23,16 +24,16 @@ func (h *Handler) careReceipt(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := r.Context()
-	tx, err := h.DB.Begin(ctx)
+	tx, err := h.DB.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if internalError(w, err) {
 		return
 	}
-	defer tx.Rollback(ctx)
+	defer tx.Rollback()
 	var incidentID int64
 	var status string
 	var attempts int
-	err = tx.QueryRow(ctx, `SELECT incident_id,status,attempts FROM care_notification_outbox
-   WHERE id=$1 FOR UPDATE`, item.NotificationID).Scan(&incidentID, &status, &attempts)
+	err = tx.QueryRowContext(ctx, `SELECT incident_id,status,attempts FROM care_notification_outbox
+   WHERE id=? FOR UPDATE`, item.NotificationID).Scan(&incidentID, &status, &attempts)
 	if err != nil {
 		if isNotFound(err) {
 			response.JSON(w, http.StatusConflict, map[string]any{"message": "回执状态不符合预期"})
@@ -44,7 +45,7 @@ func (h *Handler) careReceipt(w http.ResponseWriter, r *http.Request) {
 	if status == "delivered" {
 		// A gateway can retry after our commit but before receiving HTTP 200.
 		// Authenticate first, then ACK the durable duplicate without a second event.
-		if internalError(w, tx.Commit(ctx)) {
+		if internalError(w, tx.Commit()) {
 			return
 		}
 		response.OK(w, map[string]any{"notificationId": item.NotificationID, "status": "delivered"})
@@ -57,20 +58,20 @@ func (h *Handler) careReceipt(w http.ResponseWriter, r *http.Request) {
 		response.JSON(w, http.StatusConflict, map[string]any{"message": "回执状态不符合预期"})
 		return
 	}
-	if _, err = tx.Exec(ctx, `UPDATE care_notification_outbox SET status='delivered',delivered_at=now() WHERE id=$1`, item.NotificationID); internalError(w, err) {
+	if _, err = tx.ExecContext(ctx, `UPDATE care_notification_outbox SET status='delivered',delivered_at=CURRENT_TIMESTAMP(6) WHERE id=?`, item.NotificationID); internalError(w, err) {
 		return
 	}
-	if _, err = tx.Exec(ctx, `UPDATE care_incident SET state='notified',updated_at=now()
-    WHERE id=$1 AND state IN ('received','notifying')`, incidentID); err != nil {
+	if _, err = tx.ExecContext(ctx, `UPDATE care_incident SET state='notified',updated_at=CURRENT_TIMESTAMP(6)
+    WHERE id=? AND state IN ('received','notifying')`, incidentID); err != nil {
 		response.Error500(w, ref())
 		return
 	}
-	if _, err = tx.Exec(ctx, `INSERT INTO care_incident_event(incident_id,actor,action,note)
-    VALUES($1,'gateway','delivered','通知渠道回执已通过签名验证')`, incidentID); err != nil {
+	if _, err = tx.ExecContext(ctx, `INSERT INTO care_incident_event(incident_id,actor,action,note)
+    VALUES(?,'gateway','delivered','通知渠道回执已通过签名验证')`, incidentID); err != nil {
 		response.Error500(w, ref())
 		return
 	}
-	if err = tx.Commit(ctx); internalError(w, err) {
+	if err = tx.Commit(); internalError(w, err) {
 		return
 	}
 	response.OK(w, map[string]any{"notificationId": item.NotificationID, "status": "delivered"})

@@ -36,8 +36,8 @@ func sensitiveCareAudit(pool *dbstore.Database, next http.Handler) http.Handler 
 			next.ServeHTTP(w, r)
 			return
 		}
-		_, err := pool.Exec(r.Context(),
-			"INSERT INTO care_sensitive_access_audit(actor_id,actor_role,resource,method) VALUES($1,$2,$3,$4)",
+		_, err := pool.ExecContext(r.Context(),
+			"INSERT INTO care_sensitive_access_audit(actor_id,actor_role,resource,method) VALUES(?,?,?,?)",
 			sess.Principal.ID, sess.Principal.Role, r.URL.Path, r.Method)
 		if err != nil {
 			response.JSON(w, http.StatusServiceUnavailable, map[string]any{

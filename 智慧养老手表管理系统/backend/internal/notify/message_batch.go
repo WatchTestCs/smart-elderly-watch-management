@@ -2,7 +2,6 @@ package notify
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"suining-care/internal/observability"
 )
@@ -41,7 +40,7 @@ func messageIDs(jobs []messageJob, args []any) (string, []any) {
 		if i > 0 {
 			ids.WriteByte(',')
 		}
-		fmt.Fprintf(&ids, "$%d", len(args)+1)
+		ids.WriteByte('?')
 		args = append(args, job.id)
 	}
 	return ids.String(), args

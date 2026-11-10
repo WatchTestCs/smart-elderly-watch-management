@@ -138,10 +138,10 @@ func TestHTTPBatchLatencyAB(t *testing.T) {
 	}
 	var samples, events int
 	ctx := context.Background()
-	if err := pool.QueryRow(ctx, "SELECT count(*) FROM health_sample").Scan(&samples); err != nil {
+	if err := pool.QueryRowContext(ctx, "SELECT count(*) FROM health_sample").Scan(&samples); err != nil {
 		t.Fatal(err)
 	}
-	if err := pool.QueryRow(ctx, "SELECT count(*) FROM health_change").Scan(&events); err != nil {
+	if err := pool.QueryRowContext(ctx, "SELECT count(*) FROM health_change").Scan(&events); err != nil {
 		t.Fatal(err)
 	}
 	if samples != workers*size || events != (warmup*workers+requests)*size {

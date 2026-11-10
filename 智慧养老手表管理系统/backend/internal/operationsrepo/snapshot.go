@@ -43,12 +43,12 @@ type Snapshot struct {
 
 func ReadHealthAlerts(ctx context.Context, q db.RowQuerier) (HealthAlerts, error) {
 	var out HealthAlerts
-	err := q.QueryRow(ctx, healthAlertCountsSQL).Scan(&out.HeartRate, &out.BloodPressure, &out.Sleep)
+	err := q.QueryRowContext(ctx, healthAlertCountsSQL).Scan(&out.HeartRate, &out.BloodPressure, &out.Sleep)
 	return out, err
 }
 
 func ReadPositionAlerts(ctx context.Context, q db.RowQuerier) (total, active int64, err error) {
-	err = q.QueryRow(ctx, positionAlertSummarySQL).Scan(&total, &active)
+	err = q.QueryRowContext(ctx, positionAlertSummarySQL).Scan(&total, &active)
 	return
 }
 
@@ -59,17 +59,17 @@ func ReadSnapshot(ctx context.Context, q db.RowQuerier, now time.Time) (Snapshot
 		h.heart_rate_count,h.blood_pressure_count,h.sleep_count,
 		p.total_residents,p.active_location_alerts,
 		(SELECT COUNT(*) FROM care_incident WHERE state<>'verified'),
-		(SELECT COUNT(*) FROM care_incident WHERE state<>'verified' AND due_at < $1),
+		(SELECT COUNT(*) FROM care_incident WHERE state<>'verified' AND due_at < ?),
 		(SELECT COUNT(*) FROM care_notification_outbox WHERE status='pending'),
 		(SELECT COUNT(*) FROM care_notification_outbox WHERE status='failed'),
-		(SELECT COUNT(*) FROM care_notification_outbox WHERE status='sending' AND last_attempt_at < $2),
+		(SELECT COUNT(*) FROM care_notification_outbox WHERE status='sending' AND last_attempt_at < ?),
 		(SELECT COUNT(*) FROM device WHERE status<>0),
-		(SELECT COUNT(*) FROM device WHERE status<>0 AND (last_time IS NULL OR last_time < $3)),
+		(SELECT COUNT(*) FROM device WHERE status<>0 AND (last_time IS NULL OR last_time < ?)),
 		(SELECT COUNT(*) FROM device WHERE status<>0 AND battery IS NOT NULL AND battery>=0 AND battery<20),
 		(SELECT COUNT(*) FROM device WHERE status<>0 AND old_id IS NULL)
 		FROM (` + healthAlertCountsSQL + `) h
 		CROSS JOIN (` + positionAlertSummarySQL + `) p`
-	err := q.QueryRow(ctx, query, now, now.Add(-2*time.Minute), now.Add(-2*time.Minute)).Scan(
+	err := q.QueryRowContext(ctx, query, now, now.Add(-2*time.Minute), now.Add(-2*time.Minute)).Scan(
 		&out.Health.HeartRate, &out.Health.BloodPressure, &out.Health.Sleep,
 		&out.TotalResidents, &out.ActiveLocationAlerts,
 		&out.ActiveCareIncidents, &out.OverdueCareIncidents,

@@ -2,6 +2,7 @@ package notify
 
 import (
 	"context"
+	"database/sql"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -83,11 +84,11 @@ func TestBulkStaleLeaseCannotOverwriteAcceptanceOrCreateFallback(t *testing.T) {
 	t.Setenv("TENCENT_SMS_APPID", "")
 	p := dbtest.MySQL(t)
 	ctx := context.Background()
-	tx, err := p.Begin(ctx)
+	tx, err := p.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer tx.Rollback(ctx)
+	defer tx.Rollback()
 	messages := []Message{
 		{Topic: "announcement", Key: "one", FamilyID: 1, Phone: "13800000001", Channels: []string{"sms"}},
 		{Topic: "announcement", Key: "two", FamilyID: 1, Phone: "13800000001", Channels: []string{"sms"}},
@@ -95,10 +96,10 @@ func TestBulkStaleLeaseCannotOverwriteAcceptanceOrCreateFallback(t *testing.T) {
 	if err = EnqueueBatch(ctx, tx, nil, messages); err != nil {
 		t.Fatal(err)
 	}
-	if err = tx.Commit(ctx); err != nil {
+	if err = tx.Commit(); err != nil {
 		t.Fatal(err)
 	}
-	if _, err = p.Exec(ctx, "UPDATE message_outbox SET attempts=4"); err != nil {
+	if _, err = p.ExecContext(ctx, "UPDATE message_outbox SET attempts=4"); err != nil {
 		t.Fatal(err)
 	}
 	arrived, release := make(chan struct{}), make(chan struct{})
@@ -127,7 +128,7 @@ func TestBulkStaleLeaseCannotOverwriteAcceptanceOrCreateFallback(t *testing.T) {
 	done := make(chan error, 1)
 	go func() { _, err := d.Drain(ctx, 512); done <- err }()
 	<-arrived
-	if _, err = p.Exec(ctx, "UPDATE message_outbox SET last_attempt_at=$1", time.Now().Add(-2*time.Minute)); err != nil {
+	if _, err = p.ExecContext(ctx, "UPDATE message_outbox SET last_attempt_at=?", time.Now().Add(-2*time.Minute)); err != nil {
 		close(release)
 		t.Fatal(err)
 	}
@@ -140,7 +141,7 @@ func TestBulkStaleLeaseCannotOverwriteAcceptanceOrCreateFallback(t *testing.T) {
 		t.Fatal(err)
 	}
 	var sent, delivered, fallback int
-	if err = p.QueryRow(ctx, "SELECT sum(status='sent'),sum(status='delivered'),sum(channel='voice') FROM message_outbox").Scan(&sent, &delivered, &fallback); err != nil || sent != 2 || delivered != 0 || fallback != 0 {
+	if err = p.QueryRowContext(ctx, "SELECT sum(status='sent'),sum(status='delivered'),sum(channel='voice') FROM message_outbox").Scan(&sent, &delivered, &fallback); err != nil || sent != 2 || delivered != 0 || fallback != 0 {
 		t.Fatal(sent, delivered, fallback, err)
 	}
 }
@@ -158,18 +159,18 @@ func TestBulkBoundPartialAcceptanceAndFifthFailureFallback(t *testing.T) {
 	for i := range messages {
 		messages[i] = Message{Topic: "announcement", Key: fmt.Sprint(i), FamilyID: 1, Phone: "13800000001", Channels: []string{"sms"}}
 	}
-	tx, err := p.Begin(ctx)
+	tx, err := p.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer tx.Rollback(ctx)
+	defer tx.Rollback()
 	if err = EnqueueBatch(ctx, tx, box, messages); err != nil {
 		t.Fatal(err)
 	}
-	if err = tx.Commit(ctx); err != nil {
+	if err = tx.Commit(); err != nil {
 		t.Fatal(err)
 	}
-	if _, err = p.Exec(ctx, "UPDATE message_outbox SET attempts=4"); err != nil {
+	if _, err = p.ExecContext(ctx, "UPDATE message_outbox SET attempts=4"); err != nil {
 		t.Fatal(err)
 	}
 	var received atomic.Int64
@@ -194,7 +195,7 @@ func TestBulkBoundPartialAcceptanceAndFifthFailureFallback(t *testing.T) {
 		t.Fatal(n, received.Load(), err)
 	}
 	var sent, exhausted, delivered, encryptedFallback, unclaimed int
-	if err = p.QueryRow(ctx, `SELECT sum(status='sent'),sum(status='exhausted'),sum(status='delivered'),
+	if err = p.QueryRowContext(ctx, `SELECT sum(status='sent'),sum(status='exhausted'),sum(status='delivered'),
  sum(channel='voice' AND recipient LIKE 'sne1:%'),sum(channel='sms' AND status='pending' AND attempts=4) FROM message_outbox`).Scan(&sent, &exhausted, &delivered, &encryptedFallback, &unclaimed); err != nil || sent != 1 || exhausted != 511 || delivered != 0 || encryptedFallback != 511 || unclaimed != 1 {
 		t.Fatal(sent, exhausted, delivered, encryptedFallback, unclaimed, err)
 	}

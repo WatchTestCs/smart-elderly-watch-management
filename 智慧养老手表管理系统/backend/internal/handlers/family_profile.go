@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"net/http"
 	"suining-care/internal/auth"
 	"suining-care/internal/response"
@@ -26,13 +27,17 @@ func (h *Handler) familyUpdateTwo(w http.ResponseWriter, r *http.Request) {
 		scopeDeny(w)
 		return
 	}
-	ct, err := h.DB.Exec(r.Context(),
-		`UPDATE family SET family_name=$1,family_sex=$2,family_address=$3,family_phone=$4
-		 WHERE family_id=$5`, name, sex, addr, phone, id)
+	ct, err := h.DB.ExecContext(r.Context(),
+		`UPDATE family SET family_name=?,family_sex=?,family_address=?,family_phone=?
+		 WHERE family_id=?`, name, sex, addr, phone, id)
 	if internalError(w, err) {
 		return
 	}
-	writeSingleMutation(w, ct.RowsAffected())
+	affected, err := ct.RowsAffected()
+	if internalError(w, err) {
+		return
+	}
+	writeSingleMutation(w, affected)
 }
 
 // POST /api/v1/family/updateTouPic —— 家属更新头像（ADMIN+FAMILY，归属隔离）。
@@ -51,23 +56,27 @@ func (h *Handler) familyUpdateTouPic(w http.ResponseWriter, r *http.Request) {
 		scopeDeny(w)
 		return
 	}
-	tx, err := h.DB.Begin(r.Context())
+	tx, err := h.DB.BeginTx(r.Context(), &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if internalError(w, err) {
 		return
 	}
-	defer tx.Rollback(r.Context())
+	defer tx.Rollback()
 	if !h.lockImages(w, r.Context(), tx, []string{pic}) {
 		return
 	}
-	ct, err := tx.Exec(r.Context(), `UPDATE family SET family_tou_pic=$1 WHERE family_phone=$2 AND ($3=0 OR family_id=$3)`, pic, phone, familySelfID(auth.Principal(r)))
+	ct, err := tx.ExecContext(r.Context(), `UPDATE family SET family_tou_pic=? WHERE family_phone=? AND (?=0 OR family_id=?)`, pic, phone, familySelfID(auth.Principal(r)), familySelfID(auth.Principal(r)))
 	if internalError(w, err) {
 		return
 	}
-	if ct.RowsAffected() != 1 {
+	affected, err := ct.RowsAffected()
+	if internalError(w, err) {
+		return
+	}
+	if affected != 1 {
 		recordNotFound(w)
 		return
 	}
-	if err = tx.Commit(r.Context()); internalError(w, err) {
+	if err = tx.Commit(); internalError(w, err) {
 		return
 	}
 	response.OK(w, nil)

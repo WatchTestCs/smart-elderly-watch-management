@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"flag"
 	"fmt"
 	"log"
@@ -30,13 +31,13 @@ func main() {
 	}
 	defer pool.Close()
 	for _, target := range []struct{ table, key, column string }{{"care_incident", "id", "resolution_note"}, {"care_incident_event", "id", "note"}, {"alert_review", "id", "reason"}} {
-		tx, err := pool.Begin(ctx)
+		tx, err := pool.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 		if err != nil {
 			log.Fatal(err)
 		}
-		rows, err := tx.Query(ctx, "SELECT "+target.key+","+target.column+" FROM "+target.table+" WHERE "+target.column+" IS NOT NULL ORDER BY "+target.key+" FOR UPDATE")
+		rows, err := tx.QueryContext(ctx, "SELECT "+target.key+","+target.column+" FROM "+target.table+" WHERE "+target.column+" IS NOT NULL ORDER BY "+target.key+" FOR UPDATE")
 		if err != nil {
-			tx.Rollback(ctx)
+			tx.Rollback()
 			log.Fatal(err)
 		}
 		type item struct {
@@ -58,7 +59,7 @@ func main() {
 		}
 		rows.Close()
 		if err != nil {
-			tx.Rollback(ctx)
+			tx.Rollback()
 			log.Fatal(err)
 		}
 		fmt.Printf("%s.%s candidates=%d apply=%t decrypt=%t\n", target.table, target.column, len(items), *apply, *decrypt)
@@ -71,18 +72,18 @@ func main() {
 					text, err = box.Seal(value.text, "care-text")
 				}
 				if err == nil {
-					_, err = tx.Exec(ctx, "UPDATE "+target.table+" SET "+target.column+"=$2 WHERE "+target.key+"=$1", value.id, text)
+					_, err = tx.ExecContext(ctx, "UPDATE "+target.table+" SET "+target.column+"=? WHERE "+target.key+"=?", text, value.id)
 				}
 				if err != nil {
-					tx.Rollback(ctx)
+					tx.Rollback()
 					log.Fatal("field conversion failed; current table rolled back")
 				}
 			}
-			if err = tx.Commit(ctx); err != nil {
+			if err = tx.Commit(); err != nil {
 				log.Fatal(err)
 			}
 		} else {
-			tx.Rollback(ctx)
+			tx.Rollback()
 		}
 	}
 }

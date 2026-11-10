@@ -34,7 +34,7 @@ func (s *databaseService) serveMetrics(w http.ResponseWriter, r *http.Request) {
 	// Gateway dispatch may be configured while signed delivery ACKs are not.
 	observability.Default.Set("suining_care_receipt_configured", boolNumber(len(os.Getenv("CARE_RECEIPT_SECRET")) >= 32))
 	if pool := s.currentDB.Load(); pool != nil {
-		stats := pool.SQL().Stats()
+		stats := pool.DB.Stats()
 		observability.Default.Set("suining_mysql_pool_open_connections", float64(stats.OpenConnections))
 		observability.Default.Set("suining_mysql_pool_in_use", float64(stats.InUse))
 		observability.Default.Set("suining_mysql_pool_idle", float64(stats.Idle))

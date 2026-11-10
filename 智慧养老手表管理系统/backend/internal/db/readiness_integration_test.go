@@ -2,6 +2,7 @@ package db_test
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"net"
 	"os"
@@ -29,18 +30,18 @@ func TestMySQLPingDuringPoolSaturation(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer pool.Close()
-	pool.SQL().SetMaxOpenConns(1)
-	tx, err := pool.Begin(ctx)
+	pool.DB.SetMaxOpenConns(1)
+	tx, err := pool.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer tx.Rollback(ctx)
-	if pool.SQL().Stats().InUse != 1 {
+	defer tx.Rollback()
+	if pool.DB.Stats().InUse != 1 {
 		t.Fatal("business pool is not saturated")
 	}
 	probe, stop := context.WithTimeout(ctx, 500*time.Millisecond)
 	defer stop()
-	if err := pool.Ping(probe); err != nil {
+	if err := pool.PingContext(probe); err != nil {
 		t.Fatalf("healthy MySQL withdrawn under pool saturation: %v", err)
 	}
 }
@@ -79,7 +80,7 @@ func TestMySQLPingReportsConnectionLoss(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer pool.Close()
-	if err := pool.Ping(ctx); err != nil {
+	if err := pool.PingContext(ctx); err != nil {
 		t.Fatal(err)
 	}
 	down.Store(true)
@@ -88,11 +89,11 @@ func TestMySQLPingReportsConnectionLoss(t *testing.T) {
 		conn.Close()
 	}
 	mu.Unlock()
-	if err := pool.Ping(ctx); err == nil {
+	if err := pool.PingContext(ctx); err == nil {
 		t.Fatal("readiness concealed a disconnected MySQL server")
 	}
 	down.Store(false)
-	if err := pool.Ping(ctx); err != nil {
+	if err := pool.PingContext(ctx); err != nil {
 		t.Fatalf("readiness did not recover after reconnection: %v", err)
 	}
 }

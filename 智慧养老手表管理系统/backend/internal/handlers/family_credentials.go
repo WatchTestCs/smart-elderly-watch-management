@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"database/sql"
 	"net/http"
 	"suining-care/internal/auth"
 	"suining-care/internal/response"
@@ -29,8 +30,8 @@ func (h *Handler) familyUpdatePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var hashed *string
-	err := h.DB.QueryRow(r.Context(),
-		`SELECT family_password FROM family WHERE family_phone=$1 AND ($2=0 OR family_id=$2)`, phone, familySelfID(auth.Principal(r))).Scan(&hashed)
+	err := h.DB.QueryRowContext(r.Context(),
+		`SELECT family_password FROM family WHERE family_phone=? AND (?=0 OR family_id=?)`, phone, familySelfID(auth.Principal(r)), familySelfID(auth.Principal(r))).Scan(&hashed)
 	if err != nil {
 		if isNotFound(err) {
 			response.Fail(w, "手机号或原密码不正确")
@@ -48,17 +49,17 @@ func (h *Handler) familyUpdatePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := r.Context()
-	tx, err := h.DB.Begin(ctx)
+	tx, err := h.DB.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if internalError(w, err) {
 		return
 	}
-	defer tx.Rollback(ctx)
+	defer tx.Rollback()
 	var familyID int64
 	var currentHash *string
-	err = tx.QueryRow(ctx,
+	err = tx.QueryRowContext(ctx,
 		`SELECT family_id,family_password FROM family
-		 WHERE family_phone=$1 AND ($2=0 OR family_id=$2) FOR UPDATE`,
-		phone, familySelfID(auth.Principal(r))).Scan(&familyID, &currentHash)
+		 WHERE family_phone=? AND (?=0 OR family_id=?) FOR UPDATE`,
+		phone, familySelfID(auth.Principal(r)), familySelfID(auth.Principal(r))).Scan(&familyID, &currentHash)
 	if isNotFound(err) {
 		response.Fail(w, "手机号或原密码不正确")
 		return
@@ -70,14 +71,14 @@ func (h *Handler) familyUpdatePassword(w http.ResponseWriter, r *http.Request) {
 		conflict409(w, "密码已被其他请求修改，请重新验证")
 		return
 	}
-	if _, err := tx.Exec(ctx, "UPDATE family SET family_password=$1 WHERE family_id=$2", nh, familyID); internalError(w, err) {
+	if _, err := tx.ExecContext(ctx, "UPDATE family SET family_password=? WHERE family_id=?", nh, familyID); internalError(w, err) {
 		return
 	}
 	// Revoke persisted sessions atomically with the credential change.
-	if _, err := tx.Exec(ctx, "DELETE FROM web_session WHERE role='FAMILY' AND actor_id=$1", familyID); internalError(w, err) {
+	if _, err := tx.ExecContext(ctx, "DELETE FROM web_session WHERE role='FAMILY' AND actor_id=?", familyID); internalError(w, err) {
 		return
 	}
-	if internalError(w, tx.Commit(ctx)) {
+	if internalError(w, tx.Commit()) {
 		return
 	}
 	if err := h.Sessions.RevokeContext(context.WithoutCancel(ctx), auth.RoleFamily, familyID); err != nil {

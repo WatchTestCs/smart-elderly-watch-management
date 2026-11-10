@@ -29,7 +29,7 @@ func TestCapabilityReadsAreAudited(t *testing.T) {
 		}
 	}
 	var count int
-	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM care_sensitive_access_audit WHERE actor_id=1").Scan(&count); err != nil || count != 3 || calls != 3 {
+	if err := pool.QueryRowContext(context.Background(), "SELECT count(*) FROM care_sensitive_access_audit WHERE actor_id=1").Scan(&count); err != nil || count != 3 || calls != 3 {
 		t.Fatal(count, calls, err)
 	}
 	pool.Close()

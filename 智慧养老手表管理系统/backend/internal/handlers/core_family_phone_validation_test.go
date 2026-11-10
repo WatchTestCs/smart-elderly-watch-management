@@ -14,7 +14,7 @@ func familyPhoneValidationHandler(t *testing.T) *Handler {
 	if err != nil {
 		t.Fatal(err)
 	}
-	mustExec(t, h.DB, "INSERT INTO family(family_name,family_phone,family_password,family_address) VALUES('原家属','13800000001',$1,'原地址')", hash)
+	mustExec(t, h.DB, "INSERT INTO family(family_name,family_phone,family_password,family_address) VALUES('原家属','13800000001',?,'原地址')", hash)
 	mustExec(t, h.DB, "INSERT INTO oldperson(old_id,name,family_id,phone) VALUES(1,'已关联',1,'13800000009'),(2,'待关联',NULL,'13800000008')")
 	return h
 }
@@ -26,7 +26,7 @@ func familyPhoneEdit(phone string) map[string]any {
 func assertFamilyPhoneUnchanged(t *testing.T, h *Handler) {
 	t.Helper()
 	var name, phone, address string
-	if err := h.DB.QueryRow(context.Background(), "SELECT family_name,family_phone,family_address FROM family WHERE family_id=1").Scan(&name, &phone, &address); err != nil {
+	if err := h.DB.QueryRowContext(context.Background(), "SELECT family_name,family_phone,family_address FROM family WHERE family_id=1").Scan(&name, &phone, &address); err != nil {
 		t.Fatal(err)
 	}
 	if name != "原家属" || phone != "13800000001" || address != "原地址" {
@@ -47,10 +47,10 @@ func TestContinuousFamilyPhoneFormatValidation(t *testing.T) {
 	}
 	var count int
 	var bound *int64
-	if err := h.DB.QueryRow(context.Background(), "SELECT count(*) FROM family").Scan(&count); err != nil || count != 1 {
+	if err := h.DB.QueryRowContext(context.Background(), "SELECT count(*) FROM family").Scan(&count); err != nil || count != 1 {
 		t.Errorf("invalid add created an account: count=%d err=%v", count, err)
 	}
-	if err := h.DB.QueryRow(context.Background(), "SELECT family_id FROM oldperson WHERE old_id=2").Scan(&bound); err != nil || bound != nil {
+	if err := h.DB.QueryRowContext(context.Background(), "SELECT family_id FROM oldperson WHERE old_id=2").Scan(&bound); err != nil || bound != nil {
 		t.Fatalf("invalid phone changed elder binding: family=%v err=%v", bound, err)
 	}
 }

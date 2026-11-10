@@ -2,6 +2,7 @@ package careworkflow
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"suining-care/internal/db"
@@ -51,14 +52,14 @@ const verifiedIncidentOrderSQL = ` ORDER BY i.verified_at DESC, i.id DESC`
 // ListIncidents returns risk-ordered active work and newest-first verified history.
 func ListIncidents(ctx context.Context, store *db.Database, verified bool, page, pageSize int) ([]Incident, int64, error) {
 	var total int64
-	if err := store.QueryRow(ctx, `SELECT count(*) FROM care_incident WHERE (state='verified')=$1`, verified).Scan(&total); err != nil {
+	if err := store.QueryRowContext(ctx, `SELECT count(*) FROM care_incident WHERE (state='verified')=?`, verified).Scan(&total); err != nil {
 		return nil, 0, err
 	}
 	order := activeIncidentOrderSQL
 	if verified {
 		order = verifiedIncidentOrderSQL
 	}
-	items, err := db.QueryList(ctx, store, func(rows db.Rows) (Incident, error) {
+	items, err := db.QueryList(ctx, store, func(rows *sql.Rows) (Incident, error) {
 		var item Incident
 		err := rows.Scan(&item.ID, &item.ResidentID, &item.DeviceID, &item.Kind, &item.State,
 			&item.Severity, &item.CreatedAt, &item.DueAt, &item.AcknowledgedBy,
@@ -70,7 +71,7 @@ func ListIncidents(ctx context.Context, store *db.Database, verified bool, page,
           o.name,
           `+notificationStatusSQL+`
      FROM care_incident i LEFT JOIN oldperson o ON o.old_id=i.old_id
-     WHERE (i.state='verified')=$1`+order+`
-     LIMIT $2 OFFSET $3`, verified, pageSize, (page-1)*pageSize)
+     WHERE (i.state='verified')=?`+order+`
+     LIMIT ? OFFSET ?`, verified, pageSize, (page-1)*pageSize)
 	return items, total, err
 }

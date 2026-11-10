@@ -46,7 +46,7 @@ $env:SUINING_PG_ANALYTICS_URL=$env:PG_ANALYTICS_URL
 
 无 TLS 示例仅用于受控本机连接；远程 MySQL 使用验证证书的 `tls=true`，远程 PG 配置 `sslmode=verify-full` 与信任证书。实际凭据不提交到源码、日志或截图。[MySQL 驱动配置](https://github.com/go-sql-driver/mysql)
 
-服务强制参数绑定、utf8mb4、UTC 时间、时间值解析与严格 SQL 模式。保留微秒精度，避免刚入队的通知因时间截断而无法立即领取。SQL 适配覆盖本应用的重复参数、upsert、自增 ID、日期格式、拼接和锁语句，不是任意 PG SQL 的通用翻译器。
+服务强制参数绑定、utf8mb4、UTC 时间、时间值解析与严格 SQL 模式。保留微秒精度，避免刚入队的通知因时间截断而无法立即领取。业务 SQL 全部为原生 MySQL，使用 `?`、`ON DUPLICATE KEY UPDATE`、`CONCAT` 和 MySQL 锁语法。SQL 与参数顺序由仓储负责；`database/sql` 负责执行、事务、结果和参数转换，没有 SQL 方言翻译层。具体边界见[原生 MySQL 架构](NATIVE_MYSQL_ARCHITECTURE.md)。
 
 正式业务迁移入口 `go run ./cmd/migrate` 只处理 MySQL，不接受 PostgreSQL 业务库连接串。
 

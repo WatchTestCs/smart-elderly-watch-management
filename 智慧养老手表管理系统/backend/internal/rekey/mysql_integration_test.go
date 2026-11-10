@@ -14,7 +14,7 @@ import (
 // crypto-only tests cannot establish the pagination or CAS guarantees here.
 func TestRekeyMySQL(t *testing.T) {
 	pool := dbtest.MySQL(t)
-	database := pool.SQL()
+	database := pool.DB
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 	defer cancel()
 	old, current, retired, legacy := boxes(t)

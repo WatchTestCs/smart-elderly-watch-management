@@ -2,11 +2,11 @@ package handlers
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"net/http"
 	"time"
 
-	dbstore "suining-care/internal/db"
 	"suining-care/internal/deviceprotocol"
 	"suining-care/internal/devicerepo"
 	"suining-care/internal/deviceworkflow"
@@ -34,10 +34,10 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 	result, failure, err := deviceworkflow.SOS(r.Context(), h.DB, h.Box, deviceworkflow.SOSInput{
 		Number: req.deviceNo, Secret: req.secret, Epoch: req.bindingVersion, RequestID: req.requestID,
 	}, deviceworkflow.SOSHooks{
-		AcceptNonce: func(ctx context.Context, tx *dbstore.Transaction, deviceID int64) bool {
+		AcceptNonce: func(ctx context.Context, tx *sql.Tx, deviceID int64) bool {
 			return acceptSignedDeviceNonce(w, ctx, tx, deviceID)
 		},
-		Persist: func(ctx context.Context, tx *dbstore.Transaction, device *devicerepo.DeviceRecord) (int64, error) {
+		Persist: func(ctx context.Context, tx *sql.Tx, device *devicerepo.DeviceRecord) (int64, error) {
 			if msg := checkPosition(lng, lat); msg != "" {
 				invalidPosition = msg
 				return 0, errInvalidPosition

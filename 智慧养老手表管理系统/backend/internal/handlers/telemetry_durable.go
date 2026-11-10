@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"log"
 	"os"
@@ -30,7 +31,7 @@ func durableTelemetryEligible(parsed parsedDeviceTelemetry, requestID string, bo
 
 // QueueDurableReport is invoked in the authenticated device transaction.
 // A successful response is only emitted *after* that transaction commits.
-func (repo telemetryRepository) QueueDurableReport(ctx context.Context, tx *dbstore.Transaction, d *devicerepo.DeviceRecord, parsed parsedDeviceTelemetry, requestID string) error {
+func (repo telemetryRepository) QueueDurableReport(ctx context.Context, tx *sql.Tx, d *devicerepo.DeviceRecord, parsed parsedDeviceTelemetry, requestID string) error {
 	if repo.box == nil {
 		return errors.New("durable telemetry requires a valid encryption key")
 	}
@@ -67,13 +68,13 @@ func DrainDurableTelemetryBatch(ctx context.Context, store *dbstore.Database, bo
 		return 0, errors.New("missing telemetry encryption key")
 	}
 	repo := telemetryRepository{box: box}
-	return telemetryworkflow.Drain(ctx, store, func(ctx context.Context, tx *dbstore.Transaction, item telemetryrepo.DurableItem) error {
+	return telemetryworkflow.Drain(ctx, store, func(ctx context.Context, tx *sql.Tx, item telemetryrepo.DurableItem) error {
 		return processDurableQueueItem(ctx, tx, repo, item)
 	})
 }
 
-func processDurableQueueItem(ctx context.Context, tx *dbstore.Transaction, repo telemetryRepository, item telemetryrepo.DurableItem) error {
-	return telemetryworkflow.ProcessItem(ctx, tx, repo.box, item, func(ctx context.Context, tx *dbstore.Transaction, device *devicerepo.DeviceRecord, payload telemetryworkflow.Payload) error {
+func processDurableQueueItem(ctx context.Context, tx *sql.Tx, repo telemetryRepository, item telemetryrepo.DurableItem) error {
+	return telemetryworkflow.ProcessItem(ctx, tx, repo.box, item, func(ctx context.Context, tx *sql.Tx, device *devicerepo.DeviceRecord, payload telemetryworkflow.Payload) error {
 		day := payload.ReportedAt.UTC()
 		parsed := parsedDeviceTelemetry{
 			now: payload.ReceivedAt, beTime: payload.ReportedAt,
@@ -93,7 +94,7 @@ func RunDurableTelemetry(ctx context.Context, store *dbstore.Database, box *secu
 		return
 	}
 	repo := telemetryRepository{box: box}
-	telemetryworkflow.Run(ctx, store, func(ctx context.Context, tx *dbstore.Transaction, item telemetryrepo.DurableItem) error {
+	telemetryworkflow.Run(ctx, store, func(ctx context.Context, tx *sql.Tx, item telemetryrepo.DurableItem) error {
 		return processDurableQueueItem(ctx, tx, repo, item)
 	})
 }

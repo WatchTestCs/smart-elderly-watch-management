@@ -2,13 +2,12 @@ package telemetryrepo
 
 import (
 	"context"
+	"database/sql"
 	"time"
-
-	"suining-care/internal/db"
 )
 
 type heartbeatWriter interface {
-	Exec(context.Context, string, ...any) (db.CommandResult, error)
+	ExecContext(context.Context, string, ...any) (sql.Result, error)
 }
 
 // TouchDevice records an authenticated heartbeat without moving last-seen timestamps backwards.
@@ -21,10 +20,10 @@ func TouchDevice(ctx context.Context, writer heartbeatWriter, deviceID int64, ba
 	if appVersion != nil {
 		version = *appVersion
 	}
-	_, err := writer.Exec(ctx,
-		`UPDATE device SET last_time=GREATEST(COALESCE(last_time,$1),$1),
-		 battery=COALESCE($2,battery), app_version=COALESCE($3,app_version),
-		 last_online_at=GREATEST(COALESCE(last_online_at,$1),$1) WHERE device_id=$4`,
-		now, b, version, deviceID)
+	_, err := writer.ExecContext(ctx,
+		`UPDATE device SET last_time=GREATEST(COALESCE(last_time,?),?),
+		 battery=COALESCE(?,battery), app_version=COALESCE(?,app_version),
+		 last_online_at=GREATEST(COALESCE(last_online_at,?),?) WHERE device_id=?`,
+		now, now, b, version, now, now, deviceID)
 	return err
 }

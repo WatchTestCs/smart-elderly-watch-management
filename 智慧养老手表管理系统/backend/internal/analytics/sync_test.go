@@ -46,31 +46,31 @@ func TestDualDatabaseRecoveryAndReplay(t *testing.T) {
 	if err = Migrate(ctx, pg); err != nil {
 		t.Fatal(err)
 	}
-	tx, err := primary.Begin(ctx)
+	tx, err := primary.BeginTx(ctx, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = tx.Exec(ctx, "INSERT INTO ratepre(id,hr,create_time) VALUES(1,72,now())"); err != nil {
+	if _, err = tx.ExecContext(ctx, "INSERT INTO ratepre(id,hr,create_time) VALUES(1,72,now())"); err != nil {
 		t.Fatal(err)
 	}
-	if err = tx.Rollback(ctx); err != nil {
+	if err = tx.Rollback(); err != nil {
 		t.Fatal(err)
 	}
 	var queued int
-	if err = primary.QueryRow(ctx, "SELECT count(*) FROM analytics_outbox").Scan(&queued); err != nil || queued != 0 {
+	if err = primary.QueryRowContext(ctx, "SELECT count(*) FROM analytics_outbox").Scan(&queued); err != nil || queued != 0 {
 		t.Fatalf("rolled-back telemetry leaked: %d %v", queued, err)
 	}
 	// A real server with the projection temporarily absent simulates PG write failure.
 	if _, err = pg.Exec(ctx, "DROP SCHEMA suining_analytics CASCADE"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err = primary.Exec(ctx, "INSERT INTO ratepre(id,hr,create_time) VALUES(1,72,now())"); err != nil {
+	if _, err = primary.ExecContext(ctx, "INSERT INTO ratepre(id,hr,create_time) VALUES(1,72,CURRENT_TIMESTAMP(6))"); err != nil {
 		t.Fatal(err)
 	}
 	if _, err = SyncBatch(ctx, primary, pg, 1); err == nil {
 		t.Fatal("missing PG projection reported success")
 	}
-	if err = primary.QueryRow(ctx, "SELECT count(*) FROM analytics_outbox").Scan(&queued); err != nil || queued != 1 {
+	if err = primary.QueryRowContext(ctx, "SELECT count(*) FROM analytics_outbox").Scan(&queued); err != nil || queued != 1 {
 		t.Fatalf("failed PG write lost event: %d %v", queued, err)
 	}
 	if err = Migrate(ctx, pg); err != nil {
@@ -78,7 +78,7 @@ func TestDualDatabaseRecoveryAndReplay(t *testing.T) {
 	}
 	var originalID int64
 	var payload []byte
-	if err = primary.QueryRow(ctx, "SELECT id,payload FROM analytics_outbox").Scan(&originalID, &payload); err != nil {
+	if err = primary.QueryRowContext(ctx, "SELECT id,payload FROM analytics_outbox").Scan(&originalID, &payload); err != nil {
 		t.Fatal(err)
 	}
 	if n, err := SyncBatch(ctx, primary, pg, 1); err != nil || n != 1 {
@@ -89,7 +89,7 @@ func TestDualDatabaseRecoveryAndReplay(t *testing.T) {
 		t.Fatalf("missing values changed: %s %v", payload, err)
 	}
 	// Replaying the same event is safe after a crash between PG commit and acknowledgement.
-	if _, err = primary.Exec(ctx, "INSERT INTO analytics_outbox(id,entity,entity_id,payload) VALUES($1,'ratepre',1,$2)", originalID, string(payload)); err != nil {
+	if _, err = primary.ExecContext(ctx, "INSERT INTO analytics_outbox(id,entity,entity_id,payload) VALUES(?,'ratepre',1,?)", originalID, string(payload)); err != nil {
 		t.Fatal(err)
 	}
 	if _, err = SyncBatch(ctx, primary, pg, 1); err != nil {
@@ -99,7 +99,7 @@ func TestDualDatabaseRecoveryAndReplay(t *testing.T) {
 	if err = pg.QueryRow(ctx, "SELECT count(*) FROM suining_analytics.record").Scan(&count); err != nil || count != 1 {
 		t.Fatalf("duplicate projection: %d %v", count, err)
 	}
-	if _, err = primary.Exec(ctx, "DELETE FROM ratepre WHERE id=1"); err != nil {
+	if _, err = primary.ExecContext(ctx, "DELETE FROM ratepre WHERE id=1"); err != nil {
 		t.Fatal(err)
 	}
 	if _, err = SyncBatch(ctx, primary, pg, 1); err != nil {
@@ -109,7 +109,7 @@ func TestDualDatabaseRecoveryAndReplay(t *testing.T) {
 	if err = pg.QueryRow(ctx, "SELECT deleted FROM suining_analytics.record").Scan(&deleted); err != nil || !deleted {
 		t.Fatalf("delete not propagated: %v %v", deleted, err)
 	}
-	if _, err = primary.Exec(ctx, "INSERT INTO analytics_outbox(id,entity,entity_id,payload) VALUES($1,'ratepre',1,$2)", originalID, string(payload)); err != nil {
+	if _, err = primary.ExecContext(ctx, "INSERT INTO analytics_outbox(id,entity,entity_id,payload) VALUES(?,'ratepre',1,?)", originalID, string(payload)); err != nil {
 		t.Fatal(err)
 	}
 	if _, err = SyncBatch(ctx, primary, pg, 1); err != nil {
@@ -119,7 +119,7 @@ func TestDualDatabaseRecoveryAndReplay(t *testing.T) {
 		t.Fatal("stale event resurrected deleted data")
 	}
 	pg.Close()
-	if _, err = primary.Exec(ctx, "INSERT INTO ratepre(id,hr) VALUES(2,80)"); err != nil {
+	if _, err = primary.ExecContext(ctx, "INSERT INTO ratepre(id,hr) VALUES(2,80)"); err != nil {
 		t.Fatal(err)
 	}
 	if _, err = SyncBatch(ctx, primary, pg, 1); err == nil {

@@ -28,7 +28,7 @@ func MySQL(t *testing.T) *db.Database {
 		t.Fatal(err)
 	}
 	name := "suining_test_" + uuid.NewString()[:8]
-	if _, err = admin.Exec("CREATE DATABASE `" + name + "` CHARACTER SET utf8mb4 COLLATE utf8mb4_bin"); err != nil {
+	if _, err = admin.ExecContext(context.Background(), "CREATE DATABASE `"+name+"` CHARACTER SET utf8mb4 COLLATE utf8mb4_bin"); err != nil {
 		admin.Close()
 		t.Fatal(err)
 	}
@@ -37,7 +37,7 @@ func MySQL(t *testing.T) *db.Database {
 		if pool != nil {
 			pool.Close()
 		}
-		_, err := admin.Exec("DROP DATABASE `" + name + "`")
+		_, err := admin.ExecContext(context.Background(), "DROP DATABASE `"+name+"`")
 		admin.Close()
 		if err != nil {
 			t.Error(err)

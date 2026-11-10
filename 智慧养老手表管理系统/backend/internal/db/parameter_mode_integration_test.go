@@ -17,7 +17,7 @@ func TestMySQLParameterTransportRoundTripsAndFallback(t *testing.T) {
 	primary := dbtest.MySQL(t)
 	ctx := context.Background()
 	var schema string
-	if err := primary.QueryRow(ctx, "SELECT DATABASE()").Scan(&schema); err != nil {
+	if err := primary.QueryRowContext(ctx, "SELECT DATABASE()").Scan(&schema); err != nil {
 		t.Fatal(err)
 	}
 	base, err := mysql.ParseDSN(os.Getenv("TEST_MYSQL_DSN"))
@@ -107,7 +107,7 @@ func TestMySQLConnectionStatementCacheLifecycle(t *testing.T) {
 	t.Setenv("MYSQL_STMT_CACHE_SIZE", "2")
 	primary := dbtest.MySQL(t)
 	ctx := context.Background()
-	conn, err := primary.SQL().Conn(ctx)
+	conn, err := primary.DB.Conn(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -196,7 +196,7 @@ func TestMySQLConnectionStatementCacheLifecycle(t *testing.T) {
 func TestMySQLSessionIsolationShortcutAndMutationFallback(t *testing.T) {
 	primary := dbtest.MySQL(t)
 	ctx := context.Background()
-	conn, err := primary.SQL().Conn(ctx)
+	conn, err := primary.DB.Conn(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -248,7 +248,7 @@ func TestMySQLSessionIsolationShortcutAndMutationFallback(t *testing.T) {
 	if err = tx.QueryRowContext(ctx, "SELECT v FROM isolation_probe WHERE id=1").Scan(&value); err != nil || value != 1 {
 		t.Fatal(value, err)
 	}
-	if _, err = primary.SQL().ExecContext(ctx, "UPDATE isolation_probe SET v=2 WHERE id=1"); err != nil {
+	if _, err = primary.DB.ExecContext(ctx, "UPDATE isolation_probe SET v=2 WHERE id=1"); err != nil {
 		t.Fatal(err)
 	}
 	if err = tx.QueryRowContext(ctx, "SELECT v FROM isolation_probe WHERE id=1").Scan(&value); err != nil || value != 2 {

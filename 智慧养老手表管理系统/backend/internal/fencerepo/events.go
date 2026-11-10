@@ -2,6 +2,7 @@ package fencerepo
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"suining-care/internal/db"
@@ -20,28 +21,28 @@ type NewEvent struct {
 	OccurredAt    time.Time
 }
 
-func InsertEvent(ctx context.Context, tx *db.Transaction, event NewEvent) (int64, error) {
-	return tx.InsertID(ctx,
+func InsertEvent(ctx context.Context, tx *sql.Tx, event NewEvent) (int64, error) {
+	return db.InsertID(ctx, tx,
 		`INSERT INTO fence_event(fence_id,fence_revision,old_id,device_id,epoch,direction,lng,lat,accuracy,occurred_at)
-		 VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+		 VALUES(?,?,?,?,?,?,?,?,?,?)`,
 		event.FenceID, event.FenceRevision, event.ResidentID, event.DeviceID, event.Epoch,
 		event.Direction, event.Point[0], event.Point[1], event.Accuracy, event.OccurredAt)
 }
 
-func InsertExitIncident(ctx context.Context, tx *db.Transaction, residentID, deviceID int64) (int64, error) {
-	return tx.InsertID(ctx,
-		"INSERT INTO care_incident(old_id,device_id,kind,severity) VALUES($1,$2,'fence_exit','high')",
+func InsertExitIncident(ctx context.Context, tx *sql.Tx, residentID, deviceID int64) (int64, error) {
+	return db.InsertID(ctx, tx,
+		"INSERT INTO care_incident(old_id,device_id,kind,severity) VALUES(?,?,'fence_exit','high')",
 		residentID, deviceID)
 }
 
-func InsertExitReceipt(ctx context.Context, tx *db.Transaction, incidentID int64) error {
-	_, err := tx.Exec(ctx,
-		"INSERT INTO care_incident_event(incident_id,actor,action,note) VALUES($1,'rule','received','围栏离开事件，等待通知与照护处置')",
+func InsertExitReceipt(ctx context.Context, tx *sql.Tx, incidentID int64) error {
+	_, err := tx.ExecContext(ctx,
+		"INSERT INTO care_incident_event(incident_id,actor,action,note) VALUES(?,'rule','received','围栏离开事件，等待通知与照护处置')",
 		incidentID)
 	return err
 }
 
-func LinkIncident(ctx context.Context, tx *db.Transaction, eventID, incidentID int64) error {
-	_, err := tx.Exec(ctx, "UPDATE fence_event SET incident_id=$2 WHERE id=$1", eventID, incidentID)
+func LinkIncident(ctx context.Context, tx *sql.Tx, eventID, incidentID int64) error {
+	_, err := tx.ExecContext(ctx, "UPDATE fence_event SET incident_id=? WHERE id=?", incidentID, eventID)
 	return err
 }

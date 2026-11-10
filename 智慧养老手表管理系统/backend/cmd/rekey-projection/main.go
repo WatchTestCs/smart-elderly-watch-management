@@ -73,7 +73,7 @@ func run(args []string, output io.Writer) error {
 		return errors.New("cannot open explicitly configured MySQL source")
 	}
 	var source string
-	err = primary.SQL().QueryRowContext(ctx, "SELECT source_id FROM analytics_source WHERE singleton=1").Scan(&source)
+	err = primary.DB.QueryRowContext(ctx, "SELECT source_id FROM analytics_source WHERE singleton=1").Scan(&source)
 	primary.Close()
 	if err != nil {
 		return errors.New("cannot identify the configured MySQL analytics source")

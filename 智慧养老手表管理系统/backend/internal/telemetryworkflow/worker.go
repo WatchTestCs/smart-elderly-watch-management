@@ -2,6 +2,7 @@ package telemetryworkflow
 
 import (
 	"context"
+	"database/sql"
 	"log"
 	"time"
 
@@ -12,7 +13,7 @@ import (
 
 const batchSize = 32
 
-type Process func(context.Context, *db.Transaction, telemetryrepo.DurableItem) error
+type Process func(context.Context, *sql.Tx, telemetryrepo.DurableItem) error
 
 // Drain owns global ordering, per-item savepoints, retry state and atomic commit.
 func Drain(ctx context.Context, store *db.Database, process Process) (int, error) {
@@ -20,11 +21,11 @@ func Drain(ctx context.Context, store *db.Database, process Process) (int, error
 	defer func() {
 		observability.Default.Add("suining_telemetry_drain_seconds_total", time.Since(started).Seconds())
 	}()
-	tx, err := store.Begin(ctx)
+	tx, err := store.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		return 0, err
 	}
-	defer tx.Rollback(ctx)
+	defer tx.Rollback()
 	items, err := telemetryrepo.LockDurableBatch(ctx, tx, batchSize)
 	if err != nil || len(items) == 0 {
 		return 0, err
@@ -37,22 +38,22 @@ func Drain(ctx context.Context, store *db.Database, process Process) (int, error
 			break
 		}
 		processed++
-		if _, err := tx.Exec(ctx, "SAVEPOINT telemetry_inbox_item"); err != nil {
+		if _, err := tx.ExecContext(ctx, "SAVEPOINT telemetry_inbox_item"); err != nil {
 			return 0, err
 		}
 		if err := process(ctx, tx, item); err != nil {
-			if _, rollbackErr := tx.Exec(ctx, "ROLLBACK TO SAVEPOINT telemetry_inbox_item"); rollbackErr != nil {
+			if _, rollbackErr := tx.ExecContext(ctx, "ROLLBACK TO SAVEPOINT telemetry_inbox_item"); rollbackErr != nil {
 				return 0, rollbackErr
 			}
 			if err := telemetryrepo.MarkDurableFailure(ctx, tx, item, err.Error()); err != nil {
 				return 0, err
 			}
 		}
-		if _, err := tx.Exec(ctx, "RELEASE SAVEPOINT telemetry_inbox_item"); err != nil {
+		if _, err := tx.ExecContext(ctx, "RELEASE SAVEPOINT telemetry_inbox_item"); err != nil {
 			return 0, err
 		}
 	}
-	if err := tx.Commit(ctx); err != nil {
+	if err := tx.Commit(); err != nil {
 		return 0, err
 	}
 	observability.Default.Add("suining_telemetry_drain_processed_total", float64(processed))

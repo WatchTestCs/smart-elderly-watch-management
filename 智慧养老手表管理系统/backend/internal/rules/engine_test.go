@@ -2,6 +2,7 @@ package rules
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -18,10 +19,10 @@ func seed(t *testing.T) (*db.Database, time.Time) {
 	p := dbtest.MySQL(t)
 	now := time.Date(2026, 10, 20, 15, 30, 0, 0, time.UTC)
 	ctx := context.Background()
-	if _, err := p.Exec(ctx, "INSERT INTO oldperson(old_id,name) VALUES(1,'长者')"); err != nil {
+	if _, err := p.ExecContext(ctx, "INSERT INTO oldperson(old_id,name) VALUES(1,'长者')"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := p.Exec(ctx, "INSERT INTO device(device_id,device_no,secret,old_id,last_time,bind_time) VALUES(1,'RULE001','unused',1,$1,$1)", now); err != nil {
+	if _, err := p.ExecContext(ctx, "INSERT INTO device(device_id,device_no,secret,old_id,last_time,bind_time) VALUES(1,'RULE001','unused',1,?,?)", now, now); err != nil {
 		t.Fatal(err)
 	}
 	return p, now
@@ -29,16 +30,16 @@ func seed(t *testing.T) (*db.Database, time.Time) {
 func save(t *testing.T, p *db.Database, s health.Sample) {
 	t.Helper()
 	ctx := context.Background()
-	tx, err := p.Begin(ctx)
+	tx, err := p.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		t.Fatal(err)
 	}
 	id := int64(1)
 	if _, _, err = health.Save(ctx, tx, health.Owner{OldID: 1, DeviceID: &id, Epoch: 1}, s); err != nil {
-		tx.Rollback(ctx)
+		tx.Rollback()
 		t.Fatal(err)
 	}
-	if err = tx.Commit(ctx); err != nil {
+	if err = tx.Commit(); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -53,7 +54,7 @@ func testBaselineSourceIdentity(t *testing.T, devicePrefix int) {
 	ctx := context.Background()
 	// Index prefixes and case-insensitive legacy collations are only filters;
 	// neither may merge distinct sources into a baseline.
-	if _, err := p.Exec(ctx, "ALTER TABLE health_sample MODIFY source varchar(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL, MODIFY source_device varchar(4096) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL"); err != nil {
+	if _, err := p.ExecContext(ctx, "ALTER TABLE health_sample MODIFY source varchar(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL, MODIFY source_device varchar(4096) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL"); err != nil {
 		t.Fatal(err)
 	}
 	source, device := strings.Repeat("s", 64)+"a", strings.Repeat("d", devicePrefix)+"a"
@@ -76,7 +77,7 @@ func testBaselineSourceIdentity(t *testing.T, devicePrefix int) {
 		}
 	}
 	var count int
-	if err := p.QueryRow(ctx, "SELECT count(*) FROM care_incident WHERE kind='rule_baseline_heart_rate'").Scan(&count); err != nil || count != 1 {
+	if err := p.QueryRowContext(ctx, "SELECT count(*) FROM care_incident WHERE kind='rule_baseline_heart_rate'").Scan(&count); err != nil || count != 1 {
 		t.Fatalf("source identity changed baseline: incidents=%d err=%v", count, err)
 	}
 }
@@ -97,13 +98,13 @@ func TestBaselineStreakUsesDistinctObservationsAndRecovers(t *testing.T) {
 		}
 	}
 	var count int
-	if err := p.QueryRow(ctx, "SELECT count(*) FROM care_incident WHERE kind='rule_baseline_heart_rate'").Scan(&count); err != nil || count != 1 {
+	if err := p.QueryRowContext(ctx, "SELECT count(*) FROM care_incident WHERE kind='rule_baseline_heart_rate'").Scan(&count); err != nil || count != 1 {
 		t.Fatal(count, err)
 	}
 	if err := e.Device(ctx, 1, now.Add(4*time.Second)); err != nil {
 		t.Fatal(err)
 	}
-	p.QueryRow(ctx, "SELECT count(*) FROM care_incident").Scan(&count)
+	p.QueryRowContext(ctx, "SELECT count(*) FROM care_incident").Scan(&count)
 	if count != 1 {
 		t.Fatal("repeated observation emitted again", count)
 	}
@@ -113,7 +114,7 @@ func TestBaselineStreakUsesDistinctObservationsAndRecovers(t *testing.T) {
 		t.Fatal(err)
 	}
 	var active bool
-	p.QueryRow(ctx, "SELECT active FROM rule_state WHERE kind='baseline_heart_rate'").Scan(&active)
+	p.QueryRowContext(ctx, "SELECT active FROM rule_state WHERE kind='baseline_heart_rate'").Scan(&active)
 	if active {
 		t.Fatal("corrected healthy observation did not reset rule")
 	}
@@ -125,14 +126,14 @@ func TestBaselineCoverUsesIndexWithoutPayloadLookups(t *testing.T) {
 		at := now.Add(-time.Duration(i+30) * time.Hour)
 		save(t, p, health.Sample{RecordID: fmt.Sprint(i), Source: "watch", SourceDevice: "RULE001", Metric: "heart_rate", Unit: "count/min", Value: health.Number(70), Start: at, End: at, Version: 1})
 	}
-	args := []any{int64(1), int64(1), "heart_rate", "watch", "RULE001", now.AddDate(0, 0, -7).UnixMicro(), now.Add(-15 * time.Minute).UnixMicro()}
+	args := []any{int64(1), int64(1), "heart_rate", "watch", "RULE001", "watch", "RULE001", now.AddDate(0, 0, -7).UnixMicro(), now.Add(-15 * time.Minute).UnixMicro()}
 	var count int
 	var mean, deviation float64
-	if err := p.QueryRow(context.Background(), baselineCoverSQL, args...).Scan(&count, &mean, &deviation); err != nil || count != 20 || mean != 70 || deviation != 0 {
+	if err := p.QueryRowContext(context.Background(), baselineCoverSQL, args...).Scan(&count, &mean, &deviation); err != nil || count != 20 || mean != 70 || deviation != 0 {
 		t.Fatalf("cover changed baseline: count=%d mean=%g deviation=%g err=%v", count, mean, deviation, err)
 	}
 	var raw string
-	if err := p.QueryRow(context.Background(), "EXPLAIN FORMAT=JSON "+baselineCoverSQL, args...).Scan(&raw); err != nil {
+	if err := p.QueryRowContext(context.Background(), "EXPLAIN FORMAT=JSON "+baselineCoverSQL, args...).Scan(&raw); err != nil {
 		t.Fatal(err)
 	}
 	var plan any
@@ -176,11 +177,11 @@ func TestNightActivityCounterResetAndConcurrentOfflineDedup(t *testing.T) {
 		t.Fatal(err)
 	}
 	var count int
-	p.QueryRow(ctx, "SELECT count(*) FROM care_incident").Scan(&count)
+	p.QueryRowContext(ctx, "SELECT count(*) FROM care_incident").Scan(&count)
 	if count != 0 {
 		t.Fatal("counter reset became activity", count)
 	}
-	p.Exec(ctx, "UPDATE device SET last_time=$1", now.Add(-time.Hour))
+	p.ExecContext(ctx, "UPDATE device SET last_time=?", now.Add(-time.Hour))
 	var wg sync.WaitGroup
 	fail := make(chan error, 2)
 	for range 2 {
@@ -194,7 +195,7 @@ func TestNightActivityCounterResetAndConcurrentOfflineDedup(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	p.QueryRow(ctx, "SELECT count(*) FROM care_incident WHERE kind='rule_no_report'").Scan(&count)
+	p.QueryRowContext(ctx, "SELECT count(*) FROM care_incident WHERE kind='rule_no_report'").Scan(&count)
 	if count != 1 {
 		t.Fatal("offline deduplication", count)
 	}
@@ -219,7 +220,7 @@ func TestNightActivityMonotonicAndIntervals(t *testing.T) {
 				}
 			}
 			var count int
-			if err := p.QueryRow(context.Background(), "SELECT count(*) FROM care_incident WHERE kind='rule_night_activity'").Scan(&count); err != nil || count != 1 {
+			if err := p.QueryRowContext(context.Background(), "SELECT count(*) FROM care_incident WHERE kind='rule_night_activity'").Scan(&count); err != nil || count != 1 {
 				t.Fatal(count, err)
 			}
 		})
@@ -230,7 +231,7 @@ func TestTickPagesAndRetriesBeforeFailedDevice(t *testing.T) {
 	p, now := seed(t)
 	ctx := context.Background()
 	for id := 2; id <= 102; id++ {
-		if _, err := p.Exec(ctx, "INSERT INTO device(device_id,device_no,secret,old_id,last_time,bind_time) VALUES($1,$2,'unused',1,$3,$3)", id, fmt.Sprintf("RULE%03d", id), now); err != nil {
+		if _, err := p.ExecContext(ctx, "INSERT INTO device(device_id,device_no,secret,old_id,last_time,bind_time) VALUES(?,?,'unused',1,?,?)", id, fmt.Sprintf("RULE%03d", id), now, now); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -240,7 +241,7 @@ func TestTickPagesAndRetriesBeforeFailedDevice(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = p.Exec(ctx, "INSERT INTO rule_policy(device_id,revision,payload,updated_by) SELECT device_id,1,$1,1 FROM device", json.RawMessage(payload)); err != nil {
+	if _, err = p.ExecContext(ctx, "INSERT INTO rule_policy(device_id,revision,payload,updated_by) SELECT device_id,1,?,1 FROM device", json.RawMessage(payload)); err != nil {
 		t.Fatal(err)
 	}
 	e := Engine{DB: p}
@@ -254,33 +255,33 @@ func TestTickPagesAndRetriesBeforeFailedDevice(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = p.Exec(ctx, "UPDATE rule_policy SET payload=$1 WHERE device_id=50", json.RawMessage(invalid)); err != nil {
+	if _, err = p.ExecContext(ctx, "UPDATE rule_policy SET payload=? WHERE device_id=50", json.RawMessage(invalid)); err != nil {
 		t.Fatal(err)
 	}
 	live, err := json.Marshal(Default())
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = p.Exec(ctx, "UPDATE rule_policy SET payload=$1 WHERE device_id=75", json.RawMessage(live)); err != nil {
+	if _, err = p.ExecContext(ctx, "UPDATE rule_policy SET payload=? WHERE device_id=75", json.RawMessage(live)); err != nil {
 		t.Fatal(err)
 	}
-	if _, err = p.Exec(ctx, "UPDATE device SET last_time=$1 WHERE device_id=75", time.Now().UTC().Add(-time.Hour)); err != nil {
+	if _, err = p.ExecContext(ctx, "UPDATE device SET last_time=? WHERE device_id=75", time.Now().UTC().Add(-time.Hour)); err != nil {
 		t.Fatal(err)
 	}
 	if err = e.Tick(ctx); err == nil || e.After != 49 {
 		t.Fatalf("failed device skipped: after=%d err=%v", e.After, err)
 	}
-	if _, err = p.Exec(ctx, "UPDATE rule_policy SET payload=$1 WHERE device_id=50", json.RawMessage(payload)); err != nil {
+	if _, err = p.ExecContext(ctx, "UPDATE rule_policy SET payload=? WHERE device_id=50", json.RawMessage(payload)); err != nil {
 		t.Fatal(err)
 	}
 	if err = e.Tick(ctx); err != nil || e.After != 102 {
 		t.Fatalf("retry after=%d err=%v", e.After, err)
 	}
 	var count int
-	if err = p.QueryRow(ctx, "SELECT count(*) FROM rule_state").Scan(&count); err != nil || count != 1 {
+	if err = p.QueryRowContext(ctx, "SELECT count(*) FROM rule_state").Scan(&count); err != nil || count != 1 {
 		t.Fatal("disabled policies created state", count, err)
 	}
-	if err = p.QueryRow(ctx, "SELECT count(*) FROM care_incident WHERE device_id=75 AND kind='rule_no_report'").Scan(&count); err != nil || count != 1 {
+	if err = p.QueryRowContext(ctx, "SELECT count(*) FROM care_incident WHERE device_id=75 AND kind='rule_no_report'").Scan(&count); err != nil || count != 1 {
 		t.Fatal("retry duplicated successful device incident", count, err)
 	}
 }
@@ -290,7 +291,7 @@ func TestNightIncidentUpgradeRemainsIdempotent(t *testing.T) {
 		t.Run(kind, func(t *testing.T) {
 			p, now := seed(t)
 			ctx := context.Background()
-			if _, err := p.Exec(ctx, "INSERT INTO care_incident(old_id,device_id,kind,severity,created_at) VALUES(1,1,$1,'high',$2)", kind, now); err != nil {
+			if _, err := p.ExecContext(ctx, "INSERT INTO care_incident(old_id,device_id,kind,severity,created_at) VALUES(1,1,?,'high',?)", kind, now); err != nil {
 				t.Fatal(err)
 			}
 			e := Engine{DB: p}
@@ -301,10 +302,10 @@ func TestNightIncidentUpgradeRemainsIdempotent(t *testing.T) {
 			}
 			var count int
 			var severity string
-			if err := p.QueryRow(ctx, "SELECT count(*),max(severity) FROM care_incident").Scan(&count, &severity); err != nil || count != 1 || severity != "critical" {
+			if err := p.QueryRowContext(ctx, "SELECT count(*),max(severity) FROM care_incident").Scan(&count, &severity); err != nil || count != 1 || severity != "critical" {
 				t.Fatal(count, severity, err)
 			}
-			if err := p.QueryRow(ctx, "SELECT count(*) FROM care_incident_event WHERE action='night_rule'").Scan(&count); err != nil || count != 1 {
+			if err := p.QueryRowContext(ctx, "SELECT count(*) FROM care_incident_event WHERE action='night_rule'").Scan(&count); err != nil || count != 1 {
 				t.Fatal("duplicate upgrade", count, err)
 			}
 		})

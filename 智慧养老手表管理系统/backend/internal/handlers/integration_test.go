@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -60,7 +61,7 @@ func testHandler(t testing.TB, pool *dbstore.Database) *Handler {
 
 func mustExec(t *testing.T, pool *dbstore.Database, sql string, args ...any) {
 	t.Helper()
-	if _, err := pool.Exec(context.Background(), sql, args...); err != nil {
+	if _, err := pool.ExecContext(context.Background(), sql, args...); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -87,10 +88,10 @@ func TestIntegrationMigrationsAndBindingConstraint(t *testing.T) {
 		t.Fatal(wantErr)
 	}
 	var count int
-	if err := pool.QueryRow(ctx, "SELECT count(*) FROM schema_migrations").Scan(&count); err != nil || count != len(names) {
+	if err := pool.QueryRowContext(ctx, "SELECT count(*) FROM schema_migrations").Scan(&count); err != nil || count != len(names) {
 		t.Fatalf("migrations=%d want=%d err=%v", count, len(names), err)
 	}
-	_, err := pool.Exec(ctx, "INSERT INTO device(device_no,secret,old_id) VALUES('orphan','unused',999)")
+	_, err := pool.ExecContext(ctx, "INSERT INTO device(device_no,secret,old_id) VALUES('orphan','unused',999)")
 
 	if !db.IsForeignKey(err) {
 		t.Fatalf("orphan was not rejected: %v", err)
@@ -148,7 +149,7 @@ func TestIntegrationEditPreservesFamily(t *testing.T) {
 		t.Fatal(out)
 	}
 	var familyID *int64
-	if err := pool.QueryRow(context.Background(), "SELECT family_id FROM oldperson WHERE old_id=1").Scan(&familyID); err != nil || familyID == nil || *familyID != 7 {
+	if err := pool.QueryRowContext(context.Background(), "SELECT family_id FROM oldperson WHERE old_id=1").Scan(&familyID); err != nil || familyID == nil || *familyID != 7 {
 		t.Fatalf("binding changed: %v err=%v", familyID, err)
 	}
 }
@@ -162,7 +163,7 @@ func seedDevice(t *testing.T, pool *dbstore.Database) {
 		t.Fatal(err)
 	}
 	mustExec(t, pool, "INSERT INTO oldperson(old_id,name) VALUES(1,'长者')")
-	mustExec(t, pool, "INSERT INTO device(device_id,device_no,secret,old_id) VALUES(1,'WATCH001',$1,1)", hash)
+	mustExec(t, pool, "INSERT INTO device(device_id,device_no,secret,old_id) VALUES(1,'WATCH001',?,1)", hash)
 }
 
 func TestIntegrationCoordinatesAndSOS(t *testing.T) {
@@ -175,7 +176,7 @@ func TestIntegrationCoordinatesAndSOS(t *testing.T) {
 		t.Fatal(out)
 	}
 	var lng, lat *string
-	if err := pool.QueryRow(context.Background(), "SELECT lng,lat FROM alarm_precess ORDER BY id DESC LIMIT 1").Scan(&lng, &lat); err != nil || lng != nil || lat != nil {
+	if err := pool.QueryRowContext(context.Background(), "SELECT lng,lat FROM alarm_precess ORDER BY id DESC LIMIT 1").Scan(&lng, &lat); err != nil || lng != nil || lat != nil {
 		t.Fatalf("missing position must be NULL: %v %v err=%v", lng, lat, err)
 	}
 	// Real handlers must accept numeric decimal coordinates for reports and SOS.
@@ -186,7 +187,7 @@ func TestIntegrationCoordinatesAndSOS(t *testing.T) {
 		}
 	}
 	var count int
-	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM device_location WHERE lng='121.4737' AND lat='31.2304'").Scan(&count); err != nil || count != 2 {
+	if err := pool.QueryRowContext(context.Background(), "SELECT count(*) FROM device_location WHERE lng='121.4737' AND lat='31.2304'").Scan(&count); err != nil || count != 2 {
 		t.Fatalf("numeric coordinates persisted=%d err=%v", count, err)
 	}
 	bad := callAPI(h.deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "lng": 181, "lat": 31.2})
@@ -200,14 +201,14 @@ func TestIntegrationDistinctInvitesCannotOverwriteFamily(t *testing.T) {
 	h := testHandler(t, pool)
 	ctx := context.Background()
 	mustExec(t, pool, "INSERT INTO oldperson(old_id,name) VALUES(1,'长者')")
-	mustExec(t, pool, "INSERT INTO invite_code(code,old_id,expire_time) VALUES('AAAAAA',1,now()+interval '1 day'),('BBBBBB',1,now()+interval '1 day')")
+	mustExec(t, pool, "INSERT INTO invite_code(code,old_id,expire_time) VALUES('AAAAAA',1,CURRENT_TIMESTAMP(6)+INTERVAL 1 DAY),('BBBBBB',1,CURRENT_TIMESTAMP(6)+INTERVAL 1 DAY)")
 	// Hold the parent row so both registrations contend on the same elder.
-	blocker, err := pool.Begin(ctx)
+	blocker, err := pool.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer blocker.Rollback(ctx)
-	if _, err = blocker.Exec(ctx, "SELECT old_id FROM oldperson WHERE old_id=1 FOR UPDATE"); err != nil {
+	defer blocker.Rollback()
+	if _, err = blocker.ExecContext(ctx, "SELECT old_id FROM oldperson WHERE old_id=1 FOR UPDATE"); err != nil {
 		t.Fatal(err)
 	}
 	start := make(chan struct{})
@@ -223,7 +224,7 @@ func TestIntegrationDistinctInvitesCannotOverwriteFamily(t *testing.T) {
 	deadline := time.Now().Add(10 * time.Second)
 	for {
 		var waiting int
-		if err = pool.QueryRow(ctx, lockWaitQuery()).Scan(&waiting); err != nil {
+		if err = pool.QueryRowContext(ctx, lockWaitQuery()).Scan(&waiting); err != nil {
 			t.Fatal(err)
 		}
 		if waiting >= 2 {
@@ -234,7 +235,7 @@ func TestIntegrationDistinctInvitesCannotOverwriteFamily(t *testing.T) {
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
-	if err = blocker.Commit(ctx); err != nil {
+	if err = blocker.Commit(); err != nil {
 		t.Fatal(err)
 	}
 	success := 0
@@ -249,17 +250,17 @@ func TestIntegrationDistinctInvitesCannotOverwriteFamily(t *testing.T) {
 		}
 	}
 	var families, used int
-	if err = pool.QueryRow(ctx, "SELECT count(*) FROM family").Scan(&families); err != nil {
+	if err = pool.QueryRowContext(ctx, "SELECT count(*) FROM family").Scan(&families); err != nil {
 		t.Fatal(err)
 	}
-	if err = pool.QueryRow(ctx, "SELECT count(*) FROM invite_code WHERE used=1").Scan(&used); err != nil {
+	if err = pool.QueryRowContext(ctx, "SELECT count(*) FROM invite_code WHERE used=1").Scan(&used); err != nil {
 		t.Fatal(err)
 	}
 	if success != 1 || families != 1 || used != 1 {
 		t.Fatalf("success=%d accounts=%d used=%d", success, families, used)
 	}
 	var bound bool
-	if err = pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM oldperson o JOIN family f ON f.family_id=o.family_id WHERE o.old_id=1)").Scan(&bound); err != nil || !bound {
+	if err = pool.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM oldperson o JOIN family f ON f.family_id=o.family_id WHERE o.old_id=1)").Scan(&bound); err != nil || !bound {
 		t.Fatalf("missing winning binding: %v", err)
 	}
 }
@@ -296,12 +297,12 @@ func TestIntegrationBindDeleteRace(t *testing.T) {
 	ctx := context.Background()
 	mustExec(t, pool, "INSERT INTO oldperson(old_id,name) VALUES(1,'长者')")
 	mustExec(t, pool, "INSERT INTO device(device_no,secret) VALUES('racing','unused')")
-	binding, err := pool.Begin(ctx)
+	binding, err := pool.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer binding.Rollback(ctx)
-	if _, err = binding.Exec(ctx, "UPDATE device SET old_id=1 WHERE device_no='racing'"); err != nil {
+	defer binding.Rollback()
+	if _, err = binding.ExecContext(ctx, "UPDATE device SET old_id=1 WHERE device_no='racing'"); err != nil {
 		t.Fatal(err)
 	}
 	result := make(chan *httptest.ResponseRecorder, 1)
@@ -309,7 +310,7 @@ func TestIntegrationBindDeleteRace(t *testing.T) {
 	deadline := time.Now().Add(10 * time.Second)
 	for {
 		var waiting int
-		if err = pool.QueryRow(ctx, lockWaitQuery()).Scan(&waiting); err != nil {
+		if err = pool.QueryRowContext(ctx, lockWaitQuery()).Scan(&waiting); err != nil {
 			t.Fatal(err)
 		}
 		if waiting > 0 {
@@ -320,7 +321,7 @@ func TestIntegrationBindDeleteRace(t *testing.T) {
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
-	if err = binding.Commit(ctx); err != nil {
+	if err = binding.Commit(); err != nil {
 		t.Fatal(err)
 	}
 	response := <-result
@@ -328,7 +329,7 @@ func TestIntegrationBindDeleteRace(t *testing.T) {
 		t.Fatalf("racing deletion: HTTP %d %s", response.Code, response.Body.String())
 	}
 	var intact bool
-	if err = pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM device d JOIN oldperson o ON o.old_id=d.old_id WHERE d.device_no='racing')").Scan(&intact); err != nil || !intact {
+	if err = pool.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM device d JOIN oldperson o ON o.old_id=d.old_id WHERE d.device_no='racing')").Scan(&intact); err != nil || !intact {
 		t.Fatalf("binding became orphaned: %v", err)
 	}
 }
@@ -358,7 +359,7 @@ func TestNativeSetupRequiresDesktopToken(t *testing.T) {
 		})
 	}
 	var count int
-	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM users").Scan(&count); err != nil || count != 1 {
+	if err := pool.QueryRowContext(context.Background(), "SELECT count(*) FROM users").Scan(&count); err != nil || count != 1 {
 		t.Fatalf("administrators=%d err=%v", count, err)
 	}
 	request := httptest.NewRequest("POST", "/api/v1/auth/login", strings.NewReader(`{}`))

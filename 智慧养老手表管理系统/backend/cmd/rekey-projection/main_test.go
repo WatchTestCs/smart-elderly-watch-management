@@ -42,7 +42,7 @@ func TestProjectionRekeyCommandUsesMySQLSource(t *testing.T) {
 	primary := dbtest.MySQL(t)
 	ctx := context.Background()
 	var source, database string
-	if err := primary.SQL().QueryRowContext(ctx, "SELECT source_id,DATABASE() FROM analytics_source WHERE singleton=1").Scan(&source, &database); err != nil {
+	if err := primary.DB.QueryRowContext(ctx, "SELECT source_id,DATABASE() FROM analytics_source WHERE singleton=1").Scan(&source, &database); err != nil {
 		t.Fatal(err)
 	}
 	mysqlConfig, err := mysql.ParseDSN(os.Getenv("TEST_MYSQL_DSN"))

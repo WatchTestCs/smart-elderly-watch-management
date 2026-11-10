@@ -2,12 +2,12 @@ package telemetryworkflow
 
 import (
 	"context"
+	"database/sql"
+	"database/sql/driver"
 	"errors"
 	"strings"
 	"testing"
 	"time"
-
-	"suining-care/internal/db"
 )
 
 type heartbeatStoreStub struct {
@@ -17,14 +17,14 @@ type heartbeatStoreStub struct {
 	fail  bool
 }
 
-func (s *heartbeatStoreStub) ExecNative(_ context.Context, query string, args ...any) (db.CommandResult, error) {
+func (s *heartbeatStoreStub) ExecContext(_ context.Context, query string, args ...any) (sql.Result, error) {
 	s.calls++
 	s.query = query
 	s.args = append([]any(nil), args...)
 	if s.fail {
-		return db.CommandResult{}, errors.New("write failed")
+		return nil, errors.New("write failed")
 	}
-	return db.CommandResult{}, nil
+	return driver.RowsAffected(0), nil
 }
 
 func TestHeartbeatBufferCoalescesLatestState(t *testing.T) {

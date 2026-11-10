@@ -13,10 +13,10 @@ func TestContinuousAmbiguousElderPhone(t *testing.T) {
 	mustExec(t, pool, "INSERT INTO oldperson(old_id,name,phone) VALUES(1,'甲','13800000001'),(2,'乙','13800000001')")
 	w := callAPI(h.familyAdd, map[string]any{"familyName": "家属", "familyRelation": "子女", "familySex": "女", "familyPhone": "13800000003", "oldPhone": "13800000001", "familyAddress": "测试"})
 	var families, bound int
-	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM family").Scan(&families); err != nil {
+	if err := pool.QueryRowContext(context.Background(), "SELECT count(*) FROM family").Scan(&families); err != nil {
 		t.Fatal(err)
 	}
-	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM oldperson WHERE family_id IS NOT NULL").Scan(&bound); err != nil {
+	if err := pool.QueryRowContext(context.Background(), "SELECT count(*) FROM oldperson WHERE family_id IS NOT NULL").Scan(&bound); err != nil {
 		t.Fatal(err)
 	}
 	if w.Code != http.StatusConflict || families != 0 || bound != 0 {

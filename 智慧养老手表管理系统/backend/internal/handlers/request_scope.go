@@ -54,7 +54,7 @@ func (h *Handler) resolveOldID(w http.ResponseWriter, r *http.Request, value any
 	}
 	if p.Role != auth.RoleAdmin {
 		var familyID *int64
-		err := h.DB.QueryRow(r.Context(), "SELECT family_id FROM oldperson WHERE old_id=$1", id).Scan(&familyID)
+		err := h.DB.QueryRowContext(r.Context(), "SELECT family_id FROM oldperson WHERE old_id=?", id).Scan(&familyID)
 		if err != nil || familyID == nil || *familyID != p.ID {
 			response.JSON(w, http.StatusForbidden, map[string]any{"message": "无权访问该账户或照护记录"})
 			return 0, false

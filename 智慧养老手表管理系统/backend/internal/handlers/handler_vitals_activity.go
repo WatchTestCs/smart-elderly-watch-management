@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	dbstore "suining-care/internal/db"
+	"database/sql"
 	"suining-care/internal/response"
 
 	"net/http"
@@ -31,7 +31,7 @@ const stepLatestSelect = `SELECT o.name AS name, o.old_id AS oldId, o.sex AS sex
 	` INNER JOIN (SELECT *, ROW_NUMBER() OVER (PARTITION BY device_id,old_id ORDER BY create_time DESC, id DESC) AS rn FROM ` + ownedDailyRecords + ` daily) w` +
 	` ON w.device_id=o.device_id AND w.old_id=o.old_id AND w.rn=1`
 
-func scanActivityRecord(rows dbstore.Rows) (activityRecord, error) {
+func scanActivityRecord(rows *sql.Rows) (activityRecord, error) {
 	var d activityRecord
 	err := rows.Scan(&d.Name, &d.OldID, &d.Sex, &d.Step, &d.Sleep, &d.SleepAlertState, &d.CreateTime)
 	return d, err
@@ -51,7 +51,7 @@ func (h *Handler) listActivityHistory(w http.ResponseWriter, r *http.Request) {
 	items, ok := queryRows(h, w, r.Context(), scanActivityRecord, `SELECT o.name AS name, o.old_id AS oldId, o.sex AS sex,`+
 		` w.step AS step, w.sleep AS sleep, w.sleep_sate AS sleepAlertState, DATE_FORMAT(w.create_time,'%Y-%m-%d') AS createTime`+
 		` FROM oldperson o INNER JOIN `+ownedDailyRecords+` w ON w.device_id=o.device_id AND w.old_id=o.old_id`+
-		` WHERE o.old_id=$1 ORDER BY w.create_time DESC, w.id DESC LIMIT 1`, oldID)
+		` WHERE o.old_id=? ORDER BY w.create_time DESC, w.id DESC LIMIT 1`, oldID)
 	if !ok {
 		return
 	}
@@ -69,7 +69,7 @@ func (h *Handler) getActivityChart(w http.ResponseWriter, r *http.Request) {
 		` SELECT o.name AS name, o.old_id AS oldId, o.sex AS sex, w.step AS step, w.sleep AS sleep,`+
 		` w.sleep_sate AS sleepAlertState, w.create_time, w.id`+
 		` FROM oldperson o INNER JOIN `+ownedDailyRecords+` w ON w.device_id=o.device_id AND w.old_id=o.old_id`+
-		` WHERE o.old_id=$1 ORDER BY w.create_time DESC, w.id DESC LIMIT 7) r`+
+		` WHERE o.old_id=? ORDER BY w.create_time DESC, w.id DESC LIMIT 7) r`+
 		` ORDER BY r.create_time ASC, r.id ASC`, oldID)
 	if !ok {
 		return

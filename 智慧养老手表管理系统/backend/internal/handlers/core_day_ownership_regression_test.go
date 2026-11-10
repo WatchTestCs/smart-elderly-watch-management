@@ -58,7 +58,7 @@ func TestContinuousRebindDailySnapshotIsSeparate(t *testing.T) {
 		t.Fatalf("mixed daily fields across bindings: %v", row)
 	}
 	var oldSteps, oldSleep, owner int
-	if err := h.DB.QueryRow(context.Background(), "SELECT step,sleep,old_id FROM watch_day_info_archive WHERE device_id=1 ORDER BY id DESC LIMIT 1").Scan(&oldSteps, &oldSleep, &owner); err != nil {
+	if err := h.DB.QueryRowContext(context.Background(), "SELECT step,sleep,old_id FROM watch_day_info_archive WHERE device_id=1 ORDER BY id DESC LIMIT 1").Scan(&oldSteps, &oldSleep, &owner); err != nil {
 		t.Fatal(err)
 	}
 	if oldSteps != 5000 || oldSleep != 8 || owner != 1 {
@@ -66,7 +66,7 @@ func TestContinuousRebindDailySnapshotIsSeparate(t *testing.T) {
 	}
 	api(t, h.deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "sleep": 6, "sleepState": "0", "beTime": "2026-10-20 07:30:00"})
 	var currentSleep int
-	if err := h.DB.QueryRow(context.Background(), "SELECT sleep FROM watch_day_info WHERE device_id=1").Scan(&currentSleep); err != nil || currentSleep != 6 {
+	if err := h.DB.QueryRowContext(context.Background(), "SELECT sleep FROM watch_day_info WHERE device_id=1").Scan(&currentSleep); err != nil || currentSleep != 6 {
 		t.Fatalf("new binding inherited previous sleep clock: sleep=%d err=%v", currentSleep, err)
 	}
 	// Returning to the first elder exposes only that elder's archived day,
@@ -86,11 +86,11 @@ func TestContinuousRebindDailySnapshotIsSeparate(t *testing.T) {
 		t.Fatalf("repeated binding did not start a distinct daily snapshot: %v", current)
 	}
 	api(t, h.deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "sleep": 4, "beTime": "2026-10-20 07:00:00"})
-	if err := h.DB.QueryRow(context.Background(), "SELECT sleep FROM watch_day_info WHERE device_id=1").Scan(&currentSleep); err != nil || currentSleep != 4 {
+	if err := h.DB.QueryRowContext(context.Background(), "SELECT sleep FROM watch_day_info WHERE device_id=1").Scan(&currentSleep); err != nil || currentSleep != 4 {
 		t.Fatalf("returning binding inherited archived sleep clock: sleep=%d err=%v", currentSleep, err)
 	}
 	var count int
-	if err := h.DB.QueryRow(context.Background(), "SELECT count(*) FROM watch_day_info_archive WHERE device_id=1").Scan(&count); err != nil || count != 2 {
+	if err := h.DB.QueryRowContext(context.Background(), "SELECT count(*) FROM watch_day_info_archive WHERE device_id=1").Scan(&count); err != nil || count != 2 {
 		t.Fatalf("expected both older snapshots preserved: count=%d err=%v", count, err)
 	}
 }

@@ -27,7 +27,7 @@ func TestMySQLRoundTripAB(t *testing.T) {
 	defer cancel()
 
 	var schema string
-	if err := primary.QueryRow(ctx, "SELECT DATABASE()").Scan(&schema); err != nil {
+	if err := primary.QueryRowContext(ctx, "SELECT DATABASE()").Scan(&schema); err != nil {
 		t.Fatal(err)
 	}
 	base, err := mysql.ParseDSN(os.Getenv("TEST_MYSQL_DSN"))
@@ -84,7 +84,7 @@ func TestMySQLRoundTripAB(t *testing.T) {
 		}
 		for trial, mode := range []string{"prepared", "interpolated", "interpolated", "prepared"} {
 			for _, table := range []string{"ratepre", "analytics_outbox"} {
-				if _, err := primary.Exec(ctx, "TRUNCATE TABLE "+table); err != nil {
+				if _, err := primary.ExecContext(ctx, "TRUNCATE TABLE "+table); err != nil {
 					t.Fatal(err)
 				}
 			}
@@ -99,10 +99,10 @@ func TestMySQLRoundTripAB(t *testing.T) {
 			}
 			elapsed := time.Since(start)
 			var projected, business int
-			if err := primary.QueryRow(ctx, "SELECT count(*) FROM ratepre").Scan(&business); err != nil {
+			if err := primary.QueryRowContext(ctx, "SELECT count(*) FROM ratepre").Scan(&business); err != nil {
 				t.Fatal(err)
 			}
-			if err := primary.QueryRow(ctx, "SELECT count(*) FROM analytics_outbox").Scan(&projected); err != nil {
+			if err := primary.QueryRowContext(ctx, "SELECT count(*) FROM analytics_outbox").Scan(&projected); err != nil {
 				t.Fatal(err)
 			}
 			if projected != rowsTotal || business != rowsTotal {

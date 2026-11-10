@@ -38,7 +38,7 @@ func TestMySQLIdleConnectionRetentionAB(t *testing.T) {
 	p := dbtest.MySQL(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Minute)
 	defer cancel()
-	sqlDB := p.SQL()
+	sqlDB := p.DB
 	const concurrency = 32
 	const measuredBursts = 8
 	for trial, idleLimit := range []int{5, 20, 10, 10, 20, 5} {
@@ -61,7 +61,7 @@ func TestMySQLIdleConnectionRetentionAB(t *testing.T) {
 					<-ready
 					start := time.Now()
 					var revision int64
-					err := p.QueryRow(ctx, "SELECT revision FROM health_clock WHERE id=$1", 1).Scan(&revision)
+					err := p.QueryRowContext(ctx, "SELECT revision FROM health_clock WHERE id=?", 1).Scan(&revision)
 					if err != nil {
 						failures <- err
 						return

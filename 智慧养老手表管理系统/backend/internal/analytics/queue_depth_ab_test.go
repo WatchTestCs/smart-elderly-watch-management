@@ -35,7 +35,7 @@ func TestAnalyticsQueueDepthAB(t *testing.T) {
 			for i := range args {
 				args[i] = inserted + i + 1
 			}
-			if _, err := primary.SQL().ExecContext(ctx, query, args...); err != nil {
+			if _, err := primary.DB.ExecContext(ctx, query, args...); err != nil {
 				t.Fatal(err)
 			}
 			inserted += chunk
@@ -45,13 +45,13 @@ func TestAnalyticsQueueDepthAB(t *testing.T) {
 		for i := 0; i < 16; i++ {
 			start := time.Now()
 			var n int
-			if err := primary.QueryRow(ctx, "SELECT count(*) FROM analytics_outbox").Scan(&n); err != nil || n != size {
+			if err := primary.QueryRowContext(ctx, "SELECT count(*) FROM analytics_outbox").Scan(&n); err != nil || n != size {
 				t.Fatalf("count size %d got %d err %v", size, n, err)
 			}
 			countTimes = append(countTimes, time.Since(start))
 			start = time.Now()
 			var exists bool
-			if err := primary.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM analytics_outbox LIMIT 1)").Scan(&exists); err != nil || exists != (size > 0) {
+			if err := primary.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM analytics_outbox LIMIT 1)").Scan(&exists); err != nil || exists != (size > 0) {
 				t.Fatalf("exists size %d got %v err %v", size, exists, err)
 			}
 			existsTimes = append(existsTimes, time.Since(start))

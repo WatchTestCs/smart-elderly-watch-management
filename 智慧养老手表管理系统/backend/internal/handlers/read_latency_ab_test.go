@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -47,26 +48,26 @@ func TestReadLatencyAudit(t *testing.T) {
 	t.Cleanup(store.Close)
 	cfg := config.Config{DataKey: base64.StdEncoding.EncodeToString(make([]byte, 32)), HealthCacheBytes: 16 << 20}
 	h := New(pool, store, cfg)
-	store.UseDatabase(pool.SQL(), h.Box)
+	store.UseDatabase(pool.DB, h.Box)
 	password := "AuditPassword123!"
 	hash, err := auth.Hash(password)
 	if err != nil {
 		t.Fatal(err)
 	}
-	mustExec(t, pool, "INSERT INTO users(user_id,user_name,user_phone,password,role) VALUES(1,'audit','13800000001',$1,'1')", hash)
+	mustExec(t, pool, "INSERT INTO users(user_id,user_name,user_phone,password,role) VALUES(1,'audit','13800000001',?,'1')", hash)
 	seedDevice(t, pool)
 	for i := 1; i <= 30; i++ {
-		mustExec(t, pool, "INSERT INTO family(family_id,family_name) VALUES($1,'synthetic')", i)
-		mustExec(t, pool, "INSERT INTO customer(customer_id,customer_name,customer_age) VALUES($1,'synthetic',40)", i)
-		mustExec(t, pool, "INSERT INTO text(title,text_main,time) VALUES('synthetic','synthetic',now())")
+		mustExec(t, pool, "INSERT INTO family(family_id,family_name) VALUES(?,'synthetic')", i)
+		mustExec(t, pool, "INSERT INTO customer(customer_id,customer_name,customer_age) VALUES(?,'synthetic',40)", i)
+		mustExec(t, pool, "INSERT INTO text(title,text_main,time) VALUES('synthetic','synthetic',CURRENT_TIMESTAMP(6))")
 		if i > 1 {
-			mustExec(t, pool, "INSERT INTO oldperson(old_id,name,family_id) VALUES($1,'synthetic',$1)", i)
-			mustExec(t, pool, "INSERT INTO device(device_id,device_no,secret,old_id) VALUES($1,$2,'synthetic-only',$1)", i, fmt.Sprintf("AUDIT%03d", i))
+			mustExec(t, pool, "INSERT INTO oldperson(old_id,name,family_id) VALUES(?,'synthetic',?)", i, i)
+			mustExec(t, pool, "INSERT INTO device(device_id,device_no,secret,old_id) VALUES(?,?,'synthetic-only',?)", i, fmt.Sprintf("AUDIT%03d", i), i)
 		}
 	}
 	mustExec(t, pool, "UPDATE oldperson SET family_id=1 WHERE old_id=1")
 	for i := 0; i < 100; i++ {
-		mustExec(t, pool, "INSERT INTO message_outbox(topic,source_key,family_id,channel,recipient) VALUES('audit',$1,1,'in_app','synthetic')", fmt.Sprint(i))
+		mustExec(t, pool, "INSERT INTO message_outbox(topic,source_key,family_id,channel,recipient) VALUES('audit',?,1,'in_app','synthetic')", fmt.Sprint(i))
 	}
 	from := time.Date(2026, 10, 24, 0, 0, 0, 0, time.UTC)
 	for start := 0; start < 10000; start += 200 {
@@ -75,24 +76,24 @@ func TestReadLatencyAudit(t *testing.T) {
 			at := from.Add(time.Duration(start+i) * time.Second)
 			samples[i] = health.Sample{RecordID: fmt.Sprint(start + i), Source: "watch", SourceDevice: "AUDIT", Metric: "heart_rate", Semantics: "instant", Unit: "count/min", Value: health.Number(72), Start: at, End: at, Version: 1}
 		}
-		tx, e := pool.Begin(ctx)
+		tx, e := pool.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 		if e != nil {
 			t.Fatal(e)
 		}
 		_, duplicates, e := health.SaveBatch(ctx, tx, health.Owner{OldID: 1}, samples)
 		if e != nil || duplicates != 0 {
-			tx.Rollback(ctx)
+			tx.Rollback()
 			t.Fatalf("seed: duplicates=%d err=%v", duplicates, e)
 		}
-		if e = tx.Commit(ctx); e != nil {
+		if e = tx.Commit(); e != nil {
 			t.Fatal(e)
 		}
 	}
 	var saved, events int
-	if err = pool.QueryRow(ctx, "SELECT count(*) FROM health_sample").Scan(&saved); err != nil {
+	if err = pool.QueryRowContext(ctx, "SELECT count(*) FROM health_sample").Scan(&saved); err != nil {
 		t.Fatal(err)
 	}
-	if err = pool.QueryRow(ctx, "SELECT count(*) FROM health_change").Scan(&events); err != nil {
+	if err = pool.QueryRowContext(ctx, "SELECT count(*) FROM health_change").Scan(&events); err != nil {
 		t.Fatal(err)
 	}
 	if saved != 10000 || events != 10000 {
@@ -321,7 +322,7 @@ func TestReadLatencyAudit(t *testing.T) {
 	})
 	peer := session.NewStore(time.Hour)
 	t.Cleanup(peer.Close)
-	peer.UseDatabase(pool.SQL(), h.Box)
+	peer.UseDatabase(pool.DB, h.Box)
 	if !peer.Destroy(sess.ID) || store.Get(sess.ID) != nil {
 		t.Fatal("cross-replica revoke failed")
 	}
@@ -333,7 +334,7 @@ func TestReadLatencyAudit(t *testing.T) {
 	if w.Code != 403 {
 		t.Fatalf("revoked session HTTP %d", w.Code)
 	}
-	if err = pool.QueryRow(ctx, "SELECT count(*) FROM login_audit WHERE outcome='success'").Scan(&saved); err != nil || saved != 23 {
+	if err = pool.QueryRowContext(ctx, "SELECT count(*) FROM login_audit WHERE outcome='success'").Scan(&saved); err != nil || saved != 23 {
 		t.Fatalf("login count=%d err=%v", saved, err)
 	}
 	buildSettings := map[string]string{}

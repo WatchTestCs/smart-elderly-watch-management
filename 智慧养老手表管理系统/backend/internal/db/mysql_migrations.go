@@ -34,7 +34,7 @@ func MySQLMigrationNames() ([]string, error) {
 // MySQL DDL commits implicitly. Each statement is restartable; a checksum is
 // recorded only after all statements finish, under a connection-scoped lock.
 func MigrateMySQL(ctx context.Context, database *Database) (result error) {
-	conn, err := database.myPool.Conn(ctx)
+	conn, err := database.Conn(ctx)
 	if err != nil {
 		return err
 	}

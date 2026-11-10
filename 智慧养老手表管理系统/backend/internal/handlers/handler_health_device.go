@@ -23,7 +23,7 @@ type healthDevice struct {
 
 const healthDeviceCols = `device_id,device_no,secret,old_id,status,health_epoch`
 
-func scanHealthDevice(row db.Row) (*healthDevice, error) {
+func scanHealthDevice(row *sql.Row) (*healthDevice, error) {
 	var d healthDevice
 	if err := row.Scan(&d.ID, &d.No, &d.Secret, &d.OldID, &d.Status, &d.HealthEpoch); err != nil {
 		return nil, err
@@ -31,7 +31,7 @@ func scanHealthDevice(row db.Row) (*healthDevice, error) {
 	return &d, nil
 }
 func (h *Handler) healthDeviceAuth(ctx context.Context, q db.RowQuerier, deviceNo, secret, disabledMsg string) (*healthDevice, string, string, error) {
-	d, err := scanHealthDevice(q.QueryRow(ctx, `SELECT `+healthDeviceCols+` FROM device WHERE device_no=$1`, deviceNo))
+	d, err := scanHealthDevice(q.QueryRowContext(ctx, `SELECT `+healthDeviceCols+` FROM device WHERE device_no=?`, deviceNo))
 	if errors.Is(err, sql.ErrNoRows) {
 		d = nil
 		err = nil
@@ -55,7 +55,7 @@ func (h *Handler) healthDeviceAuth(ctx context.Context, q db.RowQuerier, deviceN
 // Health requests never supply battery/appVersion. Avoid transmitting nil
 // parameters and evaluating COALESCE for columns whose values stay untouched.
 // Two equal timestamp arguments keep positional binding ordered on both engines.
-func touchHealthDevice(ctx context.Context, q *db.Transaction, deviceID int64, now time.Time) error {
-	_, err := q.Exec(ctx, `UPDATE device SET last_time=$1,last_online_at=$2 WHERE device_id=$3`, now, now, deviceID)
+func touchHealthDevice(ctx context.Context, q *sql.Tx, deviceID int64, now time.Time) error {
+	_, err := q.ExecContext(ctx, `UPDATE device SET last_time=?,last_online_at=? WHERE device_id=?`, now, now, deviceID)
 	return err
 }

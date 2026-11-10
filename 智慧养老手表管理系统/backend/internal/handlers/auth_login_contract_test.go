@@ -27,8 +27,8 @@ func TestNativeLoginResponseDoesNotExposeAccountDTOs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	mustExec(t, pool, "INSERT INTO users(user_id,user_name,user_phone,password,role) VALUES(1,'护理主管','13800000001',$1,'1')", hash)
-	mustExec(t, pool, "INSERT INTO family(family_id,family_name,family_phone,family_password,family_address) VALUES(2,'亲属','13800000002',$1,'敏感地址')", hash)
+	mustExec(t, pool, "INSERT INTO users(user_id,user_name,user_phone,password,role) VALUES(1,'护理主管','13800000001',?,'1')", hash)
+	mustExec(t, pool, "INSERT INTO family(family_id,family_name,family_phone,family_password,family_address) VALUES(2,'亲属','13800000002',?,'敏感地址')", hash)
 	mustExec(t, pool, "INSERT INTO oldperson(old_id,name,family_id) VALUES(3,'长者',2)")
 
 	for _, tc := range []struct {
@@ -76,7 +76,7 @@ func TestNativeLoginResponseDoesNotExposeAccountDTOs(t *testing.T) {
 		t.Fatal("invalid login emitted a session cookie")
 	}
 
-	mustExec(t, pool, "INSERT INTO family(family_id,family_name,family_phone,family_password) VALUES(4,'未关联','13800000004',$1)", hash)
+	mustExec(t, pool, "INSERT INTO family(family_id,family_name,family_phone,family_password) VALUES(4,'未关联','13800000004',?)", hash)
 	unlinked := callAPI(h.login, map[string]any{"phone": "13800000004", "password": password})
 	if unlinked.Code != http.StatusForbidden {
 		t.Fatalf("unlinked family: HTTP %d: %s", unlinked.Code, unlinked.Body.String())

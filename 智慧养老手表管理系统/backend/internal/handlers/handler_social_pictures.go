@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"net/http"
 	"strings"
@@ -14,7 +15,7 @@ import (
 )
 
 type dbQuerier interface {
-	Query(ctx context.Context, sql string, args ...any) (dbstore.Rows, error)
+	QueryContext(ctx context.Context, sql string, args ...any) (*sql.Rows, error)
 }
 
 // notificationPhones 有老人绑定的家属手机号（去重）。
@@ -24,7 +25,7 @@ type notificationTarget struct {
 }
 
 func notificationPhones(ctx context.Context, q dbQuerier) ([]notificationTarget, error) {
-	return dbstore.QueryList(ctx, q, func(row dbstore.Rows) (notificationTarget, error) {
+	return dbstore.QueryList(ctx, q, func(row *sql.Rows) (notificationTarget, error) {
 		var target notificationTarget
 		err := row.Scan(&target.FamilyID, &target.Phone)
 		return target, err

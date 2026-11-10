@@ -2,6 +2,7 @@ package deviceworkflow
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"time"
 
@@ -34,11 +35,11 @@ type BindResult struct {
 }
 
 func Bind(ctx context.Context, store *db.Database, input BindInput) (BindResult, Failure, error) {
-	tx, err := store.Begin(ctx)
+	tx, err := store.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		return BindResult{}, "", err
 	}
-	defer tx.Rollback(ctx)
+	defer tx.Rollback()
 
 	device, failure, err := Authenticate(ctx, tx, input.Number, input.Secret)
 	if err != nil || device == nil {
@@ -89,7 +90,7 @@ func Bind(ctx context.Context, store *db.Database, input BindInput) (BindResult,
 	case err != nil:
 		return BindResult{}, "", err
 	}
-	if err := tx.Commit(ctx); err != nil {
+	if err := tx.Commit(); err != nil {
 		return BindResult{}, "", err
 	}
 	result := BindResult{ResidentID: *code.OldID}

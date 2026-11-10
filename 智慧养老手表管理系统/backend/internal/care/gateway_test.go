@@ -29,7 +29,7 @@ func TestGatewayRetryAfterAndFailureClasses(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			pool := testCareDB(t)
 			ctx := context.Background()
-			if _, err := pool.Exec(ctx, "INSERT INTO care_notification_outbox(incident_id,channel,recipient) VALUES(1,'sms','13800000001')"); err != nil {
+			if _, err := pool.ExecContext(ctx, "INSERT INTO care_notification_outbox(incident_id,channel,recipient) VALUES(1,'sms','13800000001')"); err != nil {
 				t.Fatal(err)
 			}
 			calls := 0
@@ -53,7 +53,7 @@ func TestGatewayRetryAfterAndFailureClasses(t *testing.T) {
 			var status, lastError string
 			var attempts int
 			var retry time.Time
-			if err := pool.QueryRow(ctx, "SELECT status,last_error,attempts,retry_at FROM care_notification_outbox").Scan(&status, &lastError, &attempts, &retry); err != nil {
+			if err := pool.QueryRowContext(ctx, "SELECT status,last_error,attempts,retry_at FROM care_notification_outbox").Scan(&status, &lastError, &attempts, &retry); err != nil {
 				t.Fatal(err)
 			}
 			if status != "failed" || lastError != tc.want || attempts != 1 || time.Until(retry) < time.Duration(tc.delay)*time.Second {

@@ -101,7 +101,7 @@ func Run(ctx context.Context, primary *db.Database, url string, state *State) {
 		if !time.Now().Before(nextPendingSample) {
 			countCtx, stopCount := context.WithTimeout(cycle, 2*time.Second)
 			var counted int64
-			err := primary.SQL().QueryRowContext(countCtx, "SELECT count(*) FROM analytics_outbox").Scan(&counted)
+			err := primary.DB.QueryRowContext(countCtx, "SELECT count(*) FROM analytics_outbox").Scan(&counted)
 			stopCount()
 			if err == nil {
 				pending = &counted

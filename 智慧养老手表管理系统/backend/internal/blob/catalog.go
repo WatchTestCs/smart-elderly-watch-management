@@ -45,7 +45,7 @@ func (m *Manager) rawGet(ctx context.Context, key string) ([]byte, error) {
 func (m *Manager) Get(ctx context.Context, key string) ([]byte, error) {
 	var record Record
 	if m.DB != nil {
-		err := m.DB.QueryRow(ctx, "SELECT content_sha256,size_bytes,state FROM image_blob WHERE name=$1", key).Scan(&record.SHA256, &record.Size, &record.State)
+		err := m.DB.QueryRowContext(ctx, "SELECT content_sha256,size_bytes,state FROM image_blob WHERE name=?", key).Scan(&record.SHA256, &record.Size, &record.State)
 		if err != nil && !errors.Is(err, sql.ErrNoRows) {
 			return nil, err
 		}
@@ -74,26 +74,26 @@ func (m *Manager) Put(ctx context.Context, key string, data []byte) error {
 		defer cancel()
 		_ = m.Store.Delete(finish, key) // A failed compensation is a private orphan, never a false DB reference.
 	}
-	tx, err := m.DB.Begin(ctx)
+	tx, err := m.DB.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		cleanup()
 		return err
 	}
-	defer tx.Rollback(context.WithoutCancel(ctx))
-	_, err = tx.Exec(ctx, "INSERT INTO image_blob(name,content_sha256,size_bytes,state) VALUES($1,$2,$3,'ready')", key, Digest(data), len(data))
+	defer tx.Rollback()
+	_, err = tx.ExecContext(ctx, "INSERT INTO image_blob(name,content_sha256,size_bytes,state) VALUES(?,?,?,'ready')", key, Digest(data), len(data))
 	if err != nil {
-		_ = tx.Rollback(context.WithoutCancel(ctx))
+		_ = tx.Rollback()
 		cleanup()
 		return err
 	}
 	// A lost COMMIT acknowledgement is ambiguous. Retain the immutable object:
 	// deleting it could break a transaction that the server actually committed.
-	return tx.Commit(ctx)
+	return tx.Commit()
 }
 
 // Require serializes reference creation with GC using catalog row locks. Every
 // business writer must call it before adding an image reference, in the same tx.
-func (m *Manager) Require(ctx context.Context, tx *db.Transaction, keys []string) error {
+func (m *Manager) Require(ctx context.Context, tx *sql.Tx, keys []string) error {
 	keys = append([]string(nil), keys...)
 	sort.Strings(keys)
 	for i, key := range keys {
@@ -109,13 +109,13 @@ func (m *Manager) Require(ctx context.Context, tx *db.Transaction, keys []string
 		}
 		// Adopt existing local images without changing their bytes. An atomic
 		// insert and subsequent current read also serialize concurrent adopters.
-		_, err = tx.Exec(ctx, "INSERT INTO image_blob(name,content_sha256,size_bytes,state) VALUES($1,$2,$3,'ready') ON DUPLICATE KEY UPDATE name=name", key, Digest(data), len(data))
+		_, err = tx.ExecContext(ctx, "INSERT INTO image_blob(name,content_sha256,size_bytes,state) VALUES(?,?,?,'ready') ON DUPLICATE KEY UPDATE name=name", key, Digest(data), len(data))
 		if err != nil {
 			return err
 		}
 		var digest, state string
 		var size int64
-		if err = tx.QueryRow(ctx, "SELECT content_sha256,size_bytes,state FROM image_blob WHERE name=$1 FOR UPDATE", key).Scan(&digest, &size, &state); err != nil {
+		if err = tx.QueryRowContext(ctx, "SELECT content_sha256,size_bytes,state FROM image_blob WHERE name=? FOR UPDATE", key).Scan(&digest, &size, &state); err != nil {
 			return err
 		}
 		if state != "ready" {
@@ -129,10 +129,10 @@ func (m *Manager) Require(ctx context.Context, tx *db.Transaction, keys []string
 }
 
 const referenceSQL = `SELECT
- (SELECT count(*) FROM family WHERE family_tou_pic=$1)+
- (SELECT count(*) FROM said WHERE tou_pic=$1)+
- (SELECT count(*) FROM pic WHERE pic_name=$1)+
- (SELECT count(*) FROM pic_show WHERE pic_name=$1)`
+ (SELECT count(*) FROM family WHERE family_tou_pic=?)+
+ (SELECT count(*) FROM said WHERE tou_pic=?)+
+ (SELECT count(*) FROM pic WHERE pic_name=?)+
+ (SELECT count(*) FROM pic_show WHERE pic_name=?)`
 
 func (m *Manager) Collect(ctx context.Context, olderThan time.Time, dryRun bool) (int, error) {
 	if m.DB == nil {
@@ -150,7 +150,7 @@ func (m *Manager) Collect(ctx context.Context, olderThan time.Time, dryRun bool)
 		}
 		if dryRun {
 			var references int
-			if err = m.DB.QueryRow(ctx, referenceSQL, entry.Key).Scan(&references); err != nil {
+			if err = m.DB.QueryRowContext(ctx, referenceSQL, entry.Key, entry.Key, entry.Key, entry.Key).Scan(&references); err != nil {
 				return err
 			}
 			if references == 0 {
@@ -158,41 +158,41 @@ func (m *Manager) Collect(ctx context.Context, olderThan time.Time, dryRun bool)
 			}
 			return nil
 		}
-		tx, err := m.DB.Begin(ctx)
+		tx, err := m.DB.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 		if err != nil {
 			return err
 		}
-		defer tx.Rollback(context.WithoutCancel(ctx))
+		defer tx.Rollback()
 		var backupActive bool
-		if err = tx.QueryRow(ctx, "SELECT backup_until>now() FROM image_gc_guard WHERE id=1 FOR UPDATE").Scan(&backupActive); err != nil {
+		if err = tx.QueryRowContext(ctx, "SELECT backup_until>CURRENT_TIMESTAMP(6) FROM image_gc_guard WHERE id=1 FOR UPDATE").Scan(&backupActive); err != nil {
 			return err
 		}
 		if backupActive {
 			return ErrBusy
 		}
-		_, err = tx.Exec(ctx, "INSERT INTO image_blob(name,content_sha256,size_bytes,state,created_at) VALUES($1,$2,$3,'ready',$4) ON DUPLICATE KEY UPDATE name=name", entry.Key, Digest(data), len(data), entry.Modified)
+		_, err = tx.ExecContext(ctx, "INSERT INTO image_blob(name,content_sha256,size_bytes,state,created_at) VALUES(?,?,?,'ready',?) ON DUPLICATE KEY UPDATE name=name", entry.Key, Digest(data), len(data), entry.Modified)
 		if err != nil {
 			return err
 		}
 		var state string
 		var created time.Time
-		if err = tx.QueryRow(ctx, "SELECT state,created_at FROM image_blob WHERE name=$1 FOR UPDATE", entry.Key).Scan(&state, &created); err != nil {
+		if err = tx.QueryRowContext(ctx, "SELECT state,created_at FROM image_blob WHERE name=? FOR UPDATE", entry.Key).Scan(&state, &created); err != nil {
 			return err
 		}
 		if !created.Before(olderThan) {
 			return nil
 		}
 		var references int
-		if err = tx.QueryRow(ctx, referenceSQL, entry.Key).Scan(&references); err != nil {
+		if err = tx.QueryRowContext(ctx, referenceSQL, entry.Key, entry.Key, entry.Key, entry.Key).Scan(&references); err != nil {
 			return err
 		}
 		if references != 0 {
 			return nil
 		}
-		if _, err = tx.Exec(ctx, "UPDATE image_blob SET state='deleting' WHERE name=$1", entry.Key); err != nil {
+		if _, err = tx.ExecContext(ctx, "UPDATE image_blob SET state='deleting' WHERE name=?", entry.Key); err != nil {
 			return err
 		}
-		if err = tx.Commit(ctx); err != nil {
+		if err = tx.Commit(); err != nil {
 			return err
 		}
 		// Publish a durable tombstone BEFORE deleting bytes. Reference writers
@@ -200,7 +200,7 @@ func (m *Manager) Collect(ctx context.Context, olderThan time.Time, dryRun bool)
 		if err = m.Store.Delete(ctx, entry.Key); err != nil {
 			return err
 		}
-		if _, err = m.DB.Exec(ctx, "UPDATE image_blob SET state='deleted' WHERE name=$1 AND state='deleting'", entry.Key); err != nil {
+		if _, err = m.DB.ExecContext(ctx, "UPDATE image_blob SET state='deleted' WHERE name=? AND state='deleting'", entry.Key); err != nil {
 			return err
 		}
 		count++
@@ -224,27 +224,27 @@ func (m *Manager) AcquireBackup(ctx context.Context, owner string, seconds int) 
 	if owner == "" || seconds < 60 || seconds > 3600 {
 		return errors.New("invalid backup lease")
 	}
-	tx, err := m.DB.Begin(ctx)
+	tx, err := m.DB.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback(context.WithoutCancel(ctx))
+	defer tx.Rollback()
 	var current string
 	var active bool
 	var serverNow time.Time
-	if err = tx.QueryRow(ctx, "SELECT backup_owner,backup_until>now(),now() FROM image_gc_guard WHERE id=1 FOR UPDATE").Scan(&current, &active, &serverNow); err != nil {
+	if err = tx.QueryRowContext(ctx, "SELECT backup_owner,backup_until>CURRENT_TIMESTAMP(6),CURRENT_TIMESTAMP(6) FROM image_gc_guard WHERE id=1 FOR UPDATE").Scan(&current, &active, &serverNow); err != nil {
 		return err
 	}
 	if active && current != owner {
 		return ErrBusy
 	}
-	if _, err = tx.Exec(ctx, "UPDATE image_gc_guard SET backup_owner=$1,backup_until=$2 WHERE id=1", owner, serverNow.Add(time.Duration(seconds)*time.Second)); err != nil {
+	if _, err = tx.ExecContext(ctx, "UPDATE image_gc_guard SET backup_owner=?,backup_until=? WHERE id=1", owner, serverNow.Add(time.Duration(seconds)*time.Second)); err != nil {
 		return err
 	}
-	return tx.Commit(ctx)
+	return tx.Commit()
 }
 func (m *Manager) ReleaseBackup(ctx context.Context, owner string) error {
-	_, err := m.DB.Exec(ctx, "UPDATE image_gc_guard SET backup_owner='',backup_until=now() WHERE id=1 AND backup_owner=$1", owner)
+	_, err := m.DB.ExecContext(ctx, "UPDATE image_gc_guard SET backup_owner='',backup_until=CURRENT_TIMESTAMP(6) WHERE id=1 AND backup_owner=?", owner)
 	return err
 }
 

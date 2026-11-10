@@ -73,18 +73,18 @@ func TestBuildValueRows(t *testing.T) {
 		rows, columns int
 		want          string
 	}{
-		{1, 1, "($1)"}, {1, 3, "($1,$2,$3)"}, {2, 2, "($1,$2),($3,$4)"},
-		{2, 14, "($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14),($15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28)"},
+		{1, 1, "(?)"}, {1, 3, "(?,?,?)"}, {2, 2, "(?,?),(?,?)"},
+		{2, 14, "(?,?,?,?,?,?,?,?,?,?,?,?,?,?),(?,?,?,?,?,?,?,?,?,?,?,?,?,?)"},
 	} {
 		if got := buildValueRows(tc.rows, tc.columns); got != tc.want {
 			t.Fatalf("placeholders = %q, want %q", got, tc.want)
 		}
 	}
 	got := buildValueRows(200, 14)
-	if strings.Count(got, "(") != 200 || !strings.HasSuffix(got, "$2800)") {
+	if strings.Count(got, "(") != 200 || !strings.HasSuffix(got, "?)") {
 		t.Fatal("wrong bulk statement")
 	}
-	if got := buildValueRows(1, 200); strings.Count(got, "$") != 200 || !strings.HasSuffix(got, "$200)") {
+	if got := buildValueRows(1, 200); strings.Count(got, "?") != 200 || !strings.HasSuffix(got, "?)") {
 		t.Fatal("wrong sample lookup placeholders")
 	}
 }

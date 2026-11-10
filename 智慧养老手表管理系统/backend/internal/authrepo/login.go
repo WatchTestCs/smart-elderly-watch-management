@@ -23,10 +23,10 @@ type Match struct {
 
 var accounts = [...]struct{ role, query string }{
 	{auth.RoleAdmin, `SELECT user_id,user_name,user_phone,password,NULL,user_phone_cipher,user_phone_lookup,user_phone_protected
- FROM users WHERE (user_phone_protected=false AND user_phone=$1) OR (user_phone_protected=true AND user_phone_lookup=$2)`},
+ FROM users WHERE (user_phone_protected=false AND user_phone=?) OR (user_phone_protected=true AND user_phone_lookup=?)`},
 	{auth.RoleFamily, `SELECT f.family_id,f.family_name,f.family_phone,f.family_password,o.old_id,NULL,NULL,false
  FROM family f LEFT JOIN oldperson o ON o.family_id=f.family_id
- WHERE f.family_phone=$1 ORDER BY o.old_id LIMIT 1`},
+ WHERE f.family_phone=? ORDER BY o.old_id LIMIT 1`},
 }
 
 // An invalid bcrypt hash with the same cost as real account hashes prevents
@@ -50,7 +50,7 @@ func Authenticate(ctx context.Context, store *db.Database, box *securestore.Box,
 		if account.role == auth.RoleAdmin {
 			args = append(args, lookup)
 		}
-		err := store.QueryRow(ctx, account.query, args...).Scan(&id, &name, &storedPhone, &hash, &residentID,
+		err := store.QueryRowContext(ctx, account.query, args...).Scan(&id, &name, &storedPhone, &hash, &residentID,
 			&protected.Cipher, &protected.Lookup, &protected.Protected)
 		if errors.Is(err, sql.ErrNoRows) {
 			continue

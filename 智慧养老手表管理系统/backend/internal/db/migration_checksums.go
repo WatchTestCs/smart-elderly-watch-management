@@ -104,3 +104,19 @@ func migrationLineEndings(query string, crlf bool) (string, error) {
 	}
 	return out.String(), nil
 }
+
+func quotedSQLEnd(query string, start int) (int, error) {
+	quote := query[start]
+	for i := start + 1; i < len(query); i++ {
+		switch query[i] {
+		case '\\':
+			i++
+		case quote:
+			if i+1 == len(query) || query[i+1] != quote {
+				return i + 1, nil
+			}
+			i++
+		}
+	}
+	return 0, errors.New("unterminated migration SQL quoted value")
+}

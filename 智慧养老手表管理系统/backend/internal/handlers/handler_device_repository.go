@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"database/sql"
 	"net/http"
 
 	dbstore "suining-care/internal/db"
@@ -50,7 +51,7 @@ func (h *Handler) hwAuth(ctx context.Context, q dbstore.RowQuerier, deviceNo, se
 }
 
 // lockDeviceID holds the device row lock until the caller finishes its transaction.
-func lockDeviceID(w http.ResponseWriter, ctx context.Context, tx *dbstore.Transaction, deviceID int64) bool {
+func lockDeviceID(w http.ResponseWriter, ctx context.Context, tx *sql.Tx, deviceID int64) bool {
 	err := devicerepo.LockDeviceID(ctx, tx, deviceID)
 	if isNotFound(err) {
 		response.JSON(w, http.StatusNotFound, map[string]any{"message": "设备不存在"})

@@ -68,7 +68,7 @@ func (h *Handler) Routes(mux *http.ServeMux) {
 }
 
 func InitRisk(ctx context.Context, pool *dbstore.Database) error {
-	if err := sharedRisk.EnableMySQL(pool.SQL()); err != nil {
+	if err := sharedRisk.EnableMySQL(pool.DB); err != nil {
 		return err
 	}
 	if path := os.Getenv("SUINING_RISK_PROXY_CIDRS_FILE"); path != "" {

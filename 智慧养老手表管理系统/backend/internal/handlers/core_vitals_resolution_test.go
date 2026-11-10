@@ -49,7 +49,7 @@ func TestContinuousVitalsResolutionRejectsUnknownKind(t *testing.T) {
 		}
 		var rate, pre string
 		var rateAt, preAt bool
-		if err := h.DB.QueryRow(context.Background(), "SELECT rate_state,pre_state,rate_handled_at IS NULL,pre_handled_at IS NULL FROM ratepre WHERE id=1").Scan(&rate, &pre, &rateAt, &preAt); err != nil {
+		if err := h.DB.QueryRowContext(context.Background(), "SELECT rate_state,pre_state,rate_handled_at IS NULL,pre_handled_at IS NULL FROM ratepre WHERE id=1").Scan(&rate, &pre, &rateAt, &preAt); err != nil {
 			t.Fatal(err)
 		}
 		if rate != "1" || pre != "1" || !rateAt || !preAt {
@@ -63,7 +63,7 @@ func TestContinuousVitalsResolutionRejectsUnknownKind(t *testing.T) {
 		}
 		if kind == "rate" {
 			var pre string
-			if err := h.DB.QueryRow(context.Background(), "SELECT pre_state FROM ratepre WHERE id=1").Scan(&pre); err != nil || pre != "1" {
+			if err := h.DB.QueryRowContext(context.Background(), "SELECT pre_state FROM ratepre WHERE id=1").Scan(&pre); err != nil || pre != "1" {
 				t.Fatalf("heart-rate resolution changed pressure: pre=%s err=%v", pre, err)
 			}
 		}
@@ -73,7 +73,7 @@ func TestContinuousVitalsResolutionRejectsUnknownKind(t *testing.T) {
 		mustExec(t, h.DB, "UPDATE ratepre SET rate_state='1',pre_state='1',rate_handled_at=NULL,pre_handled_at=NULL WHERE id=1")
 		out := api(t, h.handleResolveVitalAlert, body)
 		var rate, pre string
-		if err := h.DB.QueryRow(context.Background(), "SELECT rate_state,pre_state FROM ratepre WHERE id=1").Scan(&rate, &pre); err != nil || rate != "0" || pre != "0" || out["returnCode"] != "1111" {
+		if err := h.DB.QueryRowContext(context.Background(), "SELECT rate_state,pre_state FROM ratepre WHERE id=1").Scan(&rate, &pre); err != nil || rate != "0" || pre != "0" || out["returnCode"] != "1111" {
 			t.Fatalf("existing bulk operation changed: response=%v state=%s/%s err=%v", out, rate, pre, err)
 		}
 	}
@@ -89,10 +89,10 @@ func TestContinuousVitalsResolutionReasonMatchesSelectedRecord(t *testing.T) {
 			t.Errorf("%s selected high record but returned latest low record's reason: %v", tc.kind, out)
 		}
 		var selected, newer string
-		if err := h.DB.QueryRow(context.Background(), "SELECT "+tc.state+" FROM ratepre WHERE id=1").Scan(&selected); err != nil {
+		if err := h.DB.QueryRowContext(context.Background(), "SELECT "+tc.state+" FROM ratepre WHERE id=1").Scan(&selected); err != nil {
 			t.Fatal(err)
 		}
-		if err := h.DB.QueryRow(context.Background(), "SELECT "+tc.state+" FROM ratepre WHERE id=2").Scan(&newer); err != nil {
+		if err := h.DB.QueryRowContext(context.Background(), "SELECT "+tc.state+" FROM ratepre WHERE id=2").Scan(&newer); err != nil {
 			t.Fatal(err)
 		}
 		if selected != "0" || newer != "1" {

@@ -14,7 +14,7 @@ Go 模块名为 `suining-care`，使用 Go 1.27.3。HTTP 层基于标准库 `net
 | `internal/handlers` | 账号、档案、设备、健康、公告、照护与诊断 API，以及图片读写和内嵌静态资源服务 |
 | `internal/auth` / `session` / `csrf` / `ratelimit` | 角色权限校验、BCrypt 密码哈希、会话管理（默认存数据库，可选单实例内存模式）、CSRF 防护与请求限流 |
 | `internal/care` | 告警通知投递、超时升级与照护工单后台作业 |
-| `internal/db` | MySQL 连接池、事务封装、SQL 方言适配与数据库迁移 |
+| `internal/db` | MySQL 连接池、独立健康探针、物理连接语句缓存与数据库迁移；业务直接使用标准 `database/sql` 契约 |
 | `internal/analytics` | PostgreSQL 分析表结构、outbox 异步同步、事件去重、删除墓碑与历史数据回填 |
 | `cmd/migrate` | MySQL 业务库的独立迁移命令 |
 | `cmd/analytics-backfill` | 将现有 MySQL 业务数据批量加入 PG 分析回填队列 |
@@ -71,6 +71,8 @@ go run ./cmd/server
 - 在 Linux cgroup v2 容器环境中，设置 `SUINING_RUNTIME_AUTOTUNE=1` 可让进程在启动时自动读取 `cpu.max` 与 `memory.max` 并调整运行参数（若管理员已显式设置 `GOMAXPROCS` 或 `GOMEMLIMIT`，则以显式配置为准）。
 
 ## 事务流转与存量数据迁移
+
+业务持久化采用[原生 MySQL 架构](../../docs/NATIVE_MYSQL_ARCHITECTURE.md)：仓储显式提供 SQL 与按出现顺序排列的 `?` 参数，工作流持有 `*sql.Tx` 并负责提交。执行路径不再包含 SQL 翻译、参数重排、全局查询计划缓存、自定义事务或结果对象。
 
 建档、设备绑定、SOS 求助、工单处置与主管复核均在 MySQL 事务内完成。MySQL 触发器在同一事务中写入分析事件 outbox，确保业务回滚不会产生脏分析事件。后台 worker 异步消费 outbox 并幂等写入 PostgreSQL 的 `suining_analytics.record` 表及 `daily_health`、`care_summary` 视图。
 

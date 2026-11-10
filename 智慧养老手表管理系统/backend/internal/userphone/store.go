@@ -3,9 +3,9 @@ package userphone
 import (
 	"context"
 	"crypto/subtle"
+	"database/sql"
 	"errors"
 
-	"suining-care/internal/db"
 	"suining-care/internal/securestore"
 )
 
@@ -37,7 +37,7 @@ func (r Record) OpenStored(box *securestore.Box, id int64) (*string, error) {
 }
 
 type Queryer interface {
-	QueryRow(context.Context, string, ...any) db.Row
+	QueryRowContext(context.Context, string, ...any) *sql.Row
 }
 
 // SearchIndex validates lookup-key binding and detects keyless protected rows.
@@ -45,7 +45,7 @@ type Queryer interface {
 func SearchIndex(ctx context.Context, q Queryer, box *securestore.Box, phone string) (string, error) {
 	var verifier *string
 	var protected bool
-	err := q.QueryRow(ctx, `SELECT (SELECT lookup_verifier FROM account_phone_key_state WHERE singleton=1),
+	err := q.QueryRowContext(ctx, `SELECT (SELECT lookup_verifier FROM account_phone_key_state WHERE singleton=1),
  EXISTS(SELECT 1 FROM users WHERE user_phone_protected=true)`).Scan(&verifier, &protected)
 	if err != nil {
 		return "", errors.New("cannot verify administrator phone lookup key")
@@ -71,17 +71,17 @@ func SearchIndex(ctx context.Context, q Queryer, box *securestore.Box, phone str
 
 // BindLookupKey registers the immutable fingerprint in the same business
 // transaction as the first encrypted write. A mismatched key always fails.
-func BindLookupKey(ctx context.Context, tx *db.Transaction, box *securestore.Box) error {
+func BindLookupKey(ctx context.Context, tx *sql.Tx, box *securestore.Box) error {
 	fingerprint, err := KeyBinding(box)
 	if err != nil {
 		return err
 	}
-	if _, err := tx.Exec(ctx, `INSERT INTO account_phone_key_state(singleton,lookup_verifier)
- VALUES(1,$1) ON DUPLICATE KEY UPDATE singleton=singleton`, fingerprint); err != nil {
+	if _, err := tx.ExecContext(ctx, `INSERT INTO account_phone_key_state(singleton,lookup_verifier)
+ VALUES(1,?) ON DUPLICATE KEY UPDATE singleton=singleton`, fingerprint); err != nil {
 		return errors.New("cannot register administrator phone lookup key")
 	}
 	var actual string
-	if err := tx.QueryRow(ctx, `SELECT lookup_verifier FROM account_phone_key_state WHERE singleton=1`).Scan(&actual); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT lookup_verifier FROM account_phone_key_state WHERE singleton=1`).Scan(&actual); err != nil {
 		return errors.New("cannot read administrator phone lookup key binding")
 	}
 	if subtle.ConstantTimeCompare([]byte(fingerprint), []byte(actual)) != 1 {

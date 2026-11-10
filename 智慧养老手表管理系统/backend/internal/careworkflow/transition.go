@@ -3,8 +3,9 @@ package careworkflow
 
 import (
 	"context"
+	"database/sql"
 
-	"suining-care/internal/db"
+	"suining-care/internal/locationalertstate"
 )
 
 // NextState returns an empty string for an invalid incident transition.
@@ -48,47 +49,53 @@ func NextState(before, action string) string {
 
 // LockedIncidentState reads the transition preconditions while holding the row lock.
 // The caller must keep the transaction open through the subsequent writes.
-func LockedIncidentState(ctx context.Context, tx *db.Transaction, id int64) (state string, resolvedBy *string, err error) {
-	err = tx.QueryRow(ctx, "SELECT state,resolved_by FROM care_incident WHERE id=$1 FOR UPDATE", id).Scan(&state, &resolvedBy)
+func LockedIncidentState(ctx context.Context, tx *sql.Tx, id int64) (state string, resolvedBy *string, err error) {
+	err = tx.QueryRowContext(ctx, "SELECT state,resolved_by FROM care_incident WHERE id=? FOR UPDATE", id).Scan(&state, &resolvedBy)
 	return
 }
 
 // PersistReviewVerdict records the human review within the incident transition transaction.
-func PersistReviewVerdict(ctx context.Context, tx *db.Transaction, id int64, verdict, note string, actor int64) error {
-	_, err := tx.Exec(ctx, `INSERT INTO alert_review(entity,record_id,kind,verdict,reason,actor_id)
- SELECT 'care',id,kind,$2,$3,$4 FROM care_incident WHERE id=$1`, id, verdict, note, actor)
+func PersistReviewVerdict(ctx context.Context, tx *sql.Tx, id int64, verdict, note string, actor int64) error {
+	_, err := tx.ExecContext(ctx, `INSERT INTO alert_review(entity,record_id,kind,verdict,reason,actor_id)
+ SELECT 'care',id,kind,?,?,? FROM care_incident WHERE id=?`, verdict, note, actor, id)
 	return err
 }
 
 // PersistTransition writes the new state, related alarm status and event in one transaction.
 // The caller owns the transaction and commits only after all related writes succeed.
-func PersistTransition(ctx context.Context, tx *db.Transaction, id int64, next, action, actor, note string) error {
-	if _, err := tx.Exec(ctx, `UPDATE care_incident SET
-    state=$2,updated_at=now(),
+func PersistTransition(ctx context.Context, tx *sql.Tx, id int64, next, action, actor, note string) error {
+	if _, err := tx.ExecContext(ctx, `UPDATE care_incident SET
+    state=?,updated_at=CURRENT_TIMESTAMP(6),
     due_at=CASE
-      WHEN $3='acknowledge' THEN TIMESTAMPADD(MINUTE,10,CURRENT_TIMESTAMP(6))
-      WHEN $3='start' THEN TIMESTAMPADD(MINUTE,30,CURRENT_TIMESTAMP(6))
-      WHEN $3='resolve' THEN TIMESTAMPADD(MINUTE,30,CURRENT_TIMESTAMP(6))
-      WHEN $3='reopen' THEN TIMESTAMPADD(MINUTE,10,CURRENT_TIMESTAMP(6))
+      WHEN ?='acknowledge' THEN TIMESTAMPADD(MINUTE,10,CURRENT_TIMESTAMP(6))
+      WHEN ?='start' THEN TIMESTAMPADD(MINUTE,30,CURRENT_TIMESTAMP(6))
+      WHEN ?='resolve' THEN TIMESTAMPADD(MINUTE,30,CURRENT_TIMESTAMP(6))
+      WHEN ?='reopen' THEN TIMESTAMPADD(MINUTE,10,CURRENT_TIMESTAMP(6))
       ELSE due_at END,
-    acknowledged_by=CASE WHEN $3='acknowledge' THEN $4 ELSE acknowledged_by END,
-    acknowledged_at=CASE WHEN $3='acknowledge' THEN now() ELSE acknowledged_at END,
-    resolved_by=CASE WHEN $3='resolve' THEN $4 ELSE resolved_by END,
-    resolved_at=CASE WHEN $3='resolve' THEN now() ELSE resolved_at END,
-    resolution_note=CASE WHEN $3='resolve' THEN $5 ELSE resolution_note END,
-    verified_by=CASE WHEN $3='verify' THEN $4 ELSE verified_by END,
-    verified_at=CASE WHEN $3='verify' THEN now() ELSE verified_at END
-   WHERE id=$1`, id, next, action, actor, note); err != nil {
+    acknowledged_by=CASE WHEN ?='acknowledge' THEN ? ELSE acknowledged_by END,
+    acknowledged_at=CASE WHEN ?='acknowledge' THEN CURRENT_TIMESTAMP(6) ELSE acknowledged_at END,
+    resolved_by=CASE WHEN ?='resolve' THEN ? ELSE resolved_by END,
+    resolved_at=CASE WHEN ?='resolve' THEN CURRENT_TIMESTAMP(6) ELSE resolved_at END,
+    resolution_note=CASE WHEN ?='resolve' THEN ? ELSE resolution_note END,
+    verified_by=CASE WHEN ?='verify' THEN ? ELSE verified_by END,
+    verified_at=CASE WHEN ?='verify' THEN CURRENT_TIMESTAMP(6) ELSE verified_at END
+   WHERE id=?`, next, action, action, action, action, action, actor, action, action, actor, action, action, note, action, actor, action, id); err != nil {
 		return err
 	}
 	if action == "verify" {
-		if _, err := tx.Exec(ctx, `UPDATE alarm_precess SET status='0'
-			WHERE id=(SELECT source_alarm_id FROM care_incident WHERE id=$1)`, id); err != nil {
+		var residentID int64
+		var alarmID *int64
+		if err := tx.QueryRowContext(ctx, "SELECT old_id,source_alarm_id FROM care_incident WHERE id=?", id).Scan(&residentID, &alarmID); err != nil {
 			return err
 		}
+		if alarmID != nil {
+			if err := locationalertstate.Resolve(ctx, tx, residentID, *alarmID); err != nil {
+				return err
+			}
+		}
 	}
-	_, err := tx.Exec(ctx,
-		"INSERT INTO care_incident_event(incident_id,actor,action,note) VALUES($1,$2,$3,$4)",
+	_, err := tx.ExecContext(ctx,
+		"INSERT INTO care_incident_event(incident_id,actor,action,note) VALUES(?,?,?,?)",
 		id, actor, action, note)
 	return err
 }

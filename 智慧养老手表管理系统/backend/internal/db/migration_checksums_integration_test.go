@@ -35,9 +35,9 @@ func TestMySQLMigrationLineEndingsAndTampering(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(admin.Close)
+	t.Cleanup(func() { _ = admin.Close() })
 	name := "suining_newlines_" + uuid.NewString()[:8]
-	if _, err := admin.SQL().ExecContext(ctx, "CREATE DATABASE `"+name+"` CHARACTER SET utf8mb4 COLLATE utf8mb4_bin"); err != nil {
+	if _, err := admin.DB.ExecContext(ctx, "CREATE DATABASE `"+name+"` CHARACTER SET utf8mb4 COLLATE utf8mb4_bin"); err != nil {
 		t.Fatal(err)
 	}
 	var pool *Database
@@ -45,7 +45,7 @@ func TestMySQLMigrationLineEndingsAndTampering(t *testing.T) {
 		if pool != nil {
 			pool.Close()
 		}
-		if _, err := admin.SQL().ExecContext(context.Background(), "DROP DATABASE `"+name+"`"); err != nil {
+		if _, err := admin.DB.ExecContext(context.Background(), "DROP DATABASE `"+name+"`"); err != nil {
 			t.Error(err)
 		}
 	})
@@ -59,7 +59,7 @@ func TestMySQLMigrationLineEndingsAndTampering(t *testing.T) {
 	}
 	exec := func(query string, args ...any) {
 		t.Helper()
-		if _, err := pool.SQL().ExecContext(ctx, query, args...); err != nil {
+		if _, err := pool.DB.ExecContext(ctx, query, args...); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -71,7 +71,7 @@ func TestMySQLMigrationLineEndingsAndTampering(t *testing.T) {
 	exec("INSERT INTO care_notification_outbox(id,incident_id,channel,recipient,recipient_key) VALUES(1,1,'sms','synthetic',?)", marker)
 	capture := func() map[string]migrationLedgerEntry {
 		t.Helper()
-		rows, err := pool.SQL().QueryContext(ctx, "SELECT name,checksum,applied_at FROM schema_migrations ORDER BY name")
+		rows, err := pool.DB.QueryContext(ctx, "SELECT name,checksum,applied_at FROM schema_migrations ORDER BY name")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -133,10 +133,10 @@ func TestMySQLMigrationLineEndingsAndTampering(t *testing.T) {
 			}
 			var revision int64
 			var recipient string
-			if err := pool.SQL().QueryRowContext(ctx, "SELECT revision FROM health_clock WHERE id=1").Scan(&revision); err != nil || revision != 55 {
+			if err := pool.DB.QueryRowContext(ctx, "SELECT revision FROM health_clock WHERE id=1").Scan(&revision); err != nil || revision != 55 {
 				t.Fatal("migration validation changed business revision", err)
 			}
-			if err := pool.SQL().QueryRowContext(ctx, "SELECT recipient_key FROM care_notification_outbox WHERE id=1").Scan(&recipient); err != nil || recipient != marker {
+			if err := pool.DB.QueryRowContext(ctx, "SELECT recipient_key FROM care_notification_outbox WHERE id=1").Scan(&recipient); err != nil || recipient != marker {
 				t.Fatal("historical migration data statements were rerun", err)
 			}
 		})

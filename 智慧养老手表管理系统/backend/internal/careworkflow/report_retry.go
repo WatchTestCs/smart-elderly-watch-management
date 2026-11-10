@@ -4,8 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-
-	"suining-care/internal/db"
 )
 
 type ReportRetry struct {
@@ -18,11 +16,11 @@ type ReportRetry struct {
 // FindReportRetry reads a previously committed device alarm under the
 // caller-owned binding and device locks. It does not repeat the notification
 // aggregation needed only for SOS acknowledgements.
-func FindReportRetry(ctx context.Context, tx *db.Transaction, deviceID int64, requestID string) (*ReportRetry, error) {
+func FindReportRetry(ctx context.Context, tx *sql.Tx, deviceID int64, requestID string) (*ReportRetry, error) {
 	var prior ReportRetry
-	err := tx.QueryRow(ctx,
+	err := tx.QueryRowContext(ctx,
 		`SELECT id,old_id,kind,state FROM care_incident
-		 WHERE device_id=$1 AND request_id=$2 FOR UPDATE`,
+		 WHERE device_id=? AND request_id=? FOR UPDATE`,
 		deviceID, requestID).Scan(&prior.ID, &prior.ResidentID, &prior.Kind, &prior.State)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil

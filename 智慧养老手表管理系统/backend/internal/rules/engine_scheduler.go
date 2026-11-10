@@ -11,7 +11,7 @@ import (
 )
 
 func (e *Engine) Tick(ctx context.Context) error {
-	ids, err := db.QueryList(ctx, e.DB, db.ScanValue[int64], "SELECT device_id FROM device WHERE device_id>$1 AND old_id IS NOT NULL AND status<>0 ORDER BY device_id LIMIT 100", e.After)
+	ids, err := db.QueryList(ctx, e.DB, db.ScanValue[int64], "SELECT device_id FROM device WHERE device_id>? AND old_id IS NOT NULL AND status<>0 ORDER BY device_id LIMIT 100", e.After)
 	if err != nil {
 		return err
 	}

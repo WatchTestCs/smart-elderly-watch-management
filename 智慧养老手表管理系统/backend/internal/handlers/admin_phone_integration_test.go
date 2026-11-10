@@ -29,7 +29,7 @@ func TestProtectedAdministratorSetupAndLogin(t *testing.T) {
 	var id int64
 	var legacy, cipher, index *string
 	var protected bool
-	if err := pool.QueryRow(context.Background(), `SELECT user_id,user_phone,user_phone_cipher,user_phone_lookup,user_phone_protected FROM users`).Scan(&id, &legacy, &cipher, &index, &protected); err != nil {
+	if err := pool.QueryRowContext(context.Background(), `SELECT user_id,user_phone,user_phone_cipher,user_phone_lookup,user_phone_protected FROM users`).Scan(&id, &legacy, &cipher, &index, &protected); err != nil {
 		t.Fatal(err)
 	}
 	if legacy != nil || cipher == nil || index == nil || !protected || strings.Contains(*cipher, "13800000001") {

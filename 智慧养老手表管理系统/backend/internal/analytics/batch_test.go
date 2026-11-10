@@ -50,15 +50,15 @@ func TestSyncBatchPreservesTransactionalOutbox(t *testing.T) {
 	// must still be acknowledged, and the highest event ID must win.
 	for _, value := range []int{71, 72, 73} {
 		if value == 71 {
-			_, err = primary.Exec(ctx, "INSERT INTO ratepre(id,hr,create_time) VALUES(1,$1,now())", value)
+			_, err = primary.ExecContext(ctx, "INSERT INTO ratepre(id,hr,create_time) VALUES(1,?,CURRENT_TIMESTAMP(6))", value)
 		} else {
-			_, err = primary.Exec(ctx, "UPDATE ratepre SET hr=$1 WHERE id=1", value)
+			_, err = primary.ExecContext(ctx, "UPDATE ratepre SET hr=? WHERE id=1", value)
 		}
 		if err != nil {
 			t.Fatal(err)
 		}
 	}
-	if _, err = primary.Exec(ctx, "INSERT INTO ratepre(id,hr,create_time) VALUES(2,85,now())"); err != nil {
+	if _, err = primary.ExecContext(ctx, "INSERT INTO ratepre(id,hr,create_time) VALUES(2,85,CURRENT_TIMESTAMP(6))"); err != nil {
 		t.Fatal(err)
 	}
 	if count, err := SyncBatch(ctx, primary, pg, 2); err != nil || count != 2 {
@@ -75,7 +75,7 @@ func TestSyncBatchPreservesTransactionalOutbox(t *testing.T) {
 		t.Fatalf("latest value: %s %v", hr, err)
 	}
 	var pending int
-	if err := primary.QueryRow(ctx, "SELECT count(*) FROM analytics_outbox").Scan(&pending); err != nil || pending != 0 {
+	if err := primary.QueryRowContext(ctx, "SELECT count(*) FROM analytics_outbox").Scan(&pending); err != nil || pending != 0 {
 		t.Fatalf("outbox pending: %d %v", pending, err)
 	}
 
@@ -83,13 +83,13 @@ func TestSyncBatchPreservesTransactionalOutbox(t *testing.T) {
 	if _, err := pg.Exec(ctx, "DROP SCHEMA suining_analytics CASCADE"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := primary.Exec(ctx, "DELETE FROM ratepre WHERE id=1"); err != nil {
+	if _, err := primary.ExecContext(ctx, "DELETE FROM ratepre WHERE id=1"); err != nil {
 		t.Fatal(err)
 	}
 	if count, err := SyncBatch(ctx, primary, pg, 25); err == nil || count != 0 {
 		t.Fatalf("expected failed batch: %d %v", count, err)
 	}
-	if err := primary.QueryRow(ctx, "SELECT count(*) FROM analytics_outbox").Scan(&pending); err != nil || pending != 1 {
+	if err := primary.QueryRowContext(ctx, "SELECT count(*) FROM analytics_outbox").Scan(&pending); err != nil || pending != 1 {
 		t.Fatalf("failed write lost event: %d %v", pending, err)
 	}
 	if err := Migrate(ctx, pg); err != nil {

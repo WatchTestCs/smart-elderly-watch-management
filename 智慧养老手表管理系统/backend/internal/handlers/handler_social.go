@@ -3,11 +3,12 @@ package handlers
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
 	"suining-care/internal/blob"
-	"suining-care/internal/db"
+
 	"suining-care/internal/response"
 	"suining-care/internal/socialrepo"
 	"suining-care/internal/socialworkflow"
@@ -129,7 +130,7 @@ func (h *Handler) createNoticeComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	inserted, err := socialworkflow.CreateComment(r.Context(), h.DB,
-		func(ctx context.Context, tx *db.Transaction, names []string) error {
+		func(ctx context.Context, tx *sql.Tx, names []string) error {
 			manager, err := h.images()
 			if err != nil {
 				return err

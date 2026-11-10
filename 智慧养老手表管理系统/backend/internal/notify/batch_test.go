@@ -2,6 +2,7 @@ package notify
 
 import (
 	"context"
+	"database/sql"
 	"encoding/base64"
 	"encoding/json"
 	"net/http"
@@ -28,24 +29,24 @@ func TestBatchEnqueueBoundariesIdempotenceAndRollback(t *testing.T) {
 		messages[i] = Message{Topic: "announcement", Key: strconv.Itoa(i), FamilyID: 1, Phone: "13800000001"}
 	}
 	for _, commit := range []bool{false, true, true} {
-		tx, err := p.Begin(ctx)
+		tx, err := p.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 		if err != nil {
 			t.Fatal(err)
 		}
 		if err = EnqueueBatch(ctx, tx, box, messages); err != nil {
-			tx.Rollback(ctx)
+			tx.Rollback()
 			t.Fatal(err)
 		}
 		if commit {
-			err = tx.Commit(ctx)
+			err = tx.Commit()
 		} else {
-			err = tx.Rollback(ctx)
+			err = tx.Rollback()
 		}
 		if err != nil {
 			t.Fatal(err)
 		}
 		var count int
-		if err = p.QueryRow(ctx, "SELECT count(*) FROM message_outbox").Scan(&count); err != nil {
+		if err = p.QueryRowContext(ctx, "SELECT count(*) FROM message_outbox").Scan(&count); err != nil {
 			t.Fatal(err)
 		}
 		want := 0
@@ -57,7 +58,7 @@ func TestBatchEnqueueBoundariesIdempotenceAndRollback(t *testing.T) {
 		}
 	}
 	var encrypted string
-	if err = p.QueryRow(ctx, "SELECT recipient FROM message_outbox LIMIT 1").Scan(&encrypted); err != nil {
+	if err = p.QueryRowContext(ctx, "SELECT recipient FROM message_outbox LIMIT 1").Scan(&encrypted); err != nil {
 		t.Fatal(err)
 	}
 	if !strings.HasPrefix(encrypted, securestore.Prefix) {
@@ -67,7 +68,7 @@ func TestBatchEnqueueBoundariesIdempotenceAndRollback(t *testing.T) {
 		t.Fatal(plain, err)
 	}
 	var available int
-	if err = p.QueryRow(ctx, "SELECT count(*) FROM message_outbox WHERE channel='in_app' AND status='delivered' AND delivered_at IS NOT NULL AND attempts=0").Scan(&available); err != nil || available != 601 {
+	if err = p.QueryRowContext(ctx, "SELECT count(*) FROM message_outbox WHERE channel='in_app' AND status='delivered' AND delivered_at IS NOT NULL AND attempts=0").Scan(&available); err != nil || available != 601 {
 		t.Fatal("committed local inbox entries were unnecessarily queued", available, err)
 	}
 }
@@ -81,15 +82,15 @@ func TestBatchExternalConcurrencyBoundAndAcceptedStatus(t *testing.T) {
 	for i := range messages {
 		messages[i] = Message{Topic: "announcement", Key: strconv.Itoa(i), FamilyID: 1, Phone: "13800000001", Channels: []string{"sms"}}
 	}
-	tx, err := p.Begin(ctx)
+	tx, err := p.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer tx.Rollback(ctx)
+	defer tx.Rollback()
 	if err = EnqueueBatch(ctx, tx, nil, messages); err != nil {
 		t.Fatal(err)
 	}
-	if err = tx.Commit(ctx); err != nil {
+	if err = tx.Commit(); err != nil {
 		t.Fatal(err)
 	}
 	arrived, release := make(chan struct{}, 65), make(chan struct{})
@@ -129,7 +130,7 @@ func TestBatchExternalConcurrencyBoundAndAcceptedStatus(t *testing.T) {
 		}
 	}
 	var pending, sending int
-	if err = p.QueryRow(ctx, "SELECT sum(status='pending'),sum(status='sending') FROM message_outbox").Scan(&pending, &sending); err != nil || pending != 33 || sending != 32 {
+	if err = p.QueryRowContext(ctx, "SELECT sum(status='pending'),sum(status='sending') FROM message_outbox").Scan(&pending, &sending); err != nil || pending != 33 || sending != 32 {
 		t.Fatal("claim exceeded external bound", pending, sending, err)
 	}
 	unblock()
@@ -137,7 +138,7 @@ func TestBatchExternalConcurrencyBoundAndAcceptedStatus(t *testing.T) {
 		t.Fatal(err)
 	}
 	var sent, delivered int
-	if err = p.QueryRow(ctx, "SELECT sum(status='sent'),sum(status='delivered') FROM message_outbox").Scan(&sent, &delivered); err != nil || sent != 32 || delivered != 0 {
+	if err = p.QueryRowContext(ctx, "SELECT sum(status='sent'),sum(status='delivered') FROM message_outbox").Scan(&sent, &delivered); err != nil || sent != 32 || delivered != 0 {
 		t.Fatal("provider acceptance became delivery", sent, delivered, err)
 	}
 }
@@ -149,19 +150,19 @@ func TestBatchDrainLocalJobsBeyondSingleStatement(t *testing.T) {
 	for i := range messages {
 		messages[i] = Message{Topic: "announcement", Key: strconv.Itoa(i), FamilyID: 1, Channels: []string{"in_app"}}
 	}
-	tx, err := p.Begin(ctx)
+	tx, err := p.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer tx.Rollback(ctx)
+	defer tx.Rollback()
 	if err = EnqueueBatch(ctx, tx, nil, messages); err != nil {
 		t.Fatal(err)
 	}
-	if err = tx.Commit(ctx); err != nil {
+	if err = tx.Commit(); err != nil {
 		t.Fatal(err)
 	}
 	// Explicitly construct legacy jobs: new local entries need no worker.
-	if _, err = p.Exec(ctx, "UPDATE message_outbox SET status='pending',delivered_at=NULL"); err != nil {
+	if _, err = p.ExecContext(ctx, "UPDATE message_outbox SET status='pending',delivered_at=NULL"); err != nil {
 		t.Fatal(err)
 	}
 	d := Worker{DB: p}
@@ -171,7 +172,7 @@ func TestBatchDrainLocalJobsBeyondSingleStatement(t *testing.T) {
 		}
 	}
 	var delivered int
-	if err = p.QueryRow(ctx, "SELECT count(*) FROM message_outbox WHERE status='delivered' AND attempts=1 AND delivered_at IS NOT NULL").Scan(&delivered); err != nil || delivered != 1100 {
+	if err = p.QueryRowContext(ctx, "SELECT count(*) FROM message_outbox WHERE status='delivered' AND attempts=1 AND delivered_at IS NOT NULL").Scan(&delivered); err != nil || delivered != 1100 {
 		t.Fatal(delivered, err)
 	}
 }
@@ -184,8 +185,8 @@ func TestStaleAndDueRetryAreNotStarvedByFreshPendingJobs(t *testing.T) {
 	// A fresh pending stream has older retry_at values than retry/reclaimed
 	// tasks. Status priority must still recover the stale lease and due retry.
 	for _, state := range []string{"pending", "failed", "sending"} {
-		if _, err := p.Exec(ctx, `INSERT INTO message_outbox(topic,source_key,family_id,channel,recipient,status,retry_at,last_attempt_at)
- VALUES('announcement',$1,1,'sms','13800000001',$1,$2,$3)`, state, time.Now().Add(-time.Minute), time.Now().Add(-2*time.Minute)); err != nil {
+		if _, err := p.ExecContext(ctx, `INSERT INTO message_outbox(topic,source_key,family_id,channel,recipient,status,retry_at,last_attempt_at)
+ VALUES('announcement',?,1,'sms','13800000001',?,?,?)`, state, state, time.Now().Add(-time.Minute), time.Now().Add(-2*time.Minute)); err != nil {
 			t.Fatal(err)
 		}
 	}

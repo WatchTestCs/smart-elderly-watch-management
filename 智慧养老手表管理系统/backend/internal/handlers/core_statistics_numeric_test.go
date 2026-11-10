@@ -36,7 +36,7 @@ func TestContinuousDailyConflictSurvivesLaterSnapshot(t *testing.T) {
 	}
 	legacyID := health.Digest(legacyKey)
 	mustExec(t, pool, metricDailyEnsureSQL, legacyID, key.OldID, key.Source, key.SourceDevice, key.Metric, key.Semantics, key.Day, key.OffsetMinutes)
-	mustExec(t, pool, "UPDATE metric_daily SET dirty=false,computed_revision=3,result=$1 WHERE cache_key=$2", json.RawMessage(`{"count":1,"unit":"count","total":300}`), legacyID)
+	mustExec(t, pool, "UPDATE metric_daily SET dirty=false,computed_revision=3,result=? WHERE cache_key=?", json.RawMessage(`{"count":1,"unit":"count","total":300}`), legacyID)
 	daily := map[string]any{"oldId": 1, "source": "watch", "sourceDevice": "WATCH001", "metric": "steps", "semantics": "daily_total", "day": key.Day, "offsetMinutes": 0, "days": 1}
 	read := withHealthPrincipal(h, admin, h.healthDaily)
 	initial := api(t, read, daily)

@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"suining-care/internal/db"
+
 	"suining-care/internal/health"
 	"time"
 )
@@ -18,18 +18,18 @@ type ruleDevice struct {
 	battery          *float64
 }
 
-func readRulePolicy(ctx context.Context, tx *db.Transaction, id int64) (Policy, error) {
+func readRulePolicy(ctx context.Context, tx *sql.Tx, id int64) (Policy, error) {
 	var err error
 	p := Default()
 	var payload []byte
-	err = tx.QueryRow(ctx, "SELECT payload FROM rule_policy WHERE device_id=$1", id).Scan(&payload)
+	err = tx.QueryRowContext(ctx, "SELECT payload FROM rule_policy WHERE device_id=?", id).Scan(&payload)
 	if err == nil {
 		if err = json.Unmarshal(payload, &p); err != nil {
 			return Policy{}, err
 		}
 	} else if errors.Is(err, sql.ErrNoRows) {
 		var hrf, hrl, bpf, bpl *float64
-		err = tx.QueryRow(ctx, "SELECT hrf,hrl,bpf,bpl FROM watch_info WHERE device_id=$1", id).Scan(&hrf, &hrl, &bpf, &bpl)
+		err = tx.QueryRowContext(ctx, "SELECT hrf,hrl,bpf,bpl FROM watch_info WHERE device_id=?", id).Scan(&hrf, &hrl, &bpf, &bpl)
 		if err != nil && !errors.Is(err, sql.ErrNoRows) {
 			return Policy{}, err
 		}
@@ -49,7 +49,7 @@ func readRulePolicy(ctx context.Context, tx *db.Transaction, id int64) (Policy, 
 
 }
 
-func collectRuleInput(ctx context.Context, tx *db.Transaction, device ruleDevice, p Policy, now time.Time) (Input, error) {
+func collectRuleInput(ctx context.Context, tx *sql.Tx, device ruleDevice, p Policy, now time.Time) (Input, error) {
 	last, bound, battery := device.last, device.bound, device.battery
 	in := Input{Now: now, Baselines: map[string]Baseline{}}
 	if last != nil {
@@ -76,7 +76,7 @@ func collectRuleInput(ctx context.Context, tx *db.Transaction, device ruleDevice
 
 }
 
-func readLatestRuleObservations(ctx context.Context, tx *db.Transaction, device ruleDevice, p Policy, in *Input) error {
+func readLatestRuleObservations(ctx context.Context, tx *sql.Tx, device ruleDevice, p Policy, in *Input) error {
 	id, oldID, epoch := device.id, device.oldID, device.epoch
 	now := in.Now
 	var err error
@@ -90,7 +90,7 @@ func readLatestRuleObservations(ctx context.Context, tx *db.Transaction, device 
 		var sampleID string
 		var revision int64
 		var b []byte
-		err = tx.QueryRow(ctx, latestSampleSQL, oldID, id, epoch, metric, now.Add(-window).UnixMicro(), now.UnixMicro()).Scan(&sampleID, &revision, &b)
+		err = tx.QueryRowContext(ctx, latestSampleSQL, oldID, id, epoch, metric, now.Add(-window).UnixMicro(), now.UnixMicro()).Scan(&sampleID, &revision, &b)
 		if errors.Is(err, sql.ErrNoRows) {
 			continue
 		}
@@ -120,7 +120,7 @@ func readLatestRuleObservations(ctx context.Context, tx *db.Transaction, device 
 
 }
 
-func readLegacyRuleVitals(ctx context.Context, tx *db.Transaction, device ruleDevice, p Policy, in *Input) error {
+func readLegacyRuleVitals(ctx context.Context, tx *sql.Tx, device ruleDevice, p Policy, in *Input) error {
 	id, oldID, no := device.id, device.oldID, device.no
 	now := in.Now
 	var err error
@@ -128,7 +128,7 @@ func readLegacyRuleVitals(ctx context.Context, tx *db.Transaction, device ruleDe
 		var record int64
 		var at time.Time
 		var hr, bp *float64
-		err = tx.QueryRow(ctx, "SELECT id,create_time,hr,bp FROM ratepre WHERE device_id=$1 AND old_id=$2 AND create_time>=$3 ORDER BY create_time DESC,id DESC LIMIT 1", id, oldID, now.Add(-5*time.Minute)).Scan(&record, &at, &hr, &bp)
+		err = tx.QueryRowContext(ctx, "SELECT id,create_time,hr,bp FROM ratepre WHERE device_id=? AND old_id=? AND create_time>=? ORDER BY create_time DESC,id DESC LIMIT 1", id, oldID, now.Add(-5*time.Minute)).Scan(&record, &at, &hr, &bp)
 		if err != nil && !errors.Is(err, sql.ErrNoRows) {
 			return err
 		}
@@ -145,7 +145,7 @@ func readLegacyRuleVitals(ctx context.Context, tx *db.Transaction, device ruleDe
 
 }
 
-func readRuleBaselines(ctx context.Context, tx *db.Transaction, device ruleDevice, p Policy, in *Input) error {
+func readRuleBaselines(ctx context.Context, tx *sql.Tx, device ruleDevice, p Policy, in *Input) error {
 	id, oldID := device.id, device.oldID
 	now := in.Now
 	var err error
@@ -158,15 +158,15 @@ func readRuleBaselines(ctx context.Context, tx *db.Transaction, device ruleDevic
 		}
 		var base Baseline
 		query := `SELECT count(*),COALESCE(avg(CAST(JSON_UNQUOTE(JSON_EXTRACT(payload,'$.value')) AS DOUBLE)),0),COALESCE(stddev_pop(CAST(JSON_UNQUOTE(JSON_EXTRACT(payload,'$.value')) AS DOUBLE)),0)
- FROM health_sample WHERE old_id=$1 AND device_id=$2 AND metric=$3 AND deleted=false
- AND source=$4 AND source_device=$5 AND BINARY source=BINARY $4 AND BINARY source_device=BINARY $5
- AND sample_start>=$6 AND sample_start<$7 AND (JSON_UNQUOTE(JSON_EXTRACT(payload,'$.timeBasis')) IS NULL OR JSON_UNQUOTE(JSON_EXTRACT(payload,'$.timeBasis'))<>'legacy-unzoned')`
+ FROM health_sample WHERE old_id=? AND device_id=? AND metric=? AND deleted=false
+ AND source=? AND source_device=? AND BINARY source=BINARY ? AND BINARY source_device=BINARY ?
+ AND sample_start>=? AND sample_start<? AND (JSON_UNQUOTE(JSON_EXTRACT(payload,'$.timeBasis')) IS NULL OR JSON_UNQUOTE(JSON_EXTRACT(payload,'$.timeBasis'))<>'legacy-unzoned')`
 		if len(item.v.Device) <= 64 {
 			// All predicates and values are present in this index. Avoid random
 			// payload reads while holding the device lock as history grows.
 			query = baselineCoverSQL
 		}
-		err = tx.QueryRow(ctx, query, oldID, id, item.metric, item.v.Source, item.v.Device, now.AddDate(0, 0, -p.BaselineDays).UnixMicro(), now.Add(-15*time.Minute).UnixMicro()).Scan(&base.Count, &base.Mean, &base.Deviation)
+		err = tx.QueryRowContext(ctx, query, oldID, id, item.metric, item.v.Source, item.v.Device, item.v.Source, item.v.Device, now.AddDate(0, 0, -p.BaselineDays).UnixMicro(), now.Add(-15*time.Minute).UnixMicro()).Scan(&base.Count, &base.Mean, &base.Deviation)
 		if err != nil {
 			return err
 		}
@@ -176,13 +176,13 @@ func readRuleBaselines(ctx context.Context, tx *db.Transaction, device ruleDevic
 
 }
 
-func readRuleActivity(ctx context.Context, tx *db.Transaction, device ruleDevice, p Policy, in *Input) error {
+func readRuleActivity(ctx context.Context, tx *sql.Tx, device ruleDevice, p Policy, in *Input) error {
 	id, oldID, epoch := device.id, device.oldID, device.epoch
 	now := in.Now
 	if in.Activity != nil {
 		v := in.Activity
 		start := now.Add(-time.Duration(p.ActivityMinutes) * time.Minute)
-		rows, err := tx.Query(ctx, `SELECT payload FROM health_sample WHERE old_id=$1 AND device_id=$2 AND epoch=$3 AND metric='steps' AND NOT deleted AND BINARY source=BINARY $4 AND BINARY source_device=BINARY $5 AND sample_start<=$7 AND (sample_start>=$6 OR sample_end>$6) ORDER BY sample_start,revision LIMIT 1001`, oldID, id, epoch, v.Source, v.Device, start.UnixMicro(), now.UnixMicro())
+		rows, err := tx.QueryContext(ctx, `SELECT payload FROM health_sample WHERE old_id=? AND device_id=? AND epoch=? AND metric='steps' AND NOT deleted AND BINARY source=BINARY ? AND BINARY source_device=BINARY ? AND sample_start<=? AND (sample_start>=? OR sample_end>?) ORDER BY sample_start,revision LIMIT 1001`, oldID, id, epoch, v.Source, v.Device, now.UnixMicro(), start.UnixMicro(), start.UnixMicro())
 		if err != nil {
 			return err
 		}

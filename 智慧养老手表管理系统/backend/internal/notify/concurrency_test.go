@@ -2,6 +2,7 @@ package notify
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -32,18 +33,18 @@ func TestIndependentDrainWorkersCanProgressWhileProviderBlocks(t *testing.T) {
 	t.Setenv("NOTIFY_BULK_WEBHOOK_URL", "")
 	p := dbtest.MySQL(t)
 	ctx := context.Background()
-	tx, err := p.Begin(ctx)
+	tx, err := p.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer tx.Rollback(ctx)
+	defer tx.Rollback()
 	for i := 0; i < 2; i++ {
 		err = EnqueueChannels(ctx, tx, nil, "announcement", fmt.Sprintf("parallel-%d", i), 1, "13800000001", []string{"sms"})
 		if err != nil {
 			t.Fatal(err)
 		}
 	}
-	if err = tx.Commit(ctx); err != nil {
+	if err = tx.Commit(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -80,7 +81,7 @@ func TestIndependentDrainWorkersCanProgressWhileProviderBlocks(t *testing.T) {
 		}
 	}
 	var claimed int
-	if err = p.QueryRow(ctx, "SELECT count(*) FROM message_outbox WHERE status='sending' AND attempts=1").Scan(&claimed); err != nil || claimed != 2 {
+	if err = p.QueryRowContext(ctx, "SELECT count(*) FROM message_outbox WHERE status='sending' AND attempts=1").Scan(&claimed); err != nil || claimed != 2 {
 		t.Fatalf("claimed=%d, error=%v", claimed, err)
 	}
 }

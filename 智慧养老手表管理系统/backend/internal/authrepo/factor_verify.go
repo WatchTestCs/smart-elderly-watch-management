@@ -10,7 +10,6 @@ import (
 	"errors"
 	"time"
 
-	"suining-care/internal/db"
 	"suining-care/internal/securestore"
 )
 
@@ -18,7 +17,7 @@ var ErrFactorSecretUnavailable = errors.New("MFA encryption key unavailable")
 
 // VerifyLoginFactor consumes TOTP counters or one-time recovery codes inside
 // the same transaction as login auditing. The caller commits or rolls back.
-func VerifyLoginFactor(ctx context.Context, tx *db.Transaction, box *securestore.Box, role string, actorID int64, scope, otp, recoveryCode string, now time.Time) (bool, string, error) {
+func VerifyLoginFactor(ctx context.Context, tx *sql.Tx, box *securestore.Box, role string, actorID int64, scope, otp, recoveryCode string, now time.Time) (bool, string, error) {
 	factor, err := LockLoginFactor(ctx, tx, role, actorID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return true, "", nil

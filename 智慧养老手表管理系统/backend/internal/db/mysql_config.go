@@ -33,8 +33,7 @@ func mysqlConnectionConfig(dsn string) (*mysql.Config, error) {
 	cfg.Params["charset"] = "utf8mb4"
 	cfg.Params["time_zone"] = "'+00:00'"
 	cfg.Params["transaction_isolation"] = "'READ-COMMITTED'"
-	// Preserve the existing parameterized concatenation expressions.
-	cfg.Params["sql_mode"] = "'STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION,PIPES_AS_CONCAT'"
+	cfg.Params["sql_mode"] = "'STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'"
 	// The driver owns escaping and safe fallback to binary prepare. Respect
 	// explicit DSN true/false; otherwise avoid one-shot prepare/close per call.
 	params := dsn[strings.LastIndexByte(dsn, '/')+1:]
@@ -113,7 +112,7 @@ func OpenMySQL(ctx context.Context, dsn string) (*Database, error) {
 		pool.Close()
 		return nil, errors.New("MySQL health probe unavailable")
 	}
-	return &Database{executor: executor{my: pool, packed: cacheLimit > 0}, myPool: pool, healthPool: healthPool}, nil
+	return &Database{DB: pool, healthPool: healthPool}, nil
 }
 
 // mysqlIdleConnectionLimit is bounded by the existing 20-connection primary

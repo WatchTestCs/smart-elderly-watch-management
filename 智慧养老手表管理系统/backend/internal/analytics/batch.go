@@ -27,7 +27,7 @@ func SyncBatch(ctx context.Context, primary *db.Database, pg *pgxpool.Pool, size
 		size = 500
 	}
 
-	tx, err := primary.SQL().BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	tx, err := primary.DB.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		return 0, err
 	}

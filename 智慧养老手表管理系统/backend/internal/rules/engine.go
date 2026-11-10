@@ -10,13 +10,13 @@ import (
 	"time"
 )
 
-const latestSampleSQL = `SELECT sample_id,revision,payload FROM health_sample WHERE old_id=$1 AND device_id=$2 AND epoch=$3 AND metric=$4 AND NOT deleted AND sample_start>=$5 AND sample_start<=$6 ORDER BY sample_start DESC,revision DESC LIMIT 1`
+const latestSampleSQL = `SELECT sample_id,revision,payload FROM health_sample WHERE old_id=? AND device_id=? AND epoch=? AND metric=? AND NOT deleted AND sample_start>=? AND sample_start<=? ORDER BY sample_start DESC,revision DESC LIMIT 1`
 
 const baselineCoverSQL = `SELECT count(*),COALESCE(avg(rule_value),0),COALESCE(stddev_pop(rule_value),0)
  FROM health_sample FORCE INDEX (idx_health_rule_cover)
- WHERE old_id=$1 AND device_id=$2 AND metric=$3 AND deleted=false
- AND source=$4 AND rule_source_device=$5 AND BINARY source=BINARY $4 AND BINARY rule_source_device=BINARY $5
- AND sample_start>=$6 AND sample_start<$7 AND rule_legacy_unzoned=false`
+ WHERE old_id=? AND device_id=? AND metric=? AND deleted=false
+ AND source=? AND rule_source_device=? AND BINARY source=BINARY ? AND BINARY rule_source_device=BINARY ?
+ AND sample_start>=? AND sample_start<? AND rule_legacy_unzoned=false`
 
 type Engine struct {
 	DB    *db.Database
@@ -29,13 +29,13 @@ type Engine struct {
 
 func (e *Engine) Device(ctx context.Context, id int64, now time.Time) error {
 	observability.Default.Add("suining_rule_device_evaluations_total", 1)
-	tx, err := e.DB.Begin(ctx)
+	tx, err := e.DB.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback(ctx)
+	defer tx.Rollback()
 	device := ruleDevice{id: id}
-	err = tx.QueryRow(ctx, "SELECT old_id,health_epoch,device_no,last_time,bind_time,battery FROM device WHERE device_id=$1 AND old_id IS NOT NULL AND status<>0 FOR UPDATE", id).Scan(&device.oldID, &device.epoch, &device.no, &device.last, &device.bound, &device.battery)
+	err = tx.QueryRowContext(ctx, "SELECT old_id,health_epoch,device_no,last_time,bind_time,battery FROM device WHERE device_id=? AND old_id IS NOT NULL AND status<>0 FOR UPDATE", id).Scan(&device.oldID, &device.epoch, &device.no, &device.last, &device.bound, &device.battery)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil
 	}
@@ -47,7 +47,7 @@ func (e *Engine) Device(ctx context.Context, id int64, now time.Time) error {
 		return err
 	}
 	if !p.Enabled {
-		return tx.Commit(ctx)
+		return tx.Commit()
 	}
 	in, err := collectRuleInput(ctx, tx, device, p, now)
 	if err != nil {
@@ -65,5 +65,5 @@ func (e *Engine) Device(ctx context.Context, id int64, now time.Time) error {
 	if err := upgradeNightIncident(ctx, tx, device, p, now); err != nil {
 		return err
 	}
-	return tx.Commit(ctx)
+	return tx.Commit()
 }

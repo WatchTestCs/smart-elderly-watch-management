@@ -3,6 +3,7 @@ package blob
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"encoding/base64"
 	"errors"
 	"testing"
@@ -24,15 +25,15 @@ func TestCatalogGCReferenceLocksAndBackupLease(t *testing.T) {
 	if err = m.Put(ctx, "retained.png", []byte("private")); err != nil {
 		t.Fatal(err)
 	}
-	tx, err := pool.Begin(ctx)
+	tx, err := pool.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer tx.Rollback(ctx)
+	defer tx.Rollback()
 	if err = m.Require(ctx, tx, []string{"retained.png"}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err = tx.Exec(ctx, "INSERT INTO pic(pic_id,pic_name) VALUES(1,'retained.png')"); err != nil {
+	if _, err = tx.ExecContext(ctx, "INSERT INTO pic(pic_id,pic_name) VALUES(1,'retained.png')"); err != nil {
 		t.Fatal(err)
 	}
 	result := make(chan error, 1)
@@ -43,7 +44,7 @@ func TestCatalogGCReferenceLocksAndBackupLease(t *testing.T) {
 		}
 		result <- err
 	}()
-	if err = tx.Commit(ctx); err != nil {
+	if err = tx.Commit(); err != nil {
 		t.Fatal(err)
 	}
 	if err = <-result; err != nil {
@@ -52,7 +53,7 @@ func TestCatalogGCReferenceLocksAndBackupLease(t *testing.T) {
 	if _, err = m.Get(ctx, "retained.png"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err = pool.Exec(ctx, "DELETE FROM pic WHERE pic_id=1"); err != nil {
+	if _, err = pool.ExecContext(ctx, "DELETE FROM pic WHERE pic_id=1"); err != nil {
 		t.Fatal(err)
 	}
 	if err = m.AcquireBackup(ctx, "test-backup", 60); err != nil {
@@ -70,11 +71,11 @@ func TestCatalogGCReferenceLocksAndBackupLease(t *testing.T) {
 	if _, err = m.Get(ctx, "retained.png"); !errors.Is(err, ErrNotFound) {
 		t.Fatal("deleted image still readable", err)
 	}
-	tx, err = pool.Begin(ctx)
+	tx, err = pool.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer tx.Rollback(ctx)
+	defer tx.Rollback()
 	if err = m.Require(ctx, tx, []string{"retained.png"}); !errors.Is(err, ErrNotFound) {
 		t.Fatal("deleted image rebound", err)
 	}
@@ -88,7 +89,7 @@ func TestCatalogInsertFailureCompensatesBlob(t *testing.T) {
 		t.Fatal(err)
 	}
 	m := &Manager{DB: pool, Store: local}
-	if _, err = pool.Exec(ctx, "DROP TABLE image_blob"); err != nil {
+	if _, err = pool.ExecContext(ctx, "DROP TABLE image_blob"); err != nil {
 		t.Fatal(err)
 	}
 	if err = m.Put(ctx, "failed.png", []byte("synthetic")); err == nil {

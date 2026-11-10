@@ -95,7 +95,7 @@ func (h *Handler) positionSelectFamily(w http.ResponseWriter, r *http.Request) {
 	}
 	if !admin {
 		var familyID *int64
-		err := h.DB.QueryRow(ctx, "SELECT family_id FROM oldperson WHERE old_id=$1", residentID).Scan(&familyID)
+		err := h.DB.QueryRowContext(ctx, "SELECT family_id FROM oldperson WHERE old_id=?", residentID).Scan(&familyID)
 		if err != nil || familyID == nil || principal == nil || *familyID != principal.ID {
 			scopeDeny(w)
 			return

@@ -19,7 +19,7 @@ func extraAuditHandler(t *testing.T) *Handler {
 	p := testDatabase(t)
 	h := testHandler(t, p)
 	h.Box, _ = securestore.New(base64.StdEncoding.EncodeToString([]byte(strings.Repeat("A", 32))))
-	h.Sessions.UseDatabase(p.SQL(), h.Box)
+	h.Sessions.UseDatabase(p.DB, h.Box)
 	return h
 }
 
@@ -35,7 +35,7 @@ func TestExtraAuditFamilyOnboarding(t *testing.T) {
 	join := api(t, h.inviteJoin, map[string]any{"code": "AUDITJOIN", "familyName": "家属", "familyPhone": "13800000002", "familyPassword": "TestPassword123!", "familyRelation": "子女", "familySex": "女", "familyAddress": "测试"})
 	login := callAPI(h.login, map[string]any{"phone": "13800000002", "password": "TestPassword123!"})
 	var missing bool
-	if err := p.QueryRow(context.Background(), "SELECT family_password IS NULL FROM family WHERE family_phone='13800000002'").Scan(&missing); err != nil {
+	if err := p.QueryRowContext(context.Background(), "SELECT family_password IS NULL FROM family WHERE family_phone='13800000002'").Scan(&missing); err != nil {
 		t.Fatal(err)
 	}
 	t.Logf("admin add=%v; passwordNULL=%v; login HTTP=%d; join=%v", added, missing, login.Code, join)
@@ -85,12 +85,12 @@ func TestExtraAuditFamilyOverwrite(t *testing.T) {
 	mustExec(t, p, "INSERT INTO oldperson(old_id,name,phone,family_id) VALUES(1,'老人','13800000001',1)")
 	out := callAPI(h.familyAdd, map[string]any{"familyName": "新家属", "familyRelation": "子女", "familySex": "女", "familyPhone": "13800000003", "oldPhone": "13800000001", "familyAddress": "测试"})
 	var bound int64
-	if err := p.QueryRow(context.Background(), "SELECT family_id FROM oldperson WHERE old_id=1").Scan(&bound); err != nil {
+	if err := p.QueryRowContext(context.Background(), "SELECT family_id FROM oldperson WHERE old_id=1").Scan(&bound); err != nil {
 		t.Fatal(err)
 	}
 	t.Logf("add HTTP=%d; original familyId=1; now familyId=%d", out.Code, bound)
 	var count int
-	if err := p.QueryRow(context.Background(), "SELECT count(*) FROM family").Scan(&count); err != nil {
+	if err := p.QueryRowContext(context.Background(), "SELECT count(*) FROM family").Scan(&count); err != nil {
 		t.Fatal(err)
 	}
 	if out.Code != 409 || bound != 1 || count != 1 {
@@ -113,7 +113,7 @@ func TestExtraAuditOutOfOrderTelemetry(t *testing.T) {
 		}
 	}
 	var steps int
-	if err := p.QueryRow(context.Background(), "SELECT step FROM watch_day_info WHERE device_id=1").Scan(&steps); err != nil {
+	if err := p.QueryRowContext(context.Background(), "SELECT step FROM watch_day_info WHERE device_id=1").Scan(&steps); err != nil {
 		t.Fatal(err)
 	}
 	pos := api(t, h.positionSelect, map[string]any{"name": ""})
@@ -126,7 +126,7 @@ func TestExtraAuditOutOfOrderTelemetry(t *testing.T) {
 		t.Fatal("late older report replaced current location")
 	}
 	var sealed string
-	if err := p.QueryRow(context.Background(), "SELECT last_lng FROM device WHERE device_id=1").Scan(&sealed); err != nil {
+	if err := p.QueryRowContext(context.Background(), "SELECT last_lng FROM device WHERE device_id=1").Scan(&sealed); err != nil {
 		t.Fatal(err)
 	}
 	lng, err := h.Box.Open(sealed, coordinateScope)
@@ -137,7 +137,7 @@ func TestExtraAuditOutOfOrderTelemetry(t *testing.T) {
 	api(t, h.deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "step": 4000, "beTime": "2026-10-20 11:00:00"})
 	api(t, h.deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "sleep": 8, "beTime": "2026-10-20 12:00:00"})
 	api(t, h.deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "step": 4500, "beTime": "2026-10-20 11:30:00"})
-	if err := p.QueryRow(context.Background(), "SELECT step FROM watch_day_info WHERE device_id=1").Scan(&steps); err != nil {
+	if err := p.QueryRowContext(context.Background(), "SELECT step FROM watch_day_info WHERE device_id=1").Scan(&steps); err != nil {
 		t.Fatal(err)
 	}
 	if steps != 4500 {
@@ -153,7 +153,7 @@ func TestExtraAuditPositionTimestamp(t *testing.T) {
 	if out["returnCode"] != "1111" {
 		t.Fatal(out)
 	}
-	mustExec(t, p, "INSERT INTO alarm_precess(old_id,device_id,status,be_time) VALUES(1,1,'1',$1)", time.Date(2026, 10, 20, 10, 0, 0, 0, time.UTC))
+	mustExec(t, p, "INSERT INTO alarm_precess(old_id,device_id,status,be_time) VALUES(1,1,'1',?)", time.Date(2026, 10, 20, 10, 0, 0, 0, time.UTC))
 	pos := api(t, h.positionSelect, map[string]any{"name": ""})
 	item := pos["positionDtos"].([]any)[0].(map[string]any)
 	t.Logf("location sampled at 08:00; newer alarm at 10:00; displayed=%v", item)

@@ -32,7 +32,7 @@ func TestCareSOSOutboxAuditAndState(t *testing.T) {
 	}
 	var id, linkedAlarm int64
 	var state, notification string
-	if err := pool.QueryRow(context.Background(), `
+	if err := pool.QueryRowContext(context.Background(), `
   SELECT i.id,i.source_alarm_id,i.state,o.status
   FROM care_incident i JOIN care_notification_outbox o ON o.incident_id=i.id
   WHERE i.device_id=1`).Scan(&id, &linkedAlarm, &state, &notification); err != nil {
@@ -42,7 +42,7 @@ func TestCareSOSOutboxAuditAndState(t *testing.T) {
 		t.Fatalf("incident not durable: %d %s %s", id, state, notification)
 	}
 	var events int
-	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM care_incident_event WHERE incident_id=$1 AND action='received'", id).Scan(&events); err != nil || events != 1 {
+	if err := pool.QueryRowContext(context.Background(), "SELECT count(*) FROM care_incident_event WHERE incident_id=? AND action='received'", id).Scan(&events); err != nil || events != 1 {
 		t.Fatalf("audit missing: %d %v", events, err)
 	}
 }
@@ -87,8 +87,12 @@ func TestCareAdminTransitionsAndFamilyIsolation(t *testing.T) {
 	if res := call(auth.RoleAdmin, 2, "verify", "独立复核确认"); res.Code != 200 {
 		t.Fatalf("independent verification failed: %d %s", res.Code, res.Body.String())
 	}
+	var activeAlerts int
+	if err := pool.QueryRowContext(context.Background(), "SELECT count(*) FROM resident_location_alert_state WHERE active=true").Scan(&activeAlerts); err != nil || activeAlerts != 0 {
+		t.Fatalf("verified incident left an active location alert: count=%d err=%v", activeAlerts, err)
+	}
 	var events int
-	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM care_incident_event WHERE incident_id=$1", id).Scan(&events); err != nil || events != 5 {
+	if err := pool.QueryRowContext(context.Background(), "SELECT count(*) FROM care_incident_event WHERE incident_id=?", id).Scan(&events); err != nil || events != 5 {
 		t.Fatalf("event chain invalid: %d %v", events, err)
 	}
 }
@@ -102,7 +106,7 @@ func TestCareReceiptRequiresTrustedGatewaySignature(t *testing.T) {
 	api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "requestId": "test-press", "bindingVersion": 1})
 	var id int64
 	mustExec(t, pool, "UPDATE care_notification_outbox SET status='sent'")
-	if err := pool.QueryRow(context.Background(), "SELECT id FROM care_notification_outbox").Scan(&id); err != nil {
+	if err := pool.QueryRowContext(context.Background(), "SELECT id FROM care_notification_outbox").Scan(&id); err != nil {
 		t.Fatal(err)
 	}
 	t.Setenv("CARE_RECEIPT_SECRET", "test-receipt-secret-longer-than-32-characters")
@@ -134,11 +138,11 @@ func TestCareReceiptRequiresTrustedGatewaySignature(t *testing.T) {
 		t.Fatalf("unsigned duplicate receipt accepted: %d", rec.Code)
 	}
 	var deliveries int
-	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM care_incident_event WHERE action='delivered'").Scan(&deliveries); err != nil || deliveries != 1 {
+	if err := pool.QueryRowContext(context.Background(), "SELECT count(*) FROM care_incident_event WHERE action='delivered'").Scan(&deliveries); err != nil || deliveries != 1 {
 		t.Fatalf("duplicate receipt produced %d delivery events: %v", deliveries, err)
 	}
 	var state string
-	if err := pool.QueryRow(context.Background(), "SELECT state FROM care_incident").Scan(&state); err != nil || state != "notified" {
+	if err := pool.QueryRowContext(context.Background(), "SELECT state FROM care_incident").Scan(&state); err != nil || state != "notified" {
 		t.Fatalf("delivery state=%s err=%v", state, err)
 	}
 }
@@ -154,7 +158,7 @@ func TestCareSOSRequestIDPreventsDuplicateAlerts(t *testing.T) {
 		t.Fatalf("same press was duplicated: %+v %+v", first, repeated)
 	}
 	var count int
-	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM alarm_precess").Scan(&count); err != nil || count != 1 {
+	if err := pool.QueryRowContext(context.Background(), "SELECT count(*) FROM alarm_precess").Scan(&count); err != nil || count != 1 {
 		t.Fatalf("duplicate alert inserted count=%d err=%v", count, err)
 	}
 	fresh := api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "requestId": "press-124", "bindingVersion": 1})

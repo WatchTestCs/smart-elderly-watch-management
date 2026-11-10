@@ -16,7 +16,7 @@ const pendingRate = "(r.rate_state='1' AND (r.rate_handled_at IS NULL OR r.creat
 const pendingPressure = "(r.pre_state='1' AND (r.pre_handled_at IS NULL OR r.create_time > r.pre_handled_at))"
 
 func AlertCounts(ctx context.Context, store *db.Database) (rate, pressure int64, err error) {
-	err = store.QueryRow(ctx, `SELECT
+	err = store.QueryRowContext(ctx, `SELECT
 		(SELECT COUNT(*) FROM ratepre r WHERE `+pendingRate+`),
 		(SELECT COUNT(*) FROM ratepre r WHERE `+pendingPressure+`)`).Scan(&rate, &pressure)
 	return
@@ -24,15 +24,15 @@ func AlertCounts(ctx context.Context, store *db.Database) (rate, pressure int64,
 
 func updateSQL(kind string) string {
 	if kind == "pre" {
-		return "UPDATE ratepre AS r SET pre_handled=1, pre_handled_at=now(), pre_state='0'"
+		return "UPDATE ratepre AS r SET pre_handled=1, pre_handled_at=CURRENT_TIMESTAMP(6), pre_state='0'"
 	}
-	return "UPDATE ratepre AS r SET rate_handled=1, rate_handled_at=now(), rate_state='0'"
+	return "UPDATE ratepre AS r SET rate_handled=1, rate_handled_at=CURRENT_TIMESTAMP(6), rate_state='0'"
 }
 
 // ResolveAlert marks one or both metrics handled in a single transaction.
 func ResolveAlert(ctx context.Context, store *db.Database, recordID int64, kind string) (bool, error) {
 	var deviceID *int64
-	err := store.QueryRow(ctx, "SELECT device_id FROM ratepre WHERE id=$1", recordID).Scan(&deviceID)
+	err := store.QueryRowContext(ctx, "SELECT device_id FROM ratepre WHERE id=?", recordID).Scan(&deviceID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return false, ErrAlertNotFound
 	}
@@ -43,23 +43,27 @@ func ResolveAlert(ctx context.Context, store *db.Database, recordID int64, kind 
 	if kind == "rate" || kind == "pre" {
 		kinds = []string{kind}
 	}
-	tx, err := store.Begin(ctx)
+	tx, err := store.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		return false, err
 	}
-	defer tx.Rollback(ctx)
+	defer tx.Rollback()
 	var affected int64
 	for _, metric := range kinds {
-		result, err := tx.Exec(ctx, updateSQL(metric)+" WHERE id=$1", recordID)
+		result, err := tx.ExecContext(ctx, updateSQL(metric)+" WHERE id=?", recordID)
 		if err != nil {
 			return false, err
 		}
-		affected += result.RowsAffected()
+		changed, err := result.RowsAffected()
+		if err != nil {
+			return false, err
+		}
+		affected += changed
 	}
 	if err := healthalertstate.SyncVitalsIfPresent(ctx, tx, deviceID); err != nil {
 		return false, err
 	}
-	if err := tx.Commit(ctx); err != nil {
+	if err := tx.Commit(); err != nil {
 		return false, err
 	}
 	return affected > 0, nil
@@ -67,20 +71,20 @@ func ResolveAlert(ctx context.Context, store *db.Database, recordID int64, kind 
 
 // ResolveDeviceAlert updates the selected metric and the device-level handled flag
 // within the caller's transaction. The caller owns locking and commit.
-func ResolveDeviceAlert(ctx context.Context, tx *db.Transaction, deviceID int64, kind string, recordID *int64) (int64, error) {
+func ResolveDeviceAlert(ctx context.Context, tx *sql.Tx, deviceID int64, kind string, recordID *int64) (int64, error) {
 	handled, pending := "rate_handled", pendingRate
 	if kind == "pre" {
 		handled, pending = "pre_handled", pendingPressure
 	}
-	query := updateSQL(kind) + " WHERE device_id=$1 AND "
+	query := updateSQL(kind) + " WHERE device_id=? AND "
 	args := []any{deviceID}
 	if recordID != nil {
-		query += "id=$2"
+		query += "id=?"
 		args = append(args, *recordID)
 	} else {
 		query += pending
 	}
-	result, err := tx.Exec(ctx, query, args...)
+	result, err := tx.ExecContext(ctx, query, args...)
 	if err != nil {
 		return 0, err
 	}
@@ -93,9 +97,9 @@ func ResolveDeviceAlert(ctx context.Context, tx *db.Transaction, deviceID int64,
 		hasPending = pressurePending
 	}
 	if !hasPending {
-		if _, err := tx.Exec(ctx, "UPDATE device SET "+handled+"=1 WHERE device_id=$1", deviceID); err != nil {
+		if _, err := tx.ExecContext(ctx, "UPDATE device SET "+handled+"=1 WHERE device_id=?", deviceID); err != nil {
 			return 0, err
 		}
 	}
-	return result.RowsAffected(), nil
+	return result.RowsAffected()
 }

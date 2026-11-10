@@ -33,19 +33,19 @@ func TestDeviceRegistrationListContract(t *testing.T) {
 	deviceNo, secret := created["deviceNo"].(string), created["secret"].(string)
 	var alias, model, storedSecret string
 	var owner, primaryDevice, profiles int64
-	if err := pool.QueryRow(context.Background(), "SELECT alias,model,old_id,secret FROM device WHERE device_id=$1", id).Scan(&alias, &model, &owner, &storedSecret); err != nil {
+	if err := pool.QueryRowContext(context.Background(), "SELECT alias,model,old_id,secret FROM device WHERE device_id=?", id).Scan(&alias, &model, &owner, &storedSecret); err != nil {
 		t.Fatal(err)
 	}
 	if alias != "新手表" || model != "HarmonyOS-Wear" || owner != 1 || storedSecret == "" || storedSecret == secret {
 		t.Fatalf("registration defaults, owner or secret storage changed: alias=%s model=%s owner=%d", alias, model, owner)
 	}
-	if err := pool.QueryRow(context.Background(), "SELECT device_id FROM oldperson WHERE old_id=1").Scan(&primaryDevice); err != nil || primaryDevice != id {
+	if err := pool.QueryRowContext(context.Background(), "SELECT device_id FROM oldperson WHERE old_id=1").Scan(&primaryDevice); err != nil || primaryDevice != id {
 		t.Fatalf("primary device not linked: %d %v", primaryDevice, err)
 	}
-	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM watch_info WHERE device_id=$1 AND hrf=110 AND hrl=55 AND bpf=140 AND bpl=90", id).Scan(&profiles); err != nil || profiles != 1 {
+	if err := pool.QueryRowContext(context.Background(), "SELECT count(*) FROM watch_info WHERE device_id=? AND hrf=110 AND hrl=55 AND bpf=140 AND bpl=90", id).Scan(&profiles); err != nil || profiles != 1 {
 		t.Fatalf("default thresholds not initialized: %d %v", profiles, err)
 	}
-	mustExec(t, pool, "UPDATE device SET last_lng=$1,last_lat=$2,last_time=$3,battery=67 WHERE device_id=$4", sealCoordinate(h.Box, "121.5"), sealCoordinate(h.Box, "31.2"), time.Now().UTC().Add(-30*time.Second), id)
+	mustExec(t, pool, "UPDATE device SET last_lng=?,last_lat=?,last_time=?,battery=67 WHERE device_id=?", sealCoordinate(h.Box, "121.5"), sealCoordinate(h.Box, "31.2"), time.Now().UTC().Add(-30*time.Second), id)
 	listed := api(t, h.deviceList, map[string]any{"query": strings.ToLower(deviceNo), "state": "online"})
 	items, ok := listed["devices"].([]any)
 	if !ok || len(items) != 1 || listed["total"] != float64(1) || listed["onlineCount"] != float64(1) {
@@ -64,7 +64,7 @@ func TestDeviceRegistrationListContract(t *testing.T) {
 		}
 	}
 	var devices int
-	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM device").Scan(&devices); err != nil || devices != 1 {
+	if err := pool.QueryRowContext(context.Background(), "SELECT count(*) FROM device").Scan(&devices); err != nil || devices != 1 {
 		t.Fatalf("invalid input created a device: %d %v", devices, err)
 	}
 }

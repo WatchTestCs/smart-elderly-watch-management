@@ -49,7 +49,7 @@ func TestImageS3TwoInstancesAndRealRestore(t *testing.T) {
 		store := session.NewStore(time.Hour)
 		t.Cleanup(store.Close)
 		h := New(pool, store, cfg)
-		store.UseDatabase(pool.SQL(), h.Box)
+		store.UseDatabase(pool.DB, h.Box)
 		mux := http.NewServeMux()
 		h.Routes(mux)
 		server := httptest.NewServer(csrf.Middleware(store, auth.Middleware(store, h.EnforceAdminDuty(mux))))
@@ -172,7 +172,7 @@ func TestImageS3TwoInstancesAndRealRestore(t *testing.T) {
 		t.Fatal(err)
 	}
 	var database string
-	if err = pool.QueryRow(ctx, "SELECT DATABASE()").Scan(&database); err != nil {
+	if err = pool.QueryRowContext(ctx, "SELECT DATABASE()").Scan(&database); err != nil {
 		t.Fatal(err)
 	}
 	client := func(name string, args []string, input []byte) ([]byte, error) {
@@ -223,7 +223,7 @@ func TestImageS3TwoInstancesAndRealRestore(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(restored.Close)
+	t.Cleanup(func() { _ = restored.Close() })
 	c, _, hC := makeServer(restored)
 	if !bytes.Equal(read(c.URL), original) {
 		t.Fatal("restored image differs")
@@ -237,13 +237,13 @@ func TestImageS3TwoInstancesAndRealRestore(t *testing.T) {
 		t.Fatalf("dangling restored reference: %v %v", references, err)
 	}
 	var incidents, pending, sessions int
-	if err = restored.QueryRow(ctx, "SELECT count(*) FROM care_incident").Scan(&incidents); err != nil {
+	if err = restored.QueryRowContext(ctx, "SELECT count(*) FROM care_incident").Scan(&incidents); err != nil {
 		t.Fatal(err)
 	}
-	if err = restored.QueryRow(ctx, "SELECT count(*) FROM care_notification_outbox WHERE status='pending'").Scan(&pending); err != nil {
+	if err = restored.QueryRowContext(ctx, "SELECT count(*) FROM care_notification_outbox WHERE status='pending'").Scan(&pending); err != nil {
 		t.Fatal(err)
 	}
-	if err = restored.QueryRow(ctx, "SELECT count(*) FROM web_session").Scan(&sessions); err != nil {
+	if err = restored.QueryRowContext(ctx, "SELECT count(*) FROM web_session").Scan(&sessions); err != nil {
 		t.Fatal(err)
 	}
 	if incidents != 1 || pending != 1 || sessions != 1 {

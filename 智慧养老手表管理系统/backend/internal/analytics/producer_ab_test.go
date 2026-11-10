@@ -26,7 +26,7 @@ func TestAnalyticsProducerAB(t *testing.T) {
 	primary := dbtest.MySQL(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Minute)
 	defer cancel()
-	sqlDB := primary.SQL()
+	sqlDB := primary.DB
 	if _, err := sqlDB.ExecContext(ctx, "CREATE TABLE ratepre_direct LIKE ratepre"); err != nil {
 		t.Fatal(err)
 	}

@@ -2,11 +2,13 @@ package handlers
 
 import (
 	"context"
+	"database/sql"
 	"testing"
 	"time"
 
 	"suining-care/internal/auth"
 	"suining-care/internal/session"
+	"suining-care/internal/telemetryrepo"
 )
 
 func TestContinuousPositionKeepsAlarmAndLocationSnapshotsSeparate(t *testing.T) {
@@ -45,7 +47,7 @@ func TestContinuousSOSWithoutCoordinatesDoesNotBorrowLatestLocation(t *testing.T
 		t.Fatal(out)
 	}
 	var eventTime time.Time
-	if err := h.DB.QueryRow(context.Background(), "SELECT be_time FROM alarm_precess WHERE old_id=1 ORDER BY id DESC LIMIT 1").Scan(&eventTime); err != nil {
+	if err := h.DB.QueryRowContext(context.Background(), "SELECT be_time FROM alarm_precess WHERE old_id=1 ORDER BY id DESC LIMIT 1").Scan(&eventTime); err != nil {
 		t.Fatal(err)
 	}
 	row := api(t, h.positionSelect, map[string]any{"name": ""})["positionDtos"].([]any)[0].(map[string]any)
@@ -57,14 +59,14 @@ func TestContinuousSOSWithoutCoordinatesDoesNotBorrowLatestLocation(t *testing.T
 		t.Errorf("partial coordinates were combined with cached latitude: HTTP %d %s", bad.Code, bad.Body.String())
 	}
 	var locations, incidents int
-	if err := h.DB.QueryRow(context.Background(), "SELECT count(*) FROM device_location WHERE old_id=1").Scan(&locations); err != nil || locations != 1 {
+	if err := h.DB.QueryRowContext(context.Background(), "SELECT count(*) FROM device_location WHERE old_id=1").Scan(&locations); err != nil || locations != 1 {
 		t.Errorf("SOS without a complete fresh point wrote location history: count=%d err=%v", locations, err)
 	}
-	if err := h.DB.QueryRow(context.Background(), "SELECT count(*) FROM care_incident WHERE old_id=1").Scan(&incidents); err != nil || incidents != 1 {
+	if err := h.DB.QueryRowContext(context.Background(), "SELECT count(*) FROM care_incident WHERE old_id=1").Scan(&incidents); err != nil || incidents != 1 {
 		t.Errorf("malformed coordinates created an extra incident: count=%d err=%v", incidents, err)
 	}
 	var kind string
-	if err := h.DB.QueryRow(context.Background(), "SELECT kind FROM care_incident WHERE source_alarm_id=(SELECT max(id) FROM alarm_precess WHERE old_id=1)").Scan(&kind); err != nil || kind != "sos" {
+	if err := h.DB.QueryRowContext(context.Background(), "SELECT kind FROM care_incident WHERE source_alarm_id=(SELECT max(id) FROM alarm_precess WHERE old_id=1)").Scan(&kind); err != nil || kind != "sos" {
 		t.Fatalf("fixture must represent a real SOS, not a fall classification: kind=%s err=%v", kind, err)
 	}
 }
@@ -72,11 +74,30 @@ func TestContinuousSOSWithoutCoordinatesDoesNotBorrowLatestLocation(t *testing.T
 func TestPositionAlertSummaryUsesLatestAlarmPerResident(t *testing.T) {
 	h := extraAuditHandler(t)
 	mustExec(t, h.DB, "INSERT INTO oldperson(old_id,name) VALUES(1,'甲'),(2,'乙'),(3,'丙')")
-	mustExec(t, h.DB, `INSERT INTO alarm_precess(id,old_id,status,be_time) VALUES
-		(10,1,'1','2026-10-20 10:00:00'),
-		(11,1,'0','2026-10-20 10:00:00'),
-		(12,2,'1','2026-10-20 09:00:00'),
-		(13,2,'1','2026-10-20 10:00:00')`)
+	mustExec(t, h.DB, "INSERT INTO device(device_id,device_no,secret,old_id) VALUES(1,'SUMMARY1','test',1),(2,'SUMMARY2','test',2)")
+	ctx := context.Background()
+	tx, err := h.DB.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback()
+	at := time.Date(2026, 10, 20, 10, 0, 0, 0, time.UTC)
+	for _, alarm := range []telemetryrepo.Alarm{
+		{ResidentID: 1, DeviceID: 1, ObservedAt: at},
+		{ResidentID: 1, DeviceID: 1, ObservedAt: at},
+		{ResidentID: 2, DeviceID: 2, ObservedAt: at.Add(-time.Hour)},
+		{ResidentID: 2, DeviceID: 2, ObservedAt: at},
+	} {
+		if _, err := telemetryrepo.InsertAlarm(ctx, tx, alarm); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := tx.Commit(); err != nil {
+		t.Fatal(err)
+	}
+	if resolved, err := telemetryrepo.ResolveLatestLocationAlert(ctx, h.DB, 1); err != nil || !resolved {
+		t.Fatalf("resolve latest: resolved=%v err=%v", resolved, err)
+	}
 	got := api(t, h.positionAlertSummary, map[string]any{})
 	if got["totalResidents"] != float64(3) || got["activeAlerts"] != float64(1) {
 		t.Fatalf("unexpected summary: %v", got)

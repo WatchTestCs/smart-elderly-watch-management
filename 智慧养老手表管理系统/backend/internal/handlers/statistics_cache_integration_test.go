@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"net/http"
 	"testing"
 	"time"
@@ -42,17 +43,17 @@ func TestHealthStatisticsHotCacheConsistency(t *testing.T) {
 	check(1, 91)
 	// A rolled-back correction must not invalidate the committed result.
 	s.Version, s.Value = 3, health.Number(120)
-	tx, err := pool.Begin(context.Background())
+	tx, err := pool.BeginTx(context.Background(), &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer tx.Rollback(context.Background())
+	defer tx.Rollback()
 	deviceID := int64(1)
 	if _, _, err = health.Save(context.Background(), tx, health.Owner{OldID: 1, DeviceID: &deviceID, Epoch: 1}, s); err != nil {
 		t.Fatal(err)
 	}
 	check(1, 91)
-	if err = tx.Rollback(context.Background()); err != nil {
+	if err = tx.Rollback(); err != nil {
 		t.Fatal(err)
 	}
 	check(1, 91)
@@ -138,15 +139,15 @@ func TestHealthStatisticsHotCacheReportingOffset(t *testing.T) {
 	// for the same calendar date must not share a result across these offsets.
 	at := time.Date(2026, 10, 21, 20, 0, 0, 0, time.UTC)
 	s := health.Sample{RecordID: "daily", Source: "watch", SourceDevice: "WATCH001", Metric: "steps", Semantics: "daily_total", Unit: "count", Value: health.Number(500), Start: at, End: at, Version: 1}
-	tx, err := pool.Begin(context.Background())
+	tx, err := pool.BeginTx(context.Background(), &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer tx.Rollback(context.Background())
+	defer tx.Rollback()
 	if _, _, err = health.Save(context.Background(), tx, health.Owner{OldID: 1}, s); err != nil {
 		t.Fatal(err)
 	}
-	if err = tx.Commit(context.Background()); err != nil {
+	if err = tx.Commit(); err != nil {
 		t.Fatal(err)
 	}
 	admin := withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin}, h.healthStatistics)

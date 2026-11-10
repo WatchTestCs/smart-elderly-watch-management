@@ -57,14 +57,14 @@ func TestRunnerDrainsSaturatedTransactionalBacklog(t *testing.T) {
 	const events = 6000
 	for first := 1; first <= events; first += 100 {
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-		err := writeRatepreAB(ctx, primary.SQL(), first, first+99)
+		err := writeRatepreAB(ctx, primary.DB, first, first+99)
 		cancel()
 		if err != nil {
 			t.Fatal(err)
 		}
 	}
 	var queued int
-	if err := primary.QueryRow(context.Background(), "SELECT count(*) FROM analytics_outbox").Scan(&queued); err != nil || queued != events {
+	if err := primary.QueryRowContext(context.Background(), "SELECT count(*) FROM analytics_outbox").Scan(&queued); err != nil || queued != events {
 		t.Fatalf("seeded %d of %d events: %v", queued, events, err)
 	}
 
@@ -88,7 +88,7 @@ func TestRunnerDrainsSaturatedTransactionalBacklog(t *testing.T) {
 		err = pg.QueryRow(ctx, "SELECT count(*) FROM suining_analytics.record WHERE entity='ratepre' AND NOT deleted").Scan(&copied)
 		if err == nil && copied == events {
 			var remaining int
-			if err := primary.QueryRow(ctx, "SELECT count(*) FROM analytics_outbox").Scan(&remaining); err != nil {
+			if err := primary.QueryRowContext(ctx, "SELECT count(*) FROM analytics_outbox").Scan(&remaining); err != nil {
 				t.Fatalf("outbox residual: count=%d err=%v", remaining, err)
 			}
 			// The PG commit becomes visible before its MySQL acknowledgement.

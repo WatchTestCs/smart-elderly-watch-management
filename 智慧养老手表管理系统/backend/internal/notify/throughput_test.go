@@ -2,6 +2,7 @@ package notify
 
 import (
 	"context"
+	"database/sql"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -56,13 +57,13 @@ func TestNotificationThroughput(t *testing.T) {
 						for i := range messages {
 							messages[i] = Message{Topic: "perf", Key: fmt.Sprint(first + i), FamilyID: 1, Phone: "13800000001", Channels: []string{channel}}
 						}
-						tx, err := p.Begin(ctx)
+						tx, err := p.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 						if err == nil {
 							err = EnqueueBatch(ctx, tx, box, messages)
 							if err == nil {
-								err = tx.Commit(ctx)
+								err = tx.Commit()
 							}
-							tx.Rollback(ctx)
+							tx.Rollback()
 						}
 						if err != nil {
 							errors <- err
@@ -79,26 +80,26 @@ func TestNotificationThroughput(t *testing.T) {
 			default:
 			}
 			var persisted int
-			if err = p.QueryRow(ctx, "SELECT count(*) FROM message_outbox").Scan(&persisted); err != nil || persisted != count {
+			if err = p.QueryRowContext(ctx, "SELECT count(*) FROM message_outbox").Scan(&persisted); err != nil || persisted != count {
 				t.Fatal(persisted, err)
 			}
 			if channel == "in_app" {
 				var available int
-				if err = p.QueryRow(ctx, "SELECT count(*) FROM message_outbox WHERE status='delivered' AND delivered_at IS NOT NULL AND attempts=0").Scan(&available); err != nil || available != count {
+				if err = p.QueryRowContext(ctx, "SELECT count(*) FROM message_outbox WHERE status='delivered' AND delivered_at IS NOT NULL AND attempts=0").Scan(&available); err != nil || available != count {
 					t.Fatal(available, err)
 				}
 				t.Logf("actual committed locally available inbox rows=%d writers=%d enqueue=%s %.0f rows/s; no worker/network/reader acknowledgement involved", persisted, replicas, enqueueElapsed, count/enqueueElapsed.Seconds())
 				return
 			}
 			var plan string
-			if err = p.QueryRow(ctx, `EXPLAIN FORMAT=JSON SELECT id,family_id,topic,source_key,channel,recipient,attempts FROM message_outbox
- WHERE ((status IN ('pending','failed') AND retry_at<=now()) OR (status='sending' AND last_attempt_at<$1))
+			if err = p.QueryRowContext(ctx, `EXPLAIN FORMAT=JSON SELECT id,family_id,topic,source_key,channel,recipient,attempts FROM message_outbox
+ WHERE ((status IN ('pending','failed') AND retry_at<=CURRENT_TIMESTAMP(6)) OR (status='sending' AND last_attempt_at<?))
  ORDER BY retry_at,id LIMIT 512 FOR UPDATE SKIP LOCKED`, time.Now().Add(-time.Minute)).Scan(&plan); err != nil {
 				t.Fatal(err)
 			}
 			t.Logf("current OR selector query plan: %s", plan)
-			if err = p.QueryRow(ctx, `EXPLAIN FORMAT=JSON SELECT id,family_id,topic,source_key,channel,recipient,attempts FROM message_outbox
- WHERE status='pending' AND retry_at<=$1 ORDER BY retry_at,id LIMIT 512 FOR UPDATE SKIP LOCKED`, time.Now()).Scan(&plan); err != nil {
+			if err = p.QueryRowContext(ctx, `EXPLAIN FORMAT=JSON SELECT id,family_id,topic,source_key,channel,recipient,attempts FROM message_outbox
+ WHERE status='pending' AND retry_at<=? ORDER BY retry_at,id LIMIT 512 FOR UPDATE SKIP LOCKED`, time.Now()).Scan(&plan); err != nil {
 				t.Fatal(err)
 			}
 			t.Logf("status equality selector query plan: %s", plan)
@@ -180,12 +181,12 @@ func TestNotificationThroughput(t *testing.T) {
 				state = "sent"
 				if accepted.Load() != count {
 					var failed, pending, sending int
-					p.QueryRow(ctx, "SELECT sum(status='failed'),sum(status='pending'),sum(status='sending') FROM message_outbox").Scan(&failed, &pending, &sending)
+					p.QueryRowContext(ctx, "SELECT sum(status='failed'),sum(status='pending'),sum(status='sending') FROM message_outbox").Scan(&failed, &pending, &sending)
 					t.Fatal("gateway acceptance count", accepted.Load(), "failed", failed, "pending", pending, "sending", sending)
 				}
 			}
 			var finished int
-			if err = p.QueryRow(ctx, "SELECT count(*) FROM message_outbox WHERE status=$1", state).Scan(&finished); err != nil || finished != count || processed.Load() != count {
+			if err = p.QueryRowContext(ctx, "SELECT count(*) FROM message_outbox WHERE status=?", state).Scan(&finished); err != nil || finished != count || processed.Load() != count {
 				t.Fatal(finished, processed.Load(), err)
 			}
 			t.Logf("actual committed rows=%d writers=%d enqueue=%s %.0f rows/s; actual workers=%d drain=%s %.0f rows/s final=%s simulated_provider_ACKs=%d HTTP_requests=%d enqueue+drain=%.0f rows/s", persisted, replicas, enqueueElapsed, count/enqueueElapsed.Seconds(), replicas, drainElapsed, count/drainElapsed.Seconds(), state, accepted.Load(), requests.Load(), count/(enqueueElapsed+drainElapsed).Seconds())

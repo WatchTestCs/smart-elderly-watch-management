@@ -17,8 +17,8 @@ func TestDatabaseSessionsShareRevokeAndFactorGeneration(t *testing.T) {
 	a, b := session.NewStore(time.Hour), session.NewStore(time.Hour)
 	t.Cleanup(a.Close)
 	t.Cleanup(b.Close)
-	a.UseDatabase(pool.SQL(), box)
-	b.UseDatabase(pool.SQL(), box)
+	a.UseDatabase(pool.DB, box)
+	b.UseDatabase(pool.DB, box)
 	s := a.Create(session.Principal{Role: "ADMIN", ID: 1, Phone: "13800000001"})
 	if s == nil {
 		t.Fatal("create")
@@ -27,7 +27,7 @@ func TestDatabaseSessionsShareRevokeAndFactorGeneration(t *testing.T) {
 		t.Fatal("replica cannot read session")
 	}
 	var payload, hash string
-	if err := pool.QueryRow(context.Background(), "SELECT payload,id_hash FROM web_session LIMIT 1").Scan(&payload, &hash); err != nil {
+	if err := pool.QueryRowContext(context.Background(), "SELECT payload,id_hash FROM web_session LIMIT 1").Scan(&payload, &hash); err != nil {
 		t.Fatal(err)
 	}
 	if strings.Contains(payload, "13800000001") || strings.Contains(payload, s.CSRFToken) || hash == s.ID {
@@ -37,7 +37,7 @@ func TestDatabaseSessionsShareRevokeAndFactorGeneration(t *testing.T) {
 		t.Fatal("cross-replica revocation failed")
 	}
 	old := a.Create(session.Principal{Role: "ADMIN", ID: 1})
-	_, err := pool.Exec(context.Background(), "INSERT INTO auth_factor(role,actor_id,secret,generation,enabled,pending_until,recovery_hashes) VALUES('ADMIN',1,'encrypted','new-generation',true,now(),'[]')")
+	_, err := pool.ExecContext(context.Background(), "INSERT INTO auth_factor(role,actor_id,secret,generation,enabled,pending_until,recovery_hashes) VALUES('ADMIN',1,'encrypted','new-generation',true,CURRENT_TIMESTAMP(6),'[]')")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,7 +48,7 @@ func TestDatabaseSessionsShareRevokeAndFactorGeneration(t *testing.T) {
 	if current == nil || b.Get(current.ID) == nil {
 		t.Fatal("verified generation rejected")
 	}
-	if _, err = pool.Exec(context.Background(), "UPDATE auth_factor SET enabled=false WHERE role='ADMIN' AND actor_id=1"); err != nil {
+	if _, err = pool.ExecContext(context.Background(), "UPDATE auth_factor SET enabled=false WHERE role='ADMIN' AND actor_id=1"); err != nil {
 		t.Fatal(err)
 	}
 	if b.Get(current.ID) != nil {
@@ -58,7 +58,7 @@ func TestDatabaseSessionsShareRevokeAndFactorGeneration(t *testing.T) {
 	if withoutFactor == nil || b.Get(withoutFactor.ID) == nil {
 		t.Fatal("disabled factor rejected a session without generation")
 	}
-	if _, err = pool.Exec(context.Background(), "UPDATE auth_factor SET enabled=true,generation='rotated-generation' WHERE role='ADMIN' AND actor_id=1"); err != nil {
+	if _, err = pool.ExecContext(context.Background(), "UPDATE auth_factor SET enabled=true,generation='rotated-generation' WHERE role='ADMIN' AND actor_id=1"); err != nil {
 		t.Fatal(err)
 	}
 	if b.Get(current.ID) != nil || b.Get(withoutFactor.ID) != nil {
@@ -71,7 +71,7 @@ func TestDatabaseSessionsShareRevokeAndFactorGeneration(t *testing.T) {
 	if err = a.Revoke("ADMIN", 1); err != nil || b.Get(current.ID) != nil {
 		t.Fatal("principal revocation failed", err)
 	}
-	if _, err = pool.Exec(context.Background(), "DELETE FROM auth_factor WHERE actor_id=1"); err != nil {
+	if _, err = pool.ExecContext(context.Background(), "DELETE FROM auth_factor WHERE actor_id=1"); err != nil {
 		t.Fatal(err)
 	}
 	late := a.Create(session.Principal{Role: "ADMIN", ID: 1, FactorGeneration: "new-generation"})
@@ -89,7 +89,7 @@ func TestDatabaseSessionRejectsMismatchedIdentity(t *testing.T) {
 	box, _ := securestore.New(base64.StdEncoding.EncodeToString(make([]byte, 32)))
 	store := session.NewStore(time.Hour)
 	t.Cleanup(store.Close)
-	store.UseDatabase(pool.SQL(), box)
+	store.UseDatabase(pool.DB, box)
 	for _, identity := range []struct {
 		role string
 		id   int64
@@ -98,7 +98,7 @@ func TestDatabaseSessionRejectsMismatchedIdentity(t *testing.T) {
 		if sess == nil {
 			t.Fatal("create")
 		}
-		if _, err := pool.Exec(context.Background(), "UPDATE web_session SET role=$1,actor_id=$2", identity.role, identity.id); err != nil {
+		if _, err := pool.ExecContext(context.Background(), "UPDATE web_session SET role=?,actor_id=?", identity.role, identity.id); err != nil {
 			t.Fatal(err)
 		}
 		if store.Get(sess.ID) != nil {
@@ -109,7 +109,7 @@ func TestDatabaseSessionRejectsMismatchedIdentity(t *testing.T) {
 	if sess == nil {
 		t.Fatal("create")
 	}
-	if _, err := pool.Exec(context.Background(), "UPDATE web_session SET payload='corrupt'"); err != nil {
+	if _, err := pool.ExecContext(context.Background(), "UPDATE web_session SET payload='corrupt'"); err != nil {
 		t.Fatal(err)
 	}
 	if store.Get(sess.ID) != nil {

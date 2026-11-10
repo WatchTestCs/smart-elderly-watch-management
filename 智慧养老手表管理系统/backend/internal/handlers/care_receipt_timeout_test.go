@@ -26,7 +26,7 @@ func TestCareDelayedReceiptAfterGatewayTimeout(t *testing.T) {
 	api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "requestId": "test-press", "bindingVersion": 1})
 	ctx := context.Background()
 	var id int64
-	if err := pool.QueryRow(ctx, "SELECT id FROM care_notification_outbox").Scan(&id); err != nil {
+	if err := pool.QueryRowContext(ctx, "SELECT id FROM care_notification_outbox").Scan(&id); err != nil {
 		t.Fatal(err)
 	}
 	secret := "delayed-gateway-test-key-at-least-32-characters"
@@ -47,7 +47,7 @@ func TestCareDelayedReceiptAfterGatewayTimeout(t *testing.T) {
 	if rec := send(); rec.Code != http.StatusConflict {
 		t.Fatalf("signed receipt for never dispatched task was accepted: %d %s", rec.Code, rec.Body.String())
 	}
-	mustExec(t, pool, "UPDATE care_notification_outbox SET status='failed',attempts=1,last_attempt_at=now() WHERE id=$1", id)
+	mustExec(t, pool, "UPDATE care_notification_outbox SET status='failed',attempts=1,last_attempt_at=CURRENT_TIMESTAMP(6) WHERE id=?", id)
 	for range 2 {
 		if rec := send(); rec.Code != http.StatusOK {
 			t.Fatalf("signed delayed or retried delivery was rejected: %d %s", rec.Code, rec.Body.String())
@@ -55,13 +55,13 @@ func TestCareDelayedReceiptAfterGatewayTimeout(t *testing.T) {
 	}
 	var status, incident string
 	var events int
-	if err := pool.QueryRow(ctx, "SELECT status FROM care_notification_outbox WHERE id=$1", id).Scan(&status); err != nil {
+	if err := pool.QueryRowContext(ctx, "SELECT status FROM care_notification_outbox WHERE id=?", id).Scan(&status); err != nil {
 		t.Fatal(err)
 	}
-	if err := pool.QueryRow(ctx, "SELECT state FROM care_incident").Scan(&incident); err != nil {
+	if err := pool.QueryRowContext(ctx, "SELECT state FROM care_incident").Scan(&incident); err != nil {
 		t.Fatal(err)
 	}
-	if err := pool.QueryRow(ctx, "SELECT COUNT(*) FROM care_incident_event WHERE action='delivered'").Scan(&events); err != nil {
+	if err := pool.QueryRowContext(ctx, "SELECT COUNT(*) FROM care_incident_event WHERE action='delivered'").Scan(&events); err != nil {
 		t.Fatal(err)
 	}
 	if status != "delivered" || incident != "notified" || events != 1 {

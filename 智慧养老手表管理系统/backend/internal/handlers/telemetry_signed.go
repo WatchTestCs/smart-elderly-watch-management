@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/hmac"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -91,12 +92,12 @@ func prepareSignedDeviceRequest(w http.ResponseWriter, r *http.Request) (*http.R
 	return r.WithContext(context.WithValue(r.Context(), signedDeviceContextKey{}, signed)), true
 }
 
-func persistSignedDeviceNonce(ctx context.Context, tx *dbstore.Transaction, deviceID int64) (bool, error) {
+func persistSignedDeviceNonce(ctx context.Context, tx *sql.Tx, deviceID int64) (bool, error) {
 	signed, ok := ctx.Value(signedDeviceContextKey{}).(signedDeviceNonce)
 	if !ok {
 		return true, nil
 	}
-	_, err := tx.Exec(ctx, `INSERT INTO device_request_nonces(device_id,nonce_digest,expires_at) VALUES($1,$2,$3)`, deviceID, signed.digest[:], signed.expiresAt)
+	_, err := tx.ExecContext(ctx, `INSERT INTO device_request_nonces(device_id,nonce_digest,expires_at) VALUES(?,?,?)`, deviceID, signed.digest[:], signed.expiresAt)
 	if err == nil {
 		return true, nil
 	}
@@ -107,7 +108,7 @@ func persistSignedDeviceNonce(ctx context.Context, tx *dbstore.Transaction, devi
 	return false, err
 }
 
-func acceptSignedDeviceNonce(w http.ResponseWriter, ctx context.Context, tx *dbstore.Transaction, deviceID int64) bool {
+func acceptSignedDeviceNonce(w http.ResponseWriter, ctx context.Context, tx *sql.Tx, deviceID int64) bool {
 	accepted, err := persistSignedDeviceNonce(ctx, tx, deviceID)
 	if err != nil {
 		response.JSON(w, http.StatusServiceUnavailable, map[string]any{"message": "设备防重放状态不可用"})
@@ -130,7 +131,7 @@ func RunSignedDeviceNonceCleanup(ctx context.Context, pool *dbstore.Database) {
 			return
 		case <-ticker.C:
 			cleanupCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
-			_, err := pool.Exec(cleanupCtx, `DELETE FROM device_request_nonces WHERE expires_at < $1`, time.Now().UTC().Add(-time.Minute))
+			_, err := pool.ExecContext(cleanupCtx, `DELETE FROM device_request_nonces WHERE expires_at < ?`, time.Now().UTC().Add(-time.Minute))
 			cancel()
 			if err != nil && ctx.Err() == nil {
 				log.Printf("device replay nonce cleanup failed: %v", err)

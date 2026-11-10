@@ -3,13 +3,12 @@ package health
 import (
 	"context"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
-
-	"suining-care/internal/db"
 )
 
 var ErrConflict = errors.New("same source record version has different content")
@@ -32,7 +31,7 @@ type Record struct {
 func Digest(b []byte) string { h := sha256.Sum256(b); return hex.EncodeToString(h[:]) }
 
 // Save participates in the caller's transaction; ownership is part of identity.
-func Save(ctx context.Context, tx *db.Transaction, o Owner, s Sample) (int64, bool, error) {
+func Save(ctx context.Context, tx *sql.Tx, o Owner, s Sample) (int64, bool, error) {
 	revision, duplicates, err := SaveBatch(ctx, tx, o, []Sample{s})
 	return revision, duplicates == 1, err
 }
@@ -41,7 +40,7 @@ func Save(ctx context.Context, tx *db.Transaction, o Owner, s Sample) (int64, bo
 // final samples and their change events in two SQL statements. The revision
 // owner clock remains locked through commit, preserving each owner's cursor
 // ordering. MySQL reserves globally unique revision ranges infrequently.
-func SaveBatch(ctx context.Context, tx *db.Transaction, o Owner, samples []Sample) (int64, int, error) {
+func SaveBatch(ctx context.Context, tx *sql.Tx, o Owner, samples []Sample) (int64, int, error) {
 	batch, err := PrepareBatch(samples)
 	if err != nil {
 		return 0, 0, err
@@ -96,7 +95,7 @@ func prepareBatch(samples []Sample, device *string) (PreparedBatch, error) {
 
 // Save derives identity from the caller's locked owner and preserves the same
 // version/conflict/history transaction as SaveBatch.
-func (batch *PreparedBatch) Save(ctx context.Context, tx *db.Transaction, o Owner) (int64, int, error) {
+func (batch *PreparedBatch) Save(ctx context.Context, tx *sql.Tx, o Owner) (int64, int, error) {
 	if batch == nil || len(batch.input) < 1 || len(batch.input) > 200 {
 		return 0, 0, fmt.Errorf("batch must contain 1..200 samples")
 	}
@@ -145,7 +144,7 @@ func (batch *PreparedBatch) Save(ctx context.Context, tx *db.Transaction, o Owne
 		s := &item.sample
 		args = append(args, id, ownerID, o.DeviceID, epoch, s.Version, item.revision, json.RawMessage(item.payload), s.Source, s.SourceDevice, s.Metric, s.Semantics, s.Start.UnixMicro(), s.End.UnixMicro(), s.Deleted)
 	}
-	_, err = tx.ExecBatch(ctx, batchSQL(batchUpsert, len(selection.final)), args...)
+	_, err = tx.ExecContext(ctx, batchSQL(batchUpsert, len(selection.final)), args...)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -155,7 +154,7 @@ func (batch *PreparedBatch) Save(ctx context.Context, tx *db.Transaction, o Owne
 	var history *historyBuffer
 	args, history = appendChangeRows(args, o, input, selection.events)
 	defer releaseHistoryBuffer(history)
-	_, err = tx.ExecBatch(ctx, batchSQL(batchChanges, len(selection.events)), args...)
+	_, err = tx.ExecContext(ctx, batchSQL(batchChanges, len(selection.events)), args...)
 	if err != nil {
 		return 0, 0, fmt.Errorf("save health change: %w", err)
 	}
@@ -165,7 +164,7 @@ func (batch *PreparedBatch) Save(ctx context.Context, tx *db.Transaction, o Owne
 	// Invalidate all cached days for this owner, including the OLD date of a
 	// corrected/deleted interval. Skip already-dirty rows to avoid needless
 	// update locks, redo work and cache invalidation churn.
-	if _, err = tx.Exec(ctx, "UPDATE metric_daily SET dirty=true WHERE old_id=$1 AND dirty=false", o.OldID); err != nil {
+	if _, err = tx.ExecContext(ctx, "UPDATE metric_daily SET dirty=true WHERE old_id=? AND dirty=false", o.OldID); err != nil {
 		return 0, 0, err
 	}
 	return cursor, selection.duplicates, nil
@@ -216,13 +215,13 @@ func appendChangeRows(args []any, o Owner, input []preparedSample, events []uint
 	return args, history
 }
 
-func loadStoredSamples(ctx context.Context, tx *db.Transaction, ids []any, minimumVersion int64) (map[string]storedSample, error) {
+func loadStoredSamples(ctx context.Context, tx *sql.Tx, ids []any, minimumVersion int64) (map[string]storedSample, error) {
 	// Older stored versions cannot require equality/conflict comparison against
 	// any input in this batch. Keep their metadata but avoid serializing and
 	// transferring the JSON under the owner lock. Equal/newer versions retain
 	// payloads, including mixed-version and out-of-order batches.
 	ids[0] = minimumVersion
-	rows, err := tx.Query(ctx, batchSQL(batchLookup, len(ids)-1), ids...)
+	rows, err := tx.QueryContext(ctx, batchSQL(batchLookup, len(ids)-1), ids...)
 	if err != nil {
 		return nil, err
 	}

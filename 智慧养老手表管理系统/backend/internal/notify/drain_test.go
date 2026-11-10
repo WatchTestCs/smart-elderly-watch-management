@@ -2,6 +2,7 @@ package notify
 
 import (
 	"context"
+	"database/sql"
 	"net/http"
 	"net/http/httptest"
 	"suining-care/internal/db/dbtest"
@@ -13,22 +14,22 @@ import (
 func TestWorkerDrainsReadyBacklogWithoutOneSecondPerMessage(t *testing.T) {
 	p := dbtest.MySQL(t)
 	ctx := context.Background()
-	tx, err := p.Begin(ctx)
+	tx, err := p.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer tx.Rollback(ctx)
+	defer tx.Rollback()
 	for i := 0; i < 120; i++ {
 		if err = EnqueueChannels(ctx, tx, nil, "announcement", "burst", int64(i+1), "", []string{"in_app"}); err != nil {
 			t.Fatal(err)
 		}
 	}
-	if err = tx.Commit(ctx); err != nil {
+	if err = tx.Commit(); err != nil {
 		t.Fatal(err)
 	}
 	// Current enqueue commits local inbox entries as available immediately;
 	// construct the legacy backlog that still requires the compatibility worker.
-	if _, err = p.Exec(ctx, "UPDATE message_outbox SET status='pending',delivered_at=NULL"); err != nil {
+	if _, err = p.ExecContext(ctx, "UPDATE message_outbox SET status='pending',delivered_at=NULL"); err != nil {
 		t.Fatal(err)
 	}
 	worker, cancel := context.WithTimeout(ctx, 10*time.Second)
@@ -41,7 +42,7 @@ func TestWorkerDrainsReadyBacklogWithoutOneSecondPerMessage(t *testing.T) {
 	defer tick.Stop()
 	for {
 		var count int
-		if err = p.QueryRow(ctx, "SELECT count(*) FROM message_outbox WHERE status='delivered'").Scan(&count); err != nil {
+		if err = p.QueryRowContext(ctx, "SELECT count(*) FROM message_outbox WHERE status='delivered'").Scan(&count); err != nil {
 			t.Fatal(err)
 		}
 		if count == 120 {
@@ -61,15 +62,15 @@ func TestShortCycleLeavesExternalNotificationUnclaimed(t *testing.T) {
 	t.Setenv("NOTIFY_ALLOW_HTTP_TEST", "1")
 	p := dbtest.MySQL(t)
 	ctx := context.Background()
-	tx, err := p.Begin(ctx)
+	tx, err := p.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer tx.Rollback(ctx)
+	defer tx.Rollback()
 	if err = EnqueueChannels(ctx, tx, nil, "announcement", "budget", 1, "13800000001", []string{"sms"}); err != nil {
 		t.Fatal(err)
 	}
-	if err = tx.Commit(ctx); err != nil {
+	if err = tx.Commit(); err != nil {
 		t.Fatal(err)
 	}
 	var calls atomic.Int32
@@ -85,7 +86,7 @@ func TestShortCycleLeavesExternalNotificationUnclaimed(t *testing.T) {
 	}
 	var status string
 	var attempts int
-	if err = p.QueryRow(ctx, "SELECT status,attempts FROM message_outbox").Scan(&status, &attempts); err != nil {
+	if err = p.QueryRowContext(ctx, "SELECT status,attempts FROM message_outbox").Scan(&status, &attempts); err != nil {
 		t.Fatal(err)
 	}
 	if calls.Load() != 0 || status != "pending" || attempts != 0 {

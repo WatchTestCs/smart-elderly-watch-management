@@ -2,19 +2,19 @@ package telemetryworkflow
 
 import (
 	"context"
+	"database/sql"
 	"strings"
 	"sync"
 	"time"
 
-	"suining-care/internal/db"
 	"suining-care/internal/observability"
 )
 
 const heartbeatFlushInterval = 15 * time.Second
 const heartbeatFlushBatch = 128
 
-type nativeHeartbeatStore interface {
-	ExecNative(context.Context, string, ...any) (db.CommandResult, error)
+type heartbeatStore interface {
+	ExecContext(context.Context, string, ...any) (sql.Result, error)
 }
 
 type heartbeatState struct {
@@ -29,12 +29,12 @@ type heartbeatState struct {
 // HeartbeatBuffer coalesces replaceable device liveness writes.
 // Safety-critical events never enter this buffer.
 type HeartbeatBuffer struct {
-	store nativeHeartbeatStore
+	store heartbeatStore
 	mu    sync.Mutex
 	items map[int64]heartbeatState
 }
 
-func NewHeartbeatBuffer(store nativeHeartbeatStore) *HeartbeatBuffer {
+func NewHeartbeatBuffer(store heartbeatStore) *HeartbeatBuffer {
 	return &HeartbeatBuffer{store: store, items: make(map[int64]heartbeatState)}
 }
 
@@ -127,11 +127,15 @@ func (b *HeartbeatBuffer) flushBatch(ctx context.Context, items []heartbeatState
 		}
 		args = append(args, item.deviceID, item.seenAt, battery, version)
 	}
-	result, err := b.store.ExecNative(ctx, heartbeatBatchSQL(len(items)), args...)
+	result, err := b.store.ExecContext(ctx, heartbeatBatchSQL(len(items)), args...)
 	if err != nil {
 		return err
 	}
-	observability.Default.Add("suining_heartbeat_db_rows_total", float64(result.RowsAffected()))
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	observability.Default.Add("suining_heartbeat_db_rows_total", float64(affected))
 	observability.Default.Add("suining_heartbeat_flush_batches_total", 1)
 	return nil
 }

@@ -2,15 +2,15 @@ package handlers
 
 import (
 	"context"
+	"database/sql"
 	"net/http"
-	"strconv"
 	"strings"
 
 	dbstore "suining-care/internal/db"
 	"suining-care/internal/response"
 )
 
-func listLatestMeasurements[T any](h *Handler, w http.ResponseWriter, r *http.Request, query, key string, scan func(dbstore.Rows) (T, error)) {
+func listLatestMeasurements[T any](h *Handler, w http.ResponseWriter, r *http.Request, query, key string, scan func(*sql.Rows) (T, error)) {
 	m, ok := bodyMap(w, r)
 	if !ok {
 		return
@@ -25,11 +25,11 @@ func listLatestMeasurements[T any](h *Handler, w http.ResponseWriter, r *http.Re
 	sql := "SELECT * FROM (" + query + ") t WHERE 1=1"
 	var args []any
 	if strings.TrimSpace(name) != "" {
-		sql += " AND t.name LIKE $" + strconv.Itoa(len(args)+1)
+		sql += " AND t.name LIKE ?"
 		args = append(args, "%"+name+"%")
 	}
 	if strings.TrimSpace(timeFirst) != "" && strings.TrimSpace(timeLast) != "" {
-		sql += " AND t.createTime BETWEEN $" + strconv.Itoa(len(args)+1) + " AND $" + strconv.Itoa(len(args)+2)
+		sql += " AND t.createTime BETWEEN ? AND ?"
 		args = append(args, timeFirst, timeLast)
 	}
 	sql += " ORDER BY t.createTime DESC, t.oldId"
@@ -47,7 +47,7 @@ func listLatestMeasurements[T any](h *Handler, w http.ResponseWriter, r *http.Re
 	})
 }
 
-func queryRows[T any](h *Handler, w http.ResponseWriter, ctx context.Context, scan func(dbstore.Rows) (T, error), sql string, args ...any) ([]T, bool) {
+func queryRows[T any](h *Handler, w http.ResponseWriter, ctx context.Context, scan func(*sql.Rows) (T, error), sql string, args ...any) ([]T, bool) {
 	items, err := dbstore.QueryList(ctx, h.DB, scan, sql, args...)
 	return items, !internalError(w, err)
 }

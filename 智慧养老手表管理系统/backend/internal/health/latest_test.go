@@ -2,6 +2,7 @@ package health
 
 import (
 	"context"
+	"database/sql"
 	"testing"
 	"time"
 
@@ -11,7 +12,7 @@ import (
 func TestLatestSnapshotTracksOutOfOrderAndTombstones(t *testing.T) {
 	database := dbtest.MySQL(t)
 	ctx := context.Background()
-	if _, err := database.Exec(ctx, "INSERT INTO oldperson(old_id,name) VALUES(1,'latest')"); err != nil {
+	if _, err := database.ExecContext(ctx, "INSERT INTO oldperson(old_id,name) VALUES(1,'latest')"); err != nil {
 		t.Fatal(err)
 	}
 	now := time.Now().UTC().Truncate(time.Microsecond)
@@ -23,15 +24,15 @@ func TestLatestSnapshotTracksOutOfOrderAndTombstones(t *testing.T) {
 	newer.Value = Number(75)
 	save := func(samples ...Sample) {
 		t.Helper()
-		tx, err := database.Begin(ctx)
+		tx, err := database.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 		if err != nil {
 			t.Fatal(err)
 		}
-		defer tx.Rollback(ctx)
+		defer tx.Rollback()
 		if _, _, err = SaveBatch(ctx, tx, Owner{OldID: 1}, samples); err != nil {
 			t.Fatal(err)
 		}
-		if err = tx.Commit(ctx); err != nil {
+		if err = tx.Commit(); err != nil {
 			t.Fatal(err)
 		}
 	}
