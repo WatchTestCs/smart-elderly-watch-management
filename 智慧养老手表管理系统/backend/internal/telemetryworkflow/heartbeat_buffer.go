@@ -32,10 +32,11 @@ type heartbeatState struct {
 // HeartbeatBuffer coalesces replaceable device liveness writes.
 // Safety-critical events never enter this buffer.
 type HeartbeatBuffer struct {
-	store   heartbeatStore
-	mu      sync.Mutex
-	flushMu sync.Mutex
-	items   map[int64]heartbeatState
+	store    heartbeatStore
+	mu       sync.Mutex
+	flushMu  sync.Mutex
+	items    map[int64]heartbeatState
+	inflight int
 }
 
 func NewHeartbeatBuffer(store heartbeatStore) *HeartbeatBuffer {
@@ -53,7 +54,7 @@ func (b *HeartbeatBuffer) Record(ctx context.Context, deviceID, bindingEpoch int
 		b.mu.Unlock()
 		return nil
 	}
-	if state.bindingEpoch == 0 && len(b.items) >= heartbeatBufferCapacity {
+	if state.bindingEpoch == 0 && len(b.items)+b.inflight >= heartbeatBufferCapacity {
 		b.mu.Unlock()
 		// Keep the in-memory projection bounded. Backpressure is paid only
 		// by new device keys; an acknowledged heartbeat is never discarded.
@@ -93,7 +94,14 @@ func (b *HeartbeatBuffer) drain(max int) []heartbeatState {
 			break
 		}
 	}
+	b.inflight += len(items)
 	return items
+}
+
+func (b *HeartbeatBuffer) finishDrain(count int) {
+	b.mu.Lock()
+	b.inflight -= count
+	b.mu.Unlock()
 }
 
 func (b *HeartbeatBuffer) requeue(items []heartbeatState) {
@@ -180,8 +188,10 @@ func (b *HeartbeatBuffer) Flush(ctx context.Context) (int, error) {
 		}
 		if err := b.flushBatch(ctx, items); err != nil {
 			b.requeue(items)
+			b.finishDrain(len(items))
 			return total, err
 		}
+		b.finishDrain(len(items))
 		total += len(items)
 	}
 }
