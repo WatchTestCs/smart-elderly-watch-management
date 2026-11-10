@@ -42,8 +42,8 @@ func loadBindingTarget(ctx context.Context, tx *sql.Tx, phone string) (bindingTa
 	return target, err
 }
 
-func phoneInUse(ctx context.Context, store *db.Database, box *securestore.Box, phone string, exceptFamilyID *int64) (bool, error) {
-	lookup, err := userphone.SearchIndex(ctx, store, box, phone)
+func phoneInUse(ctx context.Context, tx *sql.Tx, box *securestore.Box, phone string, exceptFamilyID *int64) (bool, error) {
+	lookup, err := userphone.SearchIndex(ctx, tx, box, phone)
 	if err != nil {
 		return false, err
 	}
@@ -60,17 +60,12 @@ func phoneInUse(ctx context.Context, store *db.Database, box *securestore.Box, p
 		    OR EXISTS(SELECT 1 FROM family WHERE family_phone=? AND family_id<>?)`
 		args = append(args, *exceptFamilyID)
 	}
-	err = store.QueryRowContext(ctx, query, args...).Scan(&used)
+	err = tx.QueryRowContext(ctx, query, args...).Scan(&used)
 	return used, err
 }
 
 // Create binds one unambiguous unassigned resident in a single transaction.
-func Create(ctx context.Context, store *db.Database, box *securestore.Box, input Family, residentPhone string) error {
-	tx, err := store.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
+func Create(ctx context.Context, tx *sql.Tx, box *securestore.Box, input Family, residentPhone string) error {
 	lookup, err := userphone.SearchIndex(ctx, tx, box, input.Phone)
 	if err != nil {
 		return err
@@ -120,18 +115,18 @@ func Create(ctx context.Context, store *db.Database, box *securestore.Box, input
 	if affected != 1 {
 		return ErrResidentBound
 	}
-	return tx.Commit()
+	return nil
 }
 
-func Update(ctx context.Context, store *db.Database, box *securestore.Box, familyID int64, input Family) error {
-	used, err := phoneInUse(ctx, store, box, input.Phone, &familyID)
+func Update(ctx context.Context, tx *sql.Tx, box *securestore.Box, familyID int64, input Family) error {
+	used, err := phoneInUse(ctx, tx, box, input.Phone, &familyID)
 	if err != nil {
 		return err
 	}
 	if used {
 		return ErrPhoneInUse
 	}
-	result, err := store.ExecContext(ctx,
+	result, err := tx.ExecContext(ctx,
 		`UPDATE family SET family_name=?,family_relation=?,family_sex=?,
 		 family_phone=?,family_address=? WHERE family_id=?`,
 		input.Name, input.Relation, input.Sex, input.Phone, input.Address, familyID)
@@ -150,12 +145,7 @@ func Update(ctx context.Context, store *db.Database, box *securestore.Box, famil
 
 // Delete clears the resident binding and database sessions atomically.
 // Caller revokes non-database sessions only after the transaction commits.
-func Delete(ctx context.Context, store *db.Database, familyID int64) error {
-	tx, err := store.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
+func Delete(ctx context.Context, tx *sql.Tx, familyID int64) error {
 	if _, err := tx.ExecContext(ctx,
 		"UPDATE oldperson SET family_id=NULL WHERE family_id=?", familyID); err != nil {
 		return err
@@ -175,5 +165,5 @@ func Delete(ctx context.Context, store *db.Database, familyID int64) error {
 		"DELETE FROM web_session WHERE role='FAMILY' AND actor_id=?", familyID); err != nil {
 		return err
 	}
-	return tx.Commit()
+	return nil
 }
