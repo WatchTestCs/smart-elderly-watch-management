@@ -130,7 +130,7 @@ func TestIntegrationListContractsAndNumericAge(t *testing.T) {
 		handler http.HandlerFunc
 		key     string
 	}{
-		{"customers", withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 91}, h.listGuardians), "customers"}, {"family", h.familySelect, "familyDtos"},
+		{"customers", withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 91}, h.listGuardians), "customers"}, {"family", withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 91}, h.familySelect), "familyDtos"},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			out := api(t, test.handler, map[string]any{"page": 1, "pageSize": 20})
