@@ -140,3 +140,26 @@ func TestHeartbeatBufferCapacityUsesFencedDirectWrite(t *testing.T) {
 		t.Fatal("failed overflow write must not be acknowledged")
 	}
 }
+
+func TestHeartbeatCapacityIncludesInflightBatch(t *testing.T) {
+	store := &heartbeatStoreStub{}
+	buffer := NewHeartbeatBuffer(store)
+	for id := int64(1); id <= heartbeatBufferCapacity; id++ {
+		buffer.items[id] = heartbeatState{deviceID: id, bindingEpoch: 1}
+	}
+	batch := buffer.drain(heartbeatFlushBatch)
+	if len(batch) != heartbeatFlushBatch || buffer.inflight != heartbeatFlushBatch {
+		t.Fatalf("invalid in-flight reservation: size=%d inflight=%d", len(batch), buffer.inflight)
+	}
+	if err := buffer.Record(context.Background(), heartbeatBufferCapacity+1, 1, nil, nil, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	if store.calls != 1 || len(buffer.items)+buffer.inflight != heartbeatBufferCapacity {
+		t.Fatalf("in-flight capacity was ignored: calls=%d entries=%d inflight=%d", store.calls, len(buffer.items), buffer.inflight)
+	}
+	buffer.requeue(batch)
+	buffer.finishDrain(len(batch))
+	if len(buffer.items) != heartbeatBufferCapacity || buffer.inflight != 0 {
+		t.Fatalf("failed batch lost capacity accounting: entries=%d inflight=%d", len(buffer.items), buffer.inflight)
+	}
+}
