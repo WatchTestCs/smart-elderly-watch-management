@@ -8,8 +8,8 @@ import (
 
 	"suining-care/internal/auth"
 	"suining-care/internal/authrepo"
-	"suining-care/internal/session"
 	"suining-care/internal/careworkflow"
+	"suining-care/internal/session"
 )
 
 // MySQL authorization regression: a family session is denied by
