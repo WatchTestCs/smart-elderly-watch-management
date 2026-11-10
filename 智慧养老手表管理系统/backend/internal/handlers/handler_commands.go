@@ -1,15 +1,16 @@
 package handlers
 
 import (
-	"suining-care/internal/carepolicy"
 	"database/sql"
 	"net/http"
 	"strings"
+	"time"
+
+	"suining-care/internal/carepolicy"
 	"suining-care/internal/commands"
 	dbstore "suining-care/internal/db"
 	"suining-care/internal/devicerepo"
 	"suining-care/internal/response"
-	"time"
 )
 
 func (h *Handler) commandCreate(w http.ResponseWriter, r *http.Request) {
