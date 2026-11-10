@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"suining-care/internal/blob"
+	"suining-care/internal/careworkflow"
 	dbstore "suining-care/internal/db"
 	"suining-care/internal/response"
 	"suining-care/internal/socialrepo"
@@ -53,14 +54,21 @@ func (h *Handler) replaceGallery(w http.ResponseWriter, r *http.Request) {
 		}
 		names = append(names, s)
 	}
+	actor, ok := careAdmin(w, r)
+	if !ok {
+		return
+	}
 	manager, err := h.images()
 	if internalError(w, err) {
 		return
 	}
-	if err := socialworkflow.ReplaceGallery(r.Context(), h.DB, manager, names); err != nil {
-		if errors.Is(err, blob.ErrNotFound) {
+	if err := socialworkflow.ReplaceGallery(r.Context(), h.DB, actor, manager, names); err != nil {
+		switch {
+		case errors.Is(err, careworkflow.ErrCapabilityDenied):
+			response.JSON(w, http.StatusForbidden, map[string]any{"code": "ACCESS_DENIED"})
+		case errors.Is(err, blob.ErrNotFound):
 			write400(w, "图片不存在或已回收，请重新上传")
-		} else {
+		default:
 			internalError(w, err)
 		}
 		return
