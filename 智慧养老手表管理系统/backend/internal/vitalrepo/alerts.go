@@ -30,9 +30,9 @@ func updateSQL(kind string) string {
 }
 
 // ResolveAlert marks one or both metrics handled in a single transaction.
-func ResolveAlert(ctx context.Context, store *db.Database, recordID int64, kind string) (bool, error) {
+func ResolveAlert(ctx context.Context, tx *sql.Tx, recordID int64, kind string) (bool, error) {
 	var deviceID *int64
-	err := store.QueryRowContext(ctx, "SELECT device_id FROM ratepre WHERE id=?", recordID).Scan(&deviceID)
+	err := tx.QueryRowContext(ctx, "SELECT device_id FROM ratepre WHERE id=?", recordID).Scan(&deviceID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return false, ErrAlertNotFound
 	}
@@ -43,11 +43,6 @@ func ResolveAlert(ctx context.Context, store *db.Database, recordID int64, kind 
 	if kind == "rate" || kind == "pre" {
 		kinds = []string{kind}
 	}
-	tx, err := store.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
-	if err != nil {
-		return false, err
-	}
-	defer tx.Rollback()
 	var affected int64
 	for _, metric := range kinds {
 		result, err := tx.ExecContext(ctx, updateSQL(metric)+" WHERE id=?", recordID)
@@ -61,9 +56,6 @@ func ResolveAlert(ctx context.Context, store *db.Database, recordID int64, kind 
 		affected += changed
 	}
 	if err := healthalertstate.SyncVitalsIfPresent(ctx, tx, deviceID); err != nil {
-		return false, err
-	}
-	if err := tx.Commit(); err != nil {
 		return false, err
 	}
 	return affected > 0, nil

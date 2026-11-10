@@ -31,11 +31,11 @@ const vitalAlertSelect = `SELECT r.id, r.device_id, r.old_id, r.hr, r.bp, r.rate
 		FROM ratepre r LEFT JOIN oldperson o ON o.old_id=r.old_id
 		LEFT JOIN watch_info w ON w.device_id=r.device_id`
 
-func FindAlert(ctx context.Context, store *db.Database, recordID int64) (Alert, bool, error) {
+func FindAlert(ctx context.Context, store db.RowQuerier, recordID int64) (Alert, bool, error) {
 	return scanAlert(store.QueryRowContext(ctx, vitalAlertSelect+` WHERE r.id=?`, recordID))
 }
 
-func FindLatestPending(ctx context.Context, store *db.Database, residentID int64, kind string) (Alert, bool, error) {
+func FindLatestPending(ctx context.Context, store db.RowQuerier, residentID int64, kind string) (Alert, bool, error) {
 	condition := "(" + pendingRate + " OR " + pendingPressure + ")"
 	switch kind {
 	case "rate":

@@ -4,16 +4,21 @@ import (
 	"context"
 	"reflect"
 	"testing"
+
+	"suining-care/internal/auth"
+	"suining-care/internal/session"
 )
 
 func TestPendingVitalsDetailHonorsEachHandledTime(t *testing.T) {
 	h := extraAuditHandler(t)
 	seedDevice(t, h.DB)
+	seedCareAdminDuty(t, h.DB, 11, "supervisor")
+	admin := session.Principal{Role: auth.RoleAdmin, ID: 11}
 	mustExec(t, h.DB, "INSERT INTO ratepre(id,device_id,old_id,hr,bp,rate_state,pre_state,create_time) VALUES(1,1,1,150,180,'1','1','2026-10-20 10:00:00')")
 	for _, handled := range []string{"rate", "pre"} {
 		mustExec(t, h.DB, "UPDATE ratepre SET rate_handled_at=NULL,pre_handled_at=NULL WHERE id=1")
 		mustExec(t, h.DB, "UPDATE ratepre SET "+handled+"_handled_at='2026-10-20 11:00:00' WHERE id=1")
-		selected := api(t, h.getVitalAlert, map[string]any{"recordId": 1})
+		selected := api(t, withHealthPrincipal(h, admin, h.getVitalAlert), map[string]any{"recordId": 1})
 		if selected[handled+"Bad"] != float64(0) || selected["hasAlert"] != float64(1) {
 			t.Fatalf("record detail ignored handled time: %v", selected)
 		}
@@ -21,18 +26,18 @@ func TestPendingVitalsDetailHonorsEachHandledTime(t *testing.T) {
 			if kind == handled {
 				continue
 			}
-			byOwner := api(t, h.getVitalAlert, map[string]any{"oldId": 1, "kind": kind})
+			byOwner := api(t, withHealthPrincipal(h, admin, h.getVitalAlert), map[string]any{"oldId": 1, "kind": kind})
 			if !reflect.DeepEqual(byOwner, selected) {
 				t.Errorf("handled=%s kind=%q owner detail resurrected handled metric: got=%v want=%v", handled, kind, byOwner, selected)
 			}
 		}
 	}
 	mustExec(t, h.DB, "UPDATE ratepre SET rate_handled_at='2026-10-20 11:00:00',pre_handled_at='2026-10-20 11:00:00' WHERE id=1")
-	if out := api(t, h.getVitalAlert, map[string]any{"oldId": 1}); out["hasAlert"] != float64(0) {
+	if out := api(t, withHealthPrincipal(h, admin, h.getVitalAlert), map[string]any{"oldId": 1}); out["hasAlert"] != float64(0) {
 		t.Fatalf("fully handled record remained pending: %v", out)
 	}
 	mustExec(t, h.DB, "UPDATE ratepre SET rate_handled_at='2026-10-20 09:00:00',pre_handled_at='2026-10-20 09:00:00' WHERE id=1")
-	if out := api(t, h.getVitalAlert, map[string]any{"oldId": 1}); out["rateBad"] != float64(1) || out["preBad"] != float64(1) {
+	if out := api(t, withHealthPrincipal(h, admin, h.getVitalAlert), map[string]any{"oldId": 1}); out["rateBad"] != float64(1) || out["preBad"] != float64(1) {
 		t.Fatalf("older handling suppressed newer observations: %v", out)
 	}
 }
@@ -40,10 +45,12 @@ func TestPendingVitalsDetailHonorsEachHandledTime(t *testing.T) {
 func TestContinuousVitalsResolutionRejectsUnknownKind(t *testing.T) {
 	h := extraAuditHandler(t)
 	seedDevice(t, h.DB)
+	seedCareAdminDuty(t, h.DB, 11, "supervisor")
+	admin := session.Principal{Role: auth.RoleAdmin, ID: 11}
 	mustExec(t, h.DB, "INSERT INTO ratepre(id,device_id,old_id,hr,bp,rate_state,pre_state,create_time) VALUES(1,1,1,150,180,'1','1','2026-10-20 10:00:00')")
 	for _, kind := range []any{"rat", "all", 1, map[string]any{"kind": "rate"}} {
 		mustExec(t, h.DB, "UPDATE ratepre SET rate_state='1',pre_state='1',rate_handled_at=NULL,pre_handled_at=NULL WHERE id=1")
-		out := callAPI(h.handleResolveVitalAlert, map[string]any{"recordId": 1, "kind": kind})
+		out := callAPI(withHealthPrincipal(h, admin, h.handleResolveVitalAlert), map[string]any{"recordId": 1, "kind": kind})
 		if out.Code != 400 {
 			t.Errorf("unknown kind %v accepted: HTTP %d %s", kind, out.Code, out.Body.String())
 		}
@@ -57,7 +64,7 @@ func TestContinuousVitalsResolutionRejectsUnknownKind(t *testing.T) {
 		}
 	}
 	for _, kind := range []string{"rate", "pre"} {
-		out := api(t, h.handleResolveVitalAlert, map[string]any{"recordId": 1, "kind": kind})
+		out := api(t, withHealthPrincipal(h, admin, h.handleResolveVitalAlert), map[string]any{"recordId": 1, "kind": kind})
 		if out["returnCode"] != "1111" {
 			t.Fatal(out)
 		}
@@ -71,7 +78,7 @@ func TestContinuousVitalsResolutionRejectsUnknownKind(t *testing.T) {
 	// The existing omitted/empty-kind operation intentionally handles both kinds.
 	for _, body := range []map[string]any{{"recordId": 1}, {"recordId": 1, "kind": ""}} {
 		mustExec(t, h.DB, "UPDATE ratepre SET rate_state='1',pre_state='1',rate_handled_at=NULL,pre_handled_at=NULL WHERE id=1")
-		out := api(t, h.handleResolveVitalAlert, body)
+		out := api(t, withHealthPrincipal(h, admin, h.handleResolveVitalAlert), body)
 		var rate, pre string
 		if err := h.DB.QueryRowContext(context.Background(), "SELECT rate_state,pre_state FROM ratepre WHERE id=1").Scan(&rate, &pre); err != nil || rate != "0" || pre != "0" || out["returnCode"] != "1111" {
 			t.Fatalf("existing bulk operation changed: response=%v state=%s/%s err=%v", out, rate, pre, err)

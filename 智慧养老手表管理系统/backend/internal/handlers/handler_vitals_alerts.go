@@ -70,20 +70,25 @@ func (h *Handler) getVitalAlert(w http.ResponseWriter, r *http.Request) {
 	oldIDStr := strID(m, "oldId")
 	kind := strings.ToLower(str(m, "kind"))
 
+	tx, ok := h.beginSupervisorTx(w, r)
+	if !ok {
+		return
+	}
+	defer tx.Rollback()
 	var a vitalrepo.Alert
 	var found bool
 	var err error
 	if isDigits(recordIDStr) {
 		id, _ := strconv.ParseInt(recordIDStr, 10, 64)
-		a, found, err = vitalrepo.FindAlert(r.Context(), h.DB, id)
+		a, found, err = vitalrepo.FindAlert(r.Context(), tx, id)
 	} else if isDigits(oldIDStr) {
 		id, _ := strconv.ParseInt(oldIDStr, 10, 64)
-		a, found, err = vitalrepo.FindLatestPending(r.Context(), h.DB, id, kind)
+		a, found, err = vitalrepo.FindLatestPending(r.Context(), tx, id, kind)
 	} else {
 		response.Fail(w, "参数不正确")
 		return
 	}
-	if internalError(w, err) {
+	if internalError(w, err) || internalError(w, tx.Commit()) {
 		return
 	}
 	if !found {
@@ -112,7 +117,12 @@ func (h *Handler) handleResolveVitalAlert(w http.ResponseWriter, r *http.Request
 		return
 	}
 	recordID, _ := strconv.ParseInt(recordIDStr, 10, 64)
-	changed, err := vitalrepo.ResolveAlert(r.Context(), h.DB, recordID, kind)
+	tx, ok := h.beginSupervisorTx(w, r)
+	if !ok {
+		return
+	}
+	defer tx.Rollback()
+	changed, err := vitalrepo.ResolveAlert(r.Context(), tx, recordID, kind)
 	if errors.Is(err, vitalrepo.ErrAlertNotFound) {
 		response.Fail(w, "记录不存在")
 		return
@@ -122,6 +132,9 @@ func (h *Handler) handleResolveVitalAlert(w http.ResponseWriter, r *http.Request
 	}
 	if !changed {
 		recordNotFound(w)
+		return
+	}
+	if internalError(w, tx.Commit()) {
 		return
 	}
 	response.OK(w, map[string]any{"message": "已处置，红点已消除"})
