@@ -27,6 +27,7 @@
       <div v-for="person in staff" :key="person.id" class="care-staff-row">
         <span>{{ person.name || '管理员' }}（编号 {{ person.id }}）</span>
         <el-select :model-value="person.duty" :disabled="assigning !== null" :aria-label="'岗位：'+person.id" @change="setDuty(person, $event)">
+          <el-option label="未分配" value="unassigned" disabled />
           <el-option label="主管" value="supervisor" />
           <el-option label="护理员" value="caregiver" />
           <el-option label="审计员" value="auditor" />
@@ -64,7 +65,7 @@ import { authState } from '../auth'
 import { mayReadCareAudit, mayManageCareStaff } from '../domain/permissions'
 
 type Duty = 'supervisor' | 'caregiver' | 'auditor'
-interface Staff { id: number | string; name: string; duty: Duty }
+interface Staff { id: number | string; name: string; duty: Duty | 'unassigned' }
 interface AccessEntry { actorId: number | string; resource: string; at: string }
 interface AnalyticsStatus {
   ready: boolean
