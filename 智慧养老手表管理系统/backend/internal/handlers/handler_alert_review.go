@@ -16,7 +16,7 @@ func reviewVerdict(value string) bool { return value == "confirmed" || value == 
 // SOS and fence conclusions are recorded by the existing independent care verify
 // transition. This endpoint only reviews a concrete legacy vital-sign record.
 func (h *Handler) alertReview(w http.ResponseWriter, r *http.Request) {
-	actor, ok := h.careSupervisor(w, r)
+	actor, ok := careAdmin(w, r)
 	if !ok {
 		return
 	}
@@ -36,15 +36,17 @@ func (h *Handler) alertReview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := r.Context()
-	tx, err := h.DB.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
-	if internalError(w, err) {
+	tx, ok := h.beginSupervisorTx(w, r)
+	if !ok {
 		return
 	}
 	defer tx.Rollback()
 	var record int64
 	var state *string
 	// Kind is allowlisted above, never arbitrary SQL input.
-	err = tx.QueryRowContext(ctx, "SELECT id,"+req.Kind+"_state FROM ratepre WHERE id=? FOR UPDATE", req.RecordID).Scan(&record, &state)
+	err := tx.QueryRowContext(ctx,
+		"SELECT id, CASE WHEN ?='rate' THEN rate_state ELSE pre_state END FROM ratepre WHERE id=? FOR UPDATE",
+		req.Kind, req.RecordID).Scan(&record, &state)
 	if isNotFound(err) {
 		response.JSON(w, 404, map[string]any{"message": "记录不存在"})
 		return
@@ -80,7 +82,7 @@ func (h *Handler) alertReview(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) alertReviews(w http.ResponseWriter, r *http.Request) {
-	if _, ok := h.careSupervisor(w, r); !ok {
+	if _, ok := careAdmin(w, r); !ok {
 		return
 	}
 	var req struct {
@@ -96,7 +98,12 @@ func (h *Handler) alertReviews(w http.ResponseWriter, r *http.Request) {
 		write400(w, "复核目标或游标无效")
 		return
 	}
-	items, ok := queryRows(h, w, r.Context(), func(rows *sql.Rows) (map[string]any, error) {
+	tx, ok := h.beginSupervisorTx(w, r)
+	if !ok {
+		return
+	}
+	defer tx.Rollback()
+	items, err := dbstore.QueryList(r.Context(), tx, func(rows *sql.Rows) (map[string]any, error) {
 		var id, actor int64
 		var kind, verdict, reason string
 		var at time.Time
@@ -109,7 +116,7 @@ func (h *Handler) alertReviews(w http.ResponseWriter, r *http.Request) {
 		}
 		return map[string]any{"id": id, "kind": kind, "verdict": verdict, "reason": reason, "actorId": actor, "createdAt": at}, nil
 	}, "SELECT id,kind,verdict,reason,actor_id,created_at FROM alert_review WHERE entity=? AND record_id=? AND (?='' OR kind=?) AND id>? ORDER BY id LIMIT 100", req.Entity, req.RecordID, req.Kind, req.Kind, req.After)
-	if !ok {
+	if internalError(w, err) || internalError(w, tx.Commit()) {
 		return
 	}
 	response.OK(w, map[string]any{"items": items})
