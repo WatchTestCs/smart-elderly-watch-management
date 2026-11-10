@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"suining-care/internal/carepolicy"
 	"net/http"
 	"time"
 
@@ -16,7 +17,7 @@ func (h *Handler) operationsSnapshot(w http.ResponseWriter, r *http.Request) {
 	if _, ok := optBody(w, r); !ok {
 		return
 	}
-	tx, ok := h.beginSupervisorTx(w, r)
+	tx, ok := h.beginAdminActionTx(w, r, carepolicy.ReadOperations)
 	if !ok {
 		return
 	}
