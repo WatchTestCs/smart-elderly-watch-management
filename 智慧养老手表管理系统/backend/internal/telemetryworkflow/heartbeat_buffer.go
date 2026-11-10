@@ -8,10 +8,12 @@ import (
 	"time"
 
 	"suining-care/internal/observability"
+	"suining-care/internal/telemetryrepo"
 )
 
 const heartbeatFlushInterval = 15 * time.Second
 const heartbeatFlushBatch = 128
+const heartbeatBufferCapacity = 8192
 
 type heartbeatStore interface {
 	ExecContext(context.Context, string, ...any) (sql.Result, error)
@@ -32,6 +34,7 @@ type heartbeatState struct {
 type HeartbeatBuffer struct {
 	store heartbeatStore
 	mu    sync.Mutex
+	flushMu sync.Mutex
 	items map[int64]heartbeatState
 }
 
@@ -39,16 +42,22 @@ func NewHeartbeatBuffer(store heartbeatStore) *HeartbeatBuffer {
 	return &HeartbeatBuffer{store: store, items: make(map[int64]heartbeatState)}
 }
 
-func (b *HeartbeatBuffer) Record(deviceID, bindingEpoch int64, battery *int, appVersion *string, seenAt time.Time) {
+func (b *HeartbeatBuffer) Record(ctx context.Context, deviceID, bindingEpoch int64, battery *int, appVersion *string, seenAt time.Time) error {
 	if b == nil || b.store == nil || deviceID < 1 || bindingEpoch < 1 {
-		return
+		return nil
 	}
 	seenAt = seenAt.UTC()
 	b.mu.Lock()
 	state := b.items[deviceID]
 	if state.bindingEpoch > bindingEpoch {
 		b.mu.Unlock()
-		return
+		return nil
+	}
+	if state.bindingEpoch == 0 && len(b.items) >= heartbeatBufferCapacity {
+		b.mu.Unlock()
+		// Keep the in-memory projection bounded. Backpressure is paid only
+		// by new device keys; an acknowledged heartbeat is never discarded.
+		return telemetryrepo.TouchDevice(ctx, b.store, deviceID, bindingEpoch, battery, appVersion, seenAt)
 	}
 	if state.bindingEpoch != bindingEpoch {
 		state = heartbeatState{deviceID: deviceID, bindingEpoch: bindingEpoch}
@@ -67,6 +76,7 @@ func (b *HeartbeatBuffer) Record(deviceID, bindingEpoch int64, battery *int, app
 	b.items[deviceID] = state
 	b.mu.Unlock()
 	observability.Default.Add("suining_heartbeat_buffered_total", 1)
+	return nil
 }
 
 func (b *HeartbeatBuffer) drain(max int) []heartbeatState {
@@ -160,6 +170,8 @@ func (b *HeartbeatBuffer) flushBatch(ctx context.Context, items []heartbeatState
 }
 
 func (b *HeartbeatBuffer) Flush(ctx context.Context) (int, error) {
+	b.flushMu.Lock()
+	defer b.flushMu.Unlock()
 	total := 0
 	for {
 		items := b.drain(heartbeatFlushBatch)
