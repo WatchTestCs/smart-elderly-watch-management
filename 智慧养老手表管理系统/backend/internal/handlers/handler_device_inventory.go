@@ -52,8 +52,13 @@ func (h *Handler) deviceCreate(w http.ResponseWriter, r *http.Request) {
 	if internalError(w, err) {
 		return
 	}
+	tx, ok := h.beginSupervisorTx(w, r)
+	if !ok {
+		return
+	}
+	defer tx.Rollback()
 	now := time.Now()
-	deviceID, err := devicerepo.Create(ctx, h.DB, devicerepo.NewDevice{
+	deviceID, err := devicerepo.Create(ctx, tx, devicerepo.NewDevice{
 		Number: deviceNo, SecretHash: hashed, Alias: alias, Model: model,
 		ResidentID: oldID, At: now, ProfileDay: siteDay(now),
 	})
@@ -65,6 +70,9 @@ func (h *Handler) deviceCreate(w http.ResponseWriter, r *http.Request) {
 	case internalError(w, err):
 		return
 	default:
+		if internalError(w, tx.Commit()) {
+			return
+		}
 		response.OK(w, map[string]any{
 			"deviceId": deviceID, "deviceNo": deviceNo, "secret": clearSecret,
 		})
@@ -81,7 +89,12 @@ func (h *Handler) deviceResetSecret(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	exists, err := devicerepo.Exists(r.Context(), h.DB, deviceID)
+	tx, ok := h.beginSupervisorTx(w, r)
+	if !ok {
+		return
+	}
+	defer tx.Rollback()
+	exists, err := devicerepo.Exists(r.Context(), tx, deviceID)
 	if internalError(w, err) {
 		return
 	}
@@ -93,12 +106,15 @@ func (h *Handler) deviceResetSecret(w http.ResponseWriter, r *http.Request) {
 	if internalError(w, err) {
 		return
 	}
-	changed, err := devicerepo.UpdateSecret(r.Context(), h.DB, deviceID, hashed)
+	changed, err := devicerepo.UpdateSecret(r.Context(), tx, deviceID, hashed)
 	if internalError(w, err) {
 		return
 	}
 	if !changed {
 		response.Fail(w, "密钥更新失败，请重试")
+		return
+	}
+	if internalError(w, tx.Commit()) {
 		return
 	}
 	response.OK(w, map[string]any{"secret": clearSecret})
@@ -123,7 +139,12 @@ func (h *Handler) detachDevice(w http.ResponseWriter, r *http.Request, remove bo
 	if !ok {
 		return
 	}
-	changed, err := devicerepo.Detach(r.Context(), h.DB, deviceID, remove)
+	tx, ok := h.beginSupervisorTx(w, r)
+	if !ok {
+		return
+	}
+	defer tx.Rollback()
+	changed, err := devicerepo.Detach(r.Context(), tx, deviceID, remove)
 	if internalError(w, err) {
 		return
 	}
@@ -133,6 +154,9 @@ func (h *Handler) detachDevice(w http.ResponseWriter, r *http.Request, remove bo
 		} else {
 			response.Fail(w, "解绑失败")
 		}
+		return
+	}
+	if internalError(w, tx.Commit()) {
 		return
 	}
 	response.OK(w, nil)

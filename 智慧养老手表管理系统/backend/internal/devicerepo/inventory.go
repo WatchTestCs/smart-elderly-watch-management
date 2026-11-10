@@ -13,7 +13,7 @@ const deviceRecordColumns = `device_id, device_no, secret, alias, model, app_ver
 	old_id, family_id, status, bind_time, last_time, last_lng, last_lat, create_time,
 	person_handled, rate_handled, pre_handled, boot_seq, handled_seq, health_epoch`
 
-func Exists(ctx context.Context, store *db.Database, deviceID int64) (bool, error) {
+func Exists(ctx context.Context, store db.RowQuerier, deviceID int64) (bool, error) {
 	var exists bool
 	err := store.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM device WHERE device_id=?)`, deviceID).Scan(&exists)
 	return exists, err
@@ -26,7 +26,7 @@ func NumberExists(ctx context.Context, store *db.Database, number string) (bool,
 	return exists, err
 }
 
-func UpdateSecret(ctx context.Context, store *db.Database, deviceID int64, hash string) (bool, error) {
+func UpdateSecret(ctx context.Context, store *sql.Tx, deviceID int64, hash string) (bool, error) {
 	result, err := store.ExecContext(ctx, `UPDATE device SET secret=? WHERE device_id=?`, hash, deviceID)
 	if err != nil {
 		return false, err
@@ -37,12 +37,7 @@ func UpdateSecret(ctx context.Context, store *db.Database, deviceID int64, hash 
 
 // Detach transfers the elder's primary device reference before removing the binding.
 // All writes commit together, including profile deletion when remove is true.
-func Detach(ctx context.Context, store *db.Database, deviceID int64, remove bool) (bool, error) {
-	tx, err := store.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
-	if err != nil {
-		return false, err
-	}
-	defer tx.Rollback()
+func Detach(ctx context.Context, tx *sql.Tx, deviceID int64, remove bool) (bool, error) {
 
 	if _, err := tx.ExecContext(ctx, `UPDATE oldperson SET device_id=(
 		SELECT min(d.device_id) FROM device d
@@ -69,9 +64,6 @@ func Detach(ctx context.Context, store *db.Database, deviceID int64, remove bool
 	}
 	if affected != 1 {
 		return false, nil
-	}
-	if err := tx.Commit(); err != nil {
-		return false, err
 	}
 	return true, nil
 }

@@ -24,12 +24,7 @@ type NewDevice struct {
 }
 
 // Create registers a device and its optional resident/profile association atomically.
-func Create(ctx context.Context, store *db.Database, input NewDevice) (int64, error) {
-	tx, err := store.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
-	if err != nil {
-		return 0, err
-	}
-	defer tx.Rollback()
+func Create(ctx context.Context, tx *sql.Tx, input NewDevice) (int64, error) {
 
 	var residentValue, bindTime any
 	if input.ResidentID != nil {
@@ -69,9 +64,6 @@ func Create(ctx context.Context, store *db.Database, input NewDevice) (int64, er
 		if err := telemetryrepo.EnsureDefaultWatchProfile(ctx, tx, deviceID, input.ProfileDay); err != nil {
 			return 0, err
 		}
-	}
-	if err := tx.Commit(); err != nil {
-		return 0, err
 	}
 	return deviceID, nil
 }
