@@ -97,6 +97,65 @@ func TestLegacySensitiveReadsRequireCurrentSupervisor(t *testing.T) {
 	}
 }
 
+// Direct handlers recheck live duty inside each sensitive read or mutation.
+func TestLegacyDeviceHealthAndGuardianAccessAfterDutyRevocation(t *testing.T) {
+	pool := testDatabase(t)
+	seedDevice(t, pool)
+	seedCareAdminDuty(t, pool, 11, "supervisor")
+	seedCareAdminDuty(t, pool, 12, "caregiver")
+	mustExec(t, pool, "INSERT INTO customer(customer_id,customer_name) VALUES(1,'initial')")
+	h := testHandler(t, pool)
+	supervisor := session.Principal{Role: auth.RoleAdmin, ID: 11}
+	readDevice := withHealthPrincipal(h, supervisor, h.deviceList)
+	if got := callAPI(readDevice, map[string]any{}); got.Code != http.StatusOK {
+		t.Fatalf("authorized device inventory: %d %s", got.Code, got.Body.String())
+	}
+	if got := callAPI(withHealthPrincipal(h, supervisor, h.deviceBindCodeList), map[string]any{"oldId": "1"}); got.Code != http.StatusOK {
+		t.Fatalf("authorized bind-code inventory: %d %s", got.Code, got.Body.String())
+	}
+	healthQuery := map[string]any{"oldId": 1, "source": "watch", "sourceDevice": "WATCH001", "metric": "heart_rate", "semantics": "instant", "from": "2026-10-20T00:00:00Z", "to": "2026-10-21T00:00:00Z"}
+	if got := callAPI(withHealthPrincipal(h, supervisor, h.healthStatistics), healthQuery); got.Code != http.StatusOK {
+		t.Fatalf("authorized health statistics: %d %s", got.Code, got.Body.String())
+	}
+	mustExec(t, pool, "UPDATE care_staff_permission SET duty='auditor' WHERE admin_id=11")
+	for _, actor := range []int64{11, 12} {
+		p := session.Principal{Role: auth.RoleAdmin, ID: actor}
+		for _, test := range []struct {
+			name string
+			handler http.HandlerFunc
+			body map[string]any
+		}{
+			{"device_list", h.deviceList, map[string]any{}},
+			{"health_statistics", h.healthStatistics, healthQuery},
+			{"health_changes", h.healthChanges, map[string]any{"oldId": 1}},
+			{"health_latest", h.healthLatest, map[string]any{"oldId": 1}},
+			{"health_baseline", h.healthBaseline, map[string]any{"oldId": 1}},
+			{"guardian_create", h.createGuardian, map[string]any{"customerName": "new", "customerAge": "40", "customerSex": "女", "customerPhone": "13800000000", "customerAddress": "test"}},
+			{"guardian_update", h.updateGuardian, map[string]any{"customerId": 1, "customerName": "new", "customerAge": "40", "customerSex": "女", "customerPhone": "13800000000", "customerAddress": "test"}},
+			{"guardian_delete", h.deleteGuardian, map[string]any{"customerId": 1}},
+			{"bind_code_create", h.deviceCreateBindCode, map[string]any{"oldId": "1"}},
+			{"bind_code_list", h.deviceBindCodeList, map[string]any{"oldId": "1"}},
+			{"bind_code_delete", h.deviceDeleteBindCode, map[string]any{"id": "1"}},
+			{"device_secret_reset", h.deviceResetSecret, map[string]any{"deviceId": "1"}},
+			{"device_unbind", h.deviceUnbind, map[string]any{"deviceId": "1"}},
+			{"device_delete", h.deviceDelete, map[string]any{"deviceId": "1"}},
+		} {
+			got := callAPI(withHealthPrincipal(h, p, test.handler), test.body)
+			if got.Code != http.StatusForbidden {
+				t.Fatalf("actor %d %s: HTTP %d %s", actor, test.name, got.Code, got.Body.String())
+			}
+		}
+	}
+	var customerCount int
+	if err := pool.QueryRowContext(context.Background(), "SELECT count(*) FROM customer").Scan(&customerCount); err != nil || customerCount != 1 {
+		t.Fatalf("unauthorized mutation changed guardian records: count=%d err=%v", customerCount, err)
+	}
+	var deviceCount int
+	if err := pool.QueryRowContext(context.Background(), "SELECT count(*) FROM device WHERE device_id=1 AND old_id=1").Scan(&deviceCount); err != nil || deviceCount != 1 {
+		t.Fatalf("unauthorized mutation changed device binding: count=%d err=%v", deviceCount, err)
+	}
+}
+
 func TestRestrictedAdminRouteAllowlist(t *testing.T) {
 	for _, path := range []string{
 		"/api/v1/care/receipt",
