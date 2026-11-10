@@ -45,7 +45,7 @@ func TestProtectedAdministratorSetupAndLogin(t *testing.T) {
 	if lookup.Code != 200 || !strings.Contains(lookup.Body.String(), `"userPhone":"13800000001"`) {
 		t.Fatalf("protected account lookup: %d %s", lookup.Code, lookup.Body.String())
 	}
-	duplicate := callAPI(h.familyAdd, map[string]any{
+	duplicate := callAPI(withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: id}, h.familyAdd), map[string]any{
 		"familyName": "synthetic", "familyRelation": "child", "familySex": "男",
 		"familyPhone": "13800000001", "oldPhone": "13800000002", "familyAddress": "synthetic",
 	})
