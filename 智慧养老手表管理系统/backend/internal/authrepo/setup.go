@@ -8,6 +8,7 @@ import (
 	"unicode/utf8"
 
 	"suining-care/internal/auth"
+	"suining-care/internal/carerepo"
 	"suining-care/internal/db"
 	"suining-care/internal/securestore"
 	"suining-care/internal/userphone"
@@ -74,9 +75,7 @@ func InitializeAdmin(ctx context.Context, store *db.Database, box *securestore.B
 	}
 	// First-run administrator and the first explicit supervisor are one
 	// atomic identity/authorization/audit operation.
-	if _, err := tx.ExecContext(ctx,
-		"INSERT INTO care_staff_permission(admin_id,duty,assigned_by) VALUES(?,'supervisor',?)",
-		adminID, adminID); err != nil {
+	if err := carerepo.SetDuty(ctx, tx, adminID, adminID, "supervisor"); err != nil {
 		return err
 	}
 	if _, err := tx.ExecContext(ctx,
