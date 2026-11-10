@@ -4,6 +4,9 @@ import (
 	"context"
 	"net/http/httptest"
 	"testing"
+
+	"suining-care/internal/auth"
+	"suining-care/internal/session"
 )
 
 func TestContinuousElderGuardianMustExist(t *testing.T) {
@@ -47,28 +50,34 @@ func TestContinuousElderGuardianMustExist(t *testing.T) {
 
 func TestContinuousGuardianDeleteKeepsAssignedProfiles(t *testing.T) {
 	h := extraAuditHandler(t)
+	seedCareAdminDuty(t, h.DB, 11, "supervisor")
+	authorizedDelete := withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.deleteGuardian)
 	mustExec(t, h.DB, "INSERT INTO customer(customer_id,customer_name) VALUES(1,'甲'),(2,'乙')")
 	mustExec(t, h.DB, "INSERT INTO oldperson(old_id,name,customer_id) VALUES(1,'长者',1)")
-	if out := apiFailure(t, 400, h.deleteGuardian, map[string]any{"customerId": 1}); out["returnCode"] == "1111" {
+	if out := apiFailure(t, 400, authorizedDelete, map[string]any{"customerId": 1}); out["returnCode"] == "1111" {
 		t.Error("deleted a guardian still assigned to an elder")
 	}
 	var count int
 	if err := h.DB.QueryRowContext(context.Background(), "SELECT count(*) FROM oldperson o JOIN customer c ON c.customer_id=o.customer_id WHERE o.old_id=1").Scan(&count); err != nil || count != 1 {
 		t.Fatalf("guardian reference became dangling: count=%d err=%v", count, err)
 	}
-	if out := api(t, h.deleteGuardian, map[string]any{"customerId": 2}); out["returnCode"] != "1111" {
+	if out := api(t, authorizedDelete, map[string]any{"customerId": 2}); out["returnCode"] != "1111" {
 		t.Fatalf("unassigned guardian could not be deleted: %v", out)
 	}
 	if out := api(t, h.deleteResident, map[string]any{"oldId": 1}); out["returnCode"] != "1111" {
 		t.Fatal(out)
 	}
-	if out := api(t, h.deleteGuardian, map[string]any{"customerId": 1}); out["returnCode"] != "1111" {
+	if out := api(t, authorizedDelete, map[string]any{"customerId": 1}); out["returnCode"] != "1111" {
 		t.Fatalf("guardian could not be deleted after elder removal: %v", out)
 	}
 }
 
 func TestContinuousGuardianAgeBoundsDoNotWriteInvalidProfiles(t *testing.T) {
 	h := extraAuditHandler(t)
+	seedCareAdminDuty(t, h.DB, 11, "supervisor")
+	principal := session.Principal{Role: auth.RoleAdmin, ID: 11}
+	authorizedCreate := withHealthPrincipal(h, principal, h.createGuardian)
+	authorizedUpdate := withHealthPrincipal(h, principal, h.updateGuardian)
 	mustExec(t, h.DB, "INSERT INTO customer(customer_id,customer_name,customer_age) VALUES(1,'原姓名',40)")
 	body := map[string]any{"customerId": 1, "customerName": "不应写入", "customerSex": "女", "customerPhone": "13800000001", "customerAddress": "测试"}
 	for _, age := range []any{-1, 151, 1.5, "invalid"} {
@@ -76,7 +85,7 @@ func TestContinuousGuardianAgeBoundsDoNotWriteInvalidProfiles(t *testing.T) {
 		for _, handler := range []struct {
 			name string
 			call func() int
-		}{{"add", func() int { return callAPI(h.createGuardian, body).Code }}, {"edit", func() int { return callAPI(h.updateGuardian, body).Code }}} {
+		}{{"add", func() int { return callAPI(authorizedCreate, body).Code }}, {"edit", func() int { return callAPI(authorizedUpdate, body).Code }}} {
 			if code := handler.call(); code != 400 {
 				t.Errorf("%s age=%v: HTTP %d, want 400", handler.name, age, code)
 			}
@@ -92,7 +101,7 @@ func TestContinuousGuardianAgeBoundsDoNotWriteInvalidProfiles(t *testing.T) {
 	}
 	for _, valid := range []any{0, "150"} {
 		body["customerAge"] = valid
-		if out := api(t, h.updateGuardian, body); out["returnCode"] != "1111" {
+		if out := api(t, authorizedUpdate, body); out["returnCode"] != "1111" {
 			t.Fatalf("valid age %v rejected: %v", valid, out)
 		}
 	}
@@ -100,6 +109,8 @@ func TestContinuousGuardianAgeBoundsDoNotWriteInvalidProfiles(t *testing.T) {
 
 func TestContinuousGuardianCreateAndDeleteKeepReferencesValid(t *testing.T) {
 	h := extraAuditHandler(t)
+	seedCareAdminDuty(t, h.DB, 11, "supervisor")
+	authorizedDelete := withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.deleteGuardian)
 	mustExec(t, h.DB, "INSERT INTO customer(customer_id,customer_name) VALUES(1,'监护人')")
 	start := make(chan struct{})
 	created := make(chan *httptest.ResponseRecorder, 1)
@@ -110,7 +121,7 @@ func TestContinuousGuardianCreateAndDeleteKeepReferencesValid(t *testing.T) {
 	}()
 	go func() {
 		<-start
-		deleted <- callAPI(h.deleteGuardian, map[string]any{"customerId": 1})
+		deleted <- callAPI(authorizedDelete, map[string]any{"customerId": 1})
 	}()
 	close(start)
 	createResponse, deleteResponse := <-created, <-deleted

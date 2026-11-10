@@ -171,6 +171,8 @@ func TestArchitectureConcurrentBindAndUnbind(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
 	h := testHandler(t, pool)
+	seedCareAdminDuty(t, pool, 11, "supervisor")
+	unbind := withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.deviceUnbind)
 	for n := 0; n < 20; n++ {
 		mustExec(t, pool, "UPDATE device SET old_id=1 WHERE device_id=1")
 		mustExec(t, pool, "UPDATE oldperson SET device_id=1 WHERE old_id=1")
@@ -182,7 +184,7 @@ func TestArchitectureConcurrentBindAndUnbind(t *testing.T) {
 			<-start
 			results <- callAPI(h.deviceBind, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "code": code})
 		}()
-		go func() { <-start; results <- callAPI(h.deviceUnbind, map[string]any{"deviceId": 1}) }()
+		go func() { <-start; results <- callAPI(unbind, map[string]any{"deviceId": 1}) }()
 		close(start)
 		for range 2 {
 			out := <-results
@@ -200,9 +202,10 @@ func TestArchitectureConcurrentBindAndUnbind(t *testing.T) {
 func TestArchitectureUnbindingKeepsRemainingPrimary(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
+	seedCareAdminDuty(t, pool, 11, "supervisor")
 	mustExec(t, pool, "UPDATE oldperson SET device_id=1 WHERE old_id=1")
 	mustExec(t, pool, "INSERT INTO device(device_id,device_no,secret,old_id) VALUES(2,'SECOND','unused',1)")
-	api(t, testHandler(t, pool).deviceUnbind, map[string]any{"deviceId": 1})
+	api(t, withHealthPrincipal(testHandler(t, pool), session.Principal{Role: auth.RoleAdmin, ID: 11}, testHandler(t, pool).deviceUnbind), map[string]any{"deviceId": 1})
 	var primary *int64
 	if err := pool.QueryRowContext(context.Background(), "SELECT device_id FROM oldperson WHERE old_id=1").Scan(&primary); err != nil || primary == nil || *primary != 2 {
 		t.Fatalf("remaining attached device lost its primary reference: %v %v", primary, err)

@@ -7,6 +7,9 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"suining-care/internal/auth"
+	"suining-care/internal/session"
 )
 
 func TestDeviceIntegerInputBounds(t *testing.T) {
@@ -27,8 +30,12 @@ func TestDeviceIntegerInputBounds(t *testing.T) {
 func TestDeviceRegistrationListContract(t *testing.T) {
 	h := extraAuditHandler(t)
 	pool := h.DB
+	seedCareAdminDuty(t, pool, 11, "supervisor")
+	principal := session.Principal{Role: auth.RoleAdmin, ID: 11}
+	authorizedCreate := withHealthPrincipal(h, principal, h.deviceCreate)
+	authorizedList := withHealthPrincipal(h, principal, h.deviceList)
 	mustExec(t, pool, "INSERT INTO oldperson(old_id,name,phone) VALUES(1,'登记长者','13800000001')")
-	created := api(t, h.deviceCreate, map[string]any{"oldId": 1})
+	created := api(t, authorizedCreate, map[string]any{"oldId": 1})
 	id := int64(created["deviceId"].(float64))
 	deviceNo, secret := created["deviceNo"].(string), created["secret"].(string)
 	var alias, model, storedSecret string
@@ -46,7 +53,7 @@ func TestDeviceRegistrationListContract(t *testing.T) {
 		t.Fatalf("default thresholds not initialized: %d %v", profiles, err)
 	}
 	mustExec(t, pool, "UPDATE device SET last_lng=?,last_lat=?,last_time=?,battery=67 WHERE device_id=?", sealCoordinate(h.Box, "121.5"), sealCoordinate(h.Box, "31.2"), time.Now().UTC().Add(-30*time.Second), id)
-	listed := api(t, h.deviceList, map[string]any{"query": strings.ToLower(deviceNo), "state": "online"})
+	listed := api(t, authorizedList, map[string]any{"query": strings.ToLower(deviceNo), "state": "online"})
 	items, ok := listed["devices"].([]any)
 	if !ok || len(items) != 1 || listed["total"] != float64(1) || listed["onlineCount"] != float64(1) {
 		t.Fatalf("registered device missing from filtered list: %v", listed)
@@ -59,7 +66,7 @@ func TestDeviceRegistrationListContract(t *testing.T) {
 		t.Fatal("device list exposed registration secret")
 	}
 	for _, invalid := range []map[string]any{{"oldId": "invalid"}, {"alias": strings.Repeat("字", 33)}} {
-		if result := callAPI(h.deviceCreate, invalid); result.Code != 400 {
+		if result := callAPI(authorizedCreate, invalid); result.Code != 400 {
 			t.Fatalf("invalid registration accepted: HTTP %d", result.Code)
 		}
 	}

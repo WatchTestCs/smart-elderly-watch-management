@@ -4,14 +4,21 @@ import (
 	"context"
 	"testing"
 	"time"
+
+	"suining-care/internal/auth"
+	"suining-care/internal/session"
 )
 
 func TestContinuousBindingCodeExpiry(t *testing.T) {
 	pool := testDatabase(t)
 	h := testHandler(t, pool)
 	seedDevice(t, pool)
+	seedCareAdminDuty(t, pool, 11, "supervisor")
+	principal := session.Principal{Role: auth.RoleAdmin, ID: 11}
+	createCode := withHealthPrincipal(h, principal, h.deviceCreateBindCode)
+	unbind := withHealthPrincipal(h, principal, h.deviceUnbind)
 	for _, bad := range []any{"abc", -1, 0, 31, 1.5, true} {
-		out := callAPI(h.deviceCreateBindCode, map[string]any{"oldId": 1, "expireDays": bad})
+		out := callAPI(createCode, map[string]any{"oldId": 1, "expireDays": bad})
 		if out.Code != 400 {
 			t.Errorf("invalid expiry %v accepted: HTTP %d", bad, out.Code)
 		}
@@ -20,9 +27,9 @@ func TestContinuousBindingCodeExpiry(t *testing.T) {
 	if err := pool.QueryRowContext(context.Background(), "SELECT count(*) FROM bind_code").Scan(&count); err != nil || count != 0 {
 		t.Errorf("invalid expiry created codes: count=%d err=%v", count, err)
 	}
-	api(t, h.deviceUnbind, map[string]any{"deviceId": 1})
+	api(t, unbind, map[string]any{"deviceId": 1})
 	for _, body := range []map[string]any{{"oldId": 1}, {"oldId": 1, "expireDays": ""}} {
-		created := api(t, h.deviceCreateBindCode, body)
+		created := api(t, createCode, body)
 		var expiry, issued time.Time
 		if err := pool.QueryRowContext(context.Background(), "SELECT expire_time,create_time FROM bind_code WHERE code=?", created["code"]).Scan(&expiry, &issued); err != nil {
 			t.Fatal(err)
@@ -33,7 +40,7 @@ func TestContinuousBindingCodeExpiry(t *testing.T) {
 		if bound := api(t, h.deviceBind, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "code": created["code"]}); bound["returnCode"] != "1111" {
 			t.Errorf("default code cannot bind device: %v", bound)
 		}
-		api(t, h.deviceUnbind, map[string]any{"deviceId": 1})
+		api(t, unbind, map[string]any{"deviceId": 1})
 	}
 }
 

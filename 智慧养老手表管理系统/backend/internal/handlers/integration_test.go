@@ -140,7 +140,7 @@ func TestIntegrationListContractsAndNumericAge(t *testing.T) {
 			}
 		})
 	}
-	result := api(t, h.updateGuardian, map[string]any{"customerId": 1, "customerName": "监护人", "customerAge": 40, "customerSex": "女", "customerPhone": "13800000001", "customerAddress": "本地"})
+	result := api(t, withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 91}, h.updateGuardian), map[string]any{"customerId": 1, "customerName": "监护人", "customerAge": 40, "customerSex": "女", "customerPhone": "13800000001", "customerAddress": "本地"})
 	if result["returnCode"] != "1111" {
 		t.Fatal(result)
 	}
