@@ -90,9 +90,13 @@ func (h *Handler) updateNotice(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	manager, err := h.images()
-	if internalError(w, err) {
-		return
+	var manager *blob.Manager
+	if len(files) > 0 {
+		var err error
+		manager, err = h.images()
+		if internalError(w, err) {
+			return
+		}
 	}
 	updated, err := socialworkflow.UpdateNotice(r.Context(), h.DB, actor, manager, textID, str(m, "title"), str(m, "textMain"), files)
 	switch {
