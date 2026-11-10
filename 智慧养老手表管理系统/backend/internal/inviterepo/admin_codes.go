@@ -33,7 +33,7 @@ func codeFilter(state string) string {
 	}
 }
 
-func ListCodes(ctx context.Context, store *db.Database, state string, page, pageSize int) ([]CodeRecord, int64, error) {
+func ListCodes(ctx context.Context, store db.ReadQuerier, state string, page, pageSize int) ([]CodeRecord, int64, error) {
 	filter := codeFilter(state)
 	var total int64
 	err := store.QueryRowContext(ctx, "SELECT COUNT(*) FROM invite_code ic WHERE 1=1 "+filter).Scan(&total)
@@ -52,7 +52,7 @@ func ListCodes(ctx context.Context, store *db.Database, state string, page, page
 	return items, total, err
 }
 
-func ResidentName(ctx context.Context, store *db.Database, residentID int64) (*string, error) {
+func ResidentName(ctx context.Context, store db.RowQuerier, residentID int64) (*string, error) {
 	var name *string
 	err := store.QueryRowContext(ctx, "SELECT name FROM oldperson WHERE old_id=?", residentID).Scan(&name)
 	return name, err
@@ -71,7 +71,7 @@ func InsertCode(ctx context.Context, tx *sql.Tx, code string, residentID int64, 
 	return err
 }
 
-func DeleteUnusedCode(ctx context.Context, store *db.Database, codeID int64) (bool, error) {
+func DeleteUnusedCode(ctx context.Context, store interface{ ExecContext(context.Context, string, ...any) (sql.Result, error) }, codeID int64) (bool, error) {
 	result, err := store.ExecContext(ctx, "DELETE FROM invite_code WHERE id=? AND used=0", codeID)
 	if err != nil {
 		return false, err
