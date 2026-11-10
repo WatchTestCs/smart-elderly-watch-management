@@ -52,7 +52,7 @@ func TestConcurrentDutyReassignmentsPreserveSupervisor(t *testing.T) {
 	if err := pool.QueryRowContext(ctx, "SELECT COUNT(*) FROM care_staff_permission WHERE admin_id=?", removedID).Scan(&assignments); err != nil || assignments != 0 {
 		t.Fatalf("unassigned caregiver retained a permission row: count=%d err=%v", assignments, err)
 	}
-		tx, err := pool.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	tx, err := pool.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		t.Fatal(err)
 	}
