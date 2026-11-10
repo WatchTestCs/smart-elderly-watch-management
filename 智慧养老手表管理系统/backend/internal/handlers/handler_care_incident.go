@@ -187,7 +187,7 @@ func (h *Handler) careEvents(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-tx, duty, ok := h.beginCareRead(w, r, actor, carepolicy.ReadTasks)
+	tx, duty, ok := h.beginCareRead(w, r, actor, carepolicy.ReadTasks)
 	if !ok {
 		return
 	}

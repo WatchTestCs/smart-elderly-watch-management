@@ -11,7 +11,6 @@ import (
 	"suining-care/internal/auth"
 	"suining-care/internal/authrepo"
 	"suining-care/internal/carepolicy"
-	"suining-care/internal/carerepo"
 	"suining-care/internal/careworkflow"
 	"suining-care/internal/session"
 )
@@ -181,10 +180,10 @@ func TestIncidentHistoryLockFencesConcurrentOwnershipChange(t *testing.T) {
 	}
 	mustExec(t, pool, "UPDATE care_incident SET acknowledged_by='42' WHERE id=9")
 	h := testHandler(t, pool)
-	if got := careRequest(t, h, h.careEvents, 41, map[string]any{"id":"9"}); got.Code != 403 {
+	if got := careRequest(t, h, h.careEvents, 41, map[string]any{"id": "9"}); got.Code != 403 {
 		t.Fatalf("previous owner read incident history: HTTP %d %s", got.Code, got.Body.String())
 	}
-	if got := careRequest(t, h, h.careEvents, 42, map[string]any{"id":"9"}); got.Code != 200 {
+	if got := careRequest(t, h, h.careEvents, 42, map[string]any{"id": "9"}); got.Code != 200 {
 		t.Fatalf("new owner denied incident history: HTTP %d %s", got.Code, got.Body.String())
 	}
 }
