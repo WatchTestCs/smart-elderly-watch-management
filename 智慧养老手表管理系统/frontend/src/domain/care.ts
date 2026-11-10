@@ -34,7 +34,7 @@ export interface CareListResponse {
   duty: string
   actorId: number
 }
-export const actionLabels: Record<string, string> = {acknowledge:'确认接单',start:'开始处置',resolve:'登记处置措施',verify:'复核关闭',reopen:'重新开启'}
+export const actionLabels: Record<string, string> = {acknowledge:'确认接单',start:'开始处置',resolve:'登记处置措施',escalate:'升级跟进',verify:'复核关闭',reopen:'重新开启'}
 const deliveryLabels: Record<string, string> = {pending:"待发送",sending:"发送中",failed:"发送失败待重试",sent:"渠道已接收",delivered:"已确认送达",no_recipient:"未找到通知对象"}
 export const deliveryLabel = (state: string | undefined) => deliveryLabels[state || ''] || "未确认"
 const stateLabels: Record<string, string> = {received:'等待通知与接单',notifying:'通知中',notified:'通知已送达',acknowledged:'已接单',in_progress:'处理中',resolved:'待复核',escalated:'超时升级',review_overdue:'复核超时',verified:'已复核关闭'}
