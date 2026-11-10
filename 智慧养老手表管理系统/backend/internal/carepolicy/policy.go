@@ -20,6 +20,7 @@ const (
 	ManageRules       Action = "manage_rules"
 	ReadOperations    Action = "read_operations"
 	ReadMessages      Action = "read_messages"
+	ReadContacts      Action = "read_contacts"
 	ReadGeofences     Action = "read_geofences"
 	ManageGeofences   Action = "manage_geofences"
 	ReadAudit         Action = "read_audit"
@@ -53,7 +54,7 @@ func Allowed(duty Duty, action Action) bool {
 		case ReadTasks, ReadAudit, ManageStaff, Diagnostics, Acknowledge, Start,
 			Resolve, Escalate, Verify, Reopen, ReadCommands, IssueCommands,
 			ConfigureCommands, ReadReviews, ReviewAlerts, ReadRules, ManageRules,
-			ReadOperations, ReadMessages, ReadGeofences, ManageGeofences:
+			ReadOperations, ReadMessages, ReadContacts, ReadGeofences, ManageGeofences:
 			return true
 		}
 	case Caregiver:
