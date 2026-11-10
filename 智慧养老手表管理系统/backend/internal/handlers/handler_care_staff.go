@@ -97,8 +97,8 @@ func (h *Handler) careAssignDuty(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) careAccessAudit(w http.ResponseWriter, r *http.Request) {
-	actor, ok := h.careSupervisor(w, r)
-	if !ok {
+	actor, ok := careAdmin(w, r)
+	if !ok || !h.authorizeCareAction(w, r, actor, "read_audit") {
 		return
 	}
 	if _, err := h.DB.ExecContext(r.Context(), "INSERT INTO care_access_audit(admin_id,action) VALUES(?,'audit_view')", actor); internalError(w, err) {
