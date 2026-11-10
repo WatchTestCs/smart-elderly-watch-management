@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"suining-care/internal/carepolicy"
 	"suining-care/internal/db"
 	"suining-care/internal/response"
 )
@@ -67,7 +68,7 @@ func (h *Handler) listMonitoringProfiles(w http.ResponseWriter, r *http.Request)
 	if !ok {
 		return
 	}
-	tx, ok := h.beginSupervisorTx(w, r)
+	tx, ok := h.beginAdminActionTx(w, r, carepolicy.ReadThresholds)
 	if !ok {
 		return
 	}
@@ -113,7 +114,7 @@ func (h *Handler) createMonitoringProfile(w http.ResponseWriter, r *http.Request
 	if !ok {
 		return
 	}
-	tx, ok := h.beginSupervisorTx(w, r)
+	tx, ok := h.beginAdminActionTx(w, r, carepolicy.ManageThresholds)
 	if !ok {
 		return
 	}
@@ -159,7 +160,7 @@ func (h *Handler) updateMonitoringProfile(w http.ResponseWriter, r *http.Request
 	if !ok {
 		return
 	}
-	tx, ok := h.beginSupervisorTx(w, r)
+	tx, ok := h.beginAdminActionTx(w, r, carepolicy.ManageThresholds)
 	if !ok {
 		return
 	}
@@ -196,7 +197,7 @@ func (h *Handler) deleteMonitoringProfile(w http.ResponseWriter, r *http.Request
 		write400(w, "请求参数不完整")
 		return
 	}
-	tx, ok := h.beginSupervisorTx(w, r)
+	tx, ok := h.beginAdminActionTx(w, r, carepolicy.ManageThresholds)
 	if !ok {
 		return
 	}
