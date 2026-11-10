@@ -11,6 +11,7 @@ import (
 func historyLabelsHandler(t *testing.T) *Handler {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
+	seedCareAdminDuty(t, pool, 11, "supervisor")
 	mustExec(t, pool, "INSERT INTO family(family_id,family_phone) VALUES(1,'13800000001')")
 	mustExec(t, pool, "UPDATE oldperson SET device_id=1,family_id=1 WHERE old_id=1")
 	return testHandler(t, pool)
@@ -18,7 +19,7 @@ func historyLabelsHandler(t *testing.T) *Handler {
 
 func TestContinuousVitalHistoryLabelsKeepFullObservationTime(t *testing.T) {
 	h := historyLabelsHandler(t)
-	roles := []session.Principal{{Role: auth.RoleAdmin, ID: 1}, {Role: auth.RoleFamily, ID: 1, OldID: 1}}
+	roles := []session.Principal{{Role: auth.RoleAdmin, ID: 11}, {Role: auth.RoleFamily, ID: 1, OldID: 1}}
 	read := withHealthPrincipal(h, roles[0], h.getVitalChart)
 	empty := api(t, read, map[string]any{"oldId": 1})
 	if empty["time"] != "" || len(empty["createTimes"].([]any)) != 0 {
@@ -58,7 +59,7 @@ func TestContinuousSleepHistoryLabelsKeepFullCalendarDate(t *testing.T) {
 		api(t, h.deviceReport, point.fields)
 	}
 	want := []any{"2025-12-31", "2026-01-01", "2026-09-30", "2026-10-01"}
-	for _, principal := range []session.Principal{{Role: auth.RoleAdmin, ID: 1}, {Role: auth.RoleFamily, ID: 1, OldID: 1}} {
+	for _, principal := range []session.Principal{{Role: auth.RoleAdmin, ID: 11}, {Role: auth.RoleFamily, ID: 1, OldID: 1}} {
 		out := api(t, withHealthPrincipal(h, principal, h.getActivityChart), map[string]any{"oldId": 1})
 		if !reflect.DeepEqual(out["createTime"], want) || !reflect.DeepEqual(out["sleep"], []any{0.0, nil, 8.0, 7.0}) {
 			t.Errorf("role=%s sleep dates or values misaligned: %v", principal.Role, out)

@@ -45,13 +45,18 @@ func TestArchitectureWatchProfileContract(t *testing.T) {
 func TestArchitectureFormattedRecordsAcrossDatabases(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
+	seedCareAdminDuty(t, pool, 11, "supervisor")
 	mustExec(t, pool, "UPDATE oldperson SET device_id=1 WHERE old_id=1")
 	mustExec(t, pool, "INSERT INTO ratepre(old_id,device_id,hr,rate_state,create_time) VALUES(1,1,72,'1',CURRENT_TIMESTAMP(6))")
 	mustExec(t, pool, "INSERT INTO watch_day_info(device_id,step,create_time,old_id,binding_epoch) VALUES(1,100,'2026-10-19',1,1)")
 	mustExec(t, pool, "INSERT INTO text(title,text_main,time) VALUES('公告','内容','2026-10-19 08:01:02.123')")
 	mustExec(t, pool, "INSERT INTO said(said,said_time) VALUES('评论','2026-10-19 08:01:02.123')")
 	h := testHandler(t, pool)
-	for _, handler := range []http.HandlerFunc{h.listLatestVitals, h.countVitalAlertDevices, h.listLatestActivity, h.listNotices} {
+	admin := session.Principal{Role: auth.RoleAdmin, ID: 11}
+	for _, handler := range []http.HandlerFunc{
+		withHealthPrincipal(h, admin, h.listLatestVitals), h.countVitalAlertDevices,
+		withHealthPrincipal(h, admin, h.listLatestActivity), h.listNotices,
+	} {
 		out := callAPI(handler, map[string]any{})
 		if out.Code != 200 {
 			t.Fatalf("formatted record query returned %d: %s", out.Code, out.Body.String())

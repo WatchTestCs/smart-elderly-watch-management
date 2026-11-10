@@ -21,8 +21,13 @@ func (h *Handler) listVitalHistory(w http.ResponseWriter, r *http.Request) {
 	sql := vitalRecordSelect +
 		` INNER JOIN (SELECT * FROM ratepre WHERE old_id=? ORDER BY create_time DESC, id DESC LIMIT 1) r ON r.old_id=o.old_id` +
 		` ORDER BY createTime DESC`
-	items, ok := queryRows(h, w, r.Context(), scanVitalRecord, sql, oldID)
+	tx, ok := h.beginScopedHealthRead(w, r, oldID)
 	if !ok {
+		return
+	}
+	defer tx.Rollback()
+	items, err := dbstore.QueryList(r.Context(), tx, scanVitalRecord, sql, oldID)
+	if internalError(w, err) || internalError(w, tx.Commit()) {
 		return
 	}
 	response.JSON(w, http.StatusOK, map[string]any{"vitalRecords": items})
@@ -34,12 +39,17 @@ func (h *Handler) getVitalChart(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	tx, ok := h.beginScopedHealthRead(w, r, oldID)
+	if !ok {
+		return
+	}
+	defer tx.Rollback()
 	// The query returns at most 30 points, already in display order.
 	hrs := make([]*int64, 0, 30)
 	bps := make([]*int64, 0, 30)
 	createTimes := make([]string, 0, 30)
 	var timeStr, lastDay string
-	err := dbstore.QueryEach(r.Context(), h.DB, func(rows *sql.Rows) error {
+	err := dbstore.QueryEach(r.Context(), tx, func(rows *sql.Rows) error {
 		var hr, bp *int64
 		var createTime *string
 		if err := rows.Scan(&hr, &bp, &createTime); err != nil {
@@ -62,7 +72,7 @@ func (h *Handler) getVitalChart(w http.ResponseWriter, r *http.Request) {
 	}, `SELECT r.hr AS hr, r.bp AS bp, DATE_FORMAT(r.create_time,'%Y-%m-%d %H:%i:%s') AS createTime
 		FROM (SELECT id, hr, bp, create_time FROM ratepre WHERE old_id=? ORDER BY create_time DESC, id DESC LIMIT 30) r
 		ORDER BY r.create_time ASC, r.id ASC`, oldID)
-	if internalError(w, err) {
+	if internalError(w, err) || internalError(w, tx.Commit()) {
 		return
 	}
 	if lastDay != "" && lastDay != timeStr {

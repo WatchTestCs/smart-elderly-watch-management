@@ -41,7 +41,9 @@ func TestContinuousRebindCannotReadPreviousDailyData(t *testing.T) {
 		{"family history", "activityRecords", func() map[string]any {
 			return api(t, withHealthPrincipal(h, session.Principal{Role: auth.RoleFamily, ID: 2, OldID: 2}, h.getActivityChart), map[string]any{"oldId": 2, "expireDays": 3})
 		}},
-		{"admin latest", "activityRecords", func() map[string]any { return api(t, h.listLatestActivity, map[string]any{"name": "乙老人"}) }},
+		{"admin latest", "activityRecords", func() map[string]any {
+			return api(t, withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.listLatestActivity), map[string]any{"name": "乙老人"})
+		}},
 	} {
 		out := handler.read()
 		if rows := out[handler.key].([]any); len(rows) != 0 {

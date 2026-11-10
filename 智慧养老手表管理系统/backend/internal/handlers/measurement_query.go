@@ -33,13 +33,18 @@ func listLatestMeasurements[T any](h *Handler, w http.ResponseWriter, r *http.Re
 		args = append(args, timeFirst, timeLast)
 	}
 	sql += " ORDER BY t.createTime DESC, t.oldId"
-	total, ok := h.pagedTotal(w, r, sql, args)
+	tx, ok := h.beginSupervisorTx(w, r)
 	if !ok {
 		return
 	}
+	defer tx.Rollback()
+	var total int64
+	if internalError(w, tx.QueryRowContext(r.Context(), "SELECT COUNT(*) FROM ("+sql+") AS paged_total", args...).Scan(&total)) {
+		return
+	}
 	limitSQL, fullArgs := pageArgs(args, page, pageSize)
-	items, ok := queryRows(h, w, r.Context(), scan, sql+limitSQL, fullArgs...)
-	if !ok {
+	items, err := dbstore.QueryList(r.Context(), tx, scan, sql+limitSQL, fullArgs...)
+	if internalError(w, err) || internalError(w, tx.Commit()) {
 		return
 	}
 	response.JSON(w, http.StatusOK, map[string]any{

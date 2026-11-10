@@ -13,6 +13,7 @@ import (
 func TestHarmonyWatchNegotiationAndNativeRoundTrip(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
+	seedCareAdminDuty(t, pool, 11, "supervisor")
 	h := testHandler(t, pool)
 	legacy := api(t, h.deviceLogin, map[string]any{"deviceNo": "WATCH001", "secret": testSecret})
 	if _, added := legacy["protocolVersion"]; added {
@@ -42,7 +43,7 @@ func TestHarmonyWatchNegotiationAndNativeRoundTrip(t *testing.T) {
 	if out := api(t, h.healthBatch, batch); out["duplicates"] != float64(2) {
 		t.Fatal(out)
 	}
-	latest := api(t, latestHealthRoute(h, session.Principal{Role: auth.RoleAdmin, ID: 1}), map[string]any{"oldId": 1})
+	latest := api(t, latestHealthRoute(h, session.Principal{Role: auth.RoleAdmin, ID: 11}), map[string]any{"oldId": 1})
 	raw, _ := json.Marshal(latest["items"])
 	var records []health.Record
 	if err := json.Unmarshal(raw, &records); err != nil || len(records) != 2 {
