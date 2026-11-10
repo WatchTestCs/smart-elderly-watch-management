@@ -12,18 +12,6 @@ import (
 	"suining-care/internal/response"
 )
 
-// Supervisors can delegate explicit duties; an unassigned admin has none.
-func (h *Handler) careSupervisor(w http.ResponseWriter, r *http.Request) (int64, bool) {
-	actor, ok := careAdmin(w, r)
-	if !ok {
-		return 0, false
-	}
-	if !h.authorizeCareAction(w, r, actor, "manage_staff") {
-		return 0, false
-	}
-	return actor, true
-}
-
 func (h *Handler) careStaff(w http.ResponseWriter, r *http.Request) {
 	actor, ok := careAdmin(w, r)
 	if !ok {
@@ -58,7 +46,7 @@ func (h *Handler) careStaff(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) careAssignDuty(w http.ResponseWriter, r *http.Request) {
-	actor, ok := h.careSupervisor(w, r)
+	actor, ok := careAdmin(w, r)
 	if !ok {
 		return
 	}
@@ -81,14 +69,13 @@ func (h *Handler) careAssignDuty(w http.ResponseWriter, r *http.Request) {
 		write400(w, "无效岗位")
 		return
 	}
-	if target == actor && duty != "supervisor" {
-		write400(w, "主管不能降低自己的岗位权限")
-		return
-	}
 	err = careworkflow.AssignDuty(r.Context(), h.DB, actor, target, duty)
 	switch {
 	case errors.Is(err, careworkflow.ErrStaffMissing):
 		response.Fail(w, "管理员账号不存在")
+		return
+	case errors.Is(err, careworkflow.ErrSelfDemotion):
+		write400(w, "主管不能降低自己的岗位权限")
 		return
 	case errors.Is(err, careworkflow.ErrDutyDenied):
 		response.JSON(w, http.StatusForbidden, map[string]any{"message": "岗位无此操作权限"})
