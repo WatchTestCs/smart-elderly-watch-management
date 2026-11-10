@@ -8,6 +8,8 @@ import (
 	"unicode/utf8"
 
 	"suining-care/internal/auth"
+	"suining-care/internal/carerepo"
+	"suining-care/internal/carepolicy"
 	"suining-care/internal/careworkflow"
 	"suining-care/internal/response"
 )
@@ -99,6 +101,17 @@ func (h *Handler) careTransition(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer tx.Rollback()
+	// The read-time role check is only for an early 403 response. Hold a
+	// shared duty lock through commit so a concurrent demotion cannot race
+	// this state transition.
+	lockedDuty, err := carerepo.LockDuty(ctx, tx, actor)
+	if internalError(w, err) {
+		return
+	}
+	if !carepolicy.Allowed(carepolicy.Duty(lockedDuty), carepolicy.Action(action)) {
+		response.JSON(w, http.StatusForbidden, map[string]any{"code": "ACCESS_DENIED", "message": "岗位无此操作权限"})
+		return
+	}
 	before, resolver, err := careworkflow.LockedIncidentState(ctx, tx, id)
 	if err != nil {
 		if isNotFound(err) {
