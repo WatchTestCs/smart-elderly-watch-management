@@ -16,6 +16,7 @@ func TestContinuousStatisticsSubmicrosecondWindow(t *testing.T) {
 	h := testHandler(t, pool)
 	h.healthCache = newStatisticsCache(1 << 20)
 	seedDevice(t, pool)
+	seedCareAdminDuty(t, pool, 11, "supervisor")
 	at := time.Date(2026, 10, 20, 9, 0, 0, 0, time.UTC)
 	samples := []health.Sample{}
 	for i, ns := range []int{100, 500, 900} {
@@ -23,7 +24,7 @@ func TestContinuousStatisticsSubmicrosecondWindow(t *testing.T) {
 		samples = append(samples, health.Sample{RecordID: string(rune('a' + i)), Source: "watch", SourceDevice: "WATCH001", Metric: "heart_rate", Unit: "count/min", Value: health.Number(float64((i + 1) * 30)), Start: point, End: point, Version: 1})
 	}
 	api(t, h.healthBatch, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "bindingVersion": 1, "samples": samples})
-	admin := withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 1}, h.healthStatistics)
+	admin := withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.healthStatistics)
 	for _, tc := range []struct {
 		end         time.Time
 		count, mean float64

@@ -12,12 +12,16 @@ func dayOwnershipSetup(t *testing.T) *Handler {
 	pool := testDatabase(t)
 	h := testHandler(t, pool)
 	seedDevice(t, pool)
+	seedCareAdminDuty(t, pool, 11, "supervisor")
+	admin := session.Principal{Role: auth.RoleAdmin, ID: 11}
+	unbind := withHealthPrincipal(h, admin, h.deviceUnbind)
+	createCode := withHealthPrincipal(h, admin, h.deviceCreateBindCode)
 	mustExec(t, pool, "INSERT INTO family(family_id,family_name,family_phone) VALUES(2,'乙家属','13800000002')")
 	mustExec(t, pool, "UPDATE oldperson SET device_id=1 WHERE old_id=1")
 	mustExec(t, pool, "INSERT INTO oldperson(old_id,name,family_id) VALUES(2,'乙老人',2)")
 	api(t, h.deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "step": 5000, "sleep": 8, "sleepState": "1", "beTime": "2026-10-20 08:00:00"})
-	api(t, h.deviceUnbind, map[string]any{"deviceId": 1})
-	code := api(t, h.deviceCreateBindCode, map[string]any{"oldId": 2, "expireDays": 3})
+	api(t, unbind, map[string]any{"deviceId": 1})
+	code := api(t, createCode, map[string]any{"oldId": 2, "expireDays": 3})
 	out := api(t, h.deviceBind, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "code": code["code"]})
 	if out["returnCode"] != "1111" {
 		t.Fatal(out)
@@ -51,6 +55,9 @@ func TestContinuousRebindCannotReadPreviousDailyData(t *testing.T) {
 
 func TestContinuousRebindDailySnapshotIsSeparate(t *testing.T) {
 	h := dayOwnershipSetup(t)
+	admin := session.Principal{Role: auth.RoleAdmin, ID: 11}
+	unbind := withHealthPrincipal(h, admin, h.deviceUnbind)
+	createCode := withHealthPrincipal(h, admin, h.deviceCreateBindCode)
 	api(t, h.deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "step": 10, "beTime": "2026-10-20 09:00:00"})
 	out := api(t, withHealthPrincipal(h, session.Principal{Role: auth.RoleFamily, ID: 2, OldID: 2}, h.listActivityHistory), map[string]any{"oldId": 2, "expireDays": 3})
 	row := out["activityRecords"].([]any)[0].(map[string]any)
@@ -71,8 +78,8 @@ func TestContinuousRebindDailySnapshotIsSeparate(t *testing.T) {
 	}
 	// Returning to the first elder exposes only that elder's archived day,
 	// then replaces it with the new binding's independent snapshot.
-	api(t, h.deviceUnbind, map[string]any{"deviceId": 1})
-	code := api(t, h.deviceCreateBindCode, map[string]any{"oldId": 1, "expireDays": 3})
+	api(t, unbind, map[string]any{"deviceId": 1})
+	code := api(t, createCode, map[string]any{"oldId": 1, "expireDays": 3})
 	if bound := api(t, h.deviceBind, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "code": code["code"]}); bound["returnCode"] != "1111" {
 		t.Fatal(bound)
 	}
