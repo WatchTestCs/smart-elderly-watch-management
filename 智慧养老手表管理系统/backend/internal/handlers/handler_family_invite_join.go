@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"suining-care/internal/auth"
+	"suining-care/internal/carepolicy"
 	"suining-care/internal/inviterepo"
 	"suining-care/internal/inviteworkflow"
 	"suining-care/internal/response"
@@ -11,8 +12,13 @@ import (
 )
 
 func (h *Handler) inviteOldPersonList(w http.ResponseWriter, r *http.Request) {
-	list, err := inviterepo.ListResidents(r.Context(), h.DB)
-	if internalError(w, err) {
+	tx, ok := h.beginAdminActionTx(w, r, carepolicy.ReadInvites)
+	if !ok {
+		return
+	}
+	defer tx.Rollback()
+	list, err := inviterepo.ListResidents(r.Context(), tx)
+	if internalError(w, err) || internalError(w, tx.Commit()) {
 		return
 	}
 	response.OK(w, map[string]any{"oldPeople": list})
