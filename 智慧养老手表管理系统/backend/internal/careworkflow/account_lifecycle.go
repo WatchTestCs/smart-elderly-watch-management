@@ -9,6 +9,7 @@ import (
 	"suining-care/internal/auth"
 	"suining-care/internal/authrepo"
 	"suining-care/internal/carerepo"
+	"suining-care/internal/carepolicy"
 	"suining-care/internal/db"
 )
 
@@ -41,7 +42,7 @@ func ChangeAccountStatus(ctx context.Context, store *db.Database, actorID, targe
 	if err != nil {
 		return err
 	}
-	if duty != "supervisor" {
+	if !carepolicy.Allowed(carepolicy.Duty(duty), carepolicy.ManageAccounts) {
 		return ErrDutyDenied
 	}
 	target, err := accountrepo.Lock(ctx, tx, targetID)
