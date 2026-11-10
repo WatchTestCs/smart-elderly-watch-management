@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"suining-care/internal/carepolicy"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -27,7 +28,11 @@ func (h *Handler) rulePolicy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := r.Context()
-	tx, ok := h.beginSupervisorTx(w, r)
+	action := carepolicy.ReadRules
+	if req.Policy != nil {
+		action = carepolicy.ManageRules
+	}
+	tx, ok := h.beginAdminActionTx(w, r, action)
 	if !ok {
 		return
 	}
