@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"errors"
 	"database/sql"
 	"net/http"
 	"os"
@@ -17,22 +18,15 @@ import (
 // beginCareRead serializes sensitive reads with changes to the actor's
 // explicit duty and administrator role. The caller must commit before replying.
 func (h *Handler) beginCareRead(w http.ResponseWriter, r *http.Request, actor int64, action carepolicy.Action) (*sql.Tx, carepolicy.Duty, bool) {
-	tx, err := h.DB.BeginTx(r.Context(), &sql.TxOptions{Isolation: sql.LevelReadCommitted})
-	if internalError(w, err) {
-		return nil, "", false
-	}
-	duty, err := carerepo.LockDuty(r.Context(), tx, actor)
-	if err != nil {
-		tx.Rollback()
-		internalError(w, err)
-		return nil, "", false
-	}
-	if !carepolicy.Allowed(carepolicy.Duty(duty), action) {
-		tx.Rollback()
+	tx, duty, err := careworkflow.BeginAuthorized(r.Context(), h.DB, actor, action)
+	if errors.Is(err, careworkflow.ErrCapabilityDenied) {
 		response.JSON(w, http.StatusForbidden, map[string]any{"code": "ACCESS_DENIED", "message": "岗位无此操作权限"})
 		return nil, "", false
 	}
-	return tx, carepolicy.Duty(duty), true
+	if internalError(w, err) {
+		return nil, "", false
+	}
+	return tx, duty, true
 }
 
 // A missing assignment has no privileges.
