@@ -10,7 +10,8 @@ import (
 	"time"
 	"unicode/utf8"
 
-	dbstore "suining-care/internal/db"
+	dbstore "suining-care/internal/carepolicy"
+	"suining-care/internal/db"
 	"suining-care/internal/devicerepo"
 	"suining-care/internal/response"
 	"suining-care/internal/securecode"
@@ -83,7 +84,7 @@ func (h *Handler) deviceList(w http.ResponseWriter, r *http.Request) {
 	if query != "" {
 		pattern = "%" + query + "%"
 	}
-	tx, ok := h.beginSupervisorTx(w, r)
+	tx, ok := h.beginAdminActionTx(w, r, carepolicy.ReadDevices)
 	if !ok {
 		return
 	}
@@ -163,7 +164,7 @@ func (h *Handler) deviceCreateBindCode(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	oldID, _ := strconv.ParseInt(oldIDStr, 10, 64)
-	tx, ok := h.beginSupervisorTx(w, r)
+	tx, ok := h.beginAdminActionTx(w, r, carepolicy.ManageDevices)
 	if !ok {
 		return
 	}
@@ -218,7 +219,7 @@ func (h *Handler) deviceBindCodeList(w http.ResponseWriter, r *http.Request) {
 		writeValidation400(w)
 		return
 	}
-	tx, ok := h.beginSupervisorTx(w, r)
+	tx, ok := h.beginAdminActionTx(w, r, carepolicy.ReadDevices)
 	if !ok {
 		return
 	}
@@ -255,7 +256,7 @@ func (h *Handler) deviceDeleteBindCode(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	tx, ok := h.beginSupervisorTx(w, r)
+	tx, ok := h.beginAdminActionTx(w, r, carepolicy.ManageDevices)
 	if !ok {
 		return
 	}
