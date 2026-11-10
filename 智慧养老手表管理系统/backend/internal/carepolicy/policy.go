@@ -23,6 +23,8 @@ const (
 	ReadContacts      Action = "read_contacts"
 	ReadInvites       Action = "read_invites"
 	ManageInvites     Action = "manage_invites"
+	ReadRisk          Action = "read_risk"
+	ManageRisk        Action = "manage_risk"
 	ReadDevices       Action = "read_devices"
 	ManageDevices     Action = "manage_devices"
 	ReadAlerts        Action = "read_device_alerts"
@@ -63,6 +65,7 @@ func Allowed(duty Duty, action Action) bool {
 			Resolve, Escalate, Verify, Reopen, ReadCommands, IssueCommands,
 			ConfigureCommands, ReadReviews, ReviewAlerts, ReadRules, ManageRules,
 			ReadOperations, ReadMessages, ReadContacts, ReadInvites, ManageInvites,
+			ReadRisk, ManageRisk,
 			ReadDevices, ManageDevices,
 			ReadAlerts, HandleAlerts, ReadThresholds, ManageThresholds,
 			ReadGeofences, ManageGeofences:
