@@ -13,8 +13,8 @@ import (
 )
 
 var (
-	ErrAccountMissing = errors.New("administrator account missing")
-	ErrAccountRetired = errors.New("retired administrator cannot be reactivated")
+	ErrAccountMissing    = errors.New("administrator account missing")
+	ErrAccountRetired    = errors.New("retired administrator cannot be reactivated")
 	ErrAccountSelfChange = errors.New("administrator cannot change own lifecycle state")
 )
 
@@ -26,7 +26,7 @@ func ChangeAccountStatus(ctx context.Context, store *db.Database, actorID, targe
 		(status != "active" && status != "suspended" && status != "retired") {
 		return ErrDutyDenied
 	}
-	if actorID == targetID && status != "active" {
+	if actorID == targetID {
 		return ErrAccountSelfChange
 	}
 	tx, err := store.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
