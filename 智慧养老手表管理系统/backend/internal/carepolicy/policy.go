@@ -9,16 +9,16 @@ const (
 	Caregiver  Duty = "caregiver"
 	Auditor    Duty = "auditor"
 
-	ReadTasks    Action = "read_tasks"
-	ReadAudit    Action = "read_audit"
-	ManageStaff  Action = "manage_staff"
-	Diagnostics  Action = "diagnostics"
-	Acknowledge  Action = "acknowledge"
-	Start        Action = "start"
-	Resolve      Action = "resolve"
-	Escalate     Action = "escalate"
-	Verify       Action = "verify"
-	Reopen       Action = "reopen"
+	ReadTasks   Action = "read_tasks"
+	ReadAudit   Action = "read_audit"
+	ManageStaff Action = "manage_staff"
+	Diagnostics Action = "diagnostics"
+	Acknowledge Action = "acknowledge"
+	Start       Action = "start"
+	Resolve     Action = "resolve"
+	Escalate    Action = "escalate"
+	Verify      Action = "verify"
+	Reopen      Action = "reopen"
 )
 
 func Allowed(duty Duty, action Action) bool {
