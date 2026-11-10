@@ -77,7 +77,7 @@ func (h *Handler) careAssignDuty(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	duty := str(m, "duty")
-	if duty != "supervisor" && duty != "caregiver" && duty != "auditor" {
+	if duty != "supervisor" && duty != "caregiver" && duty != "auditor" && duty != "unassigned" {
 		write400(w, "无效岗位")
 		return
 	}
