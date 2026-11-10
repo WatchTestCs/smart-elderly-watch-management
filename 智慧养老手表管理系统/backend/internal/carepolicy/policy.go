@@ -35,6 +35,7 @@ const (
 	ManageGeofences   Action = "manage_geofences"
 	ReadAudit         Action = "read_audit"
 	ManageStaff       Action = "manage_staff"
+	ManageAccounts    Action = "manage_accounts"
 	Diagnostics       Action = "diagnostics"
 	Acknowledge       Action = "acknowledge"
 	Start             Action = "start"
@@ -61,7 +62,7 @@ func Allowed(duty Duty, action Action) bool {
 	switch duty {
 	case Supervisor:
 		switch action {
-		case ReadTasks, ReadAudit, ManageStaff, Diagnostics, Acknowledge, Start,
+		case ReadTasks, ReadAudit, ManageStaff, ManageAccounts, Diagnostics, Acknowledge, Start,
 			Resolve, Escalate, Verify, Reopen, ReadCommands, IssueCommands,
 			ConfigureCommands, ReadReviews, ReviewAlerts, ReadRules, ManageRules,
 			ReadOperations, ReadMessages, ReadContacts, ReadInvites, ManageInvites,
