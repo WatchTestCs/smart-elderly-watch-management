@@ -29,7 +29,7 @@ func updateSQL(kind string) string {
 	return "UPDATE ratepre AS r SET rate_handled=1, rate_handled_at=CURRENT_TIMESTAMP(6), rate_state='0'"
 }
 
-// ResolveAlert marks one or both metrics handled in a single transaction.
+// ResolveAlert updates one or both metrics within the caller's authorization transaction.
 func ResolveAlert(ctx context.Context, tx *sql.Tx, recordID int64, kind string) (bool, error) {
 	var deviceID *int64
 	err := tx.QueryRowContext(ctx, "SELECT device_id FROM ratepre WHERE id=?", recordID).Scan(&deviceID)
