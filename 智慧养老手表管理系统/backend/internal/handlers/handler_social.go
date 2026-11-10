@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"suining-care/internal/blob"
-
+	"suining-care/internal/careworkflow"
 	"suining-care/internal/response"
 	"suining-care/internal/socialrepo"
 	"suining-care/internal/socialworkflow"
@@ -69,9 +69,15 @@ func (h *Handler) searchNoticeComments(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	items, total, err := socialrepo.SearchModeratedComments(
-		r.Context(), h.DB, socialTextTable, page, pageSize,
-	)
+	actor, ok := careAdmin(w, r)
+	if !ok {
+		return
+	}
+	items, total, err := socialworkflow.ModeratedComments(r.Context(), h.DB, actor, socialTextTable, page, pageSize)
+	if errors.Is(err, careworkflow.ErrCapabilityDenied) {
+		response.JSON(w, http.StatusForbidden, map[string]any{"code": "ACCESS_DENIED"})
+		return
+	}
 	if internalError(w, err) {
 		return
 	}
@@ -91,7 +97,15 @@ func (h *Handler) deleteNoticeComment(w http.ResponseWriter, r *http.Request) {
 		response.Fail(w, "参数不正确")
 		return
 	}
-	deleted, err := socialrepo.DeleteComment(r.Context(), h.DB, saidID)
+	actor, ok := careAdmin(w, r)
+	if !ok {
+		return
+	}
+	deleted, err := socialworkflow.DeleteModeratedComment(r.Context(), h.DB, actor, saidID)
+	if errors.Is(err, careworkflow.ErrCapabilityDenied) {
+		response.JSON(w, http.StatusForbidden, map[string]any{"code": "ACCESS_DENIED"})
+		return
+	}
 	if internalError(w, err) {
 		return
 	}
@@ -167,7 +181,15 @@ func (h *Handler) replyToNoticeComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	back, _ := v.(string)
-	updated, err := socialrepo.ReplyComment(r.Context(), h.DB, saidID, back, time.Now())
+	actor, ok := careAdmin(w, r)
+	if !ok {
+		return
+	}
+	updated, err := socialworkflow.ReplyModeratedComment(r.Context(), h.DB, actor, saidID, back)
+	if errors.Is(err, careworkflow.ErrCapabilityDenied) {
+		response.JSON(w, http.StatusForbidden, map[string]any{"code": "ACCESS_DENIED"})
+		return
+	}
 	if internalError(w, err) {
 		return
 	}
