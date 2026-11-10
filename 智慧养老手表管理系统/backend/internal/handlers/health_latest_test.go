@@ -25,6 +25,7 @@ func latestHealthRoute(h *Handler, principal session.Principal) http.HandlerFunc
 func TestHealthLatestPreservesSourcesPrecisionAndVersions(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
+	seedCareAdminDuty(t, pool, 11, "supervisor")
 	h := testHandler(t, pool)
 	at := time.Date(2026, 10, 20, 9, 0, 0, 0, time.UTC)
 	a := health.Sample{RecordID: "newer", Source: "watch", SourceDevice: "A", Metric: "heart_rate", Unit: "count/min", Start: at.Add(900 * time.Nanosecond), End: at.Add(900 * time.Nanosecond), Version: 1, Value: health.Number(72)}
@@ -53,7 +54,7 @@ func TestHealthLatestPreservesSourcesPrecisionAndVersions(t *testing.T) {
 		}
 	}
 	save(a, b, c, upper, other, missing, interval, daily, sleep)
-	read := latestHealthRoute(h, session.Principal{Role: auth.RoleAdmin, ID: 1})
+	read := latestHealthRoute(h, session.Principal{Role: auth.RoleAdmin, ID: 11})
 	check := func(want float64) {
 		t.Helper()
 		out := api(t, read, map[string]any{"oldId": 1})

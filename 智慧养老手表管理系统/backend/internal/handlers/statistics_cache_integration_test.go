@@ -16,6 +16,7 @@ import (
 
 func TestHealthStatisticsHotCacheConsistency(t *testing.T) {
 	pool := testDatabase(t)
+	seedCareAdminDuty(t, pool, 11, "supervisor")
 	h := New(pool, session.NewStore(time.Hour), config.Config{HealthCacheBytes: 1 << 20})
 	t.Cleanup(h.Sessions.Close)
 	writer := testHandler(t, pool) // A second server has no access to h's cache.
@@ -24,7 +25,7 @@ func TestHealthStatisticsHotCacheConsistency(t *testing.T) {
 	s := health.Sample{RecordID: "hot", Source: "watch", SourceDevice: "WATCH001", Metric: "heart_rate", Unit: "count/min", Value: health.Number(72), Start: at, End: at, Version: 1}
 	batch := map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "bindingVersion": 1, "samples": []health.Sample{s}}
 	query := map[string]any{"oldId": 1, "source": "watch", "sourceDevice": "WATCH001", "metric": "heart_rate", "semantics": "instant", "from": at.Add(-time.Hour), "to": at.Add(time.Hour)}
-	admin := withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 1}, h.healthStatistics)
+	admin := withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.healthStatistics)
 	check := func(count int, mean float64) {
 		t.Helper()
 		for range 2 { // Exercise the first read and the warm response.
@@ -64,7 +65,7 @@ func TestHealthStatisticsHotCacheConsistency(t *testing.T) {
 	// Restarting a reader repopulates from durable state.
 	restarted := New(pool, session.NewStore(time.Hour), config.Config{HealthCacheBytes: 1 << 20})
 	t.Cleanup(restarted.Sessions.Close)
-	admin2 := withHealthPrincipal(restarted, session.Principal{Role: auth.RoleAdmin}, restarted.healthStatistics)
+	admin2 := withHealthPrincipal(restarted, session.Principal{Role: auth.RoleAdmin, ID: 11}, restarted.healthStatistics)
 	if got := api(t, admin2, query)["statistics"].(map[string]any)["count"]; got != float64(0) {
 		t.Fatal("restart returned deleted sample", got)
 	}
@@ -72,6 +73,7 @@ func TestHealthStatisticsHotCacheConsistency(t *testing.T) {
 
 func TestHealthStatisticsHotCacheAuthorizationAndIdentity(t *testing.T) {
 	pool := testDatabase(t)
+	seedCareAdminDuty(t, pool, 11, "supervisor")
 	h := New(pool, session.NewStore(time.Hour), config.Config{HealthCacheBytes: 1 << 20})
 	t.Cleanup(h.Sessions.Close)
 	seedDevice(t, pool)
@@ -92,7 +94,7 @@ func TestHealthStatisticsHotCacheAuthorizationAndIdentity(t *testing.T) {
 	if got := callAPI(h.healthStatistics, query); got.Code != http.StatusUnauthorized {
 		t.Fatal("warm cache bypassed authentication", got.Code)
 	}
-	admin := withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin}, h.healthStatistics)
+	admin := withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.healthStatistics)
 	for _, change := range []struct {
 		field string
 		value any
@@ -110,7 +112,7 @@ func TestHealthStatisticsHotCacheAuthorizationAndIdentity(t *testing.T) {
 	}
 	// Disabled and enabled paths preserve the same response contract.
 	uncached := testHandler(t, pool)
-	plain := withHealthPrincipal(uncached, session.Principal{Role: auth.RoleAdmin}, uncached.healthStatistics)
+	plain := withHealthPrincipal(uncached, session.Principal{Role: auth.RoleAdmin, ID: 11}, uncached.healthStatistics)
 	if a, b := callAPI(admin, query), callAPI(plain, query); !bytes.Equal(a.Body.Bytes(), b.Body.Bytes()) {
 		t.Fatalf("cache changed the response: %s / %s", a.Body.String(), b.Body.String())
 	}
@@ -118,11 +120,12 @@ func TestHealthStatisticsHotCacheAuthorizationAndIdentity(t *testing.T) {
 
 func TestHealthStatisticsHotCacheRequiresDatabaseValidation(t *testing.T) {
 	pool := testDatabase(t)
+	seedCareAdminDuty(t, pool, 11, "supervisor")
 	h := New(pool, session.NewStore(time.Hour), config.Config{HealthCacheBytes: 1 << 20})
 	t.Cleanup(h.Sessions.Close)
 	mustExec(t, pool, "INSERT INTO oldperson(old_id,name) VALUES(1,'hot')")
 	query := map[string]any{"oldId": 1, "source": "watch", "sourceDevice": "WATCH001", "metric": "heart_rate", "semantics": "instant", "from": "2026-10-22T00:00:00Z", "to": "2026-10-23T00:00:00Z"}
-	admin := withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin}, h.healthStatistics)
+	admin := withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.healthStatistics)
 	api(t, admin, query)
 	pool.Close()
 	if got := callAPI(admin, query); got.Code != http.StatusInternalServerError {
@@ -132,6 +135,7 @@ func TestHealthStatisticsHotCacheRequiresDatabaseValidation(t *testing.T) {
 
 func TestHealthStatisticsHotCacheReportingOffset(t *testing.T) {
 	pool := testDatabase(t)
+	seedCareAdminDuty(t, pool, 11, "supervisor")
 	h := New(pool, session.NewStore(time.Hour), config.Config{HealthCacheBytes: 1 << 20})
 	t.Cleanup(h.Sessions.Close)
 	mustExec(t, pool, "INSERT INTO oldperson(old_id,name) VALUES(1,'hot')")
@@ -150,7 +154,7 @@ func TestHealthStatisticsHotCacheReportingOffset(t *testing.T) {
 	if err = tx.Commit(); err != nil {
 		t.Fatal(err)
 	}
-	admin := withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin}, h.healthStatistics)
+	admin := withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.healthStatistics)
 	for i, offset := range []int{0, 8 * 3600} {
 		at := time.Date(2026, 10, 22, 0, 0, 0, 0, time.FixedZone("", offset))
 		query := map[string]any{"oldId": 1, "source": "watch", "sourceDevice": "WATCH001", "metric": "steps", "semantics": "daily_total", "from": at, "to": at.AddDate(0, 0, 1)}
@@ -165,13 +169,14 @@ func TestHealthStatisticsHotCacheReportingOffset(t *testing.T) {
 
 func TestHealthStatisticsHotCacheUnencodableTime(t *testing.T) {
 	pool := testDatabase(t)
+	seedCareAdminDuty(t, pool, 11, "supervisor")
 	h := New(pool, session.NewStore(time.Hour), config.Config{HealthCacheBytes: 1 << 20})
 	t.Cleanup(h.Sessions.Close)
 	seedDevice(t, pool)
 	at := time.Date(2026, 10, 22, 9, 0, 0, 0, time.UTC)
 	s := health.Sample{RecordID: "offset", Source: "watch", SourceDevice: "WATCH001", Metric: "heart_rate", Unit: "count/min", Value: health.Number(72), Start: at, End: at, Version: 1}
 	api(t, h.healthBatch, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "bindingVersion": 1, "samples": []health.Sample{s}})
-	admin := withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin}, h.healthStatistics)
+	admin := withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.healthStatistics)
 	// The time parser accepts this offset on supported Go versions, whereas
 	// Time.MarshalJSON rejects it. A failed key encoding must not hash nil.
 	query := map[string]any{"oldId": 1, "source": "watch", "sourceDevice": "WATCH001", "metric": "heart_rate", "semantics": "instant", "from": "2026-10-23T00:00:00+24:00", "to": "2026-10-24T00:00:00+24:00"}
@@ -186,6 +191,7 @@ func TestHealthStatisticsHotCacheUnencodableTime(t *testing.T) {
 
 func TestHealthStatisticsHotCacheOverflowResultConsistency(t *testing.T) {
 	pool := testDatabase(t)
+	seedCareAdminDuty(t, pool, 11, "supervisor")
 	h := New(pool, session.NewStore(time.Hour), config.Config{HealthCacheBytes: 1 << 20})
 	t.Cleanup(h.Sessions.Close)
 	seedDevice(t, pool)
@@ -195,9 +201,9 @@ func TestHealthStatisticsHotCacheOverflowResultConsistency(t *testing.T) {
 	other.RecordID = "overflow-2"
 	api(t, h.healthBatch, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "bindingVersion": 1, "samples": []health.Sample{s, other}})
 	query := map[string]any{"oldId": 1, "source": "watch", "sourceDevice": "WATCH001", "metric": "heart_rate", "semantics": "instant", "from": at.Add(-time.Hour), "to": at.Add(time.Hour)}
-	admin := withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin}, h.healthStatistics)
+	admin := withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.healthStatistics)
 	uncached := testHandler(t, pool)
-	plain := withHealthPrincipal(uncached, session.Principal{Role: auth.RoleAdmin}, uncached.healthStatistics)
+	plain := withHealthPrincipal(uncached, session.Principal{Role: auth.RoleAdmin, ID: 11}, uncached.healthStatistics)
 	// Previously overflowing finite sums now have a representable mean.
 	// The cache must return the same result as the uncached aggregation.
 	want := callAPI(plain, query)

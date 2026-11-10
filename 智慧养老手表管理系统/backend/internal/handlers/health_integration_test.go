@@ -24,6 +24,7 @@ func TestHealthVersionsCursorAndIsolation(t *testing.T) {
 	pool := testDatabase(t)
 	h := testHandler(t, pool)
 	seedDevice(t, pool)
+	seedCareAdminDuty(t, pool, 11, "supervisor")
 	tm := time.Date(2026, 10, 18, 9, 0, 0, 0, time.FixedZone("", 8*3600))
 	s := health.Sample{RecordID: "point-1", Source: "watch", SourceDevice: "WATCH001", Metric: "heart_rate", Unit: "count/min", Value: health.Number(72), Start: tm, End: tm, Version: 1}
 	req := map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "bindingVersion": 1, "samples": []health.Sample{s}}
@@ -44,7 +45,7 @@ func TestHealthVersionsCursorAndIsolation(t *testing.T) {
 	s.Deleted = true
 	req["samples"] = []health.Sample{s}
 	api(t, h.healthBatch, req)
-	admin := withHealthPrincipal(h, session.Principal{Role: "ADMIN"}, h.healthChanges)
+	admin := withHealthPrincipal(h, session.Principal{Role: "ADMIN", ID: 11}, h.healthChanges)
 	var cursor float64
 	for i := 1; i <= 3; i++ {
 		out = api(t, admin, map[string]any{"oldId": 1, "after": cursor, "limit": 1})
@@ -173,11 +174,12 @@ func TestHealthBindingEpochAndStatistics(t *testing.T) {
 	pool := testDatabase(t)
 	h := testHandler(t, pool)
 	seedDevice(t, pool)
+	seedCareAdminDuty(t, pool, 11, "supervisor")
 	at := time.Date(2026, 10, 19, 9, 0, 0, 0, time.UTC)
 	s := health.Sample{RecordID: "point", Source: "watch", SourceDevice: "WATCH001", Metric: "heart_rate", Unit: "count/min", Value: health.Number(72), Start: at, End: at, Version: 1}
 	req := map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "bindingVersion": 1, "samples": []health.Sample{s}}
 	api(t, h.healthBatch, req)
-	admin := withHealthPrincipal(h, session.Principal{Role: "ADMIN"}, h.healthStatistics)
+	admin := withHealthPrincipal(h, session.Principal{Role: "ADMIN", ID: 11}, h.healthStatistics)
 	query := map[string]any{"oldId": 1, "source": "watch", "sourceDevice": "WATCH001", "metric": "heart_rate", "semantics": "instant", "from": at.Add(-time.Hour), "to": at.Add(time.Hour)}
 	out := api(t, admin, query)
 	if out["statistics"].(map[string]any)["mean"] != float64(72) {

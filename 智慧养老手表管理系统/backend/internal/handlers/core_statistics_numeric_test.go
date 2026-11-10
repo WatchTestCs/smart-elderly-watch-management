@@ -16,6 +16,7 @@ import (
 func TestContinuousDailyConflictSurvivesLaterSnapshot(t *testing.T) {
 	pool := dbtest.MySQL(t)
 	seedDevice(t, pool)
+	seedCareAdminDuty(t, pool, 11, "supervisor")
 	h := testHandler(t, pool)
 	from := time.Date(2026, 10, 20, 0, 0, 0, 0, time.UTC)
 	a := health.Sample{RecordID: "older-a", Source: "watch", SourceDevice: "WATCH001", Metric: "steps", Unit: "count", Semantics: "daily_total", Value: health.Number(100), Start: from.Add(8 * time.Hour), End: from.Add(8 * time.Hour), Version: 1}
@@ -23,7 +24,7 @@ func TestContinuousDailyConflictSurvivesLaterSnapshot(t *testing.T) {
 	b.RecordID, b.Value = "older-b", health.Number(200)
 	latest.RecordID, latest.Start, latest.End, latest.Value = "latest", from.Add(9*time.Hour), from.Add(9*time.Hour), health.Number(300)
 	api(t, h.healthBatch, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "bindingVersion": 1, "samples": []health.Sample{latest, a, b}})
-	admin := session.Principal{Role: auth.RoleAdmin, ID: 1}
+	admin := session.Principal{Role: auth.RoleAdmin, ID: 11}
 	query := map[string]any{"oldId": 1, "source": "watch", "sourceDevice": "WATCH001", "metric": "steps", "semantics": "daily_total", "from": from, "to": from.Add(24 * time.Hour)}
 	response := callAPI(withHealthPrincipal(h, admin, h.healthStatistics), query)
 	if response.Code != 409 || !strings.Contains(response.Body.String(), "conflicting daily totals") {
@@ -55,6 +56,7 @@ func TestContinuousDailyConflictSurvivesLaterSnapshot(t *testing.T) {
 func TestContinuousStatisticsLargeFiniteMean(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
+	seedCareAdminDuty(t, pool, 11, "supervisor")
 	h := testHandler(t, pool)
 	at := time.Date(2026, 10, 20, 9, 0, 0, 0, time.UTC)
 	a := health.Sample{RecordID: "large-1", Source: "watch", SourceDevice: "WATCH001", Metric: "heart_rate", Unit: "count/min", Semantics: "instant", Value: health.Number(1e308), Start: at, End: at, Version: 1}
@@ -66,7 +68,7 @@ func TestContinuousStatisticsLargeFiniteMean(t *testing.T) {
 		if cache {
 			h.healthCache = newStatisticsCache(1 << 20)
 		}
-		read := withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 1}, h.healthStatistics)
+		read := withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.healthStatistics)
 		for range 2 {
 			out := api(t, read, query)
 			stats := out["statistics"].(map[string]any)
@@ -80,6 +82,7 @@ func TestContinuousStatisticsLargeFiniteMean(t *testing.T) {
 func TestSleepTotalOverflowReturnsConflict(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
+	seedCareAdminDuty(t, pool, 11, "supervisor")
 	h := testHandler(t, pool)
 	from := time.Date(2026, 10, 20, 0, 0, 0, 0, time.UTC)
 	a := health.Sample{RecordID: "sleep-a", Source: "watch", SourceDevice: "WATCH001", Metric: "sleep_duration", Unit: "min", Semantics: "daily_total", Value: health.Number(1e308), Start: from, End: from, Version: 1}
@@ -94,7 +97,7 @@ func TestSleepTotalOverflowReturnsConflict(t *testing.T) {
 		if cached {
 			h.healthCache = newStatisticsCache(1 << 20)
 		}
-		read := withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 1}, h.healthStatistics)
+		read := withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.healthStatistics)
 		out := callAPI(read, query)
 		if out.Code != 409 || !json.Valid(out.Body.Bytes()) || !strings.Contains(out.Body.String(), "total exceeds finite range") {
 			t.Errorf("cached=%v overflow did not produce explicit JSON conflict: HTTP %d %q", cached, out.Code, out.Body.String())

@@ -26,6 +26,12 @@ import (
 func BenchmarkHealthStatisticsHybrid(b *testing.B) {
 	pool := benchmarkStatisticsDatabase(b)
 	ctx := context.Background()
+	if _, err := pool.ExecContext(ctx, "INSERT INTO users(user_id,user_name,role) VALUES(11,'bench','1')"); err != nil {
+		b.Fatal(err)
+	}
+	if _, err := pool.ExecContext(ctx, "INSERT INTO care_staff_permission(admin_id,duty,assigned_by) VALUES(11,'supervisor',11)"); err != nil {
+		b.Fatal(err)
+	}
 	if _, err := pool.ExecContext(ctx, "INSERT INTO oldperson(old_id,name) VALUES(1,'benchmark')"); err != nil {
 		b.Fatal(err)
 	}
@@ -71,7 +77,7 @@ func BenchmarkHealthStatisticsHybrid(b *testing.B) {
 		b.Run(mode.name, func(b *testing.B) {
 			h := New(pool, session.NewStore(time.Hour), config.Config{HealthCacheBytes: mode.bytes})
 			b.Cleanup(h.Sessions.Close)
-			handler := withHealthPrincipal(h, session.Principal{Role: "ADMIN"}, h.healthStatistics)
+			handler := withHealthPrincipal(h, session.Principal{Role: "ADMIN", ID: 11}, h.healthStatistics)
 			request := func() *httptest.ResponseRecorder {
 				r := httptest.NewRequest(http.MethodPost, "/api/v1/health/statistics", bytes.NewReader(query))
 				w := httptest.NewRecorder()
