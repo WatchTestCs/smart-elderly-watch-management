@@ -15,7 +15,7 @@ type Resident struct {
 	Room  *string `json:"room"`
 }
 
-func ListResidents(ctx context.Context, store *db.Database) ([]Resident, error) {
+func ListResidents(ctx context.Context, store db.RowsQuerier) ([]Resident, error) {
 	return db.QueryList(ctx, store, func(row *sql.Rows) (Resident, error) {
 		var resident Resident
 		err := row.Scan(&resident.ID, &resident.Name, &resident.Phone, &resident.Room)
