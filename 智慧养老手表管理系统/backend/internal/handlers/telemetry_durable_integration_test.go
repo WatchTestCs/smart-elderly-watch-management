@@ -113,17 +113,22 @@ func TestTouchDeviceTimeNeverRegresses(t *testing.T) {
 		t.Fatal(err)
 	}
 	now := time.Now().UTC().Truncate(time.Second)
-	if err := telemetryrepo.TouchDevice(ctx, pool, 1, epoch, nil, nil, now); err != nil {
+	currentBattery, oldBattery := 80, 10
+	if err := telemetryrepo.TouchDevice(ctx, pool, 1, epoch, &currentBattery, nil, now); err != nil {
 		t.Fatal(err)
 	}
-	if err := telemetryrepo.TouchDevice(ctx, pool, 1, epoch, nil, nil, now.Add(-time.Hour)); err != nil {
+	if err := telemetryrepo.TouchDevice(ctx, pool, 1, epoch, &oldBattery, nil, now.Add(-time.Hour)); err != nil {
+		t.Fatal(err)
+	}
+	if err := telemetryrepo.TouchDevice(ctx, pool, 1, epoch+1, &oldBattery, nil, now.Add(time.Hour)); err != nil {
 		t.Fatal(err)
 	}
 	var stored time.Time
-	if err := pool.QueryRowContext(ctx, "SELECT last_time FROM device WHERE device_id=?", 1).Scan(&stored); err != nil {
+	var battery int
+	if err := pool.QueryRowContext(ctx, "SELECT last_time,battery FROM device WHERE device_id=?", 1).Scan(&stored, &battery); err != nil {
 		t.Fatal(err)
 	}
-	if !stored.Equal(now) {
-		t.Fatalf("device time regressed: got %v, want %v", stored, now)
+	if !stored.Equal(now) || battery != currentBattery {
+		t.Fatalf("device state regressed: time=%v battery=%d; want %v / %d", stored, battery, now, currentBattery)
 	}
 }
