@@ -40,8 +40,15 @@ func careAdmin(w http.ResponseWriter, r *http.Request) (int64, bool) {
 
 func (h *Handler) careIncidents(w http.ResponseWriter, r *http.Request) {
 	actor, ok := careAdmin(w, r)
-	if !ok || !h.authorizeCareAction(w, r, actor, "read_tasks") ||
-		!h.auditCareAccess(w, r, actor, "incident_list", nil) {
+	if !ok {
+		return
+	}
+	duty, ok := h.careDuty(w, r, actor)
+	if !ok {
+		return
+	}
+	if !carepolicy.Allowed(carepolicy.Duty(duty), carepolicy.ReadTasks) {
+		response.JSON(w, http.StatusForbidden, map[string]any{"code": "ACCESS_DENIED", "message": "岗位无此操作权限"})
 		return
 	}
 	m, ok := optBody(w, r)
@@ -60,11 +67,10 @@ func (h *Handler) careIncidents(w http.ResponseWriter, r *http.Request) {
 		write400(w, "任务范围应为 active 或 verified")
 		return
 	}
-	duty, ok := h.careDuty(w, r, actor)
-	if !ok {
+	if !h.auditCareAccess(w, r, actor, "incident_list", nil) {
 		return
 	}
-	items, total, err := careworkflow.ListIncidents(r.Context(), h.DB, state == "verified", page, pageSize)
+	items, total, err := careworkflow.ListIncidents(r.Context(), h.DB, carepolicy.Duty(duty), actor, state == "verified", page, pageSize)
 	if internalError(w, err) {
 		return
 	}
@@ -177,12 +183,30 @@ func (h *Handler) careEvents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id, ok := requireID(w, m, "id")
-	if !ok || !h.authorizeCareAction(w, r, actor, "read_tasks") ||
-		!h.auditCareAccess(w, r, actor, "incident_events", &id) {
+	if !ok {
 		return
 	}
 	page, pageSize, ok := strictPage(w, m)
 	if !ok {
+		return
+	}
+	duty, ok := h.careDuty(w, r, actor)
+	if !ok {
+		return
+	}
+	if !carepolicy.Allowed(carepolicy.Duty(duty), carepolicy.ReadTasks) {
+		response.JSON(w, http.StatusForbidden, map[string]any{"code": "ACCESS_DENIED", "message": "岗位无此操作权限"})
+		return
+	}
+	visible, err := careworkflow.CanReadIncident(r.Context(), h.DB, carepolicy.Duty(duty), actor, id)
+	if internalError(w, err) {
+		return
+	}
+	if !visible {
+		response.JSON(w, http.StatusForbidden, map[string]any{"code": "ACCESS_DENIED", "message": "任务不在可见范围"})
+		return
+	}
+	if !h.auditCareAccess(w, r, actor, "incident_events", &id) {
 		return
 	}
 	events, total, err := careworkflow.ListEvents(r.Context(), h.DB, id, page, pageSize)

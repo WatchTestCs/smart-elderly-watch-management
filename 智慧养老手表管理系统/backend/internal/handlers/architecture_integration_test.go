@@ -209,11 +209,77 @@ func TestArchitectureUnbindingKeepsRemainingPrimary(t *testing.T) {
 	}
 }
 
+func TestCaregiverQueueAndEventVisibilityAcrossDuties(t *testing.T) {
+	pool := testDatabase(t)
+	seedDevice(t, pool)
+	seedCareAdminDuty(t, pool, 11, "caregiver")
+	seedCareAdminDuty(t, pool, 12, "caregiver")
+	seedCareAdminDuty(t, pool, 13, "supervisor")
+	seedCareAdminDuty(t, pool, 14, "auditor")
+	mustExec(t, pool, "INSERT INTO users(user_id,user_name,role) VALUES(15,'未授权管理员','1')")
+	mustExec(t, pool, `INSERT INTO care_incident(id,old_id,device_id,kind,state,severity,due_at,acknowledged_by) VALUES
+(1,1,1,'sos','received','critical',CURRENT_TIMESTAMP(6),NULL),
+(2,1,1,'sos','acknowledged','critical',CURRENT_TIMESTAMP(6),'11'),
+(3,1,1,'sos','in_progress','critical',CURRENT_TIMESTAMP(6),'12'),
+(4,1,1,'sos','verified','critical',CURRENT_TIMESTAMP(6),'12'),
+(5,1,1,'sos','verified','critical',CURRENT_TIMESTAMP(6),'11'),
+(6,1,1,'sos','escalated','critical',CURRENT_TIMESTAMP(6),'12')`)
+	mustExec(t, pool, "INSERT INTO care_incident_event(incident_id,actor,action) VALUES(1,'0','received'),(2,'11','acknowledge'),(3,'12','start'),(5,'11','verify')")
+	h := testHandler(t, pool)
+	checkQueue := func(actor int64, state string, want int, forbidden map[float64]bool) {
+		t.Helper()
+		out := careRequest(t, h, h.careIncidents, actor, map[string]any{"state": state, "page": 1, "pageSize": 20})
+		if out.Code != http.StatusOK {
+			t.Fatalf("actor %d queue HTTP %d: %s", actor, out.Code, out.Body.String())
+		}
+		body := architectureBody(t, out)
+		items := body["items"].([]any)
+		if body["total"] != float64(want) || len(items) != want {
+			t.Fatalf("actor %d state %s scope: %v", actor, state, body)
+		}
+		for _, row := range items {
+			if forbidden[row.(map[string]any)["id"].(float64)] {
+				t.Fatalf("actor %d can see another caregiver's task: %v", actor, row)
+			}
+		}
+	}
+	checkQueue(11, "active", 3, map[float64]bool{3: true})
+	checkQueue(12, "active", 3, map[float64]bool{2: true})
+	checkQueue(11, "verified", 1, map[float64]bool{4: true})
+	checkQueue(12, "verified", 1, map[float64]bool{5: true})
+	checkQueue(13, "active", 4, nil)
+	checkQueue(14, "active", 4, nil)
+	checkQueue(14, "verified", 2, nil)
+
+	for _, id := range []string{"3", "4"} {
+		out := careRequest(t, h, h.careEvents, 11, map[string]any{"id": id})
+		if out.Code != http.StatusForbidden {
+			t.Fatalf("caregiver read another owner's incident %s: %d %s", id, out.Code, out.Body.String())
+		}
+	}
+	for _, id := range []string{"1", "2", "5"} {
+		out := careRequest(t, h, h.careEvents, 11, map[string]any{"id": id})
+		if out.Code != http.StatusOK {
+			t.Fatalf("caregiver denied visible incident %s: %d %s", id, out.Code, out.Body.String())
+		}
+	}
+	if out := careRequest(t, h, h.careEvents, 14, map[string]any{"id": "3"}); out.Code != http.StatusOK {
+		t.Fatalf("auditor denied read-only history: %d %s", out.Code, out.Body.String())
+	}
+	for _, handler := range []http.HandlerFunc{h.careIncidents, h.careEvents} {
+		if out := careRequest(t, h, handler, 15, map[string]any{"id": "3"}); out.Code != http.StatusForbidden {
+			t.Fatalf("unassigned admin accessed care data: %d %s", out.Code, out.Body.String())
+		}
+	}
+	if out := careRequest(t, h, h.careTransition, 14, map[string]any{"id": "1", "action": "acknowledge"}); out.Code != http.StatusForbidden {
+		t.Fatalf("auditor modified task: %d %s", out.Code, out.Body.String())
+	}
+}
+
 func TestArchitectureCareQueuePaginationAndDuty(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
-	mustExec(t, pool, "INSERT INTO users(user_id,user_name) VALUES(2,'审计员')")
-	mustExec(t, pool, "INSERT INTO care_staff_permission(admin_id,duty) VALUES(2,'auditor')")
+	seedCareAdminDuty(t, pool, 2, "auditor")
 	for n := 1; n <= 60; n++ {
 		state := "received"
 		if n > 55 {
@@ -237,8 +303,7 @@ func TestArchitectureCareQueuePaginationAndDuty(t *testing.T) {
 func TestArchitectureVerificationClearsOnlyLinkedAlarm(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
-	mustExec(t, pool, "INSERT INTO users(user_id,user_name) VALUES(2,'复核主管')")
-	mustExec(t, pool, "INSERT INTO care_staff_permission(admin_id,duty,assigned_by) VALUES(2,'supervisor',2)")
+	seedCareAdminDuty(t, pool, 2, "supervisor")
 	h := testHandler(t, pool)
 	firstIncident := api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "requestId": "verify-first", "bindingVersion": 1})["incidentId"]
 	secondIncident := api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "requestId": "verify-second", "bindingVersion": 1})["incidentId"]
@@ -263,16 +328,18 @@ func TestArchitectureVerificationClearsOnlyLinkedAlarm(t *testing.T) {
 func TestArchitectureCareHistoryHasNoSilentLimit(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
-	mustExec(t, pool, "INSERT INTO users(user_id,user_name) VALUES(1,'审计人员')")
-	mustExec(t, pool, "INSERT INTO care_staff_permission(admin_id,duty,assigned_by) VALUES(1,'auditor',1)")
+	seedCareAdminDuty(t, pool, 1, "auditor")
 	mustExec(t, pool, "INSERT INTO care_incident(id,old_id,device_id,kind,severity,due_at) VALUES(1,1,1,'sos','critical',CURRENT_TIMESTAMP(6))")
 	for n := 1; n <= 105; n++ {
 		mustExec(t, pool, "INSERT INTO care_incident_event(incident_id,actor,action,note) VALUES(1,'1','note',?)", fmt.Sprint(n))
 	}
 	h := testHandler(t, pool)
 	out := careRequest(t, h, h.careEvents, 1, map[string]any{"id": "1", "page": 3, "pageSize": 50})
+	if out.Code != 200 {
+		t.Fatalf("history lookup rejected: HTTP %d %s", out.Code, out.Body.String())
+	}
 	data := architectureBody(t, out)
-	if out.Code != 200 || data["total"] != float64(105) || len(data["events"].([]any)) != 5 {
+	if data["total"] != float64(105) || len(data["events"].([]any)) != 5 {
 		t.Fatalf("audit history silently truncates later events: HTTP %d total=%v rows=%d", out.Code, data["total"], len(data["events"].([]any)))
 	}
 }
@@ -280,8 +347,8 @@ func TestArchitectureCareHistoryHasNoSilentLimit(t *testing.T) {
 func TestArchitectureCareNoteAcceptsChineseCharacters(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
-	mustExec(t, pool, "INSERT INTO users(user_id,user_name) VALUES(1,'现场护理员'),(2,'其他护理员')")
-	mustExec(t, pool, "INSERT INTO care_staff_permission(admin_id,duty,assigned_by) VALUES(1,'caregiver',1),(2,'caregiver',1)")
+	seedCareAdminDuty(t, pool, 1, "caregiver")
+	seedCareAdminDuty(t, pool, 2, "caregiver")
 	mustExec(t, pool, "INSERT INTO care_incident(id,old_id,device_id,kind,state,severity,due_at) VALUES(1,1,1,'sos','in_progress','critical',CURRENT_TIMESTAMP(6))")
 	mustExec(t, pool, "UPDATE care_incident SET acknowledged_by='1' WHERE id=1")
 	h := testHandler(t, pool)
@@ -301,8 +368,7 @@ func TestArchitectureCareNoteAcceptsChineseCharacters(t *testing.T) {
 
 func TestArchitectureDiagnosticsExposeMissingGateway(t *testing.T) {
 	pool := testDatabase(t)
-	mustExec(t, pool, "INSERT INTO users(user_id,user_name) VALUES(1,'值守主管')")
-	mustExec(t, pool, "INSERT INTO care_staff_permission(admin_id,duty,assigned_by) VALUES(1,'supervisor',1)")
+	seedCareAdminDuty(t, pool, 1, "supervisor")
 	mustExec(t, pool, "INSERT INTO care_worker_heartbeat(singleton,last_seen_at,started_at) VALUES(true,CURRENT_TIMESTAMP(6),CURRENT_TIMESTAMP(6))")
 	t.Setenv("CARE_NOTIFY_WEBHOOK_URL", "")
 	t.Setenv("CARE_NOTIFY_WEBHOOK_TOKEN", "")

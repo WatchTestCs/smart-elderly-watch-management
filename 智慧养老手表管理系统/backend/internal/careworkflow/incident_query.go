@@ -3,8 +3,10 @@ package careworkflow
 import (
 	"context"
 	"database/sql"
+	"strconv"
 	"time"
 
+	"suining-care/internal/carepolicy"
 	"suining-care/internal/db"
 )
 
@@ -49,10 +51,44 @@ const activeIncidentOrderSQL = ` ORDER BY
 
 const verifiedIncidentOrderSQL = ` ORDER BY i.verified_at DESC, i.id DESC`
 
-// ListIncidents returns risk-ordered active work and newest-first verified history.
-func ListIncidents(ctx context.Context, store *db.Database, verified bool, page, pageSize int) ([]Incident, int64, error) {
+// Caregivers see work available for pickup or already accepted by them.
+// Escalated work is available for reassignment even when a previous owner remains recorded.
+const caregiverIncidentScopeSQL = ` AND (
+ i.acknowledged_by=?
+ OR i.state='escalated'
+ OR (i.acknowledged_by IS NULL AND i.state IN ('received','notifying','notified'))
+)`
+
+func incidentReadScope(duty carepolicy.Duty, actorID int64) (string, []any) {
+	switch duty {
+	case carepolicy.Supervisor, carepolicy.Auditor:
+		return "", nil
+	case carepolicy.Caregiver:
+		return caregiverIncidentScopeSQL, []any{strconv.FormatInt(actorID, 10)}
+	default:
+		return " AND FALSE", nil
+	}
+}
+
+// CanReadIncident applies the same row-level visibility as the paginated queue.
+// Both missing and out-of-scope incidents are invisible to the caller.
+func CanReadIncident(ctx context.Context, store *db.Database, duty carepolicy.Duty, actorID, incidentID int64) (bool, error) {
+	scope, scopeArgs := incidentReadScope(duty, actorID)
+	args := append([]any{incidentID}, scopeArgs...)
+	var visible bool
+	err := store.QueryRowContext(ctx,
+		`SELECT EXISTS(SELECT 1 FROM care_incident i WHERE i.id=?`+scope+`)`, args...).Scan(&visible)
+	return visible, err
+}
+
+// ListIncidents returns risk-ordered tasks and newest-first verified history
+// inside the current actor's authorized visibility scope.
+func ListIncidents(ctx context.Context, store *db.Database, duty carepolicy.Duty, actorID int64, verified bool, page, pageSize int) ([]Incident, int64, error) {
+	scope, scopeArgs := incidentReadScope(duty, actorID)
+	countArgs := append([]any{verified}, scopeArgs...)
 	var total int64
-	if err := store.QueryRowContext(ctx, `SELECT count(*) FROM care_incident WHERE (state='verified')=?`, verified).Scan(&total); err != nil {
+	if err := store.QueryRowContext(ctx,
+		`SELECT count(*) FROM care_incident i WHERE (i.state='verified')=?`+scope, countArgs...).Scan(&total); err != nil {
 		return nil, 0, err
 	}
 	order := activeIncidentOrderSQL
@@ -71,7 +107,7 @@ func ListIncidents(ctx context.Context, store *db.Database, verified bool, page,
           o.name,
           `+notificationStatusSQL+`
      FROM care_incident i LEFT JOIN oldperson o ON o.old_id=i.old_id
-     WHERE (i.state='verified')=?`+order+`
-     LIMIT ? OFFSET ?`, verified, pageSize, (page-1)*pageSize)
+     WHERE (i.state='verified')=?`+scope+order+`
+     LIMIT ? OFFSET ?`, append(countArgs, pageSize, (page-1)*pageSize)...)
 	return items, total, err
 }
