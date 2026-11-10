@@ -34,8 +34,8 @@ func TestHeartbeatBufferCoalescesLatestState(t *testing.T) {
 	battery := 71
 	version := "2.1.0"
 	buffer.Record(7, 1, &battery, nil, base)
-	buffer.Record(7, 1, nil, &version, base.Add(5*time.Second))
-	buffer.Record(8, 1, nil, nil, base.Add(2*time.Second))
+	buffer.Record(7, 1, nil, &version, base.Add(5 * time.Second))
+	buffer.Record(8, 1, nil, nil, base.Add(2 * time.Second))
 	if n, err := buffer.Flush(context.Background()); err != nil || n != 2 {
 		t.Fatalf("Flush() = %d, %v; want 2, nil", n, err)
 	}
@@ -46,7 +46,7 @@ func TestHeartbeatBufferCoalescesLatestState(t *testing.T) {
 	for i := 0; i < len(store.args); i += 5 {
 		values[store.args[i].(int64)] = store.args[i : i+5]
 	}
-	if got := values[7]; got[1] != int64(1) || got[2] != base.Add(5*time.Second) || got[3] != 71 || got[4] != "2.1.0" {
+	if got := values[7]; got[1] != int64(1) || got[2] != base.Add(5 * time.Second) || got[3] != 71 || got[4] != "2.1.0" {
 		t.Fatalf("device 7 state=%#v", got)
 	}
 }
@@ -103,9 +103,9 @@ func TestHeartbeatBufferSeparatesBindingEpochs(t *testing.T) {
 	oldBattery, newBattery := 10, 90
 	buffer.Record(7, 1, &oldBattery, nil, base)
 	buffer.Record(7, 2, &newBattery, nil, base.Add(time.Second))
-	buffer.Record(7, 1, &oldBattery, nil, base.Add(2*time.Second))
+	buffer.Record(7, 1, &oldBattery, nil, base.Add(2 * time.Second))
 	buffer.requeue([]heartbeatState{
-		{deviceID: 7, bindingEpoch: 1, seenAt: base.Add(3*time.Second), battery: oldBattery, hasBattery: true},
+		{deviceID: 7, bindingEpoch: 1, seenAt: base.Add(3 * time.Second), battery: oldBattery, hasBattery: true},
 	})
 	state := buffer.items[7]
 	if state.bindingEpoch != 2 || state.battery != newBattery || !state.seenAt.Equal(base.Add(time.Second)) {
