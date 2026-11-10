@@ -2,8 +2,11 @@ package handlers
 
 import (
 	"context"
+	"errors"
 	"net/http/httptest"
 	"testing"
+
+	"suining-care/internal/careworkflow"
 )
 
 // PostgreSQL-backed authorization regression: a family session is denied by
@@ -49,5 +52,35 @@ func TestCareWorkerHeartbeatSchema(t *testing.T) {
 	if err := pool.QueryRowContext(context.Background(),
 		"SELECT last_seen_at > CURRENT_TIMESTAMP(6)-INTERVAL 30 SECOND FROM care_worker_heartbeat WHERE singleton=true").Scan(&healthy); err != nil || !healthy {
 		t.Fatalf("worker heartbeat unavailable: %v", err)
+	}
+}
+
+func TestCareDutyAssignmentTransaction(t *testing.T) {
+	pool := testDatabase(t)
+	mustExec(t, pool, "INSERT INTO users(user_id,user_name) VALUES(101,'主管'),(102,'护理员'),(103,'审计员')")
+	ctx := context.Background()
+
+	if err := careworkflow.AssignDuty(ctx, pool, 101, 102, "caregiver"); err != nil {
+		t.Fatal(err)
+	}
+	var duty string
+	var audits int
+	err := pool.QueryRowContext(ctx, "SELECT duty FROM care_staff_permission WHERE admin_id=?", 102).Scan(&duty)
+	if err != nil || duty != "caregiver" {
+		t.Fatalf("duty not committed: %q %v", duty, err)
+	}
+	err = pool.QueryRowContext(ctx, "SELECT count(*) FROM care_access_audit WHERE admin_id=101 AND action='staff_duty_changed' AND subject_admin_id=102").Scan(&audits)
+	if err != nil || audits != 1 {
+		t.Fatalf("permission audit missing: %d %v", audits, err)
+	}
+	if err := careworkflow.AssignDuty(ctx, pool, 102, 103, "auditor"); !errors.Is(err, careworkflow.ErrDutyDenied) {
+		t.Fatalf("caregiver assigned another duty: %v", err)
+	}
+	if err := careworkflow.AssignDuty(ctx, pool, 101, 999999, "auditor"); !errors.Is(err, careworkflow.ErrStaffMissing) {
+		t.Fatalf("missing administrator was accepted: %v", err)
+	}
+	err = pool.QueryRowContext(ctx, "SELECT count(*) FROM care_access_audit WHERE admin_id=101 AND action='staff_duty_changed'").Scan(&audits)
+	if err != nil || audits != 1 {
+		t.Fatalf("failed assignment wrote an audit: %d %v", audits, err)
 	}
 }
