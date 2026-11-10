@@ -119,9 +119,13 @@ func TestVitalAlertFamilyReadsFollowCurrentResidentOwnership(t *testing.T) {
 func TestContinuousVitalsResolutionReasonMatchesSelectedRecord(t *testing.T) {
 	h := extraAuditHandler(t)
 	seedDevice(t, h.DB)
+	seedCareAdminDuty(t, h.DB, 11, "supervisor")
+	admin := session.Principal{Role: auth.RoleAdmin, ID: 11}
+	resolve := withHealthPrincipal(h, admin, h.deviceResolveAlert)
+	detailRead := withHealthPrincipal(h, admin, h.deviceAlertDetail)
 	mustExec(t, h.DB, "INSERT INTO ratepre(id,device_id,old_id,hr,bp,rate_state,pre_state,create_time) VALUES(1,1,1,150,180,'1','1','2026-10-20 10:00:00'),(2,1,1,40,70,'1','1','2026-10-20 11:00:00')")
 	for _, tc := range []struct{ kind, reason, state string }{{"rate", "心率偏高", "rate_state"}, {"pre", "血压偏高", "pre_state"}} {
-		out := api(t, h.deviceResolveAlert, map[string]any{"deviceId": 1, "recordId": 1, "kind": tc.kind})
+		out := api(t, resolve, map[string]any{"deviceId": 1, "recordId": 1, "kind": tc.kind})
 		if out["returnCode"] != "1111" || out["handledReason"] != tc.reason {
 			t.Errorf("%s selected high record but returned latest low record's reason: %v", tc.kind, out)
 		}
@@ -135,11 +139,11 @@ func TestContinuousVitalsResolutionReasonMatchesSelectedRecord(t *testing.T) {
 		if selected != "0" || newer != "1" {
 			t.Errorf("wrong resolution target: selected=%s newer=%s", selected, newer)
 		}
-		detail := api(t, h.deviceAlertDetail, map[string]any{"deviceId": 1, "kind": tc.kind})
+		detail := api(t, detailRead, map[string]any{"deviceId": 1, "kind": tc.kind})
 		if detail["recordId"] != float64(2) || detail["hasAlert"] != float64(1) {
 			t.Errorf("remaining latest alert lost after targeted resolution: %v", detail)
 		}
-		bulk := api(t, h.deviceResolveAlert, map[string]any{"deviceId": 1, "kind": tc.kind})
+		bulk := api(t, resolve, map[string]any{"deviceId": 1, "kind": tc.kind})
 		if bulk["returnCode"] != "1111" || (tc.kind == "rate" && bulk["handledReason"] != "心率偏低") || (tc.kind == "pre" && bulk["handledReason"] != "血压偏低") {
 			t.Errorf("existing latest/bulk resolution changed: %v", bulk)
 		}
