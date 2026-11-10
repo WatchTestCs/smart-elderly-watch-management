@@ -21,6 +21,23 @@ func Duty(ctx context.Context, store db.RowQuerier, adminID int64) (string, erro
 	return duty, err
 }
 
+// AccountAccess is a single-query coarse route prefilter. Business authorization
+// still happens against live locked rows inside the operation transaction.
+func AccountAccess(ctx context.Context, store db.RowQuerier, adminID int64) (string, bool, error) {
+	var status string
+	var duty sql.NullString
+	err := store.QueryRowContext(ctx, `SELECT u.account_status,p.duty
+ FROM users u LEFT JOIN care_staff_permission p ON p.admin_id=u.user_id
+ WHERE u.user_id=? AND u.role='1'`, adminID).Scan(&status, &duty)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", false, nil
+	}
+	if err != nil {
+		return "", false, err
+	}
+	return duty.String, status == "active", nil
+}
+
 // LockDuty retains a shared lock on the actor's explicit role until the
 // business transaction commits. Concurrent duty reassignment must wait.
 func LockDuty(ctx context.Context, tx *sql.Tx, adminID int64) (string, error) {
