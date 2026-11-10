@@ -17,7 +17,7 @@ type ChangesPage struct {
 }
 
 // ListChanges reads one extra revision to determine whether more changes remain.
-func ListChanges(ctx context.Context, store *db.Database, residentID, after int64, limit int) (ChangesPage, error) {
+func ListChanges(ctx context.Context, store db.RowsQuerier, residentID, after int64, limit int) (ChangesPage, error) {
 	rows, err := store.QueryContext(ctx,
 		`SELECT revision,payload FROM health_change WHERE old_id=? AND revision>? ORDER BY revision LIMIT ?`,
 		residentID, after, limit+1)

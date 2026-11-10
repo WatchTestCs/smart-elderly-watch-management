@@ -30,6 +30,11 @@ func (h *Handler) healthBaseline(w http.ResponseWriter, r *http.Request) {
 		write400(w, "请指定有效的老人编号")
 		return
 	}
+	tx, ok := h.beginScopedHealthRead(w, r, oldID)
+	if !ok {
+		return
+	}
+	defer tx.Rollback()
 	// Only currently bound devices contribute; an earlier binding epoch must
 	// never be analyzed as the current resident's health history.
 	// 29 days includes the current day and the preceding 28 calendar days.
@@ -37,7 +42,7 @@ func (h *Handler) healthBaseline(w http.ResponseWriter, r *http.Request) {
 	// Downsample to one actual observation per source/device/hour before
 	// decoding JSON. This keeps high-frequency wearable feeds bounded while
 	// retaining representative hourly history across the full 28-day window.
-	rows, err := h.DB.QueryContext(r.Context(), `SELECT device_id,epoch,payload FROM (
+	rows, err := tx.QueryContext(r.Context(), `SELECT device_id,epoch,payload FROM (
  SELECT s.device_id,s.epoch,s.payload,s.sample_start,s.revision,
  ROW_NUMBER() OVER (PARTITION BY s.device_id,s.epoch,s.source,s.source_device,FLOOR(s.sample_start / 3600000000)
  ORDER BY s.sample_start DESC,s.revision DESC) AS hour_rank
@@ -76,6 +81,9 @@ func (h *Handler) healthBaseline(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 	if !rowsOK(w, rows) {
+		return
+	}
+	if internalError(w, rows.Close()) || internalError(w, tx.Commit()) {
 		return
 	}
 	if len(observations) == 0 {

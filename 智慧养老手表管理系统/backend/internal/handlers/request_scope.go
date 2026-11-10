@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"database/sql"
+	"errors"
 	"math"
 	"net/http"
 	"strconv"
@@ -34,6 +36,39 @@ func (h *Handler) resolveOptionalOldID(w http.ResponseWriter, r *http.Request, i
 		return h.resolveOldID(w, r, nil)
 	}
 	return h.resolveOldID(w, r, id)
+}
+
+// beginScopedHealthRead locks the live administrator duty or family association
+// until the database portion of a health read completes.
+func (h *Handler) beginScopedHealthRead(w http.ResponseWriter, r *http.Request, oldID int64) (*sql.Tx, bool) {
+	p, ok := principalOr401(w, r)
+	if !ok {
+		return nil, false
+	}
+	if p.Role == auth.RoleAdmin {
+		return h.beginSupervisorTx(w, r)
+	}
+	if p.Role != auth.RoleFamily {
+		response.JSON(w, http.StatusForbidden, map[string]any{"code": "ACCESS_DENIED"})
+		return nil, false
+	}
+	tx, err := h.DB.BeginTx(r.Context(), &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	if internalError(w, err) {
+		return nil, false
+	}
+	var id int64
+	err = tx.QueryRowContext(r.Context(),
+		"SELECT old_id FROM oldperson WHERE old_id=? AND family_id=? FOR SHARE", oldID, p.ID).Scan(&id)
+	if errors.Is(err, sql.ErrNoRows) {
+		tx.Rollback()
+		response.JSON(w, http.StatusForbidden, map[string]any{"message": "无权访问该账户或照护记录"})
+		return nil, false
+	}
+	if internalError(w, err) {
+		tx.Rollback()
+		return nil, false
+	}
+	return tx, true
 }
 
 // resolveOldID allows ADMIN to select an elder by ID;

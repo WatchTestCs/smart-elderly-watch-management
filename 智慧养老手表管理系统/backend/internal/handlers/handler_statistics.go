@@ -24,6 +24,11 @@ func (h *Handler) healthStatistics(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	tx, ok := h.beginScopedHealthRead(w, r, oldID)
+	if !ok {
+		return
+	}
+	defer tx.Rollback()
 	// Authorization always runs before reading the cache. The committed clock
 	// also detects corrections and deletes written by another server instance.
 	var key [32]byte
@@ -33,12 +38,15 @@ func (h *Handler) healthStatistics(w http.ResponseWriter, r *http.Request) {
 		req.OldID = oldID
 		b, err := json.Marshal(req) // Keep reporting offsets for daily totals.
 		if err == nil {
-			revision, err = health.StatisticsRevision(r.Context(), h.DB, oldID)
+			revision, err = health.StatisticsRevision(r.Context(), tx, oldID)
 		}
 		if err == nil {
 			cacheable = true
 			key = sha256.Sum256(b)
 			if cached, hit := h.healthCache.get(key, revision, time.Now()); hit {
+				if internalError(w, tx.Commit()) {
+					return
+				}
 				observability.Default.Add("suining_health_cache_hits_total", 1)
 				response.OK(w, map[string]any{"statistics": cached, "source": req.Source, "sourceDevice": req.SourceDevice, "metric": req.Metric, "semantics": req.Semantics})
 				return
@@ -50,7 +58,7 @@ func (h *Handler) healthStatistics(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	observability.Default.Add("suining_health_statistics_db_loads_total", 1)
-	samples, candidates, err := health.LoadStatisticsSamples(r.Context(), h.DB, oldID, health.StatisticsQuery{
+	samples, candidates, err := health.LoadStatisticsSamples(r.Context(), tx, oldID, health.StatisticsQuery{
 		Source: req.Source, SourceDevice: req.SourceDevice, Metric: req.Metric,
 		Semantics: req.Semantics, From: req.From, To: req.To,
 	})
@@ -59,6 +67,9 @@ func (h *Handler) healthStatistics(w http.ResponseWriter, r *http.Request) {
 	}
 	if candidates > 10000 {
 		response.JSON(w, 413, map[string]any{"message": "候选采样超过 10000 条，请缩短统计范围"})
+		return
+	}
+	if internalError(w, tx.Commit()) {
 		return
 	}
 	out, err := health.Aggregate(samples, req.From, req.To)

@@ -20,7 +20,7 @@ type StatisticsQuery struct {
 }
 
 // StatisticsRevision reads the resident-scoped committed statistics clock.
-func StatisticsRevision(ctx context.Context, store *db.Database, residentID int64) (int64, error) {
+func StatisticsRevision(ctx context.Context, store db.RowQuerier, residentID int64) (int64, error) {
 	var revision int64
 	err := store.QueryRowContext(ctx,
 		"SELECT COALESCE((SELECT revision FROM health_owner_clock WHERE old_id=?),0)",
@@ -30,7 +30,7 @@ func StatisticsRevision(ctx context.Context, store *db.Database, residentID int6
 
 // LoadStatisticsSamples returns only samples inside the requested window,
 // retaining exact-byte matching under MySQL's trailing-space-insensitive collations.
-func LoadStatisticsSamples(ctx context.Context, store *db.Database, residentID int64, query StatisticsQuery) ([]Sample, int, error) {
+func LoadStatisticsSamples(ctx context.Context, store db.RowsQuerier, residentID int64, query StatisticsQuery) ([]Sample, int, error) {
 	sourceFilter := "BINARY source=BINARY ? AND BINARY source_device=BINARY ? AND BINARY metric=BINARY ? AND BINARY semantics=BINARY ?"
 	upper := query.To.UnixMicro()
 	if query.To.Nanosecond()%1000 != 0 {

@@ -144,8 +144,13 @@ func (h *Handler) healthChanges(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	changes, err := health.ListChanges(r.Context(), h.DB, oldID, req.After, req.Limit)
-	if internalError(w, err) {
+	tx, ok := h.beginScopedHealthRead(w, r, oldID)
+	if !ok {
+		return
+	}
+	defer tx.Rollback()
+	changes, err := health.ListChanges(r.Context(), tx, oldID, req.After, req.Limit)
+	if internalError(w, err) || internalError(w, tx.Commit()) {
 		return
 	}
 	response.OK(w, map[string]any{

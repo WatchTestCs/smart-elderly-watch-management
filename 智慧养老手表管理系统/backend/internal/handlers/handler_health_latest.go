@@ -28,12 +28,17 @@ func (h *Handler) healthLatest(w http.ResponseWriter, r *http.Request) {
 		write400(w, "请指定有效的老人编号")
 		return
 	}
+	tx, ok := h.beginScopedHealthRead(w, r, oldID)
+	if !ok {
+		return
+	}
+	defer tx.Rollback()
 	items, err := health.Latest(r.Context(), h.DB, oldID)
 	if errors.Is(err, health.ErrLatestTooManySeries) {
 		response.JSON(w, http.StatusRequestEntityTooLarge, map[string]any{"message": "最新采样候选超过 10000 条，请通过增量接口读取"})
 		return
 	}
-	if internalError(w, err) {
+	if internalError(w, err) || internalError(w, tx.Commit()) {
 		return
 	}
 	response.OK(w, map[string]any{"oldId": oldID, "items": items})
