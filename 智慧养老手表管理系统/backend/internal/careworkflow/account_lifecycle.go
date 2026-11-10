@@ -8,8 +8,8 @@ import (
 	"suining-care/internal/accountrepo"
 	"suining-care/internal/auth"
 	"suining-care/internal/authrepo"
-	"suining-care/internal/carerepo"
 	"suining-care/internal/carepolicy"
+	"suining-care/internal/carerepo"
 	"suining-care/internal/db"
 )
 
