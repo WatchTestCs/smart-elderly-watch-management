@@ -45,7 +45,11 @@ func ResolveAlert(ctx context.Context, tx *sql.Tx, recordID int64, kind string) 
 	}
 	var affected int64
 	for _, metric := range kinds {
-		result, err := tx.ExecContext(ctx, updateSQL(metric)+" WHERE id=?", recordID)
+		pending := pendingRate
+		if metric == "pre" {
+			pending = pendingPressure
+		}
+		result, err := tx.ExecContext(ctx, updateSQL(metric)+" WHERE id=? AND "+pending, recordID)
 		if err != nil {
 			return false, err
 		}
@@ -55,10 +59,13 @@ func ResolveAlert(ctx context.Context, tx *sql.Tx, recordID int64, kind string) 
 		}
 		affected += changed
 	}
+	if affected == 0 {
+		return false, nil
+	}
 	if err := healthalertstate.SyncVitalsIfPresent(ctx, tx, deviceID); err != nil {
 		return false, err
 	}
-	return affected > 0, nil
+	return true, nil
 }
 
 // ResolveDeviceAlert updates the selected metric and the device-level handled flag
@@ -71,14 +78,17 @@ func ResolveDeviceAlert(ctx context.Context, tx *sql.Tx, deviceID int64, kind st
 	query := updateSQL(kind) + " WHERE device_id=? AND "
 	args := []any{deviceID}
 	if recordID != nil {
-		query += "id=?"
+		query += "id=? AND "
 		args = append(args, *recordID)
-	} else {
-		query += pending
 	}
+	query += pending
 	result, err := tx.ExecContext(ctx, query, args...)
 	if err != nil {
 		return 0, err
+	}
+	changed, err := result.RowsAffected()
+	if err != nil || changed == 0 {
+		return changed, err
 	}
 	heartPending, pressurePending, err := healthalertstate.SyncVitals(ctx, tx, deviceID)
 	if err != nil {
@@ -93,5 +103,5 @@ func ResolveDeviceAlert(ctx context.Context, tx *sql.Tx, deviceID int64, kind st
 			return 0, err
 		}
 	}
-	return result.RowsAffected()
+	return changed, nil
 }
