@@ -118,6 +118,7 @@ func TestIntegrationMigrationsAndBindingConstraint(t *testing.T) {
 func TestIntegrationListContractsAndNumericAge(t *testing.T) {
 	pool := testDatabase(t)
 	h := testHandler(t, pool)
+	seedCareAdminDuty(t, pool, 91, "supervisor")
 	mustExec(t, pool, "INSERT INTO customer(customer_id,customer_name,customer_age,customer_sex,customer_phone,customer_address) VALUES(1,'监护人',40,'女','13800000001','本地')")
 	mustExec(t, pool, "INSERT INTO family(family_id,family_name) VALUES(1,'家属')")
 	mustExec(t, pool, "INSERT INTO oldperson(old_id,name,family_id) VALUES(1,'长者',1)")
@@ -126,7 +127,7 @@ func TestIntegrationListContractsAndNumericAge(t *testing.T) {
 		handler http.HandlerFunc
 		key     string
 	}{
-		{"customers", h.listGuardians, "customers"}, {"family", h.familySelect, "familyDtos"},
+		{"customers", withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 91}, h.listGuardians), "customers"}, {"family", h.familySelect, "familyDtos"},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			out := api(t, test.handler, map[string]any{"page": 1, "pageSize": 20})

@@ -7,7 +7,9 @@ import (
 	"strings"
 	"testing"
 
+	"suining-care/internal/auth"
 	"suining-care/internal/securestore"
+	"suining-care/internal/session"
 )
 
 func TestProtectedAdministratorSetupAndLogin(t *testing.T) {
@@ -39,7 +41,7 @@ func TestProtectedAdministratorSetupAndLogin(t *testing.T) {
 	if login.Code != 200 || !strings.Contains(login.Body.String(), `"authenticated":true`) {
 		t.Fatalf("encrypted administrator login: %d %s", login.Code, login.Body.String())
 	}
-	lookup := callAPI(h.userSelect, map[string]any{"userPhone": "13800000001"})
+	lookup := callAPI(withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: id}, h.userSelect), map[string]any{"userPhone": "13800000001"})
 	if lookup.Code != 200 || !strings.Contains(lookup.Body.String(), `"userPhone":"13800000001"`) {
 		t.Fatalf("protected account lookup: %d %s", lookup.Code, lookup.Body.String())
 	}

@@ -119,9 +119,11 @@ func (h *Handler) securityFactor(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) securityLoginAudit(w http.ResponseWriter, r *http.Request) {
-	if _, ok := h.careSupervisor(w, r); !ok {
+	tx, ok := h.beginSupervisorRead(w, r)
+	if !ok {
 		return
 	}
+	defer tx.Rollback()
 	var req struct {
 		After int64 `json:"after"`
 	}
@@ -132,8 +134,8 @@ func (h *Handler) securityLoginAudit(w http.ResponseWriter, r *http.Request) {
 		write400(w, "游标无效")
 		return
 	}
-	items, err := authrepo.ListLoginAudits(r.Context(), h.DB, req.After)
-	if internalError(w, err) {
+	items, err := authrepo.ListLoginAudits(r.Context(), tx, req.After)
+	if internalError(w, err) || internalError(w, tx.Commit()) {
 		return
 	}
 	response.OK(w, map[string]any{"items": items})

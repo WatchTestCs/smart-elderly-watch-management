@@ -61,6 +61,41 @@ func TestAdminDutyGateRestrictsLegacyRoutes(t *testing.T) {
 	check("/api/v1/device/list", http.StatusForbidden)
 }
 
+
+// Standalone endpoints must enforce their own read-time duty, even when the
+// generic route gate is absent or a request authenticated before demotion.
+func TestLegacySensitiveReadsRequireCurrentSupervisor(t *testing.T) {
+	pool := testDatabase(t)
+	seedCareAdminDuty(t, pool, 41, "supervisor")
+	seedCareAdminDuty(t, pool, 42, "caregiver")
+	h := testHandler(t, pool)
+	mustExec(t, pool, "INSERT INTO customer(customer_id,customer_name,customer_phone) VALUES(1,'保护的监护人','13800000000')")
+	for _, tc := range []struct {
+		actor int64
+		allowed bool
+	}{
+		{41, true},
+		{42, false},
+	} {
+		for _, handler := range []http.HandlerFunc{h.listGuardians, h.securityLoginAudit} {
+			wrapped := withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: tc.actor}, handler)
+			res := callAPI(wrapped, map[string]any{})
+			want := http.StatusForbidden
+			if tc.allowed { want = http.StatusOK }
+			if res.Code != want {
+				t.Fatalf("actor=%d HTTP=%d want=%d: %s", tc.actor, res.Code, want, res.Body.String())
+			}
+		}
+	}
+	mustExec(t, pool, "UPDATE care_staff_permission SET duty='auditor' WHERE admin_id=41")
+	for _, handler := range []http.HandlerFunc{h.listGuardians, h.securityLoginAudit} {
+		res := callAPI(withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 41}, handler), map[string]any{})
+		if res.Code != http.StatusForbidden {
+			t.Fatalf("formerly privileged session retained access: %d %s", res.Code, res.Body.String())
+		}
+	}
+}
+
 func TestRestrictedAdminRouteAllowlist(t *testing.T) {
 	for _, path := range []string{
 		"/api/v1/care/receipt",

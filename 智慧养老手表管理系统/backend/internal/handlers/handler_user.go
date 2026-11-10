@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"suining-care/internal/db"
 	"suining-care/internal/guardianrepo"
 	"suining-care/internal/response"
 	"suining-care/internal/userphone"
@@ -31,11 +32,16 @@ func (h *Handler) userSelect(w http.ResponseWriter, r *http.Request) {
 		response.Fail(w, "参数不完整")
 		return
 	}
+	tx, ok := h.beginSupervisorRead(w, r)
+	if !ok {
+		return
+	}
+	defer tx.Rollback()
 	lookup, err := userphone.SearchIndex(r.Context(), h.DB, h.Box, phone)
 	if internalError(w, err) {
 		return
 	}
-	list, ok := queryRows(h, w, r.Context(), func(rows *sql.Rows) (map[string]any, error) {
+	list, err := db.QueryList(r.Context(), tx, func(rows *sql.Rows) (map[string]any, error) {
 		var id int64
 		var name, uphone, role *string
 		var protected userphone.Record
@@ -53,7 +59,7 @@ func (h *Handler) userSelect(w http.ResponseWriter, r *http.Request) {
 		}, nil
 	}, `SELECT user_id,user_name,user_phone,role,user_phone_cipher,user_phone_lookup,user_phone_protected FROM users
  WHERE (user_phone_protected=false AND user_phone=?) OR (user_phone_protected=true AND user_phone_lookup=?)`, phone, lookup)
-	if !ok {
+	if internalError(w, err) || internalError(w, tx.Commit()) {
 		return
 	}
 	response.JSON(w, http.StatusOK, map[string]any{"usersByPhone2": list})
@@ -67,8 +73,13 @@ func (h *Handler) listGuardians(w http.ResponseWriter, r *http.Request) {
 	}
 	name := str(m, "customerName")
 	page, pageSize := bodyPage(m)
-	items, total, err := guardianrepo.List(r.Context(), h.DB, name, page, pageSize)
-	if internalError(w, err) {
+	tx, ok := h.beginSupervisorRead(w, r)
+	if !ok {
+		return
+	}
+	defer tx.Rollback()
+	items, total, err := guardianrepo.List(r.Context(), tx, name, page, pageSize)
+	if internalError(w, err) || internalError(w, tx.Commit()) {
 		return
 	}
 	response.JSON(w, http.StatusOK, map[string]any{

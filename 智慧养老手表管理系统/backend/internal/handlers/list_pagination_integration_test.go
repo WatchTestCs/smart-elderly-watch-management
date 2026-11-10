@@ -4,11 +4,15 @@ import (
 	"net/http"
 	"reflect"
 	"testing"
+
+	"suining-care/internal/auth"
+	"suining-care/internal/session"
 )
 
 func TestIntegrationListPageTotals(t *testing.T) {
 	pool := testDatabase(t)
 	h := testHandler(t, pool)
+	seedCareAdminDuty(t, pool, 91, "supervisor")
 	mustExec(t, pool, `INSERT INTO customer(customer_id,customer_name) VALUES
 		(4,'match A'),(7,'match B'),(9,'other'),(12,'match C')`)
 	mustExec(t, pool, `INSERT INTO family(family_id,family_name,family_tou_pic) VALUES (2,'match fam',NULL),(3,'other',NULL)`)
@@ -25,7 +29,7 @@ func TestIntegrationListPageTotals(t *testing.T) {
 		nullKeys                    []string
 		emptySQL                    string
 	}{
-		{"customers", "customers", "customerId", "customerName", h.listGuardians,
+		{"customers", "customers", "customerId", "customerName", withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 91}, h.listGuardians),
 			[]int{4, 7, 9, 12}, []int{4, 7, 12}, []string{"customerAge", "customerAddress"}, "DELETE FROM customer"},
 		{"family", "familyDtos", "oldId", "familyName", h.familySelect,
 			[]int{4, 7, 9, 12}, []int{4, 7, 12}, []string{"familyAddress", "familyTouPic"}, "DELETE FROM oldperson"},

@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"database/sql"
 	"net/http"
 
 	"suining-care/internal/auth"
+	"suining-care/internal/carepolicy"
 	"suining-care/internal/carerepo"
 	"suining-care/internal/response"
 )
@@ -49,6 +51,17 @@ func (h *Handler) EnforceAdminDuty(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+// beginSupervisorRead checks live supervisor authority and holds the duty lock
+// while one legacy sensitive read runs. Its caller commits before responding.
+func (h *Handler) beginSupervisorRead(w http.ResponseWriter, r *http.Request) (*sql.Tx, bool) {
+	actor, ok := careAdmin(w, r)
+	if !ok {
+		return nil, false
+	}
+	tx, _, ok := h.beginCareRead(w, r, actor, carepolicy.ManageStaff)
+	return tx, ok
 }
 
 // Every care endpoint below performs its own fine-grained duty checks.
