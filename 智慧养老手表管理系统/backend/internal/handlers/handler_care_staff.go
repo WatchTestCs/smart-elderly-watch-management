@@ -16,12 +16,7 @@ func (h *Handler) careSupervisor(w http.ResponseWriter, r *http.Request) (int64,
 	if !ok {
 		return 0, false
 	}
-	duty, ok := h.careDuty(w, r, actor)
-	if !ok {
-		return 0, false
-	}
-	if duty != "supervisor" {
-		response.JSON(w, http.StatusForbidden, map[string]any{"message": "需要照护主管权限"})
+	if !h.authorizeCareAction(w, r, actor, "manage_staff") {
 		return 0, false
 	}
 	return actor, true
