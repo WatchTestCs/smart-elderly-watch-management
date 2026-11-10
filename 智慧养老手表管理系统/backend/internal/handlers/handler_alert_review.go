@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"suining-care/internal/carepolicy"
 	"database/sql"
 	"net/http"
 	"strings"
@@ -36,7 +37,7 @@ func (h *Handler) alertReview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := r.Context()
-	tx, ok := h.beginSupervisorTx(w, r)
+	tx, ok := h.beginAdminActionTx(w, r, carepolicy.ReviewAlerts)
 	if !ok {
 		return
 	}
@@ -98,7 +99,7 @@ func (h *Handler) alertReviews(w http.ResponseWriter, r *http.Request) {
 		write400(w, "复核目标或游标无效")
 		return
 	}
-	tx, ok := h.beginSupervisorTx(w, r)
+	tx, ok := h.beginAdminActionTx(w, r, carepolicy.ReadReviews)
 	if !ok {
 		return
 	}
