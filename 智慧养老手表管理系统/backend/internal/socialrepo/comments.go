@@ -10,8 +10,8 @@ import (
 )
 
 // DeleteComment removes one notice comment and reports whether a row was removed.
-func DeleteComment(ctx context.Context, store *db.Database, commentID int64) (bool, error) {
-	result, err := store.ExecContext(ctx, "DELETE FROM said WHERE said_id=?", commentID)
+func DeleteComment(ctx context.Context, tx *sql.Tx, commentID int64) (bool, error) {
+	result, err := tx.ExecContext(ctx, "DELETE FROM said WHERE said_id=?", commentID)
 	if err != nil {
 		return false, err
 	}
@@ -20,8 +20,8 @@ func DeleteComment(ctx context.Context, store *db.Database, commentID int64) (bo
 }
 
 // ReplyComment updates the moderator reply and its timestamp.
-func ReplyComment(ctx context.Context, store *db.Database, commentID int64, reply string, at time.Time) (bool, error) {
-	result, err := store.ExecContext(ctx,
+func ReplyComment(ctx context.Context, tx *sql.Tx, commentID int64, reply string, at time.Time) (bool, error) {
+	result, err := tx.ExecContext(ctx,
 		"UPDATE said SET back=?, back_time=? WHERE said_id=?",
 		reply, at, commentID)
 	if err != nil {
