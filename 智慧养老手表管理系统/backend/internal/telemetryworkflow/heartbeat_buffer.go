@@ -32,10 +32,10 @@ type heartbeatState struct {
 // HeartbeatBuffer coalesces replaceable device liveness writes.
 // Safety-critical events never enter this buffer.
 type HeartbeatBuffer struct {
-	store heartbeatStore
-	mu    sync.Mutex
+	store   heartbeatStore
+	mu      sync.Mutex
 	flushMu sync.Mutex
-	items map[int64]heartbeatState
+	items   map[int64]heartbeatState
 }
 
 func NewHeartbeatBuffer(store heartbeatStore) *HeartbeatBuffer {
