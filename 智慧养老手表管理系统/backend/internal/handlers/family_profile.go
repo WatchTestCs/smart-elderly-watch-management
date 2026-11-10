@@ -1,13 +1,19 @@
 package handlers
 
 import (
-	"database/sql"
+	"context"
+	"errors"
 	"net/http"
+
 	"suining-care/internal/auth"
+	"suining-care/internal/blob"
+	"suining-care/internal/careworkflow"
+	"suining-care/internal/familyrepo"
+	"suining-care/internal/familyworkflow"
 	"suining-care/internal/response"
 )
 
-// POST /api/v1/family/updateTwo —— 家属更新自己的资料（ADMIN+FAMILY，归属隔离）。
+// POST /api/v1/family/updateTwo: update a family profile under its live scope.
 func (h *Handler) familyUpdateTwo(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -22,25 +28,38 @@ func (h *Handler) familyUpdateTwo(w http.ResponseWriter, r *http.Request) {
 		response.Fail(w, "参数不完整")
 		return
 	}
-	p := auth.Principal(r)
-	if p != nil && p.Role == auth.RoleFamily && (phone != p.Phone || id != p.ID) {
+	p, ok := principalOr401(w, r)
+	if !ok {
+		return
+	}
+	changed, phoneChanged, err := familyworkflow.UpdateProfile(r.Context(), h.DB, h.Box, *p, id, phone, name, sex, addr)
+	switch {
+	case errors.Is(err, careworkflow.ErrCapabilityDenied):
 		scopeDeny(w)
 		return
-	}
-	ct, err := h.DB.ExecContext(r.Context(),
-		`UPDATE family SET family_name=?,family_sex=?,family_address=?,family_phone=?
-		 WHERE family_id=?`, name, sex, addr, phone, id)
-	if internalError(w, err) {
+	case errors.Is(err, familyrepo.ErrPhoneInUse):
+		conflict409(w, "手机号已被使用")
+		return
+	case errors.Is(err, familyrepo.ErrFamilyNotFound):
+		recordNotFound(w)
+		return
+	case internalError(w, err):
 		return
 	}
-	affected, err := ct.RowsAffected()
-	if internalError(w, err) {
+	if phoneChanged {
+		if err := h.Sessions.RevokeContext(context.WithoutCancel(r.Context()), auth.RoleFamily, id); err != nil {
+			response.JSON(w, http.StatusServiceUnavailable, map[string]any{"message": "家属资料已更新，但会话撤销确认失败"})
+			return
+		}
+	}
+	if changed {
+		writeSingleMutation(w, 1)
 		return
 	}
-	writeSingleMutation(w, affected)
+	writeSingleMutation(w, 0)
 }
 
-// POST /api/v1/family/updateTouPic —— 家属更新头像（ADMIN+FAMILY，归属隔离）。
+// POST /api/v1/family/updateTouPic: update an owned family avatar.
 func (h *Handler) familyUpdateTouPic(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -52,32 +71,27 @@ func (h *Handler) familyUpdateTouPic(w http.ResponseWriter, r *http.Request) {
 		response.Fail(w, "参数不完整")
 		return
 	}
-	if !familyPhoneOK(auth.Principal(r), phone) {
+	p, ok := principalOr401(w, r)
+	if !ok {
+		return
+	}
+	manager, err := h.images()
+	if internalError(w, err) {
+		return
+	}
+	changed, err := familyworkflow.ChangeAvatar(r.Context(), h.DB, *p, phone, pic, manager)
+	switch {
+	case errors.Is(err, careworkflow.ErrCapabilityDenied):
 		scopeDeny(w)
-		return
-	}
-	tx, err := h.DB.BeginTx(r.Context(), &sql.TxOptions{Isolation: sql.LevelReadCommitted})
-	if internalError(w, err) {
-		return
-	}
-	defer tx.Rollback()
-	if !h.lockImages(w, r.Context(), tx, []string{pic}) {
-		return
-	}
-	ct, err := tx.ExecContext(r.Context(), `UPDATE family SET family_tou_pic=? WHERE family_phone=? AND (?=0 OR family_id=?)`, pic, phone, familySelfID(auth.Principal(r)), familySelfID(auth.Principal(r)))
-	if internalError(w, err) {
-		return
-	}
-	affected, err := ct.RowsAffected()
-	if internalError(w, err) {
-		return
-	}
-	if affected != 1 {
+	case errors.Is(err, familyrepo.ErrFamilyNotFound):
 		recordNotFound(w)
+	case errors.Is(err, blob.ErrNotFound):
+		write400(w, "图片不存在或已回收，请重新上传")
+	case internalError(w, err):
 		return
+	case !changed:
+		recordNotFound(w)
+	default:
+		response.OK(w, nil)
 	}
-	if err = tx.Commit(); internalError(w, err) {
-		return
-	}
-	response.OK(w, nil)
 }
