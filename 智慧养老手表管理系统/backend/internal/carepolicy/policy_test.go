@@ -4,9 +4,9 @@ import "testing"
 
 func TestRoleCapabilities(t *testing.T) {
 	cases := []struct {
-		duty Duty
+		duty   Duty
 		action Action
-		want bool
+		want   bool
 	}{
 		{Supervisor, ManageStaff, true},
 		{Supervisor, Verify, true},
