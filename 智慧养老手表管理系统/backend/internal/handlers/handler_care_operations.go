@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"suining-care/internal/care"
+	"suining-care/internal/careworkflow"
 
 	"time"
 
@@ -72,32 +73,16 @@ func (h *Handler) careDiagnostics(w http.ResponseWriter, r *http.Request) {
 	if !h.auditCareAccess(w, r, actor, "service_diagnostics", nil) {
 		return
 	}
-	var pending, failed, stale, overdue int64
-	var oldest *time.Time
-	err := h.DB.QueryRowContext(r.Context(), `
-        SELECT
-          (SELECT count(*) FROM care_notification_outbox WHERE status='pending'),
-          (SELECT count(*) FROM care_notification_outbox WHERE status='failed'),
-          (SELECT count(*) FROM care_notification_outbox WHERE status='sending' AND last_attempt_at < TIMESTAMPADD(MINUTE,-2,CURRENT_TIMESTAMP(6))),
-          (SELECT count(*) FROM care_incident WHERE state NOT IN ('verified') AND due_at < CURRENT_TIMESTAMP(6)),
-          (SELECT min(created_at) FROM care_notification_outbox WHERE status IN ('pending','failed'))
-    `).Scan(&pending, &failed, &stale, &overdue, &oldest)
+	diagnostics, err := careworkflow.ReadDiagnostics(r.Context(), h.DB, time.Now())
 	if internalError(w, err) {
 		return
 	}
-	var workerSeen, workerStarted *time.Time
-	if err := h.DB.QueryRowContext(r.Context(),
-		"SELECT last_seen_at,started_at FROM care_worker_heartbeat WHERE singleton=true").Scan(&workerSeen, &workerStarted); err != nil && !isNotFound(err) {
-		response.Error500(w, ref())
-		return
-	}
-	workerHealthy := workerSeen != nil && time.Since(*workerSeen) < 30*time.Second
 	w.Header().Set("Cache-Control", "no-store")
 	response.OK(w, map[string]any{
-		"pendingNotifications": pending, "failedNotifications": failed,
-		"staleSending": stale, "overdueIncidents": overdue,
-		"oldestOutstandingAt": oldest,
-		"workerHealthy":       workerHealthy, "workerLastSeenAt": workerSeen, "workerStartedAt": workerStarted,
+		"pendingNotifications": diagnostics.PendingNotifications, "failedNotifications": diagnostics.FailedNotifications,
+		"staleSending": diagnostics.StaleSending, "overdueIncidents": diagnostics.OverdueIncidents,
+		"oldestOutstandingAt": diagnostics.OldestOutstandingAt,
+		"workerHealthy":       diagnostics.WorkerHealthy, "workerLastSeenAt": diagnostics.WorkerLastSeenAt, "workerStartedAt": diagnostics.WorkerStartedAt,
 		"primaryEngine": "mysql", "analytics": h.analyticsStatus(),
 		"notificationConfigured": care.NotificationConfigured(), "receiptConfigured": len(os.Getenv("CARE_RECEIPT_SECRET")) >= 32,
 		"note": "数据库统计不是网关送达或值班到岗证明",
