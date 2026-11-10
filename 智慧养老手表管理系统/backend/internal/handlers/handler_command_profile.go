@@ -1,13 +1,14 @@
 package handlers
 
 import (
+	"suining-care/internal/carepolicy"
 	"net/http"
 	"suining-care/internal/commands"
 	"suining-care/internal/response"
 )
 
 func (h *Handler) commandProfile(w http.ResponseWriter, r *http.Request) {
-	actor, ok := h.careSupervisor(w, r)
+	actor, ok := careAdmin(w, r)
 	if !ok {
 		return
 	}
@@ -25,7 +26,7 @@ func (h *Handler) commandProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := r.Context()
-	tx, ok := h.beginSupervisorTx(w, r)
+	tx, ok := h.beginAdminActionTx(w, r, carepolicy.ConfigureCommands)
 	if !ok {
 		return
 	}
