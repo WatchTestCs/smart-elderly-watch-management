@@ -74,8 +74,10 @@ func TestArchitectureFormattedRecordsAcrossDatabases(t *testing.T) {
 
 func TestArchitectureLifestyleFieldsKeepTheirMeaning(t *testing.T) {
 	pool := testDatabase(t)
+	seedCareAdminDuty(t, pool, 11, "supervisor")
 	mustExec(t, pool, "INSERT INTO oldperson(name,food_like,food_hate,drag) VALUES('长者','米饭','花生','常用药')")
-	out := api(t, testHandler(t, pool).listResidents, map[string]any{"name": ""})
+	h := testHandler(t, pool)
+	out := api(t, withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.listResidents), map[string]any{"name": ""})
 	row := out["oldPeople"].([]any)[0].(map[string]any)
 	if row["foodLike"] != "米饭" || row["foodHate"] != "花生" || row["drag"] != "常用药" {
 		t.Fatalf("diet and medication fields were interchanged: %+v", row)

@@ -11,6 +11,7 @@ import (
 
 func TestContinuousElderGuardianMustExist(t *testing.T) {
 	h := extraAuditHandler(t)
+	seedCareAdminDuty(t, h.DB, 11, "supervisor")
 	mustExec(t, h.DB, "INSERT INTO customer(customer_id,customer_name) VALUES(1,'甲'),(2,'乙')")
 	body := elderPayload()
 	body["customerId"] = 999
@@ -42,7 +43,7 @@ func TestContinuousElderGuardianMustExist(t *testing.T) {
 	if out := api(t, h.updateResident, body); out["returnCode"] != "1111" {
 		t.Fatal(out)
 	}
-	detail := api(t, h.getResidentDetails, map[string]any{"name": ""})["oldPersonDetails"].([]any)[0].(map[string]any)
+	detail := api(t, withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.getResidentDetails), map[string]any{"name": ""})["oldPersonDetails"].([]any)[0].(map[string]any)
 	if detail["customerId"] != float64(2) || detail["customerName"] != "乙" {
 		t.Fatalf("valid guardian reassignment lost: %v", detail)
 	}

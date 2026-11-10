@@ -4,8 +4,10 @@ import (
 	"database/sql"
 	"net/http"
 
-	"suining-care/internal/response"
 	"time"
+
+	"suining-care/internal/db"
+	"suining-care/internal/response"
 )
 
 const oldPersonCols = `old_id, name, age, sex, phone, room, illness, warn, food_like,
@@ -36,14 +38,19 @@ func (h *Handler) listResidents(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	tx, ok := h.beginSupervisorTx(w, r)
+	if !ok {
+		return
+	}
+	defer tx.Rollback()
 	ctx := r.Context()
 	base := `SELECT ` + oldPersonCols + ` FROM oldperson WHERE (?='' OR name LIKE CONCAT('%',?,'%')) ORDER BY old_id`
 	var total int64
-	if internalError(w, h.DB.QueryRowContext(ctx, `SELECT COUNT(*) FROM (`+base+`) AS t`, name, name).Scan(&total)) {
+	if internalError(w, tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM (`+base+`) AS t`, name, name).Scan(&total)) {
 		return
 	}
-	list, ok := queryRows(h, w, ctx, scanOldPersonRow, base+` LIMIT ? OFFSET ?`, name, name, ps, (p-1)*ps)
-	if !ok {
+	list, err := db.QueryList(ctx, tx, scanOldPersonRow, base+` LIMIT ? OFFSET ?`, name, name, ps, (p-1)*ps)
+	if internalError(w, err) || internalError(w, tx.Commit()) {
 		return
 	}
 	response.OK(w, map[string]any{
@@ -57,6 +64,11 @@ func (h *Handler) getResidentDetails(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	tx, ok := h.beginSupervisorTx(w, r)
+	if !ok {
+		return
+	}
+	defer tx.Rollback()
 	ctx := r.Context()
 	base := `SELECT o.old_id, o.name, o.age, o.sex, o.phone, o.room, o.illness, o.warn,
 		o.food_like, o.food_hate, o.drag, o.family_id, o.customer_id, o.be_time, o.bothdate,
@@ -66,10 +78,10 @@ func (h *Handler) getResidentDetails(w http.ResponseWriter, r *http.Request) {
 		LEFT JOIN customer c ON c.customer_id=o.customer_id
 		WHERE (?='' OR o.name LIKE CONCAT('%',?,'%')) ORDER BY o.old_id`
 	var total int64
-	if internalError(w, h.DB.QueryRowContext(ctx, `SELECT COUNT(*) FROM (`+base+`) AS t`, name, name).Scan(&total)) {
+	if internalError(w, tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM (`+base+`) AS t`, name, name).Scan(&total)) {
 		return
 	}
-	list, ok := queryRows(h, w, ctx, func(rows *sql.Rows) (map[string]any, error) {
+	list, err := db.QueryList(ctx, tx, func(rows *sql.Rows) (map[string]any, error) {
 		var id int64
 		var name, sex, phone, room, illness, warn, drag, foodLike, foodHate *string
 		var age *int
@@ -92,7 +104,7 @@ func (h *Handler) getResidentDetails(w http.ResponseWriter, r *http.Request) {
 			"familyAddress": familyAddress, "customerName": customerName,
 		}, nil
 	}, base+` LIMIT ? OFFSET ?`, name, name, ps, (p-1)*ps)
-	if !ok {
+	if internalError(w, err) || internalError(w, tx.Commit()) {
 		return
 	}
 	response.OK(w, map[string]any{
