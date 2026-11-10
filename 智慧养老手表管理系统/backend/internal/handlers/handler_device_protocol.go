@@ -177,7 +177,7 @@ func (h *Handler) deviceHeartbeat(w http.ResponseWriter, r *http.Request) {
 	}
 	now := time.Now()
 	if h.Heartbeats != nil {
-		h.Heartbeats.Record(d.ID, battery, appVersion, now)
+		h.Heartbeats.Record(d.ID, d.HealthEpoch, battery, appVersion, now)
 	} else if internalError(w, telemetryrepo.TouchDevice(ctx, h.DB, d.ID, battery, appVersion, now)) {
 		return
 	}
