@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 
+	"suining-care/internal/carepolicy"
 	"suining-care/internal/operationsrepo"
 	"suining-care/internal/response"
 )
@@ -10,7 +11,7 @@ import (
 // readSupervisorHealthAlertCounts keeps the live duty lock through the
 // aggregate query; handlers commit before sending any count.
 func (h *Handler) readSupervisorHealthAlertCounts(w http.ResponseWriter, r *http.Request) (operationsrepo.HealthAlerts, bool) {
-	tx, ok := h.beginSupervisorTx(w, r)
+	tx, ok := h.beginAdminActionTx(w, r, carepolicy.ReadAlerts)
 	if !ok {
 		return operationsrepo.HealthAlerts{}, false
 	}
