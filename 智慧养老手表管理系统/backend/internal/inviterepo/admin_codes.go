@@ -71,7 +71,11 @@ func InsertCode(ctx context.Context, tx *sql.Tx, code string, residentID int64, 
 	return err
 }
 
-func DeleteUnusedCode(ctx context.Context, store interface{ ExecContext(context.Context, string, ...any) (sql.Result, error) }, codeID int64) (bool, error) {
+type CodeDeleter interface {
+	ExecContext(context.Context, string, ...any) (sql.Result, error)
+}
+
+func DeleteUnusedCode(ctx context.Context, store CodeDeleter, codeID int64) (bool, error) {
 	result, err := store.ExecContext(ctx, "DELETE FROM invite_code WHERE id=? AND used=0", codeID)
 	if err != nil {
 		return false, err
