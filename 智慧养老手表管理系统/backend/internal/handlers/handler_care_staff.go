@@ -2,9 +2,11 @@ package handlers
 
 import (
 	"database/sql"
+	"errors"
 	"net/http"
 	"strconv"
 
+	"suining-care/internal/careworkflow"
 	"suining-care/internal/response"
 )
 
@@ -81,31 +83,15 @@ func (h *Handler) careAssignDuty(w http.ResponseWriter, r *http.Request) {
 		write400(w, "主管不能降低自己的岗位权限")
 		return
 	}
-	tx, err := h.DB.BeginTx(r.Context(), &sql.TxOptions{Isolation: sql.LevelReadCommitted})
-	if internalError(w, err) {
-		return
-	}
-	defer tx.Rollback()
-	var exists bool
-	if internalError(w, tx.QueryRowContext(r.Context(), "SELECT EXISTS(SELECT 1 FROM users WHERE user_id=?)", target).Scan(&exists)) {
-		return
-	}
-	if !exists {
+	err = careworkflow.AssignDuty(r.Context(), h.DB, actor, target, duty)
+	switch {
+	case errors.Is(err, careworkflow.ErrStaffMissing):
 		response.Fail(w, "管理员账号不存在")
 		return
-	}
-	_, err = tx.ExecContext(r.Context(), `INSERT INTO care_staff_permission(admin_id,duty,assigned_by,assigned_at)
- VALUES(?,?,?,CURRENT_TIMESTAMP(6)) AS new ON DUPLICATE KEY UPDATE
- duty=new.duty,assigned_by=new.assigned_by,assigned_at=CURRENT_TIMESTAMP(6)`, target, duty, actor)
-	if internalError(w, err) {
+	case errors.Is(err, careworkflow.ErrDutyDenied):
+		response.JSON(w, http.StatusForbidden, map[string]any{"message": "岗位无此操作权限"})
 		return
-	}
-	_, err = tx.ExecContext(r.Context(), `INSERT INTO care_access_audit(admin_id,action,subject_admin_id)
- VALUES(?,'staff_duty_changed',?)`, actor, target)
-	if internalError(w, err) {
-		return
-	}
-	if internalError(w, tx.Commit()) {
+	case internalError(w, err):
 		return
 	}
 	response.OK(w, map[string]any{"adminId": target, "duty": duty})
