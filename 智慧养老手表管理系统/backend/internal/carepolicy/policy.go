@@ -21,6 +21,12 @@ const (
 	ReadOperations    Action = "read_operations"
 	ReadMessages      Action = "read_messages"
 	ReadContacts      Action = "read_contacts"
+	ReadDevices       Action = "read_devices"
+	ManageDevices     Action = "manage_devices"
+	ReadAlerts        Action = "read_device_alerts"
+	HandleAlerts      Action = "resolve_device_alerts"
+	ReadThresholds    Action = "read_thresholds"
+	ManageThresholds  Action = "manage_thresholds"
 	ReadGeofences     Action = "read_geofences"
 	ManageGeofences   Action = "manage_geofences"
 	ReadAudit         Action = "read_audit"
@@ -54,7 +60,9 @@ func Allowed(duty Duty, action Action) bool {
 		case ReadTasks, ReadAudit, ManageStaff, Diagnostics, Acknowledge, Start,
 			Resolve, Escalate, Verify, Reopen, ReadCommands, IssueCommands,
 			ConfigureCommands, ReadReviews, ReviewAlerts, ReadRules, ManageRules,
-			ReadOperations, ReadMessages, ReadContacts, ReadGeofences, ManageGeofences:
+			ReadOperations, ReadMessages, ReadContacts, ReadDevices, ManageDevices,
+			ReadAlerts, HandleAlerts, ReadThresholds, ManageThresholds,
+			ReadGeofences, ManageGeofences:
 			return true
 		}
 	case Caregiver:
