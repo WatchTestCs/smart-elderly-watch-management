@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"database/sql"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -35,13 +34,13 @@ func (h *Handler) healthDaily(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := r.Context()
-	tx, err := h.DB.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
-	if internalError(w, err) {
+	tx, ok := h.beginScopedHealthRead(w, r, oldID)
+	if !ok {
 		return
 	}
 	defer tx.Rollback()
 	// Use the same lock order as sample invalidation and the refresh worker.
-	if _, err = health.LockOwner(ctx, tx, oldID); internalError(w, err) {
+	if _, err := health.LockOwner(ctx, tx, oldID); internalError(w, err) {
 		return
 	}
 	items := []map[string]any{}
