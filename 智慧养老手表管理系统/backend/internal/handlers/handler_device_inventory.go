@@ -8,6 +8,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"suining-care/internal/carepolicy"
 	"suining-care/internal/devicecredential"
 	"suining-care/internal/devicerepo"
 	"suining-care/internal/response"
@@ -52,7 +53,7 @@ func (h *Handler) deviceCreate(w http.ResponseWriter, r *http.Request) {
 	if internalError(w, err) {
 		return
 	}
-	tx, ok := h.beginSupervisorTx(w, r)
+	tx, ok := h.beginAdminActionTx(w, r, carepolicy.ManageDevices)
 	if !ok {
 		return
 	}
@@ -89,7 +90,7 @@ func (h *Handler) deviceResetSecret(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	tx, ok := h.beginSupervisorTx(w, r)
+	tx, ok := h.beginAdminActionTx(w, r, carepolicy.ManageDevices)
 	if !ok {
 		return
 	}
@@ -139,7 +140,7 @@ func (h *Handler) detachDevice(w http.ResponseWriter, r *http.Request, remove bo
 	if !ok {
 		return
 	}
-	tx, ok := h.beginSupervisorTx(w, r)
+	tx, ok := h.beginAdminActionTx(w, r, carepolicy.ManageDevices)
 	if !ok {
 		return
 	}
