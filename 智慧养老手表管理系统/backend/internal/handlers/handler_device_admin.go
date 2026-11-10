@@ -163,8 +163,13 @@ func (h *Handler) deviceCreateBindCode(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	oldID, _ := strconv.ParseInt(oldIDStr, 10, 64)
+	tx, ok := h.beginSupervisorTx(w, r)
+	if !ok {
+		return
+	}
+	defer tx.Rollback()
 	ctx := r.Context()
-	oldName, err := devicerepo.ResidentName(ctx, h.DB, oldID)
+	oldName, err := devicerepo.ResidentName(ctx, tx, oldID)
 	if err != nil {
 		if isNotFound(err) {
 			response.Fail(w, "老人不存在")
@@ -176,11 +181,11 @@ func (h *Handler) deviceCreateBindCode(w http.ResponseWriter, r *http.Request) {
 	createUser := creatorName(r)
 	now := time.Now()
 	expireTime := now.AddDate(0, 0, expireDays)
-	code, err := h.genBindCode(ctx, h.DB)
+	code, err := h.genBindCode(ctx, tx)
 	if internalError(w, err) {
 		return
 	}
-	id, err := devicerepo.CreateBindCode(ctx, h.DB, code, oldID, createUser, now, expireTime)
+	id, err := devicerepo.CreateBindCode(ctx, tx, code, oldID, createUser, now, expireTime)
 	if err != nil {
 		response.Error500(w, ref())
 		return
@@ -192,6 +197,9 @@ func (h *Handler) deviceCreateBindCode(w http.ResponseWriter, r *http.Request) {
 	nm := ""
 	if oldName != nil {
 		nm = *oldName
+	}
+	if internalError(w, tx.Commit()) {
+		return
 	}
 	response.OK(w, map[string]any{
 		"code": code, "oldId": oldID, "oldPersonName": nm,
@@ -210,11 +218,16 @@ func (h *Handler) deviceBindCodeList(w http.ResponseWriter, r *http.Request) {
 		writeValidation400(w)
 		return
 	}
+	tx, ok := h.beginSupervisorTx(w, r)
+	if !ok {
+		return
+	}
+	defer tx.Rollback()
 	list := []map[string]any{}
 	// 非数字 → 返回空列表而非报错。
 	if validID(oldIDStr) {
 		oldID, _ := strconv.ParseInt(oldIDStr, 10, 64)
-		codes, err := devicerepo.ListBindCodes(r.Context(), h.DB, oldID)
+		codes, err := devicerepo.ListBindCodes(r.Context(), tx, oldID)
 		if internalError(w, err) {
 			return
 		}
@@ -225,6 +238,9 @@ func (h *Handler) deviceBindCodeList(w http.ResponseWriter, r *http.Request) {
 				"usedDeviceId": code.UsedDeviceID,
 			})
 		}
+	}
+	if internalError(w, tx.Commit()) {
+		return
 	}
 	response.OK(w, map[string]any{"bindCodes": list})
 }
@@ -239,11 +255,19 @@ func (h *Handler) deviceDeleteBindCode(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	deleted, err := devicerepo.DeleteUnusedBindCode(r.Context(), h.DB, id)
+	tx, ok := h.beginSupervisorTx(w, r)
+	if !ok {
+		return
+	}
+	defer tx.Rollback()
+	deleted, err := devicerepo.DeleteUnusedBindCode(r.Context(), tx, id)
 	if internalError(w, err) {
 		return
 	}
 	if deleted {
+		if internalError(w, tx.Commit()) {
+			return
+		}
 		response.OK(w, nil)
 		return
 	}

@@ -59,20 +59,20 @@ func CodeExists(ctx context.Context, store db.RowQuerier, code string) (bool, er
 	return exists, err
 }
 
-func ResidentName(ctx context.Context, store *db.Database, residentID int64) (*string, error) {
+func ResidentName(ctx context.Context, store db.RowQuerier, residentID int64) (*string, error) {
 	var name *string
 	err := store.QueryRowContext(ctx, "SELECT name FROM oldperson WHERE old_id=?", residentID).Scan(&name)
 	return name, err
 }
 
-func CreateBindCode(ctx context.Context, store *db.Database, code string, residentID int64, creator string, createdAt, expiresAt time.Time) (int64, error) {
+func CreateBindCode(ctx context.Context, store *sql.Tx, code string, residentID int64, creator string, createdAt, expiresAt time.Time) (int64, error) {
 	return db.InsertID(ctx, store,
 		`INSERT INTO bind_code(code, old_id, family_id, create_user, create_time, expire_time, used)
 		 VALUES(?,?,NULL,?,?,?,0)`,
 		code, residentID, creator, createdAt, expiresAt)
 }
 
-func ListBindCodes(ctx context.Context, store *db.Database, residentID int64) ([]BindCode, error) {
+func ListBindCodes(ctx context.Context, store db.RowsQuerier, residentID int64) ([]BindCode, error) {
 	return db.QueryList(ctx, store, func(rows *sql.Rows) (BindCode, error) {
 		var item BindCode
 		err := rows.Scan(&item.ID, &item.Code, &item.ExpireTime, &item.Used, &item.UsedTime, &item.UsedDeviceID)
@@ -81,7 +81,7 @@ func ListBindCodes(ctx context.Context, store *db.Database, residentID int64) ([
 	 FROM bind_code WHERE old_id=? ORDER BY id DESC LIMIT 20`, residentID)
 }
 
-func DeleteUnusedBindCode(ctx context.Context, store *db.Database, id int64) (bool, error) {
+func DeleteUnusedBindCode(ctx context.Context, store *sql.Tx, id int64) (bool, error) {
 	affected, err := store.ExecContext(ctx, "DELETE FROM bind_code WHERE id=? AND used=0", id)
 	if err != nil {
 		return false, err
