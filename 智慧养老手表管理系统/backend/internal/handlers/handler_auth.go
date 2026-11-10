@@ -11,6 +11,7 @@ import (
 
 	"suining-care/internal/auth"
 	"suining-care/internal/authrepo"
+	"suining-care/internal/carerepo"
 	"suining-care/internal/csrf"
 	"suining-care/internal/response"
 	"suining-care/internal/session"
@@ -62,11 +63,16 @@ func (h *Handler) sessionInfo(w http.ResponseWriter, r *http.Request) {
 			"oldId": p.OldID, "displayName": p.DisplayName,
 		}
 		if p.Role == auth.RoleAdmin {
-			duty, ok := h.careDuty(w, r, p.ID)
-			if !ok {
+			duty, active, err := carerepo.AccountAccess(ctx, h.DB, p.ID)
+			if internalError(w, err) {
 				return
 			}
-			account["duty"] = duty
+			if !active {
+				authenticated = false
+				account = map[string]any{}
+			} else {
+				account["duty"] = duty
+			}
 		}
 	}
 	response.JSON(w, http.StatusOK, map[string]any{
