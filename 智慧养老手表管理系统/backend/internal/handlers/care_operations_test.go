@@ -53,8 +53,8 @@ func TestRoleSpecificCarePermissions(t *testing.T) {
 	h := testHandler(t, pool)
 	req := httptest.NewRequest("POST", "/api/v1/care/incidents", nil)
 	for _, tc := range []struct {
-		actor int64
-		action string
+		actor   int64
+		action  string
 		allowed bool
 	}{
 		{11, "read_tasks", true},
