@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"suining-care/internal/authrepo"
-
+	"suining-care/internal/carepolicy"
 	"suining-care/internal/observability"
 	"suining-care/internal/response"
 	"suining-care/internal/securityworkflow"
@@ -119,7 +119,7 @@ func (h *Handler) securityFactor(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) securityLoginAudit(w http.ResponseWriter, r *http.Request) {
-	tx, ok := h.beginSupervisorTx(w, r)
+	tx, ok := h.beginAdminActionTx(w, r, carepolicy.ReadLoginAudit)
 	if !ok {
 		return
 	}
