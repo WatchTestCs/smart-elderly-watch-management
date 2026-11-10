@@ -21,8 +21,10 @@ func PublishAnnouncement(ctx context.Context, store *db.Database, actor int64, m
 		return err
 	}
 	defer tx.Rollback()
-	if err := manager.Require(ctx, tx, names); err != nil {
-		return err
+	if len(names) > 0 {
+		if err := manager.Require(ctx, tx, names); err != nil {
+			return err
+		}
 	}
 	id, err := socialrepo.InsertAnnouncement(ctx, tx, title, body, names)
 	if err != nil {
