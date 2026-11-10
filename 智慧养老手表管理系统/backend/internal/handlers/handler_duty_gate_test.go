@@ -121,9 +121,9 @@ func TestLegacyDeviceHealthAndGuardianAccessAfterDutyRevocation(t *testing.T) {
 	for _, actor := range []int64{11, 12} {
 		p := session.Principal{Role: auth.RoleAdmin, ID: actor}
 		for _, test := range []struct {
-			name string
+			name    string
 			handler http.HandlerFunc
-			body map[string]any
+			body    map[string]any
 		}{
 			{"device_list", h.deviceList, map[string]any{}},
 			{"health_statistics", h.healthStatistics, healthQuery},
