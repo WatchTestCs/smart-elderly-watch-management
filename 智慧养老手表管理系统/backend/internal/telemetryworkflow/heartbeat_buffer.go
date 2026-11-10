@@ -19,6 +19,7 @@ type heartbeatStore interface {
 
 type heartbeatState struct {
 	deviceID   int64
+	bindingEpoch int64
 	seenAt     time.Time
 	battery    int
 	hasBattery bool
@@ -38,13 +39,20 @@ func NewHeartbeatBuffer(store heartbeatStore) *HeartbeatBuffer {
 	return &HeartbeatBuffer{store: store, items: make(map[int64]heartbeatState)}
 }
 
-func (b *HeartbeatBuffer) Record(deviceID int64, battery *int, appVersion *string, seenAt time.Time) {
-	if b == nil || b.store == nil || deviceID < 1 {
+func (b *HeartbeatBuffer) Record(deviceID, bindingEpoch int64, battery *int, appVersion *string, seenAt time.Time) {
+	if b == nil || b.store == nil || deviceID < 1 || bindingEpoch < 1 {
 		return
 	}
 	seenAt = seenAt.UTC()
 	b.mu.Lock()
 	state := b.items[deviceID]
+	if state.bindingEpoch > bindingEpoch {
+		b.mu.Unlock()
+		return
+	}
+	if state.bindingEpoch != bindingEpoch {
+		state = heartbeatState{deviceID: deviceID, bindingEpoch: bindingEpoch}
+	}
 	state.deviceID = deviceID
 	newest := state.seenAt.IsZero() || !seenAt.Before(state.seenAt)
 	if newest {
@@ -83,8 +91,11 @@ func (b *HeartbeatBuffer) requeue(items []heartbeatState) {
 	defer b.mu.Unlock()
 	for _, stale := range items {
 		current, ok := b.items[stale.deviceID]
-		if !ok {
+		if !ok || stale.bindingEpoch > current.bindingEpoch {
 			b.items[stale.deviceID] = stale
+			continue
+		}
+		if stale.bindingEpoch < current.bindingEpoch {
 			continue
 		}
 		if stale.seenAt.After(current.seenAt) {
@@ -109,22 +120,22 @@ func (b *HeartbeatBuffer) requeue(items []heartbeatState) {
 
 func heartbeatBatchSQL(count int) string {
 	var q strings.Builder
-	q.Grow(256 + count*48)
+	q.Grow(256 + count*64)
 	q.WriteString("UPDATE device d JOIN (")
 	for i := 0; i < count; i++ {
 		if i == 0 {
-			q.WriteString("SELECT CAST(? AS SIGNED) device_id,CAST(? AS DATETIME(6)) seen_at,CAST(? AS SIGNED) battery,CAST(? AS CHAR(20)) app_version")
+			q.WriteString("SELECT CAST(? AS SIGNED) device_id,CAST(? AS SIGNED) binding_epoch,CAST(? AS DATETIME(6)) seen_at,CAST(? AS SIGNED) battery,CAST(? AS CHAR(20)) app_version")
 		} else {
-			q.WriteString(" UNION ALL SELECT CAST(? AS SIGNED),CAST(? AS DATETIME(6)),CAST(? AS SIGNED),CAST(? AS CHAR(20))")
+			q.WriteString(" UNION ALL SELECT CAST(? AS SIGNED),CAST(? AS SIGNED),CAST(? AS DATETIME(6)),CAST(? AS SIGNED),CAST(? AS CHAR(20))")
 		}
 	}
 	// Filter stale observations before SET; multi-table UPDATE assignment order is unspecified.
-	q.WriteString(") h ON h.device_id=d.device_id SET d.last_time=GREATEST(COALESCE(d.last_time,h.seen_at),h.seen_at),d.last_online_at=GREATEST(COALESCE(d.last_online_at,h.seen_at),h.seen_at),d.battery=COALESCE(h.battery,d.battery),d.app_version=COALESCE(h.app_version,d.app_version) WHERE h.seen_at>=COALESCE(d.last_online_at,h.seen_at)")
+	q.WriteString(") h ON h.device_id=d.device_id SET d.last_time=GREATEST(COALESCE(d.last_time,h.seen_at),h.seen_at),d.last_online_at=GREATEST(COALESCE(d.last_online_at,h.seen_at),h.seen_at),d.battery=COALESCE(h.battery,d.battery),d.app_version=COALESCE(h.app_version,d.app_version) WHERE d.health_epoch=h.binding_epoch AND h.seen_at>=COALESCE(d.last_online_at,h.seen_at)")
 	return q.String()
 }
 
 func (b *HeartbeatBuffer) flushBatch(ctx context.Context, items []heartbeatState) error {
-	args := make([]any, 0, len(items)*4)
+	args := make([]any, 0, len(items)*5)
 	for _, item := range items {
 		var battery, version any
 		if item.hasBattery {
@@ -133,7 +144,7 @@ func (b *HeartbeatBuffer) flushBatch(ctx context.Context, items []heartbeatState
 		if item.hasVersion {
 			version = item.appVersion
 		}
-		args = append(args, item.deviceID, item.seenAt, battery, version)
+		args = append(args, item.deviceID, item.bindingEpoch, item.seenAt, battery, version)
 	}
 	result, err := b.store.ExecContext(ctx, heartbeatBatchSQL(len(items)), args...)
 	if err != nil {
