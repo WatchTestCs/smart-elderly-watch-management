@@ -89,12 +89,9 @@ func TestHeartbeatBufferRequeuePrefersNewestMetadata(t *testing.T) {
 	}
 }
 
-func TestHeartbeatBatchSQLGuardsMetadataBeforeTimestamp(t *testing.T) {
+func TestHeartbeatBatchSQLFiltersStaleRows(t *testing.T) {
 	query := heartbeatBatchSQL(1)
-	battery := strings.Index(query, "d.battery=IF(h.seen_at>=")
-	version := strings.Index(query, "d.app_version=IF(h.seen_at>=")
-	lastOnline := strings.Index(query, "d.last_online_at=GREATEST")
-	if battery < 0 || version <= battery || lastOnline <= version {
-		t.Fatalf("heartbeat metadata must be guarded before updating timestamp: %s", query)
+	if !strings.Contains(query, "WHERE h.seen_at>=COALESCE(d.last_online_at,h.seen_at)") {
+		t.Fatalf("heartbeat UPDATE must reject stale rows before assignments: %s", query)
 	}
 }
