@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"suining-care/internal/auth"
+	"suining-care/internal/carepolicy"
 
 	"suining-care/internal/inviterepo"
 	"suining-care/internal/response"
@@ -75,8 +76,13 @@ func (h *Handler) inviteList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	page, pageSize := bodyPage(m)
-	rows, total, err := inviterepo.ListCodes(r.Context(), h.DB, state, page, pageSize)
-	if internalError(w, err) {
+	tx, ok := h.beginAdminActionTx(w, r, carepolicy.ReadInvites)
+	if !ok {
+		return
+	}
+	defer tx.Rollback()
+	rows, total, err := inviterepo.ListCodes(r.Context(), tx, state, page, pageSize)
+	if internalError(w, err) || internalError(w, tx.Commit()) {
 		return
 	}
 	statusText := map[string]string{"unused": "可使用", "used": "已使用", "expired": "已过期"}
@@ -112,15 +118,6 @@ func (h *Handler) inviteCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := r.Context()
-	oldName, err := inviterepo.ResidentName(ctx, h.DB, oldID)
-	if err != nil {
-		if isNotFound(err) {
-			response.Fail(w, "老人不存在，请重新选择")
-			return
-		}
-		response.Error500(w, ref())
-		return
-	}
 	expire, validExpiry := parseInvitationExpiry(m)
 	if !validExpiry {
 		write400(w, "有效天数必须为非负整数，留空或 0 表示长期有效")
@@ -138,7 +135,16 @@ func (h *Handler) inviteCreate(w http.ResponseWriter, r *http.Request) {
 	}
 	createUser := creatorName(r)
 
-	tx, err := h.DB.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	tx, ok := h.beginAdminActionTx(w, r, carepolicy.ManageInvites)
+	if !ok {
+		return
+	}
+	defer tx.Rollback()
+	oldName, err := inviterepo.ResidentName(ctx, tx, oldID)
+	if isNotFound(err) {
+		response.Fail(w, "老人不存在，请重新选择")
+		return
+	}
 	if internalError(w, err) {
 		return
 	}
@@ -190,8 +196,13 @@ func (h *Handler) inviteDelete(w http.ResponseWriter, r *http.Request) {
 		response.Fail(w, msg)
 		return
 	}
-	deleted, err := inviterepo.DeleteUnusedCode(r.Context(), h.DB, id)
-	if internalError(w, err) {
+	tx, ok := h.beginAdminActionTx(w, r, carepolicy.ManageInvites)
+	if !ok {
+		return
+	}
+	defer tx.Rollback()
+	deleted, err := inviterepo.DeleteUnusedCode(r.Context(), tx, id)
+	if internalError(w, err) || internalError(w, tx.Commit()) {
 		return
 	}
 	if deleted {
