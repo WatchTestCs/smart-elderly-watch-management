@@ -51,6 +51,7 @@ func TestFamilyContactsHonorLiveDutyAndAccountOwnership(t *testing.T) {
 			t.Fatalf("revoked supervisor read contacts: HTTP %d %s", got.Code, got.Body.String())
 		}
 	}
+	mustExec(t, pool, "UPDATE oldperson SET family_id=NULL WHERE old_id=1")
 	mustExec(t, pool, "DELETE FROM family WHERE family_id=1")
 	got := callAPI(withHealthPrincipal(h, family, h.familySelectTwo), map[string]any{"familyPhone": "13800000001"})
 	if got.Code != http.StatusForbidden {
