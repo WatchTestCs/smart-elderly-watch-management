@@ -94,6 +94,7 @@ func TestTOTPEnrollmentRecoveryAndCrossReplicaRevocation(t *testing.T) {
 }
 func TestCareNotesAreEncryptedAndReadableThroughAuthorizedAPI(t *testing.T) {
 	h := secureHandler(t)
+	mustExec(t, h.DB, "INSERT INTO care_staff_permission(admin_id,duty,assigned_by) VALUES(1,'supervisor',1),(2,'auditor',1)")
 	seedDevice(t, h.DB)
 	id := api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "requestId": "test-press", "bindingVersion": 1})["incidentId"]
 	note := "现场医疗情况只向授权人员展示"

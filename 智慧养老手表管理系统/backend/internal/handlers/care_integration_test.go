@@ -50,6 +50,8 @@ func TestCareSOSOutboxAuditAndState(t *testing.T) {
 func TestCareAdminTransitionsAndFamilyIsolation(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
+	seedCareAdminDuty(t, pool, 1, "supervisor")
+	seedCareAdminDuty(t, pool, 2, "supervisor")
 	h := testHandler(t, pool)
 	out := api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "requestId": "test-press", "bindingVersion": 1})
 	id := int64(out["incidentId"].(float64))

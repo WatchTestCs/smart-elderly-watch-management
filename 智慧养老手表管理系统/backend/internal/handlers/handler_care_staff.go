@@ -41,6 +41,7 @@ func (h *Handler) careStaff(w http.ResponseWriter, r *http.Request) {
 	}, `SELECT u.user_id,u.user_name,
  COALESCE(p.duty,'unassigned') FROM users u
  LEFT JOIN care_staff_permission p ON p.admin_id=u.user_id
+ WHERE u.role='1'
  ORDER BY u.user_id LIMIT 100`)
 	if !ok {
 		return

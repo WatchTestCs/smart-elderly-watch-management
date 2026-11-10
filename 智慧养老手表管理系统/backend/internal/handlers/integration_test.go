@@ -66,6 +66,12 @@ func mustExec(t *testing.T, pool *dbstore.Database, sql string, args ...any) {
 	}
 }
 
+func seedCareAdminDuty(t *testing.T, pool *dbstore.Database, adminID int64, duty string) {
+	t.Helper()
+	mustExec(t, pool, "INSERT INTO users(user_id,user_name,role) VALUES(?,?,'1')", adminID, fmt.Sprintf("care-staff-%d", adminID))
+	mustExec(t, pool, "INSERT INTO care_staff_permission(admin_id,duty,assigned_by) VALUES(?,?,?)", adminID, duty, adminID)
+}
+
 func TestIntegrationMigrationsAndBindingConstraint(t *testing.T) {
 	pool := testDatabase(t)
 	ctx := context.Background()

@@ -6,7 +6,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"suining-care/internal/auth"
 	"suining-care/internal/authrepo"
+	"suining-care/internal/session"
 	"suining-care/internal/careworkflow"
 )
 
@@ -14,7 +16,7 @@ import (
 // careAdmin; these checks cover assigned administrative duties.
 func TestCareDutyPermissionsAndSensitiveAudit(t *testing.T) {
 	pool := testDatabase(t)
-	mustExec(t, pool, "INSERT INTO users(user_id,user_name) VALUES(1,'主管'),(2,'护理员'),(3,'审计员')")
+	mustExec(t, pool, "INSERT INTO users(user_id,user_name,role) VALUES(1,'主管','1'),(2,'护理员','1'),(3,'审计员','1')")
 	mustExec(t, pool, "INSERT INTO care_staff_permission(admin_id,duty,assigned_by) VALUES(1,'supervisor',1),(2,'caregiver',1),(3,'auditor',1)")
 	h := testHandler(t, pool)
 	req := httptest.NewRequest("POST", "/api/v1/care/transition", nil)
@@ -48,7 +50,7 @@ func TestCareDutyPermissionsAndSensitiveAudit(t *testing.T) {
 
 func TestRoleSpecificCarePermissions(t *testing.T) {
 	pool := testDatabase(t)
-	mustExec(t, pool, "INSERT INTO users(user_id,user_name) VALUES(11,'主管'),(12,'护理员'),(13,'审计员'),(14,'未授权')")
+	mustExec(t, pool, "INSERT INTO users(user_id,user_name,role) VALUES(11,'主管','1'),(12,'护理员','1'),(13,'审计员','1'),(14,'未授权','1')")
 	mustExec(t, pool, "INSERT INTO care_staff_permission(admin_id,duty,assigned_by) VALUES(11,'supervisor',11),(12,'caregiver',11),(13,'auditor',11)")
 	h := testHandler(t, pool)
 	req := httptest.NewRequest("POST", "/api/v1/care/incidents", nil)
@@ -84,6 +86,18 @@ func TestRoleSpecificCarePermissions(t *testing.T) {
 	}
 }
 
+func TestCareStaffListExcludesNonAdministrators(t *testing.T) {
+	pool := testDatabase(t)
+	seedCareAdminDuty(t, pool, 11, "supervisor")
+	mustExec(t, pool, "INSERT INTO users(user_id,user_name,role) VALUES(12,'普通用户','0')")
+	h := testHandler(t, pool)
+	result := api(t, withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.careStaff), map[string]any{})
+	staff := result["staff"].([]any)
+	if len(staff) != 1 || staff[0].(map[string]any)["id"] != float64(11) {
+		t.Fatalf("non-admin included in care staff: %v", staff)
+	}
+}
+
 func TestCareWorkerHeartbeatSchema(t *testing.T) {
 	pool := testDatabase(t)
 	mustExec(t, pool, "INSERT INTO care_worker_heartbeat(singleton,last_seen_at,started_at) VALUES(true,CURRENT_TIMESTAMP(6),CURRENT_TIMESTAMP(6))")
@@ -96,7 +110,7 @@ func TestCareWorkerHeartbeatSchema(t *testing.T) {
 
 func TestCareDutyAssignmentTransaction(t *testing.T) {
 	pool := testDatabase(t)
-	mustExec(t, pool, "INSERT INTO users(user_id,user_name) VALUES(101,'主管'),(102,'护理员'),(103,'审计员')")
+	mustExec(t, pool, "INSERT INTO users(user_id,user_name,role) VALUES(101,'主管','1'),(102,'护理员','1'),(103,'审计员','1')")
 	mustExec(t, pool, "INSERT INTO care_staff_permission(admin_id,duty,assigned_by) VALUES(101,'supervisor',101)")
 	ctx := context.Background()
 
