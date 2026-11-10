@@ -100,6 +100,7 @@ func TestExtraAuditFamilyOverwrite(t *testing.T) {
 
 func TestExtraAuditOutOfOrderTelemetry(t *testing.T) {
 	h := extraAuditHandler(t)
+	seedCareAdminDuty(t, h.DB, 11, "supervisor")
 	p := h.DB
 	seedDevice(t, p)
 	for _, v := range []struct {
@@ -116,7 +117,7 @@ func TestExtraAuditOutOfOrderTelemetry(t *testing.T) {
 	if err := p.QueryRowContext(context.Background(), "SELECT step FROM watch_day_info WHERE device_id=1").Scan(&steps); err != nil {
 		t.Fatal(err)
 	}
-	pos := api(t, h.positionSelect, map[string]any{"name": ""})
+	pos := api(t, withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.positionSelect), map[string]any{"name": ""})
 	t.Logf("steps after 10:00 then 09:00=%d; position=%v", steps, pos)
 	if steps != 5000 {
 		t.Fatal("late older snapshot replaced the newer daily steps")
@@ -147,6 +148,7 @@ func TestExtraAuditOutOfOrderTelemetry(t *testing.T) {
 
 func TestExtraAuditPositionTimestamp(t *testing.T) {
 	h := extraAuditHandler(t)
+	seedCareAdminDuty(t, h.DB, 11, "supervisor")
 	p := h.DB
 	seedDevice(t, p)
 	out := api(t, h.deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "lng": "120", "lat": "30", "beTime": "2026-10-20 08:00:00"})
@@ -154,7 +156,7 @@ func TestExtraAuditPositionTimestamp(t *testing.T) {
 		t.Fatal(out)
 	}
 	mustExec(t, p, "INSERT INTO alarm_precess(old_id,device_id,status,be_time) VALUES(1,1,'1',?)", time.Date(2026, 10, 20, 10, 0, 0, 0, time.UTC))
-	pos := api(t, h.positionSelect, map[string]any{"name": ""})
+	pos := api(t, withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.positionSelect), map[string]any{"name": ""})
 	item := pos["positionDtos"].([]any)[0].(map[string]any)
 	t.Logf("location sampled at 08:00; newer alarm at 10:00; displayed=%v", item)
 	if item["beTime"] != "2026-10-20 08:00:00" {

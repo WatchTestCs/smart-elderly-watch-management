@@ -13,6 +13,7 @@ import (
 
 func TestContinuousPositionKeepsAlarmAndLocationSnapshotsSeparate(t *testing.T) {
 	h := extraAuditHandler(t)
+	seedCareAdminDuty(t, h.DB, 11, "supervisor")
 	seedDevice(t, h.DB)
 	mustExec(t, h.DB, "INSERT INTO family(family_id,family_phone) VALUES(1,'13800000001')")
 	mustExec(t, h.DB, "UPDATE oldperson SET family_id=1 WHERE old_id=1")
@@ -22,9 +23,9 @@ func TestContinuousPositionKeepsAlarmAndLocationSnapshotsSeparate(t *testing.T) 
 		name string
 		read func() map[string]any
 	}{
-		{"admin list", func() map[string]any { return api(t, h.positionSelect, map[string]any{"name": ""}) }},
+		{"admin list", func() map[string]any { return api(t, withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.positionSelect), map[string]any{"name": ""}) }},
 		{"admin detail", func() map[string]any {
-			return api(t, withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 1}, h.positionSelectFamily), map[string]any{"oldId": 1})
+			return api(t, withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.positionSelectFamily), map[string]any{"oldId": 1})
 		}},
 		{"family detail", func() map[string]any {
 			return api(t, withHealthPrincipal(h, session.Principal{Role: auth.RoleFamily, ID: 1, OldID: 1}, h.positionSelectFamily), map[string]any{"oldId": 1})
@@ -36,10 +37,21 @@ func TestContinuousPositionKeepsAlarmAndLocationSnapshotsSeparate(t *testing.T) 
 			t.Errorf("%s mixed incident and latest position: %v", reader.name, row)
 		}
 	}
+	mustExec(t, h.DB, "INSERT INTO family(family_id,family_phone) VALUES(2,'13800000002')")
+	mustExec(t, h.DB, "UPDATE oldperson SET family_id=2 WHERE old_id=1")
+	former := withHealthPrincipal(h, session.Principal{Role: auth.RoleFamily, ID: 1, OldID: 1}, h.positionSelectFamily)
+	current := withHealthPrincipal(h, session.Principal{Role: auth.RoleFamily, ID: 2, OldID: 1}, h.positionSelectFamily)
+	if got := callAPI(former, map[string]any{"oldId": 1}); got.Code != 403 {
+		t.Fatalf("family retained location after reassignment: %d %s", got.Code, got.Body.String())
+	}
+	if got := callAPI(current, map[string]any{"oldId": 1}); got.Code != 200 {
+		t.Fatalf("current family denied its resident location: %d %s", got.Code, got.Body.String())
+	}
 }
 
 func TestContinuousSOSWithoutCoordinatesDoesNotBorrowLatestLocation(t *testing.T) {
 	h := extraAuditHandler(t)
+	seedCareAdminDuty(t, h.DB, 11, "supervisor")
 	seedDevice(t, h.DB)
 	api(t, h.deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "lng": "121", "lat": "31", "beTime": "2026-10-20 11:00:00"})
 	out := api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "bindingVersion": 1, "requestId": "context-sos-no-coordinates"})
@@ -50,7 +62,7 @@ func TestContinuousSOSWithoutCoordinatesDoesNotBorrowLatestLocation(t *testing.T
 	if err := h.DB.QueryRowContext(context.Background(), "SELECT be_time FROM alarm_precess WHERE old_id=1 ORDER BY id DESC LIMIT 1").Scan(&eventTime); err != nil {
 		t.Fatal(err)
 	}
-	row := api(t, h.positionSelect, map[string]any{"name": ""})["positionDtos"].([]any)[0].(map[string]any)
+	row := api(t, withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.positionSelect), map[string]any{"name": ""})["positionDtos"].([]any)[0].(map[string]any)
 	if row["status"] != "1" || row["alarmTime"] != eventTime.Format(tsLayout) || row["alarmLng"] != nil || row["alarmLat"] != nil || row["lng"] != "121" || row["lat"] != "31" || row["beTime"] != "2026-10-20 11:00:00" {
 		t.Errorf("SOS context invented coordinates or lost its own timestamp: %v", row)
 	}
@@ -73,6 +85,7 @@ func TestContinuousSOSWithoutCoordinatesDoesNotBorrowLatestLocation(t *testing.T
 
 func TestPositionAlertSummaryUsesLatestAlarmPerResident(t *testing.T) {
 	h := extraAuditHandler(t)
+	seedCareAdminDuty(t, h.DB, 11, "supervisor")
 	mustExec(t, h.DB, "INSERT INTO oldperson(old_id,name) VALUES(1,'甲'),(2,'乙'),(3,'丙')")
 	mustExec(t, h.DB, "INSERT INTO device(device_id,device_no,secret,old_id) VALUES(1,'SUMMARY1','test',1),(2,'SUMMARY2','test',2)")
 	ctx := context.Background()
@@ -98,7 +111,7 @@ func TestPositionAlertSummaryUsesLatestAlarmPerResident(t *testing.T) {
 	if resolved, err := telemetryrepo.ResolveLatestLocationAlert(ctx, h.DB, 1); err != nil || !resolved {
 		t.Fatalf("resolve latest: resolved=%v err=%v", resolved, err)
 	}
-	got := api(t, h.positionAlertSummary, map[string]any{})
+	got := api(t, withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.positionAlertSummary), map[string]any{})
 	if got["totalResidents"] != float64(3) || got["activeAlerts"] != float64(1) {
 		t.Fatalf("unexpected summary: %v", got)
 	}
