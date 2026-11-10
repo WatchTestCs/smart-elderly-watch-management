@@ -1,37 +1,16 @@
 package handlers
 
 import (
-	"context"
-	"database/sql"
 	"errors"
 	"net/http"
 	"strings"
 
 	"suining-care/internal/blob"
 	"suining-care/internal/careworkflow"
-	dbstore "suining-care/internal/db"
 	"suining-care/internal/response"
 	"suining-care/internal/socialrepo"
 	"suining-care/internal/socialworkflow"
 )
-
-type dbQuerier interface {
-	QueryContext(ctx context.Context, sql string, args ...any) (*sql.Rows, error)
-}
-
-// notificationPhones 有老人绑定的家属手机号（去重）。
-type notificationTarget struct {
-	FamilyID int64
-	Phone    string
-}
-
-func notificationPhones(ctx context.Context, q dbQuerier) ([]notificationTarget, error) {
-	return dbstore.QueryList(ctx, q, func(row *sql.Rows) (notificationTarget, error) {
-		var target notificationTarget
-		err := row.Scan(&target.FamilyID, &target.Phone)
-		return target, err
-	}, "SELECT DISTINCT f.family_id,f.family_phone FROM family f INNER JOIN oldperson o ON o.family_id=f.family_id WHERE f.family_phone IS NOT NULL")
-}
 
 // POST /api/v1/gallery/replace —— 替换首页展示图（整体替换，事务内执行）。
 func (h *Handler) replaceGallery(w http.ResponseWriter, r *http.Request) {
