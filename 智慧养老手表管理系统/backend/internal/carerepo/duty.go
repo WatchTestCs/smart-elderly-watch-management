@@ -42,8 +42,31 @@ func LockAuthority(ctx context.Context, tx *sql.Tx) error {
 	return tx.QueryRowContext(ctx, "SELECT id FROM app_metadata WHERE id=1 FOR UPDATE").Scan(&id)
 }
 
-// SetDuty persists an explicit assignment under the caller's transaction.
+var ErrLastSupervisor = errors.New("cannot remove the last active care supervisor")
+
+// SetDuty requires the authority singleton lock for changes to existing duties.
+// It refuses to replace the last active supervisor, even if future callers
+// relax the handler-level self-demotion restriction.
 func SetDuty(ctx context.Context, tx *sql.Tx, target, actor int64, duty string) error {
+	if duty != "supervisor" {
+		var current string
+		err := tx.QueryRowContext(ctx, "SELECT duty FROM care_staff_permission WHERE admin_id=? FOR UPDATE", target).Scan(&current)
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			return err
+		}
+		if current == "supervisor" {
+			var others int64
+			err = tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM care_staff_permission p
+ JOIN users u ON u.user_id=p.admin_id AND u.role='1'
+ WHERE p.duty='supervisor' AND p.admin_id<>?`, target).Scan(&others)
+			if err != nil {
+				return err
+			}
+			if others == 0 {
+				return ErrLastSupervisor
+			}
+		}
+	}
 	_, err := tx.ExecContext(ctx, `INSERT INTO care_staff_permission(admin_id,duty,assigned_by,assigned_at)
  VALUES(?,?,?,CURRENT_TIMESTAMP(6)) AS new ON DUPLICATE KEY UPDATE
  duty=new.duty,assigned_by=new.assigned_by,assigned_at=CURRENT_TIMESTAMP(6)`, target, duty, actor)
