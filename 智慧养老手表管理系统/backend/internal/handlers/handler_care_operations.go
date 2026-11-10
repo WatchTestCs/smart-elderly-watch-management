@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"suining-care/internal/care"
+	"suining-care/internal/carerepo"
 	"suining-care/internal/careworkflow"
 
 	"time"
@@ -14,15 +15,9 @@ import (
 	"suining-care/internal/response"
 )
 
-// A missing assignment preserves legacy administrator privileges until a
-// supervisor explicitly delegates a narrower duty. FAMILY is always rejected
-// by careAdmin before reaching these functions.
+// A missing assignment has no privileges.
 func (h *Handler) careDuty(w http.ResponseWriter, r *http.Request, actor int64) (string, bool) {
-	var duty string
-	err := h.DB.QueryRowContext(r.Context(), "SELECT duty FROM care_staff_permission WHERE admin_id=?", actor).Scan(&duty)
-	if isNotFound(err) {
-		return "supervisor", true
-	}
+	duty, err := carerepo.Duty(r.Context(), h.DB, actor)
 	if internalError(w, err) {
 		return "", false
 	}
