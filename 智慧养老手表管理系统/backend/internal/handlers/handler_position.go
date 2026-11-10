@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"suining-care/internal/auth"
+	"suining-care/internal/carepolicy"
 	"suining-care/internal/operationsrepo"
 	"suining-care/internal/response"
 	"suining-care/internal/securestore"
@@ -47,7 +48,7 @@ func (h *Handler) positionSelect(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	tx, ok := h.beginSupervisorTx(w, r)
+	tx, ok := h.beginAdminActionTx(w, r, carepolicy.ReadLocations)
 	if !ok {
 		return
 	}
@@ -73,7 +74,7 @@ func (h *Handler) positionSelect(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) positionAlertSummary(w http.ResponseWriter, r *http.Request) {
-	tx, ok := h.beginSupervisorTx(w, r)
+	tx, ok := h.beginAdminActionTx(w, r, carepolicy.ReadAlerts)
 	if !ok {
 		return
 	}
