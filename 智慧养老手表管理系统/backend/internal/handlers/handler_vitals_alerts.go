@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"suining-care/internal/auth"
+	"suining-care/internal/carepolicy"
 	"suining-care/internal/response"
 	"suining-care/internal/vitalpolicy"
 	"suining-care/internal/vitalrepo"
@@ -49,7 +50,7 @@ func (h *Handler) countVitalAlerts(w http.ResponseWriter, r *http.Request) {
 	if _, ok := optBody(w, r); !ok {
 		return
 	}
-	tx, ok := h.beginSupervisorTx(w, r)
+	tx, ok := h.beginAdminActionTx(w, r, carepolicy.ReadAlerts)
 	if !ok {
 		return
 	}
@@ -104,7 +105,7 @@ func (h *Handler) getVitalAlert(w http.ResponseWriter, r *http.Request) {
 		}
 		tx, ok = h.beginScopedHealthRead(w, r, familyOldID)
 	} else {
-		tx, ok = h.beginSupervisorTx(w, r)
+		tx, ok = h.beginAdminActionTx(w, r, carepolicy.ReadAlerts)
 	}
 	if !ok {
 		return
@@ -159,7 +160,7 @@ func (h *Handler) handleResolveVitalAlert(w http.ResponseWriter, r *http.Request
 		return
 	}
 	recordID, _ := strconv.ParseInt(recordIDStr, 10, 64)
-	tx, ok := h.beginSupervisorTx(w, r)
+	tx, ok := h.beginAdminActionTx(w, r, carepolicy.HandleAlerts)
 	if !ok {
 		return
 	}
