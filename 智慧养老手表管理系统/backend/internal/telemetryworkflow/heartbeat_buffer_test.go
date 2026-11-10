@@ -63,3 +63,38 @@ func TestHeartbeatBufferRequeuesFailedBatch(t *testing.T) {
 		t.Fatalf("retry Flush() = %d, %v; want 1, nil", n, err)
 	}
 }
+
+func TestHeartbeatBufferRequeuePrefersNewestMetadata(t *testing.T) {
+	buffer := NewHeartbeatBuffer(&heartbeatStoreStub{})
+	base := time.Date(2026, 11, 10, 0, 0, 0, 0, time.UTC)
+	newBattery, oldBattery := 90, 20
+	newVersion, oldVersion := "3.0", "2.0"
+	buffer.Record(7, &newBattery, &newVersion, base.Add(time.Minute))
+	buffer.requeue([]heartbeatState{{
+		deviceID: 7, seenAt: base, battery: oldBattery, hasBattery: true,
+		appVersion: oldVersion, hasVersion: true,
+	}})
+	state := buffer.items[7]
+	if state.battery != newBattery || state.appVersion != newVersion || !state.seenAt.Equal(base.Add(time.Minute)) {
+		t.Fatalf("older retry regressed state: %+v", state)
+	}
+
+	buffer.requeue([]heartbeatState{{
+		deviceID: 7, seenAt: base.Add(2 * time.Minute), battery: 80, hasBattery: true,
+		appVersion: "4.0", hasVersion: true,
+	}})
+	state = buffer.items[7]
+	if state.battery != 80 || state.appVersion != "4.0" || !state.seenAt.Equal(base.Add(2*time.Minute)) {
+		t.Fatalf("newer retry was discarded: %+v", state)
+	}
+}
+
+func TestHeartbeatBatchSQLGuardsMetadataBeforeTimestamp(t *testing.T) {
+	query := heartbeatBatchSQL(1)
+	battery := strings.Index(query, "d.battery=IF(h.seen_at>=")
+	version := strings.Index(query, "d.app_version=IF(h.seen_at>=")
+	lastOnline := strings.Index(query, "d.last_online_at=GREATEST")
+	if battery < 0 || version <= battery || lastOnline <= version {
+		t.Fatalf("heartbeat metadata must be guarded before updating timestamp: %s", query)
+	}
+}
