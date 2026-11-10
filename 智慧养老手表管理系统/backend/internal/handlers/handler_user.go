@@ -37,7 +37,7 @@ func (h *Handler) userSelect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer tx.Rollback()
-	lookup, err := userphone.SearchIndex(r.Context(), h.DB, h.Box, phone)
+	lookup, err := userphone.SearchIndex(r.Context(), tx, h.Box, phone)
 	if internalError(w, err) {
 		return
 	}
