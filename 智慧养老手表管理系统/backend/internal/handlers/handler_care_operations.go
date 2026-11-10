@@ -2,8 +2,8 @@ package handlers
 
 import (
 	"context"
-	"errors"
 	"database/sql"
+	"errors"
 	"net/http"
 	"os"
 	"time"
