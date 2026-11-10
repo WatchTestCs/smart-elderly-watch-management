@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"suining-care/internal/auth"
+	"suining-care/internal/carepolicy"
 	"suining-care/internal/response"
 	"suining-care/internal/session"
 )
@@ -38,15 +39,28 @@ func (h *Handler) resolveOptionalOldID(w http.ResponseWriter, r *http.Request, i
 	return h.resolveOldID(w, r, id)
 }
 
-// beginScopedHealthRead locks the live administrator duty or family association
-// until the database portion of a health read completes.
+// beginScopedHealthRead retains health-data authorization until the caller
+// commits its database read. It never inherits the staff-management capability.
 func (h *Handler) beginScopedHealthRead(w http.ResponseWriter, r *http.Request, oldID int64) (*sql.Tx, bool) {
+	return h.beginScopedResidentRead(w, r, oldID, carepolicy.ReadHealthData)
+}
+
+// beginScopedLocationRead uses the same family ownership lock, but administrators
+// must hold the independent live location-reading capability.
+func (h *Handler) beginScopedLocationRead(w http.ResponseWriter, r *http.Request, oldID int64) (*sql.Tx, bool) {
+	return h.beginScopedResidentRead(w, r, oldID, carepolicy.ReadLocations)
+}
+
+// beginScopedResidentRead holds the actor's duty or family binding through
+// the protected query. Role changes and family unbinding cannot overtake it.
+func (h *Handler) beginScopedResidentRead(w http.ResponseWriter, r *http.Request, oldID int64, action carepolicy.Action) (*sql.Tx, bool) {
 	p, ok := principalOr401(w, r)
 	if !ok {
 		return nil, false
 	}
 	if p.Role == auth.RoleAdmin {
-		return h.beginSupervisorTx(w, r)
+		tx, _, ok := h.beginCareRead(w, r, p.ID, action)
+		return tx, ok
 	}
 	if p.Role != auth.RoleFamily {
 		response.JSON(w, http.StatusForbidden, map[string]any{"code": "ACCESS_DENIED"})
