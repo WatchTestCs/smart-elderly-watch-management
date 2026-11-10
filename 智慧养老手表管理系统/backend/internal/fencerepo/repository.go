@@ -41,7 +41,7 @@ type Event struct {
 }
 
 // ListConfigured selects only definitions belonging to the current device binding epoch.
-func ListConfigured(ctx context.Context, store *db.Database, deviceID int64) ([]Config, error) {
+func ListConfigured(ctx context.Context, store db.RowsQuerier, deviceID int64) ([]Config, error) {
 	return db.QueryList(ctx, store, func(rows *sql.Rows) (Config, error) {
 		var item Config
 		var data []byte
@@ -73,7 +73,7 @@ func ListActive(ctx context.Context, tx *sql.Tx, deviceID, residentID, epoch int
 		deviceID, residentID, epoch)
 }
 
-func ListEvents(ctx context.Context, store *db.Database, residentID, after int64) ([]Event, error) {
+func ListEvents(ctx context.Context, store db.RowsQuerier, residentID, after int64) ([]Event, error) {
 	return db.QueryList(ctx, store, func(rows *sql.Rows) (Event, error) {
 		var item Event
 		err := rows.Scan(&item.ID, &item.FenceID, &item.FenceRevision, &item.DeviceID,

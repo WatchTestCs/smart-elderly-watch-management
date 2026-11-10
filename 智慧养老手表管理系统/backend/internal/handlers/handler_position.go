@@ -47,7 +47,12 @@ func (h *Handler) positionSelect(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	rows, total, err := telemetryrepo.ListLatestPositions(r.Context(), h.DB, name, page, pageSize)
+	tx, ok := h.beginSupervisorTx(w, r)
+	if !ok {
+		return
+	}
+	defer tx.Rollback()
+	rows, total, err := telemetryrepo.ListLatestPositions(r.Context(), tx, name, page, pageSize)
 	if internalError(w, err) {
 		return
 	}
@@ -59,14 +64,22 @@ func (h *Handler) positionSelect(w http.ResponseWriter, r *http.Request) {
 		}
 		positions = append(positions, view)
 	}
+	if internalError(w, tx.Commit()) {
+		return
+	}
 	response.OK(w, map[string]any{
 		"positionDtos": positions, "total": total, "page": page, "pageSize": pageSize,
 	})
 }
 
 func (h *Handler) positionAlertSummary(w http.ResponseWriter, r *http.Request) {
-	total, active, err := operationsrepo.ReadPositionAlerts(r.Context(), h.DB)
-	if internalError(w, err) {
+	tx, ok := h.beginSupervisorTx(w, r)
+	if !ok {
+		return
+	}
+	defer tx.Rollback()
+	total, active, err := operationsrepo.ReadPositionAlerts(r.Context(), tx)
+	if internalError(w, err) || internalError(w, tx.Commit()) {
 		return
 	}
 	response.OK(w, map[string]any{"totalResidents": total, "activeAlerts": active})
@@ -93,15 +106,12 @@ func (h *Handler) positionSelectFamily(w http.ResponseWriter, r *http.Request) {
 		}
 		residentID = id
 	}
-	if !admin {
-		var familyID *int64
-		err := h.DB.QueryRowContext(ctx, "SELECT family_id FROM oldperson WHERE old_id=?", residentID).Scan(&familyID)
-		if err != nil || familyID == nil || principal == nil || *familyID != principal.ID {
-			scopeDeny(w)
-			return
-		}
+	tx, ok := h.beginScopedHealthRead(w, r, residentID)
+	if !ok {
+		return
 	}
-	rows, err := telemetryrepo.ListResidentPositions(ctx, h.DB, residentID)
+	defer tx.Rollback()
+	rows, err := telemetryrepo.ListResidentPositions(ctx, tx, residentID)
 	if internalError(w, err) {
 		return
 	}
@@ -112,6 +122,9 @@ func (h *Handler) positionSelectFamily(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		positions = append(positions, view)
+	}
+	if internalError(w, tx.Commit()) {
+		return
 	}
 	response.OK(w, map[string]any{"positionDtos": positions})
 }

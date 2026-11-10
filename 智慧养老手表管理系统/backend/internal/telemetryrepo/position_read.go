@@ -46,7 +46,7 @@ func scanPosition(rows *sql.Rows) (PositionRow, error) {
 	return item, err
 }
 
-func ListLatestPositions(ctx context.Context, store *db.Database, name string, page, pageSize int) ([]PositionRow, int64, error) {
+func ListLatestPositions(ctx context.Context, store db.ReadQuerier, name string, page, pageSize int) ([]PositionRow, int64, error) {
 	const filter = " WHERE (?='' OR o.name LIKE CONCAT('%',?,'%'))"
 	var total int64
 	if err := store.QueryRowContext(ctx, "SELECT COUNT(*) FROM oldperson o"+filter, name, name).Scan(&total); err != nil {
@@ -58,7 +58,7 @@ func ListLatestPositions(ctx context.Context, store *db.Database, name string, p
 	return items, total, err
 }
 
-func ListResidentPositions(ctx context.Context, store *db.Database, residentID int64) ([]PositionRow, error) {
+func ListResidentPositions(ctx context.Context, store db.RowsQuerier, residentID int64) ([]PositionRow, error) {
 	return db.QueryList(ctx, store, scanPosition,
 		`SELECT o.name, o.old_id, o.sex, l.lng, l.lat,
 			l.be_time AS be_time, COALESCE(a.status, '0') AS status, a.be_time AS alarm_time,

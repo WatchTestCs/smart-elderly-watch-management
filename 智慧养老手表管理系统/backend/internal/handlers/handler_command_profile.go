@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"database/sql"
 	"net/http"
 	"suining-care/internal/commands"
 	"suining-care/internal/response"
@@ -26,8 +25,8 @@ func (h *Handler) commandProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := r.Context()
-	tx, err := h.DB.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
-	if internalError(w, err) {
+	tx, ok := h.beginSupervisorTx(w, r)
+	if !ok {
 		return
 	}
 	defer tx.Rollback()
@@ -35,7 +34,7 @@ func (h *Handler) commandProfile(w http.ResponseWriter, r *http.Request) {
 	if !lockDeviceID(w, ctx, tx, id) {
 		return
 	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO device_command_profile(device_id,wire_type,protocol,enabled,updated_by) VALUES(?,?,?,?,?)
+	_, err := tx.ExecContext(ctx, `INSERT INTO device_command_profile(device_id,wire_type,protocol,enabled,updated_by) VALUES(?,?,?,?,?)
  AS new ON DUPLICATE KEY UPDATE wire_type=new.wire_type,protocol=new.protocol,enabled=new.enabled,updated_by=new.updated_by,updated_at=CURRENT_TIMESTAMP(6)`, id, req.WireType, req.Protocol, req.Enabled, actor)
 	if err == nil {
 		_, err = tx.ExecContext(ctx, "UPDATE device_command SET status='cancelled' WHERE device_id=? AND status IN ('pending','sent')", id)

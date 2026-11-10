@@ -39,8 +39,8 @@ func (h *Handler) fenceSave(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := r.Context()
-	tx, err := h.DB.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
-	if internalError(w, err) {
+	tx, ok := h.beginSupervisorTx(w, r)
+	if !ok {
 		return
 	}
 	defer tx.Rollback()
@@ -88,8 +88,13 @@ func (h *Handler) fenceList(w http.ResponseWriter, r *http.Request) {
 		write400(w, "设备无效")
 		return
 	}
-	items, err := fencerepo.ListConfigured(r.Context(), h.DB, req.DeviceID)
-	if internalError(w, err) {
+	tx, ok := h.beginSupervisorTx(w, r)
+	if !ok {
+		return
+	}
+	defer tx.Rollback()
+	items, err := fencerepo.ListConfigured(r.Context(), tx, req.DeviceID)
+	if internalError(w, err) || internalError(w, tx.Commit()) {
 		return
 	}
 	response.OK(w, map[string]any{"items": items})
@@ -168,8 +173,13 @@ func (h *Handler) fenceEvents(w http.ResponseWriter, r *http.Request) {
 		write400(w, "老人或游标无效")
 		return
 	}
-	items, err := fencerepo.ListEvents(r.Context(), h.DB, req.OldID, req.After)
-	if internalError(w, err) {
+	tx, ok := h.beginSupervisorTx(w, r)
+	if !ok {
+		return
+	}
+	defer tx.Rollback()
+	items, err := fencerepo.ListEvents(r.Context(), tx, req.OldID, req.After)
+	if internalError(w, err) || internalError(w, tx.Commit()) {
 		return
 	}
 	response.OK(w, map[string]any{"items": items})
