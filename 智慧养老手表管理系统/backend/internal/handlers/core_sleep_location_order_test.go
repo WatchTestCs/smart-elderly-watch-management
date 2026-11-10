@@ -3,12 +3,17 @@ package handlers
 import (
 	"context"
 	"testing"
+
+	"suining-care/internal/auth"
+	"suining-care/internal/session"
 )
 
 func TestContinuousSleepFieldsKeepObservationOrder(t *testing.T) {
 	pool := testDatabase(t)
 	h := testHandler(t, pool)
 	seedDevice(t, pool)
+	seedCareAdminDuty(t, pool, 11, "supervisor")
+	sleepCount := withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.countSleepAlertDevices)
 	report := func(at string, fields map[string]any) {
 		fields["deviceNo"], fields["secret"], fields["beTime"] = "WATCH001", testSecret, "2026-10-20 "+at
 		if out := api(t, h.deviceReport, fields); out["returnCode"] != "1111" {
@@ -34,7 +39,7 @@ func TestContinuousSleepFieldsKeepObservationOrder(t *testing.T) {
 	check(7, "1")
 	report("11:30:00", map[string]any{"sleep": 0, "sleepState": "0"})
 	check(0, "0")
-	if rows := api(t, h.countSleepAlertDevices, map[string]any{})["sleep"]; rows != float64(0) {
+	if rows := api(t, sleepCount, map[string]any{})["sleep"]; rows != float64(0) {
 		t.Fatalf("older sleep state created a current alert: %v", rows)
 	}
 }

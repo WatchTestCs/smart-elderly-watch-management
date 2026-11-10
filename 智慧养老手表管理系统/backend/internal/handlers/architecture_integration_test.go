@@ -34,8 +34,10 @@ func careRequest(t *testing.T, h *Handler, handler http.HandlerFunc, actor int64
 
 func TestArchitectureWatchProfileContract(t *testing.T) {
 	pool := testDatabase(t)
+	seedCareAdminDuty(t, pool, 11, "supervisor")
 	mustExec(t, pool, "INSERT INTO watch_info(device_id,op_time,hrf,hrl,bpf,bpl) VALUES(42,'2026-10-01',110,55,140,90)")
-	out := api(t, testHandler(t, pool).listMonitoringProfiles, map[string]any{"oldName": ""})
+	h := testHandler(t, pool)
+	out := api(t, withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.listMonitoringProfiles), map[string]any{"oldName": ""})
 	row := out["watchDtos"].([]any)[0].(map[string]any)
 	if row["deviceId"] != float64(42) || row["opTime"] != "2026-10-01" {
 		t.Fatalf("threshold page cannot identify/edit its row: %+v", row)
@@ -86,8 +88,9 @@ func TestArchitectureLifestyleFieldsKeepTheirMeaning(t *testing.T) {
 
 func TestArchitectureUnboundElderCreation(t *testing.T) {
 	pool := testDatabase(t)
+	seedCareAdminDuty(t, pool, 11, "supervisor")
 	mustExec(t, pool, "INSERT INTO customer(customer_id,customer_name) VALUES(1,'监护人')")
-	out := callAPI(testHandler(t, pool).createResident, elderPayload())
+	out := callAPI(withHealthPrincipal(testHandler(t, pool), session.Principal{Role: auth.RoleAdmin, ID: 11}, testHandler(t, pool).createResident), elderPayload())
 	if out.Code != 200 || architectureBody(t, out)["returnCode"] != "1111" {
 		t.Fatalf("elder creation must precede device binding: %d %s", out.Code, out.Body.String())
 	}
@@ -108,6 +111,7 @@ func architectureBody(t *testing.T, recorder *httptest.ResponseRecorder) map[str
 
 func TestArchitectureElderEditCannotRewriteBinding(t *testing.T) {
 	pool := testDatabase(t)
+	seedCareAdminDuty(t, pool, 11, "supervisor")
 	mustExec(t, pool, "INSERT INTO customer(customer_id,customer_name) VALUES(1,'监护人')")
 	seedDevice(t, pool)
 	mustExec(t, pool, "INSERT INTO oldperson(old_id,name,device_id) VALUES(2,'另一长者',2)")
@@ -115,7 +119,7 @@ func TestArchitectureElderEditCannotRewriteBinding(t *testing.T) {
 	mustExec(t, pool, "UPDATE oldperson SET device_id=1 WHERE old_id=1")
 	body := elderPayload()
 	body["oldId"], body["deviceId"] = 1, 2
-	out := callAPI(testHandler(t, pool).updateResident, body)
+	out := callAPI(withHealthPrincipal(testHandler(t, pool), session.Principal{Role: auth.RoleAdmin, ID: 11}, testHandler(t, pool).updateResident), body)
 	if out.Code != http.StatusConflict {
 		t.Fatalf("record editing rewrote another device association: %d %s", out.Code, out.Body.String())
 	}
