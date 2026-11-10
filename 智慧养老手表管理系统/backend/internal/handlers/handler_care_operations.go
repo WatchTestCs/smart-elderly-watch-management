@@ -9,6 +9,7 @@ import (
 	"suining-care/internal/care"
 	"suining-care/internal/carerepo"
 	"suining-care/internal/careworkflow"
+	"suining-care/internal/carepolicy"
 
 	"time"
 
@@ -29,9 +30,8 @@ func (h *Handler) authorizeCareAction(w http.ResponseWriter, r *http.Request, ac
 	if !ok {
 		return false
 	}
-	allowed := duty == "supervisor" || (duty == "caregiver" && (action == "acknowledge" || action == "start" || action == "resolve"))
-	if !allowed {
-		response.JSON(w, http.StatusForbidden, map[string]any{"message": "岗位无此操作权限"})
+	if !carepolicy.Allowed(carepolicy.Duty(duty), carepolicy.Action(action)) {
+		response.JSON(w, http.StatusForbidden, map[string]any{"code": "ACCESS_DENIED", "message": "岗位无此操作权限"})
 		return false
 	}
 	return true
