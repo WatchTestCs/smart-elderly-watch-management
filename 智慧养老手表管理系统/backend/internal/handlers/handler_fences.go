@@ -144,7 +144,7 @@ func (h *Handler) fencePoint(w http.ResponseWriter, r *http.Request) {
 		}
 		events = append(events, event)
 	}
-	if err = telemetryrepo.TouchDevice(ctx, tx, d.ID, nil, nil, time.Now()); internalError(w, err) {
+	if err = telemetryrepo.TouchDevice(ctx, tx, d.ID, d.HealthEpoch, nil, nil, time.Now()); internalError(w, err) {
 		return
 	}
 	if err = tx.Commit(); internalError(w, err) {
