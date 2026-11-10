@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"suining-care/internal/carepolicy"
 	dbstore "suining-care/internal/db"
 	"suining-care/internal/response"
 )
@@ -33,7 +34,7 @@ func listLatestMeasurements[T any](h *Handler, w http.ResponseWriter, r *http.Re
 		args = append(args, timeFirst, timeLast)
 	}
 	sql += " ORDER BY t.createTime DESC, t.oldId"
-	tx, ok := h.beginSupervisorTx(w, r)
+	tx, ok := h.beginAdminActionTx(w, r, carepolicy.ReadHealthData)
 	if !ok {
 		return
 	}
