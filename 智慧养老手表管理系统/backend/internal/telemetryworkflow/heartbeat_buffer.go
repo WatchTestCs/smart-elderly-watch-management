@@ -18,13 +18,13 @@ type heartbeatStore interface {
 }
 
 type heartbeatState struct {
-	deviceID   int64
+	deviceID     int64
 	bindingEpoch int64
-	seenAt     time.Time
-	battery    int
-	hasBattery bool
-	appVersion string
-	hasVersion bool
+	seenAt       time.Time
+	battery      int
+	hasBattery   bool
+	appVersion   string
+	hasVersion   bool
 }
 
 // HeartbeatBuffer coalesces replaceable device liveness writes.
