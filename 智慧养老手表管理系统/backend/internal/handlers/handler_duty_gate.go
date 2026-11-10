@@ -4,14 +4,12 @@ import (
 	"net/http"
 
 	"suining-care/internal/auth"
+	"suining-care/internal/carerepo"
 	"suining-care/internal/response"
 )
 
-// EnforceAdminDuty closes the legacy ADMIN route gap: a caregiver or auditor
-// must not gain unrestricted administrative access outside the care workspace.
-// Run this AFTER auth.Middleware so the principal is available from context.
-// Legacy ADMIN accounts without an explicit assignment remain supervisors;
-// the rollout still requires an operator to inventory and assign those accounts.
+// EnforceAdminDuty grants broad admin routes only to explicitly assigned supervisors.
+// Run after authentication so the principal is available in request context.
 func (h *Handler) EnforceAdminDuty(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		principal := auth.Principal(r)
@@ -20,15 +18,7 @@ func (h *Handler) EnforceAdminDuty(next http.Handler) http.Handler {
 			return
 		}
 
-		var duty string
-		err := h.DB.QueryRowContext(r.Context(),
-			"SELECT duty FROM care_staff_permission WHERE admin_id=?",
-			principal.ID).Scan(&duty)
-		if isNotFound(err) {
-			// Preserve the documented migration behavior for unassigned ADMINs.
-			next.ServeHTTP(w, r)
-			return
-		}
+		duty, err := carerepo.Duty(r.Context(), h.DB, principal.ID)
 		if err != nil {
 			// An unavailable role store must not turn into an allow decision.
 			response.JSON(w, http.StatusServiceUnavailable, map[string]any{
