@@ -118,8 +118,8 @@ func heartbeatBatchSQL(count int) string {
 			q.WriteString(" UNION ALL SELECT CAST(? AS SIGNED),CAST(? AS DATETIME(6)),CAST(? AS SIGNED),CAST(? AS CHAR(20))")
 		}
 	}
-	// MySQL evaluates assignments left to right. Guard metadata before advancing last_online_at.
-	q.WriteString(") h ON h.device_id=d.device_id SET d.battery=IF(h.seen_at>=COALESCE(d.last_online_at,h.seen_at),COALESCE(h.battery,d.battery),d.battery),d.app_version=IF(h.seen_at>=COALESCE(d.last_online_at,h.seen_at),COALESCE(h.app_version,d.app_version),d.app_version),d.last_time=GREATEST(COALESCE(d.last_time,h.seen_at),h.seen_at),d.last_online_at=GREATEST(COALESCE(d.last_online_at,h.seen_at),h.seen_at)")
+	// Filter stale observations before SET; multi-table UPDATE assignment order is unspecified.
+	q.WriteString(") h ON h.device_id=d.device_id SET d.last_time=GREATEST(COALESCE(d.last_time,h.seen_at),h.seen_at),d.last_online_at=GREATEST(COALESCE(d.last_online_at,h.seen_at),h.seen_at),d.battery=COALESCE(h.battery,d.battery),d.app_version=COALESCE(h.app_version,d.app_version) WHERE h.seen_at>=COALESCE(d.last_online_at,h.seen_at)")
 	return q.String()
 }
 
