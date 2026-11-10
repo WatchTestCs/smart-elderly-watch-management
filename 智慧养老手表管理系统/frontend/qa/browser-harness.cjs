@@ -34,7 +34,7 @@ module.exports = async function (run) {
    'api/v1/care/incidents':{items:[],total:0,page:1,pageSize:20,duty:'supervisor',actorId:1},
    'api/v1/care/diagnostics':{workerHealthy:true,notificationConfigured:false,receiptConfigured:false,pendingNotifications:0,failedNotifications:0,staleSending:0,overdueIncidents:0},
    'api/v1/care/staff':{staff:[]},
-   'api/v1/auth/session':{authenticated:signedIn,account:signedIn?{role,id:1,phone:'13000000000',oldId:role==='FAMILY'?1:null,displayName:role==='FAMILY'?'小明':'管理员'}:{},csrfToken:'mock-csrf-token',csrfHeader:'X-CSRF-TOKEN'},
+   'api/v1/auth/session':{authenticated:signedIn,account:signedIn?{role,id:1,duty:role==='ADMIN'?'supervisor':undefined,phone:'13000000000',oldId:role==='FAMILY'?1:null,displayName:role==='FAMILY'?'小明':'管理员'}:{},csrfToken:'mock-csrf-token',csrfHeader:'X-CSRF-TOKEN'},
    'api/v1/auth/logout':{returnCode:'1111'},
    'api/v1/family/updateTouPic':{returnCode:'1111'},
    'api/v1/notices/list':{texts:mode==='empty'?[]:[{textId:1,picId:0,title:'设备使用与照护提醒',time:'2026-10-13 10:20'},{textId:2,picId:0,title:'服务安排与平台使用说明',time:'2026-10-12 09:00'}]},
