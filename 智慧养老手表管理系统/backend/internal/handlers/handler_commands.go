@@ -1,15 +1,12 @@
 package handlers
 
 import (
-	"database/sql"
+	"errors"
 	"net/http"
 	"strings"
-	"time"
 
-	"suining-care/internal/carepolicy"
-	"suining-care/internal/commands"
-	dbstore "suining-care/internal/db"
-	"suining-care/internal/devicerepo"
+	"suining-care/internal/careworkflow"
+	"suining-care/internal/commandworkflow"
 	"suining-care/internal/response"
 )
 
@@ -31,75 +28,42 @@ func (h *Handler) commandCreate(w http.ResponseWriter, r *http.Request) {
 		write400(w, "设备、幂等键或有效期无效（30–3600 秒）")
 		return
 	}
-	ctx := r.Context()
-	tx, ok := h.beginAdminActionTx(w, r, carepolicy.IssueCommands)
-	if !ok {
+	result, err := commandworkflow.Create(r.Context(), h.DB, actor, commandworkflow.CreateRequest{
+		DeviceID: req.DeviceID, Action: req.Action, RequestKey: req.RequestKey, TTL: req.TTL,
+	})
+	var invalid *commandworkflow.InvalidAction
+	switch {
+	case errors.Is(err, careworkflow.ErrCapabilityDenied):
+		response.JSON(w, http.StatusForbidden, map[string]any{"code": "ACCESS_DENIED", "message": "岗位无此操作权限"})
 		return
-	}
-	defer tx.Rollback()
-	d, err := devicerepo.ScanDeviceRecord(devicerepo.LockedDeviceRow(ctx, tx, req.DeviceID))
-	if isNotFound(err) {
-		response.JSON(w, 404, map[string]any{"message": "设备不存在"})
+	case errors.Is(err, commandworkflow.ErrDeviceMissing):
+		response.JSON(w, http.StatusNotFound, map[string]any{"message": "设备不存在"})
 		return
-	}
-	if internalError(w, err) {
-		return
-	}
-	if d.OldID == nil || (d.Status != nil && *d.Status == 0) {
+	case errors.Is(err, commandworkflow.ErrDeviceUnavailable):
 		conflict409(w, "设备须处于启用且已绑定状态")
 		return
-	}
-	var id int64
-	var oldAction, status string
-	var oldTTL int
-	err = tx.QueryRowContext(ctx, "SELECT id,action,status,ttl_seconds FROM device_command WHERE device_id=? AND epoch=? AND request_key=?", d.ID, d.HealthEpoch, req.RequestKey).Scan(&id, &oldAction, &status, &oldTTL)
-	if err == nil {
-		if oldAction != req.Action || oldTTL != req.TTL {
-			conflict409(w, "幂等键已用于另一动作")
-			return
-		}
-		if internalError(w, tx.Commit()) {
-			return
-		}
-		response.OK(w, map[string]any{"commandId": id, "status": status, "duplicate": true})
+	case errors.Is(err, commandworkflow.ErrKeyConflict):
+		conflict409(w, "幂等键已用于另一动作")
 		return
-	}
-	if !isNotFound(err) {
-		response.Error500(w, ref())
-		return
-	}
-	var typ string
-	err = tx.QueryRowContext(ctx, "SELECT wire_type FROM device_command_profile WHERE device_id=? AND enabled=true AND protocol='suining-pull-v1'", d.ID).Scan(&typ)
-	if isNotFound(err) {
+	case errors.Is(err, commandworkflow.ErrProfileMissing):
 		conflict409(w, "设备尚未启用岁宁指令协议")
 		return
-	}
-	if internalError(w, err) {
+	case errors.As(err, &invalid):
+		write400(w, invalid.Error())
+		return
+	case internalError(w, err):
 		return
 	}
-	channel, wire, err := commands.Resolve(typ, req.Action)
-	if err != nil {
-		write400(w, err.Error())
+	if result.Duplicate {
+		response.OK(w, map[string]any{"commandId": result.CommandID, "status": result.Status, "duplicate": true})
 		return
 	}
-	maxAttempts := 1
-	if commands.RetrySafe(req.Action) {
-		maxAttempts = 3
-	}
-	now := time.Now().UTC()
-	id, err = dbstore.InsertID(ctx, tx, `INSERT INTO device_command(device_id,old_id,epoch,request_key,action,wire_type,channel,wire_action,max_attempts,retry_at,expires_at,created_by,ttl_seconds)
- VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`, d.ID, *d.OldID, d.HealthEpoch, req.RequestKey, req.Action, typ, channel, wire, maxAttempts, now, now.Add(time.Duration(req.TTL)*time.Second), actor, req.TTL)
-	if err == nil {
-		err = commitCareChange(ctx, tx, actor, "device_command_create")
-	}
-	if internalError(w, err) {
-		return
-	}
-	response.OK(w, map[string]any{"commandId": id, "status": "pending"})
+	response.OK(w, map[string]any{"commandId": result.CommandID, "status": result.Status})
 }
 
 func (h *Handler) commandList(w http.ResponseWriter, r *http.Request) {
-	if _, ok := careAdmin(w, r); !ok {
+	actor, ok := careAdmin(w, r)
+	if !ok {
 		return
 	}
 	var req struct {
@@ -113,23 +77,12 @@ func (h *Handler) commandList(w http.ResponseWriter, r *http.Request) {
 		write400(w, "设备或游标无效")
 		return
 	}
-	tx, ok := h.beginAdminActionTx(w, r, carepolicy.ReadCommands)
-	if !ok {
+	items, err := commandworkflow.List(r.Context(), h.DB, actor, req.DeviceID, req.After)
+	if errors.Is(err, careworkflow.ErrCapabilityDenied) {
+		response.JSON(w, http.StatusForbidden, map[string]any{"code": "ACCESS_DENIED", "message": "岗位无此操作权限"})
 		return
 	}
-	defer tx.Rollback()
-	items, err := dbstore.QueryList(r.Context(), tx, func(rows *sql.Rows) (map[string]any, error) {
-		var id int64
-		var action, status string
-		var attempts int
-		var created, expires time.Time
-		var ack *time.Time
-		if err := rows.Scan(&id, &action, &status, &attempts, &created, &expires, &ack); err != nil {
-			return nil, err
-		}
-		return map[string]any{"commandId": id, "action": action, "status": status, "attempts": attempts, "createdAt": created, "expiresAt": expires, "ackedAt": ack}, nil
-	}, `SELECT id,action,status,attempts,created_at,expires_at,acked_at FROM device_command WHERE device_id=? AND id>? ORDER BY id LIMIT 100`, req.DeviceID, req.After)
-	if internalError(w, err) || internalError(w, tx.Commit()) {
+	if internalError(w, err) {
 		return
 	}
 	response.OK(w, map[string]any{"items": items})
