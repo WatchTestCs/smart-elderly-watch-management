@@ -6,6 +6,8 @@ import (
 	"net/http"
 
 	"suining-care/internal/auth"
+	"suining-care/internal/careworkflow"
+	"suining-care/internal/familyworkflow"
 	"suining-care/internal/familyrepo"
 	"suining-care/internal/response"
 )
@@ -31,6 +33,10 @@ func familyFields(w http.ResponseWriter, m map[string]any) (familyrepo.Family, b
 
 // POST /api/v1/family/add: create an unactivated family and bind its elder.
 func (h *Handler) familyAdd(w http.ResponseWriter, r *http.Request) {
+	actor, ok := careAdmin(w, r)
+	if !ok {
+		return
+	}
 	m, ok := bodyMap(w, r)
 	if !ok {
 		return
@@ -44,8 +50,11 @@ func (h *Handler) familyAdd(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	err := familyrepo.Create(r.Context(), h.DB, h.Box, family, oldPhone)
+	err := familyworkflow.Create(r.Context(), h.DB, h.Box, actor, family, oldPhone)
 	switch {
+	case errors.Is(err, careworkflow.ErrCapabilityDenied):
+		response.JSON(w, http.StatusForbidden, map[string]any{"code": "ACCESS_DENIED", "message": "岗位无此操作权限"})
+		return
 	case errors.Is(err, familyrepo.ErrPhoneInUse):
 		response.Fail(w, "该手机号已被使用，请更换手机号")
 	case errors.Is(err, familyrepo.ErrResidentMissing):
@@ -63,6 +72,10 @@ func (h *Handler) familyAdd(w http.ResponseWriter, r *http.Request) {
 
 // POST /api/v1/family/updateFamily: update an administrative family record.
 func (h *Handler) familyUpdate(w http.ResponseWriter, r *http.Request) {
+	actor, ok := careAdmin(w, r)
+	if !ok {
+		return
+	}
 	m, ok := bodyMap(w, r)
 	if !ok {
 		return
@@ -76,8 +89,11 @@ func (h *Handler) familyUpdate(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	err := familyrepo.Update(r.Context(), h.DB, h.Box, id, family)
+	err := familyworkflow.Update(r.Context(), h.DB, h.Box, actor, id, family)
 	switch {
+	case errors.Is(err, careworkflow.ErrCapabilityDenied):
+		response.JSON(w, http.StatusForbidden, map[string]any{"code": "ACCESS_DENIED", "message": "岗位无此操作权限"})
+		return
 	case errors.Is(err, familyrepo.ErrPhoneInUse):
 		response.Fail(w, "该手机号已被使用，请更换手机号")
 	case errors.Is(err, familyrepo.ErrFamilyNotFound):
@@ -91,6 +107,10 @@ func (h *Handler) familyUpdate(w http.ResponseWriter, r *http.Request) {
 
 // POST /api/v1/family/deleteFamily: remove binding and revoke sessions.
 func (h *Handler) familyDelete(w http.ResponseWriter, r *http.Request) {
+	actor, ok := careAdmin(w, r)
+	if !ok {
+		return
+	}
 	m, ok := bodyMap(w, r)
 	if !ok {
 		return
@@ -100,8 +120,11 @@ func (h *Handler) familyDelete(w http.ResponseWriter, r *http.Request) {
 		response.Error500(w, ref())
 		return
 	}
-	err := familyrepo.Delete(r.Context(), h.DB, id)
+	err := familyworkflow.Delete(r.Context(), h.DB, actor, id)
 	switch {
+	case errors.Is(err, careworkflow.ErrCapabilityDenied):
+		response.JSON(w, http.StatusForbidden, map[string]any{"code": "ACCESS_DENIED", "message": "岗位无此操作权限"})
+		return
 	case errors.Is(err, familyrepo.ErrFamilyNotFound):
 		recordNotFound(w)
 		return
