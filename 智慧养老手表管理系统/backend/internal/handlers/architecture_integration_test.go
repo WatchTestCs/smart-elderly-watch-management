@@ -237,6 +237,8 @@ func TestArchitectureCareQueuePaginationAndDuty(t *testing.T) {
 func TestArchitectureVerificationClearsOnlyLinkedAlarm(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
+	mustExec(t, pool, "INSERT INTO users(user_id,user_name) VALUES(2,'复核主管')")
+	mustExec(t, pool, "INSERT INTO care_staff_permission(admin_id,duty,assigned_by) VALUES(2,'supervisor',2)")
 	h := testHandler(t, pool)
 	firstIncident := api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "requestId": "verify-first", "bindingVersion": 1})["incidentId"]
 	secondIncident := api(t, h.deviceSos, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "requestId": "verify-second", "bindingVersion": 1})["incidentId"]
@@ -261,6 +263,8 @@ func TestArchitectureVerificationClearsOnlyLinkedAlarm(t *testing.T) {
 func TestArchitectureCareHistoryHasNoSilentLimit(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
+	mustExec(t, pool, "INSERT INTO users(user_id,user_name) VALUES(1,'审计人员')")
+	mustExec(t, pool, "INSERT INTO care_staff_permission(admin_id,duty,assigned_by) VALUES(1,'auditor',1)")
 	mustExec(t, pool, "INSERT INTO care_incident(id,old_id,device_id,kind,severity,due_at) VALUES(1,1,1,'sos','critical',CURRENT_TIMESTAMP(6))")
 	for n := 1; n <= 105; n++ {
 		mustExec(t, pool, "INSERT INTO care_incident_event(incident_id,actor,action,note) VALUES(1,'1','note',?)", fmt.Sprint(n))
@@ -276,7 +280,10 @@ func TestArchitectureCareHistoryHasNoSilentLimit(t *testing.T) {
 func TestArchitectureCareNoteAcceptsChineseCharacters(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
+	mustExec(t, pool, "INSERT INTO users(user_id,user_name) VALUES(1,'现场护理员')")
+	mustExec(t, pool, "INSERT INTO care_staff_permission(admin_id,duty,assigned_by) VALUES(1,'caregiver',1)")
 	mustExec(t, pool, "INSERT INTO care_incident(id,old_id,device_id,kind,state,severity,due_at) VALUES(1,1,1,'sos','in_progress','critical',CURRENT_TIMESTAMP(6))")
+	mustExec(t, pool, "UPDATE care_incident SET acknowledged_by='1' WHERE id=1")
 	h := testHandler(t, pool)
 	out := careRequest(t, h, h.careTransition, 1, map[string]any{"id": "1", "action": "resolve", "note": strings.Repeat("护理记录", 300)})
 	if out.Code != 200 {
@@ -286,6 +293,8 @@ func TestArchitectureCareNoteAcceptsChineseCharacters(t *testing.T) {
 
 func TestArchitectureDiagnosticsExposeMissingGateway(t *testing.T) {
 	pool := testDatabase(t)
+	mustExec(t, pool, "INSERT INTO users(user_id,user_name) VALUES(1,'值守主管')")
+	mustExec(t, pool, "INSERT INTO care_staff_permission(admin_id,duty,assigned_by) VALUES(1,'supervisor',1)")
 	mustExec(t, pool, "INSERT INTO care_worker_heartbeat(singleton,last_seen_at,started_at) VALUES(true,CURRENT_TIMESTAMP(6),CURRENT_TIMESTAMP(6))")
 	t.Setenv("CARE_NOTIFY_WEBHOOK_URL", "")
 	t.Setenv("CARE_NOTIFY_WEBHOOK_TOKEN", "")
