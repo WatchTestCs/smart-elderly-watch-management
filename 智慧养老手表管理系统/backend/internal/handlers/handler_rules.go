@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -10,7 +9,7 @@ import (
 )
 
 func (h *Handler) rulePolicy(w http.ResponseWriter, r *http.Request) {
-	actor, ok := h.careSupervisor(w, r)
+	actor, ok := careAdmin(w, r)
 	if !ok {
 		return
 	}
@@ -27,8 +26,8 @@ func (h *Handler) rulePolicy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := r.Context()
-	tx, err := h.DB.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
-	if internalError(w, err) {
+	tx, ok := h.beginSupervisorTx(w, r)
+	if !ok {
 		return
 	}
 	defer tx.Rollback()
@@ -38,7 +37,7 @@ func (h *Handler) rulePolicy(w http.ResponseWriter, r *http.Request) {
 	}
 	var b []byte
 	var revision int64
-	err = tx.QueryRowContext(ctx, "SELECT revision,payload FROM rule_policy WHERE device_id=? FOR UPDATE", id).Scan(&revision, &b)
+	err := tx.QueryRowContext(ctx, "SELECT revision,payload FROM rule_policy WHERE device_id=? FOR UPDATE", id).Scan(&revision, &b)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		response.Error500(w, ref())
 		return
@@ -47,6 +46,9 @@ func (h *Handler) rulePolicy(w http.ResponseWriter, r *http.Request) {
 		policy := rules.Default()
 		if len(b) > 0 && json.Unmarshal(b, &policy) != nil {
 			response.Error500(w, ref())
+			return
+		}
+		if internalError(w, tx.Commit()) {
 			return
 		}
 		response.OK(w, map[string]any{"policy": policy, "revision": revision})
