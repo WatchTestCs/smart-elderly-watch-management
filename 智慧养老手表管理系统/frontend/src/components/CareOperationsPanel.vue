@@ -40,14 +40,28 @@
       </ol>
     </div>
   </section>
+  <section v-if="canAudit && !isSupervisor" class="care-operations" aria-labelledby="care-audit-title">
+    <header class="care-operations-head">
+      <div><h3 id="care-audit-title">访问审计</h3><p>审计岗位可查看记录，无权更改人员岗位或处置任务。</p></div>
+      <el-button plain @click="ifAudit">刷新审计</el-button>
+    </header>
+    <p v-if="error" role="alert" class="care-error">{{ error }}</p>
+    <ol class="care-access-list">
+      <li v-for="(entry,index) in accesses" :key="index">
+        {{ entry.actorId }} · {{ entry.resource }} · {{ new Date(entry.at).toLocaleString('zh-CN') }}
+      </li>
+    </ol>
+  </section>
   <SecurityPanel />
 </template>
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
 import { isAxiosError } from 'axios'
 import { api } from '../api/client'
 import { apiErrorMessage } from '../api/httpContract'
 import SecurityPanel from './SecurityPanel.vue'
+import { authState } from '../auth'
+import { mayReadCareAudit, mayManageCareStaff } from '../domain/permissions'
 
 type Duty = 'supervisor' | 'caregiver' | 'auditor'
 interface Staff { id: number | string; name: string; duty: Duty }
@@ -74,6 +88,8 @@ const diagnostics = ref<Diagnostics | null>(null)
 const staff = ref<Staff[]>([])
 const accesses = ref<AccessEntry[]>([])
 const authorized = ref(false)
+const canAudit = computed(() => mayReadCareAudit(authState.account))
+const isSupervisor = computed(() => mayManageCareStaff(authState.account))
 const forbidden = ref(false)
 const showAudit = ref(false)
 const loading = ref(false)
@@ -88,7 +104,7 @@ let auditRevision = 0
 let timer: ReturnType<typeof setInterval> | undefined
 
 async function refresh() {
-  if (disposed || loading.value) return
+  if (disposed || loading.value || !isSupervisor.value) return
   loading.value = true
   try {
     const { data } = await post<Diagnostics>('diagnostics')
@@ -151,21 +167,22 @@ async function assign(person: Staff, duty: Duty) {
 
 async function ifAudit() {
   const revision = ++auditRevision
-  if (disposed || !showAudit.value) return
+  if (disposed || (!showAudit.value && isSupervisor.value) || !canAudit.value) return
   try {
     const { data } = await post<{ accesses: AccessEntry[] }>('accessAudit')
-    if (!disposed && revision === auditRevision && showAudit.value) {
+    if (!disposed && revision === auditRevision && canAudit.value) {
       accesses.value = Array.isArray(data.accesses) ? data.accesses : []
     }
   } catch (cause) {
-    if (!disposed && revision === auditRevision && showAudit.value) {
+    if (!disposed && revision === auditRevision && canAudit.value) {
       error.value = apiErrorMessage(cause, '审计记录暂不可用')
     }
   }
 }
 
 onMounted(() => {
-  void refresh()
+  if (isSupervisor.value) void refresh()
+  else if (canAudit.value) void ifAudit()
   timer = setInterval(() => {
     if (!document.hidden) void refresh()
   }, 15_000)
