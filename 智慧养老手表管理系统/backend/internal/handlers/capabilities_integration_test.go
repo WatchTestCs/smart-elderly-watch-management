@@ -152,6 +152,7 @@ func TestConcurrentPullAndSafeRedelivery(t *testing.T) {
 func TestDailyRebuildCorrectionsDeletionAndIsolation(t *testing.T) {
 	pool := dbtest.MySQL(t)
 	seedDevice(t, pool)
+	seedCareAdminDuty(t, pool, 1, "supervisor")
 	// Deployments may inherit case-insensitive source column collations.
 	mustExec(t, pool, "ALTER TABLE health_sample MODIFY source varchar(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL")
 	h := testHandler(t, pool)
