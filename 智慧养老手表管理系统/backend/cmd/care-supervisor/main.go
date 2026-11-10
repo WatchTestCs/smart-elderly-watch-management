@@ -38,7 +38,7 @@ func main() {
 		log.Fatal(err)
 	}
 	var existing int
-	if err := tx.QueryRowContext(ctx, "SELECT COUNT(*) FROM care_staff_permission p JOIN users u ON u.user_id=p.admin_id WHERE p.duty='supervisor' AND u.role='1'").Scan(&existing); err != nil {
+	if err := tx.QueryRowContext(ctx, "SELECT COUNT(*) FROM care_staff_permission p JOIN users u ON u.user_id=p.admin_id WHERE p.duty='supervisor' AND u.role='1' AND u.account_status='active'").Scan(&existing); err != nil {
 		log.Fatal(err)
 	}
 	if existing != 0 {
