@@ -1,10 +1,15 @@
 <template>
   <div class="dashboard">
     <div class="page-heading">
-      <div><h1>{{ isRestricted ? '照护工作台' : '运营总览' }}</h1><p class="page-subtitle">{{ isRestricted ? '按职责接单、处置和复核，不展示无权限的后台统计。' : '查看设备异常与平台公告，及时跟进照护事项。' }}</p></div>
+      <div><h1>{{ workbenchTitle }}</h1><p class="page-subtitle">{{ workbenchDescription }}</p></div>
       <el-button v-if="!isRestricted" type="primary" :icon="Plus" @click="openNoticeEditor">发布公告</el-button>
     </div>
-    <care-inbox />
+    <care-inbox v-if="!isUnassigned" />
+    <section v-else aria-label="岗位状态" class="announcement-panel">
+      <h2>账号尚未分配岗位</h2>
+      <p>请联系照护主管分配岗位。当前账号不能查看照护任务或访问管理功能。</p>
+      <SecurityPanel />
+    </section>
     <div v-if="!isRestricted" class="dashboard-panels">
     <section class="overview-grid" aria-label="设备告警摘要">
       <article class="overview-card alert-card" v-loading="snapshotLoading" :aria-busy="snapshotLoading">
@@ -116,6 +121,7 @@ import { api } from '../api/client'
 import { apiErrorMessage } from '../api/httpContract'
 import { createLatestRead } from '../composables/latestRead'
 import CareInbox from '@/components/CareInbox.vue'
+import SecurityPanel from '@/components/SecurityPanel.vue'
 import { authState } from '@/auth'
 import { isRestrictedAdmin } from '@/domain/permissions'
 import store from '@/store'
@@ -166,6 +172,19 @@ const positionTotal = computed(() => snapshot.value?.totalResidents ?? null)
 let snapshotTimer: ReturnType<typeof setInterval> | undefined
 
 const isRestricted = computed(() => isRestrictedAdmin(authState.account))
+const isUnassigned = computed(() => authState.account?.role === 'ADMIN' &&
+  !['supervisor', 'caregiver', 'auditor'].includes(authState.account.duty ?? ''))
+const workbenchTitle = computed(() => {
+  if (isUnassigned.value) return '待授权账号'
+  if (authState.account?.duty === 'auditor') return '照护审计台'
+  return isRestricted.value ? '照护工作台' : '运营总览'
+})
+const workbenchDescription = computed(() => {
+  if (isUnassigned.value) return '尚未获得照护岗位授权。'
+  if (authState.account?.duty === 'auditor') return '查看照护任务与访问审计，不能修改岗位或处置任务。'
+  if (authState.account?.duty === 'caregiver') return '接单、开始照护并记录处置过程，复核由主管完成。'
+  return '查看设备异常与平台公告，及时跟进照护事项。'
+})
 const emptyTitle = computed(() => loadError.value ? '公告暂时无法加载' :
   appliedSearch.value ? '没有找到相关公告' : '暂时没有公告')
 const emptyDescription = computed(() => loadError.value || (appliedSearch.value
