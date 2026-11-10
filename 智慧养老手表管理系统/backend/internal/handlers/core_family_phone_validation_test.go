@@ -6,10 +6,12 @@ import (
 	"testing"
 
 	"suining-care/internal/auth"
+	"suining-care/internal/session"
 )
 
 func familyPhoneValidationHandler(t *testing.T) *Handler {
 	h := extraAuditHandler(t)
+	seedCareAdminDuty(t, h.DB, 11, "supervisor")
 	hash, err := auth.Hash("TestPassword123!")
 	if err != nil {
 		t.Fatal(err)
@@ -36,13 +38,16 @@ func assertFamilyPhoneUnchanged(t *testing.T, h *Handler) {
 
 func TestContinuousFamilyPhoneFormatValidation(t *testing.T) {
 	h := familyPhoneValidationHandler(t)
-	if out := apiFailure(t, 400, h.familyUpdate, familyPhoneEdit("abc")); out["returnCode"] == "1111" {
+	admin := session.Principal{Role: auth.RoleAdmin, ID: 11}
+	update := withHealthPrincipal(h, admin, h.familyUpdate)
+	create := withHealthPrincipal(h, admin, h.familyAdd)
+	if out := apiFailure(t, 400, update, familyPhoneEdit("abc")); out["returnCode"] == "1111" {
 		t.Error("edit accepted a phone that cannot log in")
 	}
 	assertFamilyPhoneUnchanged(t, h)
 	add := familyPhoneEdit("1380000000")
 	add["oldPhone"] = "13800000008"
-	if out := apiFailure(t, 400, h.familyAdd, add); out["returnCode"] == "1111" {
+	if out := apiFailure(t, 400, create, add); out["returnCode"] == "1111" {
 		t.Error("add accepted an invalid phone")
 	}
 	var count int
@@ -57,17 +62,18 @@ func TestContinuousFamilyPhoneFormatValidation(t *testing.T) {
 
 func TestContinuousFamilyPhoneEditRejectsOtherAccounts(t *testing.T) {
 	h := familyPhoneValidationHandler(t)
+	update := withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.familyUpdate)
 	mustExec(t, h.DB, "INSERT INTO family(family_name,family_phone) VALUES('另一家属','13800000002')")
 	mustExec(t, h.DB, "INSERT INTO users(user_id,user_name,user_phone,password,role) SELECT 1,'管理员','13800000003',family_password,'1' FROM family WHERE family_id=1")
 	for _, phone := range []string{"13800000002", "13800000003"} {
-		w := callAPI(h.familyUpdate, familyPhoneEdit(phone))
+		w := callAPI(update, familyPhoneEdit(phone))
 		if w.Code != 400 || !strings.Contains(w.Body.String(), `"returnCode":"0000"`) {
 			t.Errorf("existing account phone %s not rejected as business failure: HTTP %d %s", phone, w.Code, w.Body.String())
 		}
 		assertFamilyPhoneUnchanged(t, h)
 	}
 	for _, phone := range []string{"13800000001", "13800000004"} {
-		if out := api(t, h.familyUpdate, familyPhoneEdit(phone)); out["returnCode"] != "1111" {
+		if out := api(t, update, familyPhoneEdit(phone)); out["returnCode"] != "1111" {
 			t.Fatalf("valid unchanged/new phone rejected: %v", out)
 		}
 	}
