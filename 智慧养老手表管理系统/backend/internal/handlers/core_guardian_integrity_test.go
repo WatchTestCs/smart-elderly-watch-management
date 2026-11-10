@@ -12,10 +12,13 @@ import (
 func TestContinuousElderGuardianMustExist(t *testing.T) {
 	h := extraAuditHandler(t)
 	seedCareAdminDuty(t, h.DB, 11, "supervisor")
+	admin := session.Principal{Role: auth.RoleAdmin, ID: 11}
+	create := withHealthPrincipal(h, admin, h.createResident)
+	update := withHealthPrincipal(h, admin, h.updateResident)
 	mustExec(t, h.DB, "INSERT INTO customer(customer_id,customer_name) VALUES(1,'甲'),(2,'乙')")
 	body := elderPayload()
 	body["customerId"] = 999
-	if out := apiFailure(t, 400, h.createResident, body); out["returnCode"] == "1111" {
+	if out := apiFailure(t, 400, create, body); out["returnCode"] == "1111" {
 		t.Error("elder creation accepted a nonexistent guardian")
 	}
 	var count int
@@ -23,7 +26,7 @@ func TestContinuousElderGuardianMustExist(t *testing.T) {
 		t.Fatalf("invalid guardian wrote an elder: count=%d err=%v", count, err)
 	}
 	body["customerId"] = 1
-	if out := api(t, h.createResident, body); out["returnCode"] != "1111" {
+	if out := api(t, create, body); out["returnCode"] != "1111" {
 		t.Fatal(out)
 	}
 	var oldID int64
@@ -31,7 +34,7 @@ func TestContinuousElderGuardianMustExist(t *testing.T) {
 		t.Fatal(err)
 	}
 	body["oldId"], body["customerId"], body["name"] = oldID, 999, "不应写入"
-	if out := apiFailure(t, 400, h.updateResident, body); out["returnCode"] == "1111" {
+	if out := apiFailure(t, 400, update, body); out["returnCode"] == "1111" {
 		t.Error("elder edit accepted a nonexistent guardian")
 	}
 	var guardian int64
@@ -40,7 +43,7 @@ func TestContinuousElderGuardianMustExist(t *testing.T) {
 		t.Fatalf("rejected edit changed the profile: guardian=%d name=%s err=%v", guardian, name, err)
 	}
 	body["customerId"], body["name"] = 2, "长者"
-	if out := api(t, h.updateResident, body); out["returnCode"] != "1111" {
+	if out := api(t, update, body); out["returnCode"] != "1111" {
 		t.Fatal(out)
 	}
 	detail := api(t, withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.getResidentDetails), map[string]any{"name": ""})["oldPersonDetails"].([]any)[0].(map[string]any)
@@ -65,7 +68,7 @@ func TestContinuousGuardianDeleteKeepsAssignedProfiles(t *testing.T) {
 	if out := api(t, authorizedDelete, map[string]any{"customerId": 2}); out["returnCode"] != "1111" {
 		t.Fatalf("unassigned guardian could not be deleted: %v", out)
 	}
-	if out := api(t, h.deleteResident, map[string]any{"oldId": 1}); out["returnCode"] != "1111" {
+	if out := api(t, withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.deleteResident), map[string]any{"oldId": 1}); out["returnCode"] != "1111" {
 		t.Fatal(out)
 	}
 	if out := api(t, authorizedDelete, map[string]any{"customerId": 1}); out["returnCode"] != "1111" {
@@ -111,6 +114,7 @@ func TestContinuousGuardianAgeBoundsDoNotWriteInvalidProfiles(t *testing.T) {
 func TestContinuousGuardianCreateAndDeleteKeepReferencesValid(t *testing.T) {
 	h := extraAuditHandler(t)
 	seedCareAdminDuty(t, h.DB, 11, "supervisor")
+	create := withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.createResident)
 	authorizedDelete := withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.deleteGuardian)
 	mustExec(t, h.DB, "INSERT INTO customer(customer_id,customer_name) VALUES(1,'监护人')")
 	start := make(chan struct{})
@@ -118,7 +122,7 @@ func TestContinuousGuardianCreateAndDeleteKeepReferencesValid(t *testing.T) {
 	deleted := make(chan *httptest.ResponseRecorder, 1)
 	go func() {
 		<-start
-		created <- callAPI(h.createResident, elderPayload())
+		created <- callAPI(create, elderPayload())
 	}()
 	go func() {
 		<-start

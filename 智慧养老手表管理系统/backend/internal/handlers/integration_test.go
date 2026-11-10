@@ -74,6 +74,7 @@ func seedCareAdminDuty(t *testing.T, pool *dbstore.Database, adminID int64, duty
 
 func TestIntegrationMigrationsAndBindingConstraint(t *testing.T) {
 	pool := testDatabase(t)
+	seedCareAdminDuty(t, pool, 11, "supervisor")
 	ctx := context.Background()
 	// Applied migrations can be rerun concurrently without duplicate tracking rows.
 	var wg sync.WaitGroup
@@ -104,12 +105,14 @@ func TestIntegrationMigrationsAndBindingConstraint(t *testing.T) {
 	}
 	mustExec(t, pool, "INSERT INTO oldperson(old_id,name) VALUES(1,'长者')")
 	mustExec(t, pool, "INSERT INTO device(device_no,secret,old_id) VALUES('bound','unused',1)")
-	out := callAPI(testHandler(t, pool).deleteResident, map[string]any{"oldId": 1})
+	h := testHandler(t, pool)
+	remove := withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.deleteResident)
+	out := callAPI(remove, map[string]any{"oldId": 1})
 	if out.Code != 409 {
 		t.Fatalf("bound elder deletion: HTTP %d %s", out.Code, out.Body.String())
 	}
 	mustExec(t, pool, "UPDATE device SET old_id=NULL WHERE device_no='bound'")
-	result := api(t, testHandler(t, pool).deleteResident, map[string]any{"oldId": 1})
+	result := api(t, remove, map[string]any{"oldId": 1})
 	if result["returnCode"] != "1111" {
 		t.Fatal(result)
 	}
@@ -149,9 +152,10 @@ func TestIntegrationListContractsAndNumericAge(t *testing.T) {
 func TestIntegrationEditPreservesFamily(t *testing.T) {
 	pool := testDatabase(t)
 	h := testHandler(t, pool)
+	seedCareAdminDuty(t, pool, 11, "supervisor")
 	mustExec(t, pool, "INSERT INTO customer(customer_id,customer_name) VALUES(1,'监护人')")
 	mustExec(t, pool, "INSERT INTO oldperson(old_id,name,family_id) VALUES(1,'长者',7)")
-	out := api(t, h.updateResident, map[string]any{"oldId": 1, "name": "新姓名", "bothdate": "1950-01-01", "sex": "女", "phone": "13800000000", "room": "101", "illness": "", "warn": "", "foodLike": "", "foodHate": "", "drag": "", "customerName": "1"})
+	out := api(t, withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.updateResident), map[string]any{"oldId": 1, "name": "新姓名", "bothdate": "1950-01-01", "sex": "女", "phone": "13800000000", "room": "101", "illness": "", "warn": "", "foodLike": "", "foodHate": "", "drag": "", "customerName": "1"})
 	if out["returnCode"] != "1111" {
 		t.Fatal(out)
 	}
@@ -301,6 +305,8 @@ func TestLogoutDestroysSessionAndRetainsCSRF(t *testing.T) {
 func TestIntegrationBindDeleteRace(t *testing.T) {
 	pool := testDatabase(t)
 	h := testHandler(t, pool)
+	seedCareAdminDuty(t, pool, 11, "supervisor")
+	remove := withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.deleteResident)
 	ctx := context.Background()
 	mustExec(t, pool, "INSERT INTO oldperson(old_id,name) VALUES(1,'长者')")
 	mustExec(t, pool, "INSERT INTO device(device_no,secret) VALUES('racing','unused')")
@@ -313,7 +319,7 @@ func TestIntegrationBindDeleteRace(t *testing.T) {
 		t.Fatal(err)
 	}
 	result := make(chan *httptest.ResponseRecorder, 1)
-	go func() { result <- callAPI(h.deleteResident, map[string]any{"oldId": 1}) }()
+	go func() { result <- callAPI(remove, map[string]any{"oldId": 1}) }()
 	deadline := time.Now().Add(10 * time.Second)
 	for {
 		var waiting int

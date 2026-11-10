@@ -128,6 +128,13 @@ func TestLegacyDeviceHealthAndGuardianAccessAfterDutyRevocation(t *testing.T) {
 			{"device_list", h.deviceList, map[string]any{}},
 			{"resident_list", h.listResidents, map[string]any{"name": ""}},
 			{"resident_details", h.getResidentDetails, map[string]any{"name": ""}},
+			{"resident_create", h.createResident, elderPayload()},
+			{"resident_update", h.updateResident, func() map[string]any { b := elderPayload(); b["oldId"] = 1; return b }()},
+			{"resident_delete", h.deleteResident, map[string]any{"oldId": 1}},
+			{"threshold_list", h.listMonitoringProfiles, map[string]any{"oldName": ""}},
+			{"threshold_create", h.createMonitoringProfile, map[string]any{"deviceId": 1, "hrf": 100, "hrl": 60, "bpf": 140, "bpl": 90}},
+			{"threshold_update", h.updateMonitoringProfile, map[string]any{"deviceId": 1, "hrf": 100, "hrl": 60, "bpf": 140, "bpl": 90}},
+			{"threshold_delete", h.deleteMonitoringProfile, map[string]any{"deviceId": 1}},
 			{"health_statistics", h.healthStatistics, healthQuery},
 			{"health_changes", h.healthChanges, map[string]any{"oldId": 1}},
 			{"health_latest", h.healthLatest, map[string]any{"oldId": 1}},
@@ -159,6 +166,10 @@ func TestLegacyDeviceHealthAndGuardianAccessAfterDutyRevocation(t *testing.T) {
 				t.Fatalf("actor %d %s: HTTP %d %s", actor, test.name, got.Code, got.Body.String())
 			}
 		}
+	}
+	var thresholdCount int
+	if err := pool.QueryRowContext(context.Background(), "SELECT COUNT(*) FROM watch_info").Scan(&thresholdCount); err != nil || thresholdCount != 0 {
+		t.Fatalf("unauthorized mutation changed monitoring profiles: count=%d err=%v", thresholdCount, err)
 	}
 	var customerCount int
 	if err := pool.QueryRowContext(context.Background(), "SELECT count(*) FROM customer").Scan(&customerCount); err != nil || customerCount != 1 {
