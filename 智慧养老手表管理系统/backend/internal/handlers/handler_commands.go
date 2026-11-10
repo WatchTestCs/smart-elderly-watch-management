@@ -12,7 +12,7 @@ import (
 )
 
 func (h *Handler) commandCreate(w http.ResponseWriter, r *http.Request) {
-	actor, ok := h.careSupervisor(w, r)
+	actor, ok := careAdmin(w, r)
 	if !ok {
 		return
 	}
@@ -30,8 +30,8 @@ func (h *Handler) commandCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := r.Context()
-	tx, err := h.DB.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
-	if internalError(w, err) {
+	tx, ok := h.beginSupervisorTx(w, r)
+	if !ok {
 		return
 	}
 	defer tx.Rollback()
@@ -54,6 +54,9 @@ func (h *Handler) commandCreate(w http.ResponseWriter, r *http.Request) {
 	if err == nil {
 		if oldAction != req.Action || oldTTL != req.TTL {
 			conflict409(w, "幂等键已用于另一动作")
+			return
+		}
+		if internalError(w, tx.Commit()) {
 			return
 		}
 		response.OK(w, map[string]any{"commandId": id, "status": status, "duplicate": true})
@@ -85,7 +88,7 @@ func (h *Handler) commandCreate(w http.ResponseWriter, r *http.Request) {
 	id, err = dbstore.InsertID(ctx, tx, `INSERT INTO device_command(device_id,old_id,epoch,request_key,action,wire_type,channel,wire_action,max_attempts,retry_at,expires_at,created_by,ttl_seconds)
  VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`, d.ID, *d.OldID, d.HealthEpoch, req.RequestKey, req.Action, typ, channel, wire, maxAttempts, now, now.Add(time.Duration(req.TTL)*time.Second), actor, req.TTL)
 	if err == nil {
-		err = tx.Commit()
+		err = commitCareChange(ctx, tx, actor, "device_command_create")
 	}
 	if internalError(w, err) {
 		return
@@ -94,7 +97,7 @@ func (h *Handler) commandCreate(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) commandList(w http.ResponseWriter, r *http.Request) {
-	if _, ok := h.careSupervisor(w, r); !ok {
+	if _, ok := careAdmin(w, r); !ok {
 		return
 	}
 	var req struct {
@@ -108,7 +111,12 @@ func (h *Handler) commandList(w http.ResponseWriter, r *http.Request) {
 		write400(w, "设备或游标无效")
 		return
 	}
-	items, ok := queryRows(h, w, r.Context(), func(rows *sql.Rows) (map[string]any, error) {
+	tx, ok := h.beginSupervisorTx(w, r)
+	if !ok {
+		return
+	}
+	defer tx.Rollback()
+	items, err := dbstore.QueryList(r.Context(), tx, func(rows *sql.Rows) (map[string]any, error) {
 		var id int64
 		var action, status string
 		var attempts int
@@ -119,7 +127,7 @@ func (h *Handler) commandList(w http.ResponseWriter, r *http.Request) {
 		}
 		return map[string]any{"commandId": id, "action": action, "status": status, "attempts": attempts, "createdAt": created, "expiresAt": expires, "ackedAt": ack}, nil
 	}, `SELECT id,action,status,attempts,created_at,expires_at,acked_at FROM device_command WHERE device_id=? AND id>? ORDER BY id LIMIT 100`, req.DeviceID, req.After)
-	if !ok {
+	if internalError(w, err) || internalError(w, tx.Commit()) {
 		return
 	}
 	response.OK(w, map[string]any{"items": items})
