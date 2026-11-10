@@ -23,7 +23,7 @@ type Match struct {
 
 var accounts = [...]struct{ role, query string }{
 	{auth.RoleAdmin, `SELECT user_id,user_name,user_phone,password,NULL,user_phone_cipher,user_phone_lookup,user_phone_protected
- FROM users WHERE (user_phone_protected=false AND user_phone=?) OR (user_phone_protected=true AND user_phone_lookup=?)`},
+ FROM users WHERE account_status='active' AND ((user_phone_protected=false AND user_phone=?) OR (user_phone_protected=true AND user_phone_lookup=?))`},
 	{auth.RoleFamily, `SELECT f.family_id,f.family_name,f.family_phone,f.family_password,o.old_id,NULL,NULL,false
  FROM family f LEFT JOIN oldperson o ON o.family_id=f.family_id
  WHERE f.family_phone=? ORDER BY o.old_id LIMIT 1`},
