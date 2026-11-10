@@ -38,7 +38,8 @@ func careAdmin(w http.ResponseWriter, r *http.Request) (int64, bool) {
 
 func (h *Handler) careIncidents(w http.ResponseWriter, r *http.Request) {
 	actor, ok := careAdmin(w, r)
-	if !ok || !h.auditCareAccess(w, r, actor, "incident_list", nil) {
+	if !ok || !h.authorizeCareAction(w, r, actor, "read_tasks") ||
+		!h.auditCareAccess(w, r, actor, "incident_list", nil) {
 		return
 	}
 	m, ok := optBody(w, r)
@@ -159,7 +160,8 @@ func (h *Handler) careEvents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id, ok := requireID(w, m, "id")
-	if !ok || !h.auditCareAccess(w, r, actor, "incident_events", &id) {
+	if !ok || !h.authorizeCareAction(w, r, actor, "read_tasks") ||
+		!h.auditCareAccess(w, r, actor, "incident_events", &id) {
 		return
 	}
 	page, pageSize, ok := strictPage(w, m)
