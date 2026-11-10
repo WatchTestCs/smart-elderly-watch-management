@@ -2,12 +2,16 @@ package handlers
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"suining-care/internal/auth"
 	"suining-care/internal/authrepo"
+	"suining-care/internal/carepolicy"
+	"suining-care/internal/carerepo"
 	"suining-care/internal/careworkflow"
 	"suining-care/internal/session"
 )
@@ -111,6 +115,77 @@ func TestCareStaffListExcludesNonAdministrators(t *testing.T) {
 	staff := result["staff"].([]any)
 	if len(staff) != 1 || staff[0].(map[string]any)["id"] != float64(11) {
 		t.Fatalf("non-admin included in care staff: %v", staff)
+	}
+}
+
+// A read already holding the role lock finishes before reassignment commits.
+// New requests after reassignment cannot reuse the previous audit privileges.
+func TestSensitiveReadSerializesConcurrentDutyChange(t *testing.T) {
+	pool := testDatabase(t)
+	seedCareAdminDuty(t, pool, 31, "auditor")
+	seedCareAdminDuty(t, pool, 32, "supervisor")
+	h := testHandler(t, pool)
+	req := httptest.NewRequest("POST", "/api/v1/care/accessAudit", nil)
+	w := httptest.NewRecorder()
+	tx, duty, ok := h.beginCareRead(w, req, 31, carepolicy.ReadAudit)
+	if !ok || duty != carepolicy.Auditor {
+		t.Fatalf("authorized reader rejected: %d %s", w.Code, w.Body.String())
+	}
+	defer tx.Rollback()
+	ctx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)
+	defer cancel()
+	done := make(chan error, 1)
+	go func() { done <- careworkflow.AssignDuty(ctx, pool, 32, 31, "caregiver") }()
+	if err := <-done; !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("role change completed before sensitive read ended: %v", err)
+	}
+	if err := tx.Commit(); err != nil {
+		t.Fatal(err)
+	}
+	if err := careworkflow.AssignDuty(context.Background(), pool, 32, 31, "caregiver"); err != nil {
+		t.Fatal(err)
+	}
+	denied := careRequest(t, h, h.careAccessAudit, 31, map[string]any{})
+	if denied.Code != 403 {
+		t.Fatalf("former auditor accessed audit after demotion: %d %s", denied.Code, denied.Body.String())
+	}
+}
+
+func TestIncidentHistoryLockFencesConcurrentOwnershipChange(t *testing.T) {
+	pool := testDatabase(t)
+	seedDevice(t, pool)
+	seedCareAdminDuty(t, pool, 41, "caregiver")
+	seedCareAdminDuty(t, pool, 42, "caregiver")
+	mustExec(t, pool, "INSERT INTO care_incident(id,old_id,device_id,kind,state,severity,acknowledged_by) VALUES(9,1,1,'sos','in_progress','critical','41')")
+	tx, err := pool.BeginTx(context.Background(), &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback()
+	visible, err := careworkflow.CanReadIncident(context.Background(), tx, carepolicy.Caregiver, 41, 9)
+	if err != nil || !visible {
+		t.Fatalf("current caregiver denied task: visible=%v err=%v", visible, err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)
+	defer cancel()
+	done := make(chan error, 1)
+	go func() {
+		_, err := pool.ExecContext(ctx, "UPDATE care_incident SET acknowledged_by='42' WHERE id=9")
+		done <- err
+	}()
+	if err := <-done; !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("incident owner changed during locked history read: %v", err)
+	}
+	if err := tx.Commit(); err != nil {
+		t.Fatal(err)
+	}
+	mustExec(t, pool, "UPDATE care_incident SET acknowledged_by='42' WHERE id=9")
+	h := testHandler(t, pool)
+	if got := careRequest(t, h, h.careEvents, 41, map[string]any{"id":"9"}); got.Code != 403 {
+		t.Fatalf("previous owner read incident history: HTTP %d %s", got.Code, got.Body.String())
+	}
+	if got := careRequest(t, h, h.careEvents, 42, map[string]any{"id":"9"}); got.Code != 200 {
+		t.Fatalf("new owner denied incident history: HTTP %d %s", got.Code, got.Body.String())
 	}
 }
 

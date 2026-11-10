@@ -14,6 +14,27 @@ import (
 	"suining-care/internal/response"
 )
 
+// beginCareRead serializes sensitive reads with changes to the actor's
+// explicit duty and administrator role. The caller must commit before replying.
+func (h *Handler) beginCareRead(w http.ResponseWriter, r *http.Request, actor int64, action carepolicy.Action) (*sql.Tx, carepolicy.Duty, bool) {
+	tx, err := h.DB.BeginTx(r.Context(), &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	if internalError(w, err) {
+		return nil, "", false
+	}
+	duty, err := carerepo.LockDuty(r.Context(), tx, actor)
+	if err != nil {
+		tx.Rollback()
+		internalError(w, err)
+		return nil, "", false
+	}
+	if !carepolicy.Allowed(carepolicy.Duty(duty), action) {
+		tx.Rollback()
+		response.JSON(w, http.StatusForbidden, map[string]any{"code": "ACCESS_DENIED", "message": "岗位无此操作权限"})
+		return nil, "", false
+	}
+	return tx, carepolicy.Duty(duty), true
+}
+
 // A missing assignment has no privileges.
 func (h *Handler) careDuty(w http.ResponseWriter, r *http.Request, actor int64) (string, bool) {
 	duty, err := carerepo.Duty(r.Context(), h.DB, actor)
@@ -55,14 +76,16 @@ func (h *Handler) careDiagnostics(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	if !h.authorizeCareAction(w, r, actor, "diagnostics") {
+	tx, _, ok := h.beginCareRead(w, r, actor, carepolicy.Diagnostics)
+	if !ok {
 		return
 	}
-	if !h.auditCareAccess(w, r, actor, "service_diagnostics", nil) {
+	defer tx.Rollback()
+	if _, err := tx.ExecContext(r.Context(), "INSERT INTO care_access_audit(admin_id,action) VALUES(?,'service_diagnostics')", actor); internalError(w, err) {
 		return
 	}
-	diagnostics, err := careworkflow.ReadDiagnostics(r.Context(), h.DB, time.Now())
-	if internalError(w, err) {
+	diagnostics, err := careworkflow.ReadDiagnostics(r.Context(), tx, time.Now())
+	if internalError(w, err) || internalError(w, tx.Commit()) {
 		return
 	}
 	w.Header().Set("Cache-Control", "no-store")

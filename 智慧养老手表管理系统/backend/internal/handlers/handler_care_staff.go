@@ -6,7 +6,9 @@ import (
 	"net/http"
 	"strconv"
 
+	"suining-care/internal/carepolicy"
 	"suining-care/internal/careworkflow"
+	"suining-care/internal/db"
 	"suining-care/internal/response"
 )
 
@@ -23,14 +25,19 @@ func (h *Handler) careSupervisor(w http.ResponseWriter, r *http.Request) (int64,
 }
 
 func (h *Handler) careStaff(w http.ResponseWriter, r *http.Request) {
-	actor, ok := h.careSupervisor(w, r)
+	actor, ok := careAdmin(w, r)
 	if !ok {
 		return
 	}
-	if _, err := h.DB.ExecContext(r.Context(), "INSERT INTO care_access_audit(admin_id,action) VALUES(?,'staff_list')", actor); internalError(w, err) {
+	tx, _, ok := h.beginCareRead(w, r, actor, carepolicy.ManageStaff)
+	if !ok {
 		return
 	}
-	list, ok := queryRows(h, w, r.Context(), func(rows *sql.Rows) (map[string]any, error) {
+	defer tx.Rollback()
+	if _, err := tx.ExecContext(r.Context(), "INSERT INTO care_access_audit(admin_id,action) VALUES(?,'staff_list')", actor); internalError(w, err) {
+		return
+	}
+	list, err := db.QueryList(r.Context(), tx, func(rows *sql.Rows) (map[string]any, error) {
 		var id int64
 		var name *string
 		var duty string
@@ -43,7 +50,7 @@ func (h *Handler) careStaff(w http.ResponseWriter, r *http.Request) {
  LEFT JOIN care_staff_permission p ON p.admin_id=u.user_id
  WHERE u.role='1'
  ORDER BY u.user_id LIMIT 100`)
-	if !ok {
+	if internalError(w, err) || internalError(w, tx.Commit()) {
 		return
 	}
 	w.Header().Set("Cache-Control", "no-store")
@@ -94,13 +101,18 @@ func (h *Handler) careAssignDuty(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) careAccessAudit(w http.ResponseWriter, r *http.Request) {
 	actor, ok := careAdmin(w, r)
-	if !ok || !h.authorizeCareAction(w, r, actor, "read_audit") {
+	if !ok {
 		return
 	}
-	if _, err := h.DB.ExecContext(r.Context(), "INSERT INTO care_access_audit(admin_id,action) VALUES(?,'audit_view')", actor); internalError(w, err) {
+	tx, _, ok := h.beginCareRead(w, r, actor, carepolicy.ReadAudit)
+	if !ok {
 		return
 	}
-	items, ok := queryRows(h, w, r.Context(), func(rows *sql.Rows) (map[string]any, error) {
+	defer tx.Rollback()
+	if _, err := tx.ExecContext(r.Context(), "INSERT INTO care_access_audit(admin_id,action) VALUES(?,'audit_view')", actor); internalError(w, err) {
+		return
+	}
+	items, err := db.QueryList(r.Context(), tx, func(rows *sql.Rows) (map[string]any, error) {
 		var id int64
 		var role, resource, method string
 		var created interface{}
@@ -110,7 +122,7 @@ func (h *Handler) careAccessAudit(w http.ResponseWriter, r *http.Request) {
 		return map[string]any{"actorId": id, "role": role, "resource": resource, "method": method, "at": created}, nil
 	}, `SELECT actor_id,actor_role,resource,method,created_at
  FROM care_sensitive_access_audit ORDER BY id DESC LIMIT 100`)
-	if !ok {
+	if internalError(w, err) || internalError(w, tx.Commit()) {
 		return
 	}
 	w.Header().Set("Cache-Control", "no-store")

@@ -17,7 +17,7 @@ type Event struct {
 
 // ListEvents returns encrypted notes; only the authorized transport layer
 // decrypts them after completing the access audit.
-func ListEvents(ctx context.Context, store *db.Database, incidentID int64, page, pageSize int) ([]Event, int64, error) {
+func ListEvents(ctx context.Context, store *sql.Tx, incidentID int64, page, pageSize int) ([]Event, int64, error) {
 	var total int64
 	if err := store.QueryRowContext(ctx,
 		`SELECT count(*) FROM care_incident_event WHERE incident_id=?`, incidentID).Scan(&total); err != nil {

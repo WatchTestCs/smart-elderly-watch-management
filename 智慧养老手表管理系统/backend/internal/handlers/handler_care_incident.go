@@ -43,14 +43,6 @@ func (h *Handler) careIncidents(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	duty, ok := h.careDuty(w, r, actor)
-	if !ok {
-		return
-	}
-	if !carepolicy.Allowed(carepolicy.Duty(duty), carepolicy.ReadTasks) {
-		response.JSON(w, http.StatusForbidden, map[string]any{"code": "ACCESS_DENIED", "message": "岗位无此操作权限"})
-		return
-	}
 	m, ok := optBody(w, r)
 	if !ok {
 		return
@@ -67,11 +59,16 @@ func (h *Handler) careIncidents(w http.ResponseWriter, r *http.Request) {
 		write400(w, "任务范围应为 active 或 verified")
 		return
 	}
-	if !h.auditCareAccess(w, r, actor, "incident_list", nil) {
+	tx, duty, ok := h.beginCareRead(w, r, actor, carepolicy.ReadTasks)
+	if !ok {
 		return
 	}
-	items, total, err := careworkflow.ListIncidents(r.Context(), h.DB, carepolicy.Duty(duty), actor, state == "verified", page, pageSize)
-	if internalError(w, err) {
+	defer tx.Rollback()
+	if _, err := tx.ExecContext(r.Context(), "INSERT INTO care_access_audit(admin_id,action) VALUES(?,'incident_list')", actor); internalError(w, err) {
+		return
+	}
+	items, total, err := careworkflow.ListIncidents(r.Context(), tx, duty, actor, state == "verified", page, pageSize)
+	if internalError(w, err) || internalError(w, tx.Commit()) {
 		return
 	}
 	response.OK(w, map[string]any{"items": items, "total": total, "page": page, "pageSize": pageSize, "duty": duty, "actorId": actor})
@@ -190,15 +187,12 @@ func (h *Handler) careEvents(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	duty, ok := h.careDuty(w, r, actor)
+tx, duty, ok := h.beginCareRead(w, r, actor, carepolicy.ReadTasks)
 	if !ok {
 		return
 	}
-	if !carepolicy.Allowed(carepolicy.Duty(duty), carepolicy.ReadTasks) {
-		response.JSON(w, http.StatusForbidden, map[string]any{"code": "ACCESS_DENIED", "message": "岗位无此操作权限"})
-		return
-	}
-	visible, err := careworkflow.CanReadIncident(r.Context(), h.DB, carepolicy.Duty(duty), actor, id)
+	defer tx.Rollback()
+	visible, err := careworkflow.CanReadIncident(r.Context(), tx, duty, actor, id)
 	if internalError(w, err) {
 		return
 	}
@@ -206,10 +200,10 @@ func (h *Handler) careEvents(w http.ResponseWriter, r *http.Request) {
 		response.JSON(w, http.StatusForbidden, map[string]any{"code": "ACCESS_DENIED", "message": "任务不在可见范围"})
 		return
 	}
-	if !h.auditCareAccess(w, r, actor, "incident_events", &id) {
+	if _, err := tx.ExecContext(r.Context(), "INSERT INTO care_access_audit(admin_id,action,incident_id) VALUES(?,'incident_events',?)", actor, id); internalError(w, err) {
 		return
 	}
-	events, total, err := careworkflow.ListEvents(r.Context(), h.DB, id, page, pageSize)
+	events, total, err := careworkflow.ListEvents(r.Context(), tx, id, page, pageSize)
 	if internalError(w, err) {
 		return
 	}
@@ -222,6 +216,9 @@ func (h *Handler) careEvents(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		events[i].Note = &plain
+	}
+	if internalError(w, tx.Commit()) {
+		return
 	}
 	response.OK(w, map[string]any{
 		"events": events, "total": total, "page": page, "pageSize": pageSize,

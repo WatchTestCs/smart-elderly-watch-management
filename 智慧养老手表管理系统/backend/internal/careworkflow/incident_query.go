@@ -3,6 +3,7 @@ package careworkflow
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"strconv"
 	"time"
 
@@ -72,18 +73,21 @@ func incidentReadScope(duty carepolicy.Duty, actorID int64) (string, []any) {
 
 // CanReadIncident applies the same row-level visibility as the paginated queue.
 // Both missing and out-of-scope incidents are invisible to the caller.
-func CanReadIncident(ctx context.Context, store *db.Database, duty carepolicy.Duty, actorID, incidentID int64) (bool, error) {
+func CanReadIncident(ctx context.Context, tx *sql.Tx, duty carepolicy.Duty, actorID, incidentID int64) (bool, error) {
 	scope, scopeArgs := incidentReadScope(duty, actorID)
 	args := append([]any{incidentID}, scopeArgs...)
-	var visible bool
-	err := store.QueryRowContext(ctx,
-		`SELECT EXISTS(SELECT 1 FROM care_incident i WHERE i.id=?`+scope+`)`, args...).Scan(&visible)
-	return visible, err
+	var id int64
+	err := tx.QueryRowContext(ctx,
+		`SELECT i.id FROM care_incident i WHERE i.id=?`+scope+` FOR SHARE`, args...).Scan(&id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return false, nil
+	}
+	return err == nil, err
 }
 
 // ListIncidents returns risk-ordered tasks and newest-first verified history
 // inside the current actor's authorized visibility scope.
-func ListIncidents(ctx context.Context, store *db.Database, duty carepolicy.Duty, actorID int64, verified bool, page, pageSize int) ([]Incident, int64, error) {
+func ListIncidents(ctx context.Context, store *sql.Tx, duty carepolicy.Duty, actorID int64, verified bool, page, pageSize int) ([]Incident, int64, error) {
 	scope, scopeArgs := incidentReadScope(duty, actorID)
 	countArgs := append([]any{verified}, scopeArgs...)
 	var total int64

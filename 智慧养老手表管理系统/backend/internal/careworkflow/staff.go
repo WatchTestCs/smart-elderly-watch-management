@@ -33,7 +33,7 @@ func AssignDuty(ctx context.Context, store *db.Database, actor, target int64, du
 	if err := carerepo.LockAuthority(ctx, tx); err != nil {
 		return err
 	}
-	actorDuty, err := carerepo.Duty(ctx, tx, actor)
+	actorDuty, err := carerepo.LockDuty(ctx, tx, actor)
 	if err != nil {
 		return err
 	}

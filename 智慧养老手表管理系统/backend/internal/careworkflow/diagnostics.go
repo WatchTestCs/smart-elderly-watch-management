@@ -23,7 +23,7 @@ type Diagnostics struct {
 }
 
 // ReadDiagnostics gathers the operational care projection without HTTP coupling.
-func ReadDiagnostics(ctx context.Context, store *db.Database, now time.Time) (Diagnostics, error) {
+func ReadDiagnostics(ctx context.Context, store db.RowQuerier, now time.Time) (Diagnostics, error) {
 	var d Diagnostics
 	err := store.QueryRowContext(ctx, `
  SELECT
