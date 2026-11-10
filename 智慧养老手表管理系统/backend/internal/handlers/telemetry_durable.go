@@ -51,7 +51,7 @@ func (repo telemetryRepository) QueueDurableReport(ctx context.Context, tx *sql.
 	}
 	// A durable acknowledgement is also a real heartbeat. Update last-seen in
 	// the ingest transaction rather than waiting for a potentially delayed worker.
-	return telemetryrepo.TouchDevice(ctx, tx, d.ID, parsed.battery, parsed.appVersion, parsed.now)
+	return telemetryrepo.TouchDevice(ctx, tx, d.ID, d.HealthEpoch, parsed.battery, parsed.appVersion, parsed.now)
 }
 
 func durableQueueDuplicate(err error) bool {
