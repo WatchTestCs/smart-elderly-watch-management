@@ -61,7 +61,6 @@ func TestAdminDutyGateRestrictsLegacyRoutes(t *testing.T) {
 	check("/api/v1/device/list", http.StatusForbidden)
 }
 
-
 // Standalone endpoints must enforce their own read-time duty, even when the
 // generic route gate is absent or a request authenticated before demotion.
 func TestLegacySensitiveReadsRequireCurrentSupervisor(t *testing.T) {
