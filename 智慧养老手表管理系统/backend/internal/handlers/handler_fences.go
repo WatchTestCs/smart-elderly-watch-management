@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"suining-care/internal/carepolicy"
 	"database/sql"
 	"errors"
 	"math"
@@ -18,7 +19,7 @@ import (
 )
 
 func (h *Handler) fenceSave(w http.ResponseWriter, r *http.Request) {
-	actor, ok := h.careSupervisor(w, r)
+	actor, ok := careAdmin(w, r)
 	if !ok {
 		return
 	}
@@ -39,7 +40,7 @@ func (h *Handler) fenceSave(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := r.Context()
-	tx, ok := h.beginSupervisorTx(w, r)
+	tx, ok := h.beginAdminActionTx(w, r, carepolicy.ManageGeofences)
 	if !ok {
 		return
 	}
@@ -75,7 +76,7 @@ func (h *Handler) fenceSave(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) fenceList(w http.ResponseWriter, r *http.Request) {
-	if _, ok := h.careSupervisor(w, r); !ok {
+	if _, ok := careAdmin(w, r); !ok {
 		return
 	}
 	var req struct {
@@ -88,7 +89,7 @@ func (h *Handler) fenceList(w http.ResponseWriter, r *http.Request) {
 		write400(w, "设备无效")
 		return
 	}
-	tx, ok := h.beginSupervisorTx(w, r)
+	tx, ok := h.beginAdminActionTx(w, r, carepolicy.ReadGeofences)
 	if !ok {
 		return
 	}
@@ -159,7 +160,7 @@ func (h *Handler) fencePoint(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) fenceEvents(w http.ResponseWriter, r *http.Request) {
-	if _, ok := h.careSupervisor(w, r); !ok {
+	if _, ok := careAdmin(w, r); !ok {
 		return
 	}
 	var req struct {
@@ -173,7 +174,7 @@ func (h *Handler) fenceEvents(w http.ResponseWriter, r *http.Request) {
 		write400(w, "老人或游标无效")
 		return
 	}
-	tx, ok := h.beginSupervisorTx(w, r)
+	tx, ok := h.beginAdminActionTx(w, r, carepolicy.ReadGeofences)
 	if !ok {
 		return
 	}
