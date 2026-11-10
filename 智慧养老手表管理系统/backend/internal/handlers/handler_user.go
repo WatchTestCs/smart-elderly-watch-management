@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"suining-care/internal/carepolicy"
 	"suining-care/internal/db"
 	"suining-care/internal/guardianrepo"
 	"suining-care/internal/response"
@@ -32,7 +33,7 @@ func (h *Handler) userSelect(w http.ResponseWriter, r *http.Request) {
 		response.Fail(w, "参数不完整")
 		return
 	}
-	tx, ok := h.beginSupervisorTx(w, r)
+	tx, ok := h.beginAdminActionTx(w, r, carepolicy.ReadAccounts)
 	if !ok {
 		return
 	}
@@ -73,7 +74,7 @@ func (h *Handler) listGuardians(w http.ResponseWriter, r *http.Request) {
 	}
 	name := str(m, "customerName")
 	page, pageSize := bodyPage(m)
-	tx, ok := h.beginSupervisorTx(w, r)
+	tx, ok := h.beginAdminActionTx(w, r, carepolicy.ReadGuardians)
 	if !ok {
 		return
 	}
@@ -97,7 +98,7 @@ func (h *Handler) createGuardian(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	tx, ok := h.beginSupervisorTx(w, r)
+	tx, ok := h.beginAdminActionTx(w, r, carepolicy.ManageGuardians)
 	if !ok {
 		return
 	}
@@ -126,7 +127,7 @@ func (h *Handler) updateGuardian(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	tx, ok := h.beginSupervisorTx(w, r)
+	tx, ok := h.beginAdminActionTx(w, r, carepolicy.ManageGuardians)
 	if !ok {
 		return
 	}
@@ -151,7 +152,7 @@ func (h *Handler) deleteGuardian(w http.ResponseWriter, r *http.Request) {
 		response.Error500(w, ref())
 		return
 	}
-	tx, ok := h.beginSupervisorTx(w, r)
+	tx, ok := h.beginAdminActionTx(w, r, carepolicy.ManageGuardians)
 	if !ok {
 		return
 	}
