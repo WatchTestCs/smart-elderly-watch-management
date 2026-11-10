@@ -67,6 +67,10 @@ func SetDuty(ctx context.Context, tx *sql.Tx, target, actor int64, duty string) 
 			}
 		}
 	}
+	if duty == "unassigned" {
+		_, err := tx.ExecContext(ctx, "DELETE FROM care_staff_permission WHERE admin_id=?", target)
+		return err
+	}
 	_, err := tx.ExecContext(ctx, `INSERT INTO care_staff_permission(admin_id,duty,assigned_by,assigned_at)
  VALUES(?,?,?,CURRENT_TIMESTAMP(6)) AS new ON DUPLICATE KEY UPDATE
  duty=new.duty,assigned_by=new.assigned_by,assigned_at=CURRENT_TIMESTAMP(6)`, target, duty, actor)
