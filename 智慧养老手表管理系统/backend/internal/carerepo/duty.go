@@ -13,7 +13,7 @@ import (
 func Duty(ctx context.Context, store db.RowQuerier, adminID int64) (string, error) {
 	var duty string
 	err := store.QueryRowContext(ctx, `SELECT p.duty FROM care_staff_permission p
- JOIN users u ON u.user_id=p.admin_id AND u.role='1'
+ JOIN users u ON u.user_id=p.admin_id AND u.role='1' AND u.account_status='active'
  WHERE p.admin_id=?`, adminID).Scan(&duty)
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", nil
@@ -27,7 +27,7 @@ func LockDuty(ctx context.Context, tx *sql.Tx, adminID int64) (string, error) {
 	var duty string
 	err := tx.QueryRowContext(ctx,
 		`SELECT p.duty FROM care_staff_permission p
- JOIN users u ON u.user_id=p.admin_id AND u.role='1'
+ JOIN users u ON u.user_id=p.admin_id AND u.role='1' AND u.account_status='active'
  WHERE p.admin_id=? FOR SHARE`, adminID).Scan(&duty)
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", nil
@@ -57,7 +57,7 @@ func SetDuty(ctx context.Context, tx *sql.Tx, target, actor int64, duty string) 
 		if current == "supervisor" {
 			var others int64
 			err = tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM care_staff_permission p
- JOIN users u ON u.user_id=p.admin_id AND u.role='1'
+ JOIN users u ON u.user_id=p.admin_id AND u.role='1' AND u.account_status='active'
  WHERE p.duty='supervisor' AND p.admin_id<>?`, target).Scan(&others)
 			if err != nil {
 				return err
@@ -80,6 +80,6 @@ func SetDuty(ctx context.Context, tx *sql.Tx, target, actor int64, duty string) 
 // AccountExists verifies that a duty target is an administrator account.
 func AccountExists(ctx context.Context, tx *sql.Tx, target int64) (bool, error) {
 	var exists bool
-	err := tx.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM users WHERE user_id=? AND role='1')", target).Scan(&exists)
+	err := tx.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM users WHERE user_id=? AND role='1' AND account_status='active')", target).Scan(&exists)
 	return exists, err
 }
