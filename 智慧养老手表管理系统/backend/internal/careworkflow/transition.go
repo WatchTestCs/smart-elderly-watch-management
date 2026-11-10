@@ -49,8 +49,9 @@ func NextState(before, action string) string {
 
 // LockedIncidentState reads the transition preconditions while holding the row lock.
 // The caller must keep the transaction open through the subsequent writes.
-func LockedIncidentState(ctx context.Context, tx *sql.Tx, id int64) (state string, resolvedBy *string, err error) {
-	err = tx.QueryRowContext(ctx, "SELECT state,resolved_by FROM care_incident WHERE id=? FOR UPDATE", id).Scan(&state, &resolvedBy)
+func LockedIncidentState(ctx context.Context, tx *sql.Tx, id int64) (state string, resolvedBy, acknowledgedBy *string, err error) {
+	err = tx.QueryRowContext(ctx, "SELECT state,resolved_by,acknowledged_by FROM care_incident WHERE id=? FOR UPDATE", id).
+		Scan(&state, &resolvedBy, &acknowledgedBy)
 	return
 }
 
