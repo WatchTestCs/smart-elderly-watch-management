@@ -114,10 +114,11 @@ func TestCareNotesAreEncryptedAndReadableThroughAuthorizedAPI(t *testing.T) {
 }
 func TestAnnouncementWritesOutboxInsideTransaction(t *testing.T) {
 	h := secureHandler(t)
+	mustExec(t, h.DB, "INSERT INTO care_staff_permission(admin_id,duty,assigned_by) VALUES(1,'supervisor',1)")
 	seedDevice(t, h.DB)
 	mustExec(t, h.DB, "INSERT INTO family(family_id,family_phone) VALUES(1,'13800000003')")
 	mustExec(t, h.DB, "UPDATE oldperson SET family_id=1 WHERE old_id=1")
-	api(t, h.createNotice, map[string]any{"title": "通知", "textMain": "新的照护公告", "fileListName": []string{}})
+	api(t, withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 1}, h.createNotice), map[string]any{"title": "通知", "textMain": "新的照护公告", "fileListName": []string{}})
 	var count int
 	if err := h.DB.QueryRowContext(context.Background(), "SELECT count(*) FROM message_outbox WHERE topic='announcement'").Scan(&count); err != nil || count != 2 {
 		t.Fatal(count, err)
