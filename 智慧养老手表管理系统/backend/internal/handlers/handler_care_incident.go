@@ -112,13 +112,17 @@ func (h *Handler) careTransition(w http.ResponseWriter, r *http.Request) {
 		response.JSON(w, http.StatusForbidden, map[string]any{"code": "ACCESS_DENIED", "message": "岗位无此操作权限"})
 		return
 	}
-	before, resolver, err := careworkflow.LockedIncidentState(ctx, tx, id)
+	before, resolver, acknowledgedBy, err := careworkflow.LockedIncidentState(ctx, tx, id)
 	if err != nil {
 		if isNotFound(err) {
 			response.Fail(w, "事件不存在")
 			return
 		}
 		response.Error500(w, ref())
+		return
+	}
+	if !carepolicy.AllowedForIncident(carepolicy.Duty(lockedDuty), carepolicy.Action(action), actor, acknowledgedBy) {
+		response.JSON(w, http.StatusForbidden, map[string]any{"code": "ACCESS_DENIED", "message": "只能处理自己接单的照护任务"})
 		return
 	}
 	if action == "verify" && resolver != nil && *resolver == strconv.FormatInt(actor, 10) {
