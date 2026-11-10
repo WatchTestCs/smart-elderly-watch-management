@@ -67,3 +67,27 @@ go vet ./...
 ```
 
 `TestBusinessSQLUsesNativeMySQL` 检查业务源码不重新引入 PostgreSQL 参数。真实数据库测试覆盖参数传输、语句缓存、事务回滚、迁移与重建、设备绑定并发、SOS 重试、通知租约、健康批次和异步投影。手表的真实后端端到端测试验证完整 HTTP 链路。
+
+
+## 显式照护主管与历史权限迁移
+
+首次安装由 `authrepo.InitializeAdmin` 在同一个事务中创建管理员、授予 `supervisor` 岗位并写入 `supervisor_initialized` 审计记录。 `care_staff_permission` 是唯一岗位事实源；未分配岗位的管理员没有主管权限。
+
+迁移 `0027_explicit_care_authority.sql` 只清点历史管理账户与当时已有的岗位写入 `care_duty_migration_inventory`，**不将未分配账户自动提升为主管**。部署前先核对快照：
+
+```sql
+SELECT admin_id, observed_duty FROM care_duty_migration_inventory ORDER BY admin_id;
+SELECT u.user_id, p.duty FROM users u
+LEFT JOIN care_staff_permission p ON p.admin_id=u.user_id
+WHERE u.role='1' ORDER BY u.user_id;
+```
+
+已有至少一位显式主管的实例继续正常授权。若旧实例没有显式主管，应由有数据库管理权限的服务器运维人员明确选定现有管理员账号，在服务器本地执行：
+
+```sh
+MYSQL_DSN='...' go run ./cmd/care-supervisor --admin-id=123
+```
+
+命令在事务中获取 `app_metadata` 锁，只在没有任何显式主管时创建首位主管，验证账户存在且角色为管理员，并写入 `supervisor_local_bootstrap` 审计。不能通过公共 HTTP 接口执行；已有主管时使用受权的岗位管理接口。
+
+所有管理入口及岗位写入都拒绝缺失岗位的旧管理员，不再提供隐式主管兼容。主管账户的删除或禁用操作仍应纳入相同权限锁和最后主管保护后再开放相应管理能力。
