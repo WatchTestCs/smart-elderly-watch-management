@@ -56,9 +56,9 @@ func TestAdminDutyGateRestrictsLegacyRoutes(t *testing.T) {
 	mustExec(t, pool, "UPDATE care_staff_permission SET duty='supervisor' WHERE admin_id=?", adminID)
 	check("/api/v1/guardians/delete", http.StatusNoContent)
 
-	// Migration compatibility is intentional until each legacy ADMIN has a duty.
+	// Missing duty is denied, including the former implicit supervisor case.
 	mustExec(t, pool, "DELETE FROM care_staff_permission WHERE admin_id=?", adminID)
-	check("/api/v1/device/list", http.StatusNoContent)
+	check("/api/v1/device/list", http.StatusForbidden)
 }
 
 func TestRestrictedAdminRouteAllowlist(t *testing.T) {
