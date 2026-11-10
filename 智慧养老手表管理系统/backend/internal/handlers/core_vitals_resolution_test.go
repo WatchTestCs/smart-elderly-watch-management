@@ -104,6 +104,9 @@ func TestVitalAlertFamilyReadsFollowCurrentResidentOwnership(t *testing.T) {
 			t.Fatalf("other family accessed alert: %d %s", got.Code, got.Body.String())
 		}
 	}
+	if got := callAPI(other, map[string]any{"recordId": 999}); got.Code != http.StatusForbidden {
+		t.Fatalf("unknown alert ID disclosed existence: %d %s", got.Code, got.Body.String())
+	}
 	mustExec(t, pool, "UPDATE oldperson SET family_id=2 WHERE old_id=1")
 	if got := callAPI(first, map[string]any{"recordId": 1}); got.Code != http.StatusForbidden {
 		t.Fatalf("former family retained alert access: %d %s", got.Code, got.Body.String())

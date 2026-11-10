@@ -88,14 +88,16 @@ func (h *Handler) getVitalAlert(w http.ResponseWriter, r *http.Request) {
 			familyOldID, _ = strconv.ParseInt(oldIDStr, 10, 64)
 		case isDigits(recordIDStr):
 			recordID, _ := strconv.ParseInt(recordIDStr, 10, 64)
-			err := h.DB.QueryRowContext(r.Context(), "SELECT old_id FROM ratepre WHERE id=?", recordID).Scan(&familyOldID)
-			if errors.Is(err, sql.ErrNoRows) {
-				response.OK(w, map[string]any{"hasAlert": 0, "message": "该老人当前没有待处理的心率/血压异常"})
+			var owner sql.NullInt64
+			err := h.DB.QueryRowContext(r.Context(), "SELECT old_id FROM ratepre WHERE id=?", recordID).Scan(&owner)
+			if errors.Is(err, sql.ErrNoRows) || (err == nil && !owner.Valid) {
+				response.JSON(w, http.StatusForbidden, map[string]any{"code": "ACCESS_DENIED"})
 				return
 			}
 			if internalError(w, err) {
 				return
 			}
+			familyOldID = owner.Int64
 		default:
 			response.Fail(w, "参数不正确")
 			return
