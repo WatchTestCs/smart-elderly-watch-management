@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"database/sql"
 	"errors"
 	"net/http"
 	"strconv"
@@ -74,8 +73,8 @@ func (h *Handler) saveResident(w http.ResponseWriter, r *http.Request, update bo
 		return
 	}
 	ctx := r.Context()
-	tx, err := h.DB.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
-	if internalError(w, err) {
+	tx, ok := h.beginSupervisorTx(w, r)
+	if !ok {
 		return
 	}
 	defer tx.Rollback()
@@ -137,8 +136,8 @@ func (h *Handler) deleteResident(w http.ResponseWriter, r *http.Request) {
 	}
 	oldID, _ := strconv.ParseInt(oldIDStr, 10, 64)
 	ctx := r.Context()
-	tx, err := h.DB.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
-	if internalError(w, err) {
+	tx, ok := h.beginSupervisorTx(w, r)
+	if !ok {
 		return
 	}
 	rollback := func() { _ = tx.Rollback() }
