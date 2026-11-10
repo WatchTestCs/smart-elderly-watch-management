@@ -108,11 +108,15 @@ func TestTouchDeviceTimeNeverRegresses(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
 	ctx := context.Background()
-	now := time.Now().UTC().Truncate(time.Second)
-	if err := telemetryrepo.TouchDevice(ctx, pool, 1, nil, nil, now); err != nil {
+	var epoch int64
+	if err := pool.QueryRowContext(ctx, "SELECT health_epoch FROM device WHERE device_id=?", 1).Scan(&epoch); err != nil {
 		t.Fatal(err)
 	}
-	if err := telemetryrepo.TouchDevice(ctx, pool, 1, nil, nil, now.Add(-time.Hour)); err != nil {
+	now := time.Now().UTC().Truncate(time.Second)
+	if err := telemetryrepo.TouchDevice(ctx, pool, 1, epoch, nil, nil, now); err != nil {
+		t.Fatal(err)
+	}
+	if err := telemetryrepo.TouchDevice(ctx, pool, 1, epoch, nil, nil, now.Add(-time.Hour)); err != nil {
 		t.Fatal(err)
 	}
 	var stored time.Time
