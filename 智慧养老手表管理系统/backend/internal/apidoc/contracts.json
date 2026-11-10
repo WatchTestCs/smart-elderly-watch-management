@@ -150,6 +150,18 @@
       "returnCode"
     ]
   },
+  "POST /api/v1/care/accounts/status": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_care_incident.go",
+    "request": [
+      "adminId",
+      "status"
+    ],
+    "response": [
+      "adminId",
+      "returnCode",
+      "status"
+    ]
+  },
   "POST /api/v1/care/assignDuty": {
     "file": "智慧养老手表管理系统/backend/internal/handlers/handler_care_staff.go",
     "request": [
@@ -830,6 +842,30 @@
       "sleep"
     ]
   },
+  "POST /api/v1/health/baseline": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_health_baseline.go",
+    "request": [
+      "oldId"
+    ],
+    "response": [
+      "returnCode",
+      "oldId",
+      "metric",
+      "ready",
+      "sampleDays",
+      "trustedDays",
+      "rejectedDays",
+      "confidence",
+      "reason",
+      "observedAt",
+      "value",
+      "baseline",
+      "scale",
+      "score",
+      "direction",
+      "anomalous"
+    ]
+  },
   "POST /api/v1/health/changes": {
     "file": "智慧养老手表管理系统/backend/internal/handlers/handler_health.go",
     "request": [
@@ -866,30 +902,6 @@
       "semantics",
       "source",
       "sourceDevice"
-    ]
-  },
-  "POST /api/v1/health/baseline": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_health_baseline.go",
-    "request": [
-      "oldId"
-    ],
-    "response": [
-      "returnCode",
-      "oldId",
-      "metric",
-      "ready",
-      "sampleDays",
-      "trustedDays",
-      "rejectedDays",
-      "confidence",
-      "reason",
-      "observedAt",
-      "value",
-      "baseline",
-      "scale",
-      "score",
-      "direction",
-      "anomalous"
     ]
   },
   "POST /api/v1/health/latest": {
@@ -1210,6 +1222,14 @@
       "returnCode"
     ]
   },
+  "POST /api/v1/operations/snapshot": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_operations.go",
+    "request": [],
+    "response": [
+      "snapshot",
+      "returnCode"
+    ]
+  },
   "POST /api/v1/position/select": {
     "file": "智慧养老手表管理系统/backend/internal/handlers/handler_position.go",
     "request": [
@@ -1481,14 +1501,6 @@
       "vitalRecords",
       "returnCode",
       "total"
-    ]
-  },
-  "POST /api/v1/operations/snapshot": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_operations.go",
-    "request": [],
-    "response": [
-      "snapshot",
-      "returnCode"
     ]
   }
 }
