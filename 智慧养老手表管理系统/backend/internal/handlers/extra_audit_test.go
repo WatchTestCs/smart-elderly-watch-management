@@ -25,9 +25,10 @@ func extraAuditHandler(t *testing.T) *Handler {
 
 func TestExtraAuditFamilyOnboarding(t *testing.T) {
 	h := extraAuditHandler(t)
+	seedCareAdminDuty(t, h.DB, 11, "supervisor")
 	p := h.DB
 	mustExec(t, p, "INSERT INTO oldperson(old_id,name,phone) VALUES(1,'老人','13800000001')")
-	added := api(t, h.familyAdd, map[string]any{"familyName": "家属", "familyRelation": "子女", "familySex": "女", "familyPhone": "13800000002", "oldPhone": "13800000001", "familyAddress": "测试"})
+	added := api(t, withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.familyAdd), map[string]any{"familyName": "家属", "familyRelation": "子女", "familySex": "女", "familyPhone": "13800000002", "oldPhone": "13800000001", "familyAddress": "测试"})
 	if added["returnCode"] != "1111" {
 		t.Fatal(added)
 	}
@@ -51,10 +52,11 @@ func TestExtraAuditFamilyOnboarding(t *testing.T) {
 
 func TestExtraAuditPhoneReuse(t *testing.T) {
 	h := extraAuditHandler(t)
+	seedCareAdminDuty(t, h.DB, 11, "supervisor")
 	p := h.DB
 	mustExec(t, p, "INSERT INTO family(family_id,family_name,family_phone,family_address) VALUES(1,'甲','13800000001','甲地址')")
 	oldSession := h.Sessions.Create(session.Principal{Role: auth.RoleFamily, ID: 1, Phone: "13800000001"})
-	updated := api(t, h.familyUpdate, map[string]any{"familyId": 1, "familyName": "甲", "familyPhone": "13800000003", "familyRelation": "子女", "familySex": "女", "familyAddress": "甲地址"})
+	updated := api(t, withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.familyUpdate), map[string]any{"familyId": 1, "familyName": "甲", "familyPhone": "13800000003", "familyRelation": "子女", "familySex": "女", "familyAddress": "甲地址"})
 	if updated["returnCode"] != "1111" {
 		t.Fatal(updated)
 	}
@@ -80,10 +82,11 @@ func TestExtraAuditPhoneReuse(t *testing.T) {
 
 func TestExtraAuditFamilyOverwrite(t *testing.T) {
 	h := extraAuditHandler(t)
+	seedCareAdminDuty(t, h.DB, 11, "supervisor")
 	p := h.DB
 	mustExec(t, p, "INSERT INTO family(family_id,family_name,family_phone) VALUES(1,'原家属','13800000002')")
 	mustExec(t, p, "INSERT INTO oldperson(old_id,name,phone,family_id) VALUES(1,'老人','13800000001',1)")
-	out := callAPI(h.familyAdd, map[string]any{"familyName": "新家属", "familyRelation": "子女", "familySex": "女", "familyPhone": "13800000003", "oldPhone": "13800000001", "familyAddress": "测试"})
+	out := callAPI(withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.familyAdd), map[string]any{"familyName": "新家属", "familyRelation": "子女", "familySex": "女", "familyPhone": "13800000003", "oldPhone": "13800000001", "familyAddress": "测试"})
 	var bound int64
 	if err := p.QueryRowContext(context.Background(), "SELECT family_id FROM oldperson WHERE old_id=1").Scan(&bound); err != nil {
 		t.Fatal(err)
