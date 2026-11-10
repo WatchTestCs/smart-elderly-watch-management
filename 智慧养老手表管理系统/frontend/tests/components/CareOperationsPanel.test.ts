@@ -1,9 +1,13 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { defineComponent } from 'vue'
-import { expect, it, vi } from 'vitest'
+import { beforeEach, afterEach, expect, it, vi } from 'vitest'
 import axios from 'axios'
 import CareOperationsPanel from '@/components/CareOperationsPanel.vue'
+import { authState } from '@/auth'
 import { REQUEST_TIMEOUT_MS } from '@/api/client'
+
+beforeEach(() => { authState.account = { role: 'ADMIN', id: 1, duty: 'supervisor' } })
+afterEach(() => { authState.account = null; vi.restoreAllMocks() })
 
 const Button = defineComponent({ emits: ['click'], template: '<button @click="$emit(\'click\')"><slot /></button>' })
 const Select = defineComponent({ emits: ['change'], template: '<button @click="$emit(\'change\', \'caregiver\')">更改岗位</button>' })
