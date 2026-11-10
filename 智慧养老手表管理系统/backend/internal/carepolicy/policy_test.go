@@ -9,6 +9,8 @@ func TestRoleCapabilities(t *testing.T) {
 		want   bool
 	}{
 		{Supervisor, ManageStaff, true},
+		{Supervisor, ReadHealthData, true},
+		{Supervisor, ReadLocations, true},
 		{Supervisor, IssueCommands, true},
 		{Supervisor, ReadCommands, true},
 		{Supervisor, ConfigureCommands, true},
@@ -29,6 +31,8 @@ func TestRoleCapabilities(t *testing.T) {
 		{Supervisor, ReadGeofences, true},
 		{Supervisor, Verify, true},
 		{Caregiver, ReadTasks, true},
+		{Caregiver, ReadHealthData, false},
+		{Caregiver, ReadLocations, false},
 		{Caregiver, Acknowledge, true},
 		{Caregiver, Resolve, true},
 		{Caregiver, Verify, false},
@@ -42,6 +46,8 @@ func TestRoleCapabilities(t *testing.T) {
 		{Caregiver, ManageThresholds, false},
 		{Caregiver, ReadReviews, false},
 		{Auditor, ReadTasks, true},
+		{Auditor, ReadHealthData, false},
+		{Auditor, ReadLocations, false},
 		{Auditor, ReadAudit, true},
 		{Auditor, Resolve, false},
 		{Auditor, ManageStaff, false},
