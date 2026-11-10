@@ -107,7 +107,7 @@ func (h *Handler) positionSelectFamily(w http.ResponseWriter, r *http.Request) {
 		}
 		residentID = id
 	}
-	tx, ok := h.beginScopedHealthRead(w, r, residentID)
+	tx, ok := h.beginScopedLocationRead(w, r, residentID)
 	if !ok {
 		return
 	}
