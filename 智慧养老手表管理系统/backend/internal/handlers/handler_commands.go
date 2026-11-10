@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"suining-care/internal/carepolicy"
 	"database/sql"
 	"net/http"
 	"strings"
@@ -30,7 +31,7 @@ func (h *Handler) commandCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := r.Context()
-	tx, ok := h.beginSupervisorTx(w, r)
+	tx, ok := h.beginAdminActionTx(w, r, carepolicy.IssueCommands)
 	if !ok {
 		return
 	}
@@ -111,7 +112,7 @@ func (h *Handler) commandList(w http.ResponseWriter, r *http.Request) {
 		write400(w, "设备或游标无效")
 		return
 	}
-	tx, ok := h.beginSupervisorTx(w, r)
+	tx, ok := h.beginAdminActionTx(w, r, carepolicy.ReadCommands)
 	if !ok {
 		return
 	}
