@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"suining-care/internal/blob"
+	"suining-care/internal/carepolicy"
+	"suining-care/internal/careworkflow"
 	"suining-care/internal/db"
 )
 
@@ -49,8 +51,8 @@ func replaceNoticePictures(ctx context.Context, tx *sql.Tx, group int64, names [
 
 // UpdateNotice locks the notice before reading its image group, avoiding a
 // separate pre-transaction read and concurrent image-group replacement.
-func UpdateNotice(ctx context.Context, store *db.Database, manager *blob.Manager, id int64, title, body string, names []string) (bool, error) {
-	tx, err := store.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+func UpdateNotice(ctx context.Context, store *db.Database, actor int64, manager *blob.Manager, id int64, title, body string, names []string) (bool, error) {
+	tx, _, err := careworkflow.BeginAuthorized(ctx, store, actor, carepolicy.ManageContent)
 	if err != nil {
 		return false, err
 	}
@@ -88,11 +90,17 @@ func UpdateNotice(ctx context.Context, store *db.Database, manager *blob.Manager
 	if affected != 1 {
 		return false, nil
 	}
+	if err := auditContentChange(ctx, tx, actor, "notice_updated"); err != nil {
+		return false, err
+	}
+	if err := auditContentChange(ctx, tx, actor, "notice_deleted"); err != nil {
+		return false, err
+	}
 	return true, tx.Commit()
 }
 
-func DeleteNotice(ctx context.Context, store *db.Database, id int64) (bool, error) {
-	tx, err := store.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+func DeleteNotice(ctx context.Context, store *db.Database, actor, id int64) (bool, error) {
+	tx, _, err := careworkflow.BeginAuthorized(ctx, store, actor, carepolicy.ManageContent)
 	if err != nil {
 		return false, err
 	}
@@ -121,4 +129,9 @@ func DeleteNotice(ctx context.Context, store *db.Database, id int64) (bool, erro
 		}
 	}
 	return true, tx.Commit()
+}
+
+func auditContentChange(ctx context.Context, tx *sql.Tx, actor int64, action string) error {
+	_, err := tx.ExecContext(ctx, "INSERT INTO care_access_audit(admin_id,action) VALUES(?,?)", actor, action)
+	return err
 }
