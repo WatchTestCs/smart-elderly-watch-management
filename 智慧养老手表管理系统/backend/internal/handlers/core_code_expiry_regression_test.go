@@ -48,8 +48,10 @@ func TestContinuousInviteCodeExpiry(t *testing.T) {
 	pool := testDatabase(t)
 	h := testHandler(t, pool)
 	seedDevice(t, pool)
+	seedCareAdminDuty(t, pool, 11, "supervisor")
+	createInvite := withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.inviteCreate)
 	for _, bad := range []any{"abc", -1, 1.5, true, "999999999999999999999999"} {
-		out := callAPI(h.inviteCreate, map[string]any{"oldId": 1, "expireDays": bad})
+		out := callAPI(createInvite, map[string]any{"oldId": 1, "expireDays": bad})
 		if out.Code != 400 {
 			t.Errorf("invalid expiry %v became an indefinite invite: HTTP %d", bad, out.Code)
 		}
@@ -59,7 +61,7 @@ func TestContinuousInviteCodeExpiry(t *testing.T) {
 		t.Errorf("invalid expiry created invites: count=%d err=%v", count, err)
 	}
 	for _, valid := range []any{"", nil, 0, "2"} {
-		api(t, h.inviteCreate, map[string]any{"oldId": 1, "expireDays": valid})
+		api(t, createInvite, map[string]any{"oldId": 1, "expireDays": valid})
 	}
 	if err := pool.QueryRowContext(context.Background(), "SELECT count(*) FROM invite_code WHERE expire_time IS NULL").Scan(&count); err != nil || count != 3 {
 		t.Fatalf("legacy indefinite expiry contract changed: count=%d err=%v", count, err)
