@@ -37,7 +37,14 @@ const (
 	ReadAudit         Action = "read_audit"
 	ManageStaff       Action = "manage_staff"
 	ManageAccounts    Action = "manage_accounts"
-	ManageContent     Action = "manage_content"
+	ReadAccounts      Action = "read_accounts"
+	ReadGuardians     Action = "read_guardians"
+	ManageGuardians   Action = "manage_guardians"
+	ReadResidents     Action = "read_residents"
+	ManageResidents   Action = "manage_residents"
+	ReadLocations     Action = "read_locations"
+	ReadLoginAudit    Action = "read_login_audit"
+		ManageContent     Action = "manage_content"
 	ReadModeration    Action = "read_moderation"
 	Diagnostics       Action = "diagnostics"
 	Acknowledge       Action = "acknowledge"
@@ -66,6 +73,8 @@ func Allowed(duty Duty, action Action) bool {
 	case Supervisor:
 		switch action {
 		case ReadTasks, ReadAudit, ManageStaff, ManageAccounts, ManageContent, ReadModeration,
+			ReadAccounts, ReadGuardians, ManageGuardians, ReadResidents, ManageResidents,
+			ReadLocations, ReadLoginAudit,
 			Diagnostics, Acknowledge, Start,
 			Resolve, Escalate, Verify, Reopen, ReadCommands, IssueCommands,
 			ConfigureCommands, ReadReviews, ReviewAlerts, ReadRules, ManageRules,
