@@ -117,22 +117,12 @@ func (s *Local) Get(ctx context.Context, key string) ([]byte, error) {
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
 	}
-	name, err := s.path(key)
-	if err != nil {
-		return nil, err
-	}
-	real, err := filepath.EvalSymlinks(name)
-	if errors.Is(err, os.ErrNotExist) {
+	if !ValidKey(key) {
 		return nil, ErrNotFound
 	}
-	if err != nil {
-		return nil, err
-	}
-	rel, err := filepath.Rel(s.root, real)
-	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
-		return nil, ErrNotFound
-	}
-	f, err := os.Open(real)
+	// Rooted open resolves symlinks inside the trusted directory in one operation.
+	// A symlink swapped after validation cannot redirect reads outside the root.
+	f, err := os.OpenInRoot(s.root, key)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return nil, ErrNotFound
