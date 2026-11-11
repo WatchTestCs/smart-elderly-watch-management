@@ -142,6 +142,9 @@ func pageIntVal(m map[string]any, key string, fallback int) (int, string) {
 	if !ok {
 		return 0, "分页参数必须为整数"
 	}
+	if n < 1 || n > 100000 {
+		return 0, "分页参数超出允许范围"
+	}
 	return int(n), ""
 }
 
