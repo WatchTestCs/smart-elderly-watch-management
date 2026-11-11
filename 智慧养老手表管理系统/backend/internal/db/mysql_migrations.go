@@ -30,8 +30,8 @@ func MySQLMigrationNames() ([]string, error) {
 	return names, nil
 }
 
-// MySQL DDL commits implicitly. Each statement is restartable; a checksum is
-// recorded only after all statements finish, under a connection-scoped lock.
+// MySQL DDL commits implicitly. A connection-scoped lock serializes migrations;
+// statement checkpoints prevent replay of ambiguous DDL or committed DML.
 func MigrateMySQL(ctx context.Context, database *Database) (result error) {
 	conn, err := database.Conn(ctx)
 	if err != nil {
@@ -123,7 +123,21 @@ func MigrateMySQL(ctx context.Context, database *Database) (result error) {
 				return fmt.Errorf("MySQL migration %s step %d: %w", name, ordinal, err)
 			}
 		}
-		if _, err = conn.ExecContext(ctx, "INSERT INTO schema_migrations(name,checksum) VALUES(?,?)", name, sum); err != nil {
+		// Retire statement checkpoints atomically with the completed ledger entry.
+		// Otherwise an intentional rollback leaves stale fingerprints that reject
+		// reapplication, and later migrations invalidate those fingerprints.
+		tx, err := conn.BeginTx(ctx, nil)
+		if err != nil {
+			return err
+		}
+		if _, err = tx.ExecContext(ctx, "INSERT INTO schema_migrations(name,checksum) VALUES(?,?)", name, sum); err == nil {
+			_, err = tx.ExecContext(ctx, "DELETE FROM schema_migration_steps WHERE name=?", name)
+		}
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+		if err = tx.Commit(); err != nil {
 			return err
 		}
 	}

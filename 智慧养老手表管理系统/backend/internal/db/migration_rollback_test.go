@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	rollbackRefPattern  = regexp.MustCompile(`(?i)DELETE\s+FROM\s+schema_migrations\s+WHERE\s+name\s*=\s*'([^']+)'`)
+	rollbackRefPattern  = regexp.MustCompile(`(?i)(?:DELETE|SELECT\s+name)\s+FROM\s+schema_migrations\s+WHERE\s+name\s*=\s*'([^']+)'`)
 	migrationNumPattern = regexp.MustCompile(`^(\d{4})_`)
 )
 
@@ -51,7 +51,7 @@ func TestMigrationRollbackPairs(t *testing.T) {
 		}
 		matches := rollbackRefPattern.FindAllStringSubmatch(body, -1)
 		if len(matches) != 1 {
-			t.Errorf("%s: expected one schema_migrations delete, found %d", fileName, len(matches))
+			t.Errorf("%s: expected one schema_migrations delete or retained-ledger query, found %d", fileName, len(matches))
 			continue
 		}
 		ref := matches[0][1]

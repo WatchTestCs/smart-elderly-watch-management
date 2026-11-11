@@ -13,6 +13,11 @@ func TestManagedBlockAndRestart(t *testing.T) {
 	if err := m.Persist(dir); err != nil {
 		t.Fatal(err)
 	}
+	t.Cleanup(func() {
+		if err := m.Close(); err != nil {
+			t.Error(err)
+		}
+	})
 	r, err := m.AddRule("192.0.2.0/24", "block", "repeated authentication attacks", "admin", time.Hour)
 	if err != nil {
 		t.Fatal(err)
@@ -31,6 +36,11 @@ func TestManagedBlockAndRestart(t *testing.T) {
 	if err := m2.Persist(dir); err != nil {
 		t.Fatal(err)
 	}
+	t.Cleanup(func() {
+		if err := m2.Close(); err != nil {
+			t.Error(err)
+		}
+	})
 	events, rules := m2.History(10)
 	if len(rules) != 1 || len(events) != 2 {
 		t.Fatalf("persistence mismatch %v %v", rules, events)

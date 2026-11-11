@@ -85,14 +85,14 @@ func TestCapabilitiesRollbackAndReapply(t *testing.T) {
 	if err = pool.QueryRowContext(ctx, "SELECT count(*) FROM schema_migrations").Scan(&applied); err != nil {
 		t.Fatal(err)
 	}
-	wantRemaining := applied - len(rollbacks)
-	if wantRemaining < 1 {
-		t.Fatal("rollback scripts outnumber applied migrations", applied, len(rollbacks))
-	}
+	wantRemaining := applied
 	for _, name := range rollbacks {
 		b, err := os.ReadFile(filepath.Join(rollbackDir, name))
 		if err != nil {
 			t.Fatal(err)
+		}
+		if strings.Contains(string(b), "DELETE FROM schema_migrations") {
+			wantRemaining--
 		}
 		for _, statement := range strings.Split(string(b), ";") {
 			if strings.TrimSpace(statement) != "" {

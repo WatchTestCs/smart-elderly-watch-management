@@ -91,6 +91,9 @@ func (m *Manager) checkLocked(keys ...string) Decision {
 // BeforeLogin checks account+IP and IP budgets. A shared campus NAT is not
 // locked for one account's failures; it needs 30 verified failures in 10 minutes.
 func (m *Manager) BeforeLogin(ip, account string) Decision {
+	if err := m.refreshMySQLRules(); err != nil {
+		return Decision{RetryAfter: 1, RiskLevel: "storage_unavailable"}
+	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if d, matched := m.matchRuleLocked(ip); matched {
@@ -103,6 +106,9 @@ func (m *Manager) BeforeLogin(ip, account string) Decision {
 }
 
 func (m *Manager) BeforeInvite(ip string) Decision {
+	if err := m.refreshMySQLRules(); err != nil {
+		return Decision{RetryAfter: 1, RiskLevel: "storage_unavailable"}
+	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if d, matched := m.matchRuleLocked(ip); matched {

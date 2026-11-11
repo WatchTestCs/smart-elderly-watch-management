@@ -25,6 +25,8 @@ type Rule struct {
 	ExpiresAt time.Time `json:"expiresAt,omitempty"`
 }
 
+var ErrInvalidRule = errors.New("invalid risk rule")
+
 type Event struct {
 	ID                string     `json:"id"`
 	At                time.Time  `json:"at"`
@@ -263,54 +265,82 @@ func (m *Manager) matchRuleLocked(ip string) (Decision, bool) {
 
 // InsertRuleTx uses the same database transaction as the live-duty authorization.
 func (m *Manager) InsertRuleTx(ctx context.Context, tx *sql.Tx, raw, action, reason, actor string, ttl time.Duration) (Rule, error) {
- prefix, err := normalizedPrefix(strings.TrimSpace(raw))
- if err != nil { return Rule{}, err }
- if action != "block" && action != "skip-auto" { return Rule{}, errors.New("invalid action") }
- if ttl < 0 || ttl > 365*24*time.Hour { return Rule{}, errors.New("invalid duration") }
- reason = strings.TrimSpace(reason)
- if len(reason) < 3 || len(reason) > 240 { return Rule{}, errors.New("invalid reason") }
- now := m.now().UTC()
- rule := Rule{ID: m.nextEventID(), CIDR: prefix.String(), Action: action, Reason: reason, Actor: actor, CreatedAt: now}
- if ttl > 0 { rule.ExpiresAt = now.Add(ttl) }
- var expires any
- if !rule.ExpiresAt.IsZero() { expires = rule.ExpiresAt }
- if _, err = tx.ExecContext(ctx, `INSERT INTO risk_ip_rules (rule_id,cidr,action,reason,actor,created_at,expires_at) VALUES (?,?,?,?,?,?,?)`, rule.ID, rule.CIDR, rule.Action, rule.Reason, rule.Actor, rule.CreatedAt, expires); err != nil { return Rule{}, err }
- if err = m.auditRuleTx(ctx, tx, "rule_created", rule.CIDR, action+": "+reason); err != nil { return Rule{}, err }
- return rule, nil
+	prefix, err := normalizedPrefix(strings.TrimSpace(raw))
+	if err != nil {
+		return Rule{}, ErrInvalidRule
+	}
+	if action != "block" && action != "skip-auto" {
+		return Rule{}, ErrInvalidRule
+	}
+	if ttl < 0 || ttl > 365*24*time.Hour {
+		return Rule{}, ErrInvalidRule
+	}
+	reason = strings.TrimSpace(reason)
+	if len(reason) < 3 || len(reason) > 240 {
+		return Rule{}, ErrInvalidRule
+	}
+	now := m.now().UTC()
+	rule := Rule{ID: m.nextEventID(), CIDR: prefix.String(), Action: action, Reason: reason, Actor: actor, CreatedAt: now}
+	if ttl > 0 {
+		rule.ExpiresAt = now.Add(ttl)
+	}
+	var expires any
+	if !rule.ExpiresAt.IsZero() {
+		expires = rule.ExpiresAt
+	}
+	if _, err = tx.ExecContext(ctx, `INSERT INTO risk_ip_rules (rule_id,cidr,action,reason,actor,created_at,expires_at) VALUES (?,?,?,?,?,?,?)`, rule.ID, rule.CIDR, rule.Action, rule.Reason, rule.Actor, rule.CreatedAt, expires); err != nil {
+		return Rule{}, err
+	}
+	if err = m.auditRuleTx(ctx, tx, "rule_created", rule.CIDR, actor, action+": "+reason); err != nil {
+		return Rule{}, err
+	}
+	return rule, nil
 }
 
 // RemoveRuleTx locks the persisted rule so deletion and audit commit together.
 func (m *Manager) RemoveRuleTx(ctx context.Context, tx *sql.Tx, id, actor string) (bool, error) {
- var cidr string
- err := tx.QueryRowContext(ctx, "SELECT cidr FROM risk_ip_rules WHERE rule_id=? FOR UPDATE", id).Scan(&cidr)
- if errors.Is(err, sql.ErrNoRows) { return false, nil }
- if err != nil { return false, err }
- if _, err = tx.ExecContext(ctx, "DELETE FROM risk_ip_rules WHERE rule_id=?", id); err != nil { return false, err }
- if err = m.auditRuleTx(ctx, tx, "rule_deleted", cidr, actor+": "+id); err != nil { return false, err }
- return true, nil
+	var cidr string
+	err := tx.QueryRowContext(ctx, "SELECT cidr FROM risk_ip_rules WHERE rule_id=? FOR UPDATE", id).Scan(&cidr)
+	if errors.Is(err, sql.ErrNoRows) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	if _, err = tx.ExecContext(ctx, "DELETE FROM risk_ip_rules WHERE rule_id=?", id); err != nil {
+		return false, err
+	}
+	if err = m.auditRuleTx(ctx, tx, "rule_deleted", cidr, actor, id); err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
-func (m *Manager) auditRuleTx(ctx context.Context, tx *sql.Tx, action, cidr, detail string) error {
- _, err := tx.ExecContext(ctx, `INSERT INTO risk_login_events
+func (m *Manager) auditRuleTx(ctx context.Context, tx *sql.Tx, action, cidr, actor, detail string) error {
+	_, err := tx.ExecContext(ctx, `INSERT INTO risk_login_events
  (event_key,occurred_at,ip_address,account_mask,event_type,detail,device_json,network_kind,network_confidence,network_provider,network_source)
- VALUES(?,?,?,?,?,?,?,?,?,?,?)`, m.nextEventID(), m.now().UTC(), cidr, "", action, detail, "{}", "unclassified", 0, "", "")
- return err
+	 VALUES(?,?,?,?,?,?,?,?,?,?,?)`, m.nextEventID(), m.now().UTC(), cidr, actor, action, detail, "{}", "unclassified", 0, "", "")
+	return err
 }
 
 // ReloadRules publishes only database-committed rules.
 func (m *Manager) ReloadRules(ctx context.Context) error {
- m.ruleMu.Lock()
- defer m.ruleMu.Unlock()
- m.mu.Lock()
- a := m.sqlAudit
- m.mu.Unlock()
- if a == nil { return errors.New("risk MySQL persistence unavailable") }
- rules, err := loadSQLRules(ctx, a.db)
- if err != nil { return err }
- m.mu.Lock()
- m.rules = rules
- m.mu.Unlock()
- return nil
+	m.ruleMu.Lock()
+	defer m.ruleMu.Unlock()
+	m.mu.Lock()
+	a := m.sqlAudit
+	m.mu.Unlock()
+	if a == nil {
+		return errors.New("risk MySQL persistence unavailable")
+	}
+	rules, err := loadSQLRules(ctx, a.db)
+	if err != nil {
+		return err
+	}
+	m.mu.Lock()
+	m.rules = rules
+	m.mu.Unlock()
+	return nil
 }
 
 func (m *Manager) AddRule(raw, action, reason, actor string, ttl time.Duration) (Rule, error) {
@@ -339,14 +369,7 @@ func (m *Manager) AddRule(raw, action, reason, actor string, ttl time.Duration) 
 	a := m.sqlAudit
 	m.mu.Unlock()
 	if a != nil {
-		if err = insertSQLRule(a.db, rule); err != nil {
-			return Rule{}, err
-		}
-		m.mu.Lock()
-		m.rules = append(m.rules, rule)
-		m.recordEventLocked(prefix.String(), "", "rule_created", action+": "+reason)
-		m.mu.Unlock()
-		return rule, nil
+		return Rule{}, errors.New("MySQL rule changes require an authorized transaction")
 	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -375,23 +398,11 @@ func (m *Manager) DeleteRule(id, actor string) (bool, error) {
 	}
 	a := m.sqlAudit
 	m.mu.Unlock()
+	if a != nil {
+		return false, errors.New("MySQL rule changes require an authorized transaction")
+	}
 	if index < 0 {
 		return false, nil
-	}
-	if a != nil {
-		if err := deleteSQLRule(a.db, id); err != nil {
-			return false, err
-		}
-		m.mu.Lock()
-		for i, r := range m.rules {
-			if r.ID == id {
-				m.rules = append(m.rules[:i], m.rules[i+1:]...)
-				break
-			}
-		}
-		m.recordEventLocked(found.CIDR, "", "rule_deleted", actor+": "+found.Reason)
-		m.mu.Unlock()
-		return true, nil
 	}
 	m.mu.Lock()
 	defer m.mu.Unlock()

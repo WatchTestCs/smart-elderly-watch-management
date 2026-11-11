@@ -3,6 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -11,6 +12,7 @@ import (
 	"suining-care/internal/auth"
 	"suining-care/internal/carepolicy"
 	"suining-care/internal/response"
+	"suining-care/internal/risk"
 )
 
 func (h *Handler) routeRisk(mux *http.ServeMux) {
@@ -82,13 +84,20 @@ func (h *Handler) riskAdminRuleCreate(w http.ResponseWriter, r *http.Request) {
 	}
 	rule, err := h.Risk.InsertRuleTx(r.Context(), tx, input.IP, input.Action, input.Reason, actor, time.Duration(input.DurationHours)*time.Hour)
 	if err != nil {
-		response.Error(w, http.StatusBadRequest, "INVALID_RULE", "封禁规则不合法")
+		if errors.Is(err, risk.ErrInvalidRule) {
+			response.Error(w, http.StatusBadRequest, "INVALID_RULE", "封禁规则不合法")
+		} else {
+			response.Error(w, http.StatusServiceUnavailable, "RISK_STORAGE_ERROR", "封禁规则保存失败")
+		}
 		return
 	}
 	if internalError(w, tx.Commit()) {
 		return
 	}
-	_ = h.Risk.ReloadRules(r.Context())
+	if err := h.Risk.ReloadRules(r.Context()); err != nil {
+		response.Error(w, http.StatusServiceUnavailable, "RISK_REFRESH_FAILED", "规则已提交，读取最新规则失败")
+		return
+	}
 	w.Header().Set("Cache-Control", "no-store")
 	response.OK(w, map[string]any{"rule": rule})
 }
@@ -111,7 +120,10 @@ func (h *Handler) riskAdminRuleDelete(w http.ResponseWriter, r *http.Request) {
 	if internalError(w, tx.Commit()) {
 		return
 	}
-	_ = h.Risk.ReloadRules(r.Context())
+	if err := h.Risk.ReloadRules(r.Context()); err != nil {
+		response.Error(w, http.StatusServiceUnavailable, "RISK_REFRESH_FAILED", "规则已提交，读取最新规则失败")
+		return
+	}
 	w.Header().Set("Cache-Control", "no-store")
 	response.OK(w, map[string]any{"deleted": true})
 }

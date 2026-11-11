@@ -230,6 +230,20 @@ func loadSQLRules(ctx context.Context, db *sql.DB) ([]Rule, error) {
 	return rules, nil
 }
 
+// Each authentication decision reads committed rules from the shared database.
+// A process-local snapshot cannot establish visibility across server replicas.
+func (m *Manager) refreshMySQLRules() error {
+	m.mu.Lock()
+	enabled := m.sqlAudit != nil
+	m.mu.Unlock()
+	if !enabled {
+		return nil
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	return m.ReloadRules(ctx)
+}
+
 func (m *Manager) EnableMySQL(db *sql.DB) error {
 	if db == nil {
 		return errors.New("nil mysql database")
@@ -295,29 +309,11 @@ func (m *Manager) AuditDropped() uint64 {
 	return a.dropped.Load()
 }
 
-func insertSQLRule(db *sql.DB, r Rule) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-	var expires any
-	if !r.ExpiresAt.IsZero() {
-		expires = r.ExpiresAt.UTC()
-	}
-	_, err := db.ExecContext(ctx, `INSERT INTO risk_ip_rules (rule_id,cidr,action,reason,actor,created_at,expires_at) VALUES (?,?,?,?,?,?,?)`, r.ID, r.CIDR, r.Action, r.Reason, r.Actor, r.CreatedAt.UTC(), expires)
-	return err
-}
-func deleteSQLRule(db *sql.DB, id string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-	_, err := db.ExecContext(ctx, `DELETE FROM risk_ip_rules WHERE rule_id=?`, id)
-	return err
-}
-
 // HistoryMySQL queries persisted events even after a process restart. It is
 // intended only for the authenticated administrator route.
 func (m *Manager) HistoryMySQL(ctx context.Context, limit int) ([]Event, []Rule, error) {
 	m.mu.Lock()
 	a := m.sqlAudit
-	rules := append([]Rule(nil), m.rules...)
 	m.mu.Unlock()
 	if a == nil {
 		e, r := m.History(limit)
@@ -348,5 +344,9 @@ func (m *Manager) HistoryMySQL(ctx context.Context, limit int) ([]Event, []Rule,
 	if err := rows.Err(); err != nil {
 		return nil, nil, err
 	}
-	return events, rules, nil
+	if err := rows.Close(); err != nil {
+		return nil, nil, err
+	}
+	rules, err := loadSQLRules(ctx, a.db)
+	return events, rules, err
 }
