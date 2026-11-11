@@ -67,6 +67,7 @@ func TestLegacyDeviceCommandsAndReviewsRequireLiveSupervisor(t *testing.T) {
 	}{
 		{"command_list", h.commandList, map[string]any{"deviceId": 1}},
 		{"command_create", h.commandCreate, map[string]any{"deviceId": 1, "action": "locate", "requestKey": "denied-test", "ttlSeconds": 60}},
+		{"command_profile", h.commandProfile, map[string]any{"deviceId": 1, "wireType": "K1", "protocol": "suining-pull-v1", "enabled": true}},
 		{"alert_reviews", h.alertReviews, map[string]any{"entity": "ratepre", "recordId": 1, "kind": "rate"}},
 		{"alert_review", h.alertReview, map[string]any{"recordId": 1, "kind": "rate", "verdict": "confirmed", "reason": "verified", "expectedReviewId": 0}},
 	}

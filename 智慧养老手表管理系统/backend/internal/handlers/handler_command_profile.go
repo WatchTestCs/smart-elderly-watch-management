@@ -1,10 +1,13 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 
-	"suining-care/internal/carepolicy"
+	"suining-care/internal/careworkflow"
+	"suining-care/internal/commandrepo"
 	"suining-care/internal/commands"
+	"suining-care/internal/commandworkflow"
 	"suining-care/internal/response"
 )
 
@@ -26,25 +29,18 @@ func (h *Handler) commandProfile(w http.ResponseWriter, r *http.Request) {
 		write400(w, "须使用已知接口传值及 suining-pull-v1 协议")
 		return
 	}
-	ctx := r.Context()
-	tx, ok := h.beginAdminActionTx(w, r, carepolicy.ConfigureCommands)
-	if !ok {
-		return
-	}
-	defer tx.Rollback()
 	id := req.DeviceID
-	if !lockDeviceID(w, ctx, tx, id) {
+	err := commandworkflow.Configure(r.Context(), h.DB, actor, id, commandrepo.Profile{
+		WireType: req.WireType, Protocol: req.Protocol, Enabled: req.Enabled,
+	})
+	switch {
+	case errors.Is(err, careworkflow.ErrCapabilityDenied):
+		response.JSON(w, http.StatusForbidden, map[string]any{"code": "ACCESS_DENIED", "message": "岗位无此操作权限"})
 		return
-	}
-	_, err := tx.ExecContext(ctx, `INSERT INTO device_command_profile(device_id,wire_type,protocol,enabled,updated_by) VALUES(?,?,?,?,?)
- AS new ON DUPLICATE KEY UPDATE wire_type=new.wire_type,protocol=new.protocol,enabled=new.enabled,updated_by=new.updated_by,updated_at=CURRENT_TIMESTAMP(6)`, id, req.WireType, req.Protocol, req.Enabled, actor)
-	if err == nil {
-		_, err = tx.ExecContext(ctx, "UPDATE device_command SET status='cancelled' WHERE device_id=? AND status IN ('pending','sent')", id)
-	}
-	if err == nil {
-		err = commitCareChange(ctx, tx, actor, "command_profile")
-	}
-	if internalError(w, err) {
+	case errors.Is(err, commandworkflow.ErrDeviceMissing):
+		response.JSON(w, http.StatusNotFound, map[string]any{"message": "设备不存在"})
+		return
+	case internalError(w, err):
 		return
 	}
 	response.OK(w, map[string]any{"deviceId": id, "enabled": req.Enabled})
