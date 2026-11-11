@@ -77,6 +77,7 @@ jobs:
           if ($LASTEXITCODE) { throw 'Rust toolchain setup failed' }
           rustc --version | Set-Content evidence/ci/windows-desktop/rust-version.txt
           ./智慧养老手表管理系统/desktop/build.ps1 *>&1 | Tee-Object evidence/ci/windows-desktop/build.log
+          python ./智慧养老手表管理系统/desktop/build-fontless.py *>&1 | Tee-Object evidence/ci/windows-desktop/fontless.log
           ./智慧养老手表管理系统/desktop/package-release.ps1 *>&1 | Tee-Object evidence/ci/windows-desktop/package.log
       - if: always()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f

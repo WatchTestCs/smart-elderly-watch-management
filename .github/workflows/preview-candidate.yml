@@ -43,6 +43,10 @@ jobs:
       - name: Build actual Windows installer
         shell: pwsh
         run: ./智慧养老手表管理系统/desktop/build.ps1
+      - name: Build standalone no-font native distributions
+        shell: pwsh
+        run: python ./智慧养老手表管理系统/desktop/build-fontless.py
+
       - name: Package and verify Setup, portable and source
         shell: pwsh
         run: ./智慧养老手表管理系统/desktop/package-release.ps1
@@ -81,6 +85,33 @@ jobs:
           name: suining-source-${{ inputs.source_sha }}
           path: |
             智慧养老手表管理系统/outputs/*/release/Suining-Source-*.zip
+            智慧养老手表管理系统/outputs/*/release/SHA256SUMS.txt
+            智慧养老手表管理系统/outputs/*/release/release-manifest.json
+            release-provenance.json
+          if-no-files-found: error
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: suining-native-nofonts-win-x64-${{ inputs.source_sha }}
+          path: |
+            智慧养老手表管理系统/outputs/*/release/Suining-Native-NoFonts-*-win-x64.exe
+            智慧养老手表管理系统/outputs/*/release/SHA256SUMS.txt
+            智慧养老手表管理系统/outputs/*/release/release-manifest.json
+            release-provenance.json
+          if-no-files-found: error
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: suining-native-nofonts-linux-x64-${{ inputs.source_sha }}
+          path: |
+            智慧养老手表管理系统/outputs/*/release/Suining-Native-NoFonts-*-linux-x64.tar.gz
+            智慧养老手表管理系统/outputs/*/release/SHA256SUMS.txt
+            智慧养老手表管理系统/outputs/*/release/release-manifest.json
+            release-provenance.json
+          if-no-files-found: error
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: suining-native-nofonts-linux-arm64-${{ inputs.source_sha }}
+          path: |
+            智慧养老手表管理系统/outputs/*/release/Suining-Native-NoFonts-*-linux-arm64.tar.gz
             智慧养老手表管理系统/outputs/*/release/SHA256SUMS.txt
             智慧养老手表管理系统/outputs/*/release/release-manifest.json
             release-provenance.json
