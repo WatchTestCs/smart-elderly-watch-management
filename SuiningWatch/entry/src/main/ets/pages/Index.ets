@@ -183,7 +183,10 @@ struct Index {
     try {
       reply = await this.api.upload(this.config(), batchRequest(batch, live, this.secret));
     } catch (error) {
-      if ((error as DeviceRequestError).code !== 'EPOCH_EXPIRED') { throw error; }
+      if ((error as DeviceRequestError).code !== 'EPOCH_EXPIRED') {
+        if (error instanceof Error) { throw error; }
+        throw new Error('设备上传失败');
+      }
       this.useBinding(undefined);
       await this.liveBinding();
       this.status = '绑定已重新同步，请检查待上传记录后重新采样';
