@@ -62,8 +62,13 @@ func strictPageVal(w http.ResponseWriter, m map[string]any, key string, fallback
 	n, ok := numParam(m, key)
 	if !ok {
 		write400(w, "分页参数必须为整数")
+		return 0, false
 	}
-	return int(n), ok
+	if n < 1 || n > 100000 {
+		write400(w, "分页参数超出允许范围")
+		return 0, false
+	}
+	return int(n), true
 }
 
 // numParam accepts a required integer as either a JSON number or a string.
