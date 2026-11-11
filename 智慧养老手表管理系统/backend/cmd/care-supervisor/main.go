@@ -1,64 +1,63 @@
-// care-supervisor is a local, explicit recovery command for installations
-// migrated from implicit administrator privileges.
+// care-supervisor is a local, explicitly audited first-supervisor recovery tool.
 package main
 
 import (
 	"context"
-	"database/sql"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
 	"os"
+	"os/user"
 	"time"
 
-	_ "github.com/go-sql-driver/mysql"
-	"suining-care/internal/carerepo"
+	"suining-care/internal/careworkflow"
+	"suining-care/internal/config"
+	"suining-care/internal/db"
+	"suining-care/internal/securityaudit"
 )
 
 func main() {
-	adminID := flag.Int64("admin-id", 0, "existing administrator user_id to make the first supervisor")
-	flag.Parse()
-	dsn := os.Getenv("MYSQL_DSN")
-	if *adminID <= 0 || dsn == "" || flag.NArg() != 0 {
-		log.Fatal("usage: MYSQL_DSN=<secret> care-supervisor --admin-id=<existing admin ID>")
+	if err := run(os.Args[1:]); err != nil && !errors.Is(err, flag.ErrHelp) {
+		log.Print(err)
+		os.Exit(1)
 	}
-	db, err := sql.Open("mysql", dsn)
+}
+
+func run(args []string) error {
+	flags := flag.NewFlagSet("care-supervisor", flag.ContinueOnError)
+	adminID := flags.Int64("admin-id", 0, "existing active administrator user_id to recover")
+	reason := flags.String("reason", "", "required incident/ticket reason; missing reasons are audited and denied")
+	if err := flags.Parse(args); err != nil {
+		return err
+	}
+	if flags.NArg() != 0 {
+		return errors.New("usage: care-supervisor --admin-id=<ID> --reason=<ticket reason>")
+	}
+	operator, err := user.Current()
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("read OS identity: %w", err)
 	}
-	defer db.Close()
+	host, err := os.Hostname()
+	if err != nil {
+		return fmt.Errorf("read hostname: %w", err)
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
-	tx, err := db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	store, err := db.OpenMySQL(ctx, config.Secret("MYSQL_DSN"))
 	if err != nil {
-		log.Fatal(err)
+		return errors.New("MySQL connection failed: check MYSQL_DSN or MYSQL_DSN_FILE")
 	}
-	defer tx.Rollback()
-	if err := carerepo.LockAuthority(ctx, tx); err != nil {
-		log.Fatal(err)
+	defer store.Close()
+	result, err := careworkflow.RecoverSupervisor(ctx, store, *adminID, securityaudit.Actor{
+		User: operator.Username, UID: operator.Uid, Host: host,
+	}, *reason)
+	if errors.Is(err, careworkflow.ErrRecoveryDenied) {
+		return fmt.Errorf("recovery denied (%s); audit=%s; high-priority alert queued", result.Decision, result.AuditID)
 	}
-	var existing int
-	if err := tx.QueryRowContext(ctx, "SELECT COUNT(*) FROM care_staff_permission p JOIN users u ON u.user_id=p.admin_id WHERE p.duty='supervisor' AND u.role='1' AND u.account_status='active'").Scan(&existing); err != nil {
-		log.Fatal(err)
-	}
-	if existing != 0 {
-		log.Fatal("a supervisor already exists; use authenticated duty assignment instead")
-	}
-	exists, err := carerepo.AccountExists(ctx, tx, *adminID)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
-	if !exists {
-		log.Fatal("target is not an existing administrator")
-	}
-	if err := carerepo.SetDuty(ctx, tx, *adminID, *adminID, "supervisor"); err != nil {
-		log.Fatal(err)
-	}
-	if _, err := tx.ExecContext(ctx, "INSERT INTO care_access_audit(admin_id,action,subject_admin_id) VALUES(?,'supervisor_local_bootstrap',?)", *adminID, *adminID); err != nil {
-		log.Fatal(err)
-	}
-	if err := tx.Commit(); err != nil {
-		log.Fatal(err)
-	}
-	fmt.Printf("first care supervisor explicitly assigned to administrator %d\n", *adminID)
+	fmt.Printf("first supervisor assigned to administrator %d; audit=%s; high-priority alert queued\n", *adminID, result.AuditID)
+	return nil
 }

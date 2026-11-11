@@ -6,11 +6,13 @@ import (
 
 	"suining-care/internal/analytics"
 	"suining-care/internal/care"
+	"suining-care/internal/config"
 	dbstore "suining-care/internal/db"
 	"suining-care/internal/handlers"
 	"suining-care/internal/notify"
 	"suining-care/internal/rules"
 	"suining-care/internal/securestore"
+	"suining-care/internal/securityaudit"
 	"suining-care/internal/telemetryworkflow"
 )
 
@@ -28,9 +30,13 @@ func startDatabaseWorkers(ctx context.Context, deps databaseWorkerDeps) <-chan s
 	go func() {
 		defer close(done)
 		var jobs sync.WaitGroup
-		jobs.Add(8)
+		jobs.Add(9)
 		go func() { defer jobs.Done(); rules.Run(ctx, deps.pool, deps.box) }()
 		go func() { defer jobs.Done(); notify.Run(ctx, deps.pool, deps.box) }()
+		go func() {
+			defer jobs.Done()
+			securityaudit.Run(ctx, deps.pool, config.Secret("SECURITY_ALERT_WEBHOOK_URL"), config.Secret("SECURITY_ALERT_WEBHOOK_TOKEN"))
+		}()
 		go func() {
 			defer jobs.Done()
 			if deps.runCapabilities != nil {

@@ -85,7 +85,7 @@ WHERE u.role='1' ORDER BY u.user_id;
 已有至少一位显式主管的实例继续正常授权。若旧实例没有显式主管，应由有数据库管理权限的服务器运维人员明确选定现有管理员账号，在服务器本地执行：
 
 ```sh
-MYSQL_DSN='...' go run ./cmd/care-supervisor --admin-id=123
+MYSQL_DSN='...' go run ./cmd/care-supervisor --admin-id=123 --reason=INC-2026-117
 ```
 
 命令在事务中获取 `app_metadata` 锁，只在没有任何显式主管时创建首位主管，验证账户存在且角色为管理员，并写入 `supervisor_local_bootstrap` 审计。不能通过公共 HTTP 接口执行；已有主管时使用受权的岗位管理接口。
@@ -132,3 +132,17 @@ MYSQL_DSN='...' go run ./cmd/care-supervisor --admin-id=123
 岗位只是第一层授权。照护任务在 `acknowledge` 时记录 `acknowledged_by`，护理员只能对自己接单的任务执行 `start` 与 `resolve`。主管可以接管并操作，审计员仍不可修改任务。权限及任务责任在同一个 MySQL 事务里重新读取：先锁定操作者岗位行，再锁定具体任务，校验 `acknowledged_by` 后才写入任务状态和事件。跨人员越权请求返回 403，事务不写入状态或处置记录。
 
 已接单任务升级为 `escalated` 后，允许其他护理员重新接单；新接单动作会更新责任人。在未执行重新接单之前，不允许其他护理员直接开始或完成处置。主管复核仍必须与本次处置人不同。
+
+
+### 本地应急恢复审计与告警
+
+本变更仅支持新装部署（不兼容旧库），回滚脚本保留审计表与告警队列。
+
+执行示例：
+`MYSQL_DSN_FILE=... care-supervisor --admin-id=123 --reason=INC-2026-117`
+
+运维要点：
+1. CLI强制要求 `--reason` 并捕获系统身份；触发器防常规 DML 篡改，但 DBA 仍可改表，严禁宣称防 root 或合规认证。
+2. 需配置 `SECURITY_ALERT_WEBHOOK_URL`、`SECURITY_ALERT_WEBHOOK_TOKEN` 或各自 `_FILE`（`SECURITY_ALERT_WEBHOOK_URL_FILE`、`SECURITY_ALERT_WEBHOOK_TOKEN_FILE`）；未配置时告警保留排队并记日志，不视为已通知。
+3. Worker 具备租约围栏与幂等重试，超时 5 秒且禁重定向，等待 HTTP 期间不占用 DB 连接。
+4. 部署验收须核对目标提交完整 CI、真实告警接收端和外部防篡改留存。
