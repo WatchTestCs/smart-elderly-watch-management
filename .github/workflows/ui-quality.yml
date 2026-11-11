@@ -56,11 +56,6 @@ jobs:
           echo "Using browser: $CHROME"
           "$CHROME" --version
 
-          if ! command -v compare >/dev/null 2>&1; then
-            sudo apt-get update
-            sudo apt-get install -y --no-install-recommends imagemagick
-          fi
-          compare -version | head -n 2
           echo "CHROME=$CHROME" >> "$GITHUB_ENV"
 
       - name: Start preview server and Chrome
@@ -129,27 +124,7 @@ jobs:
           large-text
 
       - name: Compare desktop visual baseline
-        working-directory: .
-        shell: bash
-        run: |
-          set +e
-          METRIC="$(compare -metric RMSE docs/screenshots/login-desktop.png tests/ui/artifacts/login-desktop.png null: 2>&1)"
-          STATUS=$?
-          set -e
-
-          echo "ImageMagick status: $STATUS"
-          echo "RMSE: $METRIC"
-          NORMALIZED="$(printf '%s' "$METRIC" | sed -nE 's/.*\(([0-9.]+)\).*/\1/p')"
-          test -n "$NORMALIZED"
-
-          python3 - "$NORMALIZED" <<'PY'
-          import sys
-          value = float(sys.argv[1])
-          limit = 0.08
-          print(f"Normalized visual RMSE: {value:.6f}; limit: {limit:.6f}")
-          if value > limit:
-              raise SystemExit("Visual regression exceeded the coarse baseline threshold")
-          PY
+        run: node scripts/visual-rmse.mjs ../../docs/screenshots/login-desktop.png ../../tests/ui/artifacts/login-desktop.png
 
       - name: F02 Chromium cancellation and history regression
         shell: bash
