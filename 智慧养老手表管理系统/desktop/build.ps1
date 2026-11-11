@@ -8,7 +8,9 @@ if($env:CARGO_TARGET_DIR){
 }
 & (Join-Path $PSScriptRoot 'validate-version.ps1')
 $meta=Get-Content (Join-Path $PSScriptRoot 'version.json') -Raw|ConvertFrom-Json
-$out=Join-Path $project ("outputs/v{0}-{1}" -f $meta.version,$meta.channel)
+$channel = if ($env:SUINING_RELEASE_CHANNEL) { $env:SUINING_RELEASE_CHANNEL } else { [string]$meta.channel }
+if ($channel -notin @('preview', 'stable')) { throw 'Invalid release channel' }
+$out=Join-Path $project ("outputs/v{0}-{1}" -f $meta.version,$channel)
 New-Item -ItemType Directory -Force -Path $out | Out-Null
 Push-Location (Join-Path $project 'frontend')
 try {

@@ -4,7 +4,9 @@ $project = Split-Path $PSScriptRoot -Parent
 $repo = Split-Path $project -Parent
 $meta = Get-Content (Join-Path $PSScriptRoot 'version.json') -Raw | ConvertFrom-Json
 $version = $meta.version
-$out = Join-Path $project "outputs/v$version-$($meta.channel)"
+$channel = if ($env:SUINING_RELEASE_CHANNEL) { $env:SUINING_RELEASE_CHANNEL } else { [string]$meta.channel }
+if ($channel -notin @('preview', 'stable')) { throw 'Invalid release channel' }
+$out = Join-Path $project "outputs/v$version-$channel"
 $release = Join-Path $out 'release'
 $portable = Join-Path $out 'portable'
 $target = Join-Path $PSScriptRoot 'target'
@@ -26,7 +28,12 @@ $commit = (git -C $repo rev-parse HEAD).Trim()
 $sourceZip = Join-Path $release "Suining-Source-$version.zip"
 git -C $repo archive --format=zip --prefix="Suining-$version/" --output=$sourceZip $commit
 if ($LASTEXITCODE -ne 0) { throw 'Source archive failed' }
-Copy-Item -LiteralPath (Join-Path $repo "docs/releases/$version.md") -Destination (Join-Path $release 'Release-Notes-zh-CN.md')
+$notes = Get-Content -LiteralPath (Join-Path $repo "docs/releases/$version.md") -Raw
+if ($channel -eq 'stable') {
+    if (!$notes.Contains('这是预览渠道发布。')) { throw 'Stable release notes marker missing' }
+    $notes = $notes.Replace('这是预览渠道发布。', '这是稳定渠道发布。')
+}
+[IO.File]::WriteAllText((Join-Path $release 'Release-Notes-zh-CN.md'), $notes, [Text.UTF8Encoding]::new($false))
 
 # Run against disposable directories only; no operator database or user profile.
 $qaRoot = Join-Path ([IO.Path]::GetTempPath()) "suining-release-$([guid]::NewGuid().ToString('N'))"
@@ -87,8 +94,9 @@ try {
 }
 if (Test-Path -LiteralPath $installedApp) { throw 'Uninstall left application executable' }
 if (!(Test-Path -LiteralPath $sentinel)) { throw 'Uninstall removed user data' }
+$releaseBranch = if ($channel -eq 'stable') { 'main' } else { 'preview' }
 $manifest = [ordered]@{
-    version = $version; sourceCommit = $commit; branch = 'preview'; signing = 'unsigned'
+    version = $version; sourceCommit = $commit; branch = $releaseBranch; channel = $channel; signing = 'unsigned'
     workflowRun = $env:GITHUB_RUN_ID; backendSHA256 = $backendHash
     checks = $checks; silentInstall = $true; uninstallPreservesData = $true
     limitations = @('Headless startup, not visual UI acceptance', 'No real devices or SMS gateway', 'WebView2 missing-runtime bootstrap not tested', 'No production migration or sustained HTTP load test')
