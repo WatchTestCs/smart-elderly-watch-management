@@ -57,3 +57,21 @@ func TestLocalEncryptedImmutabilityAndIntegrity(t *testing.T) {
 		}
 	}
 }
+
+func TestLocalGetCannotFollowSymlinkOutsideImageRoot(t *testing.T) {
+	root := t.TempDir()
+	outside := filepath.Join(t.TempDir(), "private.txt")
+	if err := os.WriteFile(outside, []byte("outside-root-secret"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(outside, filepath.Join(root, "outside.png")); err != nil {
+		t.Skipf("symlinks unavailable: %v", err)
+	}
+	store, err := NewLocal(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if data, err := store.Get(context.Background(), "outside.png"); err == nil {
+		t.Fatalf("read through outside-root symlink: %q", data)
+	}
+}
