@@ -3,6 +3,8 @@ package careworkflow
 import (
 	"strings"
 	"testing"
+
+	"suining-care/internal/carepolicy"
 )
 
 func TestNotificationAggregateUsesNativeMySQL(t *testing.T) {
@@ -22,5 +24,16 @@ func TestActiveIncidentOrderPrioritizesRiskAndOverdueWork(t *testing.T) {
 func TestVerifiedIncidentOrderShowsNewestReviewFirst(t *testing.T) {
 	if !strings.Contains(verifiedIncidentOrderSQL, "i.verified_at DESC") {
 		t.Fatalf("verified history is not newest-first: %s", verifiedIncidentOrderSQL)
+	}
+}
+
+
+func TestCaregiverScopeUsesIndexedVisibilityBucket(t *testing.T) {
+	scope, args := incidentReadScope(carepolicy.Caregiver, 42)
+	if strings.Contains(scope, " OR ") || !strings.Contains(scope, "visibility_group IN") {
+		t.Fatalf("caregiver scope did not use the indexed visibility bucket: %s", scope)
+	}
+	if len(args) != 1 || args[0] != "ASSIGNED:42" {
+		t.Fatalf("unexpected caregiver visibility bucket args: %#v", args)
 	}
 }

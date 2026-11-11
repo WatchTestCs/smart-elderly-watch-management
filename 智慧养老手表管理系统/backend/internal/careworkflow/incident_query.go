@@ -54,18 +54,14 @@ const verifiedIncidentOrderSQL = ` ORDER BY i.verified_at DESC, i.id DESC`
 
 // Caregivers see work available for pickup or already accepted by them.
 // Escalated work is available for reassignment even when a previous owner remains recorded.
-const caregiverIncidentScopeSQL = ` AND (
- i.acknowledged_by=?
- OR i.state='escalated'
- OR (i.acknowledged_by IS NULL AND i.state IN ('received','notifying','notified'))
-)`
+const caregiverIncidentScopeSQL = ` AND i.visibility_group IN ('PUBLIC_POOL', ?)`
 
 func incidentReadScope(duty carepolicy.Duty, actorID int64) (string, []any) {
 	switch duty {
 	case carepolicy.Supervisor, carepolicy.Auditor:
 		return "", nil
 	case carepolicy.Caregiver:
-		return caregiverIncidentScopeSQL, []any{strconv.FormatInt(actorID, 10)}
+		return caregiverIncidentScopeSQL, []any{"ASSIGNED:" + strconv.FormatInt(actorID, 10)}
 	default:
 		return " AND FALSE", nil
 	}

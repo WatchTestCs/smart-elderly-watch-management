@@ -49,6 +49,7 @@ const (
 	ReadModeration    Action = "read_moderation"
 	Diagnostics       Action = "diagnostics"
 	Acknowledge       Action = "acknowledge"
+	ShiftHandover     Action = "shift_handover"
 	Start             Action = "start"
 	Resolve           Action = "resolve"
 	Escalate          Action = "escalate"
@@ -76,7 +77,7 @@ func Allowed(duty Duty, action Action) bool {
 		case ReadTasks, ReadAudit, ManageStaff, ManageAccounts, ManageContent, ReadModeration,
 			ReadAccounts, ReadGuardians, ManageGuardians, ReadResidents, ManageResidents,
 			ReadHealthData, ReadLocations, ReadLoginAudit,
-			Diagnostics, Acknowledge, Start,
+			Diagnostics, Acknowledge, ShiftHandover, Start,
 			Resolve, Escalate, Verify, Reopen, ReadCommands, IssueCommands,
 			ConfigureCommands, ReadReviews, ReviewAlerts, ReadRules, ManageRules,
 			ReadOperations, ReadMessages, ReadContacts, ReadInvites, ManageInvites,
@@ -88,7 +89,7 @@ func Allowed(duty Duty, action Action) bool {
 		}
 	case Caregiver:
 		switch action {
-		case ReadTasks, Acknowledge, Start, Resolve:
+		case ReadTasks, Acknowledge, ShiftHandover, Start, Resolve:
 			return true
 		}
 	case Auditor:
