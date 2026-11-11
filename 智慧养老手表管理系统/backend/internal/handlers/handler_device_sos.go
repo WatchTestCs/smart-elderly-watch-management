@@ -62,8 +62,11 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	switch failure {
+	case deviceworkflow.EpochExpired:
+		response.Error(w, http.StatusConflict, string(failure), "绑定纪元已过期，请重新登录；原求助记录须保留核查")
+		return
 	case deviceworkflow.BindingChanged:
-		conflict409(w, "绑定已变化，请重新登录；旧绑定求助不能归入新老人")
+		response.Error(w, http.StatusConflict, string(failure), "绑定已变化，请重新登录；旧绑定求助不能归入新老人")
 		return
 	case deviceworkflow.SOSRequestConflict:
 		conflict409(w, "求助编号已被其他事件或绑定使用，请检查设备请求编号")

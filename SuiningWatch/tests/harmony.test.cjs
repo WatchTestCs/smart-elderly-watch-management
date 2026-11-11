@@ -51,11 +51,46 @@ test('transport negotiates capabilities, destroys HTTP handles, and never replay
   reply = { returnCode: '1111' };
   await assert.rejects(api.login(config, 'not-logged'), /协议|兼容/);
   status = 409;
-  reply = { returnCode: '0000', code: 'CONFLICT', message: '绑定版本已变化', reference: 'watch-test' };
-  await assert.rejects(api.upload(config, {}), /绑定版本/);
+  reply = { returnCode: '0000', code: 'EPOCH_EXPIRED', message: '绑定版本已变化', reference: 'watch-test' };
+  await assert.rejects(api.upload(config, {}), error => error.code === 'EPOCH_EXPIRED' && /绑定版本/.test(error.message));
   assert.equal(calls.length, 3);
   assert.equal(destroyed, 3);
   assert.throws(() => p.normalizeConfig('http://192.168.1.2', 'WATCH001'));
+});
+
+test('a verified newer epoch clears only its old telemetry and preserves SOS history', async () => {
+  const batch = { binding, samples: p.makeSamples('WATCH001', 'old', new Date(), 72, 100) };
+  const sos = JSON.stringify([{ binding, requestId: 'unconfirmed-sos' }]);
+  const values = { batch: JSON.stringify(batch), sos };
+  let flushes = 0;
+  const { WatchStore } = load('services/WatchStore', { '@kit.ArkData': { preferences: {
+    getPreferencesSync: () => ({ getSync: (key, fallback) => values[key] ?? fallback,
+      putSync: (key, value) => { values[key] = value; }, flush: async () => { flushes++; } })
+  } } });
+  const store = new WatchStore({});
+  for (const live of [binding, { ...binding, version: 0 },
+    { ...binding, server: 'https://other.example.com', version: 2 },
+    { ...binding, deviceNo: 'OTHER', version: 2 }]) {
+    assert.equal(await store.discardExpiredBatch(live), false);
+    assert.deepEqual(store.batch(), batch);
+  }
+  assert.throws(() => p.batchRequest(batch, { ...binding, version: 2 }, 'secret'), error => error.code === 'EPOCH_EXPIRED');
+  assert.equal(await store.discardExpiredBatch({ ...binding, version: 2 }), true);
+  assert.equal(store.batch(), undefined);
+  assert.equal(values.sos, sos);
+  assert.equal(flushes, 1);
+  assert.equal(await store.discardExpiredBatch({ ...binding, version: 2 }), false);
+});
+
+test('failed persistence of epoch cleanup blocks further sampling', async () => {
+  const values = { batch: JSON.stringify({ binding, samples: [] }) };
+  const { WatchStore } = load('services/WatchStore', { '@kit.ArkData': { preferences: {
+    getPreferencesSync: () => ({ getSync: (key, fallback) => values[key] ?? fallback,
+      putSync: (key, value) => { values[key] = value; }, flush: async () => { throw new Error('disk failure'); } })
+  } } });
+  const store = new WatchStore({});
+  await assert.rejects(store.discardExpiredBatch({ ...binding, version: 2 }), /重启/);
+  assert.throws(() => store.batch(), /重启/);
 });
 
 test('native permission denial and missing hardware never fabricate readings', async () => {

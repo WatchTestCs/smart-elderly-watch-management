@@ -1,6 +1,6 @@
 import { preferences } from '@kit.ArkData';
 import { common } from '@kit.AbilityKit';
-import { WatchConfig, PendingBatch, PendingSOS, SimulatorState, readPendingSOS } from '../model/Protocol';
+import { WatchConfig, PendingBatch, PendingSOS, SimulatorState, Binding, isExpiredBinding, readPendingSOS } from '../model/Protocol';
 
 export class WatchStore {
   private prefs: preferences.Preferences;
@@ -39,6 +39,12 @@ export class WatchStore {
       this.batchStorageFailed = true;
       throw new Error('采样保存状态未确认，请重启应用恢复记录，勿重复采样');
     }
+  }
+  async discardExpiredBatch(live: Binding): Promise<boolean> {
+    const batch = this.batch();
+    if (!batch || !isExpiredBinding(batch.binding, live)) { return false; }
+    await this.saveBatch(undefined);
+    return true;
   }
   async saveSOS(sos: PendingSOS[]): Promise<void> {
     if (this.sosStorageFailed) { throw new Error('求助记录保存失败，请联系管理员核查，勿重复发送'); }

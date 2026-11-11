@@ -106,8 +106,10 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 	if locked == nil {
 		rollback()
 		switch failure {
+		case deviceworkflow.EpochExpired:
+			response.Error(w, http.StatusConflict, string(failure), "绑定纪元已过期，请重新登录并清理旧纪元采样")
 		case deviceworkflow.BindingChanged:
-			conflict409(w, "绑定已变化，请重新登录；旧绑定求助不能归入新老人")
+			response.Error(w, http.StatusConflict, string(failure), "绑定已变化，请重新登录；旧绑定数据不能归入新老人")
 		case deviceworkflow.DeviceUnbound:
 			hwFail(w, "DEVICE_NOT_BOUND", "设备还未绑定老人")
 		case deviceworkflow.DeviceDisabled:

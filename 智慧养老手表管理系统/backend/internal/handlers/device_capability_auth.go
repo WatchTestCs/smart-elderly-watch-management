@@ -6,6 +6,7 @@ import (
 
 	"suining-care/internal/devicerepo"
 	"suining-care/internal/deviceworkflow"
+	"suining-care/internal/response"
 )
 
 type capabilityCredentials struct {
@@ -28,6 +29,8 @@ func (h *Handler) capabilityDevice(w http.ResponseWriter, r *http.Request, tx *s
 		hwFail(w, "DEVICE_AUTH_FAILED", "设备号或密钥不正确")
 	case deviceworkflow.DeviceDisabled:
 		hwFail(w, "DEVICE_DISABLED", "设备已停用")
+	case deviceworkflow.EpochExpired, deviceworkflow.BindingChanged:
+		response.Error(w, http.StatusConflict, string(failure), "绑定版本已改变，请重新登录")
 	default:
 		conflict409(w, "绑定版本已改变")
 	}

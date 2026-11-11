@@ -3,7 +3,7 @@ import { WatchApi } from '../services/WatchApi';
 import { WatchStore } from '../services/WatchStore';
 import { HealthSensors } from '../services/HealthSensors';
 import { NativeSampling } from '../model/NativeSampling';
-import { Binding, WatchConfig,
+import { Binding, WatchConfig, DeviceReply, DeviceRequestError,
   HealthSample, normalizeConfig, bindingFrom, enqueue, batchRequest, makeSamples, sameBinding, pendingForBinding } from '../model/Protocol';
 
 @Entry
@@ -91,6 +91,10 @@ struct Index {
     const reply = await this.api.login(config, this.secret);
     if (reply.bound !== 1) { this.useBinding(undefined); }
     const binding = bindingFrom(config, reply);
+    if (await this.store?.discardExpiredBatch(binding)) {
+      this.queued = 0;
+      this.sampling.reset();
+    }
     this.useBinding(binding);
     this.person = reply.residentName || '长者 #' + binding.residentId;
     return binding;
@@ -171,10 +175,20 @@ struct Index {
   }
   private async upload(): Promise<void> {
     if (!this.store) { throw new Error('本地存储未就绪'); }
-    const batch = this.store.batch();
-    if (!batch) { throw new Error('当前没有待上传记录'); }
+    if (!this.store.batch()) { throw new Error('当前没有待上传记录'); }
     const live = await this.liveBinding();
-    const reply = await this.api.upload(this.config(), batchRequest(batch, live, this.secret));
+    const batch = this.store.batch();
+    if (!batch) { this.status = '旧纪元采样已清除，请重新采样'; return; }
+    let reply: DeviceReply;
+    try {
+      reply = await this.api.upload(this.config(), batchRequest(batch, live, this.secret));
+    } catch (error) {
+      if ((error as DeviceRequestError).code !== 'EPOCH_EXPIRED') { throw error; }
+      this.useBinding(undefined);
+      await this.liveBinding();
+      this.status = '绑定已重新同步，请检查待上传记录后重新采样';
+      return;
+    }
     // Clear only after the server acknowledges the complete batch.
     if (reply.accepted !== batch.samples.length) { throw new Error('上传确认数量不匹配，记录已保留'); }
     await this.store.saveBatch(undefined);

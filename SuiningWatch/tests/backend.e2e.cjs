@@ -152,12 +152,24 @@ async function main() {
   await request('/api/v1/device/bind', { ...credentials, code: code2.code });
   const rebound = protocol.bindingFrom(config, await request('/api/v1/device/login', credentials));
   assert.notEqual(rebound.version, live.version);
-  assert.throws(() => protocol.batchRequest(queue, rebound, device.secret));
-  await request('/api/v1/device/healthBatch', body, {}, 409);
-  await request('/api/v1/device/sos', sos, {}, 409);
+  assert.throws(() => protocol.batchRequest(queue, rebound, device.secret), error => error.code === 'EPOCH_EXPIRED');
+  assert.equal((await request('/api/v1/device/healthBatch', body, {}, 409)).code, 'EPOCH_EXPIRED');
+  assert.equal((await request('/api/v1/device/sos', sos, {}, 409)).code, 'EPOCH_EXPIRED');
+  await assert.rejects(watch.upload(config, body), error => error.code === 'EPOCH_EXPIRED');
+  const saved = {};
+  const { WatchStore: EpochStore } = load('services/WatchStore', { '@kit.ArkData': { preferences: {
+    getPreferencesSync: () => ({ getSync: (key, fallback) => saved[key] ?? fallback,
+      putSync: (key, value) => { saved[key] = value; }, flush: async () => {} })
+  } } });
+  const epochStore = new EpochStore({});
+  await epochStore.saveBatch(queue);
+  await epochStore.saveSOS([{ binding: live, requestId: sos.requestId }]);
+  assert.equal(await epochStore.discardExpiredBatch(rebound), true);
+  assert.equal(epochStore.batch(), undefined);
+  assert.equal(epochStore.pendingSOS()[0].requestId, sos.requestId);
   const currentSOS = await request('/api/v1/device/sos', { ...credentials, requestId: 'watch-sim-e2e-rebound', bindingVersion: rebound.version });
   assert.notEqual(currentSOS.incidentId, first.incidentId);
-  checks.push('rebind changed epoch; both client and backend rejected old offline batch');
+  checks.push('rebind returned EPOCH_EXPIRED through the production transport; verified handshake cleared only old telemetry and retained SOS history');
   checks.push('rebound device rejected old SOS retry and accepted a new SOS for the current binding');
   console.log(JSON.stringify({ passed: checks.length, checks }, null, 2));
 }

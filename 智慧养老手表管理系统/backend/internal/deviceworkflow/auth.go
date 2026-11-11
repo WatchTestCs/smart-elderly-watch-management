@@ -17,6 +17,7 @@ const (
 	DeviceDisabled    Failure = "DEVICE_DISABLED"
 	DeviceUnbound     Failure = "DEVICE_NOT_BOUND"
 	BindingChanged    Failure = "BINDING_CHANGED"
+	EpochExpired      Failure = "EPOCH_EXPIRED"
 )
 
 func MissingRow(err error) bool {
@@ -81,6 +82,9 @@ func LockAuthenticatedDevice(ctx context.Context, tx *sql.Tx, device *devicerepo
 	}
 	if locked.No != number {
 		return nil, InvalidCredential, nil
+	}
+	if epoch < locked.HealthEpoch {
+		return nil, EpochExpired, nil
 	}
 	if locked.OldID == nil || *locked.OldID != owner || locked.HealthEpoch != epoch {
 		return nil, BindingChanged, nil

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"suining-care/internal/devicecredential"
+	"suining-care/internal/deviceworkflow"
 	"suining-care/internal/health"
 	"suining-care/internal/response"
 )
@@ -81,8 +82,12 @@ func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Reques
 	if !checkHealthDeviceCredential(w, req.Secret, d.Secret, d.Status) {
 		return
 	}
+	if req.BindingVersion < d.HealthEpoch {
+		response.Error(w, http.StatusConflict, string(deviceworkflow.EpochExpired), "绑定纪元已过期，请重新登录并清理旧纪元采样")
+		return
+	}
 	if d.OldID == nil || d.HealthEpoch != req.BindingVersion {
-		conflict409(w, "绑定已变化，请重新登录；旧绑定数据不能归入新老人")
+		response.Error(w, http.StatusConflict, string(deviceworkflow.BindingChanged), "绑定已变化，请重新登录；旧绑定数据不能归入新老人")
 		return
 	}
 	expectedOwner := *d.OldID
@@ -109,8 +114,12 @@ func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Reques
 		if !checkHealthDeviceCredential(w, req.Secret, d.Secret, d.Status) {
 			return
 		}
+		if req.BindingVersion < d.HealthEpoch {
+			response.Error(w, http.StatusConflict, string(deviceworkflow.EpochExpired), "绑定纪元已过期，请重新登录并清理旧纪元采样")
+			return
+		}
 		if d.OldID == nil || *d.OldID != expectedOwner || d.HealthEpoch != req.BindingVersion {
-			conflict409(w, "绑定已变化，请重新登录；旧绑定数据不能归入新老人")
+			response.Error(w, http.StatusConflict, string(deviceworkflow.BindingChanged), "绑定已变化，请重新登录；旧绑定数据不能归入新老人")
 			return
 		}
 	}

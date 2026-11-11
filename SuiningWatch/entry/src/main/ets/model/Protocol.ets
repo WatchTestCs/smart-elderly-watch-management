@@ -3,6 +3,13 @@ export interface WatchConfig {
   server: string;
   deviceNo: string;
 }
+export class DeviceRequestError extends Error {
+  code: string;
+  constructor(code: string, message: string) {
+    super(message);
+    this.code = code;
+  }
+}
 export interface SimulatorState { day: string; steps: number; }
 export interface DeviceReply {
   returnCode: string;
@@ -106,6 +113,9 @@ export function bindingFrom(config: WatchConfig, reply: DeviceReply): Binding {
 export function sameBinding(a: Binding, b: Binding): boolean {
   return a.server === b.server && a.deviceNo === b.deviceNo && a.residentId === b.residentId && a.version === b.version;
 }
+export function isExpiredBinding(saved: Binding, live: Binding): boolean {
+  return saved.server === live.server && saved.deviceNo === live.deviceNo && saved.version < live.version;
+}
 export function enqueue(current: PendingBatch | undefined, binding: Binding,
   samples: HealthSample[]): PendingBatch {
   if (current && !sameBinding(current.binding, binding)) {
@@ -118,6 +128,9 @@ export function enqueue(current: PendingBatch | undefined, binding: Binding,
   return { binding: binding, samples: prior.concat(samples) };
 }
 export function batchRequest(batch: PendingBatch, live: Binding, secret: string): BatchRequest {
+  if (isExpiredBinding(batch.binding, live)) {
+    throw new DeviceRequestError('EPOCH_EXPIRED', '绑定纪元已过期，禁止补传旧记录');
+  }
   if (!sameBinding(batch.binding, live)) {
     throw new Error('服务器或设备绑定已变化，禁止补传旧记录');
   }

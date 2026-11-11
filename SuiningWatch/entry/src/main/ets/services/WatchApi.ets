@@ -1,6 +1,6 @@
 import { http } from '@kit.NetworkKit';
 import { WatchConfig, Credentials, DeviceReply, BindRequest, HeartbeatRequest,
-  BatchRequest, SOSRequest, LoginRequest, WATCH_APP_VERSION, WATCH_PROTOCOL_VERSION, verifyHandshake } from '../model/Protocol';
+  BatchRequest, SOSRequest, LoginRequest, DeviceRequestError, WATCH_APP_VERSION, WATCH_PROTOCOL_VERSION, verifyHandshake } from '../model/Protocol';
 
 // A single request has a bounded lifetime; requests never log the device secret.
 export class WatchApi {
@@ -19,7 +19,7 @@ export class WatchApi {
       const reply = JSON.parse(response.result as string) as DeviceReply;
       if (response.responseCode < 200 || response.responseCode >= 300 || reply.returnCode !== '1111') {
         const message = reply.message || '服务返回 HTTP ' + response.responseCode;
-        throw new Error(message + (reply.reference ? '（编号：' + reply.reference + '）' : ''));
+        throw new DeviceRequestError(reply.code || 'HTTP_ERROR', message + (reply.reference ? '（编号：' + reply.reference + '）' : ''));
       }
       return reply;
     } finally {
