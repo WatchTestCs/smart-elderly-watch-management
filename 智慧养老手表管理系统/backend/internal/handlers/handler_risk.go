@@ -54,7 +54,6 @@ func (h *Handler) riskAdminEvents(w http.ResponseWriter, r *http.Request) {
 	if internalError(w, tx.Commit()) {
 		return
 	}
-	_ = h.Risk.ReloadRules(r.Context())
 	w.Header().Set("Cache-Control", "no-store")
 	response.OK(w, map[string]any{"events": events, "rules": rules})
 }
@@ -89,6 +88,7 @@ func (h *Handler) riskAdminRuleCreate(w http.ResponseWriter, r *http.Request) {
 	if internalError(w, tx.Commit()) {
 		return
 	}
+	_ = h.Risk.ReloadRules(r.Context())
 	w.Header().Set("Cache-Control", "no-store")
 	response.OK(w, map[string]any{"rule": rule})
 }
