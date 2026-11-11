@@ -15,7 +15,10 @@ backend = project / "backend"
 frontend_dist = project / "frontend" / "dist"
 web = backend / "internal" / "handlers" / "web"
 version = json.loads((desktop / "version.json").read_text(encoding="utf-8"))
-release = project / "outputs" / f"v{version['version']}-{version['channel']}" / "release"
+channel = os.environ.get("SUINING_RELEASE_CHANNEL", version["channel"])
+if channel not in ("preview", "stable"):
+    raise SystemExit("Invalid release channel")
+release = project / "outputs" / f"v{version['version']}-{channel}" / "release"
 release.mkdir(parents=True, exist_ok=True)
 
 targets = (
