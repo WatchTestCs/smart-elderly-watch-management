@@ -142,6 +142,15 @@ func TestMySQLJournalRejectsSchemaDrift(t *testing.T) {
 			if _, err := resumeMigrationAt(ctx, conn, "test", []string{statement}); err == nil {
 				t.Fatal("schema drift accepted")
 			}
+			var completedSchema string
+			if err := conn.QueryRowContext(ctx, "SELECT schema_checksum FROM schema_migration_steps WHERE name='test'").Scan(&completedSchema); err != nil {
+				t.Fatal(err)
+			}
+			journalExec(t, conn, "CREATE TABLE schema_migrations(name VARCHAR(191) PRIMARY KEY,schema_checksum CHAR(64) NOT NULL) ENGINE=InnoDB")
+			journalExec(t, conn, "INSERT INTO schema_migrations VALUES(?,?)", "test", completedSchema)
+			if err := validateCompletedMigrationSchema(ctx, conn, []string{"test"}); err == nil {
+				t.Fatal("completed ledger accepted schema drift")
+			}
 		})
 	}
 }
@@ -163,6 +172,37 @@ func TestMySQLJournalRejectsExistingTable(t *testing.T) {
 	var recorded int
 	if err := conn.QueryRowContext(context.Background(), "SELECT COUNT(*) FROM schema_migrations").Scan(&recorded); err != nil || recorded != 0 {
 		t.Fatalf("failed migration recorded success: %d %v", recorded, err)
+	}
+}
+
+func TestMySQLCompletedSchemaRejectsDrift(t *testing.T) {
+	pool, conn := journalDatabase(t)
+	ctx := context.Background()
+	if err := MigrateMySQL(ctx, pool); err != nil {
+		t.Fatal(err)
+	}
+	journalExec(t, conn, "ALTER TABLE users MODIFY user_name VARCHAR(99)")
+	if err := MigrateMySQL(ctx, pool); err == nil {
+		t.Fatal("completed migration ledger hid a changed column type")
+	}
+}
+
+func TestMySQLJournalRejectsNontransactionalMetadata(t *testing.T) {
+	for _, table := range []string{"schema_migrations", "schema_migration_steps"} {
+		t.Run(table, func(t *testing.T) {
+			pool, conn := journalDatabase(t)
+			ledgerEngine, journalEngine := "InnoDB", "InnoDB"
+			if table == "schema_migrations" {
+				ledgerEngine = "MyISAM"
+			} else {
+				journalEngine = "MyISAM"
+			}
+			journalExec(t, conn, "CREATE TABLE schema_migrations(name VARCHAR(191) PRIMARY KEY,checksum CHAR(64) NOT NULL,applied_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)) ENGINE="+ledgerEngine)
+			journalExec(t, conn, "CREATE TABLE schema_migration_steps(name VARCHAR(191),ordinal INT,statement_checksum CHAR(64),schema_checksum CHAR(64),PRIMARY KEY(name,ordinal)) ENGINE="+journalEngine)
+			if err := MigrateMySQL(context.Background(), pool); err == nil || !strings.Contains(err.Error(), "requires InnoDB") {
+				t.Fatalf("nontransactional metadata accepted: %v", err)
+			}
+		})
 	}
 }
 

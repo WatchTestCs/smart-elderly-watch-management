@@ -85,6 +85,54 @@ func migrationStatementDigest(statement string) string {
 	return hex.EncodeToString(sum[:])
 }
 
+// Validate a completed prefix before extending it or accepting a no-op run.
+// Partial migration recovery uses its statement checkpoints instead. A ledger
+// with holes represents explicit rollback and must be reapplied before a new
+// completed fingerprint can be recorded.
+func validateCompletedMigrationSchema(ctx context.Context, conn *sql.Conn, names []string) error {
+	var pending int
+	if err := conn.QueryRowContext(ctx, `SELECT COUNT(*) FROM schema_migration_steps s
+ LEFT JOIN schema_migrations m ON m.name=s.name WHERE m.name IS NULL`).Scan(&pending); err != nil {
+		return err
+	}
+	if pending != 0 {
+		return nil
+	}
+	rows, err := conn.QueryContext(ctx, "SELECT name,schema_checksum FROM schema_migrations ORDER BY name")
+	if err != nil {
+		return err
+	}
+	next, prefix := 0, true
+	var lastName, lastChecksum string
+	for rows.Next() {
+		if err = rows.Scan(&lastName, &lastChecksum); err != nil {
+			break
+		}
+		if next >= len(names) || lastName != names[next] {
+			prefix = false
+		}
+		next++
+	}
+	if err == nil {
+		err = rows.Err()
+	}
+	rows.Close()
+	if err != nil {
+		return err
+	}
+	if !prefix || lastChecksum == "" {
+		return nil
+	}
+	actual, err := schemaDigest(ctx, conn)
+	if err != nil {
+		return err
+	}
+	if actual != lastChecksum {
+		return fmt.Errorf("MySQL schema differs from completed migration %s; manual inspection required", lastName)
+	}
+	return nil
+}
+
 func migrationStatementKind(text string) string {
 	for {
 		text = strings.TrimSpace(text)
