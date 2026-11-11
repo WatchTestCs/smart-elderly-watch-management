@@ -57,7 +57,7 @@ jobs:
 
   native:
     name: HarmonyOS SDK compile (no hardware)
-    if: ${{ inputs.require_native || inputs.sdk_url != '' || inputs.sdk_sha256 != '' }}
+    if: ${{ inputs.require_native }}
     runs-on: windows-latest
     timeout-minutes: 20
     steps:
