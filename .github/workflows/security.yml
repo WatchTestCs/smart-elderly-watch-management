@@ -62,4 +62,14 @@ jobs:
         uses: github/codeql-action/analyze@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
         with:
           category: "/language:${{ matrix.language }}"
+          output: ${{ runner.temp }}/codeql-sarif
+
+      - name: Preserve exact-source CodeQL findings
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: codeql-${{ matrix.language }}-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/codeql-sarif
+          if-no-files-found: warn
+          retention-days: 7
 
