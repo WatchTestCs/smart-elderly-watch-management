@@ -99,7 +99,17 @@ func TestShiftHandoverCanBeCancelledAndReplaced(t *testing.T) {
 	if err := CancelShiftHandover(ctx, store, handoverID, 82); !errors.Is(err, ErrHandoverState) {
 		t.Fatalf("target could cancel source handover: %v", err)
 	}
+	if _, err := store.ExecContext(ctx, "UPDATE care_staff_permission SET duty='auditor' WHERE admin_id=82"); err != nil {
+		t.Fatal(err)
+	}
+	recoveredID, recoveredItems, err := CreateShiftHandover(ctx, store, 81, 82, "恢复丢失响应")
+	if err != nil || recoveredID != handoverID || len(recoveredItems) != 1 || recoveredItems[0] != incidentID {
+		t.Fatalf("pending handover could not be recovered after target demotion: id=%d items=%v err=%v", recoveredID, recoveredItems, err)
+	}
 	if err := CancelShiftHandover(ctx, store, handoverID, 81); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.ExecContext(ctx, "UPDATE care_staff_permission SET duty='caregiver' WHERE admin_id=82"); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := AcceptShiftHandover(ctx, store, handoverID, 82); !errors.Is(err, ErrHandoverState) {
