@@ -61,6 +61,8 @@ fields = {
     "/api/v1/health/latest": {"oldId": "integer"},
     "/api/v1/alert-reviews": {"recordId": "integer", "kind": "string", "verdict": "string", "reason": "string", "expectedReviewId": "integer"},
     "/api/v1/alert-reviews/search": {"entity": "string", "recordId": "integer", "kind": "string", "after": "integer"},
+    "/api/v1/care/handover/create": {"toAdminId": "integer", "note": "string"},
+    "/api/v1/care/handover/accept": {"handoverId": "integer"},
 }
 def json_request(schema):
     return {"required": True, "content": {"application/json": {"schema": schema}}}

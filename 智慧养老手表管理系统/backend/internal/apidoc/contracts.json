@@ -209,6 +209,30 @@
       "total"
     ]
   },
+  "POST /api/v1/care/handover/accept": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_care_handover.go",
+    "request": [
+      "handoverId"
+    ],
+    "response": [
+      "handoverId",
+      "returnCode",
+      "status",
+      "transferred"
+    ]
+  },
+  "POST /api/v1/care/handover/create": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_care_handover.go",
+    "request": [
+      "toAdminId",
+      "note"
+    ],
+    "response": [
+      "handoverId",
+      "incidentIds",
+      "returnCode"
+    ]
+  },
   "POST /api/v1/care/incidents": {
     "file": "智慧养老手表管理系统/backend/internal/handlers/handler_care_incident.go",
     "request": [
