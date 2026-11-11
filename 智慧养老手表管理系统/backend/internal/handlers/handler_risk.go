@@ -54,6 +54,7 @@ func (h *Handler) riskAdminEvents(w http.ResponseWriter, r *http.Request) {
 	if internalError(w, tx.Commit()) {
 		return
 	}
+	_ = h.Risk.ReloadRules(r.Context())
 	w.Header().Set("Cache-Control", "no-store")
 	response.OK(w, map[string]any{"events": events, "rules": rules})
 }
@@ -80,7 +81,7 @@ func (h *Handler) riskAdminRuleCreate(w http.ResponseWriter, r *http.Request) {
 		response.Error(w, http.StatusBadRequest, "INVALID_DURATION", "封禁期限不合法")
 		return
 	}
-	rule, err := h.Risk.AddRule(input.IP, input.Action, input.Reason, actor, time.Duration(input.DurationHours)*time.Hour)
+	rule, err := h.Risk.InsertRuleTx(r.Context(), tx, input.IP, input.Action, input.Reason, actor, time.Duration(input.DurationHours)*time.Hour)
 	if err != nil {
 		response.Error(w, http.StatusBadRequest, "INVALID_RULE", "封禁规则不合法")
 		return
@@ -98,7 +99,7 @@ func (h *Handler) riskAdminRuleDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer tx.Rollback()
-	deleted, err := h.Risk.DeleteRule(strings.TrimSpace(r.PathValue("id")), actor)
+	deleted, err := h.Risk.RemoveRuleTx(r.Context(), tx, strings.TrimSpace(r.PathValue("id")), actor)
 	if err != nil {
 		response.Error(w, http.StatusServiceUnavailable, "RISK_STORAGE_ERROR", "封禁规则保存失败")
 		return
@@ -110,6 +111,7 @@ func (h *Handler) riskAdminRuleDelete(w http.ResponseWriter, r *http.Request) {
 	if internalError(w, tx.Commit()) {
 		return
 	}
+	_ = h.Risk.ReloadRules(r.Context())
 	w.Header().Set("Cache-Control", "no-store")
 	response.OK(w, map[string]any{"deleted": true})
 }
