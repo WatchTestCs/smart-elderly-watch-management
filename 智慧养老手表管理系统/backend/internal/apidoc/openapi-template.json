@@ -626,6 +626,7 @@
           "content": {
             "application/json": {
               "schema": {
+                "additionalProperties": false,
                 "properties": {
                   "handoverId": {
                     "type": "integer"
@@ -658,6 +659,7 @@
           "content": {
             "application/json": {
               "schema": {
+                "additionalProperties": false,
                 "properties": {
                   "toAdminId": {
                     "type": "integer"
