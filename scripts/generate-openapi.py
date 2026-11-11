@@ -63,6 +63,7 @@ fields = {
     "/api/v1/alert-reviews/search": {"entity": "string", "recordId": "integer", "kind": "string", "after": "integer"},
     "/api/v1/care/handover/create": {"toAdminId": "integer", "note": "string"},
     "/api/v1/care/handover/accept": {"handoverId": "integer"},
+    "/api/v1/care/handover/cancel": {"handoverId": "integer"},
 }
 def json_request(schema):
     return {"required": True, "content": {"application/json": {"schema": schema}}}

@@ -20,6 +20,7 @@ func (h *Handler) routeCare(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/v1/care/transition", h.careTransition)
 	mux.HandleFunc("POST /api/v1/care/handover/create", h.careCreateHandover)
 	mux.HandleFunc("POST /api/v1/care/handover/accept", h.careAcceptHandover)
+	mux.HandleFunc("POST /api/v1/care/handover/cancel", h.careCancelHandover)
 	mux.HandleFunc("POST /api/v1/care/events", h.careEvents)
 	mux.HandleFunc("POST /api/v1/care/receipt", h.careReceipt)
 	mux.HandleFunc("POST /api/v1/care/diagnostics", h.careDiagnostics)

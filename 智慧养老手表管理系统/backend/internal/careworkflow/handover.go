@@ -19,9 +19,15 @@ var (
 	ErrHandoverEmpty   = errors.New("no active incidents to hand over")
 	ErrHandoverPending = errors.New("caregiver already has a pending handover")
 	ErrHandoverMissing = errors.New("shift handover not found")
-	ErrHandoverState   = errors.New("shift handover cannot be accepted")
+	ErrHandoverState   = errors.New("shift handover state conflict")
 	ErrHandoverInvalid = errors.New("invalid shift handover")
 )
+
+func handoverItems(ctx context.Context, store db.RowsQuerier, handoverID int64) ([]int64, error) {
+	return db.QueryList(ctx, store, db.ScanValue[int64],
+		"SELECT incident_id FROM care_shift_handover_item WHERE handover_id=? ORDER BY incident_id",
+		handoverID)
+}
 
 func CreateShiftHandover(ctx context.Context, store *db.Database, fromAdminID, toAdminID int64, note string) (int64, []int64, error) {
 	note = strings.TrimSpace(note)
@@ -43,14 +49,33 @@ func CreateShiftHandover(ctx context.Context, store *db.Database, fromAdminID, t
 		return 0, nil, ErrHandoverDenied
 	}
 
-	// Target eligibility is rechecked under its own duty lock at acceptance.
-	// Avoid locking two duty rows here so authority changes retain one lock order.
 	toDuty, err := carerepo.Duty(ctx, tx, toAdminID)
 	if err != nil {
 		return 0, nil, err
 	}
 	if !carepolicy.Allowed(carepolicy.Duty(toDuty), carepolicy.Acknowledge) {
 		return 0, nil, ErrHandoverDenied
+	}
+
+	var existingID, existingTarget int64
+	err = tx.QueryRowContext(ctx,
+		"SELECT id,to_admin_id FROM care_shift_handover WHERE pending_from_admin_id=? FOR UPDATE",
+		fromAdminID).Scan(&existingID, &existingTarget)
+	switch {
+	case err == nil:
+		if existingTarget != toAdminID {
+			return 0, nil, ErrHandoverPending
+		}
+		items, err := handoverItems(ctx, tx, existingID)
+		if err != nil {
+			return 0, nil, err
+		}
+		if err := tx.Commit(); err != nil {
+			return 0, nil, err
+		}
+		return existingID, items, nil
+	case !errors.Is(err, sql.ErrNoRows):
+		return 0, nil, err
 	}
 
 	fromActor := strconv.FormatInt(fromAdminID, 10)
@@ -73,6 +98,14 @@ func CreateShiftHandover(ctx context.Context, store *db.Database, fromAdminID, t
 	if err != nil {
 		var mysqlErr *mysql.MySQLError
 		if errors.As(err, &mysqlErr) && mysqlErr.Number == 1062 {
+			_ = tx.Rollback()
+			var concurrentID int64
+			if err := store.QueryRowContext(ctx,
+				"SELECT id FROM care_shift_handover WHERE pending_from_admin_id=? AND to_admin_id=?",
+				fromAdminID, toAdminID).Scan(&concurrentID); err == nil {
+				items, err := handoverItems(ctx, store, concurrentID)
+				return concurrentID, items, err
+			}
 			return 0, nil, ErrHandoverPending
 		}
 		return 0, nil, err
@@ -182,4 +215,54 @@ func AcceptShiftHandover(ctx context.Context, store *db.Database, handoverID, ac
 		return 0, err
 	}
 	return transferred, nil
+}
+
+func CancelShiftHandover(ctx context.Context, store *db.Database, handoverID, actorID int64) error {
+	if handoverID < 1 || actorID < 1 {
+		return ErrHandoverInvalid
+	}
+
+	tx, err := store.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	duty, err := carerepo.LockDuty(ctx, tx, actorID)
+	if err != nil {
+		return err
+	}
+	if !carepolicy.Allowed(carepolicy.Duty(duty), carepolicy.ShiftHandover) {
+		return ErrHandoverDenied
+	}
+
+	var fromAdminID, toAdminID int64
+	var status string
+	err = tx.QueryRowContext(ctx, `
+ SELECT from_admin_id,to_admin_id,status
+ FROM care_shift_handover
+ WHERE id=?
+ FOR UPDATE`, handoverID).Scan(&fromAdminID, &toAdminID, &status)
+	if errors.Is(err, sql.ErrNoRows) {
+		return ErrHandoverMissing
+	}
+	if err != nil {
+		return err
+	}
+	if status != "pending" || fromAdminID != actorID {
+		return ErrHandoverState
+	}
+
+	if _, err := tx.ExecContext(ctx, `
+ UPDATE care_shift_handover
+ SET status='cancelled',cancelled_at=CURRENT_TIMESTAMP(6)
+ WHERE id=?`, handoverID); err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, `
+ INSERT INTO care_access_audit(admin_id,action,subject_admin_id)
+ VALUES(?,'shift_handover_cancelled',?)`, actorID, toAdminID); err != nil {
+		return err
+	}
+	return tx.Commit()
 }

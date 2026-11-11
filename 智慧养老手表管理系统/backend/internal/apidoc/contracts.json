@@ -221,6 +221,17 @@
       "transferred"
     ]
   },
+  "POST /api/v1/care/handover/cancel": {
+    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_care_handover.go",
+    "request": [
+      "handoverId"
+    ],
+    "response": [
+      "handoverId",
+      "returnCode",
+      "status"
+    ]
+  },
   "POST /api/v1/care/handover/create": {
     "file": "智慧养老手表管理系统/backend/internal/handlers/handler_care_handover.go",
     "request": [

@@ -639,6 +639,39 @@
         "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_care_incident.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
+    "/api/v1/care/handover/cancel": {
+      "post": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "handoverId": {},
+                    "status": {}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "handoverId": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_care_incident.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+      }
+    },
     "/api/v1/care/handover/create": {
       "post": {
         "responses": {

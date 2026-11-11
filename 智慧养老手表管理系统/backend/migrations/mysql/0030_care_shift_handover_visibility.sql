@@ -21,10 +21,11 @@ CREATE TABLE care_shift_handover (
   from_admin_id BIGINT NOT NULL,
   to_admin_id BIGINT NOT NULL,
   status VARCHAR(16) NOT NULL DEFAULT 'pending'
-    CHECK(status IN ('pending','accepted')),
+    CHECK(status IN ('pending','accepted','cancelled')),
   note VARCHAR(512) NOT NULL DEFAULT '',
   created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   accepted_at DATETIME(6),
+  cancelled_at DATETIME(6),
   transferred_count BIGINT NOT NULL DEFAULT 0,
   pending_from_admin_id BIGINT GENERATED ALWAYS AS (
     CASE WHEN status='pending' THEN from_admin_id ELSE NULL END
