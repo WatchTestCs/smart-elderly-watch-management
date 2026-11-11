@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-sql-driver/mysql"
 	"suining-care/migrations"
 )
 
@@ -79,6 +78,9 @@ func MigrateMySQL(ctx context.Context, database *Database) (result error) {
 	if _, err = conn.ExecContext(ctx, "CREATE TABLE IF NOT EXISTS schema_migrations(name varchar(191) PRIMARY KEY,checksum char(64) NOT NULL,applied_at datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)) ENGINE=InnoDB"); err != nil {
 		return err
 	}
+	if err = ensureMigrationStepJournal(ctx, conn); err != nil {
+		return fmt.Errorf("initialize migration step journal: %w", err)
+	}
 	names, err := MySQLMigrationNames()
 	if err != nil {
 		return err
@@ -104,16 +106,21 @@ func MigrateMySQL(ctx context.Context, database *Database) (result error) {
 		if !errors.Is(err, sql.ErrNoRows) {
 			return err
 		}
-		// Trigger statements use a single SET body, so no compound delimiters.
+		// MySQL DDL commits implicitly. Resume only after checking committed step
+		// fingerprints; never classify an unknown duplicate object as success.
+		statements := make([]string, 0)
 		for _, statement := range strings.Split(string(data), ";") {
-			if strings.TrimSpace(statement) == "" {
-				continue
+			if migrationStatementKind(statement) != "" {
+				statements = append(statements, statement)
 			}
-			if _, err = conn.ExecContext(ctx, statement); err != nil {
-				var myErr *mysql.MySQLError
-				if !errors.As(err, &myErr) || (myErr.Number != 1060 && myErr.Number != 1061 && myErr.Number != 1826 && myErr.Number != 1359) {
-					return fmt.Errorf("MySQL migration %s: %w", name, err)
-				}
+		}
+		start, err := resumeMigrationAt(ctx, conn, name, statements)
+		if err != nil {
+			return err
+		}
+		for ordinal := start; ordinal < len(statements); ordinal++ {
+			if err := applyCheckpointedStatement(ctx, conn, name, ordinal, statements[ordinal]); err != nil {
+				return fmt.Errorf("MySQL migration %s step %d: %w", name, ordinal, err)
 			}
 		}
 		if _, err = conn.ExecContext(ctx, "INSERT INTO schema_migrations(name,checksum) VALUES(?,?)", name, sum); err != nil {
