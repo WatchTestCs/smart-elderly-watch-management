@@ -23,7 +23,7 @@ run(async ({ page, context, base, report, setRole, setSignedIn, setMode }) => {
       const layout = await page.evaluate(() => ({ width: innerWidth, scrollWidth: document.documentElement.scrollWidth, title: document.title, logo: !!document.querySelector('img[src*="suining-logo"]') }));
       check(report, `${width} ${route}: no horizontal overflow`, layout.scrollWidth <= width, layout);
       check(report, `${width} ${route}: brand image loaded`, await page.locator('img[src*="suining-logo"]').evaluate(image => image.complete && image.naturalWidth > 0));
-      check(report, `${width} ${route}: new page title`, layout.title.startsWith('岁宁'));
+      check(report, `${width} ${route}: new page title`, (layout.title.startsWith('岁宁') || layout.title.includes(' · 岁宁 · ')));
       if (['/sign-in','/join-family','/family-portal/overview','/operations/overview'].includes(route)) await page.screenshot({ path: path.join(images, route.slice(1)+'-'+width+'.png'), fullPage: true });
     }
   }

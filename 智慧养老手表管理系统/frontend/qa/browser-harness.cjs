@@ -34,6 +34,7 @@ module.exports = async function (run) {
    'api/v1/care/incidents':{items:[],total:0,page:1,pageSize:20,duty:'supervisor',actorId:1},
    'api/v1/care/diagnostics':{workerHealthy:true,notificationConfigured:false,receiptConfigured:false,pendingNotifications:0,failedNotifications:0,staleSending:0,overdueIncidents:0},
    'api/v1/care/staff':{staff:[]},
+   'api/v1/operations/snapshot':{health:{heartRate:1,bloodPressure:0,sleep:0},totalResidents:1,activeLocationAlerts:0,activeCareIncidents:0,overdueCareIncidents:0,pendingNotifications:0,failedNotifications:0,staleNotifications:0,activeDevices:1,offlineDevices:0,lowBatteryDevices:0,unboundDevices:0,capturedAt:'2026-11-11T00:00:00Z'},
    'api/v1/auth/session':{authenticated:signedIn,account:signedIn?{role,id:1,duty:role==='ADMIN'?'supervisor':undefined,phone:'13000000000',oldId:role==='FAMILY'?1:null,displayName:role==='FAMILY'?'小明':'管理员'}:{},csrfToken:'mock-csrf-token',csrfHeader:'X-CSRF-TOKEN'},
    'api/v1/auth/logout':{returnCode:'1111'},
    'api/v1/family/updateTouPic':{returnCode:'1111'},
