@@ -50,20 +50,20 @@ run(async ({ page, context, base, report, setRole, setSignedIn }) => {
 
   // Exercise actual paging controls and verify the request window.
   for (const [route, endpoint, key, button] of [
-    ['/operations/activity', 'step/selectStep', 'activityRecords', '查询长者姓名'],
-    ['/operations/vitals', 'ratepre/selectRatepre', 'vitalRecords', '查询长者姓名'],
+    ['/operations/activity', 'activity/latest', 'activityRecords', '查询长者姓名'],
+    ['/operations/vitals', 'vitals/latest', 'vitalRecords', '查询长者姓名'],
     ['/operations/locations', 'position/select', 'positionDtos', '查询长者姓名'],
     ['/operations/devices', 'device/list', 'devices', null],
-    ['/operations/life', 'oldPerson/select', 'oldPeople', '查询长者姓名'],
-    ['/operations/residents', 'oldPerson/selectDetail', 'oldPersonDetails', '查询长者姓名'],
-    ['/operations/monitoring-profiles', 'watchInfo/select', 'watchDtos', '查询长者姓名'],
-    ['/operations/guardians', 'customer/select', 'customers', '查询监护人姓名'],
+    ['/operations/life', 'residents/list', 'oldPeople', '查询长者姓名'],
+    ['/operations/residents', 'residents/details', 'oldPersonDetails', '查询长者姓名'],
+    ['/operations/monitoring-profiles', 'monitoring-profiles/list', 'watchDtos', '查询长者姓名'],
+    ['/operations/guardians', 'guardians/list', 'customers', '查询监护人姓名'],
     ['/operations/families', 'family/select', 'familyDtos', '查询家属姓名'],
-    ['/operations/overview', 'text/select', 'texts', '搜索公告'],
-    ['/operations/notices', 'text/select', 'texts', '搜索公告'],
+    ['/operations/overview', 'notices/list', 'texts', '搜索公告'],
+    ['/operations/notices', 'notices/list', 'texts', '搜索公告'],
     ['/operations/invitations', 'inviteCode/list', 'inviteCodes', null],
-    ['/operations/comments', 'said/selectByUser', 'moderatedComments', null],
-    ['/family-portal/overview', 'text/select', 'texts', null]
+    ['/operations/comments', 'notice-comments/search', 'moderatedComments', null],
+    ['/family-portal/overview', 'notices/list', 'texts', null]
   ]) {
     await context.route('**/api/v1/' + endpoint, r => {
       const input = r.request().postDataJSON()
