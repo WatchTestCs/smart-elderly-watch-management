@@ -2,9 +2,9 @@ name: Preview CI
 
 on:
   pull_request:
-    branches: [preview]
+    branches: [preview, main]
   push:
-    branches: [preview]
+    branches: [preview, main]
   workflow_dispatch:
     inputs:
       require_native:

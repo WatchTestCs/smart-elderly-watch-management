@@ -9,7 +9,7 @@ permissions:
 jobs:
   browser:
     name: Full browser QA (manual)
-    if: github.ref == 'refs/heads/preview'
+    if: ${{ github.ref == 'refs/heads/preview' || github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:

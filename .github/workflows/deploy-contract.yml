@@ -2,13 +2,13 @@ name: Deployment contract
 on:
   workflow_call:
   pull_request:
-    branches: [preview]
+    branches: [preview, main]
     paths:
       - "deploy/**"
       - "scripts/start-platform.py"
       - ".github/workflows/deploy-contract.yml"
   push:
-    branches: [preview]
+    branches: [preview, main]
     paths:
       - "deploy/**"
       - ".github/workflows/deploy-contract.yml"

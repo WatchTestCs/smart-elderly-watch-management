@@ -2,7 +2,7 @@ name: Go static checks
 
 on:
   pull_request:
-    branches: [preview]
+    branches: [preview, main]
     paths:
       - '智慧养老手表管理系统/backend/**'
       - '.github/workflows/**'

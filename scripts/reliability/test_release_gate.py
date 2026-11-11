@@ -188,5 +188,15 @@ class ReleaseGateTests(unittest.TestCase):
             gate.verify("owner/repo", "preview", SHA, api)
 
 
+    def test_accepts_main_exact_source_evidence(self):
+        data = self.fixture()
+        for run in data["runs"]:
+            run["head_branch"] = "main"
+        for artifact in data["artifacts"]:
+            artifact["workflow_run"]["head_branch"] = "main"
+        result = gate.verify("owner/repo", "main", SHA, self.api(data))
+        self.assertEqual(result["branch"], "main")
+
+
 if __name__ == "__main__":
     unittest.main()

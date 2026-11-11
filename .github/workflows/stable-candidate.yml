@@ -1,0 +1,64 @@
+name: Stable release candidate
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Full current main commit SHA with passing stable-channel evidence
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  exact-source:
+    uses: ./.github/workflows/reusable-exact-source.yml
+    with:
+      source_sha: ${{ inputs.source_sha }}
+      source_branch: main
+    permissions:
+      contents: read
+      actions: read
+
+  build:
+    if: github.ref == 'refs/heads/main'
+    needs: exact-source
+    permissions:
+      contents: read
+      actions: read
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.source_sha }}
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: '24'
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
+        with:
+          go-version: '1.27.3'
+          cache-dependency-path: 智慧养老手表管理系统/backend/go.sum
+      - name: Prepare Rust
+        shell: pwsh
+        run: rustup toolchain install stable --profile minimal --no-self-update
+      - name: Build actual Windows installer
+        shell: pwsh
+        run: ./智慧养老手表管理系统/desktop/build.ps1
+      - name: Package and verify Setup, portable and source
+        shell: pwsh
+        run: ./智慧养老手表管理系统/desktop/package-release.ps1
+      - name: Recheck stable source immediately before retaining installer
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python scripts/reliability/release-gate.py --repo '${{ github.repository }}' --branch main --sha '${{ inputs.source_sha }}' --output release-provenance.json
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: suining-windows-stable-${{ inputs.source_sha }}
+          path: |
+            智慧养老手表管理系统/outputs/*/release/*
+            release-provenance.json
+          if-no-files-found: error
