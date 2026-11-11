@@ -79,6 +79,60 @@ jobs:
           ./智慧养老手表管理系统/desktop/build.ps1 *>&1 | Tee-Object evidence/ci/windows-desktop/build.log
           python ./智慧养老手表管理系统/desktop/build-fontless.py *>&1 | Tee-Object evidence/ci/windows-desktop/fontless.log
           ./智慧养老手表管理系统/desktop/package-release.ps1 *>&1 | Tee-Object evidence/ci/windows-desktop/package.log
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: suining-setup-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            智慧养老手表管理系统/outputs/*/release/Suining-Setup-*.exe
+            智慧养老手表管理系统/outputs/*/release/SHA256SUMS.txt
+            智慧养老手表管理系统/outputs/*/release/release-manifest.json
+            evidence/ci/windows-desktop/source-sha.txt
+          if-no-files-found: error
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: suining-portable-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            智慧养老手表管理系统/outputs/*/release/Suining-Portable-*.zip
+            智慧养老手表管理系统/outputs/*/release/SHA256SUMS.txt
+            智慧养老手表管理系统/outputs/*/release/release-manifest.json
+            evidence/ci/windows-desktop/source-sha.txt
+          if-no-files-found: error
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: suining-source-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            智慧养老手表管理系统/outputs/*/release/Suining-Source-*.zip
+            智慧养老手表管理系统/outputs/*/release/SHA256SUMS.txt
+            智慧养老手表管理系统/outputs/*/release/release-manifest.json
+            evidence/ci/windows-desktop/source-sha.txt
+          if-no-files-found: error
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: suining-native-nofonts-win-x64-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            智慧养老手表管理系统/outputs/*/release/Suining-Native-NoFonts-*-win-x64.exe
+            智慧养老手表管理系统/outputs/*/release/SHA256SUMS.txt
+            智慧养老手表管理系统/outputs/*/release/release-manifest.json
+            evidence/ci/windows-desktop/source-sha.txt
+          if-no-files-found: error
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: suining-native-nofonts-linux-x64-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            智慧养老手表管理系统/outputs/*/release/Suining-Native-NoFonts-*-linux-x64.tar.gz
+            智慧养老手表管理系统/outputs/*/release/SHA256SUMS.txt
+            智慧养老手表管理系统/outputs/*/release/release-manifest.json
+            evidence/ci/windows-desktop/source-sha.txt
+          if-no-files-found: error
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: suining-native-nofonts-linux-arm64-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            智慧养老手表管理系统/outputs/*/release/Suining-Native-NoFonts-*-linux-arm64.tar.gz
+            智慧养老手表管理系统/outputs/*/release/SHA256SUMS.txt
+            智慧养老手表管理系统/outputs/*/release/release-manifest.json
+            evidence/ci/windows-desktop/source-sha.txt
+          if-no-files-found: error
       - if: always()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
         with:
