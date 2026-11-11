@@ -38,7 +38,7 @@ run(async ({ page, context, base, report, setRole }) => {
   const beforeCancel = requests;
   await remove.click();
   await page.locator('.el-message-box').getByRole('button', { name: '取消', exact: true }).click();
-  await message('已取消删除');
+  assert.equal(await page.locator('.el-message').filter({ hasText: '已取消删除' }).count(), 0);
   assert.equal(requests, beforeCancel);
 
   status = 500;
