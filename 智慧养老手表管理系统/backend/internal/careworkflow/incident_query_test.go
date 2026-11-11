@@ -27,7 +27,6 @@ func TestVerifiedIncidentOrderShowsNewestReviewFirst(t *testing.T) {
 	}
 }
 
-
 func TestCaregiverScopeUsesIndexedVisibilityBucket(t *testing.T) {
 	scope, args := incidentReadScope(carepolicy.Caregiver, 42)
 	if strings.Contains(scope, " OR ") || !strings.Contains(scope, "visibility_group IN") {
