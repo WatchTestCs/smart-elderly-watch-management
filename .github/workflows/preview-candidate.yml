@@ -58,3 +58,30 @@ jobs:
             智慧养老手表管理系统/outputs/*/release/*
             release-provenance.json
           if-no-files-found: error
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: suining-setup-${{ inputs.source_sha }}
+          path: |
+            智慧养老手表管理系统/outputs/*/release/Suining-Setup-*.exe
+            智慧养老手表管理系统/outputs/*/release/SHA256SUMS.txt
+            智慧养老手表管理系统/outputs/*/release/release-manifest.json
+            release-provenance.json
+          if-no-files-found: error
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: suining-portable-${{ inputs.source_sha }}
+          path: |
+            智慧养老手表管理系统/outputs/*/release/Suining-Portable-*.zip
+            智慧养老手表管理系统/outputs/*/release/SHA256SUMS.txt
+            智慧养老手表管理系统/outputs/*/release/release-manifest.json
+            release-provenance.json
+          if-no-files-found: error
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: suining-source-${{ inputs.source_sha }}
+          path: |
+            智慧养老手表管理系统/outputs/*/release/Suining-Source-*.zip
+            智慧养老手表管理系统/outputs/*/release/SHA256SUMS.txt
+            智慧养老手表管理系统/outputs/*/release/release-manifest.json
+            release-provenance.json
+          if-no-files-found: error

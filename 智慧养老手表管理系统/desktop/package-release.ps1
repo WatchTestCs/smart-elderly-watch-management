@@ -93,6 +93,14 @@ $manifest = [ordered]@{
     checks = $checks; silentInstall = $true; uninstallPreservesData = $true
     limitations = @('Headless startup, not visual UI acceptance', 'No real devices or SMS gateway', 'WebView2 missing-runtime bootstrap not tested', 'No production migration or sustained HTTP load test')
 }
+$manifest['distributionBytes'] = [ordered]@{
+    setup = (Get-Item -LiteralPath (Join-Path $release (Split-Path $setup -Leaf))).Length
+    portable = (Get-Item -LiteralPath $portableZip).Length
+    source = (Get-Item -LiteralPath $sourceZip).Length
+    desktopExecutable = (Get-Item -LiteralPath (Join-Path $portable 'suining.exe')).Length
+    backendExecutable = (Get-Item -LiteralPath (Join-Path $portable 'suining-server.exe')).Length
+}
+$manifest['distributionBytes'] | Format-Table -AutoSize | Out-Host
 $manifest | ConvertTo-Json -Depth 6 | Set-Content -Encoding utf8NoBOM (Join-Path $release 'release-manifest.json')
 Get-ChildItem -LiteralPath $release -File | Where-Object Name -ne 'SHA256SUMS.txt' | Sort-Object Name | ForEach-Object {
     '{0}  {1}' -f (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant(), $_.Name
