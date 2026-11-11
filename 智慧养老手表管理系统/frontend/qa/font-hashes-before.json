@@ -232,90 +232,6 @@
     "sha256": "1e8b4f5dd7d295296a2d8047838dd7f4d1c5c635d46c25bf8f1431e161311c9d"
   },
   {
-    "file": "frontend/public/static/fonts/source-han-serif-sc/characters-056.woff2",
-    "sha256": "2ed8dda9c9ab39ffaa5ec4f39932ab5f6b1c5e12867f77ece746bd47a934c60a"
-  },
-  {
-    "file": "frontend/public/static/fonts/source-han-serif-sc/characters-057.woff2",
-    "sha256": "8e9f1015597c02c6ff678057803f74499173a7626d81e65d05859bf7ad52e8f8"
-  },
-  {
-    "file": "frontend/public/static/fonts/source-han-serif-sc/characters-058.woff2",
-    "sha256": "e1b0ab3ced793627d0a4a637193063290189f168abcffe9475d8904feb72366b"
-  },
-  {
-    "file": "frontend/public/static/fonts/source-han-serif-sc/characters-059.woff2",
-    "sha256": "3025823f6a7f14e87c0ae0a77b6913195701f0e7653249056b54fe09aa867e82"
-  },
-  {
-    "file": "frontend/public/static/fonts/source-han-serif-sc/characters-060.woff2",
-    "sha256": "594733b6cd7ddb921fc5725a12f6d796462057fc3686141612c8d9dab752c417"
-  },
-  {
-    "file": "frontend/public/static/fonts/source-han-serif-sc/characters-061.woff2",
-    "sha256": "7cc7193c02599b1b1a56534463a937c44fd97909588405e55c49ea1192ab91dc"
-  },
-  {
-    "file": "frontend/public/static/fonts/source-han-serif-sc/characters-062.woff2",
-    "sha256": "e1430f71f278c687f0320d42ea80fca94dd16af059068cc030e7c0a6877adf85"
-  },
-  {
-    "file": "frontend/public/static/fonts/source-han-serif-sc/characters-063.woff2",
-    "sha256": "2c14adde43a2878918f1e203bd9b33edbba16577a4599f08e02699bafd3dd97a"
-  },
-  {
-    "file": "frontend/public/static/fonts/source-han-serif-sc/characters-064.woff2",
-    "sha256": "a518d67515331df07f3a507d4eda23f3f9497ef9948cfc51ce088a05abd358d6"
-  },
-  {
-    "file": "frontend/public/static/fonts/source-han-serif-sc/characters-065.woff2",
-    "sha256": "6ed0b6f9bfb375b0e2366a42d0618e88ba7b4eb4b7aa1ae84a165d0cd7171373"
-  },
-  {
-    "file": "frontend/public/static/fonts/source-han-serif-sc/characters-066.woff2",
-    "sha256": "658fd3dc4c6d79bbcd78aa5f7b54731317c9f610c8c17f8fb7a0e97fb09b2458"
-  },
-  {
-    "file": "frontend/public/static/fonts/source-han-serif-sc/characters-067.woff2",
-    "sha256": "33d252fa62925c381e145ab44df013d5cdbca7ae497a836f60b11a13c9e8db75"
-  },
-  {
-    "file": "frontend/public/static/fonts/source-han-serif-sc/characters-068.woff2",
-    "sha256": "8fea2e05b842f6f9c614b66f9a998f64f9f74955dacff4a272a9e42a14e72a79"
-  },
-  {
-    "file": "frontend/public/static/fonts/source-han-serif-sc/characters-069.woff2",
-    "sha256": "fb9ec2a560a663d40f14c3b5b5e8e870ff3a8dc6d1d955adf5c20e5d01fdcbab"
-  },
-  {
-    "file": "frontend/public/static/fonts/source-han-serif-sc/characters-070.woff2",
-    "sha256": "ec8abfc3da5a774b8a87dce8434ee212b0d4123f71c3812e92a7db998a4752c5"
-  },
-  {
-    "file": "frontend/public/static/fonts/source-han-serif-sc/characters-071.woff2",
-    "sha256": "785f2a9439e15bf3a643093107d86aa90f46892d6dfc0e9d65c10d21fc979c07"
-  },
-  {
-    "file": "frontend/public/static/fonts/source-han-serif-sc/characters-072.woff2",
-    "sha256": "27cec0947ac6e46f05eae5e0de00a714ac387e1653052b93fd65b1074db1c1cb"
-  },
-  {
-    "file": "frontend/public/static/fonts/source-han-serif-sc/characters-073.woff2",
-    "sha256": "da20bb5f27a2abe500b6dd0c1064131f4d7e374326b829bf1dd9ed4b7abaabc6"
-  },
-  {
-    "file": "frontend/public/static/fonts/source-han-serif-sc/characters-074.woff2",
-    "sha256": "7c16563bb5eda907b231298adaa918380d88a22a50736e196bd3d324ece31494"
-  },
-  {
-    "file": "frontend/public/static/fonts/source-han-serif-sc/characters-075.woff2",
-    "sha256": "8f3a35e3988d3e3e58f38d52a28b6306f6207115edab4df81dc460138f78bfc5"
-  },
-  {
-    "file": "frontend/public/static/fonts/source-han-serif-sc/characters-076.woff2",
-    "sha256": "cbb0b87292cb9478c22f150113dbbbf2a6c7411a848a54add2f9c5398c22d9d2"
-  },
-  {
     "file": "frontend/public/static/fonts/source-han-serif-sc/characters-077.woff2",
     "sha256": "b63cbdc782f264f0b05c09ee688e7a72dcd0495a6c433359f06cc0d724dd27c4"
   },
@@ -342,10 +258,6 @@
   {
     "file": "frontend/public/static/fonts/source-han-serif-sc/characters-083.woff2",
     "sha256": "70ceb96be02661a327cb0f2fc2b207b56b6923438a25d4032db97d0c9932b449"
-  },
-  {
-    "file": "frontend/public/static/fonts/source-han-serif-sc/manifest.json",
-    "sha256": "acfc7b0784ea7909850e56ba5a013735f82412cff26a86e7721527d19401b4d1"
   },
   {
     "file": "frontend/public/static/fonts/source-han-serif-sc/ui-common.woff2",

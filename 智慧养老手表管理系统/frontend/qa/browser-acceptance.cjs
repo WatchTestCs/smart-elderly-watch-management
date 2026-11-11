@@ -99,6 +99,12 @@ run(async ({ page, context, base, report, setRole, setSignedIn, setMode }) => {
     return [{ file: item.file, expected: item.sha256, actual }];
   });
   check(report, 'All existing font files unchanged', changedFonts.length === 0, { count:before.length, changedFonts });
+  const fontCSS = fs.readFileSync(path.join(root, 'frontend/src/assets/css/fonts.css'), 'utf8');
+  const referencedFonts = [...fontCSS.matchAll(/url\(["']?(\/static\/fonts\/[^"')]+)["']?\)/g)]
+    .map(match => 'frontend/public' + match[1]);
+  const missingReferences = referencedFonts.filter(file =>
+    !fs.existsSync(path.join(root, file)) || !before.some(item => item.file === file));
+  check(report, 'All CSS font assets exist and have an integrity baseline', missingReferences.length === 0, missingReferences);
   check(report, 'No browser JavaScript errors', report.pageErrors.length===0,report.pageErrors);
   check(report, 'No missing static resources', report.missingAssets.length===0,report.missingAssets);
   check(report, 'No unexpected API calls', report.unexpectedApi.length===0,report.unexpectedApi);
