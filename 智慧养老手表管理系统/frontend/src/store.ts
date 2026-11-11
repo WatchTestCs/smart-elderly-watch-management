@@ -31,7 +31,7 @@ function restoreTabs(value: unknown): Tab[] {
   return tabs
 }
 
-function restoreWorkspace(): Pick<WorkspaceState, 'openTab' | 'activeIndex' | 'selectedResidentId'> {
+function restoreWorkspace(): Pick<WorkspaceState, 'openTab' | 'activeIndex'> {
   try {
     const raw = sessionStorage.getItem(storageKey)
     if (raw) {
@@ -39,21 +39,22 @@ function restoreWorkspace(): Pick<WorkspaceState, 'openTab' | 'activeIndex' | 's
       return {
         openTab: restoreTabs(saved.openTab),
         activeIndex: typeof saved.activeIndex === 'string' && saved.activeIndex.startsWith('/operations/')
-          ? saved.activeIndex : home,
-        selectedResidentId: typeof saved.selectedResidentId === 'string' ? saved.selectedResidentId : null
+          ? saved.activeIndex : home
       }
     }
   } catch { /* Storage-disabled sessions keep the workspace in memory. */ }
-  return { openTab: [], activeIndex: home, selectedResidentId: null }
+  return { openTab: [], activeIndex: home }
 }
-const state = reactive<WorkspaceState>({ ...restoreWorkspace(), alertRevision: 0 })
+const state = reactive<WorkspaceState>({ ...restoreWorkspace(), selectedResidentId: null, alertRevision: 0 })
 function persistWorkspace() {
   try {
     sessionStorage.setItem(storageKey, JSON.stringify({
-      openTab: state.openTab, activeIndex: state.activeIndex, selectedResidentId: state.selectedResidentId
+      openTab: state.openTab, activeIndex: state.activeIndex
     }))
   } catch { /* Storage availability must not break navigation. */ }
 }
+// Scrub identifiers persisted by earlier sessions; only navigation state survives reload.
+persistWorkspace()
 const alertsChannel = typeof window !== 'undefined' && typeof window.BroadcastChannel === 'function'
   ? new window.BroadcastChannel('suining-alerts-v1') : null
 if (alertsChannel) alertsChannel.onmessage = event => {
