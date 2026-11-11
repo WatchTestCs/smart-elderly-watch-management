@@ -49,14 +49,6 @@ func CreateShiftHandover(ctx context.Context, store *db.Database, fromAdminID, t
 		return 0, nil, ErrHandoverDenied
 	}
 
-	toDuty, err := carerepo.Duty(ctx, tx, toAdminID)
-	if err != nil {
-		return 0, nil, err
-	}
-	if !carepolicy.Allowed(carepolicy.Duty(toDuty), carepolicy.Acknowledge) {
-		return 0, nil, ErrHandoverDenied
-	}
-
 	var existingID, existingTarget int64
 	err = tx.QueryRowContext(ctx,
 		"SELECT id,to_admin_id FROM care_shift_handover WHERE pending_from_admin_id=? FOR UPDATE",
@@ -76,6 +68,14 @@ func CreateShiftHandover(ctx context.Context, store *db.Database, fromAdminID, t
 		return existingID, items, nil
 	case !errors.Is(err, sql.ErrNoRows):
 		return 0, nil, err
+	}
+
+	toDuty, err := carerepo.Duty(ctx, tx, toAdminID)
+	if err != nil {
+		return 0, nil, err
+	}
+	if !carepolicy.Allowed(carepolicy.Duty(toDuty), carepolicy.Acknowledge) {
+		return 0, nil, ErrHandoverDenied
 	}
 
 	fromActor := strconv.FormatInt(fromAdminID, 10)
