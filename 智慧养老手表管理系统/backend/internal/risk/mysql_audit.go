@@ -203,15 +203,10 @@ func writeAuditBatch(ctx context.Context, db *sql.DB, events []Event) error {
 	return tx.Commit()
 }
 
-func (m *Manager) EnableMySQL(db *sql.DB) error {
-	if db == nil {
-		return errors.New("nil mysql database")
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+func loadSQLRules(ctx context.Context, db *sql.DB) ([]Rule, error) {
 	rows, err := db.QueryContext(ctx, `SELECT rule_id,cidr,action,reason,actor,created_at,expires_at FROM risk_ip_rules ORDER BY created_at`)
 	if err != nil {
-		return fmt.Errorf("load risk rules: %w", err)
+		return nil, fmt.Errorf("load risk rules: %w", err)
 	}
 	rules := make([]Rule, 0)
 	for rows.Next() {
@@ -229,6 +224,19 @@ func (m *Manager) EnableMySQL(db *sql.DB) error {
 		err = rows.Err()
 	}
 	rows.Close()
+	if err != nil {
+		return nil, err
+	}
+	return rules, nil
+}
+
+func (m *Manager) EnableMySQL(db *sql.DB) error {
+	if db == nil {
+		return errors.New("nil mysql database")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	rules, err := loadSQLRules(ctx, db)
 	if err != nil {
 		return err
 	}
