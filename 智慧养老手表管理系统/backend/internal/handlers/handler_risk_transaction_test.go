@@ -3,11 +3,14 @@ package handlers
 import (
 	"context"
 	"net/http"
+	"net/http/httptest"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"suining-care/internal/auth"
 	"suining-care/internal/risk"
+	"suining-care/internal/session"
 )
 
 func TestRiskHandlersRequireLiveDutyAndAtomicAudit(t *testing.T) {
@@ -19,6 +22,13 @@ func TestRiskHandlersRequireLiveDutyAndAtomicAudit(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { h.Risk.CloseMySQL() })
+	request := func(handler http.HandlerFunc, actor int64, body map[string]any) *httptest.ResponseRecorder {
+		sess := h.Sessions.Create(session.Principal{Role: auth.RoleAdmin, ID: actor})
+		return callAPI(func(w http.ResponseWriter, r *http.Request) {
+			r.AddCookie(&http.Cookie{Name: session.CookieName, Value: sess.ID})
+			handler(w, r)
+		}, body)
+	}
 	for id, duty := range map[int64]string{1: "supervisor", 2: "caregiver", 3: "auditor", 5: "supervisor", 6: "supervisor"} {
 		seedCareAdminDuty(t, pool, id, duty)
 	}
@@ -27,12 +37,12 @@ func TestRiskHandlersRequireLiveDutyAndAtomicAudit(t *testing.T) {
 	mustExec(t, pool, "UPDATE users SET role='0' WHERE user_id=6")
 	input := map[string]any{"ip": "203.0.113.9", "action": "skip-auto", "reason": strings.Repeat("r", 240)}
 	for _, actor := range []int64{2, 3, 4, 5, 6} {
-		got := careRequest(t, h, h.riskAdminRuleCreate, actor, input)
+		got := request(h.riskAdminRuleCreate, actor, input)
 		if got.Code != http.StatusForbidden {
 			t.Fatalf("actor %d: HTTP %d %s", actor, got.Code, got.Body.String())
 		}
 	}
-	got := careRequest(t, h, h.riskAdminRuleCreate, 1, input)
+	got := request(h.riskAdminRuleCreate, 1, input)
 	if got.Code != http.StatusOK {
 		t.Fatalf("valid rule: HTTP %d %s", got.Code, got.Body.String())
 	}
@@ -44,7 +54,7 @@ func TestRiskHandlersRequireLiveDutyAndAtomicAudit(t *testing.T) {
 		t.Fatalf("missing audit actor: %q %v", actor, err)
 	}
 	mustExec(t, pool, "CREATE TRIGGER reject_risk_audit BEFORE INSERT ON risk_login_events FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='injected failure'")
-	got = careRequest(t, h, h.riskAdminRuleCreate, 1, input)
+	got = request(h.riskAdminRuleCreate, 1, input)
 	if got.Code != http.StatusServiceUnavailable {
 		t.Fatalf("audit storage failure: HTTP %d %s", got.Code, got.Body.String())
 	}
@@ -54,10 +64,10 @@ func TestRiskHandlersRequireLiveDutyAndAtomicAudit(t *testing.T) {
 	}
 	mustExec(t, pool, "DROP TRIGGER reject_risk_audit")
 	remove := func(w http.ResponseWriter, r *http.Request) { r.SetPathValue("id", id); h.riskAdminRuleDelete(w, r) }
-	if got := careRequest(t, h, remove, 2, nil); got.Code != http.StatusForbidden {
+	if got := request(remove, 2, nil); got.Code != http.StatusForbidden {
 		t.Fatal("caregiver deleted rule", got.Code)
 	}
-	if got := careRequest(t, h, remove, 1, nil); got.Code != http.StatusOK {
+	if got := request(remove, 1, nil); got.Code != http.StatusOK {
 		t.Fatalf("delete: HTTP %d %s", got.Code, got.Body.String())
 	}
 	if err := pool.QueryRowContext(context.Background(), "SELECT COUNT(*) FROM risk_login_events").Scan(&count); err != nil || count != 2 {
