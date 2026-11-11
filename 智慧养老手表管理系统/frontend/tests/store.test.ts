@@ -3,14 +3,15 @@ import store from '@/store'
 
 beforeEach(() => { store.clearTabs() })
 
-it('persists workspace tabs and the selected resident without persisting transient alert signals', () => {
+it('persists navigation state without exposing resident identity or transient alerts', () => {
   store.addTab({ route: '/operations/overview', name: '运营总览' })
   store.addTab({ route: '/operations/overview', name: '重复' })
   store.activate('/operations/overview')
   store.selectResident(1001)
   expect(store.state.openTab).toHaveLength(1)
   const persisted = JSON.parse(sessionStorage.getItem('suining-workspace-v1') || '{}')
-  expect(persisted.selectedResidentId).toBe('1001')
+  expect(store.state.selectedResidentId).toBe('1001')
+  expect(persisted).not.toHaveProperty('selectedResidentId')
   expect(persisted.openTab).toEqual([{ route: '/operations/overview', name: '运营总览' }])
   const initial = store.state.alertRevision
   store.notifyAlertsChanged()
