@@ -139,6 +139,17 @@ func applyCheckpointedStatement(ctx context.Context, conn *sql.Conn, name string
 }
 
 func rejectUntrackedTable(ctx context.Context, conn *sql.Conn, statement string) error {
+ // Migrations commonly place comments before CREATE TABLE.
+ for {
+  statement = strings.TrimSpace(statement)
+  if strings.HasPrefix(statement, "--") || strings.HasPrefix(statement, "#") {
+   newline := strings.IndexByte(statement, '\n')
+   if newline < 0 { return nil }
+   statement = statement[newline+1:]
+   continue
+  }
+  break
+ }
  fields := strings.Fields(statement)
  if len(fields) < 6 || !strings.EqualFold(fields[0],"CREATE") || !strings.EqualFold(fields[1],"TABLE") ||
   !strings.EqualFold(fields[2],"IF") || !strings.EqualFold(fields[3],"NOT") || !strings.EqualFold(fields[4],"EXISTS") { return nil }
