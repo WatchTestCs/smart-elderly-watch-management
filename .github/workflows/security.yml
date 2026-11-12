@@ -15,9 +15,29 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  classify:
+    name: PR change scope
+    runs-on: ubuntu-latest
+    outputs:
+      codeql: ${{ steps.scope.outputs.codeql }}
+      codeql_matrix: ${{ steps.scope.outputs.codeql_matrix }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Determine affected modules
+        id: scope
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: python3 scripts/ci/change-scope.py
+
   codeql:
     name: CodeQL / ${{ matrix.language }}
-    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+    needs: classify
+    if: ${{ needs.classify.outputs.codeql == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     permissions:
@@ -26,12 +46,7 @@ jobs:
       security-events: write
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - language: javascript-typescript
-            build-mode: none
-          - language: go
-            build-mode: manual
+      matrix: ${{ fromJSON(needs.classify.outputs.codeql_matrix) }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

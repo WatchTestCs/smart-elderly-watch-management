@@ -32,15 +32,47 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  classify:
+    name: PR change scope
+    runs-on: ubuntu-latest
+    outputs:
+      full: ${{ steps.scope.outputs.full }}
+      frontend: ${{ steps.scope.outputs.frontend }}
+      ui: ${{ steps.scope.outputs.ui }}
+      backend: ${{ steps.scope.outputs.backend }}
+      watch: ${{ steps.scope.outputs.watch }}
+      simulator: ${{ steps.scope.outputs.simulator }}
+      windows: ${{ steps.scope.outputs.windows }}
+      deployment: ${{ steps.scope.outputs.deployment }}
+      security: ${{ steps.scope.outputs.security }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Determine affected modules
+        id: scope
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: python3 scripts/ci/change-scope.py
+
   frontend:
+    if: needs.classify.outputs.frontend == 'true'
+    needs: classify
     name: Frontend
     uses: ./.github/workflows/reusable-frontend.yml
 
   ui-quality:
+    if: needs.classify.outputs.ui == 'true'
+    needs: classify
     name: UI Quality
     uses: ./.github/workflows/ui-quality.yml
 
   watch:
+    if: needs.classify.outputs.watch == 'true'
+    needs: classify
     name: Watch protocol
     uses: ./.github/workflows/reusable-watch.yml
     with:
@@ -49,13 +81,15 @@ jobs:
       require_native: ${{ inputs.require_native || github.event_name == 'push' }}
 
   simulator-tests:
+    if: needs.classify.outputs.simulator == 'true'
+    needs: classify
     name: Watch simulator tests
     uses: ./.github/workflows/watch-simulator.yml
 
   simulator:
     name: Watch simulator
-    if: ${{ always() }}
-    needs: [simulator-tests]
+    if: ${{ always() && needs.classify.outputs.simulator == 'true' }}
+    needs: [classify, simulator-tests]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -66,7 +100,8 @@ jobs:
 
   dependency-review:
     name: Dependency review
-    if: ${{ github.event_name == 'pull_request' }}
+    if: ${{ github.event_name == 'pull_request' && needs.classify.outputs.security == 'true' }}
+    needs: classify
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -83,20 +118,28 @@ jobs:
           fail-on-scopes: development, runtime
 
   backend:
+    if: needs.classify.outputs.backend == 'true'
+    needs: classify
     name: Backend
     uses: ./.github/workflows/reusable-backend.yml
 
   windows:
+    if: needs.classify.outputs.windows == 'true'
+    needs: classify
     name: Windows sidecar contract
     uses: ./.github/workflows/reusable-windows-package.yml
     with:
       build_desktop: ${{ inputs.build_desktop || github.event_name == 'push' }}
 
   deployment:
+    if: needs.classify.outputs.deployment == 'true'
+    needs: classify
     name: Deployment and alerts
     uses: ./.github/workflows/deploy-contract.yml
 
   security-scan:
+    if: needs.classify.outputs.security == 'true'
+    needs: classify
     name: Current-source vulnerability scan
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -129,24 +172,67 @@ jobs:
   required:
     name: Core CI / required
     if: ${{ always() }}
-    needs: [frontend, ui-quality, watch, simulator, backend, windows, deployment, security-scan, dependency-review]
+    needs: [classify, frontend, ui-quality, watch, simulator, backend, windows, deployment, security-scan, dependency-review]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
           persist-credentials: false
+      - name: Require successful change classification
+        env:
+          CLASSIFY: ${{ needs.classify.result }}
+        run: test "$CLASSIFY" = success
+      - name: Validate PR diff whitespace
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: git diff --check "$BASE_SHA" "$HEAD_SHA"
       - name: Verify release gate fail-closed regressions
+        if: needs.classify.outputs.full == 'true'
         run: python3 -m unittest discover -s scripts/reliability -p 'test_*.py' -v
       - name: Require all core checks
         shell: bash
+        env:
+          FRONTEND: ${{ needs.frontend.result }}
+          UI: ${{ needs['ui-quality'].result }}
+          WATCH: ${{ needs.watch.result }}
+          SIMULATOR: ${{ needs.simulator.result }}
+          BACKEND: ${{ needs.backend.result }}
+          WINDOWS: ${{ needs.windows.result }}
+          DEPLOYMENT: ${{ needs.deployment.result }}
+          SECURITY: ${{ needs['security-scan'].result }}
+          DEPENDENCY: ${{ needs['dependency-review'].result }}
+          WANT_FRONTEND: ${{ needs.classify.outputs.frontend }}
+          WANT_UI: ${{ needs.classify.outputs.ui }}
+          WANT_WATCH: ${{ needs.classify.outputs.watch }}
+          WANT_SIMULATOR: ${{ needs.classify.outputs.simulator }}
+          WANT_BACKEND: ${{ needs.classify.outputs.backend }}
+          WANT_WINDOWS: ${{ needs.classify.outputs.windows }}
+          WANT_DEPLOYMENT: ${{ needs.classify.outputs.deployment }}
+          WANT_SECURITY: ${{ needs.classify.outputs.security }}
+          IS_PR: ${{ github.event_name == 'pull_request' }}
         run: |
-          test "${{ needs.frontend.result }}" = "success"
-          test "${{ needs.ui-quality.result }}" = "success"
-          test "${{ needs.watch.result }}" = "success"
-          test "${{ needs.simulator.result }}" = "success"
-          test "${{ needs.backend.result }}" = "success"
-          test "${{ needs.windows.result }}" = "success"
-          test "${{ needs.deployment.result }}" = "success"
-          test "${{ needs.security-scan.result }}" = "success"
-          test "${{ needs['dependency-review'].result }}" = "success" || test "${{ needs['dependency-review'].result }}" = "skipped"
+          check() {
+            local result="$1" selected="$2"
+            if [ "$selected" = true ]; then
+              test "$result" = success
+            else
+              test "$result" = skipped
+            fi
+          }
+          check "$FRONTEND" "$WANT_FRONTEND"
+          check "$UI" "$WANT_UI"
+          check "$WATCH" "$WANT_WATCH"
+          check "$SIMULATOR" "$WANT_SIMULATOR"
+          check "$BACKEND" "$WANT_BACKEND"
+          check "$WINDOWS" "$WANT_WINDOWS"
+          check "$DEPLOYMENT" "$WANT_DEPLOYMENT"
+          check "$SECURITY" "$WANT_SECURITY"
+          if [ "$IS_PR" = true ] && [ "$WANT_SECURITY" = true ]; then
+            test "$DEPENDENCY" = success
+          else
+            test "$DEPENDENCY" = skipped
+          fi
