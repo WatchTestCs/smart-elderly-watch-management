@@ -11,6 +11,8 @@
   },
   "include": [
     "vite.config.ts",
-    "vitest.config.ts"
+    "vitest.config.ts",
+    "scripts/check-typescript-scope.ts",
+    "scripts/check-vue36-readiness.ts"
   ]
 }
