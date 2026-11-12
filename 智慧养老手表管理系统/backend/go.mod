@@ -3,30 +3,30 @@ module suining-care
 go 1.27.4
 
 require (
-	github.com/aws/aws-sdk-go-v2 v1.47.4
-	github.com/aws/aws-sdk-go-v2/credentials v1.20.10
-	github.com/aws/aws-sdk-go-v2/service/s3 v1.114.5
-	github.com/aws/smithy-go v1.28.6
-	github.com/go-sql-driver/mysql v1.9.3
-	github.com/goccy/go-json v0.11.2
+	github.com/aws/aws-sdk-go-v2 v1.47.8
+	github.com/aws/aws-sdk-go-v2/credentials v1.20.16
+	github.com/aws/aws-sdk-go-v2/service/s3 v1.114.9
+	github.com/aws/smithy-go v1.28.8
+	github.com/go-sql-driver/mysql v1.10.1
+	github.com/goccy/go-json v0.12.0
 	github.com/google/uuid v1.6.0
-	github.com/jackc/pgx/v5 v5.9.2
-	golang.org/x/crypto v0.56.0
+	github.com/jackc/pgx/v5 v5.12.0
+	golang.org/x/crypto v0.58.0
 )
 
 require (
-	filippo.io/edwards25519 v1.1.1 // indirect
-	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.7.24 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/configsources v1.5.7 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.8.7 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/v4a v1.5.7 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.13.22 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.11.8 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.14.7 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.20.7 // indirect
+	filippo.io/edwards25519 v1.2.0 // indirect
+	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.7.26 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/configsources v1.5.11 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.8.11 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/v4a v1.5.11 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.13.24 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.11.12 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.14.11 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.20.11 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
-	github.com/jackc/puddle/v2 v2.2.2 // indirect
-	golang.org/x/sync v0.22.0 // indirect
-	golang.org/x/text v0.41.0 // indirect
+	github.com/jackc/puddle/v2 v2.2.3 // indirect
+	golang.org/x/sync v0.24.0 // indirect
+	golang.org/x/text v0.43.0 // indirect
 )
