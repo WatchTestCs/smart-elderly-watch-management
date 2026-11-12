@@ -15,9 +15,44 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  classify:
+    name: PR change scope
+    runs-on: ubuntu-latest
+    outputs:
+      full: ${{ steps.scope.outputs.full }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Identify Markdown-only pull requests
+        id: scope
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          if [ "$EVENT_NAME" != pull_request ]; then
+            echo "full=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git diff --name-only -z "$BASE_SHA" "$HEAD_SHA" > "$RUNNER_TEMP/changed-files"
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          paths = [p.decode() for p in Path(os.environ["RUNNER_TEMP"], "changed-files").read_bytes().split(b"\0") if p]
+          markdown_only = bool(paths) and all(p.endswith((".md", ".mdx")) for p in paths)
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"full={str(not markdown_only).lower()}\n")
+          print(f"{len(paths)} changed files; {'full CI' if not markdown_only else 'Markdown-only fast path'}")
+          PY
+
   codeql:
     name: CodeQL / ${{ matrix.language }}
-    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+    needs: classify
+    if: ${{ needs.classify.outputs.full == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     permissions:
