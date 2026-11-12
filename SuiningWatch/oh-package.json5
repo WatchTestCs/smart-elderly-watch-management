@@ -1,4 +1,4 @@
 {
-  "modelVersion": "6.0.0", "name": "suining-watch", "version": "0.2.0",
+  "modelVersion": "26.0.0", "name": "suining-watch", "version": "0.2.0",
   "description": "岁宁 WATCH 5 原生健康与设备通信端", "dependencies": {}
 }
