@@ -37,34 +37,26 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       full: ${{ steps.scope.outputs.full }}
+      frontend: ${{ steps.scope.outputs.frontend }}
+      ui: ${{ steps.scope.outputs.ui }}
+      backend: ${{ steps.scope.outputs.backend }}
+      watch: ${{ steps.scope.outputs.watch }}
+      simulator: ${{ steps.scope.outputs.simulator }}
+      windows: ${{ steps.scope.outputs.windows }}
+      deployment: ${{ steps.scope.outputs.deployment }}
+      security: ${{ steps.scope.outputs.security }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
           fetch-depth: 0
-      - name: Identify Markdown-only pull requests
+      - name: Determine affected modules
         id: scope
-        shell: bash
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           EVENT_NAME: ${{ github.event_name }}
-        run: |
-          if [ "$EVENT_NAME" != pull_request ]; then
-            echo "full=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          git diff --name-only -z "$BASE_SHA" "$HEAD_SHA" > "$RUNNER_TEMP/changed-files"
-          python3 - <<'PY'
-          import os
-          from pathlib import Path
-
-          paths = [p.decode() for p in Path(os.environ["RUNNER_TEMP"], "changed-files").read_bytes().split(b"\0") if p]
-          markdown_only = bool(paths) and all(p.endswith((".md", ".mdx")) for p in paths)
-          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
-              output.write(f"full={str(not markdown_only).lower()}\n")
-          print(f"{len(paths)} changed files; {'full CI' if not markdown_only else 'Markdown-only fast path'}")
-          PY
+        run: python3 scripts/ci/change-scope.py
 
   frontend:
     if: needs.classify.outputs.full == 'true'
@@ -108,7 +100,7 @@ jobs:
 
   dependency-review:
     name: Dependency review
-    if: ${{ github.event_name == 'pull_request' && needs.classify.outputs.full == 'true' }}
+    if: ${{ github.event_name == 'pull_request' && needs.classify.outputs.security == 'true' }}
     needs: classify
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -188,8 +180,8 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
-      - name: Validate Markdown-only changes
-        if: needs.classify.outputs.full == 'false'
+      - name: Validate PR diff whitespace
+        if: github.event_name == 'pull_request'
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
@@ -198,15 +190,45 @@ jobs:
         if: needs.classify.outputs.full == 'true'
         run: python3 -m unittest discover -s scripts/reliability -p 'test_*.py' -v
       - name: Require all core checks
-        if: needs.classify.outputs.full == 'true'
         shell: bash
+        env:
+          FRONTEND: ${{ needs.frontend.result }}
+          UI: ${{ needs['ui-quality'].result }}
+          WATCH: ${{ needs.watch.result }}
+          SIMULATOR: ${{ needs.simulator.result }}
+          BACKEND: ${{ needs.backend.result }}
+          WINDOWS: ${{ needs.windows.result }}
+          DEPLOYMENT: ${{ needs.deployment.result }}
+          SECURITY: ${{ needs['security-scan'].result }}
+          DEPENDENCY: ${{ needs['dependency-review'].result }}
+          WANT_FRONTEND: ${{ needs.classify.outputs.frontend }}
+          WANT_UI: ${{ needs.classify.outputs.ui }}
+          WANT_WATCH: ${{ needs.classify.outputs.watch }}
+          WANT_SIMULATOR: ${{ needs.classify.outputs.simulator }}
+          WANT_BACKEND: ${{ needs.classify.outputs.backend }}
+          WANT_WINDOWS: ${{ needs.classify.outputs.windows }}
+          WANT_DEPLOYMENT: ${{ needs.classify.outputs.deployment }}
+          WANT_SECURITY: ${{ needs.classify.outputs.security }}
+          IS_PR: ${{ github.event_name == 'pull_request' }}
         run: |
-          test "${{ needs.frontend.result }}" = "success"
-          test "${{ needs.ui-quality.result }}" = "success"
-          test "${{ needs.watch.result }}" = "success"
-          test "${{ needs.simulator.result }}" = "success"
-          test "${{ needs.backend.result }}" = "success"
-          test "${{ needs.windows.result }}" = "success"
-          test "${{ needs.deployment.result }}" = "success"
-          test "${{ needs.security-scan.result }}" = "success"
-          test "${{ needs['dependency-review'].result }}" = "success" || test "${{ needs['dependency-review'].result }}" = "skipped"
+          check() {
+            local result="$1" selected="$2"
+            if [ "$selected" = true ]; then
+              test "$result" = success
+            else
+              test "$result" = skipped
+            fi
+          }
+          check "$FRONTEND" "$WANT_FRONTEND"
+          check "$UI" "$WANT_UI"
+          check "$WATCH" "$WANT_WATCH"
+          check "$SIMULATOR" "$WANT_SIMULATOR"
+          check "$BACKEND" "$WANT_BACKEND"
+          check "$WINDOWS" "$WANT_WINDOWS"
+          check "$DEPLOYMENT" "$WANT_DEPLOYMENT"
+          check "$SECURITY" "$WANT_SECURITY"
+          if [ "$IS_PR" = true ] && [ "$WANT_SECURITY" = true ]; then
+            test "$DEPENDENCY" = success
+          else
+            test "$DEPENDENCY" = skipped
+          fi
