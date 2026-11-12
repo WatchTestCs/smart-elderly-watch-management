@@ -16,11 +16,11 @@ on:
         type: boolean
         default: false
       sdk_url:
-        description: Optional HTTPS URL of Windows Command Line Tools 6.1.1.280 for native watch compilation
+        description: HTTPS URL of HarmonyOS 26.0.0.821 Windows CLI archive first part (.zip.aa)
         type: string
         default: ''
       sdk_sha256:
-        description: Required expected SDK SHA-256 when sdk_url is supplied
+        description: SHA-256 of the reconstructed HarmonyOS 26 ZIP archive
         type: string
         default: ''
 
