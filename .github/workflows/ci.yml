@@ -32,15 +32,55 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  classify:
+    name: PR change scope
+    runs-on: ubuntu-latest
+    outputs:
+      full: ${{ steps.scope.outputs.full }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Identify Markdown-only pull requests
+        id: scope
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          if [ "$EVENT_NAME" != pull_request ]; then
+            echo "full=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git diff --name-only -z "$BASE_SHA" "$HEAD_SHA" > "$RUNNER_TEMP/changed-files"
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          paths = [p.decode() for p in Path(os.environ["RUNNER_TEMP"], "changed-files").read_bytes().split(b"\\0") if p]
+          markdown_only = bool(paths) and all(p.endswith((".md", ".mdx")) for p in paths)
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"full={str(not markdown_only).lower()}\\n")
+          print(f"{len(paths)} changed files; {'full CI' if not markdown_only else 'Markdown-only fast path'}")
+          PY
+
   frontend:
+    if: needs.classify.outputs.full == 'true'
+    needs: classify
     name: Frontend
     uses: ./.github/workflows/reusable-frontend.yml
 
   ui-quality:
+    if: needs.classify.outputs.full == 'true'
+    needs: classify
     name: UI Quality
     uses: ./.github/workflows/ui-quality.yml
 
   watch:
+    if: needs.classify.outputs.full == 'true'
+    needs: classify
     name: Watch protocol
     uses: ./.github/workflows/reusable-watch.yml
     with:
@@ -49,13 +89,15 @@ jobs:
       require_native: ${{ inputs.require_native || github.event_name == 'push' }}
 
   simulator-tests:
+    if: needs.classify.outputs.full == 'true'
+    needs: classify
     name: Watch simulator tests
     uses: ./.github/workflows/watch-simulator.yml
 
   simulator:
     name: Watch simulator
-    if: ${{ always() }}
-    needs: [simulator-tests]
+    if: ${{ always() && needs.classify.outputs.full == 'true' }}
+    needs: [classify, simulator-tests]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -66,7 +108,8 @@ jobs:
 
   dependency-review:
     name: Dependency review
-    if: ${{ github.event_name == 'pull_request' }}
+    if: ${{ github.event_name == 'pull_request' && needs.classify.outputs.full == 'true' }}
+    needs: classify
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -83,20 +126,28 @@ jobs:
           fail-on-scopes: development, runtime
 
   backend:
+    if: needs.classify.outputs.full == 'true'
+    needs: classify
     name: Backend
     uses: ./.github/workflows/reusable-backend.yml
 
   windows:
+    if: needs.classify.outputs.full == 'true'
+    needs: classify
     name: Windows sidecar contract
     uses: ./.github/workflows/reusable-windows-package.yml
     with:
       build_desktop: ${{ inputs.build_desktop || github.event_name == 'push' }}
 
   deployment:
+    if: needs.classify.outputs.full == 'true'
+    needs: classify
     name: Deployment and alerts
     uses: ./.github/workflows/deploy-contract.yml
 
   security-scan:
+    if: needs.classify.outputs.full == 'true'
+    needs: classify
     name: Current-source vulnerability scan
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -128,17 +179,25 @@ jobs:
 
   required:
     name: Core CI / required
-    if: ${{ always() }}
-    needs: [frontend, ui-quality, watch, simulator, backend, windows, deployment, security-scan, dependency-review]
+    if: ${{ always() && needs.classify.result == 'success' }}
+    needs: [classify, frontend, ui-quality, watch, simulator, backend, windows, deployment, security-scan, dependency-review]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
+      - name: Validate Markdown-only changes
+        if: needs.classify.outputs.full == 'false'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: git diff --check "$BASE_SHA" "$HEAD_SHA"
       - name: Verify release gate fail-closed regressions
+        if: needs.classify.outputs.full == 'true'
         run: python3 -m unittest discover -s scripts/reliability -p 'test_*.py' -v
       - name: Require all core checks
+        if: needs.classify.outputs.full == 'true'
         shell: bash
         run: |
           test "${{ needs.frontend.result }}" = "success"
