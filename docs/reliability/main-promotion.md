@@ -10,9 +10,9 @@
 4. Security 必须在同一 SHA 上成功。
 5. 分支推送同时启动 Tauri preview candidate；它等待同一 SHA 的 CI 与 Security 成功后运行 release gate，确认当前 `preview` HEAD、必需 job、artifact digest 与来源全部一致。手动复验时输入同一 SHA。
 
-## 首次切换
+## 首次切换（已执行，保留供恢复与审计）
 
-当前历史 `main` 与新架构 `preview` 已分叉，因此第一次晋升是一次性的主线世代迁移，不按普通 PR 合并处理。
+2026-11-12 已完成首次世代迁移：旧 `main` 提交 `ac5f2d5655fdb5caf772f80ba1f72ba999e2bd76` 保存于 `history/main-before-preview-20261112-ac5f2d5`，随后使用 expected-SHA 更新将 `main` 指向已在 `preview` 验证的 `e1e268fdb6efde2e72c9ee7c9eb7f3fc431b0423`。两条分支均保留，后续晋升使用下节的常规流程。以下步骤为这次迁移的历史操作规范，不应再次执行。
 
 1. 再次确认候选 SHA 仍是 `preview` HEAD。
 2. 保存旧 `main` 的不可变标签，并记录旧 `main` SHA。标签用于历史恢复，不继续维护旧架构。

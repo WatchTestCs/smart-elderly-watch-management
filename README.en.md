@@ -22,9 +22,13 @@ This branch also includes [SuiningWatch](SuiningWatch/README.md), a native Harmo
 
 *Interface preview populated with test data.*
 
+## Branches and releases
+
+`preview` is the development and prerelease-validation branch; `main` is the stable-candidate branch. Feature and documentation pull requests target `preview`. On 2026-11-12 the validated commit `e1e268f` was promoted to `main`, while the previous main head was preserved under `history/main-before-preview-20261112-ac5f2d5`. **Promotion to `main` is not a published release.** Check the [Stable release candidate workflow](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/workflows/stable-candidate.yml), an official tag for the same commit, and [GitHub Releases](https://github.com/WatchTestCs/smart-elderly-watch-management/releases) for release status. See the [promotion runbook](docs/reliability/main-promotion.md).
+
 ## Download
 
-2.1.0 · Windows x64 (Preview channel)
+The following files belong to the previously published 2.1.0 · Windows x64 preview release, not necessarily the current `main` head.
 
 | Package | Download | Best for |
 | --- | --- | --- |

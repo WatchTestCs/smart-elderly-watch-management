@@ -17,7 +17,7 @@ CodeQL 或依赖审查因 fork 权限、配置缺失而未运行时，应由维�
 
 `preview` 是预发布集成通道，允许经过评审的功能、架构、依赖与破坏性变更；`main` 是稳定通道，不接收日常开发 PR。正式晋升必须绑定一个明确的 40 位 `preview` HEAD SHA，并在候选冻结后只接受缺陷、安全、构建或发布阻断修复。
 
-晋升前先在候选 SHA 上运行完整 Preview CI、Security 与候选打包，确认 release gate 证据完整。晋升时不得用 squash 或 rebase 生成未经候选验证的新源码提交；稳定主线应直接采用已经验证的候选 SHA。首次从历史 `main` 切换到新架构前，必须先保存旧 `main` 的不可变标签并记录其 SHA。由于当前两条历史已分叉，首次切换属于一次性世代迁移；完成后要求 `main` 始终位于后续 `preview` 历史上，常规晋升只允许 fast-forward。
+晋升前先在候选 SHA 上运行完整 Preview CI、Security 与候选打包，确认 release gate 证据完整。晋升时不得用 squash 或 rebase 生成未经候选验证的新源码提交；稳定主线应直接采用已经验证的候选 SHA。首次从历史 `main` 切换到新架构前，必须先保存旧 `main` 的不可变标签并记录其 SHA。首次历史分叉已于 2026-11-12 按 [晋升手册](main-promotion.md) 完成一次性世代迁移；之后要求 `main` 始终是 `preview` 的祖先，常规晋升只允许 fast-forward。
 
 候选 SHA 提升到 `main` 后，必须在 `main` 上重新运行同一套分支敏感 CI 与 Security，并通过 Stable release candidate 的 exact-source 检查后才能创建正式版本标签。若 `main` 出现独立提交或两条分支失去祖先关系，应停止常规晋升，先显式解决历史关系，不能用强制合并掩盖分叉。
 
