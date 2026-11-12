@@ -59,19 +59,19 @@ jobs:
         run: python3 scripts/ci/change-scope.py
 
   frontend:
-    if: needs.classify.outputs.full == 'true'
+    if: needs.classify.outputs.frontend == 'true'
     needs: classify
     name: Frontend
     uses: ./.github/workflows/reusable-frontend.yml
 
   ui-quality:
-    if: needs.classify.outputs.full == 'true'
+    if: needs.classify.outputs.ui == 'true'
     needs: classify
     name: UI Quality
     uses: ./.github/workflows/ui-quality.yml
 
   watch:
-    if: needs.classify.outputs.full == 'true'
+    if: needs.classify.outputs.watch == 'true'
     needs: classify
     name: Watch protocol
     uses: ./.github/workflows/reusable-watch.yml
@@ -81,14 +81,14 @@ jobs:
       require_native: ${{ inputs.require_native || github.event_name == 'push' }}
 
   simulator-tests:
-    if: needs.classify.outputs.full == 'true'
+    if: needs.classify.outputs.simulator == 'true'
     needs: classify
     name: Watch simulator tests
     uses: ./.github/workflows/watch-simulator.yml
 
   simulator:
     name: Watch simulator
-    if: ${{ always() && needs.classify.outputs.full == 'true' }}
+    if: ${{ always() && needs.classify.outputs.simulator == 'true' }}
     needs: [classify, simulator-tests]
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -118,13 +118,13 @@ jobs:
           fail-on-scopes: development, runtime
 
   backend:
-    if: needs.classify.outputs.full == 'true'
+    if: needs.classify.outputs.backend == 'true'
     needs: classify
     name: Backend
     uses: ./.github/workflows/reusable-backend.yml
 
   windows:
-    if: needs.classify.outputs.full == 'true'
+    if: needs.classify.outputs.windows == 'true'
     needs: classify
     name: Windows sidecar contract
     uses: ./.github/workflows/reusable-windows-package.yml
@@ -132,13 +132,13 @@ jobs:
       build_desktop: ${{ inputs.build_desktop || github.event_name == 'push' }}
 
   deployment:
-    if: needs.classify.outputs.full == 'true'
+    if: needs.classify.outputs.deployment == 'true'
     needs: classify
     name: Deployment and alerts
     uses: ./.github/workflows/deploy-contract.yml
 
   security-scan:
-    if: needs.classify.outputs.full == 'true'
+    if: needs.classify.outputs.security == 'true'
     needs: classify
     name: Current-source vulnerability scan
     runs-on: ubuntu-latest
