@@ -171,7 +171,7 @@ jobs:
 
   required:
     name: Core CI / required
-    if: ${{ always() && needs.classify.result == 'success' }}
+    if: ${{ always() }}
     needs: [classify, frontend, ui-quality, watch, simulator, backend, windows, deployment, security-scan, dependency-review]
     runs-on: ubuntu-latest
     steps:
@@ -180,6 +180,10 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
+      - name: Require successful change classification
+        env:
+          CLASSIFY: ${{ needs.classify.result }}
+        run: test "$CLASSIFY" = success
       - name: Validate PR diff whitespace
         if: github.event_name == 'pull_request'
         env:
