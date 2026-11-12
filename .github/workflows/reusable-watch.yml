@@ -59,7 +59,7 @@ jobs:
     name: HarmonyOS SDK compile (no hardware)
     if: ${{ inputs.require_native }}
     runs-on: windows-latest
-    timeout-minutes: 20
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -80,14 +80,40 @@ jobs:
           if ($uri.Scheme -ne 'https' -or $uri.UserInfo) { throw 'SDK must use an HTTPS URL without embedded credentials' }
           if ($env:SDK_ARCHIVE_SHA256 -notmatch '^[a-fA-F0-9]{64}$') { throw 'An expected SDK SHA-256 is required before executing downloaded tools' }
           $uri.GetLeftPart([UriPartial]::Path) | Set-Content (Join-Path $evidence 'sdk-source.txt')
-          $archive = Join-Path $env:RUNNER_TEMP 'watch-commandline-6.1.1.280.zip'
-          curl.exe --fail --location --connect-timeout 20 --max-time 600 --retry 1 --output $archive $url
-          if ($LASTEXITCODE -ne 0) { throw 'SDK download failed; native compilation has not run' }
-          Get-FileHash -LiteralPath $archive -Algorithm SHA256 | ConvertTo-Json | Set-Content (Join-Path $evidence 'sdk-sha256.json')
-          if ((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash -ine $env:SDK_ARCHIVE_SHA256) { throw 'SDK checksum mismatch; archive will not be extracted or executed' }
+          # HarmonyOS 26 Release CLI is distributed as a SHA-256 checked split ZIP.
+          # A fixed release name prevents a stale SDK variable from silently building with Hvigor 6.1.
+          $releaseSuffix = '/26.0.0.821/ohos-sdk-windows-amd64.zip.aa'
+          if (!$uri.AbsolutePath.EndsWith($releaseSuffix, [StringComparison]::Ordinal)) {
+            throw "SDK URL must point to the HarmonyOS 26 Release split archive: $releaseSuffix"
+          }
+          $archive = Join-Path $env:RUNNER_TEMP 'ohos-sdk-windows-amd64.zip'
+          $parts = @()
+          foreach ($suffix in @('aa', 'ab')) {
+            $part = "$archive.$suffix"
+            $partUrl = $url.Substring(0, $url.Length - 2) + $suffix
+            curl.exe --fail --location --connect-timeout 20 --max-time 900 --retry 2 --output $part $partUrl
+            if ($LASTEXITCODE -ne 0) { throw "SDK part $suffix download failed; native compilation has not run" }
+            $parts += $part
+          }
+          $output = [IO.File]::Create($archive)
+          try {
+            foreach ($part in $parts) {
+              $inputStream = [IO.File]::OpenRead($part)
+              try { $inputStream.CopyTo($output) }
+              finally { $inputStream.Dispose() }
+            }
+          } finally { $output.Dispose() }
+          $actualHash = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash
+          @{ sha256 = $actualHash; bytes = (Get-Item -LiteralPath $archive).Length } |
+            ConvertTo-Json | Set-Content (Join-Path $evidence 'sdk-sha256.json')
+          if ($actualHash -ine $env:SDK_ARCHIVE_SHA256) { throw 'SDK checksum mismatch; archive will not be extracted or executed' }
+          foreach ($part in $parts) { Remove-Item -LiteralPath $part -Force }
           $toolDirectory = Join-Path $env:RUNNER_TEMP 'watch-sdk'
           Expand-Archive -LiteralPath $archive -DestinationPath $toolDirectory
           $toolRoot = Join-Path $toolDirectory 'command-line-tools'
+          if (!(Test-Path (Join-Path $toolRoot 'bin/hvigorw.bat'))) {
+            throw 'HarmonyOS 26 command-line-tools layout is invalid'
+          }
           & SuiningWatch/scripts/build.ps1 -CommandLineHome $toolRoot -ReportPath (Join-Path $evidence 'native-build.json')
       - if: always()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
