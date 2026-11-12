@@ -1,0 +1,30 @@
+name: Refresh frontend dependency lock (temporary)
+on:
+  push:
+    branches:
+      - chore/preview-vite-vitest-harmony26-20261112
+permissions:
+  contents: write
+jobs:
+  regenerate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: '24'
+      - name: Regenerate lock using npm
+        working-directory: 智慧养老手表管理系统/frontend
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - name: Commit updated lockfile
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add '智慧养老手表管理系统/frontend/package-lock.json'
+          if ! git diff --cached --quiet; then
+            git commit -m 'build(frontend): refresh Vite and Vitest lockfile'
+            git push origin HEAD:chore/preview-vite-vitest-harmony26-20261112
+          fi
