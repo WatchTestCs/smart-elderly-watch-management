@@ -3,28 +3,30 @@ import { join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const sourceRoot = new URL('../src/', import.meta.url)
-const packageInfo = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
+interface PackageInfo { dependencies?: Record<string, string>; devDependencies?: Record<string, string>; optionalDependencies?: Record<string, string> }
+const packageInfo = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as PackageInfo
 const forbiddenPackages = [
   'vue-template-compiler', '@vue/compat', 'vuex', 'vue-class-component',
   'vue-property-decorator', 'vue-router-composable', 'element-ui',
   'vue-cli-service', '@vue/cli-service', 'vue-loader', 'vue-jest'
 ]
-const forbiddenSyntax = [
+type PatternRule = readonly [RegExp, string]
+const forbiddenSyntax: PatternRule[] = [
   [/\bnew\s+Vue\s*\(/g, 'Vue 2 constructor'],
   [/\bVue\.(?:use|extend|component|directive|filter|mixin|prototype)\b/g, 'Vue 2 global API'],
   [/\b(?:this\.)?\$(?:listeners|scopedSlots|children|destroy|set|delete|on|off|once)\b/g, 'removed instance API'],
   [/\b(?:beforeDestroy|destroyed)\s*\(/g, 'removed lifecycle hook']
 ]
-const forbiddenTemplate = [
+const forbiddenTemplate: PatternRule[] = [
   [/\bv-bind:[\w-]+\.sync\b|\s:[\w-]+\.sync\b/g, 'removed .sync binding'],
   [/@[\w:-]+\.native\b/g, 'removed .native modifier'],
   [/\bslot-scope\s*=/g, 'removed scoped-slot syntax']
 ]
 
-const errors = []
-const advisory = []
+const errors: string[] = []
+const advisory: string[] = []
 const sourcePath = fileURLToPath(sourceRoot)
-for (const section of ['dependencies', 'devDependencies', 'optionalDependencies']) {
+for (const section of ['dependencies', 'devDependencies', 'optionalDependencies'] as const) {
   for (const name of Object.keys(packageInfo[section] ?? {})) {
     if (forbiddenPackages.includes(name) || name.startsWith('@vue/cli-plugin-')) {
       errors.push(`package.json: ${section} contains ${name}`)
@@ -35,7 +37,7 @@ if (!String(packageInfo.dependencies?.vue ?? '').startsWith('3.')) {
   errors.push('package.json: vue must remain on major version 3')
 }
 
-function walk(directory) {
+function walk(directory: string): void {
   for (const entry of readdirSync(directory, { withFileTypes: true })) {
     const path = join(directory, entry.name)
     if (entry.isDirectory()) {
@@ -48,7 +50,7 @@ function walk(directory) {
 
 let scanned = 0
 let jsSfcs = 0
-function check(path) {
+function check(path: string): void {
   scanned++
   const text = readFileSync(path, 'utf8')
   const name = relative(sourcePath, path)
