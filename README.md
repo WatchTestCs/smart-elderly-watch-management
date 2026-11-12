@@ -22,9 +22,13 @@
 
 *上图为使用测试数据的界面示例，仅供预览布局。*
 
+## 分支与发布
+
+`preview` 用于日常开发和预发布验证，`main` 用于稳定候选验收；普通功能和文档 PR 均以 `preview` 为目标。2026-11-12 已将通过预览候选门禁的提交 `e1e268f` 晋升到 `main`，旧主线保存在 `history/main-before-preview-20261112-ac5f2d5`。**进入 `main` 不等于已经发布新版本**。正式交付须以 [Stable release candidate](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/workflows/stable-candidate.yml) 的成功运行、同 SHA 的正式标签及 [GitHub Releases](https://github.com/WatchTestCs/smart-elderly-watch-management/releases) 为准。完整流程见 [晋升手册](docs/reliability/main-promotion.md)。
+
 ## 下载
 
-2.1.0 · Windows x64（预览版）
+以下是已发布的 2.1.0 · Windows x64（预览版）附件，不代表当前 `main` 的最新构建。
 
 | 版本类型 | 下载链接 | 适用场景 |
 | --- | --- | --- |
