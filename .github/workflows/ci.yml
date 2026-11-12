@@ -59,10 +59,10 @@ jobs:
           import os
           from pathlib import Path
 
-          paths = [p.decode() for p in Path(os.environ["RUNNER_TEMP"], "changed-files").read_bytes().split(b"\\0") if p]
+          paths = [p.decode() for p in Path(os.environ["RUNNER_TEMP"], "changed-files").read_bytes().split(b"\0") if p]
           markdown_only = bool(paths) and all(p.endswith((".md", ".mdx")) for p in paths)
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
-              output.write(f"full={str(not markdown_only).lower()}\\n")
+              output.write(f"full={str(not markdown_only).lower()}\n")
           print(f"{len(paths)} changed files; {'full CI' if not markdown_only else 'Markdown-only fast path'}")
           PY
 
@@ -186,6 +186,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
           persist-credentials: false
       - name: Validate Markdown-only changes
         if: needs.classify.outputs.full == 'false'
