@@ -29,7 +29,7 @@ jobs:
           Remove-Item -LiteralPath Env:\JAVA_HOME -ErrorAction SilentlyContinue
           $env:NODE_PATH = 'watch-preflight-sentinel'
           $before = @{}
-          foreach ($name in @('NODE_PATH', 'JAVA_HOME', 'DEVECO_SDK_HOME', 'PATH')) {
+          foreach ($name in @('NODE_PATH', 'NODE_HOME', 'DEVECO_NODE_HOME', 'JAVA_HOME', 'DEVECO_SDK_HOME', 'PATH')) {
             $before[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
           }
           $evidence = Join-Path $PWD 'evidence/ci/watch-preflight'
@@ -48,6 +48,12 @@ jobs:
             }
           }
           'Preflight contract passed; native compilation has not run.' | Set-Content (Join-Path $evidence 'result.txt')
+      - name: Reject mismatched SDK, plugin and CLI metadata
+        shell: pwsh
+        run: ./SuiningWatch/scripts/test-toolchain.ps1
+      - name: Reject production bundles and inconsistent UI artifacts before installation
+        shell: pwsh
+        run: ./SuiningWatch/scripts/test-native-ui-preflight.ps1
       - if: always()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
         with:
@@ -79,16 +85,27 @@ jobs:
           $uri = [Uri]$url
           if ($uri.Scheme -ne 'https' -or $uri.UserInfo) { throw 'SDK must use an HTTPS URL without embedded credentials' }
           if ($env:SDK_ARCHIVE_SHA256 -notmatch '^[a-fA-F0-9]{64}$') { throw 'An expected SDK SHA-256 is required before executing downloaded tools' }
+          $expected = Get-Content -LiteralPath SuiningWatch/toolchain.json -Raw | ConvertFrom-Json
+          if ($env:SDK_ARCHIVE_SHA256 -ine $expected.archiveSha256) { throw "SDK configuration must point to Command Line Tools $($expected.commandLineVersion) with the pinned SHA-256" }
           $uri.GetLeftPart([UriPartial]::Path) | Set-Content (Join-Path $evidence 'sdk-source.txt')
-          $archive = Join-Path $env:RUNNER_TEMP 'watch-commandline-6.1.1.280.zip'
+          $archive = Join-Path $env:RUNNER_TEMP "watch-commandline-$($expected.commandLineVersion).zip"
           curl.exe --fail --location --connect-timeout 20 --max-time 600 --retry 1 --output $archive $url
           if ($LASTEXITCODE -ne 0) { throw 'SDK download failed; native compilation has not run' }
           Get-FileHash -LiteralPath $archive -Algorithm SHA256 | ConvertTo-Json | Set-Content (Join-Path $evidence 'sdk-sha256.json')
           if ((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash -ine $env:SDK_ARCHIVE_SHA256) { throw 'SDK checksum mismatch; archive will not be extracted or executed' }
           $toolDirectory = Join-Path $env:RUNNER_TEMP 'watch-sdk'
-          Expand-Archive -LiteralPath $archive -DestinationPath $toolDirectory
+          python SuiningWatch/scripts/extract-toolchain.py $archive $toolDirectory
+          if ($LASTEXITCODE -ne 0) { throw 'SDK extraction or CRC verification failed; native compilation has not run' }
           $toolRoot = Join-Path $toolDirectory 'command-line-tools'
-          & SuiningWatch/scripts/build.ps1 -CommandLineHome $toolRoot -ReportPath (Join-Path $evidence 'native-build.json')
+          & SuiningWatch/scripts/build.ps1 -CommandLineHome $toolRoot -BuildMode release -ReportPath (Join-Path $evidence 'native-build.json')
+          # Preserve the completed product before the test target's clean task.
+          $product = Get-Content -LiteralPath (Join-Path $evidence 'native-build.json') -Raw | ConvertFrom-Json
+          if ($product.buildMode -ne 'release') { throw '原生产品必须使用 release 模式' }
+          Copy-Item -LiteralPath $product.artifact.path -Destination (Join-Path $evidence 'entry-default-unsigned.hap')
+          & SuiningWatch/scripts/build.ps1 -CommandLineHome $toolRoot -BuildTarget ohosTest -ReportPath (Join-Path $evidence 'native-test-build.json')
+          $test = Get-Content -LiteralPath (Join-Path $evidence 'native-test-build.json') -Raw | ConvertFrom-Json
+          Copy-Item -LiteralPath $test.artifact.path -Destination (Join-Path $evidence 'entry-ohosTest-unsigned.hap')
+          # This runner compiles tests only; it has no wearable emulator image.
       - if: always()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
         with:
@@ -164,6 +181,7 @@ jobs:
         env:
           MYSQL_DSN: root:ci_watch_only@tcp(127.0.0.1:3306)/suining_watch_e2e?parseTime=true
           ADDR: 127.0.0.1:18796
+          SUINING_REQUIRE_SIGNED_DEVICE: '1'
         run: |
           set -euo pipefail
           mkdir -p evidence/ci/watch-integration

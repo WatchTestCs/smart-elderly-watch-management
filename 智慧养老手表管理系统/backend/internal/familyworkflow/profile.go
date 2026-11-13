@@ -23,7 +23,7 @@ var (
 
 // scopedProfile locks the live administrator duty or the current family identity
 // before locking the target family row. Its caller owns the returned transaction.
-func scopedProfile(ctx context.Context, store *db.Database, actor session.Principal, targetID int64, phone string) (*sql.Tx, int64, string, error) {
+func scopedProfile(ctx context.Context, store *db.Database, box *securestore.Box, actor session.Principal, targetID int64, phone string) (*sql.Tx, int64, string, error) {
 	var tx *sql.Tx
 	var err error
 	switch actor.Role {
@@ -43,7 +43,7 @@ func scopedProfile(ctx context.Context, store *db.Database, actor session.Princi
 	if err != nil {
 		return nil, 0, "", err
 	}
-	id, currentPhone, err := familyrepo.LockProfile(ctx, tx, targetID, phone)
+	id, currentPhone, err := familyrepo.LockProfile(ctx, tx, box, targetID, phone)
 	if errors.Is(err, familyrepo.ErrFamilyNotFound) && actor.Role == auth.RoleFamily {
 		err = careworkflow.ErrCapabilityDenied
 	}
@@ -60,7 +60,7 @@ func scopedProfile(ctx context.Context, store *db.Database, actor session.Princi
 // UpdateProfile returns whether a row changed and whether the family's phone
 // identity changed, so all in-memory sessions can be invalidated after commit.
 func UpdateProfile(ctx context.Context, store *db.Database, box *securestore.Box, actor session.Principal, id int64, phone, name, sex, address string) (bool, bool, error) {
-	tx, id, currentPhone, err := scopedProfile(ctx, store, actor, id, phone)
+	tx, id, currentPhone, err := scopedProfile(ctx, store, box, actor, id, phone)
 	if err != nil {
 		return false, false, err
 	}
@@ -81,8 +81,8 @@ func UpdateProfile(ctx context.Context, store *db.Database, box *securestore.Box
 	return updated, phoneChanged, nil
 }
 
-func ChangeAvatar(ctx context.Context, store *db.Database, actor session.Principal, phone, image string, manager *blob.Manager) (bool, error) {
-	tx, id, _, err := scopedProfile(ctx, store, actor, 0, phone)
+func ChangeAvatar(ctx context.Context, store *db.Database, box *securestore.Box, actor session.Principal, phone, image string, manager *blob.Manager) (bool, error) {
+	tx, id, _, err := scopedProfile(ctx, store, box, actor, 0, phone)
 	if err != nil {
 		return false, err
 	}
@@ -102,11 +102,11 @@ func ChangeAvatar(ctx context.Context, store *db.Database, actor session.Princip
 
 // ChangePassword keeps expensive password verification outside the row lock.
 // The locked hash is rechecked before the replacement and session revocation.
-func ChangePassword(ctx context.Context, store *db.Database, actor session.Principal, phone, oldPassword, newPassword string) (int64, error) {
+func ChangePassword(ctx context.Context, store *db.Database, box *securestore.Box, actor session.Principal, phone, oldPassword, newPassword string) (int64, error) {
 	if actor.Role != auth.RoleAdmin && (actor.Role != auth.RoleFamily || actor.Phone != phone) {
 		return 0, careworkflow.ErrCapabilityDenied
 	}
-	previous, err := familyrepo.PasswordByPhone(ctx, store, phone)
+	previous, err := familyrepo.PasswordByPhone(ctx, store, box, phone)
 	if errors.Is(err, sql.ErrNoRows) || (err == nil && (previous == nil || !auth.Matches(oldPassword, *previous))) {
 		return 0, ErrWrongPassword
 	}
@@ -117,7 +117,7 @@ func ChangePassword(ctx context.Context, store *db.Database, actor session.Princ
 	if err != nil {
 		return 0, err
 	}
-	tx, id, _, err := scopedProfile(ctx, store, actor, 0, phone)
+	tx, id, _, err := scopedProfile(ctx, store, box, actor, 0, phone)
 	if err != nil {
 		return 0, err
 	}

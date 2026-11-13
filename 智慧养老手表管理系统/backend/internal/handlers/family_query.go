@@ -9,6 +9,7 @@ import (
 	"suining-care/internal/carepolicy"
 	"suining-care/internal/db"
 	"suining-care/internal/response"
+	"suining-care/internal/userphone"
 )
 
 // POST /api/v1/family/select: supervisor-only resident and family contacts.
@@ -31,7 +32,13 @@ func (h *Handler) familySelect(w http.ResponseWriter, r *http.Request) {
 	list, err := db.QueryList(ctx, tx, func(rows *sql.Rows) (map[string]any, error) {
 		var oldID, familyID int64
 		var oldName, fname, frel, fsex, fphone, faddr, fpic *string
-		if err := rows.Scan(&oldID, &oldName, &familyID, &fname, &frel, &fsex, &fphone, &faddr, &fpic); err != nil {
+		var record userphone.Record
+		if err := rows.Scan(&oldID, &oldName, &familyID, &fname, &frel, &fsex, &fphone, &faddr, &fpic, &record.Cipher, &record.Lookup, &record.Protected); err != nil {
+			return nil, err
+		}
+		record.Legacy = fphone
+		fphone, err := record.OpenFamilyStored(h.Box, familyID)
+		if err != nil {
 			return nil, err
 		}
 		return map[string]any{
@@ -40,7 +47,8 @@ func (h *Handler) familySelect(w http.ResponseWriter, r *http.Request) {
 			"familyPhone": fphone, "familyAddress": faddr, "familyTouPic": fpic,
 		}, nil
 	}, `SELECT o.old_id,o.name,f.family_id,f.family_name,f.family_relation,
-		        f.family_sex,f.family_phone,f.family_address,f.family_tou_pic`+filter+`
+		        f.family_sex,f.family_phone,f.family_address,f.family_tou_pic,
+		        f.family_phone_cipher,f.family_phone_lookup,f.family_phone_protected`+filter+`
 		 ORDER BY o.old_id LIMIT ? OFFSET ?`, name, name, ps, (p-1)*ps)
 	if internalError(w, err) {
 		return
@@ -102,9 +110,15 @@ func (h *Handler) familySelectTwo(w http.ResponseWriter, r *http.Request) {
 	}
 	var id int64
 	var name, sex, addr, pic *string
-	err := tx.QueryRowContext(ctx, `SELECT family_id,family_name,family_sex,family_address,family_tou_pic
-		 FROM family WHERE family_phone=? AND (?=0 OR family_id=?)`,
-		phone, familySelfID(principal), familySelfID(principal)).Scan(&id, &name, &sex, &addr, &pic)
+	lookup, err := userphone.SearchIndex(ctx, tx, h.Box, phone)
+	if internalError(w, err) {
+		return
+	}
+	var record userphone.Record
+	err = tx.QueryRowContext(ctx, `SELECT family_id,family_name,family_sex,family_address,family_tou_pic,
+ family_phone,family_phone_cipher,family_phone_lookup,family_phone_protected
+		 FROM family WHERE `+userphone.FamilyMatch+` AND (?=0 OR family_id=?)`,
+		phone, lookup, familySelfID(principal), familySelfID(principal)).Scan(&id, &name, &sex, &addr, &pic, &record.Legacy, &record.Cipher, &record.Lookup, &record.Protected)
 	if errors.Is(err, sql.ErrNoRows) {
 		if internalError(w, tx.Commit()) {
 			return
@@ -112,7 +126,13 @@ func (h *Handler) familySelectTwo(w http.ResponseWriter, r *http.Request) {
 		response.JSON(w, http.StatusOK, map[string]any{"familyDto2": nil})
 		return
 	}
-	if internalError(w, err) || internalError(w, tx.Commit()) {
+	if internalError(w, err) {
+		return
+	}
+	if _, err := record.OpenFamilyStored(h.Box, id); internalError(w, err) {
+		return
+	}
+	if internalError(w, tx.Commit()) {
 		return
 	}
 	response.JSON(w, http.StatusOK, map[string]any{"familyDto2": map[string]any{

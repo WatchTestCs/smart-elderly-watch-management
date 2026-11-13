@@ -143,7 +143,7 @@ func (h *Handler) createNoticeComment(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	inserted, err := socialworkflow.CreateComment(r.Context(), h.DB,
+	inserted, err := socialworkflow.CreateComment(r.Context(), h.DB, h.Box,
 		func(ctx context.Context, tx *sql.Tx, names []string) error {
 			manager, err := h.images()
 			if err != nil {

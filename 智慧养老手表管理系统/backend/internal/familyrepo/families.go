@@ -51,13 +51,13 @@ func phoneInUse(ctx context.Context, tx *sql.Tx, box *securestore.Box, phone str
 	query := `SELECT EXISTS(SELECT 1 FROM users WHERE
 	    (user_phone_protected=false AND user_phone=?) OR
 	    (user_phone_protected=true AND user_phone_lookup=?))
-	    OR EXISTS(SELECT 1 FROM family WHERE family_phone=?)`
-	args := []any{phone, lookup, phone}
+	    OR EXISTS(SELECT 1 FROM family WHERE ` + userphone.FamilyMatch + `)`
+	args := []any{phone, lookup, phone, lookup}
 	if exceptFamilyID != nil {
 		query = `SELECT EXISTS(SELECT 1 FROM users WHERE
 		    (user_phone_protected=false AND user_phone=?) OR
 		    (user_phone_protected=true AND user_phone_lookup=?))
-		    OR EXISTS(SELECT 1 FROM family WHERE family_phone=? AND family_id<>?)`
+		    OR EXISTS(SELECT 1 FROM family WHERE ` + userphone.FamilyMatch + ` AND family_id<>?)`
 		args = append(args, *exceptFamilyID)
 	}
 	err = tx.QueryRowContext(ctx, query, args...).Scan(&used)
@@ -75,8 +75,8 @@ func Create(ctx context.Context, tx *sql.Tx, box *securestore.Box, input Family,
 		`SELECT EXISTS(SELECT 1 FROM users WHERE
 		    (user_phone_protected=false AND user_phone=?) OR
 		    (user_phone_protected=true AND user_phone_lookup=?))
-		    OR EXISTS(SELECT 1 FROM family WHERE family_phone=?)`,
-		input.Phone, lookup, input.Phone).Scan(&duplicate)
+		    OR EXISTS(SELECT 1 FROM family WHERE `+userphone.FamilyMatch+`)`,
+		input.Phone, lookup, input.Phone, lookup).Scan(&duplicate)
 	if err != nil {
 		return err
 	}
@@ -84,10 +84,13 @@ func Create(ctx context.Context, tx *sql.Tx, box *securestore.Box, input Family,
 		return ErrPhoneInUse
 	}
 	familyID, err := db.InsertID(ctx, tx,
-		`INSERT INTO family(family_name,family_relation,family_sex,family_phone,family_address)
-		 VALUES(?,?,?,?,?)`,
-		input.Name, input.Relation, input.Sex, input.Phone, input.Address)
+		`INSERT INTO family(family_name,family_relation,family_sex,family_address)
+		 VALUES(?,?,?,?)`,
+		input.Name, input.Relation, input.Sex, input.Address)
 	if err != nil {
+		return err
+	}
+	if err := userphone.StoreFamily(ctx, tx, box, familyID, input.Phone); err != nil {
 		return err
 	}
 	target, err := loadBindingTarget(ctx, tx, residentPhone)
@@ -128,8 +131,8 @@ func Update(ctx context.Context, tx *sql.Tx, box *securestore.Box, familyID int6
 	}
 	result, err := tx.ExecContext(ctx,
 		`UPDATE family SET family_name=?,family_relation=?,family_sex=?,
-		 family_phone=?,family_address=? WHERE family_id=?`,
-		input.Name, input.Relation, input.Sex, input.Phone, input.Address, familyID)
+		 family_address=? WHERE family_id=?`,
+		input.Name, input.Relation, input.Sex, input.Address, familyID)
 	if err != nil {
 		return err
 	}
@@ -140,7 +143,7 @@ func Update(ctx context.Context, tx *sql.Tx, box *securestore.Box, familyID int6
 	if affected != 1 {
 		return ErrFamilyNotFound
 	}
-	return nil
+	return userphone.StoreFamily(ctx, tx, box, familyID, input.Phone)
 }
 
 // Delete clears the resident binding and database sessions atomically.

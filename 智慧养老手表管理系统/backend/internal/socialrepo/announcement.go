@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"suining-care/internal/db"
+	"suining-care/internal/securestore"
+	"suining-care/internal/userphone"
 )
 
 type AnnouncementRecipient struct {
@@ -37,10 +39,23 @@ func InsertAnnouncement(ctx context.Context, tx *sql.Tx, title, body string, nam
 		title, body, time.Now(), group)
 }
 
-func AnnouncementRecipients(ctx context.Context, tx *sql.Tx) ([]AnnouncementRecipient, error) {
-	return db.QueryList(ctx, tx, func(rows *sql.Rows) (AnnouncementRecipient, error) {
-		var item AnnouncementRecipient
-		err := rows.Scan(&item.FamilyID, &item.Phone)
-		return item, err
-	}, "SELECT DISTINCT f.family_id,f.family_phone FROM family f INNER JOIN oldperson o ON o.family_id=f.family_id WHERE f.family_phone IS NOT NULL")
+func AnnouncementRecipients(ctx context.Context, tx *sql.Tx, box *securestore.Box) ([]AnnouncementRecipient, error) {
+	items := []AnnouncementRecipient{}
+	err := db.QueryEach(ctx, tx, func(rows *sql.Rows) error {
+		var id int64
+		var record userphone.Record
+		if err := rows.Scan(&id, &record.Legacy, &record.Cipher, &record.Lookup, &record.Protected); err != nil {
+			return err
+		}
+		phone, err := record.OpenFamilyStored(box, id)
+		if err != nil {
+			return err
+		}
+		if phone != nil {
+			items = append(items, AnnouncementRecipient{FamilyID: id, Phone: *phone})
+		}
+		return nil
+	}, `SELECT DISTINCT f.family_id,f.family_phone,f.family_phone_cipher,f.family_phone_lookup,f.family_phone_protected
+ FROM family f INNER JOIN oldperson o ON o.family_id=f.family_id`)
+	return items, err
 }

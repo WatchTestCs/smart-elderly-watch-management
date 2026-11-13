@@ -7,7 +7,7 @@ export interface SensorRead {
   status: string;
 }
 
-// Foreground, user-triggered reads. Permission denial or missing hardware never
+// Foreground manual or scheduled reads. Permission denial or missing hardware never
 // falls back to generated measurements. Each one-shot listener has a timeout.
 export class HealthSensors {
   private generation: number = 0;
@@ -29,7 +29,7 @@ export class HealthSensors {
   suspend(): void { this.active = false; this.cancel(); }
   resume(): void { this.active = true; }
 
-  async read(context: common.UIAbilityContext, session: number = this.generation): Promise<SensorRead> {
+  async read(context: common.UIAbilityContext, session: number = this.generation, requestPermission: boolean = true): Promise<SensorRead> {
     if (!this.active || session !== this.generation) { throw new Error('读取已取消'); }
     this.cancel();
     const generation = this.generation;
@@ -41,17 +41,28 @@ export class HealthSensors {
     if (steps) { permissions.push('ohos.permission.ACTIVITY_MOTION'); }
     if (generation !== this.generation) { throw new Error('读取已取消'); }
     if (!permissions.length) { return { observations: [], status: '当前设备未提供心率或计步传感器' }; }
-    const grant = await abilityAccessCtrl.createAtManager().requestPermissionsFromUser(context, permissions);
+    const manager = abilityAccessCtrl.createAtManager();
+    const authResults: number[] = [];
+    if (requestPermission) {
+      const grant = await manager.requestPermissionsFromUser(context, permissions);
+      for (const result of grant.authResults) { authResults.push(result); }
+    } else {
+      // Timer callbacks never open permission dialogs. The user authorizes once
+      // through the foreground action; revoked grants stop sensor access.
+      for (const permission of permissions) {
+        authResults.push(await manager.checkAccessToken(context.applicationInfo.accessTokenId, permission));
+      }
+    }
     if (generation !== this.generation) { throw new Error('读取已取消'); }
     const observations: SensorObservation[] = [];
     const notes: string[] = [];
-    if (heart && grant.authResults[0] === 0) {
+    if (heart && authResults[0] === 0) {
       try { observations.push(await this.readHeart()); }
       catch (error) { notes.push('心率未取得有效读数，请检查佩戴或稍后重试'); }
     } else { notes.push(heart ? '心率权限未授权' : '无心率传感器'); }
     if (generation !== this.generation) { throw new Error('读取已取消'); }
     const stepIndex = heart ? 1 : 0;
-    if (steps && grant.authResults[stepIndex] === 0) {
+    if (steps && authResults[stepIndex] === 0) {
       try { observations.push(await this.readSteps()); }
       catch (error) { notes.push('计步读数暂不可用'); }
     } else { notes.push(steps ? '活动权限未授权' : '无计步传感器'); }

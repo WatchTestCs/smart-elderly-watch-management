@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"suining-care/internal/db/dbtest"
+	"suining-care/internal/userphone"
 )
 
 // This uses a disposable, fully migrated InnoDB database. Node adapters and
@@ -43,6 +44,21 @@ func TestRekeyMySQL(t *testing.T) {
 		return Column{}
 	}
 	s := func(scope string) string { return sealed(t, old, "synthetic protected value", scope) }
+	phone, err := userphone.Protect(old, 7, "13800000007")
+	if err != nil {
+		t.Fatal(err)
+	}
+	exec("INSERT INTO users(user_id,user_name,user_phone_cipher,user_phone_lookup,user_phone_protected) VALUES(7,'synthetic',?,?,true)", phone.Ciphertext, phone.Lookup)
+	phoneKey, err := userphone.KeyBinding(old)
+	if err != nil {
+		t.Fatal(err)
+	}
+	exec("INSERT INTO account_phone_key_state(singleton,lookup_verifier) VALUES(1,?)", phoneKey)
+	familyPhone, err := userphone.ProtectFamily(old, 7, "13800000017")
+	if err != nil {
+		t.Fatal(err)
+	}
+	exec("INSERT INTO family(family_id,family_name,family_phone_cipher,family_phone_lookup,family_phone_protected) VALUES(7,'synthetic',?,?,true)", familyPhone.Ciphertext, familyPhone.Lookup)
 	exec("INSERT INTO oldperson(old_id,name) VALUES(1,'synthetic')")
 	exec("INSERT INTO device(device_id,device_no,secret,old_id,last_lng,last_lat) VALUES(1,'REKEY-LAB',?,1,?,?)", strings.Repeat("x", 48), s("location"), s("location"))
 	exec("INSERT INTO care_incident(id,old_id,device_id,resolution_note) VALUES(1,1,1,?)", s("care-text"))
@@ -79,7 +95,7 @@ func TestRekeyMySQL(t *testing.T) {
 
 	t.Run("scan is readonly and covers all actual columns", func(t *testing.T) {
 		report, err := Run(ctx, database, current, old, options)
-		if err != nil || len(report.Before) != 20 || report.Stage != "complete" || report.EncryptedColumnsClean || report.RetirementAuthorized {
+		if err != nil || len(report.Before) != 22 || report.Stage != "complete" || report.EncryptedColumnsClean || report.RetirementAuthorized {
 			t.Fatalf("unexpected report: %+v err=%v", report, err)
 		}
 		for _, column := range report.Before {
@@ -104,7 +120,7 @@ func TestRekeyMySQL(t *testing.T) {
 				t.Fatal("incomplete apply")
 			}
 		}
-		if rewrites != 30 {
+		if rewrites != 32 {
 			t.Fatalf("pagination lost rows: rewrites=%d", rewrites)
 		}
 		options.Apply = false

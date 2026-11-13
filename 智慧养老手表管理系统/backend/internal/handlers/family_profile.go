@@ -79,7 +79,7 @@ func (h *Handler) familyUpdateTouPic(w http.ResponseWriter, r *http.Request) {
 	if internalError(w, err) {
 		return
 	}
-	changed, err := familyworkflow.ChangeAvatar(r.Context(), h.DB, *p, phone, pic, manager)
+	changed, err := familyworkflow.ChangeAvatar(r.Context(), h.DB, h.Box, *p, phone, pic, manager)
 	switch {
 	case errors.Is(err, careworkflow.ErrCapabilityDenied):
 		scopeDeny(w)

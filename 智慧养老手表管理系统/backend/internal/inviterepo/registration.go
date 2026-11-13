@@ -6,6 +6,8 @@ import (
 	"database/sql"
 
 	"suining-care/internal/db"
+	"suining-care/internal/securestore"
+	"suining-care/internal/userphone"
 )
 
 type FamilyRegistration struct {
@@ -19,13 +21,13 @@ type FamilyRegistration struct {
 
 // SaveFamily inserts a new family or activates only its existing passwordless
 // placeholder. The caller owns the invitation/resident row locks and commit.
-func SaveFamily(ctx context.Context, tx *sql.Tx, registration FamilyRegistration, boundFamilyID *int64, familyID, residentID int64) (int64, bool, error) {
+func SaveFamily(ctx context.Context, tx *sql.Tx, box *securestore.Box, registration FamilyRegistration, boundFamilyID *int64, familyID, residentID int64) (int64, bool, error) {
 	var err error
 	if boundFamilyID == nil {
 		familyID, err = db.InsertID(ctx, tx,
-			`INSERT INTO family(family_name,family_phone,family_password,family_relation,family_sex,family_address)
-			 VALUES(?,?,?,?,?,?)`,
-			registration.Name, registration.Phone, registration.PasswordHash,
+			`INSERT INTO family(family_name,family_password,family_relation,family_sex,family_address)
+			 VALUES(?,?,?,?,?)`,
+			registration.Name, registration.PasswordHash,
 			registration.Relation, registration.Sex, registration.Address)
 	} else {
 		result, updateErr := tx.ExecContext(ctx,
@@ -46,6 +48,9 @@ func SaveFamily(ctx context.Context, tx *sql.Tx, registration FamilyRegistration
 		}
 	}
 	if err != nil {
+		return familyID, false, err
+	}
+	if err := userphone.StoreFamily(ctx, tx, box, familyID, registration.Phone); err != nil {
 		return familyID, false, err
 	}
 	if boundFamilyID == nil {

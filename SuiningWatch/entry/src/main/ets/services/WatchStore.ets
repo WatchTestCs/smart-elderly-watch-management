@@ -1,13 +1,56 @@
-import { preferences } from '@kit.ArkData';
 import { common } from '@kit.AbilityKit';
-import { WatchConfig, PendingBatch, PendingSOS, SimulatorState, Binding, isExpiredBinding, readPendingSOS } from '../model/Protocol';
+import { EncryptedPreferences } from './EncryptedPreferences';
+import { WatchConfig, PendingBatch, PendingSOS, SimulatorState, Binding, bindingIdentity, sameBinding, isExpiredBinding, readPendingSOS } from '../model/Protocol';
 
 export class WatchStore {
-  private prefs: preferences.Preferences;
+  private prefs: EncryptedPreferences;
   private sosStorageFailed: boolean = false;
   private batchStorageFailed: boolean = false;
-  constructor(context: common.Context) {
-    this.prefs = preferences.getPreferencesSync(context, { name: 'suining_watch_sim_v1' });
+  constructor(context: common.Context, preferencesName: string = 'suining_watch_sim_v1') {
+    this.prefs = new EncryptedPreferences(context, preferencesName);
+  }
+  static async open(context: common.Context, preferencesName: string = 'suining_watch_sim_v1'): Promise<WatchStore> {
+    const store = new WatchStore(context, preferencesName);
+    await store.prefs.open();
+    return store;
+  }
+  usable(): boolean { return this.prefs.usable() && !this.sosStorageFailed && !this.batchStorageFailed; }
+  credential(config: WatchConfig): string {
+    if (this.prefs.getSync('credentialServer', '') !== config.server || this.prefs.getSync('credentialDevice', '') !== config.deviceNo) { return ''; }
+    return this.prefs.getSync('credential', '') as string;
+  }
+  async saveCredential(config: WatchConfig, secret: string): Promise<void> {
+    if (secret.length < 24 || secret.length > 128) { throw new Error('设备密钥长度无效'); }
+    if (this.credential(config) === secret) { return; }
+    this.prefs.putSync('credentialServer', config.server);
+    this.prefs.putSync('credentialDevice', config.deviceNo);
+    this.prefs.putSync('credential', secret);
+    await this.prefs.flush();
+  }
+  async forgetCredential(): Promise<void> {
+    this.prefs.putSync('credential', '');
+    await this.prefs.flush();
+  }
+  monitoringEnabled(): boolean { return this.prefs.getSync('monitoringEnabled', '0') === '1'; }
+  async saveMonitoringEnabled(enabled: boolean): Promise<void> {
+    this.prefs.putSync('monitoringEnabled', enabled ? '1' : '0');
+    await this.prefs.flush();
+  }
+  verifiedBinding(config: WatchConfig): Binding | undefined {
+    const raw = this.prefs.getSync('verifiedBinding', '') as string;
+    if (!raw) { return undefined; }
+    const saved = JSON.parse(raw) as Binding;
+    if (!saved || saved.server !== config.server || saved.deviceNo !== config.deviceNo) { return undefined; }
+    return bindingIdentity(config, saved.residentId, saved.version);
+  }
+  async rememberBinding(binding: Binding | undefined): Promise<void> {
+    if (binding) {
+      const config: WatchConfig = { server: binding.server, deviceNo: binding.deviceNo };
+      const previous = this.verifiedBinding(config);
+      if (previous && sameBinding(previous, binding)) { return; }
+    } else if (!this.prefs.getSync('verifiedBinding', '')) { return; }
+    this.prefs.putSync('verifiedBinding', binding ? JSON.stringify(binding) : '');
+    await this.prefs.flush();
   }
   config(): WatchConfig {
     return {

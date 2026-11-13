@@ -34,7 +34,7 @@ func (h *Handler) familyUpdatePassword(w http.ResponseWriter, r *http.Request) {
 		response.Fail(w, "请填写原密码，新密码须为12–20位且包含字母和数字")
 		return
 	}
-	id, err := familyworkflow.ChangePassword(r.Context(), h.DB, *p, phone, oldPw, newPw)
+	id, err := familyworkflow.ChangePassword(r.Context(), h.DB, h.Box, *p, phone, oldPw, newPw)
 	switch {
 	case errors.Is(err, careworkflow.ErrCapabilityDenied):
 		scopeDeny(w)

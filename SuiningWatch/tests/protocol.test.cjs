@@ -24,6 +24,10 @@ test('server validation rejects credentials, paths and query strings', () => {
 test('unbound or missing binding version cannot produce an authenticated owner', () => {
   assert.throws(() => p.bindingFrom(config, { returnCode: '1111', bound: 0 }));
   assert.throws(() => p.bindingFrom(config, { returnCode: '1111', bound: 1, residentId: 7 }));
+  for (const value of [-1, 0, 1.5, Number.MAX_SAFE_INTEGER + 1]) {
+    assert.throws(() => p.bindingFrom(config, { returnCode: '1111', bound: 1, residentId: 7, bindingVersion: value }));
+    assert.throws(() => p.bindingFrom(config, { returnCode: '1111', bound: 1, residentId: value, bindingVersion: 1 }));
+  }
 });
 test('samples declare simulation, units, and UTC cumulative day boundary', () => {
   assert.equal(samples[0].metadata.simulated, 'true');
@@ -71,53 +75,33 @@ test('old pending SOS remains available while a new binding can create its own r
   assert.deepEqual(p.readPendingSOS(''), []);
 });
 test('SOS persistence failure keeps the previous value and blocks subsequent sends', async () => {
-  const storeSource = path.resolve(__dirname, '../entry/src/main/ets/services/WatchStore.ets');
+  const { storeFixture } = require('./storage-fixture.cjs');
   for (const initial of ['', JSON.stringify({ binding, requestId: 'already-sent' })]) {
-    const values = { sos: initial };
-    const prefs = {
-      getSync: (key, fallback) => values[key] ?? fallback,
-      putSync: (key, value) => { values[key] = value; },
-      flush: async () => { throw new Error('simulated storage failure'); }
-    };
-    const storeModule = new Module(storeSource, module);
-    storeModule.require = id => {
-      if (id === '@kit.ArkData') return { preferences: { getPreferencesSync: () => prefs } };
-      if (id === '../model/Protocol') return p;
-      return require(id);
-    };
-    storeModule._compile(ts.transpileModule(fs.readFileSync(storeSource, 'utf8'), {
-      compilerOptions: { target: ts.ScriptTarget.ES2020, module: ts.ModuleKind.CommonJS }
-    }).outputText, storeSource);
-    const store = new storeModule.exports.WatchStore({});
+    const fixture = storeFixture({ sos: initial });
+    const store = await fixture.open();
+    const previous = fixture.values.encryptedStateV1;
+    fixture.setFlush(async () => { throw new Error('simulated storage failure'); });
     await assert.rejects(store.saveSOS(initial ? [{ binding, requestId: 'already-sent', incidentId: 42 }] : [{ binding, requestId: 'new' }]));
-    assert.equal(values.sos, initial);
     assert.throws(() => store.pendingSOS(), /勿重复发送/);
     await assert.rejects(store.saveSOS([]), /勿重复发送/);
+    fixture.values.encryptedStateV1 = previous;
+    fixture.setFlush(async () => {});
+    const recovered = await fixture.open();
+    assert.deepEqual(recovered.pendingSOS(), p.readPendingSOS(initial));
   }
 });
+
 test('SOS acknowledgement retains its request ID when flush writes then fails', async () => {
+  const { storeFixture } = require('./storage-fixture.cjs');
   const pending = { binding, requestId: 'uncertain' };
-  let durable = JSON.stringify([pending]);
-  let staged = durable;
-  const prefs = {
-    getSync: () => staged,
-    putSync: (key, value) => { staged = value; },
-    flush: async () => { durable = staged; throw new Error('completion lost'); }
-  };
-  const storeSource = path.resolve(__dirname, '../entry/src/main/ets/services/WatchStore.ets');
-  const storeModule = new Module(storeSource, module);
-  storeModule.require = id => {
-    if (id === '@kit.ArkData') return { preferences: { getPreferencesSync: () => prefs } };
-    if (id === '../model/Protocol') return p;
-    return require(id);
-  };
-  storeModule._compile(ts.transpileModule(fs.readFileSync(storeSource, 'utf8'), {
-    compilerOptions: { target: ts.ScriptTarget.ES2020, module: ts.ModuleKind.CommonJS }
-  }).outputText, storeSource);
-  const store = new storeModule.exports.WatchStore({});
+  const fixture = storeFixture({ sos: JSON.stringify([pending]) });
+  const store = await fixture.open();
+  let durable;
+  fixture.setFlush(async () => { durable = fixture.values.encryptedStateV1; throw new Error('completion lost'); });
   await assert.rejects(store.saveSOS([{ ...pending, incidentId: 42 }]));
-  staged = durable; // simulate reloading the committed bytes in a new process
-  const afterRestart = new storeModule.exports.WatchStore({}).pendingSOS();
+  fixture.values.encryptedStateV1 = durable;
+  fixture.setFlush(async () => {});
+  const afterRestart = (await fixture.open()).pendingSOS();
   assert.equal(afterRestart[0].requestId, 'uncertain');
   assert.equal(afterRestart[0].incidentId, 42);
   assert.equal(p.pendingForBinding(afterRestart, binding), undefined);

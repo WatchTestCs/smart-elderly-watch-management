@@ -98,7 +98,7 @@ func Join(ctx context.Context, store *db.Database, box *securestore.Box, input R
 	} else if dup {
 		return Result{}, FamilyMismatch, nil
 	}
-	familyID, applied, err := inviterepo.SaveFamily(ctx, tx, inviterepo.FamilyRegistration{
+	familyID, applied, err := inviterepo.SaveFamily(ctx, tx, box, inviterepo.FamilyRegistration{
 		Name: input.Name, Phone: input.Phone, PasswordHash: hash,
 		Relation: input.Relation, Sex: input.Sex, Address: input.Address,
 	}, resident.FamilyID, familyID, *inv.ResidentID)

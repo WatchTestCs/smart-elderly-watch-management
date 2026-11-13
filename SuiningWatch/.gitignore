@@ -1,6 +1,7 @@
 node_modules/
 oh_modules/
 .hvigor/
+.test/
 .idea/
 build/
 entry/build/

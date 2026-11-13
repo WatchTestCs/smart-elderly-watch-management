@@ -5,9 +5,11 @@ export interface WatchConfig {
 }
 export class DeviceRequestError extends Error {
   code: string;
-  constructor(code: string, message: string) {
+  status: number;
+  constructor(code: string, message: string, status: number = 0) {
     super(message);
     this.code = code;
+    this.status = status;
   }
 }
 export interface SimulatorState { day: string; steps: number; }
@@ -23,6 +25,7 @@ export interface DeviceReply {
   bindingVersion?: number;
   accepted?: number;
   duplicates?: number;
+  duplicate?: boolean;
   incidentId?: number;
   incidentState?: string;
   notificationState?: string;
@@ -104,11 +107,17 @@ export function verifyHandshake(reply: DeviceReply): void {
 }
 
 export function bindingFrom(config: WatchConfig, reply: DeviceReply): Binding {
-  if (reply.bound !== 1 || !reply.residentId || !reply.bindingVersion) {
+  if (reply.bound !== 1 || reply.residentId === undefined || reply.bindingVersion === undefined) {
     throw new Error('设备尚未绑定长者，请输入后台生成的设备绑定码');
   }
+  return bindingIdentity(config, reply.residentId, reply.bindingVersion);
+}
+export function bindingIdentity(config: WatchConfig, residentId: number, version: number): Binding {
+  if (!Number.isSafeInteger(residentId) || residentId <= 0 || !Number.isSafeInteger(version) || version <= 0) {
+    throw new Error('设备绑定身份无效，请核查设备与绑定版本');
+  }
   return { server: config.server, deviceNo: config.deviceNo,
-    residentId: reply.residentId, version: reply.bindingVersion };
+    residentId: residentId, version: version };
 }
 export function sameBinding(a: Binding, b: Binding): boolean {
   return a.server === b.server && a.deviceNo === b.deviceNo && a.residentId === b.residentId && a.version === b.version;
