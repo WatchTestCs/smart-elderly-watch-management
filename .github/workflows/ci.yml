@@ -120,7 +120,7 @@ jobs:
           # JSON output exits zero even when vulnerable symbols are reachable.
           govulncheck -mode=convert < ../../evidence/ci/security/govulncheck.jsonl | tee ../../evidence/ci/security/govulncheck.txt
       - if: always()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: security-${{ github.event.pull_request.head.sha || github.sha }}
           path: evidence/ci/security/

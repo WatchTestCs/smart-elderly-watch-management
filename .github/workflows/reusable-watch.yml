@@ -49,7 +49,7 @@ jobs:
           }
           'Preflight contract passed; native compilation has not run.' | Set-Content (Join-Path $evidence 'result.txt')
       - if: always()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: watch-preflight-${{ github.event.pull_request.head.sha || github.sha }}
           path: evidence/ci/watch-preflight/
@@ -90,7 +90,7 @@ jobs:
           $toolRoot = Join-Path $toolDirectory 'command-line-tools'
           & SuiningWatch/scripts/build.ps1 -CommandLineHome $toolRoot -ReportPath (Join-Path $evidence 'native-build.json')
       - if: always()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: watch-native-${{ github.event.pull_request.head.sha || github.sha }}
           path: |
@@ -125,7 +125,7 @@ jobs:
           npm test 2>&1 | tee ../evidence/ci/watch/protocol-test.txt
           npm audit --audit-level=high --json > ../evidence/ci/watch/npm-audit.json
       - if: always()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: watch-${{ github.event.pull_request.head.sha || github.sha }}
           path: evidence/ci/watch/
@@ -186,7 +186,7 @@ jobs:
           export WATCH_TEST_SETUP_TOKEN="$SUINING_DESKTOP_TOKEN"
           npm run test:e2e --prefix SuiningWatch 2>&1 | tee evidence/ci/watch-integration/result.txt
       - if: always()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: watch-integration-${{ github.event.pull_request.head.sha || github.sha }}
           path: evidence/ci/watch-integration/
