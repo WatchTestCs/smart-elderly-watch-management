@@ -36,7 +36,7 @@ func TestExtraAuditFamilyOnboarding(t *testing.T) {
 	join := api(t, h.inviteJoin, map[string]any{"code": "AUDITJOIN", "familyName": "家属", "familyPhone": "13800000002", "familyPassword": "TestPassword123!", "familyRelation": "子女", "familySex": "女", "familyAddress": "测试"})
 	login := callAPI(h.login, map[string]any{"phone": "13800000002", "password": "TestPassword123!"})
 	var missing bool
-	if err := p.QueryRowContext(context.Background(), "SELECT family_password IS NULL FROM family WHERE family_phone='13800000002'").Scan(&missing); err != nil {
+	if err := p.QueryRowContext(context.Background(), "SELECT family_password IS NULL FROM family WHERE family_id=1").Scan(&missing); err != nil {
 		t.Fatal(err)
 	}
 	t.Logf("admin add=%v; passwordNULL=%v; login HTTP=%d; join=%v", added, missing, login.Code, join)

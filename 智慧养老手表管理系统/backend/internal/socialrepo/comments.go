@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"suining-care/internal/db"
+	"suining-care/internal/securestore"
+	"suining-care/internal/userphone"
 )
 
 // DeleteComment removes one notice comment and reports whether a row was removed.
@@ -92,9 +94,13 @@ type NewComment struct {
 }
 
 // AuthorAvatar retrieves the current family profile image for a comment author.
-func AuthorAvatar(ctx context.Context, tx *sql.Tx, phone string) (string, error) {
+func AuthorAvatar(ctx context.Context, tx *sql.Tx, box *securestore.Box, phone string) (string, error) {
 	var avatar *string
-	err := tx.QueryRowContext(ctx, "SELECT family_tou_pic FROM family WHERE family_phone=?", phone).Scan(&avatar)
+	lookup, err := userphone.SearchIndex(ctx, tx, box, phone)
+	if err != nil {
+		return "", err
+	}
+	err = tx.QueryRowContext(ctx, "SELECT family_tou_pic FROM family WHERE "+userphone.FamilyMatch, phone, lookup).Scan(&avatar)
 	if err != nil {
 		return "", err
 	}

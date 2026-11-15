@@ -66,7 +66,7 @@ npm run test:api-drift
 
 应用与测试固定使用 TypeScript 6.0.3。app、Node 和测试分别通过项目配置检查，SFC 范围检查使用 Vue 解析器及真实 `vue-tsc --showConfig` 输出，不依赖 TypeScript Compiler API。当前 44 个 SFC 中有 21 个使用 TS 脚本、1 个仅含模板，另有 22 个既有 JS 脚本记录在 `scripts/sfc-typecheck-baseline.json`，尚未完成严格类型迁移；新增组件及已迁移组件不得退回 JS。
 
-API 类型仍由 Go OpenAPI 和官方 `openapi-typescript` 生成。其 7.13.0 版本要求 TS 5，因此固定安装在 `tools/openapi/` 独立工具目录及锁文件中，避免与应用 TS 6 的 peer 约束冲突。`api:check` 检查已提交生成结果，`test:api-drift` 使用真实 `tsc` CLI 和临时源码副本验证四种不兼容变更会使消费端编译失败；执行这两个命令还需要 Go 1.26.10。工具目录不会进入浏览器产物。
+API 类型仍由 Go OpenAPI 和官方 `openapi-typescript` 生成。其 7.13.0 版本要求 TS 5，因此固定安装在 `tools/openapi/` 独立工具目录及锁文件中，避免与应用 TS 6 的 peer 约束冲突。`api:check` 检查已提交生成结果，`test:api-drift` 使用真实 `tsc` CLI 和临时源码副本验证四种不兼容变更会使消费端编译失败；执行这两个命令还需要 Go 1.27.4（与后端 `go.mod` 一致）。工具目录不会进入浏览器产物。
 
 端到端测试位于 `qa/`，基于 Playwright：
 
