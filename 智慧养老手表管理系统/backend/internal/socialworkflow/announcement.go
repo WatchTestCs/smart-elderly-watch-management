@@ -30,7 +30,7 @@ func PublishAnnouncement(ctx context.Context, store *db.Database, actor int64, m
 	if err != nil {
 		return err
 	}
-	recipients, err := socialrepo.AnnouncementRecipients(ctx, tx)
+	recipients, err := socialrepo.AnnouncementRecipients(ctx, tx, box)
 	if err != nil {
 		return err
 	}

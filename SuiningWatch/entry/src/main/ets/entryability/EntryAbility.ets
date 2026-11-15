@@ -3,6 +3,10 @@ import { window } from '@kit.ArkUI';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 
 export default class EntryAbility extends UIAbility {
+  onForeground(): void { AppStorage.setOrCreate('suiningWatchForeground', true); }
+  onBackground(): void { AppStorage.setOrCreate('suiningWatchForeground', false); }
+  onDestroy(): void { AppStorage.setOrCreate('suiningWatchForeground', false); }
+
   onWindowStageCreate(stage: window.WindowStage): void {
     try {
       stage.loadContent('pages/Index', (error) => {

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"suining-care/internal/db"
+	"suining-care/internal/userphone"
 )
 
 type Resident struct {
@@ -59,7 +60,7 @@ func PhoneRegistered(ctx context.Context, tx *sql.Tx, phone, lookup string) (boo
 		`SELECT EXISTS(SELECT 1 FROM users WHERE
 		    (user_phone_protected=false AND user_phone=?) OR
 		    (user_phone_protected=true AND user_phone_lookup=?))
-		    OR EXISTS(SELECT 1 FROM family WHERE family_phone=?)`, phone, lookup, phone).Scan(&registered)
+		    OR EXISTS(SELECT 1 FROM family WHERE `+userphone.FamilyMatch+`)`, phone, lookup, phone, lookup).Scan(&registered)
 	return registered, err
 }
 
@@ -80,9 +81,9 @@ func LockPasswordlessFamily(ctx context.Context, tx *sql.Tx, familyID int64, pho
 	var id int64
 	err := tx.QueryRowContext(ctx,
 		`SELECT family_id FROM family
-		 WHERE family_id=? AND family_phone=? AND family_password IS NULL
+		 WHERE family_id=? AND `+userphone.FamilyMatch+` AND family_password IS NULL
 		 AND NOT EXISTS(SELECT 1 FROM users WHERE (user_phone_protected=false AND user_phone=?) OR (user_phone_protected=true AND user_phone_lookup=?)) FOR UPDATE`,
-		familyID, phone, phone, lookup).Scan(&id)
+		familyID, phone, lookup, phone, lookup).Scan(&id)
 	return id, err
 }
 
