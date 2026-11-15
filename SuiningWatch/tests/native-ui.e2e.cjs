@@ -117,7 +117,9 @@ async function main() {
   });
   const control = http.createServer(async (incoming, outgoing) => {
     try {
-      assert.equal(incoming.method, 'POST'); assert.equal(incoming.headers.authorization, 'Bearer ' + token);
+      if (incoming.method !== 'POST' || incoming.headers.authorization !== 'Bearer ' + token) {
+        throw new Error('Unauthenticated UI control request');
+      }
       const body = JSON.parse(await bytes(incoming, 4096));
       if (incoming.url === '/capture') {
         assert.match(body.file, /^\/data\/storage\/el2\/base\/(?:haps\/entry\/)?files\/suining-quality-ui-(?:home|records)-\d{13}\.png$/);
