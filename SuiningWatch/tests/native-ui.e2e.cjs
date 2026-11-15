@@ -132,6 +132,7 @@ async function main() {
       assert.equal(incoming.url, '/control');
       // Select the next phase locally. The request can only confirm it.
       const action = phases[completed.length];
+      assert.ok(action, 'No further UI phase is permitted');
       assert.equal(body.action, action);
       switch (action) {
         case 'authenticated': await wait(() => logins().length >= 1); baseline = logins().length; break;
