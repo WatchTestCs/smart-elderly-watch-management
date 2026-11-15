@@ -11,7 +11,7 @@
 
 两个目标构建均执行 clean，应使用不同导出目录保存产物。质量产品是验收包，不是默认产品的发布件。默认 release HAP 仍需单独构建，核对 DEBUG=false 及测试代码排除。
 
-`npm run test:native-ui` 需要全新隔离 Go/MySQL 服务且启用严格设备签名。沿用原生联调的 `WATCH_TEST_URL`、`WATCH_TEST_SETUP_TOKEN`、`WATCH_NATIVE_COMMANDLINE_HOME`、`WATCH_NATIVE_BUILD_REPORT`、`WATCH_NATIVE_REPORT_DIR`、`WATCH_NATIVE_PWSH`，另设置 `WATCH_NATIVE_APP_REPORT` 为 quality 产品报告。默认要求当前 SHA、干净工作树及两份成功 quality 报告；`WATCH_NATIVE_ALLOW_DIRTY=1` 仅调试，保留 dirty 标记。
+`npm run test:native-ui` 需要全新隔离 Go/MySQL 服务且启用严格设备签名。沿用原生联调的 `WATCH_TEST_URL`、`WATCH_TEST_SETUP_TOKEN`、`WATCH_NATIVE_COMMANDLINE_HOME`、`WATCH_NATIVE_BUILD_REPORT`、`WATCH_NATIVE_REPORT_DIR`、`WATCH_NATIVE_PWSH`，另设置 `WATCH_NATIVE_APP_REPORT` 为 quality 产品报告。始终要求当前 SHA、干净工作树及两份成功 quality 报告；环境变量 `WATCH_NATIVE_ALLOW_DIRTY` 不能绕过端到端验收。单独运行原生 UI 测试脚本仍可用 `-AllowDirty` 调试，但结果不可作为正式验收证据。
 
 主机先检查 HDC 连接和新库初始化状态，创建合成账号、设备与长者。只在 quality 的实际 EntryAbility 上下文预置界面输入，再关闭该 Ability 后由页面重载；实际认证仍由页面按钮执行。API 24 的模块上下文与 UIAbility 可解析到不同 Preferences 目录，不能把应用根目录夹具当作页面已恢复。
 

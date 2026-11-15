@@ -26,7 +26,7 @@ const builds = [appReport, testReport].map(file => JSON.parse(fs.readFileSync(fi
 for (const build of builds) { assert.equal(build.source, source); assert.equal(build.product, 'quality'); assert.equal(build.status, 'passed'); }
 const dirty = !!git(['status', '--porcelain', '--untracked-files=no']) ||
   !!git(['status', '--porcelain', '--untracked-files=normal', '--', 'SuiningWatch']) || builds.some(build => build.dirty);
-if (dirty && process.env.WATCH_NATIVE_ALLOW_DIRTY !== '1') throw new Error('Formal UI acceptance requires clean source');
+if (dirty) throw new Error('Formal UI acceptance requires clean source');
 const bundle = 'com.suining.watch.quality';
 fs.mkdirSync(evidence, { recursive: true });
 function hdcCall(args) {
@@ -184,7 +184,6 @@ async function main() {
       const args = ['-NoProfile', '-File', path.resolve(__dirname, '../scripts/run-native-ui-tests.ps1'), '-BuildReport', testReport,
         '-AppBuildReport', appReport, '-CommandLineHome', sdk, '-FixtureToken', token, '-Target', target, '-Scenario', scenario,
         '-ReportPath', path.join(evidence, scenario + '.json')];
-      if (process.env.WATCH_NATIVE_ALLOW_DIRTY === '1') args.push('-AllowDirty');
       await new Promise((resolve, reject) => {
         const log = fs.createWriteStream(path.join(evidence, scenario + '.console.log'));
         const child = spawn(pwsh, args, { windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });

@@ -25,7 +25,7 @@ const source = git(['rev-parse', 'HEAD']);
 assert.equal(build.source, source, 'test HAP must match current commit');
 const dirty = !!git(['status', '--porcelain', '--untracked-files=no']) ||
   !!git(['status', '--porcelain', '--untracked-files=normal', '--', 'SuiningWatch']);
-if ((dirty || build.dirty) && process.env.WATCH_NATIVE_ALLOW_DIRTY !== '1') throw new Error('Formal native integration requires clean source');
+if (dirty || build.dirty) throw new Error('Formal native integration requires clean source');
 fs.mkdirSync(evidence, { recursive: true });
 let cookie = '', csrf = '';
 async function api(route, body, extra = {}, expected = 200) {
@@ -184,7 +184,6 @@ async function main() {
     }
     const args = ['-NoProfile', '-File', path.resolve(__dirname, '../scripts/run-native-tests.ps1'), '-BuildReport', path.resolve(buildReport),
       '-CommandLineHome', sdk, '-Target', target, '-Suite', 'backend', '-FixtureToken', token, '-ReportPath', path.join(evidence, 'native-backend-runtime.json')];
-    if (process.env.WATCH_NATIVE_ALLOW_DIRTY === '1') args.push('-AllowDirty');
     let runnerError;
     await new Promise((resolve, reject) => {
       const log = fs.createWriteStream(path.join(evidence, 'native-backend-console.log'));
