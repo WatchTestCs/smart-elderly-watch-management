@@ -130,7 +130,9 @@ async function main() {
         outgoing.writeHead(200, { 'Content-Type': 'application/json' }); outgoing.end(JSON.stringify({ ok: true })); return;
       }
       assert.equal(incoming.url, '/control');
-      const { action } = body; assert.equal(action, phases[completed.length]);
+      // Select the next phase locally. The request can only confirm it.
+      const action = phases[completed.length];
+      assert.equal(body.action, action);
       switch (action) {
         case 'authenticated': await wait(() => logins().length >= 1); baseline = logins().length; break;
         case 'started': await wait(() => logins().length > baseline); baseline = logins().length; timing.started = logins().at(-1).at; break;
