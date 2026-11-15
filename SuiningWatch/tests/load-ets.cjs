@@ -14,8 +14,12 @@ module.exports = function load(relative, mocks = {}) {
     if (name.startsWith('.')) return load(path.relative(root, path.resolve(path.dirname(file), name)), mocks);
     return require(name);
   };
-  mod._compile(ts.transpileModule(fs.readFileSync(file, 'utf8'), {
+  const source = ts.transpileModule(fs.readFileSync(file, 'utf8'), {
     compilerOptions: { target: ts.ScriptTarget.ES2020, module: ts.ModuleKind.CommonJS }
-  }).outputText, file);
+  }).outputText;
+  // Keep syscap checks at the explicit SDK boundary, including unsupported tests.
+  const prelude = 'const canIUse = module.__syscap || (() => true);\n';
+  mod.__syscap = mocks.canIUse;
+  mod._compile(prelude + source, file);
   return mod.exports;
 };

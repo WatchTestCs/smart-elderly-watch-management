@@ -16,7 +16,7 @@ on:
         type: boolean
         default: false
       sdk_url:
-        description: Optional HTTPS URL of Windows Command Line Tools 6.1.1.280 for native watch compilation
+        description: Optional HTTPS URL of Windows Command Line Tools 26.0.0.865 for native watch compilation
         type: string
         default: ''
       sdk_sha256:

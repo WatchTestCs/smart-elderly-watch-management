@@ -9,6 +9,13 @@
 GitHub Actions 检查来源与名称应以仓库实际 check-runs 为准，不应硬编码未经复核的 integration ID。
 CodeQL 或依赖审查因 fork 权限、配置缺失而未运行时，应由维护者在可信分支重新执行，不能把跳过当成通过。
 
+2026-11-13 的实际配置快照：上游既有 ruleset `26444520` 保持 active，仅匹配
+`refs/heads/preview`，无 bypass，保留原有 11 项必需检查、禁止删除和非快进等规则。
+将原先的 0 人批准修正为至少 1 人批准，开启新推送撤销旧批准与最后推送需他人批准。
+保存后重新读取规则核对；GitHub 对 #146 返回 `REVIEW_REQUIRED` 和 `BLOCKED`。
+这证明当前规则及服务端评估结果，不表示已有独立批准，也不冒充失败/缺失检查下的真实合并调用测试。
+按本次授权没有尝试自合并、直接推上游或绕过保护；完整发布门禁和独立审查仍须另行完成。
+
 ## 预览交付
 
 预发布只面向 `preview`，不自动更新 `main`。附件、源码快照和校验清单必须对应同一版本与提交；旧 Release 不包含后续分支改动。普通 PR/CI 不读取发布私钥，签名与发布只在明确的 release 流程执行。
@@ -17,7 +24,7 @@ CodeQL 或依赖审查因 fork 权限、配置缺失而未运行时，应由维�
 
 `preview` 是预发布集成通道，允许经过评审的功能、架构、依赖与破坏性变更；`main` 是稳定通道，不接收日常开发 PR。正式晋升必须绑定一个明确的 40 位 `preview` HEAD SHA，并在候选冻结后只接受缺陷、安全、构建或发布阻断修复。
 
-晋升前先在候选 SHA 上运行完整 Preview CI、Security 与候选打包，确认 release gate 证据完整。晋升时不得用 squash 或 rebase 生成未经候选验证的新源码提交；稳定主线应直接采用已经验证的候选 SHA。首次从历史 `main` 切换到新架构前，必须先保存旧 `main` 的不可变标签并记录其 SHA。由于当前两条历史已分叉，首次切换属于一次性世代迁移；完成后要求 `main` 始终位于后续 `preview` 历史上，常规晋升只允许 fast-forward。
+晋升前先在候选 SHA 上运行完整 Preview CI、Security 与候选打包，确认 release gate 证据完整。晋升时不得用 squash 或 rebase 生成未经候选验证的新源码提交；稳定主线应直接采用已经验证的候选 SHA。首次从历史 `main` 切换到新架构前，必须先保存旧 `main` 的不可变标签并记录其 SHA。首次历史分叉已于 2026-11-12 按 [晋升手册](main-promotion.md) 完成一次性世代迁移；之后要求 `main` 始终是 `preview` 的祖先，常规晋升只允许 fast-forward。
 
 候选 SHA 提升到 `main` 后，必须在 `main` 上重新运行同一套分支敏感 CI 与 Security，并通过 Stable release candidate 的 exact-source 检查后才能创建正式版本标签。若 `main` 出现独立提交或两条分支失去祖先关系，应停止常规晋升，先显式解决历史关系，不能用强制合并掩盖分叉。
 
@@ -33,8 +40,12 @@ UI Quality 由 Preview CI 在每个候选提交上调用，不再按前端路径
 候选工作流等待同一 SHA 的 CI 与 Security 成功，再执行来源与产物门禁。手动复验时仍需启用
 `require_native` 与 `build_desktop`。原生构建读取显式 SDK URL / SHA-256，或仓库变量 `HARMONY_SDK_URL` /
 `HARMONY_SDK_SHA256`。缺少配置必须失败；普通 PR 的可选原生 job 被跳过时，只能声明
-基础检查通过。SDK 工具链版本为 Command Line Tools 6.1.1.280 / HarmonyOS API 24，
-URL 必须为 HTTPS，并在解压和执行前核对预期归档 SHA-256。
+基础检查通过。SDK 工具链固定为 Command Line Tools 26.0.0.865 / Hvigor 6.26.9 /
+HarmonyOS SDK 26.0.0.105（API 26），版本与归档 SHA-256 见 `SuiningWatch/toolchain.json`。
+URL 必须为 HTTPS；传入摘要须与版本清单一致，并在解压和执行前核对实际归档 SHA-256。
+仓库管理员须同步更新两项 SDK 变量；旧版 URL 或摘要会阻断构建。华为下载链接可能临时签名，
+不得把签名查询参数写入源码或证据。解压脚本支持 Windows 长路径，并校验全部文件 CRC；
+中断后保留目录供排查，重新执行应选用新的空目标目录。
 
 `scripts/reliability/release-gate.py` 对正式候选独立检查 UI、Go 1.27.4、手表协议与真实
 后端联调、原生 HAP、模拟器协议、Windows sidecar、实际 Tauri 构建和安装/卸载测试、

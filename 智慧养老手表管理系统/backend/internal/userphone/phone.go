@@ -1,4 +1,4 @@
-// Package userphone protects administrator phone numbers without retaining plaintext.
+// Package userphone protects account phone numbers without retaining plaintext.
 package userphone
 
 import (
@@ -24,10 +24,18 @@ func rowScope(userID int64) string {
 // Protect binds ciphertext to the administrator row and uses a keyed lookup index.
 // Callers must persist both fields atomically and clear the original plaintext.
 func Protect(box *securestore.Box, userID int64, phone string) (Protected, error) {
-	if box == nil || userID <= 0 || !auth.ValidPhone(phone) {
-		return Protected{}, errors.New("invalid administrator phone protection input")
+	return protect(box, userID, phone, rowScope(userID))
+}
+
+func ProtectFamily(box *securestore.Box, familyID int64, phone string) (Protected, error) {
+	return protect(box, familyID, phone, "account-phone:family:"+strconv.FormatInt(familyID, 10))
+}
+
+func protect(box *securestore.Box, id int64, phone, scope string) (Protected, error) {
+	if box == nil || id <= 0 || !auth.ValidPhone(phone) {
+		return Protected{}, errors.New("invalid account phone protection input")
 	}
-	ciphertext, err := box.Seal(phone, rowScope(userID))
+	ciphertext, err := box.Seal(phone, scope)
 	if err != nil {
 		return Protected{}, err
 	}
@@ -36,15 +44,23 @@ func Protect(box *securestore.Box, userID int64, phone string) (Protected, error
 
 // Reveal rejects row swaps, corrupt ciphertext and mismatched indexes.
 func Reveal(box *securestore.Box, userID int64, value Protected) (string, error) {
-	if box == nil || userID <= 0 || value.Ciphertext == "" || value.Lookup == "" {
-		return "", errors.New("invalid protected administrator phone")
+	return reveal(box, userID, value, rowScope(userID))
+}
+
+func RevealFamily(box *securestore.Box, familyID int64, value Protected) (string, error) {
+	return reveal(box, familyID, value, "account-phone:family:"+strconv.FormatInt(familyID, 10))
+}
+
+func reveal(box *securestore.Box, id int64, value Protected, scope string) (string, error) {
+	if box == nil || id <= 0 || value.Ciphertext == "" || value.Lookup == "" {
+		return "", errors.New("invalid protected account phone")
 	}
-	phone, err := box.Open(value.Ciphertext, rowScope(userID))
+	phone, err := box.Open(value.Ciphertext, scope)
 	if err != nil || !auth.ValidPhone(phone) {
-		return "", errors.New("administrator phone authentication failed")
+		return "", errors.New("account phone authentication failed")
 	}
 	if subtle.ConstantTimeCompare([]byte(box.Index(indexScope, phone)), []byte(value.Lookup)) != 1 {
-		return "", errors.New("administrator phone index mismatch")
+		return "", errors.New("account phone index mismatch")
 	}
 	return phone, nil
 }
