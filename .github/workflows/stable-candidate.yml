@@ -63,14 +63,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: python scripts/reliability/release-gate.py --repo '${{ github.repository }}' --branch main --sha '${{ inputs.source_sha || github.sha }}' --output release-provenance.json
-      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: suining-windows-stable-${{ inputs.source_sha || github.sha }}
           path: |
             智慧养老手表管理系统/outputs/*/release/*
             release-provenance.json
           if-no-files-found: error
-      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: suining-setup-${{ inputs.source_sha || github.sha }}
           path: |
@@ -79,7 +79,7 @@ jobs:
             智慧养老手表管理系统/outputs/*/release/release-manifest.json
             release-provenance.json
           if-no-files-found: error
-      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: suining-portable-${{ inputs.source_sha || github.sha }}
           path: |
@@ -88,7 +88,7 @@ jobs:
             智慧养老手表管理系统/outputs/*/release/release-manifest.json
             release-provenance.json
           if-no-files-found: error
-      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: suining-source-${{ inputs.source_sha || github.sha }}
           path: |
@@ -97,7 +97,7 @@ jobs:
             智慧养老手表管理系统/outputs/*/release/release-manifest.json
             release-provenance.json
           if-no-files-found: error
-      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: suining-native-nofonts-win-x64-${{ inputs.source_sha || github.sha }}
           path: |
@@ -106,7 +106,7 @@ jobs:
             智慧养老手表管理系统/outputs/*/release/release-manifest.json
             release-provenance.json
           if-no-files-found: error
-      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: suining-native-nofonts-linux-x64-${{ inputs.source_sha || github.sha }}
           path: |
@@ -115,7 +115,7 @@ jobs:
             智慧养老手表管理系统/outputs/*/release/release-manifest.json
             release-provenance.json
           if-no-files-found: error
-      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: suining-native-nofonts-linux-arm64-${{ inputs.source_sha || github.sha }}
           path: |
