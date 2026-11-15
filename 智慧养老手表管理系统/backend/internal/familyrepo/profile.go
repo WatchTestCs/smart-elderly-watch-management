@@ -7,25 +7,37 @@ import (
 
 	"suining-care/internal/db"
 	"suining-care/internal/securestore"
+	"suining-care/internal/userphone"
 )
 
 // LockProfile prevents deletion, phone reassignment and profile writes from
 // passing a family account identity check concurrently.
-func LockProfile(ctx context.Context, tx *sql.Tx, id int64, phone string) (int64, string, error) {
+func LockProfile(ctx context.Context, tx *sql.Tx, box *securestore.Box, id int64, phone string) (int64, string, error) {
 	var familyID int64
-	var currentPhone sql.NullString
+	var record userphone.Record
 	var err error
 	if id > 0 {
 		err = tx.QueryRowContext(ctx,
-			"SELECT family_id,family_phone FROM family WHERE family_id=? FOR UPDATE", id).Scan(&familyID, &currentPhone)
+			"SELECT family_id,family_phone,family_phone_cipher,family_phone_lookup,family_phone_protected FROM family WHERE family_id=? FOR UPDATE", id).Scan(&familyID, &record.Legacy, &record.Cipher, &record.Lookup, &record.Protected)
 	} else {
+		lookup, lookupErr := userphone.SearchIndex(ctx, tx, box, phone)
+		if lookupErr != nil {
+			return 0, "", lookupErr
+		}
 		err = tx.QueryRowContext(ctx,
-			"SELECT family_id,family_phone FROM family WHERE family_phone=? FOR UPDATE", phone).Scan(&familyID, &currentPhone)
+			"SELECT family_id,family_phone,family_phone_cipher,family_phone_lookup,family_phone_protected FROM family WHERE "+userphone.FamilyMatch+" FOR UPDATE", phone, lookup).Scan(&familyID, &record.Legacy, &record.Cipher, &record.Lookup, &record.Protected)
 	}
 	if errors.Is(err, sql.ErrNoRows) {
 		return 0, "", ErrFamilyNotFound
 	}
-	return familyID, currentPhone.String, err
+	if err != nil {
+		return 0, "", err
+	}
+	opened, err := record.OpenFamilyStored(box, familyID)
+	if err != nil || opened == nil {
+		return familyID, "", err
+	}
+	return familyID, *opened, nil
 }
 
 func UpdateProfileDetails(ctx context.Context, tx *sql.Tx, box *securestore.Box, familyID int64, oldPhone, name, sex, address, phone string) (bool, error) {
@@ -39,13 +51,19 @@ func UpdateProfileDetails(ctx context.Context, tx *sql.Tx, box *securestore.Box,
 		}
 	}
 	result, err := tx.ExecContext(ctx,
-		"UPDATE family SET family_name=?,family_sex=?,family_address=?,family_phone=? WHERE family_id=?",
-		name, sex, address, phone, familyID)
+		"UPDATE family SET family_name=?,family_sex=?,family_address=? WHERE family_id=?",
+		name, sex, address, familyID)
 	if err != nil {
 		return false, err
 	}
 	n, err := result.RowsAffected()
-	return n == 1, err
+	if err != nil || n != 1 {
+		return false, err
+	}
+	if err := userphone.StoreFamily(ctx, tx, box, familyID, phone); err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 func UpdateAvatar(ctx context.Context, tx *sql.Tx, familyID int64, image string) (bool, error) {
@@ -57,9 +75,13 @@ func UpdateAvatar(ctx context.Context, tx *sql.Tx, familyID int64, image string)
 	return n == 1, err
 }
 
-func PasswordByPhone(ctx context.Context, store db.RowQuerier, phone string) (*string, error) {
+func PasswordByPhone(ctx context.Context, store db.RowQuerier, box *securestore.Box, phone string) (*string, error) {
 	var hash *string
-	err := store.QueryRowContext(ctx, "SELECT family_password FROM family WHERE family_phone=?", phone).Scan(&hash)
+	lookup, err := userphone.SearchIndex(ctx, store, box, phone)
+	if err != nil {
+		return nil, err
+	}
+	err = store.QueryRowContext(ctx, "SELECT family_password FROM family WHERE "+userphone.FamilyMatch, phone, lookup).Scan(&hash)
 	return hash, err
 }
 

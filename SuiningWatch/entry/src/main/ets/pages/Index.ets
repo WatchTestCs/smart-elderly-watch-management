@@ -1,10 +1,13 @@
 import { common } from '@kit.AbilityKit';
+import { DEBUG } from 'BuildProfile';
+import { requireDebugSampling } from '../services/DebugSampling';
 import { WatchApi } from '../services/WatchApi';
 import { WatchStore } from '../services/WatchStore';
 import { HealthSensors } from '../services/HealthSensors';
-import { NativeSampling } from '../model/NativeSampling';
-import { Binding, WatchConfig, DeviceReply, DeviceRequestError,
-  HealthSample, normalizeConfig, bindingFrom, enqueue, batchRequest, makeSamples, sameBinding, pendingForBinding } from '../model/Protocol';
+import { WatchSynchronizer, SyncResult } from '../services/WatchSynchronizer';
+import { AutoMonitor, MonitorDecision } from '../services/AutoMonitor';
+import { Binding, WatchConfig, DeviceRequestError,
+  normalizeConfig, bindingFrom, enqueue, makeSamples, sameBinding, pendingForBinding } from '../model/Protocol';
 
 @Entry
 @Component
@@ -31,17 +34,37 @@ struct Index {
   private binding: Binding | undefined = undefined;
   private counterDay: string = new Date().toISOString().slice(0, 10);
   private sensors: HealthSensors = new HealthSensors();
-  private sampling: NativeSampling = new NativeSampling();
+  private synchronizer: WatchSynchronizer | undefined = undefined;
+  private automatic: AutoMonitor = new AutoMonitor(async () => this.automaticCycle());
+  @State private autoEnabled: boolean = false;
+  @State private autoStatus: string = '自动监测已关闭';
+  @StorageLink('suiningWatchForeground') @Watch('foregroundChanged') private foreground: boolean = false;
+  private visible: boolean = true;
+  private urgent: Array<() => Promise<void>> = [];
+  private appearance: number = 0;
+  private pendingRestore: number | undefined = undefined;
 
   aboutToAppear(): void {
-    this.sensors.resume();
-    try {
+    this.visible = this.foreground;
+    this.automatic.setVisible(false);
+    if (this.visible) { this.sensors.resume(); } else { this.sensors.suspend(); }
+    const appearance = ++this.appearance;
+    this.restoreLocalState(appearance);
+  }
+  private restoreLocalState(appearance: number): void {
+    if (this.busy) { this.pendingRestore = appearance; return; }
+    this.act(async () => {
       const context = this.getUIContext().getHostContext();
       if (!context) { throw new Error('无法取得应用上下文'); }
-      this.store = new WatchStore(context as common.UIAbilityContext);
+      const store = await WatchStore.open(context as common.UIAbilityContext);
+      if (appearance !== this.appearance) { return; }
+      this.store = store;
+      this.synchronizer = new WatchSynchronizer(store, this.api, this.sensors, context as common.UIAbilityContext);
+      if (this.visible) { this.synchronizer.resume(); } else { this.synchronizer.suspend(); }
       const config = this.store.config();
       this.server = config.server;
       this.deviceNo = config.deviceNo;
+      this.secret = this.store.credential(config);
       const sosHistory = this.store.pendingSOS();
       this.sosPending = sosHistory.filter((item) => !item.incidentId).length;
       for (let i = sosHistory.length - 1; i >= 0; i--) {
@@ -54,25 +77,52 @@ struct Index {
       this.queued = batch ? batch.samples.length : 0;
       const simulator = this.store.simulator();
       if (simulator.day === this.counterDay) { this.steps = simulator.steps; }
-    } catch (error) {
-      this.status = '读取本地状态失败，请重新打开应用；不会覆盖旧记录';
-    }
+      this.status = this.secret ? '已恢复安全凭据，连接后可继续同步' : '安全存储已就绪，请配置设备连接';
+      this.autoEnabled = store.monitoringEnabled();
+      this.autoStatus = this.autoEnabled ? '自动监测待前台运行' : '自动监测已关闭';
+      this.automatic.setEnabled(this.autoEnabled);
+      this.automatic.setVisible(this.visible);
+    });
   }
   aboutToDisappear(): void {
-    this.sensors.suspend();
-    this.sampling.reset();
+    this.appearance++;
+    this.pendingRestore = undefined;
+    this.stopForeground();
   }
-  onPageShow(): void { this.sensors.resume(); }
-  onPageHide(): void {
-    this.sensors.suspend();
-    this.sampling.reset();
+  onPageShow(): void {
+    if (!this.foreground) { this.stopForeground(); return; }
+    this.visible = true; this.sensors.resume(); this.synchronizer?.resume();
+    this.automatic.setVisible(true);
+  }
+  private foregroundChanged(): void {
+    if (this.foreground) { this.onPageShow(); } else { this.stopForeground(); }
+  }
+  private stopForeground(): void {
+    this.visible = false; this.automatic.setVisible(false);
+    if (this.synchronizer) { this.synchronizer.suspend(); } else { this.sensors.suspend(); }
+    if (this.autoEnabled) { this.autoStatus = '后台暂停；回到前台自动恢复'; }
+  }
+  onPageHide(): void { this.stopForeground(); }
+  private sync(): WatchSynchronizer {
+    if (!this.synchronizer || !this.store) { throw new Error('安全存储未就绪，请重新打开应用'); }
+    return this.synchronizer;
+  }
+  private changedConnection(): void {
+    const wasEnabled = this.autoEnabled;
+    this.autoEnabled = false; this.automatic.setEnabled(false); this.synchronizer?.reset();
+    this.autoStatus = '连接已修改，重新认证后可开启自动监测'; this.useBinding(undefined);
+    if (wasEnabled) {
+      this.urgentAction(async () => {
+        if (!this.store) { throw new Error('无法确认停止设置，请重启后检查'); }
+        await this.store.saveMonitoringEnabled(false);
+      });
+    }
   }
   private config(): WatchConfig { return normalizeConfig(this.server, this.deviceNo); }
   private useBinding(binding: Binding | undefined): void {
     if (!binding || !this.binding || !sameBinding(this.binding, binding)) {
       this.nativeHeart = 0;
       this.nativeCounter = -1;
-      this.sampling.reset();
       this.person = binding ? '长者 #' + binding.residentId : '尚未绑定';
     }
     this.binding = binding;
@@ -88,13 +138,10 @@ struct Index {
     this.credentials();
     this.connected = false;
     const config = this.config();
-    const reply = await this.api.login(config, this.secret);
+    const reply = await this.sync().authenticate(config, this.secret);
     if (reply.bound !== 1) { this.useBinding(undefined); }
     const binding = bindingFrom(config, reply);
-    if (await this.store?.discardExpiredBatch(binding)) {
-      this.queued = 0;
-      this.sampling.reset();
-    }
+    const batch = this.store?.batch(); this.queued = batch ? batch.samples.length : 0;
     this.useBinding(binding);
     this.person = reply.residentName || '长者 #' + binding.residentId;
     return binding;
@@ -104,16 +151,27 @@ struct Index {
     this.busy = true;
     try { await action(); }
     catch (error) {
+      if ((error as DeviceRequestError).code === 'CANCELLED') { return; }
       const message = (error as Error).message;
       this.status = message || '请求失败，请检查连接；待上传记录已保留';
       this.connected = false;
-    } finally { this.busy = false; }
+    } finally {
+      this.busy = false;
+      const next = this.urgent.shift();
+      if (next) { this.act(next); }
+      else {
+        const restore = this.pendingRestore; this.pendingRestore = undefined;
+        if (restore !== undefined && restore === this.appearance) { this.restoreLocalState(restore); }
+        else { this.automatic.setVisible(this.visible); }
+      }
+    }
   }
   private async connect(): Promise<void> {
     this.credentials();
     const config = this.config();
     await this.store?.saveConfig(config);
-    const reply = await this.api.login(config, this.secret);
+    await this.store?.saveMonitoringEnabled(this.autoEnabled);
+    const reply = await this.sync().authenticate(config, this.secret);
     if (reply.bound !== 1) {
       this.useBinding(undefined);
       this.status = '设备认证成功，请输入设备绑定码';
@@ -132,6 +190,7 @@ struct Index {
     await this.connect();
   }
   private async sample(): Promise<void> {
+    requireDebugSampling();
     const day = new Date().toISOString().slice(0, 10);
     if (day !== this.counterDay) { this.steps = 0; this.counterDay = day; }
     this.heart = 68 + Math.floor(Math.random() * 13);
@@ -147,69 +206,91 @@ struct Index {
     this.queued = batch.samples.length;
     this.status = '已保存 2 条模拟采样，点击“上传记录”提交';
   }
+  private showSync(result: SyncResult): void {
+    this.useBinding(result.binding); this.queued = result.queued;
+    if (result.heart !== undefined) { this.nativeHeart = result.heart; }
+    if (result.counter !== undefined) { this.nativeCounter = result.counter; }
+    if (result.uploaded > 0) { this.lastUpload = new Date().toLocaleTimeString(); }
+    this.status = (result.offline ? '离线缓存' : '同步完成') + ' · 新采样 ' + result.sampled +
+      ' · 已上报 ' + result.uploaded + ' · 待上传 ' + result.queued + (result.note ? '；' + result.note : '');
+  }
   private async sampleNative(): Promise<void> {
-    const session = this.sensors.session();
-    const binding = await this.liveBinding();
-    const context = this.getUIContext().getHostContext();
-    if (!context || !this.store) { throw new Error('应用上下文或本地存储尚未就绪'); }
-    // Read before sensor access too: a failed persistence operation blocks new
-    // deltas until Preferences is reloaded on application restart.
-    const current = this.store.batch();
-    const result = await this.sensors.read(context as common.UIAbilityContext, session);
-    const candidate = this.sampling.copy();
-    let samples: HealthSample[] = [];
-    for (const observation of result.observations) {
-      samples = samples.concat(candidate.accept(binding, this.store.nextID(), observation));
-      if (observation.metric === 'heart_rate') { this.nativeHeart = observation.value; }
-      if (observation.metric === 'steps') { this.nativeCounter = observation.value; }
-    }
-    if (samples.length) {
-      const batch = enqueue(current, binding, samples);
-      await this.store.saveBatch(batch);
-      this.queued = batch.samples.length;
-    }
-    // Advance a step baseline only after its derived samples were persisted.
-    this.sampling = candidate;
-    this.status = '已保存 ' + samples.length + ' 条传感器采样；计步首次读取仅建立基线' +
-      (result.status ? '；' + result.status : '；点击上传记录提交');
+    this.credentials(); this.showSync(await this.sync().sample(this.config(), this.secret));
   }
   private async upload(): Promise<void> {
-    if (!this.store) { throw new Error('本地存储未就绪'); }
-    if (!this.store.batch()) { throw new Error('当前没有待上传记录'); }
-    const live = await this.liveBinding();
-    const batch = this.store.batch();
-    if (!batch) { this.status = '旧纪元采样已清除，请重新采样'; return; }
-    let reply: DeviceReply;
-    try {
-      reply = await this.api.upload(this.config(), batchRequest(batch, live, this.secret));
-    } catch (error) {
+    if (!this.store?.batch()) { throw new Error('当前没有待上传记录'); }
+    this.credentials();
+    try { this.showSync(await this.sync().upload(this.config(), this.secret)); }
+    catch (error) {
       if ((error as DeviceRequestError).code !== 'EPOCH_EXPIRED') {
         if (error instanceof Error) { throw error; }
-        throw new Error('设备上传失败');
+        throw new Error('同步未完成，待上传记录已保留');
       }
-      this.useBinding(undefined);
-      await this.liveBinding();
-      this.status = '绑定已重新同步，请检查待上传记录后重新采样';
-      return;
+      this.useBinding(undefined); await this.liveBinding();
+      this.status = '绑定已重新同步，旧纪元采样已核查';
     }
-    // Clear only after the server acknowledges the complete batch.
-    if (reply.accepted !== batch.samples.length) { throw new Error('上传确认数量不匹配，记录已保留'); }
-    await this.store.saveBatch(undefined);
-    this.queued = 0;
-    this.lastUpload = new Date().toLocaleTimeString();
-    this.status = '后台已接收 ' + reply.accepted + ' 条，重复 ' + (reply.duplicates || 0) + ' 条';
+  }
+  private urgentAction(action: () => Promise<void>): void {
+    this.automatic.setVisible(false); this.synchronizer?.reset();
+    if (this.busy) { this.urgent.push(action); } else { this.act(action); }
+  }
+  private async startAutomatic(): Promise<void> {
+    this.credentials();
+    const config = this.config();
+    if (!this.store || this.store.credential(config) !== this.secret || !this.store.verifiedBinding(config)) {
+      throw new Error('请先保存地址、认证并绑定设备，再开启自动监测');
+    }
+    await this.store.saveMonitoringEnabled(true);
+    this.autoEnabled = true; this.autoStatus = '自动监测 · 前台每分钟采样并同步';
+    this.automatic.setEnabled(true); this.automatic.setVisible(this.visible);
+  }
+  private stopAutomatic(): void {
+    this.autoEnabled = false; this.automatic.setEnabled(false);
+    this.autoStatus = '自动监测已暂停，正在保存停止设置';
+    this.urgentAction(async () => {
+      if (!this.store) { throw new Error('无法确认停止设置，请重启后检查'); }
+      await this.store.saveMonitoringEnabled(false);
+      this.autoStatus = '自动监测已关闭'; this.status = '已停止，采样及求助记录仍保留';
+    });
+  }
+  private async automaticCycle(): Promise<MonitorDecision> {
+    if (this.busy || !this.store || !this.synchronizer) { return 'busy'; }
+    if (!this.visible || !this.autoEnabled) { return 'ok'; }
+    let decision: MonitorDecision = 'ok';
+    await this.act(async () => {
+      try {
+        const result = await this.sync().cycle(this.config(), this.secret);
+        this.showSync(result);
+        this.autoStatus = result.offline ? '自动监测 · 离线缓存，联网后补传' : '自动监测 · 前台每分钟采样并同步';
+      } catch (error) {
+        const failure = error as DeviceRequestError;
+        if (failure.code === 'CANCELLED') { return; }
+        if (failure.code === 'AUTH_REQUIRED' || failure.code === 'NOT_BOUND' || failure.status === 401 ||
+            failure.status === 403 || !this.store?.usable()) {
+          decision = 'halt'; this.autoEnabled = false; this.automatic.setEnabled(false);
+          this.autoStatus = '自动监测暂停，请检查认证、绑定和本地存储';
+          if (this.store?.usable()) { await this.store.saveMonitoringEnabled(false); }
+        } else { decision = 'retry'; this.autoStatus = '自动监测遇到异常，将退避重试；记录保留'; }
+        if (error instanceof Error) { throw error; }
+        throw new Error('同步未完成，待上传记录已保留');
+      }
+    });
+    return decision;
   }
   private confirmSOS(): void {
     this.getUIContext().showAlertDialog({
       title: '确认发送 SOS 求助？',
       message: '当前绑定有未确认请求时将重试；否则会新建求助。旧绑定请求保留待核查。后台接收不代表通知送达或人员到场。',
       primaryButton: { value: '取消', action: () => {} },
-      secondaryButton: { value: '确认发送', action: () => { this.act(async () => { await this.sendSOS(); }); } }
+      secondaryButton: { value: '确认发送', action: () => { this.urgentAction(async () => { await this.sendSOS(); }); } }
     });
   }
   private async sendSOS(): Promise<void> {
     if (!this.store) { throw new Error('本地存储未就绪'); }
-    const live = await this.liveBinding();
+    const config = this.config();
+    const cached = this.store.credential(config) === this.secret ? this.store.verifiedBinding(config) : undefined;
+    const live = this.visible ? await this.liveBinding() : cached;
+    if (!live) { throw new Error('未能核实求助归属，请返回前台连接设备后重试'); }
     let items = this.store.pendingSOS();
     let pending = pendingForBinding(items, live);
     if (!pending) {
@@ -218,6 +299,7 @@ struct Index {
       await this.store.saveSOS(items);
       this.sosPending = items.filter((item) => !item.incidentId).length;
     }
+    if (!this.visible) { this.status = '求助已保存在本机，尚未提交后台；返回前台可重试原请求'; return; }
     const reply = await this.api.sos(this.config(), { deviceNo: live.deviceNo,
       secret: this.secret, requestId: pending.requestId, bindingVersion: pending.binding.version });
     if (!reply.incidentId) { throw new Error('后台确认缺少求助编号，原请求已保留'); }
@@ -236,7 +318,7 @@ struct Index {
       message: '只清除本机采样，不删除后台数据，也不清除未确认的求助。',
       primaryButton: { value: '保留', action: () => {} },
       secondaryButton: { value: '丢弃', action: () => {
-        this.act(async () => { await this.store?.saveBatch(undefined); this.sampling.reset(); this.queued = 0; this.status = '本机记录已丢弃，计步基线已重置'; });
+        this.act(async () => { await this.store?.saveBatch(undefined); this.synchronizer?.reset(); this.queued = 0; this.status = '本机记录已丢弃，计步基线已重置'; });
       } }
     });
   }
@@ -254,14 +336,21 @@ struct Index {
     Text(this.person === '尚未绑定' ? '今天，也安心' : this.person).fontSize(19).fontColor('#F3EDE0')
     Text('心率 · 传感器观测').fontSize(12).fontColor('#93B1A7')
     Row({ space: 4 }) {
-      Text(this.nativeHeart > 0 ? this.nativeHeart.toString() : '—').fontSize(52).fontWeight(FontWeight.Medium).fontColor('#E6CE9D')
+      Text(this.nativeHeart > 0 ? this.nativeHeart.toString() : '—').id('watch-heart-rate').fontSize(52).fontWeight(FontWeight.Medium).fontColor('#E6CE9D')
       Text('次/分').fontSize(12).fontColor('#93B1A7').padding({ top: 22 })
     }.justifyContent(FlexAlign.Center)
     Text('计步器累计 ' + (this.nativeCounter >= 0 ? this.nativeCounter.toString() : '尚未读取')).fontSize(15).fontColor('#D8E4DC')
     this.action('授权并读取传感器', () => { this.act(async () => { await this.sampleNative(); }); })
     this.caption('前台读取；仅上传两次计步观测的增量，不冒充全天步数。')
-    this.action('SOS 求助' + (this.sosPending ? '（待核查 ' + this.sosPending + '）' : ''), () => { this.confirmSOS(); }, '#803F37')
+    Button('SOS 求助').fontSize(15).fontColor('#F3EDE0').backgroundColor('#803F37')
+      .width('100%').height(40).enabled(!this.busy || this.autoEnabled).onClick(() => { this.confirmSOS(); })
+    if (this.sosPending) { this.caption('待核查求助：' + this.sosPending + ' 条') }
     if (this.lastSOS) { this.caption(this.lastSOS) }
+    Button(this.autoEnabled ? '停止自动监测' : '开启自动监测').id('watch-auto-toggle').fontSize(15).fontColor('#F3EDE0')
+      .backgroundColor('#24463C').width('100%').height(40).enabled(!this.busy || this.autoEnabled)
+      .onClick(() => { if (this.autoEnabled) { this.stopAutomatic(); } else { this.act(async () => { await this.startAutomatic(); }); } })
+    this.caption(this.autoStatus)
+    this.caption('先授权传感器。前台每分钟自动运行；后台暂停，返回后恢复。断网只缓存已验证归属的采样，联网核实后补传。')
   }
   @Builder
   private records() {
@@ -277,7 +366,9 @@ struct Index {
       this.status = '心跳成功 · 当前绑定已校验';
     }); })
     this.action('丢弃本机记录', () => { this.confirmDiscard(); }, '#373B35')
-    this.action('生成模拟采样（调试）', () => { this.act(async () => { await this.sample(); }); }, '#373B35')
+    if (DEBUG) {
+      this.action('生成模拟采样（调试）', () => { this.act(async () => { await this.sample(); }); }, '#373B35')
+    }
     this.caption('失败不清除队列；重试复用记录 ID，后台去重。绑定变化时禁止补传。')
   }
   @Builder
@@ -285,14 +376,21 @@ struct Index {
     Text('连接与绑定').fontSize(21).fontColor('#F3EDE0')
     this.caption('后端地址')
     TextInput({ text: this.server, placeholder: 'http://127.0.0.1:18796' }).fontSize(12)
-      .height(38).enabled(!this.busy).onChange((value: string) => { this.server = value; this.useBinding(undefined); })
+      .height(38).enabled(!this.busy).onChange((value: string) => { this.server = value; this.changedConnection(); })
     this.caption('设备号（后台登记）')
     TextInput({ text: this.deviceNo, placeholder: 'WATCH5_SIM_001' }).fontSize(13)
-      .height(38).enabled(!this.busy).onChange((value: string) => { this.deviceNo = value; this.useBinding(undefined); })
-    this.caption('设备密钥（仅本次运行使用）')
+      .height(38).enabled(!this.busy).onChange((value: string) => { this.deviceNo = value; this.changedConnection(); })
+    this.caption('设备密钥（认证成功后加密保存）')
     TextInput({ text: this.secret, placeholder: '后台生成的设备密钥' }).type(InputType.Password).fontSize(13)
-      .height(38).enabled(!this.busy).onChange((value: string) => { this.secret = value; this.useBinding(undefined); })
+      .height(38).enabled(!this.busy).onChange((value: string) => { this.secret = value; this.changedConnection(); })
     this.action('保存地址并认证', () => { this.act(async () => { await this.connect(); }); })
+    this.action('忘记本机设备密钥', () => { this.act(async () => {
+      if (!this.store) { throw new Error('安全存储未就绪，无法确认密钥移除'); }
+      this.autoEnabled = false; this.automatic.setEnabled(false); this.sync().reset();
+      await this.store.saveMonitoringEnabled(false); await this.store.forgetCredential();
+      this.autoStatus = '自动监测已关闭'; this.secret = ''; this.useBinding(undefined);
+      this.status = '本机设备密钥已移除，健康记录及求助历史仍保留';
+    }); }, '#373B35')
     this.caption('设备绑定码（不是家属邀请码）')
     TextInput({ text: this.bindCode, placeholder: '输入设备绑定码' }).fontSize(15)
       .height(38).enabled(!this.busy).onChange((value: string) => { this.bindCode = value; })
@@ -306,17 +404,17 @@ struct Index {
         Text('HarmonyOS · 需授权读取传感器').fontSize(10).fontColor('#D5BD89')
         Row({ space: 7 }) {
           ForEach(['首页', '记录', '设置'], (label: string, index: number) => {
-            Button(label).fontSize(12).height(28).backgroundColor(this.page === index ? '#3D5F50' : '#172D26')
+            Button(label).id('watch-tab-' + index).fontSize(12).height(28).backgroundColor(this.page === index ? '#3D5F50' : '#172D26')
               .onClick(() => { this.page = index; })
           }, (label: string) => label)
         }.justifyContent(FlexAlign.Center)
         if (this.page === 0) { this.home(); }
         else if (this.page === 1) { this.records(); }
         else { this.settings(); }
-        Text(this.busy ? '正在处理，请稍候…' : this.status).fontSize(12)
+        Text(this.busy ? '正在处理，请稍候…' : this.status).id('watch-status').fontSize(12)
           .fontColor(this.connected ? '#B9D6BC' : '#D8C599').textAlign(TextAlign.Center)
           .width('100%').padding({ top: 4 })
       }.width('76%').padding({ top: 28, bottom: 44 }).constraintSize({ minHeight: '100%' })
-    }.width('100%').height('100%').backgroundColor('#0C1917').scrollBar(BarState.Off)
+    }.id('watch-scroll').width('100%').height('100%').backgroundColor('#0C1917').scrollBar(BarState.Off)
   }
 }
