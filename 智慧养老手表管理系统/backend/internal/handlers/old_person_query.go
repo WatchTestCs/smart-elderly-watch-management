@@ -8,6 +8,7 @@ import (
 	"suining-care/internal/carepolicy"
 	"suining-care/internal/db"
 	"suining-care/internal/response"
+	"suining-care/internal/userphone"
 )
 
 const oldPersonCols = `old_id, name, age, sex, phone, room, illness, warn, food_like,
@@ -73,7 +74,7 @@ func (h *Handler) getResidentDetails(w http.ResponseWriter, r *http.Request) {
 	base := `SELECT o.old_id, o.name, o.age, o.sex, o.phone, o.room, o.illness, o.warn,
 		o.food_like, o.food_hate, o.drag, o.family_id, o.customer_id, o.be_time, o.bothdate,
 		o.device_id, f.family_name, f.family_relation, f.family_phone, f.family_sex,
-		f.family_address, c.customer_name
+		f.family_address, c.customer_name,f.family_phone_cipher,f.family_phone_lookup,f.family_phone_protected
 		FROM oldperson o LEFT JOIN family f ON f.family_id=o.family_id
 		LEFT JOIN customer c ON c.customer_id=o.customer_id
 		WHERE (?='' OR o.name LIKE CONCAT('%',?,'%')) ORDER BY o.old_id`
@@ -88,10 +89,21 @@ func (h *Handler) getResidentDetails(w http.ResponseWriter, r *http.Request) {
 		var familyID, customerID, deviceID *int64
 		var beTime, bothdate *time.Time
 		var familyName, familyRelation, familyPhone, familySex, familyAddress, customerName *string
+		var record userphone.Record
+		var protected sql.NullBool
 		if err := rows.Scan(&id, &name, &age, &sex, &phone, &room, &illness, &warn,
 			&foodLike, &foodHate, &drag, &familyID, &customerID, &beTime, &bothdate, &deviceID,
-			&familyName, &familyRelation, &familyPhone, &familySex, &familyAddress, &customerName); err != nil {
+			&familyName, &familyRelation, &familyPhone, &familySex, &familyAddress, &customerName, &record.Cipher, &record.Lookup, &protected); err != nil {
 			return nil, err
+		}
+		if familyID != nil {
+			record.Legacy = familyPhone
+			record.Protected = protected.Bool
+			var err error
+			familyPhone, err = record.OpenFamilyStored(h.Box, *familyID)
+			if err != nil {
+				return nil, err
+			}
 		}
 		return map[string]any{
 			"oldId": id, "name": name, "age": currentPersonAge(bothdate, age, time.Now()), "sex": sex, "phone": phone,
