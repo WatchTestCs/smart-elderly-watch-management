@@ -11,6 +11,7 @@ The new backend keeps **MySQL 8.4 as the only authoritative and persistent appli
 - Existing statistics are computed by MySQL business queries; the legacy `analytics.configured`, `analytics.ready`, `analytics.pending` response keys remain for frontend compatibility and now report same-MySQL readiness, with pending = 0. They do **not** signify a second analytics database.
 - `BLOB_BACKEND=local`, `BLOB_BACKEND=s3` and nonempty `PG_ANALYTICS_URL` are rejected with an actionable configuration error. New/default `BLOB_BACKEND=mysql`. `IMAGE_DIR` and S3 credentials are no longer runtime application settings.
 - `DATA_ENCRYPTION_KEY` and any rotation keyring remain necessary; do not rotate during migration.
+- **Risk audit recovery caveat:** The read-only production container writes a bounded risk-audit retry journal to `/tmp/suining-risk-audit.jsonl` on `tmpfs`; this is **not durable across container recreation**. The authoritative audit history is in MySQL. If MySQL remains down during an abrupt container crash, uncommitted audit attempts can be lost. Preserve this as a release risk until a fail-closed/synchronous audit guarantee is demonstrated; do not add a second durable storage backend merely to conceal it.
 
 ## Required production migration (stop all old writers)
 

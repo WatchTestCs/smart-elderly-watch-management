@@ -42,6 +42,8 @@ jobs:
               raise SystemExit('Prometheus must not be gated on app readiness')
           if 'mysql: {condition: service_healthy}' not in app:
               raise SystemExit('Business app must still require healthy MySQL')
+          if 'read_only: true' in app and ('SUINING_RISK_AUDIT_SPOOL_PATH: /tmp/' not in app or 'tmpfs: ["/tmp"]' not in app):
+              raise SystemExit('Read-only app requires an ephemeral writable risk audit journal')
           startup = Path('scripts/start-platform.py').read_text()
           critical = '["up", "--build", "-d", "--wait", "mysql", "app", "gateway", "prometheus"]'
           if critical not in startup or 'postgres' in startup:

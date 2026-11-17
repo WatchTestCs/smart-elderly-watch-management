@@ -20,6 +20,9 @@ services:
     environment:
       MYSQL_DSN: suining:${MYSQL_PASSWORD}@tcp(mysql:3306)/suining
       BLOB_BACKEND: mysql
+      # The runtime filesystem is read-only; the audit retry journal is ephemeral.
+      # MySQL remains the only durable application datastore.
+      SUINING_RISK_AUDIT_SPOOL_PATH: /tmp/suining-risk-audit.jsonl
       SESSION_BACKEND: database
       HEALTH_HOT_CACHE_MIB: ${HEALTH_HOT_CACHE_MIB:-16}
       RATE_LIMIT_MAX_KEYS: ${RATE_LIMIT_MAX_KEYS:-8192}
