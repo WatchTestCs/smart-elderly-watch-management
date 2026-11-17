@@ -152,7 +152,7 @@ describe('write failure exit guard', () => {
 
   it('keeps one-shot setup failures on the staged classifier', () => {
     const consumers: string[] = []
-    const classifier = /from ['"][^'"]*domain\/setup['"]/
+    const classifier = /from ['"][^'"]*api\/setupFailure['"]/
     const violations: string[] = []
     for (const file of sourceFiles(SRC)) {
       const source = fs.readFileSync(file, 'utf8')

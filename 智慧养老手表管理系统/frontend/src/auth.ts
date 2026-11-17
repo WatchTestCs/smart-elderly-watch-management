@@ -5,15 +5,9 @@ import { ElMessage } from 'element-plus'
 import { apiErrorMessage, assertApiResponse, isApplicationAPI } from './api/httpContract'
 import store from './store'
 import { isRestrictedAdmin } from './domain/permissions'
+import type { SessionAccount } from './domain/session'
+export type { SessionAccount } from './domain/session'
 
-export interface SessionAccount {
-  role: 'ADMIN' | 'FAMILY'
-  id?: number | string
-  duty?: 'supervisor' | 'caregiver' | 'auditor' | string
-  displayName?: string
-  oldId?: number | string
-  phone?: string
-}
 export interface SessionState {
   account: SessionAccount | null
   csrfToken: string

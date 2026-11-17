@@ -172,3 +172,7 @@ Windows Setup 配置为 `downloadBootstrapper` 与静默补装，不包含完整
 ## API 与会话
 
 服务端直接注册 `/api/v1/`，仅提供版本化业务路由。Go 使用 `SUINING_SESSION` Cookie；浏览器和手表客户端必须遵循当前 API 契约。请求字段、成功响应、错误状态和差异处理见 [接口合同](API_CONTRACTS.md)。
+
+## 模块依赖与公开接口
+
+按 Go、Vue、HarmonyOS 模块实测依赖与后续迁移边界，见 [MODULE_BOUNDARIES.md](MODULE_BOUNDARIES.md)。

@@ -63,7 +63,7 @@ export function useRecordCharts() {
     try {
       const [{ data }, { default: echarts }] = await Promise.all([
         api.post<ChartData>(`api/v1/${kind}/chart`, { oldId }, { signal: controller.signal }),
-        import('../chartEngine')
+        import('../charts/chartEngine')
       ])
       if (!active()) return
       const vital = kind === 'vitals'
