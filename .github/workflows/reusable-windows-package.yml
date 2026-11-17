@@ -95,12 +95,14 @@ jobs:
           $uninstaller = Get-ChildItem -LiteralPath $target -Recurse -File -Filter '*uninstall*.exe' | Select-Object -First 1
           if (!$binary -or !$sidecar -or !$uninstaller) { throw 'Installer omitted application, Go sidecar, or uninstaller' }
           $webview = @('HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F1E7A06D-06EA-45B8-9656-ED0EC0EA8DF5}', 'HKLM:\SOFTWARE\Microsoft\EdgeUpdate\Clients\{F1E7A06D-06EA-45B8-9656-ED0EC0EA8DF5}', 'HKCU:\SOFTWARE\Microsoft\EdgeUpdate\Clients\{F1E7A06D-06EA-45B8-9656-ED0EC0EA8DF5}') | ForEach-Object { Get-ItemProperty -Path $_ -Name pv -ErrorAction SilentlyContinue } | Where-Object { $_.pv }
-          if (!$webview) { throw 'WebView2 runtime was unavailable after installer completed' }
+          $webviewExe = @("${env:ProgramFiles(x86)}\Microsoft\EdgeWebView\Application", "$env:ProgramFiles\Microsoft\EdgeWebView\Application", "$env:LOCALAPPDATA\Microsoft\EdgeWebView\Application") | Where-Object { Test-Path $_ } | ForEach-Object { Get-ChildItem $_ -Recurse -File -Filter 'msedgewebview2.exe' -ErrorAction SilentlyContinue } | Select-Object -First 1
+          if (!$webview -and !$webviewExe) { throw 'WebView2 runtime was unavailable after installer completed' }
+          $webviewVersion = if ($webview) { @($webview)[0].pv } else { $webviewExe.Directory.Name }
           $appHash = (Get-FileHash -LiteralPath $binary.FullName -Algorithm SHA256).Hash
           $uninstall = Start-Process -FilePath $uninstaller.FullName -ArgumentList '/S' -Wait -PassThru
           if ($uninstall.ExitCode -ne 0) { throw "NSIS silent uninstall returned $($uninstall.ExitCode)" }
           if (Test-Path $binary.FullName) { throw 'Application executable still present after uninstall' }
-          @{source=(git rev-parse HEAD).Trim();setupHash=(Get-FileHash $setup.FullName -Algorithm SHA256).Hash;appHash=$appHash;webview=$webview[0].pv;installed=$true;uninstalled=$true} | ConvertTo-Json | Set-Content evidence/ci/windows-desktop/install-smoke.json
+          @{source=(git rev-parse HEAD).Trim();setupHash=(Get-FileHash $setup.FullName -Algorithm SHA256).Hash;appHash=$appHash;webview=$webviewVersion;installed=$true;uninstalled=$true} | ConvertTo-Json | Set-Content evidence/ci/windows-desktop/install-smoke.json
 
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
         with:
