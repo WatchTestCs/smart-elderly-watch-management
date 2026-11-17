@@ -1,3 +1,5 @@
+> **MySQL-only candidate (2026-11-17):** Current preview storage and deployment guidance is in [MySQL 单库存储迁移](../MYSQL_ONLY_MIGRATION.md). Older PostgreSQL/S3/local-image instructions on this page describe previous releases and are not suitable for deploying the new candidate.
+
 # 备份与灾难恢复 · MySQL 主库 / 可选 PostgreSQL 分析
 
 适用于当前 `preview` 的 Go + MySQL / PostgreSQL 双库架构。**MySQL 及上传图片是业务恢复的必要来源；PG 是可重建的分析投影，不能拿它代替 MySQL 备份。**

@@ -1,3 +1,5 @@
+> **MySQL-only candidate (2026-11-17):** Current preview storage and deployment guidance is in [MySQL 单库存储迁移](MYSQL_ONLY_MIGRATION.md). Older PostgreSQL/S3/local-image instructions on this page describe previous releases and are not suitable for deploying the new candidate.
+
 # 实现架构 · Tauri / Go / Vue / MySQL / PostgreSQL
 
 本文说明进程、协议、数据和构建路径。部署见 [双库指南](DUAL_DATABASES.md)，产品入口见 [README](../README.md)。

@@ -8,7 +8,6 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"strings"
 	"testing"
 
@@ -71,7 +70,6 @@ func TestImageUploadGuards(t *testing.T) {
 		})
 	}
 	h := &Handler{}
-	h.Cfg.ImageDir = t.TempDir()
 	var body bytes.Buffer
 	writer := multipart.NewWriter(&body)
 	field, err := writer.CreateFormField("oversized-field")
@@ -91,9 +89,8 @@ func TestImageUploadGuards(t *testing.T) {
 	if response.Code != http.StatusBadRequest {
 		t.Fatalf("oversized request accepted: HTTP %d", response.Code)
 	}
-	files, err := os.ReadDir(h.Cfg.ImageDir)
-	if err != nil || len(files) != 0 {
-		t.Fatal("rejected upload left files behind")
+	if h.imageManager != nil {
+		t.Fatal("rejected upload initialized image storage")
 	}
 }
 

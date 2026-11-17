@@ -21,8 +21,8 @@ import (
 )
 
 // applyDesktopEnv 把桌面端环境变量折叠进监听地址与图片目录，返回就绪文件与父 PID。
-func applyDesktopEnv(addr, imageDir string) (newAddr, newImageDir, readyFile string, parentPid int) {
-	newAddr, newImageDir = addr, imageDir
+func applyDesktopEnv(addr string) (newAddr, readyFile string, parentPid int) {
+	newAddr = addr
 	if p := strings.TrimSpace(os.Getenv("SUINING_PORT")); p != "" {
 		bind := strings.TrimSpace(os.Getenv("SUINING_BIND_ADDRESS"))
 		if bind == "" {
@@ -30,16 +30,13 @@ func applyDesktopEnv(addr, imageDir string) (newAddr, newImageDir, readyFile str
 		}
 		newAddr = net.JoinHostPort(strings.Trim(bind, "[]"), p)
 	}
-	if d := os.Getenv("SUINING_DATA_DIR"); d != "" && os.Getenv("IMAGE_DIR") == "" {
-		newImageDir = filepath.Join(d, "images")
-	}
 	readyFile = os.Getenv("SUINING_READY_FILE")
 	if s := strings.TrimSpace(os.Getenv("SUINING_PARENT_PID")); s != "" {
 		if pid, err := strconv.Atoi(s); err == nil && pid > 0 {
 			parentPid = pid
 		}
 	}
-	return newAddr, newImageDir, readyFile, parentPid
+	return newAddr, readyFile, parentPid
 }
 
 // writeReadyFile 使用同目录临时文件和 rename 发布就绪信息。

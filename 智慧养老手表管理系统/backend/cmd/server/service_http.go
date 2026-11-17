@@ -31,12 +31,11 @@ func (s *databaseService) serveServiceStatus(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	w.Header().Set("Cache-Control", "no-store")
-	snapshot := s.analytics.Snapshot()
 	response.JSON(w, http.StatusOK, map[string]any{
 		"databaseReady": api != nil,
 		"primaryEngine": "mysql",
 		"configError":   s.configErrorText(),
-		"analytics":     map[string]bool{"configured": snapshot.Configured, "ready": snapshot.Ready},
+		"analytics":     map[string]bool{"configured": api != nil, "ready": api != nil},
 	})
 }
 

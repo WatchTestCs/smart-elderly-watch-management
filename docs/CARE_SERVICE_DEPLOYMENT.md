@@ -1,3 +1,5 @@
+> **MySQL-only candidate (2026-11-17):** Current preview storage and deployment guidance is in [MySQL 单库存储迁移](MYSQL_ONLY_MIGRATION.md). Older PostgreSQL/S3/local-image instructions on this page describe previous releases and are not suitable for deploying the new candidate.
+
 # 独立部署照护后台
 
 此部署方式使 Go 后端与桌面 GUI 的退出独立。**单实例并不等于真正高可用**：硬件接入、短信运营商、数据库、网络、供电和现场救援均需要另行保障。

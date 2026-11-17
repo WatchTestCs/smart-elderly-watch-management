@@ -24,7 +24,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
 COPY --from=backend /out/ /app/
 USER 10001:10001
 WORKDIR /app
-ENV ADDR=0.0.0.0:8080 IMAGE_DIR=/data/images SESSION_BACKEND=database
+ENV ADDR=0.0.0.0:8080 BLOB_BACKEND=mysql SESSION_BACKEND=database
 EXPOSE 8080
 HEALTHCHECK --interval=10s --timeout=4s --start-period=40s CMD ["/app/healthcheck"]
 ENTRYPOINT ["/app/suining"]

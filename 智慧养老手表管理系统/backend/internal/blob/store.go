@@ -216,6 +216,10 @@ func (s *Encrypted) Get(ctx context.Context, key string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	return s.decode(key, data)
+}
+
+func (s *Encrypted) decode(key string, data []byte) ([]byte, error) {
 	if !bytes.HasPrefix(data, []byte(securestore.Prefix)) {
 		if s.AllowLegacy && len(data) <= MaxPlainBytes {
 			return data, nil

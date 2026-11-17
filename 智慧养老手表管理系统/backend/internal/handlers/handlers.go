@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"suining-care/internal/analytics"
 	"suining-care/internal/blob"
 	dbstore "suining-care/internal/db"
 	"suining-care/internal/ratelimit"
@@ -25,7 +24,6 @@ var sharedRisk = risk.New()
 // Handler 聚合依赖，各组 endpoint 实现在 handler_*.go 中。
 type Handler struct {
 	DB           *dbstore.Database
-	Analytics    *analytics.State
 	Sessions     *session.Store
 	Cfg          config.Config
 	Box          *securestore.Box

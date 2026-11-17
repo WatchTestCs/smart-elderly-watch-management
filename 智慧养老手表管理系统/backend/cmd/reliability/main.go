@@ -64,16 +64,11 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	var store blob.Store
-	if cfg.BlobBackend == "s3" {
-		store, err = blob.NewS3(cfg.Blob)
-	} else {
-		store, err = blob.NewLocal(cfg.ImageDir)
-	}
+	store, err := blob.NewMySQL(pool.DB)
 	if err != nil {
 		return err
 	}
-	manager := &blob.Manager{DB: pool, Store: &blob.Encrypted{Store: store, Box: box, AllowLegacy: cfg.BlobBackend != "s3"}}
+	manager := &blob.Manager{DB: pool, Store: &blob.Encrypted{Store: store, Box: box}}
 	switch *action {
 	case "verify-images":
 		records, err := manager.VerifyReferences(ctx)

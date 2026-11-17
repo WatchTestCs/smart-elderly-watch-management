@@ -2,12 +2,13 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"suining-care/internal/blob"
 	"log"
 	"net/http"
 	"sync/atomic"
 	"time"
 
-	"suining-care/internal/analytics"
 	"suining-care/internal/auth"
 	"suining-care/internal/config"
 	"suining-care/internal/csrf"
@@ -25,7 +26,6 @@ import (
 type databaseService struct {
 	api          atomic.Pointer[http.Handler]
 	currentDB    atomic.Pointer[dbstore.Database]
-	analytics    analytics.State
 	limiter      atomic.Pointer[ratelimit.Limiter]
 	desktopToken string
 	// configErr 记录启动阶段的配置错误。它一旦非空，watchDatabase 不再进入
@@ -81,6 +81,13 @@ func watchDatabase(ctx context.Context, cfg config.Config, sessions *session.Sto
 		if err == nil && api == nil {
 			migration, cancelMigration := context.WithTimeout(ctx, 2*time.Minute)
 			err = dbstore.MigrateMySQL(migration, pool)
+			if err == nil {
+				var missing int64
+				missing, err = blob.MissingMySQLReferences(migration, pool.DB)
+				if err == nil && missing != 0 {
+					err = fmt.Errorf("%d referenced images require migration to MySQL; use cmd/import-images before starting", missing)
+				}
+			}
 			cancelMigration()
 			if err == nil {
 				err = handlers.InitRisk(ctx, pool)
@@ -97,7 +104,6 @@ func watchDatabase(ctx context.Context, cfg config.Config, sessions *session.Sto
 				}
 				mux := http.NewServeMux()
 				h := handlers.New(pool, sessions, cfg)
-				h.Analytics = &service.analytics
 				h.Heartbeats = telemetryworkflow.NewHeartbeatBuffer(pool)
 				h.Routes(mux)
 				observability.Default.SetRouteResolver(func(r *http.Request) string { _, pattern := mux.Handler(r); return pattern })
@@ -105,8 +111,6 @@ func watchDatabase(ctx context.Context, cfg config.Config, sessions *session.Sto
 					pool:            pool,
 					box:             h.Box,
 					runCapabilities: h.RunCapabilities,
-					analyticsURL:    cfg.PGAnalyticsURL,
-					analyticsState:  &service.analytics,
 					heartbeats:      h.Heartbeats,
 				})
 				api = limiter.Middleware(csrf.Middleware(sessions, auth.Middleware(sessions, h.EnforceAdminDuty(h.EnforceDeviceSignatures(sensitiveCareAudit(pool, response.Router(mux)))))))

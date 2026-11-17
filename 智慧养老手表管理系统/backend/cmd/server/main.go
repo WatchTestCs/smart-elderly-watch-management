@@ -33,8 +33,8 @@ func main() {
 		log.Printf("CONFIG INVALID: %v", cfgErr)
 		log.Print("业务接口将保持 503；配置错误不会随重试恢复，修正环境变量后需重启进程")
 	}
-	addr, imageDir, readyFile, parentPid := applyDesktopEnv(cfg.Addr, cfg.ImageDir)
-	cfg.Addr, cfg.ImageDir = addr, imageDir
+	addr, readyFile, parentPid := applyDesktopEnv(cfg.Addr)
+	cfg.Addr = addr
 	ctx := context.Background()
 
 	sessions := session.NewStore(cfg.SessionTTL)

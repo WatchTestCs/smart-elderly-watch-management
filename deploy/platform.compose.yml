@@ -15,24 +15,11 @@ services:
       timeout: 4s
       retries: 30
     restart: unless-stopped
-  postgres:
-    image: postgres:16
-    environment:
-      POSTGRES_DB: suining_analytics
-      POSTGRES_USER: suining_analytics
-      POSTGRES_PASSWORD: ${PG_PASSWORD:?}
-    volumes: ["postgres:/var/lib/postgresql/data"]
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U suining_analytics -d suining_analytics"]
-      interval: 5s
-      timeout: 4s
-      retries: 20
-    restart: unless-stopped
   app:
     build: {context: "..", dockerfile: deploy/Dockerfile}
     environment:
       MYSQL_DSN: suining:${MYSQL_PASSWORD}@tcp(mysql:3306)/suining
-      PG_ANALYTICS_URL: postgres://suining_analytics:${PG_PASSWORD}@postgres:5432/suining_analytics?sslmode=disable
+      BLOB_BACKEND: mysql
       SESSION_BACKEND: database
       HEALTH_HOT_CACHE_MIB: ${HEALTH_HOT_CACHE_MIB:-16}
       RATE_LIMIT_MAX_KEYS: ${RATE_LIMIT_MAX_KEYS:-8192}
@@ -52,10 +39,8 @@ services:
       RULE_DEVICE_WORKERS: ${RULE_DEVICE_WORKERS:-8}
       CARE_RECEIPT_SECRET: ${CARE_RECEIPT_SECRET:?}
     secrets: [data_key, metrics_token, bootstrap_token]
-    volumes: ["images:/data/images"]
     expose: ["8080"]
-    # MySQL is the only business startup dependency. PostgreSQL projection
-    # reconnects asynchronously and must never prevent the API from starting.
+    # MySQL owns all persistent application data and encrypted images.
     depends_on:
       mysql: {condition: service_healthy}
     read_only: true
@@ -96,8 +81,6 @@ secrets:
   oncall_token: {file: ./secrets/oncall-token}
 volumes:
   mysql:
-  postgres:
-  images:
   prometheus:
   alertmanager:
 networks:

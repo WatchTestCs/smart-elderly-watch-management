@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"suining-care/internal/blob"
 	"suining-care/internal/ratelimit"
 	"suining-care/internal/securestore"
 )
@@ -18,16 +17,14 @@ import (
 type Config struct {
 	Addr             string // 默认只监听回环地址，远程部署必须显式配置
 	MySQLDSN         string
-	PGAnalyticsURL   string
+	LegacyPGURL      string        // Refuse legacy projection configuration until it is migrated
 	SessionTTL       time.Duration // 登录 session 有效期，默认 12h
-	ImageDir         string        // 图片上传落盘目录，默认 ./data/images
 	DesktopToken     string        // X-Suining-Desktop 桌面端 token
 	DataKey          string
 	SessionBackend   string
 	HealthCacheBytes int64 // 健康统计内存缓存预算；0 禁用
 	RateLimit        ratelimit.Options
 	BlobBackend      string
-	Blob             blob.S3Options
 }
 
 func getenv(key, def string) string {
@@ -52,16 +49,11 @@ func Secret(key string) string { return getenv(key, "") }
 // 探针都认为服务正常。配置错误本身不会随等待消失（环境变量在进程生命周期内
 // 不变），所以必须在启动阶段就说清楚，而不是让调用方永远看到"稍后重试"。
 func (c Config) Validate() error {
-	if c.BlobBackend != "" && c.BlobBackend != "local" && c.BlobBackend != "s3" {
-		return errors.New("BLOB_BACKEND must be local or s3")
+	if c.BlobBackend != "" && c.BlobBackend != "mysql" {
+		return errors.New("BLOB_BACKEND must be mysql; migrate legacy local/S3 objects before upgrading")
 	}
-	if c.BlobBackend == "s3" {
-		if err := blob.ValidateS3(c.Blob); err != nil {
-			return err
-		}
-		if c.MySQLDSN == "" || c.DataKey == "" {
-			return errors.New("S3 storage requires the shared MySQL catalog and an encryption key")
-		}
+	if strings.TrimSpace(c.LegacyPGURL) != "" {
+		return errors.New("PG_ANALYTICS_URL is retired; export any needed projection history and remove this setting")
 	}
 	if err := ratelimit.ValidateOptions(c.RateLimit); err != nil {
 		return err
@@ -140,16 +132,14 @@ func Load() Config {
 	}
 	return Config{
 		MySQLDSN:         getenv("MYSQL_DSN", ""),
-		PGAnalyticsURL:   getenv("PG_ANALYTICS_URL", ""),
+		LegacyPGURL:      getenv("PG_ANALYTICS_URL", ""),
 		Addr:             getenv("ADDR", "127.0.0.1:8080"),
 		SessionTTL:       time.Duration(ttlHours) * time.Hour,
-		ImageDir:         getenv("IMAGE_DIR", "./data/images"),
 		DesktopToken:     getenv("SUINING_DESKTOP_TOKEN", ""),
 		DataKey:          getenv("DATA_ENCRYPTION_KEY", ""),
 		SessionBackend:   strings.ToLower(strings.TrimSpace(getenv("SESSION_BACKEND", "database"))),
 		HealthCacheBytes: cacheMiB << 20,
 		RateLimit:        ratelimit.Options{MaxKeys: maxKeys, MaxSlots: maxSlots, TrustedProxyCIDRs: proxies},
-		BlobBackend:      strings.ToLower(strings.TrimSpace(getenv("BLOB_BACKEND", "local"))),
-		Blob:             blob.S3Options{Endpoint: getenv("S3_ENDPOINT", ""), Region: getenv("S3_REGION", "us-east-1"), Bucket: getenv("S3_BUCKET", ""), AccessKey: getenv("S3_ACCESS_KEY", ""), SecretKey: getenv("S3_SECRET_KEY", "")},
+		BlobBackend:      strings.ToLower(strings.TrimSpace(getenv("BLOB_BACKEND", "mysql"))),
 	}
 }

@@ -1,3 +1,5 @@
+> **MySQL-only candidate (2026-11-17):** Current preview storage and deployment guidance is in [MySQL 单库存储迁移](docs/MYSQL_ONLY_MIGRATION.md). Older PostgreSQL/S3/local-image instructions on this page describe previous releases and are not suitable for deploying the new candidate.
+
 <p align="center">
   <img src="智慧养老手表管理系统/frontend/public/static/brand/suining-logo-192.webp" width="88" height="88" alt="岁宁·智慧养老">
 </p>

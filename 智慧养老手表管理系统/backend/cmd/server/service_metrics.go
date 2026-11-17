@@ -19,16 +19,13 @@ func (s *databaseService) serveMetrics(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	observability.Default.Set("suining_database_ready", boolNumber(s.api.Load() != nil))
-	snapshot := s.analytics.Snapshot()
-	observability.Default.Set("suining_analytics_configured", boolNumber(snapshot.Configured))
-	observability.Default.Set("suining_analytics_ready", boolNumber(snapshot.Ready))
-	if snapshot.Pending != nil {
-		observability.Default.Set("suining_analytics_outbox_pending", float64(*snapshot.Pending))
-		observability.Default.Set("suining_analytics_outbox_sample_valid", 1)
-	} else {
-		// Preserve the last sample value but explicitly mark it unusable.
-		observability.Default.Set("suining_analytics_outbox_sample_valid", 0)
-	}
+	// Legacy metric names remain for existing dashboards; there is no longer
+	// a second database or an asynchronous outbox consumer.
+	ready := s.api.Load() != nil
+	observability.Default.Set("suining_analytics_configured", boolNumber(ready))
+	observability.Default.Set("suining_analytics_ready", boolNumber(ready))
+	observability.Default.Set("suining_analytics_outbox_pending", 0)
+	observability.Default.Set("suining_analytics_outbox_sample_valid", boolNumber(ready))
 	observability.Default.Set("suining_care_notification_configured", boolNumber(care.NotificationConfigured()))
 	// Use the same environment source and length check as the receipt handler.
 	// Gateway dispatch may be configured while signed delivery ACKs are not.

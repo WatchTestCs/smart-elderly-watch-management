@@ -103,7 +103,18 @@ func (m *Manager) Require(ctx context.Context, tx *sql.Tx, keys []string) error 
 		if !ValidKey(key) {
 			return ErrNotFound
 		}
-		data, err := m.rawGet(ctx, key)
+		var data []byte
+		var err error
+		if transactional, ok := m.Store.(interface {
+			GetTx(context.Context, *sql.Tx, string) ([]byte, error)
+		}); ok {
+			data, err = transactional.GetTx(ctx, tx, key)
+			if errors.Is(err, ErrNotFound) && key == "kai.jpg" {
+				data, err = append([]byte(nil), defaultAvatar...), nil
+			}
+		} else {
+			data, err = m.rawGet(ctx, key)
+		}
 		if err != nil {
 			return err
 		}

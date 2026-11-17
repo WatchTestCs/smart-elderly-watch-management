@@ -12,7 +12,7 @@ func TestSafeDefaults(t *testing.T) {
 	t.Setenv("DATABASE_URL", "postgres://legacy.invalid/ignored")
 	t.Setenv("ADDR", "")
 	cfg := Load()
-	if cfg.MySQLDSN != "" || cfg.PGAnalyticsURL != "" {
+	if cfg.MySQLDSN != "" || cfg.LegacyPGURL != "" {
 		t.Fatal("default credentials must never be embedded in the service")
 	}
 	if cfg.Addr != "127.0.0.1:8080" {
@@ -25,7 +25,7 @@ func TestExplicitDeploymentConfiguration(t *testing.T) {
 	t.Setenv("PG_ANALYTICS_URL", "postgres://example.local/analytics?sslmode=require")
 	t.Setenv("ADDR", "0.0.0.0:9090")
 	cfg := Load()
-	if cfg.MySQLDSN != "suining@tcp(mysql.local:3306)/suining?tls=true" || cfg.PGAnalyticsURL != "postgres://example.local/analytics?sslmode=require" || cfg.Addr != "0.0.0.0:9090" {
+	if cfg.MySQLDSN != "suining@tcp(mysql.local:3306)/suining?tls=true" || cfg.LegacyPGURL != "postgres://example.local/analytics?sslmode=require" || cfg.Addr != "0.0.0.0:9090" {
 		t.Fatal("explicit dual-database deployment configuration ignored")
 	}
 }
@@ -111,5 +111,34 @@ func TestDesktopTokenUsesSingleCurrentEnvironmentKey(t *testing.T) {
 	t.Setenv("SUINING_DESKTOP_TOKEN", "current-value")
 	if token := Load().DesktopToken; token != "current-value" {
 		t.Fatalf("current desktop token not loaded: %q", token)
+	}
+}
+
+func TestMySQLOnlyStorageConfiguration(t *testing.T) {
+	key := base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{9}, 32))
+	for _, tt := range []struct {
+		name, backend, pgURL string
+		allowed              bool
+	}{
+		{"mysql", "mysql", "", true},
+		{"default", "", "", true},
+		{"local rejected", "local", "", false},
+		{"s3 rejected", "s3", "", false},
+		{"other backend rejected", "sqlite", "", false},
+		{"pg projection rejected", "mysql", "postgres://host/analytics", false},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := Config{MySQLDSN: "suining@tcp(localhost:3306)/suining", DataKey: key, BlobBackend: tt.backend, LegacyPGURL: tt.pgURL, SessionBackend: "database"}
+			err := cfg.Validate()
+			if (err == nil) != tt.allowed {
+				t.Fatalf("Validate() error = %v, allowed=%v", err, tt.allowed)
+			}
+		})
+	}
+	t.Setenv("BLOB_BACKEND", "")
+	t.Setenv("PG_ANALYTICS_URL", "")
+	t.Setenv("PG_ANALYTICS_URL_FILE", "")
+	if cfg := Load(); cfg.BlobBackend != "mysql" || cfg.LegacyPGURL != "" {
+		t.Fatalf("MySQL-only defaults not selected: backend=%q", cfg.BlobBackend)
 	}
 }

@@ -21,20 +21,14 @@ for name, value in {"data-key": base64.b64encode(secrets.token_bytes(32)).decode
     target.chmod(0o444)
 env = root / "deploy/platform.env"
 if not env.exists():
-    values = {"MYSQL_ROOT_PASSWORD": secrets.token_hex(24), "MYSQL_PASSWORD": secrets.token_hex(24), "PG_PASSWORD": secrets.token_hex(24), "CARE_RECEIPT_SECRET": secrets.token_hex(32), "APP_PORT": "8080", "PROMETHEUS_PORT": "9090"}
+    values = {"MYSQL_ROOT_PASSWORD": secrets.token_hex(24), "MYSQL_PASSWORD": secrets.token_hex(24), "CARE_RECEIPT_SECRET": secrets.token_hex(32), "APP_PORT": "8080", "PROMETHEUS_PORT": "9090"}
     env.write_bytes(("\n".join(key + "=" + value for key, value in values.items()) + "\n").encode())
     env.chmod(0o600)
 command = ["docker", "compose", "--env-file", str(env), "-f", str(root / "deploy/platform.compose.yml")]
 subprocess.run(command + ["config", "--quiet"], check=True)
 if "--validate" not in sys.argv:
     # First bring up the authoritative MySQL business plane and monitoring.
-    # An explicit service list keeps --wait independent of optional PG.
+    # All persistent business services now require only MySQL.
     subprocess.run(command + ["up", "--build", "-d", "--wait", "mysql", "app", "gateway", "prometheus"], check=True)
-    # Attempt optional analytics only AFTER care is online. A failed image pull
-    # or unhealthy PG must not prevent the business plane from starting.
-    analytics = subprocess.run(command + ["up", "-d", "postgres"], check=False)
-    if analytics.returncode:
-        print("可选 PostgreSQL 分析服务未启动；MySQL 业务与照护服务已独立启动。", file=sys.stderr)
     print("岁宁：http://127.0.0.1:8080 ；Prometheus：http://127.0.0.1:9090")
     print("首次管理员：python scripts/bootstrap-admin.py；密钥与数据卷必须独立备份。")
-    print("PostgreSQL 分析状态请查看 /api/v1/service/status，主库由 MySQL 提供。")

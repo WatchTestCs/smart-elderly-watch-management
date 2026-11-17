@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -56,7 +58,7 @@ func testHandler(t testing.TB, pool *dbstore.Database) *Handler {
 	t.Helper()
 	store := session.NewStore(time.Hour)
 	t.Cleanup(store.Close)
-	return New(pool, store, config.Config{ImageDir: t.TempDir()})
+	return New(pool, store, config.Config{DataKey: base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{7}, 32))})
 }
 
 func mustExec(t *testing.T, pool *dbstore.Database, sql string, args ...any) {

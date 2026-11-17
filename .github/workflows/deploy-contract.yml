@@ -28,34 +28,27 @@ jobs:
         env:
           MYSQL_ROOT_PASSWORD: ci-do-not-use
           MYSQL_PASSWORD: ci-do-not-use
-          PG_PASSWORD: ci-do-not-use
           CARE_RECEIPT_SECRET: ci-placeholder-not-production-32-plus-chars
-          S3_ENDPOINT: https://s3.example.invalid
-          S3_BUCKET: ci-contract-only
         run: |
           docker compose -f deploy/platform.compose.yml config --quiet
-          docker compose -f deploy/platform.compose.yml -f deploy/object-storage.compose.yml config --quiet
           python3 - <<'PY'
           from pathlib import Path
           text = Path('deploy/platform.compose.yml').read_text()
           app = text.split('\n  app:', 1)[1].split('\n  gateway:', 1)[0]
           monitor = text.split('\n  prometheus:', 1)[1]
-          if 'postgres: {condition: service_healthy}' in app:
-              raise SystemExit('PG is optional and must not gate app startup')
+          if 'postgres:' in text or 'PG_ANALYTICS_URL:' in text or 'S3_' in text:
+              raise SystemExit('Production Compose must not include PostgreSQL or S3')
           if 'app: {condition: service_healthy}' in monitor:
               raise SystemExit('Prometheus must not be gated on app readiness')
           if 'mysql: {condition: service_healthy}' not in app:
               raise SystemExit('Business app must still require healthy MySQL')
           startup = Path('scripts/start-platform.py').read_text()
           critical = '["up", "--build", "-d", "--wait", "mysql", "app", "gateway", "prometheus"]'
-          optional = '["up", "-d", "postgres"]'
-          if critical not in startup or optional not in startup:
-              raise SystemExit('Startup must scope --wait to business and start PG separately')
-          if startup.index(critical) >= startup.index(optional):
-              raise SystemExit('Start business before the optional PG image pull')
+          if critical not in startup or 'postgres' in startup:
+              raise SystemExit('Startup must launch only the MySQL-backed stack')
           unit = Path('deploy/suining-care.service').read_text()
           if 'postgresql.service' in unit:
-              raise SystemExit('systemd service must not wait for optional PostgreSQL')
+              raise SystemExit('systemd service must not depend on PostgreSQL')
           PY
       - name: Validate Nginx trusted proxy and shared edge limiter syntax
         run: |

@@ -95,8 +95,7 @@ func (h *Handler) careDiagnostics(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) analyticsStatus() any {
-	if h.Analytics == nil {
-		return map[string]any{"configured": h.Cfg.PGAnalyticsURL != "", "ready": false, "pending": nil}
-	}
-	return h.Analytics.Snapshot()
+	// The MySQL source is authoritative. Keep the diagnostics response shape
+	// for clients that previously observed an optional projection worker.
+	return map[string]any{"configured": h.DB != nil, "ready": h.DB != nil, "pending": 0, "lastSyncedAt": nil}
 }

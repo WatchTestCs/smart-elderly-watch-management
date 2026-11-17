@@ -1,3 +1,5 @@
+> **MySQL-only candidate (2026-11-17):** Current preview storage and deployment guidance is in [MySQL 单库存储迁移](../MYSQL_ONLY_MIGRATION.md). Older PostgreSQL/S3/local-image instructions on this page describe previous releases and are not suitable for deploying the new candidate.
+
 # PostgreSQL 位置投影密文轮换
 
 `backend/cmd/rekey-projection` 处理 `suining_analytics.record.payload` 中一个明确 MySQL 来源的 `device_location` 坐标。分析消费者可能已经删除 MySQL outbox 事件，因此仅完成 [MySQL 字段与事件轮换](rekey-data.md) 不能证明 PG 不再依赖旧密钥。

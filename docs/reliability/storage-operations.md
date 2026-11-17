@@ -1,3 +1,5 @@
+> **MySQL-only candidate (2026-11-17):** Current preview storage and deployment guidance is in [MySQL 单库存储迁移](../MYSQL_ONLY_MIGRATION.md). Older PostgreSQL/S3/local-image instructions on this page describe previous releases and are not suitable for deploying the new candidate.
+
 # 图片、多实例和恢复操作
 
 `BLOB_BACKEND=local` 使用 IMAGE_DIR；`s3` 使用私有专用 bucket、S3_ENDPOINT、S3_REGION、

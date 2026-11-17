@@ -1,3 +1,5 @@
+> **MySQL-only candidate (2026-11-17):** Current preview storage and deployment guidance is in [MySQL 单库存储迁移](../MYSQL_ONLY_MIGRATION.md). Older PostgreSQL/S3/local-image instructions on this page describe previous releases and are not suitable for deploying the new candidate.
+
 # PostgreSQL 可选分析与独立告警验证
 
 > 适用于 `deploy/platform.compose.yml`。这里的数据库高可用边界不变：MySQL 是唯一业务主库，PostgreSQL 只存储可重建的异步分析投影。PG 不是 MySQL 的热备或自动容灾实例。

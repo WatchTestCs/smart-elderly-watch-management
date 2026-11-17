@@ -13,22 +13,16 @@ import (
 
 func (h *Handler) images() (*blob.Manager, error) {
 	h.imageOnce.Do(func() {
-		var store blob.Store
-		if h.Cfg.BlobBackend == "s3" {
-			store, h.imageError = blob.NewS3(h.Cfg.Blob)
-			if h.Box == nil || h.DB == nil {
-				h.imageError = errors.New("shared encrypted catalog is required")
-			}
-		} else {
-			store, h.imageError = blob.NewLocal(h.Cfg.ImageDir)
-		}
-		if h.imageError != nil {
+		if h.DB == nil || h.Box == nil {
+			h.imageError = errors.New("encrypted MySQL image storage requires a shared database and key")
 			return
 		}
-		if h.Box != nil {
-			store = &blob.Encrypted{Store: store, Box: h.Box, AllowLegacy: h.Cfg.BlobBackend != "s3"}
+		store, err := blob.NewMySQL(h.DB.DB)
+		if err != nil {
+			h.imageError = err
+			return
 		}
-		h.imageManager = &blob.Manager{DB: h.DB, Store: store}
+		h.imageManager = &blob.Manager{DB: h.DB, Store: &blob.Encrypted{Store: store, Box: h.Box}}
 	})
 	return h.imageManager, h.imageError
 }

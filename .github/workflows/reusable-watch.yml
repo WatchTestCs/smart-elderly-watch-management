@@ -190,7 +190,6 @@ jobs:
           (cd 智慧养老手表管理系统/backend && go build -o "$RUNNER_TEMP/watch-e2e-server" ./cmd/server)
           export DATA_ENCRYPTION_KEY="$(openssl rand -base64 32)"
           export SUINING_DESKTOP_TOKEN="$(openssl rand -hex 32)"
-          export IMAGE_DIR="$RUNNER_TEMP/watch-e2e-images"
           "$RUNNER_TEMP/watch-e2e-server" > evidence/ci/watch-integration/server.log 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid" 2>/dev/null || true' EXIT

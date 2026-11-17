@@ -1,3 +1,5 @@
+> **MySQL-only candidate (2026-11-17):** Current preview storage and deployment guidance is in [MySQL 单库存储迁移](MYSQL_ONLY_MIGRATION.md). Older PostgreSQL/S3/local-image instructions on this page describe previous releases and are not suitable for deploying the new candidate.
+
 # MySQL 主库与 PostgreSQL 分析库
 
 当前部署采用 **MySQL 核心业务 + PostgreSQL 分析投影**。MySQL 保存业务事务和 outbox；PostgreSQL 为可选分析副库，其不可用不应阻断核心业务。

@@ -1,3 +1,5 @@
+> **MySQL-only candidate (2026-11-17):** Current preview storage and deployment guidance is in [MySQL 单库存储迁移](../MYSQL_ONLY_MIGRATION.md). Older PostgreSQL/S3/local-image instructions on this page describe previous releases and are not suitable for deploying the new candidate.
+
 # MySQL、对象、密钥与 PG 投影的协调恢复回归
 
 `TestImageS3TwoInstancesAndRealRestore` 使用真实 MySQL、PostgreSQL 与私有 S3 兼容服务，
