@@ -128,3 +128,37 @@ func (s *Encrypted) GetTx(ctx context.Context, tx *sql.Tx, key string) ([]byte, 
 	}
 	return s.decode(key, data)
 }
+
+// putMySQLCatalog publishes ciphertext and integrity metadata atomically.
+// A duplicate key never overwrites an immutable image or its catalog.
+func (s *Encrypted) putMySQLCatalog(ctx context.Context, database *sql.DB, key string, data []byte) error {
+	if !ValidKey(key) {
+		return ErrNotFound
+	}
+	if len(data) > MaxPlainBytes {
+		return ErrIntegrity
+	}
+	ciphertext, err := s.Box.Seal(string(data), "image:"+key)
+	if err != nil {
+		return err
+	}
+	if len(ciphertext) > MaxStoredBytes {
+		return ErrIntegrity
+	}
+	tx, err := database.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err = tx.ExecContext(ctx, "INSERT INTO image_payload(name,payload) VALUES(?,?)", key, []byte(ciphertext)); err == nil {
+		_, err = tx.ExecContext(ctx, "INSERT INTO image_blob(name,content_sha256,size_bytes,state) VALUES(?,?,?,'ready')", key, Digest(data), len(data))
+	}
+	if err != nil {
+		var duplicate *mysql.MySQLError
+		if errors.As(err, &duplicate) && duplicate.Number == 1062 {
+			return ErrExists
+		}
+		return err
+	}
+	return tx.Commit()
+}

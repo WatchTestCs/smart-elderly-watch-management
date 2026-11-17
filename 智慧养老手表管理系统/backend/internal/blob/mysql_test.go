@@ -44,17 +44,49 @@ func TestMySQLImageStorageAndLegacyImport(t *testing.T) {
 		t.Fatalf("invalid image key accepted: %v", err)
 	}
 
+	// A failed catalog write must not leave a newly published orphan payload.
+	catalogOnly := []byte("reserved")
+	if _, err := pool.ExecContext(ctx, "INSERT INTO image_blob(name,content_sha256,size_bytes,state) VALUES(?,?,?,'ready')",
+		"catalog-only.png", Digest(catalogOnly), len(catalogOnly)); err != nil {
+		t.Fatal(err)
+	}
+	if err := manager.Put(ctx, "catalog-only.png", []byte("different")); !errors.Is(err, ErrExists) {
+		t.Fatalf("duplicate catalog did not reject atomic insert: %v", err)
+	}
+	var partial int
+	if err := pool.QueryRowContext(ctx, "SELECT COUNT(*) FROM image_payload WHERE name='catalog-only.png'").Scan(&partial); err != nil || partial != 0 {
+		t.Fatalf("failed image transaction left an orphan payload: %d %v", partial, err)
+	}
+	// Under a single pooled connection, reference checks must stay on tx.
+	pool.DB.SetMaxOpenConns(1)
+	limited, cancel := context.WithTimeout(ctx, 3*time.Second)
+	tx, err := pool.BeginTx(limited, nil)
+	if err != nil {
+		cancel()
+		t.Fatal(err)
+	}
+	err = manager.Require(limited, tx, []string{"current.png"})
+	_ = tx.Rollback()
+	cancel()
+	pool.DB.SetMaxOpenConns(16)
+	if err != nil {
+		t.Fatalf("transaction-scoped image reference blocked with one connection: %v", err)
+	}
+
 	// Existing metadata may already name a legacy local object.
 	original := []byte("existing local object")
 	if _, err := pool.ExecContext(ctx, "INSERT INTO image_blob(name,content_sha256,size_bytes,state) VALUES(?,?,?,'ready')",
 		"legacy.jpg", Digest(original), len(original)); err != nil {
 		t.Fatal(err)
 	}
-	if missing, err := MissingMySQLReferences(ctx, pool.DB); err != nil || missing != 0 {
-		t.Fatalf("unreferenced legacy catalog counted as missing: %d %v", missing, err)
+	if missing, err := MissingMySQLReferences(ctx, pool.DB); err != nil || missing != 2 {
+		t.Fatalf("unmigrated ready catalogs were not detected: %d %v", missing, err)
 	}
 	if changed, err := ImportLegacy(ctx, pool.DB, box, "legacy.jpg", original); err != nil || !changed {
 		t.Fatalf("legacy import: changed=%v err=%v", changed, err)
+	}
+	if changed, err := ImportLegacy(ctx, pool.DB, box, "catalog-only.png", catalogOnly); err != nil || !changed {
+		t.Fatalf("existing catalog recovery: changed=%v err=%v", changed, err)
 	}
 	if changed, err := ImportLegacy(ctx, pool.DB, box, "legacy.jpg", original); err != nil || changed {
 		t.Fatalf("idempotent retry: changed=%v err=%v", changed, err)
@@ -77,9 +109,38 @@ func TestMySQLImageStorageAndLegacyImport(t *testing.T) {
 	if missing, err := MissingMySQLReferences(ctx, pool.DB); err != nil || missing != 0 {
 		t.Fatalf("restored reference still missing: %d %v", missing, err)
 	}
+	// A customized built-in avatar must be migrated if a ready catalog exists.
+	avatar := []byte("customer-supplied avatar with the reserved filename")
+	if _, err := pool.ExecContext(ctx, "INSERT INTO image_blob(name,content_sha256,size_bytes,state) VALUES(?,?,?,'ready')",
+		"kai.jpg", Digest(avatar), len(avatar)); err != nil {
+		t.Fatal(err)
+	}
+	if missing, err := MissingMySQLReferences(ctx, pool.DB); err != nil || missing != 1 {
+		t.Fatalf("custom default avatar lost from migration inventory: %d %v", missing, err)
+	}
+	if changed, err := ImportLegacy(ctx, pool.DB, box, "kai.jpg", avatar); err != nil || !changed {
+		t.Fatalf("custom default avatar import failed: %v", err)
+	}
+	if verified, err := manager.VerifyReadyCatalog(ctx); err != nil || verified != 5 {
+		t.Fatalf("ready catalog integrity: checked=%d err=%v", verified, err)
+	}
+	// Detect corrupted ciphertext even if MySQL contains both metadata and bytes.
+	var validCiphertext []byte
+	if err := pool.QueryRowContext(ctx, "SELECT payload FROM image_payload WHERE name='legacy.jpg'").Scan(&validCiphertext); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.ExecContext(ctx, "UPDATE image_payload SET payload=? WHERE name='legacy.jpg'", []byte("tampered")); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := manager.VerifyReadyCatalog(ctx); !errors.Is(err, ErrIntegrity) {
+		t.Fatalf("corrupt stored ciphertext was accepted: %v", err)
+	}
+	if _, err := pool.ExecContext(ctx, "UPDATE image_payload SET payload=? WHERE name='legacy.jpg'", validCiphertext); err != nil {
+		t.Fatal(err)
+	}
 
 	var entries int
-	if err := raw.Walk(ctx, func(item Entry) error { entries++; return nil }); err != nil || entries != 3 {
+	if err := raw.Walk(ctx, func(item Entry) error { entries++; return nil }); err != nil || entries != 5 {
 		t.Fatalf("MySQL image walk: count=%d err=%v", entries, err)
 	}
 	if err := pool.QueryRowContext(ctx, "SELECT COUNT(*) FROM information_schema.TRIGGERS WHERE TRIGGER_SCHEMA=DATABASE() AND TRIGGER_NAME LIKE 'suining_analytics_%'").

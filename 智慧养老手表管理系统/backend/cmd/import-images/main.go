@@ -98,7 +98,7 @@ func run() error {
 		missing = &count
 	}
 	if *apply && *missing != 0 {
-		return fmt.Errorf("migration incomplete: %d referenced images missing; do not delete old storage", missing)
+		return fmt.Errorf("migration incomplete: %d referenced images missing; do not delete old storage", *missing)
 	}
 	if *apply {
 		store, err := blob.NewMySQL(pool.DB)
@@ -106,6 +106,9 @@ func run() error {
 			return err
 		}
 		manager := &blob.Manager{DB: pool, Store: &blob.Encrypted{Store: store, Box: box}}
+		if _, err := manager.VerifyReadyCatalog(ctx); err != nil {
+			return fmt.Errorf("MySQL image catalog integrity verification: %w", err)
+		}
 		if _, err := manager.VerifyReferences(ctx); err != nil {
 			return fmt.Errorf("image reference verification: %w", err)
 		}

@@ -70,6 +70,13 @@ func TestRekeyMySQL(t *testing.T) {
 	exec("INSERT INTO care_notification_outbox(id,incident_id,channel,recipient,recipient_key) VALUES(1,1,'sms',?,?)", sealed(t, old, "13800000001", "care-notification-recipient"), lookup)
 	exec("INSERT INTO message_outbox(id,topic,source_key,family_id,channel,recipient) VALUES(1,'care','1',1,'sms',?)", s("notification-recipient"))
 	exec("INSERT INTO device_location(id,device_id,old_id,lng,lat,position_metadata) VALUES(1,1,1,?,?,?)", s("location"), s("location"), s("location"))
+	// Historical outbox entries are retained for rekey, but the retired PG
+	// projection triggers no longer populate them on new business writes.
+	historicalLocation, err := json.Marshal(map[string]any{"lng": s("location"), "lat": s("location"), "source": "gps"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	exec("INSERT INTO analytics_outbox(entity,entity_id,payload) VALUES('device_location',1,?)", string(historicalLocation))
 	exec("INSERT INTO alarm_precess(id,old_id,device_id,lng,lat,position_metadata) VALUES(1,1,1,?,?,?)", s("location"), s("location"), s("location"))
 	exec("INSERT INTO alarm_process(id,old_id,device_id,lng,lat) VALUES(1,1,1,?,?)", s("location"), s("location"))
 	for _, hash := range []string{strings.Repeat("1", 64), strings.Repeat("a", 64), strings.Repeat("z", 64)} {
@@ -120,7 +127,7 @@ func TestRekeyMySQL(t *testing.T) {
 				t.Fatal("incomplete apply")
 			}
 		}
-		if rewrites != 32 {
+		if rewrites != 31 {
 			t.Fatalf("pagination lost rows: rewrites=%d", rewrites)
 		}
 		options.Apply = false

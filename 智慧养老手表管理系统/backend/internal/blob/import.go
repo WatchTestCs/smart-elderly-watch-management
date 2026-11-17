@@ -102,7 +102,7 @@ func MissingMySQLReferences(ctx context.Context, database *sql.DB) (int64, error
 		" UNION SELECT name FROM image_blob WHERE state='ready'" +
 		" ) refs LEFT JOIN image_payload p ON p.name=refs.name" +
 		" LEFT JOIN image_blob c ON c.name=refs.name AND c.state='ready'" +
-		" WHERE refs.name<>'kai.jpg' AND (p.name IS NULL OR c.name IS NULL)"
+		" WHERE (refs.name<>'kai.jpg' OR c.name IS NOT NULL) AND (p.name IS NULL OR c.name IS NULL)"
 	var missing int64
 	err := database.QueryRowContext(ctx, query).Scan(&missing)
 	return missing, err

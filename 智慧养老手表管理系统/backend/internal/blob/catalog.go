@@ -63,6 +63,17 @@ func (m *Manager) Get(ctx context.Context, key string) ([]byte, error) {
 	return data, nil
 }
 func (m *Manager) Put(ctx context.Context, key string, data []byte) error {
+	// Both the encrypted bytes and their integrity catalog reside in MySQL.
+	// Commit them together: the older two-store compensation path is retained
+	// solely for offline/legacy test backends.
+	if encrypted, ok := m.Store.(*Encrypted); ok {
+		if _, mysqlOnly := encrypted.Store.(*MySQL); mysqlOnly {
+			if m.DB == nil {
+				return errors.New("MySQL images require their business catalog")
+			}
+			return encrypted.putMySQLCatalog(ctx, m.DB.DB, key, data)
+		}
+	}
 	if err := m.Store.Put(ctx, key, data); err != nil {
 		return err
 	}
