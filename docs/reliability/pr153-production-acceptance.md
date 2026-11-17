@@ -46,3 +46,20 @@
 2. 完整旧库与密钥/图片对象备份，在**隔离副本**执行升级与恢复；迁移前后行数、密文哈希、关键索引、外键、触发器、审计历史一致。
 3. Windows Tauri 原生安装、启动、卸载、重装及 WebView2；HarmonyOS SDK 原生编译、真机、离线重传和 SOS 实际闭环均验收。
 4. 告警处理、外部通知/回执、RBAC 并发撤权、MySQL 故障恢复和 P95/P99 基线达到项目明确的 SLO，再由维护者审查并合并。
+
+## 2026-11-17 continued verification on PR #153 (exact-source addendum)
+
+**Decision: NO-GO pending exact-head CI and physical client acceptance.** This addendum distinguishes code changes from proven deployment outcomes. Source before this addendum: `2efd51143c28bb41ef1f13ab154f15a946f8601d`.
+
+| Requirement | Result and raw evidence | Residual risk |
+| --- | --- | --- |
+| Real MySQL 8.4 deployment | Isolated Docker project `suiningpr153qa`, app, mysql:8.4, Nginx and Prometheus all healthy; HTTP `127.0.0.1:18089/api/v1/service/status` returned `databaseReady:true` and `primaryEngine:mysql`. MySQL queried: 32 schema migrations, image_payload exists, zero retired projection triggers | Synthetic data only; no production-sized import or signed release |
+| MySQL 8.4 dependency failure | Stop dedicated MySQL container: readiness false, business HTTP 503, Retry-After 3; restart: automatic MySQL recovery without restarting Go API | Crash consistency under sustained production writes/replicas remains untested |
+| Native HarmonyOS compilation | SDK 26.0.0.105, Hvigor 6.26.9: default/debug `E5F69FE923FA75F299933EBF33A7FBCD31B56F97192E10BC599311E74AB4158A`, default/release `97DB2AC2FC8E7504EDE4E45DD2906B22E22DFBD6BE11BB1279A06FB4FF98E79C`, quality/release `F0BAD3BAB1573C7AE42D30CA8CC5492B3B0FD9DB9B10BC00EE3AC4477F125512`; `ohosTest` debug build `940AA69FC7434E2B78EA50DB4DE590C793CB90455AA59D398A2A54B5F5AA487C` | All HAPs unsigned, HDC returned no targets, no device installation or sensor/SOS E2E |
+| Windows desktop native build | GitHub `44101522360`, actual Tauri build and package job succeeded, installer, Portable and source artifacts uploaded; local Windows `cargo check --locked` blocked by absent MSVC `link.exe` | Installer execution, upgrade/uninstall and WebView2 lifecycle remain unverified |
+| Go 1.27.4 + MySQL 8.4 race suite | CI `44103294247`: 1,435 passes, six documented optional A/B/performance skips; no test-case failure, **gate rejected two obsolete S3/PG test names**. Replaced these names with meaningful MySQL image two-pool/restore + legacy import checks; historical rekey `TestRekeyMySQL` already mandatory. | New exact HEAD CI must pass the replacement test and evidence auditor; optional soak/P95/P99 not asserted |
+| UI cancellation | Linux UI Quality `44103294247` failed on Playwright `requestfailed` timeout at `frontend/qa/lifecycle-acceptance.cjs:23`. Local Chromium passed all 15 checks. Replaced interception-dependent event with in-page observation of real `XMLHttpRequest.abort()`, matched by request URL and body, retaining five positive cancellation assertions. | Linux CI must rerun on exact HEAD |
+| Mixed statistics performance | Local Ryzen AI 9 H 365, 10,000 health records: disk route 41.86 ms/op; hot-cache route 0.271 ms/op (single-machine microbenchmark, not P95/P99 or load-test SLA) | Need real traffic mix and explicit SLO |
+| Risk audit recovery file | Readonly production container requires bounded spool on ephemeral `/tmp`; deployment config and contract updated in `2efd511` | Abrupt container termination during database outage can lose uncommitted audit events |
+
+**Operational scope:** Tests and destructive fault injections targeted only independent temporary MySQL databases/containers; existing user business database was not changed. Full release acceptance still requires production-equivalent sanitized data restore, external notification delivery receipt, native device installation and validated final CI source SHA.
