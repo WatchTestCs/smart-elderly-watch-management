@@ -79,6 +79,29 @@ jobs:
           ./智慧养老手表管理系统/desktop/build.ps1 *>&1 | Tee-Object evidence/ci/windows-desktop/build.log
           python ./智慧养老手表管理系统/desktop/build-fontless.py *>&1 | Tee-Object evidence/ci/windows-desktop/fontless.log
           ./智慧养老手表管理系统/desktop/package-release.ps1 *>&1 | Tee-Object evidence/ci/windows-desktop/package.log
+
+      - name: Smoke-test installed NSIS on disposable Windows runner
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $setup = Get-ChildItem '智慧养老手表管理系统/outputs' -Filter 'Suining-Setup-*-win-x64.exe' -Recurse -File | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          if (!$setup) { throw 'No NSIS installer was built' }
+          $target = Join-Path $env:RUNNER_TEMP 'suining-pr153-installer-smoke'
+          if (Test-Path $target) { throw 'Installer test target already exists' }
+          $install = Start-Process -FilePath $setup.FullName -ArgumentList @('/S', "/D=$target") -Wait -PassThru
+          if ($install.ExitCode -ne 0) { throw "NSIS silent install returned $($install.ExitCode)" }
+          $binary = Get-ChildItem -LiteralPath $target -Recurse -File -Filter 'suining.exe' | Select-Object -First 1
+          $sidecar = Get-ChildItem -LiteralPath $target -Recurse -File -Filter 'suining-server*.exe' | Select-Object -First 1
+          $uninstaller = Get-ChildItem -LiteralPath $target -Recurse -File -Filter '*uninstall*.exe' | Select-Object -First 1
+          if (!$binary -or !$sidecar -or !$uninstaller) { throw 'Installer omitted application, Go sidecar, or uninstaller' }
+          $webview = @('HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F1E7A06D-06EA-45B8-9656-ED0EC0EA8DF5}', 'HKLM:\SOFTWARE\Microsoft\EdgeUpdate\Clients\{F1E7A06D-06EA-45B8-9656-ED0EC0EA8DF5}', 'HKCU:\SOFTWARE\Microsoft\EdgeUpdate\Clients\{F1E7A06D-06EA-45B8-9656-ED0EC0EA8DF5}') | ForEach-Object { Get-ItemProperty -Path $_ -Name pv -ErrorAction SilentlyContinue } | Where-Object { $_.pv }
+          if (!$webview) { throw 'WebView2 runtime was unavailable after installer completed' }
+          $appHash = (Get-FileHash -LiteralPath $binary.FullName -Algorithm SHA256).Hash
+          $uninstall = Start-Process -FilePath $uninstaller.FullName -ArgumentList '/S' -Wait -PassThru
+          if ($uninstall.ExitCode -ne 0) { throw "NSIS silent uninstall returned $($uninstall.ExitCode)" }
+          if (Test-Path $binary.FullName) { throw 'Application executable still present after uninstall' }
+          @{source=(git rev-parse HEAD).Trim();setupHash=(Get-FileHash $setup.FullName -Algorithm SHA256).Hash;appHash=$appHash;webview=$webview[0].pv;installed=$true;uninstalled=$true} | ConvertTo-Json | Set-Content evidence/ci/windows-desktop/install-smoke.json
+
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
         with:
           name: suining-setup-${{ github.event.pull_request.head.sha || github.sha }}
