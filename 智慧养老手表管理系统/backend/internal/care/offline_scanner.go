@@ -49,7 +49,9 @@ func scanOfflinePage(ctx context.Context, pool *dbstore.Database, after int64) (
 	if err == nil {
 		err = rows.Err()
 	}
-	rows.Close()
+	if closeErr := rows.Close(); err == nil {
+		err = closeErr
+	}
 	if err != nil {
 		return after, 0, err
 	}

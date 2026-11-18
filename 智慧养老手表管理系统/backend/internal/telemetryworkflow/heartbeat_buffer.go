@@ -3,6 +3,7 @@ package telemetryworkflow
 import (
 	"context"
 	"database/sql"
+	"log/slog"
 	"strings"
 	"sync"
 	"time"
@@ -187,6 +188,7 @@ func (b *HeartbeatBuffer) Flush(ctx context.Context) (int, error) {
 			return total, nil
 		}
 		if err := b.flushBatch(ctx, items); err != nil {
+			observability.Default.Add("suining_heartbeat_flush_errors_total", 1)
 			b.requeue(items)
 			b.finishDrain(len(items))
 			return total, err
@@ -203,12 +205,16 @@ func (b *HeartbeatBuffer) Run(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			final, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-			_, _ = b.Flush(final)
+			if _, err := b.Flush(final); err != nil {
+				slog.Error("heartbeat_flush_failed", "phase", "shutdown", "error", err)
+			}
 			cancel()
 			return
 		case <-ticker.C:
 			run, cancel := context.WithTimeout(ctx, 5*time.Second)
-			_, _ = b.Flush(run)
+			if _, err := b.Flush(run); err != nil {
+				slog.Warn("heartbeat_flush_failed", "phase", "periodic", "error", err)
+			}
 			cancel()
 		}
 	}

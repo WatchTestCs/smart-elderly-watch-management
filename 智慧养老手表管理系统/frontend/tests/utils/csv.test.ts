@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { toCsv } from '@/utils/csv'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { downloadCsv, toCsv } from '@/utils/csv'
 
 describe('toCsv', () => {
   const columns = [{ key: 'name', label: '姓名' }, { key: 'note', label: '备注' }]
@@ -16,5 +16,42 @@ describe('toCsv', () => {
   it('neutralises spreadsheet formulas and tolerates missing values', () => {
     const csv = toCsv(columns, [{ name: '=HYPERLINK("x")', note: null }, { name: '-1' }])
     expect(csv.split('\r\n').slice(1)).toEqual(['"\'=HYPERLINK(""x"")",', "'-1,"])
+  })
+})
+
+afterEach(() => {
+  vi.useRealTimers()
+  vi.restoreAllMocks()
+  vi.unstubAllGlobals()
+})
+
+describe('downloadCsv resource lifetime', () => {
+  const columns = [{ key: 'name', label: 'Name' }]
+  it('keeps the blob alive while the browser begins the download, then releases it', () => {
+    const revoke = vi.fn()
+    vi.stubGlobal('URL', { createObjectURL: vi.fn(() => 'blob:csv-export'), revokeObjectURL: revoke })
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+    vi.useFakeTimers()
+    const before = document.querySelectorAll('a').length
+
+    downloadCsv('people.csv', columns, [{ name: 'Alice' }])
+
+    expect(document.querySelectorAll('a')).toHaveLength(before)
+    expect(revoke).not.toHaveBeenCalled()
+    vi.advanceTimersByTime(29_999)
+    expect(revoke).not.toHaveBeenCalled()
+    vi.advanceTimersByTime(1)
+    expect(revoke).toHaveBeenCalledExactlyOnceWith('blob:csv-export')
+  })
+
+  it('removes the link and revokes its URL if the browser refuses the click', () => {
+    const revoke = vi.fn()
+    vi.stubGlobal('URL', { createObjectURL: vi.fn(() => 'blob:failed-export'), revokeObjectURL: revoke })
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => { throw new Error('download blocked') })
+    const before = document.querySelectorAll('a').length
+
+    expect(() => downloadCsv('people.csv', columns, [])).toThrow('download blocked')
+    expect(document.querySelectorAll('a')).toHaveLength(before)
+    expect(revoke).toHaveBeenCalledExactlyOnceWith('blob:failed-export')
   })
 })
