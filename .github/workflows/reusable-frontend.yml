@@ -69,8 +69,22 @@ jobs:
           set -o pipefail
           npm run build 2>&1 | tee ../../evidence/ci/frontend/build.txt
 
-      - name: Audit production dependencies
-        run: npm audit --audit-level=high --json > ../../evidence/ci/frontend/npm-audit.json
+      - name: Audit frontend dependencies
+        env:
+          POWERSHELL_TELEMETRY_OPTOUT: '1'
+        shell: pwsh
+        run: |
+          $reportPath = '../../evidence/ci/frontend/npm-audit.json'
+          npm audit --audit-level=high --json > $reportPath
+          $auditExit = $LASTEXITCODE
+          if ($auditExit -ne 0) {
+            $report = Get-Content -Raw $reportPath | ConvertFrom-Json -AsHashtable
+            $report.vulnerabilities.Values | ForEach-Object { $_.via } |
+              Where-Object { $_ -is [System.Collections.IDictionary] -and $_.severity -in 'high', 'critical' } |
+              Sort-Object -Property { $_.source } -Unique |
+              ForEach-Object { Write-Host "$($_.severity) $($_.dependency) $($_.url)" }
+          }
+          exit $auditExit
 
       - if: always()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
