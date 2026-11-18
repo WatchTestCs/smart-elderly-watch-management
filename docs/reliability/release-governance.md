@@ -83,3 +83,5 @@ CI artifact 应保存 source SHA、Go 版本与平台、原始测试日志、逐
 签名密钥不进入仓库；未签名提交或附件不得描述为已签名。生产发布还需维护者配置受托签名
 tag、代码签名证书、时间戳服务、证书轮换、构建证明和留存策略。CI action、容器基础镜像、
 SDK 与依赖来源应固定版本或摘要，并按补丁策略持续审核。
+
+Markdown-only pull requests still report the required Watch simulator check. Source changes and release runs execute both simulator platforms.
