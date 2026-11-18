@@ -9,7 +9,8 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"time"
+	"os/signal"
+	"syscall"
 
 	"suining-care/internal/blob"
 	"suining-care/internal/config"
@@ -36,21 +37,22 @@ func run() error {
 	if err := cfg.Validate(); err != nil {
 		return err
 	}
-	if cfg.MySQLDSN == "" {
+	if *apply && cfg.MySQLDSN == "" {
 		return errors.New("MYSQL_DSN is required")
 	}
 	box, err := securestore.New(cfg.DataKey)
 	if err != nil {
 		return err
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
-	pool, err := db.OpenMySQL(ctx, cfg.MySQLDSN)
-	if err != nil {
-		return err
-	}
-	defer pool.Close()
+	var pool *db.Database
 	if *apply {
+		pool, err = db.OpenMySQL(ctx, cfg.MySQLDSN)
+		if err != nil {
+			return err
+		}
+		defer pool.Close()
 		if err := db.MigrateMySQL(ctx, pool); err != nil {
 			return err
 		}
@@ -65,17 +67,16 @@ func run() error {
 		if !blob.ValidKey(entry.Key) {
 			return blob.ErrIntegrity
 		}
-		_, err := legacy.Get(ctx, entry.Key)
-		if err != nil {
-			return fmt.Errorf("source %q: %w", entry.Key, err)
-		}
 		inspected++
 		if !*apply {
+			if _, err := legacy.Get(ctx, entry.Key); err != nil {
+				return fmt.Errorf("source %q: %w", entry.Key, err)
+			}
 			return nil
 		}
 		raw, err := local.Get(ctx, entry.Key)
 		if err != nil {
-			return err
+			return fmt.Errorf("source %q: %w", entry.Key, err)
 		}
 		changed, err := blob.ImportLegacy(ctx, pool.DB, box, entry.Key, raw)
 		if err != nil {

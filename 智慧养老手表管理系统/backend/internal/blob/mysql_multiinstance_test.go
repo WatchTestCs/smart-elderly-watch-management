@@ -22,7 +22,8 @@ func TestMySQLImageTwoInstancesAndRestoredPayload(t *testing.T) {
 	primary := dbtest.MySQL(t)
 	restored := dbtest.MySQL(t)
 	ctx := context.Background()
-	box, err := securestore.New(base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{7}, 32)))
+	key := base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{7}, 32))
+	box, err := securestore.NewKeyring("current", map[string]string{"current": key}, key)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -50,7 +51,7 @@ func TestMySQLImageTwoInstancesAndRestoredPayload(t *testing.T) {
 	}
 	first := &Manager{DB: primary, Store: &Encrypted{Store: rawA, Box: box}}
 	second := &Manager{DB: peer, Store: &Encrypted{Store: rawB, Box: box}}
-	content := []byte("shared encrypted image, same bytes on both application instances")
+	content := bytes.Repeat([]byte{0x7d}, MaxPlainBytes)
 	var wg sync.WaitGroup
 	results := make(chan error, 2)
 	start := make(chan struct{})
