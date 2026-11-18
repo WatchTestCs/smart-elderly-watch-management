@@ -24,9 +24,9 @@ type Match struct {
 var accounts = [...]struct{ role, query string }{
 	{auth.RoleAdmin, `SELECT user_id,user_name,user_phone,password,NULL,user_phone_cipher,user_phone_lookup,user_phone_protected
  FROM users WHERE account_status='active' AND ((user_phone_protected=false AND user_phone=?) OR (user_phone_protected=true AND user_phone_lookup=?))`},
-	{auth.RoleFamily, `SELECT f.family_id,f.family_name,f.family_phone,f.family_password,o.old_id,NULL,NULL,false
+	{auth.RoleFamily, `SELECT f.family_id,f.family_name,f.family_phone,f.family_password,o.old_id,f.family_phone_cipher,f.family_phone_lookup,f.family_phone_protected
  FROM family f LEFT JOIN oldperson o ON o.family_id=f.family_id
- WHERE f.family_phone=? ORDER BY o.old_id LIMIT 1`},
+ WHERE ` + userphone.QualifiedFamilyMatch + ` ORDER BY o.old_id LIMIT 1`},
 }
 
 // An invalid bcrypt hash with the same cost as real account hashes prevents
@@ -46,10 +46,7 @@ func Authenticate(ctx context.Context, store *db.Database, box *securestore.Box,
 		var name, storedPhone, hash sql.NullString
 		var residentID sql.NullInt64
 		var protected userphone.Record
-		args := []any{phone}
-		if account.role == auth.RoleAdmin {
-			args = append(args, lookup)
-		}
+		args := []any{phone, lookup}
 		err := store.QueryRowContext(ctx, account.query, args...).Scan(&id, &name, &storedPhone, &hash, &residentID,
 			&protected.Cipher, &protected.Lookup, &protected.Protected)
 		if errors.Is(err, sql.ErrNoRows) {
@@ -58,11 +55,17 @@ func Authenticate(ctx context.Context, store *db.Database, box *securestore.Box,
 		if err != nil {
 			return Match{}, err
 		}
-		if account.role == auth.RoleAdmin {
+		if account.role == auth.RoleAdmin || account.role == auth.RoleFamily {
 			if storedPhone.Valid {
 				protected.Legacy = &storedPhone.String
 			}
-			opened, err := protected.OpenStored(box, id)
+			var opened *string
+			var err error
+			if account.role == auth.RoleAdmin {
+				opened, err = protected.OpenStored(box, id)
+			} else {
+				opened, err = protected.OpenFamilyStored(box, id)
+			}
 			if err != nil {
 				return Match{}, err
 			}

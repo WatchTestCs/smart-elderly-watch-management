@@ -3,7 +3,11 @@ package config
 import (
 	"bytes"
 	"encoding/base64"
+	"log/slog"
+	"path/filepath"
+	"strings"
 	"testing"
+	"time"
 )
 
 func TestSafeDefaults(t *testing.T) {
@@ -98,6 +102,41 @@ func TestSecureCookies(t *testing.T) {
 		if got := (Config{Addr: test.addr}).SecureCookies(); got != test.want {
 			t.Fatalf("SecureCookies(%q)=%v, want %v", test.addr, got, test.want)
 		}
+	}
+}
+
+func TestSessionTTLRejectsDurationOverflow(t *testing.T) {
+	t.Setenv("SESSION_TTL_HOURS_FILE", "")
+	for _, test := range []struct {
+		value string
+		want  time.Duration
+	}{
+		{"24", 24 * time.Hour},
+		{"3000000", 12 * time.Hour},
+		{"-1", 12 * time.Hour},
+		{"invalid", 12 * time.Hour},
+	} {
+		t.Run(test.value, func(t *testing.T) {
+			t.Setenv("SESSION_TTL_HOURS", test.value)
+			if got := Load().SessionTTL; got != test.want {
+				t.Fatalf("SessionTTL=%s, want %s", got, test.want)
+			}
+		})
+	}
+}
+
+func TestUnreadableSecretFileIsReportedWithoutFallback(t *testing.T) {
+	var logs bytes.Buffer
+	previous := slog.Default()
+	slog.SetDefault(slog.New(slog.NewTextHandler(&logs, nil)))
+	t.Cleanup(func() { slog.SetDefault(previous) })
+	t.Setenv("SUINING_DESKTOP_TOKEN_FILE", filepath.Join(t.TempDir(), "missing"))
+	t.Setenv("SUINING_DESKTOP_TOKEN", "plaintext-should-not-fallback")
+	if got := Secret("SUINING_DESKTOP_TOKEN"); got != "" {
+		t.Fatalf("unreadable secret file unexpectedly fell back to environment: %q", got)
+	}
+	if output := logs.String(); !strings.Contains(output, "configuration_file_read_failed") || !strings.Contains(output, "SUINING_DESKTOP_TOKEN_FILE") || strings.Contains(output, "plaintext-should-not-fallback") {
+		t.Fatalf("missing or sensitive config diagnostic: %s", output)
 	}
 }
 

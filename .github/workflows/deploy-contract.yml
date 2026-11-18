@@ -72,3 +72,38 @@ jobs:
             -v "$PWD/deploy:/etc/prometheus:ro" \
             --entrypoint promtool prom/prometheus:v3.5.0 \
             test rules /etc/prometheus/alerts_test.yml
+      - name: Verify independent watchdog with real monitoring processes
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence="$PWD/evidence/ci/watchdog-process"
+          mkdir -p "$evidence" "$RUNNER_TEMP/watchdog-tools"
+          prom_container=""
+          am_container=""
+          cleanup() {
+            if [ -n "$prom_container" ]; then docker rm -f "$prom_container" >/dev/null; fi
+            if [ -n "$am_container" ]; then docker rm -f "$am_container" >/dev/null; fi
+          }
+          trap cleanup EXIT
+          docker pull prom/prometheus:v3.5.0
+          docker pull prom/alertmanager:v0.28.1
+          docker image inspect --format '{{index .RepoDigests 0}}' \
+            prom/prometheus:v3.5.0 prom/alertmanager:v0.28.1 > "$evidence/monitor-images.txt"
+          prom_container="$(docker create prom/prometheus:v3.5.0)"
+          am_container="$(docker create prom/alertmanager:v0.28.1)"
+          docker cp "$prom_container:/bin/prometheus" "$RUNNER_TEMP/watchdog-tools/prometheus"
+          docker cp "$am_container:/bin/alertmanager" "$RUNNER_TEMP/watchdog-tools/alertmanager"
+          chmod +x "$RUNNER_TEMP/watchdog-tools/"*
+          python3 scripts/reliability/watchdog-process-drill.py \
+            --prometheus "$RUNNER_TEMP/watchdog-tools/prometheus" \
+            --alertmanager "$RUNNER_TEMP/watchdog-tools/alertmanager" \
+            --report-dir "$evidence"
+      - name: Preserve watchdog process evidence including failures
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: watchdog-process-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            evidence/ci/watchdog-process/**/summary.json
+            evidence/ci/watchdog-process/monitor-images.txt
+          if-no-files-found: error
