@@ -4,6 +4,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"net"
 	"os"
 	"strconv"
@@ -31,6 +32,7 @@ func getenv(key, def string) string {
 	if path := os.Getenv(key + "_FILE"); path != "" {
 		b, err := os.ReadFile(path)
 		if err != nil {
+			slog.Error("configuration_file_read_failed", "env_key", key+"_FILE", "error", err)
 			return ""
 		}
 		return strings.TrimSpace(string(b))
@@ -123,7 +125,7 @@ func Load() Config {
 		proxies[i] = strings.TrimSpace(proxies[i])
 	}
 	ttlHours, err := strconv.Atoi(getenv("SESSION_TTL_HOURS", "12"))
-	if err != nil || ttlHours <= 0 {
+	if err != nil || ttlHours <= 0 || int64(ttlHours) > (1<<63-1)/int64(time.Hour) {
 		ttlHours = 12
 	}
 	cacheMiB, err := strconv.ParseInt(getenv("HEALTH_HOT_CACHE_MIB", "16"), 10, 64)
