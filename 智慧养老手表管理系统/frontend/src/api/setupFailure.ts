@@ -1,4 +1,4 @@
-import { apiErrorMessage, transportOutcome } from '../api/httpContract'
+import { apiErrorMessage, transportOutcome } from './httpContract'
 
 // Creating the first administrator is a one-shot write. A lost response must
 // never be described as a validation failure, or the user will submit again.

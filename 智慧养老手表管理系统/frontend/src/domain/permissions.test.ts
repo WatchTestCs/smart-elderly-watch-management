@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { isRestrictedAdmin, mayManageCareStaff, mayReadCareAudit } from './permissions'
-import type { SessionAccount } from '../auth'
+import type { SessionAccount } from './session'
 
 const account = (duty?: string): SessionAccount => ({ role: 'ADMIN', duty })
 

@@ -5,7 +5,7 @@ import {
   SETUP_REJECTED_FALLBACK,
   SETUP_UNCONFIRMED_MESSAGE,
   setupFailureMessage
-} from '@/domain/setup'
+} from '@/api/setupFailure'
 
 const timeout = Object.assign(new Error('timeout'), { code: 'ECONNABORTED' })
 const network = Object.assign(new Error('offline'), { code: 'ERR_NETWORK' })

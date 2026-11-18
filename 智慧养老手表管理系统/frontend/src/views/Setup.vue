@@ -30,7 +30,7 @@ import { useRouter } from 'vue-router'
 import { api } from '../api/client'
 import { loadSession } from '../auth'
 import { createAdministrator } from '../desktop'
-import { setupFailureMessage } from '../domain/setup'
+import { setupFailureMessage } from '../api/setupFailure'
 
 const router = useRouter()
 const form = ref<FormInstance | null>(null)
