@@ -7,7 +7,7 @@ import { spawnSync } from 'node:child_process'
 import { afterEach, expect, it } from 'vitest'
 
 const roots: string[] = []
-const gate = fileURLToPath(new URL('../scripts/check-typescript-scope.mjs', import.meta.url))
+const gate = fileURLToPath(new URL('../scripts/check-typescript-scope.ts', import.meta.url))
 function fixture() {
   const root = mkdtempSync(path.join(tmpdir(), 'suining-sfc-scope-'))
   roots.push(root)
