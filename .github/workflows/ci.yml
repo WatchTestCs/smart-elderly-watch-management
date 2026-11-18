@@ -48,21 +48,61 @@ jobs:
       sdk_sha256: ${{ inputs.sdk_sha256 || vars.HARMONY_SDK_SHA256 || '' }}
       require_native: ${{ inputs.require_native || github.event_name == 'push' }}
 
+  simulator-scope:
+    name: Scope simulator matrix
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      run-matrix: ${{ steps.scope.outputs.run || 'true' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        if: github.event_name == 'pull_request'
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Classify pull request changes
+        if: github.event_name == 'pull_request'
+        id: scope
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        shell: pwsh
+        run: |
+          python3 -m unittest discover -s scripts/reliability -p test_watch_simulator_scope.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python3 scripts/reliability/watch_simulator_scope.py
+
   simulator-tests:
     name: Watch simulator tests
+    needs: simulator-scope
+    if: needs.simulator-scope.outputs.run-matrix == 'true'
     uses: ./.github/workflows/watch-simulator.yml
 
   simulator:
     name: Watch simulator
     if: ${{ always() }}
-    needs: [simulator-tests]
+    needs: [simulator-scope, simulator-tests]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Require both simulator platforms
+      - name: Check simulator matrix result
+        shell: pwsh
         env:
+          SCOPE_RESULT: ${{ needs['simulator-scope'].result }}
+          RUN_MATRIX: ${{ needs['simulator-scope'].outputs.run-matrix }}
           SIMULATOR_RESULT: ${{ needs['simulator-tests'].result }}
-        run: test "$SIMULATOR_RESULT" = success
+        run: |
+          if ($env:SCOPE_RESULT -ne 'success') {
+            throw 'Simulator change classification failed.'
+          }
+          switch ($env:RUN_MATRIX) {
+            'true' { $expected = 'success' }
+            'false' { $expected = 'skipped' }
+            default { throw "Invalid simulator scope: $env:RUN_MATRIX" }
+          }
+          if ($env:SIMULATOR_RESULT -ne $expected) {
+            throw "Expected $expected from simulator matrix, got $env:SIMULATOR_RESULT."
+          }
 
   dependency-review:
     name: Dependency review
@@ -105,7 +145,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
-      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: '1.27.4'
           cache-dependency-path: 智慧养老手表管理系统/backend/go.sum
@@ -120,7 +160,7 @@ jobs:
           # JSON output exits zero even when vulnerable symbols are reachable.
           govulncheck -mode=convert < ../../evidence/ci/security/govulncheck.jsonl | tee ../../evidence/ci/security/govulncheck.txt
       - if: always()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: security-${{ github.event.pull_request.head.sha || github.sha }}
           path: evidence/ci/security/

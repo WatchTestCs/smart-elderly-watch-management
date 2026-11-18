@@ -34,13 +34,16 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Set up Go
-        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ matrix.go-version }}
           cache-dependency-path: 智慧养老手表管理系统/backend/go.sum
 
       - name: Enforce native Go API boundary
         run: python3 scripts/check-api-boundary.py
+
+      - name: Enforce Go module boundaries
+        run: python3 scripts/check-go-module-boundaries.py
 
       - name: Check generated OpenAPI contract
         run: python3 scripts/generate-openapi.py --check
@@ -83,7 +86,7 @@ jobs:
 
       - name: Preserve exact-source evidence including failures
         if: always()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: backend-${{ matrix.go-version }}-${{ github.event.pull_request.head.sha || github.sha }}
           path: evidence/ci/backend-${{ matrix.go-version }}/

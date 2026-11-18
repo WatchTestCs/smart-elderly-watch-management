@@ -1,4 +1,4 @@
-import type { SessionAccount } from '../auth'
+import type { SessionAccount } from './session'
 
 // An explicit supervisor assignment is required for the full administration UI.
 // Every other ADMIN duty, including an unassigned account, stays in the care workspace.

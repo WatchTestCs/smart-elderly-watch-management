@@ -6,23 +6,10 @@ import (
 	"errors"
 
 	"suining-care/internal/db"
+	"suining-care/internal/vitalpolicy"
 )
 
-type Alert struct {
-	ID            int64
-	DeviceID      *int64
-	OldID         *int64
-	Hr            *int64
-	Bp            *int64
-	RateState     *string
-	PreState      *string
-	RateDone      bool
-	PreDone       bool
-	CreateTime    *string
-	OldPersonName *string
-	HrHigh, HrLow *int
-	BpHigh, BpLow *int
-}
+type Alert = vitalpolicy.Alert
 
 const vitalAlertSelect = `SELECT r.id, r.device_id, r.old_id, r.hr, r.bp, r.rate_state, r.pre_state,
 		COALESCE((r.rate_handled_at IS NOT NULL AND r.create_time <= r.rate_handled_at), false),

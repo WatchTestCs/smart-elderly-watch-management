@@ -12,16 +12,19 @@ const result = spawnSync(process.execPath, [compiler, '--showConfig', '-p', path
   encoding: 'utf8', windowsHide: true, timeout: 30000, maxBuffer: 8 * 1024 * 1024
 })
 if (result.status !== 0) throw new Error(result.stderr || result.stdout || String(result.error))
-const project = JSON.parse(result.stdout)
-const included = new Set((project.files || []).map(file => path.resolve(root, file)))
+const project = JSON.parse(result.stdout) as { files?: string[] }
+const included = new Set((project.files ?? []).map(file => path.resolve(root, file)))
 const baselineFile = path.join(root, 'scripts/sfc-typecheck-baseline.json')
-const legacy = new Set(fs.existsSync(baselineFile) ? JSON.parse(fs.readFileSync(baselineFile, 'utf8')).untyped : [])
+const baseline = fs.existsSync(baselineFile)
+  ? JSON.parse(fs.readFileSync(baselineFile, 'utf8')) as { untyped: string[] }
+  : { untyped: [] as string[] }
+const legacy = new Set<string>(baseline.untyped)
 const remaining = new Set(legacy)
-const problems = []
+const problems: string[] = []
 let components = 0
 let typedScripts = 0
 let templateOnly = 0
-function inspect(directory) {
+function inspect(directory: string): void {
   for (const item of fs.readdirSync(directory, { withFileTypes: true })) {
     const file = path.join(directory, item.name)
     const relative = path.relative(root, file).split(path.sep).join('/')
@@ -35,7 +38,7 @@ function inspect(directory) {
     components++
     const { descriptor, errors } = parse(fs.readFileSync(file, 'utf8'), { filename: file })
     if (errors.length) problems.push(`invalid SFC: ${relative}`)
-    const scripts = [descriptor.script, descriptor.scriptSetup].filter(Boolean)
+    const scripts = [descriptor.script, descriptor.scriptSetup].filter((script): script is NonNullable<typeof script> => script !== null)
     if (scripts.some(script => script.src)) problems.push(`external SFC script requires review: ${relative}`)
     const untyped = scripts.some(script => script.lang !== 'ts')
     if (legacy.has(relative)) {
