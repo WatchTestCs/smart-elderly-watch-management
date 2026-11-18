@@ -5,9 +5,12 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"errors"
+	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
+
+	"suining-care/internal/observability"
 )
 
 type heartbeatStoreStub struct {
@@ -61,6 +64,29 @@ func TestHeartbeatBufferRequeuesFailedBatch(t *testing.T) {
 	store.fail = false
 	if n, err := buffer.Flush(context.Background()); err != nil || n != 1 {
 		t.Fatalf("retry Flush() = %d, %v; want 1, nil", n, err)
+	}
+}
+
+func TestHeartbeatBufferFailedShutdownFlushIsObservable(t *testing.T) {
+	store := &heartbeatStoreStub{fail: true}
+	buffer := NewHeartbeatBuffer(store)
+	if err := buffer.Record(context.Background(), 7, 1, nil, nil, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	buffer.Run(ctx)
+	if store.calls != 1 || len(buffer.items) != 1 {
+		t.Fatalf("shutdown failed to retain unflushed heartbeat: calls=%d pending=%d", store.calls, len(buffer.items))
+	}
+	metrics := httptest.NewRecorder()
+	observability.Default.ServeHTTP(metrics, httptest.NewRequest("GET", "/metrics", nil))
+	if !strings.Contains(metrics.Body.String(), "suining_heartbeat_flush_errors_total ") {
+		t.Fatal("failed heartbeat flush was not exposed to monitoring")
+	}
+	store.fail = false
+	if n, err := buffer.Flush(context.Background()); err != nil || n != 1 {
+		t.Fatalf("retry after shutdown error = %d, %v; want 1, nil", n, err)
 	}
 }
 
