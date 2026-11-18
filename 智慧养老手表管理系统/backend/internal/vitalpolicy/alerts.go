@@ -3,8 +3,6 @@ package vitalpolicy
 import (
 	"strconv"
 	"strings"
-
-	"suining-care/internal/vitalrepo"
 )
 
 // Alert rendering policy is pure: routes and persistence stay outside this package.
@@ -26,7 +24,7 @@ func Reason(metric string, value, low, high int) string {
 	}
 }
 
-func DescribeRatepreAlert(a vitalrepo.Alert) map[string]any {
+func DescribeRatepreAlert(a Alert) map[string]any {
 	hr, bp := 0, 0
 	if a.Hr != nil {
 		hr = int(*a.Hr)

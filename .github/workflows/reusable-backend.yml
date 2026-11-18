@@ -52,6 +52,9 @@ jobs:
       - name: Enforce native Go API boundary
         run: python3 scripts/check-api-boundary.py
 
+      - name: Enforce Go module boundaries
+        run: python3 scripts/check-go-module-boundaries.py
+
       - name: Check generated OpenAPI contract
         run: python3 scripts/generate-openapi.py --check
 
