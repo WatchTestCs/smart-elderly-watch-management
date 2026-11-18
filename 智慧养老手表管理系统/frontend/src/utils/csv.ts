@@ -20,7 +20,14 @@ export function downloadCsv(filename: string, columns: CsvColumn[], rows: Record
   link.href = url
   link.download = filename
   document.body.appendChild(link)
-  link.click()
-  link.remove()
-  setTimeout(() => URL.revokeObjectURL(url), 0)
+  try {
+    link.click()
+  } catch (error) {
+    URL.revokeObjectURL(url)
+    throw error
+  } finally {
+    link.remove()
+  }
+  // Browser downloads may acquire the blob asynchronously after click returns.
+  setTimeout(() => URL.revokeObjectURL(url), 30_000)
 }
