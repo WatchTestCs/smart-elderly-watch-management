@@ -67,7 +67,10 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         shell: pwsh
-        run: python3 scripts/reliability/watch_simulator_scope.py
+        run: |
+          python3 -m unittest discover -s scripts/reliability -p test_watch_simulator_scope.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python3 scripts/reliability/watch_simulator_scope.py
 
   simulator-tests:
     name: Watch simulator tests
