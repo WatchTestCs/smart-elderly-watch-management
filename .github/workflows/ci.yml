@@ -189,7 +189,7 @@ jobs:
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: git diff --check "$BASE_SHA" "$HEAD_SHA"
+        run: git diff --check "$BASE_SHA...$HEAD_SHA"
       - name: Verify release gate fail-closed regressions
         if: needs.classify.outputs.full == 'true'
         run: python3 -m unittest discover -s scripts/reliability -p 'test_*.py' -v
