@@ -1,41 +1,49 @@
 const fs=require('fs'),path=require('path'),run=require('./browser-harness.cjs');
+const {EventEmitter,once}=require('node:events');
 run(async({page,base,report,setRole,setSignedIn})=>{
  const checks=[];const check=(name,pass,details)=>checks.push({name,pass:Boolean(pass),details});
  const withTimeout=(promise,ms,message)=>Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error(message)),ms))]);
  const visit=async(route,role)=>{setRole(role);setSignedIn(true);await page.goto(base+'/?lifecycle='+Date.now()+'#'+route);await page.locator('.care-app').waitFor();};
  // Exercise real Axios/XHR cancellation against held mock responses.
- let customerMode='normal';const customerRequests=[];
+ const customerRequests=[],customerRoutes=new EventEmitter();
+ const heldSearches=new Set(['F02旧查询','F02超时','F02离页']);
  await page.route('**/api/v1/guardians/list',route=>{
-  customerRequests.push(route.request());
-  if(customerMode==='hold')return;
-  if(customerMode==='error')return route.fulfill({status:503,json:{returnCode:'0000',code:'SERVICE_UNAVAILABLE',message:'请求未完成',}});
-  return route.fulfill({json:{returnCode:'1111',customers:[{customerId:1,customerName:'F02当前监护人',customerPhone:'19912345678',customerAge:70}],total:1}});
+  const request=route.request();
+  const {customerName}=request.postDataJSON();
+  customerRequests.push(request);
+  customerRoutes.emit(customerName,request);
+  if(heldSearches.has(customerName))return;
+  if(customerName==='F02当前错误')return route.fulfill({status:503,json:{returnCode:'0000',code:'SERVICE_UNAVAILABLE',message:'请求未完成'}});
+  const name=customerName==='F02新查询'?'F02新查询结果':'F02当前监护人';
+  return route.fulfill({json:{returnCode:'1111',customers:[{customerId:1,customerName:name,customerPhone:'19912345678',customerAge:70}],total:1}});
  });
  await visit('/operations/guardians','ADMIN');
  await page.getByText('F02当前监护人',{exact:true}).first().waitFor();
  const searchCustomer=async(name)=>{
   await page.getByLabel('监护人姓名',{exact:true}).fill(name);
-  const requested=page.waitForRequest(r=>r.url().endsWith('/api/v1/guardians/list')&&r.postDataJSON().customerName===name);
-  await page.getByRole('button',{name:'查询监护人姓名',exact:true}).click();
-  return requested;
+  const [[request]]=await Promise.all([
+   once(customerRoutes,name,{signal:AbortSignal.timeout(8000)}),
+   page.getByRole('button',{name:'查询监护人姓名',exact:true}).click()
+  ]);
+  return request;
  };
- customerMode='hold';const superseded=await searchCustomer('F02旧查询');
+ const superseded=await searchCustomer('F02旧查询');
  const canceled=page.waitForEvent('requestfailed',{predicate:r=>r===superseded});
- customerMode='normal';await searchCustomer('F02新查询');await canceled;
+ await searchCustomer('F02新查询');await canceled;
  await page.locator('.roles[aria-busy="false"]').waitFor();
- check('New guardian query aborts a hung XHR and displays its own result',await page.getByText('F02当前监护人',{exact:true}).count()>0);
+ check('New guardian query aborts a hung XHR and displays its own result',await page.getByText('F02新查询结果',{exact:true}).count()>0);
  check('Read cancellation preserves the CSRF header',customerRequests.every(r=>r.headers()['x-csrf-token']==='mock-csrf-token'));
- customerMode='hold';const timedOut=await searchCustomer('F02超时');
+ const timedOut=await searchCustomer('F02超时');
  const timeoutCanceled=page.waitForEvent('requestfailed',{predicate:r=>r===timedOut});
  await page.getByRole('alert').filter({hasText:'监护人信息暂时无法加载'}).waitFor({timeout:15000});await timeoutCanceled;
  check('Guardian timeout aborts XHR and ends loading',await page.locator('.roles').getAttribute('aria-busy')==='false');
- customerMode='normal';await searchCustomer('F02恢复');
+ await searchCustomer('F02恢复');
  await page.getByText('F02当前监护人',{exact:true}).first().waitFor();
  check('A fresh query recovers after timeout',await page.getByRole('alert').filter({hasText:'监护人信息暂时无法加载'}).count()===0);
- customerMode='error';await searchCustomer('F02当前错误');
+ await searchCustomer('F02当前错误');
  await page.getByRole('alert').filter({hasText:'请求未完成'}).waitFor();
  check('A current HTTP failure ends loading and remains visible',await page.locator('.roles').getAttribute('aria-busy')==='false');
- customerMode='hold';const leaving=await searchCustomer('F02离页');
+ const leaving=await searchCustomer('F02离页');
  const unmounted=page.waitForEvent('requestfailed',{predicate:r=>r===leaving});
  await page.evaluate(()=>{location.hash='/operations/overview'});await unmounted;
  await page.getByRole('heading',{name:'运营总览',exact:true}).waitFor();
