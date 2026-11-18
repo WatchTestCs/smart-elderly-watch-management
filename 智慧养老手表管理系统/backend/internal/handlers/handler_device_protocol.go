@@ -188,7 +188,7 @@ func (h *Handler) deviceHeartbeat(w http.ResponseWriter, r *http.Request) {
 		bound = 1
 	}
 	response.OK(w, map[string]any{
-		"serverTime": now.Format(tsLayout), "bound": bound, "residentId": d.OldID, "bindingVersion": d.HealthEpoch,
+		"serverTime": siteStamp(now), "bound": bound, "residentId": d.OldID, "bindingVersion": d.HealthEpoch,
 		"reportInterval": 5, "pendingAlarm": 0,
 	})
 }

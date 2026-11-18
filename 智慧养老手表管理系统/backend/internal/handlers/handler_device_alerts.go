@@ -130,7 +130,7 @@ func describePersonAlert(pr *personRow, now time.Time) map[string]any {
 			offlineSec := int64(now.Sub(*pr.lastTime) / time.Second)
 			if offlineSec > 120 {
 				reasons = append(reasons, "离线 "+humanSeconds(offlineSec))
-				details = append(details, "最后一次心跳是 "+pr.lastTime.Format(tsLayout)+"，超过 2 分钟没有上报。")
+				details = append(details, "最后一次心跳是 "+siteStamp(*pr.lastTime)+"，超过 2 分钟没有上报。")
 			}
 		}
 	}

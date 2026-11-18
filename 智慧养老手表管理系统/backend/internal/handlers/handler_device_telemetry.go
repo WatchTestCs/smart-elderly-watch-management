@@ -202,7 +202,7 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 		queuedResult := map[string]any{
 			"rateState": nil, "preState": nil, "queued": true,
 			"message":    "设备数据已持久接收，等待后台处理",
-			"serverTime": parsed.now.Format(tsLayout),
+			"serverTime": siteStamp(parsed.now),
 		}
 		if !stageDeviceReportReceipt(w, ctx, tx, rollback, d, receiptID, receiptDigest, queuedResult) {
 			return
@@ -221,7 +221,7 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 	}
 	result := map[string]any{
 		"rateState": persisted.rateState, "preState": persisted.preState,
-		"serverTime": parsed.now.Format(tsLayout),
+		"serverTime": siteStamp(parsed.now),
 	}
 	if persisted.careIncidentID != 0 {
 		result["incidentId"] = persisted.careIncidentID

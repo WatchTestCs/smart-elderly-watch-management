@@ -188,6 +188,9 @@ func (h *Handler) deviceCreateBindCode(w http.ResponseWriter, r *http.Request) {
 	}
 	id, err := devicerepo.CreateBindCode(ctx, tx, code, oldID, createUser, now, expireTime)
 	if err != nil {
+		if duplicateConflict(w, err, "绑定码生成冲突，请重试") {
+			return
+		}
 		response.Error500(w, ref())
 		return
 	}

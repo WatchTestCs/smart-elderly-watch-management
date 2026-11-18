@@ -73,7 +73,10 @@ func (h *Handler) listGuardians(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	name := str(m, "customerName")
-	page, pageSize := bodyPage(m)
+	page, pageSize, pageOK := bodyPage(w, m)
+	if !pageOK {
+		return
+	}
 	tx, ok := h.beginAdminActionTx(w, r, carepolicy.ReadGuardians)
 	if !ok {
 		return
@@ -187,14 +190,26 @@ func lockCustomer(w http.ResponseWriter, r *http.Request, tx *sql.Tx, id int64) 
 }
 
 func guardianFields(w http.ResponseWriter, m map[string]any) (string, int, string, string, string, bool) {
-	name := str(m, "customerName")
-	ageStr, _ := vstr(m, "customerAge")
-	sex := str(m, "customerSex")
-	phone := str(m, "customerPhone")
-	addr := str(m, "customerAddress")
-	if name == "" || ageStr == "" || sex == "" || phone == "" || addr == "" {
-		response.Fail(w, "参数不完整")
-		return "", 0, "", "", "", false
+	const bad = ""
+	name, okName := vstrRequired(w, m, "customerName", 50)
+	if !okName {
+		return bad, 0, "", "", "", false
+	}
+	ageStr, okAge := vstrRequired(w, m, "customerAge", 4)
+	if !okAge {
+		return bad, 0, "", "", "", false
+	}
+	sex, okSex := vstrRequired(w, m, "customerSex", 1)
+	if !okSex {
+		return bad, 0, "", "", "", false
+	}
+	phone, okPhone := vstrRequired(w, m, "customerPhone", 12)
+	if !okPhone {
+		return bad, 0, "", "", "", false
+	}
+	addr, okAddr := vstrRequired(w, m, "customerAddress", 200)
+	if !okAddr {
+		return bad, 0, "", "", "", false
 	}
 	age, err := strconv.Atoi(ageStr)
 	if err != nil || age < 0 || age > 150 {

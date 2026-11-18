@@ -30,6 +30,28 @@ func TestContinuousReportFutureClock(t *testing.T) {
 	}
 }
 
+func TestReportTimeUsesSiteZoneNotProcessZone(t *testing.T) {
+	// 设备上报的是现场墙钟。解析结果必须落在 siteTimeZone 上，而不是依赖进程
+	// 的 TZ：否则容器内（TZ=UTC）正常、宿主东八区时每条记录偏 8 小时，处置时间
+	// 与上报时间的比较会恒假，红点永远消不掉。
+	got, ok := parseReportTimeStrict("2026-10-30 12:00:00")
+	if !ok {
+		t.Fatal("report time rejected")
+	}
+	if back := siteStamp(got); back != "2026-10-30 12:00:00" {
+		t.Errorf("round trip drifted: got %q", back)
+	}
+	// 与服务器时刻比较时必须是同一套口径：现场正午 = 服务器 now 的同一瞬间。
+	now := time.Date(2026, 10, 30, 12, 0, 0, 0, siteTimeZone)
+	if !got.Equal(now) {
+		t.Errorf("absolute instants differ: %v vs %v", got, now)
+	}
+	// 落库必须是 UTC 墙钟，这样 datetime 列与 now() 才可比。
+	if stored := got.UTC(); stored.Hour() != now.UTC().Hour() {
+		t.Errorf("stored wall clock drifted: %v vs %v", stored, now.UTC())
+	}
+}
+
 func TestContinuousSleepCountUsesLatestDay(t *testing.T) {
 	pool := testDatabase(t)
 	h := testHandler(t, pool)

@@ -181,6 +181,10 @@ func (h *Handler) replyToNoticeComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	back, _ := v.(string)
+	if utf8.RuneCountInString(back) > 2000 {
+		response.Fail(w, "回复内容最多 2000 个字符")
+		return
+	}
 	actor, ok := careAdmin(w, r)
 	if !ok {
 		return
