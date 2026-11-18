@@ -1,6 +1,32 @@
 const fs=require('fs'),path=require('path'),run=require('./browser-harness.cjs');
 run(async({page,base,report,setRole,setSignedIn})=>{
  const checks=[];const check=(name,pass,details)=>checks.push({name,pass:Boolean(pass),details});
+ // Chrome may not emit Playwright requestfailed while an intercepted route
+ // remains unresolved, even though Axios has aborted the underlying XHR.
+ // Observe the real transport's abort invocation in the page instead.
+ await page.addInitScript(() => {
+  const open=XMLHttpRequest.prototype.open,send=XMLHttpRequest.prototype.send,abort=XMLHttpRequest.prototype.abort;
+  XMLHttpRequest.prototype.open=function(...args) {
+   this.__careUrl=String(args[1]);
+   return open.apply(this,args);
+  };
+  XMLHttpRequest.prototype.send=function(...args) {
+   this.__careBody=String(args[0]??'');
+   return send.apply(this,args);
+  };
+  XMLHttpRequest.prototype.abort=function(...args) {
+   (window.__careAbortedXHR ||= []).push({url:this.__careUrl,body:this.__careBody});
+   return abort.apply(this,args);
+  };
+ });
+ const abortSpec=request=>({url:new URL(request.url()).pathname,body:request.postData()});
+ const abortedCount=async(request)=>page.evaluate(spec=>(window.__careAbortedXHR||[])
+  .filter(({url,body})=>url?.endsWith(spec.url)&&body===spec.body).length,abortSpec(request));
+ const expectAbort=async(request,before)=>page.waitForFunction(
+  ({spec,before})=>(window.__careAbortedXHR||[])
+   .filter(({url,body})=>url?.endsWith(spec.url)&&body===spec.body).length>before,
+  {spec:abortSpec(request),before},{timeout:5000});
+
  const withTimeout=(promise,ms,message)=>Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error(message)),ms))]);
  const visit=async(route,role)=>{setRole(role);setSignedIn(true);await page.goto(base+'/?lifecycle='+Date.now()+'#'+route);await page.locator('.care-app').waitFor();};
  // Exercise real Axios/XHR cancellation against held mock responses.
@@ -20,14 +46,14 @@ run(async({page,base,report,setRole,setSignedIn})=>{
   return requested;
  };
  customerMode='hold';const superseded=await searchCustomer('F02旧查询');
- const canceled=page.waitForEvent('requestfailed',{predicate:r=>r===superseded});
- customerMode='normal';await searchCustomer('F02新查询');await canceled;
+ const canceled=await abortedCount(superseded);
+ customerMode='normal';await searchCustomer('F02新查询');await expectAbort(superseded,canceled);
  await page.locator('.roles[aria-busy="false"]').waitFor();
  check('New guardian query aborts a hung XHR and displays its own result',await page.getByText('F02当前监护人',{exact:true}).count()>0);
  check('Read cancellation preserves the CSRF header',customerRequests.every(r=>r.headers()['x-csrf-token']==='mock-csrf-token'));
  customerMode='hold';const timedOut=await searchCustomer('F02超时');
- const timeoutCanceled=page.waitForEvent('requestfailed',{predicate:r=>r===timedOut});
- await page.getByRole('alert').filter({hasText:'监护人信息暂时无法加载'}).waitFor({timeout:15000});await timeoutCanceled;
+ const timeoutCanceled=await abortedCount(timedOut);
+ await page.getByRole('alert').filter({hasText:'监护人信息暂时无法加载'}).waitFor({timeout:15000});await expectAbort(timedOut,timeoutCanceled);
  check('Guardian timeout aborts XHR and ends loading',await page.locator('.roles').getAttribute('aria-busy')==='false');
  customerMode='normal';await searchCustomer('F02恢复');
  await page.getByText('F02当前监护人',{exact:true}).first().waitFor();
@@ -36,8 +62,8 @@ run(async({page,base,report,setRole,setSignedIn})=>{
  await page.getByRole('alert').filter({hasText:'请求未完成'}).waitFor();
  check('A current HTTP failure ends loading and remains visible',await page.locator('.roles').getAttribute('aria-busy')==='false');
  customerMode='hold';const leaving=await searchCustomer('F02离页');
- const unmounted=page.waitForEvent('requestfailed',{predicate:r=>r===leaving});
- await page.evaluate(()=>{location.hash='/operations/overview'});await unmounted;
+ const unmounted=await abortedCount(leaving);
+ await page.evaluate(()=>{location.hash='/operations/overview'});await expectAbort(leaving,unmounted);
  await page.getByRole('heading',{name:'运营总览',exact:true}).waitFor();
  const countAfterLeaving=customerRequests.length;await page.waitForTimeout(100);
  check('Navigation aborts the guardian read without starting a replacement',customerRequests.length===countAfterLeaving);
@@ -52,12 +78,12 @@ run(async({page,base,report,setRole,setSignedIn})=>{
   await page.getByRole('button',{name:'处置记录',exact:true}).first().click();return requested;
  };
  const historyRequest=await openHistory();
- const historyCanceled=page.waitForEvent('requestfailed',{predicate:r=>r===historyRequest});
- await page.getByRole('dialog',{name:'照护事件履历'}).locator('.el-dialog__headerbtn').click();await historyCanceled;
+ const historyCanceled=await abortedCount(historyRequest);
+ await page.getByRole('dialog',{name:'照护事件履历'}).locator('.el-dialog__headerbtn').click();await expectAbort(historyRequest,historyCanceled);
  check('Closing history aborts its hung XHR',historyRequests.length===1);
  const historyAgain=await openHistory();
- const historyUnmounted=page.waitForEvent('requestfailed',{predicate:r=>r===historyAgain});
- await page.evaluate(()=>{location.hash='/operations/guardians'});await historyUnmounted;
+ const historyUnmounted=await abortedCount(historyAgain);
+ await page.evaluate(()=>{location.hash='/operations/guardians'});await expectAbort(historyAgain,historyUnmounted);
  await page.locator('.roles').waitFor();
  check('History can reopen and is aborted when leaving the page',historyRequests.length===2);
  await page.unroute('**/api/v1/care/events');await page.unroute('**/api/v1/care/incidents');
