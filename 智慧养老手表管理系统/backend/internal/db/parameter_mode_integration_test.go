@@ -13,7 +13,7 @@ import (
 	"suining-care/internal/db/dbtest"
 )
 
-func TestMySQLParameterTransportRoundTripsAndFallback(t *testing.T) {
+func TestMySQLParameterTransportRoundTrips(t *testing.T) {
 	primary := dbtest.MySQL(t)
 	ctx := context.Background()
 	var schema string
@@ -82,14 +82,17 @@ func TestMySQLParameterTransportRoundTripsAndFallback(t *testing.T) {
 			if !interpolate && after <= before {
 				t.Fatal("binary prepare control did not execute")
 			}
-			// A literal '?' makes the driver's conservative interpolation check fall
-			// back to binary prepare. Values must still be bound, never concatenated.
+			// A quoted question mark must remain literal in both transport modes.
 			var marker, returned string
 			if err := conn.QueryRowContext(ctx, "SELECT '?' AS marker, ? AS value", text).Scan(&marker, &returned); err != nil || marker != "?" || returned != text {
-				t.Fatal("fallback changed bound values", err)
+				t.Fatal("quoted marker changed bound values", err)
 			}
-			if prepares() <= after {
-				t.Fatal("literal question mark did not use safe prepare fallback")
+			literalAfter := prepares()
+			if interpolate && literalAfter != after {
+				t.Fatalf("quoted marker triggered an unexpected prepare: %d -> %d", after, literalAfter)
+			}
+			if !interpolate && literalAfter <= after {
+				t.Fatal("quoted marker did not use binary prepare with interpolation disabled")
 			}
 			var nilBytes, nilValue bool
 			if err := conn.QueryRowContext(ctx, "SELECT ? IS NULL, ? IS NULL", []byte(nil), nil).Scan(&nilBytes, &nilValue); err != nil || !nilBytes || !nilValue {
