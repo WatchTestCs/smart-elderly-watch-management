@@ -73,6 +73,14 @@ groups:
         annotations:
           summary: "SOS notification gateway repeatedly fails"
           description: "The reason label distinguishes DNS, timeout, network, HTTP and decryption failures. Check pending jobs and human fallback."
+      - alert: SuiningHeartbeatFlushRepeatedFailures
+        expr: increase(suining_heartbeat_flush_errors_total[5m]) >= 3
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Buffered device heartbeats repeatedly fail to persist"
+          description: "Check MySQL and heartbeat_flush_failed logs. Liveness writes are replaceable; durable SOS and telemetry follow separate paths."
   - name: suining-analytics
     rules:
       - alert: SuiningOptionalAnalyticsUnavailable
