@@ -29,7 +29,7 @@ run(async({page,base,report,setRole,setSignedIn})=>{
  };
  const superseded=await searchCustomer('F02旧查询');
  const canceled=page.waitForEvent('requestfailed',{predicate:r=>r===superseded});
- await searchCustomer('F02新查询');await canceled;
+ await Promise.all([canceled,searchCustomer('F02新查询')]);
  await page.locator('.roles[aria-busy="false"]').waitFor();
  check('New guardian query aborts a hung XHR and displays its own result',await page.getByText('F02新查询结果',{exact:true}).count()>0);
  check('Read cancellation preserves the CSRF header',customerRequests.every(r=>r.headers()['x-csrf-token']==='mock-csrf-token'));

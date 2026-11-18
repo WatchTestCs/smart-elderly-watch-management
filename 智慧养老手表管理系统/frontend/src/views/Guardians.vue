@@ -1,5 +1,5 @@
 <template>
-  <div class="roles" v-loading="isLoading" element-loading-text="正在加载监护人信息…" :aria-busy="isLoading">
+  <div class="roles" :aria-busy="isLoading">
     
     <div class="sys-research">
       <form class="row-search" role="search" @submit.prevent="loadGuardians()">
@@ -88,6 +88,7 @@
     </el-dialog>
 
     <el-alert v-if="mutationError" :title="mutationError" type="error" :closable="false" show-icon />
+    <div v-loading="isLoading" element-loading-text="正在加载监护人信息…">
     <div v-if="loadError" class="collection-feedback" role="alert"><span>{{ loadError }}</span><el-button plain :loading="isLoading" @click="loadGuardians(true)">重新加载</el-button></div>
     <el-table v-if="!mobileLayout && !loadError" class="adaptive-record-table" :data="guardianList"
     style="width: 100%" border>
@@ -125,6 +126,7 @@
         v-model:current-page="currentPage"
         :page-size="pageSize"
         :total="total" />
+    </div>
     </div>
   </div>
 
