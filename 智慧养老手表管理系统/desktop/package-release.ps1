@@ -47,6 +47,7 @@ function Test-Application([string]$executable, [string]$label) {
     $env:SUINING_USER_DATA = Join-Path $qaRoot $label
     $application = Start-Process -FilePath $executable -PassThru -WindowStyle Hidden
     $backendPid = $null
+    $secondInstance = $null
     try {
         $discovery = Join-Path $env:SUINING_USER_DATA 'runtime/server.json'
         $deadline = [DateTime]::UtcNow.AddSeconds(45)
@@ -60,6 +61,14 @@ function Test-Application([string]$executable, [string]$label) {
         $backendPid = [int]$server.pid
         $page = Invoke-WebRequest "http://127.0.0.1:$($server.port)/index.html" -TimeoutSec 10
         if ($page.StatusCode -ne 200 -or $page.Content -notmatch '<html') { throw "$label embedded UI missing" }
+        $secondInstance = Start-Process -FilePath $executable -PassThru -WindowStyle Hidden
+        if (!$secondInstance.WaitForExit(15000) -or $secondInstance.ExitCode -ne 0) {
+            throw "$label second instance did not hand off to the running application"
+        }
+        $running = Get-Content -LiteralPath $discovery -Raw | ConvertFrom-Json
+        if ($application.HasExited -or $running.desktopPid -ne $application.Id -or $running.pid -ne $backendPid) {
+            throw "$label second instance replaced the running application or sidecar"
+        }
         # Simulate parent termination and verify the sidecar's orphan watchdog.
         Stop-Process -Id $application.Id
         $application.WaitForExit()
@@ -68,8 +77,9 @@ function Test-Application([string]$executable, [string]$label) {
             if ([DateTime]::UtcNow -gt $deadline) { throw "$label orphan sidecar did not exit" }
             Start-Sleep -Milliseconds 200
         }
-        return @{ distribution = $label; nativeStartup = $true; embeddedUI = $true; parentTerminationCleanup = $true }
+        return @{ distribution = $label; nativeStartup = $true; embeddedUI = $true; singleInstance = $true; parentTerminationCleanup = $true }
     } finally {
+        if ($secondInstance -and !$secondInstance.HasExited) { Stop-Process -Id $secondInstance.Id -ErrorAction SilentlyContinue }
         if (!$application.HasExited) { Stop-Process -Id $application.Id -ErrorAction SilentlyContinue }
         if ($backendPid) { Stop-Process -Id $backendPid -ErrorAction SilentlyContinue }
     }
