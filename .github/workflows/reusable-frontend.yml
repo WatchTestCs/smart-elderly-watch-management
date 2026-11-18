@@ -72,27 +72,6 @@ jobs:
       - name: Audit production dependencies
         run: npm audit --audit-level=high --json > ../../evidence/ci/frontend/npm-audit.json
 
-      - name: Summarize failed dependency audit
-        if: failure()
-        shell: pwsh
-        run: |
-          $report = '../../evidence/ci/frontend/npm-audit.json'
-          if (!(Test-Path -LiteralPath $report)) { exit 0 }
-          $audit = Get-Content -LiteralPath $report -Raw | ConvertFrom-Json -AsHashtable
-          if ($audit.error) { $audit.error | ConvertTo-Json -Depth 4; exit 0 }
-          foreach ($name in $audit.vulnerabilities.Keys) {
-            $entry = $audit.vulnerabilities[$name]
-            if ($entry.severity -in 'high', 'critical') {
-              [ordered]@{
-                package = $name
-                severity = $entry.severity
-                range = $entry.range
-                via = $entry.via
-                fixAvailable = $entry.fixAvailable
-              } | ConvertTo-Json -Depth 8 -Compress
-            }
-          }
-
       - if: always()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
         with:
