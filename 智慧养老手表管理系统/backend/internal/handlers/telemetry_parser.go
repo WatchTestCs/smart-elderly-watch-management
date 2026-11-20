@@ -20,7 +20,7 @@ func parseDeviceTelemetryPayload(w http.ResponseWriter, m map[string]any, now ti
 	out := parsedDeviceTelemetry{now: now, sourceStr: "gps"}
 	beTimeStr, _ := vstr(m, "beTime")
 	if beTimeStr == "" {
-		beTimeStr = siteStamp(now)
+		beTimeStr = now.Format(tsLayout)
 	}
 	var valid bool
 	out.beTime, valid = parseReportTimeStrict(beTimeStr)
@@ -28,13 +28,13 @@ func parseDeviceTelemetryPayload(w http.ResponseWriter, m map[string]any, now ti
 		write400(w, "beTime 格式应为 yyyy-MM-dd HH:mm:ss")
 		return parsedDeviceTelemetry{}, false
 	}
-	// beTime 现在已是绝对时刻，直接与服务器时刻比较即可，不再需要把两者
-	// 拉回同一套墙钟表示。
-	if out.beTime.After(now.Add(5 * time.Minute)) {
+	// Legacy timestamps use server wall time without a zone. Compare in the
+	// same representation so a non-UTC server does not reject its own default.
+	wallNow, _ := parseReportTimeStrict(now.Format(tsLayout))
+	if out.beTime.After(wallNow.Add(5 * time.Minute)) {
 		write400(w, "beTime 不能晚于服务器时间 5 分钟，请检查设备时钟")
 		return parsedDeviceTelemetry{}, false
 	}
-	// DATE 列存的是现场日期，按上报字符串的日期部分取值，不做时区换算。
 	out.day, _ = time.Parse("2006-01-02", beTimeStr[:10])
 
 	var msg string

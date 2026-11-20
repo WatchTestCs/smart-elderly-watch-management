@@ -13,14 +13,8 @@ import (
 	"unicode/utf8"
 )
 
-// write400 统一走 response.Fail 的封装。
-//
-// 前端 apiErrorMessage 只认 returnCode='0000' 的失败信封；过去这里直接写
-// {"message": "..."}，前端取不到 message，所有定制文案（例如「beTime 不能晚于
-// 服务器时间」「字段 room 最多 50 个字符」）都会退化成通用的「请求参数无效」，
-// 用户看不出到底哪里填错了。
 func write400(w http.ResponseWriter, msg string) {
-	response.Fail(w, msg)
+	response.JSON(w, http.StatusBadRequest, map[string]any{"message": msg})
 }
 
 func writeValidation400(w http.ResponseWriter) {
@@ -198,24 +192,13 @@ func checkPosition(lng, lat string) string {
 	return ""
 }
 
-// parseReportTimeStrict 把设备上报的「现场墙钟」解析成绝对时刻。
-//
-// 设备没有时区概念，上报的是机构现场的墙上时间（与心跳下发的 serverTime 一致）。
-// 必须按 siteTimeZone 解释，否则解析结果会随部署环境的 TZ 漂移：容器内 TZ=UTC 时
-// 看起来正常，宿主为东八区时每条记录都会偏 8 小时，而 datetime 列存的是绝对时刻，
-// 于是「处置时间 > 上报时间」的比较会恒假，红点永远消不掉。
 func parseReportTimeStrict(s string) (time.Time, bool) {
 	if !reportTimeRe.MatchString(s) {
 		return time.Time{}, false
 	}
-	t, err := time.ParseInLocation(tsLayout, s, siteTimeZone)
+	t, err := time.Parse(tsLayout, s)
 	if err != nil {
 		return time.Time{}, false
 	}
 	return t, true
-}
-
-// siteStamp 把绝对时刻格式化成设备可读的现场墙钟，用于 heartbeat 的 serverTime。
-func siteStamp(t time.Time) string {
-	return t.In(siteTimeZone).Format(tsLayout)
 }

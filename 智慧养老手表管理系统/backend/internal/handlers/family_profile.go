@@ -20,9 +20,18 @@ func (h *Handler) familyUpdateTwo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	phone := str(m, "familyPhone")
-	name := str(m, "familyName")
-	sex := str(m, "familySex")
-	addr := str(m, "familyAddress")
+	name, ok := vstrRequired(w, m, "familyName", 50)
+	if !ok {
+		return
+	}
+	sex, ok := vstrRequired(w, m, "familySex", 1)
+	if !ok {
+		return
+	}
+	addr, ok := vstrRequired(w, m, "familyAddress", 200)
+	if !ok {
+		return
+	}
 	id, okID := int64Val(m, "familyId")
 	if phone == "" || name == "" || sex == "" || addr == "" || !okID {
 		response.Fail(w, "参数不完整")

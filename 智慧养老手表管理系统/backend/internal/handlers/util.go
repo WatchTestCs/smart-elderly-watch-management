@@ -2,7 +2,6 @@
 package handlers
 
 import (
-	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -175,7 +174,12 @@ func internalError(w http.ResponseWriter, err error) bool {
 		return false
 	}
 	reference := ref()
-	log.Printf("internal error ref=%s: %v", reference, err)
+	var dbErr *mysqlDriver.MySQLError
+	if errors.As(err, &dbErr) {
+		log.Printf("internal error ref=%s mysql_code=%d", reference, dbErr.Number)
+	} else {
+		log.Printf("internal error ref=%s type=%T", reference, err)
+	}
 	if retryableError(err) {
 		w.Header().Set("Retry-After", "2")
 		response.Error(w, http.StatusServiceUnavailable, "SERVICE_BUSY", "服务暂时繁忙，请稍后重试")
@@ -185,24 +189,9 @@ func internalError(w http.ResponseWriter, err error) bool {
 	return true
 }
 
-// retryableError 区分「重试有意义」与「真的坏了」：连接池耗尽、行锁冲突、context
-// 超时都不是数据错误，客户端隔几秒重试通常就能成功，不应该收到 500。
+// retryableError recognizes explicit database contention or resource exhaustion.
+// An ambiguous network or commit failure must not imply a safe replay.
 func retryableError(err error) bool {
-	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
-		return true
-	}
-	var myErr *mysqlDriver.MySQLError
-	if errors.As(err, &myErr) && (myErr.Number == 1213 || myErr.Number == 1205 || myErr.Number == 1040 || myErr.Number == 1041) {
-		return true
-	}
-	msg := err.Error()
-	for _, hint := range []string{
-		"connection refused", "bad connection", "too many connections",
-		"i/o timeout", "broken pipe", "connection reset", "unexpected EOF",
-	} {
-		if strings.Contains(msg, hint) {
-			return true
-		}
-	}
-	return false
+	var dbErr *mysqlDriver.MySQLError
+	return errors.As(err, &dbErr) && (dbErr.Number == 1213 || dbErr.Number == 1205 || dbErr.Number == 1040 || dbErr.Number == 1041)
 }

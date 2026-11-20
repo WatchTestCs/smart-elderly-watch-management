@@ -15,3 +15,4 @@ ALTER TABLE family MODIFY family_name varchar(50) DEFAULT NULL;
 ALTER TABLE family MODIFY family_address varchar(200) DEFAULT NULL;
 ALTER TABLE customer MODIFY customer_name varchar(50) DEFAULT NULL;
 ALTER TABLE customer MODIFY customer_address varchar(200) DEFAULT NULL;
+ALTER TABLE said MODIFY person_name varchar(50) DEFAULT NULL;
