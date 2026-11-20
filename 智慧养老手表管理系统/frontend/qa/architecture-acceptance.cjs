@@ -7,7 +7,7 @@ run(async ({ page, context, base, report, setRole }) => {
   setRole('ADMIN')
   const checks = []
   const check = (name, pass) => { checks.push({ name, pass: Boolean(pass) }); assert.ok(pass, name) }
-  let duty = 'supervisor', actorId = 1, failList = false, failTransition = false, workerHealthy = true, pgReady = false
+  let duty = 'supervisor', actorId = 1, failList = false, failTransition = false, loseTransitionResponse = false, workerHealthy = true, pgReady = false
   let taskRequests = [], transitions = [], diagnosticsRequests = 0
   const tasks = Array.from({ length: 61 }, (_, i) => ({ id: i + 1, oldId: 1, deviceId: 1, oldPersonName: '李奶奶', state: 'received', createdAt: '2026-10-19T08:00:00+08:00', dueAt: '2026-10-19T08:03:00+08:00', notificationState: 'pending' }))
   await context.route('**/api/v1/care/incidents', route => {
@@ -34,6 +34,7 @@ run(async ({ page, context, base, report, setRole }) => {
     const task = tasks.find(t => t.id === Number(input.id))
     task.state = { acknowledge: 'acknowledged', start: 'in_progress', resolve: 'resolved', verify: 'verified', reopen: 'in_progress' }[input.action]
     if (input.action === 'resolve') task.resolvedBy = String(actorId)
+    if (loseTransitionResponse) return route.abort('timedout')
     return route.fulfill({ json: { returnCode: '1111', state: task.state } })
   })
   const visit = async () => {
@@ -91,6 +92,22 @@ run(async ({ page, context, base, report, setRole }) => {
   await dialog.getByRole('button', { name: '确认记录', exact: true }).click()
   await dialog.waitFor({ state: 'hidden' })
   check('successful transition refreshes its task', tasks[0].state === 'resolved')
+  await page.waitForFunction(() => document.querySelector('.care-inbox')?.getAttribute('aria-busy') === 'false')
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.getByRole('button', { name: '接单', exact: true }).first().click()
+  const lostAck = page.getByRole('dialog', { name: '确认接单' })
+  await lostAck.locator('textarea').fill('保留现场核对记录')
+  loseTransitionResponse = true
+  const beforeLostAck = transitions.length
+  await lostAck.getByRole('button', { name: '确认记录', exact: true }).click()
+  await lostAck.getByRole('status').filter({ hasText: '当前列表状态：已接单' }).waitFor()
+  check('lost write response preserves the note and blocks a stale action', await lostAck.locator('textarea').inputValue() === '保留现场核对记录' && await lostAck.getByRole('button', { name: '确认记录', exact: true }).isDisabled() && transitions.length === beforeLostAck + 1)
+  await lostAck.getByRole('button', { name: '重新核对', exact: true }).click()
+  await lostAck.getByRole('status').filter({ hasText: '当前列表状态：已接单' }).waitFor()
+  check('explicit reconciliation performs no duplicate transition', transitions.length === beforeLostAck + 1)
+  await lostAck.getByRole('button', { name: '取消', exact: true }).click()
+  loseTransitionResponse = false
+  await page.setViewportSize({ width: 1440, height: 1000 })
   failList = true
   await inbox.getByRole('button', { name: '刷新任务', exact: true }).click()
   await inbox.getByRole('alert').filter({ hasText: '请求未完成' }).waitFor()

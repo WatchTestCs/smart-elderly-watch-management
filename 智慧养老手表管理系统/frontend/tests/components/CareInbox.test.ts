@@ -66,11 +66,11 @@ describe('care task read scheduling', () => {
     const view = mountInbox()
     await vi.advanceTimersByTimeAsync(10000)
     expect(view.get('.care-inbox').attributes('aria-busy')).toBe('false')
-    expect(view.text()).toContain('照护任务暂时无法加载')
+    expect(view.text()).toContain('查询超时')
     expect(post.mock.calls[0][2].signal.aborted).toBe(true)
     await vi.advanceTimersByTimeAsync(5000)
     expect(view.text()).toContain('恢复任务')
-    expect(view.text()).not.toContain('照护任务暂时无法加载')
+    expect(view.text()).not.toContain('查询超时')
     expect(post.mock.calls.every(([path]) => path === '/api/v1/care/incidents')).toBe(true)
     view.unmount()
     expect(vi.getTimerCount()).toBe(0)
@@ -233,5 +233,60 @@ it('only offers verification to a supervisor who is neither assignee nor resolve
     const tasks = view.findAll('.care-task')
     expect(tasks).toHaveLength(3)
     expect(tasks.map(task => task.findAll('.care-task-actions button').some(button => button.text() === '复核关闭'))).toEqual([false, false, true])
+  } finally { view.unmount() }
+})
+
+it('discards a pre-commit list response and obtains a new snapshot after a care write', async () => {
+  post.mockReset()
+  let finishOld!: (value: unknown) => void
+  const initial = fixture('resident', 1)
+  const updated = { data: { ...initial.data, items: [{ ...initial.data.items[0], state: 'acknowledged', acknowledgedBy: '7' }] } }
+  post.mockResolvedValueOnce(initial)
+    .mockReturnValueOnce(new Promise(resolve => { finishOld = resolve }))
+    .mockResolvedValueOnce({ data: { returnCode: '1111' } })
+    .mockResolvedValueOnce(updated)
+  const view = mountInbox()
+  try {
+    await flushPromises()
+    store.notifyAlertsChanged()
+    await flushPromises()
+    const oldSignal = post.mock.calls[1][2].signal
+    await view.findAll('.care-task-actions button').find(button => button.text() === '接单')!.trigger('click')
+    await view.findAll('.test-dialog button').find(button => button.text() === '确认记录')!.trigger('click')
+    await flushPromises()
+    expect(oldSignal.aborted).toBe(true)
+    expect(post.mock.calls.map(([path]) => path)).toEqual([
+      '/api/v1/care/incidents', '/api/v1/care/incidents', '/api/v1/care/transition', '/api/v1/care/incidents'
+    ])
+    expect(view.findAll('.care-task-actions button').some(button => button.text() === '开始处置')).toBe(true)
+    finishOld(initial)
+    await flushPromises()
+    expect(view.findAll('.care-task-actions button').some(button => button.text() === '接单')).toBe(false)
+  } finally { view.unmount() }
+})
+
+it('reconciles a lost transition response without automatically submitting again', async () => {
+  post.mockReset()
+  const initial = fixture('resident', 1)
+  const updated = { data: { ...initial.data, items: [{ ...initial.data.items[0], state: 'acknowledged', acknowledgedBy: '7' }] } }
+  post.mockResolvedValueOnce(initial)
+    .mockRejectedValueOnce({ code: 'ECONNABORTED' })
+    .mockResolvedValueOnce(updated)
+  const view = mountInbox()
+  try {
+    await flushPromises()
+    await view.findAll('.care-task-actions button').find(button => button.text() === '接单')!.trigger('click')
+    await view.findAll('.test-dialog button').find(button => button.text() === '确认记录')!.trigger('click')
+    await flushPromises()
+    expect(post.mock.calls.map(([path]) => path)).toEqual([
+      '/api/v1/care/incidents', '/api/v1/care/transition', '/api/v1/care/incidents'
+    ])
+    expect(view.get('.test-dialog [role="alert"]').text()).toContain('先核对')
+    expect(view.get('.test-dialog [role="status"]').text()).toContain('已接单')
+    const confirm = view.findAll('.test-dialog button').find(button => button.text() === '确认记录')!
+    expect(confirm.attributes('disabled')).toBeDefined()
+    await confirm.trigger('click')
+    expect(post.mock.calls.filter(([path]) => path === '/api/v1/care/transition')).toHaveLength(1)
+    expect(view.findAll('.care-task-actions button').some(button => button.text() === '接单')).toBe(false)
   } finally { view.unmount() }
 })

@@ -20,12 +20,12 @@
         </div>
         <div class="care-task-actions">
           <el-button plain @click="viewHistory(task)">处置记录</el-button>
-          <el-button v-if="canAct('acknowledge') && ['received','notifying','notified','escalated'].includes(task.state)" type="primary" @click="begin(task,'acknowledge')">接单</el-button>
-          <el-button v-if="canAct('start') && canContinue(task) && task.state==='acknowledged'" type="primary" @click="begin(task,'start')">开始处置</el-button>
-          <el-button v-if="canAct('resolve') && canContinue(task) && task.state==='in_progress'" type="primary" @click="begin(task,'resolve')">登记处置</el-button>
-          <el-button v-if="canAct('escalate') && ['received','notifying','notified','acknowledged','in_progress'].includes(task.state)" plain @click="begin(task,'escalate')">升级跟进</el-button>
-          <el-button v-if="canAct('verify') && String(task.resolvedBy) !== String(actorId) && String(task.acknowledgedBy) !== String(actorId) && ['resolved','review_overdue'].includes(task.state)" type="primary" @click="begin(task,'verify')">复核关闭</el-button>
-          <el-button v-if="canAct('reopen') && ['resolved','review_overdue'].includes(task.state)" plain @click="begin(task,'reopen')">重新开启</el-button>
+          <el-button v-if="canTransition(task, 'acknowledge')" type="primary" @click="begin(task,'acknowledge')">接单</el-button>
+          <el-button v-if="canTransition(task, 'start')" type="primary" @click="begin(task,'start')">开始处置</el-button>
+          <el-button v-if="canTransition(task, 'resolve')" type="primary" @click="begin(task,'resolve')">登记处置</el-button>
+          <el-button v-if="canTransition(task, 'escalate')" plain @click="begin(task,'escalate')">升级跟进</el-button>
+          <el-button v-if="canTransition(task, 'verify')" type="primary" @click="begin(task,'verify')">复核关闭</el-button>
+          <el-button v-if="canTransition(task, 'reopen')" plain @click="begin(task,'reopen')">重新开启</el-button>
         </div>
       </article>
     </div>
@@ -44,19 +44,24 @@
     </el-dialog>
     <el-dialog v-model="dialog.visible" :title="actionLabels[dialog.action] || '记录照护措施'" width="min(500px, 94vw)" append-to-body :close-on-click-modal="!saving" :close-on-press-escape="!saving" :show-close="!saving">
       <p v-if="dialog.error" role="alert" class="care-error">{{ dialog.error }}</p>
+      <p v-if="dialog.reconciled" role="status">
+        {{ loading ? '正在核对任务状态…' : currentTask && !error ? '当前列表状态：' + stateLabel(currentTask.state) : '当前列表无法确认任务状态。' }}
+        {{ !loading && !canRetry ? '请重新核对，或关闭窗口后按最新状态操作。' : '' }}
+      </p>
       <label for="care-action-note">处置或交班记录</label>
       <el-input id="care-action-note" v-model="dialog.note" type="textarea" :rows="4" maxlength="2000" show-word-limit placeholder="说明现场情况、处理措施及后续跟进" />
       <template #footer>
         <el-button :disabled="saving" @click="dialog.visible=false">取消</el-button>
-        <el-button type="primary" :loading="saving" @click="submit">确认记录</el-button>
+        <el-button v-if="dialog.reconciled" :disabled="saving || loading" @click="reconcile">重新核对</el-button>
+        <el-button type="primary" :loading="saving" :disabled="!canRetry" @click="submit">确认记录</el-button>
       </template>
     </el-dialog>
   </section>
 </template>
 <script setup lang="ts">
 import { api as requestClient, type Envelope } from '../api/client'
-import { apiErrorMessage, readErrorMessage } from '../api/httpContract'
-import { ref, shallowRef, watch, onMounted, onBeforeUnmount } from 'vue'
+import { apiErrorMessage, readErrorMessage, transportOutcome } from '../api/httpContract'
+import { computed, ref, shallowRef, watch, onMounted, onBeforeUnmount } from 'vue'
 import { createLatestRead } from '../composables/latestRead'
 import { startVisiblePolling } from '../composables/visiblePolling'
 import CareOperationsPanel from './CareOperationsPanel.vue'
@@ -78,11 +83,28 @@ const scope = ref('active')
 const page = ref(1)
 const total = ref(0)
 const pageSize = 20
-const dialog = ref<{ visible: boolean; id: string | number | null; action: string; note: string; error: string }>({visible:false,id:null,action:'',note:'',error:''})
+const dialog = ref<{ visible: boolean; id: string | number | null; action: string; state: string; note: string; error: string; reconciled: boolean }>({visible:false,id:null,action:'',state:'',note:'',error:'',reconciled:false})
 const history = ref<HistoryState>({visible:false,loading:false,error:'',events:[],id:null,page:1,total:0})
 const canAct = (action: string) => !error.value && (duty.value === 'supervisor' || (duty.value === 'caregiver' && ['acknowledge','start','resolve'].includes(action)))
 const canContinue = (task: CareTask) =>
   duty.value === 'supervisor' || String(task.acknowledgedBy ?? '') === String(actorId.value)
+function canTransition(task: CareTask, action: string): boolean {
+  if (!canAct(action)) return false
+  switch (action) {
+    case 'acknowledge': return ['received','notifying','notified','escalated'].includes(task.state)
+    case 'start': return canContinue(task) && task.state === 'acknowledged'
+    case 'resolve': return canContinue(task) && task.state === 'in_progress'
+    case 'escalate': return ['received','notifying','notified','acknowledged','in_progress'].includes(task.state)
+    case 'verify': return String(task.resolvedBy) !== String(actorId.value) && String(task.acknowledgedBy) !== String(actorId.value) && ['resolved','review_overdue'].includes(task.state)
+    case 'reopen': return ['resolved','review_overdue'].includes(task.state)
+    default: return false
+  }
+}
+const currentTask = computed(() => tasks.value.find(task => String(task.id) === String(dialog.value.id)))
+const canRetry = computed(() => !dialog.value.reconciled || Boolean(
+  !loading.value && currentTask.value && currentTask.value.state === dialog.value.state &&
+  canTransition(currentTask.value, dialog.value.action)
+))
 
 let stopPolling: (() => void) | undefined
 const reads = createLatestRead(
@@ -99,7 +121,7 @@ const reads = createLatestRead(
   },
   cause => {
     tasks.value = []; total.value = 0; duty.value = ''; actorId.value = null
-    error.value = apiErrorMessage(cause, '照护任务暂时无法加载')
+    error.value = readErrorMessage(cause, '照护任务暂时无法加载')
   },
   value => { loading.value = value },
   { key: query => `${query.state}:${query.page}:${query.pageSize}` }
@@ -129,10 +151,15 @@ function loadHistory (value: number) {
   return historyReads.run({id:String(history.value.id),page:value,pageSize})
 }
 function begin (task: CareTask, action: string) {
-  dialog.value = {visible:true,id:task.id,action,note:'',error:''}
+  dialog.value = {visible:true,id:task.id,action,state:task.state,note:'',error:'',reconciled:false}
+}
+async function reconcile() {
+  dialog.value.reconciled = true
+  reads.cancel()
+  await load()
 }
 async function submit () {
-  if (saving.value) return
+  if (saving.value || !canRetry.value) return
   if (['resolve','verify','reopen'].includes(dialog.value.action) && !dialog.value.note.trim()) {
     dialog.value.error = '登记处置、复核或重新开启时必须填写记录'
     return
@@ -145,11 +172,19 @@ async function submit () {
     if (data.returnCode !== '1111') throw new Error('transition rejected')
     dialog.value.visible = false
     error.value = ''
+    // Never reuse a list snapshot that started before the committed write.
+    reads.cancel()
     store.notifyAlertsChanged()
     await load()
     if (dialog.value.action === 'verify') emit('verified')
   } catch (cause) {
     dialog.value.error = apiErrorMessage(cause, '任务操作未完成')
+    const status = (cause as { response?: { status?: number } } | null)?.response?.status
+    const outcome = transportOutcome(cause)
+    if (status === 409 || status === 403 || outcome === 'timeout' || outcome === 'network') {
+      // Reconcile from the server without replaying the mutation or losing the note.
+      await reconcile()
+    }
   } finally {saving.value = false}
 }
 function refreshWhenVisible() {
