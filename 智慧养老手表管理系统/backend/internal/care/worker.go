@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"regexp"
 	"strings"
 	dbstore "suining-care/internal/db"
+	"suining-care/internal/notify"
 	"suining-care/internal/observability"
 	"suining-care/internal/securestore"
 	"time"
@@ -22,8 +22,6 @@ type dispatcher struct {
 	escalationPhone string
 	httpClient      *http.Client
 }
-
-var phonePattern = regexp.MustCompile(`^1[0-9]{10}$`)
 
 // NotificationConfigured reports the same configuration gate used by Run,
 // without disclosing the gateway URL or token to the browser.
@@ -49,10 +47,7 @@ func Run(ctx context.Context, db *dbstore.Database, box *securestore.Box) {
 	} else {
 		observability.Default.Set("suining_care_gateway_tls_configured", 1)
 	}
-	escalation := strings.TrimSpace(os.Getenv("CARE_ESCALATION_PHONE"))
-	if !phonePattern.MatchString(escalation) {
-		escalation = ""
-	}
+	escalation := notify.EscalationPhone()
 	d := &dispatcher{db: db, box: box, webhookURL: endpoint, webhookToken: token,
 		escalationPhone: escalation, httpClient: client}
 	if endpoint != "" {

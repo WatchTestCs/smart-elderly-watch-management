@@ -7,6 +7,7 @@ package notify
 import (
 	"context"
 	"database/sql"
+	"os"
 	"strings"
 
 	"suining-care/internal/auth"
@@ -84,4 +85,27 @@ func QueueCareSMS(ctx context.Context, tx *sql.Tx, box *securestore.Box, inciden
 		return 0, err
 	}
 	return ct.RowsAffected()
+}
+
+// EscalationPhone returns the configured, valid fallback recipient.
+func EscalationPhone() string {
+	phone := strings.TrimSpace(os.Getenv("CARE_ESCALATION_PHONE"))
+	if !auth.ValidPhone(phone) {
+		return ""
+	}
+	return phone
+}
+
+// QueueEscalationSMS writes the fallback to the caller's incident transaction.
+func QueueEscalationSMS(ctx context.Context, tx *sql.Tx, box *securestore.Box, incidentID int64, phone string) error {
+	if phone == "" {
+		return nil
+	}
+	sealed, key, err := SealNotificationRecipient(box, phone)
+	if err != nil {
+		return err
+	}
+	_, err = tx.ExecContext(ctx, `INSERT INTO care_notification_outbox(incident_id,channel,recipient,recipient_key)
+		VALUES(?,'sms',?,?) ON DUPLICATE KEY UPDATE id=id`, incidentID, sealed, key)
+	return err
 }
