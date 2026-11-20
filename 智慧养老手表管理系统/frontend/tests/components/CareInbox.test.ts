@@ -217,3 +217,21 @@ describe('care task read scheduling', () => {
     expect(post).toHaveBeenCalledTimes(2)
   })
 })
+
+it('only offers verification to a supervisor who is neither assignee nor resolver', async () => {
+  post.mockReset()
+  post.mockResolvedValueOnce({ data: {
+    items: [
+      { id: 'assigned', oldPersonName: 'assigned', state: 'resolved', acknowledgedBy: '7', resolvedBy: '8' },
+      { id: 'resolved', oldPersonName: 'resolved', state: 'review_overdue', acknowledgedBy: '8', resolvedBy: '7' },
+      { id: 'independent', oldPersonName: 'independent', state: 'resolved', acknowledgedBy: '8', resolvedBy: '9' }
+    ], total: 3, duty: 'supervisor', actorId: 7
+  } })
+  const view = mountInbox()
+  try {
+    await flushPromises()
+    const tasks = view.findAll('.care-task')
+    expect(tasks).toHaveLength(3)
+    expect(tasks.map(task => task.findAll('.care-task-actions button').some(button => button.text() === '复核关闭'))).toEqual([false, false, true])
+  } finally { view.unmount() }
+})

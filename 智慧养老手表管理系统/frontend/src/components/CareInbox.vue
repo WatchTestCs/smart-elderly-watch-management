@@ -58,6 +58,7 @@ import { api as requestClient, type Envelope } from '../api/client'
 import { apiErrorMessage, readErrorMessage } from '../api/httpContract'
 import { ref, shallowRef, watch, onMounted, onBeforeUnmount } from 'vue'
 import { createLatestRead } from '../composables/latestRead'
+import { startVisiblePolling } from '../composables/visiblePolling'
 import CareOperationsPanel from './CareOperationsPanel.vue'
 import store from '../store'
 import {
@@ -83,7 +84,7 @@ const canAct = (action: string) => !error.value && (duty.value === 'supervisor' 
 const canContinue = (task: CareTask) =>
   duty.value === 'supervisor' || String(task.acknowledgedBy ?? '') === String(actorId.value)
 
-let timer: ReturnType<typeof setInterval> | undefined
+let stopPolling: (() => void) | undefined
 const reads = createLatestRead(
   (query: { page: number; pageSize: number; state: string }, signal: AbortSignal) => requestClient.post<CareListResponse>('api/v1/care/incidents', query, { signal }),
   ({data}, query) => {
@@ -157,14 +158,12 @@ function refreshWhenVisible() {
 watch(() => store.state.alertRevision, refreshWhenVisible)
 onMounted(() => {
   void load()
-  timer = setInterval(() => {
+  stopPolling = startVisiblePolling(() => {
     if (!loading.value) refreshWhenVisible()
-  }, 15000)
-  document.addEventListener('visibilitychange', refreshWhenVisible)
+  }, 15_000)
 })
 onBeforeUnmount(() => {
-  if (timer !== undefined) clearInterval(timer)
-  document.removeEventListener('visibilitychange', refreshWhenVisible)
+  stopPolling?.()
   reads.dispose()
   historyReads.dispose()
 })

@@ -120,6 +120,7 @@ import { useRouter } from 'vue-router'
 import { api } from '../api/client'
 import { apiErrorMessage } from '../api/httpContract'
 import { createLatestRead } from '../composables/latestRead'
+import { startVisiblePolling } from '../composables/visiblePolling'
 import CareInbox from '@/components/CareInbox.vue'
 import SecurityPanel from '@/components/SecurityPanel.vue'
 import { authState } from '@/auth'
@@ -169,7 +170,7 @@ const allCount = computed(() => snapshot.value
   : null)
 const num = computed(() => snapshot.value?.activeLocationAlerts ?? null)
 const positionTotal = computed(() => snapshot.value?.totalResidents ?? null)
-let snapshotTimer: ReturnType<typeof setInterval> | undefined
+let stopSnapshotPolling: (() => void) | undefined
 
 const isRestricted = computed(() => isRestrictedAdmin(authState.account))
 const isUnassigned = computed(() => authState.account?.role === 'ADMIN' &&
@@ -272,14 +273,12 @@ onMounted(() => {
   if (!isRestricted.value) {
     void loadNotices()
     void loadSnapshot()
-    snapshotTimer = setInterval(refreshSnapshotWhenVisible, 30_000)
-    document.addEventListener('visibilitychange', refreshSnapshotWhenVisible)
+    stopSnapshotPolling = startVisiblePolling(refreshSnapshotWhenVisible, 30_000)
   }
 })
 onBeforeUnmount(() => {
   noticeReads.dispose()
   snapshotReads.dispose()
-  if (snapshotTimer !== undefined) clearInterval(snapshotTimer)
-  document.removeEventListener('visibilitychange', refreshSnapshotWhenVisible)
+  stopSnapshotPolling?.()
 })
 </script>

@@ -3,7 +3,13 @@ import { readTimeoutError } from '../api/httpContract'
 // Read-only queue: an abandoned transport must never delay or overwrite newer state.
 export function awaitAbortable<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
   return new Promise<T>((resolve, reject) => {
-    if (signal.aborted) { reject(new Error('read aborted')); return }
+    if (signal.aborted) {
+      // The caller has already created this promise. Observe its eventual
+      // rejection even when the transport was cancelled before wrapping it.
+      void promise.catch(() => {})
+      reject(new Error('read aborted'))
+      return
+    }
     const cleanup = () => signal.removeEventListener('abort', onAbort)
     const onAbort = () => { cleanup(); reject(new Error('read aborted')) }
     signal.addEventListener('abort', onAbort, { once: true })

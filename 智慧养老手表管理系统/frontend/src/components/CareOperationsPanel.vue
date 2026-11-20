@@ -61,6 +61,7 @@ import { isAxiosError } from 'axios'
 import { api } from '../api/client'
 import { apiErrorMessage } from '../api/httpContract'
 import SecurityPanel from './SecurityPanel.vue'
+import { startVisiblePolling } from '../composables/visiblePolling'
 import { authState } from '../auth'
 import { mayReadCareAudit, mayManageCareStaff } from '../domain/permissions'
 
@@ -102,7 +103,7 @@ const post = <T,>(url: string, body: Record<string, unknown> = {}) =>
 let disposed = false
 let staffRevision = 0
 let auditRevision = 0
-let timer: ReturnType<typeof setInterval> | undefined
+let stopPolling: (() => void) | undefined
 
 async function refresh() {
   if (disposed || loading.value || !isSupervisor.value) return
@@ -184,15 +185,13 @@ async function ifAudit() {
 onMounted(() => {
   if (isSupervisor.value) void refresh()
   else if (canAudit.value) void ifAudit()
-  timer = setInterval(() => {
-    if (!document.hidden) void refresh()
-  }, 15_000)
+  stopPolling = startVisiblePolling(() => { void refresh() }, 15_000)
 })
 onBeforeUnmount(() => {
   disposed = true
   staffRevision++
   auditRevision++
-  clearInterval(timer)
+  stopPolling?.()
 })
 </script>
 <style scoped>
