@@ -24,7 +24,7 @@
           <el-button v-if="canAct('start') && canContinue(task) && task.state==='acknowledged'" type="primary" @click="begin(task,'start')">开始处置</el-button>
           <el-button v-if="canAct('resolve') && canContinue(task) && task.state==='in_progress'" type="primary" @click="begin(task,'resolve')">登记处置</el-button>
           <el-button v-if="canAct('escalate') && ['received','notifying','notified','acknowledged','in_progress'].includes(task.state)" plain @click="begin(task,'escalate')">升级跟进</el-button>
-          <el-button v-if="canAct('verify') && String(task.resolvedBy) !== String(actorId) && ['resolved','review_overdue'].includes(task.state)" type="primary" @click="begin(task,'verify')">复核关闭</el-button>
+          <el-button v-if="canAct('verify') && String(task.resolvedBy) !== String(actorId) && String(task.acknowledgedBy) !== String(actorId) && ['resolved','review_overdue'].includes(task.state)" type="primary" @click="begin(task,'verify')">复核关闭</el-button>
           <el-button v-if="canAct('reopen') && ['resolved','review_overdue'].includes(task.state)" plain @click="begin(task,'reopen')">重新开启</el-button>
         </div>
       </article>
@@ -58,6 +58,7 @@ import { api as requestClient, type Envelope } from '../api/client'
 import { apiErrorMessage, readErrorMessage } from '../api/httpContract'
 import { ref, shallowRef, watch, onMounted, onBeforeUnmount } from 'vue'
 import { createLatestRead } from '../composables/latestRead'
+import { startVisiblePolling } from '../composables/visiblePolling'
 import CareOperationsPanel from './CareOperationsPanel.vue'
 import store from '../store'
 import {
@@ -83,7 +84,7 @@ const canAct = (action: string) => !error.value && (duty.value === 'supervisor' 
 const canContinue = (task: CareTask) =>
   duty.value === 'supervisor' || String(task.acknowledgedBy ?? '') === String(actorId.value)
 
-let timer: ReturnType<typeof setInterval> | undefined
+let stopPolling: (() => void) | undefined
 const reads = createLatestRead(
   (query: { page: number; pageSize: number; state: string }, signal: AbortSignal) => requestClient.post<CareListResponse>('api/v1/care/incidents', query, { signal }),
   ({data}, query) => {
@@ -157,14 +158,12 @@ function refreshWhenVisible() {
 watch(() => store.state.alertRevision, refreshWhenVisible)
 onMounted(() => {
   void load()
-  timer = setInterval(() => {
+  stopPolling = startVisiblePolling(() => {
     if (!loading.value) refreshWhenVisible()
-  }, 15000)
-  document.addEventListener('visibilitychange', refreshWhenVisible)
+  }, 15_000)
 })
 onBeforeUnmount(() => {
-  if (timer !== undefined) clearInterval(timer)
-  document.removeEventListener('visibilitychange', refreshWhenVisible)
+  stopPolling?.()
   reads.dispose()
   historyReads.dispose()
 })

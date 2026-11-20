@@ -1,6 +1,6 @@
 import { afterEach, describe, it, expect, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
-import { createLatestRead } from '@/composables/latestRead'
+import { awaitAbortable, createLatestRead } from '@/composables/latestRead'
 
 function deferred<T>() {
   let resolve!: (value: T) => void
@@ -199,4 +199,13 @@ describe('cancelable latest read scheduler', () => {
     expect(accept.mock.calls).toEqual([[1, 1]])
   })
 
+})
+
+it('observes rejection of an already-aborted source promise', async () => {
+  const controller = new AbortController()
+  controller.abort()
+  const source = deferred<number>()
+  await expect(awaitAbortable(source.promise, controller.signal)).rejects.toThrow('read aborted')
+  source.reject(new Error('late aborted transport failure'))
+  await flushPromises()
 })

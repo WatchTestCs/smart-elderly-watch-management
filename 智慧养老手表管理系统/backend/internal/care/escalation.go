@@ -31,15 +31,8 @@ func (d *dispatcher) escalate(ctx context.Context) error {
 			VALUES(?,'system','escalate','超时无人完成对应照护阶段；需要立即跟进')`, id); err != nil {
 			return err
 		}
-		if d.escalationPhone != "" {
-			sealed, key, sealErr := notify.SealNotificationRecipient(d.box, d.escalationPhone)
-			if sealErr != nil {
-				return sealErr
-			}
-			if _, err := tx.ExecContext(ctx, `INSERT INTO care_notification_outbox(incident_id,channel,recipient,recipient_key)
-				VALUES(?,'sms',?,?) ON DUPLICATE KEY UPDATE id=id`, id, sealed, key); err != nil {
-				return err
-			}
+		if err := notify.QueueEscalationSMS(ctx, tx, d.box, id, d.escalationPhone); err != nil {
+			return err
 		}
 	}
 	return tx.Commit()

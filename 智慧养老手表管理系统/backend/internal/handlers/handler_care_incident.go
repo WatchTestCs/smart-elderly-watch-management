@@ -11,6 +11,7 @@ import (
 	"suining-care/internal/carepolicy"
 	"suining-care/internal/carerepo"
 	"suining-care/internal/careworkflow"
+	"suining-care/internal/notify"
 	"suining-care/internal/response"
 )
 
@@ -132,8 +133,9 @@ func (h *Handler) careTransition(w http.ResponseWriter, r *http.Request) {
 		response.JSON(w, http.StatusForbidden, map[string]any{"code": "ACCESS_DENIED", "message": "只能处理自己接单的照护任务"})
 		return
 	}
-	if action == "verify" && resolver != nil && *resolver == strconv.FormatInt(actor, 10) {
-		response.JSON(w, http.StatusForbidden, map[string]any{"message": "处置人与复核人必须不同"})
+	actorID := strconv.FormatInt(actor, 10)
+	if action == "verify" && ((resolver != nil && *resolver == actorID) || (acknowledgedBy != nil && *acknowledgedBy == actorID)) {
+		response.JSON(w, http.StatusForbidden, map[string]any{"message": "接单人、处置人不得复核本次照护任务"})
 		return
 	}
 	next := careworkflow.NextState(before, action)
@@ -165,7 +167,10 @@ func (h *Handler) careTransition(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	if internalError(w, careworkflow.PersistTransition(ctx, tx, id, next, action, strconv.FormatInt(actor, 10), note)) {
+	if internalError(w, careworkflow.PersistTransition(ctx, tx, id, next, action, actorID, note)) {
+		return
+	}
+	if action == "escalate" && internalError(w, notify.QueueEscalationSMS(ctx, tx, h.Box, id, notify.EscalationPhone())) {
 		return
 	}
 	if internalError(w, tx.Commit()) {
