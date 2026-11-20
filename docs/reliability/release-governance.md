@@ -38,12 +38,12 @@ UI Quality 由 Preview CI 在每个候选提交上调用，不再按前端路径
 
 `preview` 与 `main` 的分支推送自动启用完整原生 Preview CI，并启动对应通道的候选工作流；
 候选工作流等待同一 SHA 的 CI 与 Security 成功，再执行来源与产物门禁。手动复验时仍需启用
-`require_native` 与 `build_desktop`。原生构建读取显式 SDK URL / SHA-256，或仓库变量 `HARMONY_SDK_URL` /
+`require_native` 与 `build_desktop`。原生构建按显式 SDK URL、仓库 Secret `HARMONY_SDK_DOWNLOAD_URL`、仓库变量 `HARMONY_SDK_URL` 的顺序选择下载地址。SHA-256 优先读取显式输入与仓库变量 `HARMONY_SDK_DOWNLOAD_SHA256`，再读取
 `HARMONY_SDK_SHA256`。缺少配置必须失败；普通 PR 的可选原生 job 被跳过时，只能声明
 基础检查通过。SDK 工具链固定为 Command Line Tools 26.0.0.865 / Hvigor 6.26.9 /
 HarmonyOS SDK 26.0.0.105（API 26），版本与归档 SHA-256 见 `SuiningWatch/toolchain.json`。
 URL 必须为 HTTPS；传入摘要须与版本清单一致，并在解压和执行前核对实际归档 SHA-256。
-仓库管理员须同步更新两项 SDK 变量；旧版 URL 或摘要会阻断构建。华为下载链接可能临时签名，
+切换归档时应同步核对下载地址和摘要。华为签名下载地址应通过 `HARMONY_SDK_DOWNLOAD_URL` 配置，失效后更新 Secret，
 不得把签名查询参数写入源码或证据。解压脚本支持 Windows 长路径，并校验全部文件 CRC；
 中断后保留目录供排查，重新执行应选用新的空目标目录。
 

@@ -1,6 +1,9 @@
 name: Reusable watch protocol verification
 on:
   workflow_call:
+    secrets:
+      sdk_download_url:
+        required: false
     inputs:
       sdk_url:
         type: string
@@ -65,7 +68,7 @@ jobs:
     name: HarmonyOS SDK compile (no hardware)
     if: ${{ inputs.require_native }}
     runs-on: windows-latest
-    timeout-minutes: 20
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -74,7 +77,7 @@ jobs:
       - name: Acquire versioned SDK and compile unsigned wearable HAP
         shell: pwsh
         env:
-          SDK_ARCHIVE_URL: ${{ inputs.sdk_url }}
+          SDK_ARCHIVE_URL: ${{ inputs.sdk_url || secrets.sdk_download_url || vars.HARMONY_SDK_URL || '' }}
           SDK_ARCHIVE_SHA256: ${{ inputs.sdk_sha256 }}
         run: |
           $ErrorActionPreference = 'Stop'
@@ -89,7 +92,7 @@ jobs:
           if ($env:SDK_ARCHIVE_SHA256 -ine $expected.archiveSha256) { throw "SDK configuration must point to Command Line Tools $($expected.commandLineVersion) with the pinned SHA-256" }
           $uri.GetLeftPart([UriPartial]::Path) | Set-Content (Join-Path $evidence 'sdk-source.txt')
           $archive = Join-Path $env:RUNNER_TEMP "watch-commandline-$($expected.commandLineVersion).zip"
-          curl.exe --fail --location --connect-timeout 20 --max-time 600 --retry 1 --output $archive $url
+          curl.exe --fail --location --connect-timeout 20 --max-time 1500 --retry 1 --retry-max-time 1500 --output $archive $url
           if ($LASTEXITCODE -ne 0) { throw 'SDK download failed; native compilation has not run' }
           Get-FileHash -LiteralPath $archive -Algorithm SHA256 | ConvertTo-Json | Set-Content (Join-Path $evidence 'sdk-sha256.json')
           if ((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash -ine $env:SDK_ARCHIVE_SHA256) { throw 'SDK checksum mismatch; archive will not be extracted or executed' }

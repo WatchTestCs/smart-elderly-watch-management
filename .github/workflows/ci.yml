@@ -44,9 +44,11 @@ jobs:
     name: Watch protocol
     uses: ./.github/workflows/reusable-watch.yml
     with:
-      sdk_url: ${{ inputs.sdk_url || vars.HARMONY_SDK_URL || '' }}
-      sdk_sha256: ${{ inputs.sdk_sha256 || vars.HARMONY_SDK_SHA256 || '' }}
+      sdk_url: ${{ inputs.sdk_url || '' }}
+      sdk_sha256: ${{ inputs.sdk_sha256 || vars.HARMONY_SDK_DOWNLOAD_SHA256 || vars.HARMONY_SDK_SHA256 || '' }}
       require_native: ${{ inputs.require_native || github.event_name == 'push' }}
+    secrets:
+      sdk_download_url: ${{ secrets.HARMONY_SDK_DOWNLOAD_URL }}
 
   simulator-scope:
     name: Scope simulator matrix
