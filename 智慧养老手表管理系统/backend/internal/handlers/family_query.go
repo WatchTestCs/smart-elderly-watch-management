@@ -19,7 +19,10 @@ func (h *Handler) familySelect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	name := str(m, "familyName")
-	p, ps := bodyPage(m)
+	p, ps, pageOK := bodyPage(w, m)
+	if !pageOK {
+		return
+	}
 	ctx := r.Context()
 	tx, ok := h.beginAdminActionTx(w, r, carepolicy.ReadContacts)
 	if !ok {

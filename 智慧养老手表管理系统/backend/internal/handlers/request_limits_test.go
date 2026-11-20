@@ -50,9 +50,13 @@ func TestPaginationAndIDsRejectInvalidNumbers(t *testing.T) {
 			t.Fatalf("invalid ID accepted: %v (%d)", m, n)
 		}
 	}
-	p, ps := bodyPage(map[string]any{"page": 1e100, "pageSize": float64(1000000)})
-	if p != 1 || ps != 20 {
-		t.Fatalf("invalid pagination must be bounded: page=%d size=%d", p, ps)
+	// 越界分页必须被拒绝，而不是静默夹取成 1/20——否则调用方会以为自己
+	// 拿到的是全量数据。
+	if _, _, ok := bodyPage(httptest.NewRecorder(), map[string]any{"page": 1e100, "pageSize": float64(1000000)}); ok {
+		t.Fatalf("out-of-range pagination must be rejected")
+	}
+	if p, ps, ok := bodyPage(httptest.NewRecorder(), map[string]any{}); !ok || p != 1 || ps != 20 {
+		t.Fatalf("defaults must stay 1/20: page=%d size=%d ok=%v", p, ps, ok)
 	}
 }
 

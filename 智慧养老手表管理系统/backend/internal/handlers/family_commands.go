@@ -14,15 +14,28 @@ import (
 
 // familyFields validates the common administrative family profile.
 func familyFields(w http.ResponseWriter, m map[string]any) (familyrepo.Family, bool) {
-	family := familyrepo.Family{
-		Name: str(m, "familyName"), Relation: str(m, "familyRelation"),
-		Sex: str(m, "familySex"), Phone: str(m, "familyPhone"),
-		Address: str(m, "familyAddress"),
-	}
-	if family.Name == "" || family.Relation == "" || family.Sex == "" ||
-		family.Phone == "" || family.Address == "" {
-		response.Fail(w, "参数不完整")
+	name, okName := vstrRequired(w, m, "familyName", 50)
+	if !okName {
 		return familyrepo.Family{}, false
+	}
+	relation, okRelation := vstrRequired(w, m, "familyRelation", 10)
+	if !okRelation {
+		return familyrepo.Family{}, false
+	}
+	sex, okSex := vstrRequired(w, m, "familySex", 1)
+	if !okSex {
+		return familyrepo.Family{}, false
+	}
+	phone, okPhone := vstrRequired(w, m, "familyPhone", 12)
+	if !okPhone {
+		return familyrepo.Family{}, false
+	}
+	address, okAddress := vstrRequired(w, m, "familyAddress", 200)
+	if !okAddress {
+		return familyrepo.Family{}, false
+	}
+	family := familyrepo.Family{
+		Name: name, Relation: relation, Sex: sex, Phone: phone, Address: address,
 	}
 	if !auth.ValidPhone(family.Phone) {
 		response.Fail(w, "请输入正确的11位手机号")

@@ -75,7 +75,10 @@ func (h *Handler) inviteList(w http.ResponseWriter, r *http.Request) {
 		response.JSON(w, http.StatusBadRequest, map[string]any{"message": "邀请状态不正确"})
 		return
 	}
-	page, pageSize := bodyPage(m)
+	page, pageSize, pageOK := bodyPage(w, m)
+	if !pageOK {
+		return
+	}
 	tx, ok := h.beginAdminActionTx(w, r, carepolicy.ReadInvites)
 	if !ok {
 		return

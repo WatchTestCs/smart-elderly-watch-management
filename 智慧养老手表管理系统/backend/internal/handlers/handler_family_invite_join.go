@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strings"
 	"suining-care/internal/auth"
 	"suining-care/internal/carepolicy"
 	"suining-care/internal/inviterepo"
@@ -143,11 +144,11 @@ func (registration *invitationRegistration) validationMessage() string {
 	if registration.code == "" {
 		return "请输入邀请码"
 	}
-	if registration.familyName == "" {
+	if strings.TrimSpace(registration.familyName) == "" {
 		return "请输入姓名"
 	}
-	if utf8.RuneCountInString(registration.familyName) > 10 {
-		return "姓名长度不能超过10个字符"
+	if utf8.RuneCountInString(registration.familyName) > 50 {
+		return "姓名长度不能超过50个字符"
 	}
 	if !auth.ValidPhone(registration.familyPhone) {
 		return "请输入正确的11位手机号"
@@ -161,8 +162,8 @@ func (registration *invitationRegistration) validationMessage() string {
 	if registration.familySex != "男" && registration.familySex != "女" {
 		return "请选择性别"
 	}
-	if utf8.RuneCountInString(registration.familyAddress) > 20 {
-		return "地址长度不能超过20个字符"
+	if utf8.RuneCountInString(registration.familyAddress) > 200 {
+		return "地址长度不能超过200个字符"
 	}
 
 	return ""

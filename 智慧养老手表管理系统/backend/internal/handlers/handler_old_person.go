@@ -22,6 +22,13 @@ func (h *Handler) updateResident(w http.ResponseWriter, r *http.Request) {
 	h.saveResident(w, r, true)
 }
 
+// residentFieldLimits 与 migrations/mysql/0032_text_widths.sql 的列宽保持一致。
+// 超限在这里就被拒成 400，不再交给 INSERT 让 MySQL 1406 打成 500。
+var residentFieldLimits = map[string]int{
+	"name": 50, "bothdate": 10, "sex": 1, "phone": 12, "room": 50,
+	"illness": 200, "warn": 50, "foodLike": 100, "foodHate": 100, "drag": 100,
+}
+
 func (h *Handler) saveResident(w http.ResponseWriter, r *http.Request, update bool) {
 	m, ok := bodyMap(w, r)
 	if !ok {
@@ -30,9 +37,8 @@ func (h *Handler) saveResident(w http.ResponseWriter, r *http.Request, update bo
 	keys := [...]string{"name", "bothdate", "sex", "phone", "room", "illness", "warn", "foodLike", "foodHate", "drag"}
 	fields := make(map[string]string, len(keys))
 	for _, key := range keys {
-		value, present := vstr(m, key)
-		if !present {
-			write400(w, "请求参数不完整")
+		value, ok := vstrMax(w, m, key, residentFieldLimits[key])
+		if !ok {
 			return
 		}
 		fields[key] = value

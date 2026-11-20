@@ -133,7 +133,12 @@ func (h *Handler) createMonitoringProfile(w http.ResponseWriter, r *http.Request
 		`INSERT INTO watch_info(device_id,op_time,bpf,bpl,hrl,hrf)
 		 SELECT ?,?,?,?,?,? FROM device WHERE device_id=?`,
 		deviceID, siteDay(now), bpf, bpl, hrl, hrf, deviceID)
-	if internalError(w, err) {
+	if err != nil {
+		// exists 检查与 INSERT 之间存在并发窗口，唯一索引会兜住，映射成 409。
+		if duplicateConflict(w, err, "设备阈值档案已存在") {
+			return
+		}
+		internalError(w, err)
 		return
 	}
 	affected, err := ct.RowsAffected()

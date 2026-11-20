@@ -16,6 +16,14 @@ func (h *Handler) createNotice(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	title, okTitle := vstrRequired(w, m, "title", 200)
+	if !okTitle {
+		return
+	}
+	textMain, okMain := vstrRequired(w, m, "textMain", 10000)
+	if !okMain {
+		return
+	}
 	files, ok := picNameList(w, m)
 	if !ok {
 		return
@@ -32,7 +40,7 @@ func (h *Handler) createNotice(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	err := socialworkflow.PublishAnnouncement(r.Context(), h.DB, actor, manager, h.Box, str(m, "title"), str(m, "textMain"), files)
+	err := socialworkflow.PublishAnnouncement(r.Context(), h.DB, actor, manager, h.Box, title, textMain, files)
 	switch {
 	case errors.Is(err, careworkflow.ErrCapabilityDenied):
 		response.JSON(w, http.StatusForbidden, map[string]any{"code": "ACCESS_DENIED"})
@@ -82,6 +90,14 @@ func (h *Handler) updateNotice(w http.ResponseWriter, r *http.Request) {
 		response.Fail(w, "参数不正确")
 		return
 	}
+	title, okTitle := vstrRequired(w, m, "title", 200)
+	if !okTitle {
+		return
+	}
+	textMain, okMain := vstrRequired(w, m, "textMain", 10000)
+	if !okMain {
+		return
+	}
 	files, ok := picNameList(w, m)
 	if !ok {
 		return
@@ -98,7 +114,7 @@ func (h *Handler) updateNotice(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	updated, err := socialworkflow.UpdateNotice(r.Context(), h.DB, actor, manager, textID, str(m, "title"), str(m, "textMain"), files)
+	updated, err := socialworkflow.UpdateNotice(r.Context(), h.DB, actor, manager, textID, title, textMain, files)
 	switch {
 	case errors.Is(err, careworkflow.ErrCapabilityDenied):
 		response.JSON(w, http.StatusForbidden, map[string]any{"code": "ACCESS_DENIED"})
