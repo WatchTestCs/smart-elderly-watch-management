@@ -9,12 +9,26 @@
 GitHub Actions 检查来源与名称应以仓库实际 check-runs 为准，不应硬编码未经复核的 integration ID。
 CodeQL 或依赖审查因 fork 权限、配置缺失而未运行时，应由维护者在可信分支重新执行，不能把跳过当成通过。
 
+Security 使用普通 `pull_request` 事件扫描 fork 提交，不因来源仓库不同而跳过。
+该事件的 fork token 由 GitHub 限制为只读，工作流不引用 secrets；不得改为在
+`pull_request_target` 中检出并执行不可信源码。GitHub 对普通 PR 事件允许上传 CodeQL
+结果，详见 [上传权限说明](https://docs.github.com/en/code-security/reference/code-scanning/troubleshoot-analysis-errors/resource-not-accessible)。
+检出固定 head SHA 且不持久化凭据，分析前核对实际 HEAD 与预期 40 位 SHA，
+并在 `codeql-<language>-<SHA>` 制品中同时保存 `codeql-source.txt` 和 SARIF。
+源码核对失败或扫描失败仍使 job 失败；上传步骤成功不能代替分析成功，也不能将 PR 扫描作为正式发布认证。
+
 2026-11-13 的实际配置快照：上游既有 ruleset `26444520` 保持 active，仅匹配
 `refs/heads/preview`，无 bypass，保留原有 11 项必需检查、禁止删除和非快进等规则。
 将原先的 0 人批准修正为至少 1 人批准，开启新推送撤销旧批准与最后推送需他人批准。
 保存后重新读取规则核对；GitHub 对 #146 返回 `REVIEW_REQUIRED` 和 `BLOCKED`。
 这证明当前规则及服务端评估结果，不表示已有独立批准，也不冒充失败/缺失检查下的真实合并调用测试。
 按本次授权没有尝试自合并、直接推上游或绕过保护；完整发布门禁和独立审查仍须另行完成。
+
+2026-11-21 重新读取同一规则：管理员已将名称改为
+`Preview CI-gated PRs (no required approval)`，要求批准数为 0，撤销旧批准与最后推送需他人批准均关闭；
+active、preview 范围、无 bypass、11 项必需检查及禁止删除/非快进仍保留。
+其中必需 `CodeQL / go` 必须实际执行。尊重管理员后续配置，没有自动恢复旧审批设置；
+原验收要求中的独立审批仍未满足，不能沿用 11 月 13 日快照声称当前仍强制审批。
 
 ## 预览交付
 

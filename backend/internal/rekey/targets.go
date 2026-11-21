@@ -37,6 +37,12 @@ func (t target) fieldScope(keys []any) string {
 	if t.table == "family" && t.column == "family_phone_cipher" {
 		return "account-phone:family:" + fmt.Sprint(keys[0])
 	}
+	if t.table == "said" && t.column == "said_phone_cipher" {
+		return "social-comment-phone:" + fmt.Sprint(keys[0])
+	}
+	if t.table == "oldperson" && t.column == "care_profile_cipher" {
+		return "resident-care-profile:" + fmt.Sprint(keys[0])
+	}
 	return t.scope
 }
 
@@ -66,5 +72,7 @@ func targets() []target {
 		{"analytics_outbox", "payload", []string{"id"}, "location", coordinateProjection},
 		{"users", "user_phone_cipher", []string{"user_id"}, "", directEnvelope},
 		{"family", "family_phone_cipher", []string{"family_id"}, "", directEnvelope},
+		{"said", "said_phone_cipher", []string{"said_id"}, "", directEnvelope},
+		{"oldperson", "care_profile_cipher", []string{"old_id"}, "", directEnvelope},
 	}
 }

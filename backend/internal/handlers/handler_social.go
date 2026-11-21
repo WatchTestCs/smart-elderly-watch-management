@@ -52,7 +52,7 @@ func (h *Handler) listNoticeComments(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	items, err := socialrepo.ListComments(r.Context(), h.DB, p.Phone, textID)
+	items, err := socialrepo.ListComments(r.Context(), h.DB, h.Box, p.Phone, textID)
 	if internalError(w, err) {
 		return
 	}
@@ -215,7 +215,7 @@ func (h *Handler) toggleNoticeCommentLike(w http.ResponseWriter, r *http.Request
 	if !ok {
 		return
 	}
-	changed, err := socialrepo.ToggleLike(r.Context(), h.DB, saidID, p.Phone)
+	changed, err := socialrepo.ToggleLike(r.Context(), h.DB, h.Box, saidID, p.Phone)
 	if isNotFound(err) {
 		response.JSON(w, http.StatusNotFound, map[string]any{"message": "评论不存在"})
 		return

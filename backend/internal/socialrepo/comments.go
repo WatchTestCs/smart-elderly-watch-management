@@ -4,6 +4,7 @@ package socialrepo
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"time"
 
 	"suining-care/internal/db"
@@ -13,6 +14,17 @@ import (
 
 // DeleteComment removes one notice comment and reports whether a row was removed.
 func DeleteComment(ctx context.Context, tx *sql.Tx, commentID int64) (bool, error) {
+	var locked int64
+	err := tx.QueryRowContext(ctx, "SELECT said_id FROM said WHERE said_id=? FOR UPDATE", commentID).Scan(&locked)
+	if errors.Is(err, sql.ErrNoRows) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	if _, err := tx.ExecContext(ctx, "DELETE FROM nice_count WHERE said_id=?", commentID); err != nil {
+		return false, err
+	}
 	result, err := tx.ExecContext(ctx, "DELETE FROM said WHERE said_id=?", commentID)
 	if err != nil {
 		return false, err
@@ -35,24 +47,31 @@ func ReplyComment(ctx context.Context, tx *sql.Tx, commentID int64, reply string
 
 // ToggleLike serializes all votes for a comment under its row lock.
 // Any failure rolls back both the vote and the aggregate count.
-func ToggleLike(ctx context.Context, store *db.Database, commentID int64, phone string) (bool, error) {
+func ToggleLike(ctx context.Context, store *db.Database, box *securestore.Box, commentID int64, phone string) (bool, error) {
 	tx, err := store.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		return false, err
 	}
 	defer tx.Rollback()
+	lookup, err := bindSocialPhoneKey(ctx, tx, box, phone)
+	if err != nil {
+		return false, err
+	}
 
 	var locked int64
 	if err := tx.QueryRowContext(ctx, "SELECT said_id FROM said WHERE said_id=? FOR UPDATE", commentID).Scan(&locked); err != nil {
 		return false, err
 	}
 	var count int64
-	if err := tx.QueryRowContext(ctx, "SELECT COUNT(1) FROM nice_count WHERE said_id=? AND phone=?", commentID, phone).Scan(&count); err != nil {
+	if err := tx.QueryRowContext(ctx, "SELECT COUNT(1) FROM nice_count WHERE said_id=? AND "+likePhoneMatch, commentID, phone, lookup).Scan(&count); err != nil {
 		return false, err
+	}
+	if count > 1 {
+		return false, errors.New("duplicate historical votes require review")
 	}
 	var affected int64
 	if count > 0 {
-		result, err := tx.ExecContext(ctx, "DELETE FROM nice_count WHERE said_id=? AND phone=?", commentID, phone)
+		result, err := tx.ExecContext(ctx, "DELETE FROM nice_count WHERE said_id=? AND "+likePhoneMatch, commentID, phone, lookup)
 		if err != nil {
 			return false, err
 		}
@@ -65,7 +84,11 @@ func ToggleLike(ctx context.Context, store *db.Database, commentID int64, phone 
 			return false, err
 		}
 	} else {
-		result, err := tx.ExecContext(ctx, "INSERT INTO nice_count(said_id,phone) VALUES(?,?)", commentID, phone)
+		var legacy, index any = phone, nil
+		if box != nil {
+			legacy, index = nil, lookup
+		}
+		result, err := tx.ExecContext(ctx, "INSERT INTO nice_count(said_id,phone,phone_lookup,phone_protected) VALUES(?,?,?,?)", commentID, legacy, index, box != nil)
 		if err != nil {
 			return false, err
 		}
@@ -111,13 +134,47 @@ func AuthorAvatar(ctx context.Context, tx *sql.Tx, box *securestore.Box, phone s
 }
 
 // InsertComment writes a notice comment inside the caller's transaction.
-func InsertComment(ctx context.Context, tx *sql.Tx, comment NewComment) (bool, error) {
+func InsertComment(ctx context.Context, tx *sql.Tx, box *securestore.Box, comment NewComment) (bool, error) {
+	if _, err := bindSocialPhoneKey(ctx, tx, box, comment.AuthorPhone); err != nil {
+		return false, err
+	}
+	var legacy any = comment.AuthorPhone
+	if box != nil {
+		legacy = nil
+	}
 	result, err := tx.ExecContext(ctx,
 		"INSERT INTO said(said,text_id,said_time,person_name,said_phone,tou_pic) VALUES(?,?,?,?,?,?)",
-		comment.Content, comment.NoticeID, comment.CreatedAt, comment.AuthorName, comment.AuthorPhone, comment.Avatar)
+		comment.Content, comment.NoticeID, comment.CreatedAt, comment.AuthorName, legacy, comment.Avatar)
 	if err != nil {
 		return false, err
 	}
 	affected, err := result.RowsAffected()
-	return affected == 1, err
+	if err != nil {
+		return false, err
+	}
+	if affected != 1 {
+		return false, errors.New("comment insert affected an unexpected number of rows")
+	}
+	if box != nil {
+		id, err := result.LastInsertId()
+		if err != nil {
+			return false, err
+		}
+		cipher, err := sealCommentPhone(box, id, comment.AuthorPhone)
+		if err != nil {
+			return false, err
+		}
+		updated, err := tx.ExecContext(ctx, "UPDATE said SET said_phone_cipher=?,said_phone_protected=true WHERE said_id=? AND said_phone IS NULL AND said_phone_protected=false", cipher, id)
+		if err != nil {
+			return false, err
+		}
+		n, err := updated.RowsAffected()
+		if err != nil {
+			return false, err
+		}
+		if n != 1 {
+			return false, errors.New("comment phone protection update mismatch")
+		}
+	}
+	return true, nil
 }

@@ -3,7 +3,6 @@
 
 const {
   REGEX_BACKSLASH,
-  REGEX_REMOVE_BACKSLASH,
   REGEX_SPECIAL_CHARS,
   REGEX_SPECIAL_CHARS_GLOBAL
 } = require('./constants');
@@ -27,42 +26,34 @@ exports.isWindows = () => {
   return false;
 };
 
-// The former bracket regexp had quadratic worst-case backtracking on repeated
-// escaped opening brackets. Match its replacement semantics in linear time.
 exports.removeBackslashes = str => {
-  if (!str.includes('\\')) return str;
-  const n = str.length;
-  const nextClose = new Int32Array(n + 1);
-  const nextBreak = new Int32Array(n + 1);
-  let close = -1;
-  let lineBreak = -1;
-  const isBreak = ch => ch === '\n' || ch === '\r' || ch === '\u2028' || ch === '\u2029';
-  for (let i = n - 1; i >= 0; i--) {
-    if (str[i] === ']' && i > 0 && str[i - 1] !== '\\') close = i;
-    if (isBreak(str[i])) lineBreak = i;
-    nextClose[i] = close;
-    nextBreak[i] = lineBreak;
+  // Cache the next eligible bracket end once. Retrying an unanchored bracket
+  // regex at every '[' takes quadratic time when the closing ']' is absent.
+  const ends = new Int32Array(str.length + 1);
+  let end = -1;
+  ends[str.length] = -1;
+  const isLineEnd = char => char === '\n' || char === '\r' || char === '\u2028' || char === '\u2029';
+  for (let i = str.length - 1; i >= 0; i--) {
+    if (isLineEnd(str[i])) end = str[i + 1] === ']' ? i + 1 : -1;
+    else if (str[i] === ']' && i > 0 && str[i - 1] !== '\\') end = i;
+    ends[i] = end;
   }
-
-  const pieces = [];
-  let segment = 0;
-  for (let i = 0; i < n; i++) {
-    if (str[i] === '[' && i + 2 < n) {
-      // Preserve complete bracket expressions, including backslashes inside.
-      const end = nextClose[i + 2];
-      const stop = nextBreak[i + 1];
-      if (end !== -1 && (stop === -1 || stop >= end - 1)) {
-        i = end;
-        continue;
-      }
+  const parts = [];
+  let from = 0;
+  for (let i = 0; i < str.length; i++) {
+    if (str[i] === '[' && i + 2 < str.length) {
+      const close = isLineEnd(str[i + 1]) ? (str[i + 2] === ']' ? i + 2 : -1) : ends[i + 2];
+      if (close !== -1) { i = close; continue; }
     }
-    if (str[i] !== '\\' || i + 1 === n || isBreak(str[i + 1])) continue;    pieces.push(str.slice(segment, i));
-    segment = i + 1;
+    if (str[i] === '\\' && i + 1 < str.length && !isLineEnd(str[i + 1])) {
+      parts.push(str.slice(from, i));
+      from = i + 1;
+    }
   }
-  if (pieces.length === 0) return str;
-  pieces.push(str.slice(segment));
-  return pieces.join('');
+  parts.push(str.slice(from));
+  return parts.join('');
 };
+
 exports.escapeLast = (input, char, lastIdx) => {
   const idx = input.lastIndexOf(char, lastIdx);
   if (idx === -1) return input;

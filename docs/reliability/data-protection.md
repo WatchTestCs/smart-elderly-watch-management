@@ -12,7 +12,9 @@ PG 的 7 个基表字段、12 个视图输出及非字段资产另列于
 已有加密只覆盖代码明确调用 securestore 的字段。当前实现包含收件人/坐标保护，并保留已有
 session、TOTP、照护备注、复核理由、规则证据。新增私有图片 AEAD 与哈希校验。
 管理员和家属主账号手机号的新写入已使用按角色/账号认证的 AEAD 与 HMAC 查询索引，历史回填工具分别为 protect-user-phones 和 [protect-family-phones](../security/family-phone-protection.md)；已保护的手机号也纳入 rekey-data 的分批轮换清单，保持查询索引及共用 key binding 不变。家属登录、资料与通知已适配；该项不代表其他人员联系方式及手机号副本已保护。
-姓名、老人/监护人电话、地址、原始健康样本、生成列、围栏/事件、社交文本、said.said_phone 与 nice_count.phone 等手机号副本、历史明文仍需纳入迁移盘点。
+评论作者手机号新增按评论 ID 认证的 AEAD，点赞身份新增独立域 HMAC；原列在配置密钥的新写入中为 NULL。详见[社交手机号保护](social-phone-protection.md)，历史副本须显式运行 protect-social-phones 并核对聚合/重复数据，评论密文纳入 rekey-data，点赞摘要与独立 key binding 保持不变。
+长者联系方式、房间、病情、注意事项、饮食喜恶和用药七列新增按长者 ID 认证的 v1 AEAD 档案封装，原列在配置密钥的新写入中清空；电话以独立域 HMAC 保留既有家属关联查找，非唯一索引保留重复号码歧义。详见[长者照护档案保护](resident-care-profile-protection.md)，历史迁移使用 protect-resident-profiles，密文列加入 rekey-data。该封装不处理遥测统计 JSON。
+姓名、生日等身份资料、监护人电话、家属/监护人地址、原始健康样本、生成列、围栏/事件、社交文本及未回填的字段/历史副本仍需纳入迁移盘点。
 不宣称全库加密。AEAD 只在配置正确密钥的新写路径生效；兼容旧明文读取不是迁移完成。
 
 MySQL 是业务真相源。PG 分析投影是额外敏感副本，其 JSON/健康数值、备份、WAL、导出与
