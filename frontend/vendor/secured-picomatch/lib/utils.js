@@ -27,12 +27,42 @@ exports.isWindows = () => {
   return false;
 };
 
+// The former bracket regexp had quadratic worst-case backtracking on repeated
+// escaped opening brackets. Match its replacement semantics in linear time.
 exports.removeBackslashes = str => {
-  return str.replace(REGEX_REMOVE_BACKSLASH, match => {
-    return match === '\\' ? '' : match;
-  });
-};
+  if (!str.includes('\\')) return str;
+  const n = str.length;
+  const nextClose = new Int32Array(n + 1);
+  const nextBreak = new Int32Array(n + 1);
+  let close = -1;
+  let lineBreak = -1;
+  const isBreak = ch => ch === '\n' || ch === '\r' || ch === '\u2028' || ch === '\u2029';
+  for (let i = n - 1; i >= 0; i--) {
+    if (str[i] === ']' && i > 0 && str[i - 1] !== '\\') close = i;
+    if (isBreak(str[i])) lineBreak = i;
+    nextClose[i] = close;
+    nextBreak[i] = lineBreak;
+  }
 
+  const pieces = [];
+  let segment = 0;
+  for (let i = 0; i < n; i++) {
+    if (str[i] === '[' && i + 2 < n) {
+      // Preserve complete bracket expressions, including backslashes inside.
+      const end = nextClose[i + 2];
+      const stop = nextBreak[i + 1];
+      if (end !== -1 && (stop === -1 || stop >= end - 1)) {
+        i = end;
+        continue;
+      }
+    }
+    if (str[i] !== '\\' || i + 1 === n || isBreak(str[i + 1])) continue;    pieces.push(str.slice(segment, i));
+    segment = i + 1;
+  }
+  if (pieces.length === 0) return str;
+  pieces.push(str.slice(segment));
+  return pieces.join('');
+};
 exports.escapeLast = (input, char, lastIdx) => {
   const idx = input.lastIndexOf(char, lastIdx);
   if (idx === -1) return input;
