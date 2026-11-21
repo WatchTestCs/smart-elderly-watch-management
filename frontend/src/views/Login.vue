@@ -74,7 +74,7 @@ const rules = {
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
     { validator: ((_rule, value, done) => done(
-      new TextEncoder().encode(typeof value === 'string' ? value : '').length <= 72
+      typeof value === 'string' && new TextEncoder().encode(value).length <= 72
         ? undefined : new Error('密码不能超过 72 个字节'))) satisfies FormItemRule['validator'], trigger: 'blur' }
   ]
 }

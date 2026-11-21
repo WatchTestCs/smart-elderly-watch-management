@@ -86,3 +86,15 @@ it('refreshes a rejected CSRF token without discarding the authenticated account
   await vi.waitFor(() => expect(authState.csrfToken).toBe('renewed-token'))
   expect(authState.account).toMatchObject({ id: 9, role: 'ADMIN', duty: 'supervisor' })
 })
+
+it('rejects a malformed session before adopting the identity or CSRF token', async () => {
+  authState.account = null
+  authState.csrfToken = ''
+  mock.get.mockResolvedValueOnce({ data: {
+    csrfToken: 123, authenticated: true,
+    account: { role: 'ADMIN', id: 12 }
+  } })
+  await expect(loadSession(true)).rejects.toThrow('Invalid session response')
+  expect(authState.account).toBeNull()
+  expect(authState.csrfToken).toBe('')
+})

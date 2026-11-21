@@ -110,7 +110,7 @@ const checkConfirm: NonNullable<FormItemRule['validator']> = (_rule, value, call
   callback()
 }
 const checkPasswordComplexity: NonNullable<FormItemRule['validator']> = (_rule, value, callback) => {
-  if (typeof value === 'string' && value && (!/[a-zA-Z]/.test(value) || !/\d/.test(value))) {
+  if (typeof value !== 'string' || !/[a-zA-Z]/.test(value) || !/\d/.test(value)) {
     return callback(new Error('密码必须同时包含字母和数字'))
   }
   callback()

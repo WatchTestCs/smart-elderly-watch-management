@@ -61,7 +61,13 @@ export function loadSession (refresh = false): Promise<SessionAccount | null> {
   const request = axios.get<SessionWire>('/api/v1/auth/session', { skipSession: true, timeout: 5000 }).then(response => {
     if (generation !== sessionGeneration) return authState.account
     const data = response.data
-    if (!data || !data.csrfToken) throw new Error('Session response missing')
+    if (!data || typeof data.csrfToken !== 'string' || !data.csrfToken ||
+      typeof data.authenticated !== 'boolean' ||
+      (data.setupRequired !== undefined && typeof data.setupRequired !== 'boolean') ||
+      (data.csrfHeader !== undefined && typeof data.csrfHeader !== 'string') ||
+      (data.authenticated && (!data.account || !['ADMIN', 'FAMILY'].includes(data.account.role)))) {
+      throw new Error('Invalid session response')
+    }
     authState.setupRequired = Boolean(data.setupRequired)
     const previousAccount = authState.account
     const nextAccount = data.authenticated ? data.account as SessionAccount : null

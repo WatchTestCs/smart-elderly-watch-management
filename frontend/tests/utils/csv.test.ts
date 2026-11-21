@@ -13,6 +13,16 @@ describe('toCsv', () => {
     expect(toCsv(columns, [{ name: '  =1+1', note: 'ok' }])).toContain("\r\n'  =1+1,ok")
   })
 
+  it('preserves date, bigint and custom string values without enabling formulas', () => {
+    const date = new Date('2020-01-01T00:00:00Z')
+    const csv = toCsv([{ key: 'value', label: 'value' }], [
+      { value: date }, { value: 9007199254740993n },
+      { value: { toString: () => '=1+1' } }
+    ])
+    expect(csv).toContain(String(date))
+    expect(csv).toContain('9007199254740993')
+    expect(csv).toContain("'=1+1")
+  })
   it('neutralises spreadsheet formulas and tolerates missing values', () => {
     const csv = toCsv(columns, [{ name: '=HYPERLINK("x")', note: null }, { name: '-1' }])
     expect(csv.split('\r\n').slice(1)).toEqual(['"\'=HYPERLINK(""x"")",', "'-1,"])
