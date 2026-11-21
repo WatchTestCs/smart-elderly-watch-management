@@ -48,3 +48,21 @@ func TestLogRouteCategoryNeverIncludesRequestValues(t *testing.T) {
 		}
 	}
 }
+
+func TestSpecialRouteMetricsUseCanonicalLiterals(t *testing.T) {
+	for _, path := range []string{"/metrics", "/healthz", "/openapi.json"} {
+		t.Run(path, func(t *testing.T) {
+			registry := New()
+			h := registry.HTTP(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				w.WriteHeader(http.StatusNoContent)
+			}))
+			req := httptest.NewRequest(http.MethodGet, path, nil)
+			h.ServeHTTP(httptest.NewRecorder(), req)
+			result := httptest.NewRecorder()
+			registry.ServeHTTP(result, req)
+			if !strings.Contains(result.Body.String(), `route="`+path+`",method="GET",status="204"`) {
+				t.Fatalf("lost canonical route metric: %s", result.Body.String())
+			}
+		})
+	}
+}

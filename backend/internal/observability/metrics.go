@@ -171,18 +171,38 @@ func (r *Registry) HTTP(next http.Handler) http.Handler {
 				route = pattern
 			}
 		}
-		if req.URL.Path == "/metrics" || req.URL.Path == "/healthz" || req.URL.Path == "/openapi.json" {
-			route = req.URL.Path
+		switch req.URL.Path {
+		case "/metrics":
+			route = "/metrics"
+		case "/healthz":
+			route = "/healthz"
+		case "/openapi.json":
+			route = "/openapi.json"
 		}
 		if strings.HasPrefix(req.URL.Path, "/static/") || strings.HasPrefix(req.URL.Path, "/assets/") {
 			route = "static"
 		}
 		seconds := time.Since(start).Seconds()
-		method := req.Method
-		switch method {
-		case "GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "CONNECT", "TRACE":
-		default:
-			method = "OTHER"
+		method := "OTHER"
+		switch req.Method {
+		case "GET":
+			method = "GET"
+		case "HEAD":
+			method = "HEAD"
+		case "POST":
+			method = "POST"
+		case "PUT":
+			method = "PUT"
+		case "PATCH":
+			method = "PATCH"
+		case "DELETE":
+			method = "DELETE"
+		case "OPTIONS":
+			method = "OPTIONS"
+		case "CONNECT":
+			method = "CONNECT"
+		case "TRACE":
+			method = "TRACE"
 		}
 		labels := `route=` + strconv.Quote(route) + `,method=` + strconv.Quote(method) + `,status=` + strconv.Quote(strconv.Itoa(out.status))
 		r.observeHTTP(labels, seconds)
