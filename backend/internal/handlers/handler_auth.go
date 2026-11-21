@@ -93,7 +93,7 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 	phone := str(m, "phone")
 	password := str(m, "password")
 	if !auth.ValidPhone(phone) || password == "" || len(password) > 72 {
-		response.JSON(w, http.StatusBadRequest, map[string]any{"code": "INVALID_LOGIN_INPUT", "message": "请输入有效手机号和密码"})
+		response.WriteError(w, &response.AppError{HTTPStatus: http.StatusBadRequest, Code: "INVALID_LOGIN_INPUT", Message: "请输入有效手机号和密码"})
 		return
 	}
 
@@ -193,7 +193,10 @@ func (h *Handler) desktopExit(w http.ResponseWriter, r *http.Request) {
 	if !h.checkDesktopToken(w, r) {
 		return
 	}
-	response.JSON(w, http.StatusOK, map[string]any{"closing": true})
+	response.WriteStruct(w, http.StatusOK, struct {
+		Closing    bool   `json:"closing"`
+		ReturnCode string `json:"returnCode"`
+	}{Closing: true, ReturnCode: response.CodeOK})
 	go func() {
 		time.Sleep(200 * time.Millisecond)
 		os.Exit(0)
@@ -219,5 +222,8 @@ func (h *Handler) finishAccountLogin(w http.ResponseWriter, r *http.Request, m m
 		return
 	}
 	h.Risk.SuccessfulLogin(h.clientIP(r), phone, r.UserAgent(), r.Header.Get("Sec-CH-UA-Model"), r.Header.Get("X-App-Device-ID"))
-	response.JSON(w, http.StatusOK, map[string]any{"authenticated": true})
+	response.WriteStruct(w, http.StatusOK, struct {
+		Authenticated bool   `json:"authenticated"`
+		ReturnCode    string `json:"returnCode"`
+	}{Authenticated: true, ReturnCode: response.CodeOK})
 }
