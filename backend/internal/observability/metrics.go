@@ -186,6 +186,30 @@ func (r *Registry) HTTP(next http.Handler) http.Handler {
 		}
 		labels := `route=` + strconv.Quote(route) + `,method=` + strconv.Quote(method) + `,status=` + strconv.Quote(strconv.Itoa(out.status))
 		r.observeHTTP(labels, seconds)
-		slog.Info("http_request", "request_id", id, "route", route, "method", method, "status", out.status, "duration_ms", seconds*1000)
+		slog.Info("http_request", "request_id", id, "route", logRouteCategory(route), "method", method, "status", out.status, "duration_ms", seconds*1000)
 	})
+}
+
+// logRouteCategory avoids writing resolver-provided route text to audit logs.
+// Canonical patterns remain available as bounded Prometheus metric labels.
+func logRouteCategory(pattern string) string {
+	if _, path, ok := strings.Cut(pattern, " "); ok {
+		pattern = path // Method-qualified ServeMux pattern.
+	}
+	switch {
+	case pattern == "unknown", pattern == "static", pattern == "/healthz", pattern == "/metrics", pattern == "/openapi.json":
+		return pattern
+	case strings.HasPrefix(pattern, "/api/v1/device/"):
+		return "device"
+	case strings.HasPrefix(pattern, "/api/v1/auth/"):
+		return "auth"
+	case strings.HasPrefix(pattern, "/api/v1/care/"):
+		return "care"
+	case strings.HasPrefix(pattern, "/api/v1/family/"):
+		return "family"
+	case strings.HasPrefix(pattern, "/api/v1/"):
+		return "api"
+	default:
+		return "other"
+	}
 }

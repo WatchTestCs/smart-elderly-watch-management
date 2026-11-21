@@ -29,3 +29,22 @@ func TestBoundedRoutesAndRequestID(t *testing.T) {
 		t.Fatal("missing trace")
 	}
 }
+
+func TestLogRouteCategoryNeverIncludesRequestValues(t *testing.T) {
+	cases := map[string]string{
+		"GET /api/v1/device/healthBatch":           "device",
+		"POST /api/v1/auth/login":                  "auth",
+		"/api/v1/family/profile":                   "family",
+		"/api/v1/care/complete":                    "care",
+		"/api/v1/settings":                         "api",
+		"/healthz":                                 "/healthz",
+		"unknown":                                  "unknown",
+		"/api/v1/device/health\nspoofed log entry": "other",
+		"/unsafe/13800000001\npass=secret":         "other",
+	}
+	for input, expected := range cases {
+		if actual := logRouteCategory(input); actual != expected {
+			t.Errorf("category for %q = %q, want %q", input, actual, expected)
+		}
+	}
+}
