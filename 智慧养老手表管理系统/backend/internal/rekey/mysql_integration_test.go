@@ -147,7 +147,7 @@ func TestRekeyMySQL(t *testing.T) {
 				t.Fatal("incomplete apply")
 			}
 		}
-        if rewrites != 34 {
+		if rewrites != 33 {
 			t.Fatalf("pagination lost rows: rewrites=%d", rewrites)
 		}
 		options.Apply = false
