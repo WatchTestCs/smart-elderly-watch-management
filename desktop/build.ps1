@@ -30,10 +30,7 @@ try {
  go vet ./...
  if($LASTEXITCODE -ne 0){throw 'Backend static checks failed'}
  $env:CGO_ENABLED='0'
- $profile=Join-Path $env:TEMP 'suining-build-default.pgo'
- go test -run '^$' -bench '^BenchmarkSafe$' -benchtime=100ms -cpuprofile $profile ./internal/jsonscan
- if($LASTEXITCODE -ne 0){throw 'PGO profile generation failed'}
- go build -trimpath "-pgo=$profile" -ldflags '-s -w' -o $bin ./cmd/server
+ go build -trimpath  -ldflags '-s -w' -o $bin ./cmd/server
  if($LASTEXITCODE -ne 0){throw 'Go sidecar build failed'}
 } finally { Pop-Location }
 if($SelfSign){& (Join-Path $PSScriptRoot 'sign.ps1') -FilePath $bin | Set-Content (Join-Path $out 'backend-signature.json')}

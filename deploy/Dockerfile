@@ -11,10 +11,9 @@ COPY ["backend/go.mod", "backend/go.sum", "./"]
 RUN go mod download
 COPY ["backend/", "./"]
 COPY --from=frontend /ui/dist/ internal/handlers/web/
-RUN go test -run '^$' -bench '^BenchmarkSafe$' -benchtime=100ms -cpuprofile=/tmp/default.pgo ./internal/jsonscan \
- && CGO_ENABLED=0 go build -trimpath -pgo=/tmp/default.pgo -ldflags='-s -w' -o /out/suining ./cmd/server \
- && CGO_ENABLED=0 go build -trimpath -pgo=/tmp/default.pgo -ldflags='-s -w' -o /out/healthcheck ./cmd/healthcheck \
- && CGO_ENABLED=0 go build -trimpath -pgo=/tmp/default.pgo -ldflags='-s -w' -o /out/protect-notes ./cmd/protect-notes
+RUN CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o /out/suining ./cmd/server \
+ && CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o /out/healthcheck ./cmd/healthcheck \
+ && CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o /out/protect-notes ./cmd/protect-notes
 
 FROM debian:bookworm-slim
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates tzdata \
