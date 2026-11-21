@@ -48,3 +48,49 @@ func TestWriteErrorPreservesDomainCode(t *testing.T) {
 		})
 	}
 }
+
+func TestWriteOKRetainsZeroValues(t *testing.T) {
+	for _, value := range []any{false, 0, ""} {
+		w := httptest.NewRecorder()
+		WriteOK(w, value)
+		var got map[string]any
+		if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil {
+			t.Fatal(err)
+		}
+		if w.Code != 200 || got["returnCode"] != CodeOK {
+			t.Fatalf("unexpected success: %d %v", w.Code, got)
+		}
+		if _, ok := got["data"]; !ok {
+			t.Fatalf("zero payload omitted: %v", got)
+		}
+	}
+}
+
+func TestInternalErrorDoesNotExposeCauseOrMessage(t *testing.T) {
+	w := httptest.NewRecorder()
+	WriteError(w, Internal("SQL password secret", errors.New("database secret")))
+	var got BaseResponse
+	if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil {
+		t.Fatal(err)
+	}
+	if w.Code != 500 || got.ReturnCode != CodeFail || got.Code != "INTERNAL_ERROR" || got.Message != internalServerMessage() {
+		t.Fatalf("unsafe internal response: %d %+v", w.Code, got)
+	}
+}
+
+func TestWriteErrorKeepsPublicReference(t *testing.T) {
+	w := httptest.NewRecorder()
+	WriteError(w, &AppError{HTTPStatus: 409, Code: "CONFLICT", Message: "stale", Reference: "request-1"})
+	var got BaseResponse
+	if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil {
+		t.Fatal(err)
+	}
+	if w.Code != 409 || got.Reference != "request-1" {
+		t.Fatalf("missing reference: %+v", got)
+	}
+}
+
+func internalServerMessage() string {
+	_, msg := errorDefaults(http.StatusInternalServerError)
+	return msg
+}

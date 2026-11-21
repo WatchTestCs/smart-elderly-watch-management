@@ -3,6 +3,7 @@ package response
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
 )
 
@@ -32,9 +33,7 @@ func JSON(w http.ResponseWriter, status int, fields map[string]any) {
 	} else {
 		v["returnCode"] = CodeOK
 	}
-	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(v)
+	writeJSON(w, status, v)
 }
 
 func OK(w http.ResponseWriter, fields map[string]any) {
@@ -83,4 +82,20 @@ func errorDefaults(status int) (string, string) {
 	default:
 		return "INTERNAL_ERROR", "服务处理失败"
 	}
+}
+
+// writeJSON validates encoding before committing the HTTP status. No internal
+// serialization error or partially encoded success body reaches a client.
+func writeJSON(w http.ResponseWriter, status int, payload any) {
+	encoded, err := json.Marshal(payload)
+	if err != nil {
+		slog.Error("API response serialization failed", "error", err)
+		status = http.StatusInternalServerError
+		code, message := errorDefaults(status)
+		encoded, _ = json.Marshal(BaseResponse{ReturnCode: CodeFail, Code: code, Message: message})
+	}
+	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
+	w.WriteHeader(status)
+	_, _ = w.Write(encoded)
+	_, _ = w.Write([]byte{'\n'})
 }

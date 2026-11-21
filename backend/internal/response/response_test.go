@@ -3,6 +3,7 @@ package response
 import (
 	"encoding/json"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -46,5 +47,23 @@ func TestJSONContract(t *testing.T) {
 				t.Fatal("reference lost")
 			}
 		})
+	}
+}
+
+func TestJSONSerializationFailureReturnsSafe500(t *testing.T) {
+	w := httptest.NewRecorder()
+	JSON(w, 200, map[string]any{"secret": "private", "unencodable": make(chan int)})
+	var got BaseResponse
+	if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil {
+		t.Fatal(err)
+	}
+	if w.Code != 500 || got.ReturnCode != CodeFail || got.Code != "INTERNAL_ERROR" {
+		t.Fatalf("invalid encoder error contract: %d %+v", w.Code, got)
+	}
+	if _, ok := w.Header()["Content-Type"]; !ok {
+		t.Fatal("missing JSON content type")
+	}
+	if strings.Contains(w.Body.String(), "private") {
+		t.Fatal("encoded data escaped on error")
 	}
 }

@@ -1,7 +1,6 @@
 package response
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
 )
@@ -11,13 +10,14 @@ type BaseResponse struct {
 	ReturnCode string `json:"returnCode"`
 	Code       string `json:"code,omitempty"`
 	Message    string `json:"message,omitempty"`
+	Reference  string `json:"reference,omitempty"`
 }
 
 // Envelope is for endpoints whose public contract explicitly uses a data field.
 // Existing flat endpoints must use WriteStruct with their own DTO instead.
 type Envelope[T any] struct {
 	BaseResponse
-	Data T `json:"data,omitempty"`
+	Data T `json:"data"`
 }
 
 // AppError makes the HTTP status and domain error code explicit.
@@ -25,6 +25,7 @@ type AppError struct {
 	HTTPStatus int
 	Code       string
 	Message    string
+	Reference  string
 	Err        error
 }
 
@@ -52,18 +53,19 @@ func Internal(msg string, err error) *AppError {
 
 // WriteStruct emits the supplied public DTO and preserves its exact status.
 func WriteStruct[T any](w http.ResponseWriter, status int, payload T) {
-	writeTypedJSON(w, status, payload)
+	writeJSON(w, status, payload)
 }
 
 // WriteOK is only for endpoints with an explicit {returnCode,data} contract.
 func WriteOK[T any](w http.ResponseWriter, data T) {
-	writeTypedJSON(w, http.StatusOK, Envelope[T]{BaseResponse: BaseResponse{ReturnCode: CodeOK}, Data: data})
+	writeJSON(w, http.StatusOK, Envelope[T]{BaseResponse: BaseResponse{ReturnCode: CodeOK}, Data: data})
 }
 
 func WriteError(w http.ResponseWriter, err error) {
 	var appErr *AppError
 	if !errors.As(err, &appErr) {
-		writeTypedJSON(w, http.StatusInternalServerError, BaseResponse{ReturnCode: CodeFail, Code: "INTERNAL_ERROR", Message: "internal server error"})
+		code, message := errorDefaults(http.StatusInternalServerError)
+		writeJSON(w, http.StatusInternalServerError, BaseResponse{ReturnCode: CodeFail, Code: code, Message: message})
 		return
 	}
 	status := appErr.HTTPStatus
@@ -76,14 +78,12 @@ func WriteError(w http.ResponseWriter, err error) {
 		code = defaultCode
 	}
 	message := appErr.Message
+	// Never expose raw backend failure details to API clients.
+	if status == http.StatusInternalServerError {
+		message = defaultMessage
+	}
 	if message == "" {
 		message = defaultMessage
 	}
-	writeTypedJSON(w, status, BaseResponse{ReturnCode: CodeFail, Code: code, Message: message})
-}
-
-func writeTypedJSON(w http.ResponseWriter, status int, payload any) {
-	w.Header().Set("Content-Type", "application/json;charset=UTF-8")
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(payload)
+	writeJSON(w, status, BaseResponse{ReturnCode: CodeFail, Code: code, Message: message, Reference: appErr.Reference})
 }
