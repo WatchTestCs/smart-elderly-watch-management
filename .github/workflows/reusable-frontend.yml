@@ -30,7 +30,7 @@ jobs:
             frontend/tools/openapi/package-lock.json
 
       - name: Enforce native Go API boundary
-        run: python3 ../../scripts/check-api-boundary.py
+        run: python3 ../scripts/check-api-boundary.py
 
       - name: Install locked dependencies
         run: |
@@ -57,27 +57,27 @@ jobs:
       - name: Unit tests and strict TypeScript checks
         shell: bash
         run: |
-          mkdir -p ../../evidence/ci/frontend
-          git rev-parse HEAD > ../../evidence/ci/frontend/source-sha.txt
-          node --version > ../../evidence/ci/frontend/node-version.txt
+          mkdir -p ../evidence/ci/frontend
+          git rev-parse HEAD > ../evidence/ci/frontend/source-sha.txt
+          node --version > ../evidence/ci/frontend/node-version.txt
           set -o pipefail
           status=0
-          npm test 2>&1 | tee ../../evidence/ci/frontend/test.txt || status=1
-          npm run typecheck 2>&1 | tee ../../evidence/ci/frontend/typecheck.txt || status=1
+          npm test 2>&1 | tee ../evidence/ci/frontend/test.txt || status=1
+          npm run typecheck 2>&1 | tee ../evidence/ci/frontend/typecheck.txt || status=1
           exit "$status"
 
       - name: Build production frontend
         shell: bash
         run: |
           set -o pipefail
-          npm run build 2>&1 | tee ../../evidence/ci/frontend/build.txt
+          npm run build 2>&1 | tee ../evidence/ci/frontend/build.txt
 
       - name: Audit frontend dependencies
         env:
           POWERSHELL_TELEMETRY_OPTOUT: '1'
         shell: pwsh
         run: |
-          $reportPath = '../../evidence/ci/frontend/npm-audit.json'
+          $reportPath = '../evidence/ci/frontend/npm-audit.json'
           npm audit --audit-level=high --json > $reportPath
           $auditExit = $LASTEXITCODE
           if ($auditExit -ne 0) {

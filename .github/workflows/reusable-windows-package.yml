@@ -37,7 +37,7 @@ jobs:
           git rev-parse HEAD | Set-Content evidence/ci/windows/source-sha.txt
           Push-Location 'backend'
           $env:CGO_ENABLED = '0'
-          go build -trimpath  -ldflags='-s -w' -o '../../evidence/ci/windows/suining-server.exe' ./cmd/server
+          go build -trimpath  -ldflags='-s -w' -o '../evidence/ci/windows/suining-server.exe' ./cmd/server
           if ($LASTEXITCODE) { throw 'Windows sidecar build failed' }
           Pop-Location
           Get-FileHash evidence/ci/windows/suining-server.exe -Algorithm SHA256 | ConvertTo-Json | Set-Content evidence/ci/windows/sha256.json

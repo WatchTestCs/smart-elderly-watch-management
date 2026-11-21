@@ -54,8 +54,8 @@ jobs:
           TEST_MYSQL_DSN: root:ci_root_only@tcp(localhost:3306)/suining_test
         run: |
           set -euo pipefail
-          mkdir -p ../../evidence/ci/backend-${{ matrix.go-version }}
-          evidence=../../evidence/ci/backend-${{ matrix.go-version }}
+          mkdir -p ../evidence/ci/backend-${{ matrix.go-version }}
+          evidence=../evidence/ci/backend-${{ matrix.go-version }}
           test -n "$TEST_MYSQL_DSN"
           git rev-parse HEAD > "$evidence/source-sha.txt"
           go version > "$evidence/go-version.txt"
@@ -65,7 +65,7 @@ jobs:
           go list -m -json all > "$evidence/modules.jsonl"
           go vet ./... > "$evidence/vet.txt" 2>&1
           go test -json -race -count=1 -timeout 45m ./... > "$evidence/mysql.jsonl" 2>&1
-          python3 ../../scripts/reliability/audit-go-results.py "$evidence/mysql.jsonl" --mode mysql --output "$evidence/mysql-summary.json"
+          python3 ../scripts/reliability/audit-go-results.py "$evidence/mysql.jsonl" --mode mysql --output "$evidence/mysql-summary.json"
           go build ./... > "$evidence/build.txt" 2>&1
           CGO_ENABLED=0 go build -trimpath  -ldflags='-s -w' -o "$evidence/suining-server" ./cmd/server
           if readelf -l "$evidence/suining-server" | grep -q INTERP; then
