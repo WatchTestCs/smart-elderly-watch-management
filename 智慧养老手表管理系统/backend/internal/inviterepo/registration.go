@@ -6,6 +6,7 @@ import (
 	"database/sql"
 
 	"suining-care/internal/db"
+	"suining-care/internal/familyaddress"
 	"suining-care/internal/securestore"
 	"suining-care/internal/userphone"
 )
@@ -25,17 +26,24 @@ func SaveFamily(ctx context.Context, tx *sql.Tx, box *securestore.Box, registrat
 	var err error
 	if boundFamilyID == nil {
 		familyID, err = db.InsertID(ctx, tx,
-			`INSERT INTO family(family_name,family_password,family_relation,family_sex,family_address)
-			 VALUES(?,?,?,?,?)`,
+			`INSERT INTO family(family_name,family_password,family_relation,family_sex)
+			 VALUES(?,?,?,?)`,
 			registration.Name, registration.PasswordHash,
-			registration.Relation, registration.Sex, registration.Address)
+			registration.Relation, registration.Sex)
+		if err == nil {
+			err = familyaddress.Store(ctx, tx, box, familyID, registration.Address)
+		}
 	} else {
+		address, err := familyaddress.PrepareUpdate(ctx, tx, box, familyID, registration.Address)
+		if err != nil {
+			return familyID, false, err
+		}
 		result, updateErr := tx.ExecContext(ctx,
 			`UPDATE family SET family_name=?,family_password=?,
-			 family_relation=?,family_sex=?,family_address=?
+			 family_relation=?,family_sex=?,family_address=?,family_address_cipher=?,family_address_protected=?
 			 WHERE family_id=? AND family_password IS NULL`,
 			registration.Name, registration.PasswordHash, registration.Relation,
-			registration.Sex, registration.Address, familyID)
+			registration.Sex, address.Legacy, address.Cipher, address.Protected, familyID)
 		if updateErr != nil {
 			return familyID, false, updateErr
 		}

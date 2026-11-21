@@ -8,6 +8,7 @@ import (
 	"suining-care/internal/auth"
 	"suining-care/internal/carepolicy"
 	"suining-care/internal/db"
+	"suining-care/internal/familyaddress"
 	"suining-care/internal/response"
 	"suining-care/internal/userphone"
 )
@@ -34,13 +35,18 @@ func (h *Handler) familySelect(w http.ResponseWriter, r *http.Request) {
 		 WHERE (?='' OR f.family_name LIKE CONCAT('%',?,'%'))`
 	list, err := db.QueryList(ctx, tx, func(rows *sql.Rows) (map[string]any, error) {
 		var oldID, familyID int64
-		var oldName, fname, frel, fsex, fphone, faddr, fpic *string
+		var oldName, fname, frel, fsex, fpic *string
 		var record userphone.Record
-		if err := rows.Scan(&oldID, &oldName, &familyID, &fname, &frel, &fsex, &fphone, &faddr, &fpic, &record.Cipher, &record.Lookup, &record.Protected); err != nil {
+		var address familyaddress.Record
+		if err := rows.Scan(&oldID, &oldName, &familyID, &fname, &frel, &fsex, &record.Legacy, &fpic,
+			&record.Cipher, &record.Lookup, &record.Protected, &address.Legacy, &address.Cipher, &address.Protected); err != nil {
 			return nil, err
 		}
-		record.Legacy = fphone
 		fphone, err := record.OpenFamilyStored(h.Box, familyID)
+		if err != nil {
+			return nil, err
+		}
+		faddr, err := address.Open(h.Box, familyID)
 		if err != nil {
 			return nil, err
 		}
@@ -50,8 +56,9 @@ func (h *Handler) familySelect(w http.ResponseWriter, r *http.Request) {
 			"familyPhone": fphone, "familyAddress": faddr, "familyTouPic": fpic,
 		}, nil
 	}, `SELECT o.old_id,o.name,f.family_id,f.family_name,f.family_relation,
-		        f.family_sex,f.family_phone,f.family_address,f.family_tou_pic,
-		        f.family_phone_cipher,f.family_phone_lookup,f.family_phone_protected`+filter+`
+		        f.family_sex,f.family_phone,f.family_tou_pic,
+		        f.family_phone_cipher,f.family_phone_lookup,f.family_phone_protected,
+		        f.family_address,f.family_address_cipher,f.family_address_protected`+filter+`
 		 ORDER BY o.old_id LIMIT ? OFFSET ?`, name, name, ps, (p-1)*ps)
 	if internalError(w, err) {
 		return
@@ -112,16 +119,18 @@ func (h *Handler) familySelectTwo(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	var id int64
-	var name, sex, addr, pic *string
+	var name, sex, pic *string
 	lookup, err := userphone.SearchIndex(ctx, tx, h.Box, phone)
 	if internalError(w, err) {
 		return
 	}
 	var record userphone.Record
-	err = tx.QueryRowContext(ctx, `SELECT family_id,family_name,family_sex,family_address,family_tou_pic,
+	var address familyaddress.Record
+	err = tx.QueryRowContext(ctx, `SELECT family_id,family_name,family_sex,`+familyaddress.Columns+`,family_tou_pic,
  family_phone,family_phone_cipher,family_phone_lookup,family_phone_protected
 		 FROM family WHERE `+userphone.FamilyMatch+` AND (?=0 OR family_id=?)`,
-		phone, lookup, familySelfID(principal), familySelfID(principal)).Scan(&id, &name, &sex, &addr, &pic, &record.Legacy, &record.Cipher, &record.Lookup, &record.Protected)
+		phone, lookup, familySelfID(principal), familySelfID(principal)).Scan(&id, &name, &sex,
+		&address.Legacy, &address.Cipher, &address.Protected, &pic, &record.Legacy, &record.Cipher, &record.Lookup, &record.Protected)
 	if errors.Is(err, sql.ErrNoRows) {
 		if internalError(w, tx.Commit()) {
 			return
@@ -133,6 +142,10 @@ func (h *Handler) familySelectTwo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if _, err := record.OpenFamilyStored(h.Box, id); internalError(w, err) {
+		return
+	}
+	addr, err := address.Open(h.Box, id)
+	if internalError(w, err) {
 		return
 	}
 	if internalError(w, tx.Commit()) {

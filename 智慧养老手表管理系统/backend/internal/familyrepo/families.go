@@ -7,6 +7,7 @@ import (
 	"errors"
 
 	"suining-care/internal/db"
+	"suining-care/internal/familyaddress"
 	"suining-care/internal/residentprofile"
 	"suining-care/internal/securestore"
 	"suining-care/internal/userphone"
@@ -97,10 +98,12 @@ func Create(ctx context.Context, tx *sql.Tx, box *securestore.Box, input Family,
 		return ErrPhoneInUse
 	}
 	familyID, err := db.InsertID(ctx, tx,
-		`INSERT INTO family(family_name,family_relation,family_sex,family_address)
-		 VALUES(?,?,?,?)`,
-		input.Name, input.Relation, input.Sex, input.Address)
+		`INSERT INTO family(family_name,family_relation,family_sex) VALUES(?,?,?)`,
+		input.Name, input.Relation, input.Sex)
 	if err != nil {
+		return err
+	}
+	if err := familyaddress.Store(ctx, tx, box, familyID, input.Address); err != nil {
 		return err
 	}
 	if err := userphone.StoreFamily(ctx, tx, box, familyID, input.Phone); err != nil {
@@ -142,10 +145,17 @@ func Update(ctx context.Context, tx *sql.Tx, box *securestore.Box, familyID int6
 	if used {
 		return ErrPhoneInUse
 	}
+	address, err := familyaddress.PrepareUpdate(ctx, tx, box, familyID, input.Address)
+	if errors.Is(err, sql.ErrNoRows) {
+		return ErrFamilyNotFound
+	}
+	if err != nil {
+		return err
+	}
 	result, err := tx.ExecContext(ctx,
 		`UPDATE family SET family_name=?,family_relation=?,family_sex=?,
-		 family_address=? WHERE family_id=?`,
-		input.Name, input.Relation, input.Sex, input.Address, familyID)
+		 family_address=?,family_address_cipher=?,family_address_protected=? WHERE family_id=?`,
+		input.Name, input.Relation, input.Sex, address.Legacy, address.Cipher, address.Protected, familyID)
 	if err != nil {
 		return err
 	}

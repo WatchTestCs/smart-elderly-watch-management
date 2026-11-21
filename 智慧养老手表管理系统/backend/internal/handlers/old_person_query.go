@@ -7,6 +7,7 @@ import (
 
 	"suining-care/internal/carepolicy"
 	"suining-care/internal/db"
+	"suining-care/internal/familyaddress"
 	"suining-care/internal/residentprofile"
 	"suining-care/internal/response"
 	"suining-care/internal/securestore"
@@ -91,7 +92,8 @@ func (h *Handler) getResidentDetails(w http.ResponseWriter, r *http.Request) {
 	base := `SELECT o.old_id, o.name, o.age, o.sex, o.phone, o.room, o.illness, o.warn,
 		o.food_like, o.food_hate, o.drag, o.family_id, o.customer_id, o.be_time, o.bothdate,
 		o.device_id, f.family_name, f.family_relation, f.family_phone, f.family_sex,
-		f.family_address, c.customer_name,f.family_phone_cipher,f.family_phone_lookup,f.family_phone_protected,
+		f.family_address,f.family_address_cipher,f.family_address_protected,c.customer_name,
+		f.family_phone_cipher,f.family_phone_lookup,f.family_phone_protected,
 		o.care_profile_cipher,o.phone_lookup,o.care_profile_protected
 		FROM oldperson o LEFT JOIN family f ON f.family_id=o.family_id
 		LEFT JOIN customer c ON c.customer_id=o.customer_id
@@ -108,11 +110,13 @@ func (h *Handler) getResidentDetails(w http.ResponseWriter, r *http.Request) {
 		var beTime, bothdate *time.Time
 		var familyName, familyRelation, familyPhone, familySex, familyAddress, customerName *string
 		var record userphone.Record
+		var address familyaddress.Record
 		var profile residentprofile.Record
-		var protected sql.NullBool
+		var protected, addressProtected sql.NullBool
 		if err := rows.Scan(&id, &name, &age, &sex, &phone, &room, &illness, &warn,
 			&foodLike, &foodHate, &drag, &familyID, &customerID, &beTime, &bothdate, &deviceID,
-			&familyName, &familyRelation, &familyPhone, &familySex, &familyAddress, &customerName, &record.Cipher, &record.Lookup, &protected,
+			&familyName, &familyRelation, &familyPhone, &familySex, &address.Legacy, &address.Cipher, &addressProtected,
+			&customerName, &record.Cipher, &record.Lookup, &protected,
 			&profile.Cipher, &profile.Lookup, &profile.Protected); err != nil {
 			return nil, err
 		}
@@ -126,6 +130,11 @@ func (h *Handler) getResidentDetails(w http.ResponseWriter, r *http.Request) {
 			record.Protected = protected.Bool
 			var err error
 			familyPhone, err = record.OpenFamilyStored(h.Box, *familyID)
+			if err != nil {
+				return nil, err
+			}
+			address.Protected = addressProtected.Bool
+			familyAddress, err = address.Open(h.Box, *familyID)
 			if err != nil {
 				return nil, err
 			}

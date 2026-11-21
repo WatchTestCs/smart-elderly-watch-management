@@ -4,8 +4,9 @@
 `information_schema`。字段分类与迁移设计可从 Git 历史查阅；当前盘点应以实际部署 schema 为准。S2 为内部元数据，S3 为人员与
 联系方式，S4 为健康、位置、凭据及可关联的敏感载荷。此分级是工程设计，不是合规认证。
 表的其他列也可能通过 ID 关联到自然人，不能当作匿名数据发布。
-PG 的 7 个基表字段、12 个视图输出及非字段资产另列于
-[projection-and-assets.csv](projection-and-assets.csv)，依据 migrations/analytics/0001_projection.sql。
+历史 PG 的 7 个基表字段、12 个视图输出及非字段资产另列于
+[projection-and-assets.csv](projection-and-assets.csv)，原 analytics schema 可从 Git 历史查阅。
+最新运行架构以 [单 MySQL 迁移](../MYSQL_ONLY_MIGRATION.md) 为准；历史资产仍需恢复验收。
 
 ## 当前边界
 
@@ -14,14 +15,17 @@ session、TOTP、照护备注、复核理由、规则证据。新增私有图片
 管理员和家属主账号手机号的新写入已使用按角色/账号认证的 AEAD 与 HMAC 查询索引，历史回填工具分别为 protect-user-phones 和 [protect-family-phones](../security/family-phone-protection.md)；已保护的手机号也纳入 rekey-data 的分批轮换清单，保持查询索引及共用 key binding 不变。家属登录、资料与通知已适配；该项不代表其他人员联系方式及手机号副本已保护。
 评论作者手机号新增按评论 ID 认证的 AEAD，点赞身份新增独立域 HMAC；原列在配置密钥的新写入中为 NULL。详见[社交手机号保护](social-phone-protection.md)，历史副本须显式运行 protect-social-phones 并核对聚合/重复数据，评论密文纳入 rekey-data，点赞摘要与独立 key binding 保持不变。
 长者联系方式、房间、病情、注意事项、饮食喜恶和用药七列新增按长者 ID 认证的 v1 AEAD 档案封装，原列在配置密钥的新写入中清空；电话以独立域 HMAC 保留既有家属关联查找，非唯一索引保留重复号码歧义。详见[长者照护档案保护](resident-care-profile-protection.md)，历史迁移使用 protect-resident-profiles，密文列加入 rekey-data。该封装不处理遥测统计 JSON。
-姓名、生日等身份资料、监护人电话、家属/监护人地址、原始健康样本、生成列、围栏/事件、社交文本及未回填的字段/历史副本仍需纳入迁移盘点。
+监护人电话/地址新增按监护人 ID 认证的 v1 AEAD 联系人封装及 reader 校验记录，原联系方式在有 key 新写中清空；姓名查询、ID 关联和年龄校验保留。历史值须显式运行 [protect-guardian-contacts](guardian-contact-protection.md)，联系人密文与加密的 reader marker 都纳入轮换。
+家属地址的新写入使用按家属 ID 认证的 AEAD，授权读取保持原字段，历史回填和轮换见[家属地址保护](family-address-protection.md)。
+姓名、生日等身份资料、原始健康样本、生成列、围栏/事件、社交文本及未回填的字段/历史副本仍需纳入迁移盘点。
 不宣称全库加密。AEAD 只在配置正确密钥的新写路径生效；兼容旧明文读取不是迁移完成。
 
-MySQL 是业务真相源。PG 分析投影是额外敏感副本，其 JSON/健康数值、备份、WAL、导出与
-死信数据至少采用源数据同级控制。生产环境需要分别配置 MySQL/PG 加密卷、受控快照及 TLS；
+MySQL 是唯一在线持久化业务存储，图片密文在 `image_payload`，目录及引用继续由 MySQL 管理。
+旧 PG 分析投影的 JSON/健康数值、备份、WAL、导出与死信数据仍至少采用源数据同级控制。
+生产环境需要配置 MySQL 加密卷、受控快照及 TLS，并保留历史 PG 资产的访问及加密控制；
 本机隔离测试的数据库文件没有据此宣称已加密。AEAD 不能防止持有应用密钥的在线攻击者。
 
-另有非字段资产：私有对象 bucket、本地 IMAGE_DIR、SQL dump、备份对象、访问日志、故障日志、
+另有历史私有对象 bucket、本地 IMAGE_DIR，以及 SQL dump、备份对象、访问日志、故障日志、
 CI artifacts、配置 secret、会话 cookie 和密钥备份。备份应独立 AEAD 加密、独立访问控制，
 密钥放在外部受控密钥库；不得与备份同包。日志禁止手机号、设备密钥、session、明文健康载荷、
 网关凭据。配置只通过受限文件/secret 注入；生产密钥不进入仓库或验收证据。

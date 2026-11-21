@@ -40,8 +40,11 @@ def audit(path, mode):
         failures.append({"error": "missing or truncated test stream (<100 passing tests)"})
     required = {"TestCareSOSOutboxAuditAndState", "TestCareAdminTransitionsAndFamilyIsolation", "TestCareReceiptRequiresTrustedGatewaySignature"}
     if mode == "mysql":
+        required.add("TestFamilyAddressBackfillMySQL")
+        required.add("TestMySQLMigrationRejectsUnknownHistoryBeforeDDL")
         required.add("TestSocialCommentViewerWithoutPhoneMySQL")
         required |= {"TestResidentCareProfileProtectedMySQL", "TestResidentProfileAtomicFailureMySQL", "TestResidentProfilePhoneAmbiguityMySQL", "TestResidentProfileRotationMySQL", "TestResidentProfileBackfillMySQL", "TestResidentProfilePreflightMySQL", "TestResidentProfileBackfillLocksMySQL", "TestResidentProfileCommandMySQL"}
+        required |= {"TestGuardianContactProtectedMySQL", "TestGuardianContactAtomicFailureMySQL", "TestGuardianContactRotationMySQL", "TestGuardianContactFirstWritersMySQL", "TestGuardianContactBackfillMySQL", "TestGuardianContactPreflightMySQL", "TestGuardianContactBackfillLocksMySQL", "TestGuardianContactCommandMySQL"}
         required |= {"TestSocialPhonesAreProtectedMySQL", "TestSocialPhoneBackfillMySQL", "TestSocialPhoneBackfillLocksMySQL", "TestSocialPhonePreflightMySQL", "TestSocialPhoneFailClosedMySQL", "TestSocialPhoneConcurrentVotesMySQL", "TestSocialPhoneCommandMySQL", "TestSocialPhoneImageRollbackMySQL", "TestSocialPhoneRekeyMySQL"}
         required |= {"TestCapabilitiesRollbackAndReapply", "TestHighCardinalityHardCaps256Clients", "TestKeyRotationAndRetirementFailClosed", "TestRekeyMySQL", "TestAdministratorPhoneRekeyMySQL", "TestFamilyPhoneBackfillMySQL", "TestFamilyPhoneCommandMySQL", "TestFamilyPhoneRecipientsLegacyAndProtectedMySQL", "TestProtectedFamilyLifecycleMySQL", "TestMySQLImageStorageAndLegacyImport", "TestMySQLImageTwoInstancesAndRestoredPayload", "TestCareFullHTTPChainAfterRealGatewayTimeout"}
     else:

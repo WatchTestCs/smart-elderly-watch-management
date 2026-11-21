@@ -42,3 +42,19 @@ SELECT name, size_bytes, content_sha256, state FROM image_blob ORDER BY name LIM
 The last trigger count must be **0**, and referenced objects must pass full authenticated SHA-256 verification. Verify original and restored MySQL row counts, binding/SOS workflow and transaction rollback, backup/restore of large `MEDIUMBLOB` rows, user login, image upload/download, and database restart. An optional local image backup is a **migration input**, never a runtime fallback.
 
 **Rollback requires restoring the complete pre-upgrade MySQL backup**, including the old migration ledger and triggers, along with the original image storage. After the new service has accepted writes, reconcile those writes against the rollback target before restoring the old backup. The migration ledger rejects old binaries started against an upgraded schema. Do not claim a production-ready release until native and real-data recovery gates pass.
+## Preview 隐私迁移编号衔接
+
+本分支保留上游 `0033_mysql_image_payload.sql` 和 `0034_retire_pg_projection.sql`，
+社交手机号、长者照护档案和监护人联系方式分别使用 `0035`、`0036`、`0037`。
+上述三项仍需独立预检、停写、匹配备份及显式回填，不会随 schema 迁移自动加密历史行。
+
+若已执行未合并 fork 的 `0033_social_phone_protection.sql`、
+`0034_resident_care_profile_protection.sql` 或 `0035_guardian_contact_protection.sql`，
+不得直接升级或手改 ledger 来冒充新编号。启动迁移在任何 DDL 前检查完成 ledger 和
+statement journal，未知名称立即拒绝，不清除 checksum、schema fingerprint 或未完成 intent。
+先保留原库/密钥/镜像及匹配的可恢复备份，继续使用匹配版本；升级须另行审核 schema、
+回填状态、历史 SQL checksum 和全部指纹后实施显式迁移。本 PR 不提供自动 ledger 重命名。
+已知编号的合法 rollback/reapply 仍遵循原检查点流程。
+
+单 MySQL 验收包含加密图片 payload、目录和引用一致性。历史 PG、S3、本地图片、WAL、
+dump 和旧密钥仍须保留在恢复资产清单；移除在线组件不代表已迁移、可删除或已完成密钥退役。
