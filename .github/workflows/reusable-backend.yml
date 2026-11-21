@@ -37,7 +37,7 @@ jobs:
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ matrix.go-version }}
-          cache-dependency-path: 智慧养老手表管理系统/backend/go.sum
+          cache-dependency-path: backend/go.sum
 
       - name: Enforce native Go API boundary
         run: python3 scripts/check-api-boundary.py
@@ -49,13 +49,13 @@ jobs:
         run: python3 scripts/generate-openapi.py --check
 
       - name: Run backend tests, build and vet
-        working-directory: 智慧养老手表管理系统/backend
+        working-directory: backend
         env:
           TEST_MYSQL_DSN: root:ci_root_only@tcp(localhost:3306)/suining_test
         run: |
           set -euo pipefail
-          mkdir -p ../../evidence/ci/backend-${{ matrix.go-version }}
-          evidence=../../evidence/ci/backend-${{ matrix.go-version }}
+          mkdir -p ../evidence/ci/backend-${{ matrix.go-version }}
+          evidence=../evidence/ci/backend-${{ matrix.go-version }}
           test -n "$TEST_MYSQL_DSN"
           git rev-parse HEAD > "$evidence/source-sha.txt"
           go version > "$evidence/go-version.txt"
@@ -63,20 +63,17 @@ jobs:
           MYSQL_PWD=ci_root_only mysql --protocol=TCP -h 127.0.0.1 -u root -N -e 'SELECT VERSION(),@@innodb_flush_log_at_trx_commit,@@version_comment' > "$evidence/mysql-environment.txt"
           docker inspect --format '{{.Config.Image}} {{.Image}}' '${{ job.services.mysql.id }}' > "$evidence/database-images.txt"
           go list -m -json all > "$evidence/modules.jsonl"
-          go test -json -race -count=1 -timeout 45m ./... > "$evidence/mysql.jsonl" 2>&1
-          python3 ../../scripts/reliability/audit-go-results.py "$evidence/mysql.jsonl" --mode mysql --output "$evidence/mysql-summary.json"
-          go build ./... > "$evidence/build.txt" 2>&1
           go vet ./... > "$evidence/vet.txt" 2>&1
-          # Benchmark-derived bootstrap profile, not a production traffic profile.
-          go test -run '^$' -bench '^BenchmarkSafe$' -benchtime=100ms -cpuprofile="$evidence/default.pgo" ./internal/jsonscan > "$evidence/pgo-training.txt" 2>&1
-          test -s "$evidence/default.pgo"
-          CGO_ENABLED=0 go build -trimpath -pgo="$evidence/default.pgo" -ldflags='-s -w' -o "$evidence/suining-server" ./cmd/server
+          go test -json -race -count=1 -timeout 45m ./... > "$evidence/mysql.jsonl" 2>&1
+          python3 ../scripts/reliability/audit-go-results.py "$evidence/mysql.jsonl" --mode mysql --output "$evidence/mysql-summary.json"
+          go build ./... > "$evidence/build.txt" 2>&1
+          CGO_ENABLED=0 go build -trimpath  -ldflags='-s -w' -o "$evidence/suining-server" ./cmd/server
           if readelf -l "$evidence/suining-server" | grep -q INTERP; then
             echo 'Server binary contains a dynamic interpreter' >&2
             exit 1
           fi
           go version -m "$evidence/suining-server" > "$evidence/server-build-info.txt"
-          grep -F -- '-pgo=' "$evidence/server-build-info.txt"
+          grep -F 'CGO_ENABLED=0' "$evidence/server-build-info.txt"
           unformatted="$(gofmt -l ./cmd ./internal ./migrations)"
           if [ -n "$unformatted" ]; then
             printf 'Go files requiring gofmt:\n%s\n' "$unformatted"

@@ -15,16 +15,16 @@ SUFFIXES = {".go", ".rs", ".js", ".cjs", ".mjs", ".ts", ".ets", ".vue",
 HISTORY = ("docs/decisions/", "docs/releases/", "docs/performance/",
            "docs/refactoring/", "evidence/")
 PREFIXES = ("README.md", "README.en.md", "docs/",
-            "智慧养老手表管理系统/backend/",
-            "智慧养老手表管理系统/frontend/",
-            "智慧养老手表管理系统/desktop/",
-            "智慧养老手表管理系统/watch-sim/",
+            "backend/",
+            "frontend/",
+            "desktop/",
+            "watch-sim/",
             "SuiningWatch/", ".github/workflows/", "deploy/", "tests/", "scripts/")
 files = subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT).decode("utf-8").split("\0")
 errors = []
-if (ROOT / '智慧养老手表管理系统/oldIot').exists():
+if (ROOT / 'oldIot').exists():
     errors.append('historical frontend directory must not be restored')
-module = (ROOT / '智慧养老手表管理系统/backend/go.mod').read_text(encoding='utf-8')
+module = (ROOT / 'backend/go.mod').read_text(encoding='utf-8')
 if not module.splitlines() or module.splitlines()[0].strip() != 'module suining-care':
     errors.append('backend must use the native suining-care Go module')
 for name in files:

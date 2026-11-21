@@ -1,7 +1,7 @@
-> **MySQL-only candidate (2026-11-17):** Current preview storage and deployment guidance is in [MySQL migration](docs/MYSQL_ONLY_MIGRATION.md). Older PostgreSQL/S3/local-image instructions on this page describe previous releases and are not suitable for deploying the new candidate.
+> **Current `preview`: MySQL 8.4 only.** Previous PostgreSQL/S3 deployments require an explicit migration; see [MySQL migration](docs/MYSQL_ONLY_MIGRATION.md).
 
 <p align="center">
-  <img src="智慧养老手表管理系统/frontend/public/static/brand/suining-logo-192.webp" width="88" height="88" alt="Suining · Elderly Care Management">
+  <img src="frontend/public/static/brand/suining-logo-192.webp" width="88" height="88" alt="Suining · Elderly Care Management">
 </p>
 
 <h1 align="center">Suining · Elderly Care Management</h1>
@@ -16,7 +16,7 @@
 
 [Download](#download) · [Features](#features) · [Getting started](#getting-started) · [Architecture](#architecture) · [Source and builds](#source-and-builds) · [Validation and performance](#validation-and-performance) · [Documentation](#documentation)
 
-Suining brings resident profiles, watch devices, health records, location alerts, and care tasks into a single workspace for care organizations and families. The application is built with Tauri 2, Rust, Vue 3, Vite, and Go, using an independently deployed MySQL primary database for business transactions and PostgreSQL for asynchronous analytics.
+Suining brings resident profiles, watch devices, health records, location alerts, and care tasks into a single workspace for care organizations and families. The application is built with Tauri 2, Rust, Vue 3, Vite, and Go, using MySQL 8.4 as its sole persistent application datastore.
 
 This branch also includes [SuiningWatch](SuiningWatch/README.md), a native HarmonyOS (ArkTS) watch app used to test device-to-backend protocols in the emulator. See the [watch integration notes](docs/WATCH_INTEGRATION.md) for build and test details. The watch app includes foreground heart-rate and step sensors, permission requests, device authentication, health uploads and SOS. Simulated samples remain a separate debugging source. Native SDK builds, signing and physical-watch validation use the setup described in the watch guide.
 
@@ -67,64 +67,45 @@ Access is scoped by role. Family accounts only see their linked residents. Super
 
 ### Windows desktop
 
-1. Run the Setup installer or extract the entire portable ZIP to a local folder.
-2. Start a MySQL database for business data, and optionally a PostgreSQL instance if you need analytics projections. You can use the [dual-database Compose template](deploy/dual-db.compose.yml), which exposes MySQL on port 13306 and PostgreSQL on port 15432.
-3. Configure your database connection strings and session encryption key in PowerShell, then launch the app:
+The installer and portable package do not include a database server. This `preview` candidate requires **MySQL 8.4 only**. Older PostgreSQL and S3 settings are rejected by the new backend.
+
+1. Start MySQL 8.4 and create the application's database and credentials. For upgrades, complete the [MySQL-only migration and image import](docs/MYSQL_ONLY_MIGRATION.md) with a tested backup and all old writers stopped.
+2. Configure the database and persist an independently generated 32-byte encryption key (base64). For a controlled local loopback example in PowerShell 7:
 
 ```powershell
-$env:SUINING_MYSQL_DSN='suining:REPLACE_PASSWORD@tcp(127.0.0.1:13306)/suining'
-$env:SUINING_PG_ANALYTICS_URL='postgres://suining_analytics:REPLACE_PASSWORD@127.0.0.1:15432/suining_analytics?sslmode=disable'
+$env:SUINING_MYSQL_DSN='suining:REPLACE_PASSWORD@tcp(127.0.0.1:13306)/suining?parseTime=true'
 $env:SESSION_BACKEND='database'
 $env:DATA_ENCRYPTION_KEY='REPLACE_WITH_SAVED_BASE64_OF_32_RANDOM_BYTES'
 & '.\suining.exe'
 ```
 
-The example above disables TLS for a local loopback setup; enable and verify TLS whenever connecting across hosts. If you omit PostgreSQL, core workflows still run normally, though you should monitor queued analytics events in MySQL. Generate `DATA_ENCRYPTION_KEY` once during initial deployment and store it safely.
+3. Once MySQL migrations have succeeded, follow the setup flow to create the first administrator. No default administrator credentials are bundled. Create resident records before binding watches.
 
-4. After MySQL migrations complete, follow the desktop prompt to create the first administrator account. The system has no default phone number or master password, and family members register with invitation codes.
-5. Create resident profiles before registering and binding watches. Back up your MySQL database and local image directory (`%APPDATA%\岁宁` by default) separately.
+Preserve the encryption key with database backups. Encrypted images live in MySQL (`image_payload`), so include binary columns when backing up. Verify TLS for any database connection beyond the trusted local host. A desktop instance closes its local backend when the window exits; unattended watch reporting and SOS require a continuously running server and a staffed notification path.
 
-Restart the application after changing environment variables. Running the Go backend directly reads `MYSQL_DSN` and `PG_ANALYTICS_URL`, whereas launching through the desktop shell reads the `SUINING_`-prefixed variables shown above. The older `DATABASE_URL` and `SUINING_DATABASE_URL` variables are deprecated.
+### Local Compose environment
 
-### Local development platform
+From the repository root, use the single-MySQL stack:
 
-The [platform Compose setup](deploy/platform.compose.yml) starts MySQL 8.4, PostgreSQL 16, the Go backend, Nginx, and Prometheus together:
-
-```sh
-python3 scripts/start-platform.py
-# Once the containers are healthy, create the initial administrator interactively
-python3 scripts/bootstrap-admin.py
+```powershell
+python scripts/start-platform.py
+python scripts/bootstrap-admin.py
 ```
 
-The web UI listens at `http://127.0.0.1:8080` and Prometheus metrics are exposed at `http://127.0.0.1:9090`. On first run, the script generates `deploy/secrets/` and `deploy/platform.env`, preserving existing keys and passwords. It does not generate TLS certificates. MySQL business services start first; optional PostgreSQL startup follows and its failure does not block business services.
+`deploy/platform.compose.yml` contains MySQL 8.4, the Go API, Nginx, and monitoring services. It does not provision PostgreSQL, S3 or a local-image runtime. The gateway binds `127.0.0.1:8080` by default; Prometheus binds `127.0.0.1:9090`. Before exposing any endpoint remotely, configure ingress TLS, access control and trusted proxy CIDRs. See the [deployment runbook](docs/MYSQL_ONLY_MIGRATION.md) for backup and rollback checks.
 
-### Database migration and 24/7 monitoring
-
-The desktop client binds its local Go server to a dynamic loopback port and stops the server when you close the window. For continuous watch reporting and round-the-clock SOS handling, deploy the Go backend as a persistent service behind a controlled network endpoint, connect an external notification gateway, and staff an on-call response workflow.
-
-## Architecture
+### Application architecture
 
 ```mermaid
 flowchart LR
-    R["Tauri / Rust"] -->|"Verify, start and stop"| G["Go API and workers"]
+    W["HarmonyOS watch"] -->|"Signed telemetry and SOS"| G["Go API and workers"]
     V["Vue 3 / WebView2"] -->|"Same-origin HTTP"| G
-    V -->|"Restricted setup IPC"| R
-    G -->|"Business transactions"| M[("MySQL primary")]
-    M -->|"Transactional enqueue"| O["Analytics outbox"]
-    O -->|"Go async projection / idempotent retry"| P[("PostgreSQL analytics")]
-    G --> F["Local images and logs"]
+    V -->|"Restricted setup IPC"| R["Tauri / Rust shell"]
+    R -->|"Manage local process"| G
+    G -->|"Transactions, sessions, telemetry, encrypted images"| M[("MySQL 8.4")]
 ```
 
-MySQL holds all authoritative business records, while PostgreSQL stores an asynchronous analytics projection that can be rebuilt from MySQL at any time. The Vue frontend communicates with the Go server over same-origin HTTP and never holds database credentials or desktop initialization tokens.
-
-| Runtime condition | System behavior |
-| --- | --- |
-| MySQL is unreachable or migrations are incomplete | The UI opens normally, and business API endpoints return `503 DATABASE_UNAVAILABLE` |
-| PostgreSQL is unconfigured or offline | Core workflows continue; committed analytics events stay in the MySQL outbox and sync once PG recovers |
-| A user write request fails | The form keeps the user's unsaved input and prompts for a manual retry without replaying writes automatically |
-| Session configuration is invalid | The status endpoint returns `configError` and prompts the operator to fix the environment and restart |
-
-`GET /healthz` checks HTTP process liveness, while `GET /api/v1/service/status` reports database readiness and analytics sync status. See the [architecture overview](docs/ARCHITECTURE.md) for process lifecycle details and the [health data contract](智慧养老手表管理系统/backend/docs/health-data.md#跨窗口步数与夜间累计计数) for interval splitting, midnight boundaries, and alert thresholds.
+MySQL is the only authoritative application datastore. Historical analytics table names and legacy status fields may remain to preserve contracts, but there is no live PostgreSQL analytics worker. When MySQL is down or the image migration is incomplete, business APIs stay unavailable rather than serving an inconsistent dataset. `/healthz` reports process liveness and `/api/v1/service/status` reports readiness. See [Workspace](docs/WORKSPACE.md), [API contracts](docs/API_CONTRACTS.md), and [MySQL migration](docs/MYSQL_ONLY_MIGRATION.md).
 
 ## Source and builds
 
@@ -136,7 +117,7 @@ cd smart-elderly-watch-management
 ```
 
 ```text
-智慧养老手表管理系统/
+
 ├── desktop/     Tauri / Rust shell, native permissions, and Windows packaging scripts
 ├── backend/     Go API, SQL migrations, care workflows, and analytics workers
 ├── frontend/    Vue 3 / Vite web interface and Playwright browser QA
@@ -149,10 +130,10 @@ docs/            Architecture guides, deployment runbooks, release notes, and te
 evidence/        Archived test outputs and fault-injection evidence
 ```
 
-Building the Windows desktop package requires PowerShell 7, Node.js (`^20.19.0 || >=22.12.0`), Go (`1.26.0+` per `go.mod`), Rust 1.85+, MSVC build tools, and the Windows SDK. See [Environment setup](docs/BUILD.md) for exact version constraints.
+Building the Windows desktop package requires PowerShell 7, Node.js (`^20.19.0 || >=22.12.0`), Go (`1.27.4` per `go.mod`), Rust 1.85+, MSVC build tools, and the Windows SDK. See [Environment setup](docs/BUILD.md) for exact version constraints.
 
 ```powershell
-cd 智慧养老手表管理系统
+# Work from the repository root
 ./desktop/validate-version.ps1
 ./desktop/build.ps1
 ```
@@ -164,11 +145,11 @@ The build script compiles the Vue frontend, embeds the assets into the Go binary
 The Rust watch simulator can connect to preview or generate local data without a network, backend, or account. Building it requires Rust 1.89+ and, on Windows, MSVC and the Windows SDK.
 
 ```powershell
-cargo build --release --locked --manifest-path 智慧养老手表管理系统/watch-sim/Cargo.toml
-.\智慧养老手表管理系统\watch-sim\target\release\watch-sim.exe --local "D:\watch-sim\local-data" --scenario demo --health-samples
+cargo build --release --locked --manifest-path watch-sim/Cargo.toml
+.\watch-sim\target\release\watch-sim.exe --local "D:\watch-sim\local-data" --scenario demo --health-samples
 ```
 
-Packaged builds include `本地模拟.cmd` for double-click startup. Each run creates a separate directory containing samples, events, and an `index.html` page that opens offline. See the [simulator guide](智慧养老手表管理系统/watch-sim/README.md) for online options, certificates, and validation commands.
+Packaged builds include `本地模拟.cmd` for double-click startup. Each run creates a separate directory containing samples, events, and an `index.html` page that opens offline. See the [simulator guide](watch-sim/README.md) for online options, certificates, and validation commands.
 
 Compared with the preview Node simulator, the Rust build reduced startup plus three-request time by 79.5% and peak working set by 85.2%. Coverage, adaptations and raw measurements are performance evidence and are not distributed with this repository.
 
@@ -180,11 +161,11 @@ UI Quality runs with every Preview CI. `Core CI / required` covers the core chec
 | --- | --- |
 | Preview branch automation | [Preview CI](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/workflows/ci.yml) |
 | Current release notes | [Version 2.1.0](docs/releases/2.1.0.md) and the release manifest |
-| Backend regression | Run `go test -count=1 ./...` and `go vet ./...` in `智慧养老手表管理系统/backend` |
-| Frontend build | Run `npm ci` and `npm run build` in `智慧养老手表管理系统/frontend` |
+| Backend regression | Run `go test -count=1 ./...` and `go vet ./...` in `backend` |
+| Frontend build | Run `npm ci` and `npm run build` in `frontend` |
 | Watch protocol | Run `npm ci` and `npm test` in `SuiningWatch`; this does not replace native DevEco or physical-device validation |
 
-Database integration and race tests require dedicated disposable test databases configured through `TEST_MYSQL_DSN` and `TEST_DATABASE_URL`. Tests must never target production databases. CI results must be read from the workflow run for the exact commit being assessed.
+Database integration and race tests require dedicated disposable test databases configured through `TEST_MYSQL_DSN`. Tests must never target production databases. CI results must be read from the workflow run for the exact commit being assessed.
 
 Historical performance experiments and release-stage notes are not current-version acceptance evidence. Before production deployment, separately validate physical watch hardware, external notification gateways, production data migration, network TLS, and staffed incident response. Gateway acceptance does not prove notification delivery or completed care response.
 ## Troubleshooting
@@ -192,7 +173,7 @@ Historical performance experiments and release-stage notes are not current-versi
 | Symptom | What to check |
 | --- | --- |
 | The window opens, but login or saving fails | Verify MySQL connectivity, database name, migration status, `SESSION_BACKEND`, and `DATA_ENCRYPTION_KEY` |
-| PostgreSQL is offline, but writes still succeed | This is normal; MySQL handles live transactions and queues analytics events until PG reconnects |
+| Legacy PostgreSQL connection variables are configured | Remove the unsupported variables and follow the MySQL-only migration guide before restarting |
 | A watch cannot reach the desktop app | The desktop client only listens on localhost; deploy the Go server on a reachable host for external devices |
 | The portable build fails to launch | Extract the entire ZIP, keep both `.exe` files in the same directory, ensure WebView2 is installed, and verify the SHA-256 hash |
 
@@ -201,9 +182,9 @@ Historical performance experiments and release-stage notes are not current-versi
 | Topic | Guides |
 | --- | --- |
 | Releases and upgrades | [2.1.0 release notes](docs/releases/2.1.0.md) · [Changelog](CHANGELOG.md) |
-| Databases and backups | [Dual-database guide](docs/DUAL_DATABASES.md) · [Backup and restore runbook](docs/runbooks/backup-restore.md) |
+| Databases and backups | [Current MySQL migration](docs/MYSQL_ONLY_MIGRATION.md) · [Backup and restore runbook](docs/runbooks/backup-restore.md) |
 | Operations and support | [Care service deployment](docs/CARE_SERVICE_DEPLOYMENT.md) · [Support and troubleshooting](docs/SUPPORT.md) |
-| Module guides | [Workspace overview](智慧养老手表管理系统/README.md) · [Frontend](智慧养老手表管理系统/frontend/README.md) · [Backend](智慧养老手表管理系统/backend/README.md) · [Watch app](SuiningWatch/README.md) |
+| Module guides | [Workspace overview](docs/WORKSPACE.md) · [Frontend](frontend/README.md) · [Backend](backend/README.md) · [Watch app](SuiningWatch/README.md) |
 | Architecture and testing | [Architecture](docs/ARCHITECTURE.md) · [UI requirements](docs/UI_UX.md) · [Release gates](docs/reliability/release-governance.md) · [Testing guide](docs/TESTING.md) |
 
 When opening an [issue](https://github.com/WatchTestCs/smart-elderly-watch-management/issues), include the application version or commit SHA, OS, network layout, and redacted logs.
@@ -214,7 +195,7 @@ Licensed under the [MIT License](LICENSE). Bundled fonts, map tiles, and third-p
 
 ## API contract
 
-[API contracts and resolved differences](docs/API_CONTRACTS.md) list request and success fields for 109 paths. JSON success uses HTTP 200 and `returnCode="1111"`. Failures use HTTP 4xx/5xx with `returnCode="0000"`, `code`, `message` and an optional `reference`. Image downloads return bytes; uploads use multipart field `file`.
+[API contracts and resolved differences](docs/API_CONTRACTS.md) list request and success fields for the currently documented routes. JSON success uses HTTP 200 and `returnCode="1111"`. Failures use HTTP 4xx/5xx with `returnCode="0000"`, `code`, `message` and an optional `reference`. Image downloads return bytes; uploads use multipart field `file`.
 
 Device requests use `X-Device-Signature`, `X-Device-Timestamp` and `X-Device-Nonce`. With `SUINING_REQUIRE_SIGNED_DEVICE=1`, every device route requires a valid signature and rejects nonce replay, except `/device/report` and `/device/sos` (which reserve nonces inside their business transaction) and `/care/receipt` (which uses the gateway HMAC). Without the variable, legacy unsigned firmware still works, but any signature that is present must verify.
 

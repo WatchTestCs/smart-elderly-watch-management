@@ -18,14 +18,14 @@ jobs:
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: '1.27.4'
-          cache-dependency-path: 智慧养老手表管理系统/backend/go.sum
+          cache-dependency-path: backend/go.sum
       - name: Validate all product versions
         shell: pwsh
-        run: ./智慧养老手表管理系统/desktop/validate-version.ps1
+        run: ./desktop/validate-version.ps1
       - name: Parse active PowerShell scripts
         shell: pwsh
         run: |
-          Get-ChildItem '智慧养老手表管理系统/desktop' -Filter '*.ps1' | ForEach-Object {
+          Get-ChildItem 'desktop' -Filter '*.ps1' | ForEach-Object {
             $tokens=$null; $errors=$null
             [void][System.Management.Automation.Language.Parser]::ParseFile($_.FullName,[ref]$tokens,[ref]$errors)
             if($errors.Count){throw ($errors|Out-String)}
@@ -35,11 +35,9 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force evidence/ci/windows | Out-Null
           git rev-parse HEAD | Set-Content evidence/ci/windows/source-sha.txt
-          Push-Location '智慧养老手表管理系统/backend'
+          Push-Location 'backend'
           $env:CGO_ENABLED = '0'
-          go test -run '^$' -bench '^BenchmarkSafe$' -benchtime=100ms -cpuprofile '../../evidence/ci/windows/default.pgo' ./internal/jsonscan
-          if ($LASTEXITCODE) { throw 'PGO profile generation failed' }
-          go build -trimpath -pgo='../../evidence/ci/windows/default.pgo' -ldflags='-s -w' -o '../../evidence/ci/windows/suining-server.exe' ./cmd/server
+          go build -trimpath  -ldflags='-s -w' -o '../evidence/ci/windows/suining-server.exe' ./cmd/server
           if ($LASTEXITCODE) { throw 'Windows sidecar build failed' }
           Pop-Location
           Get-FileHash evidence/ci/windows/suining-server.exe -Algorithm SHA256 | ConvertTo-Json | Set-Content evidence/ci/windows/sha256.json
@@ -66,7 +64,7 @@ jobs:
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
         with:
           go-version: '1.27.4'
-          cache-dependency-path: 智慧养老手表管理系统/backend/go.sum
+          cache-dependency-path: backend/go.sum
       - name: Build and exercise the actual desktop distributions
         shell: pwsh
         run: |
@@ -76,15 +74,15 @@ jobs:
           rustup toolchain install stable --profile minimal --no-self-update
           if ($LASTEXITCODE) { throw 'Rust toolchain setup failed' }
           rustc --version | Set-Content evidence/ci/windows-desktop/rust-version.txt
-          ./智慧养老手表管理系统/desktop/build.ps1 *>&1 | Tee-Object evidence/ci/windows-desktop/build.log
-          python ./智慧养老手表管理系统/desktop/build-fontless.py *>&1 | Tee-Object evidence/ci/windows-desktop/fontless.log
-          ./智慧养老手表管理系统/desktop/package-release.ps1 *>&1 | Tee-Object evidence/ci/windows-desktop/package.log
+          ./desktop/build.ps1 *>&1 | Tee-Object evidence/ci/windows-desktop/build.log
+          python ./desktop/build-fontless.py *>&1 | Tee-Object evidence/ci/windows-desktop/fontless.log
+          ./desktop/package-release.ps1 *>&1 | Tee-Object evidence/ci/windows-desktop/package.log
 
       - name: Smoke-test installed NSIS on disposable Windows runner
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $setup = Get-ChildItem '智慧养老手表管理系统/outputs' -Filter 'Suining-Setup-*-win-x64.exe' -Recurse -File | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          $setup = Get-ChildItem 'outputs' -Filter 'Suining-Setup-*-win-x64.exe' -Recurse -File | Sort-Object LastWriteTime -Descending | Select-Object -First 1
           if (!$setup) { throw 'No NSIS installer was built' }
           $target = Join-Path $env:RUNNER_TEMP 'suining-pr153-installer-smoke'
           if (Test-Path $target) { throw 'Installer test target already exists' }
@@ -108,54 +106,54 @@ jobs:
         with:
           name: suining-setup-${{ github.event.pull_request.head.sha || github.sha }}
           path: |
-            智慧养老手表管理系统/outputs/*/release/Suining-Setup-*.exe
-            智慧养老手表管理系统/outputs/*/release/SHA256SUMS.txt
-            智慧养老手表管理系统/outputs/*/release/release-manifest.json
+            outputs/*/release/Suining-Setup-*.exe
+            outputs/*/release/SHA256SUMS.txt
+            outputs/*/release/release-manifest.json
             evidence/ci/windows-desktop/source-sha.txt
           if-no-files-found: error
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: suining-portable-${{ github.event.pull_request.head.sha || github.sha }}
           path: |
-            智慧养老手表管理系统/outputs/*/release/Suining-Portable-*.zip
-            智慧养老手表管理系统/outputs/*/release/SHA256SUMS.txt
-            智慧养老手表管理系统/outputs/*/release/release-manifest.json
+            outputs/*/release/Suining-Portable-*.zip
+            outputs/*/release/SHA256SUMS.txt
+            outputs/*/release/release-manifest.json
             evidence/ci/windows-desktop/source-sha.txt
           if-no-files-found: error
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: suining-source-${{ github.event.pull_request.head.sha || github.sha }}
           path: |
-            智慧养老手表管理系统/outputs/*/release/Suining-Source-*.zip
-            智慧养老手表管理系统/outputs/*/release/SHA256SUMS.txt
-            智慧养老手表管理系统/outputs/*/release/release-manifest.json
+            outputs/*/release/Suining-Source-*.zip
+            outputs/*/release/SHA256SUMS.txt
+            outputs/*/release/release-manifest.json
             evidence/ci/windows-desktop/source-sha.txt
           if-no-files-found: error
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: suining-native-nofonts-win-x64-${{ github.event.pull_request.head.sha || github.sha }}
           path: |
-            智慧养老手表管理系统/outputs/*/release/Suining-Native-NoFonts-*-win-x64.exe
-            智慧养老手表管理系统/outputs/*/release/SHA256SUMS.txt
-            智慧养老手表管理系统/outputs/*/release/release-manifest.json
+            outputs/*/release/Suining-Native-NoFonts-*-win-x64.exe
+            outputs/*/release/SHA256SUMS.txt
+            outputs/*/release/release-manifest.json
             evidence/ci/windows-desktop/source-sha.txt
           if-no-files-found: error
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: suining-native-nofonts-linux-x64-${{ github.event.pull_request.head.sha || github.sha }}
           path: |
-            智慧养老手表管理系统/outputs/*/release/Suining-Native-NoFonts-*-linux-x64.tar.gz
-            智慧养老手表管理系统/outputs/*/release/SHA256SUMS.txt
-            智慧养老手表管理系统/outputs/*/release/release-manifest.json
+            outputs/*/release/Suining-Native-NoFonts-*-linux-x64.tar.gz
+            outputs/*/release/SHA256SUMS.txt
+            outputs/*/release/release-manifest.json
             evidence/ci/windows-desktop/source-sha.txt
           if-no-files-found: error
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: suining-native-nofonts-linux-arm64-${{ github.event.pull_request.head.sha || github.sha }}
           path: |
-            智慧养老手表管理系统/outputs/*/release/Suining-Native-NoFonts-*-linux-arm64.tar.gz
-            智慧养老手表管理系统/outputs/*/release/SHA256SUMS.txt
-            智慧养老手表管理系统/outputs/*/release/release-manifest.json
+            outputs/*/release/Suining-Native-NoFonts-*-linux-arm64.tar.gz
+            outputs/*/release/SHA256SUMS.txt
+            outputs/*/release/release-manifest.json
             evidence/ci/windows-desktop/source-sha.txt
           if-no-files-found: error
       - if: always()
@@ -164,5 +162,5 @@ jobs:
           name: windows-desktop-${{ github.event.pull_request.head.sha || github.sha }}
           path: |
             evidence/ci/windows-desktop/
-            智慧养老手表管理系统/outputs/*/release/*
+            outputs/*/release/*
           if-no-files-found: error

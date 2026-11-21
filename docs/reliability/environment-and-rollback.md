@@ -4,7 +4,7 @@
 
 验证必须在独立 clone、临时数据库和专用对象存储中执行。不要对生产库运行自动测试、故障注入或迁移演练；不要停止、清空或覆盖部署方现有数据库服务。
 
-后端在 `智慧养老手表管理系统/backend` 目录执行：
+后端在 `backend` 目录执行：
 
 ```sh
 go test -count=1 ./...
@@ -15,7 +15,7 @@ go vet ./...
 
 需要真实数据库集成测试时，配置专用的 `TEST_MYSQL_DSN` 与 `TEST_DATABASE_URL`。测试库必须允许测试初始化和销毁；未配置时跳过的测试不能算作数据库验收通过。
 
-前端在 `智慧养老手表管理系统/frontend` 目录执行 `npm ci`、`npm test`、`npm run typecheck` 和 `npm run build`；具体脚本以当前 `package.json` 为准。仓库根目录执行 `python scripts/generate-openapi.py --check`。HarmonyOS 端执行 `npm ci` 与 `npm test`；便携协议测试不等价于 DevEco 原生 SDK 编译或真机验收。
+前端在 `frontend` 目录执行 `npm ci`、`npm test`、`npm run typecheck` 和 `npm run build`；具体脚本以当前 `package.json` 为准。仓库根目录执行 `python scripts/generate-openapi.py --check`。HarmonyOS 端执行 `npm ci` 与 `npm test`；便携协议测试不等价于 DevEco 原生 SDK 编译或真机验收。
 
 CI 结果必须对应被审查的完整 commit SHA。每项检查按实际状态记录；跳过、blocked、未配置服务和未连接真实设备均不得写成通过。环境版本、数据库镜像和测试数据来源应从该次 CI artifact 或运行日志读取，不复用历史实验版本号作为当前环境声明。
 

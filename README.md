@@ -1,7 +1,7 @@
-> **MySQL-only candidate (2026-11-17):** Current preview storage and deployment guidance is in [MySQL 单库存储迁移](docs/MYSQL_ONLY_MIGRATION.md). Older PostgreSQL/S3/local-image instructions on this page describe previous releases and are not suitable for deploying the new candidate.
+> **当前 `preview`：仅使用 MySQL 8.4。** PostgreSQL/S3 旧版本须按 [迁移手册](docs/MYSQL_ONLY_MIGRATION.md) 明确迁移。
 
 <p align="center">
-  <img src="智慧养老手表管理系统/frontend/public/static/brand/suining-logo-192.webp" width="88" height="88" alt="岁宁·智慧养老">
+  <img src="frontend/public/static/brand/suining-logo-192.webp" width="88" height="88" alt="岁宁·智慧养老">
 </p>
 
 <h1 align="center">岁宁 · 智慧养老管理</h1>
@@ -16,7 +16,7 @@
 
 [下载](#下载) · [主要功能](#主要功能) · [开始使用](#开始使用) · [系统架构](#系统架构) · [源码与构建](#源码与构建) · [验证与性能](#验证与性能) · [文档导航](#文档导航)
 
-岁宁面向照护机构与家属，在同一工作台内集中管理长者档案、手表设备、健康记录、位置告警与照护任务。客户端与服务端基于 Tauri 2、Rust、Vue 3、Vite 与 Go 构建，使用独立部署的 MySQL 保存业务数据，并通过 PostgreSQL 异步处理统计分析。
+岁宁面向照护机构与家属，在同一工作台内集中管理长者档案、手表设备、健康记录、位置告警与照护任务。客户端与服务端基于 Tauri 2、Rust、Vue 3、Vite 与 Go 构建，使用独立部署的 MySQL 保存业务数据，，仅使用 MySQL 8.4 持久化业务数据。
 
 仓库根目录下的 [SuiningWatch](SuiningWatch/README.md) 是配套的 HarmonyOS 手表端工程，包含前台心率与计步传感器读取、系统权限申请、设备认证、采样上传和 SOS。模拟采样保留为独立调试来源；构建与接入步骤见[手表接入说明](docs/WATCH_INTEGRATION.md)。
 
@@ -65,64 +65,45 @@
 
 ### Windows 桌面端
 
-1. 运行 Setup 安装程序，或将免安装 ZIP 完整解压到本地目录。
-2. 准备独立的 MySQL 业务数据库，需要使用异步分析时再额外部署 PostgreSQL。可以直接使用仓库提供的[双库 Compose 模板](deploy/dual-db.compose.yml)，其 MySQL 与 PostgreSQL 默认端口分别为 13306 和 15432。
-3. 在 PowerShell 中配置数据库连接与会话加密密钥，随后启动客户端：
+当前 `preview` 候选版**仅使用 MySQL 8.4** 作为持久化业务数据库。安装包和便携版均不包含数据库服务。旧 PostgreSQL、S3 配置不能用于新后端。
+
+1. 配置 MySQL 8.4 数据库及独立账号。升级旧版本时，先停止所有旧版写入服务，按 [MySQL 单库迁移手册](docs/MYSQL_ONLY_MIGRATION.md) 备份并导入历史图片。
+2. 生成并妥善保存随机 32 字节数据加密密钥（base64）。PowerShell 7 本地示例：
 
 ```powershell
-$env:SUINING_MYSQL_DSN='suining:替换密码@tcp(127.0.0.1:13306)/suining'
-$env:SUINING_PG_ANALYTICS_URL='postgres://suining_analytics:替换密码@127.0.0.1:15432/suining_analytics?sslmode=disable'
+$env:SUINING_MYSQL_DSN='suining:替换密码@tcp(127.0.0.1:13306)/suining?parseTime=true'
 $env:SESSION_BACKEND='database'
-$env:DATA_ENCRYPTION_KEY='替换为已妥善保存的32字节随机密钥的Base64'
+$env:DATA_ENCRYPTION_KEY='替换为已备份的32字节随机密钥的base64'
 & '.\suining.exe'
 ```
 
-上述配置仅适用于受控的本机环境，跨主机连接数据库时请开启并验证 TLS。如果不配置 PostgreSQL，核心业务依然正常运转，但需留意 MySQL 中待同步分析事件的积压情况。首次部署时请生成 `DATA_ENCRYPTION_KEY` 并妥善备份，切勿在后续启动时随意更换。
+3. 数据库迁移成功后，按界面提示创建首位管理员。系统没有默认管理员密码。先创建长者档案，再登记与绑定手表。
 
-4. MySQL 自动迁移完成后，按桌面引导创建首位管理员账号。系统不设默认手机号或初始通用密码，家属需凭管理员生成的邀请码注册。
-5. 使用时先建立长者档案，再登记并绑定手表。本地图片与日志默认保存在 `%APPDATA%\岁宁`，日常运维时请将图片目录与数据库分别备份。
-
-修改环境变量后需重启客户端生效。直接运行 Go 服务端时读取 `MYSQL_DSN` 与 `PG_ANALYTICS_URL`，通过桌面端启动时则读取带 `SUINING_` 前缀的同名变量。旧版 `DATABASE_URL` 与 `SUINING_DATABASE_URL` 已弃用。
+加密图片存入 MySQL `image_payload`，备份时必须包含 BLOB 数据及数据密钥。跨主机连接数据库须校验 TLS。桌面端关闭时会停止其本地 Go 服务；持续接收手表上报和 SOS 需要独立常驻的 Go 服务及真实值守通知渠道。
 
 ### 本地容器化平台
 
-仓库提供了包含 MySQL 8.4、PostgreSQL 16、Go 后端、Nginx 与 Prometheus 的[完整 Compose 编排文件](deploy/platform.compose.yml)。配置好环境变量后，可通过脚本一键启动：
+从仓库根目录运行：
 
-```sh
-python3 scripts/start-platform.py
-# 待服务就绪后，按提示创建首位管理员
-python3 scripts/bootstrap-admin.py
+```powershell
+python scripts/start-platform.py
+python scripts/bootstrap-admin.py
 ```
 
-启动后应用默认监听 `http://127.0.0.1:8080`，Prometheus 指标页位于 `http://127.0.0.1:9090`。启动脚本首次运行时会生成 `deploy/secrets/` 与 `deploy/platform.env`，保留已有密钥和密码；不会生成 TLS 证书。MySQL 业务服务先启动，随后尝试启动 PostgreSQL，其失败不阻塞业务。
+[Compose 配置](deploy/platform.compose.yml) 仅部署 MySQL 8.4、Go 服务、Nginx 和监控组件，不再部署 PostgreSQL、S3 或运行时本地图片目录。默认网关绑定 `127.0.0.1:8080`，Prometheus 绑定 `127.0.0.1:9090`。跨网络开放前须配置 TLS、访问控制和可信代理范围。数据迁移及回滚要求见 [MySQL 单库迁移手册](docs/MYSQL_ONLY_MIGRATION.md)。
 
-### 旧库迁移与长期值守
-
-桌面客户端默认监听本机回环动态端口，关闭窗口即终止本地 Go 服务。如果需要全天候接收真实手表上报并处理紧急求助，请独立部署常驻 Go 服务、配置受控公网或局域网入口、接入外部通知网关，并安排值班人员跟进。
-
-## 系统架构
+### 系统架构
 
 ```mermaid
 flowchart LR
-    R["Tauri / Rust"] -->|"校验、启动与退出"| G["Go API 与后台作业"]
+    W["HarmonyOS 手表"] -->|"签名遥测与 SOS"| G["Go API 与后台任务"]
     V["Vue 3 / WebView2"] -->|"同源 HTTP"| G
-    V -->|"受限初始化 IPC"| R
-    G -->|"业务事务"| M[("MySQL 主库")]
-    M -->|"事务内写入"| O["分析 outbox"]
-    O -->|"Go 异步投影 / 幂等重试"| P[("PostgreSQL 分析库")]
-    G --> F["本地图片与日志"]
+    V -->|"受限初始化 IPC"| R["Tauri / Rust 桌面壳"]
+    R -->|"管理本地服务进程"| G
+    G -->|"事务、会话、遥测、加密图片"| M[("MySQL 8.4")]
 ```
 
-MySQL 是唯一的业务数据源，PostgreSQL 仅存放可随时重建的分析投影。前端 Vue 应用通过同源 HTTP 访问 Go 接口，不直接连接数据库，也不接触桌面初始化令牌或数据库凭据。
-
-| 运行异常或状态 | 系统处理方式 |
-| --- | --- |
-| MySQL 未连接或迁移未完成 | 桌面界面正常打开，业务 API 返回 `503 DATABASE_UNAVAILABLE` |
-| PostgreSQL 未配置或离线 | 核心业务正常读写，已提交的分析事件暂存于 MySQL outbox，待恢复后自动补齐 |
-| 用户提交保存失败 | 页面保留当前已填内容并提示手动重试，不自动重放写请求 |
-| 会话配置缺失或无效 | 状态接口返回 `configError`，提示修正环境变量后重启 |
-
-`GET /healthz` 仅用于探测 HTTP 进程是否存活，数据库连接与迁移状态由 `GET /api/v1/service/status` 返回。完整的进程交互与鉴权细节见[架构说明](docs/ARCHITECTURE.md)，健康采样的跨窗口步数分摊、日界切分与阈值判定规则见[健康数据接口约定](智慧养老手表管理系统/backend/docs/health-data.md#跨窗口步数与夜间累计计数)。
+MySQL 是唯一权威业务数据存储。部分历史分析表名和旧状态响应字段为兼容接口而保留，但不再运行 PostgreSQL 分析投影。MySQL 不可用或历史图片迁移未完成时，业务 API 保持不可用，避免返回不一致数据。`/healthz` 用于存活检测，`/api/v1/service/status` 用于就绪检查。详见 [工作区说明](docs/WORKSPACE.md)、[接口约定](docs/API_CONTRACTS.md) 和 [MySQL 单库迁移](docs/MYSQL_ONLY_MIGRATION.md)。
 
 ## 源码与构建
 
@@ -134,7 +115,7 @@ cd smart-elderly-watch-management
 ```
 
 ```text
-智慧养老手表管理系统/
+
 ├── desktop/     Tauri / Rust 桌面壳、原生权限与 Windows 打包脚本
 ├── backend/     Go API、数据库迁移、照护工单与分析投影作业
 ├── frontend/    Vue 3 / Vite 前端界面与 Playwright 浏览器测试
@@ -150,7 +131,7 @@ evidence/        自动化测试与故障演练留档数据
 在 Windows 上执行完整桌面构建，需要安装 PowerShell 7、Node.js（`^20.19.0 || >=22.12.0`）、Go（`go.mod` 要求 `1.27.4`）、Rust 1.85+、MSVC 生成工具与 Windows SDK。具体环境准备见[构建环境说明](docs/BUILD.md)。
 
 ```powershell
-cd 智慧养老手表管理系统
+# Work from the repository root
 ./desktop/validate-version.ps1
 ./desktop/build.ps1
 ```
@@ -162,11 +143,11 @@ cd 智慧养老手表管理系统
 手表模拟器现使用 Rust，可独立连接 preview，也可在无网络、后端或账号时保存本地模拟数据。构建模拟器需要 Rust 1.89+；Windows 还需 MSVC 与 Windows SDK。
 
 ```powershell
-cargo build --release --locked --manifest-path 智慧养老手表管理系统/watch-sim/Cargo.toml
-.\智慧养老手表管理系统\watch-sim\target\release\watch-sim.exe --local "D:\手表模拟\本地数据" --scenario demo --health-samples
+cargo build --release --locked --manifest-path watch-sim/Cargo.toml
+.\watch-sim\target\release\watch-sim.exe --local "D:\手表模拟\本地数据" --scenario demo --health-samples
 ```
 
-发布包可双击 `本地模拟.cmd`。每次运行创建独立目录，保存采样、事件与可离线打开的 `index.html`。联机参数、证书和验证命令见[模拟器说明](智慧养老手表管理系统/watch-sim/README.md)。
+发布包可双击 `本地模拟.cmd`。每次运行创建独立目录，保存采样、事件与可离线打开的 `index.html`。联机参数、证书和验证命令见[模拟器说明](watch-sim/README.md)。
 
 与远端 Node 模拟器的对照显示，Rust 的三请求启动耗时降低79.5%、峰值工作集降低85.2%；功能覆盖、适配与原始测量数据属性能证据，未随仓库分发。
 
@@ -178,11 +159,11 @@ UI Quality 随每次 Preview CI 执行。`Core CI / required` 仅表示基础检
 | --- | --- |
 | 分支自动化检查 | [Preview CI](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/workflows/ci.yml) |
 | 当前版本发布信息 | [2.1.0 版本说明](docs/releases/2.1.0.md)及发行附件中的 manifest |
-| 后端回归 | 在 `智慧养老手表管理系统/backend` 中执行 `go test -count=1 ./...` 与 `go vet ./...` |
-| 前端构建 | 在 `智慧养老手表管理系统/frontend` 中执行 `npm ci` 与 `npm run build` |
+| 后端回归 | 在 `backend` 中执行 `go test -count=1 ./...` 与 `go vet ./...` |
+| 前端构建 | 在 `frontend` 中执行 `npm ci` 与 `npm run build` |
 | 手表协议 | 在 `SuiningWatch` 中执行 `npm ci` 与 `npm test`；这不等同于 DevEco 原生编译或真机验收 |
 
-如需运行完整数据库集成与竞态测试，请先配置专用测试库环境变量 `TEST_MYSQL_DSN` 与 `TEST_DATABASE_URL`，再执行 `go test -race -count=1 -timeout 600s ./...`（未配置时数据库集成用例会自动跳过）。
+如需运行完整数据库集成与竞态测试，请先配置专用测试库环境变量 `TEST_MYSQL_DSN`，再执行 `go test -race -count=1 -timeout 600s ./...`（未配置时数据库集成用例会自动跳过）。
 
 仓库当前 CI 结果以对应提交的 GitHub Actions 检查为准。性能实验、旧版本构建记录和阶段性补丁报告不再作为当前版本能力或验收结论；正式投入生产前，仍需针对真实穿戴硬件、外部短信或语音网关、生产数据迁移、跨网 TLS 证书及值班响应流程开展独立验收。通知发送成功仅代表网关已受理，实际照护结果以人工跟进与复核记录为准。
 ## 常见问题
@@ -190,7 +171,7 @@ UI Quality 随每次 Preview CI 执行。`Core CI / required` 仅表示基础检
 | 现象 | 排查方向 |
 | --- | --- |
 | 界面能打开，但无法登录或保存 | 检查 MySQL 是否启动、库名是否正确、迁移是否完成，以及 `SESSION_BACKEND` 和 `DATA_ENCRYPTION_KEY` 是否有效 |
-| PostgreSQL 离线，但日常操作仍能保存 | 属于预期设计；业务直接写入 MySQL，留意磁盘空间与分析事件积压即可 |
+| 仍配置 PostgreSQL 连接变量 | 新版不再支持；移除旧配置并执行 MySQL 单库迁移后重新启动 |
 | 外部手表无法连接桌面端服务 | 桌面端默认仅监听本机回环地址，外部设备接入需独立部署服务端并开放受控网络端口 |
 | 免安装版双击无法启动 | 确认已完整解压 ZIP、主程序与 Go sidecar 位于同一目录、系统已安装 WebView2，并核对 SHA-256 |
 
@@ -202,7 +183,7 @@ UI Quality 随每次 Preview CI 执行。`Core CI / required` 仅表示基础检
 | 下载、版本与升级 | [2.1.0 发布说明](docs/releases/2.1.0.md) · [更新日志](CHANGELOG.md) |
 | 数据库、迁移与备份 | [双库配置指南](docs/DUAL_DATABASES.md) · [备份与恢复手册](docs/runbooks/backup-restore.md) |
 | 设备接入与照护运维 | [照护服务部署](docs/CARE_SERVICE_DEPLOYMENT.md) · [支持与故障排查](docs/SUPPORT.md) |
-| 源码开发与模块说明 | [工程总览](智慧养老手表管理系统/README.md) · [前端说明](智慧养老手表管理系统/frontend/README.md) · [后端说明](智慧养老手表管理系统/backend/README.md) · [手表端说明](SuiningWatch/README.md) |
+| 源码开发与模块说明 | [工程总览](docs/WORKSPACE.md) · [前端说明](frontend/README.md) · [后端说明](backend/README.md) · [手表端说明](SuiningWatch/README.md) |
 | 架构设计与测试 | [实现架构](docs/ARCHITECTURE.md) · [界面规范](docs/UI_UX.md) · [发布门禁](docs/reliability/release-governance.md) · [测试指南](docs/TESTING.md) |
 
 提交 [Issue](https://github.com/WatchTestCs/smart-elderly-watch-management/issues) 反馈问题时，请附上版本号或 Git 提交哈希、操作系统环境、网络拓扑结构以及脱敏后的应用日志。

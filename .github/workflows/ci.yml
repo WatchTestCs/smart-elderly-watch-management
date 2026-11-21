@@ -32,11 +32,27 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  fast-gate:
+    name: Fast source validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Check source architecture and generated OpenAPI
+        run: |
+          python3 scripts/check-api-boundary.py
+          python3 scripts/check-go-module-boundaries.py
+          python3 scripts/generate-openapi.py --check
   frontend:
+    needs: fast-gate
     name: Frontend
     uses: ./.github/workflows/reusable-frontend.yml
 
   ui-quality:
+    needs: fast-gate
     name: UI Quality
     uses: ./.github/workflows/ui-quality.yml
 
@@ -125,10 +141,12 @@ jobs:
           fail-on-scopes: development, runtime
 
   backend:
+    needs: fast-gate
     name: Backend
     uses: ./.github/workflows/reusable-backend.yml
 
   windows:
+    needs: fast-gate
     name: Windows sidecar contract
     uses: ./.github/workflows/reusable-windows-package.yml
     with:
@@ -150,17 +168,17 @@ jobs:
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: '1.27.4'
-          cache-dependency-path: 智慧养老手表管理系统/backend/go.sum
+          cache-dependency-path: backend/go.sum
       - name: Scan reachable Go vulnerabilities
         shell: bash
-        working-directory: 智慧养老手表管理系统/backend
+        working-directory: backend
         run: |
-          mkdir -p ../../evidence/ci/security
-          git rev-parse HEAD > ../../evidence/ci/security/source-sha.txt
+          mkdir -p ../evidence/ci/security
+          git rev-parse HEAD > ../evidence/ci/security/source-sha.txt
           go install golang.org/x/vuln/cmd/govulncheck@v1.9.0
-          govulncheck -json ./... > ../../evidence/ci/security/govulncheck.jsonl 2>&1
+          govulncheck -json ./... > ../evidence/ci/security/govulncheck.jsonl 2>&1
           # JSON output exits zero even when vulnerable symbols are reachable.
-          govulncheck -mode=convert < ../../evidence/ci/security/govulncheck.jsonl | tee ../../evidence/ci/security/govulncheck.txt
+          govulncheck -mode=convert < ../evidence/ci/security/govulncheck.jsonl | tee ../evidence/ci/security/govulncheck.txt
       - if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
@@ -171,7 +189,7 @@ jobs:
   required:
     name: Core CI / required
     if: ${{ always() }}
-    needs: [frontend, ui-quality, watch, simulator, backend, windows, deployment, security-scan, dependency-review]
+    needs: [fast-gate, frontend, ui-quality, watch, simulator, backend, windows, deployment, security-scan, dependency-review]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -183,6 +201,7 @@ jobs:
       - name: Require all core checks
         shell: bash
         run: |
+          test "${{ needs['fast-gate'].result }}" = "success"
           test "${{ needs.frontend.result }}" = "success"
           test "${{ needs.ui-quality.result }}" = "success"
           test "${{ needs.watch.result }}" = "success"

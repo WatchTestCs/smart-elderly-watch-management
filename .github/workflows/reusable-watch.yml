@@ -178,7 +178,7 @@ jobs:
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
         with:
           go-version: '1.27.4'
-          cache-dependency-path: 智慧养老手表管理系统/backend/go.sum
+          cache-dependency-path: backend/go.sum
       - name: Exercise production watch protocol against disposable Go/MySQL
         shell: bash
         env:
@@ -190,7 +190,7 @@ jobs:
           mkdir -p evidence/ci/watch-integration
           git rev-parse HEAD > evidence/ci/watch-integration/source-sha.txt
           npm ci --prefix SuiningWatch
-          (cd 智慧养老手表管理系统/backend && go build -o "$RUNNER_TEMP/watch-e2e-server" ./cmd/server)
+          (cd backend && go build -o "$RUNNER_TEMP/watch-e2e-server" ./cmd/server)
           export DATA_ENCRYPTION_KEY="$(openssl rand -base64 32)"
           export SUINING_DESKTOP_TOKEN="$(openssl rand -hex 32)"
           "$RUNNER_TEMP/watch-e2e-server" > evidence/ci/watch-integration/server.log 2>&1 &

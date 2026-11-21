@@ -25,9 +25,9 @@ jobs:
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: '1.27.4'
-          cache-dependency-path: 智慧养老手表管理系统/backend/go.sum
+          cache-dependency-path: backend/go.sum
       - name: Apply migrations and prove the second execution is a no-op
-        working-directory: 智慧养老手表管理系统/backend
+        working-directory: backend
         env:
           MYSQL_DSN: root:ci_root_only@tcp(localhost:3306)/suining_test
           TEST_MYSQL_DSN: root:ci_root_only@tcp(localhost:3306)/suining_test

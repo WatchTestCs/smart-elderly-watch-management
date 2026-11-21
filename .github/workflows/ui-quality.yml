@@ -18,7 +18,7 @@ jobs:
     timeout-minutes: 15
     defaults:
       run:
-        working-directory: 智慧养老手表管理系统/frontend
+        working-directory: frontend
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -37,7 +37,7 @@ jobs:
         with:
           node-version: "24"
           cache: npm
-          cache-dependency-path: 智慧养老手表管理系统/frontend/package-lock.json
+          cache-dependency-path: frontend/package-lock.json
 
       - name: Install locked frontend dependencies
         run: npm ci
@@ -124,7 +124,7 @@ jobs:
           large-text
 
       - name: Compare desktop visual baseline
-        run: node scripts/visual-rmse.mjs ../../docs/screenshots/login-desktop.png ../../tests/ui/artifacts/login-desktop.png
+        run: node scripts/visual-rmse.mjs ../docs/screenshots/login-desktop.png ../tests/ui/artifacts/login-desktop.png
 
       - name: F02 Chromium cancellation and history regression
         shell: bash
@@ -144,8 +144,8 @@ jobs:
           path: |
             evidence/ci/ui-quality/
             tests/ui/artifacts/
-            智慧养老手表管理系统/frontend/qa/artifacts/f02-acceptance.json
-            智慧养老手表管理系统/frontend/qa/artifacts/lifecycle-acceptance.json
+            frontend/qa/artifacts/f02-acceptance.json
+            frontend/qa/artifacts/lifecycle-acceptance.json
             /tmp/suining-vite.log
             /tmp/suining-chrome.log
           if-no-files-found: error

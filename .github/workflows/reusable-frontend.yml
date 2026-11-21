@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: 智慧养老手表管理系统/frontend
+        working-directory: frontend
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -26,11 +26,11 @@ jobs:
           node-version: "24"
           cache: npm
           cache-dependency-path: |
-            智慧养老手表管理系统/frontend/package-lock.json
-            智慧养老手表管理系统/frontend/tools/openapi/package-lock.json
+            frontend/package-lock.json
+            frontend/tools/openapi/package-lock.json
 
       - name: Enforce native Go API boundary
-        run: python3 ../../scripts/check-api-boundary.py
+        run: python3 ../scripts/check-api-boundary.py
 
       - name: Install locked dependencies
         run: |
@@ -51,30 +51,33 @@ jobs:
       - name: Enforce Vue 3.6 migration boundary
         run: npm run check:vue36
 
+      - name: Enforce type-aware ESLint and Vue safety rules
+        run: npm run lint
+
       - name: Unit tests and strict TypeScript checks
         shell: bash
         run: |
-          mkdir -p ../../evidence/ci/frontend
-          git rev-parse HEAD > ../../evidence/ci/frontend/source-sha.txt
-          node --version > ../../evidence/ci/frontend/node-version.txt
+          mkdir -p ../evidence/ci/frontend
+          git rev-parse HEAD > ../evidence/ci/frontend/source-sha.txt
+          node --version > ../evidence/ci/frontend/node-version.txt
           set -o pipefail
           status=0
-          npm test 2>&1 | tee ../../evidence/ci/frontend/test.txt || status=1
-          npm run typecheck 2>&1 | tee ../../evidence/ci/frontend/typecheck.txt || status=1
+          npm test 2>&1 | tee ../evidence/ci/frontend/test.txt || status=1
+          npm run typecheck 2>&1 | tee ../evidence/ci/frontend/typecheck.txt || status=1
           exit "$status"
 
       - name: Build production frontend
         shell: bash
         run: |
           set -o pipefail
-          npm run build 2>&1 | tee ../../evidence/ci/frontend/build.txt
+          npm run build 2>&1 | tee ../evidence/ci/frontend/build.txt
 
       - name: Audit frontend dependencies
         env:
           POWERSHELL_TELEMETRY_OPTOUT: '1'
         shell: pwsh
         run: |
-          $reportPath = '../../evidence/ci/frontend/npm-audit.json'
+          $reportPath = '../evidence/ci/frontend/npm-audit.json'
           npm audit --audit-level=high --json > $reportPath
           $auditExit = $LASTEXITCODE
           if ($auditExit -ne 0) {
