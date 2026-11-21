@@ -124,7 +124,7 @@ jobs:
           large-text
 
       - name: Compare desktop visual baseline
-        run: node scripts/visual-rmse.mjs ../../docs/screenshots/login-desktop.png ../../tests/ui/artifacts/login-desktop.png
+        run: node scripts/visual-rmse.mjs ../docs/screenshots/login-desktop.png ../tests/ui/artifacts/login-desktop.png
 
       - name: F02 Chromium cancellation and history regression
         shell: bash
