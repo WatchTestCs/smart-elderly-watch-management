@@ -2,7 +2,7 @@
 
 岁宁前端基于 Vue 3、Vue Router 4、Element Plus 2 与 Vite 8 构建，使用 Axios 调用 Go 后端接口，通过 ECharts 6 渲染健康趋势图表，并集成 Leaflet 与 OpenStreetMap 展示定位与轨迹。在 Windows 桌面端中，Tauri 2（WebView2）直接加载编译内嵌在 Go 服务端中的生产静态资源。
 
-[整体技术栈与架构](../../README.md) · [源码工程总览](../README.md) · [后端接口与数据](../backend/README.md) · [历史改进记录](../../CHANGELOG.md)
+[整体技术栈与架构](../docs/WORKSPACE.md) · [源码工程总览](../README.md) · [后端接口与数据](../backend/README.md) · [历史改进记录](../CHANGELOG.md)
 
 ## 模块职责
 
@@ -12,7 +12,7 @@
 - `src/auth.ts` 负责跨页面轮询服务就绪状态。当数据库断开或尚未就绪时，界面会保留当前路由与用户输入内容，提示手动重试而不自动重放写请求。
 - 首次部署的管理员初始化界面通过 `src/desktop.ts` 调用受限的 Tauri 原生命令，前端代码不保存桌面初始化令牌或数据库凭据。
 
-前端所有数据均通过 Go `/api/v1/` 接口读写，不直接连接 MySQL 或 PostgreSQL。
+前端所有数据均通过 Go `/api/v1/` 接口读写，不直接连接 MySQL。
 
 ### 数据流及代码所有权
 
