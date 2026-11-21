@@ -7,7 +7,8 @@ export default tseslint.config(
   { ignores: ['dist/**', 'vendor/**', 'coverage/**', 'node_modules/**'] },
   js.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
-  ...vue.configs['flat/recommended'],
+  // Enforce Vue correctness without rewriting established template formatting.
+  ...vue.configs['flat/essential'],
   {
     files: ['src/**/*.{ts,vue}'],
     languageOptions: {

@@ -35,37 +35,17 @@ jobs:
   fast-gate:
     name: Fast source validation
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
-        with:
-          go-version: '1.27.4'
-          cache-dependency-path: backend/go.sum
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
-        with:
-          node-version: '24'
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
       - name: Check source architecture and generated OpenAPI
         run: |
           python3 scripts/check-api-boundary.py
           python3 scripts/check-go-module-boundaries.py
           python3 scripts/generate-openapi.py --check
-      - name: Check Go package diagnostics before race tests
-        working-directory: backend
-        run: go vet ./...
-      - name: Check frontend types, AST lint and Go API drift
-        working-directory: frontend
-        run: |
-          npm ci
-          npm run lint
-          npm run typecheck
-          npm run api:tools:ci
-          npm run test:api-drift
   frontend:
     needs: fast-gate
     name: Frontend

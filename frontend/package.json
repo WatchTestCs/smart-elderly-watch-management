@@ -11,7 +11,7 @@
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1",
     "test": "vitest run",
-    "lint": "eslint src --quiet",
+    "lint": "eslint src --max-warnings 0",
     "lint:fix": "eslint src --fix",
     "test:watch": "vitest",
     "typecheck": "npm run check:boundaries && node scripts/check-typescript-scope.ts && vue-tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.node.json && vue-tsc --noEmit -p tsconfig.test.json",
