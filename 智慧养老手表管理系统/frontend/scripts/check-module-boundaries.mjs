@@ -1,6 +1,7 @@
 import { readFileSync, readdirSync } from 'node:fs'
 import { dirname, join, relative, resolve, sep } from 'node:path'
 import ts from 'typescript'
+import { inlineScripts } from './sfc-scripts.ts'
 
 const root = resolve('src')
 const sourceExtensions = ['.ts', '.tsx', '.vue', '.js', '.mjs']
@@ -40,7 +41,7 @@ function targetOf(file, specifier) {
 for (const file of files) {
   const source = readFileSync(file, 'utf8')
   const scripts = file.endsWith('.vue')
-    ? [...source.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)].map(match => match[1])
+    ? inlineScripts(source, file).map(block => block.content)
     : [source]
   for (const script of scripts) {
     const tree = ts.createSourceFile(file, script, ts.ScriptTarget.Latest, true)

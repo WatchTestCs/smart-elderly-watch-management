@@ -1,11 +1,47 @@
 package observability
 
 import (
+	"bytes"
+	"encoding/json"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 )
+
+func TestHTTPLogRecordsRemainStructured(t *testing.T) {
+	for _, format := range []string{"json", "text"} {
+		t.Run(format, func(t *testing.T) {
+			var output bytes.Buffer
+			var handler slog.Handler = slog.NewJSONHandler(&output, nil)
+			if format == "text" {
+				handler = slog.NewTextHandler(&output, nil)
+			}
+			previous := slog.Default()
+			slog.SetDefault(slog.New(handler))
+			defer slog.SetDefault(previous)
+			r := New()
+			const route = "fixture\r\nFORGED=yes\t\"value\""
+			r.SetRouteResolver(func(*http.Request) string { return route })
+			h := r.HTTP(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(503) }))
+			req := httptest.NewRequest("GET", "/unmatched?secret=must-not-be-logged", nil)
+			h.ServeHTTP(httptest.NewRecorder(), req)
+			logged := output.String()
+			if strings.Count(logged, "\n") != 1 || strings.Contains(logged, "\r") || strings.Contains(logged, "must-not-be-logged") {
+				t.Fatal("HTTP log escaped its structured record or included query data")
+			}
+			if format == "json" {
+				var record map[string]any
+				if err := json.Unmarshal(output.Bytes(), &record); err != nil || record["route"] != route || record["msg"] != "http_request" || record["status"] != float64(503) {
+					t.Fatal("HTTP JSON log lost its authenticated record boundaries", err)
+				}
+			} else if !strings.Contains(logged, `\r\nFORGED=yes\t\"value\"`) {
+				t.Fatal("HTTP text handler did not quote control characters")
+			}
+		})
+	}
+}
 
 func TestBoundedRoutesAndRequestID(t *testing.T) {
 	r := New()

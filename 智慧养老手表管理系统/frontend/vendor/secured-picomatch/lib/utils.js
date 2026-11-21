@@ -3,7 +3,6 @@
 
 const {
   REGEX_BACKSLASH,
-  REGEX_REMOVE_BACKSLASH,
   REGEX_SPECIAL_CHARS,
   REGEX_SPECIAL_CHARS_GLOBAL
 } = require('./constants');
@@ -28,9 +27,31 @@ exports.isWindows = () => {
 };
 
 exports.removeBackslashes = str => {
-  return str.replace(REGEX_REMOVE_BACKSLASH, match => {
-    return match === '\\' ? '' : match;
-  });
+  // Cache the next eligible bracket end once. Retrying an unanchored bracket
+  // regex at every '[' takes quadratic time when the closing ']' is absent.
+  const ends = new Int32Array(str.length + 1);
+  let end = -1;
+  ends[str.length] = -1;
+  const isLineEnd = char => char === '\n' || char === '\r' || char === '\u2028' || char === '\u2029';
+  for (let i = str.length - 1; i >= 0; i--) {
+    if (isLineEnd(str[i])) end = str[i + 1] === ']' ? i + 1 : -1;
+    else if (str[i] === ']' && i > 0 && str[i - 1] !== '\\') end = i;
+    ends[i] = end;
+  }
+  const parts = [];
+  let from = 0;
+  for (let i = 0; i < str.length; i++) {
+    if (str[i] === '[' && i + 2 < str.length) {
+      const close = isLineEnd(str[i + 1]) ? (str[i + 2] === ']' ? i + 2 : -1) : ends[i + 2];
+      if (close !== -1) { i = close; continue; }
+    }
+    if (str[i] === '\\' && i + 1 < str.length && !isLineEnd(str[i + 1])) {
+      parts.push(str.slice(from, i));
+      from = i + 1;
+    }
+  }
+  parts.push(str.slice(from));
+  return parts.join('');
 };
 
 exports.escapeLast = (input, char, lastIdx) => {

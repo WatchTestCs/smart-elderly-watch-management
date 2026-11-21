@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { inlineScripts } from './sfc-scripts.ts'
 
 const sourceRoot = new URL('../src/', import.meta.url)
 interface PackageInfo { dependencies?: Record<string, string>; devDependencies?: Record<string, string>; optionalDependencies?: Record<string, string> }
@@ -55,12 +56,12 @@ function check(path: string): void {
   const text = readFileSync(path, 'utf8')
   const name = relative(sourcePath, path)
   const isSfc = path.endsWith('.vue')
+  const blocks = isSfc ? inlineScripts(text, path) : []
   const script = isSfc
-    ? (text.match(/<script\b[^>]*>[\s\S]*?<\/script>/gi) ?? []).join('\n')
+    ? blocks.map(block => block.content).join('\n')
     : text
   if (isSfc) {
-    const tags = text.match(/<script\b[^>]*>/gi) ?? []
-    if (tags.some(tag => !/\blang=["']ts["']/.test(tag))) jsSfcs++
+    if (blocks.some(block => block.lang !== 'ts')) jsSfcs++
     for (const [pattern, reason] of forbiddenTemplate) {
       for (const match of text.matchAll(pattern)) {
         const line = text.slice(0, match.index).split('\n').length

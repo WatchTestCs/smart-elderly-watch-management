@@ -7,6 +7,7 @@ import (
 	"errors"
 
 	"suining-care/internal/db"
+	"suining-care/internal/residentprofile"
 	"suining-care/internal/securestore"
 	"suining-care/internal/userphone"
 )
@@ -33,12 +34,24 @@ type bindingTarget struct {
 	matches  int
 }
 
-func loadBindingTarget(ctx context.Context, tx *sql.Tx, phone string) (bindingTarget, error) {
+func loadBindingTarget(ctx context.Context, tx *sql.Tx, box *securestore.Box, phone string) (bindingTarget, error) {
 	target := bindingTarget{}
-	err := db.QueryEach(ctx, tx, func(rows *sql.Rows) error {
+	lookup, err := residentprofile.SearchIndex(ctx, tx, box, phone)
+	if err != nil {
+		return target, err
+	}
+	err = db.QueryEach(ctx, tx, func(rows *sql.Rows) error {
+		var profile residentprofile.Record
+		if err := rows.Scan(&target.id, &target.familyID, &profile.Legacy.Phone, &profile.Cipher, &profile.Lookup, &profile.Protected); err != nil {
+			return err
+		}
+		values, err := profile.Open(box, target.id)
+		if err != nil || values.Phone == nil || !residentprofile.PhoneEqual(*values.Phone, phone) {
+			return errors.New("resident phone identity could not be authenticated")
+		}
 		target.matches++
-		return rows.Scan(&target.id, &target.familyID)
-	}, "SELECT old_id,family_id FROM oldperson WHERE phone=? ORDER BY old_id LIMIT 2 FOR UPDATE", phone)
+		return nil
+	}, "SELECT old_id,family_id,phone,care_profile_cipher,phone_lookup,care_profile_protected FROM oldperson WHERE "+residentprofile.PhoneMatch+" ORDER BY old_id LIMIT 2 FOR UPDATE", phone, lookup)
 	return target, err
 }
 
@@ -93,7 +106,7 @@ func Create(ctx context.Context, tx *sql.Tx, box *securestore.Box, input Family,
 	if err := userphone.StoreFamily(ctx, tx, box, familyID, input.Phone); err != nil {
 		return err
 	}
-	target, err := loadBindingTarget(ctx, tx, residentPhone)
+	target, err := loadBindingTarget(ctx, tx, box, residentPhone)
 	if err != nil {
 		return err
 	}

@@ -7,27 +7,36 @@ import (
 
 	"suining-care/internal/carepolicy"
 	"suining-care/internal/db"
+	"suining-care/internal/residentprofile"
 	"suining-care/internal/response"
+	"suining-care/internal/securestore"
 	"suining-care/internal/userphone"
 )
 
 const oldPersonCols = `old_id, name, age, sex, phone, room, illness, warn, food_like,
-	food_hate, drag, family_id, customer_id, be_time, bothdate, device_id`
+	food_hate, drag, family_id, customer_id, be_time, bothdate, device_id,care_profile_cipher,phone_lookup,care_profile_protected`
 
-func scanOldPersonRow(row *sql.Rows) (map[string]any, error) {
+func scanOldPersonRow(row *sql.Rows, box *securestore.Box) (map[string]any, error) {
 	var id int64
 	var name, sex, phone, room, illness, warn, drag, foodLike, foodHate *string
+	var profile residentprofile.Record
 	var age *int
 	var familyID, customerID, deviceID *int64
 	var beTime, bothdate *time.Time
 	if err := row.Scan(&id, &name, &age, &sex, &phone, &room, &illness, &warn,
-		&foodLike, &foodHate, &drag, &familyID, &customerID, &beTime, &bothdate, &deviceID); err != nil {
+		&foodLike, &foodHate, &drag, &familyID, &customerID, &beTime, &bothdate, &deviceID,
+		&profile.Cipher, &profile.Lookup, &profile.Protected); err != nil {
+		return nil, err
+	}
+	profile.Legacy = residentprofile.Values{Phone: phone, Room: room, Illness: illness, Warn: warn, FoodLike: foodLike, FoodHate: foodHate, Drag: drag}
+	values, err := profile.Open(box, id)
+	if err != nil {
 		return nil, err
 	}
 	return map[string]any{
-		"oldId": id, "name": name, "age": currentPersonAge(bothdate, age, time.Now()), "sex": sex, "phone": phone,
-		"room": room, "illness": illness, "warn": warn, "drag": drag,
-		"foodLike": foodLike, "foodHate": foodHate, "familyId": familyID,
+		"oldId": id, "name": name, "age": currentPersonAge(bothdate, age, time.Now()), "sex": sex, "phone": values.Phone,
+		"room": values.Room, "illness": values.Illness, "warn": values.Warn, "drag": values.Drag,
+		"foodLike": values.FoodLike, "foodHate": values.FoodHate, "familyId": familyID,
 		"customerId": customerID, "beTime": dateOrNil(beTime),
 		"bothdate": dateOrNil(bothdate), "deviceId": deviceID,
 	}, nil
@@ -45,12 +54,17 @@ func (h *Handler) listResidents(w http.ResponseWriter, r *http.Request) {
 	}
 	defer tx.Rollback()
 	ctx := r.Context()
+	if internalError(w, residentprofile.VerifyKey(ctx, tx, h.Box)) {
+		return
+	}
 	base := `SELECT ` + oldPersonCols + ` FROM oldperson WHERE (?='' OR name LIKE CONCAT('%',?,'%')) ORDER BY old_id`
 	var total int64
 	if internalError(w, tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM (`+base+`) AS t`, name, name).Scan(&total)) {
 		return
 	}
-	list, err := db.QueryList(ctx, tx, scanOldPersonRow, base+` LIMIT ? OFFSET ?`, name, name, ps, (p-1)*ps)
+	list, err := db.QueryList(ctx, tx, func(rows *sql.Rows) (map[string]any, error) {
+		return scanOldPersonRow(rows, h.Box)
+	}, base+` LIMIT ? OFFSET ?`, name, name, ps, (p-1)*ps)
 	if internalError(w, err) || internalError(w, tx.Commit()) {
 		return
 	}
@@ -71,10 +85,14 @@ func (h *Handler) getResidentDetails(w http.ResponseWriter, r *http.Request) {
 	}
 	defer tx.Rollback()
 	ctx := r.Context()
+	if internalError(w, residentprofile.VerifyKey(ctx, tx, h.Box)) {
+		return
+	}
 	base := `SELECT o.old_id, o.name, o.age, o.sex, o.phone, o.room, o.illness, o.warn,
 		o.food_like, o.food_hate, o.drag, o.family_id, o.customer_id, o.be_time, o.bothdate,
 		o.device_id, f.family_name, f.family_relation, f.family_phone, f.family_sex,
-		f.family_address, c.customer_name,f.family_phone_cipher,f.family_phone_lookup,f.family_phone_protected
+		f.family_address, c.customer_name,f.family_phone_cipher,f.family_phone_lookup,f.family_phone_protected,
+		o.care_profile_cipher,o.phone_lookup,o.care_profile_protected
 		FROM oldperson o LEFT JOIN family f ON f.family_id=o.family_id
 		LEFT JOIN customer c ON c.customer_id=o.customer_id
 		WHERE (?='' OR o.name LIKE CONCAT('%',?,'%')) ORDER BY o.old_id`
@@ -90,10 +108,17 @@ func (h *Handler) getResidentDetails(w http.ResponseWriter, r *http.Request) {
 		var beTime, bothdate *time.Time
 		var familyName, familyRelation, familyPhone, familySex, familyAddress, customerName *string
 		var record userphone.Record
+		var profile residentprofile.Record
 		var protected sql.NullBool
 		if err := rows.Scan(&id, &name, &age, &sex, &phone, &room, &illness, &warn,
 			&foodLike, &foodHate, &drag, &familyID, &customerID, &beTime, &bothdate, &deviceID,
-			&familyName, &familyRelation, &familyPhone, &familySex, &familyAddress, &customerName, &record.Cipher, &record.Lookup, &protected); err != nil {
+			&familyName, &familyRelation, &familyPhone, &familySex, &familyAddress, &customerName, &record.Cipher, &record.Lookup, &protected,
+			&profile.Cipher, &profile.Lookup, &profile.Protected); err != nil {
+			return nil, err
+		}
+		profile.Legacy = residentprofile.Values{Phone: phone, Room: room, Illness: illness, Warn: warn, FoodLike: foodLike, FoodHate: foodHate, Drag: drag}
+		values, err := profile.Open(h.Box, id)
+		if err != nil {
 			return nil, err
 		}
 		if familyID != nil {
@@ -106,9 +131,9 @@ func (h *Handler) getResidentDetails(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		return map[string]any{
-			"oldId": id, "name": name, "age": currentPersonAge(bothdate, age, time.Now()), "sex": sex, "phone": phone,
-			"room": room, "illness": illness, "warn": warn, "drag": drag,
-			"foodLike": foodLike, "foodHate": foodHate, "familyId": familyID,
+			"oldId": id, "name": name, "age": currentPersonAge(bothdate, age, time.Now()), "sex": sex, "phone": values.Phone,
+			"room": values.Room, "illness": values.Illness, "warn": values.Warn, "drag": values.Drag,
+			"foodLike": values.FoodLike, "foodHate": values.FoodHate, "familyId": familyID,
 			"customerId": customerID, "beTime": dateOrNil(beTime),
 			"bothdate": dateOrNil(bothdate), "deviceId": deviceID,
 			"familyName": familyName, "familyRelation": familyRelation,

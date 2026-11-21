@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"suining-care/internal/db"
+	"suining-care/internal/residentprofile"
 )
 
 // AdminDevice contains only database values. Sensitive coordinates remain
@@ -20,6 +21,7 @@ type AdminDevice struct {
 	ResidentID      *int64
 	ResidentName    *string
 	ResidentPhone   *string
+	ResidentProfile residentprofile.Record `json:"-"`
 	BoundAt         *time.Time
 	LastTime        *time.Time
 	LastLongitude   *string
@@ -46,14 +48,18 @@ func ListAdminDevices(ctx context.Context, store db.ReadQuerier, pattern, state 
 	}
 	items, err := db.QueryList(ctx, store, func(rows *sql.Rows) (AdminDevice, error) {
 		var item AdminDevice
+		var protected sql.NullBool
 		err := rows.Scan(&item.ID, &item.Number, &item.Alias, &item.Model, &item.AppVersion,
 			&item.Battery, &item.ResidentID, &item.ResidentName, &item.ResidentPhone,
 			&item.BoundAt, &item.LastTime, &item.LastLongitude, &item.LastLatitude,
-			&item.Status, &item.PersonHandled, &item.RateHandled, &item.PressureHandled)
+			&item.Status, &item.PersonHandled, &item.RateHandled, &item.PressureHandled,
+			&item.ResidentProfile.Cipher, &item.ResidentProfile.Lookup, &protected)
+		item.ResidentProfile.Protected = protected.Bool
+		item.ResidentProfile.Legacy.Phone = item.ResidentPhone
 		return item, err
 	}, `SELECT d.device_id, d.device_no, d.alias, d.model, d.app_version, d.battery,
 		d.old_id, o.name, o.phone, d.bind_time, d.last_time, d.last_lng, d.last_lat,
-		d.status, d.person_handled, d.rate_handled, d.pre_handled
+		d.status, d.person_handled, d.rate_handled, d.pre_handled,o.care_profile_cipher,o.phone_lookup,o.care_profile_protected
 		FROM device d LEFT JOIN oldperson o ON o.old_id = d.old_id `+adminFilter+
 		` ORDER BY d.device_id LIMIT ? OFFSET ?`,
 		pattern, pattern, pattern, state, state, size, (page-1)*size)
