@@ -202,7 +202,7 @@
           "content": null,
           "$ref": "#/components/requestBodies/JsonObject"
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_vitals.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/activity/chart": {
@@ -227,7 +227,7 @@
           "content": null,
           "$ref": "#/components/requestBodies/ResidentId"
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_vitals.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/activity/history": {
@@ -250,7 +250,7 @@
           "content": null,
           "$ref": "#/components/requestBodies/ResidentId"
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_vitals.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/activity/latest": {
@@ -286,7 +286,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_vitals.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/alert-reviews": {
@@ -332,7 +332,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_capability_routes.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_capability_routes.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/alert-reviews/search": {
@@ -367,7 +367,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_capability_routes.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_capability_routes.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/auth/login": {
@@ -408,7 +408,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_auth.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_auth.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/auth/logout": {
@@ -425,7 +425,7 @@
           "content": null,
           "$ref": "#/components/requestBodies/JsonObject"
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_auth.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_auth.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/auth/session": {
@@ -448,7 +448,7 @@
           }
         },
         "security": [],
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_auth.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_auth.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/care/accessAudit": {
@@ -471,7 +471,7 @@
           "content": null,
           "$ref": "#/components/requestBodies/JsonObject"
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_care_incident.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_care_incident.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/care/accounts/status": {
@@ -502,7 +502,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_care_incident.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_care_incident.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/care/assignDuty": {
@@ -533,7 +533,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_care_incident.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_care_incident.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/care/diagnostics": {
@@ -568,7 +568,7 @@
           "content": null,
           "$ref": "#/components/requestBodies/JsonObject"
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_care_incident.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_care_incident.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/care/events": {
@@ -602,7 +602,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_care_incident.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_care_incident.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/care/handover/accept": {
@@ -636,7 +636,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_care_incident.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_care_incident.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/care/handover/cancel": {
@@ -669,7 +669,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_care_incident.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_care_incident.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/care/handover/create": {
@@ -705,7 +705,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_care_incident.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_care_incident.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/care/incidents": {
@@ -741,7 +741,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_care_incident.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_care_incident.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/care/receipt": {
@@ -774,7 +774,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_care_incident.go. Device body authentication or signed gateway receipt; not anonymous access."
+        "description": "Implementation: backend/internal/handlers/handler_care_incident.go. Device body authentication or signed gateway receipt; not anonymous access."
       }
     },
     "/api/v1/care/staff": {
@@ -797,7 +797,7 @@
           "content": null,
           "$ref": "#/components/requestBodies/JsonObject"
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_care_incident.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_care_incident.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/care/transition": {
@@ -830,7 +830,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_care_incident.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_care_incident.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/desktop/exit": {
@@ -855,7 +855,7 @@
           "content": null,
           "$ref": "#/components/requestBodies/JsonObject"
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_auth.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_auth.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/device-command-profiles": {
@@ -897,7 +897,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_capability_routes.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_capability_routes.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/device-commands": {
@@ -940,7 +940,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_capability_routes.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_capability_routes.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/device-commands/search": {
@@ -969,7 +969,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_capability_routes.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_capability_routes.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/device/alertCounts": {
@@ -996,7 +996,7 @@
           "content": null,
           "$ref": "#/components/requestBodies/JsonObject"
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/device/alertDetail": {
@@ -1043,7 +1043,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/device/bind": {
@@ -1077,7 +1077,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_resident_devices.go. Device body authentication or signed gateway receipt; not anonymous access."
+        "description": "Implementation: backend/internal/handlers/handler_resident_devices.go. Device body authentication or signed gateway receipt; not anonymous access."
       }
     },
     "/api/v1/device/bindCodeList": {
@@ -1100,7 +1100,7 @@
           "content": null,
           "$ref": "#/components/requestBodies/ResidentId"
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/device/commandAck": {
@@ -1137,7 +1137,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_capability_routes.go. Device body authentication or signed gateway receipt; not anonymous access."
+        "description": "Implementation: backend/internal/handlers/handler_capability_routes.go. Device body authentication or signed gateway receipt; not anonymous access."
       }
     },
     "/api/v1/device/commandPull": {
@@ -1170,7 +1170,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_capability_routes.go. Device body authentication or signed gateway receipt; not anonymous access."
+        "description": "Implementation: backend/internal/handlers/handler_capability_routes.go. Device body authentication or signed gateway receipt; not anonymous access."
       }
     },
     "/api/v1/device/create": {
@@ -1203,7 +1203,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/device/createBindCode": {
@@ -1237,7 +1237,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/device/delete": {
@@ -1254,7 +1254,7 @@
           "content": null,
           "$ref": "#/components/requestBodies/DeviceId"
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/device/deleteBindCode": {
@@ -1277,7 +1277,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/device/fencePoint": {
@@ -1314,7 +1314,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_capability_routes.go. Device body authentication or signed gateway receipt; not anonymous access."
+        "description": "Implementation: backend/internal/handlers/handler_capability_routes.go. Device body authentication or signed gateway receipt; not anonymous access."
       }
     },
     "/api/v1/device/healthBatch": {
@@ -1350,7 +1350,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_health.go. Device body authentication or signed gateway receipt; not anonymous access."
+        "description": "Implementation: backend/internal/handlers/handler_health.go. Device body authentication or signed gateway receipt; not anonymous access."
       }
     },
     "/api/v1/device/heartbeat": {
@@ -1389,7 +1389,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_resident_devices.go. Device body authentication or signed gateway receipt; not anonymous access."
+        "description": "Implementation: backend/internal/handlers/handler_resident_devices.go. Device body authentication or signed gateway receipt; not anonymous access."
       }
     },
     "/api/v1/device/list": {
@@ -1425,7 +1425,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/device/login": {
@@ -1480,7 +1480,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_resident_devices.go. Device body authentication or signed gateway receipt; not anonymous access. HarmonyOS clients send optional platform=harmonyos with protocolVersion=1; both are required together when platform is supplied. Authenticated success returns protocolVersion=1 and maxBatchSize=200 plus the existing bindingVersion/owner. Unsupported platform/version returns 400. Omit platform when platform-specific capability negotiation is not needed. Invalid credentials return 401 with code=DEVICE_AUTH_FAILED; disabled devices return 403."
+        "description": "Implementation: backend/internal/handlers/handler_resident_devices.go. Device body authentication or signed gateway receipt; not anonymous access. HarmonyOS clients send optional platform=harmonyos with protocolVersion=1; both are required together when platform is supplied. Authenticated success returns protocolVersion=1 and maxBatchSize=200 plus the existing bindingVersion/owner. Unsupported platform/version returns 400. Omit platform when platform-specific capability negotiation is not needed. Invalid credentials return 401 with code=DEVICE_AUTH_FAILED; disabled devices return 403."
       }
     },
     "/api/v1/device/report": {
@@ -1548,7 +1548,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_resident_devices.go. Device body authentication or signed gateway receipt; not anonymous access."
+        "description": "Implementation: backend/internal/handlers/handler_resident_devices.go. Device body authentication or signed gateway receipt; not anonymous access."
       }
     },
     "/api/v1/device/resetSecret": {
@@ -1571,7 +1571,7 @@
           "content": null,
           "$ref": "#/components/requestBodies/DeviceId"
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/device/resolveAlert": {
@@ -1603,7 +1603,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/device/sos": {
@@ -1663,7 +1663,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_resident_devices.go. Device body authentication or signed gateway receipt; not anonymous access."
+        "description": "Implementation: backend/internal/handlers/handler_resident_devices.go. Device body authentication or signed gateway receipt; not anonymous access."
       }
     },
     "/api/v1/device/unbind": {
@@ -1680,7 +1680,7 @@
           "content": null,
           "$ref": "#/components/requestBodies/DeviceId"
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/family/add": {
@@ -1708,7 +1708,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_family.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_family.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/family/deleteFamily": {
@@ -1731,7 +1731,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_family.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_family.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/family/select": {
@@ -1765,7 +1765,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_family.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_family.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/family/selectTwo": {
@@ -1794,7 +1794,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_family.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_family.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/family/updateFamily": {
@@ -1822,7 +1822,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_family.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_family.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/family/updatePassword": {
@@ -1847,7 +1847,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_family.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_family.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/family/updateTouPic": {
@@ -1871,7 +1871,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_family.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_family.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/family/updateTwo": {
@@ -1898,7 +1898,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_family.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_family.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/fence-events/search": {
@@ -1922,7 +1922,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_capability_routes.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_capability_routes.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/fences": {
@@ -1966,7 +1966,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_capability_routes.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_capability_routes.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/fences/search": {
@@ -1983,7 +1983,7 @@
           "content": null,
           "$ref": "#/components/requestBodies/DeviceId"
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_capability_routes.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_capability_routes.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/gallery/list": {
@@ -2013,7 +2013,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_social.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_social.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/gallery/replace": {
@@ -2041,7 +2041,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_social.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_social.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/guardians/create": {
@@ -2068,7 +2068,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_user.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_user.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/guardians/delete": {
@@ -2091,7 +2091,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_user.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_user.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/guardians/list": {
@@ -2125,7 +2125,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_user.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_user.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/guardians/update": {
@@ -2153,7 +2153,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_user.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_user.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/health/alerts/device-counts": {
@@ -2193,7 +2193,7 @@
           "content": null,
           "$ref": "#/components/requestBodies/JsonObject"
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_vitals.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/health/baseline": {
@@ -2230,7 +2230,7 @@
           "content": null,
           "$ref": "#/components/requestBodies/ResidentId"
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_health.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_health.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/health/changes": {
@@ -2264,7 +2264,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_health.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_health.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/health/daily-query": {
@@ -2323,7 +2323,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_capability_routes.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_capability_routes.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/health/latest": {
@@ -2488,7 +2488,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_health.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_health.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/image/download": {
@@ -2507,7 +2507,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_social.go. Go API DTOs without explicit schemas remain open objects; consult implementation.",
+        "description": "Implementation: backend/internal/handlers/handler_social.go. Go API DTOs without explicit schemas remain open objects; consult implementation.",
         "parameters": [
           {
             "name": "name",
@@ -2554,7 +2554,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_social.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_social.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/inviteCode/checkCode": {
@@ -2586,7 +2586,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_family.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_family.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/inviteCode/create": {
@@ -2621,7 +2621,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_family.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_family.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/inviteCode/delete": {
@@ -2644,7 +2644,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_family.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_family.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/inviteCode/join": {
@@ -2682,7 +2682,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_family.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_family.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/inviteCode/list": {
@@ -2716,7 +2716,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_family.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_family.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/inviteCode/oldPersonList": {
@@ -2739,7 +2739,7 @@
           "content": null,
           "$ref": "#/components/requestBodies/JsonObject"
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_family.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_family.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/locations/alerts/resolve-latest": {
@@ -2756,7 +2756,7 @@
           "content": null,
           "$ref": "#/components/requestBodies/ResidentId"
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/locations/alerts/summary": {
@@ -2780,7 +2780,7 @@
           "content": null,
           "$ref": "#/components/requestBodies/JsonObject"
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/monitoring-profiles/create": {
@@ -2807,7 +2807,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/monitoring-profiles/delete": {
@@ -2824,7 +2824,7 @@
           "content": null,
           "$ref": "#/components/requestBodies/DeviceId"
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/monitoring-profiles/list": {
@@ -2858,7 +2858,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/monitoring-profiles/update": {
@@ -2885,7 +2885,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/notice-comments/create": {
@@ -2909,7 +2909,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_social.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_social.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/notice-comments/delete": {
@@ -2932,7 +2932,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_social.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_social.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/notice-comments/list": {
@@ -2955,7 +2955,7 @@
           "content": null,
           "$ref": "#/components/requestBodies/NoticeId"
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_social.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_social.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/notice-comments/reply": {
@@ -2979,7 +2979,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_social.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_social.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/notice-comments/search": {
@@ -3012,7 +3012,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_social.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_social.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/notice-comments/toggle-like": {
@@ -3035,7 +3035,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_social.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_social.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/notices/create": {
@@ -3065,7 +3065,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_social.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_social.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/notices/delete": {
@@ -3082,7 +3082,7 @@
           "content": null,
           "$ref": "#/components/requestBodies/NoticeId"
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_social.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_social.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/notices/detail": {
@@ -3106,7 +3106,7 @@
           "content": null,
           "$ref": "#/components/requestBodies/NoticeId"
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_social.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_social.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/notices/list": {
@@ -3140,7 +3140,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_social.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_social.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/notices/update": {
@@ -3171,7 +3171,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_social.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_social.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/notifications/search": {
@@ -3200,7 +3200,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handlers.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handlers.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/operations/snapshot": {
@@ -3223,7 +3223,7 @@
           "content": null,
           "$ref": "#/components/requestBodies/JsonObject"
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_operations.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_operations.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/position/select": {
@@ -3249,7 +3249,7 @@
           "content": null,
           "$ref": "#/components/requestBodies/NamePage"
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/position/selectFamily": {
@@ -3272,7 +3272,7 @@
           "content": null,
           "$ref": "#/components/requestBodies/ResidentId"
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/residents/create": {
@@ -3306,7 +3306,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/residents/delete": {
@@ -3323,7 +3323,7 @@
           "content": null,
           "$ref": "#/components/requestBodies/ResidentId"
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/residents/details": {
@@ -3349,7 +3349,7 @@
           "content": null,
           "$ref": "#/components/requestBodies/NamePage"
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/residents/list": {
@@ -3375,7 +3375,7 @@
           "content": null,
           "$ref": "#/components/requestBodies/NamePage"
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/residents/update": {
@@ -3411,7 +3411,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_resident_devices.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/risk/events": {
@@ -3430,7 +3430,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_risk.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_risk.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/risk/rules": {
@@ -3462,7 +3462,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_risk.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_risk.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/risk/rules/{id}": {
@@ -3485,7 +3485,7 @@
           "content": null,
           "$ref": "#/components/requestBodies/JsonObject"
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_risk.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_risk.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/rule-policies": {
@@ -3524,7 +3524,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handlers.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handlers.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/security/factor": {
@@ -3565,7 +3565,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handlers.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handlers.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/security/login-audit": {
@@ -3591,7 +3591,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handlers.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handlers.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/service/status": {
@@ -3641,7 +3641,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_auth.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_auth.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/user/select": {
@@ -3670,7 +3670,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_user.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_user.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/vitals/alerts/count": {
@@ -3695,7 +3695,7 @@
           "content": null,
           "$ref": "#/components/requestBodies/JsonObject"
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_vitals.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/vitals/alerts/detail": {
@@ -3739,7 +3739,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_vitals.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/vitals/alerts/device-counts": {
@@ -3774,7 +3774,7 @@
           "content": null,
           "$ref": "#/components/requestBodies/JsonObject"
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_vitals.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/vitals/alerts/resolve": {
@@ -3804,7 +3804,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_vitals.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/vitals/chart": {
@@ -3830,7 +3830,7 @@
           "content": null,
           "$ref": "#/components/requestBodies/ResidentId"
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_vitals.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/vitals/history": {
@@ -3853,7 +3853,7 @@
           "content": null,
           "$ref": "#/components/requestBodies/ResidentId"
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_vitals.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     },
     "/api/v1/vitals/latest": {
@@ -3889,7 +3889,7 @@
             }
           }
         },
-        "description": "Implementation: 智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
+        "description": "Implementation: backend/internal/handlers/handler_vitals.go. Go API DTOs without explicit schemas remain open objects; consult implementation."
       }
     }
   },

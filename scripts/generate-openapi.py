@@ -10,7 +10,7 @@ import re
 import sys
 
 root = Path(__file__).resolve().parents[1]
-backend = root / "智慧养老手表管理系统/backend"
+backend = root / "backend"
 folder = backend / "internal/apidoc"
 paths = {}
 
@@ -194,7 +194,7 @@ for key, contract in contracts.items():
 # The frontend status fallback is generated from the owning Go definition.
 source = (backend / 'internal/response/response.go').read_text(encoding='utf-8')
 definitions = {status: {'code': code, 'message': message} for status, code, message in re.findall(r'case (\d+):\s*return "([^"]+)", "([^"]+)"', source)}
-status_target = root / '智慧养老手表管理系统/frontend/src/api/status-errors.json'
+status_target = root / 'frontend/src/api/status-errors.json'
 status_data = (json.dumps(definitions, ensure_ascii=False, indent=2) + '\n').encode('utf-8')
 if '--check' in sys.argv:
     if not status_target.exists() or status_target.read_bytes() != status_data:

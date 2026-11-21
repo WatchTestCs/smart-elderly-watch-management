@@ -3,7 +3,7 @@
 准备 Windows x64、C++ Build Tools（MSVC + Windows SDK）、Rust stable、Go 1.27.4（与当前 backend/go.mod 及 CI 一致）、Node.js 22.12+、PowerShell 7。推荐在 Developer PowerShell 中构建。Tauri 与前端工具版本由 package-lock.json 固定，Rust 依赖由 Cargo.lock 固定。
 
 ```powershell
-cd 智慧养老手表管理系统
+# Work from the repository root
 ./desktop/build.ps1
 ./desktop/package-release.ps1
 # 可选：明确标注为本机自签，不是公开受信任证书

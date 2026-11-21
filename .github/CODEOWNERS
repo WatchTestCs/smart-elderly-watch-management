@@ -4,5 +4,5 @@
 # High-risk boundaries are listed explicitly so future ownership can be split
 # without rediscovering them.
 /.github/ @qiyuhuating
-/智慧养老手表管理系统/desktop/ @qiyuhuating
-/智慧养老手表管理系统/backend/internal/auth/ @qiyuhuating
+/desktop/ @qiyuhuating
+/backend/internal/auth/ @qiyuhuating

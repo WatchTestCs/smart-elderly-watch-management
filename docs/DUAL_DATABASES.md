@@ -102,7 +102,7 @@ SELECT * FROM suining_analytics.care_summary ORDER BY source_id,state;
 
 测试命令与测试库要求见 [测试指南](TESTING.md)。真实后端浏览器脚本需独立空 MySQL、服务 URL、桌面测试令牌与 `CARE_E2E_TEST_ONLY=1`，仅支持 `qa_arch_` 前缀测试库。
 
-源码：[数据库适配](../智慧养老手表管理系统/backend/internal/db/database.go) · [同步](../智慧养老手表管理系统/backend/internal/analytics/sync.go) · [回填](../智慧养老手表管理系统/backend/cmd/analytics-backfill/main.go)。
+源码：[数据库适配](../backend/internal/db/database.go) · [同步](../backend/internal/analytics/sync.go) · [回填](../backend/cmd/analytics-backfill/main.go)。
 
 ## 业务连接调优
 

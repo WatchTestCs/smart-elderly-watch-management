@@ -2,7 +2,7 @@
 
 ## Go 后端
 
-在 `智慧养老手表管理系统/backend` 目录执行：
+在 `backend` 目录执行：
 
 ```sh
 go test -count=1 ./...
@@ -19,7 +19,7 @@ go test -race -count=1 -timeout 600s ./...
 
 ## Vue 前端
 
-在 `智慧养老手表管理系统/frontend` 目录执行：
+在 `frontend` 目录执行：
 
 ```sh
 npm ci

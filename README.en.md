@@ -1,7 +1,7 @@
 > **MySQL-only candidate (2026-11-17):** Current preview storage and deployment guidance is in [MySQL migration](docs/MYSQL_ONLY_MIGRATION.md). Older PostgreSQL/S3/local-image instructions on this page describe previous releases and are not suitable for deploying the new candidate.
 
 <p align="center">
-  <img src="智慧养老手表管理系统/frontend/public/static/brand/suining-logo-192.webp" width="88" height="88" alt="Suining · Elderly Care Management">
+  <img src="frontend/public/static/brand/suining-logo-192.webp" width="88" height="88" alt="Suining · Elderly Care Management">
 </p>
 
 <h1 align="center">Suining · Elderly Care Management</h1>
@@ -124,7 +124,7 @@ MySQL holds all authoritative business records, while PostgreSQL stores an async
 | A user write request fails | The form keeps the user's unsaved input and prompts for a manual retry without replaying writes automatically |
 | Session configuration is invalid | The status endpoint returns `configError` and prompts the operator to fix the environment and restart |
 
-`GET /healthz` checks HTTP process liveness, while `GET /api/v1/service/status` reports database readiness and analytics sync status. See the [architecture overview](docs/ARCHITECTURE.md) for process lifecycle details and the [health data contract](智慧养老手表管理系统/backend/docs/health-data.md#跨窗口步数与夜间累计计数) for interval splitting, midnight boundaries, and alert thresholds.
+`GET /healthz` checks HTTP process liveness, while `GET /api/v1/service/status` reports database readiness and analytics sync status. See the [architecture overview](docs/ARCHITECTURE.md) for process lifecycle details and the [health data contract](backend/docs/health-data.md#跨窗口步数与夜间累计计数) for interval splitting, midnight boundaries, and alert thresholds.
 
 ## Source and builds
 
@@ -136,7 +136,7 @@ cd smart-elderly-watch-management
 ```
 
 ```text
-智慧养老手表管理系统/
+
 ├── desktop/     Tauri / Rust shell, native permissions, and Windows packaging scripts
 ├── backend/     Go API, SQL migrations, care workflows, and analytics workers
 ├── frontend/    Vue 3 / Vite web interface and Playwright browser QA
@@ -152,7 +152,7 @@ evidence/        Archived test outputs and fault-injection evidence
 Building the Windows desktop package requires PowerShell 7, Node.js (`^20.19.0 || >=22.12.0`), Go (`1.26.0+` per `go.mod`), Rust 1.85+, MSVC build tools, and the Windows SDK. See [Environment setup](docs/BUILD.md) for exact version constraints.
 
 ```powershell
-cd 智慧养老手表管理系统
+# Work from the repository root
 ./desktop/validate-version.ps1
 ./desktop/build.ps1
 ```
@@ -164,11 +164,11 @@ The build script compiles the Vue frontend, embeds the assets into the Go binary
 The Rust watch simulator can connect to preview or generate local data without a network, backend, or account. Building it requires Rust 1.89+ and, on Windows, MSVC and the Windows SDK.
 
 ```powershell
-cargo build --release --locked --manifest-path 智慧养老手表管理系统/watch-sim/Cargo.toml
-.\智慧养老手表管理系统\watch-sim\target\release\watch-sim.exe --local "D:\watch-sim\local-data" --scenario demo --health-samples
+cargo build --release --locked --manifest-path watch-sim/Cargo.toml
+.\watch-sim\target\release\watch-sim.exe --local "D:\watch-sim\local-data" --scenario demo --health-samples
 ```
 
-Packaged builds include `本地模拟.cmd` for double-click startup. Each run creates a separate directory containing samples, events, and an `index.html` page that opens offline. See the [simulator guide](智慧养老手表管理系统/watch-sim/README.md) for online options, certificates, and validation commands.
+Packaged builds include `本地模拟.cmd` for double-click startup. Each run creates a separate directory containing samples, events, and an `index.html` page that opens offline. See the [simulator guide](watch-sim/README.md) for online options, certificates, and validation commands.
 
 Compared with the preview Node simulator, the Rust build reduced startup plus three-request time by 79.5% and peak working set by 85.2%. Coverage, adaptations and raw measurements are performance evidence and are not distributed with this repository.
 
@@ -180,8 +180,8 @@ UI Quality runs with every Preview CI. `Core CI / required` covers the core chec
 | --- | --- |
 | Preview branch automation | [Preview CI](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/workflows/ci.yml) |
 | Current release notes | [Version 2.1.0](docs/releases/2.1.0.md) and the release manifest |
-| Backend regression | Run `go test -count=1 ./...` and `go vet ./...` in `智慧养老手表管理系统/backend` |
-| Frontend build | Run `npm ci` and `npm run build` in `智慧养老手表管理系统/frontend` |
+| Backend regression | Run `go test -count=1 ./...` and `go vet ./...` in `backend` |
+| Frontend build | Run `npm ci` and `npm run build` in `frontend` |
 | Watch protocol | Run `npm ci` and `npm test` in `SuiningWatch`; this does not replace native DevEco or physical-device validation |
 
 Database integration and race tests require dedicated disposable test databases configured through `TEST_MYSQL_DSN` and `TEST_DATABASE_URL`. Tests must never target production databases. CI results must be read from the workflow run for the exact commit being assessed.
@@ -203,7 +203,7 @@ Historical performance experiments and release-stage notes are not current-versi
 | Releases and upgrades | [2.1.0 release notes](docs/releases/2.1.0.md) · [Changelog](CHANGELOG.md) |
 | Databases and backups | [Dual-database guide](docs/DUAL_DATABASES.md) · [Backup and restore runbook](docs/runbooks/backup-restore.md) |
 | Operations and support | [Care service deployment](docs/CARE_SERVICE_DEPLOYMENT.md) · [Support and troubleshooting](docs/SUPPORT.md) |
-| Module guides | [Workspace overview](智慧养老手表管理系统/README.md) · [Frontend](智慧养老手表管理系统/frontend/README.md) · [Backend](智慧养老手表管理系统/backend/README.md) · [Watch app](SuiningWatch/README.md) |
+| Module guides | [Workspace overview](docs/WORKSPACE.md) · [Frontend](frontend/README.md) · [Backend](backend/README.md) · [Watch app](SuiningWatch/README.md) |
 | Architecture and testing | [Architecture](docs/ARCHITECTURE.md) · [UI requirements](docs/UI_UX.md) · [Release gates](docs/reliability/release-governance.md) · [Testing guide](docs/TESTING.md) |
 
 When opening an [issue](https://github.com/WatchTestCs/smart-elderly-watch-management/issues), include the application version or commit SHA, OS, network layout, and redacted logs.

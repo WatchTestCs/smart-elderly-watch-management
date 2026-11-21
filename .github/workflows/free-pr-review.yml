@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [preview, main]
     paths:
-      - '智慧养老手表管理系统/backend/**'
+      - 'backend/**'
       - '.github/workflows/**'
   workflow_dispatch:
 
@@ -31,13 +31,13 @@ jobs:
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: '1.27.4'
-          cache-dependency-path: '智慧养老手表管理系统/backend/go.sum'
+          cache-dependency-path: 'backend/go.sum'
 
       - name: Lint GitHub Actions workflows
         run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12 -shellcheck=
 
       - name: Verify formatting and vet
-        working-directory: '智慧养老手表管理系统/backend'
+        working-directory: 'backend'
         run: |
           set -euo pipefail
           unformatted="$(gofmt -l ./cmd ./internal ./migrations)"

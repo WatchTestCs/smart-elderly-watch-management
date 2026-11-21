@@ -3,7 +3,7 @@ version: 2
 # Dependency updates target preview; security updates follow the default branch.
 updates:
   - package-ecosystem: npm
-    directory: "/智慧养老手表管理系统/frontend"
+    directory: "/frontend"
     target-branch: preview
     schedule:
       interval: weekly
@@ -18,7 +18,7 @@ updates:
           - patch
 
   - package-ecosystem: npm
-    directory: "/智慧养老手表管理系统/desktop"
+    directory: "/desktop"
     target-branch: preview
     schedule:
       interval: weekly
@@ -33,7 +33,7 @@ updates:
           - patch
 
   - package-ecosystem: gomod
-    directory: "/智慧养老手表管理系统/backend"
+    directory: "/backend"
     target-branch: preview
     schedule:
       interval: weekly
@@ -58,7 +58,7 @@ updates:
     open-pull-requests-limit: 5
 
   - package-ecosystem: cargo
-    directory: "/智慧养老手表管理系统/desktop"
+    directory: "/desktop"
     target-branch: preview
     schedule:
       interval: weekly

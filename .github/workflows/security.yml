@@ -44,7 +44,7 @@ jobs:
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: '1.27.4'
-          cache-dependency-path: 智慧养老手表管理系统/backend/go.sum
+          cache-dependency-path: backend/go.sum
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
@@ -55,7 +55,7 @@ jobs:
 
       - name: Build Go for analysis
         if: matrix.language == 'go'
-        working-directory: 智慧养老手表管理系统/backend
+        working-directory: backend
         run: go build ./...
 
       - name: Analyze

@@ -1,6 +1,6 @@
 {
   "DELETE /api/v1/risk/rules/{id}": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_risk.go",
+    "file": "backend/internal/handlers/handler_risk.go",
     "request": [],
     "response": [
       "deleted",
@@ -8,7 +8,7 @@
     ]
   },
   "GET /api/v1/auth/session": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_auth.go",
+    "file": "backend/internal/handlers/handler_auth.go",
     "request": [],
     "response": [
       "account",
@@ -20,14 +20,14 @@
     ]
   },
   "GET /api/v1/image/download": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_social_images.go",
+    "file": "backend/internal/handlers/handler_social_images.go",
     "request": [
       "name"
     ],
     "response": []
   },
   "GET /api/v1/risk/events": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_risk.go",
+    "file": "backend/internal/handlers/handler_risk.go",
     "request": [],
     "response": [
       "events",
@@ -36,7 +36,7 @@
     ]
   },
   "GET /api/v1/service/status": {
-    "file": "智慧养老手表管理系统/backend/cmd/server/database.go",
+    "file": "backend/cmd/server/database.go",
     "request": [],
     "response": [
       "returnCode",
@@ -47,7 +47,7 @@
     ]
   },
   "POST /api/v1/activity/alerts/device-counts": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go",
+    "file": "backend/internal/handlers/handler_vitals.go",
     "request": [],
     "response": [
       "returnCode",
@@ -55,7 +55,7 @@
     ]
   },
   "POST /api/v1/activity/chart": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_vitals_activity.go",
+    "file": "backend/internal/handlers/handler_vitals_activity.go",
     "request": [
       "oldId"
     ],
@@ -67,7 +67,7 @@
     ]
   },
   "POST /api/v1/activity/history": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_vitals_activity.go",
+    "file": "backend/internal/handlers/handler_vitals_activity.go",
     "request": [
       "oldId"
     ],
@@ -77,7 +77,7 @@
     ]
   },
   "POST /api/v1/activity/latest": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_vitals_activity.go",
+    "file": "backend/internal/handlers/handler_vitals_activity.go",
     "request": [
       "name",
       "timeFirst",
@@ -94,7 +94,7 @@
     ]
   },
   "POST /api/v1/alert-reviews": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_alert_review.go",
+    "file": "backend/internal/handlers/handler_alert_review.go",
     "request": [
       "expectedReviewId",
       "kind",
@@ -110,7 +110,7 @@
     ]
   },
   "POST /api/v1/alert-reviews/search": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_alert_review.go",
+    "file": "backend/internal/handlers/handler_alert_review.go",
     "request": [
       "after",
       "entity",
@@ -123,7 +123,7 @@
     ]
   },
   "POST /api/v1/auth/login": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_auth.go",
+    "file": "backend/internal/handlers/handler_auth.go",
     "request": [
       "otp",
       "password",
@@ -136,14 +136,14 @@
     ]
   },
   "POST /api/v1/auth/logout": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_auth.go",
+    "file": "backend/internal/handlers/handler_auth.go",
     "request": [],
     "response": [
       "returnCode"
     ]
   },
   "POST /api/v1/care/accessAudit": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_care_staff.go",
+    "file": "backend/internal/handlers/handler_care_staff.go",
     "request": [],
     "response": [
       "accesses",
@@ -151,7 +151,7 @@
     ]
   },
   "POST /api/v1/care/accounts/status": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_care_incident.go",
+    "file": "backend/internal/handlers/handler_care_incident.go",
     "request": [
       "adminId",
       "status"
@@ -163,7 +163,7 @@
     ]
   },
   "POST /api/v1/care/assignDuty": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_care_staff.go",
+    "file": "backend/internal/handlers/handler_care_staff.go",
     "request": [
       "adminId",
       "duty"
@@ -175,7 +175,7 @@
     ]
   },
   "POST /api/v1/care/diagnostics": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_care_operations.go",
+    "file": "backend/internal/handlers/handler_care_operations.go",
     "request": [],
     "response": [
       "analytics",
@@ -195,7 +195,7 @@
     ]
   },
   "POST /api/v1/care/events": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_care_incident.go",
+    "file": "backend/internal/handlers/handler_care_incident.go",
     "request": [
       "id",
       "page",
@@ -210,7 +210,7 @@
     ]
   },
   "POST /api/v1/care/handover/accept": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_care_handover.go",
+    "file": "backend/internal/handlers/handler_care_handover.go",
     "request": [
       "handoverId"
     ],
@@ -222,7 +222,7 @@
     ]
   },
   "POST /api/v1/care/handover/cancel": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_care_handover.go",
+    "file": "backend/internal/handlers/handler_care_handover.go",
     "request": [
       "handoverId"
     ],
@@ -233,7 +233,7 @@
     ]
   },
   "POST /api/v1/care/handover/create": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_care_handover.go",
+    "file": "backend/internal/handlers/handler_care_handover.go",
     "request": [
       "toAdminId",
       "note"
@@ -245,7 +245,7 @@
     ]
   },
   "POST /api/v1/care/incidents": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_care_incident.go",
+    "file": "backend/internal/handlers/handler_care_incident.go",
     "request": [
       "state",
       "page",
@@ -262,7 +262,7 @@
     ]
   },
   "POST /api/v1/care/receipt": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_care_receipt.go",
+    "file": "backend/internal/handlers/handler_care_receipt.go",
     "request": [
       "notificationId",
       "status"
@@ -274,7 +274,7 @@
     ]
   },
   "POST /api/v1/care/staff": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_care_staff.go",
+    "file": "backend/internal/handlers/handler_care_staff.go",
     "request": [],
     "response": [
       "returnCode",
@@ -282,7 +282,7 @@
     ]
   },
   "POST /api/v1/care/transition": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_care_incident.go",
+    "file": "backend/internal/handlers/handler_care_incident.go",
     "request": [
       "action",
       "id",
@@ -296,7 +296,7 @@
     ]
   },
   "POST /api/v1/desktop/exit": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_auth.go",
+    "file": "backend/internal/handlers/handler_auth.go",
     "request": [],
     "response": [
       "closing",
@@ -304,7 +304,7 @@
     ]
   },
   "POST /api/v1/device-command-profiles": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_command_profile.go",
+    "file": "backend/internal/handlers/handler_command_profile.go",
     "request": [
       "deviceId",
       "enabled",
@@ -318,7 +318,7 @@
     ]
   },
   "POST /api/v1/device-commands": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_commands.go",
+    "file": "backend/internal/handlers/handler_commands.go",
     "request": [
       "action",
       "deviceId",
@@ -333,7 +333,7 @@
     ]
   },
   "POST /api/v1/device-commands/search": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_commands.go",
+    "file": "backend/internal/handlers/handler_commands.go",
     "request": [
       "after",
       "deviceId"
@@ -344,7 +344,7 @@
     ]
   },
   "POST /api/v1/device/alertCounts": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_device_alert_actions.go",
+    "file": "backend/internal/handlers/handler_device_alert_actions.go",
     "request": [],
     "response": [
       "items",
@@ -356,7 +356,7 @@
     ]
   },
   "POST /api/v1/device/alertDetail": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_device_alert_actions.go",
+    "file": "backend/internal/handlers/handler_device_alert_actions.go",
     "request": [
       "deviceId",
       "kind"
@@ -384,7 +384,7 @@
     ]
   },
   "POST /api/v1/device/bind": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_device_protocol.go",
+    "file": "backend/internal/handlers/handler_device_protocol.go",
     "request": [
       "code",
       "deviceNo",
@@ -397,7 +397,7 @@
     ]
   },
   "POST /api/v1/device/bindCodeList": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_device_admin.go",
+    "file": "backend/internal/handlers/handler_device_admin.go",
     "request": [
       "oldId"
     ],
@@ -407,7 +407,7 @@
     ]
   },
   "POST /api/v1/device/commandAck": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_command_delivery.go",
+    "file": "backend/internal/handlers/handler_command_delivery.go",
     "request": [
       "deviceNo",
       "secret",
@@ -423,7 +423,7 @@
     ]
   },
   "POST /api/v1/device/commandPull": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_command_delivery.go",
+    "file": "backend/internal/handlers/handler_command_delivery.go",
     "request": [
       "bindingVersion",
       "deviceNo",
@@ -435,7 +435,7 @@
     ]
   },
   "POST /api/v1/device/create": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_device_inventory.go",
+    "file": "backend/internal/handlers/handler_device_inventory.go",
     "request": [
       "alias",
       "model",
@@ -449,7 +449,7 @@
     ]
   },
   "POST /api/v1/device/createBindCode": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_device_admin.go",
+    "file": "backend/internal/handlers/handler_device_admin.go",
     "request": [
       "createUser",
       "expireDays",
@@ -464,7 +464,7 @@
     ]
   },
   "POST /api/v1/device/delete": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_device_inventory.go",
+    "file": "backend/internal/handlers/handler_device_inventory.go",
     "request": [
       "deviceId"
     ],
@@ -473,7 +473,7 @@
     ]
   },
   "POST /api/v1/device/deleteBindCode": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_device_admin.go",
+    "file": "backend/internal/handlers/handler_device_admin.go",
     "request": [
       "id"
     ],
@@ -482,7 +482,7 @@
     ]
   },
   "POST /api/v1/device/fencePoint": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_fences.go",
+    "file": "backend/internal/handlers/handler_fences.go",
     "request": [
       "deviceNo",
       "secret",
@@ -498,7 +498,7 @@
     ]
   },
   "POST /api/v1/device/healthBatch": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_health.go",
+    "file": "backend/internal/handlers/handler_health.go",
     "request": [
       "bindingVersion",
       "deviceNo",
@@ -513,7 +513,7 @@
     ]
   },
   "POST /api/v1/device/heartbeat": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_device_protocol.go",
+    "file": "backend/internal/handlers/handler_device_protocol.go",
     "request": [
       "appVersion",
       "battery",
@@ -531,7 +531,7 @@
     ]
   },
   "POST /api/v1/device/list": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_device_admin.go",
+    "file": "backend/internal/handlers/handler_device_admin.go",
     "request": [
       "query",
       "state",
@@ -548,7 +548,7 @@
     ]
   },
   "POST /api/v1/device/login": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_device_protocol.go",
+    "file": "backend/internal/handlers/handler_device_protocol.go",
     "request": [
       "deviceNo",
       "platform",
@@ -569,7 +569,7 @@
     ]
   },
   "POST /api/v1/device/report": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_device_telemetry.go",
+    "file": "backend/internal/handlers/handler_device_telemetry.go",
     "request": [
       "deviceNo",
       "secret",
@@ -600,7 +600,7 @@
     ]
   },
   "POST /api/v1/device/resetSecret": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_device_inventory.go",
+    "file": "backend/internal/handlers/handler_device_inventory.go",
     "request": [
       "deviceId"
     ],
@@ -610,7 +610,7 @@
     ]
   },
   "POST /api/v1/device/resolveAlert": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_device_alert_actions.go",
+    "file": "backend/internal/handlers/handler_device_alert_actions.go",
     "request": [
       "deviceId",
       "kind",
@@ -623,7 +623,7 @@
     ]
   },
   "POST /api/v1/device/sos": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_device_sos.go",
+    "file": "backend/internal/handlers/handler_device_sos.go",
     "request": [
       "alarm",
       "bindingVersion",
@@ -646,7 +646,7 @@
     ]
   },
   "POST /api/v1/device/unbind": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_device_inventory.go",
+    "file": "backend/internal/handlers/handler_device_inventory.go",
     "request": [
       "deviceId"
     ],
@@ -655,7 +655,7 @@
     ]
   },
   "POST /api/v1/family/add": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/family_commands.go",
+    "file": "backend/internal/handlers/family_commands.go",
     "request": [
       "familyAddress",
       "familyName",
@@ -669,7 +669,7 @@
     ]
   },
   "POST /api/v1/family/deleteFamily": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/family_commands.go",
+    "file": "backend/internal/handlers/family_commands.go",
     "request": [
       "familyId"
     ],
@@ -678,7 +678,7 @@
     ]
   },
   "POST /api/v1/family/select": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/family_query.go",
+    "file": "backend/internal/handlers/family_query.go",
     "request": [
       "familyName",
       "page",
@@ -693,7 +693,7 @@
     ]
   },
   "POST /api/v1/family/selectTwo": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/family_query.go",
+    "file": "backend/internal/handlers/family_query.go",
     "request": [
       "familyPhone"
     ],
@@ -703,7 +703,7 @@
     ]
   },
   "POST /api/v1/family/updateFamily": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/family_commands.go",
+    "file": "backend/internal/handlers/family_commands.go",
     "request": [
       "familyAddress",
       "familyId",
@@ -717,7 +717,7 @@
     ]
   },
   "POST /api/v1/family/updatePassword": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/family_credentials.go",
+    "file": "backend/internal/handlers/family_credentials.go",
     "request": [
       "familyPassword",
       "familyPhone",
@@ -728,7 +728,7 @@
     ]
   },
   "POST /api/v1/family/updateTouPic": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/family_profile.go",
+    "file": "backend/internal/handlers/family_profile.go",
     "request": [
       "familyPhone",
       "familyTouPic"
@@ -738,7 +738,7 @@
     ]
   },
   "POST /api/v1/family/updateTwo": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/family_profile.go",
+    "file": "backend/internal/handlers/family_profile.go",
     "request": [
       "familyAddress",
       "familyId",
@@ -751,7 +751,7 @@
     ]
   },
   "POST /api/v1/fence-events/search": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_fences.go",
+    "file": "backend/internal/handlers/handler_fences.go",
     "request": [
       "after",
       "oldId"
@@ -762,7 +762,7 @@
     ]
   },
   "POST /api/v1/fences": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_fences.go",
+    "file": "backend/internal/handlers/handler_fences.go",
     "request": [
       "coordinateSystem",
       "coordinates",
@@ -787,7 +787,7 @@
     ]
   },
   "POST /api/v1/fences/search": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_fences.go",
+    "file": "backend/internal/handlers/handler_fences.go",
     "request": [
       "deviceId"
     ],
@@ -797,7 +797,7 @@
     ]
   },
   "POST /api/v1/gallery/list": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_social_pictures.go",
+    "file": "backend/internal/handlers/handler_social_pictures.go",
     "request": [
       "id",
       "picName"
@@ -808,7 +808,7 @@
     ]
   },
   "POST /api/v1/gallery/replace": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_social_pictures.go",
+    "file": "backend/internal/handlers/handler_social_pictures.go",
     "request": [
       "fileListName"
     ],
@@ -817,7 +817,7 @@
     ]
   },
   "POST /api/v1/guardians/create": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_user.go",
+    "file": "backend/internal/handlers/handler_user.go",
     "request": [
       "customerAddress",
       "customerAge",
@@ -830,7 +830,7 @@
     ]
   },
   "POST /api/v1/guardians/delete": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_user.go",
+    "file": "backend/internal/handlers/handler_user.go",
     "request": [
       "customerId"
     ],
@@ -839,7 +839,7 @@
     ]
   },
   "POST /api/v1/guardians/list": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_user.go",
+    "file": "backend/internal/handlers/handler_user.go",
     "request": [
       "customerName",
       "page",
@@ -854,7 +854,7 @@
     ]
   },
   "POST /api/v1/guardians/update": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_user.go",
+    "file": "backend/internal/handlers/handler_user.go",
     "request": [
       "customerAddress",
       "customerAge",
@@ -868,7 +868,7 @@
     ]
   },
   "POST /api/v1/health/alerts/device-counts": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go",
+    "file": "backend/internal/handlers/handler_vitals.go",
     "request": [],
     "response": [
       "bloodPressure",
@@ -878,7 +878,7 @@
     ]
   },
   "POST /api/v1/health/baseline": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_health_baseline.go",
+    "file": "backend/internal/handlers/handler_health_baseline.go",
     "request": [
       "oldId"
     ],
@@ -902,7 +902,7 @@
     ]
   },
   "POST /api/v1/health/changes": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_health.go",
+    "file": "backend/internal/handlers/handler_health.go",
     "request": [
       "after",
       "limit",
@@ -917,7 +917,7 @@
     ]
   },
   "POST /api/v1/health/daily-query": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_daily.go",
+    "file": "backend/internal/handlers/handler_daily.go",
     "request": [
       "oldId",
       "source",
@@ -940,7 +940,7 @@
     ]
   },
   "POST /api/v1/health/latest": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_health_latest.go",
+    "file": "backend/internal/handlers/handler_health_latest.go",
     "request": [
       "oldId"
     ],
@@ -951,7 +951,7 @@
     ]
   },
   "POST /api/v1/health/statistics": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_statistics.go",
+    "file": "backend/internal/handlers/handler_statistics.go",
     "request": [
       "from",
       "metric",
@@ -971,7 +971,7 @@
     ]
   },
   "POST /api/v1/image/saveImage": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_social_images.go",
+    "file": "backend/internal/handlers/handler_social_images.go",
     "request": [
       "file"
     ],
@@ -981,7 +981,7 @@
     ]
   },
   "POST /api/v1/inviteCode/checkCode": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_family_invite_join.go",
+    "file": "backend/internal/handlers/handler_family_invite_join.go",
     "request": [
       "code"
     ],
@@ -993,7 +993,7 @@
     ]
   },
   "POST /api/v1/inviteCode/create": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_family_invites.go",
+    "file": "backend/internal/handlers/handler_family_invites.go",
     "request": [
       "count",
       "createUser",
@@ -1009,7 +1009,7 @@
     ]
   },
   "POST /api/v1/inviteCode/delete": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_family_invites.go",
+    "file": "backend/internal/handlers/handler_family_invites.go",
     "request": [
       "id"
     ],
@@ -1018,7 +1018,7 @@
     ]
   },
   "POST /api/v1/inviteCode/join": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_family_invite_join.go",
+    "file": "backend/internal/handlers/handler_family_invite_join.go",
     "request": [
       "code",
       "familyAddress",
@@ -1036,7 +1036,7 @@
     ]
   },
   "POST /api/v1/inviteCode/list": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_family_invites.go",
+    "file": "backend/internal/handlers/handler_family_invites.go",
     "request": [
       "page",
       "pageSize",
@@ -1051,7 +1051,7 @@
     ]
   },
   "POST /api/v1/inviteCode/oldPersonList": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_family_invite_join.go",
+    "file": "backend/internal/handlers/handler_family_invite_join.go",
     "request": [],
     "response": [
       "oldPeople",
@@ -1059,7 +1059,7 @@
     ]
   },
   "POST /api/v1/locations/alerts/resolve-latest": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_device_alerts.go",
+    "file": "backend/internal/handlers/handler_device_alerts.go",
     "request": [
       "oldId"
     ],
@@ -1068,7 +1068,7 @@
     ]
   },
   "POST /api/v1/locations/alerts/summary": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_position.go",
+    "file": "backend/internal/handlers/handler_position.go",
     "request": [],
     "response": [
       "activeAlerts",
@@ -1077,7 +1077,7 @@
     ]
   },
   "POST /api/v1/monitoring-profiles/create": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_watch_info.go",
+    "file": "backend/internal/handlers/handler_watch_info.go",
     "request": [
       "deviceId",
       "hrf",
@@ -1090,7 +1090,7 @@
     ]
   },
   "POST /api/v1/monitoring-profiles/delete": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_watch_info.go",
+    "file": "backend/internal/handlers/handler_watch_info.go",
     "request": [
       "deviceId"
     ],
@@ -1099,7 +1099,7 @@
     ]
   },
   "POST /api/v1/monitoring-profiles/list": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_watch_info.go",
+    "file": "backend/internal/handlers/handler_watch_info.go",
     "request": [
       "oldName",
       "page",
@@ -1114,7 +1114,7 @@
     ]
   },
   "POST /api/v1/monitoring-profiles/update": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_watch_info.go",
+    "file": "backend/internal/handlers/handler_watch_info.go",
     "request": [
       "deviceId",
       "hrf",
@@ -1127,7 +1127,7 @@
     ]
   },
   "POST /api/v1/notice-comments/create": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_social.go",
+    "file": "backend/internal/handlers/handler_social.go",
     "request": [
       "said",
       "textId"
@@ -1137,7 +1137,7 @@
     ]
   },
   "POST /api/v1/notice-comments/delete": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_social.go",
+    "file": "backend/internal/handlers/handler_social.go",
     "request": [
       "saidId"
     ],
@@ -1146,7 +1146,7 @@
     ]
   },
   "POST /api/v1/notice-comments/list": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_social.go",
+    "file": "backend/internal/handlers/handler_social.go",
     "request": [
       "textId"
     ],
@@ -1156,7 +1156,7 @@
     ]
   },
   "POST /api/v1/notice-comments/reply": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_social.go",
+    "file": "backend/internal/handlers/handler_social.go",
     "request": [
       "back",
       "saidId"
@@ -1166,7 +1166,7 @@
     ]
   },
   "POST /api/v1/notice-comments/search": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_social.go",
+    "file": "backend/internal/handlers/handler_social.go",
     "request": [
       "page",
       "pageSize"
@@ -1180,7 +1180,7 @@
     ]
   },
   "POST /api/v1/notice-comments/toggle-like": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_social.go",
+    "file": "backend/internal/handlers/handler_social.go",
     "request": [
       "saidId"
     ],
@@ -1189,7 +1189,7 @@
     ]
   },
   "POST /api/v1/notices/create": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_social_text.go",
+    "file": "backend/internal/handlers/handler_social_text.go",
     "request": [
       "fileListName",
       "textMain",
@@ -1200,7 +1200,7 @@
     ]
   },
   "POST /api/v1/notices/delete": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_social_text.go",
+    "file": "backend/internal/handlers/handler_social_text.go",
     "request": [
       "textId"
     ],
@@ -1209,7 +1209,7 @@
     ]
   },
   "POST /api/v1/notices/detail": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/social_text_query.go",
+    "file": "backend/internal/handlers/social_text_query.go",
     "request": [
       "textId"
     ],
@@ -1220,7 +1220,7 @@
     ]
   },
   "POST /api/v1/notices/list": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/social_text_query.go",
+    "file": "backend/internal/handlers/social_text_query.go",
     "request": [
       "title",
       "page",
@@ -1235,7 +1235,7 @@
     ]
   },
   "POST /api/v1/notices/update": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_social_text.go",
+    "file": "backend/internal/handlers/handler_social_text.go",
     "request": [
       "textId",
       "title",
@@ -1247,7 +1247,7 @@
     ]
   },
   "POST /api/v1/notifications/search": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_notifications.go",
+    "file": "backend/internal/handlers/handler_notifications.go",
     "request": [
       "after",
       "familyId"
@@ -1258,7 +1258,7 @@
     ]
   },
   "POST /api/v1/operations/snapshot": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_operations.go",
+    "file": "backend/internal/handlers/handler_operations.go",
     "request": [],
     "response": [
       "snapshot",
@@ -1266,7 +1266,7 @@
     ]
   },
   "POST /api/v1/position/select": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_position.go",
+    "file": "backend/internal/handlers/handler_position.go",
     "request": [
       "name",
       "page",
@@ -1281,7 +1281,7 @@
     ]
   },
   "POST /api/v1/position/selectFamily": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_position.go",
+    "file": "backend/internal/handlers/handler_position.go",
     "request": [
       "oldId"
     ],
@@ -1291,7 +1291,7 @@
     ]
   },
   "POST /api/v1/residents/create": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_old_person.go",
+    "file": "backend/internal/handlers/handler_old_person.go",
     "request": [
       "name",
       "bothdate",
@@ -1311,7 +1311,7 @@
     ]
   },
   "POST /api/v1/residents/delete": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_old_person.go",
+    "file": "backend/internal/handlers/handler_old_person.go",
     "request": [
       "oldId"
     ],
@@ -1320,7 +1320,7 @@
     ]
   },
   "POST /api/v1/residents/details": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/old_person_query.go",
+    "file": "backend/internal/handlers/old_person_query.go",
     "request": [
       "name",
       "page",
@@ -1335,7 +1335,7 @@
     ]
   },
   "POST /api/v1/residents/list": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/old_person_query.go",
+    "file": "backend/internal/handlers/old_person_query.go",
     "request": [
       "name",
       "page",
@@ -1350,7 +1350,7 @@
     ]
   },
   "POST /api/v1/residents/update": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_old_person.go",
+    "file": "backend/internal/handlers/handler_old_person.go",
     "request": [
       "oldId",
       "name",
@@ -1372,7 +1372,7 @@
     ]
   },
   "POST /api/v1/risk/rules": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_risk.go",
+    "file": "backend/internal/handlers/handler_risk.go",
     "request": [
       "action",
       "durationHours",
@@ -1385,7 +1385,7 @@
     ]
   },
   "POST /api/v1/rule-policies": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_rules.go",
+    "file": "backend/internal/handlers/handler_rules.go",
     "request": [
       "deviceId",
       "policy",
@@ -1398,7 +1398,7 @@
     ]
   },
   "POST /api/v1/security/factor": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_security.go",
+    "file": "backend/internal/handlers/handler_security.go",
     "request": [
       "action",
       "otp",
@@ -1413,7 +1413,7 @@
     ]
   },
   "POST /api/v1/security/login-audit": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_security.go",
+    "file": "backend/internal/handlers/handler_security.go",
     "request": [
       "after"
     ],
@@ -1423,7 +1423,7 @@
     ]
   },
   "POST /api/v1/setup": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_auth.go",
+    "file": "backend/internal/handlers/handler_auth.go",
     "request": [
       "name",
       "password",
@@ -1434,7 +1434,7 @@
     ]
   },
   "POST /api/v1/user/select": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_user.go",
+    "file": "backend/internal/handlers/handler_user.go",
     "request": [
       "userPhone"
     ],
@@ -1444,7 +1444,7 @@
     ]
   },
   "POST /api/v1/vitals/alerts/count": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_vitals_alerts.go",
+    "file": "backend/internal/handlers/handler_vitals_alerts.go",
     "request": [],
     "response": [
       "preTotal",
@@ -1454,7 +1454,7 @@
     ]
   },
   "POST /api/v1/vitals/alerts/detail": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_vitals_alerts.go",
+    "file": "backend/internal/handlers/handler_vitals_alerts.go",
     "request": [
       "kind",
       "oldId",
@@ -1479,7 +1479,7 @@
     ]
   },
   "POST /api/v1/vitals/alerts/device-counts": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_vitals.go",
+    "file": "backend/internal/handlers/handler_vitals.go",
     "request": [],
     "response": [
       "bloodPressure",
@@ -1488,7 +1488,7 @@
     ]
   },
   "POST /api/v1/vitals/alerts/resolve": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_vitals_alerts.go",
+    "file": "backend/internal/handlers/handler_vitals_alerts.go",
     "request": [
       "kind",
       "recordId"
@@ -1499,7 +1499,7 @@
     ]
   },
   "POST /api/v1/vitals/chart": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_vitals_measurements.go",
+    "file": "backend/internal/handlers/handler_vitals_measurements.go",
     "request": [
       "oldId"
     ],
@@ -1512,7 +1512,7 @@
     ]
   },
   "POST /api/v1/vitals/history": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_vitals_measurements.go",
+    "file": "backend/internal/handlers/handler_vitals_measurements.go",
     "request": [
       "oldId"
     ],
@@ -1522,7 +1522,7 @@
     ]
   },
   "POST /api/v1/vitals/latest": {
-    "file": "智慧养老手表管理系统/backend/internal/handlers/handler_vitals_measurements.go",
+    "file": "backend/internal/handlers/handler_vitals_measurements.go",
     "request": [
       "name",
       "timeFirst",

@@ -1,15 +1,15 @@
 FROM node:24-bookworm-slim AS frontend
 WORKDIR /ui
-COPY ["智慧养老手表管理系统/frontend/package.json", "智慧养老手表管理系统/frontend/package-lock.json", "./"]
+COPY ["frontend/package.json", "frontend/package-lock.json", "./"]
 RUN npm ci --no-audit --no-fund
-COPY ["智慧养老手表管理系统/frontend/", "./"]
+COPY ["frontend/", "./"]
 RUN npm run test && npm run typecheck && npm run build
 
 FROM golang:1.27.4-bookworm AS backend
 WORKDIR /src
-COPY ["智慧养老手表管理系统/backend/go.mod", "智慧养老手表管理系统/backend/go.sum", "./"]
+COPY ["backend/go.mod", "backend/go.sum", "./"]
 RUN go mod download
-COPY ["智慧养老手表管理系统/backend/", "./"]
+COPY ["backend/", "./"]
 COPY --from=frontend /ui/dist/ internal/handlers/web/
 RUN go test -run '^$' -bench '^BenchmarkSafe$' -benchtime=100ms -cpuprofile=/tmp/default.pgo ./internal/jsonscan \
  && CGO_ENABLED=0 go build -trimpath -pgo=/tmp/default.pgo -ldflags='-s -w' -o /out/suining ./cmd/server \

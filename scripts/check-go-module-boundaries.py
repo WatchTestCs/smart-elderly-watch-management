@@ -4,7 +4,7 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-BACKEND = ROOT / "智慧养老手表管理系统" / "backend"
+BACKEND = ROOT / "backend"
 PREFIX = "suining-care/internal/"
 # Existing atomic cross-domain writes, pending transaction-preserving migration.
 EXISTING_CROSS_REPO = {

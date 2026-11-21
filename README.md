@@ -1,7 +1,7 @@
 > **MySQL-only candidate (2026-11-17):** Current preview storage and deployment guidance is in [MySQL 单库存储迁移](docs/MYSQL_ONLY_MIGRATION.md). Older PostgreSQL/S3/local-image instructions on this page describe previous releases and are not suitable for deploying the new candidate.
 
 <p align="center">
-  <img src="智慧养老手表管理系统/frontend/public/static/brand/suining-logo-192.webp" width="88" height="88" alt="岁宁·智慧养老">
+  <img src="frontend/public/static/brand/suining-logo-192.webp" width="88" height="88" alt="岁宁·智慧养老">
 </p>
 
 <h1 align="center">岁宁 · 智慧养老管理</h1>
@@ -122,7 +122,7 @@ MySQL 是唯一的业务数据源，PostgreSQL 仅存放可随时重建的分析
 | 用户提交保存失败 | 页面保留当前已填内容并提示手动重试，不自动重放写请求 |
 | 会话配置缺失或无效 | 状态接口返回 `configError`，提示修正环境变量后重启 |
 
-`GET /healthz` 仅用于探测 HTTP 进程是否存活，数据库连接与迁移状态由 `GET /api/v1/service/status` 返回。完整的进程交互与鉴权细节见[架构说明](docs/ARCHITECTURE.md)，健康采样的跨窗口步数分摊、日界切分与阈值判定规则见[健康数据接口约定](智慧养老手表管理系统/backend/docs/health-data.md#跨窗口步数与夜间累计计数)。
+`GET /healthz` 仅用于探测 HTTP 进程是否存活，数据库连接与迁移状态由 `GET /api/v1/service/status` 返回。完整的进程交互与鉴权细节见[架构说明](docs/ARCHITECTURE.md)，健康采样的跨窗口步数分摊、日界切分与阈值判定规则见[健康数据接口约定](backend/docs/health-data.md#跨窗口步数与夜间累计计数)。
 
 ## 源码与构建
 
@@ -134,7 +134,7 @@ cd smart-elderly-watch-management
 ```
 
 ```text
-智慧养老手表管理系统/
+
 ├── desktop/     Tauri / Rust 桌面壳、原生权限与 Windows 打包脚本
 ├── backend/     Go API、数据库迁移、照护工单与分析投影作业
 ├── frontend/    Vue 3 / Vite 前端界面与 Playwright 浏览器测试
@@ -150,7 +150,7 @@ evidence/        自动化测试与故障演练留档数据
 在 Windows 上执行完整桌面构建，需要安装 PowerShell 7、Node.js（`^20.19.0 || >=22.12.0`）、Go（`go.mod` 要求 `1.27.4`）、Rust 1.85+、MSVC 生成工具与 Windows SDK。具体环境准备见[构建环境说明](docs/BUILD.md)。
 
 ```powershell
-cd 智慧养老手表管理系统
+# Work from the repository root
 ./desktop/validate-version.ps1
 ./desktop/build.ps1
 ```
@@ -162,11 +162,11 @@ cd 智慧养老手表管理系统
 手表模拟器现使用 Rust，可独立连接 preview，也可在无网络、后端或账号时保存本地模拟数据。构建模拟器需要 Rust 1.89+；Windows 还需 MSVC 与 Windows SDK。
 
 ```powershell
-cargo build --release --locked --manifest-path 智慧养老手表管理系统/watch-sim/Cargo.toml
-.\智慧养老手表管理系统\watch-sim\target\release\watch-sim.exe --local "D:\手表模拟\本地数据" --scenario demo --health-samples
+cargo build --release --locked --manifest-path watch-sim/Cargo.toml
+.\watch-sim\target\release\watch-sim.exe --local "D:\手表模拟\本地数据" --scenario demo --health-samples
 ```
 
-发布包可双击 `本地模拟.cmd`。每次运行创建独立目录，保存采样、事件与可离线打开的 `index.html`。联机参数、证书和验证命令见[模拟器说明](智慧养老手表管理系统/watch-sim/README.md)。
+发布包可双击 `本地模拟.cmd`。每次运行创建独立目录，保存采样、事件与可离线打开的 `index.html`。联机参数、证书和验证命令见[模拟器说明](watch-sim/README.md)。
 
 与远端 Node 模拟器的对照显示，Rust 的三请求启动耗时降低79.5%、峰值工作集降低85.2%；功能覆盖、适配与原始测量数据属性能证据，未随仓库分发。
 
@@ -178,8 +178,8 @@ UI Quality 随每次 Preview CI 执行。`Core CI / required` 仅表示基础检
 | --- | --- |
 | 分支自动化检查 | [Preview CI](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/workflows/ci.yml) |
 | 当前版本发布信息 | [2.1.0 版本说明](docs/releases/2.1.0.md)及发行附件中的 manifest |
-| 后端回归 | 在 `智慧养老手表管理系统/backend` 中执行 `go test -count=1 ./...` 与 `go vet ./...` |
-| 前端构建 | 在 `智慧养老手表管理系统/frontend` 中执行 `npm ci` 与 `npm run build` |
+| 后端回归 | 在 `backend` 中执行 `go test -count=1 ./...` 与 `go vet ./...` |
+| 前端构建 | 在 `frontend` 中执行 `npm ci` 与 `npm run build` |
 | 手表协议 | 在 `SuiningWatch` 中执行 `npm ci` 与 `npm test`；这不等同于 DevEco 原生编译或真机验收 |
 
 如需运行完整数据库集成与竞态测试，请先配置专用测试库环境变量 `TEST_MYSQL_DSN` 与 `TEST_DATABASE_URL`，再执行 `go test -race -count=1 -timeout 600s ./...`（未配置时数据库集成用例会自动跳过）。
@@ -202,7 +202,7 @@ UI Quality 随每次 Preview CI 执行。`Core CI / required` 仅表示基础检
 | 下载、版本与升级 | [2.1.0 发布说明](docs/releases/2.1.0.md) · [更新日志](CHANGELOG.md) |
 | 数据库、迁移与备份 | [双库配置指南](docs/DUAL_DATABASES.md) · [备份与恢复手册](docs/runbooks/backup-restore.md) |
 | 设备接入与照护运维 | [照护服务部署](docs/CARE_SERVICE_DEPLOYMENT.md) · [支持与故障排查](docs/SUPPORT.md) |
-| 源码开发与模块说明 | [工程总览](智慧养老手表管理系统/README.md) · [前端说明](智慧养老手表管理系统/frontend/README.md) · [后端说明](智慧养老手表管理系统/backend/README.md) · [手表端说明](SuiningWatch/README.md) |
+| 源码开发与模块说明 | [工程总览](docs/WORKSPACE.md) · [前端说明](frontend/README.md) · [后端说明](backend/README.md) · [手表端说明](SuiningWatch/README.md) |
 | 架构设计与测试 | [实现架构](docs/ARCHITECTURE.md) · [界面规范](docs/UI_UX.md) · [发布门禁](docs/reliability/release-governance.md) · [测试指南](docs/TESTING.md) |
 
 提交 [Issue](https://github.com/WatchTestCs/smart-elderly-watch-management/issues) 反馈问题时，请附上版本号或 Git 提交哈希、操作系统环境、网络拓扑结构以及脱敏后的应用日志。
