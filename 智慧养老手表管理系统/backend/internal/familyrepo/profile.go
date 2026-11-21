@@ -6,6 +6,7 @@ import (
 	"errors"
 
 	"suining-care/internal/db"
+	"suining-care/internal/familyaddress"
 	"suining-care/internal/securestore"
 	"suining-care/internal/userphone"
 )
@@ -50,9 +51,13 @@ func UpdateProfileDetails(ctx context.Context, tx *sql.Tx, box *securestore.Box,
 			return false, ErrPhoneInUse
 		}
 	}
+	protected, err := familyaddress.PrepareUpdate(ctx, tx, box, familyID, address)
+	if err != nil {
+		return false, err
+	}
 	result, err := tx.ExecContext(ctx,
-		"UPDATE family SET family_name=?,family_sex=?,family_address=? WHERE family_id=?",
-		name, sex, address, familyID)
+		"UPDATE family SET family_name=?,family_sex=?,family_address=?,family_address_cipher=?,family_address_protected=? WHERE family_id=?",
+		name, sex, protected.Legacy, protected.Cipher, protected.Protected, familyID)
 	if err != nil {
 		return false, err
 	}

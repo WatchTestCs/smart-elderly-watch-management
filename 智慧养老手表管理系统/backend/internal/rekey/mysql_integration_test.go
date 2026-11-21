@@ -8,6 +8,9 @@ import (
 	"time"
 
 	"suining-care/internal/db/dbtest"
+	"suining-care/internal/familyaddress"
+	"suining-care/internal/guardiancontact"
+	"suining-care/internal/residentprofile"
 	"suining-care/internal/userphone"
 )
 
@@ -59,7 +62,41 @@ func TestRekeyMySQL(t *testing.T) {
 		t.Fatal(err)
 	}
 	exec("INSERT INTO family(family_id,family_name,family_phone_cipher,family_phone_lookup,family_phone_protected) VALUES(7,'synthetic',?,?,true)", familyPhone.Ciphertext, familyPhone.Lookup)
+	exec("INSERT INTO said(said_id,text_id,said_phone_cipher,said_phone_protected) VALUES(7,1,?,true)", sealed(t, old, "13800000027", "social-comment-phone:7"))
+	socialLookup := old.Index("social-like-phone", "13800000027")
+	socialBinding := old.Index("social-phone-key-binding", "v1")
+	exec("INSERT INTO social_phone_key_state(singleton,lookup_verifier) VALUES(1,?)", socialBinding)
+	exec("INSERT INTO nice_count(said_id,phone_lookup,phone_protected) VALUES(7,?,true)", socialLookup)
 	exec("INSERT INTO oldperson(old_id,name) VALUES(1,'synthetic')")
+	exec("INSERT INTO oldperson(old_id,name) VALUES(7,'synthetic profile')")
+	profileTx, err := database.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer profileTx.Rollback()
+	if err := residentprofile.Store(ctx, profileTx, old, 7, residentprofile.Strings("13800000037", "301", "synthetic condition", "", "rice", "", "synthetic medication")); err != nil {
+		t.Fatal(err)
+	}
+	if err := profileTx.Commit(); err != nil {
+		t.Fatal(err)
+	}
+	profileLookup := get("SELECT phone_lookup FROM oldperson WHERE old_id=7")
+	profileBinding := get("SELECT lookup_verifier FROM resident_profile_key_state WHERE singleton=1")
+	exec("INSERT INTO customer(customer_id,customer_name) VALUES(7,'synthetic guardian')")
+	contactTx, err := database.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer contactTx.Rollback()
+	if err := guardiancontact.Store(ctx, contactTx, old, 7, guardiancontact.Strings("010-12345678", "synthetic contact address")); err != nil {
+		t.Fatal(err)
+	}
+	if err := contactTx.Commit(); err != nil {
+		t.Fatal(err)
+	}
+	contactBinding := get("SELECT lookup_verifier FROM guardian_contact_key_state WHERE singleton=1")
+	address := sealed(t, old, "synthetic family address", familyaddress.Scope("7"))
+	exec("UPDATE family SET family_address_cipher=?,family_address_protected=true WHERE family_id=7", address)
 	exec("INSERT INTO device(device_id,device_no,secret,old_id,last_lng,last_lat) VALUES(1,'REKEY-LAB',?,1,?,?)", strings.Repeat("x", 48), s("location"), s("location"))
 	exec("INSERT INTO care_incident(id,old_id,device_id,resolution_note) VALUES(1,1,1,?)", s("care-text"))
 	for _, id := range []int{1, 2, 10, 100} {
@@ -102,7 +139,7 @@ func TestRekeyMySQL(t *testing.T) {
 
 	t.Run("scan is readonly and covers all actual columns", func(t *testing.T) {
 		report, err := Run(ctx, database, current, old, options)
-		if err != nil || len(report.Before) != 22 || report.Stage != "complete" || report.EncryptedColumnsClean || report.RetirementAuthorized {
+		if err != nil || len(report.Before) != 27 || report.Stage != "complete" || report.EncryptedColumnsClean || report.RetirementAuthorized {
 			t.Fatalf("unexpected report: %+v err=%v", report, err)
 		}
 		for _, column := range report.Before {
@@ -127,7 +164,7 @@ func TestRekeyMySQL(t *testing.T) {
 				t.Fatal("incomplete apply")
 			}
 		}
-		if rewrites != 31 {
+		if rewrites != 36 {
 			t.Fatalf("pagination lost rows: rewrites=%d", rewrites)
 		}
 		options.Apply = false
@@ -137,6 +174,26 @@ func TestRekeyMySQL(t *testing.T) {
 		}
 		if get("SELECT recipient_key FROM care_notification_outbox WHERE id=1") != lookup || current.Index("care-notification-recipient", "13800000001") != lookup {
 			t.Fatal("HMAC index changed")
+		}
+		if value, err := retired.Open(get("SELECT said_phone_cipher FROM said WHERE said_id=7"), "social-comment-phone:7"); err != nil || value != "13800000027" {
+			t.Fatal("comment phone still requires retired reader", err)
+		}
+		if get("SELECT phone_lookup FROM nice_count WHERE said_id=7") != socialLookup || get("SELECT lookup_verifier FROM social_phone_key_state WHERE singleton=1") != socialBinding {
+			t.Fatal("AEAD rotation changed social HMAC identity or binding")
+		}
+		if _, err := retired.Open(get("SELECT care_profile_cipher FROM oldperson WHERE old_id=7"), "resident-care-profile:7"); err != nil || get("SELECT phone_lookup FROM oldperson WHERE old_id=7") != profileLookup || get("SELECT lookup_verifier FROM resident_profile_key_state WHERE singleton=1") != profileBinding {
+			t.Fatal("resident profile rotation changed its scope, lookup or binding", err)
+		}
+		if _, err := retired.Open(get("SELECT contact_cipher FROM customer WHERE customer_id=7"), "guardian-contact:7"); err != nil || get("SELECT lookup_verifier FROM guardian_contact_key_state WHERE singleton=1") != contactBinding {
+			t.Fatal("guardian contact rotation changed its scope or binding", err)
+		}
+		if err := guardiancontact.VerifyKey(ctx, database, retired); err != nil {
+			t.Fatal("guardian reader marker still requires the retired key", err)
+		}
+		address := get("SELECT family_address_cipher FROM family WHERE family_id=7")
+		plain, err := (familyaddress.Record{Cipher: &address, Protected: true}).Open(retired, 7)
+		if err != nil || plain == nil || *plain != "synthetic family address" {
+			t.Fatal("family address could not be read with only the new key", err)
 		}
 		if get("SELECT CONCAT(health_epoch,':',old_id,':',device_no) FROM device WHERE device_id=1") != beforeBusiness || get("SELECT CONCAT(state,':',updated_at) FROM care_incident WHERE id=1") != beforeIncident {
 			t.Fatal("business state changed")
@@ -218,7 +275,7 @@ func TestRekeyMySQL(t *testing.T) {
 		limited := options
 		limited.MaxRowsPerColumn = 1
 		report, err := Run(ctx, database, current, old, limited)
-		if err == nil || report.Stage != "preflight" || len(report.Applied) != 0 || report.Before[len(report.Before)-1].Complete {
+		if err == nil || report.Stage != "preflight" || len(report.Applied) != 0 || column(report.Before, "care_incident_event.note").Complete {
 			t.Fatal("truncated inventory accepted")
 		}
 	})

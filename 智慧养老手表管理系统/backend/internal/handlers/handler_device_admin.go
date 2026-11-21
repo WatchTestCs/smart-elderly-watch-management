@@ -13,6 +13,7 @@ import (
 	"suining-care/internal/carepolicy"
 	dbstore "suining-care/internal/db"
 	"suining-care/internal/devicerepo"
+	"suining-care/internal/residentprofile"
 	"suining-care/internal/response"
 	"suining-care/internal/securecode"
 )
@@ -90,6 +91,9 @@ func (h *Handler) deviceList(w http.ResponseWriter, r *http.Request) {
 	}
 	defer tx.Rollback()
 	ctx := r.Context()
+	if internalError(w, residentprofile.VerifyKey(ctx, tx, h.Box)) {
+		return
+	}
 	items, total, onlineCount, err := devicerepo.ListAdminDevices(ctx, tx, pattern, state, p, ps)
 	if internalError(w, err) {
 		return
@@ -280,6 +284,17 @@ func (h *Handler) deviceDeleteBindCode(w http.ResponseWriter, r *http.Request) {
 
 // genDeviceNo 生成唯一设备号（W + 8 位，重试 30 次，兜底时间戳）。
 func (h *Handler) adminDeviceView(device devicerepo.AdminDevice, now time.Time) (map[string]any, error) {
+	if device.ResidentID == nil && (device.ResidentProfile.Protected || device.ResidentProfile.Cipher != nil || device.ResidentProfile.Lookup != nil) {
+		return nil, errors.New("protected device resident profile has no identity")
+	}
+	if device.ResidentID != nil {
+		device.ResidentProfile.Legacy.Phone = device.ResidentPhone
+		values, err := device.ResidentProfile.Open(h.Box, *device.ResidentID)
+		if err != nil {
+			return nil, err
+		}
+		device.ResidentPhone = values.Phone
+	}
 	name := "（未绑定）"
 	if device.ResidentName != nil {
 		name = *device.ResidentName

@@ -17,13 +17,24 @@ var (
 )
 
 // The rollback coverage gate applies to MySQL business migrations only.
-// PostgreSQL analytics projections use their own rebuildable schema.
+// Retired PostgreSQL projections are historical recovery assets only.
 func TestMigrationRollbackPairs(t *testing.T) {
 	names, err := MySQLMigrationNames()
 	if err != nil {
 		t.Fatal(err)
 	}
 	forward, covered := nameSet(names), make(map[string]bool)
+	numbered := make(map[int]string, len(names))
+	for _, name := range names {
+		n, ok := migrationNumber(path.Base(name))
+		if !ok {
+			t.Fatalf("MySQL migration %s has no numeric prefix", name)
+		}
+		if previous, exists := numbered[n]; exists {
+			t.Fatalf("duplicate MySQL migration number %04d: %s and %s", n, previous, name)
+		}
+		numbered[n] = name
+	}
 	dir := filepath.Join("..", "..", "migrations", "rollback")
 	entries, err := os.ReadDir(dir)
 	if err != nil {

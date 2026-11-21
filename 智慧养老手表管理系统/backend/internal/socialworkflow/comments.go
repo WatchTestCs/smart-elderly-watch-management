@@ -31,7 +31,7 @@ func CreateComment(ctx context.Context, store *db.Database, box *securestore.Box
 		}
 	}
 	comment.Avatar = avatar
-	created, err := socialrepo.InsertComment(ctx, tx, comment)
+	created, err := socialrepo.InsertComment(ctx, tx, box, comment)
 	if err != nil {
 		return false, err
 	}

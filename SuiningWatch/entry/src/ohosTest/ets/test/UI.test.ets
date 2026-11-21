@@ -156,6 +156,12 @@ export default function uiTests(): void {
         await pause(61000);
         await phase(token, 'restart-quiet');
         await tab(driver, 1);
+        // On a round display the records label can be below the viewport.
+        // Locate and reveal the real label before asserting its visibility;
+        // switching a tab alone neither waits for layout nor scrolls to it.
+        const label = await (await component(driver, 'watch-scroll')).scrollSearch(ON.text('条采样待上传'));
+        if (!label) { throw new Error('Records label unavailable after process restart'); }
+        expect(await label.getText()).assertEqual('条采样待上传');
         await driver.assertComponentExist(ON.text('条采样待上传'));
         await capture(driver, context, token, 'records');
         return;
