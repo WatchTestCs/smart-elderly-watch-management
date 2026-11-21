@@ -43,7 +43,7 @@ func TestGoBackendContainsNoJavaRuntimeArtifacts(t *testing.T) {
 func TestDeploymentOnlyRunsGoBackend(t *testing.T) {
 	// This path is checked only in the full repository checkout. A backend-only
 	// source package can still run its Go tests without the deployment folder.
-	path := filepath.Join("..", "..", "..", "..", "deploy", "Dockerfile")
+	path := filepath.Join("..", "..", "..", "deploy", "Dockerfile")
 	dockerfile, err := os.ReadFile(path)
 	if os.IsNotExist(err) {
 		t.Skip("deployment tree is not present in this source package")
