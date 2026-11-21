@@ -13,7 +13,7 @@ export function awaitAbortable<T>(promise: Promise<T>, signal: AbortSignal): Pro
     const cleanup = () => signal.removeEventListener('abort', onAbort)
     const onAbort = () => { cleanup(); reject(new Error('read aborted')) }
     signal.addEventListener('abort', onAbort, { once: true })
-    promise.then(value => { cleanup(); resolve(value) }, error => { cleanup(); reject(error) })
+    promise.then(value => { cleanup(); resolve(value) }, error => { cleanup(); reject(error as Error) })
   })
 }
 

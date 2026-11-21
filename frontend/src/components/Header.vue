@@ -20,7 +20,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import GeneralSettings from './GeneralSettings.vue'
+import type GeneralSettings from './GeneralSettings.vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { authState, endSession } from '../auth'

@@ -58,7 +58,7 @@ persistWorkspace()
 const alertsChannel = typeof window !== 'undefined' && typeof window.BroadcastChannel === 'function'
   ? new window.BroadcastChannel('suining-alerts-v1') : null
 if (alertsChannel) alertsChannel.onmessage = event => {
-  if (event.data?.type === 'alerts-changed') state.alertRevision++
+  if (event.data && typeof event.data === 'object' && (event.data as { type?: unknown }).type === 'alerts-changed') state.alertRevision++
 }
 
 const store = {

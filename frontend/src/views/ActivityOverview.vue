@@ -1,17 +1,17 @@
 <template>
   <div class="roles">
-    
+
     <div class="sys-research">
       <form class="row-search" role="search" @submit.prevent="searchStep()">
         <div class="search-field">
-          
+
           <label class="table-search-label" for="search-step">长者姓名</label>
           <el-input id="search-step"
             placeholder="按长者姓名查找"
             v-model="searchText"
             class="input-with-select">
             <template #append><el-button aria-label="查询长者姓名"
-              
+
               :icon="Search"
               native-type="submit"></el-button></template>
           </el-input>
@@ -24,7 +24,7 @@
     <el-table v-if="!mobileLayout" class="adaptive-record-table" :data="stepList"
     style="width: 100%" border>
     <template #empty><div  class="care-empty-state"><strong>暂无活动数据</strong><span>手表上报的步数与睡眠记录会显示在这里。</span></div></template>
-    
+
       <el-table-column type="index" width="100" align="center"></el-table-column>
       <el-table-column prop="name" label="姓名" width="180" align="center"></el-table-column>
       <el-table-column prop="sex" label="性别" width="100" align="center"></el-table-column>
@@ -39,7 +39,7 @@
 			<el-table-column prop="createTime" label="时间" width="180" align="center"></el-table-column>
       <el-table-column label="操作" align="center">
         <template #default="scope" >
-          
+
           <el-button size="small" plain type="success" :icon="Check" aria-label="查看睡眠详情" @click="showRoleDialog(scope.row)">
             查看睡眠详情
           </el-button>
@@ -51,7 +51,7 @@
             查看睡眠详情
           </el-button></template>
     </record-cards>
-    
+
     <div style="margin-top: 10px;text-align: center">
       <el-pagination layout="total, sizes, prev, pager, next, jumper"
         @size-change="handleSizeChange"
@@ -93,7 +93,7 @@ interface ActivityRecord {
   name: string
 }
 const {
-  records: stepList, isLoading, loadError, total,
+  records: stepList, total,
   pageSize, currentPage, load: searchStep,
   handleSizeChange, changePage
 } = usePagedRecords<ActivityRecord>({

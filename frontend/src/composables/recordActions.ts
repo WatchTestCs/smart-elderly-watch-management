@@ -10,7 +10,7 @@ export async function writeRecord(
   path: string,
   body: unknown,
   success: string,
-  refresh: () => unknown | Promise<unknown>,
+  refresh: () => void | Promise<unknown>,
   failure = '请求未完成，请重试'
 ): Promise<boolean> {
   const key = path + JSON.stringify(body)
@@ -40,7 +40,7 @@ export async function deleteRecord(
   path: string,
   body: unknown,
   prompt: string,
-  refresh: () => unknown | Promise<unknown>
+  refresh: () => void | Promise<unknown>
 ): Promise<boolean> {
   try {
     await ElMessageBox.confirm(prompt, '提示', {

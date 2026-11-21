@@ -96,9 +96,9 @@ export interface DeviceState {
   currentDevice: DeviceRecord | null
   bindCodeList: DeviceBindCode[]
   newBindCode: NewBindCodeResponse | null
-  bindOldId: DeviceId | ''
+  bindOldId: DeviceId
   bindExpireDays: string
-  createForm: { alias: string; model: string; oldId: DeviceId | '' }
+  createForm: { alias: string; model: string; oldId: DeviceId }
   alertCounts: Record<string, DeviceAlertCounts>
   alertTotals: { personTotal: number; rateTotal: number; preTotal: number; total: number }
   alertDialog: DeviceAlert

@@ -149,7 +149,7 @@ const emptyResident = () => ({
 const createDialogVisible = ref(false)
 const editDialogVisible = ref(false)
 const createForm = reactive(emptyResident())
-const editForm = ref({ ...emptyResident(), oldId: '' as string | number, customerName: '', deviceId: '' })
+const editForm = ref<ReturnType<typeof emptyResident> & { oldId: string | number; customerName: string; deviceId: string }>({ ...emptyResident(), oldId: '', customerName: '', deviceId: '' })
 const createFormRef = ref<InstanceType<typeof ResidentForm> | null>(null)
 const editFormRef = ref<InstanceType<typeof ResidentForm> | null>(null)
 const guardianOptions = ref<GuardianOption[]>([])

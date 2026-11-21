@@ -19,7 +19,7 @@
         <div class="created-line">设备号：<b>{{ createdDevice.deviceNo }}</b>
           <el-button size="small" plain type="primary" @click="emit('copy', createdDevice.deviceNo)">复制</el-button>
         </div>
-        <div class="created-line">密　钥：<b class="secret">{{ createdDevice.secret }}</b>
+        <div class="created-line">密 钥：<b class="secret">{{ createdDevice.secret }}</b>
           <el-button size="small" plain type="primary" @click="emit('copy', createdDevice.secret)">复制</el-button>
         </div>
         <HarmonyWatchSetup :device-no="createdDevice.deviceNo" />

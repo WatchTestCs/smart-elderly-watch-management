@@ -4,14 +4,14 @@
     <div class="sys-research">
       <form class="row-search" role="search" @submit.prevent="loadVitals()">
         <div class="search-field">
-          
+
           <label class="table-search-label" for="search-vitals">长者姓名</label>
           <el-input id="search-vitals"
             placeholder="按长者姓名查找"
             v-model="searchText"
             class="input-with-select">
             <template #append><el-button aria-label="查询长者姓名"
-              
+
               :icon="Search"
               native-type="submit"></el-button></template>
           </el-input>
@@ -33,7 +33,7 @@
 
       <el-table-column type="index" width="150" align="center"></el-table-column>
       <el-table-column prop="name" label="姓名" width="180" align="center"></el-table-column>
-			
+
       <el-table-column prop="sex" label="性别" width="150" align="center"></el-table-column>
 			<el-table-column prop="preState" label="血压状态" width="150" align="center">
 				<template #default="scope" >
@@ -126,7 +126,7 @@ const {
   primaryChartElement, secondaryChartElement, showRecordDetails, resizeCharts, disposeCharts
 } = useRecordCharts()
 const {
-  records: vitalRecords, isLoading, loadError, total,
+  records: vitalRecords, total,
   pageSize, currentPage, load: loadVitals,
   handleSizeChange, changePage
 } = usePagedRecords<VitalRow, { name: string; timeFirst: string; timeLast: string }>({
@@ -231,7 +231,7 @@ async function resolveRow(row: VitalRow) {
       api.post<Envelope>('api/v1/vitals/alerts/resolve', { recordId: row.recordId, kind })
         .then(({ data }) => accepted(data))
     ))
-    const failures = results.flatMap(result => result.status === 'rejected' ? [result.reason] : [])
+    const failures = results.flatMap(result => result.status === 'rejected' ? [result.reason as unknown] : [])
     if (failures.some(error => ['timeout', 'network'].includes(transportOutcome(error)))) {
       ElMessage({ type: 'error', message: UNCONFIRMED_MESSAGE })
     } else if (failures.length) {

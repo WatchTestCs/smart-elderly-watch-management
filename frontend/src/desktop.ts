@@ -99,9 +99,10 @@ export function installDesktopKeys(): () => void {
     } catch { /* Fullscreen errors must not interrupt active dialogs. */ }
   }
 
-  window.addEventListener('keydown', onKeyDown)
+  const onKeyDownListener = (event: KeyboardEvent) => { void onKeyDown(event) }
+  window.addEventListener('keydown', onKeyDownListener)
   return () => {
-    window.removeEventListener('keydown', onKeyDown)
+    window.removeEventListener('keydown', onKeyDownListener)
     window.removeEventListener('click', onExternalClick, true)
     window.removeEventListener('auxclick', onExternalClick, true)
   }

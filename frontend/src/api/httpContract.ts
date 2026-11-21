@@ -78,7 +78,8 @@ export function apiErrorMessage(error: unknown, fallback = '请求未完成'): s
 export function assertApiResponse(response: AxiosResponse): AxiosResponse {
   if (!isApplicationAPI(response.config.url) || ['blob', 'arraybuffer'].includes(response.config.responseType || '')) return response
   if (isSuccessEnvelope(response.data)) return response
-  const message = response.data?.returnCode === '0000'
+  const body: unknown = response.data
+  const message = body !== null && typeof body === 'object' && 'returnCode' in body && body.returnCode === '0000'
     ? apiErrorMessage({ response }, '请求被拒绝')
     : '服务响应格式错误'
   throw new AxiosError(message, 'ERR_BAD_RESPONSE', response.config, response.request, response)

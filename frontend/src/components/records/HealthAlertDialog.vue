@@ -10,7 +10,7 @@
         <table class="alert-table">
           <tbody>
             <tr><th>老人</th><td>{{ dialog.oldPersonName }}</td></tr>
-            <tr><th>本次测量</th><td>心率 {{ dialog.hr }} 次/分　血压 {{ dialog.bp }} mmHg</td></tr>
+            <tr><th>本次测量</th><td>心率 {{ dialog.hr }} 次/分 血压 {{ dialog.bp }} mmHg</td></tr>
             <tr><th>发生时间</th><td>{{ dialog.occurTime }}</td></tr>
             <tr><th>判断依据</th><td>{{ dialog.detail }}</td></tr>
             <tr><th>怎么处理</th><td>{{ dialog.advice }}</td></tr>

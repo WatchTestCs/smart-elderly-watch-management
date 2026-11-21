@@ -134,10 +134,11 @@ export function useDevices() {
         loadAlertCounts()
       ])
     } finally {
-      if (disposed) return
-      consecutivePollFailures = state.deviceLoadError || state.alertLoadError
-        ? Math.min(consecutivePollFailures + 1, 3) : 0
-      state.deviceLoading = false
+      if (!disposed) {
+        consecutivePollFailures = state.deviceLoadError || state.alertLoadError
+          ? Math.min(consecutivePollFailures + 1, 3) : 0
+        state.deviceLoading = false
+      }
     }
   }
   function scheduleFilter() {
@@ -301,7 +302,7 @@ export function useDevices() {
       if (!disposed) ElMessage({ type: 'error', message: apiErrorMessage(error, '登记失败') })
     } finally { state.creating = false }
   }
-  async function destructiveOperation(row: DeviceRecord, prompt: string, path: string, success: string, onSuccess?: (data: Envelope & DeviceMutationResponse) => unknown | Promise<unknown>) {
+  async function destructiveOperation(row: DeviceRecord, prompt: string, path: string, success: string, onSuccess?: (data: Envelope & DeviceMutationResponse) => void | Promise<unknown>) {
     try {
       await ElMessageBox.confirm(prompt, '提示', {
         confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning'
@@ -347,10 +348,11 @@ export function useDevices() {
   watch(() => state.deviceQuery, scheduleFilter)
   watch(() => state.deviceState, scheduleFilter)
   watch(() => state.autoRefresh, enabled => enabled ? startTimer() : stopTimer())
+  const onVisibilityChange = () => { void handleVisibilityChange() }
   onMounted(() => {
     void loadDevices().finally(startTimer)
     void loadOldPeople()
-    document.addEventListener('visibilitychange', handleVisibilityChange)
+    document.addEventListener('visibilitychange', onVisibilityChange)
     window.addEventListener('online', handleOnline)
   })
   onBeforeUnmount(() => {
@@ -359,7 +361,7 @@ export function useDevices() {
     alertCountsRequest++
     disposeWorkbench()
     clearTimeout(filterTimer)
-    document.removeEventListener('visibilitychange', handleVisibilityChange)
+    document.removeEventListener('visibilitychange', onVisibilityChange)
     window.removeEventListener('online', handleOnline)
     stopTimer()
   })

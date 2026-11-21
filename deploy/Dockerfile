@@ -3,7 +3,7 @@ WORKDIR /ui
 COPY ["frontend/package.json", "frontend/package-lock.json", "./"]
 RUN npm ci --no-audit --no-fund
 COPY ["frontend/", "./"]
-RUN npm run test && npm run typecheck && npm run build
+RUN npm run lint && npm run test && npm run typecheck && npm run build
 
 FROM golang:1.27.4-bookworm AS backend
 WORKDIR /src

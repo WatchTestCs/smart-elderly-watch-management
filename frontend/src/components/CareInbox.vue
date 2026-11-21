@@ -112,7 +112,7 @@ const reads = createLatestRead(
   ({data}, query) => {
     if (!Array.isArray(data.items) || !Number.isInteger(data.total) || data.total < 0 || !['supervisor','caregiver','auditor'].includes(data.duty) || !Number.isInteger(data.actorId)) throw new Error('invalid care response')
     const lastPage = Math.max(1, Math.ceil(data.total / pageSize))
-    if (query.page > lastPage) { page.value = lastPage; load(); return }
+    if (query.page > lastPage) { page.value = lastPage; void load(); return }
     tasks.value = data.items
     total.value = data.total
     duty.value = data.duty
@@ -129,8 +129,8 @@ const reads = createLatestRead(
 function load () {
   return reads.run({page:page.value,pageSize,state:scope.value})
 }
-function changePage (value: number) { page.value = value; load() }
-function changeScope () { page.value = 1; load() }
+function changePage (value: number) { page.value = value; void load() }
+function changeScope () { page.value = 1; void load() }
 const historyReads = createLatestRead(
   (query: { id: string; page: number; pageSize: number }, signal: AbortSignal) => requestClient.post<{ events: CareEvent[]; total: number }>('api/v1/care/events', query, { signal }),
   ({data}) => {

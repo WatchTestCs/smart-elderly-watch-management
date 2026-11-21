@@ -126,7 +126,7 @@ const profileRules = {
 }
 const validatePass: NonNullable<FormItemRule['validator']> = (_rule, value, callback) => {
   if (!value) return callback(new Error('请输入密码'))
-  if (passwordEditForm.familyPassword2) passwordEditFormRef.value?.validateField('familyPassword2')
+  if (passwordEditForm.familyPassword2) void passwordEditFormRef.value?.validateField('familyPassword2').catch(() => {})
   callback()
 }
 const validatePass2: NonNullable<FormItemRule['validator']> = (_rule, value, callback) => {

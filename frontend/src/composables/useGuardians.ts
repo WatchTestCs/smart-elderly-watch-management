@@ -13,7 +13,7 @@ export interface Guardian {
   customerAddress: string
 }
 export const emptyGuardian = (): Guardian => ({ customerName: '', customerAge: '', customerSex: '', customerPhone: '', customerAddress: '' })
-export const validPhone = (value: unknown) => /^1\d{10}$/.test(String(value ?? ''))
+export const validPhone = (value: unknown) => /^1\d{10}$/.test(typeof value === 'string' || typeof value === 'number' ? String(value) : '')
 export const validAge = (value: unknown) => {
   if (typeof value !== 'number' && typeof value !== 'string') return false
   if (typeof value === 'string' && !/^\d+$/.test(value.trim())) return false

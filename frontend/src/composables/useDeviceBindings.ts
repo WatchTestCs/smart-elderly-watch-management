@@ -29,7 +29,7 @@ export function useDeviceBindings(state: DeviceState, post: DevicePost) {
     state.bindCodeDialogVisible = true
     if (!wasVisible || !residentChanged) void loadBindCodes(oldId)
   }
-  async function loadBindCodes(oldId: DeviceId | '') {
+  async function loadBindCodes(oldId: DeviceId) {
     const revision = ++bindCodeRequest
     if (disposed) return
     if (!oldId) {

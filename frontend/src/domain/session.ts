@@ -2,7 +2,7 @@
 export interface SessionAccount {
   role: 'ADMIN' | 'FAMILY'
   id?: number | string
-  duty?: 'supervisor' | 'caregiver' | 'auditor' | string
+  duty?: string
   displayName?: string
   oldId?: number | string
   phone?: string

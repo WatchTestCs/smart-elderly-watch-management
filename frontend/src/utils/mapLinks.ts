@@ -10,7 +10,7 @@ export function mapLocationUrl(provider: Exclude<MapProvider, 'offline'>, longit
     const [lng, lat] = coordinateSystem === 'gcj02'
       ? gcj02ToWgs84(longitude, latitude) : [longitude, latitude]
     const params = new URLSearchParams({ api: '1', query: `${lat},${lng}` })
-    return 'https://www.google.com/maps/search/?' + params
+    return 'https://www.google.com/maps/search/?' + params.toString()
   }
   const [lng, lat] = mapDisplayPosition(longitude, latitude, coordinateSystem)
   if (provider === 'amap') {
@@ -18,11 +18,11 @@ export function mapLocationUrl(provider: Exclude<MapProvider, 'offline'>, longit
       lng: String(lng), lat: String(lat), name: '设备最近上报位置',
       zoom: '16', maptype: style, platform: 'pc', src: 'suining'
     })
-    return 'https://www.amap.com/ssr/embed/place?' + params
+    return 'https://www.amap.com/ssr/embed/place?' + params.toString()
   }
   const params = new URLSearchParams({
     marker: `coord:${lat},${lng};title:设备最近上报位置`,
     referer: 'suining'
   })
-  return 'https://apis.map.qq.com/uri/v1/marker?' + params
+  return 'https://apis.map.qq.com/uri/v1/marker?' + params.toString()
 }

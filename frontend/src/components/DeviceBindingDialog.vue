@@ -58,7 +58,7 @@ const props = defineProps<{
   visible: boolean
   currentDevice: DeviceRecord | null
   oldPeople: ResidentRecord[]
-  bindOldId: DeviceId | ''
+  bindOldId: DeviceId
   bindExpireDays: string
   newBindCode: NewBindCodeResponse | null
   bindCodeList: DeviceBindCode[]
@@ -68,7 +68,7 @@ const emit = defineEmits<{
   create: []
   delete: [code: DeviceBindCode]
   copy: [text: string]
-  'update:bindOldId': [value: DeviceId | '']
+  'update:bindOldId': [value: DeviceId]
   'update:bindExpireDays': [value: string]
 }>()
 const selectedResident = computed({

@@ -8,6 +8,14 @@ import { isRestrictedAdmin } from './domain/permissions'
 import type { SessionAccount } from './domain/session'
 export type { SessionAccount } from './domain/session'
 
+interface SessionWire {
+  csrfToken: string
+  csrfHeader?: string
+  setupRequired?: boolean
+  authenticated?: boolean
+  account?: SessionAccount | null
+}
+
 export interface SessionState {
   account: SessionAccount | null
   csrfToken: string
@@ -50,7 +58,7 @@ export function loadSession (refresh = false): Promise<SessionAccount | null> {
   if (!refresh && loaded) return Promise.resolve(authState.account)
   if (pending) return pending
   const generation = sessionGeneration
-  const request = axios.get('/api/v1/auth/session', { skipSession: true, timeout: 5000 }).then(response => {
+  const request = axios.get<SessionWire>('/api/v1/auth/session', { skipSession: true, timeout: 5000 }).then(response => {
     if (generation !== sessionGeneration) return authState.account
     const data = response.data
     if (!data || !data.csrfToken) throw new Error('Session response missing')
@@ -160,7 +168,7 @@ export function monitorDatabase (router: { currentRoute: { value: { path: string
         else if (account && route === '/sign-in') await router.replace?.(account.role === 'FAMILY' ? '/family-portal/overview' : '/operations/overview')
         else if (!account && !['/sign-in', '/join-family', '/setup'].includes(route)) await router.replace?.('/sign-in')
       }
-    } catch (_) {
+    } catch {
       ready = false
       if (active) { authState.databaseReady = false; loaded = false }
     } finally {

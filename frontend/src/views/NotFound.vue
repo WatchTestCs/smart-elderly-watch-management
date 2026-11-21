@@ -14,7 +14,7 @@ import { authState } from '../auth'
 const router = useRouter()
 function goHome () {
   const account = authState.account as { role?: string } | null
-  router.replace(!account ? '/sign-in' : account.role === 'FAMILY' ? '/family-portal/overview' : '/operations/overview')
+  void router.replace(!account ? '/sign-in' : account.role === 'FAMILY' ? '/family-portal/overview' : '/operations/overview')
 }
 </script>
 

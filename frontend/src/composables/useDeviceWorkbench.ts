@@ -39,7 +39,7 @@ export function useDeviceWorkbench(
       if (counts.preCount > 0) pending.push({ device, kind: 'pre' })
     }
 
-    const results: (DeviceRecord | null)[] = Array(pending.length).fill(null)
+    const results: (DeviceRecord | null)[] = Array.from({ length: pending.length }, () => null)
     let nextIndex = 0
     let failed = false
     let firstError: unknown = null

@@ -74,7 +74,7 @@ const rules = {
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
     { validator: ((_rule, value, done) => done(
-      new TextEncoder().encode(value || '').length <= 72
+      new TextEncoder().encode(typeof value === 'string' ? value : '').length <= 72
         ? undefined : new Error('密码不能超过 72 个字节'))) satisfies FormItemRule['validator'], trigger: 'blur' }
   ]
 }
@@ -103,12 +103,15 @@ async function submitForm() {
       errorMessage.value = data?.message || '手机号或密码不正确，请重试'
     }
   } catch (error) {
-    const code = axios.isAxiosError(error) ? error.response?.data?.code : undefined
+    const raw: unknown = axios.isAxiosError(error) ? error.response?.data : undefined
+    const detail = raw !== null && typeof raw === 'object' ? raw as { code?: unknown; message?: unknown } : null
+    const code = typeof detail?.code === 'string' ? detail.code : ''
+    const serverMessage = typeof detail?.message === 'string' ? detail.message : ''
     if (code === 'MFA_REQUIRED') {
       mfaRequired.value = true
-      errorMessage.value = axios.isAxiosError(error) ? error.response?.data?.message || '需要进行二次验证' : '需要进行二次验证'
+      errorMessage.value = serverMessage || '需要进行二次验证'
     } else if (['INVALID_CREDENTIALS', 'INVALID_LOGIN_INPUT', 'ACCOUNT_UNLINKED'].includes(code)) {
-      errorMessage.value = axios.isAxiosError(error) ? error.response?.data?.message || '登录失败，请重试' : '登录失败，请重试'
+      errorMessage.value = serverMessage || '登录失败，请重试'
     } else {
       errorMessage.value = apiErrorMessage(error, '暂时无法登录，请稍后重试')
     }

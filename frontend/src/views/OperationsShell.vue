@@ -74,7 +74,7 @@ function tabRemove(target: string | number) {
 }
 function addCurrentTab(nextRoute: ReturnType<typeof useRoute>) {
   if (!nextRoute.path || nextRoute.path === '/operations') return
-  store.addTab({ route: nextRoute.path, name: String(nextRoute.meta.title || '运营总览') })
+  store.addTab({ route: nextRoute.path, name: (typeof nextRoute.meta.title === 'string' && nextRoute.meta.title ? nextRoute.meta.title : '运营总览') })
   store.activate(nextRoute.path)
 }
 onMounted(() => addCurrentTab(route))
