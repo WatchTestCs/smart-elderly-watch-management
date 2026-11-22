@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/google/uuid"
@@ -55,6 +56,59 @@ func journalExec(t *testing.T, conn *sql.Conn, query string, args ...any) {
 	t.Helper()
 	if _, err := conn.ExecContext(context.Background(), query, args...); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestMySQLMigrationRejectsUnknownHistoryBeforeDDL(t *testing.T) {
+	for _, tc := range []struct{ table, name string }{
+		{"schema_migrations", "mysql/0033_social_phone_protection.sql"},
+		{"schema_migration_steps", "mysql/0034_resident_care_profile_protection.sql"},
+		{"schema_migration_steps", "mysql/0035_guardian_contact_protection.sql"},
+		{"schema_migrations", "mysql/9999_future.sql"},
+	} {
+		t.Run(tc.table+"/"+tc.name, func(t *testing.T) {
+			pool, conn := journalDatabase(t)
+			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+			defer cancel()
+			// An old ledger lacks schema_checksum. Rejection must precede even
+			// adding that column or creating the missing step journal.
+			journalExec(t, conn, "CREATE TABLE schema_migrations(name VARCHAR(191) PRIMARY KEY,checksum CHAR(64) NOT NULL) ENGINE=InnoDB")
+			journalExec(t, conn, "CREATE TABLE records(id INT PRIMARY KEY,n INT) ENGINE=InnoDB")
+			journalExec(t, conn, "INSERT INTO records VALUES(1,47)")
+			if tc.table == "schema_migrations" {
+				journalExec(t, conn, "INSERT INTO schema_migrations VALUES(?,?)", tc.name, strings.Repeat("1", 64))
+			} else {
+				if err := ensureMigrationStepJournal(ctx, conn); err != nil {
+					t.Fatal(err)
+				}
+				journalExec(t, conn, "INSERT INTO schema_migration_steps VALUES(?,?,?,?)", tc.name, 0, strings.Repeat("2", 64), "")
+			}
+			before, err := schemaDigest(ctx, conn)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := MigrateMySQL(ctx, pool); err == nil || !strings.Contains(err.Error(), "unknown MySQL migration in "+tc.table+": "+tc.name) {
+				t.Fatalf("unknown history not rejected before migration: %v", err)
+			}
+			after, err := schemaDigest(ctx, conn)
+			if err != nil || before != after {
+				t.Fatalf("business schema changed on rejected history: %v", err)
+			}
+			var value, fingerprintColumns, journals int
+			if err := conn.QueryRowContext(ctx, "SELECT n FROM records WHERE id=1").Scan(&value); err != nil || value != 47 {
+				t.Fatalf("business data changed: %d %v", value, err)
+			}
+			if err := conn.QueryRowContext(ctx, "SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='schema_migrations' AND COLUMN_NAME='schema_checksum'").Scan(&fingerprintColumns); err != nil || fingerprintColumns != 0 {
+				t.Fatalf("ledger DDL executed before rejection: %d %v", fingerprintColumns, err)
+			}
+			if err := conn.QueryRowContext(ctx, "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='schema_migration_steps'").Scan(&journals); err != nil || (journals == 1) != (tc.table == "schema_migration_steps") {
+				t.Fatalf("step journal changed: %d %v", journals, err)
+			}
+			var count int
+			if err := conn.QueryRowContext(ctx, "SELECT COUNT(*) FROM "+tc.table+" WHERE name=?", tc.name).Scan(&count); err != nil || count != 1 {
+				t.Fatalf("unknown history was rewritten: %d %v", count, err)
+			}
+		})
 	}
 }
 

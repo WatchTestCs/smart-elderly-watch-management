@@ -85,6 +85,47 @@ func migrationStatementDigest(statement string) string {
 	return hex.EncodeToString(sum[:])
 }
 
+// Known ledger holes may be deliberate rollbacks. Unknown completed migrations
+// or statement intents instead require a matching release/backup and inspection.
+func validateMigrationHistoryNames(ctx context.Context, conn *sql.Conn, names []string) error {
+	known := make(map[string]bool, len(names))
+	for _, name := range names {
+		known[name] = true
+	}
+	for _, table := range []string{"schema_migrations", "schema_migration_steps"} {
+		var exists int
+		if err := conn.QueryRowContext(ctx, "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=?", table).Scan(&exists); err != nil {
+			return err
+		}
+		if exists == 0 {
+			continue
+		}
+		// table is selected exclusively from the fixed internal list above.
+		rows, err := conn.QueryContext(ctx, "SELECT DISTINCT name FROM "+table+" ORDER BY name")
+		if err != nil {
+			return err
+		}
+		for rows.Next() {
+			var name string
+			if err = rows.Scan(&name); err != nil {
+				break
+			}
+			if !known[name] {
+				err = fmt.Errorf("unknown MySQL migration in %s: %s; use a matching release or restore a matching backup before migration; manual inspection required", table, name)
+				break
+			}
+		}
+		if err == nil {
+			err = rows.Err()
+		}
+		rows.Close()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // Validate a completed prefix before extending it or accepting a no-op run.
 // Partial migration recovery uses its statement checkpoints instead. A ledger
 // with holes represents explicit rollback and must be reapplied before a new

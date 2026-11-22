@@ -63,6 +63,15 @@ func MigrateMySQL(ctx context.Context, database *Database) (result error) {
 		}
 		result = errors.Join(result, fmt.Errorf("release MySQL migration lock: %w", err))
 	}()
+	names, err := MySQLMigrationNames()
+	if err != nil {
+		return err
+	}
+	// Reject foreign or newer histories before even changing ledger metadata.
+	// MySQL DDL cannot be rolled back after discovering an incompatible name.
+	if err := validateMigrationHistoryNames(ctx, conn, names); err != nil {
+		return err
+	}
 	var known, tables int
 	if err = conn.QueryRowContext(ctx, "SELECT count(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='schema_migrations'").Scan(&known); err != nil {
 		return err
@@ -99,10 +108,6 @@ func MigrateMySQL(ctx context.Context, database *Database) (result error) {
 	}
 	if err = ensureMigrationStepJournal(ctx, conn); err != nil {
 		return fmt.Errorf("initialize migration step journal: %w", err)
-	}
-	names, err := MySQLMigrationNames()
-	if err != nil {
-		return err
 	}
 	if err := validateCompletedMigrationSchema(ctx, conn, names); err != nil {
 		return err

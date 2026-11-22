@@ -1,10 +1,15 @@
 # 已加密 MySQL 字段的分批轮换
 
+最新运行架构为单 MySQL。下文的 PG/outbox 消费路径仅指历史部署，当前没有在线 PG 消费者。
+`image_payload.payload` 是 MySQL 内的加密图片，尚不属于这 27 个文本/JSON 列目标；
+图片仍需新不可变 key、目录/引用事务和旧 payload 回收的专门轮换验证。
+历史 PG/S3/本地图片及备份恢复验收继续保留，不能据此授权删除旧 key。
+
 `backend/cmd/rekey-data` 只处理现有 AEAD 字段，不会把姓名、电话或健康 JSON 等历史明文字段自动变成密文，也不改变 HMAC 索引。它是 P0-07 的部分实现，不能作为全库保护或旧密钥退役的证明。
 
 ## 覆盖和前置条件
 
-固定清单位于 `internal/rekey/targets.go`，覆盖 24 个列目标：照护备注与事件、告警复核理由、两类通知收件人、设备最近坐标、位置历史、两张告警表的坐标、已存在的位置元数据、数据库会话、按角色/账号认证的 TOTP、规则证据的 JSON 密文包装、遥测 inbox、MySQL `analytics_outbox.payload` 中设备位置事件的坐标，以及已加密的管理员、家属主账号和评论作者手机号、长者照护档案封装。清单包含复合主键与字符串主键，不接受命令行拼接表名或字段名。
+固定清单位于 `internal/rekey/targets.go`，覆盖 27 个列目标：照护备注与事件、告警复核理由、两类通知收件人、设备最近坐标、位置历史、两张告警表的坐标、已存在的位置元数据、数据库会话、按角色/账号认证的 TOTP、规则证据的 JSON 密文包装、遥测 inbox、MySQL `analytics_outbox.payload` 中设备位置事件的坐标，以及已加密的管理员、家属主账号和评论作者手机号、长者照护档案封装、监护人联系方式及 reader marker、家属地址。清单包含复合主键与字符串主键，不接受命令行拼接表名或字段名。
 
 管理员 `users.user_phone_cipher` 使用与生产 `userphone.Protect/Reveal` 相同的 `account-phone:admin:<user_id>` scope，不能把两个账号的密文互换。轮换只修改密文，不改变 user_phone_lookup、lookup_verifier、user_phone_protected、登录密码或账号状态；历史未迁移手机号和已移除的 NULL 手机号保持原值。缺少此目标的旧版本轮换工具可能遗漏仍依赖旧密钥的管理员账号，必须使用本版本重新扫描；不能根据旧扫描结果删除 reader。历史明文回填仍使用独立 protect-user-phones 工具及停写/备份流程，本工具不代替该迁移。
 
@@ -14,11 +19,15 @@
 
 长者 `oldperson.care_profile_cipher` 为第 24 项，使用 `resident-care-profile:<old_id>`。只重封装现有七字段档案，保持 phone_lookup、resident lookupKey 指纹、归属及设备关系不变；未回填的原始列不被自动改写。历史回填另用 [protect-resident-profiles](resident-care-profile-protection.md)。`TestResidentProfileRotationMySQL` 通过实际档案、设备、家属关联和编辑 API 验证仅新 reader 的行为；旧版 23 项扫描不能排除这项残留。
 
+监护人 `customer.contact_cipher` 为第 25 项，使用 `guardian-contact:<customer_id>`；加密 reader marker `guardian_contact_key_state.key_verifier` 为第 26 项，使用固定 `guardian-contact-key-state` scope。两者都须重封装，lookupKey 指纹与监护人/长者关系保持。只处理联系人而遗漏 marker 的旧工具会保留 A reader 依赖；历史明文回填另用 [protect-guardian-contacts](guardian-contact-protection.md)。实际仅 B reader 的列表/编辑和 key-state 读取纳入对应回归，仍不授权全资产退役。
+
 位置触发器会把当时的坐标密文复制进分析事件；只更新位置表不能消除历史 A 密文。第 20 项仅匹配 `entity=device_location`，在保留事件 ID、归属、时间、source、其他属性及顺序的同时，按原 `location` scope 重封装 `lng`/`lat`。任一个坐标认证失败便不更新整条载荷；删除事件的 NULL 载荷保持原样。其他实体的载荷不被当作坐标处理，也不自动加密原有健康 JSON。
 
 先备份数据库与旧密钥，并验证备份可恢复。所有读实例和 worker 必须先能读 A+B，再把各写实例切到 active B；旧密钥 A 与原有 lookupKey C 继续保留。命令比较当前配置和 `--previous-key-file` 的 lookupKey，发生变化立即拒绝。单 key 旧配置的 lookupKey 实际就是旧 key；该部署仍须沿用它，独立 lookupKey 的索引迁移另行实施。
 
 当前 `DATA_ENCRYPTION_KEY_FILE` 指向私有的新 keyring 文件，`MYSQL_DSN_FILE` 指向明确选择的数据库。命令不会生成密钥，不会运行 schema migration，不会切换正在运行的服务配置，也不会删除 reader。不要把配置内容写入命令行或验收制品。
+
+家属地址 family.family_address_cipher 为第 27 项，按 family-address:<family_id> 认证。轮换不改手机号索引、家属 ID 或长者关联。历史明文使用 [protect-family-addresses](family-address-protection.md) 单独回填。
 
 ## 执行与恢复
 
@@ -40,7 +49,7 @@ rekey-data --previous-key-file <私有旧配置文件> > after.json
 
 ## 验证边界
 
-`TestRekeyMySQL` 在全新迁移的真实 InnoDB 库中覆盖全部 24 个列目标：只读预检、单行分页/数字顺序/字符串与复合主键、32 份直接字段历史密文及分析事件内的坐标 A→B、只保留 B 后读取、HMAC 与业务状态不变、规则 JSON 保留、损坏密文阻止前列写入、legacy 恢复重跑、行数耗尽、明文残留、超大字段、取消、并发更新和删除。断言历史位置事件不再含 A，并保留无关实体载荷；这仍不授权退役。即使列使用忽略大小写及尾空格的 collation，CAS 也不得覆盖并发值。
+`TestRekeyMySQL` 在全新迁移的真实 InnoDB 库中覆盖全部 27 个列目标：只读预检、单行分页/数字顺序/字符串与复合主键、直接字段历史密文及分析事件内的坐标 A→B、只保留 B 后读取、HMAC 与业务状态不变、规则 JSON 保留、损坏密文阻止前列写入、legacy 恢复重跑、行数耗尽、明文残留、超大字段、取消、并发更新和删除。断言历史位置事件不再含 A，并保留无关实体载荷；这仍不授权退役。即使列使用忽略大小写及尾空格的 collation，CAS 也不得覆盖并发值。
 
 `TestAdministratorPhoneRekeyMySQL` 使用生产手机号保护与认证代码验证旧密钥写入→新密钥重封装→仅保留新 reader 后两账号仍可登录，精确 HMAC 索引和 key binding 不变；另验证无版本单 key 旧格式在保留原 lookupKey 后可完成同一登录迁移。账号间密文互换阻止所有列的首次写入，CAS 保留并发手机号替换与索引。两个真实 MySQL 测试均列入必需结果审计，缺失、失败或意外 skip 不能通过门禁。
 

@@ -82,7 +82,7 @@ func (h *Handler) listGuardians(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer tx.Rollback()
-	items, total, err := guardianrepo.List(r.Context(), tx, name, page, pageSize)
+	items, total, err := guardianrepo.List(r.Context(), tx, h.Box, name, page, pageSize)
 	if internalError(w, err) || internalError(w, tx.Commit()) {
 		return
 	}
@@ -106,7 +106,7 @@ func (h *Handler) createGuardian(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer tx.Rollback()
-	affected, err := guardianrepo.Create(r.Context(), tx, guardianrepo.Fields{
+	affected, err := guardianrepo.Create(r.Context(), tx, h.Box, guardianrepo.Fields{
 		Name: name, Age: age, Sex: sex, Phone: phone, Address: addr,
 	})
 	if internalError(w, err) || internalError(w, tx.Commit()) {
@@ -135,10 +135,18 @@ func (h *Handler) updateGuardian(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer tx.Rollback()
-	affected, err := guardianrepo.Update(r.Context(), tx, id, guardianrepo.Fields{
+	affected, err := guardianrepo.Update(r.Context(), tx, h.Box, id, guardianrepo.Fields{
 		Name: name, Age: age, Sex: sex, Phone: phone, Address: addr,
 	})
-	if internalError(w, err) || internalError(w, tx.Commit()) {
+	if internalError(w, err) {
+		return
+	}
+	if affected == 0 {
+		// A missing row must not commit a newly reserved key-state marker.
+		writeSingleMutation(w, 0)
+		return
+	}
+	if internalError(w, tx.Commit()) {
 		return
 	}
 	writeSingleMutation(w, affected)
