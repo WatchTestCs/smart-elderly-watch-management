@@ -1,9 +1,10 @@
 # Windows 构建 · 2.1.0
 
-准备 Windows x64、C++ Build Tools（MSVC + Windows SDK）、Rust stable、Go 1.27.4（与当前 backend/go.mod 及 CI 一致）、Node.js 22.12+、PowerShell 7。推荐在 Developer PowerShell 中构建。Tauri 与前端工具版本由 package-lock.json 固定，Rust 依赖由 Cargo.lock 固定。
+准备 Windows x64、C++ Build Tools（MSVC + Windows SDK）、Rust stable（最低版本 1.99.1，见 `desktop/Cargo.toml`）、Go 1.27.4（与 `backend/go.mod` 和 CI 一致）、Node.js 24.x（项目兼容范围从 22.12+ 起）、PowerShell 7。推荐在开发者 PowerShell 环境中构建。前端依赖由 `frontend/package-lock.json` 锁定，Tauri/Rust 依赖由 `desktop/Cargo.lock` 锁定。
 
 ```powershell
 # Work from the repository root
+./desktop/validate-version.ps1
 ./desktop/build.ps1
 ./desktop/package-release.ps1
 # 可选：明确标注为本机自签，不是公开受信任证书
@@ -14,7 +15,7 @@
 
 产物为 `outputs/v2.1.0-preview/Suining-Setup-2.1.0-win-x64.exe`，附校验和及可选签名记录。当前源码使用 `downloadBootstrapper`、`silent: true`：不附带 WebView2 运行时或引导程序。安装时检测已有组件，缺失时才联网下载微软引导程序并静默补装；下载或补装失败时安装器报错，不把缺少组件的状态当成成功。WebView2 安装为 Windows 共享组件，卸载岁宁不会移除它。缺少组件且无法联网时不能完成安装。当前构建默认未签名；脚本支持 `CARGO_TARGET_DIR`。
 
-数据库不需要为编译运行；设置专用 `TEST_MYSQL_DSN` 和 `TEST_DATABASE_URL` 后才会执行真实数据库集成测试，未设置时会明确跳过，不能称为集成验收通过。直接 Go 开发可使用纯 API 模式；桌面发布必须嵌入真实前端。
+数据库服务不需要为纯编译保持运行；需要验证数据库集成测试时，仅使用指向独立实例的 `TEST_MYSQL_DSN`。未配置时相关测试可能跳过，不能将跳过报告为数据库集成验收通过。直接 Go 开发可使用纯 API 模式；桌面发布必须嵌入真实前端。
 
 Tauri 官方参考：[Windows 前置条件](https://v2.tauri.app/start/prerequisites/)、[Windows 安装包](https://v2.tauri.app/distribute/windows-installer/)、[sidecar](https://v2.tauri.app/develop/sidecar/)。
 

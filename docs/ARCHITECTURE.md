@@ -1,176 +1,104 @@
-> **MySQL-only candidate (2026-11-17):** Current preview storage and deployment guidance is in [MySQL 单库存储迁移](MYSQL_ONLY_MIGRATION.md). Older PostgreSQL/S3/local-image instructions on this page describe previous releases and are not suitable for deploying the new candidate.
+# 实现架构 · Tauri 2 / Go 1.27 / Vue 3.5 / MySQL 8.4
 
-# 实现架构 · Tauri / Go / Vue / MySQL / PostgreSQL
+本文描述当前 `preview` 分支的**实际实现**。数据库结构和岗位授权详见 [原生 MySQL 架构](NATIVE_MYSQL_ARCHITECTURE.md)，历史迁移路径见 [单库存储迁移](MYSQL_ONLY_MIGRATION.md)，API 细节见 [接口契约](API_CONTRACTS.md)。
 
-本文说明进程、协议、数据和构建路径。部署见 [双库指南](DUAL_DATABASES.md)，产品入口见 [README](../README.md)。
+## 组件及信任边界
 
-## 组件职责
+| 组件 | 当前实现 | 职责与边界 |
+| --- | --- | --- |
+| 桌面端（`desktop/`） | Tauri 2、Rust 1.99.1、WebView2 | 单实例、受限原生 IPC、校验并启动 Go 子进程、窗口和退出管理；不在网页中暴露桌面控制令牌 |
+| 前端（`frontend/`） | Vue 3.5.45、Vue Router 4.6.4、Element Plus 2.14.8、ECharts 6.1.0、Leaflet 1.9.4、Vite 8.3.8、TypeScript 6.0.3 | 管理员及家属工作台、表单、图表、位置展示和连接状态；不直接访问数据库 |
+| Go 服务（`backend/`） | Go 1.27.4、`net/http`、`goccy/go-json`、`go-sql-driver/mysql` | `/api/v1/` 业务接口、权限与事务、会话和 CSRF、设备身份与可选签名校验、静态前端资源；不负责安装 MySQL |
+| 持久化 | MySQL 8.4、`database/sql` | 业务数据、会话、审计、健康及位置记录、图片 BLOB；不进行 PostgreSQL 生产双写或外部对象存储兜底 |
+| 手表及模拟器（`SuiningWatch/`、`watch-sim/`） | HarmonyOS ArkTS、Rust 1.99.1 | 按服务端设备契约上报采样与 SOS；不能直接写数据库 |
 
-| 组件 | 实现 | 负责 | 不负责 |
-| --- | --- | --- | --- |
-| 原生桌面 | Tauri 2 / Rust / WebView2 | 单实例、窗口、Go 文件校验、启动退出、受限初始化 IPC | SQL 业务、在网页中暴露令牌 |
-| 页面 | Vue 3 / Vue Router / Element Plus | 管理与家属工作区、表单、图表、路由、就地连接提醒 | 直接连接数据库、离线伪造记录 |
-| 本地服务 | Go 标准库 HTTP | 业务 API、设备鉴权、会话、CSRF、图片处理与静态资源 | 安装或托管数据库 |
-| 数据访问 | MySQL database/sql + PG pgx / SQL 事务 | 连接、查询、约束、迁移和失败回滚 | 数据库服务安装与主库故障时自动切换 |
-| 外部数据库 | MySQL 主库 + PG 分析库 | 主库业务事务、分析投影及数据库持久化 | 保存 Windows 上的本机图片与诊断日志 |
+`preview` 使用 MySQL 单库；旧文档中的 PostgreSQL 分析投影、S3/SeaweedFS 和本地图片回退仅属于历史方案，不应据此部署当前版本。
 
-前端使用 Vue 3、Vite、ECharts 与 Leaflet / OpenStreetMap；Go 服务负责业务 API、设备接入、照护作业与静态资源服务。
+## 启动与关闭
 
-## 启动与停止
+当前 Tauri 桌面程序**仍然启动独立的 Go 子进程**，并非完全无子进程的单体桌面程序。其主要步骤可由 [`desktop/src/main.rs`](../desktop/src/main.rs) 核查：
+
+1. 从桌面资源目录读取 `suining-server.exe`，对比构建时嵌入的 `desktop/backend-sha256.txt` 期望哈希；不匹配则拒绝启动。
+2. 通过安全随机数生成本次启动的桌面控制令牌，作为 `SUINING_DESKTOP_TOKEN` 环境变量仅传入 Go 子进程；**不会**将该令牌写进 `runtime/server.json` 或传给页面 JavaScript。
+3. Go 服务在本机回环地址选择端口，写入一次性就绪文件。Tauri 校验子进程 PID 和端口后，将 `runtime/server.json` 写为包含 `port`、`pid`、`desktopPid` 的发现记录，并以 `http://127.0.0.1:<port>/index.html` 打开界面。
+4. 桌面初始化命令、窗口来源与关停操作受原生边界限制。Go 服务也可作为独立程序部署，此时监听地址和网络访问控制需由部署者显式配置。
 
 ```mermaid
 sequenceDiagram
-  participant R as Rust 主进程
-  participant G as Go 服务
-  participant V as Vue 界面
-  participant P as MySQL 主库
-  R->>R: 校验 sidecar SHA-256，生成随机令牌
-  R->>G: 启动子进程，传入端口、目录和父 PID
-  G-->>R: 就绪文件：PID 与动态端口
-  par 本地界面
-    R->>V: 加载验证后的本机 origin
-    V->>G: 获取界面及连接状态
-  and 数据库后台任务
-    G->>P: 连接、探测、执行内嵌迁移
-    P-->>G: 就绪或失败
-  end
-  V->>G: 状态查询及已授权业务请求
-  Note over V,G: 数据库未就绪时，界面保留，业务 API 提示不可用
-  R->>G: 带桌面令牌请求退出
-  G-->>R: 停止监听并清理连接
+    participant T as Tauri 桌面壳
+    participant G as Go 子进程
+    participant V as WebView/Vue
+    participant M as MySQL 8.4
+    T->>T: 校验 Go 文件哈希，内存生成启动令牌
+    T->>G: 创建子进程（令牌仅通过环境变量传递）
+    G-->>T: 就绪文件（PID 和动态端口）
+    T->>T: 写 runtime/server.json（仅发现信息）
+    T->>V: 打开经校验的 127.0.0.1 页面
+    V->>G: GET /api/v1/service/status、auth/session
+    G->>M: 连接并检查数据库状态
+    M-->>G: 可用或失败
+    G-->>V: 实际状态与允许的操作
 ```
 
-源码入口：[desktop/src/main.rs](../desktop/src/main.rs)、[cmd/server/main.go](../backend/cmd/server/main.go)。
+桌面应用的用户资料存放于用户数据目录，不应放进安装目录。`runtime/server.json` 只用于进程发现，既不是数据库连接配置，也不是身份凭据.
 
-- Rust 在启动前验证 Go 程序的 SHA-256；校验值由构建时生成并编入原生程序。
-- Rust 为每次启动生成随机令牌，使用进程环境传给 Go，不交给 Vue 状态或本地存储。
-- Go 的 HTTP 监听与静态资源不等待业务数据库；Rust 校验就绪文件 PID 和端口后才打开窗口。
-- Go 默认桌面监听为回环地址与动态端口。Rust 限制网页导航的实际 origin，不允许切换到任意外站。
-- 正常关闭时先请求认证退出接口，等待后必要时终止子进程；Go 还定期检查父进程，防止遗留服务。
+## 初始化与访问隔离
 
-`runtime/server.json` 是本机运行发现文件，包含端口和进程信息，不包含桌面令牌。它不是数据库配置、持久业务存储或公共服务发现协议。
+首次管理员初始化由 Vue 引导页调用受限的 `setup_admin` 原生命令，经 Tauri 核对主窗口来源后才由 Go 处理 `/api/v1/setup`。普通浏览器请求仅有 Cookie 无法代替桌面启动令牌执行初始化。实现和权限边界见 [Tauri 初始化能力](../desktop/permissions/setup.toml)、[桌面能力配置](../desktop/capabilities/desktop.json)及[前端原生桥接](../frontend/src/desktop.ts)。
 
-## 初始化与请求链
+`GET /healthz` 仅表示 HTTP 进程存活；`GET /api/v1/service/status` 中的 `databaseReady` 表示当前业务数据库是否就绪。数据库不就绪时，静态界面和诊断仍可使用，而依赖数据库的业务操作可能返回 `503 DATABASE_UNAVAILABLE`。从故障恢复到重新取得有效会话之前，不应向用户宣称已登录状态或服务端注销已确认成功。
 
-### 首次管理员初始化
+桌面启动的 Go 服务绑定回环地址，不能直接作为异地手表接入服务。需要持续接收外部设备上报与 SOS 时，应按 [常驻照护服务部署](CARE_SERVICE_DEPLOYMENT.md) 单独部署具备合适 TLS、监听及权限边界的服务实例。
 
-Vue Setup → 受限 `setup_admin` IPC → Rust 核对主窗口标签与实际 origin → Go `/api/v1/setup`，由 Rust 附加随机桌面令牌。普通网页请求不能凭 Cookie 直接完成管理员初始化。
+## Web 接口、会话与数据库
 
-Tauri 能力配置限定主窗口、本机页面和必要命令；原生命令会再次核对实际 origin，而不只依赖 URL 通配能力配置。
+- 正式业务入口位于 `/api/v1/`。业务响应使用 `returnCode: "1111"` 表示成功、`"0000"` 表示失败；错误对象还携带具体 `code`、`message` 等字段，详见 [接口契约](API_CONTRACTS.md)。
+- 前端通过会话接口获得登录状态和 CSRF 令牌；服务端负责用户、岗位及资源级授权，不能以隐藏菜单代替权限检查。
+- 当前持久化由 MySQL 承担。Go 进程读取 `MYSQL_DSN`；Tauri 桌面启动器可将 `SUINING_MYSQL_DSN` 映射为此变量。`PG_ANALYTICS_URL` 已退役，残留配置将被拒绝。
+- 配置有效的 MySQL DSN 时，必须同时配置数据加密密钥。缺失或无效的密钥属于配置错误，不能将其描述为等待数据库恢复即可自动解决。
+- 连接故障时前端展示数据服务状态，探测恢复不意味着失败的写操作可以自动重放。无法确认写入结果时应先核对状态，避免重复操作。
 
-实现位置：[permissions/setup.toml](../desktop/permissions/setup.toml)、[capabilities/desktop.json](../desktop/capabilities/desktop.json)、[前端原生桥](../frontend/src/desktop.ts)。
+## 会话、授权与数据所有权
 
-### 业务请求
+网页登录后，`SUINING_SESSION` Cookie 指向服务端会话。默认 `SESSION_BACKEND=database` 时，加密会话状态和撤销信息由 MySQL 持久化；指定 `memory` 仅适合单实例开发。断库期间的服务端注销可能无法确认撤销，不应把本地页面跳转等同于会话在服务端已删除。
 
-数据库就绪后，Go 发布业务处理器，中间件顺序为：**限流 → CSRF → 会话与角色鉴权 → 路由处理器**。普通写操作使用会话绑定的 CSRF；设备上报使用设备鉴权；`setup` 和 `desktop/exit` 使用桌面令牌，不依赖网页 CSRF。
+`internal/accesspolicy` 集中维护 API 访问策略，重要数据读写还需结合实时岗位权限和事务验证。服务端负责请求体大小与类型边界，前端不能以隐藏菜单、客户端缓存或未确认响应代替授权及状态事实。
 
-业务按领域组织在 `handler_auth`、`handler_user`、`handler_family`、`handler_old`、`handler_vitals` 与 `handler_social`，分别处理账号、人员、家庭关联、长者/设备/告警、健康日常和公告互动。当前以处理器和共享依赖组织，不宣称存在未实现的微服务或独立领域服务层。
+业务主数据、图片 BLOB、会话与审计由 MySQL 持久化。用户数据目录下的 `server-console.log` 和 `runtime/server.json` 是日志与运行发现信息，不是业务数据备份。MySQL 迁移状态由数据库账本维护；旧 PG 数据须按专门迁移流程处理，不应把历史双库文档作为当前部署依据。
 
-照护任务由 `handler_care_incident`、岗位与诊断处理器及 `internal/care` 后台作业协作。总览注册 `CareInbox`，读取带总数、岗位和操作者 ID 的分页任务；接单、处置与复核通过事务写入状态及事件履历，独立复核同时更新关联告警。设备归属只通过设备登记、绑定、解绑入口修改，普通档案编辑保留现有归属。
+## 设备上报与可靠性
 
-### 设备上报持久化边界
+`POST /api/v1/device/report` 先校验设备号与设备密钥，再按绑定版本、采样时间和业务规则执行 MySQL 事务。设备签名相关接口使用 `X-Device-Signature`、`X-Device-Timestamp`、`X-Device-Nonce`；显式配置 `SUINING_REQUIRE_SIGNED_DEVICE=1` 才会强制拒绝缺少签名的请求，提供的签名则仍需验证。
 
-Go 的 `internal/handlers/telemetry_repository.go` 只编排单次设备上报事务。分工如下：
+不能将 `requestId` 去重说成**每一笔普通健康上报**都必定支持。SOS 的请求 ID 与绑定版本用于可靠重试；开启持久遥测队列时，满足条件的步数/睡眠数据使用合法请求 ID 入队。心率、血压、位置和紧急告警不走该普通遥测队列。具体条件见 [`telemetry_durable.go`](../backend/internal/handlers/telemetry_durable.go) 和 [设备签名设计](reliability/watch-device-signatures.md)。
 
-| 代码 | 数据与责任 |
-| --- | --- |
-| `telemetry_repository_vitals.go` | 心率/血压测量及阈值状态，写入 `ratepre` |
-| `telemetry_repository_day.go` | 步数、睡眠按采样时间更新日汇总，设备重新绑定时归档旧归属 |
-| `telemetry_repository_alarm.go` | 设备位置、跌倒/异常事件与 SOS 持久化，关联照护工单及必要的通知队列 |
+`SUINING_DURABLE_TELEMETRY=1` 控制符合条件的加密步数/睡眠遥测入队，**不是**用于切换全部上报的 SQL 唯一键冲突语义。数据库写入失败或状态不确定时必须按接口真实结果处理，不能把“已接受请求”表述为“通知已送达”。
 
-三个模块仍共用调用方传入的事务；任一步失败都由调用方处理整体回滚。不得将位置告警、SOS 工单和通知入队拆成互不相关的事务，也不得把记录落库直接描述成通知已送达。
+## 构建、发布与验证边界
 
-### 会话与离线退出
-
-会话使用 `SUINING_SESSION` Cookie，登录时轮换会话标识以降低会话固定风险。当前默认 `SESSION_BACKEND=database`：加密服务端会话保存在 MySQL，跨实例查询和撤销依赖主库；明确选择 `memory` 的单实例开发环境才把会话放在 Go 进程内存，其会话重启后失效。
-
-退出登录由本地路由执行会话与 CSRF 校验。数据库会话模式下，`Destroy` 需向 MySQL 删除服务端会话；主库不可用时可能返回 503，不能声称已完成服务端撤销。旧版内存会话的离线退出行为不适用于当前默认部署。
-
-## 数据库连接与故障恢复
-
-实现入口：[cmd/server/database.go](../backend/cmd/server/database.go)、[前端 auth.ts](../frontend/src/auth.ts)。
-
-Go 的主库连接任务在后台运行；PG 分析同步独立重试，不决定业务 API 是否就绪。一次连接或 Ping 探测最长 5 秒，成功后的迁移有独立 2 分钟期限；一轮结束后间隔 3 秒继续检查。连接与迁移全部成功后才通过原子指针发布业务处理器，检测到连接失败时撤下它。
-
-| 接口或状态 | 含义 |
-| --- | --- |
-| `GET /healthz` | 本地 HTTP 进程存活，不代表数据库或设备业务正常 |
-| `GET /api/v1/service/status` | 返回 `databaseReady`，不暴露连接串或数据库错误详情 |
-| 数据库未就绪的业务请求 | `503 DATABASE_UNAVAILABLE`，含重试提示，不代表允许自动重放写入 |
-| 数据库无关操作 | 静态界面、状态查询和窗口操作保持可用；默认数据库会话的服务端登出依赖 MySQL，断库可能返回 503 |
-
-前端由 `src/auth.ts` 统一探测服务状态：数据库就绪时每 10 秒检查一次，故障时按 2、4、8、16、20 秒退避。页面隐藏时暂停定时检查，恢复可见或网络重新连接时立即探测。只有 Go 后端负责建立数据库连接。
-
-未连接时保留登录界面；已登录断线时保留工作区、路由与输入。恢复后刷新会话：过期会话回到登录，空库可进入初始化；有效会话不会因恢复连接而重建整页或清空输入。失败的保存、注册和初始化不会被自动重放。
-
-后台探测与请求之间存在时间窗口：强制断库时，正在执行的 SQL 仍可能先返回 500，后续请求转为 503。已记录验收没有将这些故障响应描述为正常业务成功。客户端可通过 `/api/v1/service/status` 读取数据库与迁移就绪状态。
-
-## 数据、文件与迁移
-
-| 内容 | 保存位置 | 运维含义 |
-| --- | --- | --- |
-| 账号、档案、设备、健康、公告等业务数据 | 独立 MySQL | 使用数据库备份策略，部署方负责权限与可用性 |
-| 上传图片 | 默认 `%APPDATA%\岁宁\images` | 文件目录需与业务引用一起备份 |
-| 服务诊断 | 默认 `%APPDATA%\岁宁\server-console.log` | 诊断用途，不作为业务数据源 |
-| 运行发现文件 | 默认用户目录下 `runtime` | 运行期文件，不含桌面令牌 |
-| 会话与 CSRF | 默认 MySQL 加密 `web_session`；显式 `memory` 模式为 Go 进程内存 | 默认模式可共享与撤销但需数据库可用；内存模式不跨实例且进程重启后失效 |
-| Vue 产物与迁移 SQL | 编入 Go 二进制 | 无需依赖启动工作目录；不代表数据库内嵌 |
-
-MySQL 迁移按文件执行，通过连接级锁及 `schema_migrations` 校验和协调；旧 PG 与分析迁移使用事务级 advisory lock。设备到长者的外键会阻止孤儿关系；已有非法引用导致迁移失败时，不应靠删数据或清空归属绕过。
-
-家属关联采用事务锁和条件更新以避免覆盖绑定；图片处理在完整解码前限制尺寸和像素，落盘文件名不直接使用用户路径。以上为源码已有边界，不是本轮新增安全审计或所有风险已消除的声明。
-
-## 运行配置
-
-当前应用服务使用 `MYSQL_DSN` 与 `PG_ANALYTICS_URL`；桌面分别通过 `SUINING_MYSQL_DSN`、`SUINING_PG_ANALYTICS_URL` 传入。下面的 `DATABASE_URL` 仅供旧 PG 迁移工具使用，不会让当前应用切换回 PG 主库。完整示例见 [双库配置](DUAL_DATABASES.md)。
-
-| 配置 | 使用方 | 说明 |
-| --- | --- | --- |
-| `SUINING_MYSQL_DSN` / `SUINING_PG_ANALYTICS_URL` | Windows 桌面启动 | Rust 转交双库配置，修改后重启 |
-| `MYSQL_DSN` / `PG_ANALYTICS_URL` | 直接 Go 启动 | 主库 DSN 和分析 URL，无默认凭据 |
-| `ADDR` | 直接 Go 启动 | 非桌面模式默认 `127.0.0.1:8080`，跨机器访问需明确配置监听和网络边界 |
-| `SUINING_PORT` / `SUINING_BIND_ADDRESS` | 桌面协议 | 桌面默认回环，端口 0 表示动态分配 |
-| `SUINING_USER_DATA` | Rust 桌面 | 覆盖本地数据目录；默认沿用 `%APPDATA%\岁宁` |
-| `IMAGE_DIR` | Go | 覆盖图片目录，否则桌面使用本地数据目录下 images |
-| `SESSION_TTL_HOURS` | Go | 会话期限，默认 12 小时 |
-| `TEST_DATABASE_URL` | 回归测试 | 仅用于隔离测试库，不应指向生产数据库 |
-
-数据库可在独立服务器或本机独立服务运行。跨主机连接应由部署方验证 TLS 与访问控制，不把数据库凭据交给网页。桌面退出会停止本地 Go 服务；全天候接收手表与 SOS 需按 [照护服务部署](CARE_SERVICE_DEPLOYMENT.md) 运行独立常驻服务。桌面回环端口不能直接供外部手表连接。
-
-## 构建、分发与版本
+`desktop/version.json` 是桌面产品版本入口；[版本校验脚本](../desktop/validate-version.ps1)核对前后端与桌面版本。Windows 构建依次处理前端资源、Go 二进制与哈希、Tauri 原生程序、安装与免安装制品，详细命令及签名边界见 [构建说明](BUILD.md)。
 
 ```mermaid
 flowchart LR
-  V["Vue / Vite 生产构建"] --> E["复制到 Go 内嵌资源目录"]
-  E --> G["Go 测试、编译与可选签名"]
-  G --> H["生成已签 sidecar 哈希"]
-  H --> R["Tauri / Rust 原生编译"]
-  R --> N["NSIS Setup"]
-  R --> Z["Windows 免安装 ZIP"]
+    V["Vue/Vite 构建"] --> G["嵌入 Go 静态资源"]
+    G --> H["编译并校验 Go sidecar"]
+    H --> T["编译 Tauri/Rust"]
+    T --> I["NSIS 安装包"]
+    T --> P["免安装制品"]
 ```
 
-`desktop/version.json` 是产品版本入口，版本核对脚本检查 Go 版本文件、前端包、Cargo 和 Tauri 产品版本。`Cargo.lock` 和 npm 锁文件固定依赖，Go 使用 `go.mod` / `go.sum`。
+Go 单元与真实 MySQL 集成测试、前端 UI 检查、手表协议模拟、CodeQL 和发布门禁覆盖不同边界。缺失独立测试库、HarmonyOS SDK/硬件、真实通知网关或 Windows 真机安装证据时，相关项目必须标为未验证，不能以其他检查通过代替。见 [测试指南](TESTING.md)。
 
-Windows Setup 配置为 `downloadBootstrapper` 与静默补装，不包含完整 WebView2；免安装 ZIP 保留主程序与 Go sidecar，要求系统已有 WebView2。源码 ZIP 由固定 Git 提交归档，不含用户资料和编译缓存。当前构建脚本自动生成 Setup；免安装包、源码归档、说明及摘要属于发布整理步骤，不能误称脚本已自动生成全部附件。
+## 运行配置摘要
 
-当前桌面交付目标为 Windows x64；本仓库不据此宣称提供经过完整验收的 Linux 原生桌面安装包。
+| 变量 | 实际作用 |
+| --- | --- |
+| `MYSQL_DSN` / `SUINING_MYSQL_DSN` | Go 服务的 MySQL DSN / Tauri 传给 Go 的 MySQL DSN |
+| `DATA_ENCRYPTION_KEY` / `DATA_ENCRYPTION_KEY_FILE` | 32 字节随机数据密钥的 Base64 表达或受保护的密钥文件，必须安全备份和共享给相同数据域的实例 |
+| `SESSION_BACKEND` | 默认 `database`；`memory` 仅适合隔离的单实例开发 |
+| `BLOB_BACKEND` | 当前只支持 `mysql` |
+| `SUINING_REQUIRE_SIGNED_DEVICE` | 为 `1` 时对适用设备接口强制要求签名 |
+| `SUINING_DURABLE_TELEMETRY` | 为 `1` 时启用满足条件的加密步数/睡眠遥测队列 |
+| `TEST_MYSQL_DSN` | 仅供测试进程使用，必须指向可销毁的独立实例 |
 
-## 统计、限流与前端读取调度
-
-普通数值统计直接累计；日累计仅保存每天最新样本；睡眠样本统一排序后按阶段流式累计并集和冲突区间。步数整数分摊及混合来源拒绝继续由原合同约束。限流使用 32 个独立分片和按需增长的精确滑动窗口，服务结束时关闭清理任务；配额仍按进程内的 IP 与路径独立计算，未变为跨实例的全局配额。
-
-监护人与照护任务列表共享有界读取调度器：一个在途查询加一个可替换的最新后继，过期响应不能覆盖当前查询。卸载清理只阻止后续读取与状态提交，不保证取消已经发出的网络请求。保存、删除及照护状态转换不进入这个队列；成功后的查询显式刷新视图。复杂度和资源边界应结合当前源码、专用数据库测试与对应提交的 CI 结果验证；历史本机测量方法与结果见 [性能测量记录](reliability/performance.md)，不能作为当前提交的性能承诺。
-
-## 请求边界与会话资源所有权
-
-`internal/accesspolicy` 集中定义显式路由权限；auth、CSRF 与 OpenAPI 生成脚本共同读取。设备和原生令牌接口保留原验证方式，未知业务路由仍默认管理员权限。`handlers/request_json.go` 统一正文大小、清理与单文档检查，普通/可选正文、健康和能力端点的限制及未知字段策略分别保留。
-
-会话的模型/内存、加密 SQL、HTTP Cookie/快照及维护循环分别位于 `session/session.go`、`database.go`、`http.go` 和 `cleanup.go`。HTTP 会话操作继承请求取消，数据库操作另有 3 秒上限；审计失败补偿和 MFA 提交后撤销显式保留独立的有界清理。服务关闭时先关闭会话维护，再停止数据库作业并释放共享 SQL 池。Store.Close 不关闭外部数据库、不撤销现有会话。
-
-## 当前验证边界
-
-当前自动化验证以 `preview` 对应提交的 GitHub Actions 为准。Go 单元与集成测试、前端构建、手表协议测试、部署配置检查和安全扫描分别验证不同边界；跳过的数据库测试、未执行的 HarmonyOS SDK 编译及未连接的真实通知网关不得报告为通过。真实设备、传感器、外部通知送达、生产数据迁移、跨网 TLS 和现场值班仍需独立验收。
-
-## API 与会话
-
-服务端直接注册 `/api/v1/`，仅提供版本化业务路由。Go 使用 `SUINING_SESSION` Cookie；浏览器和手表客户端必须遵循当前 API 契约。请求字段、成功响应、错误状态和差异处理见 [接口合同](API_CONTRACTS.md)。
+密钥、真实数据库 DSN、设备密钥和个人健康或位置记录不得写入仓库、Issue 或 PR 证据。构建和部署方式分别见 [BUILD](BUILD.md) 与 [TESTING](TESTING.md)。

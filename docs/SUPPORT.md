@@ -2,7 +2,7 @@
 
 首次使用步骤、各角色功能及可逐项核对的故障解决清单见[岁宁使用指南](USER_GUIDE.md)。
 
-项目通过 [GitHub Issues](https://github.com/WatchTestCs/smart-elderly-watch-management/issues) 接收缺陷报告和功能建议，可使用中文或英文。维护者按实际时间处理，不提供响应时限或生产可用性保证。
+项目通过 [GitHub Issues](https://github.com/WatchTestCs/smart-elderly-watch-management/issues) 接收缺陷报告、功能建议与[无障碍问题](../.github/ISSUE_TEMPLATE/accessibility_barrier.yml)，可使用中文或英文。维护者按实际时间处理，不提供响应时限或生产可用性保证。
 
 安全漏洞请按照 [安全政策](../.github/SECURITY.md) 私下报告。公开 Issue 不要包含真实长者资料、健康数据、位置记录、数据库文件、密码、设备密钥或私钥。日志和截图先脱敏。
 
@@ -10,7 +10,7 @@
 
 | 情况 | 检查 |
 | --- | --- |
-| 数据库未连接 | 检查 MySQL DSN、服务状态和迁移结果。PostgreSQL 故障主要影响异步分析。 |
+| 数据库未连接 | 检查 MySQL DSN、服务状态和迁移结果。当前 `preview` 不再依赖 PostgreSQL 生产分析投影。 |
 | 无法登录或初始化 | 系统没有默认管理员密码。首次初始化需要可用的业务数据库及桌面初始化入口。 |
 | 免安装版无法启动 | 完整解压 ZIP，保留主程序和 Go sidecar，并确认已安装 WebView2。 |
 | 升级后找不到旧数据 | 旧 PostgreSQL 业务数据需要离线导入空 MySQL；上传图片须另行迁移。安装程序不会自动转换数据库。 |
@@ -20,7 +20,7 @@
 
 ## 缺陷报告
 
-在 [新 Issue](https://github.com/WatchTestCs/smart-elderly-watch-management/issues/new) 中写明：
+选择 [缺陷反馈模板](../.github/ISSUE_TEMPLATE/bug_report.yml) 创建 Issue，并写明：
 
 - 使用的版本或提交 SHA、操作系统、安装包名称。
 - 最小复现步骤、预期结果和实际结果。

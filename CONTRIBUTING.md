@@ -1,6 +1,6 @@
 # Contributing / 参与贡献
 
-[中文项目介绍](README.md) · [English overview](README.en.md) · [Support / 问题反馈](docs/SUPPORT.md)
+[中文项目介绍](README.md) · [English overview](README.en.md) · [Support / 问题反馈](docs/SUPPORT.md) · [无障碍说明](ACCESSIBILITY.md) · [社区行为准则](CODE_OF_CONDUCT.md)
 
 We welcome pull requests that improve documentation, translations, accessibility, reproducible bug reports, or targeted code fixes in either Chinese or English. Please keep discussions focused on technical behavior and user impact.
 
@@ -15,10 +15,12 @@ Base your work on `preview` and open pull requests against `preview`. The `main`
 ## Before changing code / 开始前准备
 
 1. Read the [architecture](docs/ARCHITECTURE.md), the relevant module README, and the [UI requirements](docs/UI_UX.md) or [release gates](docs/reliability/release-governance.md) for the affected area.
-2. Check existing issues and follow the [issue templates](docs/SUPPORT.md). If you plan to change deployment topology, database responsibilities, or authentication boundaries, open an issue to discuss the design first.
+2. Check existing issues and use the [issue templates](.github/ISSUE_TEMPLATE/config.yml). See [support](docs/SUPPORT.md) for troubleshooting and [community conduct](CODE_OF_CONDUCT.md) before posting. If you plan to change deployment topology, database responsibilities, or authentication boundaries, open an issue to discuss the design first.
 3. Keep each pull request focused. Avoid bundling unrelated refactors, dependency upgrades, or formatting sweeps.
 
-Please preserve the core architectural invariants: MySQL handles authoritative business transactions while PostgreSQL receives asynchronous analytics projections; the desktop UI starts cleanly even when databases are unreachable; failed user writes preserve form input instead of replaying automatically; and frontend code never holds database credentials or desktop initialization tokens.
+Please preserve the current `preview` architecture: MySQL 8.4 is the sole authoritative store for business transactions, sessions, audit, and image BLOBs; PostgreSQL production projections and S3/local image fallbacks are retired. The desktop UI must remain diagnosable when MySQL is unavailable. Never silently replay user writes after an uncertain result, expose database credentials or desktop bootstrap tokens to page JavaScript, or bypass server-side authorization. For a11y changes, use the [accessibility guidance](ACCESSIBILITY.md) and the `--care-target-*` design tokens; verify actual control sizes and keyboard behavior instead of assuming a token proves compliance.
+
+当前 `preview` 已收敛为 MySQL 8.4 单库，不得重新引入 PostgreSQL 生产投影或 S3/本地图片兜底。写入结果不确定时先核对状态，不能静默重放；数据库凭据与桌面控制令牌不得暴露给前端，权限校验必须由服务端执行。无障碍改动参照 [无障碍说明](ACCESSIBILITY.md) 并验证真实键盘与视口交互。
 
 ## Verification requirements / 验证要求
 
@@ -26,7 +28,7 @@ Please preserve the core architectural invariants: MySQL handles authoritative b
 | --- | --- |
 | Documentation or translation | Verify local markdown links, command accuracy, and version/platform descriptions |
 | Frontend UI | Run a production build (`npm run build`) and relevant Playwright checks, covering empty/error states and narrow viewports |
-| Go backend | Run unit tests and `go vet`; test transactional changes against an isolated MySQL instance and analytics changes against PostgreSQL |
+| Go backend | Run relevant unit tests and `go vet`; verify transactional changes against isolated MySQL 8.4. PostgreSQL tools apply only to explicit legacy migration work. |
 | Desktop shell or packaging | Verify native window launch, graceful shutdown, and installer behavior in addition to compiling |
 
 See [BUILD](docs/BUILD.md) and [TESTING](docs/TESTING.md) for environment setup. Always run automated tests against disposable test databases rather than production data.
