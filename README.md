@@ -12,11 +12,19 @@
   <a href="README.md">简体中文</a> · <a href="README.en.md">English</a>
 </p>
 
-[![Preview CI](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/workflows/ci.yml/badge.svg?branch=preview)](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/workflows/ci.yml)
+[![Preview CI](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/workflows/ci.yml/badge.svg?branch=preview)](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/workflows/ci.yml?query=branch%3Apreview)
+[![CodeQL](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/workflows/security.yml/badge.svg?branch=preview)](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/workflows/security.yml?query=branch%3Apreview)
+[![Release](https://img.shields.io/github/v/release/WatchTestCs/smart-elderly-watch-management?label=Release)](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/latest)
+[![License](https://img.shields.io/github/license/WatchTestCs/smart-elderly-watch-management)](LICENSE)
+[![Open issues](https://img.shields.io/github/issues/WatchTestCs/smart-elderly-watch-management)](https://github.com/WatchTestCs/smart-elderly-watch-management/issues)
+[![Open PRs](https://img.shields.io/github/issues-pr/WatchTestCs/smart-elderly-watch-management)](https://github.com/WatchTestCs/smart-elderly-watch-management/pulls)
+[![Accessibility](https://img.shields.io/badge/Accessibility-report%20a%20barrier-blue)](https://github.com/WatchTestCs/smart-elderly-watch-management/issues/new?template=accessibility_barrier.yml)
+
+社区入口：[反馈缺陷或建议](https://github.com/WatchTestCs/smart-elderly-watch-management/issues/new/choose) · [参与贡献](CONTRIBUTING.md) · [无障碍反馈](ACCESSIBILITY.md) · [私密安全报告](.github/SECURITY.md) · [行为准则](CODE_OF_CONDUCT.md)
 
 [下载](#下载) · [主要功能](#主要功能) · [开始使用](#开始使用) · [系统架构](#系统架构) · [源码与构建](#源码与构建) · [验证与性能](#验证与性能) · [文档导航](#文档导航)
 
-岁宁面向照护机构与家属，在同一工作台内集中管理长者档案、手表设备、健康记录、位置告警与照护任务。客户端与服务端基于 Tauri 2、Rust、Vue 3、Vite 与 Go 构建，使用独立部署的 MySQL 保存业务数据，，仅使用 MySQL 8.4 持久化业务数据。
+岁宁面向照护机构与家属，在同一工作台内集中管理长者档案、手表设备、健康记录、位置告警与照护任务。客户端与服务端基于 Tauri 2、Rust、Vue 3、Vite 与 Go 构建，仅使用独立部署的 MySQL 8.4 持久化业务数据。
 
 仓库根目录下的 [SuiningWatch](SuiningWatch/README.md) 是配套的 HarmonyOS 手表端工程，包含前台心率与计步传感器读取、系统权限申请、设备认证、采样上传和 SOS。模拟采样保留为独立调试来源；构建与接入步骤见[手表接入说明](docs/WATCH_INTEGRATION.md)。
 
