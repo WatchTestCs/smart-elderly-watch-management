@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"encoding/base64"
 	"net/http"
 	"testing"
 	"time"
@@ -17,7 +18,7 @@ import (
 func TestHealthStatisticsHotCacheConsistency(t *testing.T) {
 	pool := testDatabase(t)
 	seedCareAdminDuty(t, pool, 11, "supervisor")
-	h := New(pool, session.NewStore(time.Hour), config.Config{HealthCacheBytes: 1 << 20})
+	h := New(pool, session.NewStore(time.Hour), config.Config{HealthCacheBytes: 1 << 20, DataKey: base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{7}, 32))})
 	t.Cleanup(h.Sessions.Close)
 	writer := testHandler(t, pool) // A second server has no access to h's cache.
 	seedDevice(t, pool)
@@ -50,7 +51,11 @@ func TestHealthStatisticsHotCacheConsistency(t *testing.T) {
 	}
 	defer tx.Rollback()
 	deviceID := int64(1)
-	if _, _, err = health.Save(context.Background(), tx, health.Owner{OldID: 1, DeviceID: &deviceID, Epoch: 1}, s); err != nil {
+	prepared, err := health.PrepareBatch([]health.Sample{s})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err = prepared.SaveProtected(context.Background(), tx, health.Owner{OldID: 1, DeviceID: &deviceID, Epoch: 1}, h.Box); err != nil {
 		t.Fatal(err)
 	}
 	check(1, 91)
@@ -63,7 +68,7 @@ func TestHealthStatisticsHotCacheConsistency(t *testing.T) {
 	api(t, writer.healthBatch, batch)
 	check(0, 0)
 	// Restarting a reader repopulates from durable state.
-	restarted := New(pool, session.NewStore(time.Hour), config.Config{HealthCacheBytes: 1 << 20})
+	restarted := New(pool, session.NewStore(time.Hour), config.Config{HealthCacheBytes: 1 << 20, DataKey: base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{7}, 32))})
 	t.Cleanup(restarted.Sessions.Close)
 	admin2 := withHealthPrincipal(restarted, session.Principal{Role: auth.RoleAdmin, ID: 11}, restarted.healthStatistics)
 	if got := api(t, admin2, query)["statistics"].(map[string]any)["count"]; got != float64(0) {
@@ -74,7 +79,7 @@ func TestHealthStatisticsHotCacheConsistency(t *testing.T) {
 func TestHealthStatisticsHotCacheAuthorizationAndIdentity(t *testing.T) {
 	pool := testDatabase(t)
 	seedCareAdminDuty(t, pool, 11, "supervisor")
-	h := New(pool, session.NewStore(time.Hour), config.Config{HealthCacheBytes: 1 << 20})
+	h := New(pool, session.NewStore(time.Hour), config.Config{HealthCacheBytes: 1 << 20, DataKey: base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{7}, 32))})
 	t.Cleanup(h.Sessions.Close)
 	seedDevice(t, pool)
 	mustExec(t, pool, "INSERT INTO family(family_id,family_phone) VALUES(1,'1'),(2,'2')")
@@ -121,7 +126,7 @@ func TestHealthStatisticsHotCacheAuthorizationAndIdentity(t *testing.T) {
 func TestHealthStatisticsHotCacheRequiresDatabaseValidation(t *testing.T) {
 	pool := testDatabase(t)
 	seedCareAdminDuty(t, pool, 11, "supervisor")
-	h := New(pool, session.NewStore(time.Hour), config.Config{HealthCacheBytes: 1 << 20})
+	h := New(pool, session.NewStore(time.Hour), config.Config{HealthCacheBytes: 1 << 20, DataKey: base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{7}, 32))})
 	t.Cleanup(h.Sessions.Close)
 	mustExec(t, pool, "INSERT INTO oldperson(old_id,name) VALUES(1,'hot')")
 	query := map[string]any{"oldId": 1, "source": "watch", "sourceDevice": "WATCH001", "metric": "heart_rate", "semantics": "instant", "from": "2026-10-22T00:00:00Z", "to": "2026-10-23T00:00:00Z"}
@@ -136,7 +141,7 @@ func TestHealthStatisticsHotCacheRequiresDatabaseValidation(t *testing.T) {
 func TestHealthStatisticsHotCacheReportingOffset(t *testing.T) {
 	pool := testDatabase(t)
 	seedCareAdminDuty(t, pool, 11, "supervisor")
-	h := New(pool, session.NewStore(time.Hour), config.Config{HealthCacheBytes: 1 << 20})
+	h := New(pool, session.NewStore(time.Hour), config.Config{HealthCacheBytes: 1 << 20, DataKey: base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{7}, 32))})
 	t.Cleanup(h.Sessions.Close)
 	mustExec(t, pool, "INSERT INTO oldperson(old_id,name) VALUES(1,'hot')")
 	// This observation falls on Oct 22 in UTC+8, and Oct 21 in UTC. Requests
@@ -170,7 +175,7 @@ func TestHealthStatisticsHotCacheReportingOffset(t *testing.T) {
 func TestHealthStatisticsHotCacheUnencodableTime(t *testing.T) {
 	pool := testDatabase(t)
 	seedCareAdminDuty(t, pool, 11, "supervisor")
-	h := New(pool, session.NewStore(time.Hour), config.Config{HealthCacheBytes: 1 << 20})
+	h := New(pool, session.NewStore(time.Hour), config.Config{HealthCacheBytes: 1 << 20, DataKey: base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{7}, 32))})
 	t.Cleanup(h.Sessions.Close)
 	seedDevice(t, pool)
 	at := time.Date(2026, 10, 22, 9, 0, 0, 0, time.UTC)
@@ -192,7 +197,7 @@ func TestHealthStatisticsHotCacheUnencodableTime(t *testing.T) {
 func TestHealthStatisticsHotCacheOverflowResultConsistency(t *testing.T) {
 	pool := testDatabase(t)
 	seedCareAdminDuty(t, pool, 11, "supervisor")
-	h := New(pool, session.NewStore(time.Hour), config.Config{HealthCacheBytes: 1 << 20})
+	h := New(pool, session.NewStore(time.Hour), config.Config{HealthCacheBytes: 1 << 20, DataKey: base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{7}, 32))})
 	t.Cleanup(h.Sessions.Close)
 	seedDevice(t, pool)
 	at := time.Date(2026, 10, 22, 9, 0, 0, 0, time.UTC)
