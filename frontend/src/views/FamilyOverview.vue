@@ -7,7 +7,7 @@
         <p class="welcome-description">查看健康、活动与位置记录，<br class="desktop-break">留意家人的日常变化。</p>
         <el-button type="primary" @click="router.push('/family-portal/vitals')">查看健康记录 <el-icon aria-hidden="true"><ArrowRight /></el-icon></el-button>
       </div>
-      <div class="welcome-scene" aria-hidden="true"><img src="/static/img/care-river-morning.webp" alt="" width="1200" height="800" fetchpriority="high" decoding="async"></div>
+      <div class="welcome-scene" aria-hidden="true"><img src="/static/img/care-river-morning.webp" srcset="/static/img/care-river-morning-640.webp 640w, /static/img/care-river-morning-900.webp 900w, /static/img/care-river-morning.webp 1200w" sizes="(max-width: 700px) 100vw, 40vw" alt="" width="1200" height="800" fetchpriority="high" decoding="async"></div>
     </section>
     <LatestHealthPanel />
     <div class="family-daily-grid">

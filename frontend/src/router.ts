@@ -1,5 +1,5 @@
 import type { Component } from 'vue'
-import { createRouter, createWebHashHistory, type RouteRecordRaw } from 'vue-router'
+import { createRouter, createWebHashHistory, type RouteLocationNormalized, type RouteRecordRaw } from 'vue-router'
 import { loadSession, authState, type SessionAccount } from './auth'
 import { documentTitle, recoverFromChunkError } from './appGuards'
 import { isRestrictedAdmin } from './domain/permissions'
@@ -65,9 +65,26 @@ function wrongPortal(account: SessionAccount, familyPage: boolean): boolean {
   return (account.role === 'FAMILY') !== familyPage
 }
 
+// vue-router starts downloading a route's lazy chunks only after every beforeEach guard has
+// settled, so the session request and the page chunk used to run back to back. Starting the
+// dynamic import here lets them overlap; the module loader dedupes the router's own later call.
+function prefetchRouteChunks (to: RouteLocationNormalized): void {
+  for (const record of to.matched) {
+    const loader: unknown = record.components?.default
+    // Same test vue-router uses to tell a lazy loader from an already-resolved component.
+    if (typeof loader !== 'function' || 'displayName' in loader || 'props' in loader || '__vccOpts' in loader) continue
+    try {
+      void Promise.resolve((loader as () => unknown)()).catch(() => undefined)
+    } catch {
+      // The router reports a failed chunk itself (see router.onError) when it loads the route.
+    }
+  }
+}
+
 router.beforeEach(async to => {
   const publicPage = to.path === '/sign-in' || to.path === '/join-family'
   const familyPage = to.matched.some(route => route.path === '/family-portal')
+  prefetchRouteChunks(to)
 
   try {
     const account: SessionAccount | null = await loadSession()

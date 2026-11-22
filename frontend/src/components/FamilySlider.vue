@@ -8,7 +8,7 @@
       <el-menu-item index="/family-portal/location" aria-label="位置与安全"><el-icon aria-hidden="true"><Location /></el-icon><span class="nav-label-full">位置与安全</span><span class="nav-label-short">位置</span></el-menu-item>
       <el-menu-item index="/family-portal/profile" aria-label="个人中心"><span class="nav-profile-icon" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="7" r="3.5"/><path d="M5 21v-2a7 7 0 0 1 14 0v2Z"/></svg></span><span class="nav-label-full">个人中心</span><span class="nav-label-short">我的</span></el-menu-item>
     </el-menu>
-    <div class="sidebar-moment" aria-hidden="true"><img src="/static/img/care-botanical.webp" alt="" width="440" height="660"><p>让关爱<br>成为日常</p></div>
+    <div class="sidebar-moment" aria-hidden="true"><img src="/static/img/care-botanical.webp" alt="" width="440" height="660" loading="lazy" decoding="async"><p>让关爱<br>成为日常</p></div>
     <div class="sidebar-note"><el-icon aria-hidden="true"><Clock /></el-icon><span>数据以最近一次<br>设备上报为准</span></div>
   </nav>
 </template>
