@@ -195,7 +195,11 @@ fn start_backend(app: &tauri::App) -> Result<Backend, Box<dyn std::error::Error>
         }
         hasher.update(&buffer[..count]);
     }
-    let actual = format!("{:x}", hasher.finalize());
+    let actual: String = hasher
+        .finalize()
+        .iter()
+        .map(|b| format!("{b:02x}"))
+        .collect();
     if actual != include_str!("../backend-sha256.txt").trim() {
         return Err("后端文件完整性校验失败，请重新安装".into());
     }
