@@ -23,11 +23,7 @@ jobs:
           MYSQL_ROOT_HOST: "%"
           MYSQL_DATABASE: suining_test
         ports: ["3306:3306"]
-        # Data directory on tmpfs: every integration test creates, migrates and drops its own
-        # database, so DDL/fsync latency on the runner disk dominates wall-clock time. The
-        # container is ephemeral, so nothing here needs to survive a restart.
         options: >-
-          --tmpfs /var/lib/mysql:rw,nosuid,nodev,size=2g
           --health-cmd "mysqladmin ping -h 127.0.0.1 -u root -pci_root_only --silent"
           --health-interval 5s --health-timeout 5s --health-retries 20
     steps:
@@ -51,12 +47,6 @@ jobs:
 
       - name: Check generated OpenAPI contract
         run: python3 scripts/generate-openapi.py --check
-
-      - name: Relax MySQL durability for the ephemeral CI database
-        # Applied before the evidence capture below, so mysql-environment.txt records the real values.
-        run: |
-          MYSQL_PWD=ci_root_only mysql --protocol=TCP -h 127.0.0.1 -u root \
-            -e 'SET GLOBAL innodb_flush_log_at_trx_commit=0; SET GLOBAL sync_binlog=0;'
 
       - name: Run backend tests, build and vet
         working-directory: backend
@@ -90,36 +80,6 @@ jobs:
             gofmt -d ./cmd ./internal ./migrations
             exit 1
           fi
-
-      - name: Summarize slowest Go packages and tests
-        if: always()
-        shell: bash
-        run: |
-          python3 - "evidence/ci/backend-${{ matrix.go-version }}/mysql.jsonl" >> "$GITHUB_STEP_SUMMARY" <<'PY' || true
-          import json, sys
-          pkgs, tests = {}, {}
-          try:
-              lines = open(sys.argv[1], encoding="utf-8", errors="replace")
-          except OSError:
-              sys.exit(0)
-          for line in lines:
-              try:
-                  e = json.loads(line)
-              except ValueError:
-                  continue
-              if e.get("Action") not in ("pass", "fail") or "Elapsed" not in e:
-                  continue
-              if e.get("Test"):
-                  tests[(e["Package"], e["Test"])] = e["Elapsed"]
-              else:
-                  pkgs[e["Package"]] = e["Elapsed"]
-          print("### Slowest Go packages (wall time)\n\n| seconds | package |\n|---:|---|")
-          for p, s in sorted(pkgs.items(), key=lambda kv: -kv[1])[:15]:
-              print(f"| {s:.1f} | `{p}` |")
-          print("\n### Slowest Go tests\n\n| seconds | test |\n|---:|---|")
-          for (p, t), s in sorted(tests.items(), key=lambda kv: -kv[1])[:20]:
-              print(f"| {s:.1f} | `{p}` {t} |")
-          PY
 
       - name: Preserve exact-source evidence including failures
         if: always()
