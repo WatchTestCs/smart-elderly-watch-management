@@ -1,18 +1,24 @@
 # Security Policy
 
-## Supported branch
+## Supported versions and branches
 
-Active engineering and preview hardening currently happen on `preview`. Published preview binaries must remain traceable to an exact source commit.
+| Source | Scope of security maintenance |
+| --- | --- |
+| `main` and the latest official `v2.1.0+20261122` release | Current stable source; reports are accepted and fixes are assessed for an updated release |
+| `preview` | Active development; report vulnerabilities in the current HEAD |
+| Older tags and archived packages | Retained for reproducibility, without a promise of backports; report an issue privately if it also affects a supported source |
+
+A patch merged into `preview` does not automatically patch previously downloaded installers. Check each release's exact Git SHA and assets.
 
 ## Reporting a vulnerability
 
 Do not open a public issue containing an exploitable vulnerability, real user records, credentials, database files, private keys, SMS credentials, device secrets or personally identifying health data.
 
-Prefer GitHub's private security-advisory reporting channel for this repository. If private reporting is unavailable, contact a repository maintainer privately and share only the minimum information needed to reproduce the issue.
+Use the repository's [private vulnerability reporting form](https://github.com/WatchTestCs/smart-elderly-watch-management/security/advisories/new) to report security issues without disclosing them in a public Issue or PR. Include only the evidence necessary to reproduce the problem. Do not attach actual residents' medical records, addresses or access credentials. If the private form is temporarily unavailable, contact a repository maintainer privately.
 
 A useful report includes:
 
-- affected source commit / preview version;
+- affected source commit, release tag, or development branch;
 - affected component (WebView, Tauri/Rust Main, Go service, installer, device API, etc.);
 - prerequisites and realistic impact;
 - minimal reproduction steps;

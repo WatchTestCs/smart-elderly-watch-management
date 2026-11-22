@@ -1,11 +1,11 @@
 # 岁宁 2.1.0 使用指南
 
-适用于 Windows 桌面端及通过浏览器访问的岁宁平台。按当前 `preview` 功能编写；正式发布时以对应安装包中的版本说明和 `release-manifest.json` 为准。
+适用于岁宁 2.1.0 Windows 桌面端及浏览器工作台。开发分支与正式版功能可能不同，以对应版本的发布清单和实际构建为准。
 
 ## 1. 首次使用
 
 1. 从项目 [GitHub Releases](https://github.com/WatchTestCs/smart-elderly-watch-management/releases) 下载与系统架构对应的安装包。Windows 可使用 Setup；Portable 必须完整解压，保留 `suining.exe` 与 `suining-server.exe`。按同一发布批次的 `SHA256SUMS.txt` 核对下载文件。
-2. 由部署人员准备独立的 MySQL 业务库和持久化的数据加密密钥。PostgreSQL 用于异步分析，不是日常业务的必要前置条件。数据库连接、备份和旧库迁移参见 [双库配置](DUAL_DATABASES.md) 与 [备份恢复](runbooks/backup-restore.md)。
+2. 由部署人员准备 MySQL 8.4 业务库和长期保管的加密密钥。当前版本不连接 PostgreSQL 分析库或 S3；配置、加密图片和历史迁移见 [MySQL 单库迁移](MYSQL_ONLY_MIGRATION.md) 与 [备份恢复](runbooks/backup-restore.md)。
 3. 启动桌面应用。首次安装按初始化界面创建管理员。**系统没有默认管理员账号或通用密码**。若提示数据库未连接，先检查服务与配置，不要重复初始化。
 4. 管理员登录后建立老人档案，补齐必要的监护人和家属关联，再到设备管理登记手表并完成绑定。
 5. 配置监测阈值，确认手表已认证、绑定版本正确并能上报数据。使用真实设备前按 [手表接入](WATCH_INTEGRATION.md) 完成端侧配置。
@@ -77,7 +77,7 @@ Google 官方 [Maps Embed API](https://developers.google.com/maps/documentation/
 | --- | --- | --- |
 | 界面显示“数据库未连接” | MySQL 是否运行、DSN、库名和迁移状态 | 修复配置后重启服务；不要反复执行初始化或对真实业务库直接重建 |
 | 登录失败、提示初始化 | 用户身份、账号状态、数据库与会话配置 | 核对登录凭据及管理员初始化状态；不要寻找默认密码 |
-| PostgreSQL 不可用 | 分析服务状态、MySQL Outbox 积压 | 核心业务仍以 MySQL 为准；恢复分析服务后观察积压消退 |
+| 仍配置旧 PostgreSQL 或 S3 地址 | 是否沿用旧部署环境变量 | 新版拒绝这些旧配置；保留旧数据并按 MySQL 单库迁移手册完成停写和迁移 |
 | 安装后无法启动 | WebView2、Windows 版本与完整安装日志 | 检查 WebView2；Portable 必须完整解压并保留 sidecar |
 | Windows 提示未知发布者 | 是否来自官方发布页、SHA-256 是否匹配 | 校验来源和清单后再决定是否运行；本地自签名不等于其他设备信任 |
 | 设备离线或数据不更新 | 网络、设备认证、绑定版本、最后上报时间 | 先恢复连接；换绑后在手表端重新认证，不要把旧绑定采样归到新老人 |

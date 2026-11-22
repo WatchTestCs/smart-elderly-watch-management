@@ -1,7 +1,7 @@
 $ErrorActionPreference = 'Stop'
 & (Join-Path $PSScriptRoot 'validate-version.ps1')
 $project = Split-Path $PSScriptRoot -Parent
-$repo = Split-Path $project -Parent
+$repo = $project # desktop/ is directly under the repository root.
 $meta = Get-Content (Join-Path $PSScriptRoot 'version.json') -Raw | ConvertFrom-Json
 $version = $meta.version
 $channel = if ($env:SUINING_RELEASE_CHANNEL) { $env:SUINING_RELEASE_CHANNEL } else { [string]$meta.channel }
@@ -30,8 +30,11 @@ git -C $repo archive --format=zip --prefix="Suining-$version/" --output=$sourceZ
 if ($LASTEXITCODE -ne 0) { throw 'Source archive failed' }
 $notes = Get-Content -LiteralPath (Join-Path $repo "docs/releases/$version.md") -Raw
 if ($channel -eq 'stable') {
-    if (!$notes.Contains('这是预览渠道发布。')) { throw 'Stable release notes marker missing' }
-    $notes = $notes.Replace('这是预览渠道发布。', '这是稳定渠道发布。')
+    if ($notes.Contains('这是预览渠道发布。')) {
+        $notes = $notes.Replace('这是预览渠道发布。', '这是稳定渠道发布。')
+    } elseif (!$notes.Contains('这是稳定渠道发布。')) {
+        throw 'Stable release notes marker missing'
+    }
 }
 [IO.File]::WriteAllText((Join-Path $release 'Release-Notes-zh-CN.md'), $notes, [Text.UTF8Encoding]::new($false))
 

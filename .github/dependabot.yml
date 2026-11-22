@@ -11,6 +11,16 @@ updates:
       time: "04:00"
       timezone: "Asia/Singapore"
     open-pull-requests-limit: 5
+    # Node 24, TypeScript 6 and Vue Router 4 are the tested compatibility line.
+    # A future major upgrade needs a dedicated migration and validation plan.
+    # Keep minor/patch and default-branch security updates active.
+    ignore:
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "vue-router"
+        update-types: ["version-update:semver-major"]
     groups:
       frontend-minor-patch:
         update-types:
@@ -56,6 +66,11 @@ updates:
       time: "04:45"
       timezone: "Asia/Singapore"
     open-pull-requests-limit: 5
+    groups:
+      actions-minor-patch:
+        update-types:
+          - minor
+          - patch
 
   - package-ecosystem: cargo
     directory: "/desktop"

@@ -1,15 +1,15 @@
-> **MySQL-only candidate (2026-11-17):** Current preview storage and deployment guidance is in [MySQL 单库存储迁移](MYSQL_ONLY_MIGRATION.md). Older PostgreSQL/S3/local-image instructions on this page describe previous releases and are not suitable for deploying the new candidate.
+当前部署使用 MySQL 8.4 单库。历史 PostgreSQL 和外部对象存储仅可作为迁移来源，参见 [MySQL 单库迁移](MYSQL_ONLY_MIGRATION.md)。
 
 # 独立部署照护后台
 
 此部署方式使 Go 后端与桌面 GUI 的退出独立。**单实例并不等于真正高可用**：硬件接入、短信运营商、数据库、网络、供电和现场救援均需要另行保障。
 
-当前本地双库配置、旧库迁移与 PG 故障边界见 [DUAL_DATABASES](DUAL_DATABASES.md)。
+单库配置、停写迁移与回退操作见 [MySQL 单库迁移](MYSQL_ONLY_MIGRATION.md)。
 
 ## 运行模式
 
 - 在 Linux 服务器持续运行 `backend/cmd/server` 编译的 Go 程序，Windows 桌面端只作为客户端使用，不启动/终止这个服务端进程。
-- MySQL 主库与 PG 分析库需分别持久化，业务备份以 MySQL 为准；所有数据库迁移在启动前由服务执行，首次升级前必须备份。
+- MySQL 8.4 是唯一业务数据库，包含健康采样、照护事务、审计和加密图片 BLOB；升级前须备份数据库及对应密钥。
 - `/healthz` 仅表示 HTTP 服务可连接；`GET /api/v1/service/status` 的 `databaseReady` 字段用于 DB 就绪诊断。注意 Web 和通知网关可用性要另行监控，不能把 HTTP 200 当作 SOS 可被救援的证明。
 
 ## systemd 部署示例
@@ -31,8 +31,8 @@ sudo systemctl status suining-care
 ```env
 ADDR=127.0.0.1:8080
 MYSQL_DSN=suining:REPLACE@tcp(127.0.0.1:3306)/suining?tls=true
-PG_ANALYTICS_URL=postgres://suining_analytics:REPLACE@127.0.0.1:5432/suining_analytics?sslmode=require
-IMAGE_DIR=/var/lib/suining/images
+SESSION_BACKEND=database
+DATA_ENCRYPTION_KEY=REPLACE_WITH_SAVED_BASE64_OF_32_RANDOM_BYTES
 CARE_NOTIFY_WEBHOOK_URL=https://your-trusted-gateway.example/api/notify
 CARE_NOTIFY_WEBHOOK_TOKEN=REPLACE_WITH_SECRET
 CARE_RECEIPT_SECRET=REPLACE_WITH_RANDOM_SECRET_AT_LEAST_32_CHARACTERS
@@ -60,7 +60,7 @@ SOS 成功响应是 `received`，不是 `delivered` 或 `acknowledged`。若有�
 
 ## 运维与恢复检查
 
-至少按机构风险与 RPO/RTO 制定 MySQL 业务库及上传图片的备份计划，并在隔离环境定期演练 MySQL 恢复及图片关联校验；PG 分析库只作为可重建投影，不能替代业务备份。保留校验和、恢复时间目标、加密密钥保护及备份删除策略，详见 [备份与恢复手册](runbooks/backup-restore.md)。监控数据库连接、网关退避队列长度、最长未接单时间、告警升级数量及服务退出次数。
+至少按机构风险与 RPO/RTO 制定 MySQL 业务库和加密图片的备份计划，在隔离环境定期演练恢复和 BLOB 引用校验。历史 PostgreSQL 不是本版运行依赖。保留校验和、恢复时间目标、加密密钥保护及备份删除策略，详见 [备份与恢复手册](runbooks/backup-restore.md)。监控数据库连接、网关退避队列长度、最长未接单时间、告警升级数量及服务退出次数。
 
 当前仓库不能证明真实硬件、短信运营商、应急人工值守和多机故障转移通过；这些都是正式交付的门槛。
 
@@ -72,7 +72,7 @@ SOS 成功响应是 `received`，不是 `delivered` 或 `acknowledged`。若有�
 
 用户表中旧的 ADMIN 默认拥有主管权限，是迁移兼容策略；上线前在工作台逐一设置护理员、审计员、主管岗位。护理员与审计员已由统一岗位门禁限制为照护接口（仍按每个操作单独鉴权）和本人 MFA 设置，不能访问传统后台 ADMIN 接口；主管保留管理权限。**历史未分配岗位的 ADMIN 仍默认为主管**，上线前必须逐一清点与授权。这不是多机构、院区或老人级数据隔离。主管可检索最近敏感路径访问审计，但需另行制定保留期限、备份加密、历史审计归档和授权撤销制度。
 
-部署前按 [当前测试指南](TESTING.md) 与机构自身的应急流程，对断网、服务中断、网关重复提交、设备 requestId 弱网重试、人员接单与二人复核开展隔离环境演练。未完成真实硬件、外部网关和值班人员验证前，不得把该源码预览版作为唯一的人身安全求助系统。
+部署前按 [当前测试指南](TESTING.md) 与机构自身的应急流程，对断网、服务中断、网关重复提交、设备 requestId 弱网重试、人员接单与二人复核开展隔离环境演练。未完成真实硬件、外部网关和值班人员验证前，不得将本系统作为唯一的人身安全求助渠道。
 
 ## 配置文件读取诊断
 

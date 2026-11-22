@@ -4,7 +4,7 @@ import os
 import subprocess
 
 
-ROOT_DOCS = {b"README.md", b"README.en.md", b"CONTRIBUTING.md", b"CHANGELOG.md"}
+ROOT_DOCS = {b"README.md", b"README.en.md"}
 
 
 def documentation_only(diff: bytes) -> bool:

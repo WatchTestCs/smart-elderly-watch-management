@@ -4,7 +4,7 @@
 
 ## 设计目标
 
-项目参考 **WCAG 2.1 AA**，并结合养老照护场景优化常用操作。当前样式变量在 [`frontend/src/assets/css/tokens.css`](frontend/src/assets/css/tokens.css) 中定义：
+项目参考 **WCAG 2.1 AA**，并结合养老照护场景优化常用操作。当前样式变量在 [`frontend/src/assets/css/tokens.css`](../frontend/src/assets/css/tokens.css) 中定义：
 
 - 主要操作热区目标为 `--care-target-primary: 48px`，辅助操作目标为 `--care-target-min: 44px`。这些是设计令牌，不表示所有第三方组件和所有状态均已逐一验证符合最小尺寸。
 - 使用 `html.large-text` 切换大字模式；登录、注册与工作台提供相关入口。调整字号后仍应检查窄屏、长文本、表格和对话框的显示。
@@ -16,7 +16,7 @@
 
 桌面端使用 Windows 10/11、Tauri 2 与 WebView2。浏览器和移动端界面采用响应式布局；仓库的自动化 UI 质量检查主要依赖 Chrome/Chromium。Firefox、Safari、屏幕阅读器及不同移动设备的完整兼容性需要分别验收，不能根据布局断点推断全部通过。
 
-可按 [测试指南](docs/TESTING.md) 运行自动化检查。视口、设备缩放、大字模式、键盘、读屏、错误状态和长内容都应作为具体问题的复现条件记录。
+可按 [测试指南](TESTING.md) 运行自动化检查。视口、设备缩放、大字模式、键盘、读屏、错误状态和长内容都应作为具体问题的复现条件记录。
 
 ## 已知限制
 
@@ -27,6 +27,6 @@
 
 ## 反馈无障碍障碍
 
-请使用 [无障碍问题模板](.github/ISSUE_TEMPLATE/accessibility_barrier.yml) 创建 Issue，并尽量提供页面路由、视口宽高、浏览器和辅助技术、是否开启大字或减少动画、复现步骤、实际与期望行为。
+请使用 [无障碍问题模板](../.github/ISSUE_TEMPLATE/accessibility_barrier.yml) 创建 Issue，并尽量提供页面路由、视口宽高、浏览器和辅助技术、是否开启大字或减少动画、复现步骤、实际与期望行为。
 
-勿在截图、日志或附件中包含真实长者资料、健康记录、坐标或凭据。涉及真实隐私泄露或可利用漏洞时，请使用 [私密安全报告渠道](.github/SECURITY.md)，不要公开发布。
+勿在截图、日志或附件中包含真实长者资料、健康记录、坐标或凭据。涉及真实隐私泄露或可利用漏洞时，请使用 [私密安全报告渠道](../.github/SECURITY.md)，不要公开发布。
