@@ -75,8 +75,8 @@
 3. 将数据库连接和保存的密钥配置到桌面启动环境，再运行程序。以下命令会交互式读取配置，不需要将真实密码写入仓库。
 
    ```powershell
-   $env:SUINING_MYSQL_DSN = Read-Host 'MySQL DSN'
-   $env:DATA_ENCRYPTION_KEY = Read-Host 'Saved Base64 encryption key'
+   $env:SUINING_MYSQL_DSN = Read-Host 'MySQL DSN' -MaskInput
+   $env:DATA_ENCRYPTION_KEY = Read-Host 'Saved Base64 encryption key' -MaskInput
    $env:SESSION_BACKEND = 'database'
    .\suining.exe
    ```
