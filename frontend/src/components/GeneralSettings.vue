@@ -1,5 +1,5 @@
 <template>
-  <el-dialog v-model="visible" title="常规设置" width="min(520px, 94vw)" append-to-body>
+  <el-dialog v-model="visible" class="general-settings-dialog" title="常规设置" width="min(520px, 94vw)" append-to-body>
     <section class="settings-group">
       <h3>显示与操作</h3>
       <div class="setting"><label for="setting-large-text">大字模式</label><el-switch id="setting-large-text" :model-value="largeText" @change="updateLargeText" /></div>
@@ -55,4 +55,34 @@ defineExpose({ open })
 .settings-group h3 { margin: 0; font-size: 18px; }
 .setting { display: flex; justify-content: space-between; align-items: center; gap: 16px; min-height: 42px; }
 .hint { margin: 0; color: var(--care-text-muted); font-size: 13px; line-height: 1.7; }
+</style>
+
+<style>
+.general-settings-dialog {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100dvh - 32px);
+  margin: 16px auto !important;
+  overflow: hidden;
+}
+.general-settings-dialog .el-dialog__header,
+.general-settings-dialog .el-dialog__footer {
+  flex-shrink: 0;
+}
+.general-settings-dialog .el-dialog__body {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+@media (max-width: 420px) {
+  .general-settings-dialog .el-dialog__footer {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .general-settings-dialog .el-dialog__footer .el-button {
+    margin-left: 0;
+  }
+}
 </style>
