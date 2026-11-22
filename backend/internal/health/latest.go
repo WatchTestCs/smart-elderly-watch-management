@@ -117,8 +117,10 @@ func readLatest(ctx context.Context, q latestQuerier, oldID int64, box *securest
 
 func buildLatest(ctx context.Context, q *sql.Tx, oldID int64, box *securestore.Box) ([]Record, error) {
 	partition := "BINARY source,BINARY source_device,BINARY metric,BINARY semantics"
+	// Select one deterministic winner per series before applying the 10,000-
+	// series bound; RANK() counts every timestamp tie as another candidate.
 	sql := "SELECT s.sample_id,s.device_id,s.epoch,s.revision,s.payload,s.payload_cipher FROM health_sample s INNER JOIN (" +
-		"SELECT sample_id,RANK() OVER (PARTITION BY " + partition + " ORDER BY sample_start DESC) AS latest_rank " +
+		"SELECT sample_id,ROW_NUMBER() OVER (PARTITION BY " + partition + " ORDER BY sample_start DESC,revision DESC,sample_id DESC) AS latest_rank " +
 		"FROM health_sample WHERE old_id=? AND NOT deleted) ranked ON ranked.sample_id=s.sample_id " +
 		"WHERE ranked.latest_rank=1 ORDER BY s.sample_id DESC LIMIT 10001"
 	rows, err := q.QueryContext(ctx, sql, oldID)
