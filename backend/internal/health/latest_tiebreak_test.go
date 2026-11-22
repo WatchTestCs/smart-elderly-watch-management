@@ -79,13 +79,16 @@ func TestLatestBackfillCapsDistinctSeriesRatherThanTiedSamples(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Simulate 10,000 imported records with one exact series/timestamp.
+	// Assign distinct revisions to satisfy the per-owner uniqueness constraint.
 	// RANK() returned every tied row and hit the candidate cap even
 	// though the resident has only one distinct latest series.
 	digits := "(SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9)"
 	query := fmt.Sprintf(`INSERT INTO health_sample
 		(sample_id,old_id,device_id,epoch,version,revision,payload,payload_cipher,source,source_device,metric,semantics,sample_start,sample_end,deleted)
 		SELECT SHA2(CONCAT('latest-tie:',a.n,b.n,c.n,d.n),256),
-		h.old_id,h.device_id,h.epoch,h.version,h.revision,h.payload,h.payload_cipher,
+		h.old_id,h.device_id,h.epoch,h.version,
+		h.revision + 1 + a.n * 1000 + b.n * 100 + c.n * 10 + d.n,
+		h.payload,h.payload_cipher,
 		h.source,h.source_device,h.metric,h.semantics,h.sample_start,h.sample_end,h.deleted
 		FROM health_sample AS h
 		CROSS JOIN %s AS a CROSS JOIN %s AS b CROSS JOIN %s AS c CROSS JOIN %s AS d
