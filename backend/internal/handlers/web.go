@@ -22,7 +22,7 @@ func MountWeb(mux *http.ServeMux) {
 	if _, err := fs.Stat(sub, "index.html"); err != nil {
 		return // 无前端产物：纯 API 模式
 	}
-	files := http.FileServer(http.FS(sub))
+	files := newStaticHandler(sub)
 	mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://tile.openstreetmap.org; font-src 'self'; connect-src 'self' ipc: http://ipc.localhost; object-src 'none'; frame-src https://www.amap.com https://apis.map.qq.com https://www.google.com; base-uri 'self'; frame-ancestors 'none'")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
