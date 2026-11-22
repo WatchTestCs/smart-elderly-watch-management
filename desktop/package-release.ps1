@@ -1,7 +1,7 @@
 $ErrorActionPreference = 'Stop'
 & (Join-Path $PSScriptRoot 'validate-version.ps1')
 $project = Split-Path $PSScriptRoot -Parent
-$repo = Split-Path $project -Parent
+$repo = $project # desktop/ is directly under the repository root.
 $meta = Get-Content (Join-Path $PSScriptRoot 'version.json') -Raw | ConvertFrom-Json
 $version = $meta.version
 $channel = if ($env:SUINING_RELEASE_CHANNEL) { $env:SUINING_RELEASE_CHANNEL } else { [string]$meta.channel }
