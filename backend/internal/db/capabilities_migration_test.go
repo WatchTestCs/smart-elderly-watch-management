@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"sort"
@@ -90,6 +91,18 @@ func TestCapabilitiesRollbackAndReapply(t *testing.T) {
 		b, err := os.ReadFile(filepath.Join(rollbackDir, name))
 		if err != nil {
 			t.Fatal(err)
+		}
+		// These historical rollbacks would remove columns or indexes retained by
+		// irreversible health protection migrations 0041/0042. Check their
+		// fail-closed preflight, but do not execute destructive downgrade DDL.
+		switch name {
+		case "mysql_0004_device_capabilities.sql", "mysql_0009_rule_baseline_cover.sql", "mysql_0024_health_latest.sql":
+			_, err := pool.DB.Exec(strings.SplitN(string(b), ";", 2)[0])
+			var mysqlErr *mysql.MySQLError
+			if !errors.As(err, &mysqlErr) || mysqlErr.Number != 1062 {
+				t.Fatalf("%s did not reject encrypted-schema rollback: %v", name, err)
+			}
+			continue
 		}
 		if strings.Contains(string(b), "DELETE FROM schema_migrations") {
 			wantRemaining--

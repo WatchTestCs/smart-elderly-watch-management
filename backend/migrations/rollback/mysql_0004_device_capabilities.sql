@@ -1,3 +1,6 @@
+-- Block incompatible encrypted-schema rollback before any destructive DDL.
+-- Re-inserting the existing successor ledger row fails with duplicate key 1062.
+INSERT INTO schema_migrations SELECT * FROM schema_migrations WHERE name='mysql/0041_health_projection_protection.sql';
 -- Offline only: stop API/workers, back up these tables and care incident/event data first.
 -- MySQL DDL implicitly commits. This is compensating removal, not transactional undo.
 -- Device actions already executed cannot be rolled back. Retain generated care incidents.
