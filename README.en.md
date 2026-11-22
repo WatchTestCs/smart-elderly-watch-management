@@ -75,8 +75,8 @@ Latest stable release: **2.1.0 · Windows x64**, published on [GitHub Releases](
 3. Provide the database DSN and saved key in the desktop launch environment. This interactive example avoids hardcoding real credentials into the repository.
 
    ```powershell
-   $env:SUINING_MYSQL_DSN = Read-Host 'MySQL DSN'
-   $env:DATA_ENCRYPTION_KEY = Read-Host 'Saved Base64 encryption key'
+   $env:SUINING_MYSQL_DSN = Read-Host 'MySQL DSN' -MaskInput
+   $env:DATA_ENCRYPTION_KEY = Read-Host 'Saved Base64 encryption key' -MaskInput
    $env:SESSION_BACKEND = 'database'
    .\suining.exe
    ```
