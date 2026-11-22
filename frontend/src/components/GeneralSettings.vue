@@ -2,7 +2,7 @@
   <el-dialog v-model="visible" title="常规设置" width="min(520px, 94vw)" append-to-body>
     <section class="settings-group">
       <h3>显示与操作</h3>
-      <div class="setting"><label for="setting-large-text">大字模式</label><el-switch id="setting-large-text" :model-value="largeText" @change="setLargeText" /></div>
+      <div class="setting"><label for="setting-large-text">大字模式</label><el-switch id="setting-large-text" :model-value="largeText" @change="updateLargeText" /></div>
       <div class="setting"><label for="setting-reduced-motion">减少界面动画</label><el-switch id="setting-reduced-motion" v-model="mapPreferences.reducedMotion" @change="saveMapPreferences" /></div>
     </section>
     <section class="settings-group">
@@ -36,19 +36,15 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { mapPreferences, saveMapPreferences, resetMapPreferences } from '../utils/mapProviders'
+import { useTextSizePreference } from '../composables/useTextSizePreference'
 
-const emit = defineEmits<{ textSizeChanged: [value: boolean] }>()
 const visible = ref(false)
-const largeText = ref(false)
+const { largeText, setLargeText } = useTextSizePreference()
 function open() {
-  largeText.value = document.documentElement.classList.contains('large-text')
   visible.value = true
 }
-function setLargeText(value: string | number | boolean) {
-  largeText.value = Boolean(value)
-  document.documentElement.classList.toggle('large-text', largeText.value)
-  emit('textSizeChanged', largeText.value)
-  try { localStorage.setItem('large_text', String(largeText.value)) } catch { /* Session-only preference. */ }
+function updateLargeText(value: string | number | boolean) {
+  setLargeText(Boolean(value))
 }
 defineExpose({ open })
 </script>

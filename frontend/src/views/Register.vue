@@ -27,9 +27,9 @@
               maxlength="20"
               clearable
               @blur="checkCode">
-              <template #append><el-button  @click="checkCode">验证</el-button></template>
+              <template #append><el-button :loading="checkingCode" :disabled="checkingCode" @click="checkCode">验证</el-button></template>
             </el-input>
-            <div v-if="codeMessage" :class="codeOk ? 'tip-ok' : 'tip-error'">{{ codeMessage }}</div>
+            <div v-if="codeMessage" :class="codeOk ? 'tip-ok' : 'tip-error'" :role="codeOk ? 'status' : 'alert'" aria-live="polite">{{ codeMessage }}</div>
           </el-form-item>
 
           <el-form-item label="姓名" prop="familyName" for="register-familyName">
@@ -76,11 +76,13 @@
 
 <script setup lang="ts">
 import { View } from '@element-plus/icons-vue'
-import { onMounted, reactive, ref, watch } from 'vue'
+import { reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, type FormInstance, type FormItemRule } from 'element-plus'
 import { apiErrorMessage } from '../api/httpContract'
 import { invitations } from '../api/invitations'
+import { useTextSizePreference } from '../composables/useTextSizePreference'
+import { validatePasswordComplexity, validatePhone } from '../utils/validation'
 
 const router = useRouter()
 const heroImage = '/static/img/care-lakeside-artisan.webp'
@@ -88,9 +90,10 @@ const heroImageSrcset = '/static/img/care-lakeside-artisan-640.webp 640w, /stati
 const brandLogo = '/static/brand/suining-logo-96.webp'
 const brandLogoSrcset = '/static/brand/suining-logo-96.webp 96w, /static/brand/suining-logo-192.webp 192w'
 const submitting = ref(false)
+const checkingCode = ref(false)
 const showPassword = ref(false)
 const showConfirmPassword = ref(false)
-const largeText = ref(localStorage.getItem('large_text') === 'true')
+const { largeText, toggleTextSize } = useTextSizePreference()
 const codeMessage = ref('')
 const codeOk = ref(false)
 const verifiedCode = ref('')
@@ -99,20 +102,9 @@ const registerForm = reactive({
   familyPhone: '', familyPassword: '', confirmPassword: '', familyAddress: ''
 })
 const registerFormRef = ref<FormInstance | null>(null)
-const checkPhone: NonNullable<FormItemRule['validator']> = (_rule, value, callback) => {
-  if (!value) return callback(new Error('手机号不能为空'))
-  if (!/^1\d{10}$/.test(String(value))) return callback(new Error('手机号格式不正确'))
-  callback()
-}
 const checkConfirm: NonNullable<FormItemRule['validator']> = (_rule, value, callback) => {
   if (!value) return callback(new Error('请再次输入密码'))
   if (value !== registerForm.familyPassword) return callback(new Error('两次输入的密码不一致'))
-  callback()
-}
-const checkPasswordComplexity: NonNullable<FormItemRule['validator']> = (_rule, value, callback) => {
-  if (typeof value !== 'string' || !/[a-zA-Z]/.test(value) || !/\d/.test(value)) {
-    return callback(new Error('密码必须同时包含字母和数字'))
-  }
   callback()
 }
 const rules = {
@@ -122,32 +114,35 @@ const rules = {
   familySex: [{ required: true, message: '请选择性别', trigger: 'change' }],
   familyPhone: [
     { required: true, message: '请输入手机号', trigger: 'blur' },
-    { validator: checkPhone, trigger: 'blur' }
+    { validator: validatePhone, trigger: 'blur' }
   ],
   familyPassword: [
     { required: true, message: '请输入密码', trigger: 'blur' },
     { min: 12, max: 20, message: '密码长度为12-20个字符', trigger: 'blur' },
-    { validator: checkPasswordComplexity, trigger: 'blur' }
+    { validator: validatePasswordComplexity, trigger: 'blur' }
   ],
   confirmPassword: [{ validator: checkConfirm, trigger: 'blur' }]
-}
-function toggleTextSize() {
-  largeText.value = !largeText.value
-  localStorage.setItem('large_text', String(largeText.value))
-  document.documentElement.classList.toggle('large-text', largeText.value)
 }
 let codeRequest = 0
 watch(() => registerForm.code, () => {
   codeRequest++
+  checkingCode.value = false
   codeOk.value = false
   verifiedCode.value = ''
+})
+watch(() => registerForm.familyPassword, () => {
+  if (registerForm.confirmPassword) void registerFormRef.value?.validateField('confirmPassword').catch(() => {})
 })
 async function checkCode() {
   const code = registerForm.code.trim()
   const revision = ++codeRequest
   codeMessage.value = ''
   codeOk.value = false
-  if (!code) return
+  if (!code) {
+    checkingCode.value = false
+    return
+  }
+  checkingCode.value = true
   try {
     const { data } = await invitations.checkCode({ code })
     if (revision !== codeRequest || code !== registerForm.code.trim()) return
@@ -161,6 +156,8 @@ async function checkCode() {
     }
   } catch (error) {
     if (revision === codeRequest) codeMessage.value = apiErrorMessage(error, '邀请码暂时无法验证')
+  } finally {
+    if (revision === codeRequest) checkingCode.value = false
   }
 }
 async function submitForm() {
@@ -175,27 +172,29 @@ async function submitForm() {
   try {
     const { data } = await invitations.join({
       code: registerForm.code.trim(),
-      familyName: registerForm.familyName,
-      familyRelation: registerForm.familyRelation,
+      familyName: registerForm.familyName.trim(),
+      familyRelation: registerForm.familyRelation.trim(),
       familySex: registerForm.familySex,
-      familyPhone: registerForm.familyPhone,
+      familyPhone: registerForm.familyPhone.trim(),
       familyPassword: registerForm.familyPassword,
-      familyAddress: registerForm.familyAddress
+      familyAddress: registerForm.familyAddress.trim()
     })
     if (data.returnCode !== '1111') {
       ElMessage({ type: 'error', message: data.message || '注册失败，请稍后重试' })
       void checkCode()
       return
     }
+    const signedPhone = registerForm.familyPhone.trim()
+    registerForm.familyPassword = ''
+    registerForm.confirmPassword = ''
     ElMessage({ type: 'success', message: '注册成功！已绑定老人：' + data.oldPersonName + '，请使用手机号登录' })
-    localStorage.setItem('login_phone', registerForm.familyPhone)
+    try { localStorage.setItem('login_phone', signedPhone) } catch { /* Registration remains successful. */ }
     await router.push('/sign-in')
   } catch (error) {
     ElMessage({ type: 'error', message: apiErrorMessage(error, '注册失败，请检查后端服务是否已启动') })
   } finally { submitting.value = false }
 }
 function goLogin() { void router.push('/sign-in') }
-onMounted(() => document.documentElement.classList.toggle('large-text', largeText.value))
 </script>
 
 <style scoped>

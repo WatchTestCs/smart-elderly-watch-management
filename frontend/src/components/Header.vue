@@ -9,54 +9,50 @@
     </router-link>
     <div class="header-right">
       <el-button class="text-size-button" link :aria-label="largeText ? '切换为标准字号' : '切换为更大字号'" :aria-pressed="String(largeText)" @click="toggleTextSize">{{ largeText ? '标准字' : '大字' }}</el-button>
-      <el-button class="settings-button" link @click="settings?.open()">设置</el-button>
+      <el-button class="settings-button" link aria-label="打开通用设置" @click="settings?.open()">设置</el-button>
       <span class="header-divider"></span>
       <span class="user-avatar" aria-hidden="true">{{ userInitial }}</span>
       <span class="username">{{ login_username || '用户' }}</span>
-      <el-button class="logout-button" link @click="logout">退出</el-button>
+      <el-button class="logout-button" link :loading="loggingOut" :disabled="loggingOut" @click="logout">退出</el-button>
     </div>
+    <GeneralSettings ref="settings" />
   </header>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import type GeneralSettings from './GeneralSettings.vue'
+import { computed, ref } from 'vue'
+import GeneralSettings from './GeneralSettings.vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { authState, endSession } from '../auth'
 import { apiErrorMessage } from '../api/httpContract'
+import { useTextSizePreference } from '../composables/useTextSizePreference'
 
 const router = useRouter()
 const settings = ref<InstanceType<typeof GeneralSettings> | null>(null)
+const loggingOut = ref(false)
 const login_username = computed(() => authState.account?.displayName || '')
-const largeText = ref((() => {
-  try { return localStorage.getItem('large_text') === 'true' } catch { return false }
-})())
+const { largeText, toggleTextSize } = useTextSizePreference()
 const isFamily = computed(() => authState.account?.role === 'FAMILY')
 const userInitial = computed(() => (login_username.value || '用').slice(0, 1))
-function applyTextSize() {
-  document.documentElement.classList.toggle('large-text', largeText.value)
-}
-function toggleTextSize() {
-  largeText.value = !largeText.value
-  try { localStorage.setItem('large_text', String(largeText.value)) } catch { /* In-memory preference when storage is blocked. */ }
-  applyTextSize()
-}
 async function logout() {
+  if (loggingOut.value) return
   try {
     await ElMessageBox.confirm('退出后需要重新登录，确定退出吗？', '退出登录', {
       confirmButtonText: '退出', cancelButtonText: '继续使用', type: 'warning'
     })
   } catch { return }
+  loggingOut.value = true
   try {
     await endSession()
   } catch (error) {
     ElMessage.error(apiErrorMessage(error, '退出未能完成'))
+  } finally {
+    loggingOut.value = false
   }
   // endSession invalidates local state even when the response was lost.
   await router.push('/sign-in')
 }
-onMounted(applyTextSize)
 </script>
 
 <style scoped>

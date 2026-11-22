@@ -73,7 +73,7 @@ router.beforeEach(async to => {
     const account: SessionAccount | null = await loadSession()
     if (authState.setupRequired) return to.path === '/setup' ? undefined : '/setup'
     if (to.path === '/setup') return '/sign-in'
-    if (publicPage) return
+    if (publicPage) return account ? portalHome(account) : undefined
     if (!account) return '/sign-in'
     if (to.name === 'not-found') return
     if (wrongPortal(account, familyPage)) return portalHome(account)

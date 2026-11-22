@@ -57,7 +57,7 @@ Use the named source archive and checksums from the Release to reproduce its bui
 | Location and alerts | View reported locations, SOS and explicit fall types; show independent sampling context and mark unknown or historical positions |
 | Care coordination | Claim alert tasks and log interventions; the reviewing supervisor must be neither the current assignee nor the resolver; manual and timeout escalation durably enqueue configured fallback notifications; reconcile an uncertain write in the same dialog, retain notes, and block obsolete actions |
 | Announcements | Publish illustrated notices and moderate comments across administrator and family views |
-| Desktop accessibility | Toggle large-text mode, navigate by keyboard, use `F11` fullscreen, and adapt to narrow screens |
+| Desktop accessibility | Toggle large-text mode, navigate by keyboard, use `F11` fullscreen, and adapt to narrow screens; the top Settings button opens display, motion, and map preferences, with a shared text-size setting across sign-in, registration, and settings |
 
 In day-to-day operation, staff create a resident profile, register and bind a watch, receive incoming telemetry, handle generated alert tasks, and have a second supervisor review completed interventions.
 

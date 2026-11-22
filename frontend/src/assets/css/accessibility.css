@@ -11,7 +11,7 @@
   border: 0 !important;
 }
 
-#app .care-app :where(
+#app :is(.care-app, .auth-page, .register-page) :where(
   button,
   a[href],
   input,
@@ -39,7 +39,7 @@
 /* Element Plus input groups expose their own outer focus ring. Avoid a
    second ring inside the compound search control while preserving keyboard
    focus visibility on the group. Standalone fields remain unaffected. */
-#app .care-app .el-input-group .el-input__inner:focus-visible {
+#app :is(.care-app, .auth-page, .register-page) .el-input-group .el-input__inner:focus-visible {
   outline: none;
 }
 

@@ -12,7 +12,7 @@
     </section>
     <main class="auth-panel">
       <div class="auth-card">
-        <el-button class="login-text-toggle" link :aria-pressed="String(largeText)" @click="toggleTextSize">{{ largeText ? '标准字' : '大字' }}</el-button>
+        <el-button class="login-text-toggle" link :aria-label="largeText ? '切换为标准字号' : '切换为更大字号'" :aria-pressed="String(largeText)" @click="toggleTextSize">{{ largeText ? '标准字' : '大字' }}</el-button>
         <div class="auth-brand"><img class="auth-mark" src="/static/brand/suining-logo-96.webp" srcset="/static/brand/suining-logo-96.webp 96w, /static/brand/suining-logo-192.webp 192w" sizes="72px" width="72" height="72" alt="" aria-hidden="true" decoding="async"><span>岁宁</span></div>
         <p class="auth-eyebrow">智慧养老管理平台</p>
         <h2>欢迎回来</h2>
@@ -28,7 +28,7 @@
               <template #prefix><svg class="el-input__icon password-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 4v3"/></svg></template><template #suffix><button  type="button" class="password-visibility" :aria-label="showPassword ? '隐藏密码' : '显示密码'" :aria-pressed="showPassword" @click="showPassword = !showPassword"><el-icon aria-hidden="true"><View /></el-icon></button></template>
             </el-input>
           </el-form-item>
-          <el-form-item v-if="mfaRequired" label="动态验证码或恢复码"><el-input v-model="loginForm.otp" aria-label="动态验证码" autocomplete="one-time-code" inputmode="numeric" maxlength="6" placeholder="6 位动态验证码" /><el-input v-model="loginForm.recoveryCode" aria-label="一次性恢复码" autocomplete="off" placeholder="无法使用验证器时填写恢复码" /></el-form-item>
+          <el-form-item v-if="mfaRequired" label="动态验证码或恢复码" prop="otp"><el-input v-model="loginForm.otp" aria-label="动态验证码" autocomplete="one-time-code" inputmode="numeric" maxlength="6" placeholder="6 位动态验证码" /><el-input v-model="loginForm.recoveryCode" aria-label="一次性恢复码" autocomplete="off" placeholder="无法使用验证器时填写恢复码" /></el-form-item>
           <p v-if="errorMessage" class="auth-error" role="alert">{{ errorMessage }}</p>
           <el-button type="primary" native-type="submit" class="submit-button" :loading="submitting" :disabled="submitting">登录</el-button>
         </el-form>
@@ -42,49 +42,39 @@
 
 <script setup lang="ts">
 import { Iphone, Setting, View } from '@element-plus/icons-vue'
-import { onMounted, reactive, ref } from 'vue'
+import { reactive, ref, watch } from 'vue'
 import type { FormInstance, FormItemRule } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { apiErrorMessage } from '../api/httpContract'
 import { api } from '../api/client'
 import axios from 'axios'
 import { loadSession } from '../auth'
+import { useTextSizePreference } from '../composables/useTextSizePreference'
+import { validateMfaCredentials, validatePasswordByteLimit, validatePhone } from '../utils/validation'
 
 const router = useRouter()
 let registeredPhone = ''
-let savedLargeText = false
 try {
   registeredPhone = localStorage.getItem('login_phone') || ''
   localStorage.removeItem('login_phone')
-  savedLargeText = localStorage.getItem('large_text') === 'true'
 } catch { /* Login remains available when browser storage is blocked. */ }
 const heroImage = '/static/img/care-lakeside-artisan.webp'
 const submitting = ref(false)
 const showPassword = ref(false)
 const mfaRequired = ref(false)
 const errorMessage = ref('')
-const largeText = ref(savedLargeText)
+const { largeText, toggleTextSize } = useTextSizePreference()
 const loginForm = reactive({ phone: registeredPhone, password: '', otp: '', recoveryCode: '' })
 const loginFormRef = ref<FormInstance | null>(null)
-const rules = {
-  phone: [
-    { required: true, message: '请输入手机号', trigger: 'blur' },
-    { pattern: /^1\d{10}$/, message: '请输入有效的 11 位手机号', trigger: 'blur' }
-  ],
-  password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { validator: ((_rule, value, done) => done(
-      typeof value === 'string' && new TextEncoder().encode(value).length <= 72
-        ? undefined : new Error('密码不能超过 72 个字节'))) satisfies FormItemRule['validator'], trigger: 'blur' }
-  ]
+const validateMfa: NonNullable<FormItemRule['validator']> = (_rule, _value, callback) => {
+  if (!mfaRequired.value) return callback()
+  const issue = validateMfaCredentials(loginForm.otp, loginForm.recoveryCode)
+  callback(issue ? new Error(issue) : undefined)
 }
-function applyTextSize() {
-  document.documentElement.classList.toggle('large-text', largeText.value)
-}
-function toggleTextSize() {
-  largeText.value = !largeText.value
-  try { localStorage.setItem('large_text', String(largeText.value)) } catch { /* Session-only preference. */ }
-  applyTextSize()
+const rules: Record<string, FormItemRule[]> = {
+  phone: [{ required: true, message: '请输入手机号', trigger: 'blur' }, { validator: validatePhone, trigger: 'blur' }],
+  password: [{ required: true, message: '请输入密码', trigger: 'blur' }, { validator: validatePasswordByteLimit, trigger: 'blur' }],
+  otp: [{ validator: validateMfa, trigger: 'blur' }]
 }
 function goRegister() { void router.push('/join-family') }
 async function submitForm() {
@@ -94,10 +84,14 @@ async function submitForm() {
     const valid = await loginFormRef.value?.validate().catch(() => false)
     if (!valid) return
     errorMessage.value = ''
-    const { data } = await api.post<{ authenticated?: boolean; message?: string }>('/api/v1/auth/login', { ...loginForm })
+    const payload = { phone: loginForm.phone.trim(), password: loginForm.password, otp: loginForm.otp.trim(), recoveryCode: loginForm.recoveryCode.trim() }
+    const { data } = await api.post<{ authenticated?: boolean; message?: string }>('/api/v1/auth/login', payload)
     if (data?.authenticated === true) {
       const account = await loadSession(true)
-      if (!account) throw new Error('Login session not established')
+      if (!account) throw new Error('登录状态未能建立，请刷新页面后重试')
+      loginForm.password = ''
+      loginForm.otp = ''
+      loginForm.recoveryCode = ''
       await router.push(account.role === 'ADMIN' ? '/operations' : '/family-portal')
     } else {
       errorMessage.value = data?.message || '手机号或密码不正确，请重试'
@@ -117,7 +111,9 @@ async function submitForm() {
     }
   } finally { submitting.value = false }
 }
-onMounted(applyTextSize)
+watch(() => [loginForm.phone, loginForm.password, loginForm.otp, loginForm.recoveryCode], () => {
+  if (errorMessage.value) errorMessage.value = ''
+})
 </script>
 
 <style scoped>
