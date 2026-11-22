@@ -1,4 +1,4 @@
-> **当前 `preview`：仅使用 MySQL 8.4。** PostgreSQL/S3 旧版本须按 [迁移手册](docs/MYSQL_ONLY_MIGRATION.md) 明确迁移。
+> **正式版 2.1.0**：业务数据使用 MySQL 8.4 单库；[下载最新版](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/latest)。开发分支为 `preview`，稳定版为 `main`。
 
 <p align="center">
   <img src="frontend/public/static/brand/suining-logo-192.webp" width="88" height="88" alt="岁宁·智慧养老">
@@ -6,7 +6,7 @@
 
 <h1 align="center">岁宁 · 智慧养老管理</h1>
 
-<p align="center">岁月有伴，日常安宁。<br>连接长者、家属与照护人员的开源手表管理平台。</p>
+<p align="center">面向养老照护场景的设备管理、健康监测和协作工作台。</p>
 
 <p align="center">
   <a href="README.md">简体中文</a> · <a href="README.en.md">English</a>
@@ -22,194 +22,151 @@
 
 社区入口：[反馈缺陷或建议](https://github.com/WatchTestCs/smart-elderly-watch-management/issues/new/choose) · [参与贡献](CONTRIBUTING.md) · [无障碍反馈](ACCESSIBILITY.md) · [私密安全报告](.github/SECURITY.md) · [行为准则](CODE_OF_CONDUCT.md)
 
-[下载](#下载) · [主要功能](#主要功能) · [开始使用](#开始使用) · [系统架构](#系统架构) · [源码与构建](#源码与构建) · [验证与性能](#验证与性能) · [文档导航](#文档导航)
 
-岁宁面向照护机构与家属，在同一工作台内集中管理长者档案、手表设备、健康记录、位置告警与照护任务。客户端与服务端基于 Tauri 2、Rust、Vue 3、Vite 与 Go 构建，仅使用独立部署的 MySQL 8.4 持久化业务数据。
+[功能与使用场景](#功能与使用场景) · [下载安装](#下载安装) · [首次启动](#首次启动) · [系统架构](#系统架构) · [开发与构建](#开发与构建) · [常见问题](#常见问题) · [文档与反馈](#文档与反馈)
 
-仓库根目录下的 [SuiningWatch](SuiningWatch/README.md) 是配套的 HarmonyOS 手表端工程，包含前台心率与计步传感器读取、系统权限申请、设备认证、采样上传和 SOS。模拟采样保留为独立调试来源；构建与接入步骤见[手表接入说明](docs/WATCH_INTEGRATION.md)。
+岁宁将长者档案、手表数据、位置告警和照护任务集中在同一工作台，供照护机构及已关联的家属使用。仓库同时包含 Windows 桌面端、可独立部署的 Go 服务、浏览器界面、HarmonyOS 手表端及 Rust 协议模拟器。
 
-![岁宁管理员工作台：设备异常、位置告警与平台公告](docs/screenshots/overview-desktop.png)
+![使用测试数据的岁宁管理工作台](docs/screenshots/overview-desktop.png)
 
-*上图为使用测试数据的界面示例，仅供预览布局。*
+*界面示例使用测试数据；具体功能取决于所部署版本、设备和服务配置。*
 
-## 分支与发布
+## 功能与使用场景
 
-正式版发布时，`main` 与 `preview` 同步为同一源码提交。后续功能与文档仍先提交到 `preview`，`main` 用于稳定版。此轮经维护者授权使用本机编译与打包验收，未重新执行新 SHA 的完整 GitHub CI；发布清单记录实际证据。
-
-2026-10-22 的 `v2.1.0` 预览标签固定在旧提交 `e3cf064`，不会改写。正式版仍使用产品版本 **2.1.0**，以独立的 [`v2.1.0+20261122`](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.1.0+20261122) 标签区分，避免破坏旧版可追溯性。
-
-## 下载
-
-**2.1.0 正式版 · Windows x64**，安装包与完整源码来自同一发行提交，MySQL 8.4 须单独部署。
-
-| 发布文件 | 下载 | 适用场景 |
-| --- | --- | --- |
-| Windows 安装版 | [Setup EXE](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/download/v2.1.0+20261122/Suining-Setup-2.1.0-win-x64.exe) | Windows 10/11 x64 安装及卸载 |
-| 免安装版 | [Portable ZIP](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/download/v2.1.0+20261122/Suining-Portable-2.1.0-win-x64.zip) | 完整解压，运行 `suining.exe`，保留配套 Go 服务端 |
-| 完整源码 | [Source ZIP](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/download/v2.1.0+20261122/Suining-Source-2.1.0.zip) | 对应本次固定提交和数据库迁移 |
-| 原生独立服务端 | [Windows x64 EXE](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/download/v2.1.0+20261122/Suining-Native-NoFonts-2.1.0-win-x64.exe) | 不含桌面界面，浏览器访问 |
-
-[SHA-256 校验](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/download/v2.1.0+20261122/SHA256SUMS.txt) · [发布清单](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/download/v2.1.0+20261122/release-manifest.json) · [正式版说明](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.1.0+20261122)
-
-> 原 [`v2.1.0` 预览包](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.1.0) 保留。正式版安装包不包含 MySQL，不自动迁移历史 PostgreSQL 数据或图片；升级前先备份，并按 [MySQL 单库迁移](docs/MYSQL_ONLY_MIGRATION.md) 操作。Windows 可执行文件默认未签名。
-
-## 主要功能
-
-| 模块 | 功能范围 |
+| 使用场景 | 可以完成的工作 |
 | --- | --- |
-| 长者与家庭 | 管理长者、监护人和家属档案；校验有效监护人关联及监护人的 0–150 岁整数年龄，保护仍被长者引用的监护人；生成家属注册邀请码 |
-| 手表设备 | 登记与绑定设备、校验设备密钥、查看在线状态、设置监测阈值 |
-| 健康与日常 | 查询心率、单项血压、睡眠、步数和日常生活记录 |
-| 位置与告警 | 查看上报位置、异常、SOS 与明确摔倒类型；展示独立采样来源/时间/精度，标记未知与历史位置 |
-| 照护协作 | 接单、开始处置、记录措施；复核主管不得为当前接单人或处置人；人工升级与超时升级均按配置持久化通知；操作结果不确定时可在原对话框核对任务状态，保留记录并阻止过期动作重复提交 |
-| 公告与互动 | 发布图文公告、管理评论，区分管理端与家属端视图 |
-| 桌面无障碍 | 支持大字模式、全键盘操作、`F11` 全屏及窄屏自适应布局；顶部“设置”可配置显示、动画与地图，大字偏好在登录、注册和设置面板间同步 |
+| 长者与家属档案 | 维护基础资料、监护和家属关联，通过邀请码为家属开通受限访问 |
+| 设备与健康数据 | 登记和绑定手表，查看心率、血压、睡眠、步数及采样时间；区分缺失、历史和实时上报 |
+| 位置与异常处理 | 查看设备报告的位置、SOS 和告警，识别最后上报时间，避免将历史位置误认为实时定位 |
+| 照护协作 | 对告警工单接单、记录处置与升级，并由具备权限的其他主管复核 |
+| 机构公告 | 发布通知、管理评论，按管理端和家属端权限展示 |
+| 桌面使用体验 | 支持字号调节、键盘操作、全屏和窄屏布局；可在设置中调整显示与地图偏好 |
 
-日常业务按以下顺序流转：建立长者档案，登记并绑定手表，接收健康与位置上报，触发告警并生成工单，照护人员接单处置，最后由另一名主管独立复核。
+**典型流程：** 建立长者档案 → 关联家属 → 登记并绑定手表 → 接收上报 → 处理告警工单 → 独立复核。家属仅能查看获授权的长者信息，岗位权限由服务端执行。
 
-系统按角色隔离权限：家属只能查看已关联长者的记录；主管拥有完整后台管理权限；护理员与审计员仅限访问照护协作页面及个人双因素认证（2FA）设置。
+**使用边界：** 未上报不代表健康状态正常；网关接受通知也不代表家属已收到或照护人员已到场。真实 SOS 值守必须配置独立常驻服务、可靠通知渠道和人工响应机制，不能只依赖桌面窗口。
 
-## 开始使用
+## 下载安装
+
+最新正式版：**2.1.0 · Windows x64**。从 [GitHub Releases](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/latest) 获取发行包。
+
+| 下载 | 适合谁 | 使用方式 |
+| --- | --- | --- |
+| [Windows Setup 安装包](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/download/v2.1.0%2B20261122/Suining-Setup-2.1.0-win-x64.exe) | 日常使用者 | 运行安装程序，完成安装后启动岁宁 |
+| [Portable 免安装 ZIP](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/download/v2.1.0%2B20261122/Suining-Portable-2.1.0-win-x64.zip) | 不希望安装客户端的用户 | 完整解压后运行 `suining.exe`，不要单独复制 EXE |
+| [完整源码 ZIP](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/download/v2.1.0%2B20261122/Suining-Source-2.1.0.zip) | 开发及审计人员 | 对应正式发布提交，包含部署和迁移脚本 |
+| [独立 Go 服务端 EXE](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/download/v2.1.0%2B20261122/Suining-Native-NoFonts-2.1.0-win-x64.exe) | 服务端部署人员 | 无桌面界面，需自行配置数据库和网络 |
+
+[正式版更新说明](docs/releases/2.1.0.md) · [SHA-256 校验清单](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/download/v2.1.0%2B20261122/SHA256SUMS.txt) · [实际构建与验收清单](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/download/v2.1.0%2B20261122/release-manifest.json)
+
+安装包**不附带 MySQL**。Windows 客户端需要 WebView2；安装版会按构建配置处理所需运行组件，Portable 需系统已经安装 WebView2。当前 Windows 发行文件未使用公开受信任的代码签名证书。
+
+## 首次启动
 
 ### Windows 桌面端
 
-当前 `preview` 候选版**仅使用 MySQL 8.4** 作为持久化业务数据库。安装包和便携版均不包含数据库服务。旧 PostgreSQL、S3 配置不能用于新后端。
+1. 准备 **MySQL 8.4** 数据库及专用账号，授予应用所需权限。生产部署还需设置备份、TLS 和访问限制。数据库连接信息采用 Go MySQL DSN 格式，例如 `suining:密码@tcp(127.0.0.1:3306)/suining?parseTime=true`；实际端口按部署环境调整。
+2. 首次部署时生成并**安全保存**随机 32 字节数据加密密钥。可以在 PowerShell 7 中生成 Base64 值，保存到受控密钥存储；升级时必须使用原有密钥，不能每次重新生成。
 
-1. 配置 MySQL 8.4 数据库及独立账号。升级旧版本时，先停止所有旧版写入服务，按 [MySQL 单库迁移手册](docs/MYSQL_ONLY_MIGRATION.md) 备份并导入历史图片。
-2. 生成并妥善保存随机 32 字节数据加密密钥（base64）。PowerShell 7 本地示例：
+   ```powershell
+   [Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(32))
+   ```
 
-```powershell
-$env:SUINING_MYSQL_DSN='suining:替换密码@tcp(127.0.0.1:13306)/suining?parseTime=true'
-$env:SESSION_BACKEND='database'
-$env:DATA_ENCRYPTION_KEY='替换为已备份的32字节随机密钥的base64'
-& '.\suining.exe'
-```
+3. 将数据库连接和保存的密钥配置到桌面启动环境，再运行程序。以下命令会交互式读取配置，不需要将真实密码写入仓库。
 
-3. 数据库迁移成功后，按界面提示创建首位管理员。系统没有默认管理员密码。先创建长者档案，再登记与绑定手表。
+   ```powershell
+   $env:SUINING_MYSQL_DSN = Read-Host 'MySQL DSN'
+   $env:DATA_ENCRYPTION_KEY = Read-Host 'Saved Base64 encryption key'
+   $env:SESSION_BACKEND = 'database'
+   .\suining.exe
+   ```
 
-加密图片存入 MySQL `image_payload`，备份时必须包含 BLOB 数据及数据密钥。跨主机连接数据库须校验 TLS。桌面端关闭时会停止其本地 Go 服务；持续接收手表上报和 SOS 需要独立常驻的 Go 服务及真实值守通知渠道。
+4. 确认数据库迁移完成后，按初始化界面创建管理员，再建立长者档案与设备绑定。**没有预置管理员账号或通用密码。**
 
-### 本地容器化平台
+数据库连接失败时仍可能打开界面，但登录和业务写入不可用。图片及健康相关数据存储在 MySQL 中，备份必须包含 BLOB 和用于解密的密钥。旧 PostgreSQL/S3 部署的迁移必须停写、备份并按 [MySQL 单库迁移手册](docs/MYSQL_ONLY_MIGRATION.md) 操作，安装程序不会自动迁移旧数据。
 
-从仓库根目录运行：
+### 常驻服务与本地 Compose
+
+桌面端使用本机 Go 子进程，关闭窗口会终止本地服务。需要持续接收远程手表数据和 SOS，请按 [照护服务部署说明](docs/CARE_SERVICE_DEPLOYMENT.md) 部署独立常驻服务，并为对外接口配置 HTTPS、访问控制和实际值班流程。
+
+如需在本地启动完整服务栈，安装 Docker Compose 与 Python 3，在仓库根目录运行：
 
 ```powershell
 python scripts/start-platform.py
 python scripts/bootstrap-admin.py
 ```
 
-[Compose 配置](deploy/platform.compose.yml) 仅部署 MySQL 8.4、Go 服务、Nginx 和监控组件，不再部署 PostgreSQL、S3 或运行时本地图片目录。默认网关绑定 `127.0.0.1:8080`，Prometheus 绑定 `127.0.0.1:9090`。跨网络开放前须配置 TLS、访问控制和可信代理范围。数据迁移及回滚要求见 [MySQL 单库迁移手册](docs/MYSQL_ONLY_MIGRATION.md)。
+脚本启动 MySQL 8.4、Go API、Nginx 和监控，默认工作台地址为 `http://127.0.0.1:8080`，Prometheus 为 `http://127.0.0.1:9090`，均仅绑定本地回环地址。`deploy/secrets/`、`deploy/platform.env` 与 MySQL 数据卷需要妥善备份。不要将本地默认配置直接暴露到公网。
 
-### 系统架构
+## 系统架构
 
 ```mermaid
 flowchart LR
-  subgraph Desktop["Windows 桌面客户端"]
-    T["Tauri 2 / Rust"] -->|"SHA-256 校验与进程管理"| L["Go 本机子进程"]
-    V["Vue 3 / WebView2"] -->|"同源 HTTP / 会话"| L
-    V -->|"受限初始化 IPC"| T
-  end
-  W["HarmonyOS 手表 / Rust 模拟器"] -->|"受控网络：签名遥测与 SOS"| S["常驻 Go API"]
-  B["浏览器工作台"] -->|"HTTPS /api/v1/"| S
-  L -->|"业务、会话、图片 BLOB"| M[("MySQL 8.4")]
-  S -->|"授权事务与设备上报"| M
+    subgraph Desktop["Windows 桌面端"]
+        T["Tauri 2 / Rust"] -->|"校验哈希、管理进程"| L["本机 Go 服务"]
+        V["Vue 3 / WebView2"] -->|"同源 HTTP"| L
+        V -->|"受限 IPC"| T
+    end
+    W["HarmonyOS 手表 / Rust 模拟器"] -->|"设备认证、遥测与 SOS"| S["独立常驻 Go API"]
+    B["浏览器工作台"] -->|"HTTPS /api/v1/"| S
+    L -->|"业务读写"| M[("MySQL 8.4")]
+    S -->|"授权事务"| M
 ```
 
-MySQL 8.4 是唯一生产业务数据库。桌面程序校验 Go 子进程的文件哈希，启动令牌仅经环境变量传递，`runtime/server.json` 只包含端口与进程 ID。桌面服务仅监听本机回环地址；外部手表全天候接入须独立部署常驻 Go API、TLS 和人工照护流程。PostgreSQL/S3 仅作为历史迁移来源，当前不做双写。
+MySQL 8.4 是**唯一生产业务数据库**，保存档案、会话、告警、健康数据、审计和图片。桌面程序在启动前校验 Go 程序 SHA-256；控制令牌只通过进程环境变量传递，不暴露给网页。桌面本地服务仅监听回环地址，不能直接供外部手表访问。
 
-`/healthz` 仅表示进程存活，`/api/v1/service/status` 反映数据库就绪。参见 [架构说明](docs/ARCHITECTURE.md) 和 [迁移手册](docs/MYSQL_ONLY_MIGRATION.md)。
+服务的 `/healthz` 仅检查进程存活；`/api/v1/service/status` 才用于判断数据库就绪。具体信任边界、岗位授权和迁移设计见 [架构文档](docs/ARCHITECTURE.md)。
 
-## 源码与构建
+## 开发与构建
 
-日常开发基于 `preview` 分支；如需复现已发布的安装包，请直接下载上方的发行版源码包。
-
-```sh
-git clone --branch preview https://github.com/WatchTestCs/smart-elderly-watch-management.git
-cd smart-elderly-watch-management
-```
-
-```text
-
-├── desktop/     Tauri / Rust 桌面壳、原生权限与 Windows 打包脚本
-├── backend/     Go API、数据库迁移、照护工单与分析投影作业
-├── frontend/    Vue 3 / Vite 前端界面与 Playwright 浏览器测试
-└── watch-sim/   手表上报协议模拟器
-SuiningWatch/    HarmonyOS (ArkTS) 穿戴端模拟工程
-deploy/          Docker Compose、数据库与监控告警配置
-scripts/         平台启动、OpenAPI 生成与基准测试脚本
-tests/           UI 冒烟测试
-docs/            架构设计、部署手册、版本说明与验证记录
-evidence/        自动化测试与故障演练留档数据
-```
-
-在 Windows 上执行完整桌面构建，需要安装 PowerShell 7、Node.js（`^20.19.0 || >=22.12.0`）、Go（`go.mod` 要求 `1.27.4`）、Rust 1.85+、MSVC 生成工具与 Windows SDK。具体环境准备见[构建环境说明](docs/BUILD.md)。
+日常开发以 `preview` 为目标分支，`main` 对应稳定发布。完整构建要求：**PowerShell 7、Node.js 24.x、Go 1.27.4、Rust（至少 1.99.1）**；Windows 桌面打包还需 MSVC C++ Build Tools 和 Windows SDK，详见 [构建指南](docs/BUILD.md)。
 
 ```powershell
-# Work from the repository root
+git clone --branch preview https://github.com/WatchTestCs/smart-elderly-watch-management.git
+Set-Location smart-elderly-watch-management
 ./desktop/validate-version.ps1
 ./desktop/build.ps1
 ```
 
-构建脚本依次编译 Vue 静态资源、内嵌静态资源的 Go 服务端、sidecar SHA-256 校验文件、Tauri 原生壳以及 NSIS 安装包，最终产物输出到 `outputs/v2.1.0-stable`。
+主要目录：`frontend/`（Vue 前端）、`backend/`（Go API 与 MySQL 迁移）、`desktop/`（Tauri 桌面及打包）、`SuiningWatch/`（HarmonyOS 手表端）、`watch-sim/`（Rust 模拟器）、`deploy/`（容器、网关与监控）。
 
-### 手表模拟器与本地模拟
-
-手表模拟器现使用 Rust，可独立连接 preview，也可在无网络、后端或账号时保存本地模拟数据。构建模拟器需要 Rust 1.89+；Windows 还需 MSVC 与 Windows SDK。
+常用的变更相关验证：
 
 ```powershell
-cargo build --release --locked --manifest-path watch-sim/Cargo.toml
-.\watch-sim\target\release\watch-sim.exe --local "D:\手表模拟\本地数据" --scenario demo --health-samples
+Push-Location backend
+go test -count=1 ./...
+go vet ./...
+Pop-Location
+
+Push-Location frontend
+npm ci
+npm run typecheck
+npm test
+npm run build
+Pop-Location
 ```
 
-发布包可双击 `本地模拟.cmd`。每次运行创建独立目录，保存采样、事件与可离线打开的 `index.html`。联机参数、证书和验证命令见[模拟器说明](watch-sim/README.md)。
+数据库集成和竞态测试使用**隔离测试库** `TEST_MYSQL_DSN`；未配置时部分测试会跳过。HarmonyOS 原生编译、实体手表、短信网关、生产迁移及长时间运行须独立验收，不应因基础 CI 通过就视为已覆盖。测试范围见 [测试指南](docs/TESTING.md)。
 
-与远端 Node 模拟器的对照显示，Rust 的三请求启动耗时降低79.5%、峰值工作集降低85.2%；功能覆盖、适配与原始测量数据属性能证据，未随仓库分发。
-
-## 验证与性能
-
-UI Quality 随每次 Preview CI 执行。`Core CI / required` 仅表示基础检查通过；正式候选还需原生 HAP、实际 Windows 安装包测试和同一 SHA 的完整证据，操作与失败条件见[发布门禁](docs/reliability/release-governance.md)。
-
-| 验证维度 | 当前依据 |
-| --- | --- |
-| 分支自动化检查 | [Preview CI](https://github.com/WatchTestCs/smart-elderly-watch-management/actions/workflows/ci.yml) |
-| 当前版本发布信息 | [2.1.0 版本说明](docs/releases/2.1.0.md)及发行附件中的 manifest |
-| 后端回归 | 在 `backend` 中执行 `go test -count=1 ./...` 与 `go vet ./...` |
-| 前端构建 | 在 `frontend` 中执行 `npm ci` 与 `npm run build` |
-| 手表协议 | 在 `SuiningWatch` 中执行 `npm ci` 与 `npm test`；这不等同于 DevEco 原生编译或真机验收 |
-
-如需运行完整数据库集成与竞态测试，请先配置专用测试库环境变量 `TEST_MYSQL_DSN`，再执行 `go test -race -count=1 -timeout 600s ./...`（未配置时数据库集成用例会自动跳过）。
-
-仓库当前 CI 结果以对应提交的 GitHub Actions 检查为准。性能实验、旧版本构建记录和阶段性补丁报告不再作为当前版本能力或验收结论；正式投入生产前，仍需针对真实穿戴硬件、外部短信或语音网关、生产数据迁移、跨网 TLS 证书及值班响应流程开展独立验收。通知发送成功仅代表网关已受理，实际照护结果以人工跟进与复核记录为准。
 ## 常见问题
 
-| 现象 | 排查方向 |
+| 现象 | 排查 |
 | --- | --- |
-| 界面能打开，但无法登录或保存 | 检查 MySQL 是否启动、库名是否正确、迁移是否完成，以及 `SESSION_BACKEND` 和 `DATA_ENCRYPTION_KEY` 是否有效 |
-| 仍配置 PostgreSQL 连接变量 | 新版不再支持；移除旧配置并执行 MySQL 单库迁移后重新启动 |
-| 外部手表无法连接桌面端服务 | 桌面端默认仅监听本机回环地址，外部设备接入需独立部署服务端并开放受控网络端口 |
-| 免安装版双击无法启动 | 确认已完整解压 ZIP、主程序与 Go sidecar 位于同一目录、系统已安装 WebView2，并核对 SHA-256 |
+| 窗口能打开，但无法登录或保存 | 检查 MySQL 服务、DSN、迁移状态以及 `DATA_ENCRYPTION_KEY`。`/healthz` 成功不代表数据库就绪 |
+| Portable 无法运行 | 完整解压 ZIP，确认 `suining.exe` 与 `suining-server.exe` 在同一目录，并检查 WebView2 |
+| 手表无法连接 | 桌面本地服务只监听回环地址；外部设备应连接独立部署的 Go API，而不是桌面随机端口 |
+| 旧版本升级后配置报错 | 不再支持 PostgreSQL 分析库和 S3 作为运行时依赖；按迁移手册清理旧配置，勿直接删除原数据 |
+| 担心数据丢失 | 单独备份 MySQL 数据、加密密钥与部署配置，并在隔离环境验证恢复 |
 
-## 文档导航
+## 文档与反馈
 
-| 主题 | 相关文档 |
+| 需要做什么 | 参考资料 |
 | --- | --- |
-| 首次使用、功能入口与问题解决清单 | [用户使用指南](docs/USER_GUIDE.md) |
-| 下载、版本与升级 | [2.1.0 发布说明](docs/releases/2.1.0.md) · [更新日志](CHANGELOG.md) |
-| 数据库、迁移与备份 | [双库配置指南](docs/DUAL_DATABASES.md) · [备份与恢复手册](docs/runbooks/backup-restore.md) |
-| 设备接入与照护运维 | [照护服务部署](docs/CARE_SERVICE_DEPLOYMENT.md) · [支持与故障排查](docs/SUPPORT.md) |
-| 源码开发与模块说明 | [工程总览](docs/WORKSPACE.md) · [前端说明](frontend/README.md) · [后端说明](backend/README.md) · [手表端说明](SuiningWatch/README.md) |
-| 架构设计与测试 | [实现架构](docs/ARCHITECTURE.md) · [界面规范](docs/UI_UX.md) · [发布门禁](docs/reliability/release-governance.md) · [测试指南](docs/TESTING.md) |
+| 部署、迁移、备份 | [MySQL 迁移](docs/MYSQL_ONLY_MIGRATION.md) · [备份恢复](docs/runbooks/backup-restore.md) |
+| 理解架构和接口 | [实现架构](docs/ARCHITECTURE.md) · [API 契约](docs/API_CONTRACTS.md) |
+| 接入手表和模拟器 | [手表接入](docs/WATCH_INTEGRATION.md) · [Rust 模拟器](watch-sim/README.md) |
+| 遇到问题与参与开发 | [支持与排查](docs/SUPPORT.md) · [贡献指南](CONTRIBUTING.md) · [Issue 模板](https://github.com/WatchTestCs/smart-elderly-watch-management/issues/new/choose) |
 
-提交 [Issue](https://github.com/WatchTestCs/smart-elderly-watch-management/issues) 反馈问题时，请附上版本号或 Git 提交哈希、操作系统环境、网络拓扑结构以及脱敏后的应用日志。
+提交问题时请说明**版本或 commit SHA、复现步骤、操作系统、部署方式及脱敏日志**；不要公开健康记录、定位、密码和设备密钥。安全问题请使用 [私密报告方式](.github/SECURITY.md)。
 
-本项目采用 [MIT 许可证](LICENSE) 开源，仓库包含的字体、地图及第三方依赖遵循各自原有许可证。
-
-> **接口不兼容变更提醒：** 当前 `preview` 分支仅暴露 `/api/v1/` 路由，已移除无版本号的 `/api/` 别名；浏览器端会话 Cookie 统一更名为 `SUINING_SESSION`。
-
-## 接口约定
-
-[接口合同与逐项差异处理](docs/API_CONTRACTS.md)列出 109 个路径的请求字段、成功响应字段和错误状态。JSON 成功响应使用 HTTP 200 与 `returnCode="1111"`；失败使用 HTTP 4xx/5xx 与 `returnCode="0000"`、`code`、`message`，内部错误保留 `reference`。图片下载返回图片字节，上传使用 multipart `file` 字段。
-
-设备请求签名使用 `X-Device-Signature`、`X-Device-Timestamp`、`X-Device-Nonce`。设置 `SUINING_REQUIRE_SIGNED_DEVICE=1` 后，除 `/device/report`、`/device/sos`（已在业务事务内预留 nonce）与 `/care/receipt`（使用网关 HMAC）外，其余设备路由强制签名并拒绝 nonce 重放；未设置该变量时旧固件仍可无签名上报，但携带的签名必须校验通过。
-
-携带合法 `requestId` 的 `/device/report` 具备事务级幂等：相同编号且相同内容重发时返回首次提交的成功响应（`duplicate=true`）而不重复写入；同一编号换成不同内容返回 409。未携带编号的旧固件上报保持原有行为。启用持久遥测队列（`SUINING_DURABLE_TELEMETRY=1`）时沿用该路径原有的唯一键 409 语义。
+项目代码采用 [MIT License](LICENSE)。所含字体、地图和第三方依赖适用各自许可证。历史预览发布现归档为 [`v2.0.7`](https://github.com/WatchTestCs/smart-elderly-watch-management/releases/tag/v2.0.7)，其旧附件内部仍显示 2.1.0；请下载上方 **2.1.0 正式版**，不要混用历史包。
