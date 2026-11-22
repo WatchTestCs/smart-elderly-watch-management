@@ -32,7 +32,51 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  change-scope:
+    name: Change scope
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      docs_only: ${{ steps.classify.outputs.docs_only }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Test fail-closed change classification
+        run: python3 -m unittest discover -s scripts/reliability -p test_pr_change_scope.py
+      - name: Classify changed paths
+        id: classify
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python3 scripts/reliability/pr_change_scope.py >> "$GITHUB_OUTPUT"
+
+  docs-check:
+    name: Documentation / verify
+    needs: change-scope
+    if: ${{ github.event_name == 'pull_request' && needs.change-scope.outputs.docs_only == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Verify changed Markdown links
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: python3 scripts/reliability/check_pr_docs.py
+      - name: Parse GitHub Issue templates
+        run: |
+          ruby -ryaml -e 'Dir[".github/ISSUE_TEMPLATE/*.{yml,yaml}"].each { |file| parsed = YAML.safe_load_file(file); abort "invalid Issue template: #{file}" unless parsed.is_a?(Hash); next if File.basename(file) == "config.yml"; abort "invalid Issue form: #{file}" unless parsed["name"] && parsed["body"].is_a?(Array) }'
+
   fast-gate:
+    needs: change-scope
+    if: needs.change-scope.outputs.docs_only != 'true'
     name: Fast source validation
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -47,16 +91,20 @@ jobs:
           python3 scripts/check-go-module-boundaries.py
           python3 scripts/generate-openapi.py --check
   frontend:
-    needs: fast-gate
+    needs: [change-scope, fast-gate]
+    if: needs.change-scope.outputs.docs_only != 'true'
     name: Frontend
     uses: ./.github/workflows/reusable-frontend.yml
 
   ui-quality:
-    needs: fast-gate
+    needs: [change-scope, fast-gate]
+    if: needs.change-scope.outputs.docs_only != 'true'
     name: UI Quality
     uses: ./.github/workflows/ui-quality.yml
 
   watch:
+    needs: change-scope
+    if: needs.change-scope.outputs.docs_only != 'true'
     name: Watch protocol
     uses: ./.github/workflows/reusable-watch.yml
     with:
@@ -67,6 +115,8 @@ jobs:
       sdk_download_url: ${{ secrets.HARMONY_SDK_DOWNLOAD_URL }}
 
   simulator-scope:
+    needs: change-scope
+    if: needs.change-scope.outputs.docs_only != 'true'
     name: Scope simulator matrix
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -98,8 +148,8 @@ jobs:
 
   simulator:
     name: Watch simulator
-    if: ${{ always() }}
-    needs: [simulator-scope, simulator-tests]
+    if: ${{ always() && needs.change-scope.outputs.docs_only != 'true' }}
+    needs: [change-scope, simulator-scope, simulator-tests]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -124,7 +174,8 @@ jobs:
 
   dependency-review:
     name: Dependency review
-    if: ${{ github.event_name == 'pull_request' }}
+    needs: change-scope
+    if: ${{ github.event_name == 'pull_request' && needs.change-scope.outputs.docs_only != 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -141,22 +192,28 @@ jobs:
           fail-on-scopes: development, runtime
 
   backend:
-    needs: fast-gate
+    needs: [change-scope, fast-gate]
+    if: needs.change-scope.outputs.docs_only != 'true'
     name: Backend
     uses: ./.github/workflows/reusable-backend.yml
 
   windows:
-    needs: fast-gate
+    needs: [change-scope, fast-gate]
+    if: needs.change-scope.outputs.docs_only != 'true'
     name: Windows sidecar contract
     uses: ./.github/workflows/reusable-windows-package.yml
     with:
       build_desktop: ${{ inputs.build_desktop || github.event_name == 'push' }}
 
   deployment:
+    needs: change-scope
+    if: needs.change-scope.outputs.docs_only != 'true'
     name: Deployment and alerts
     uses: ./.github/workflows/deploy-contract.yml
 
   security-scan:
+    needs: change-scope
+    if: needs.change-scope.outputs.docs_only != 'true'
     name: Current-source vulnerability scan
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -189,7 +246,7 @@ jobs:
   required:
     name: Core CI / required
     if: ${{ always() }}
-    needs: [fast-gate, frontend, ui-quality, watch, simulator, backend, windows, deployment, security-scan, dependency-review]
+    needs: [change-scope, docs-check, fast-gate, frontend, ui-quality, watch, simulator, backend, windows, deployment, security-scan, dependency-review]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -197,17 +254,39 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
       - name: Verify release gate fail-closed regressions
+        if: needs.change-scope.outputs.docs_only != 'true'
         run: python3 -m unittest discover -s scripts/reliability -p 'test_*.py' -v
-      - name: Require all core checks
+      - name: Require all risk-appropriate checks
         shell: bash
+        env:
+          SCOPE_RESULT: ${{ needs.change-scope.result }}
+          DOCS_ONLY: ${{ needs.change-scope.outputs.docs_only }}
+          DOCS_RESULT: ${{ needs.docs-check.result }}
+          FAST_RESULT: ${{ needs.fast-gate.result }}
+          FRONTEND_RESULT: ${{ needs.frontend.result }}
+          UI_RESULT: ${{ needs.ui-quality.result }}
+          WATCH_RESULT: ${{ needs.watch.result }}
+          SIMULATOR_RESULT: ${{ needs.simulator.result }}
+          BACKEND_RESULT: ${{ needs.backend.result }}
+          WINDOWS_RESULT: ${{ needs.windows.result }}
+          DEPLOYMENT_RESULT: ${{ needs.deployment.result }}
+          SECURITY_RESULT: ${{ needs.security-scan.result }}
+          DEPENDENCY_RESULT: ${{ needs.dependency-review.result }}
         run: |
-          test "${{ needs['fast-gate'].result }}" = "success"
-          test "${{ needs.frontend.result }}" = "success"
-          test "${{ needs.ui-quality.result }}" = "success"
-          test "${{ needs.watch.result }}" = "success"
-          test "${{ needs.simulator.result }}" = "success"
-          test "${{ needs.backend.result }}" = "success"
-          test "${{ needs.windows.result }}" = "success"
-          test "${{ needs.deployment.result }}" = "success"
-          test "${{ needs.security-scan.result }}" = "success"
-          test "${{ needs['dependency-review'].result }}" = "success" || test "${{ needs['dependency-review'].result }}" = "skipped"
+          set -euo pipefail
+          test "$SCOPE_RESULT" = success
+          if [ "$DOCS_ONLY" = true ]; then
+            test "$DOCS_RESULT" = success
+            for result in "$FAST_RESULT" "$FRONTEND_RESULT" "$UI_RESULT" "$WATCH_RESULT" "$SIMULATOR_RESULT" "$BACKEND_RESULT" "$WINDOWS_RESULT" "$DEPLOYMENT_RESULT" "$SECURITY_RESULT" "$DEPENDENCY_RESULT"; do
+              test "$result" = skipped
+            done
+          elif [ "$DOCS_ONLY" = false ]; then
+            test "$DOCS_RESULT" = skipped
+            for result in "$FAST_RESULT" "$FRONTEND_RESULT" "$UI_RESULT" "$WATCH_RESULT" "$SIMULATOR_RESULT" "$BACKEND_RESULT" "$WINDOWS_RESULT" "$DEPLOYMENT_RESULT" "$SECURITY_RESULT"; do
+              test "$result" = success
+            done
+            test "$DEPENDENCY_RESULT" = success || test "$DEPENDENCY_RESULT" = skipped
+          else
+            echo "Invalid or missing change classification" >&2
+            exit 1
+          fi

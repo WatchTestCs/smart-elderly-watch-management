@@ -15,7 +15,28 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  change-scope:
+    name: Security change scope
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      docs_only: ${{ steps.classify.outputs.docs_only }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Classify changed paths
+        id: classify
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python3 scripts/reliability/pr_change_scope.py >> "$GITHUB_OUTPUT"
+
   codeql:
+    needs: change-scope
+    if: needs.change-scope.outputs.docs_only != 'true'
     name: CodeQL / ${{ matrix.language }}
     # Ordinary pull_request runs keep fork tokens read-only and expose no secrets.
     # GitHub permits CodeQL uploads for this event; do not use pull_request_target.
@@ -87,3 +108,27 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
 
+
+  required:
+    name: Security gate / required
+    needs: [change-scope, codeql]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require CodeQL for source changes
+        shell: bash
+        env:
+          SCOPE_RESULT: ${{ needs.change-scope.result }}
+          DOCS_ONLY: ${{ needs.change-scope.outputs.docs_only }}
+          CODEQL_RESULT: ${{ needs.codeql.result }}
+        run: |
+          set -euo pipefail
+          test "$SCOPE_RESULT" = success
+          if [ "$DOCS_ONLY" = true ]; then
+            test "$CODEQL_RESULT" = skipped
+          elif [ "$DOCS_ONLY" = false ]; then
+            test "$CODEQL_RESULT" = success
+          else
+            exit 1
+          fi
