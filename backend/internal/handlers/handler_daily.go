@@ -12,7 +12,8 @@ import (
 )
 
 // All requested days share one owner lock, one batch insert and one indexed read.
-const metricDailyEnsureSQL = `INSERT INTO metric_daily(cache_key,old_id,source,source_device,metric,semantics,record_day,offset_minutes) VALUES `
+const metricDailyInsertPrefix = `INSERT INTO metric_daily(cache_key,old_id,source,source_device,metric,semantics,record_day,offset_minutes) VALUES `
+const metricDailyEnsureSQL = metricDailyInsertPrefix + `(?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE cache_key=cache_key`
 
 type dailyCacheRow struct {
 	dirty   bool
@@ -65,7 +66,7 @@ func (h *Handler) healthDaily(w http.ResponseWriter, r *http.Request) {
 		values = append(values, ids[n], k.OldID, k.Source, k.SourceDevice, k.Metric, k.Semantics, k.Day, k.OffsetMinutes)
 	}
 	placeholders := strings.TrimSuffix(strings.Repeat("(?,?,?,?,?,?,?,?),", req.Days), ",")
-	_, err = tx.ExecContext(ctx, metricDailyEnsureSQL+placeholders+" ON DUPLICATE KEY UPDATE cache_key=cache_key", values...)
+	_, err = tx.ExecContext(ctx, metricDailyInsertPrefix+placeholders+" ON DUPLICATE KEY UPDATE cache_key=cache_key", values...)
 	if internalError(w, err) {
 		return
 	}
