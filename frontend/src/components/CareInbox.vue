@@ -74,6 +74,7 @@ import type { CareTask, CareEvent, CareListResponse, HistoryState } from '../dom
 
 const emit = defineEmits(['verified'])
 const tasks = shallowRef<CareTask[]>([])
+let lastTaskSnapshot = ''
 const error = ref('')
 const loading = ref(false)
 const saving = ref(false)
@@ -113,14 +114,20 @@ const reads = createLatestRead(
     if (!Array.isArray(data.items) || !Number.isInteger(data.total) || data.total < 0 || !['supervisor','caregiver','auditor'].includes(data.duty) || !Number.isInteger(data.actorId)) throw new Error('invalid care response')
     const lastPage = Math.max(1, Math.ceil(data.total / pageSize))
     if (query.page > lastPage) { page.value = lastPage; void load(); return }
-    tasks.value = data.items
+    // Polling often returns identical task data. Keep the old array identity
+    // so the task cards do not re-render every time an idle dashboard polls.
+    const snapshot = JSON.stringify(data.items)
+    if (snapshot !== lastTaskSnapshot) {
+      tasks.value = data.items
+      lastTaskSnapshot = snapshot
+    }
     total.value = data.total
     duty.value = data.duty
     actorId.value = data.actorId
     error.value = ''
   },
   cause => {
-    tasks.value = []; total.value = 0; duty.value = ''; actorId.value = null
+    tasks.value = []; lastTaskSnapshot = ''; total.value = 0; duty.value = ''; actorId.value = null
     error.value = readErrorMessage(cause, '照护任务暂时无法加载')
   },
   value => { loading.value = value },
