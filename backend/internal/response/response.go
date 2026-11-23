@@ -44,14 +44,22 @@ func Fail(w http.ResponseWriter, message string) {
 	Error(w, http.StatusBadRequest, "INVALID_REQUEST", message)
 }
 
+// Error uses the already-defined typed envelope rather than allocating and
+// copying an intermediate response map on every failed request.
 func Error(w http.ResponseWriter, status int, code, message string) {
-	JSON(w, status, map[string]any{"code": code, "message": message})
+	if status < 400 || status > 599 {
+		status = http.StatusInternalServerError
+	}
+	defaultCode, defaultMessage := errorDefaults(status)
+	if code == "" { code = defaultCode }
+	if message == "" { message = defaultMessage }
+	writeJSON(w, status, BaseResponse{ReturnCode: CodeFail, Code: code, Message: message})
 }
 
 func Error500(w http.ResponseWriter, reference string) {
-	JSON(w, http.StatusInternalServerError, map[string]any{
-		"message":   "服务处理失败",
-		"reference": reference,
+	writeJSON(w, http.StatusInternalServerError, BaseResponse{
+		ReturnCode: CodeFail, Code: "INTERNAL_ERROR",
+		Message: "服务处理失败", Reference: reference,
 	})
 }
 
