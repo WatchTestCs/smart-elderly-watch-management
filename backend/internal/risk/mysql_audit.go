@@ -1,6 +1,7 @@
 package risk
 
 import (
+	"suining-care/internal/config"
 	"bytes"
 	"context"
 	"database/sql"
@@ -254,7 +255,7 @@ func (m *Manager) EnableMySQL(db *sql.DB) error {
 	if err != nil {
 		return err
 	}
-	spoolPath := os.Getenv("SUINING_RISK_AUDIT_SPOOL_PATH")
+	spoolPath := config.Setting("SUINING_RISK_AUDIT_SPOOL_PATH")
 	if spoolPath == "" {
 		configDir, err := os.UserConfigDir()
 		if err != nil {
