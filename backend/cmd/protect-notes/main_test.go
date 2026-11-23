@@ -30,7 +30,9 @@ func TestBoundedNoteConversionMySQL(t *testing.T) {
 	pool := dbtest.MySQL(t)
 	ctx := context.Background()
 	box, err := securestore.New(base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{17}, 32)))
-	if err != nil { t.Fatal(err) }
+	if err != nil {
+		t.Fatal(err)
+	}
 	for _, stmt := range []string{
 		"INSERT INTO oldperson(old_id,name) VALUES(1,'Test')",
 		"INSERT INTO device(device_id,device_no,secret) VALUES(1,'NOTE-TEST','secret')",
@@ -38,18 +40,29 @@ func TestBoundedNoteConversionMySQL(t *testing.T) {
 		"INSERT INTO care_incident_event(incident_id,actor,action,note) VALUES(1,'test','review','event-note')",
 		"INSERT INTO alert_review(entity,record_id,kind,verdict,reason,actor_id) VALUES('care',1,'sos','confirmed','review-note',1)",
 	} {
-		if _, err := pool.ExecContext(ctx, stmt); err != nil { t.Fatal(err) }
+		if _, err := pool.ExecContext(ctx, stmt); err != nil {
+			t.Fatal(err)
+		}
 	}
 	var out bytes.Buffer
-	if err := convertNotes(ctx, pool.DB, box, 1, true, false, &out); err != nil { t.Fatal(err) }
-	if !strings.Contains(out.String(), "capped=true") { t.Fatal("partial backfill was not marked as capped") }
+	if err := convertNotes(ctx, pool.DB, box, 1, true, false, &out); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out.String(), "capped=true") {
+		t.Fatal("partial backfill was not marked as capped")
+	}
 	var protected int
 	if err := pool.QueryRowContext(ctx, "SELECT COUNT(*) FROM care_incident WHERE resolution_note LIKE 'sne1:%'").Scan(&protected); err != nil || protected != 1 {
 		t.Fatalf("limit was ignored: %d %v", protected, err)
 	}
 	out.Reset()
-	if err := convertNotes(ctx, pool.DB, box, 100, true, false, &out); err != nil { t.Fatal(err) }
-	for _, tc := range []struct{ query string; want int }{
+	if err := convertNotes(ctx, pool.DB, box, 100, true, false, &out); err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct {
+		query string
+		want  int
+	}{
 		{"SELECT COUNT(*) FROM care_incident WHERE resolution_note LIKE 'sne1:%'", 3},
 		{"SELECT COUNT(*) FROM care_incident_event WHERE note LIKE 'sne1:%'", 1},
 		{"SELECT COUNT(*) FROM alert_review WHERE reason LIKE 'sne1:%'", 1},
@@ -59,11 +72,17 @@ func TestBoundedNoteConversionMySQL(t *testing.T) {
 		}
 	}
 	out.Reset()
-	if err := convertNotes(ctx, pool.DB, box, 100, true, false, &out); err != nil { t.Fatal(err) }
-	if strings.Contains(out.String(), "applied=1") { t.Fatalf("idempotent run rewrote rows: %s", out.String()) }
+	if err := convertNotes(ctx, pool.DB, box, 100, true, false, &out); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(out.String(), "applied=1") {
+		t.Fatalf("idempotent run rewrote rows: %s", out.String())
+	}
 	out.Reset()
-	if err := convertNotes(ctx, pool.DB, box, 100, true, true, &out); err != nil { t.Fatal(err) }
-	for _, tc := range []struct { query, want string }{
+	if err := convertNotes(ctx, pool.DB, box, 100, true, true, &out); err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct{ query, want string }{
 		{"SELECT resolution_note FROM care_incident WHERE id=1", "note-1"},
 		{"SELECT note FROM care_incident_event WHERE incident_id=1", "event-note"},
 		{"SELECT reason FROM alert_review WHERE record_id=1", "review-note"},

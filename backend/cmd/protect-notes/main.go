@@ -123,15 +123,25 @@ func convertNotes(ctx context.Context, database *sql.DB, box *securestore.Box, l
 				// Commit at most 64 rows together. A changed value rolls back the
 				// whole chunk, while earlier chunks remain safe to resume.
 				tx, beginErr := database.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
-				if beginErr != nil { return fmt.Errorf("%s note transaction failed: %w", target.table, beginErr) }
+				if beginErr != nil {
+					return fmt.Errorf("%s note transaction failed: %w", target.table, beginErr)
+				}
 				batchErr := func() error {
 					defer tx.Rollback()
 					for _, item := range items {
 						var text string
-						if decrypt { text, err = box.Open(item.value, "care-text") } else { text, err = box.Seal(item.value, "care-text") }
-						if err != nil { return fmt.Errorf("%s note conversion failed: %w", target.table, err) }
+						if decrypt {
+							text, err = box.Open(item.value, "care-text")
+						} else {
+							text, err = box.Seal(item.value, "care-text")
+						}
+						if err != nil {
+							return fmt.Errorf("%s note conversion failed: %w", target.table, err)
+						}
 						result, err := tx.ExecContext(ctx, updateSQL, text, item.id, item.value)
-						if err != nil { return fmt.Errorf("%s note update failed: %w", target.table, err) }
+						if err != nil {
+							return fmt.Errorf("%s note update failed: %w", target.table, err)
+						}
 						changed, err := result.RowsAffected()
 						if err != nil || changed != 1 {
 							return fmt.Errorf("%s note changed during migration; verify writers are stopped", target.table)
@@ -139,7 +149,9 @@ func convertNotes(ctx context.Context, database *sql.DB, box *securestore.Box, l
 					}
 					return tx.Commit()
 				}()
-				if batchErr != nil { return batchErr }
+				if batchErr != nil {
+					return batchErr
+				}
 				applied += len(items)
 			}
 			if len(items) < batchSize {
