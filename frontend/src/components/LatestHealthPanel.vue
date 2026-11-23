@@ -103,7 +103,7 @@ const localTime = (value: string) => new Date(value).toLocaleString('zh-CN', { t
 .latest-list p { margin: 8px 0; line-height: 1.7; overflow-wrap: anywhere; }
 .latest-list .latest-value { font-size: 26px; color: var(--care-primary); }
 .latest-value span, .latest-source { font-size: 14px; color: var(--care-text-muted); }
-html.large-text .digest-header strong { font-size: 20px; }
-html.large-text .digest-summary { font-size: 18px; }
+:global(html.large-text) .digest-header strong { font-size: 20px; }
+:global(html.large-text) .digest-summary { font-size: 18px; }
 @media (max-width: 700px) { .latest-health { padding: 20px 18px; } }
 </style>
