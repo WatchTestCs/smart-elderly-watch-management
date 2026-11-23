@@ -25,3 +25,9 @@
 历史明文以 `protect-health-projections --samples` 只读盘点，按上述停写、备份及完整 reader 审查执行 `protect-health-projections --samples --apply --limit 100`。完成后核对原载荷列和测量值生成列的残留数量，并使用 `rekey-data` 验证第 32 个密文列。尚未回填的历史值仍能走原有覆盖索引。
 
 统计、日结果、最近值和读端基线在授权及索引筛选后解密。规则基线在同一个查询快照内合并历史明文的 SQL 统计和密文的应用端总体统计，保留原来源匹配、时间窗口与时区剔除。长窗口性能需在历史样本规模下独立测量。旧数值上报表及历史资产继续按数据分类验证。
+
+## 旧式心率与血压记录
+
+迁移 0043 为 ratepre 增加 measurement_cipher。配置密钥后，两项读数在同一上报事务中加密，原 hr、bp 列置空。密文认证记录 ID，读取时同时核对长者和设备。缺测值保留为空。
+
+使用 protect-health-projections --legacy-vitals 盘点历史行。在完成上述停写和备份验证后，可加 --apply --limit 100 分批回填。完成后复查剩余行数，并使用 rekey-data 核对第 33 项 ratepre.measurement_cipher。

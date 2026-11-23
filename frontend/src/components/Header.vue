@@ -10,10 +10,10 @@
     <div class="header-right">
       <el-button class="text-size-button" link :aria-label="largeText ? '切换为标准字号' : '切换为更大字号'" :aria-pressed="String(largeText)" @click="toggleTextSize">{{ largeText ? '标准字' : '大字' }}</el-button>
       <el-button class="settings-button" link aria-label="打开通用设置" @click="settings?.open()">设置</el-button>
-      <span class="header-divider"></span>
+      <span class="header-divider" aria-hidden="true"></span>
       <span class="user-avatar" aria-hidden="true">{{ userInitial }}</span>
       <span class="username">{{ login_username || '用户' }}</span>
-      <el-button class="logout-button" link :loading="loggingOut" :disabled="loggingOut" @click="logout">退出</el-button>
+      <el-button class="logout-button" aria-label="退出登录" link :loading="loggingOut" :disabled="loggingOut" @click="logout">退出</el-button>
     </div>
     <GeneralSettings ref="settings" />
   </header>
@@ -84,9 +84,13 @@ async function logout() {
   .care-header { min-height: 72px; height: auto; padding: 10px 16px; gap: 8px; }
   .header-divider, .brand-copy small, .username { display: none; }
   .brand-mark { width: 48px; height: 48px; }
-  .username { max-width: 74px; font-size: 14px; }
   .header-right { gap: 7px; }
   .text-size-button { min-width: 64px; padding: 10px 8px; }
+}
+@media (max-width: 420px) {
+  .brand-copy small { display: none; }
+  .user-avatar { display: none; }
+  .brand { gap: 8px; }
 }
 @media (max-width: 360px) {
   .brand-copy { display: none; }
@@ -95,14 +99,10 @@ async function logout() {
   .care-header { padding-inline: 10px; }
   .header-right { gap: 4px; }
 }
-@media (max-width: 420px) {
-  .brand-copy small { display: none; }
-  .user-avatar { display: none; }
-  .brand { gap: 8px; }
-}
 html.large-text .care-header .brand-copy strong { font-size: 24px; }
 html.large-text .care-header .brand-copy small,
 html.large-text .care-header .username,
 html.large-text .care-header .text-size-button,
+html.large-text .care-header .settings-button,
 html.large-text .care-header .logout-button { font-size: 17px; }
 </style>

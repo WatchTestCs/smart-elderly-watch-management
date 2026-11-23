@@ -29,7 +29,7 @@ type vitalRecord struct {
 }
 
 const vitalRecordSelect = `SELECT o.name AS name, o.old_id AS oldId, o.sex AS sex,` +
-	` r.rate_state AS rateState, r.pre_state AS preState, r.hr AS hr, r.bp AS bp, r.id AS recordId,` +
+	` r.rate_state AS rateState, r.pre_state AS preState, r.hr AS hr, r.bp AS bp, r.id AS recordId, r.measurement_cipher, r.device_id,` +
 	` CAST(r.rate_handled AS CHAR) AS rateHandled, CAST(r.pre_handled AS CHAR) AS preHandled,` +
 	` DATE_FORMAT(r.create_time,'%Y-%m-%d %H:%i:%s') AS createTime` +
 	` FROM oldperson o`
@@ -39,9 +39,17 @@ const latestVitalsQuery = vitalRecordSelect +
 	` INNER JOIN (SELECT *, ROW_NUMBER() OVER (PARTITION BY old_id ORDER BY create_time DESC, id DESC) AS rn FROM ratepre) r` +
 	` ON r.old_id=o.old_id AND r.rn=1`
 
-func scanVitalRecord(rows *sql.Rows) (vitalRecord, error) {
+func (h *Handler) scanVitalRecord(rows *sql.Rows) (vitalRecord, error) {
 	var d vitalRecord
-	err := rows.Scan(&d.Name, &d.OldID, &d.Sex, &d.RateState, &d.PreState, &d.Hr, &d.Bp, &d.RecordID, &d.RateHandled, &d.PreHandled, &d.CreateTime)
+	var id int64
+	var deviceID *int64
+	var stored vitalrepo.StoredMeasurements
+	if err := rows.Scan(&d.Name, &d.OldID, &d.Sex, &d.RateState, &d.PreState, &stored.HeartRate, &stored.Pressure,
+		&id, &stored.Cipher, &deviceID, &d.RateHandled, &d.PreHandled, &d.CreateTime); err != nil {
+		return d, err
+	}
+	values, err := stored.Open(h.Box, id, d.OldID, deviceID)
+	d.RecordID, d.Hr, d.Bp = &id, values.HeartRate, values.Pressure
 	return d, err
 }
 
@@ -116,10 +124,10 @@ func (h *Handler) getVitalAlert(w http.ResponseWriter, r *http.Request) {
 	var err error
 	if isDigits(recordIDStr) {
 		id, _ := strconv.ParseInt(recordIDStr, 10, 64)
-		a, found, err = vitalrepo.FindAlert(r.Context(), tx, id)
+		a, found, err = vitalrepo.FindAlert(r.Context(), tx, h.Box, id)
 	} else if isDigits(oldIDStr) {
 		id, _ := strconv.ParseInt(oldIDStr, 10, 64)
-		a, found, err = vitalrepo.FindLatestPending(r.Context(), tx, id, kind)
+		a, found, err = vitalrepo.FindLatestPending(r.Context(), tx, h.Box, id, kind)
 	} else {
 		response.Fail(w, "参数不正确")
 		return

@@ -1,7 +1,7 @@
 # 已加密 MySQL 字段的分批轮换
 
 最新运行架构为单 MySQL。下文的 PG/outbox 消费路径仅指历史部署，当前没有在线 PG 消费者。
-`image_payload.payload` 是 MySQL 内的加密图片，尚不属于这 32 个文本/JSON 列目标；
+`image_payload.payload` 是 MySQL 内的加密图片，尚不属于这 33 个文本/JSON 列目标；
 图片使用独立的 [rekey-images](mysql-image-rotation.md) 扫描和切换密文版本。
 历史 PG/S3/本地图片及备份恢复验收继续保留，不能据此授权删除旧 key。
 
@@ -9,7 +9,7 @@
 
 ## 覆盖和前置条件
 
-固定清单位于 `internal/rekey/targets.go`，覆盖 32 个列目标，包括照护备注与事件、告警复核理由、两类通知收件人、设备最近坐标、位置历史、两张告警表的坐标、已存在的位置元数据、数据库会话、按角色/账号认证的 TOTP、规则证据的 JSON 密文包装、遥测 inbox、MySQL `analytics_outbox.payload` 中设备位置事件的坐标、已保护的身份资料，以及健康原始样本、同步变化流、最新样本和日统计副本。清单包含复合主键与字符串主键，不接受命令行拼接表名或字段名。
+固定清单位于 `internal/rekey/targets.go`，覆盖 33 个列目标，包括照护备注与事件、告警复核理由、两类通知收件人、设备最近坐标、位置历史、两张告警表的坐标、已存在的位置元数据、数据库会话、按角色/账号认证的 TOTP、规则证据的 JSON 密文包装、遥测 inbox、MySQL `analytics_outbox.payload` 中设备位置事件的坐标、已保护的身份资料，以及健康原始样本、同步变化流、最新样本和日统计副本。清单包含复合主键与字符串主键，不接受命令行拼接表名或字段名。
 
 管理员 `users.user_phone_cipher` 使用与生产 `userphone.Protect/Reveal` 相同的 `account-phone:admin:<user_id>` scope，不能把两个账号的密文互换。轮换只修改密文，不改变 user_phone_lookup、lookup_verifier、user_phone_protected、登录密码或账号状态；历史未迁移手机号和已移除的 NULL 手机号保持原值。缺少此目标的旧版本轮换工具可能遗漏仍依赖旧密钥的管理员账号，必须使用本版本重新扫描；不能根据旧扫描结果删除 reader。历史明文回填仍使用独立 protect-user-phones 工具及停写/备份流程，本工具不代替该迁移。
 
@@ -55,7 +55,7 @@ rekey-data --previous-key-file <私有旧配置文件> > after.json
 
 ## 验证边界
 
-`TestRekeyMySQL` 在全新迁移的真实 InnoDB 库中覆盖全部 32 个列目标。场景包括只读预检、单行分页/数字顺序/字符串与复合主键、直接字段历史密文及分析事件内的坐标 A→B、只保留 B 后读取、HMAC 与业务状态不变、规则 JSON 保留、损坏密文阻止前列写入、legacy 恢复重跑、行数耗尽、明文残留、超大字段、取消、并发更新和删除。测试核对历史位置事件不再含 A，并保留无关实体载荷。最终退役仍须单独验证。即使列使用忽略大小写及尾空格的 collation，CAS 也不得覆盖并发值。
+`TestRekeyMySQL` 在全新迁移的真实 InnoDB 库中覆盖全部 33 个列目标。场景包括只读预检、单行分页/数字顺序/字符串与复合主键、直接字段历史密文及分析事件内的坐标 A→B、只保留 B 后读取、HMAC 与业务状态不变、规则 JSON 保留、损坏密文阻止前列写入、legacy 恢复重跑、行数耗尽、明文残留、超大字段、取消、并发更新和删除。测试核对历史位置事件不再含 A，并保留无关实体载荷。最终退役仍须单独验证。即使列使用忽略大小写及尾空格的 collation，CAS 也不得覆盖并发值。
 
 `TestAdministratorPhoneRekeyMySQL` 使用生产手机号保护与认证代码验证旧密钥写入→新密钥重封装→仅保留新 reader 后两账号仍可登录，精确 HMAC 索引和 key binding 不变；另验证无版本单 key 旧格式在保留原 lookupKey 后可完成同一登录迁移。账号间密文互换阻止所有列的首次写入，CAS 保留并发手机号替换与索引。两个真实 MySQL 测试均列入必需结果审计，缺失、失败或意外 skip 不能通过门禁。
 

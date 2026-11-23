@@ -19,6 +19,7 @@
           :rules="rules"
           ref="registerFormRef"
           class="register-form"
+          @submit.prevent="submitForm"
         >
           <el-form-item label="邀请码" prop="code" for="register-code">
             <el-input
@@ -42,8 +43,8 @@
 
           <el-form-item label="性别" prop="familySex">
             <el-radio-group v-model="registerForm.familySex" aria-label="性别">
-              <el-radio label="男">男</el-radio>
-              <el-radio label="女">女</el-radio>
+              <el-radio value="男">男</el-radio>
+              <el-radio value="女">女</el-radio>
             </el-radio-group>
           </el-form-item>
 
@@ -64,8 +65,8 @@
           </el-form-item>
 
           <el-form-item>
-            <el-button type="primary" class="green" :loading="submitting" @click="submitForm">创建账号</el-button>
-            <el-button @click="goLogin">返回登录</el-button>
+            <el-button type="primary" class="green" :loading="submitting" native-type="submit" :disabled="submitting">创建账号</el-button>
+            <el-button native-type="button" @click="goLogin">返回登录</el-button>
           </el-form-item>
         </el-form>
       </div>
@@ -121,7 +122,7 @@ const rules = {
     { min: 12, max: 20, message: '密码长度为12-20个字符', trigger: 'blur' },
     { validator: validatePasswordComplexity, trigger: 'blur' }
   ],
-  confirmPassword: [{ validator: checkConfirm, trigger: 'blur' }]
+  confirmPassword: [{ required: true, message: '请再次输入密码', trigger: 'blur' }, { validator: checkConfirm, trigger: 'blur' }]
 }
 let codeRequest = 0
 watch(() => registerForm.code, () => {
@@ -163,7 +164,7 @@ async function checkCode() {
 async function submitForm() {
   if (submitting.value) return
   const valid = await registerFormRef.value?.validate().catch(() => false)
-  if (!valid) return
+  if (!valid || submitting.value) return
   if (!codeOk.value || verifiedCode.value !== registerForm.code.trim()) {
     ElMessage({ type: 'warning', message: '请先验证邀请码是否可用' })
     return

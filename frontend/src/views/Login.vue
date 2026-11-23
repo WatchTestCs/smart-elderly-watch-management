@@ -20,7 +20,7 @@
         <el-form label-position="top" ref="loginFormRef" :model="loginForm" :rules="rules" class="login-form" @submit.prevent="submitForm">
           <el-form-item label="手机号" prop="phone" for="login-phone">
             <el-input id="login-phone" aria-label="手机号" v-model="loginForm.phone" placeholder="请输入登录手机号" autocomplete="username" inputmode="tel" maxlength="11" clearable>
-              <template #prefix><el-icon class="el-input__icon "><Iphone /></el-icon></template>
+              <template #prefix><el-icon class="el-input__icon "><Iphone aria-hidden="true" /></el-icon></template>
             </el-input>
           </el-form-item>
           <el-form-item label="密码" prop="password" for="login-password">
@@ -28,12 +28,17 @@
               <template #prefix><svg class="el-input__icon password-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 4v3"/></svg></template><template #suffix><button  type="button" class="password-visibility" :aria-label="showPassword ? '隐藏密码' : '显示密码'" :aria-pressed="showPassword" @click="showPassword = !showPassword"><el-icon aria-hidden="true"><View /></el-icon></button></template>
             </el-input>
           </el-form-item>
-          <el-form-item v-if="mfaRequired" label="动态验证码或恢复码" prop="otp"><el-input v-model="loginForm.otp" aria-label="动态验证码" autocomplete="one-time-code" inputmode="numeric" maxlength="6" placeholder="6 位动态验证码" /><el-input v-model="loginForm.recoveryCode" aria-label="一次性恢复码" autocomplete="off" placeholder="无法使用验证器时填写恢复码" /></el-form-item>
+          <el-form-item v-if="mfaRequired" label="动态验证码或恢复码" prop="otp">
+            <div class="mfa-inputs">
+              <el-input v-model="loginForm.otp" aria-label="动态验证码" autocomplete="one-time-code" inputmode="numeric" maxlength="6" placeholder="6 位动态验证码" />
+              <el-input v-model="loginForm.recoveryCode" aria-label="一次性恢复码" autocomplete="off" placeholder="无法使用验证器时填写恢复码" />
+            </div>
+          </el-form-item>
           <p v-if="errorMessage" class="auth-error" role="alert">{{ errorMessage }}</p>
           <el-button type="primary" native-type="submit" class="submit-button" :loading="submitting" :disabled="submitting">登录</el-button>
         </el-form>
         <div class="auth-register"><span>首次使用？</span><el-button link @click="goRegister">使用邀请码注册</el-button></div>
-        <p class="auth-footnote"><el-icon><Setting /></el-icon> 账号信息仅用于本系统登录</p>
+        <p class="auth-footnote"><el-icon><Setting aria-hidden="true" /></el-icon> 账号信息仅用于本系统登录</p>
       </div>
       <footer class="auth-footer">岁宁 · 让关怀始终在线</footer>
     </main>
@@ -117,6 +122,7 @@ watch(() => [loginForm.phone, loginForm.password, loginForm.otp, loginForm.recov
 </script>
 
 <style scoped>
+.mfa-inputs { display: flex; flex-direction: column; gap: 10px; width: 100%; }
 .auth-page { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(430px, .92fr); height: 100vh; height: 100dvh; overflow: hidden; background: #f8f8f2; }
 .auth-story { position: relative; min-height: 0; overflow: hidden; background: var(--care-brand-dark); }
 .story-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 60% center; }

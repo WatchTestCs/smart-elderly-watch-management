@@ -6,7 +6,10 @@ import (
 	"errors"
 	"time"
 
+	"suining-care/internal/db"
 	"suining-care/internal/healthalertstate"
+	"suining-care/internal/securestore"
+	"suining-care/internal/vitalrepo"
 )
 
 // Thresholds contains the configured per-device alert bounds.
@@ -29,12 +32,31 @@ func ReadThresholds(ctx context.Context, tx *sql.Tx, deviceID int64) (Thresholds
 }
 
 // InsertVitals persists one measurement within the report transaction.
-func InsertVitals(ctx context.Context, tx *sql.Tx, deviceID, residentID, epoch int64, observedAt time.Time, heartRate, pressure *int, heartRateState, pressureState any) error {
-	if _, err := tx.ExecContext(ctx,
+func InsertVitals(ctx context.Context, tx *sql.Tx, deviceID, residentID, epoch int64, observedAt time.Time, heartRate, pressure *int, heartRateState, pressureState any, box *securestore.Box) error {
+	legacyHR, legacyBP := heartRate, pressure
+	if box != nil {
+		legacyHR, legacyBP = nil, nil
+	}
+	id, err := db.InsertID(ctx, tx,
 		`INSERT INTO ratepre(device_id,old_id,rate_state,pre_state,create_time,hr,bp)
     VALUES(?,?,?,?,?,?,?)`,
-		deviceID, residentID, heartRateState, pressureState, observedAt, heartRate, pressure); err != nil {
+		deviceID, residentID, heartRateState, pressureState, observedAt, legacyHR, legacyBP)
+	if err != nil {
 		return err
 	}
+	if box != nil {
+		values := vitalrepo.Measurements{HeartRate: vitalInt64(heartRate), Pressure: vitalInt64(pressure)}
+		if err := vitalrepo.StoreProtectedMeasurements(ctx, tx, box, id, &residentID, &deviceID, values); err != nil {
+			return err
+		}
+	}
 	return healthalertstate.RecordVitals(ctx, tx, deviceID, epoch, observedAt, heartRateState, pressureState)
+}
+
+func vitalInt64(value *int) *int64 {
+	if value == nil {
+		return nil
+	}
+	number := int64(*value)
+	return &number
 }

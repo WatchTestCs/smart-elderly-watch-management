@@ -43,7 +43,7 @@ func (repo telemetryRepository) persistReportVitals(ctx context.Context, tx *sql
 	if !hasMeasurements {
 		return result, nil
 	}
-	if err := telemetryrepo.InsertVitals(ctx, tx, d.ID, oldID, d.HealthEpoch, parsed.beTime, hr, bp, result.rateState, result.preState); err != nil {
+	if err := telemetryrepo.InsertVitals(ctx, tx, d.ID, oldID, d.HealthEpoch, parsed.beTime, hr, bp, result.rateState, result.preState, repo.box); err != nil {
 		return telemetryPersisted{}, err
 	}
 	return result, nil
