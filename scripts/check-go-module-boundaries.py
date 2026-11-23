@@ -10,6 +10,7 @@ PREFIX = "suining-care/internal/"
 EXISTING_CROSS_REPO = {
     ("authrepo", "carerepo"),          # first-run supervisor assignment
     ("devicerepo", "telemetryrepo"),    # device binding and initial watch thresholds
+    ("telemetryrepo", "vitalrepo"),     # same-transaction vital encryption; one authenticated writer
 }
 
 result = subprocess.run(
