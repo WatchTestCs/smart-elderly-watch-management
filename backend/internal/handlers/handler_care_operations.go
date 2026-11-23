@@ -1,11 +1,11 @@
 package handlers
 
 import (
+	"suining-care/internal/config"
 	"context"
 	"database/sql"
 	"errors"
 	"net/http"
-	"os"
 	"time"
 
 	"suining-care/internal/care"
@@ -89,7 +89,7 @@ func (h *Handler) careDiagnostics(w http.ResponseWriter, r *http.Request) {
 		"oldestOutstandingAt": diagnostics.OldestOutstandingAt,
 		"workerHealthy":       diagnostics.WorkerHealthy, "workerLastSeenAt": diagnostics.WorkerLastSeenAt, "workerStartedAt": diagnostics.WorkerStartedAt,
 		"primaryEngine": "mysql", "analytics": h.analyticsStatus(),
-		"notificationConfigured": care.NotificationConfigured(), "receiptConfigured": len(os.Getenv("CARE_RECEIPT_SECRET")) >= 32,
+		"notificationConfigured": care.NotificationConfigured(), "receiptConfigured": len(config.Secret("CARE_RECEIPT_SECRET")) >= 32,
 		"note": "数据库统计不是网关送达或值班到岗证明",
 	})
 }
