@@ -40,7 +40,9 @@ type signedDeviceNonce struct {
 func (h *Handler) prepareSignedDeviceRequest(w http.ResponseWriter, r *http.Request) (*http.Request, bool) {
 	sig := strings.TrimSpace(r.Header.Get("X-Device-Signature"))
 	required := h.Cfg.Requests.RequireSigned
-	if !h.Cfg.Requests.Loaded { required = config.Enabled("SUINING_REQUIRE_SIGNED_DEVICE") }
+	if !h.Cfg.Requests.Loaded {
+		required = config.Enabled("SUINING_REQUIRE_SIGNED_DEVICE")
+	}
 	if sig == "" && !required {
 		return r, true
 	}

@@ -25,11 +25,11 @@ type RiskConfig struct {
 // The zero value leaves direct test-constructed handlers with their existing
 // environment-injection behavior; production always calls Load().
 type RequestConfig struct {
-	Loaded             bool
-	RequireSigned      bool
-	DurableTelemetry   bool
-	HealthLateLock     bool
-	CareReceiptSecret  string
+	Loaded            bool
+	RequireSigned     bool
+	DurableTelemetry  bool
+	HealthLateLock    bool
+	CareReceiptSecret string
 }
 
 type Config struct {

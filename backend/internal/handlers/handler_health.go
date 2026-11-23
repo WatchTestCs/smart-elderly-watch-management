@@ -38,7 +38,9 @@ func (h *Handler) healthBatch(w http.ResponseWriter, r *http.Request) {
 	// drained before enabling it: mixed device->owner and owner->device lock
 	// ordering across replicas can produce InnoDB deadlocks.
 	lateLock := h.Cfg.Requests.HealthLateLock
-	if !h.Cfg.Requests.Loaded { lateLock = config.Enabled("HEALTH_LATE_DEVICE_LOCK") }
+	if !h.Cfg.Requests.Loaded {
+		lateLock = config.Enabled("HEALTH_LATE_DEVICE_LOCK")
+	}
 	h.healthBatchWithLockOrder(w, r, lateLock)
 }
 

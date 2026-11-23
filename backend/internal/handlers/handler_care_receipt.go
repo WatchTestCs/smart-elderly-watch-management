@@ -84,7 +84,9 @@ type careReceiptRequest struct {
 
 func (h *Handler) decodeCareReceipt(w http.ResponseWriter, r *http.Request) (careReceiptRequest, bool) {
 	secret := h.Cfg.Requests.CareReceiptSecret
-	if !h.Cfg.Requests.Loaded { secret = config.Secret("CARE_RECEIPT_SECRET") }
+	if !h.Cfg.Requests.Loaded {
+		secret = config.Secret("CARE_RECEIPT_SECRET")
+	}
 	if len(secret) < 32 {
 		response.JSON(w, http.StatusServiceUnavailable, map[string]any{"message": "回执校验服务尚未配置"})
 		return careReceiptRequest{}, false

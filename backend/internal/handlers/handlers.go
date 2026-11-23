@@ -21,7 +21,6 @@ import (
 	"suining-care/internal/telemetryworkflow"
 )
 
-
 // Handler 聚合依赖，各组 endpoint 实现在 handler_*.go 中。
 type Handler struct {
 	DB           *dbstore.Database
@@ -113,4 +112,3 @@ func InitRiskWithConfig(ctx context.Context, pool *dbstore.Database, mgr *risk.M
 	}
 	return nil
 }
-

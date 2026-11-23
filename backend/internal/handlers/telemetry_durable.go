@@ -22,7 +22,9 @@ import (
 // Emergency/SOS, vital signs and coordinates are deliberately excluded.
 func (h *Handler) durableTelemetryEligible(parsed parsedDeviceTelemetry, requestID string, box *securestore.Box) bool {
 	enabled := h.Cfg.Requests.DurableTelemetry
-	if !h.Cfg.Requests.Loaded { enabled = config.Enabled("SUINING_DURABLE_TELEMETRY") }
+	if !h.Cfg.Requests.Loaded {
+		enabled = config.Enabled("SUINING_DURABLE_TELEMETRY")
+	}
 	return enabled &&
 		box != nil && deviceprotocol.ValidRequestID(requestID) &&
 		parsed.hr == nil && parsed.bp == nil && parsed.alarm == "" &&
