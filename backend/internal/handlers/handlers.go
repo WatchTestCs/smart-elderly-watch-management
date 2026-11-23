@@ -21,7 +21,6 @@ import (
 	"suining-care/internal/telemetryworkflow"
 )
 
-var sharedRisk = risk.New()
 
 // Handler 聚合依赖，各组 endpoint 实现在 handler_*.go 中。
 type Handler struct {
@@ -40,11 +39,10 @@ type Handler struct {
 }
 
 func New(pool *dbstore.Database, sessions *session.Store, cfg config.Config) *Handler {
-	return NewWithRisk(pool, sessions, cfg, sharedRisk)
+	return NewWithRisk(pool, sessions, cfg, nil)
 }
 
-// NewWithRisk keeps the production risk manager instance-owned. The legacy
-// New constructor remains for offline tests and local-only bootstrap routes.
+// NewWithRisk keeps the risk manager instance-owned; New creates a fresh one.
 func NewWithRisk(pool *dbstore.Database, sessions *session.Store, cfg config.Config, mgr *risk.Manager) *Handler {
 	var box *securestore.Box
 	if strings.TrimSpace(cfg.DataKey) != "" {
@@ -93,12 +91,7 @@ func (h *Handler) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/v1/rule-policies", h.rulePolicy)
 }
 
-func InitRisk(ctx context.Context, pool *dbstore.Database) error {
-	return InitRiskWithConfig(ctx, pool, sharedRisk, config.Load().Risk)
-}
-
 // InitRiskWithConfig binds persisted risk state and intelligence to one manager.
-// Shared state is reserved for the backwards-compatible InitRisk entrypoint.
 func InitRiskWithConfig(ctx context.Context, pool *dbstore.Database, mgr *risk.Manager, cfg config.RiskConfig) error {
 	if mgr == nil {
 		return fmt.Errorf("risk manager is required")
@@ -121,4 +114,3 @@ func InitRiskWithConfig(ctx context.Context, pool *dbstore.Database, mgr *risk.M
 	return nil
 }
 
-func CloseRisk() uint64 { return sharedRisk.CloseMySQL() }
