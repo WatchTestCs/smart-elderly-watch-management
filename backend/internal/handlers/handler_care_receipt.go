@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"suining-care/internal/config"
 	"crypto/hmac"
 	"crypto/sha256"
 	"database/sql"
@@ -8,7 +9,6 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -83,7 +83,7 @@ type careReceiptRequest struct {
 }
 
 func decodeCareReceipt(w http.ResponseWriter, r *http.Request) (careReceiptRequest, bool) {
-	secret := os.Getenv("CARE_RECEIPT_SECRET")
+	secret := config.Secret("CARE_RECEIPT_SECRET")
 	if len(secret) < 32 {
 		response.JSON(w, http.StatusServiceUnavailable, map[string]any{"message": "回执校验服务尚未配置"})
 		return careReceiptRequest{}, false
