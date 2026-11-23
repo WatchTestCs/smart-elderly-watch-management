@@ -21,6 +21,17 @@ type RiskConfig struct {
 	NetworkFeedPath string
 }
 
+// RequestConfig snapshots request hot-path toggles and HMAC secrets at startup.
+// The zero value leaves direct test-constructed handlers with their existing
+// environment-injection behavior; production always calls Load().
+type RequestConfig struct {
+	Loaded             bool
+	RequireSigned      bool
+	DurableTelemetry   bool
+	HealthLateLock     bool
+	CareReceiptSecret  string
+}
+
 type Config struct {
 	Addr             string // 默认只监听回环地址，远程部署必须显式配置
 	MySQLDSN         string
@@ -33,6 +44,7 @@ type Config struct {
 	RateLimit        ratelimit.Options
 	BlobBackend      string
 	Risk             RiskConfig
+	Requests         RequestConfig
 }
 
 func getenv(key, def string) string {
@@ -183,6 +195,13 @@ func Load() Config {
 		HealthCacheBytes: cacheMiB << 20,
 		RateLimit:        ratelimit.Options{MaxKeys: maxKeys, MaxSlots: maxSlots, TrustedProxyCIDRs: proxies},
 		BlobBackend:      strings.ToLower(strings.TrimSpace(getenv("BLOB_BACKEND", "mysql"))),
+		Requests: RequestConfig{
+			Loaded:            true,
+			RequireSigned:     Enabled("SUINING_REQUIRE_SIGNED_DEVICE"),
+			DurableTelemetry:  Enabled("SUINING_DURABLE_TELEMETRY"),
+			HealthLateLock:    Enabled("HEALTH_LATE_DEVICE_LOCK"),
+			CareReceiptSecret: Secret("CARE_RECEIPT_SECRET"),
+		},
 		Risk: RiskConfig{
 			ProxyCIDRsFile:  getenv("SUINING_RISK_PROXY_CIDRS_FILE", ""),
 			NetworkFeedPath: getenv("SUINING_RISK_NETWORK_FEED", ""),
