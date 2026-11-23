@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"suining-care/internal/carepolicy"
 	dbstore "suining-care/internal/db"
 	"suining-care/internal/response"
 	"suining-care/internal/telemetryrepo"
@@ -24,12 +25,20 @@ func (h *Handler) resolveLatestLocationAlert(w http.ResponseWriter, r *http.Requ
 	if !ok {
 		return
 	}
-	resolved, err := telemetryrepo.ResolveLatestLocationAlert(r.Context(), h.DB, oldID)
+	tx, ok := h.beginAdminActionTx(w, r, carepolicy.HandleAlerts)
+	if !ok {
+		return
+	}
+	defer tx.Rollback()
+	resolved, err := telemetryrepo.ResolveLatestLocationAlertTx(r.Context(), tx, oldID)
 	if internalError(w, err) {
 		return
 	}
 	if !resolved {
 		response.Fail(w, "没有待处理的告警")
+		return
+	}
+	if internalError(w, tx.Commit()) {
 		return
 	}
 	response.OK(w, nil)

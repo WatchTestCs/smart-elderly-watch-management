@@ -2,10 +2,9 @@
 package response
 
 import (
+	"encoding/json"
 	"log/slog"
 	"net/http"
-
-	json "github.com/goccy/go-json"
 )
 
 const (
@@ -14,14 +13,15 @@ const (
 )
 
 // JSON adds the result envelope without changing endpoint-specific data fields.
-// New endpoints should prefer WriteStruct / WriteOK / WriteError in typed.go.
 func JSON(w http.ResponseWriter, status int, fields map[string]any) {
 	v := make(map[string]any, len(fields)+3)
 	for key, value := range fields {
 		v[key] = value
 	}
 	if status < 400 && v["returnCode"] != nil && v["returnCode"] != CodeOK {
-		slog.Warn("implicit_http_status_override", "original_status", status, "return_code", v["returnCode"])
+		// Preserve legacy 400 semantics, but surface the caller's contradictory
+		// success status so it can be corrected without breaking API clients.
+		slog.Warn("api_response_success_status_with_failure_code", "http_status", status)
 		status = http.StatusBadRequest
 	}
 	if status >= 400 {
@@ -47,6 +47,8 @@ func Fail(w http.ResponseWriter, message string) {
 	Error(w, http.StatusBadRequest, "INVALID_REQUEST", message)
 }
 
+// Error uses the already-defined typed envelope rather than allocating and
+// copying an intermediate response map on every failed request.
 func Error(w http.ResponseWriter, status int, code, message string) {
 	if status < 400 || status > 599 {
 		status = http.StatusInternalServerError
@@ -58,19 +60,13 @@ func Error(w http.ResponseWriter, status int, code, message string) {
 	if message == "" {
 		message = defaultMessage
 	}
-	writeJSON(w, status, BaseResponse{
-		ReturnCode: CodeFail,
-		Code:       code,
-		Message:    message,
-	})
+	writeJSON(w, status, BaseResponse{ReturnCode: CodeFail, Code: code, Message: message})
 }
 
 func Error500(w http.ResponseWriter, reference string) {
 	writeJSON(w, http.StatusInternalServerError, BaseResponse{
-		ReturnCode: CodeFail,
-		Code:       "INTERNAL_ERROR",
-		Message:    "服务处理失败",
-		Reference:  reference,
+		ReturnCode: CodeFail, Code: "INTERNAL_ERROR",
+		Message: "服务处理失败", Reference: reference,
 	})
 }
 

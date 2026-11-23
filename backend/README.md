@@ -84,6 +84,14 @@ $env:TEST_MYSQL_DSN='测试MySQL原生DSN'
 go test -race -count=1 -timeout 240s ./...
 ```
 
+## 离线加密回填命令
+
+从 `backend/` 目录执行 `go run ./cmd/suining-ctl protect family-addresses --limit 100` 可只读盘点待迁移数据；追加 `--apply` 才会执行写入。可选目标还有 `family-phones`、`guardian-contacts`、`resident-birthdates`、`resident-profiles` 和 `social-phones`。原有 `protect-*` 命令仍可使用，统计 JSON 格式保持不变。
+
+所有写入前必须停写、验证备份并配置数据加密密钥。密钥和数据库连接均支持 `DATA_ENCRYPTION_KEY_FILE` / `MYSQL_DSN_FILE`；已配置但无法读取的密钥文件会使服务配置验证失败。
+
+`go run ./cmd/protect-notes --limit 100` 在最多处理指定条记录后停止，单批读取不超过 64 条、无全表 `FOR UPDATE`。它默认只读盘点，追加 `--apply` 执行加密；`--decrypt --apply` 会恢复明文，仅限经审批的离线回滚。单次操作最多 2 分钟，出现 `capped=true` 后需检查剩余记录并分批重跑。加密期间不得有业务写入。
+
 运维性能参考[性能指南](../docs/reliability/performance.md)，迁移、回滚与数据恢复参考[MySQL 单库指南](../docs/MYSQL_ONLY_MIGRATION.md)。
 
 ## 接口路由与会话约定（破坏性变更）

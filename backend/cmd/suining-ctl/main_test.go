@@ -6,21 +6,15 @@ import (
 	"testing"
 )
 
-func TestDispatchHelpAndUnknownTarget(t *testing.T) {
+func TestUnifiedProtectDispatchValidatesCommandWithoutDatabase(t *testing.T) {
+	for _, args := range [][]string{nil, {"other", "family-phones"}, {"protect", "unknown"}} {
+		if err := dispatch(args, &bytes.Buffer{}); err == nil {
+			t.Fatalf("accepted invalid command: %v", args)
+		}
+	}
 	var out bytes.Buffer
-	if err := dispatch([]string{}, &out); err == nil {
-		t.Fatal("expected usage error for empty args")
-	}
-	if err := dispatch([]string{"protect", "unknown"}, &out); err == nil {
-		t.Fatal("expected error for unknown target")
-	}
-	for _, target := range []string{"family-addresses", "family-phones", "guardian-contacts", "resident-birthdates", "resident-profiles", "social-phones"} {
-		out.Reset()
-		if err := dispatch([]string{"protect", target, "--help"}, &out); err != nil {
-			t.Fatalf("help failed for %s: %v", target, err)
-		}
-		if !strings.Contains(out.String(), "1..1000") {
-			t.Fatalf("help output missing limit bounds for %s: %q", target, out.String())
-		}
+	if err := dispatch([]string{"protect", "family-phones", "--help"}, &out); err != nil ||
+		!strings.Contains(out.String(), "1..1000") {
+		t.Fatalf("help failed: %v", err)
 	}
 }

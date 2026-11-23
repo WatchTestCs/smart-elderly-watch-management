@@ -1,4 +1,4 @@
-// Command protect-resident-profiles explicitly migrates existing care fields.
+// Command protect-resident-profiles runs the bounded offline encryption backfill.
 package main
 
 import (
@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"suining-care/internal/opscli"
-	"suining-care/internal/residentprofile"
 )
 
 func main() {
@@ -18,12 +17,5 @@ func main() {
 }
 
 func run(args []string, output io.Writer) error {
-	return opscli.RunBackfill(opscli.BackfillSpec[residentprofile.BackfillReport]{
-		Name:             "protect-resident-profiles",
-		ApplyUsage:       "apply with relevant writers stopped and a tested backup",
-		LimitUsage:       "maximum profiles per invocation, 1..1000",
-		Subject:          "resident backfill",
-		RequireKeyOnScan: true,
-		Run:              residentprofile.Backfill,
-	}, args, output)
+	return opscli.RunTarget("resident-profiles", args, output)
 }

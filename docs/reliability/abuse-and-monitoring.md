@@ -17,7 +17,7 @@ NAT 共享、高频单 IP、伪造 header、trusted proxy、关闭生命周期�
 TRUSTED_PROXY_CIDRS 最多 64 项，只有 TCP peer 在其中才解析 Forwarded/XFF，最多 4096 字节
 和 32 hops，从右向左跳过可信代理。无效链回退 peer，mapped IPv4 规范化、拒绝 zone；直接
 客户端伪造 XFF 无效。Nginx 覆盖 XFF 并清除 Forwarded，默认独立网段 172.30.73/24，应用仅
-信任 gateway /32。网段冲突时同时调整 PLATFORM_SUBNET、GATEWAY_IPV4、TRUSTED_PROXY_CIDRS。
+信任 gateway /32。网段冲突时调整 PLATFORM_SUBNET 和 GATEWAY_IPV4。默认可信代理随网关地址更新；显式设置 TRUSTED_PROXY_CIDRS 时使用该覆盖值。
 不能用整个办公网/0.0.0.0/0 当可信代理，也不能让客户端绕过 ingress 直连公开后端。
 
 Nginx shared zones 在同一 ingress 内跨 worker/应用副本统一控制登录与硬件洪水，内存区固定。

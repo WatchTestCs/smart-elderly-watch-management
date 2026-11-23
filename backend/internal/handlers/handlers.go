@@ -3,26 +3,23 @@ package handlers
 
 import (
 	"context"
+	"fmt"
+	"log"
 	"log/slog"
 	"net/http"
-	"os"
 	"strings"
-	"sync"
-	"time"
-
 	"suining-care/internal/blob"
-	"suining-care/internal/config"
 	dbstore "suining-care/internal/db"
 	"suining-care/internal/ratelimit"
 	"suining-care/internal/risk"
+	"sync"
+	"time"
+
+	"suining-care/internal/config"
 	"suining-care/internal/securestore"
 	"suining-care/internal/session"
 	"suining-care/internal/telemetryworkflow"
 )
-
-// sharedRisk 仅作为兼容 cmd/server 旧 InitRisk/CloseRisk 入口的默认实例；
-// 新代码与隔离测试应通过 NewWithRisk 显式注入独立 *risk.Manager。
-var sharedRisk = risk.New()
 
 // Handler 聚合依赖，各组 endpoint 实现在 handler_*.go 中。
 type Handler struct {
@@ -40,40 +37,38 @@ type Handler struct {
 	Heartbeats   *telemetryworkflow.HeartbeatBuffer
 }
 
-// New 构造 Handler（保持既有签名兼容）；若 DataKey 无效将记录明确警告而非静默丢弃。
 func New(pool *dbstore.Database, sessions *session.Store, cfg config.Config) *Handler {
-	return NewWithRisk(pool, sessions, cfg, sharedRisk)
+	return NewWithRisk(pool, sessions, cfg, nil)
 }
 
-// NewWithRisk 允许调用方与测试注入独立的 *risk.Manager，避免跨实例共享全局状态。
-func NewWithRisk(pool *dbstore.Database, sessions *session.Store, cfg config.Config, riskMgr *risk.Manager) *Handler {
+// NewWithRisk keeps the risk manager instance-owned; New creates a fresh one.
+func NewWithRisk(pool *dbstore.Database, sessions *session.Store, cfg config.Config, mgr *risk.Manager) *Handler {
 	var box *securestore.Box
 	if strings.TrimSpace(cfg.DataKey) != "" {
-		b, err := securestore.New(cfg.DataKey)
+		var err error
+		box, err = securestore.New(cfg.DataKey)
 		if err != nil {
-			slog.Warn("handler_data_key_invalid", "error", err)
-		} else {
-			box = b
+			// A live DB handler must never silently downgrade encrypted writes.
+			if pool != nil {
+				panic(fmt.Errorf("invalid handler encryption configuration: %w", err))
+			}
+			slog.Error("local_bootstrap_invalid_encryption_key", "error", err)
 		}
+	} else if pool != nil && cfg.MySQLDSN != "" {
+		panic("database handler requires an encryption key")
 	}
 	resolve, err := ratelimit.NewClientIPResolver(cfg.RateLimit.TrustedProxyCIDRs)
 	if err != nil {
-		slog.Warn("handler_trusted_proxy_cidrs_invalid", "error", err)
+		if pool != nil {
+			panic(fmt.Errorf("invalid trusted proxy configuration: %w", err))
+		}
+		slog.Warn("local_bootstrap_invalid_proxy_config", "error", err)
 		resolve, _ = ratelimit.NewClientIPResolver(nil)
 	}
-	if riskMgr == nil {
-		riskMgr = risk.New()
+	if mgr == nil {
+		mgr = risk.New()
 	}
-	return &Handler{
-		DB:           pool,
-		Sessions:     sessions,
-		Cfg:          cfg,
-		Box:          box,
-		CookieSecure: cfg.SecureCookies(),
-		healthCache:  newStatisticsCache(cfg.HealthCacheBytes),
-		clientIP:     resolve,
-		Risk:         riskMgr,
-	}
+	return &Handler{DB: pool, Sessions: sessions, Cfg: cfg, Box: box, CookieSecure: cfg.SecureCookies(), healthCache: newStatisticsCache(cfg.HealthCacheBytes), clientIP: resolve, Risk: mgr}
 }
 
 // Routes 注册全部路由。各组在自己的文件中通过 h.route 注册。
@@ -95,32 +90,25 @@ func (h *Handler) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/v1/rule-policies", h.rulePolicy)
 }
 
-// InitRisk 保留兼容入口，内部委托至显式配置版本 InitRiskWithConfig。
-func InitRisk(ctx context.Context, pool *dbstore.Database) error {
-	return InitRiskWithConfig(ctx, sharedRisk, pool, config.RiskConfig{
-		ProxyCIDRsFile:  os.Getenv("SUINING_RISK_PROXY_CIDRS_FILE"),
-		NetworkFeedPath: os.Getenv("SUINING_RISK_NETWORK_FEED"),
-	})
-}
-
-// InitRiskWithConfig 使用显式配置初始化指定 *risk.Manager，消除隐藏环境变量依赖。
-func InitRiskWithConfig(ctx context.Context, mgr *risk.Manager, pool *dbstore.Database, cfg config.RiskConfig) error {
+// InitRiskWithConfig binds persisted risk state and intelligence to one manager.
+func InitRiskWithConfig(ctx context.Context, pool *dbstore.Database, mgr *risk.Manager, cfg config.RiskConfig) error {
+	if mgr == nil {
+		return fmt.Errorf("risk manager is required")
+	}
 	if err := mgr.EnableMySQL(pool.DB); err != nil {
 		return err
 	}
 	if path := strings.TrimSpace(cfg.ProxyCIDRsFile); path != "" {
 		if err := mgr.LoadProxyCIDRs(path); err != nil {
-			slog.Warn("risk_ip_feed_unavailable", "path", path, "error", err)
+			log.Printf("risk IP feed unavailable: %v", err)
 		}
 	}
 	if path := strings.TrimSpace(cfg.NetworkFeedPath); path != "" {
 		if err := mgr.StartNetworkRefresh(ctx, path, 15*time.Minute, func(err error) {
-			slog.Warn("risk_intelligence_update_failed", "path", path, "error", err)
+			log.Printf("risk intelligence update failed: %v", err)
 		}); err != nil {
-			slog.Warn("risk_intelligence_initial_load_failed", "path", path, "error", err)
+			log.Printf("risk intelligence initial load failed: %v", err)
 		}
 	}
 	return nil
 }
-
-func CloseRisk() uint64 { return sharedRisk.CloseMySQL() }

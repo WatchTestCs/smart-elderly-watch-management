@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"log/slog"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -179,5 +180,28 @@ func TestMySQLOnlyStorageConfiguration(t *testing.T) {
 	t.Setenv("PG_ANALYTICS_URL_FILE", "")
 	if cfg := Load(); cfg.BlobBackend != "mysql" || cfg.LegacyPGURL != "" {
 		t.Fatalf("MySQL-only defaults not selected: backend=%q", cfg.BlobBackend)
+	}
+}
+
+func TestConfiguredReceiptSecretFileFailsClosed(t *testing.T) {
+	t.Setenv("CARE_RECEIPT_SECRET_FILE", filepath.Join(t.TempDir(), "missing"))
+	t.Setenv("CARE_RECEIPT_SECRET", "fallback-must-not-apply")
+	if err := (Config{SessionBackend: "memory"}).Validate(); err == nil || !strings.Contains(err.Error(), "CARE_RECEIPT_SECRET_FILE") {
+		t.Fatalf("missing configured secret file was not rejected: %v", err)
+	}
+}
+
+func TestConfiguredNotificationSecretFileIsLoaded(t *testing.T) {
+	key := filepath.Join(t.TempDir(), "token")
+	if err := os.WriteFile(key, []byte("real-file-token\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("NOTIFY_WEBHOOK_TOKEN_FILE", key)
+	t.Setenv("NOTIFY_WEBHOOK_TOKEN", "ignored-fallback-token")
+	if got := Secret("NOTIFY_WEBHOOK_TOKEN"); got != "real-file-token" {
+		t.Fatalf("did not honor the file-backed token")
+	}
+	if err := ValidateSecretFiles(); err != nil {
+		t.Fatal(err)
 	}
 }

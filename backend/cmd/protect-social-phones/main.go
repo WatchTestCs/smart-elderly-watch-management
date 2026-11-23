@@ -1,4 +1,4 @@
-// Command protect-social-phones explicitly migrates legacy comment/like phones.
+// Command protect-social-phones runs the bounded offline encryption backfill.
 package main
 
 import (
@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"suining-care/internal/opscli"
-	"suining-care/internal/socialrepo"
 )
 
 func main() {
@@ -18,12 +17,5 @@ func main() {
 }
 
 func run(args []string, output io.Writer) error {
-	return opscli.RunBackfill(opscli.BackfillSpec[socialrepo.PhoneBackfillReport]{
-		Name:             "protect-social-phones",
-		ApplyUsage:       "apply with social writers stopped and a tested backup",
-		LimitUsage:       "maximum rows per invocation, 1..1000",
-		Subject:          "social backfill",
-		RequireKeyOnScan: true,
-		Run:              socialrepo.BackfillPhones,
-	}, args, output)
+	return opscli.RunTarget("social-phones", args, output)
 }

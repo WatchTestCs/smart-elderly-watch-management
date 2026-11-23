@@ -158,6 +158,8 @@ Pop-Location
 | 旧版本升级后配置报错 | 不再支持 PostgreSQL 分析库和 S3 作为运行时依赖；按迁移手册清理旧配置，勿直接删除原数据 |
 | 担心数据丢失 | 单独备份 MySQL 数据、加密密钥与部署配置，并在隔离环境验证恢复 |
 
+`preview` 开发分支支持统一离线回填入口 `go run ./cmd/suining-ctl protect <target> --limit 100`。转换照护备注请使用 `go run ./cmd/protect-notes --limit 100`，默认只盘点；执行 `--apply` 前必须停写并核验备份。详细命令见 [后端运维说明](backend/README.md)。
+
 ## 文档与反馈
 
 [完整项目文档索引](docs/INDEX.md) 按安装、开发、部署、运维和安全场景整理资料，找不到的内容可在 Issue 中提出。

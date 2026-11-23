@@ -1,7 +1,7 @@
 // Periodic reads run only while the document is visible. Callers retain
 // their own request deadlines, cancellation and busy-state policies.
 export interface VisiblePollingOptions {
-  /** Minimum elapsed milliseconds before a visibility-return refresh. */
+  /** Minimum elapsed time before returning to a tab can trigger an extra read. */
   minGapMs?: number
 }
 
@@ -10,9 +10,9 @@ export function startVisiblePolling(
   intervalMs: number,
   options: VisiblePollingOptions = {}
 ): () => void {
-  const minGapMs = Math.max(0, options.minGapMs ?? Math.min(intervalMs, 1500))
+  const minGapMs = options.minGapMs ?? Math.min(intervalMs, 1500)
   let timer: ReturnType<typeof setInterval> | undefined
-  let lastRunAt = Date.now()
+  let lastVisibilityAt: number | undefined
 
   function clearTimer() {
     if (timer !== undefined) clearInterval(timer)
@@ -20,7 +20,6 @@ export function startVisiblePolling(
   }
 
   function runRefresh() {
-    lastRunAt = Date.now()
     refresh()
   }
 
@@ -32,7 +31,13 @@ export function startVisiblePolling(
     clearTimer()
     if (document.hidden) return
     timer = setInterval(tick, intervalMs)
-    if (Date.now() - lastRunAt >= minGapMs) runRefresh()
+    // A first foreground return must refresh even after a hidden mount.
+    // Only later returns within the gap are redundant.
+    const now = Date.now()
+    if (lastVisibilityAt === undefined || now - lastVisibilityAt >= minGapMs) {
+      lastVisibilityAt = now
+      runRefresh()
+    }
   }
 
   if (!document.hidden) timer = setInterval(tick, intervalMs)

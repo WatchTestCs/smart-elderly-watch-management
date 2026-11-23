@@ -4,7 +4,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { accepted, api, type Envelope } from '../api/client'
 import { apiErrorMessage, readErrorMessage } from '../api/httpContract'
 import { copyText } from '../utils/clipboard'
-import { createDeviceState, emptyDeviceAlert, isValidCount } from './deviceModels'
+import { createDeviceState, emptyDeviceAlert, isValidCount, sameDeviceRows } from './deviceModels'
 import { useDeviceBindings } from './useDeviceBindings'
 import { useDeviceWorkbench } from './useDeviceWorkbench'
 export type { DeviceRecord } from './deviceModels'
@@ -54,12 +54,22 @@ export function useDevices() {
         throw new Error('invalid alert counters')
       }
       const counts = Object.fromEntries(data.items.map(item => [item.deviceId, item]))
-      if (JSON.stringify(state.alertCounts) !== JSON.stringify(counts)) state.alertCounts = counts
+      const previousCounts = state.alertCounts
+      const ids = Object.keys(counts)
+      if (ids.length !== Object.keys(previousCounts).length || ids.some(id => {
+        const before = previousCounts[id]
+        const after = counts[id]
+        return !before || before.personCount !== after.personCount ||
+          before.rateCount !== after.rateCount || before.preCount !== after.preCount
+      })) state.alertCounts = counts
       const totals = {
         personTotal: data.personTotal ?? 0, rateTotal: data.rateTotal ?? 0,
         preTotal: data.preTotal ?? 0, total: data.total
       }
-      if (JSON.stringify(state.alertTotals) !== JSON.stringify(totals)) state.alertTotals = totals
+      if (state.alertTotals.personTotal !== totals.personTotal ||
+          state.alertTotals.rateTotal !== totals.rateTotal ||
+          state.alertTotals.preTotal !== totals.preTotal ||
+          state.alertTotals.total !== totals.total) state.alertTotals = totals
       state.alertsReady = true
       state.alertLoadError = ''
     } catch (error) {
@@ -117,7 +127,7 @@ export function useDevices() {
               return
             }
           }
-          if (JSON.stringify(state.deviceList) !== JSON.stringify(data.devices)) state.deviceList = data.devices
+          if (!sameDeviceRows(state.deviceList, data.devices)) state.deviceList = data.devices
           displayedQuery = queryKey
           state.deviceLoadError = ''
           state.deviceTotal = data.total ?? data.devices.length

@@ -1,4 +1,4 @@
-// Command protect-resident-birthdates explicitly migrates legacy dates of birth.
+// Command protect-resident-birthdates runs the bounded offline encryption backfill.
 package main
 
 import (
@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"suining-care/internal/opscli"
-	"suining-care/internal/residentprofile"
 )
 
 func main() {
@@ -18,12 +17,5 @@ func main() {
 }
 
 func run(args []string, output io.Writer) error {
-	return opscli.RunBackfill(opscli.BackfillSpec[residentprofile.BackfillReport]{
-		Name:             "protect-resident-birthdates",
-		ApplyUsage:       "apply with resident writers stopped and a tested backup",
-		LimitUsage:       "maximum birthdates per invocation, 1..1000",
-		Subject:          "resident birthdate backfill",
-		RequireKeyOnScan: true,
-		Run:              residentprofile.BackfillBirthdates,
-	}, args, output)
+	return opscli.RunTarget("resident-birthdates", args, output)
 }

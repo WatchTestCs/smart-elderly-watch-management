@@ -1,4 +1,4 @@
-// Command protect-family-phones performs bounded, explicit legacy backfill.
+// Command protect-family-phones runs the bounded offline encryption backfill.
 package main
 
 import (
@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"suining-care/internal/opscli"
-	"suining-care/internal/userphone"
 )
 
 func main() {
@@ -18,12 +17,5 @@ func main() {
 }
 
 func run(args []string, output io.Writer) error {
-	return opscli.RunBackfill(opscli.BackfillSpec[userphone.FamilyBackfillReport]{
-		Name:             "protect-family-phones",
-		ApplyUsage:       "apply with account writers stopped and a tested backup",
-		LimitUsage:       "maximum rows per invocation, 1..1000",
-		Subject:          "family backfill",
-		RequireKeyOnScan: false,
-		Run:              userphone.BackfillFamily,
-	}, args, output)
+	return opscli.RunTarget("family-phones", args, output)
 }

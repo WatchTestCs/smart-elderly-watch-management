@@ -1,4 +1,4 @@
-// Command protect-guardian-contacts explicitly migrates existing guardian contacts.
+// Command protect-guardian-contacts runs the bounded offline encryption backfill.
 package main
 
 import (
@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 
-	"suining-care/internal/guardiancontact"
 	"suining-care/internal/opscli"
 )
 
@@ -18,12 +17,5 @@ func main() {
 }
 
 func run(args []string, output io.Writer) error {
-	return opscli.RunBackfill(opscli.BackfillSpec[guardiancontact.BackfillReport]{
-		Name:             "protect-guardian-contacts",
-		ApplyUsage:       "apply with relevant writers stopped and a tested backup",
-		LimitUsage:       "maximum contacts per invocation, 1..1000",
-		Subject:          "guardian contact backfill",
-		RequireKeyOnScan: true,
-		Run:              guardiancontact.Backfill,
-	}, args, output)
+	return opscli.RunTarget("guardian-contacts", args, output)
 }

@@ -1,4 +1,4 @@
-// Command protect-family-addresses explicitly migrates existing family addresses.
+// Command protect-family-addresses runs the bounded offline encryption backfill.
 package main
 
 import (
@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 
-	"suining-care/internal/familyaddress"
 	"suining-care/internal/opscli"
 )
 
@@ -18,12 +17,5 @@ func main() {
 }
 
 func run(args []string, output io.Writer) error {
-	return opscli.RunBackfill(opscli.BackfillSpec[familyaddress.BackfillReport]{
-		Name:             "protect-family-addresses",
-		ApplyUsage:       "apply with relevant writers stopped and a tested backup",
-		LimitUsage:       "maximum addresses per invocation, 1..1000",
-		Subject:          "family address backfill",
-		RequireKeyOnScan: true,
-		Run:              familyaddress.Backfill,
-	}, args, output)
+	return opscli.RunTarget("family-addresses", args, output)
 }

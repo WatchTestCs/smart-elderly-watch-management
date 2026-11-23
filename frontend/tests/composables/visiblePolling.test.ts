@@ -43,26 +43,42 @@ it('does not schedule an interval when mounted in a hidden document', () => {
   } finally { stop() }
 })
 
-it('throttles rapid tab hide/show while resuming after the minimum gap', () => {
+it('coalesces rapid visibility changes without firing a request storm', () => {
   vi.useFakeTimers()
   const hidden = vi.spyOn(document, 'hidden', 'get').mockReturnValue(false)
   const refresh = vi.fn()
-  const stop = startVisiblePolling(refresh, 15_000, { minGapMs: 2_000 })
+  const stop = startVisiblePolling(refresh, 15_000)
   try {
+    for (let attempt = 0; attempt < 10; attempt++) {
+      hidden.mockReturnValue(true)
+      document.dispatchEvent(new Event('visibilitychange'))
+      hidden.mockReturnValue(false)
+      document.dispatchEvent(new Event('visibilitychange'))
+      vi.advanceTimersByTime(50)
+    }
+    expect(refresh).toHaveBeenCalledTimes(1)
+    expect(vi.getTimerCount()).toBe(1)
     hidden.mockReturnValue(true)
     document.dispatchEvent(new Event('visibilitychange'))
-    vi.advanceTimersByTime(500)
+    vi.advanceTimersByTime(1500)
     hidden.mockReturnValue(false)
     document.dispatchEvent(new Event('visibilitychange'))
-    expect(refresh).toHaveBeenCalledTimes(0)
+    expect(refresh).toHaveBeenCalledTimes(2)
+    expect(vi.getTimerCount()).toBe(1)
+  } finally { stop() }
+  expect(vi.getTimerCount()).toBe(0)
+})
 
-    hidden.mockReturnValue(true)
-    document.dispatchEvent(new Event('visibilitychange'))
-    vi.advanceTimersByTime(2_100)
+it('refreshes on first foreground return after a hidden mount', () => {
+  vi.useFakeTimers()
+  const hidden = vi.spyOn(document, 'hidden', 'get').mockReturnValue(true)
+  const refresh = vi.fn()
+  const stop = startVisiblePolling(refresh, 15_000, { minGapMs: 2_000 })
+  try {
+    vi.advanceTimersByTime(200)
     hidden.mockReturnValue(false)
     document.dispatchEvent(new Event('visibilitychange'))
     expect(refresh).toHaveBeenCalledTimes(1)
-  } finally {
-    stop()
-  }
+    expect(vi.getTimerCount()).toBe(1)
+  } finally { stop() }
 })

@@ -10,10 +10,10 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"suining-care/internal/config"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
-	"suining-care/internal/config"
 	"suining-care/internal/securestore"
 	"suining-care/internal/userphone"
 )
