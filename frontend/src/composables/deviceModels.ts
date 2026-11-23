@@ -21,6 +21,24 @@ export interface DeviceRecord {
   reason?: string
   recordId?: DeviceId
 }
+// API device rows contain scalar fields. Compare the full public record
+// without allocating a serialized copy on every 5-second poll; unknown fields
+// are still considered so new API properties cannot be silently ignored.
+export function sameDeviceRows(left: readonly DeviceRecord[], right: readonly DeviceRecord[]): boolean {
+  if (left.length !== right.length) return false
+  for (let index = 0; index < left.length; index++) {
+    const a = left[index] as Record<string, unknown>
+    const b = right[index] as Record<string, unknown>
+    for (const key in a) {
+      if (Object.hasOwn(a, key) && (!Object.hasOwn(b, key) || a[key] !== b[key])) return false
+    }
+    for (const key in b) {
+      if (Object.hasOwn(b, key) && !Object.hasOwn(a, key)) return false
+    }
+  }
+  return true
+}
+
 export interface ResidentRecord { oldId: DeviceId; name: string }
 export interface DeviceBindCode { id: DeviceId; code: string; expireTime: string; used: number }
 export interface DeviceAlertCounts { personCount: number; rateCount: number; preCount: number }
