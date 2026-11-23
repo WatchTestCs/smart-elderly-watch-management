@@ -25,3 +25,11 @@ func TestInjectedRiskManagerIsInstanceOwned(t *testing.T) {
 		t.Fatal("injected risk managers were shared across instances")
 	}
 }
+
+func TestDefaultHandlersDoNotShareRiskState(t *testing.T) {
+	first := New(nil, nil, config.Config{})
+	second := New(nil, nil, config.Config{})
+	if first.Risk == nil || second.Risk == nil || first.Risk == second.Risk {
+		t.Fatal("default constructors shared mutable risk state")
+	}
+}
