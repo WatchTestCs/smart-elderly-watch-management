@@ -7,11 +7,14 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
+	"encoding/pem"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strconv"
 	"sync"
 	"testing"
@@ -82,10 +85,13 @@ func TestCareFullHTTPChainAfterRealGatewayTimeout(t *testing.T) {
 		w.WriteHeader(http.StatusAccepted)
 	}))
 	defer func() { releaseOnce.Do(func() { close(release) }); gateway.Close() }()
-	// Trust the test gateway's actual CA, keeping certificate verification enabled.
-	transport := http.DefaultTransport
-	http.DefaultTransport = gateway.Client().Transport
-	defer func() { http.DefaultTransport = transport }()
+	// The production gateway client builds its own TLS transport; provide the test CA explicitly.
+	caPath := filepath.Join(t.TempDir(), "gateway-ca.pem")
+	caPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: gateway.Certificate().Raw})
+	if err := os.WriteFile(caPath, caPEM, 0600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("CARE_NOTIFY_CA_FILE", caPath)
 	t.Setenv("CARE_NOTIFY_WEBHOOK_URL", gateway.URL)
 	t.Setenv("CARE_NOTIFY_WEBHOOK_TOKEN", "synthetic-gateway-token")
 	press := map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "requestId": "full-chain-real-timeout", "bindingVersion": 1}
