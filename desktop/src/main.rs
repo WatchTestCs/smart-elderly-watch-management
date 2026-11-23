@@ -1,6 +1,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-#[cfg(windows)]
 mod display_refresh;
 
 use serde::{Deserialize, Serialize};
