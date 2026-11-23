@@ -34,7 +34,11 @@
 
 需要**额外**在 GitHub Settings → Rules → Rulesets 为 `preview` 和
 `main` 增加一条独立的分支规则：选中 **Restrict updates**，在 Bypass
-中**只允许 Organization admins (组织 Owner)**。不要放行 Repository admin、
+中**只允许 Organization admins (组织 Owner)**。
+
+当前 `main` 规则仅禁止删除和非快进更新，尚未要求 PR 或 CI。为主分支补充
+**Require a pull request**（0 人审批）及上述两项必需检查，且不要给任何
+非 Owner 角色设置 bypass，才能做到主分支同样先检查后合并。不要放行 Repository admin、
 Maintainer、Write 角色、其他团队或自动化 GitHub App，并确认 Owner 仍须满足
 原有 PR 和必需 CI 规则；不要将 Owner 添加到现有 CI/PR 规则的 bypass。
 
