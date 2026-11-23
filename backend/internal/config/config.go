@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"math"
 	"net"
 	"os"
 	"strconv"
@@ -75,7 +76,7 @@ func envTZOffset(key string, fallback float64) float64 {
     raw := strings.TrimSpace(getenv(key, ""))
     if raw == "" { return fallback }
     offset, err := strconv.ParseFloat(raw, 64)
-    if err != nil || offset < -12 || offset > 14 { return fallback }
+    if err != nil || math.IsNaN(offset) || math.IsInf(offset, 0) || offset < -12 || offset > 14 { return fallback }
     return offset
 }
 
