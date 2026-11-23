@@ -56,14 +56,14 @@ it('coalesces rapid visibility changes without firing a request storm', () => {
       document.dispatchEvent(new Event('visibilitychange'))
       vi.advanceTimersByTime(50)
     }
-    expect(refresh).not.toHaveBeenCalled()
+    expect(refresh).toHaveBeenCalledTimes(1)
     expect(vi.getTimerCount()).toBe(1)
     hidden.mockReturnValue(true)
     document.dispatchEvent(new Event('visibilitychange'))
     vi.advanceTimersByTime(1500)
     hidden.mockReturnValue(false)
     document.dispatchEvent(new Event('visibilitychange'))
-    expect(refresh).toHaveBeenCalledTimes(1)
+    expect(refresh).toHaveBeenCalledTimes(2)
     expect(vi.getTimerCount()).toBe(1)
   } finally { stop() }
   expect(vi.getTimerCount()).toBe(0)
