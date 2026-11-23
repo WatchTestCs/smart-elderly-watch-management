@@ -4,8 +4,8 @@
       <h3>显示与操作</h3>
       <div class="setting"><label for="setting-large-text">大字模式</label><el-switch id="setting-large-text" :model-value="largeText" @change="updateLargeText" /></div>
       <div class="setting"><label for="setting-reduced-motion">减少界面动画</label><el-switch id="setting-reduced-motion" v-model="mapPreferences.reducedMotion" @change="saveMapPreferences" /></div>
-      <div class="setting"><label>当前显示器刷新率</label><strong>{{ hostHz == null ? (probing ? '检测中…' : hostError || '暂不可用') : hostHz + ' Hz' }}</strong></div>
-      <div class="setting"><label>WebView 空载帧调度</label><strong>{{ frameHz == null ? (probing ? '采样中…' : '未测得') : '约 ' + frameHz + ' FPS' }}</strong></div>
+      <div class="setting"><span>当前显示器刷新率</span><strong>{{ hostHz == null ? (probing ? '检测中…' : hostError || '暂不可用') : hostHz + ' Hz' }}</strong></div>
+      <div class="setting"><span>WebView 空载帧调度</span><strong>{{ frameHz == null ? (probing ? '采样中…' : '未测得') : '约 ' + frameHz + ' FPS' }}</strong></div>
       <p class="hint" role="status">{{ refreshAdvice }}</p>
       <el-button plain :loading="probing" @click="probe">重新检测显示性能</el-button>
     </section>
