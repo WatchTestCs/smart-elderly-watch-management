@@ -34,7 +34,8 @@ describe('scalar device polling comparisons', () => {
   it('detects changed fields, row ordering and added API fields', () => {
     expect(sameDeviceRows([first], [{ ...first, battery: 79 }])).toBe(false)
     expect(sameDeviceRows([first, second], [second, first])).toBe(false)
-    expect(sameDeviceRows([first], [{ ...first, extraField: 'new' }])).toBe(false)
+    const expanded = { ...first, extraField: 'new' }
+    expect(sameDeviceRows([first], [expanded])).toBe(false)
     expect(sameDeviceRows([first], [{ deviceId: 1, deviceNo: 'A', battery: 80 }])).toBe(false)
   })
 })
