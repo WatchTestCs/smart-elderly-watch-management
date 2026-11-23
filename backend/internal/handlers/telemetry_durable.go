@@ -21,7 +21,9 @@ import (
 // The queue stores only encrypted measurements, never hardware credentials.
 // Emergency/SOS, vital signs and coordinates are deliberately excluded.
 func (h *Handler) durableTelemetryEligible(parsed parsedDeviceTelemetry, requestID string, box *securestore.Box) bool {
-	return (h.Cfg.Requests.Loaded && h.Cfg.Requests.DurableTelemetry || !h.Cfg.Requests.Loaded && config.Enabled("SUINING_DURABLE_TELEMETRY")) &&
+	enabled := h.Cfg.Requests.DurableTelemetry
+	if !h.Cfg.Requests.Loaded { enabled = config.Enabled("SUINING_DURABLE_TELEMETRY") }
+	return enabled &&
 		box != nil && deviceprotocol.ValidRequestID(requestID) &&
 		parsed.hr == nil && parsed.bp == nil && parsed.alarm == "" &&
 		parsed.lng == "" && parsed.lat == "" &&
