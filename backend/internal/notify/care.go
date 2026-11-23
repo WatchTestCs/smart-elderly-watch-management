@@ -5,9 +5,9 @@
 package notify
 
 import (
+	"suining-care/internal/config"
 	"context"
 	"database/sql"
-	"os"
 	"strings"
 
 	"suining-care/internal/auth"
@@ -89,7 +89,7 @@ func QueueCareSMS(ctx context.Context, tx *sql.Tx, box *securestore.Box, inciden
 
 // EscalationPhone returns the configured, valid fallback recipient.
 func EscalationPhone() string {
-	phone := strings.TrimSpace(os.Getenv("CARE_ESCALATION_PHONE"))
+	phone := strings.TrimSpace(config.Setting("CARE_ESCALATION_PHONE"))
 	if !auth.ValidPhone(phone) {
 		return ""
 	}
