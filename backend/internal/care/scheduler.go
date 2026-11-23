@@ -1,16 +1,16 @@
 package care
 
 import (
+	"suining-care/internal/config"
 	"context"
 	"log/slog"
-	"os"
 	"strconv"
 	"sync"
 	"time"
 )
 
 func deliveryConcurrency() int {
-	n, err := strconv.Atoi(os.Getenv("CARE_NOTIFY_CONCURRENCY"))
+	n, err := strconv.Atoi(config.Setting("CARE_NOTIFY_CONCURRENCY"))
 	if err != nil || n < 1 || n > 64 {
 		return 8
 	}
