@@ -66,12 +66,12 @@ func TestSnapshotGroupedCountersMatchLegacyMySQL(t *testing.T) {
 			"(1,1,1,'received','2026-11-23 11:00:00')," +
 			"(2,1,1,'verified','2026-11-23 11:00:00')," +
 			"(3,2,3,'in_progress','2026-11-23 13:00:00')",
-		"INSERT INTO care_notification_outbox(id,incident_id,channel,recipient,status,last_attempt_at) VALUES " +
-			"(1,1,'sms','a','pending',NULL)," +
-			"(2,1,'sms','b','failed',NULL)," +
-			"(3,1,'sms','c','sending','2026-11-23 11:00:00')," +
-			"(4,1,'sms','d','sending','2026-11-23 11:59:30')," +
-			"(5,1,'sms','e','delivered',NULL)",
+		"INSERT INTO care_notification_outbox(id,incident_id,channel,recipient,recipient_key,status,last_attempt_at) VALUES " +
+			"(1,1,'sms','a',REPEAT('a',64),'pending',NULL)," +
+			"(2,1,'sms','b',REPEAT('b',64),'failed',NULL)," +
+			"(3,1,'sms','c',REPEAT('c',64),'sending','2026-11-23 11:00:00')," +
+			"(4,1,'sms','d',REPEAT('d',64),'sending','2026-11-23 11:59:30')," +
+			"(5,1,'sms','e',REPEAT('e',64),'delivered',NULL)",
 	} {
 		if _, err := pool.ExecContext(ctx, statement); err != nil {
 			t.Fatal(err)
