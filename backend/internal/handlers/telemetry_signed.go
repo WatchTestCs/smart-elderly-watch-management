@@ -122,6 +122,33 @@ func acceptSignedDeviceNonce(w http.ResponseWriter, ctx context.Context, tx *sql
 
 // Expired records are deleted independently of the request path. SOS and
 // telemetry never acknowledge an in-memory queue without a DB commit.
+// Each invocation caps cleanup at 20,000 rows to bound lock duration and work.
+func cleanupExpiredSignedDeviceNonces(
+	ctx context.Context, cutoff time.Time,
+	exec func(context.Context, string, ...any) (sql.Result, error),
+) error {
+	const batchSize = 5000
+	for batch := 0; batch < 4; batch++ {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		cleanupCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+		result, err := exec(cleanupCtx, "DELETE FROM device_request_nonces WHERE expires_at < ? LIMIT 5000", cutoff)
+		cancel()
+		if err != nil {
+			return err
+		}
+		affected, err := result.RowsAffected()
+		if err != nil {
+			return err
+		}
+		if affected < batchSize {
+			return nil
+		}
+	}
+	return nil
+}
+
 func RunSignedDeviceNonceCleanup(ctx context.Context, pool *dbstore.Database) {
 	ticker := time.NewTicker(5 * time.Minute)
 	defer ticker.Stop()
@@ -130,9 +157,7 @@ func RunSignedDeviceNonceCleanup(ctx context.Context, pool *dbstore.Database) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			cleanupCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
-			_, err := pool.ExecContext(cleanupCtx, `DELETE FROM device_request_nonces WHERE expires_at < ?`, time.Now().UTC().Add(-time.Minute))
-			cancel()
+			err := cleanupExpiredSignedDeviceNonces(ctx, time.Now().UTC().Add(-time.Minute), pool.ExecContext)
 			if err != nil && ctx.Err() == nil {
 				log.Printf("device replay nonce cleanup failed: %v", err)
 			}

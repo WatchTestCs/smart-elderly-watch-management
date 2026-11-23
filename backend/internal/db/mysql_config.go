@@ -91,6 +91,7 @@ func OpenMySQL(ctx context.Context, dsn string) (*Database, error) {
 	}
 	pool.SetMaxIdleConns(idleLimit)
 	pool.SetConnMaxLifetime(5 * time.Minute)
+	pool.SetConnMaxIdleTime(2 * time.Minute)
 	if err = pool.PingContext(ctx); err != nil {
 		pool.Close()
 		return nil, errors.New("MySQL unavailable")
@@ -107,6 +108,7 @@ func OpenMySQL(ctx context.Context, dsn string) (*Database, error) {
 	healthPool.SetMaxOpenConns(1)
 	healthPool.SetMaxIdleConns(1)
 	healthPool.SetConnMaxLifetime(5 * time.Minute)
+	healthPool.SetConnMaxIdleTime(2 * time.Minute)
 	if err = healthPool.PingContext(ctx); err != nil {
 		healthPool.Close()
 		pool.Close()

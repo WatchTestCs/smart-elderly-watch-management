@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"strconv"
 	"suining-care/internal/notify"
@@ -99,6 +100,7 @@ func (d *dispatcher) sendCareDelivery(ctx context.Context, job *delivery, openEr
 			if callErr != nil {
 				err = transportFailure(callErr)
 			} else {
+				_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 4096))
 				resp.Body.Close()
 				if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 					reason := "http_4xx"

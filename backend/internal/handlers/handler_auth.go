@@ -40,8 +40,8 @@ func (h *Handler) MountLocalLogout(mux *http.ServeMux) {
 // sessionInfo 处理 GET /api/v1/auth/session：公开；无会话则建匿名会话。
 func (h *Handler) sessionInfo(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	var count int64
-	if internalError(w, h.DB.QueryRowContext(ctx, "SELECT COUNT(*) FROM users").Scan(&count)) {
+	var hasUsers bool
+	if internalError(w, h.DB.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM users LIMIT 1)").Scan(&hasUsers)) {
 		return
 	}
 
@@ -77,7 +77,7 @@ func (h *Handler) sessionInfo(w http.ResponseWriter, r *http.Request) {
 	}
 	response.JSON(w, http.StatusOK, map[string]any{
 		"authenticated": authenticated,
-		"setupRequired": count == 0,
+		"setupRequired": !hasUsers,
 		"account":       account,
 		"csrfToken":     sess.CSRFToken,
 		"csrfHeader":    "X-CSRF-TOKEN",

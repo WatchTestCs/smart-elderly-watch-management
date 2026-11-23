@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"suining-care/internal/config"
 	dbstore "suining-care/internal/db"
 	"suining-care/internal/notify"
 	"suining-care/internal/observability"
@@ -27,14 +28,14 @@ type dispatcher struct {
 // without disclosing the gateway URL or token to the browser.
 func NotificationConfigured() bool {
 	parsed, err := url.Parse(strings.TrimSpace(os.Getenv("CARE_NOTIFY_WEBHOOK_URL")))
-	return err == nil && parsed.Scheme == "https" && parsed.Host != "" && strings.TrimSpace(os.Getenv("CARE_NOTIFY_WEBHOOK_TOKEN")) != ""
+	return err == nil && parsed.Scheme == "https" && parsed.Host != "" && strings.TrimSpace(config.Secret("CARE_NOTIFY_WEBHOOK_TOKEN")) != ""
 }
 
 // Run starts only after migrations succeed. A stale "sending" job can be claimed
 // again after a crash; the receiver must honor Idempotency-Key.
 func Run(ctx context.Context, db *dbstore.Database, box *securestore.Box) {
 	endpoint := strings.TrimSpace(os.Getenv("CARE_NOTIFY_WEBHOOK_URL"))
-	token := strings.TrimSpace(os.Getenv("CARE_NOTIFY_WEBHOOK_TOKEN"))
+	token := strings.TrimSpace(config.Secret("CARE_NOTIFY_WEBHOOK_TOKEN"))
 	if !NotificationConfigured() {
 		log.Print("care: notification gateway not configured (HTTPS URL + token required); delivery tasks remain pending")
 		endpoint = ""

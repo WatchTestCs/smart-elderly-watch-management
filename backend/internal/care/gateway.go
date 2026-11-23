@@ -58,6 +58,13 @@ func gatewayClient(caFile string) (*http.Client, error) {
 		return nil, errors.New("gateway transport is unavailable")
 	}
 	transport = transport.Clone()
+	transport.MaxIdleConns = 32
+	transport.MaxIdleConnsPerHost = 32
+	transport.MaxConnsPerHost = 32
+	transport.IdleConnTimeout = 90 * time.Second
+	transport.TLSHandshakeTimeout = 5 * time.Second
+	transport.ResponseHeaderTimeout = 10 * time.Second
+	transport.TLSClientConfig = &tls.Config{MinVersion: tls.VersionTLS12}
 	if caFile != "" {
 		pem, err := os.ReadFile(caFile)
 		if err != nil {
@@ -70,7 +77,7 @@ func gatewayClient(caFile string) (*http.Client, error) {
 		if !roots.AppendCertsFromPEM(pem) {
 			return nil, errors.New("gateway CA file contains no valid certificate")
 		}
-		transport.TLSClientConfig = &tls.Config{RootCAs: roots, MinVersion: tls.VersionTLS12}
+		transport.TLSClientConfig.RootCAs = roots
 	}
 	return &http.Client{Timeout: 12 * time.Second, Transport: transport, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}, nil
 }

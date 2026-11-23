@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"suining-care/internal/config"
 	"suining-care/internal/db"
 	"suining-care/internal/securestore"
 	"sync"
@@ -48,8 +49,11 @@ func Run(ctx context.Context, pool *db.Database, box *securestore.Box) {
 	transport.MaxIdleConns = 64
 	transport.MaxIdleConnsPerHost = 64
 	transport.MaxConnsPerHost = 64
+	transport.IdleConnTimeout = 90 * time.Second
+	transport.TLSHandshakeTimeout = 5 * time.Second
+	transport.ResponseHeaderTimeout = 10 * time.Second
 	defer transport.CloseIdleConnections()
-	d := Worker{DB: pool, Box: box, URL: strings.TrimSpace(os.Getenv("NOTIFY_WEBHOOK_URL")), BulkURL: strings.TrimSpace(os.Getenv("NOTIFY_BULK_WEBHOOK_URL")), Token: os.Getenv("NOTIFY_WEBHOOK_TOKEN"), Client: &http.Client{Timeout: 10 * time.Second, Transport: transport}}
+	d := Worker{DB: pool, Box: box, URL: strings.TrimSpace(os.Getenv("NOTIFY_WEBHOOK_URL")), BulkURL: strings.TrimSpace(os.Getenv("NOTIFY_BULK_WEBHOOK_URL")), Token: config.Secret("NOTIFY_WEBHOOK_TOKEN"), Client: &http.Client{Timeout: 10 * time.Second, Transport: transport}}
 	var workers sync.WaitGroup
 	for range drainConcurrency() {
 		workers.Go(func() {
