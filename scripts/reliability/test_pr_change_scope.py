@@ -26,7 +26,7 @@ class ChangeScopeTests(unittest.TestCase):
             with self.subTest(path=path):
                 got = classify([path])
                 self.assertFalse(got["docs_only"])
-                self.assertEqual({key for key in got if got[key]}, set(expected) | ({"fast_gate"} if expected[0] in ("backend", "frontend") else set()))
+                self.assertEqual({key for key in got if got[key]}, set(expected) | ({"fast_gate"} if path.startswith(("backend/", "frontend/")) else set()))
 
     def test_protocol_and_dependency_changes(self):
         got = classify(["backend/internal/handlers/handler_device_report.go"])
