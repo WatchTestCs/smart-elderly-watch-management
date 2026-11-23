@@ -65,6 +65,14 @@ func commitCareChange(ctx context.Context, tx *sql.Tx, actor int64, action strin
 	return tx.Commit()
 }
 
+func (h *Handler) receiptConfigured() bool {
+	secret := h.Cfg.Requests.CareReceiptSecret
+	if !h.Cfg.Requests.Loaded {
+		secret = config.Secret("CARE_RECEIPT_SECRET")
+	}
+	return len(secret) >= 32
+}
+
 func (h *Handler) careDiagnostics(w http.ResponseWriter, r *http.Request) {
 	actor, ok := careAdmin(w, r)
 	if !ok {
