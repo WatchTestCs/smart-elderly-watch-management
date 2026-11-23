@@ -16,7 +16,6 @@ import (
 	"time"
 )
 
-
 var (
 	tencentAppIDPattern = regexp.MustCompile(`^\d+$`)
 	tencentPhonePattern = regexp.MustCompile(`^1\d{10}$`)
