@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"suining-care/internal/config"
 	"bytes"
 	"context"
 	"crypto/hmac"
@@ -12,7 +13,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -39,7 +39,7 @@ type signedDeviceNonce struct {
 // SUINING_REQUIRE_SIGNED_DEVICE=1. Signatures that are present must verify.
 func prepareSignedDeviceRequest(w http.ResponseWriter, r *http.Request) (*http.Request, bool) {
 	sig := strings.TrimSpace(r.Header.Get("X-Device-Signature"))
-	if sig == "" && os.Getenv("SUINING_REQUIRE_SIGNED_DEVICE") != "1" {
+	if sig == "" && !config.Enabled("SUINING_REQUIRE_SIGNED_DEVICE") {
 		return r, true
 	}
 	fail := func() (*http.Request, bool) {
