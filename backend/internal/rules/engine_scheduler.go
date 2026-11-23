@@ -1,9 +1,9 @@
 package rules
 
 import (
+	"suining-care/internal/config"
 	"context"
 	"log/slog"
-	"os"
 	"suining-care/internal/db"
 	"suining-care/internal/securestore"
 	"sync"
@@ -50,7 +50,7 @@ func (e *Engine) Tick(ctx context.Context) error {
 }
 
 func Run(ctx context.Context, pool *db.Database, box *securestore.Box) {
-	e := Engine{DB: pool, Box: box, Workers: deviceWorkers(os.Getenv("RULE_DEVICE_WORKERS"))}
+	e := Engine{DB: pool, Box: box, Workers: deviceWorkers(config.Setting("RULE_DEVICE_WORKERS"))}
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
 	for {
