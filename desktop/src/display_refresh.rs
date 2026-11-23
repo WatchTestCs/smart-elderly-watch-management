@@ -1,13 +1,16 @@
 //! Reads the current Windows display mode of the monitor hosting the main
 //! window. This is the OS refresh rate, not the WebView rendering frame rate.
 use crate::Backend;
+#[cfg(windows)]
 use std::mem;
 use tauri::WebviewWindow;
+#[cfg(windows)]
 use windows_sys::Win32::Graphics::Gdi::{
     DEVMODEW, ENUM_CURRENT_SETTINGS, EnumDisplaySettingsW, GetMonitorInfoW,
     MONITORINFO, MONITORINFOEXW, MONITOR_DEFAULTTONEAREST, MonitorFromWindow,
 };
 
+#[cfg(windows)]
 #[tauri::command]
 pub async fn monitor_refresh_rate(
     window: WebviewWindow,
@@ -42,4 +45,13 @@ pub async fn monitor_refresh_rate(
         return Err("系统未报告有效刷新率".into());
     }
     Ok(hz)
+}
+
+#[cfg(not(windows))]
+#[tauri::command]
+pub async fn monitor_refresh_rate(
+    _window: WebviewWindow,
+    _state: tauri::State<'_, Backend>,
+) -> Result<u32, String> {
+    Err("当前系统没有可用的原生刷新率查询".into())
 }
