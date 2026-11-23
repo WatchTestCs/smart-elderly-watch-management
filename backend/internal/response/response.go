@@ -2,9 +2,10 @@
 package response
 
 import (
-	json "github.com/goccy/go-json"
 	"log/slog"
 	"net/http"
+
+	json "github.com/goccy/go-json"
 )
 
 const (
@@ -13,6 +14,7 @@ const (
 )
 
 // JSON adds the result envelope without changing endpoint-specific data fields.
+// New endpoints should prefer WriteStruct / WriteOK / WriteError in typed.go.
 func JSON(w http.ResponseWriter, status int, fields map[string]any) {
 	v := make(map[string]any, len(fields)+3)
 	for key, value := range fields {
@@ -46,23 +48,30 @@ func Fail(w http.ResponseWriter, message string) {
 }
 
 func Error(w http.ResponseWriter, status int, code, message string) {
-    if status < 400 || status > 599 {
-        status = http.StatusInternalServerError
-    }
-    defaultCode, defaultMessage := errorDefaults(status)
-    if code == "" { code = defaultCode }
-    if message == "" { message = defaultMessage }
-    writeJSON(w, status, BaseResponse{
-        ReturnCode: CodeFail, Code: code, Message: message,
-    })
+	if status < 400 || status > 599 {
+		status = http.StatusInternalServerError
+	}
+	defaultCode, defaultMessage := errorDefaults(status)
+	if code == "" {
+		code = defaultCode
+	}
+	if message == "" {
+		message = defaultMessage
+	}
+	writeJSON(w, status, BaseResponse{
+		ReturnCode: CodeFail,
+		Code:       code,
+		Message:    message,
+	})
 }
 
 func Error500(w http.ResponseWriter, reference string) {
-    writeJSON(w, http.StatusInternalServerError, BaseResponse{
-        ReturnCode: CodeFail,
-        Code: "INTERNAL_ERROR", Message: "服务处理失败",
-        Reference: reference,
-    })
+	writeJSON(w, http.StatusInternalServerError, BaseResponse{
+		ReturnCode: CodeFail,
+		Code:       "INTERNAL_ERROR",
+		Message:    "服务处理失败",
+		Reference:  reference,
+	})
 }
 
 func errorDefaults(status int) (string, string) {

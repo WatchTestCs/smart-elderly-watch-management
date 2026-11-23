@@ -1,4 +1,4 @@
-// Package config 从环境变量装配服务配置，连接凭据必须显式配置。
+// Package config 从环境变量装配服务配置，连接凭据与运行开关统一在此显式声明。
 package config
 
 import (
@@ -16,24 +16,29 @@ import (
 	"suining-care/internal/securestore"
 )
 
-// TelemetryConfig groups device processing options for explicit dependency injection.
+// TelemetryConfig 集中声明设备遥测鉴权、持久化队列与时区开关，避免热路径散落 os.Getenv。
 type TelemetryConfig struct {
-    RequireSignedDevice bool
-    DurableQueueEnabled bool
-    SiteTZOffsetHours float64
+	RequireSignedDevice bool
+	DurableQueueEnabled bool
+	SiteTZOffsetHours   float64
 }
 
-type HealthConfig struct { LateDeviceLock bool }
+// HealthConfig 集中声明健康批处理锁顺序等高风险特性开关。
+type HealthConfig struct {
+	LateDeviceLock bool
+}
 
+// RiskConfig 集中声明风控情报与代理网段文件路径。
 type RiskConfig struct {
-    ProxyCIDRsFile string
-    NetworkFeedPath string
-    AuditSpoolPath string
+	ProxyCIDRsFile  string
+	NetworkFeedPath string
+	AuditSpoolPath  string
 }
 
+// CareConfig 集中声明照护回执密钥与通知通道关键参数（统一支持 *_FILE 密钥文件）。
 type CareConfig struct {
-    ReceiptSecret string
-    EscalationPhone string
+	ReceiptSecret   string
+	EscalationPhone string
 }
 
 type Config struct {
@@ -47,10 +52,11 @@ type Config struct {
 	HealthCacheBytes int64 // 健康统计内存缓存预算；0 禁用
 	RateLimit        ratelimit.Options
 	BlobBackend      string
+
 	Telemetry TelemetryConfig
-	Health HealthConfig
-	Risk RiskConfig
-	Care CareConfig
+	Health    HealthConfig
+	Risk      RiskConfig
+	Care      CareConfig
 }
 
 func getenv(key, def string) string {
@@ -67,26 +73,26 @@ func getenv(key, def string) string {
 	}
 	return def
 }
+
 func Secret(key string) string { return getenv(key, "") }
 
-func envBool(key string) bool { return strings.TrimSpace(getenv(key, "")) == "1" }
-
-// Support fractional UTC offsets (for example +5:30); reject invalid and non-finite input.
-func envTZOffset(key string, fallback float64) float64 {
-    raw := strings.TrimSpace(getenv(key, ""))
-    if raw == "" { return fallback }
-    offset, err := strconv.ParseFloat(raw, 64)
-    if err != nil || math.IsNaN(offset) || math.IsInf(offset, 0) || offset < -12 || offset > 14 { return fallback }
-    return offset
+func envBool(key string) bool {
+	return strings.TrimSpace(getenv(key, "")) == "1"
 }
 
+func envTZOffset(key string, fallback float64) float64 {
+	raw := strings.TrimSpace(getenv(key, ""))
+	if raw == "" {
+		return fallback
+	}
+	offset, err := strconv.ParseFloat(raw, 64)
+	if err != nil || math.IsNaN(offset) || math.IsInf(offset, 0) || offset < -12 || offset > 14 {
+		return fallback
+	}
+	return offset
+}
 
 // Validate 拒绝那些"进程能起来、但业务接口永远不可用且不会自愈"的配置。
-//
-// 这些错误原先发生在 cmd/server 的 watchDatabase 协程里：只打印一行日志就
-// return，不再进入 3 秒重连循环；而就绪文件和 /healthz 早已成功，桌面端与
-// 探针都认为服务正常。配置错误本身不会随等待消失（环境变量在进程生命周期内
-// 不变），所以必须在启动阶段就说清楚，而不是让调用方永远看到"稍后重试"。
 func (c Config) Validate() error {
 	if c.BlobBackend != "" && c.BlobBackend != "mysql" {
 		return errors.New("BLOB_BACKEND must be mysql; migrate legacy local/S3 objects before upgrading")
@@ -97,8 +103,6 @@ func (c Config) Validate() error {
 	if err := ratelimit.ValidateOptions(c.RateLimit); err != nil {
 		return err
 	}
-	// 只要配置了 MySQL，就必须有数据加密密钥：缺少它时照护备注、通知收件人等
-	// 敏感字段会明文落库，登录审计退化为可离线穷举的裸哈希——无论会话后端是什么。
 	if strings.TrimSpace(c.MySQLDSN) != "" {
 		if strings.TrimSpace(c.DataKey) == "" {
 			return errors.New("配置 MYSQL_DSN 时必须设置 DATA_ENCRYPTION_KEY（32 字节随机数的 base64）；" +
@@ -114,7 +118,6 @@ func (c Config) Validate() error {
 	}
 	switch c.SessionBackend {
 	case "", "memory":
-		// 空值与 memory 都是单实例开发模式，会话保存在进程内存里。
 		return nil
 	case "database":
 	default:
@@ -130,8 +133,7 @@ func (c Config) Validate() error {
 	return nil
 }
 
-// SecureCookies 报告会话 Cookie 是否应携带 Secure 标志：凡是非回环监听地址，
-// 都假定可能经网络（含明文代理）访问，Cookie 必须只在 TLS 上传输。
+// SecureCookies 报告会话 Cookie 是否应携带 Secure 标志。
 func (c Config) SecureCookies() bool {
 	host, _, err := net.SplitHostPort(c.Addr)
 	if err != nil {
@@ -180,20 +182,22 @@ func Load() Config {
 		HealthCacheBytes: cacheMiB << 20,
 		RateLimit:        ratelimit.Options{MaxKeys: maxKeys, MaxSlots: maxSlots, TrustedProxyCIDRs: proxies},
 		BlobBackend:      strings.ToLower(strings.TrimSpace(getenv("BLOB_BACKEND", "mysql"))),
-        Telemetry: TelemetryConfig{
-            RequireSignedDevice: envBool("SUINING_REQUIRE_SIGNED_DEVICE"),
-            DurableQueueEnabled: envBool("SUINING_DURABLE_TELEMETRY"),
-            SiteTZOffsetHours: envTZOffset("SITE_TZ_OFFSET_HOURS", 8),
-        },
-        Health: HealthConfig{LateDeviceLock: envBool("HEALTH_LATE_DEVICE_LOCK")},
-        Risk: RiskConfig{
-            ProxyCIDRsFile: getenv("SUINING_RISK_PROXY_CIDRS_FILE", ""),
-            NetworkFeedPath: getenv("SUINING_RISK_NETWORK_FEED", ""),
-            AuditSpoolPath: getenv("SUINING_RISK_AUDIT_SPOOL_PATH", ""),
-        },
-        Care: CareConfig{
-            ReceiptSecret: Secret("CARE_RECEIPT_SECRET"),
-            EscalationPhone: Secret("CARE_ESCALATION_PHONE"),
-        },
+		Telemetry: TelemetryConfig{
+			RequireSignedDevice: envBool("SUINING_REQUIRE_SIGNED_DEVICE"),
+			DurableQueueEnabled: envBool("SUINING_DURABLE_TELEMETRY"),
+			SiteTZOffsetHours:   envTZOffset("SITE_TZ_OFFSET_HOURS", 8),
+		},
+		Health: HealthConfig{
+			LateDeviceLock: envBool("HEALTH_LATE_DEVICE_LOCK"),
+		},
+		Risk: RiskConfig{
+			ProxyCIDRsFile:  getenv("SUINING_RISK_PROXY_CIDRS_FILE", ""),
+			NetworkFeedPath: getenv("SUINING_RISK_NETWORK_FEED", ""),
+			AuditSpoolPath:  getenv("SUINING_RISK_AUDIT_SPOOL_PATH", ""),
+		},
+		Care: CareConfig{
+			ReceiptSecret:   Secret("CARE_RECEIPT_SECRET"),
+			EscalationPhone: Secret("CARE_ESCALATION_PHONE"),
+		},
 	}
 }
