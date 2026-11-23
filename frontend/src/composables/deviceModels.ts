@@ -27,13 +27,12 @@ export interface DeviceRecord {
 export function sameDeviceRows(left: readonly DeviceRecord[], right: readonly DeviceRecord[]): boolean {
   if (left.length !== right.length) return false
   for (let index = 0; index < left.length; index++) {
-    const a = left[index] as Record<string, unknown>
-    const b = right[index] as Record<string, unknown>
-    for (const key in a) {
-      if (Object.hasOwn(a, key) && (!Object.hasOwn(b, key) || a[key] !== b[key])) return false
-    }
-    for (const key in b) {
-      if (Object.hasOwn(b, key) && !Object.hasOwn(a, key)) return false
+    const a = left[index]
+    const b = right[index]
+    const fields = Object.keys(a) as (keyof DeviceRecord)[]
+    if (fields.length !== Object.keys(b).length) return false
+    for (const field of fields) {
+      if (!Object.hasOwn(b, field) || a[field] !== b[field]) return false
     }
   }
   return true
