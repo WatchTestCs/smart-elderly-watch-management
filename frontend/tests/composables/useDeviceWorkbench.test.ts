@@ -1,4 +1,6 @@
-import { expect, it } from 'vitest'
+import { afterEach, expect, it, vi } from 'vitest'
+
+afterEach(() => vi.unstubAllGlobals())
 import { flushPromises } from '@vue/test-utils'
 import { createDeviceState } from '@/composables/deviceModels'
 import { useDeviceWorkbench } from '@/composables/useDeviceWorkbench'
@@ -40,6 +42,11 @@ it('cancels pending detail work when the alert dialog closes, then allows reopen
 })
 
 it('shows the first completed alert while another request is still waiting', async () => {
+  vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+    queueMicrotask(() => callback(0))
+    return 1
+  })
+  vi.stubGlobal('cancelAnimationFrame', vi.fn())
   const state = createDeviceState()
   state.deviceList = [{ deviceId: 1, deviceNo: 'watch-1' }, { deviceId: 2, deviceNo: 'watch-2' }]
   state.alertCounts = {
@@ -59,4 +66,46 @@ it('shows the first completed alert while another request is still waiting', asy
   expect(state.workbench.loading).toBe(false)
   expect(state.workbench.list.map(row => row.deviceId)).toEqual([1, 2])
   workbench.disposeWorkbench()
+})
+
+it('groups simultaneous alert responses into one frame and discards stale frames on close', async () => {
+  const state = createDeviceState()
+  state.deviceList = Array.from({ length: 3 }, (_, index) => ({
+    deviceId: index + 1, deviceNo: `watch-${index + 1}`
+  }))
+  state.alertCounts = Object.fromEntries(state.deviceList.map(row => [
+    String(row.deviceId), { personCount: 1, rateCount: 0, preCount: 0 }
+  ]))
+  const callbacks: FrameRequestCallback[] = []
+  const cancel = vi.fn()
+  vi.stubGlobal('requestAnimationFrame', vi.fn((callback: FrameRequestCallback) => {
+    callbacks.push(callback)
+    return callbacks.length
+  }))
+  vi.stubGlobal('cancelAnimationFrame', cancel)
+  let finishSlow!: (value: { hasAlert: number; kindText: string }) => void
+  const workbench = useDeviceWorkbench(state, deviceId => Number(deviceId) === 3
+    ? new Promise(resolve => { finishSlow = resolve })
+    : Promise.resolve({ hasAlert: 1, kindText: '人员' }))
+  const pending = workbench.openWorkbench()
+  await flushPromises()
+  expect(callbacks).toHaveLength(1)
+  expect(state.workbench.list).toEqual([])
+  callbacks[0](0)
+  expect(state.workbench.list.map(row => row.deviceId)).toEqual([1, 2])
+  finishSlow({ hasAlert: 1, kindText: '人员' })
+  await pending
+  expect(state.workbench.list.map(row => row.deviceId)).toEqual([1, 2, 3])
+  workbench.disposeWorkbench()
+
+  const stale = useDeviceWorkbench(state, () => Promise.resolve({ hasAlert: 1, kindText: '人员' }))
+  const another = stale.openWorkbench()
+  await flushPromises()
+  // Pending progress was rendered for at most one frame, but closing
+  // must never allow callbacks from the previous dialog to publish.
+  stale.closeWorkbench()
+  for (const callback of callbacks.slice(1)) callback(0)
+  await another
+  expect(state.workbench.visible).toBe(false)
+  stale.disposeWorkbench()
 })

@@ -8,9 +8,9 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
+	"suining-care/internal/config"
 	"time"
 
 	"suining-care/internal/response"
@@ -19,7 +19,7 @@ import (
 // This endpoint only accepts cryptographically authenticated delivery receipts
 // from the configured gateway; HTTP dispatch success alone is not delivery.
 func (h *Handler) careReceipt(w http.ResponseWriter, r *http.Request) {
-	item, ok := decodeCareReceipt(w, r)
+	item, ok := h.decodeCareReceipt(w, r)
 	if !ok {
 		return
 	}
@@ -82,8 +82,11 @@ type careReceiptRequest struct {
 	Status         string `json:"status"`
 }
 
-func decodeCareReceipt(w http.ResponseWriter, r *http.Request) (careReceiptRequest, bool) {
-	secret := os.Getenv("CARE_RECEIPT_SECRET")
+func (h *Handler) decodeCareReceipt(w http.ResponseWriter, r *http.Request) (careReceiptRequest, bool) {
+	secret := h.Cfg.Requests.CareReceiptSecret
+	if !h.Cfg.Requests.Loaded {
+		secret = config.Secret("CARE_RECEIPT_SECRET")
+	}
 	if len(secret) < 32 {
 		response.JSON(w, http.StatusServiceUnavailable, map[string]any{"message": "回执校验服务尚未配置"})
 		return careReceiptRequest{}, false

@@ -5,13 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"os"
+	"suining-care/internal/config"
 	"time"
 )
 
 // Bulk is explicitly configured and never silently replaces Tencent's adapter.
 func (d *Worker) bulkEnabled() bool {
-	return d.BulkURL != "" && os.Getenv("TENCENT_SMS_APPID") == ""
+	return d.BulkURL != "" && config.Setting("TENCENT_SMS_APPID") == ""
 }
 
 type bulkNotification struct {

@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"math"
 	"net/http"
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
+	"suining-care/internal/config"
 	"suining-care/internal/response"
 	"time"
 	"unicode/utf8"
@@ -58,7 +58,7 @@ var (
 // 固定 +8 而不是 time.Local：中国全境无夏令时，且不依赖部署环境；也不引入
 // time.LoadLocation，避免为了一个时区拖进 time/tzdata。
 var siteTimeZone = func() *time.Location {
-	if raw := strings.TrimSpace(os.Getenv("SITE_TZ_OFFSET_HOURS")); raw != "" {
+	if raw := strings.TrimSpace(config.Setting("SITE_TZ_OFFSET_HOURS")); raw != "" {
 		if hours, err := strconv.ParseFloat(raw, 64); err == nil && hours >= -12 && hours <= 14 {
 			return time.FixedZone("SITE", int(hours*3600))
 		}

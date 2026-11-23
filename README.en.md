@@ -158,6 +158,8 @@ Database integration and race tests need a **disposable test database** configur
 | Legacy deployment settings fail | PostgreSQL analytics and S3 are no longer runtime dependencies; follow the migration guide without discarding old data |
 | Need to recover data | Back up MySQL, encryption keys, and deployment configuration; test recovery in an isolated environment |
 
+The `preview` development branch supports bounded offline encryption backfills through `go run ./cmd/suining-ctl protect <target> --limit 100`. For care notes, use `go run ./cmd/protect-notes --limit 100`. Both default to a read-only preview; stop all writers and verify your backup before adding `--apply`. See the [backend operations guide](backend/README.md).
+
 ## Documentation and support
 
 The [documentation index](docs/INDEX.md) groups setup, development, operations and security guides by task.

@@ -16,8 +16,15 @@ export function useDeviceWorkbench(
   let revision = 0
   let disposed = false
   const activeReads = new Set<AbortController>()
+  let renderFrame: number | undefined
+
+  function cancelRender(): void {
+    if (renderFrame !== undefined) cancelAnimationFrame(renderFrame)
+    renderFrame = undefined
+  }
 
   function abortReads(): void {
+    cancelRender()
     for (const controller of activeReads) controller.abort()
     activeReads.clear()
   }
@@ -40,6 +47,15 @@ export function useDeviceWorkbench(
     }
 
     const results: (DeviceRecord | null)[] = Array.from({ length: pending.length }, () => null)
+    // A burst of completed detail reads must not rebuild the full table for
+    // each response. Publish intermediate results at most once per frame.
+    function publishProgress(): void {
+      if (renderFrame !== undefined) return
+      renderFrame = requestAnimationFrame(() => {
+        renderFrame = undefined
+        if (current()) state.workbench.list = results.filter((row): row is DeviceRecord => row !== null)
+      })
+    }
     let nextIndex = 0
     let failed = false
     let firstError: unknown = null
@@ -61,8 +77,8 @@ export function useDeviceWorkbench(
             oldPersonName: detail.oldPersonName ?? device.oldPersonName ?? '',
             kind, kindText: detail.kindText, reason: detail.reason, recordId: detail.recordId
           }
-          // Show usable results as soon as they arrive; keep the original device order.
-          state.workbench.list = results.filter((row): row is DeviceRecord => row !== null)
+          // Preserve source order, coalescing multiple completions into one paint.
+          publishProgress()
         } catch (error) {
           if (!current()) return
           failed = true
@@ -77,6 +93,7 @@ export function useDeviceWorkbench(
     try {
       await Promise.all(Array.from({ length: Math.min(6, pending.length) }, () => worker()))
       if (!current()) return
+      cancelRender()
       state.workbench.list = results.filter((row): row is DeviceRecord => row !== null)
       if (failed) ElMessage({ type: 'warning', message: readErrorMessage(firstError, '部分异常详情加载失败') })
     } finally {

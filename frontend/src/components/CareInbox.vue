@@ -5,7 +5,7 @@
       <div class="care-inbox-tools"><label for="care-task-scope">任务范围</label><el-select id="care-task-scope" v-model="scope" :disabled="saving" @change="changeScope"><el-option label="待复核任务" value="active"/><el-option label="已复核任务" value="verified"/></el-select><el-button plain :disabled="saving" @click="load">刷新任务</el-button></div>
     </div>
     <CareOperationsPanel />
-    <p v-if="loading" role="status" class="care-loading">正在读取照护任务…（可继续刷新或切换分页）</p>
+    <p v-if="loading && !tasks.length" role="status" class="care-loading">正在读取照护任务…（可继续刷新或切换分页）</p>
     <p v-if="error" role="alert" class="care-error">{{ error }}</p>
     <p v-else-if="!loading && !tasks.length" class="care-empty">{{ scope === 'verified' ? '当前没有已复核任务。' : '当前没有查询到待处理任务。请继续检查设备与服务状态。' }}</p>
     <p v-if="duty === 'auditor'" class="care-empty">当前为审计员岗位，可查看任务与履历。</p>
@@ -74,6 +74,7 @@ import type { CareTask, CareEvent, CareListResponse, HistoryState } from '../dom
 
 const emit = defineEmits(['verified'])
 const tasks = shallowRef<CareTask[]>([])
+let lastTaskSnapshot = ''
 const error = ref('')
 const loading = ref(false)
 const saving = ref(false)
@@ -113,14 +114,20 @@ const reads = createLatestRead(
     if (!Array.isArray(data.items) || !Number.isInteger(data.total) || data.total < 0 || !['supervisor','caregiver','auditor'].includes(data.duty) || !Number.isInteger(data.actorId)) throw new Error('invalid care response')
     const lastPage = Math.max(1, Math.ceil(data.total / pageSize))
     if (query.page > lastPage) { page.value = lastPage; void load(); return }
-    tasks.value = data.items
+    // Polling often returns identical task data. Keep the old array identity
+    // so the task cards do not re-render every time an idle dashboard polls.
+    const snapshot = JSON.stringify(data.items)
+    if (snapshot !== lastTaskSnapshot) {
+      tasks.value = data.items
+      lastTaskSnapshot = snapshot
+    }
     total.value = data.total
     duty.value = data.duty
     actorId.value = data.actorId
     error.value = ''
   },
   cause => {
-    tasks.value = []; total.value = 0; duty.value = ''; actorId.value = null
+    tasks.value = []; lastTaskSnapshot = ''; total.value = 0; duty.value = ''; actorId.value = null
     error.value = readErrorMessage(cause, '照护任务暂时无法加载')
   },
   value => { loading.value = value },

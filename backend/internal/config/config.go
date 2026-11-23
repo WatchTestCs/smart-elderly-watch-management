@@ -15,6 +15,23 @@ import (
 	"suining-care/internal/securestore"
 )
 
+// RiskConfig is bound at startup and passed to an instance-owned risk manager.
+type RiskConfig struct {
+	ProxyCIDRsFile  string
+	NetworkFeedPath string
+}
+
+// RequestConfig snapshots request hot-path toggles and HMAC secrets at startup.
+// The zero value leaves direct test-constructed handlers with their existing
+// environment-injection behavior; production always calls Load().
+type RequestConfig struct {
+	Loaded            bool
+	RequireSigned     bool
+	DurableTelemetry  bool
+	HealthLateLock    bool
+	CareReceiptSecret string
+}
+
 type Config struct {
 	Addr             string // 默认只监听回环地址，远程部署必须显式配置
 	MySQLDSN         string
@@ -26,6 +43,8 @@ type Config struct {
 	HealthCacheBytes int64 // 健康统计内存缓存预算；0 禁用
 	RateLimit        ratelimit.Options
 	BlobBackend      string
+	Risk             RiskConfig
+	Requests         RequestConfig
 }
 
 func getenv(key, def string) string {
@@ -44,6 +63,36 @@ func getenv(key, def string) string {
 }
 func Secret(key string) string { return getenv(key, "") }
 
+// Setting is the single environment reader for optional runtime settings.
+// Sensitive credentials must use Secret so *_FILE takes precedence.
+func Setting(key string) string { return getenv(key, "") }
+
+func Enabled(key string) bool { return strings.TrimSpace(Setting(key)) == "1" }
+
+// ValidateSecretFiles prevents a broken *_FILE reference from silently
+// disabling a configured notification, care receipt, or API credential.
+func ValidateSecretFiles() error {
+	for _, key := range []string{
+		"DATA_ENCRYPTION_KEY", "MYSQL_DSN", "SUINING_DESKTOP_TOKEN",
+		"CARE_RECEIPT_SECRET", "CARE_NOTIFY_WEBHOOK_TOKEN",
+		"NOTIFY_WEBHOOK_TOKEN", "TENCENT_SMS_APPKEY",
+		"SECURITY_ALERT_WEBHOOK_TOKEN",
+	} {
+		path := os.Getenv(key + "_FILE")
+		if path == "" {
+			continue
+		}
+		value, err := os.ReadFile(path)
+		if err != nil {
+			return fmt.Errorf("cannot read %s_FILE: %w", key, err)
+		}
+		if strings.TrimSpace(string(value)) == "" {
+			return fmt.Errorf("%s_FILE is empty", key)
+		}
+	}
+	return nil
+}
+
 // Validate 拒绝那些"进程能起来、但业务接口永远不可用且不会自愈"的配置。
 //
 // 这些错误原先发生在 cmd/server 的 watchDatabase 协程里：只打印一行日志就
@@ -51,6 +100,9 @@ func Secret(key string) string { return getenv(key, "") }
 // 探针都认为服务正常。配置错误本身不会随等待消失（环境变量在进程生命周期内
 // 不变），所以必须在启动阶段就说清楚，而不是让调用方永远看到"稍后重试"。
 func (c Config) Validate() error {
+	if err := ValidateSecretFiles(); err != nil {
+		return err
+	}
 	if c.BlobBackend != "" && c.BlobBackend != "mysql" {
 		return errors.New("BLOB_BACKEND must be mysql; migrate legacy local/S3 objects before upgrading")
 	}
@@ -143,5 +195,16 @@ func Load() Config {
 		HealthCacheBytes: cacheMiB << 20,
 		RateLimit:        ratelimit.Options{MaxKeys: maxKeys, MaxSlots: maxSlots, TrustedProxyCIDRs: proxies},
 		BlobBackend:      strings.ToLower(strings.TrimSpace(getenv("BLOB_BACKEND", "mysql"))),
+		Requests: RequestConfig{
+			Loaded:            true,
+			RequireSigned:     Enabled("SUINING_REQUIRE_SIGNED_DEVICE"),
+			DurableTelemetry:  Enabled("SUINING_DURABLE_TELEMETRY"),
+			HealthLateLock:    Enabled("HEALTH_LATE_DEVICE_LOCK"),
+			CareReceiptSecret: Secret("CARE_RECEIPT_SECRET"),
+		},
+		Risk: RiskConfig{
+			ProxyCIDRsFile:  getenv("SUINING_RISK_PROXY_CIDRS_FILE", ""),
+			NetworkFeedPath: getenv("SUINING_RISK_NETWORK_FEED", ""),
+		},
 	}
 }

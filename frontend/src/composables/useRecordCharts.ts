@@ -44,10 +44,20 @@ export function useRecordCharts() {
   }
 
   function resizeCharts() {
-    if (frame !== null || unmounted) return
+    if (frame !== null || unmounted || !detailsVisible.value) return
     frame = requestAnimationFrame(() => {
       frame = null
-      for (const chart of charts) if (!chart.isDisposed()) chart.resize()
+      for (const chart of charts) {
+        if (chart.isDisposed()) continue
+        const element = chart.getDom()
+        const width = element.clientWidth
+        const height = element.clientHeight
+        // ResizeObserver can fire after chart.resize() updates its own canvas.
+        // Avoid redrawing when the host dimensions have not changed.
+        if (width > 0 && height > 0 && (chart.getWidth() !== width || chart.getHeight() !== height)) {
+          chart.resize()
+        }
+      }
     })
   }
 
@@ -80,7 +90,10 @@ export function useRecordCharts() {
 
       function render(element: HTMLElement | null, options: ChartOptions) {
         if (!element || !active()) return
-        const chart: EChartsType = echarts.getInstanceByDom(element) || echarts.init(element)
+        // Capping backing-store scale at 2 avoids 3x/4x canvas memory and
+        // raster work on high-density devices without changing layout size.
+        const chart: EChartsType = echarts.getInstanceByDom(element) ||
+          echarts.init(element, undefined, { renderer: 'canvas', devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2) })
         if (!charts.includes(chart)) {
           charts.push(chart)
           if (typeof ResizeObserver !== 'undefined') {

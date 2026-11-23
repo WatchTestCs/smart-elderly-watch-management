@@ -205,7 +205,7 @@ function handleAvatarError(error: unknown) {
 async function editPassword() {
   if (isPasswordSaving.value) return
   const valid = await passwordEditFormRef.value?.validate().catch(() => false)
-  if (!valid) return
+  if (!valid || isPasswordSaving.value) return
   isPasswordSaving.value = true
   try {
     const { data } = await api.post<Envelope>('api/v1/family/updatePassword', {
@@ -236,7 +236,10 @@ function openPasswordEditor() {
 }
 function resetForm() {
   passwordEditDialogVisible.value = false
-  passwordEditFormRef.value?.resetFields()
+  passwordEditForm.oldPassword = ''
+  passwordEditForm.familyPassword = ''
+  passwordEditForm.familyPassword2 = ''
+  passwordEditFormRef.value?.clearValidate()
 }
 function beforeAvatarUpload(file: File) {
   const validType = ['image/jpeg', 'image/png'].includes(file.type)

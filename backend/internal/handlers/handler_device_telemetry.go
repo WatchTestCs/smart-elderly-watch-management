@@ -16,7 +16,7 @@ import (
 
 // POST /api/v1/device/report —— 设备数据上报（公开，事务）。
 func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
-	r, signedOK := prepareSignedDeviceRequest(w, r)
+	r, signedOK := h.prepareSignedDeviceRequest(w, r)
 	if !signedOK {
 		return
 	}
@@ -127,7 +127,7 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 	receiptDigest := ""
 	// The durable queue already owns its replay contract (a unique key and
 	// a 409 on collision); do not turn that into a duplicate acknowledgement.
-	if receiptID != "" && deviceprotocol.ValidRequestID(receiptID) && !durableTelemetryEligible(parsed, receiptID, h.Box) {
+	if receiptID != "" && deviceprotocol.ValidRequestID(receiptID) && !h.durableTelemetryEligible(parsed, receiptID, h.Box) {
 		var digestErr error
 		receiptDigest, digestErr = reportPayloadDigest(m)
 		if digestErr != nil {
@@ -188,7 +188,7 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if requestID, present := vstr(m, "requestId"); present &&
-		durableTelemetryEligible(parsed, requestID, h.Box) {
+		h.durableTelemetryEligible(parsed, requestID, h.Box) {
 		err := (telemetryRepository{box: h.Box}).QueueDurableReport(ctx, tx, d, parsed, requestID)
 		if err != nil {
 			rollback()

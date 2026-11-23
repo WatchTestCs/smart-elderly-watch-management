@@ -26,16 +26,18 @@ type PositionRow struct {
 	AlarmKind        string
 }
 
+// Use the existing (old_id, be_time, id) indexes for two top-one probes per
+// resident instead of ranking every historical location and alert row.
 const latestPositionsSQL = `SELECT o.name, o.old_id, o.sex, l.lng, l.lat, l.be_time AS be_time,
 	COALESCE(a.status, '0') AS status, a.be_time AS alarm_time, a.lng AS alarm_lng, a.lat AS alarm_lat,
 	l.position_metadata AS location_metadata, a.position_metadata AS alarm_metadata, COALESCE(a.kind,'unknown') AS alarm_kind
 	FROM oldperson o
-	LEFT JOIN (SELECT old_id, lng, lat, be_time, position_metadata,
-		ROW_NUMBER() OVER (PARTITION BY old_id ORDER BY be_time DESC, id DESC) AS rn FROM device_location) l
-		ON l.old_id = o.old_id AND l.rn = 1
-	LEFT JOIN (SELECT old_id, status, be_time, lng, lat, kind, position_metadata,
-		ROW_NUMBER() OVER (PARTITION BY old_id ORDER BY be_time DESC, id DESC) AS rn FROM alarm_precess) a
-		ON a.old_id = o.old_id AND a.rn = 1`
+	LEFT JOIN device_location l ON l.id = (
+		SELECT d.id FROM device_location d WHERE d.old_id = o.old_id
+		ORDER BY d.be_time DESC, d.id DESC LIMIT 1)
+	LEFT JOIN alarm_precess a ON a.id = (
+		SELECT al.id FROM alarm_precess al WHERE al.old_id = o.old_id
+		ORDER BY al.be_time DESC, al.id DESC LIMIT 1)`
 
 func scanPosition(rows *sql.Rows) (PositionRow, error) {
 	var item PositionRow

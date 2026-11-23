@@ -42,3 +42,29 @@ it('does not schedule an interval when mounted in a hidden document', () => {
     expect(vi.getTimerCount()).toBe(0)
   } finally { stop() }
 })
+
+it('coalesces rapid visibility changes without firing a request storm', () => {
+  vi.useFakeTimers()
+  const hidden = vi.spyOn(document, 'hidden', 'get').mockReturnValue(false)
+  const refresh = vi.fn()
+  const stop = startVisiblePolling(refresh, 15_000)
+  try {
+    for (let attempt = 0; attempt < 10; attempt++) {
+      hidden.mockReturnValue(true)
+      document.dispatchEvent(new Event('visibilitychange'))
+      hidden.mockReturnValue(false)
+      document.dispatchEvent(new Event('visibilitychange'))
+      vi.advanceTimersByTime(50)
+    }
+    expect(refresh).toHaveBeenCalledTimes(1)
+    expect(vi.getTimerCount()).toBe(1)
+    hidden.mockReturnValue(true)
+    document.dispatchEvent(new Event('visibilitychange'))
+    vi.advanceTimersByTime(1500)
+    hidden.mockReturnValue(false)
+    document.dispatchEvent(new Event('visibilitychange'))
+    expect(refresh).toHaveBeenCalledTimes(2)
+    expect(vi.getTimerCount()).toBe(1)
+  } finally { stop() }
+  expect(vi.getTimerCount()).toBe(0)
+})
