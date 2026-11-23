@@ -5,13 +5,13 @@ import (
 	"database/sql"
 	"errors"
 	"net/http"
+	"suining-care/internal/config"
 	"time"
 
 	"suining-care/internal/care"
 	"suining-care/internal/carepolicy"
 	"suining-care/internal/carerepo"
 	"suining-care/internal/careworkflow"
-	"suining-care/internal/config"
 	"suining-care/internal/response"
 )
 
@@ -65,6 +65,14 @@ func commitCareChange(ctx context.Context, tx *sql.Tx, actor int64, action strin
 	return tx.Commit()
 }
 
+func (h *Handler) receiptConfigured() bool {
+	secret := h.Cfg.Requests.CareReceiptSecret
+	if !h.Cfg.Requests.Loaded {
+		secret = config.Secret("CARE_RECEIPT_SECRET")
+	}
+	return len(secret) >= 32
+}
+
 func (h *Handler) careDiagnostics(w http.ResponseWriter, r *http.Request) {
 	actor, ok := careAdmin(w, r)
 	if !ok {
@@ -89,7 +97,7 @@ func (h *Handler) careDiagnostics(w http.ResponseWriter, r *http.Request) {
 		"oldestOutstandingAt": diagnostics.OldestOutstandingAt,
 		"workerHealthy":       diagnostics.WorkerHealthy, "workerLastSeenAt": diagnostics.WorkerLastSeenAt, "workerStartedAt": diagnostics.WorkerStartedAt,
 		"primaryEngine": "mysql", "analytics": h.analyticsStatus(),
-		"notificationConfigured": care.NotificationConfigured(), "receiptConfigured": len(config.Secret("CARE_RECEIPT_SECRET")) >= 32,
+		"notificationConfigured": care.NotificationConfigured(), "receiptConfigured": h.receiptConfigured(),
 		"note": "数据库统计不是网关送达或值班到岗证明",
 	})
 }

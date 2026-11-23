@@ -17,6 +17,7 @@ import (
 	"suining-care/internal/observability"
 	"suining-care/internal/ratelimit"
 	"suining-care/internal/response"
+	"suining-care/internal/risk"
 	"suining-care/internal/securestore"
 	"suining-care/internal/session"
 	"suining-care/internal/telemetryworkflow"
@@ -45,6 +46,7 @@ func watchDatabase(ctx context.Context, cfg config.Config, sessions *session.Sto
 		return
 	}
 	var pool *dbstore.Database
+	var instanceRisk *risk.Manager
 	limiter, limiterErr := ratelimit.NewWithOptions(cfg.RateLimit)
 	if limiterErr != nil {
 		log.Printf("invalid rate limit configuration: %v", limiterErr)
@@ -59,8 +61,10 @@ func watchDatabase(ctx context.Context, cfg config.Config, sessions *session.Sto
 		if workerDone != nil {
 			<-workerDone
 		}
-		if dropped := handlers.CloseRisk(); dropped > 0 {
-			log.Printf("risk audit dropped events: %d", dropped)
+		if instanceRisk != nil {
+			if dropped := instanceRisk.CloseMySQL(); dropped > 0 {
+				log.Printf("risk audit dropped events: %d", dropped)
+			}
 		}
 		service.currentDB.Store(nil)
 		if pool != nil {
@@ -90,7 +94,10 @@ func watchDatabase(ctx context.Context, cfg config.Config, sessions *session.Sto
 			}
 			cancelMigration()
 			if err == nil {
-				err = handlers.InitRisk(ctx, pool)
+				if instanceRisk == nil {
+					instanceRisk = risk.New()
+				}
+				err = handlers.InitRiskWithConfig(ctx, pool, instanceRisk, cfg.Risk)
 			}
 			if err == nil {
 				if cfg.SessionBackend == "database" {
@@ -103,7 +110,7 @@ func watchDatabase(ctx context.Context, cfg config.Config, sessions *session.Sto
 					sessions.UseDatabase(pool.DB, box)
 				}
 				mux := http.NewServeMux()
-				h := handlers.New(pool, sessions, cfg)
+				h := handlers.NewWithRisk(pool, sessions, cfg, instanceRisk)
 				h.Heartbeats = telemetryworkflow.NewHeartbeatBuffer(pool)
 				h.Routes(mux)
 				observability.Default.SetRouteResolver(func(r *http.Request) string { _, pattern := mux.Handler(r); return pattern })

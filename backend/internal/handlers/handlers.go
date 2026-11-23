@@ -3,9 +3,11 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
-	"os"
+	"strings"
 	"suining-care/internal/blob"
 	dbstore "suining-care/internal/db"
 	"suining-care/internal/ratelimit"
@@ -18,8 +20,6 @@ import (
 	"suining-care/internal/session"
 	"suining-care/internal/telemetryworkflow"
 )
-
-var sharedRisk = risk.New()
 
 // Handler 聚合依赖，各组 endpoint 实现在 handler_*.go 中。
 type Handler struct {
@@ -38,12 +38,37 @@ type Handler struct {
 }
 
 func New(pool *dbstore.Database, sessions *session.Store, cfg config.Config) *Handler {
-	box, _ := securestore.New(cfg.DataKey)
+	return NewWithRisk(pool, sessions, cfg, nil)
+}
+
+// NewWithRisk keeps the risk manager instance-owned; New creates a fresh one.
+func NewWithRisk(pool *dbstore.Database, sessions *session.Store, cfg config.Config, mgr *risk.Manager) *Handler {
+	var box *securestore.Box
+	if strings.TrimSpace(cfg.DataKey) != "" {
+		var err error
+		box, err = securestore.New(cfg.DataKey)
+		if err != nil {
+			// A live DB handler must never silently downgrade encrypted writes.
+			if pool != nil {
+				panic(fmt.Errorf("invalid handler encryption configuration: %w", err))
+			}
+			slog.Error("local_bootstrap_invalid_encryption_key", "error", err)
+		}
+	} else if pool != nil && cfg.MySQLDSN != "" {
+		panic("database handler requires an encryption key")
+	}
 	resolve, err := ratelimit.NewClientIPResolver(cfg.RateLimit.TrustedProxyCIDRs)
 	if err != nil {
+		if pool != nil {
+			panic(fmt.Errorf("invalid trusted proxy configuration: %w", err))
+		}
+		slog.Warn("local_bootstrap_invalid_proxy_config", "error", err)
 		resolve, _ = ratelimit.NewClientIPResolver(nil)
 	}
-	return &Handler{DB: pool, Sessions: sessions, Cfg: cfg, Box: box, CookieSecure: cfg.SecureCookies(), healthCache: newStatisticsCache(cfg.HealthCacheBytes), clientIP: resolve, Risk: sharedRisk}
+	if mgr == nil {
+		mgr = risk.New()
+	}
+	return &Handler{DB: pool, Sessions: sessions, Cfg: cfg, Box: box, CookieSecure: cfg.SecureCookies(), healthCache: newStatisticsCache(cfg.HealthCacheBytes), clientIP: resolve, Risk: mgr}
 }
 
 // Routes 注册全部路由。各组在自己的文件中通过 h.route 注册。
@@ -65,17 +90,21 @@ func (h *Handler) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/v1/rule-policies", h.rulePolicy)
 }
 
-func InitRisk(ctx context.Context, pool *dbstore.Database) error {
-	if err := sharedRisk.EnableMySQL(pool.DB); err != nil {
+// InitRiskWithConfig binds persisted risk state and intelligence to one manager.
+func InitRiskWithConfig(ctx context.Context, pool *dbstore.Database, mgr *risk.Manager, cfg config.RiskConfig) error {
+	if mgr == nil {
+		return fmt.Errorf("risk manager is required")
+	}
+	if err := mgr.EnableMySQL(pool.DB); err != nil {
 		return err
 	}
-	if path := os.Getenv("SUINING_RISK_PROXY_CIDRS_FILE"); path != "" {
-		if err := sharedRisk.LoadProxyCIDRs(path); err != nil {
+	if path := strings.TrimSpace(cfg.ProxyCIDRsFile); path != "" {
+		if err := mgr.LoadProxyCIDRs(path); err != nil {
 			log.Printf("risk IP feed unavailable: %v", err)
 		}
 	}
-	if path := os.Getenv("SUINING_RISK_NETWORK_FEED"); path != "" {
-		if err := sharedRisk.StartNetworkRefresh(ctx, path, 15*time.Minute, func(err error) {
+	if path := strings.TrimSpace(cfg.NetworkFeedPath); path != "" {
+		if err := mgr.StartNetworkRefresh(ctx, path, 15*time.Minute, func(err error) {
 			log.Printf("risk intelligence update failed: %v", err)
 		}); err != nil {
 			log.Printf("risk intelligence initial load failed: %v", err)
@@ -83,5 +112,3 @@ func InitRisk(ctx context.Context, pool *dbstore.Database) error {
 	}
 	return nil
 }
-
-func CloseRisk() uint64 { return sharedRisk.CloseMySQL() }

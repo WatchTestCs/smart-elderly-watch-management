@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"suining-care/internal/config"
 	"sync/atomic"
 	"time"
 )
@@ -254,7 +255,7 @@ func (m *Manager) EnableMySQL(db *sql.DB) error {
 	if err != nil {
 		return err
 	}
-	spoolPath := os.Getenv("SUINING_RISK_AUDIT_SPOOL_PATH")
+	spoolPath := config.Setting("SUINING_RISK_AUDIT_SPOOL_PATH")
 	if spoolPath == "" {
 		configDir, err := os.UserConfigDir()
 		if err != nil {

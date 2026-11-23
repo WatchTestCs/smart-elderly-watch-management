@@ -7,15 +7,14 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strings"
 	"suining-care/internal/config"
 	"suining-care/internal/securestore"
 )
 
 func (d *Worker) deliver(ctx context.Context, id int64, topic, key, channel, phone string) error {
-	if appID := config.Secret("TENCENT_SMS_APPID"); channel == "sms" && appID != "" {
-		return TencentSMS(ctx, d.Client, appID, config.Secret("TENCENT_SMS_APPKEY"), phone)
+	if channel == "sms" && config.Setting("TENCENT_SMS_APPID") != "" {
+		return TencentSMS(ctx, d.Client, config.Setting("TENCENT_SMS_APPID"), config.Secret("TENCENT_SMS_APPKEY"), phone)
 	}
 	if d.URL == "" || d.Token == "" {
 		return fmt.Errorf("gateway unavailable")
@@ -42,7 +41,7 @@ func (d *Worker) deliver(ctx context.Context, id int64, topic, key, channel, pho
 }
 
 func validGatewayURL(url string) bool {
-	return strings.HasPrefix(url, "https://") || os.Getenv("NOTIFY_ALLOW_HTTP_TEST") == "1"
+	return strings.HasPrefix(url, "https://") || config.Enabled("NOTIFY_ALLOW_HTTP_TEST")
 }
 
 func (d *Worker) gatewayRequest(ctx context.Context, url string, body []byte) (*http.Request, error) {

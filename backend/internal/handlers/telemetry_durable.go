@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"log"
-	"os"
+	"suining-care/internal/config"
 	"time"
 
 	"github.com/go-sql-driver/mysql"
@@ -20,8 +20,12 @@ import (
 
 // The queue stores only encrypted measurements, never hardware credentials.
 // Emergency/SOS, vital signs and coordinates are deliberately excluded.
-func durableTelemetryEligible(parsed parsedDeviceTelemetry, requestID string, box *securestore.Box) bool {
-	return os.Getenv("SUINING_DURABLE_TELEMETRY") == "1" &&
+func (h *Handler) durableTelemetryEligible(parsed parsedDeviceTelemetry, requestID string, box *securestore.Box) bool {
+	enabled := h.Cfg.Requests.DurableTelemetry
+	if !h.Cfg.Requests.Loaded {
+		enabled = config.Enabled("SUINING_DURABLE_TELEMETRY")
+	}
+	return enabled &&
 		box != nil && deviceprotocol.ValidRequestID(requestID) &&
 		parsed.hr == nil && parsed.bp == nil && parsed.alarm == "" &&
 		parsed.lng == "" && parsed.lat == "" &&

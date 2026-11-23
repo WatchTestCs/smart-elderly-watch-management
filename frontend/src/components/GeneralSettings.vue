@@ -4,6 +4,10 @@
       <h3>显示与操作</h3>
       <div class="setting"><label for="setting-large-text">大字模式</label><el-switch id="setting-large-text" :model-value="largeText" @change="updateLargeText" /></div>
       <div class="setting"><label for="setting-reduced-motion">减少界面动画</label><el-switch id="setting-reduced-motion" v-model="mapPreferences.reducedMotion" @change="saveMapPreferences" /></div>
+      <div class="setting"><span>当前显示器刷新率</span><strong>{{ hostHz == null ? (probing ? '检测中…' : hostError || '暂不可用') : hostHz + ' Hz' }}</strong></div>
+      <div class="setting"><span>WebView 空载帧调度</span><strong>{{ frameHz == null ? (probing ? '采样中…' : '未测得') : '约 ' + frameHz + ' FPS' }}</strong></div>
+      <p class="hint" role="status">{{ refreshAdvice }}</p>
+      <el-button plain :loading="probing" @click="probe">重新检测显示性能</el-button>
     </section>
     <section class="settings-group">
       <h3>位置地图</h3>
@@ -34,15 +38,50 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { isTauri } from '@tauri-apps/api/core'
 import { mapPreferences, saveMapPreferences, resetMapPreferences } from '../utils/mapProviders'
+import { hostMonitorHz, sampleWebViewHz } from '../utils/displayRefresh'
 import { useTextSizePreference } from '../composables/useTextSizePreference'
 
 const visible = ref(false)
 const { largeText, setLargeText } = useTextSizePreference()
-function open() {
-  visible.value = true
+const hostHz = ref<number | null>(null)
+const frameHz = ref<number | null>(null)
+const probing = ref(false)
+const hostError = ref('')
+let activeProbe: AbortController | undefined
+
+const refreshAdvice = computed(() => {
+  if (!isTauri()) return '网页无法读取显示器的系统刷新率；下方空载采样只反映浏览器帧调度。'
+  if (hostHz.value == null) return hostError.value || '正在读取当前窗口所在显示器的系统刷新率。'
+  if (hostHz.value <= 300) return `当前显示模式为 ${hostHz.value} Hz，无法真正显示超过 300 FPS；需更高刷新率的显示模式。`
+  if (frameHz.value != null && frameHz.value <= 300) return `显示器支持 ${hostHz.value} Hz，但 WebView 空载仅测得约 ${frameHz.value} FPS，需要检查系统节能和帧调度限制。`
+  return `当前显示模式为 ${hostHz.value} Hz，具备超过 300 FPS 的硬件刷新条件；交互帧率仍需实机性能测试。`
+})
+
+async function probe() {
+  activeProbe?.abort()
+  const controller = new AbortController()
+  activeProbe = controller
+  probing.value = true
+  hostHz.value = null
+  frameHz.value = null
+  hostError.value = ''
+  const [native, browser] = await Promise.allSettled([hostMonitorHz(), sampleWebViewHz(controller.signal)])
+  if (activeProbe !== controller || controller.signal.aborted) return
+  if (native.status === 'fulfilled') hostHz.value = native.value
+  else hostError.value = '原生刷新率读取失败'
+  if (browser.status === 'fulfilled') frameHz.value = browser.value
+  probing.value = false
+  activeProbe = undefined
 }
+function open() { visible.value = true }
+watch(visible, value => {
+  if (value) void probe()
+  else { activeProbe?.abort(); activeProbe = undefined; probing.value = false }
+})
+onBeforeUnmount(() => activeProbe?.abort())
 function updateLargeText(value: string | number | boolean) {
   setLargeText(Boolean(value))
 }

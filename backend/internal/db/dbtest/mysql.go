@@ -12,7 +12,7 @@ import (
 	"suining-care/internal/db"
 )
 
-func MySQL(t *testing.T) *db.Database {
+func MySQL(t testing.TB) *db.Database {
 	t.Helper()
 	dsn := os.Getenv("TEST_MYSQL_DSN")
 	if dsn == "" {

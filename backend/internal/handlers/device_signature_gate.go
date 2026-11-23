@@ -26,7 +26,7 @@ func (h *Handler) EnforceDeviceSignatures(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 			return
 		}
-		signed, ok := prepareSignedDeviceRequest(w, r)
+		signed, ok := h.prepareSignedDeviceRequest(w, r)
 		if !ok {
 			return
 		}

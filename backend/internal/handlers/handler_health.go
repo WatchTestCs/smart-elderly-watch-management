@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"net/http"
-	"os"
+	"suining-care/internal/config"
 	"time"
 
 	"suining-care/internal/devicecredential"
@@ -37,7 +37,11 @@ func (h *Handler) healthBatch(w http.ResponseWriter, r *http.Request) {
 	// Owner-first is opt-in only. All old-version writers must be stopped and
 	// drained before enabling it: mixed device->owner and owner->device lock
 	// ordering across replicas can produce InnoDB deadlocks.
-	h.healthBatchWithLockOrder(w, r, os.Getenv("HEALTH_LATE_DEVICE_LOCK") == "1")
+	lateLock := h.Cfg.Requests.HealthLateLock
+	if !h.Cfg.Requests.Loaded {
+		lateLock = config.Enabled("HEALTH_LATE_DEVICE_LOCK")
+	}
+	h.healthBatchWithLockOrder(w, r, lateLock)
 }
 
 // healthBatchWithLockOrder preserves the original write/revision contract but

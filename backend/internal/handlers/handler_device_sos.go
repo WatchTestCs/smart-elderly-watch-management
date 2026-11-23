@@ -15,7 +15,7 @@ import (
 
 // POST /api/v1/device/sos: parse request and map the transactional outcome.
 func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
-	r, signedOK := prepareSignedDeviceRequest(w, r)
+	r, signedOK := h.prepareSignedDeviceRequest(w, r)
 	if !signedOK {
 		return
 	}

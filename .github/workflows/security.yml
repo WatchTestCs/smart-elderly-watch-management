@@ -20,7 +20,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
-      docs_only: ${{ steps.classify.outputs.docs_only }}
+      codeql_go: ${{ steps.classify.outputs.codeql_go }}
+      codeql_js: ${{ steps.classify.outputs.codeql_js }}
+      codeql_matrix: ${{ steps.classify.outputs.codeql_matrix }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -30,16 +32,14 @@ jobs:
       - name: Classify changed paths
         id: classify
         env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || '' }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: python3 scripts/reliability/pr_change_scope.py >> "$GITHUB_OUTPUT"
 
   codeql:
     needs: change-scope
-    if: needs.change-scope.outputs.docs_only != 'true'
+    if: ${{ needs.change-scope.outputs.codeql_go == 'true' || needs.change-scope.outputs.codeql_js == 'true' }}
     name: CodeQL / ${{ matrix.language }}
-    # Ordinary pull_request runs keep fork tokens read-only and expose no secrets.
-    # GitHub permits CodeQL uploads for this event; do not use pull_request_target.
     runs-on: ubuntu-latest
     timeout-minutes: 25
     permissions:
@@ -49,18 +49,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - language: javascript-typescript
-            build-mode: none
-          - language: go
-            build-mode: manual
+        include: ${{ fromJSON(needs.change-scope.outputs.codeql_matrix) }}
     steps:
       - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-
       - name: Verify exact analysis source
         env:
           EXPECTED_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -68,46 +63,39 @@ jobs:
         run: |
           set -euo pipefail
           [[ "$EXPECTED_SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
-          actual_source_sha=$(git rev-parse HEAD)
-          test "$actual_source_sha" = "$EXPECTED_SOURCE_SHA"
-          printf '%s\n' "$actual_source_sha" > "$RUNNER_TEMP/codeql-source.txt"
-
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SOURCE_SHA"
+          printf '%s\n' "$EXPECTED_SOURCE_SHA" > "$RUNNER_TEMP/codeql-source.txt"
       - name: Set up Go
         if: matrix.language == 'go'
-        uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5
         with:
           go-version: '1.27.4'
           cache-dependency-path: backend/go.sum
-
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        uses: github/codeql-action/init@33d7b85da1a04171e211befe2c739303b9a4c066
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
           queries: security-extended
-
       - name: Build Go for analysis
         if: matrix.language == 'go'
         working-directory: backend
         run: go build ./...
-
       - name: Analyze
-        uses: github/codeql-action/analyze@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        uses: github/codeql-action/analyze@33d7b85da1a04171e211befe2c739303b9a4c066
         with:
           category: "/language:${{ matrix.language }}"
-          output: ${{ runner.temp }}/codeql-sarif
-
-      - name: Preserve exact-source CodeQL findings
+          output: ${{ runner.temp }}}/codeql-sarif
+      - name: Preserve exact-source findings
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: codeql-${{ matrix.language }}-${{ github.event.pull_request.head.sha || github.sha }}
           path: |
-            ${{ runner.temp }}/codeql-sarif
-            ${{ runner.temp }}/codeql-source.txt
+            ${{ runner.temp }}}/codeql-sarif
+            ${{ runner.temp }}}/codeql-source.txt
           if-no-files-found: warn
           retention-days: 7
-
 
   required:
     name: Security gate / required
@@ -116,19 +104,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Require CodeQL for source changes
+      - name: Enforce selected CodeQL checks
         shell: bash
         env:
           SCOPE_RESULT: ${{ needs.change-scope.result }}
-          DOCS_ONLY: ${{ needs.change-scope.outputs.docs_only }}
+          CODEQL_GO: ${{ needs.change-scope.outputs.codeql_go }}
+          CODEQL_JS: ${{ needs.change-scope.outputs.codeql_js }}
           CODEQL_RESULT: ${{ needs.codeql.result }}
         run: |
           set -euo pipefail
           test "$SCOPE_RESULT" = success
-          if [ "$DOCS_ONLY" = true ]; then
-            test "$CODEQL_RESULT" = skipped
-          elif [ "$DOCS_ONLY" = false ]; then
+          if [ "$CODEQL_GO" = true ] || [ "$CODEQL_JS" = true ]; then
             test "$CODEQL_RESULT" = success
           else
-            exit 1
+            test "$CODEQL_RESULT" = skipped
           fi

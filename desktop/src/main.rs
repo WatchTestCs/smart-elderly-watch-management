@@ -1,5 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod display_refresh;
+
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 #[cfg(windows)]
@@ -313,7 +315,7 @@ fn main() {
                 let _ = window.set_focus();
             }
         }))
-        .invoke_handler(tauri::generate_handler![setup_admin, open_external_link])
+        .invoke_handler(tauri::generate_handler![setup_admin, open_external_link, display_refresh::monitor_refresh_rate])
         .setup(|app| {
             let backend = start_backend(app)?;
             let origin = backend.origin.clone();

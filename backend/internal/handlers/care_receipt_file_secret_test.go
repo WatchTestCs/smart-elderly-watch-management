@@ -31,14 +31,14 @@ func TestCareReceiptAcceptsFileBackedSigningSecret(t *testing.T) {
 	req.Header.Set("X-Care-Timestamp", stamp)
 	req.Header.Set("X-Care-Signature", hex.EncodeToString(mac.Sum(nil)))
 	rec := httptest.NewRecorder()
-	item, ok := decodeCareReceipt(rec, req)
+	item, ok := (&Handler{}).decodeCareReceipt(rec, req)
 	if !ok || item.NotificationID != 42 || item.Status != "delivered" {
 		t.Fatalf("file-backed receipt rejected: code=%d body=%s", rec.Code, rec.Body.String())
 	}
 	t.Setenv("CARE_RECEIPT_SECRET_FILE", keyfile+".missing")
 	req = httptest.NewRequest(http.MethodPost, "/api/v1/care/receipt", bytes.NewReader(body))
 	rec = httptest.NewRecorder()
-	if _, ok := decodeCareReceipt(rec, req); ok || rec.Code != http.StatusServiceUnavailable {
+	if _, ok := (&Handler{}).decodeCareReceipt(rec, req); ok || rec.Code != http.StatusServiceUnavailable {
 		t.Fatalf("missing secret file should fail closed: %d", rec.Code)
 	}
 }

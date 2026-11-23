@@ -9,7 +9,7 @@
       <span class="setup-kicker">初次相见 · 岁宁</span>
       <h2>开启照护日常</h2>
       <database-notice><p class="setup-intro">创建管理员账号。业务记录保存在独立数据库中，关闭软件不会清除记录。</p></database-notice>
-      <el-form ref="form" :model="account" label-position="top" :rules="rules" @submit.prevent="submit">
+      <el-form ref="form" :model="account" :disabled="busy" label-position="top" :rules="rules" @submit.prevent="submit">
         <el-form-item label="怎么称呼您" prop="name"><el-input v-model="account.name" maxlength="10" autocomplete="name" /></el-form-item>
         <el-form-item label="登录手机号" prop="phone"><el-input v-model="account.phone" maxlength="11" inputmode="tel" autocomplete="username" /></el-form-item>
         <el-form-item label="设置密码" prop="password"><el-input v-model="account.password" type="password" show-password autocomplete="new-password" /></el-form-item>
@@ -43,15 +43,17 @@ const rules = {
   password: [{ pattern: /^(?=.*[A-Za-z])(?=.*\d).{12,20}$/, required: true, message: '请设置 12–20 位含字母和数字的密码', trigger: 'blur' }]
 }
 async function submit() {
-  if (busy.value || !await form.value?.validate().catch(() => false)) return
+  if (busy.value) return
   busy.value = true
   error.value = ''
   let accountCreated = false
   try {
-    await createAdministrator({ ...account })
+    if (!await form.value?.validate().catch(() => false)) return
+    const submitted = { ...account }
+    await createAdministrator(submitted)
     accountCreated = true
-    await api.post('/api/v1/auth/login', { phone: account.phone, password: account.password })
     account.password = ''
+    await api.post('/api/v1/auth/login', { phone: submitted.phone, password: submitted.password })
     const loggedIn = await loadSession(true)
     if (!loggedIn) throw new Error('Session missing')
     await router.replace('/operations/overview')

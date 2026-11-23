@@ -8,19 +8,19 @@ on:
   workflow_dispatch:
     inputs:
       require_native:
-        description: Require a real SDK build for a formal release candidate; missing SDK configuration must fail
+        description: Require HarmonyOS SDK compilation; release qualification requires this
         type: boolean
-        default: false
+        default: true
       build_desktop:
-        description: Build and exercise the actual Windows Setup and Portable distributions
+        description: Build and install Windows Setup and Portable distributions
         type: boolean
-        default: false
+        default: true
       sdk_url:
-        description: Optional HTTPS URL of Windows Command Line Tools 26.0.0.865 for native watch compilation
+        description: HTTPS URL of Windows Command Line Tools 26.0.0.865
         type: string
         default: ''
       sdk_sha256:
-        description: Required expected SDK SHA-256 when sdk_url is supplied
+        description: Expected SDK SHA-256 when sdk_url is supplied
         type: string
         default: ''
 
@@ -38,18 +38,30 @@ jobs:
     timeout-minutes: 5
     outputs:
       docs_only: ${{ steps.classify.outputs.docs_only }}
+      fast_gate: ${{ steps.classify.outputs.fast_gate }}
+      frontend: ${{ steps.classify.outputs.frontend }}
+      ui: ${{ steps.classify.outputs.ui }}
+      backend: ${{ steps.classify.outputs.backend }}
+      watch: ${{ steps.classify.outputs.watch }}
+      simulator: ${{ steps.classify.outputs.simulator }}
+      windows: ${{ steps.classify.outputs.windows }}
+      desktop: ${{ steps.classify.outputs.desktop }}
+      deployment: ${{ steps.classify.outputs.deployment }}
+      security_scan: ${{ steps.classify.outputs.security_scan }}
+      dependency: ${{ steps.classify.outputs.dependency }}
+      ci_tests: ${{ steps.classify.outputs.ci_tests }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - name: Test fail-closed change classification
+      - name: Test change classification
         run: python3 -m unittest discover -s scripts/reliability -p test_pr_change_scope.py
       - name: Classify changed paths
         id: classify
         env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || '' }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: python3 scripts/reliability/pr_change_scope.py >> "$GITHUB_OUTPUT"
 
@@ -75,9 +87,9 @@ jobs:
           ruby -ryaml -e 'Dir[".github/ISSUE_TEMPLATE/*.{yml,yaml}"].each { |file| parsed = YAML.safe_load_file(file); abort "invalid Issue template: #{file}" unless parsed.is_a?(Hash); next if File.basename(file) == "config.yml"; abort "invalid Issue form: #{file}" unless parsed["name"] && parsed["body"].is_a?(Array) }'
 
   fast-gate:
-    needs: change-scope
-    if: needs.change-scope.outputs.docs_only != 'true'
     name: Fast source validation
+    needs: change-scope
+    if: needs.change-scope.outputs.fast_gate == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -90,99 +102,59 @@ jobs:
           python3 scripts/check-api-boundary.py
           python3 scripts/check-go-module-boundaries.py
           python3 scripts/generate-openapi.py --check
+
   frontend:
-    needs: [change-scope, fast-gate]
-    if: needs.change-scope.outputs.docs_only != 'true'
+    needs: change-scope
+    if: needs.change-scope.outputs.frontend == 'true'
     name: Frontend
     uses: ./.github/workflows/reusable-frontend.yml
 
   ui-quality:
-    needs: [change-scope, fast-gate]
-    if: needs.change-scope.outputs.docs_only != 'true'
+    needs: change-scope
+    if: needs.change-scope.outputs.ui == 'true'
     name: UI Quality
     uses: ./.github/workflows/ui-quality.yml
 
   watch:
     needs: change-scope
-    if: needs.change-scope.outputs.docs_only != 'true'
+    if: needs.change-scope.outputs.watch == 'true'
     name: Watch protocol
     uses: ./.github/workflows/reusable-watch.yml
     with:
       sdk_url: ${{ inputs.sdk_url || '' }}
       sdk_sha256: ${{ inputs.sdk_sha256 || vars.HARMONY_SDK_DOWNLOAD_SHA256 || vars.HARMONY_SDK_SHA256 || '' }}
-      require_native: ${{ inputs.require_native || github.event_name == 'push' }}
+      require_native: ${{ inputs.require_native || github.event_name == 'workflow_dispatch' || github.event_name == 'push' }}
     secrets:
       sdk_download_url: ${{ secrets.HARMONY_SDK_DOWNLOAD_URL }}
 
-  simulator-scope:
-    needs: change-scope
-    if: needs.change-scope.outputs.docs_only != 'true'
-    name: Scope simulator matrix
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    outputs:
-      run-matrix: ${{ steps.scope.outputs.run || 'true' }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        if: github.event_name == 'pull_request'
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Classify pull request changes
-        if: github.event_name == 'pull_request'
-        id: scope
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        shell: pwsh
-        run: |
-          python3 -m unittest discover -s scripts/reliability -p test_watch_simulator_scope.py
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          python3 scripts/reliability/watch_simulator_scope.py
-
   simulator-tests:
     name: Watch simulator tests
-    needs: simulator-scope
-    if: needs.simulator-scope.outputs.run-matrix == 'true'
+    needs: change-scope
+    if: needs.change-scope.outputs.simulator == 'true'
     uses: ./.github/workflows/watch-simulator.yml
 
   simulator:
     name: Watch simulator
-    if: ${{ always() && needs.change-scope.outputs.docs_only != 'true' }}
-    needs: [change-scope, simulator-scope, simulator-tests]
+    if: ${{ always() && needs.change-scope.outputs.simulator == 'true' }}
+    needs: [change-scope, simulator-tests]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Check simulator matrix result
-        shell: pwsh
+      - name: Require simulator matrix success
         env:
-          SCOPE_RESULT: ${{ needs['simulator-scope'].result }}
-          RUN_MATRIX: ${{ needs['simulator-scope'].outputs.run-matrix }}
-          SIMULATOR_RESULT: ${{ needs['simulator-tests'].result }}
-        run: |
-          if ($env:SCOPE_RESULT -ne 'success') {
-            throw 'Simulator change classification failed.'
-          }
-          switch ($env:RUN_MATRIX) {
-            'true' { $expected = 'success' }
-            'false' { $expected = 'skipped' }
-            default { throw "Invalid simulator scope: $env:RUN_MATRIX" }
-          }
-          if ($env:SIMULATOR_RESULT -ne $expected) {
-            throw "Expected $expected from simulator matrix, got $env:SIMULATOR_RESULT."
-          }
+          MATRIX_RESULT: ${{ needs.simulator-tests.result }}
+        run: test "$MATRIX_RESULT" = success
 
   dependency-review:
     name: Dependency review
     needs: change-scope
-    if: ${{ github.event_name == 'pull_request' && needs.change-scope.outputs.docs_only != 'true' }}
+    if: ${{ github.event_name == 'pull_request' && needs.change-scope.outputs.dependency == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
       contents: read
     steps:
-      - name: Checkout PR
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
       - name: Reject newly introduced vulnerable dependencies
@@ -192,28 +164,28 @@ jobs:
           fail-on-scopes: development, runtime
 
   backend:
-    needs: [change-scope, fast-gate]
-    if: needs.change-scope.outputs.docs_only != 'true'
+    needs: change-scope
+    if: needs.change-scope.outputs.backend == 'true'
     name: Backend
     uses: ./.github/workflows/reusable-backend.yml
 
   windows:
-    needs: [change-scope, fast-gate]
-    if: needs.change-scope.outputs.docs_only != 'true'
+    needs: change-scope
+    if: needs.change-scope.outputs.windows == 'true'
     name: Windows sidecar contract
     uses: ./.github/workflows/reusable-windows-package.yml
     with:
-      build_desktop: ${{ inputs.build_desktop || github.event_name == 'push' }}
+      build_desktop: ${{ inputs.build_desktop || needs.change-scope.outputs.desktop == 'true' || github.event_name == 'workflow_dispatch' }}
 
   deployment:
     needs: change-scope
-    if: needs.change-scope.outputs.docs_only != 'true'
+    if: needs.change-scope.outputs.deployment == 'true'
     name: Deployment and alerts
     uses: ./.github/workflows/deploy-contract.yml
 
   security-scan:
     needs: change-scope
-    if: needs.change-scope.outputs.docs_only != 'true'
+    if: needs.change-scope.outputs.security_scan == 'true'
     name: Current-source vulnerability scan
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -222,7 +194,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
-      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5
         with:
           go-version: '1.27.4'
           cache-dependency-path: backend/go.sum
@@ -234,7 +206,6 @@ jobs:
           git rev-parse HEAD > ../evidence/ci/security/source-sha.txt
           go install golang.org/x/vuln/cmd/govulncheck@v1.9.0
           govulncheck -json ./... > ../evidence/ci/security/govulncheck.jsonl 2>&1
-          # JSON output exits zero even when vulnerable symbols are reachable.
           govulncheck -mode=convert < ../evidence/ci/security/govulncheck.jsonl | tee ../evidence/ci/security/govulncheck.txt
       - if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
@@ -253,40 +224,60 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
-      - name: Verify release gate fail-closed regressions
-        if: needs.change-scope.outputs.docs_only != 'true'
+      - name: Verify CI classification and release gate regressions
+        if: needs.change-scope.outputs.ci_tests == 'true'
         run: python3 -m unittest discover -s scripts/reliability -p 'test_*.py' -v
-      - name: Require all risk-appropriate checks
+      - name: Enforce selected checks
         shell: bash
         env:
-          SCOPE_RESULT: ${{ needs.change-scope.result }}
+          EVENT_NAME: ${{ github.event_name }}
           DOCS_ONLY: ${{ needs.change-scope.outputs.docs_only }}
+          SCOPE_RESULT: ${{ needs.change-scope.result }}
           DOCS_RESULT: ${{ needs.docs-check.result }}
+          FAST: ${{ needs.change-scope.outputs.fast_gate }}
           FAST_RESULT: ${{ needs.fast-gate.result }}
+          FRONTEND: ${{ needs.change-scope.outputs.frontend }}
           FRONTEND_RESULT: ${{ needs.frontend.result }}
+          UI: ${{ needs.change-scope.outputs.ui }}
           UI_RESULT: ${{ needs.ui-quality.result }}
+          WATCH: ${{ needs.change-scope.outputs.watch }}
           WATCH_RESULT: ${{ needs.watch.result }}
+          SIMULATOR: ${{ needs.change-scope.outputs.simulator }}
           SIMULATOR_RESULT: ${{ needs.simulator.result }}
+          BACKEND: ${{ needs.change-scope.outputs.backend }}
           BACKEND_RESULT: ${{ needs.backend.result }}
+          WINDOWS: ${{ needs.change-scope.outputs.windows }}
           WINDOWS_RESULT: ${{ needs.windows.result }}
+          DEPLOYMENT: ${{ needs.change-scope.outputs.deployment }}
           DEPLOYMENT_RESULT: ${{ needs.deployment.result }}
+          SECURITY: ${{ needs.change-scope.outputs.security_scan }}
           SECURITY_RESULT: ${{ needs.security-scan.result }}
+          DEPENDENCY: ${{ needs.change-scope.outputs.dependency }}
           DEPENDENCY_RESULT: ${{ needs.dependency-review.result }}
         run: |
           set -euo pipefail
           test "$SCOPE_RESULT" = success
-          if [ "$DOCS_ONLY" = true ]; then
+          check() {
+            if [ "$1" = true ]; then test "$2" = success
+            else test "$2" = skipped
+            fi
+          }
+          if [ "$DOCS_ONLY" = true ] && [ "$EVENT_NAME" = pull_request ]; then
             test "$DOCS_RESULT" = success
-            for result in "$FAST_RESULT" "$FRONTEND_RESULT" "$UI_RESULT" "$WATCH_RESULT" "$SIMULATOR_RESULT" "$BACKEND_RESULT" "$WINDOWS_RESULT" "$DEPLOYMENT_RESULT" "$SECURITY_RESULT" "$DEPENDENCY_RESULT"; do
-              test "$result" = skipped
-            done
-          elif [ "$DOCS_ONLY" = false ]; then
-            test "$DOCS_RESULT" = skipped
-            for result in "$FAST_RESULT" "$FRONTEND_RESULT" "$UI_RESULT" "$WATCH_RESULT" "$SIMULATOR_RESULT" "$BACKEND_RESULT" "$WINDOWS_RESULT" "$DEPLOYMENT_RESULT" "$SECURITY_RESULT"; do
-              test "$result" = success
-            done
-            test "$DEPENDENCY_RESULT" = success || test "$DEPENDENCY_RESULT" = skipped
           else
-            echo "Invalid or missing change classification" >&2
-            exit 1
+            test "$DOCS_RESULT" = skipped
+          fi
+          check "$FAST" "$FAST_RESULT"
+          check "$FRONTEND" "$FRONTEND_RESULT"
+          check "$UI" "$UI_RESULT"
+          check "$WATCH" "$WATCH_RESULT"
+          check "$SIMULATOR" "$SIMULATOR_RESULT"
+          check "$BACKEND" "$BACKEND_RESULT"
+          check "$WINDOWS" "$WINDOWS_RESULT"
+          check "$DEPLOYMENT" "$DEPLOYMENT_RESULT"
+          check "$SECURITY" "$SECURITY_RESULT"
+          if [ "$DEPENDENCY" = true ] && [ "$EVENT_NAME" = pull_request ]; then
+            test "$DEPENDENCY_RESULT" = success
+          else
+            test "$DEPENDENCY_RESULT" = skipped
           fi

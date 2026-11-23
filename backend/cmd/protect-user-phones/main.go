@@ -10,6 +10,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"suining-care/internal/config"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -25,7 +26,7 @@ func main() {
 		fmt.Fprintln(os.Stderr, "limit must be between 1 and 1000")
 		os.Exit(2)
 	}
-	dsn := os.Getenv("MYSQL_DSN")
+	dsn := config.Secret("MYSQL_DSN")
 	if dsn == "" {
 		fmt.Fprintln(os.Stderr, "MYSQL_DSN is required")
 		os.Exit(2)
@@ -52,7 +53,7 @@ func main() {
 		fmt.Printf("pending=%d (dry-run, no writes)\n", pending)
 		return
 	}
-	box, err := securestore.New(os.Getenv("DATA_ENCRYPTION_KEY"))
+	box, err := securestore.New(config.Secret("DATA_ENCRYPTION_KEY"))
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "valid DATA_ENCRYPTION_KEY required")
 		os.Exit(1)

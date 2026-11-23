@@ -12,10 +12,10 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
+	"suining-care/internal/config"
 	"time"
 
 	mysqlDriver "github.com/go-sql-driver/mysql"
@@ -37,9 +37,13 @@ type signedDeviceNonce struct {
 
 // Existing unsigned firmware continues to work unless
 // SUINING_REQUIRE_SIGNED_DEVICE=1. Signatures that are present must verify.
-func prepareSignedDeviceRequest(w http.ResponseWriter, r *http.Request) (*http.Request, bool) {
+func (h *Handler) prepareSignedDeviceRequest(w http.ResponseWriter, r *http.Request) (*http.Request, bool) {
 	sig := strings.TrimSpace(r.Header.Get("X-Device-Signature"))
-	if sig == "" && os.Getenv("SUINING_REQUIRE_SIGNED_DEVICE") != "1" {
+	required := h.Cfg.Requests.RequireSigned
+	if !h.Cfg.Requests.Loaded {
+		required = config.Enabled("SUINING_REQUIRE_SIGNED_DEVICE")
+	}
+	if sig == "" && !required {
 		return r, true
 	}
 	fail := func() (*http.Request, bool) {
