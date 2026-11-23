@@ -86,18 +86,41 @@ func TestBaselineStreakUsesDistinctObservationsAndRecovers(t *testing.T) {
 	p, now := seed(t)
 	e := Engine{DB: p}
 	ctx := context.Background()
-	for i := 0; i < 20; i++ {
+	historical := func(i int) health.Sample {
 		at := now.Add(-time.Duration(i+30) * time.Hour)
-		save(t, p, health.Sample{RecordID: fmt.Sprint(i), Source: "watch", SourceDevice: "RULE001", Metric: "heart_rate", Unit: "count/min", Value: health.Number(70), Start: at, End: at, Version: 1})
+		return health.Sample{RecordID: fmt.Sprint(i), Source: "watch", SourceDevice: "RULE001", Metric: "heart_rate", Unit: "count/min",
+			Value: health.Number(70), Start: at, End: at, Version: 1}
 	}
-	for i := 0; i < 3; i++ {
+	for i := 0; i < 19; i++ {
+		save(t, p, historical(i))
+	}
+	first := health.Sample{RecordID: "current0", Source: "watch", SourceDevice: "RULE001", Metric: "heart_rate",
+		Unit: "count/min", Value: health.Number(100), Start: now, End: now, Version: 1}
+	save(t, p, first)
+	if err := e.Device(ctx, 1, now.Add(time.Millisecond)); err != nil {
+		t.Fatal(err)
+	}
+	var count int
+	if err := p.QueryRowContext(ctx, "SELECT count(*) FROM rule_state WHERE kind='baseline_heart_rate'").Scan(&count); err != nil || count != 0 {
+		t.Fatalf("insufficient history created baseline state: count=%d err=%v", count, err)
+	}
+	save(t, p, historical(19))
+	if err := e.Device(ctx, 1, now.Add(2*time.Millisecond)); err != nil {
+		t.Fatal(err)
+	}
+	var streak int
+	if err := p.QueryRowContext(ctx, "SELECT streak FROM rule_state WHERE kind='baseline_heart_rate'").Scan(&streak); err != nil || streak != 1 {
+		t.Fatalf("late history did not qualify the current observation: streak=%d err=%v", streak, err)
+	}
+	for i := 1; i < 3; i++ {
 		at := now.Add(time.Duration(i) * time.Second)
-		save(t, p, health.Sample{RecordID: fmt.Sprint("current", i), Source: "watch", SourceDevice: "RULE001", Metric: "heart_rate", Unit: "count/min", Value: health.Number(100), Start: at, End: at, Version: 1})
+		reading := first
+		reading.RecordID, reading.Start, reading.End = fmt.Sprint("current", i), at, at
+		save(t, p, reading)
 		if err := e.Device(ctx, 1, at.Add(time.Millisecond)); err != nil {
 			t.Fatal(err)
 		}
 	}
-	var count int
 	if err := p.QueryRowContext(ctx, "SELECT count(*) FROM care_incident WHERE kind='rule_baseline_heart_rate'").Scan(&count); err != nil || count != 1 {
 		t.Fatal(count, err)
 	}

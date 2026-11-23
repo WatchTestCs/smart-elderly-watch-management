@@ -13,6 +13,7 @@ import (
 	"suining-care/internal/health"
 	"suining-care/internal/residentprofile"
 	"suining-care/internal/userphone"
+	"suining-care/internal/vitalrepo"
 )
 
 // This uses a disposable, fully migrated InnoDB database. Node adapters and
@@ -113,6 +114,19 @@ func TestRekeyMySQL(t *testing.T) {
 	exec("INSERT INTO metric_daily(cache_key,old_id,source,source_device,metric,semantics,record_day,offset_minutes,computed_revision,result_cipher) VALUES(?,7,'watch','device','heart_rate','instant','1956-02-29',0,8,?)",
 		dailyKey, sealed(t, old, "{}", health.DailyResultScope(dailyKey, "8")))
 	exec("INSERT INTO device(device_id,device_no,secret,old_id,last_lng,last_lat) VALUES(1,'REKEY-LAB',?,1,?,?)", strings.Repeat("x", 48), s("location"), s("location"))
+	exec("INSERT INTO ratepre(id,old_id,device_id) VALUES(7,7,1)")
+	vitalTx, err := database.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer vitalTx.Rollback()
+	owner, device, pulse := int64(7), int64(1), int64(72)
+	if err := vitalrepo.StoreProtectedMeasurements(ctx, vitalTx, old, 7, &owner, &device, vitalrepo.Measurements{HeartRate: &pulse}); err != nil {
+		t.Fatal(err)
+	}
+	if err := vitalTx.Commit(); err != nil {
+		t.Fatal(err)
+	}
 	exec("INSERT INTO care_incident(id,old_id,device_id,resolution_note) VALUES(1,1,1,?)", s("care-text"))
 	for _, id := range []int{1, 2, 10, 100} {
 		exec("INSERT INTO care_incident_event(id,incident_id,actor,action,note) VALUES(?,1,'synthetic','received',?)", id, s("care-text"))
@@ -154,7 +168,7 @@ func TestRekeyMySQL(t *testing.T) {
 
 	t.Run("scan is readonly and covers all actual columns", func(t *testing.T) {
 		report, err := Run(ctx, database, current, old, options)
-		if err != nil || len(report.Before) != 32 || report.Stage != "complete" || report.EncryptedColumnsClean || report.RetirementAuthorized {
+		if err != nil || len(report.Before) != 33 || report.Stage != "complete" || report.EncryptedColumnsClean || report.RetirementAuthorized {
 			t.Fatalf("unexpected report: %+v err=%v", report, err)
 		}
 		for _, column := range report.Before {
@@ -179,7 +193,7 @@ func TestRekeyMySQL(t *testing.T) {
 				t.Fatal("incomplete apply")
 			}
 		}
-		if rewrites != 41 {
+		if rewrites != 42 {
 			t.Fatalf("pagination lost rows: rewrites=%d", rewrites)
 		}
 		options.Apply = false
@@ -209,6 +223,11 @@ func TestRekeyMySQL(t *testing.T) {
 		plain, err := (familyaddress.Record{Cipher: &address, Protected: true}).Open(retired, 7)
 		if err != nil || plain == nil || *plain != "synthetic family address" {
 			t.Fatal("family address could not be read with only the new key", err)
+		}
+		storedVital := get("SELECT measurement_cipher FROM ratepre WHERE id=7")
+		vital, err := (vitalrepo.StoredMeasurements{Cipher: &storedVital}).Open(retired, 7, &owner, &device)
+		if err != nil || vital.HeartRate == nil || *vital.HeartRate != pulse || vital.Pressure != nil {
+			t.Fatal("legacy vital measurements still require the previous reader", err)
 		}
 		birthdate := get("SELECT birthdate_cipher FROM oldperson WHERE old_id=7")
 		date, err := (residentprofile.BirthdateRecord{Cipher: &birthdate, Protected: true}).Open(retired, 7)

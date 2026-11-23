@@ -8,6 +8,7 @@ import (
 	"suining-care/internal/familyaddress"
 	"suining-care/internal/health"
 	"suining-care/internal/residentprofile"
+	"suining-care/internal/vitalrepo"
 )
 
 type target struct {
@@ -35,6 +36,8 @@ func (t target) condition() string {
 func (t target) name() string { return t.table + "." + t.column }
 func (t target) fieldScope(keys []any) string {
 	switch t.table {
+	case "ratepre":
+		return vitalrepo.MeasurementScope(fmt.Sprint(keys[0]))
 	case "health_sample":
 		return health.SamplePayloadScope(fmt.Sprint(keys[0]), fmt.Sprint(keys[1]), fmt.Sprint(keys[2]))
 	case "health_change":
@@ -107,5 +110,6 @@ func targets() []target {
 		{"health_sample_latest", "payload_cipher", []string{"old_id", "series_key", "revision"}, "", directEnvelope},
 		{"metric_daily", "result_cipher", []string{"cache_key", "computed_revision"}, "", directEnvelope},
 		{"health_sample", "payload_cipher", []string{"sample_id", "old_id", "revision"}, "", directEnvelope},
+		{"ratepre", "measurement_cipher", []string{"id"}, "", directEnvelope},
 	}
 }

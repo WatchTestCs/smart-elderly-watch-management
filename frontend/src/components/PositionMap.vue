@@ -2,18 +2,25 @@
   <section class="position-map" aria-label="位置地图">
     <div class="position-map-heading">
       <div><h2>位置地图</h2><p>{{ valid ? `${selection?.name || '长者'} · ${selection?.lng}，${selection?.lat}` : '选择一条位置记录，在此查看。' }}</p></div>
-      <el-button v-if="valid && mapPreferences.provider === 'amap' && !online" @click="enableOnlineMap">加载高德地图</el-button>
-      <el-button v-if="online" link @click="disableOnlineMap">关闭在线地图</el-button>
-      <a v-if="valid && (mapPreferences.provider === 'tencent' || mapPreferences.provider === 'google') && providerUrl"
-        class="online-map-link" :href="providerUrl" target="_blank" rel="noopener noreferrer"
-        referrerpolicy="no-referrer">在{{ mapPreferences.provider === 'google' ? 'Google' : '腾讯' }}地图查看位置</a>
-      <a v-if="online && embeddedUrl" class="online-map-link" :href="embeddedUrl"
-        target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">在高德地图中打开</a>
+      <div class="position-map-actions">
+        <el-button v-if="valid && mapPreferences.provider === 'amap' && !online" @click="enableOnlineMap">加载高德地图</el-button>
+        <el-button v-if="online" link @click="disableOnlineMap">关闭在线地图</el-button>
+        <a v-if="valid && (mapPreferences.provider === 'tencent' || mapPreferences.provider === 'google') && providerUrl"
+          class="online-map-link" :href="providerUrl" target="_blank" rel="noopener noreferrer"
+          referrerpolicy="no-referrer">在{{ mapPreferences.provider === 'google' ? 'Google' : '腾讯' }}地图查看位置</a>
+        <a v-if="online && embeddedUrl" class="online-map-link" :href="embeddedUrl"
+          target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">在高德地图中打开</a>
+      </div>
     </div>
     <p v-if="online && mapLoading" class="position-map-note" role="status">正在加载高德地图，位置坐标仍可查看…</p>
-    <iframe v-if="online && embeddedUrl" :src="embeddedUrl" class="position-map-canvas online-map"
-      @load="mapLoading = false"
-      title="高德地图 · 设备最近上报位置" loading="lazy" referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin"
+    <div v-if="online && mapLoadError" role="alert" class="position-map-actions">
+      <span>地图未能加载，仍可查看离线位置。</span>
+      <el-button @click="startMapLoad">重新加载</el-button>
+      <el-button @click="disableOnlineMap">切回离线标记</el-button>
+    </div>
+    <iframe v-if="online && embeddedUrl && !mapLoadError" :key="iframeKey" ref="frame" :src="embeddedUrl" class="position-map-canvas online-map"
+      @load="finishMapLoad($event, false)" @error="finishMapLoad($event, true)"
+      title="高德地图 · 设备最近上报位置" loading="eager" referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin"
       allowfullscreen></iframe>
     <div v-show="!online" ref="canvas" class="position-map-canvas" :class="{ 'has-location': valid }" role="region" aria-label="离线位置标记"></div>
     <p v-if="valid" class="position-map-note">{{ describePositionContext(selection ?? {}) }}</p>
@@ -24,6 +31,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch, type PropType } from 'vue'
 import L from 'leaflet'
+import { useMapFrameLoad } from '../composables/useMapFrameLoad'
 import 'leaflet/dist/leaflet.css'
 import { describePositionContext, type PositionContext } from '../utils/positionContext'
 import { mapPreferences } from '../utils/mapProviders'
@@ -37,7 +45,7 @@ interface PositionSelection extends PositionContext {
 const props = defineProps({ selection: { type: Object as PropType<PositionSelection | null>, default: null } })
 const canvas = ref<HTMLElement | null>(null)
 const online = ref(false)
-const mapLoading = ref(false)
+const { frame, iframeKey, mapLoading, mapLoadError, startMapLoad, finishMapLoad, resetFrameLoad } = useMapFrameLoad()
 const valid = computed(() => {
   const value = props.selection
   return value && value.lng != null && value.lat != null && String(value.lng).trim() !== '' && String(value.lat).trim() !== '' &&
@@ -82,11 +90,11 @@ function updateLocation () {
 function enableOnlineMap () {
   if (!map || !valid.value || mapPreferences.provider !== 'amap') return
   online.value = true
-  mapLoading.value = true
+  startMapLoad()
 }
 function disableOnlineMap () {
+  resetFrameLoad()
   online.value = false
-  mapLoading.value = false
   scheduleResize()
 }
 onMounted(() => {
@@ -106,13 +114,13 @@ watch(() => [mapPreferences.provider, mapPreferences.loadOnlineAutomatically, va
   else if (mapPreferences.loadOnlineAutomatically && !online.value) enableOnlineMap()
 })
 watch(embeddedUrl, (url, previous) => {
-  if (online.value && url && url !== previous) mapLoading.value = true
+  if (online.value && url && url !== previous) startMapLoad()
 })
 onBeforeUnmount(() => {
   observer?.disconnect()
   observer = null
+  resetFrameLoad()
   online.value = false
-  mapLoading.value = false
   if (resizeFrame !== null) cancelAnimationFrame(resizeFrame)
   resizeFrame = null
   marker = null
@@ -129,7 +137,8 @@ onBeforeUnmount(() => {
 .position-map-heading p { margin: 6px 0 0; }
 .position-map-canvas { height: clamp(240px, 46vh, 440px); z-index: 0; border-radius: 16px; background-color: #eef1e9; background-image: linear-gradient(#dce3d833 1px, transparent 1px), linear-gradient(90deg, #dce3d833 1px, transparent 1px); background-size: 32px 32px; }
 .online-map { display: block; width: 100%; border: 0; }
-.online-map-link { color: var(--care-primary); font-size: 14px; text-underline-offset: 3px; }
+.position-map-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.online-map-link { display: inline-flex; align-items: center; min-height: var(--care-target-min, 48px); color: var(--care-primary); font-size: 14px; text-underline-offset: 3px; }
 .position-map-canvas:not(.has-location):not(.online-map) { opacity: .55; pointer-events: none; }
 .position-map-note { margin: 12px 0 0; font-size: 15px; }
 .position-map :deep(.leaflet-container) { font-family: inherit; }

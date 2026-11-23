@@ -5,11 +5,12 @@ import (
 	"net/http"
 	dbstore "suining-care/internal/db"
 	"suining-care/internal/response"
+	"suining-care/internal/vitalrepo"
 )
 
 // POST /api/v1/vitals/latest —— 按姓名+时间范围分页查询。
 func (h *Handler) listLatestVitals(w http.ResponseWriter, r *http.Request) {
-	listLatestMeasurements(h, w, r, latestVitalsQuery, "vitalRecords", scanVitalRecord)
+	listLatestMeasurements(h, w, r, latestVitalsQuery, "vitalRecords", h.scanVitalRecord)
 }
 
 // POST /api/v1/vitals/history —— 家属查询自己老人的心率血压列表。
@@ -26,7 +27,7 @@ func (h *Handler) listVitalHistory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer tx.Rollback()
-	items, err := dbstore.QueryList(r.Context(), tx, scanVitalRecord, sql, oldID)
+	items, err := dbstore.QueryList(r.Context(), tx, h.scanVitalRecord, sql, oldID)
 	if internalError(w, err) || internalError(w, tx.Commit()) {
 		return
 	}
@@ -50,9 +51,15 @@ func (h *Handler) getVitalChart(w http.ResponseWriter, r *http.Request) {
 	createTimes := make([]string, 0, 30)
 	var timeStr, lastDay string
 	err := dbstore.QueryEach(r.Context(), tx, func(rows *sql.Rows) error {
-		var hr, bp *int64
+		var id int64
+		var device *int64
 		var createTime *string
-		if err := rows.Scan(&hr, &bp, &createTime); err != nil {
+		var stored vitalrepo.StoredMeasurements
+		if err := rows.Scan(&id, &device, &stored.HeartRate, &stored.Pressure, &stored.Cipher, &createTime); err != nil {
+			return err
+		}
+		values, err := stored.Open(h.Box, id, &oldID, device)
+		if err != nil {
 			return err
 		}
 		ct := ""
@@ -65,12 +72,12 @@ func (h *Handler) getVitalChart(w http.ResponseWriter, r *http.Request) {
 		if ct != "" {
 			lastDay = safeSub(ct, 0, 10)
 		}
-		hrs = append(hrs, hr)
-		bps = append(bps, bp)
+		hrs = append(hrs, values.HeartRate)
+		bps = append(bps, values.Pressure)
 		createTimes = append(createTimes, ct)
 		return nil
-	}, `SELECT r.hr AS hr, r.bp AS bp, DATE_FORMAT(r.create_time,'%Y-%m-%d %H:%i:%s') AS createTime
-		FROM (SELECT id, hr, bp, create_time FROM ratepre WHERE old_id=? ORDER BY create_time DESC, id DESC LIMIT 30) r
+	}, `SELECT r.id, r.device_id, r.hr, r.bp, r.measurement_cipher, DATE_FORMAT(r.create_time,'%Y-%m-%d %H:%i:%s') AS createTime
+		FROM (SELECT id, device_id, hr, bp, measurement_cipher, create_time FROM ratepre WHERE old_id=? ORDER BY create_time DESC, id DESC LIMIT 30) r
 		ORDER BY r.create_time ASC, r.id ASC`, oldID)
 	if internalError(w, err) || internalError(w, tx.Commit()) {
 		return

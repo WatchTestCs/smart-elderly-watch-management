@@ -44,6 +44,7 @@ def audit(path, mode):
         required.add("TestResidentBirthdateBackfillMySQL")
         required.add("TestHealthProjectionProtectionMySQL")
         required.add("TestProtectedBaselineMatchesLegacyMySQL")
+        required |= {"TestProtectedLegacyVitalsMySQL", "TestProtectedLegacyVitalsRuleFallbackMySQL"}
         required |= {"TestMySQLImageCiphertextRotation", "TestMySQLImageRotationPreservesHTTPDownload", "TestMySQLCoordinatedBackupRestore"}
         required.add("TestMySQLMigrationRejectsUnknownHistoryBeforeDDL")
         required.add("TestSocialCommentViewerWithoutPhoneMySQL")

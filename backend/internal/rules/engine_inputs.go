@@ -9,6 +9,7 @@ import (
 
 	"suining-care/internal/health"
 	"suining-care/internal/securestore"
+	"suining-care/internal/vitalrepo"
 	"time"
 )
 
@@ -64,7 +65,7 @@ func collectRuleInput(ctx context.Context, tx *sql.Tx, device ruleDevice, p Poli
 	if err := readLatestRuleObservations(ctx, tx, device, p, &in, box); err != nil {
 		return Input{}, err
 	}
-	if err := readLegacyRuleVitals(ctx, tx, device, p, &in); err != nil {
+	if err := readLegacyRuleVitals(ctx, tx, device, &in, box); err != nil {
 		return Input{}, err
 	}
 	if err := readRuleBaselines(ctx, tx, device, p, &in, box); err != nil {
@@ -126,24 +127,29 @@ func readLatestRuleObservations(ctx context.Context, tx *sql.Tx, device ruleDevi
 
 }
 
-func readLegacyRuleVitals(ctx context.Context, tx *sql.Tx, device ruleDevice, p Policy, in *Input) error {
+func readLegacyRuleVitals(ctx context.Context, tx *sql.Tx, device ruleDevice, in *Input, box *securestore.Box) error {
 	id, oldID, no := device.id, device.oldID, device.no
 	now := in.Now
 	var err error
 	if in.Heart == nil || in.Blood == nil {
 		var record int64
 		var at time.Time
-		var hr, bp *float64
-		err = tx.QueryRowContext(ctx, "SELECT id,create_time,hr,bp FROM ratepre WHERE device_id=? AND old_id=? AND create_time>=? ORDER BY create_time DESC,id DESC LIMIT 1", id, oldID, now.Add(-5*time.Minute)).Scan(&record, &at, &hr, &bp)
+		var stored vitalrepo.StoredMeasurements
+		err = tx.QueryRowContext(ctx, "SELECT id,create_time,hr,bp,measurement_cipher FROM ratepre WHERE device_id=? AND old_id=? AND create_time>=? ORDER BY create_time DESC,id DESC LIMIT 1", id, oldID, now.Add(-5*time.Minute)).
+			Scan(&record, &at, &stored.HeartRate, &stored.Pressure, &stored.Cipher)
 		if err != nil && !errors.Is(err, sql.ErrNoRows) {
 			return err
 		}
 		if err == nil {
-			if hr != nil && in.Heart == nil {
-				in.Heart = &Value{*hr, fmt.Sprint("legacy:", record), "legacy", no, at}
+			values, err := stored.Open(box, record, &oldID, &id)
+			if err != nil {
+				return err
 			}
-			if bp != nil && in.Blood == nil {
-				in.Blood = &Value{*bp, fmt.Sprint("legacy:", record), "legacy", no, at}
+			if values.HeartRate != nil && in.Heart == nil {
+				in.Heart = &Value{float64(*values.HeartRate), fmt.Sprint("legacy:", record), "legacy", no, at}
+			}
+			if values.Pressure != nil && in.Blood == nil {
+				in.Blood = &Value{float64(*values.Pressure), fmt.Sprint("legacy:", record), "legacy", no, at}
 			}
 		}
 	}
@@ -157,6 +163,18 @@ func readRuleBaselines(ctx context.Context, tx *sql.Tx, device ruleDevice, p Pol
 		v            *Value
 	}{{"heart_rate", "heart_rate", in.Heart}, {"blood_pressure", "blood_pressure_systolic", in.Blood}} {
 		if item.v == nil || item.v.Source == "legacy" {
+			continue
+		}
+		var previous string
+		err := tx.QueryRowContext(ctx, "SELECT observation_key FROM rule_state WHERE device_id=? AND epoch=? AND kind=?",
+			device.id, device.epoch, "baseline_"+item.kind).Scan(&previous)
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			return err
+		}
+		// Device and policy writes take the same device lock. Once this
+		// version has a baseline state, persistence ignores its replays.
+		// A missing state still allows late history to meet the minimum.
+		if err == nil && previous == item.v.Key {
 			continue
 		}
 		base, err := readRuleBaseline(ctx, tx, device, item.metric, *item.v, in.Now, p.BaselineDays, box)
