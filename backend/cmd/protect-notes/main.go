@@ -70,7 +70,7 @@ func run(args []string, output io.Writer) error {
 }
 
 // convertNotes never holds a cursor-wide FOR UPDATE lock. SELECT is read-only,
-// and each update verifies the exact original bytes before changing a row.
+// and each bounded transaction verifies the exact original bytes for every row.
 // A failed or interrupted command is resumable, with a maximum of limit rows
 // read into bounded 64-row batches in a single invocation.
 func convertNotes(ctx context.Context, database *sql.DB, box *securestore.Box, limit int, apply, decrypt bool, out io.Writer) error {
@@ -119,28 +119,28 @@ func convertNotes(ctx context.Context, database *sql.DB, box *securestore.Box, l
 			lastID = items[len(items)-1].id
 			candidates += len(items)
 			budget -= len(items)
-			for _, item := range items {
-				if !apply {
-					continue
-				}
-				var text string
-				if decrypt {
-					text, err = box.Open(item.value, "care-text")
-				} else {
-					text, err = box.Seal(item.value, "care-text")
-				}
-				if err != nil {
-					return fmt.Errorf("%s note conversion failed: %w", target.table, err)
-				}
-				result, err := database.ExecContext(ctx, updateSQL, text, item.id, item.value)
-				if err != nil {
-					return fmt.Errorf("%s note update failed: %w", target.table, err)
-				}
-				changed, err := result.RowsAffected()
-				if err != nil || changed != 1 {
-					return fmt.Errorf("%s note changed during migration; verify writers are stopped", target.table)
-				}
-				applied++
+			if apply {
+				// Commit at most 64 rows together. A changed value rolls back the
+				// whole chunk, while earlier chunks remain safe to resume.
+				tx, beginErr := database.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+				if beginErr != nil { return fmt.Errorf("%s note transaction failed: %w", target.table, beginErr) }
+				batchErr := func() error {
+					defer tx.Rollback()
+					for _, item := range items {
+						var text string
+						if decrypt { text, err = box.Open(item.value, "care-text") } else { text, err = box.Seal(item.value, "care-text") }
+						if err != nil { return fmt.Errorf("%s note conversion failed: %w", target.table, err) }
+						result, err := tx.ExecContext(ctx, updateSQL, text, item.id, item.value)
+						if err != nil { return fmt.Errorf("%s note update failed: %w", target.table, err) }
+						changed, err := result.RowsAffected()
+						if err != nil || changed != 1 {
+							return fmt.Errorf("%s note changed during migration; verify writers are stopped", target.table)
+						}
+					}
+					return tx.Commit()
+				}()
+				if batchErr != nil { return batchErr }
+				applied += len(items)
 			}
 			if len(items) < batchSize {
 				break
