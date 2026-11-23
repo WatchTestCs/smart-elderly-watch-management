@@ -193,11 +193,15 @@ func TestConfiguredReceiptSecretFileFailsClosed(t *testing.T) {
 
 func TestConfiguredNotificationSecretFileIsLoaded(t *testing.T) {
 	key := filepath.Join(t.TempDir(), "token")
-	if err := os.WriteFile(key, []byte("real-file-token\n"), 0600); err != nil { t.Fatal(err) }
+	if err := os.WriteFile(key, []byte("real-file-token\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
 	t.Setenv("NOTIFY_WEBHOOK_TOKEN_FILE", key)
 	t.Setenv("NOTIFY_WEBHOOK_TOKEN", "ignored-fallback-token")
 	if got := Secret("NOTIFY_WEBHOOK_TOKEN"); got != "real-file-token" {
 		t.Fatalf("did not honor the file-backed token")
 	}
-	if err := ValidateSecretFiles(); err != nil { t.Fatal(err) }
+	if err := ValidateSecretFiles(); err != nil {
+		t.Fatal(err)
+	}
 }

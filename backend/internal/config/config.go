@@ -17,8 +17,8 @@ import (
 
 // RiskConfig is bound at startup and passed to an instance-owned risk manager.
 type RiskConfig struct {
-  ProxyCIDRsFile string
-  NetworkFeedPath string
+	ProxyCIDRsFile  string
+	NetworkFeedPath string
 }
 
 type Config struct {
@@ -60,21 +60,25 @@ func Enabled(key string) bool { return strings.TrimSpace(Setting(key)) == "1" }
 // ValidateSecretFiles prevents a broken *_FILE reference from silently
 // disabling a configured notification, care receipt, or API credential.
 func ValidateSecretFiles() error {
-  for _, key := range []string{
-    "DATA_ENCRYPTION_KEY", "MYSQL_DSN", "SUINING_DESKTOP_TOKEN",
-    "CARE_RECEIPT_SECRET", "CARE_NOTIFY_WEBHOOK_TOKEN",
-    "NOTIFY_WEBHOOK_TOKEN", "TENCENT_SMS_APPKEY",
-    "SECURITY_ALERT_WEBHOOK_TOKEN",
-  } {
-    path := os.Getenv(key + "_FILE")
-    if path == "" { continue }
-    value, err := os.ReadFile(path)
-    if err != nil { return fmt.Errorf("cannot read %s_FILE: %w", key, err) }
-    if strings.TrimSpace(string(value)) == "" {
-      return fmt.Errorf("%s_FILE is empty", key)
-    }
-  }
-  return nil
+	for _, key := range []string{
+		"DATA_ENCRYPTION_KEY", "MYSQL_DSN", "SUINING_DESKTOP_TOKEN",
+		"CARE_RECEIPT_SECRET", "CARE_NOTIFY_WEBHOOK_TOKEN",
+		"NOTIFY_WEBHOOK_TOKEN", "TENCENT_SMS_APPKEY",
+		"SECURITY_ALERT_WEBHOOK_TOKEN",
+	} {
+		path := os.Getenv(key + "_FILE")
+		if path == "" {
+			continue
+		}
+		value, err := os.ReadFile(path)
+		if err != nil {
+			return fmt.Errorf("cannot read %s_FILE: %w", key, err)
+		}
+		if strings.TrimSpace(string(value)) == "" {
+			return fmt.Errorf("%s_FILE is empty", key)
+		}
+	}
+	return nil
 }
 
 // Validate 拒绝那些"进程能起来、但业务接口永远不可用且不会自愈"的配置。
@@ -84,7 +88,9 @@ func ValidateSecretFiles() error {
 // 探针都认为服务正常。配置错误本身不会随等待消失（环境变量在进程生命周期内
 // 不变），所以必须在启动阶段就说清楚，而不是让调用方永远看到"稍后重试"。
 func (c Config) Validate() error {
-	if err := ValidateSecretFiles(); err != nil { return err }
+	if err := ValidateSecretFiles(); err != nil {
+		return err
+	}
 	if c.BlobBackend != "" && c.BlobBackend != "mysql" {
 		return errors.New("BLOB_BACKEND must be mysql; migrate legacy local/S3 objects before upgrading")
 	}
@@ -178,7 +184,7 @@ func Load() Config {
 		RateLimit:        ratelimit.Options{MaxKeys: maxKeys, MaxSlots: maxSlots, TrustedProxyCIDRs: proxies},
 		BlobBackend:      strings.ToLower(strings.TrimSpace(getenv("BLOB_BACKEND", "mysql"))),
 		Risk: RiskConfig{
-			ProxyCIDRsFile: getenv("SUINING_RISK_PROXY_CIDRS_FILE", ""),
+			ProxyCIDRsFile:  getenv("SUINING_RISK_PROXY_CIDRS_FILE", ""),
 			NetworkFeedPath: getenv("SUINING_RISK_NETWORK_FEED", ""),
 		},
 	}

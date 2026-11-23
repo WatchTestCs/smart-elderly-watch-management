@@ -51,8 +51,12 @@ func Error(w http.ResponseWriter, status int, code, message string) {
 		status = http.StatusInternalServerError
 	}
 	defaultCode, defaultMessage := errorDefaults(status)
-	if code == "" { code = defaultCode }
-	if message == "" { message = defaultMessage }
+	if code == "" {
+		code = defaultCode
+	}
+	if message == "" {
+		message = defaultMessage
+	}
 	writeJSON(w, status, BaseResponse{ReturnCode: CodeFail, Code: code, Message: message})
 }
 

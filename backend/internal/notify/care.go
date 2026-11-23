@@ -5,10 +5,10 @@
 package notify
 
 import (
-	"suining-care/internal/config"
 	"context"
 	"database/sql"
 	"strings"
+	"suining-care/internal/config"
 
 	"suining-care/internal/auth"
 	"suining-care/internal/db"

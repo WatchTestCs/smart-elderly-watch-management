@@ -3,7 +3,6 @@
 package main
 
 import (
-	"suining-care/internal/config"
 	"context"
 	"crypto/subtle"
 	"database/sql"
@@ -11,6 +10,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"suining-care/internal/config"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"

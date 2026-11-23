@@ -23,8 +23,8 @@ import (
 
 type backfillSpec[R any] struct {
 	name, applyHelp, limitHelp, subject string
-	requireKeyOnScan bool
-	run func(context.Context, *sql.DB, *securestore.Box, int, bool) (R, error)
+	requireKeyOnScan                    bool
+	run                                 func(context.Context, *sql.DB, *securestore.Box, int, bool) (R, error)
 }
 
 func runBackfill[R any](spec backfillSpec[R], args []string, output io.Writer) error {

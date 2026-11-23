@@ -16,8 +16,8 @@ import (
 	"suining-care/internal/handlers"
 	"suining-care/internal/observability"
 	"suining-care/internal/ratelimit"
-	"suining-care/internal/risk"
 	"suining-care/internal/response"
+	"suining-care/internal/risk"
 	"suining-care/internal/securestore"
 	"suining-care/internal/session"
 	"suining-care/internal/telemetryworkflow"
@@ -94,7 +94,9 @@ func watchDatabase(ctx context.Context, cfg config.Config, sessions *session.Sto
 			}
 			cancelMigration()
 			if err == nil {
-				if instanceRisk == nil { instanceRisk = risk.New() }
+				if instanceRisk == nil {
+					instanceRisk = risk.New()
+				}
 				err = handlers.InitRiskWithConfig(ctx, pool, instanceRisk, cfg.Risk)
 			}
 			if err == nil {

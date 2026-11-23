@@ -1,7 +1,6 @@
 package risk
 
 import (
-	"suining-care/internal/config"
 	"bytes"
 	"context"
 	"database/sql"
@@ -11,6 +10,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"suining-care/internal/config"
 	"sync/atomic"
 	"time"
 )

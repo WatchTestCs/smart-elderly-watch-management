@@ -9,7 +9,11 @@ import (
 )
 
 func TestInvalidEncryptionKeyCannotBuildDatabaseHandler(t *testing.T) {
-	defer func() { if recover() == nil { t.Fatal("invalid key silently produced a handler without encryption") } }()
+	defer func() {
+		if recover() == nil {
+			t.Fatal("invalid key silently produced a handler without encryption")
+		}
+	}()
 	New(&dbstore.Database{}, nil, config.Config{DataKey: "invalid-base64-key"})
 }
 

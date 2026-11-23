@@ -3,11 +3,11 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"log/slog"
-	"fmt"
-	"strings"
 	"net/http"
+	"strings"
 	"suining-care/internal/blob"
 	dbstore "suining-care/internal/db"
 	"suining-care/internal/ratelimit"
@@ -52,7 +52,9 @@ func NewWithRisk(pool *dbstore.Database, sessions *session.Store, cfg config.Con
 		box, err = securestore.New(cfg.DataKey)
 		if err != nil {
 			// A live DB handler must never silently downgrade encrypted writes.
-			if pool != nil { panic(fmt.Errorf("invalid handler encryption configuration: %w", err)) }
+			if pool != nil {
+				panic(fmt.Errorf("invalid handler encryption configuration: %w", err))
+			}
 			slog.Error("local_bootstrap_invalid_encryption_key", "error", err)
 		}
 	} else if pool != nil && cfg.MySQLDSN != "" {
@@ -60,11 +62,15 @@ func NewWithRisk(pool *dbstore.Database, sessions *session.Store, cfg config.Con
 	}
 	resolve, err := ratelimit.NewClientIPResolver(cfg.RateLimit.TrustedProxyCIDRs)
 	if err != nil {
-		if pool != nil { panic(fmt.Errorf("invalid trusted proxy configuration: %w", err)) }
+		if pool != nil {
+			panic(fmt.Errorf("invalid trusted proxy configuration: %w", err))
+		}
 		slog.Warn("local_bootstrap_invalid_proxy_config", "error", err)
 		resolve, _ = ratelimit.NewClientIPResolver(nil)
 	}
-	if mgr == nil { mgr = risk.New() }
+	if mgr == nil {
+		mgr = risk.New()
+	}
 	return &Handler{DB: pool, Sessions: sessions, Cfg: cfg, Box: box, CookieSecure: cfg.SecureCookies(), healthCache: newStatisticsCache(cfg.HealthCacheBytes), clientIP: resolve, Risk: mgr}
 }
 
@@ -94,8 +100,12 @@ func InitRisk(ctx context.Context, pool *dbstore.Database) error {
 // InitRiskWithConfig binds persisted risk state and intelligence to one manager.
 // Shared state is reserved for the backwards-compatible InitRisk entrypoint.
 func InitRiskWithConfig(ctx context.Context, pool *dbstore.Database, mgr *risk.Manager, cfg config.RiskConfig) error {
-	if mgr == nil { return fmt.Errorf("risk manager is required") }
-	if err := mgr.EnableMySQL(pool.DB); err != nil { return err }
+	if mgr == nil {
+		return fmt.Errorf("risk manager is required")
+	}
+	if err := mgr.EnableMySQL(pool.DB); err != nil {
+		return err
+	}
 	if path := strings.TrimSpace(cfg.ProxyCIDRsFile); path != "" {
 		if err := mgr.LoadProxyCIDRs(path); err != nil {
 			log.Printf("risk IP feed unavailable: %v", err)

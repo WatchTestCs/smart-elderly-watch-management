@@ -1,9 +1,9 @@
 package rules
 
 import (
-	"suining-care/internal/config"
 	"context"
 	"log/slog"
+	"suining-care/internal/config"
 	"suining-care/internal/db"
 	"suining-care/internal/securestore"
 	"sync"

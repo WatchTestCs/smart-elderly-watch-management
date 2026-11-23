@@ -17,7 +17,7 @@ import (
 	"suining-care/internal/securestore"
 )
 
-type noteTarget struct { table, column string }
+type noteTarget struct{ table, column string }
 
 var noteTargets = []noteTarget{
 	{"care_incident", "resolution_note"},
@@ -26,7 +26,7 @@ var noteTargets = []noteTarget{
 }
 
 type noteRow struct {
-	id int64
+	id    int64
 	value string
 }
 
@@ -56,11 +56,15 @@ func run(args []string, output io.Writer) error {
 	}
 	cfg := config.Load()
 	box, err := securestore.New(cfg.DataKey)
-	if err != nil { return errors.New("valid DATA_ENCRYPTION_KEY required") }
+	if err != nil {
+		return errors.New("valid DATA_ENCRYPTION_KEY required")
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 	pool, err := db.OpenMySQL(ctx, cfg.MySQLDSN)
-	if err != nil { return errors.New("cannot open explicitly configured MySQL") }
+	if err != nil {
+		return errors.New("cannot open explicitly configured MySQL")
+	}
 	defer pool.Close()
 	return convertNotes(ctx, pool.DB, box, *limit, *apply, *decrypt, output)
 }
@@ -75,7 +79,9 @@ func convertNotes(ctx context.Context, database *sql.DB, box *securestore.Box, l
 		candidates, applied := 0, 0
 		var lastID int64
 		op := "NOT LIKE"
-		if decrypt { op = "LIKE" }
+		if decrypt {
+			op = "LIKE"
+		}
 		// Table and column names come only from noteTargets above.
 		selectSQL := fmt.Sprintf("SELECT id,%s FROM %s WHERE id>? AND %s IS NOT NULL AND %s %s ? ORDER BY id LIMIT ?",
 			target.column, target.table, target.column, target.column, op)
@@ -83,36 +89,62 @@ func convertNotes(ctx context.Context, database *sql.DB, box *securestore.Box, l
 			target.table, target.column, target.column)
 		for budget > 0 {
 			batchSize := budget
-			if batchSize > 64 { batchSize = 64 }
+			if batchSize > 64 {
+				batchSize = 64
+			}
 			rows, err := database.QueryContext(ctx, selectSQL, lastID, securestore.Prefix+"%", batchSize)
-			if err != nil { return fmt.Errorf("%s read failed: %w", target.table, err) }
+			if err != nil {
+				return fmt.Errorf("%s read failed: %w", target.table, err)
+			}
 			items := make([]noteRow, 0, batchSize)
 			for rows.Next() {
 				var row noteRow
-				if err = rows.Scan(&row.id, &row.value); err != nil { break }
+				if err = rows.Scan(&row.id, &row.value); err != nil {
+					break
+				}
 				items = append(items, row)
 			}
-			if err == nil { err = rows.Err() }
-			if closeErr := rows.Close(); err == nil { err = closeErr }
-			if err != nil { return fmt.Errorf("%s scan failed: %w", target.table, err) }
-			if len(items) == 0 { break }
+			if err == nil {
+				err = rows.Err()
+			}
+			if closeErr := rows.Close(); err == nil {
+				err = closeErr
+			}
+			if err != nil {
+				return fmt.Errorf("%s scan failed: %w", target.table, err)
+			}
+			if len(items) == 0 {
+				break
+			}
 			lastID = items[len(items)-1].id
 			candidates += len(items)
 			budget -= len(items)
 			for _, item := range items {
-				if !apply { continue }
+				if !apply {
+					continue
+				}
 				var text string
-				if decrypt { text, err = box.Open(item.value, "care-text") } else { text, err = box.Seal(item.value, "care-text") }
-				if err != nil { return fmt.Errorf("%s note conversion failed: %w", target.table, err) }
+				if decrypt {
+					text, err = box.Open(item.value, "care-text")
+				} else {
+					text, err = box.Seal(item.value, "care-text")
+				}
+				if err != nil {
+					return fmt.Errorf("%s note conversion failed: %w", target.table, err)
+				}
 				result, err := database.ExecContext(ctx, updateSQL, text, item.id, item.value)
-				if err != nil { return fmt.Errorf("%s note update failed: %w", target.table, err) }
+				if err != nil {
+					return fmt.Errorf("%s note update failed: %w", target.table, err)
+				}
 				changed, err := result.RowsAffected()
 				if err != nil || changed != 1 {
 					return fmt.Errorf("%s note changed during migration; verify writers are stopped", target.table)
 				}
 				applied++
 			}
-			if len(items) < batchSize { break }
+			if len(items) < batchSize {
+				break
+			}
 		}
 		if _, err := fmt.Fprintf(out, "%s.%s candidates=%d applied=%d decrypt=%t capped=%t\n",
 			target.table, target.column, candidates, applied, decrypt, budget == 0); err != nil {
