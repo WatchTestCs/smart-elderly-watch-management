@@ -19,6 +19,9 @@ func JSON(w http.ResponseWriter, status int, fields map[string]any) {
 		v[key] = value
 	}
 	if status < 400 && v["returnCode"] != nil && v["returnCode"] != CodeOK {
+		// Preserve legacy 400 semantics, but surface the caller's contradictory
+		// success status so it can be corrected without breaking API clients.
+		slog.Warn("api_response_success_status_with_failure_code", "http_status", status)
 		status = http.StatusBadRequest
 	}
 	if status >= 400 {
