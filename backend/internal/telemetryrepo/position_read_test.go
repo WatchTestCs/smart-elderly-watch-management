@@ -100,7 +100,7 @@ func BenchmarkLatestPositionsQuery(b *testing.B) {
 	const residents, history = 100, 150
 	for id := 1; id <= residents; id++ {
 		if _, err := pool.ExecContext(ctx, "INSERT INTO oldperson(old_id,name) VALUES (?,?)",
-			id, fmt.Sprintf("Resident%03d", id)); err != nil {
+			id, fmt.Sprintf("R%03d", id)); err != nil {
 			b.Fatal(err)
 		}
 	}
