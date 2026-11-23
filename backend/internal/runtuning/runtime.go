@@ -4,6 +4,7 @@
 package runtuning
 
 import (
+	"suining-care/internal/config"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -22,7 +23,7 @@ type Decision struct {
 // ApplyOptIn checks an explicit opt-in to avoid altering desktop/host behavior.
 // Respect GOMAXPROCS and GOMEMLIMIT when administrators have set them.
 func ApplyOptIn() Decision {
-	if os.Getenv("SUINING_RUNTIME_AUTOTUNE") != "1" || runtime.GOOS != "linux" {
+	if !config.Enabled("SUINING_RUNTIME_AUTOTUNE") || runtime.GOOS != "linux" {
 		return Decision{}
 	}
 	return apply("/sys/fs/cgroup", os.Getenv, runtime.NumCPU(), runtime.GOMAXPROCS, debug.SetMemoryLimit)
