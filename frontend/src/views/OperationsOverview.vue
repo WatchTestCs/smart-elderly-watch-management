@@ -12,22 +12,22 @@
     </section>
     <div v-if="!isRestricted" class="dashboard-panels">
     <section class="overview-grid" aria-label="设备告警摘要">
-      <article class="overview-card alert-card" v-loading="snapshotLoading" :aria-busy="snapshotLoading">
+      <article class="overview-card alert-card" v-loading="snapshotLoading && !snapshot" :aria-busy="snapshotLoading && !snapshot">
         <div class="metric-icon amber"><el-icon><WarningFilled /></el-icon></div>
         <div class="metric-copy"><span>设备异常类别计数</span><strong v-if="!snapshotError">{{ allCount == null ? '—' : allCount }}</strong><strong v-else class="metric-error" role="status">{{ snapshotError }}</strong><small v-if="categoryCounts">心率 {{ categoryCounts.rate }} · 血压 {{ categoryCounts.pressure }} · 睡眠 {{ categoryCounts.sleep }}</small><small>同一设备可能对应多类异常</small></div>
         <el-button v-if="snapshotError" link @click="loadSnapshot">重新加载设备统计</el-button><el-button v-else link @click="router.push('/operations/devices')">查看设备 <el-icon><ArrowRight /></el-icon></el-button>
       </article>
-      <article class="overview-card fall-card" v-loading="snapshotLoading" :aria-busy="snapshotLoading">
+      <article class="overview-card fall-card" v-loading="snapshotLoading && !snapshot" :aria-busy="snapshotLoading && !snapshot">
         <div class="metric-icon rose"><el-icon><WarningFilled /></el-icon></div>
         <div class="metric-copy"><span>紧急告警</span><strong v-if="!snapshotError">{{ num == null ? '—' : num }}</strong><strong v-else class="metric-error" role="status">{{ snapshotError }}</strong><small v-if="positionTotal != null">{{ positionTotal ? num + ' / ' + positionTotal + ' 位长者有紧急告警' : '暂无长者位置记录' }}</small><small>根据最近告警记录统计</small></div>
         <el-button v-if="snapshotError" link @click="loadSnapshot">重新加载告警统计</el-button><el-button v-else link @click="router.push('/operations/locations')">查看位置 <el-icon><ArrowRight /></el-icon></el-button>
       </article>
-      <article class="overview-card care-card" v-loading="snapshotLoading" :aria-busy="snapshotLoading">
+      <article class="overview-card care-card" v-loading="snapshotLoading && !snapshot" :aria-busy="snapshotLoading && !snapshot">
         <div class="metric-icon rose"><el-icon><WarningFilled /></el-icon></div>
         <div class="metric-copy"><span>照护待办</span><strong v-if="!snapshotError">{{ snapshot?.activeCareIncidents ?? '—' }}</strong><strong v-else class="metric-error" role="status">{{ snapshotError }}</strong><small v-if="snapshot">其中 {{ snapshot.overdueCareIncidents }} 项已超时 · {{ snapshot.failedNotifications }} 条通知失败</small><small>需要人工接单、处置或复核的闭环任务</small></div>
         <el-button v-if="snapshotError" link @click="loadSnapshot">重新加载待办</el-button><el-button v-else link @click="focusCareInbox">查看待办 <el-icon><ArrowRight /></el-icon></el-button>
       </article>
-      <article class="overview-card device-card" v-loading="snapshotLoading" :aria-busy="snapshotLoading">
+      <article class="overview-card device-card" v-loading="snapshotLoading && !snapshot" :aria-busy="snapshotLoading && !snapshot">
         <div class="metric-icon amber"><el-icon><WarningFilled /></el-icon></div>
         <div class="metric-copy"><span>设备关注</span><strong v-if="!snapshotError">{{ snapshot?.offlineDevices ?? '—' }}</strong><strong v-else class="metric-error" role="status">{{ snapshotError }}</strong><small v-if="snapshot">共 {{ snapshot.activeDevices }} 台启用设备 · 低电量 {{ snapshot.lowBatteryDevices }} · 未绑定 {{ snapshot.unboundDevices }}</small><small>离线超过 2 分钟的启用设备</small></div>
         <el-button v-if="snapshotError" link @click="loadSnapshot">重新加载设备状态</el-button><el-button v-else link @click="router.push('/operations/devices')">查看设备 <el-icon><ArrowRight /></el-icon></el-button>
@@ -115,7 +115,7 @@
 </style>
 <script setup lang="ts">
 import { ArrowRight, InfoFilled, Plus, Search, WarningFilled } from '@element-plus/icons-vue'
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '../api/client'
 import { apiErrorMessage } from '../api/httpContract'
@@ -135,7 +135,7 @@ interface NoticeListResponse {
 const router = useRouter()
 const searchText = ref('')
 const appliedSearch = ref('')
-const notices = ref<NoticeRecord[]>([])
+const notices = shallowRef<NoticeRecord[]>([])
 const total = ref(0)
 const isLoading = ref(false)
 const loadError = ref('')
@@ -157,7 +157,7 @@ interface OperationsSnapshot {
   capturedAt: string
 }
 
-const snapshot = ref<OperationsSnapshot | null>(null)
+const snapshot = shallowRef<OperationsSnapshot | null>(null)
 const snapshotLoading = ref(false)
 const snapshotError = ref('')
 const categoryCounts = computed(() => snapshot.value ? {
