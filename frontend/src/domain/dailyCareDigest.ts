@@ -1,4 +1,14 @@
-import type { LatestHealthRecord } from '../api/health'
+// Domain inputs are structural values, independent of API client modules.
+export interface CareDigestRecord {
+  sample: {
+    start: string
+    end?: string | null
+    timeBasis?: string
+    metric: string
+    unit: string
+    value: unknown
+  }
+}
 
 export type DigestStatus = 'calm' | 'stale' | 'empty' | 'unknown'
 
@@ -36,7 +46,7 @@ export function formatElapsedZh(diffMs: number): string {
   return `${Math.floor(hours / 24)} 天前采样`
 }
 
-function sampleTime(record: LatestHealthRecord, nowMs: number): number | null {
+function sampleTime(record: CareDigestRecord, nowMs: number): number | null {
   const sample = record.sample
   // The server marks legacy local timestamps as unzoned. Do not reinterpret
   // those strings in the operator's browser timezone.
@@ -50,7 +60,7 @@ function sampleTime(record: LatestHealthRecord, nowMs: number): number | null {
 }
 
 export function buildDailyCareDigest(
-  records: readonly LatestHealthRecord[], nowMs: number = Date.now()
+  records: readonly CareDigestRecord[], nowMs: number = Date.now()
 ): DailyCareDigest {
   if (!records.length) {
     const headline = '暂未收到健康采样'
