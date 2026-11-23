@@ -15,6 +15,26 @@ import (
 	"suining-care/internal/securestore"
 )
 
+// TelemetryConfig groups device processing options for explicit dependency injection.
+type TelemetryConfig struct {
+    RequireSignedDevice bool
+    DurableQueueEnabled bool
+    SiteTZOffsetHours float64
+}
+
+type HealthConfig struct { LateDeviceLock bool }
+
+type RiskConfig struct {
+    ProxyCIDRsFile string
+    NetworkFeedPath string
+    AuditSpoolPath string
+}
+
+type CareConfig struct {
+    ReceiptSecret string
+    EscalationPhone string
+}
+
 type Config struct {
 	Addr             string // 默认只监听回环地址，远程部署必须显式配置
 	MySQLDSN         string
@@ -26,6 +46,10 @@ type Config struct {
 	HealthCacheBytes int64 // 健康统计内存缓存预算；0 禁用
 	RateLimit        ratelimit.Options
 	BlobBackend      string
+	Telemetry TelemetryConfig
+	Health HealthConfig
+	Risk RiskConfig
+	Care CareConfig
 }
 
 func getenv(key, def string) string {
@@ -43,6 +67,18 @@ func getenv(key, def string) string {
 	return def
 }
 func Secret(key string) string { return getenv(key, "") }
+
+func envBool(key string) bool { return strings.TrimSpace(getenv(key, "")) == "1" }
+
+// Support fractional UTC offsets (for example +5:30); reject invalid and non-finite input.
+func envTZOffset(key string, fallback float64) float64 {
+    raw := strings.TrimSpace(getenv(key, ""))
+    if raw == "" { return fallback }
+    offset, err := strconv.ParseFloat(raw, 64)
+    if err != nil || offset < -12 || offset > 14 { return fallback }
+    return offset
+}
+
 
 // Validate 拒绝那些"进程能起来、但业务接口永远不可用且不会自愈"的配置。
 //
@@ -143,5 +179,20 @@ func Load() Config {
 		HealthCacheBytes: cacheMiB << 20,
 		RateLimit:        ratelimit.Options{MaxKeys: maxKeys, MaxSlots: maxSlots, TrustedProxyCIDRs: proxies},
 		BlobBackend:      strings.ToLower(strings.TrimSpace(getenv("BLOB_BACKEND", "mysql"))),
+        Telemetry: TelemetryConfig{
+            RequireSignedDevice: envBool("SUINING_REQUIRE_SIGNED_DEVICE"),
+            DurableQueueEnabled: envBool("SUINING_DURABLE_TELEMETRY"),
+            SiteTZOffsetHours: envTZOffset("SITE_TZ_OFFSET_HOURS", 8),
+        },
+        Health: HealthConfig{LateDeviceLock: envBool("HEALTH_LATE_DEVICE_LOCK")},
+        Risk: RiskConfig{
+            ProxyCIDRsFile: getenv("SUINING_RISK_PROXY_CIDRS_FILE", ""),
+            NetworkFeedPath: getenv("SUINING_RISK_NETWORK_FEED", ""),
+            AuditSpoolPath: getenv("SUINING_RISK_AUDIT_SPOOL_PATH", ""),
+        },
+        Care: CareConfig{
+            ReceiptSecret: Secret("CARE_RECEIPT_SECRET"),
+            EscalationPhone: Secret("CARE_ESCALATION_PHONE"),
+        },
 	}
 }

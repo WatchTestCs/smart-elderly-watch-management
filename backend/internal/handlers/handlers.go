@@ -3,9 +3,10 @@ package handlers
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
+	"strings"
 	"suining-care/internal/blob"
 	dbstore "suining-care/internal/db"
 	"suining-care/internal/ratelimit"
@@ -38,12 +39,29 @@ type Handler struct {
 }
 
 func New(pool *dbstore.Database, sessions *session.Store, cfg config.Config) *Handler {
-	box, _ := securestore.New(cfg.DataKey)
-	resolve, err := ratelimit.NewClientIPResolver(cfg.RateLimit.TrustedProxyCIDRs)
-	if err != nil {
-		resolve, _ = ratelimit.NewClientIPResolver(nil)
-	}
-	return &Handler{DB: pool, Sessions: sessions, Cfg: cfg, Box: box, CookieSecure: cfg.SecureCookies(), healthCache: newStatisticsCache(cfg.HealthCacheBytes), clientIP: resolve, Risk: sharedRisk}
+    return NewWithRisk(pool, sessions, cfg, sharedRisk)
+}
+
+// NewWithRisk permits isolated risk manager instances without changing the public New API.
+func NewWithRisk(pool *dbstore.Database, sessions *session.Store, cfg config.Config, manager *risk.Manager) *Handler {
+    var box *securestore.Box
+    if strings.TrimSpace(cfg.DataKey) != "" {
+        loaded, err := securestore.New(cfg.DataKey)
+        if err != nil {
+            slog.Warn("handler_data_key_invalid", "error", err)
+        } else {
+            box = loaded
+        }
+    }
+    resolve, err := ratelimit.NewClientIPResolver(cfg.RateLimit.TrustedProxyCIDRs)
+    if err != nil {
+        slog.Warn("handler_trusted_proxy_cidrs_invalid", "error", err)
+        resolve, _ = ratelimit.NewClientIPResolver(nil)
+    }
+    if manager == nil { manager = risk.New() }
+    return &Handler{DB: pool, Sessions: sessions, Cfg: cfg, Box: box,
+        CookieSecure: cfg.SecureCookies(), healthCache: newStatisticsCache(cfg.HealthCacheBytes),
+        clientIP: resolve, Risk: manager}
 }
 
 // Routes 注册全部路由。各组在自己的文件中通过 h.route 注册。
@@ -66,22 +84,28 @@ func (h *Handler) Routes(mux *http.ServeMux) {
 }
 
 func InitRisk(ctx context.Context, pool *dbstore.Database) error {
-	if err := sharedRisk.EnableMySQL(pool.DB); err != nil {
-		return err
-	}
-	if path := os.Getenv("SUINING_RISK_PROXY_CIDRS_FILE"); path != "" {
-		if err := sharedRisk.LoadProxyCIDRs(path); err != nil {
-			log.Printf("risk IP feed unavailable: %v", err)
-		}
-	}
-	if path := os.Getenv("SUINING_RISK_NETWORK_FEED"); path != "" {
-		if err := sharedRisk.StartNetworkRefresh(ctx, path, 15*time.Minute, func(err error) {
-			log.Printf("risk intelligence update failed: %v", err)
-		}); err != nil {
-			log.Printf("risk intelligence initial load failed: %v", err)
-		}
-	}
-	return nil
+    return InitRiskWithConfig(ctx, sharedRisk, pool, config.RiskConfig{
+        ProxyCIDRsFile: os.Getenv("SUINING_RISK_PROXY_CIDRS_FILE"),
+        NetworkFeedPath: os.Getenv("SUINING_RISK_NETWORK_FEED"),
+    })
+}
+
+// InitRiskWithConfig initializes a supplied manager from explicit configuration.
+func InitRiskWithConfig(ctx context.Context, manager *risk.Manager, pool *dbstore.Database, cfg config.RiskConfig) error {
+    if err := manager.EnableMySQL(pool.DB); err != nil { return err }
+    if path := strings.TrimSpace(cfg.ProxyCIDRsFile); path != "" {
+        if err := manager.LoadProxyCIDRs(path); err != nil {
+            slog.Warn("risk_ip_feed_unavailable", "path", path, "error", err)
+        }
+    }
+    if path := strings.TrimSpace(cfg.NetworkFeedPath); path != "" {
+        if err := manager.StartNetworkRefresh(ctx, path, 15*time.Minute, func(err error) {
+            slog.Warn("risk_intelligence_update_failed", "path", path, "error", err)
+        }); err != nil {
+            slog.Warn("risk_intelligence_initial_load_failed", "path", path, "error", err)
+        }
+    }
+    return nil
 }
 
 func CloseRisk() uint64 { return sharedRisk.CloseMySQL() }

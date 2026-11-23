@@ -140,3 +140,30 @@ fn write_hex(bytes: &[u8], output: &mut [u8]) {
         pair[1] = HEX[(byte & 0x0f) as usize];
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn prepared_signer_matches_stateless_sign() {
+        let cred = Credentials { device_no: "  sn-watch-01  ".into(), secret: "test-secret-key".into() };
+        let body = br#"{"deviceNo":"SN-WATCH-01","heartRate":72}"#;
+        let ts = 1_763_900_000_i64;
+        let nonce = "abcDEF0123456789".to_string();
+        let direct = signature_headers(&cred, body, ts, nonce.clone());
+        let prepared = PreparedSigner::new(&cred).headers(body, ts, nonce);
+        assert_eq!(direct.signature, prepared.signature);
+        assert_eq!(direct.signature.len(), 64);
+        assert_eq!(direct.timestamp, "1763900000");
+        assert_eq!(direct.nonce, prepared.nonce);
+        assert_eq!(direct.pairs_ref()[0].0, "X-Device-Signature");
+    }
+
+    #[test]
+    fn signed_payload_change_invalidates_digest() {
+        let s1 = sign("sec", "WATCH01", 100, "nonce_0123456789", br#"{"a":1}"#);
+        let s2 = sign("sec", "WATCH01", 100, "nonce_0123456789", br#"{"a":2}"#);
+        assert_ne!(s1, s2);
+    }
+}

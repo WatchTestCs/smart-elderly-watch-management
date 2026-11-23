@@ -19,10 +19,7 @@ import (
 const HeaderName = "X-CSRF-TOKEN"
 
 func rejected(w http.ResponseWriter) {
-	response.JSON(w, http.StatusForbidden, map[string]any{
-		"code":    "CSRF_REJECTED",
-		"message": "请求未获授权，请刷新页面后重试",
-	})
+	response.Error(w, http.StatusForbidden, "CSRF_REJECTED", "请求未获授权，请刷新页面后重试")
 }
 
 // Middleware 校验 CSRF token。
