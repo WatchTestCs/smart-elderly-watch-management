@@ -11,7 +11,7 @@ import (
 func TestHealthDailyBatchOrderAndExistingResultsMySQL(t *testing.T) {
 	pool := testDatabase(t)
 	seedDevice(t, pool)
-	seedCareAdminDuty(t, pool, 11, "supervisor")
+	seedCareAdminDuty(t, pool, 1, "supervisor")
 	h := testHandler(t, pool)
 	admin := capabilityAdmin(h, h.healthDaily)
 	req := map[string]any{
