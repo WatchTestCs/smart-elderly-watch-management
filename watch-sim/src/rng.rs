@@ -74,7 +74,9 @@ mod tests {
     #[test]
     fn identical_seeds_yield_identical_sequences() {
         let (mut a, mut b) = (Pcg32::new(20261123), Pcg32::new(20261123));
-        for _ in 0..32 { assert_eq!(a.next_u32(), b.next_u32()); }
+        for _ in 0..32 {
+            assert_eq!(a.next_u32(), b.next_u32());
+        }
     }
 
     #[test]
@@ -87,6 +89,9 @@ mod tests {
         }
         assert_eq!(rng.nonce(2).len(), 16);
         assert_eq!(rng.nonce(128).len(), 64);
-        assert!(rng.nonce(24).bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_'));
+        assert!(rng
+            .nonce(24)
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_'));
     }
 }

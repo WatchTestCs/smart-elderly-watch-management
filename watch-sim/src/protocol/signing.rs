@@ -147,7 +147,10 @@ mod tests {
 
     #[test]
     fn prepared_signer_matches_stateless_sign() {
-        let cred = Credentials { device_no: "  sn-watch-01  ".into(), secret: "test-secret-key".into() };
+        let cred = Credentials {
+            device_no: "  sn-watch-01  ".into(),
+            secret: "test-secret-key".into(),
+        };
         let body = br#"{"deviceNo":"SN-WATCH-01","heartRate":72}"#;
         let ts = 1_763_900_000_i64;
         let nonce = "abcDEF0123456789".to_string();
