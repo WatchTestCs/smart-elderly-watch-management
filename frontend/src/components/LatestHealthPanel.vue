@@ -2,7 +2,19 @@
   <section class="latest-health" aria-labelledby="latest-health-heading" :aria-busy="loading">
     <div class="latest-heading">
       <div><h2 id="latest-health-heading">最近健康采样</h2><p>各来源分别展示，按采样开始时间选取；历史记录保留原时间。</p></div>
-      <el-button link :loading="loading" @click="load">刷新采样</el-button>
+      <div class="latest-actions">
+        <el-button v-if="isSupported && !loading && !error" link :aria-pressed="isSpeaking" @click="toggle(digest.spokenText)">
+          {{ isSpeaking ? '停止播报' : '语音播报' }}
+        </el-button>
+        <el-button link :loading="loading" @click="load">刷新采样</el-button>
+      </div>
+    </div>
+    <div v-if="!loading && !error" class="digest-banner" :class="'digest-banner--' + digest.status" >
+      <div class="digest-header">
+        <strong>{{ digest.headline }}</strong>
+        <span class="digest-freshness">{{ digest.freshnessText }}</span>
+      </div>
+      <p class="digest-summary">{{ digest.summary }}{{ digest.suggestedAction }}</p>
     </div>
     <p v-if="error" role="alert">{{ error }}</p>
     <p v-else-if="loading" role="status">正在读取最近采样…</p>
@@ -22,23 +34,43 @@
 </template>
 
 <script setup lang="ts">
+import { computed, onBeforeUnmount, onMounted, shallowRef, ref } from 'vue'
 import { apiErrorMessage } from '../api/httpContract'
-import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { readLatestHealth, type LatestHealthRecord } from '../api/health'
 import { createLatestRead } from '../composables/latestRead'
+import { useSpeechReadout } from '../composables/useSpeechReadout'
+import { buildDailyCareDigest } from '../domain/dailyCareDigest'
 
-const items = ref<LatestHealthRecord[]>([])
+const items = shallowRef<LatestHealthRecord[]>([])
 const loading = ref(false)
 const error = ref('')
+const { isSupported, isSpeaking, stop, toggle } = useSpeechReadout()
+const nowMs = ref(Date.now())
+const digest = computed(() => buildDailyCareDigest(items.value, nowMs.value))
+let clock: ReturnType<typeof setInterval> | undefined
+
 const reads = createLatestRead<void, LatestHealthRecord[]>(
   (_, signal) => readLatestHealth(signal),
   records => { items.value = records; error.value = '' },
   cause => { error.value = apiErrorMessage(cause, '健康采样暂时无法加载，请点击刷新采样重试。') },
   busy => { loading.value = busy }
 )
-const load = () => reads.run()
-onMounted(load)
-onBeforeUnmount(reads.dispose)
+const load = () => {
+  stop()
+  nowMs.value = Date.now()
+  return reads.run()
+}
+onMounted(() => {
+  void load()
+  clock = setInterval(() => {
+    if (!document.hidden) nowMs.value = Date.now()
+  }, 60_000)
+})
+onBeforeUnmount(() => {
+  if (clock !== undefined) clearInterval(clock)
+  stop()
+  reads.dispose()
+})
 
 const metricLabels: Record<string, string> = {
   heart_rate: '心率', blood_pressure_systolic: '收缩压', blood_pressure_diastolic: '舒张压',
@@ -52,15 +84,26 @@ const localTime = (value: string) => new Date(value).toLocaleString('zh-CN', { t
 </script>
 
 <style scoped>
-.latest-health { margin: 0 0 28px; padding: 24px 28px; border: 1px solid #dfe6dc; border-radius: 12px; background: #fff; color: var(--care-heading); }
-.latest-heading { display: flex; justify-content: space-between; align-items: start; gap: 16px; }
+.latest-health { margin: 0 0 28px; padding: 24px 28px; border: 1px solid var(--care-border); border-radius: 12px; background: var(--care-surface); color: var(--care-heading); }
+.latest-heading { display: flex; justify-content: space-between; align-items: start; gap: 16px; flex-wrap: wrap; }
+.latest-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .latest-heading h2 { margin: 0; font-size: 23px; font-weight: 500; }
 .latest-heading p, .latest-empty { color: var(--care-text-muted); line-height: 1.8; }
+.digest-banner { margin-top: 14px; padding: 14px 16px; border-radius: var(--care-control-radius); border-left: 3px solid var(--care-primary); background: var(--care-success-bg); }
+.digest-banner--stale { border-left-color: var(--care-warning); background: var(--care-warning-bg); }
+.digest-banner--unknown { border-left-color: var(--care-warning); background: var(--care-warning-bg); }
+.digest-banner--empty { border-left-color: var(--care-control-border); background: var(--care-neutral-bg); }
+.digest-header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; }
+.digest-header strong { font-size: 17px; color: var(--care-heading); }
+.digest-freshness { font-size: 14px; color: var(--care-text-muted); }
+.digest-summary { margin: 6px 0 0; font-size: 15px; line-height: 1.75; color: var(--care-text-secondary); }
 .latest-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 20px; margin: 16px 0 0; padding: 0; list-style: none; }
-.latest-list li { padding-top: 16px; border-top: 1px solid #dfe6dc; min-width: 0; }
+.latest-list li { padding-top: 16px; border-top: 1px solid var(--care-border); min-width: 0; }
 .latest-list h3 { margin: 0; font-size: 18px; font-weight: 500; }
 .latest-list p { margin: 8px 0; line-height: 1.7; overflow-wrap: anywhere; }
 .latest-list .latest-value { font-size: 26px; color: var(--care-primary); }
 .latest-value span, .latest-source { font-size: 14px; color: var(--care-text-muted); }
+html.large-text .digest-header strong { font-size: 20px; }
+html.large-text .digest-summary { font-size: 18px; }
 @media (max-width: 700px) { .latest-health { padding: 20px 18px; } }
 </style>

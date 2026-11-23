@@ -3,6 +3,7 @@
     <section class="settings-group">
       <h3>显示与操作</h3>
       <div class="setting"><label for="setting-large-text">大字模式</label><el-switch id="setting-large-text" :model-value="largeText" @change="updateLargeText" /></div>
+      <div class="setting"><label for="setting-high-contrast">高对比度模式</label><el-switch id="setting-high-contrast" :model-value="highContrast" @change="updateHighContrast" /></div>
       <div class="setting"><label for="setting-reduced-motion">减少界面动画</label><el-switch id="setting-reduced-motion" v-model="mapPreferences.reducedMotion" @change="saveMapPreferences" /></div>
     </section>
     <section class="settings-group">
@@ -39,12 +40,15 @@ import { mapPreferences, saveMapPreferences, resetMapPreferences } from '../util
 import { useTextSizePreference } from '../composables/useTextSizePreference'
 
 const visible = ref(false)
-const { largeText, setLargeText } = useTextSizePreference()
+const { largeText, highContrast, setLargeText, setHighContrast } = useTextSizePreference()
 function open() {
   visible.value = true
 }
 function updateLargeText(value: string | number | boolean) {
   setLargeText(Boolean(value))
+}
+function updateHighContrast(value: string | number | boolean) {
+  setHighContrast(Boolean(value))
 }
 defineExpose({ open })
 </script>

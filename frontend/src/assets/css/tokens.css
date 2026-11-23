@@ -35,3 +35,30 @@
   --care-focus-offset: 3px;
   --care-focus-color: #235442;
 }
+
+html.high-contrast {
+  --care-brand-dark: #000000;
+  --care-primary: #0d3b2b;
+  --care-heading: #000000;
+  --care-text: #000000;
+  --care-text-secondary: #111111;
+  --care-text-muted: #1f2924;
+
+  --care-danger: #8b0000;
+  --care-warning: #5c3d00;
+  --care-warning-strong: #4a3000;
+
+  --care-surface: #ffffff;
+  --care-surface-muted: #f0f2ef;
+  --care-surface-hover: #e4ebe2;
+  --care-neutral-bg: #ebedea;
+
+  --care-border: #3d4f45;
+  --care-border-soft: #54665c;
+  --care-border-subtle: #66786e;
+  --care-control-border: #111111;
+  --care-neutral-border: #3d4f45;
+
+  --care-focus-width: 4px;
+  --care-focus-color: #000000;
+}
