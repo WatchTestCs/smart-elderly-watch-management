@@ -151,7 +151,10 @@ func (d *dispatcher) finishCareDelivery(ctx context.Context, job *delivery, err 
 	if err != nil {
 		return err
 	}
-	if affected > 0 && job.attempts >= 5 && job.channel == "sms" {
+	// A missing or undecryptable recipient must not be converted into a
+	// permanently undeliverable voice task when SMS retries are exhausted.
+	if affected > 0 && job.attempts >= 5 && job.channel == "sms" && job.recipient != "" &&
+		(failure == nil || failure.reason != "decrypt") {
 		voiceRecipient, voiceKey, sealErr := notify.SealNotificationRecipient(d.box, job.recipient)
 		if sealErr != nil {
 			return sealErr
