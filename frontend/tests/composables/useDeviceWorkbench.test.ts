@@ -42,6 +42,11 @@ it('cancels pending detail work when the alert dialog closes, then allows reopen
 })
 
 it('shows the first completed alert while another request is still waiting', async () => {
+  vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+    queueMicrotask(() => callback(0))
+    return 1
+  })
+  vi.stubGlobal('cancelAnimationFrame', vi.fn())
   const state = createDeviceState()
   state.deviceList = [{ deviceId: 1, deviceNo: 'watch-1' }, { deviceId: 2, deviceNo: 'watch-2' }]
   state.alertCounts = {
@@ -54,7 +59,6 @@ it('shows the first completed alert while another request is still waiting', asy
     : new Promise(resolve => { finishSlow = resolve }))
   const pending = workbench.openWorkbench()
   await flushPromises()
-  await new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
   expect(state.workbench.loading).toBe(true)
   expect(state.workbench.list.map(row => row.deviceId)).toEqual([1])
   finishSlow({ hasAlert: 1, kindText: '人员' })
