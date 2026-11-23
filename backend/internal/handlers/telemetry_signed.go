@@ -39,7 +39,9 @@ type signedDeviceNonce struct {
 // SUINING_REQUIRE_SIGNED_DEVICE=1. Signatures that are present must verify.
 func (h *Handler) prepareSignedDeviceRequest(w http.ResponseWriter, r *http.Request) (*http.Request, bool) {
 	sig := strings.TrimSpace(r.Header.Get("X-Device-Signature"))
-	if sig == "" && !(h.Cfg.Requests.Loaded && h.Cfg.Requests.RequireSigned || !h.Cfg.Requests.Loaded && config.Enabled("SUINING_REQUIRE_SIGNED_DEVICE")) {
+	required := h.Cfg.Requests.RequireSigned
+	if !h.Cfg.Requests.Loaded { required = config.Enabled("SUINING_REQUIRE_SIGNED_DEVICE") }
+	if sig == "" && !required {
 		return r, true
 	}
 	fail := func() (*http.Request, bool) {
