@@ -28,7 +28,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: preview-ci-${{ github.event.pull_request.number || github.ref }
+  group: preview-ci-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -37,38 +37,38 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
-      docs_only: ${{ steps.classify.outputs.docs_only }
-      fast_gate: ${{ steps.classify.outputs.fast_gate }
-      frontend: ${{ steps.classify.outputs.frontend }
-      ui: ${{ steps.classify.outputs.ui }
-      backend: ${{ steps.classify.outputs.backend }
-      watch: ${{ steps.classify.outputs.watch }
-      simulator: ${{ steps.classify.outputs.simulator }
-      windows: ${{ steps.classify.outputs.windows }
-      desktop: ${{ steps.classify.outputs.desktop }
-      deployment: ${{ steps.classify.outputs.deployment }
-      security_scan: ${{ steps.classify.outputs.security_scan }
-      dependency: ${{ steps.classify.outputs.dependency }
-      ci_tests: ${{ steps.classify.outputs.ci_tests }
+      docs_only: ${{ steps.classify.outputs.docs_only }}
+      fast_gate: ${{ steps.classify.outputs.fast_gate }}
+      frontend: ${{ steps.classify.outputs.frontend }}
+      ui: ${{ steps.classify.outputs.ui }}
+      backend: ${{ steps.classify.outputs.backend }}
+      watch: ${{ steps.classify.outputs.watch }}
+      simulator: ${{ steps.classify.outputs.simulator }}
+      windows: ${{ steps.classify.outputs.windows }}
+      desktop: ${{ steps.classify.outputs.desktop }}
+      deployment: ${{ steps.classify.outputs.deployment }}
+      security_scan: ${{ steps.classify.outputs.security_scan }}
+      dependency: ${{ steps.classify.outputs.dependency }}
+      ci_tests: ${{ steps.classify.outputs.ci_tests }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
           fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha || github.sha }
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Test change classification
         run: python3 -m unittest discover -s scripts/reliability -p test_pr_change_scope.py
       - name: Classify changed paths
         id: classify
         env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || '' }
-          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || '' }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: python3 scripts/reliability/pr_change_scope.py >> "$GITHUB_OUTPUT"
 
   docs-check:
     name: Documentation / verify
     needs: change-scope
-    if: ${{ github.event_name == 'pull_request' && needs.change-scope.outputs.docs_only == 'true' }
+    if: ${{ github.event_name == 'pull_request' && needs.change-scope.outputs.docs_only == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -76,11 +76,11 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }
+          ref: ${{ github.event.pull_request.head.sha }}
       - name: Verify changed Markdown links
         env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: python3 scripts/reliability/check_pr_docs.py
       - name: Parse GitHub Issue templates
         run: |
@@ -96,7 +96,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-          ref: ${{ github.event.pull_request.head.sha || github.sha }
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Check source architecture and generated OpenAPI
         run: |
           python3 scripts/check-api-boundary.py
@@ -121,11 +121,11 @@ jobs:
     name: Watch protocol
     uses: ./.github/workflows/reusable-watch.yml
     with:
-      sdk_url: ${{ inputs.sdk_url || '' }
-      sdk_sha256: ${{ inputs.sdk_sha256 || vars.HARMONY_SDK_DOWNLOAD_SHA256 || vars.HARMONY_SDK_SHA256 || '' }
-      require_native: ${{ inputs.require_native || github.event_name == 'workflow_dispatch' || github.event_name == 'push' }
+      sdk_url: ${{ inputs.sdk_url || '' }}
+      sdk_sha256: ${{ inputs.sdk_sha256 || vars.HARMONY_SDK_DOWNLOAD_SHA256 || vars.HARMONY_SDK_SHA256 || '' }}
+      require_native: ${{ inputs.require_native || github.event_name == 'workflow_dispatch' || github.event_name == 'push' }}
     secrets:
-      sdk_download_url: ${{ secrets.HARMONY_SDK_DOWNLOAD_URL }
+      sdk_download_url: ${{ secrets.HARMONY_SDK_DOWNLOAD_URL }}
 
   simulator-tests:
     name: Watch simulator tests
@@ -135,20 +135,20 @@ jobs:
 
   simulator:
     name: Watch simulator
-    if: ${{ always() && needs.change-scope.outputs.simulator == 'true' }
+    if: ${{ always() && needs.change-scope.outputs.simulator == 'true' }}
     needs: [change-scope, simulator-tests]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - name: Require simulator matrix success
         env:
-          MATRIX_RESULT: ${{ needs.simulator-tests.result }
+          MATRIX_RESULT: ${{ needs.simulator-tests.result }}
         run: test "$MATRIX_RESULT" = success
 
   dependency-review:
     name: Dependency review
     needs: change-scope
-    if: ${{ github.event_name == 'pull_request' && needs.change-scope.outputs.dependency == 'true' }
+    if: ${{ github.event_name == 'pull_request' && needs.change-scope.outputs.dependency == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -175,7 +175,7 @@ jobs:
     name: Windows sidecar contract
     uses: ./.github/workflows/reusable-windows-package.yml
     with:
-      build_desktop: ${{ inputs.build_desktop || needs.change-scope.outputs.desktop == 'true' || github.event_name == 'workflow_dispatch' }
+      build_desktop: ${{ inputs.build_desktop || needs.change-scope.outputs.desktop == 'true' || github.event_name == 'workflow_dispatch' }}
 
   deployment:
     needs: change-scope
@@ -192,7 +192,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
       - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5
         with:
@@ -210,19 +210,19 @@ jobs:
       - if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
-          name: security-${{ github.event.pull_request.head.sha || github.sha }
+          name: security-${{ github.event.pull_request.head.sha || github.sha }}
           path: evidence/ci/security/
           if-no-files-found: error
 
   required:
     name: Core CI / required
-    if: ${{ always() }
+    if: ${{ always() }}
     needs: [change-scope, docs-check, fast-gate, frontend, ui-quality, watch, simulator, backend, windows, deployment, security-scan, dependency-review]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
       - name: Verify CI classification and release gate regressions
         if: needs.change-scope.outputs.ci_tests == 'true'
@@ -230,30 +230,30 @@ jobs:
       - name: Enforce selected checks
         shell: bash
         env:
-          EVENT_NAME: ${{ github.event_name }
-          DOCS_ONLY: ${{ needs.change-scope.outputs.docs_only }
-          SCOPE_RESULT: ${{ needs.change-scope.result }
-          DOCS_RESULT: ${{ needs.docs-check.result }
-          FAST: ${{ needs.change-scope.outputs.fast_gate }
-          FAST_RESULT: ${{ needs.fast-gate.result }
-          FRONTEND: ${{ needs.change-scope.outputs.frontend }
-          FRONTEND_RESULT: ${{ needs.frontend.result }
-          UI: ${{ needs.change-scope.outputs.ui }
-          UI_RESULT: ${{ needs.ui-quality.result }
-          WATCH: ${{ needs.change-scope.outputs.watch }
-          WATCH_RESULT: ${{ needs.watch.result }
-          SIMULATOR: ${{ needs.change-scope.outputs.simulator }
-          SIMULATOR_RESULT: ${{ needs.simulator.result }
-          BACKEND: ${{ needs.change-scope.outputs.backend }
-          BACKEND_RESULT: ${{ needs.backend.result }
-          WINDOWS: ${{ needs.change-scope.outputs.windows }
-          WINDOWS_RESULT: ${{ needs.windows.result }
-          DEPLOYMENT: ${{ needs.change-scope.outputs.deployment }
-          DEPLOYMENT_RESULT: ${{ needs.deployment.result }
-          SECURITY: ${{ needs.change-scope.outputs.security_scan }
-          SECURITY_RESULT: ${{ needs.security-scan.result }
-          DEPENDENCY: ${{ needs.change-scope.outputs.dependency }
-          DEPENDENCY_RESULT: ${{ needs.dependency-review.result }
+          EVENT_NAME: ${{ github.event_name }}
+          DOCS_ONLY: ${{ needs.change-scope.outputs.docs_only }}
+          SCOPE_RESULT: ${{ needs.change-scope.result }}
+          DOCS_RESULT: ${{ needs.docs-check.result }}
+          FAST: ${{ needs.change-scope.outputs.fast_gate }}
+          FAST_RESULT: ${{ needs.fast-gate.result }}
+          FRONTEND: ${{ needs.change-scope.outputs.frontend }}
+          FRONTEND_RESULT: ${{ needs.frontend.result }}
+          UI: ${{ needs.change-scope.outputs.ui }}
+          UI_RESULT: ${{ needs.ui-quality.result }}
+          WATCH: ${{ needs.change-scope.outputs.watch }}
+          WATCH_RESULT: ${{ needs.watch.result }}
+          SIMULATOR: ${{ needs.change-scope.outputs.simulator }}
+          SIMULATOR_RESULT: ${{ needs.simulator.result }}
+          BACKEND: ${{ needs.change-scope.outputs.backend }}
+          BACKEND_RESULT: ${{ needs.backend.result }}
+          WINDOWS: ${{ needs.change-scope.outputs.windows }}
+          WINDOWS_RESULT: ${{ needs.windows.result }}
+          DEPLOYMENT: ${{ needs.change-scope.outputs.deployment }}
+          DEPLOYMENT_RESULT: ${{ needs.deployment.result }}
+          SECURITY: ${{ needs.change-scope.outputs.security_scan }}
+          SECURITY_RESULT: ${{ needs.security-scan.result }}
+          DEPENDENCY: ${{ needs.change-scope.outputs.dependency }}
+          DEPENDENCY_RESULT: ${{ needs.dependency-review.result }}
         run: |
           set -euo pipefail
           test "$SCOPE_RESULT" = success
