@@ -1,10 +1,10 @@
 package db
 
 import (
+	"suining-care/internal/config"
 	"context"
 	"database/sql"
 	"errors"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -65,7 +65,7 @@ func OpenMySQL(ctx context.Context, dsn string) (*Database, error) {
 		return nil, err
 	}
 	formattedDSN := cfg.FormatDSN()
-	cacheLimit, err := mysqlStatementCacheLimit(os.Getenv("MYSQL_STMT_CACHE_SIZE"))
+	cacheLimit, err := mysqlStatementCacheLimit(config.Setting("MYSQL_STMT_CACHE_SIZE"))
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func OpenMySQL(ctx context.Context, dsn string) (*Database, error) {
 	// 20 available connections. Preserve a warm pool; operators running many
 	// replicas can cap idle connections to fit their MySQL memory/connection
 	// budget without modifying application code.
-	idleLimit, err := mysqlIdleConnectionLimit(os.Getenv("MYSQL_MAX_IDLE_CONNS"))
+	idleLimit, err := mysqlIdleConnectionLimit(config.Setting("MYSQL_MAX_IDLE_CONNS"))
 	if err != nil {
 		pool.Close()
 		return nil, err
