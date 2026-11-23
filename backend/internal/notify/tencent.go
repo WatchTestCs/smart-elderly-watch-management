@@ -16,45 +16,10 @@ import (
 	"time"
 )
 
+
 var (
-	tencentAppIDPattern = regexp.MustCompile(`^\d+package notify
-
-import (
-	"bytes"
-	"context"
-	"crypto/rand"
-	"crypto/sha256"
-	"encoding/binary"
-	"encoding/hex"
-	"encoding/json"
-	"fmt"
-	"io"
-	"net/http"
-	"regexp"
-	"strconv"
-	"time"
-)
-
-)
-	tencentPhonePattern = regexp.MustCompile(`^1\d{10}package notify
-
-import (
-	"bytes"
-	"context"
-	"crypto/rand"
-	"crypto/sha256"
-	"encoding/binary"
-	"encoding/hex"
-	"encoding/json"
-	"fmt"
-	"io"
-	"net/http"
-	"regexp"
-	"strconv"
-	"time"
-)
-
-)
+	tencentAppIDPattern = regexp.MustCompile(`^\d+$`)
+	tencentPhonePattern = regexp.MustCompile(`^1\d{10}$`)
 )
 
 func TencentSMS(ctx context.Context, client *http.Client, appID, key, phone string) error {
