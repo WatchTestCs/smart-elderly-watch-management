@@ -26,7 +26,9 @@ type PositionRow struct {
 	AlarmKind        string
 }
 
-// Use the existing (old_id, be_time, id) indexes for two top-one probes per\n// resident instead of ranking every historical location and alert row.\nconst latestPositionsSQL = `SELECT o.name, o.old_id, o.sex, l.lng, l.lat, l.be_time AS be_time,
+// Use the existing (old_id, be_time, id) indexes for two top-one probes per
+// resident instead of ranking every historical location and alert row.
+const latestPositionsSQL = `SELECT o.name, o.old_id, o.sex, l.lng, l.lat, l.be_time AS be_time,
 	COALESCE(a.status, '0') AS status, a.be_time AS alarm_time, a.lng AS alarm_lng, a.lat AS alarm_lat,
 	l.position_metadata AS location_metadata, a.position_metadata AS alarm_metadata, COALESCE(a.kind,'unknown') AS alarm_kind
 	FROM oldperson o
