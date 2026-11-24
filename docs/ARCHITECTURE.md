@@ -14,6 +14,10 @@
 
 `preview` 使用 MySQL 单库；旧文档中的 PostgreSQL 分析投影、S3/SeaweedFS 和本地图片回退仅属于历史方案，不应据此部署当前版本。
 
+## 实验性 Suining-Core 加速
+
+通过 `suiningcore` 构建标签可静态链接 Rust 健康统计与个人基线计算内核。MySQL 仍是唯一权威持久化数据源；每次统计读取先执行原有服务端授权并校验已提交的版本号。可重建的内存列投影按既有缓存预算分片淘汰，无法使用时走原有 Go/MySQL 路径。默认构建与桌面发布暂不启用。构建、支持范围及验收限制见 [Suining-Core](../suining-core/README.md)。
+
 ## 启动与关闭
 
 当前 Tauri 桌面程序**仍然启动独立的 Go 子进程**，并非完全无子进程的单体桌面程序。其主要步骤可由 [`desktop/src/main.rs`](../desktop/src/main.rs) 核查：

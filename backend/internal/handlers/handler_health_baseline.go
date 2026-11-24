@@ -98,7 +98,10 @@ func (h *Handler) healthBaseline(w http.ResponseWriter, r *http.Request) {
 	// The latest valid observation is the reference point. Evaluate excludes
 	// future/same-day values and observations from another binding epoch.
 	current := observations[0]
-	result, err := healthbaseline.Evaluate(current, observations[1:])
+	result, native := coreBaseline(current, observations[1:])
+	if !native {
+		result, err = healthbaseline.Evaluate(current, observations[1:])
+	}
 	if internalError(w, err) {
 		return
 	}

@@ -5,7 +5,7 @@ store for business data, sessions, audit, blobs, transactions and recovery.
 This crate contains no SQL client, persistent store, network listener or
 authorization implementation. Its projections are disposable.
 
-## Initial implementation
+## Heart-rate projection
 
 `HeartRateSeries` is an immutable structure-of-arrays projection of one
 resident/source/device's instantaneous heart-rate series. It accepts at most
@@ -33,11 +33,52 @@ authorized. The Go adapter must establish that before admission. In particular:
 - Keep native binaries under the existing build integrity and release gates.
   Do not load arbitrary libraries from a writable search path.
 
-The initial crate is not wired into the HTTP service or desktop packaging.
-There is no cross-language ABI, production cache, scheduler, SIMD kernel,
-durable queue or new database. The integration requires Go/Rust differential
-tests, isolated MySQL 8.4 tests of concurrent correction/delete/revocation,
-resource limits, and end-to-end measurements before activation.
+The experimental `suiningcore` Go build tag enables a synchronous, statically
+linked C ABI for the existing statistics endpoint. Go owns immutable columns
+and a 16-shard LRU; the Rust kernel does not retain a Go pointer. The projection
+and serialized result caches share the existing configured health cache
+budget; projections expire after 30 seconds. Only fully covered,
+microsecond-aligned instantaneous heart-rate windows qualify. The adapter
+also checks each SQL timestamp index against the decrypted payload.
+The same authorized transaction validates the current committed revision
+before a hit is returned. Cache admission rechecks that revision after
+the original database read. On a miss, unsupported input or ABI rejection,
+the ordinary Go/MySQL path remains available.
+
+The experimental baseline path runs the 28-day daily-median and fixed-anchor
+heart-rate algorithm in Rust after the original authorized MySQL read. It
+keeps the resident, device, binding, source and date filters in Go. Small
+or unsupported observations use the original Go evaluator. Incremental
+updates across committed revisions are not yet implemented.
+
+The SIMD reducer uses AVX-512F, AVX2 or NEON when detected and the whole
+series consists of nonnegative exact integers (excluding negative zero)
+at most 900719925474. With at most 10,000 points, every partial sum is
+exactly representable in f64. Other values retain ordered scalar arithmetic.
+The default build and `purego` do not activate the native path. A native
+process fault is not recoverable inside the same process; the build tag
+can be removed to restore the ordinary backend.
+
+## Experimental native build
+
+Windows x64 (GNU Rust toolchain and matching GCC on PATH):
+
+```powershell
+cargo +stable-x86_64-pc-windows-gnu build --release --locked --target x86_64-pc-windows-gnu
+Set-Location ../backend
+$env:CGO_ENABLED = '1'
+go test -tags suiningcore ./internal/handlers -run 'TestCoreColumnCacheParity|TestCoreStatisticsMySQL'
+```
+
+Linux x64 or ARM64 (native Rust and C compiler): build with
+`cargo build --release --locked` from this directory, then use
+`CGO_ENABLED=1` and `go test -tags suiningcore` in the backend.
+Build the Rust archive again whenever its sources change. The ABI symbol
+is versioned. Use only a trusted local build artifact.
+MySQL tests require a disposable `TEST_MYSQL_DSN`; without it they skip.
+The desktop packaging path remains unchanged. Linux and ARM64 builds,
+isolated MySQL 8.4 verification, end-to-end latency/throughput and a
+72-hour soak are still release gates, not completed evidence.
 
 ## Verification
 

@@ -34,13 +34,16 @@ func (h *Handler) healthStatistics(w http.ResponseWriter, r *http.Request) {
 	var key [32]byte
 	var revision int64
 	cacheable := false
+	var seriesKey coreKey
+	var from, to int64
+	var eligible bool
 	if h.healthCache != nil {
 		req.OldID = oldID
 		b, err := json.Marshal(req) // Keep reporting offsets for daily totals.
 		if err == nil {
 			revision, err = health.StatisticsRevision(r.Context(), tx, oldID)
 		}
-		if err == nil {
+		if err == nil && revision > 0 {
 			cacheable = true
 			key = sha256.Sum256(b)
 			if cached, hit := h.healthCache.get(key, revision, time.Now()); hit {
@@ -52,13 +55,26 @@ func (h *Handler) healthStatistics(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			observability.Default.Add("suining_health_cache_misses_total", 1)
-		} else {
+			if h.healthCache.core != nil {
+				seriesKey, from, to, eligible = coreWindow(req)
+				if eligible {
+					if cached, hit := h.healthCache.core.get(seriesKey, revision, from, to, time.Now()); hit {
+						if internalError(w, tx.Commit()) {
+							return
+						}
+						observability.Default.Add("suining_health_core_hits_total", 1)
+						response.OK(w, map[string]any{"statistics": cached, "source": req.Source, "sourceDevice": req.SourceDevice, "metric": req.Metric, "semantics": req.Semantics})
+						return
+					}
+				}
+			}
+		} else if err != nil {
 			// A cache validation failure must never serve an unverified hit.
 			observability.Default.Add("suining_health_cache_validation_errors_total", 1)
 		}
 	}
 	observability.Default.Add("suining_health_statistics_db_loads_total", 1)
-	samples, candidates, err := health.LoadStatisticsSamples(r.Context(), tx, oldID, health.StatisticsQuery{
+	samples, candidates, projectionEligible, err := health.LoadStatisticsSamples(r.Context(), tx, oldID, health.StatisticsQuery{
 		Source: req.Source, SourceDevice: req.SourceDevice, Metric: req.Metric,
 		Semantics: req.Semantics, From: req.From, To: req.To,
 	}, h.Box)
@@ -82,6 +98,9 @@ func (h *Handler) healthStatistics(w http.ResponseWriter, r *http.Request) {
 		// sample write committed between the first clock read and this check.
 		current, err := health.StatisticsRevision(r.Context(), h.DB, oldID)
 		if err == nil && current == revision {
+			if eligible && projectionEligible {
+				h.healthCache.core.put(makeCoreSeries(seriesKey, revision, from, to, samples, candidates, time.Now()))
+			}
 			b, err := json.Marshal(out)
 			if err == nil {
 				h.healthCache.put(key, revision, b, time.Now())

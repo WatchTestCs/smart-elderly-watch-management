@@ -1,6 +1,10 @@
 //! Rebuildable analytics over an authorized, committed MySQL snapshot.
 //! This crate does not own persistent data, connections, or authorization.
 
+mod baseline;
+mod ffi;
+mod simd;
+
 /// Identity of one instantaneous heart-rate series. The caller must resolve and
 /// authorize the resident before constructing or querying a projection.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -62,6 +66,7 @@ pub struct HeartRateSeries {
     coverage: Window,
     timestamps: Box<[i64]>,
     values: Box<[f64]>,
+    exact_integer: bool,
 }
 
 impl HeartRateSeries {
@@ -84,6 +89,7 @@ impl HeartRateSeries {
         }
         let mut timestamps = Vec::with_capacity(points.len());
         let mut values = Vec::with_capacity(points.len());
+        let mut exact_integer = true;
         for p in points {
             if p.at < coverage.from || p.at >= coverage.to || !p.value.is_finite() || p.value < 0.0
             {
@@ -92,6 +98,7 @@ impl HeartRateSeries {
             if timestamps.last().is_some_and(|&last| p.at < last) {
                 return Err(AdmissionError::OutOfOrder);
             }
+            exact_integer &= simd::exact_point(p.value);
             timestamps.push(p.at);
             values.push(p.value);
         }
@@ -101,6 +108,7 @@ impl HeartRateSeries {
             coverage,
             timestamps: timestamps.into_boxed_slice(),
             values: values.into_boxed_slice(),
+            exact_integer,
         })
     }
 
@@ -124,15 +132,38 @@ impl HeartRateSeries {
         {
             return Err(Miss::Window);
         }
-        let first = self.timestamps.partition_point(|&at| at < window.from);
-        let end = self.timestamps[first..].partition_point(|&at| at < window.to) + first;
-        Ok(aggregate(&self.values[first..end]))
+        Ok(query_columns(
+            &self.timestamps,
+            &self.values,
+            window,
+            self.exact_integer,
+        ))
     }
 
     /// Payload memory only; cache metadata and allocator overhead are excluded.
     pub fn column_bytes(&self) -> usize {
         self.timestamps.len() * size_of::<i64>() + self.values.len() * size_of::<f64>()
     }
+}
+
+fn query_columns(
+    timestamps: &[i64],
+    values: &[f64],
+    window: Window,
+    exact_integer: bool,
+) -> Option<Statistics> {
+    let first = timestamps.partition_point(|&at| at < window.from);
+    let end = timestamps[first..].partition_point(|&at| at < window.to) + first;
+    let values = &values[first..end];
+    if exact_integer && let Some((total, min, max)) = simd::reduce(values) {
+        return Some(Statistics {
+            count: values.len(),
+            min,
+            max,
+            mean: total / values.len() as f64,
+        });
+    }
+    aggregate(values)
 }
 
 fn aggregate(values: &[f64]) -> Option<Statistics> {

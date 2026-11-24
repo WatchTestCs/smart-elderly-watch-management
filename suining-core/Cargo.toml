@@ -9,6 +9,7 @@ description = "Rebuildable health analytics for Suining"
 [lib]
 name = "suining_core"
 path = "src/lib.rs"
+crate-type = ["rlib", "staticlib"]
 
 [profile.release]
 lto = "thin"

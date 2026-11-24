@@ -18,6 +18,7 @@ const (
 // the database. Its budget accounts for payloads and approximate metadata; it is
 // not a hard limit on process heap or RSS.
 type statisticsCache struct {
+	core     *coreCache
 	mu       sync.Mutex
 	maxBytes int64
 	bytes    int64
@@ -37,6 +38,16 @@ func newStatisticsCache(maxBytes int64) *statisticsCache {
 		return nil
 	}
 	return &statisticsCache{maxBytes: maxBytes, entries: make(map[[32]byte]*list.Element)}
+}
+
+func newHealthStatisticsCache(maxBytes int64) *statisticsCache {
+	core := newCoreCache(maxBytes / 2)
+	if core == nil {
+		return newStatisticsCache(maxBytes)
+	}
+	cache := newStatisticsCache(maxBytes - maxBytes/2)
+	cache.core = core
+	return cache
 }
 
 // get returns immutable bytes owned by the cache. Callers may encode them but
