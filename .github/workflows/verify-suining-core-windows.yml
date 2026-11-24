@@ -1,0 +1,32 @@
+name: Suining Core Windows native verification
+on:
+  push:
+    branches: [verify/suining-core-windows-dc109b64]
+permissions:
+  contents: read
+jobs:
+  windows-native:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5
+        with:
+          go-version-file: backend/go.mod
+          cache: false
+      - name: Build Windows GNU static archive
+        working-directory: suining-core
+        run: |
+          Get-Command gcc -ErrorAction Stop
+          rustup toolchain install 1.100.0-x86_64-pc-windows-gnu --profile minimal
+          cargo +1.100.0-x86_64-pc-windows-gnu build --release --locked --offline --target x86_64-pc-windows-gnu
+      - name: Test native parity via the Go handler
+        working-directory: backend
+        env:
+          CGO_ENABLED: '1'
+        run: go test -count=1 -tags suiningcore -v ./internal/handlers -run '^TestCore(BaselineParity|ColumnCacheParity)$'
