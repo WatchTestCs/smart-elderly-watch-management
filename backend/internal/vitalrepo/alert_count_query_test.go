@@ -2,8 +2,10 @@ package vitalrepo
 
 import (
 	"context"
+	"database/sql"
 	"testing"
 
+	"suining-care/internal/db"
 	"suining-care/internal/db/dbtest"
 )
 
@@ -46,9 +48,15 @@ func TestPendingCountsMySQL(t *testing.T) {
 func BenchmarkPendingCountsMySQL(b *testing.B) {
 	pool := dbtest.MySQL(b)
 	ctx := context.Background()
-	_, err := pool.ExecContext(ctx, `INSERT INTO ratepre(rate_state,pre_state,create_time)
+	_, err := pool.ExecContext(ctx, `INSERT INTO device(device_id,device_no,secret)
+		WITH RECURSIVE seq(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM seq WHERE n<256)
+		SELECT n, CONCAT('D',n), 'bench' FROM seq`)
+	if err != nil {
+		b.Fatal(err)
+	}
+	_, err = pool.ExecContext(ctx, `INSERT INTO ratepre(device_id,rate_state,pre_state,create_time)
 		WITH RECURSIVE seq(n) AS (SELECT 0 UNION ALL SELECT n+1 FROM seq WHERE n<255)
-		SELECT IF(a.n%25=0,'1','0'), IF(b.n%40=0,'1','0'), '2026-01-02'
+		SELECT a.n+1, IF(a.n%25=0,'1','0'), IF(b.n%40=0,'1','0'), '2026-01-02'
 		FROM seq a CROSS JOIN seq b`)
 	if err != nil {
 		b.Fatal(err)
@@ -65,6 +73,33 @@ func BenchmarkPendingCountsMySQL(b *testing.B) {
 					err := pool.QueryRowContext(ctx, tc.query).Scan(&rate, &pressure)
 					if err != nil || rate != 2816 || pressure != 1792 {
 						b.Errorf("rate=%d pressure=%d err=%v", rate, pressure, err)
+						return
+					}
+				}
+			})
+		})
+	}
+	const separateDevices = `SELECT ` + personCols + `,
+		(SELECT COUNT(*) FROM ratepre r WHERE r.device_id=d.device_id AND ` + pendingRate + `),
+		(SELECT COUNT(*) FROM ratepre r WHERE r.device_id=d.device_id AND ` + pendingPressure + `) ` +
+		personFrom + ` WHERE d.status=1 ORDER BY d.device_id`
+	for _, tc := range []struct{ name, query string }{
+		{"devices/separate", separateDevices}, {"devices/combined", deviceAlertCountsSQL},
+	} {
+		b.Run(tc.name, func(b *testing.B) {
+			b.RunParallel(func(pb *testing.PB) {
+				for pb.Next() {
+					var devices, rate, pressure int64
+					err := db.QueryEach(ctx, pool, func(rows *sql.Rows) error {
+						var hr, bp int64
+						_, err := scanPersonRow(rows, &hr, &bp)
+						devices++
+						rate += hr
+						pressure += bp
+						return err
+					}, tc.query)
+					if err != nil || devices != 256 || rate != 2816 || pressure != 1792 {
+						b.Errorf("devices=%d rate=%d pressure=%d err=%v", devices, rate, pressure, err)
 						return
 					}
 				}

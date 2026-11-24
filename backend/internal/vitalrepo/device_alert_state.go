@@ -45,6 +45,10 @@ func FindDeviceAlertState(ctx context.Context, tx *sql.Tx, deviceID int64) (*Dev
 		`SELECT `+personCols+` `+personFrom+` WHERE d.device_id=?`, deviceID))
 }
 
+const deviceAlertCountsSQL = `SELECT ` + personCols + `, counts.rate_count, counts.pressure_count ` + personFrom + `
+		JOIN LATERAL (` + pendingCountsSQL + ` WHERE r.device_id=d.device_id) counts ON TRUE
+		WHERE d.status=1 ORDER BY d.device_id`
+
 func EachDeviceAlertCount(ctx context.Context, tx *sql.Tx, visit func(*DeviceAlertState, int64, int64)) error {
 	return db.QueryEach(ctx, tx, func(rows *sql.Rows) error {
 		var rate, pressure int64
@@ -54,7 +58,5 @@ func EachDeviceAlertCount(ctx context.Context, tx *sql.Tx, visit func(*DeviceAle
 		}
 		visit(state, rate, pressure)
 		return nil
-	}, `SELECT `+personCols+`, counts.rate_count, counts.pressure_count `+personFrom+`
-		JOIN LATERAL (`+pendingCountsSQL+` WHERE r.device_id=d.device_id) counts ON TRUE
-		WHERE d.status=1 ORDER BY d.device_id`)
+	}, deviceAlertCountsSQL)
 }
