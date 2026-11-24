@@ -14,6 +14,7 @@ import (
 	"suining-care/internal/devicealertworkflow"
 	"suining-care/internal/devicerepo"
 	"suining-care/internal/response"
+	"suining-care/internal/vitalrepo"
 )
 
 func (h *Handler) deviceAlertCounts(w http.ResponseWriter, r *http.Request) {
@@ -23,37 +24,23 @@ func (h *Handler) deviceAlertCounts(w http.ResponseWriter, r *http.Request) {
 	}
 	defer tx.Rollback()
 	ctx := r.Context()
-	rows, err := tx.QueryContext(ctx,
-		`SELECT `+personCols+`,
-			(SELECT COUNT(1) FROM ratepre r WHERE r.device_id = d.device_id AND `+pendingRate+`) AS rate_count,
-			(SELECT COUNT(1) FROM ratepre r WHERE r.device_id = d.device_id AND `+pendingPressure+`) AS pre_count
-		 `+personFrom+` WHERE d.status = 1 ORDER BY d.device_id`)
-	if internalError(w, err) {
-		return
-	}
-	defer rows.Close()
 	now := time.Now()
 	items := []map[string]any{}
 	var personTotal, rateTotal, preTotal int64
-	for rows.Next() {
-		var rateCount, preCount int64
-		pr, err := scanPersonRow(rows, &rateCount, &preCount)
-		if internalError(w, err) {
-			return
-		}
+	err := vitalrepo.EachDeviceAlertCount(ctx, tx, func(pr *vitalrepo.DeviceAlertState, rateCount, preCount int64) {
 		personCount := int64(0)
 		if describePersonAlert(pr, now) != nil {
 			personCount = 1
 		}
 		items = append(items, map[string]any{
-			"deviceId": pr.deviceID, "deviceNo": pr.deviceNo, "alias": pr.alias,
+			"deviceId": pr.DeviceID, "deviceNo": pr.DeviceNo, "alias": pr.Alias,
 			"personCount": personCount, "rateCount": rateCount, "preCount": preCount,
 		})
 		personTotal += personCount
 		rateTotal += rateCount
 		preTotal += preCount
-	}
-	if internalError(w, rows.Err()) || internalError(w, rows.Close()) || internalError(w, tx.Commit()) {
+	})
+	if internalError(w, err) || internalError(w, tx.Commit()) {
 		return
 	}
 	response.OK(w, map[string]any{
@@ -110,8 +97,7 @@ func (h *Handler) deviceAlertDetail(w http.ResponseWriter, r *http.Request) {
 	}
 	var alert map[string]any
 	if kind == "person" {
-		pr, err := scanPersonRow(tx.QueryRowContext(ctx,
-			`SELECT `+personCols+` `+personFrom+` WHERE d.device_id=?`, deviceID))
+		pr, err := vitalrepo.FindDeviceAlertState(ctx, tx, deviceID)
 		if internalError(w, err) {
 			return
 		}
@@ -221,8 +207,7 @@ func (h *Handler) alertResolutionReason(ctx context.Context, tx *sql.Tx, deviceI
 	var before string
 	switch kind {
 	case "person":
-		pr, err := scanPersonRow(tx.QueryRowContext(ctx,
-			`SELECT `+personCols+` `+personFrom+` WHERE d.device_id=?`, deviceID))
+		pr, err := vitalrepo.FindDeviceAlertState(ctx, tx, deviceID)
 		if err != nil {
 			return "", err
 		}

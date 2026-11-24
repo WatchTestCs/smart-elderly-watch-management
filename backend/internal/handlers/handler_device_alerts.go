@@ -44,42 +44,6 @@ func (h *Handler) resolveLatestLocationAlert(w http.ResponseWriter, r *http.Requ
 	response.OK(w, nil)
 }
 
-// ---------------------------------------------------------------------------
-// 异常（红点）与处置
-// ---------------------------------------------------------------------------
-
-type personRow struct {
-	deviceID   int64
-	deviceNo   string
-	alias      *string
-	oldID      *int64
-	lastTime   *time.Time
-	battery    *int
-	bootSeq    int
-	handledSeq int
-	createTime *time.Time
-	oldName    *string
-	hrf, hrl   *int
-	bpf, bpl   *int
-}
-
-const personCols = `d.device_id, d.device_no, d.alias, d.old_id, d.last_time, d.battery,
-	d.boot_seq, d.handled_seq, d.create_time, o.name, w.hrf, w.hrl, w.bpf, w.bpl`
-const personFrom = `FROM device d LEFT JOIN oldperson o ON o.old_id = d.old_id
-	LEFT JOIN watch_info w ON w.device_id = d.device_id`
-
-func scanPersonRow(row interface{ Scan(...any) error }, extra ...any) (*personRow, error) {
-	var pr personRow
-	dest := []any{&pr.deviceID, &pr.deviceNo, &pr.alias, &pr.oldID, &pr.lastTime,
-		&pr.battery, &pr.bootSeq, &pr.handledSeq, &pr.createTime, &pr.oldName,
-		&pr.hrf, &pr.hrl, &pr.bpf, &pr.bpl}
-	dest = append(dest, extra...)
-	if err := row.Scan(dest...); err != nil {
-		return nil, err
-	}
-	return &pr, nil
-}
-
 func humanSeconds(sec int64) string {
 	switch {
 	case sec < 60:
@@ -121,33 +85,33 @@ func adviceOfKind(kind string) string {
 }
 
 // describePersonAlert returns nil when there is no pending alert.
-func describePersonAlert(pr *personRow, now time.Time) map[string]any {
-	onlineNow := pr.lastTime != nil && now.Sub(*pr.lastTime) <= 120*time.Second
+func describePersonAlert(pr *vitalrepo.DeviceAlertState, now time.Time) map[string]any {
+	onlineNow := pr.LastSeen != nil && now.Sub(*pr.LastSeen) <= 120*time.Second
 	// 已人工确认过、且设备没有重新上线过 → 不再重复报"离线/从未上报"。
 	// handled_seq = -1 是"从未确认"哨兵。
-	offlineAcknowledged := pr.handledSeq >= pr.bootSeq && pr.handledSeq >= 0 && !onlineNow
+	offlineAcknowledged := pr.HandledSeq >= pr.BootSeq && pr.HandledSeq >= 0 && !onlineNow
 	var reasons, details []string
-	if pr.oldID == nil {
+	if pr.ResidentID == nil {
 		reasons = append(reasons, "未绑定老人")
 		details = append(details, "设备还没有绑定到老人，采集到的数据无法归到具体人身上。")
 	}
 	if !offlineAcknowledged {
-		if pr.lastTime == nil {
+		if pr.LastSeen == nil {
 			reasons = append(reasons, "从未上报")
 			details = append(details, "设备登记后一直没有心跳和数据上报，可能是手表未开机或服务器地址填错。")
 		} else {
-			offlineSec := int64(now.Sub(*pr.lastTime) / time.Second)
+			offlineSec := int64(now.Sub(*pr.LastSeen) / time.Second)
 			if offlineSec > 120 {
 				reasons = append(reasons, "离线 "+humanSeconds(offlineSec))
-				details = append(details, "最后一次心跳是 "+pr.lastTime.Format(tsLayout)+"，超过 2 分钟没有上报。")
+				details = append(details, "最后一次心跳是 "+pr.LastSeen.Format(tsLayout)+"，超过 2 分钟没有上报。")
 			}
 		}
 	}
-	if pr.battery != nil && *pr.battery >= 0 && *pr.battery < 20 {
-		reasons = append(reasons, "电量低（"+strconv.Itoa(*pr.battery)+"%）")
+	if pr.Battery != nil && *pr.Battery >= 0 && *pr.Battery < 20 {
+		reasons = append(reasons, "电量低（"+strconv.Itoa(*pr.Battery)+"%）")
 		details = append(details, "电量低于 20%，需要提醒老人充电。")
 	}
-	if pr.hrf == nil || pr.hrl == nil || pr.bpf == nil || pr.bpl == nil {
+	if pr.HRHigh == nil || pr.HRLow == nil || pr.BPHigh == nil || pr.BPLow == nil {
 		reasons = append(reasons, "未配置心率血压阈值")
 		details = append(details, "该设备在「手表信息」里没有心率/血压的正常上下限，异常判定没有依据，请先补全。")
 	}
@@ -155,21 +119,21 @@ func describePersonAlert(pr *personRow, now time.Time) map[string]any {
 		return nil
 	}
 	oldName := "（未绑定）"
-	if pr.oldID != nil && pr.oldName != nil {
-		oldName = *pr.oldName
+	if pr.ResidentID != nil && pr.ResidentName != nil {
+		oldName = *pr.ResidentName
 	}
 	occurTime := ""
-	if pr.lastTime != nil {
-		occurTime = pr.lastTime.Format(tsLayout)
-	} else if pr.createTime != nil {
-		occurTime = pr.createTime.Format(tsLayout)
+	if pr.LastSeen != nil {
+		occurTime = pr.LastSeen.Format(tsLayout)
+	} else if pr.CreatedAt != nil {
+		occurTime = pr.CreatedAt.Format(tsLayout)
 	}
 	return map[string]any{
 		"kind": "person", "kindText": "人员不合格",
 		"reason": strings.Join(reasons, "；"), "detail": strings.Join(details, "；"),
 		"value": "", "threshold": "", "occurTime": occurTime,
-		"recordId": nil, "deviceId": pr.deviceID, "deviceNo": pr.deviceNo,
-		"alias": pr.alias, "oldPersonName": oldName,
+		"recordId": nil, "deviceId": pr.DeviceID, "deviceNo": pr.DeviceNo,
+		"alias": pr.Alias, "oldPersonName": oldName,
 	}
 }
 
@@ -209,5 +173,3 @@ func (h *Handler) findRatepreAlert(ctx context.Context, q dbstore.RowQuerier, de
 		"deviceId": deviceID, "oldPersonName": oldName,
 	}, nil
 }
-
-// POST /api/v1/device/alertCounts —— 各设备未处理异常数（ADMIN，红点）。

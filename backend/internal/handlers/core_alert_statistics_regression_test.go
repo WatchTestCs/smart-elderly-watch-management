@@ -8,17 +8,18 @@ import (
 	"suining-care/internal/auth"
 	"suining-care/internal/health"
 	"suining-care/internal/session"
+	"suining-care/internal/vitalrepo"
 )
 
 func TestContinuousZeroBatteryAlert(t *testing.T) {
 	now := time.Now()
 	id := int64(1)
 	low, high := 55, 110
-	pr := personRow{deviceID: 1, oldID: &id, lastTime: &now, hrf: &high, hrl: &low, bpf: &high, bpl: &low}
+	pr := vitalrepo.DeviceAlertState{DeviceID: 1, ResidentID: &id, LastSeen: &now, HRHigh: &high, HRLow: &low, BPHigh: &high, BPLow: &low}
 	for _, battery := range []int{-1, 0, 19, 20} {
-		pr.battery = &battery
+		pr.Battery = &battery
 		if battery == -1 {
-			pr.battery = nil
+			pr.Battery = nil
 		}
 		alert := describePersonAlert(&pr, now)
 		want := battery == 0 || battery == 19

@@ -70,11 +70,6 @@ func (h *Handler) countVitalAlerts(w http.ResponseWriter, r *http.Request) {
 	response.OK(w, map[string]any{"rateTotal": rate, "preTotal": pressure, "total": rate + pressure})
 }
 
-const (
-	pendingRate     = "(r.rate_state='1' AND (r.rate_handled_at IS NULL OR r.create_time > r.rate_handled_at))"
-	pendingPressure = "(r.pre_state='1' AND (r.pre_handled_at IS NULL OR r.create_time > r.pre_handled_at))"
-)
-
 // POST /api/v1/vitals/alerts/detail —— 查看一条异常记录的原因。
 func (h *Handler) getVitalAlert(w http.ResponseWriter, r *http.Request) {
 	m, ok := bodyMap(w, r)
