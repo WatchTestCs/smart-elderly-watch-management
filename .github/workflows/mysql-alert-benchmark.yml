@@ -1,0 +1,31 @@
+name: Disposable MySQL alert benchmark
+on:
+  push:
+    branches: [bench/mysql-alert-counts-524292ee]
+permissions:
+  contents: read
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: bench_only
+          MYSQL_ROOT_HOST: '%'
+        ports: ['3306:3306']
+        options: --health-cmd="mysqladmin ping" --health-interval=5s --health-timeout=4s --health-retries=30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5
+        with:
+          go-version-file: backend/go.mod
+          cache: false
+      - name: Compare identical MySQL histories
+        working-directory: backend
+        env:
+          TEST_MYSQL_DSN: root:bench_only@tcp(127.0.0.1:3306)/mysql?parseTime=true
+        run: go test ./internal/vitalrepo -run '^TestPendingCountsMySQL$' -bench '^BenchmarkPendingCountsMySQL$' -benchtime=3s -cpu=1,4 -count=3 -v
