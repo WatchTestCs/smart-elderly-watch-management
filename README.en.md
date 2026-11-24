@@ -85,6 +85,8 @@ Latest stable release: **2.1.0 · Windows x64**, published on [GitHub Releases](
 
 The interface may open when MySQL is unreachable, but login and data writes require a ready database. Backups must include stored image/health data, BLOB columns, and recoverable encryption keys. Migrating from an earlier PostgreSQL/S3 deployment requires stopping writers, backing up, and following the [MySQL-only migration guide](docs/MYSQL_ONLY_MIGRATION.md); the installer does not migrate data for you.
 
+Set `MYSQL_STATISTICS_MAX_CONNS` (0–64, default 0) to enable a dedicated health statistics pool on the same MySQL primary. Budget 20 business connections, one liveness connection, and the configured statistics connections per instance.
+
 ### Always-on deployments and local Compose
 
 The desktop starts a local Go child process and stops it when the window closes. To receive remote watch uploads and SOS continuously, deploy a separate server following the [care service deployment guide](docs/CARE_SERVICE_DEPLOYMENT.md), with HTTPS, access restrictions, monitoring, and staffed escalation procedures.

@@ -10,6 +10,7 @@ import (
 
 	"suining-care/internal/auth"
 	"suining-care/internal/carepolicy"
+	"suining-care/internal/careworkflow"
 	"suining-care/internal/response"
 	"suining-care/internal/session"
 )
@@ -54,19 +55,30 @@ func (h *Handler) beginScopedLocationRead(w http.ResponseWriter, r *http.Request
 // beginScopedResidentRead holds the actor's duty or family binding through
 // the protected query. Role changes and family unbinding cannot overtake it.
 func (h *Handler) beginScopedResidentRead(w http.ResponseWriter, r *http.Request, oldID int64, action carepolicy.Action) (*sql.Tx, bool) {
+	return beginScopedResidentReadOn(w, r, h.DB.DB, oldID, action)
+}
+
+func beginScopedResidentReadOn(w http.ResponseWriter, r *http.Request, pool *sql.DB, oldID int64, action carepolicy.Action) (*sql.Tx, bool) {
 	p, ok := principalOr401(w, r)
 	if !ok {
 		return nil, false
 	}
 	if p.Role == auth.RoleAdmin {
-		tx, _, ok := h.beginCareRead(w, r, p.ID, action)
-		return tx, ok
+		tx, _, err := careworkflow.BeginAuthorized(r.Context(), pool, p.ID, action)
+		if errors.Is(err, careworkflow.ErrCapabilityDenied) {
+			response.JSON(w, http.StatusForbidden, map[string]any{"code": "ACCESS_DENIED", "message": "岗位无此操作权限"})
+			return nil, false
+		}
+		if internalError(w, err) {
+			return nil, false
+		}
+		return tx, true
 	}
 	if p.Role != auth.RoleFamily {
 		response.JSON(w, http.StatusForbidden, map[string]any{"code": "ACCESS_DENIED"})
 		return nil, false
 	}
-	tx, err := h.DB.BeginTx(r.Context(), &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	tx, err := pool.BeginTx(r.Context(), &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if internalError(w, err) {
 		return nil, false
 	}

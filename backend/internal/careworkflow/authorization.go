@@ -7,7 +7,6 @@ import (
 
 	"suining-care/internal/carepolicy"
 	"suining-care/internal/carerepo"
-	"suining-care/internal/db"
 )
 
 var ErrCapabilityDenied = errors.New("care capability denied")
@@ -15,7 +14,9 @@ var ErrCapabilityDenied = errors.New("care capability denied")
 // BeginAuthorized holds the current administrator role and explicit duty until
 // the caller commits or rolls back. Acquire business resource locks only after
 // this call, so revocation and resource operations use a consistent order.
-func BeginAuthorized(ctx context.Context, store *db.Database, actor int64, action carepolicy.Action) (*sql.Tx, carepolicy.Duty, error) {
+func BeginAuthorized(ctx context.Context, store interface {
+	BeginTx(context.Context, *sql.TxOptions) (*sql.Tx, error)
+}, actor int64, action carepolicy.Action) (*sql.Tx, carepolicy.Duty, error) {
 	tx, err := store.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		return nil, "", err

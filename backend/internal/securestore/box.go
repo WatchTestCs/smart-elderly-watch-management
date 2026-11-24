@@ -73,10 +73,16 @@ func New(encoded string) (*Box, error) {
 	return &Box{aead: aead, key: key}, nil
 }
 func (b *Box) Seal(text, scope string) (string, error) {
+	return b.SealBytes([]byte(text), scope)
+}
+
+// SealBytes accepts an already encoded payload without a string round trip.
+// The authenticated envelope format and fresh random nonce are unchanged.
+func (b *Box) SealBytes(text []byte, scope string) (string, error) {
 	if b == nil {
 		return "", errors.New("encryption key is not configured")
 	}
-	nonce := make([]byte, b.aead.NonceSize())
+	nonce := make([]byte, b.aead.NonceSize(), b.aead.NonceSize()+len(text)+b.aead.Overhead())
 	if _, err := rand.Read(nonce); err != nil {
 		return "", err
 	}
@@ -85,8 +91,10 @@ func (b *Box) Seal(text, scope string) (string, error) {
 		prefix += "v2:" + b.active + ":"
 		scope += "\x00" + b.active
 	}
-	data := b.aead.Seal(nonce, nonce, []byte(text), []byte(scope))
-	return prefix + base64.RawStdEncoding.EncodeToString(data), nil
+	data := b.aead.Seal(nonce, nonce, text, []byte(scope))
+	encoded := make([]byte, len(prefix), len(prefix)+base64.RawStdEncoding.EncodedLen(len(data)))
+	copy(encoded, prefix)
+	return string(base64.RawStdEncoding.AppendEncode(encoded, data)), nil
 }
 func (b *Box) Open(text, scope string) (string, error) {
 	if b == nil || !strings.HasPrefix(text, Prefix) {

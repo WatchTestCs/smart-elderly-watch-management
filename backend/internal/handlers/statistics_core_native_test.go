@@ -96,7 +96,11 @@ func TestCoreColumnCacheParity(t *testing.T) {
 }
 
 func TestCoreStatisticsMySQL(t *testing.T) {
+	t.Setenv("MYSQL_STATISTICS_MAX_CONNS", "12")
 	pool := testDatabase(t)
+	if pool.StatisticsPool() == pool.DB || pool.StatisticsPool().Stats().MaxOpenConnections != 12 {
+		t.Fatal("statistics pool isolation not enabled")
+	}
 	seedDevice(t, pool)
 	seedCareAdminDuty(t, pool, 11, "supervisor")
 	h := New(pool, session.NewStore(time.Hour), config.Config{HealthCacheBytes: 8 << 20, DataKey: base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{7}, 32))})
@@ -144,6 +148,7 @@ func TestCoreStatisticsMySQL(t *testing.T) {
 	}
 	t.Logf("20 distinct warm windows: native mean=%s SQL mean=%s", nativeTime/20, sqlTime/20)
 	query.From, query.To = at.Add(time.Minute), at.Add(131*time.Minute)
+	observability.Default.Set("suining_health_core_incremental_hits_total", 0)
 	samples[1].Version, samples[1].Value = 2, health.Number(120)
 	batch["samples"] = []health.Sample{samples[1]}
 	api(t, plain.healthBatch, batch)
@@ -152,6 +157,18 @@ func TestCoreStatisticsMySQL(t *testing.T) {
 	batch["samples"] = []health.Sample{samples[1]}
 	api(t, plain.healthBatch, batch)
 	check()
+	// A moved point crosses the existing projection's coverage.
+	samples[2].Version = 2
+	samples[2].Start = at.Add(300 * time.Minute)
+	samples[2].End = samples[2].Start
+	batch["samples"] = []health.Sample{samples[2]}
+	api(t, plain.healthBatch, batch)
+	check()
+	metrics = httptest.NewRecorder()
+	observability.Default.ServeHTTP(metrics, httptest.NewRequest("GET", "/metrics", nil))
+	if !strings.Contains(metrics.Body.String(), "suining_health_core_incremental_hits_total 3\n") {
+		t.Fatalf("correction, deletion and move did not all use incremental projection")
+	}
 	pool.Close()
 	if got := callAPI(admin, query); got.Code != http.StatusInternalServerError {
 		t.Fatalf("database outage returned %d", got.Code)

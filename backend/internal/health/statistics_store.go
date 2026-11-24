@@ -31,13 +31,14 @@ func StatisticsRevision(ctx context.Context, store db.RowQuerier, residentID int
 
 // LoadStatisticsSamples returns only samples inside the requested window,
 // retaining exact-byte matching under MySQL's trailing-space-insensitive collations.
-func LoadStatisticsSamples(ctx context.Context, store db.RowsQuerier, residentID int64, query StatisticsQuery, box *securestore.Box) ([]Sample, int, bool, error) {
+func LoadStatisticsSamples(ctx context.Context, store db.RowsQuerier, residentID int64, query StatisticsQuery, box *securestore.Box, collectIDs bool) ([]Sample, []string, int, bool, error) {
 	sourceFilter := "BINARY source=BINARY ? AND BINARY source_device=BINARY ? AND BINARY metric=BINARY ? AND BINARY semantics=BINARY ?"
 	upper := query.To.UnixMicro()
 	if query.To.Nanosecond()%1000 != 0 {
 		upper++
 	}
 	samples := []Sample{}
+	var ids []string
 	candidates := 0
 	projectionEligible := true
 	err := db.QueryEach(ctx, store, func(rows *sql.Rows) error {
@@ -61,6 +62,9 @@ func LoadStatisticsSamples(ctx context.Context, store db.RowsQuerier, residentID
 		}
 		if sample.InWindow(query.From, query.To) {
 			samples = append(samples, sample)
+			if collectIDs {
+				ids = append(ids, id)
+			}
 		}
 		return nil
 	}, `SELECT sample_id,revision,payload,payload_cipher,sample_start FROM health_sample
@@ -70,7 +74,7 @@ func LoadStatisticsSamples(ctx context.Context, store db.RowsQuerier, residentID
 		 ORDER BY revision LIMIT 10001`,
 		residentID, query.Source, query.SourceDevice, query.Metric, query.Semantics, upper, query.From.UnixMicro(), query.Semantics, query.From.UnixMicro())
 	if err != nil {
-		return nil, 0, false, err
+		return nil, nil, 0, false, err
 	}
-	return samples, candidates, projectionEligible, nil
+	return samples, ids, candidates, projectionEligible, nil
 }

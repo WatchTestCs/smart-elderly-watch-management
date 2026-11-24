@@ -10,11 +10,25 @@ import (
 // Repositories execute native MySQL through database/sql directly.
 type Database struct {
 	*sql.DB
-	healthPool *sql.DB
+	healthPool     *sql.DB
+	statisticsPool *sql.DB
 }
 
 func (d *Database) Close() error {
-	return errors.Join(d.healthPool.Close(), d.DB.Close())
+	var statisticsErr error
+	if d.statisticsPool != nil {
+		statisticsErr = d.statisticsPool.Close()
+	}
+	return errors.Join(statisticsErr, d.healthPool.Close(), d.DB.Close())
+}
+
+// StatisticsPool uses the same primary MySQL server, with an independent
+// connection budget. It never bypasses authorization or transaction locks.
+func (d *Database) StatisticsPool() *sql.DB {
+	if d.statisticsPool != nil {
+		return d.statisticsPool
+	}
+	return d.DB
 }
 
 func (d *Database) PingContext(ctx context.Context) error {

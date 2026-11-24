@@ -52,7 +52,7 @@ func protectProjection(box *securestore.Box, raw json.RawMessage, scope string) 
 	if box == nil {
 		return ProjectionPayload{JSON: raw}, nil
 	}
-	cipher, err := box.Seal(string(raw), scope)
+	cipher, err := box.SealBytes(raw, scope)
 	if err != nil || len(cipher) > maxProjectionCipherBytes {
 		return ProjectionPayload{}, errors.New("cannot seal health projection payload")
 	}

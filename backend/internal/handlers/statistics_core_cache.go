@@ -4,6 +4,7 @@ import (
 	"container/list"
 	"hash/maphash"
 	"math"
+	"sort"
 	"sync"
 	"time"
 
@@ -23,12 +24,13 @@ type coreSeries struct {
 	unit               string
 	timestamps         []int64
 	values             []float64
+	ids                []string
 	exactInteger       bool
 	expires            time.Time
 }
 
 func (s *coreSeries) cost() int64 {
-	return int64(cap(s.timestamps)*8 + cap(s.values)*8 + len(s.key.source) + len(s.key.device) + len(s.unit) + statisticsCacheEntryOverhead)
+	return int64(cap(s.timestamps)*8 + cap(s.values)*8 + cap(s.ids)*80 + len(s.key.source) + len(s.key.device) + len(s.unit) + statisticsCacheEntryOverhead)
 }
 
 type coreShard struct {
@@ -71,7 +73,7 @@ func (c *coreCache) get(key coreKey, revision, from, to int64, now time.Time) (h
 		return health.Statistics{}, false
 	}
 	s := e.Value.(*coreSeries)
-	if !now.Before(s.expires) || s.revision < revision {
+	if !now.Before(s.expires) {
 		shard.remove(e)
 		shard.mu.Unlock()
 		return health.Statistics{}, false
@@ -150,4 +152,108 @@ func makeCoreSeries(key coreKey, revision, from, to int64, samples []health.Samp
 		s.values = append(s.values, v)
 	}
 	return s
+}
+
+// stale returns an immutable projection only when it can be updated using
+// committed changes without changing floating-point arithmetic.
+func (c *coreCache) stale(key coreKey, revision, from, to int64, now time.Time) *coreSeries {
+	if c == nil {
+		return nil
+	}
+	shard := c.shard(key)
+	shard.mu.Lock()
+	defer shard.mu.Unlock()
+	e := shard.entries[key]
+	if e == nil {
+		return nil
+	}
+	s := e.Value.(*coreSeries)
+	if !now.Before(s.expires) || s.revision >= revision || from < s.from || to > s.to ||
+		!s.exactInteger || len(s.ids) != len(s.values) {
+		return nil
+	}
+	return s
+}
+
+type corePoint struct {
+	id    string
+	at    int64
+	value float64
+}
+
+// applyCoreChanges is restricted to exact nonnegative integer series so
+// timestamp sorting cannot change the scalar sum or signed-zero extrema.
+// Each changed identity replaces its old observation, including tombstones
+// and corrections that move a point across the coverage boundary.
+func applyCoreChanges(s *coreSeries, revision int64, changes []health.Record, now time.Time) *coreSeries {
+	if !s.exactInteger || len(s.ids) != len(s.values) || len(changes) == 0 || changes[len(changes)-1].Revision != revision {
+		return nil
+	}
+	updated := make(map[string]corePoint, len(changes))
+	previous := s.revision
+	for _, record := range changes {
+		p := record.Sample
+		if record.OldID != s.key.resident || len(record.SampleID) != 64 || record.Revision <= previous || record.Revision > revision {
+			return nil
+		}
+		previous = record.Revision
+		if p.Source != s.key.source || p.SourceDevice != s.key.device || p.Metric != "heart_rate" || p.Semantics != "instant" {
+			continue
+		}
+		point := corePoint{id: record.SampleID}
+		at := p.Start.UnixNano()
+		if !time.Unix(0, at).Equal(p.Start) {
+			return nil
+		}
+		if !p.Deleted && at >= s.from && at < s.to {
+			if p.TimeBasis != "" || p.Unit != "count/min" || p.Value == nil {
+				return nil
+			}
+			v := *p.Value
+			if math.Signbit(v) || !(v <= 900719925474) || math.Trunc(v) != v {
+				return nil
+			}
+			point.at, point.value = at, v
+		} else {
+			point.id = ""
+		}
+		updated[record.SampleID] = point
+	}
+	next := *s
+	next.revision = revision
+	next.expires = now.Add(statisticsCacheTTL)
+	if len(updated) == 0 {
+		return &next
+	}
+	changedPoints := make([]corePoint, 0, len(updated))
+	for _, point := range updated {
+		if point.id != "" {
+			changedPoints = append(changedPoints, point)
+		}
+	}
+	sort.Slice(changedPoints, func(i, j int) bool { return changedPoints[i].at < changedPoints[j].at })
+	points := make([]corePoint, 0, len(s.ids)+len(changedPoints))
+	j := 0
+	for i, id := range s.ids {
+		if _, changed := updated[id]; changed {
+			continue
+		}
+		for j < len(changedPoints) && changedPoints[j].at < s.timestamps[i] {
+			points = append(points, changedPoints[j])
+			j++
+		}
+		points = append(points, corePoint{id, s.timestamps[i], s.values[i]})
+	}
+	points = append(points, changedPoints[j:]...)
+	if len(points) > 10000 {
+		return nil
+	}
+	next.timestamps = make([]int64, len(points))
+	next.values = make([]float64, len(points))
+	next.ids = make([]string, len(points))
+	next.unit = "count/min"
+	for i, point := range points {
+		next.timestamps[i], next.values[i], next.ids[i] = point.at, point.value, point.id
+	}
+	return &next
 }

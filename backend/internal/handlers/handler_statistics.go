@@ -1,11 +1,14 @@
 package handlers
 
 import (
+	"context"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"time"
 
+	"suining-care/internal/carepolicy"
 	"suining-care/internal/health"
 	"suining-care/internal/observability"
 	"suining-care/internal/response"
@@ -24,7 +27,8 @@ func (h *Handler) healthStatistics(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	tx, ok := h.beginScopedHealthRead(w, r, oldID)
+	pool := h.DB.StatisticsPool()
+	tx, ok := beginScopedResidentReadOn(w, r, pool, oldID, carepolicy.ReadHealthData)
 	if !ok {
 		return
 	}
@@ -66,6 +70,20 @@ func (h *Handler) healthStatistics(w http.ResponseWriter, r *http.Request) {
 						response.OK(w, map[string]any{"statistics": cached, "source": req.Source, "sourceDevice": req.SourceDevice, "metric": req.Metric, "semantics": req.Semantics})
 						return
 					}
+					if previous := h.healthCache.core.stale(seriesKey, revision, from, to, time.Now()); previous != nil {
+						next := h.refreshCoreProjection(r.Context(), tx, previous, revision)
+						if next != nil {
+							if result, ok := coreQuery(next, from, to); ok {
+								if internalError(w, tx.Commit()) {
+									return
+								}
+								h.healthCache.core.put(next)
+								observability.Default.Add("suining_health_core_incremental_hits_total", 1)
+								response.OK(w, map[string]any{"statistics": result, "source": req.Source, "sourceDevice": req.SourceDevice, "metric": req.Metric, "semantics": req.Semantics})
+								return
+							}
+						}
+					}
 				}
 			}
 		} else if err != nil {
@@ -74,10 +92,10 @@ func (h *Handler) healthStatistics(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	observability.Default.Add("suining_health_statistics_db_loads_total", 1)
-	samples, candidates, projectionEligible, err := health.LoadStatisticsSamples(r.Context(), tx, oldID, health.StatisticsQuery{
+	samples, ids, candidates, projectionEligible, err := health.LoadStatisticsSamples(r.Context(), tx, oldID, health.StatisticsQuery{
 		Source: req.Source, SourceDevice: req.SourceDevice, Metric: req.Metric,
 		Semantics: req.Semantics, From: req.From, To: req.To,
-	}, h.Box)
+	}, h.Box, eligible)
 	if internalError(w, err) {
 		return
 	}
@@ -96,10 +114,13 @@ func (h *Handler) healthStatistics(w http.ResponseWriter, r *http.Request) {
 	if cacheable {
 		// A single SQL result is a consistent snapshot. Admit it only if no
 		// sample write committed between the first clock read and this check.
-		current, err := health.StatisticsRevision(r.Context(), h.DB, oldID)
+		current, err := health.StatisticsRevision(r.Context(), pool, oldID)
 		if err == nil && current == revision {
 			if eligible && projectionEligible {
-				h.healthCache.core.put(makeCoreSeries(seriesKey, revision, from, to, samples, candidates, time.Now()))
+				if series := makeCoreSeries(seriesKey, revision, from, to, samples, candidates, time.Now()); series != nil {
+					series.ids = ids
+					h.healthCache.core.put(series)
+				}
 			}
 			b, err := json.Marshal(out)
 			if err == nil {
@@ -110,6 +131,24 @@ func (h *Handler) healthStatistics(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	response.OK(w, map[string]any{"statistics": out, "source": req.Source, "sourceDevice": req.SourceDevice, "metric": req.Metric, "semantics": req.Semantics})
+}
+
+// Refresh only a complete committed change range. An owner write during the
+// read invalidates the candidate; the ordinary snapshot path remains available.
+func (h *Handler) refreshCoreProjection(ctx context.Context, tx *sql.Tx, previous *coreSeries, revision int64) *coreSeries {
+	records, err := health.StatisticsChanges(ctx, tx, previous.key.resident, previous.revision, revision, h.Box)
+	if err != nil {
+		return nil
+	}
+	next := applyCoreChanges(previous, revision, records, time.Now())
+	if next == nil {
+		return nil
+	}
+	current, err := health.StatisticsRevision(ctx, tx, previous.key.resident)
+	if err != nil || current != revision {
+		return nil
+	}
+	return next
 }
 
 type healthStatisticsRequest struct {

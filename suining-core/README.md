@@ -24,8 +24,8 @@ authorized. The Go adapter must establish that before admission. In particular:
 - Obtain a strictly positive committed `health_owner_clock` revision and
   read a consistent snapshot; revalidate that revision before publishing it.
   Reject incomplete snapshots, mixed units or identities, legacy time basis,
-  candidate-count discrepancies and unsupported timestamp ranges. Never sort
-  values into a different floating-point accumulation order.
+  candidate-count discrepancies and unsupported timestamp ranges. Only reorder exact nonnegative integer values when every partial sum is
+  provably representable; other values retain their original accumulation order.
 - Serve only the same identity, revision and a fully covered window. Never
   return a cache hit when MySQL validation fails. Do not cache errors.
 - Bound total projection memory, evict cold entries, and use the existing Go/MySQL
@@ -45,11 +45,25 @@ before a hit is returned. Cache admission rechecks that revision after
 the original database read. On a miss, unsupported input or ABI rejection,
 the ordinary Go/MySQL path remains available.
 
+For eligible integer heart-rate projections, retain the sample IDs and advance
+an older view using at most 256 committed owner changes. Verify each event's
+identity, the final revision, and the live owner clock. Replace corrected points,
+remove tombstones and merge new points in timestamp order; unsupported inputs,
+expired views or incomplete changes use a fresh MySQL snapshot. This does not
+provide a durable second store.
+
+`MYSQL_STATISTICS_MAX_CONNS` enables an independent statistics connection pool
+on the same primary (0/default: shared; 1–64: dedicated). The existing business
+pool remains capped at 20 and the liveness pool at 1; budget all pools and
+replicas against MySQL `max_connections`. Database/sql bounds active statistics
+transactions and waits for request-context cancellation. Authorization locks
+and the authoritative commit semantics are unchanged.
+
 The experimental baseline path runs the 28-day daily-median and fixed-anchor
 heart-rate algorithm in Rust after the original authorized MySQL read. It
 keeps the resident, device, binding, source and date filters in Go. Small
-or unsupported observations use the original Go evaluator. Incremental
-updates across committed revisions are not yet implemented.
+or unsupported observations use the original Go evaluator. The personal
+baseline itself is still recomputed from its authorized database snapshot.
 
 The SIMD reducer uses AVX-512F, AVX2 or NEON when detected and the whole
 series consists of nonnegative exact integers (excluding negative zero)
@@ -77,8 +91,8 @@ Build the Rust archive again whenever its sources change. The ABI symbol
 is versioned. Use only a trusted local build artifact.
 MySQL tests require a disposable `TEST_MYSQL_DSN`; without it they skip.
 The desktop packaging path remains unchanged. Linux and ARM64 builds,
-isolated MySQL 8.4 verification, end-to-end latency/throughput and a
-72-hour soak are still release gates, not completed evidence.
+production deployment and broader workload verification remain separate from
+isolated integration and benchmark results.
 
 ## Verification
 

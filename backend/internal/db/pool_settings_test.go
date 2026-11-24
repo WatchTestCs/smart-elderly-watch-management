@@ -2,6 +2,19 @@ package db
 
 import "testing"
 
+func TestMySQLStatisticsConnectionLimit(t *testing.T) {
+	for _, tc := range []struct {
+		raw  string
+		want int
+		fail bool
+	}{{"", 0, false}, {"12", 12, false}, {"64", 64, false}, {"65", 0, true}, {"-1", 0, true}, {"bad", 0, true}} {
+		got, err := mysqlStatisticsConnectionLimit(tc.raw)
+		if got != tc.want || (err != nil) != tc.fail {
+			t.Fatalf("%q: %d %v", tc.raw, got, err)
+		}
+	}
+}
+
 func TestMySQLIdleConnectionLimit(t *testing.T) {
 	for _, tc := range []struct {
 		input string
