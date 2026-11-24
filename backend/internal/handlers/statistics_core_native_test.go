@@ -35,7 +35,7 @@ func TestCoreColumnCacheParity(t *testing.T) {
 	samples := coreSamples(at, 256)
 	key := coreKey{1, "watch", "WATCH001"}
 	c := newCoreCache(4 << 20)
-	series := makeCoreSeries(key, 7, at.UnixNano(), at.Add(256*time.Minute).UnixNano(), samples, len(samples), at)
+	series := makeCoreSeries(key, 7, at.UnixNano(), at.Add(256*time.Minute).UnixNano(), samples, nil, len(samples), at)
 	if series == nil {
 		t.Fatal("admission rejected valid samples")
 	}
@@ -65,7 +65,7 @@ func TestCoreColumnCacheParity(t *testing.T) {
 		if fractional {
 			x[17].Value = health.Number(71.125)
 		}
-		s := makeCoreSeries(key, 7, at.UnixNano(), at.Add(256*time.Minute).UnixNano(), x, len(x), at)
+		s := makeCoreSeries(key, 7, at.UnixNano(), at.Add(256*time.Minute).UnixNano(), x, nil, len(x), at)
 		if s == nil || s.exactInteger == fractional {
 			t.Fatal("incorrect SIMD admission")
 		}
@@ -172,5 +172,25 @@ func TestCoreStatisticsMySQL(t *testing.T) {
 	pool.Close()
 	if got := callAPI(admin, query); got.Code != http.StatusInternalServerError {
 		t.Fatalf("database outage returned %d", got.Code)
+	}
+}
+
+func TestCoreRebuildAfterHistoricalCorrection(t *testing.T) {
+	at := time.Date(2026, 10, 22, 9, 0, 0, 0, time.UTC)
+	samples := coreSamples(at, 3)
+	samples[0], samples[2] = samples[2], samples[0]
+	ids := []string{"third", "second", "first"}
+	to := at.Add(3 * time.Minute)
+	series := makeCoreSeries(coreKey{1, "watch", "WATCH001"}, 7, at.UnixNano(), to.UnixNano(), samples, ids, len(samples), at)
+	if series == nil || !reflect.DeepEqual(series.ids, []string{"first", "second", "third"}) {
+		t.Fatalf("unordered integer projection not admitted or IDs misplaced: %+v", series)
+	}
+	got, ok := coreQuery(series, at.UnixNano(), at.Add(time.Minute).UnixNano())
+	if !ok || got.Count != 1 || *got.Mean != 60 {
+		t.Fatalf("reordered projection mismatch: %+v", got)
+	}
+	samples[0].Value = health.Number(71.125)
+	if series := makeCoreSeries(coreKey{1, "watch", "WATCH001"}, 8, at.UnixNano(), to.UnixNano(), samples, nil, len(samples), at); series != nil {
+		t.Fatal("unordered fractional projection must preserve scalar order via fallback")
 	}
 }

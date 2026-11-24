@@ -69,3 +69,42 @@ func TestLatestUsesSingleAuthorizedConnection(t *testing.T) {
 		}
 	}
 }
+
+func TestFamilyScopedReadsAvoidUnlockedLookup(t *testing.T) {
+	t.Setenv("MYSQL_STATISTICS_MAX_CONNS", "0")
+	pool := testDatabase(t)
+	seedDevice(t, pool)
+	mustExec(t, pool, "INSERT INTO family(family_id,family_phone) VALUES(1,'13800000001')")
+	mustExec(t, pool, "UPDATE oldperson SET family_id=1 WHERE old_id=1")
+	h := testHandler(t, pool)
+	pool.SetMaxOpenConns(1)
+	pool.SetMaxIdleConns(1)
+	selects := func() int64 {
+		t.Helper()
+		var name string
+		var count int64
+		if err := pool.QueryRowContext(t.Context(), "SHOW SESSION STATUS LIKE 'Com_select'").Scan(&name, &count); err != nil {
+			t.Fatal(err)
+		}
+		return count
+	}
+	p := session.Principal{Role: auth.RoleFamily, ID: 1, OldID: 1}
+	handlers := []http.HandlerFunc{h.healthChanges, h.healthBaseline, h.listVitalHistory, h.getVitalChart, h.listActivityHistory, h.getActivityChart}
+	for _, handler := range handlers {
+		before := selects()
+		got := callAPI(withHealthPrincipal(h, p, handler), map[string]any{})
+		after := selects()
+		if got.Code != http.StatusOK || after-before != 2 {
+			t.Fatalf("family scoped read: HTTP %d, SELECTs=%d, body=%s", got.Code, after-before, got.Body)
+		}
+	}
+	mustExec(t, pool, "UPDATE oldperson SET family_id=NULL WHERE old_id=1")
+	for _, handler := range handlers {
+		before := selects()
+		got := callAPI(withHealthPrincipal(h, p, handler), map[string]any{})
+		after := selects()
+		if got.Code != http.StatusForbidden || after-before != 1 {
+			t.Fatalf("revoked family read: HTTP %d, SELECTs=%d", got.Code, after-before)
+		}
+	}
+}

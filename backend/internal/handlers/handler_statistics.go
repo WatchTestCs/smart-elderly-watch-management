@@ -34,7 +34,7 @@ func (h *Handler) healthStatistics(w http.ResponseWriter, r *http.Request) {
 	// The binding is checked once, under the transaction's shared lock.
 	// A separate unlocked family lookup cannot authorize the actual read.
 	pool := h.DB.StatisticsPool()
-	tx, ok := beginScopedResidentReadOn(w, r, pool, oldID, carepolicy.ReadHealthData)
+	tx, ok := beginScopedResidentReadOn(w, r, pool, oldID, carepolicy.ReadHealthData, sql.LevelRepeatableRead)
 	if !ok {
 		return
 	}
@@ -118,43 +118,30 @@ func (h *Handler) healthStatistics(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if cacheable {
-		// A single SQL result is a consistent snapshot. Admit it only if no
-		// sample write committed between the first clock read and this check.
-		current, err := health.StatisticsRevision(r.Context(), pool, oldID)
-		if err == nil && current == revision {
-			if eligible && projectionEligible {
-				if series := makeCoreSeries(seriesKey, revision, from, to, samples, candidates, time.Now()); series != nil {
-					series.ids = ids
-					h.healthCache.core.put(series)
-				}
+		// The clock and samples came from the same repeatable-read view.
+		// New requests still validate the current committed revision; a
+		// concurrent commit cannot cause this snapshot to be mislabeled.
+		if eligible && projectionEligible {
+			if series := makeCoreSeries(seriesKey, revision, from, to, samples, ids, candidates, time.Now()); series != nil {
+				h.healthCache.core.put(series)
 			}
-			b, err := json.Marshal(out)
-			if err == nil {
-				h.healthCache.put(key, revision, b, time.Now())
-			}
-		} else if err != nil {
-			observability.Default.Add("suining_health_cache_validation_errors_total", 1)
+		}
+		b, err := json.Marshal(out)
+		if err == nil {
+			h.healthCache.put(key, revision, b, time.Now())
 		}
 	}
 	response.OK(w, map[string]any{"statistics": out, "source": req.Source, "sourceDevice": req.SourceDevice, "metric": req.Metric, "semantics": req.Semantics})
 }
 
-// Refresh only a complete committed change range. An owner write during the
-// read invalidates the candidate; the ordinary snapshot path remains available.
+// Refresh only a complete committed change range within the same read view
+// as the caller's revision. The ordinary snapshot path remains available.
 func (h *Handler) refreshCoreProjection(ctx context.Context, tx *sql.Tx, previous *coreSeries, revision int64) *coreSeries {
 	records, err := health.StatisticsChanges(ctx, tx, previous.key.resident, previous.revision, revision, h.Box)
 	if err != nil {
 		return nil
 	}
-	next := applyCoreChanges(previous, revision, records, time.Now())
-	if next == nil {
-		return nil
-	}
-	current, err := health.StatisticsRevision(ctx, tx, previous.key.resident)
-	if err != nil || current != revision {
-		return nil
-	}
-	return next
+	return applyCoreChanges(previous, revision, records, time.Now())
 }
 
 type healthStatisticsRequest struct {

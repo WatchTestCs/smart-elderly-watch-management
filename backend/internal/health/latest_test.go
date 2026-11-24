@@ -83,3 +83,97 @@ func TestLatestKeySeparatesSeriesFields(t *testing.T) {
 		t.Fatal("distinct series share the same key")
 	}
 }
+
+func TestLatestRefreshMultipleSeriesInOneBatch(t *testing.T) {
+	database := dbtest.MySQL(t)
+	ctx := t.Context()
+	if _, err := database.ExecContext(ctx, "INSERT INTO oldperson(old_id,name) VALUES(1,'multi-series')"); err != nil {
+		t.Fatal(err)
+	}
+	now := time.Now().UTC().Truncate(time.Microsecond)
+	sample := Sample{RecordID: "first", Source: "watch", SourceDevice: "A", Metric: "heart_rate", Unit: "count/min", Value: Number(65), Start: now, End: now, Version: 1}
+	other := sample
+	other.SourceDevice = "B"
+	save := func(samples ...Sample) {
+		t.Helper()
+		tx, err := database.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer tx.Rollback()
+		if _, _, err = SaveBatch(ctx, tx, Owner{OldID: 1}, samples); err != nil {
+			t.Fatal(err)
+		}
+		if err = tx.Commit(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	save(sample, other)
+	if got, err := Latest(ctx, database, 1, nil); err != nil || len(got) != 2 {
+		t.Fatalf("initial projection: %v %v", got, err)
+	}
+	newer := sample
+	newer.RecordID, newer.Start, newer.End = "newer", now.Add(time.Minute), now.Add(time.Minute)
+	other.Deleted, other.Value, other.Version = true, nil, 2
+	third := sample
+	third.SourceDevice = "C"
+	save(newer, other, third)
+	got, err := Latest(ctx, database, 1, nil)
+	if err != nil || len(got) != 2 || got[0].Sample.SourceDevice != "A" || got[0].Sample.RecordID != "newer" || got[1].Sample.SourceDevice != "C" {
+		t.Fatalf("updated/deleted/inserted projection: %v %v", got, err)
+	}
+}
+
+func TestStatisticsCommittedSnapshot(t *testing.T) {
+	database := dbtest.MySQL(t)
+	ctx := t.Context()
+	if _, err := database.ExecContext(ctx, "INSERT INTO oldperson(old_id,name) VALUES(1,'snapshot')"); err != nil {
+		t.Fatal(err)
+	}
+	now := time.Now().UTC().Truncate(time.Microsecond)
+	sample := Sample{RecordID: "snapshot", Source: "watch", SourceDevice: "A", Metric: "heart_rate", Unit: "count/min", Semantics: "instant", Value: Number(65), Start: now, End: now, Version: 1}
+	save := func(s Sample) {
+		t.Helper()
+		tx, err := database.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer tx.Rollback()
+		if _, _, err := SaveBatch(ctx, tx, Owner{OldID: 1}, []Sample{s}); err != nil {
+			t.Fatal(err)
+		}
+		if err := tx.Commit(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	save(sample)
+	snapshot, err := database.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer snapshot.Rollback()
+	revision, err := StatisticsRevision(ctx, snapshot, 1)
+	if err != nil || revision <= 0 {
+		t.Fatalf("revision=%d: %v", revision, err)
+	}
+	sample.Version, sample.Value = 2, Number(83)
+	save(sample)
+	query := StatisticsQuery{Source: "watch", SourceDevice: "A", Metric: "heart_rate", Semantics: "instant", From: now.Add(-time.Second), To: now.Add(time.Second)}
+	samples, _, _, _, err := LoadStatisticsSamples(ctx, snapshot, 1, query, nil, true)
+	if err != nil || len(samples) != 1 || *samples[0].Value != 65 {
+		t.Fatalf("snapshot changed after concurrent commit: %v %v", samples, err)
+	}
+	if r, err := StatisticsRevision(ctx, snapshot, 1); err != nil || r != revision {
+		t.Fatalf("snapshot clock changed: %d %v", r, err)
+	}
+	if err := snapshot.Commit(); err != nil {
+		t.Fatal(err)
+	}
+	if r, err := StatisticsRevision(ctx, database, 1); err != nil || r <= revision {
+		t.Fatalf("new read missed committed revision: %d %v", r, err)
+	}
+	samples, _, _, _, err = LoadStatisticsSamples(ctx, database, 1, query, nil, true)
+	if err != nil || len(samples) != 1 || *samples[0].Value != 83 {
+		t.Fatalf("new read missed committed correction: %v %v", samples, err)
+	}
+}

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"errors"
 	"net/http"
 
@@ -34,7 +35,7 @@ func (h *Handler) healthLatest(w http.ResponseWriter, r *http.Request) {
 		write400(w, "请指定有效的老人编号")
 		return
 	}
-	tx, ok := beginScopedResidentReadOn(w, r, h.DB.StatisticsPool(), oldID, carepolicy.ReadHealthData)
+	tx, ok := beginScopedResidentReadOn(w, r, h.DB.StatisticsPool(), oldID, carepolicy.ReadHealthData, sql.LevelReadCommitted)
 	if !ok {
 		return
 	}

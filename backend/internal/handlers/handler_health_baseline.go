@@ -18,15 +18,19 @@ func (h *Handler) healthBaseline(w http.ResponseWriter, r *http.Request) {
 	if !decodeHealth(w, r, &req) {
 		return
 	}
-	var requested any
-	if req.OldID != nil {
-		requested = *req.OldID
-	}
-	oldID, ok := h.resolveOldID(w, r, requested)
+	p, ok := principalOr401(w, r)
 	if !ok {
 		return
 	}
+	oldID := p.OldID
+	if req.OldID != nil {
+		oldID = *req.OldID
+	}
 	if oldID < 1 {
+		// Preserve the prior family-denial and invalid-ID precedence.
+		if _, ok := h.resolveOldID(w, r, oldID); !ok {
+			return
+		}
 		write400(w, "请指定有效的老人编号")
 		return
 	}

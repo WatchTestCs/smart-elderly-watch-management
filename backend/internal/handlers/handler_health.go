@@ -153,10 +153,15 @@ func (h *Handler) healthChanges(w http.ResponseWriter, r *http.Request) {
 	if req.Limit == 0 {
 		req.Limit = 100
 	}
-	oldID, ok := h.resolveOptionalOldID(w, r, req.OldID)
+	p, ok := principalOr401(w, r)
 	if !ok {
 		return
 	}
+	oldID := req.OldID
+	if oldID == 0 {
+		oldID = p.OldID
+	}
+	// The scoped transaction below checks current family ownership.
 	tx, ok := h.beginScopedHealthRead(w, r, oldID)
 	if !ok {
 		return

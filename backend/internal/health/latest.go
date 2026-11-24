@@ -20,16 +20,6 @@ var ErrLatestTooManySeries = errors.New("health latest candidates exceed 10000")
 
 type latestQuerier interface {
 	QueryContext(context.Context, string, ...any) (*sql.Rows, error)
-	QueryRowContext(context.Context, string, ...any) *sql.Row
-}
-
-func latestReady(ctx context.Context, q latestQuerier, oldID int64) (bool, error) {
-	var id int64
-	err := q.QueryRowContext(ctx, "SELECT old_id FROM health_latest_ready WHERE old_id=?", oldID).Scan(&id)
-	if errors.Is(err, sql.ErrNoRows) {
-		return false, nil
-	}
-	return err == nil, err
 }
 
 func Latest(ctx context.Context, store *db.Database, oldID int64, box *securestore.Box) ([]Record, error) {
@@ -203,13 +193,16 @@ func insertLatest(ctx context.Context, tx *sql.Tx, rec Record, payload []byte, b
 	return err
 }
 
+type latestPrior struct {
+	record  Record
+	payload ProjectionPayload
+}
+
 func refreshLatest(ctx context.Context, tx *sql.Tx, o Owner, input []preparedSample, final []uint8, box *securestore.Box) error {
-	ready, err := latestReady(ctx, tx, o.OldID)
-	if err != nil || !ready {
-		return err
-	}
 	type series struct{ source, device, metric, semantics string }
-	seen := make(map[series]struct{}, len(final))
+	seen := make(map[series]struct{}, min(len(final), 8))
+	indices := make([]uint8, 0, min(len(final), 8))
+	keys := make([][32]byte, 0, min(len(final), 8))
 	for _, index := range final {
 		sample := input[index].sample
 		identity := series{sample.Source, sample.SourceDevice, sample.Metric, sample.Semantics}
@@ -217,25 +210,88 @@ func refreshLatest(ctx context.Context, tx *sql.Tx, o Owner, input []preparedSam
 			continue
 		}
 		seen[identity] = struct{}{}
-		if err = refreshLatestSeries(ctx, tx, o.OldID, sample, latestKey(sample), box); err != nil {
+		indices = append(indices, index)
+		keys = append(keys, latestKey(sample))
+	}
+	// The owner-clock lock already serializes initial projection construction
+	// and sample writes. Read the ready marker and lock the affected prior rows
+	// together instead of making a separate round trip for every series.
+	args := make([]any, 0, len(keys)+1)
+	for i := range keys {
+		args = append(args, keys[i][:])
+	}
+	args = append(args, o.OldID)
+	rows, err := tx.QueryContext(ctx, "SELECT l.series_key,l.sample_id,l.device_id,COALESCE(l.epoch,0),COALESCE(l.revision,0),l.payload,l.payload_cipher"+
+		" FROM health_latest_ready r LEFT JOIN health_sample_latest l ON l.old_id=r.old_id AND l.series_key IN ("+
+		strings.TrimSuffix(strings.Repeat("?,", len(keys)), ",")+") WHERE r.old_id=? FOR UPDATE", args...)
+	if err != nil {
+		return err
+	}
+	ready := false
+	priors := make(map[[32]byte]latestPrior, len(keys))
+	for rows.Next() {
+		ready = true
+		var key []byte
+		var id sql.NullString
+		var prior latestPrior
+		if err = rows.Scan(&key, &id, &prior.record.DeviceID, &prior.record.Epoch, &prior.record.Revision, &prior.payload.JSON, &prior.payload.Cipher); err != nil {
+			break
+		}
+		if id.Valid {
+			prior.record.SampleID = id.String
+			priors[[32]byte(key)] = prior
+		}
+	}
+	if err == nil {
+		err = rows.Err()
+	}
+	rows.Close()
+	if err != nil || !ready {
+		return err
+	}
+	// Resolve all winners under the same owner lock, then write only changed
+	// projections. Multiple series share one upsert and one delete statement.
+	upserts := make([]any, 0, len(keys)*8)
+	deletes := []any{o.OldID}
+	for i, index := range indices {
+		prior, found := priors[keys[i]]
+		change, err := refreshLatestSeries(ctx, tx, o.OldID, input[index].sample, keys[i], prior, found, box)
+		if err != nil {
+			return err
+		}
+		if !change.changed {
+			continue
+		}
+		if change.winner == nil {
+			deletes = append(deletes, keys[i][:])
+			continue
+		}
+		rec := change.winner
+		upserts = append(upserts, o.OldID, keys[i][:], rec.SampleID, rec.DeviceID, rec.Epoch, rec.Revision, change.payload.JSON, change.payload.Cipher)
+	}
+	if len(deletes) > 1 {
+		if _, err = tx.ExecContext(ctx, "DELETE FROM health_sample_latest WHERE old_id=? AND series_key IN ("+
+			strings.TrimSuffix(strings.Repeat("?,", len(deletes)-1), ",")+")", deletes...); err != nil {
 			return err
 		}
 	}
-	return nil
+	if len(upserts) != 0 {
+		_, err = tx.ExecContext(ctx, batchSQL(batchLatest, len(upserts)/8), upserts...)
+	}
+	return err
 }
 
-func refreshLatestSeries(ctx context.Context, tx *sql.Tx, oldID int64, s Sample, key [32]byte, box *securestore.Box) error {
-	var prior Record
-	var old ProjectionPayload
-	err := tx.QueryRowContext(ctx, "SELECT sample_id,device_id,epoch,revision,payload,payload_cipher FROM health_sample_latest WHERE old_id=? AND series_key=? FOR UPDATE", oldID, key[:]).
-		Scan(&prior.SampleID, &prior.DeviceID, &prior.Epoch, &prior.Revision, &old.JSON, &old.Cipher)
-	found := err == nil
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		return err
-	}
+type latestChange struct {
+	winner  *Record
+	payload ProjectionPayload
+	changed bool
+}
+
+func refreshLatestSeries(ctx context.Context, tx *sql.Tx, oldID int64, s Sample, key [32]byte, previous latestPrior, found bool, box *securestore.Box) (latestChange, error) {
+	prior, old := previous.record, previous.payload
 	oldPayload, err := old.Open(box, latestPayloadScope(oldID, key[:], prior.Revision))
 	if err != nil {
-		return err
+		return latestChange{}, err
 	}
 	// The coarse predicates permit the existing prefix index to narrow the
 	// lookup; binary predicates preserve the exact series identity. Only the
@@ -249,7 +305,7 @@ func refreshLatestSeries(ctx context.Context, tx *sql.Tx, oldID int64, s Sample,
 		s.Source, s.SourceDevice, s.Metric, s.Semantics, s.Source, s.SourceDevice, s.Metric, s.Semantics,
 		s.Source, s.SourceDevice, s.Metric, s.Semantics, s.Source, s.SourceDevice, s.Metric, s.Semantics)
 	if err != nil {
-		return err
+		return latestChange{}, err
 	}
 	var winner *Record
 	var winnerPayload []byte
@@ -278,14 +334,10 @@ func refreshLatestSeries(ctx context.Context, tx *sql.Tx, oldID int64, s Sample,
 	}
 	rows.Close()
 	if err != nil {
-		return err
+		return latestChange{}, err
 	}
 	if winner == nil {
-		if !found {
-			return nil
-		}
-		_, err = tx.ExecContext(ctx, "DELETE FROM health_sample_latest WHERE old_id=? AND series_key=?", oldID, key[:])
-		return err
+		return latestChange{changed: found}, nil
 	}
 	// Keep a byte-identical winner with matching metadata and encryption key.
 	// An older sample or unrelated correction need not rewrite the latest
@@ -303,15 +355,11 @@ func refreshLatestSeries(ctx context.Context, tx *sql.Tx, oldID int64, s Sample,
 		prior.DeviceID != nil && winner.DeviceID != nil && *prior.DeviceID == *winner.DeviceID
 	if found && activeEnvelope && sameDevice && prior.SampleID == winner.SampleID &&
 		prior.Revision == winner.Revision && prior.Epoch == winner.Epoch && bytes.Equal(oldPayload, winnerPayload) {
-		return nil
+		return latestChange{}, nil
 	}
 	stored, err := protectProjection(box, winnerPayload, latestPayloadScope(oldID, key[:], winner.Revision))
 	if err != nil {
-		return err
+		return latestChange{}, err
 	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO health_sample_latest(old_id,series_key,sample_id,device_id,epoch,revision,payload,payload_cipher)
- VALUES(?,?,?,?,?,?,?,?) AS new ON DUPLICATE KEY UPDATE sample_id=new.sample_id,device_id=new.device_id,
- epoch=new.epoch,revision=new.revision,payload=new.payload,payload_cipher=new.payload_cipher`,
-		oldID, key[:], winner.SampleID, winner.DeviceID, winner.Epoch, winner.Revision, stored.JSON, stored.Cipher)
-	return err
+	return latestChange{winner: winner, payload: stored, changed: true}, nil
 }

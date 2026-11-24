@@ -127,19 +127,20 @@ func coreWindow(req healthStatisticsRequest) (coreKey, int64, int64, bool) {
 	return key, from, to, ok
 }
 
-func makeCoreSeries(key coreKey, revision, from, to int64, samples []health.Sample, candidates int, now time.Time) *coreSeries {
-	if revision <= 0 || len(samples) != candidates || len(samples) > 10000 {
+func makeCoreSeries(key coreKey, revision, from, to int64, samples []health.Sample, ids []string, candidates int, now time.Time) *coreSeries {
+	if revision <= 0 || len(samples) != candidates || len(samples) > 10000 || (len(ids) != 0 && len(ids) != len(samples)) {
 		return nil
 	}
 	s := &coreSeries{key: key, revision: revision, from: from, to: to, exactInteger: true,
-		timestamps: make([]int64, 0, len(samples)), values: make([]float64, 0, len(samples)), expires: now.Add(statisticsCacheTTL)}
+		timestamps: make([]int64, 0, len(samples)), values: make([]float64, 0, len(samples)), ids: ids, expires: now.Add(statisticsCacheTTL)}
+	ordered := true
 	for i := range samples {
 		p := &samples[i]
 		at := p.Start.UnixNano()
 		if p.Source != key.source || p.SourceDevice != key.device || p.Metric != "heart_rate" ||
 			p.Semantics != "instant" || p.TimeBasis != "" || p.Deleted || p.Value == nil ||
 			p.Unit != "count/min" || !time.Unix(0, at).Equal(p.Start) ||
-			at < from || at >= to || (i > 0 && at < s.timestamps[i-1]) {
+			at < from || at >= to {
 			return nil
 		}
 		v := *p.Value
@@ -147,9 +148,32 @@ func makeCoreSeries(key coreKey, revision, from, to int64, samples []health.Samp
 			return nil
 		}
 		s.exactInteger = s.exactInteger && !math.Signbit(v) && v <= 900719925474 && math.Trunc(v) == v
+		ordered = ordered && (i == 0 || at >= s.timestamps[i-1])
 		s.unit = p.Unit
 		s.timestamps = append(s.timestamps, at)
 		s.values = append(s.values, v)
+	}
+	// SQL preserves revision order for scalar floating-point parity. A
+	// historical correction can put a timestamp out of order. Exact,
+	// bounded nonnegative integers can safely be sorted for binary search.
+	if !ordered {
+		if !s.exactInteger {
+			return nil
+		}
+		points := make([]corePoint, len(samples))
+		for i := range points {
+			points[i].at, points[i].value = s.timestamps[i], s.values[i]
+			if len(ids) != 0 {
+				points[i].id = ids[i]
+			}
+		}
+		sort.Slice(points, func(i, j int) bool { return points[i].at < points[j].at })
+		for i, point := range points {
+			s.timestamps[i], s.values[i] = point.at, point.value
+			if len(ids) != 0 {
+				s.ids[i] = point.id
+			}
+		}
 	}
 	return s
 }
@@ -197,7 +221,7 @@ func applyCoreChanges(s *coreSeries, revision int64, changes []health.Record, no
 			return nil
 		}
 		previous = record.Revision
-		if p.Source != s.key.source || p.SourceDevice != s.key.device || p.Metric != "heart_rate" || p.Semantics != "instant" {
+		if p.Source != s.key.source || p.SourceDevice != s.key.device || p.Metric != "heart_rate" {
 			continue
 		}
 		point := corePoint{id: record.SampleID}
@@ -205,7 +229,7 @@ func applyCoreChanges(s *coreSeries, revision int64, changes []health.Record, no
 		if !time.Unix(0, at).Equal(p.Start) {
 			return nil
 		}
-		if !p.Deleted && at >= s.from && at < s.to {
+		if !p.Deleted && p.Semantics == "instant" && at >= s.from && at < s.to {
 			if p.TimeBasis != "" || p.Unit != "count/min" || p.Value == nil {
 				return nil
 			}
@@ -229,6 +253,18 @@ func applyCoreChanges(s *coreSeries, revision int64, changes []health.Record, no
 	for _, point := range updated {
 		if point.id != "" {
 			changedPoints = append(changedPoints, point)
+		}
+	}
+	if len(changedPoints) == 0 {
+		affected := false
+		for _, id := range s.ids {
+			if _, exists := updated[id]; exists {
+				affected = true
+				break
+			}
+		}
+		if !affected {
+			return &next
 		}
 	}
 	sort.Slice(changedPoints, func(i, j int) bool { return changedPoints[i].at < changedPoints[j].at })
