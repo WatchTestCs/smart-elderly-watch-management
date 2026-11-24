@@ -132,6 +132,14 @@ func TestHealthStatisticsHotCacheRequiresDatabaseValidation(t *testing.T) {
 	query := map[string]any{"oldId": 1, "source": "watch", "sourceDevice": "WATCH001", "metric": "heart_rate", "semantics": "instant", "from": "2026-10-22T00:00:00Z", "to": "2026-10-23T00:00:00Z"}
 	admin := withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.healthStatistics)
 	api(t, admin, query)
+	if len(h.healthCache.entries) != 0 {
+		t.Fatal("cached a result without a committed revision")
+	}
+	mustExec(t, pool, "INSERT INTO health_owner_clock(old_id,revision,range_end) VALUES(1,1,1)")
+	api(t, admin, query)
+	if len(h.healthCache.entries) != 1 {
+		t.Fatal("expected a warm entry before disconnecting MySQL")
+	}
 	pool.Close()
 	if got := callAPI(admin, query); got.Code != http.StatusInternalServerError {
 		t.Fatal("warm cache served without database revision validation", got.Code)

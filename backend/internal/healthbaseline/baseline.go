@@ -49,64 +49,75 @@ func Evaluate(current Observation, history []Observation) (Result, error) {
 		current.At.IsZero() || !current.Valid || math.IsNaN(current.Value) || math.IsInf(current.Value, 0) {
 		return Result{}, errors.New("invalid current health observation")
 	}
-	day := current.At.UTC().Truncate(24 * time.Hour)
+	const dayDuration = 24 * time.Hour
+	day := current.At.UTC().Truncate(dayDuration)
 	firstDay := day.AddDate(0, 0, -HistoryDays)
-	days := make(map[time.Time][]float64)
+
+	// The window has a fixed number of UTC calendar days, already in time order.
+	var days [HistoryDays][]float64
+	var firstValues [HistoryDays]float64
+	sampleDays := 0
 	for _, sample := range history {
 		if sample.OwnerID != current.OwnerID || sample.DeviceID != current.DeviceID || sample.BindingVersion != current.BindingVersion ||
 			sample.Source != current.Source || sample.SourceDevice != current.SourceDevice || sample.Metric != current.Metric || !sample.Valid || sample.At.IsZero() ||
 			math.IsNaN(sample.Value) || math.IsInf(sample.Value, 0) {
 			continue
 		}
-		sampleDay := sample.At.UTC().Truncate(24 * time.Hour)
-		if sampleDay.Before(firstDay) || !sampleDay.Before(day) {
+		if sample.At.Before(firstDay) || !sample.At.Before(day) {
 			continue
 		}
-		days[sampleDay] = append(days[sampleDay], sample.Value)
+		i := int(sample.At.Sub(firstDay) / dayDuration)
+		if len(days[i]) == 0 {
+			sampleDays++
+			firstValues[i] = sample.Value
+			days[i] = firstValues[i : i+1 : i+1]
+		} else {
+			days[i] = append(days[i], sample.Value)
+		}
 	}
 
-	orderedDays := make([]time.Time, 0, len(days))
-	for date := range days {
-		orderedDays = append(orderedDays, date)
-	}
-	slices.SortFunc(orderedDays, func(a, b time.Time) int { return a.Compare(b) })
-	result := Result{SampleDays: len(orderedDays), Confidence: "insufficient", Reason: "insufficient_history"}
-	if len(orderedDays) < MinimumDays {
+	result := Result{SampleDays: sampleDays, Confidence: "insufficient", Reason: "insufficient_history"}
+	if sampleDays < MinimumDays {
 		return result, nil
 	}
 
-	// Anchor on the first seven eligible days. A recent multi-day excursion
-	// must not teach the baseline that the excursion is normal.
-	anchor := make([]float64, MinimumDays)
-	for i, date := range orderedDays[:MinimumDays] {
-		anchor[i] = median(days[date])
-	}
-	center := median(anchor)
-	scale := robustScale(current.Metric, center, anchor)
-	trusted := slices.Clone(anchor)
-	lastTrusted := orderedDays[MinimumDays-1]
-	for _, date := range orderedDays[MinimumDays:] {
-		value := median(days[date])
-		if math.Abs(value-center) >= AlertScore*scale {
-			result.RejectedDays++
+	// Anchor on the first seven eligible days. Keep the center and scale fixed
+	// so a sustained excursion cannot gradually redefine normal.
+	var anchor [MinimumDays]float64
+	var center, scale float64
+	lastTrusted := 0
+	for i, values := range days {
+		if len(values) == 0 {
 			continue
 		}
-		trusted = append(trusted, value)
-		lastTrusted = date
+		// Buckets own their samples; sorting cannot mutate the caller's history.
+		value := medianInPlace(values)
+		if result.TrustedDays < MinimumDays {
+			anchor[result.TrustedDays] = value
+			result.TrustedDays++
+			if result.TrustedDays == MinimumDays {
+				center = medianInPlace(anchor[:])
+				scale = robustScale(current.Metric, center, anchor[:])
+			}
+		} else {
+			if math.Abs(value-center) >= AlertScore*scale {
+				result.RejectedDays++
+				continue
+			}
+			result.TrustedDays++
+		}
+		lastTrusted = i
 	}
-	result.TrustedDays = len(trusted)
-	// An old, abandoned baseline must not return a confident assessment.
-	if int(day.Sub(lastTrusted).Hours()/24) > 7 {
+	if HistoryDays-lastTrusted > 7 {
 		result.Reason = "stale_baseline"
 		return result, nil
 	}
-	// Keep the anchor fixed during the evaluation. Even accepted values near
-	// the boundary cannot gradually drag the reference toward an excursion.
+
 	score := (current.Value - center) / scale
 	result.Ready = true
 	result.Reason = ""
 	result.Confidence = "moderate"
-	if len(trusted) >= 14 && result.RejectedDays == 0 {
+	if result.TrustedDays >= 14 && result.RejectedDays == 0 {
 		result.Confidence = "high"
 	}
 	if result.RejectedDays > 0 {
@@ -124,24 +135,23 @@ func Evaluate(current Observation, history []Observation) (Result, error) {
 	return result, nil
 }
 
+// The anchor is no longer needed after calculating its center.
 func robustScale(metric string, center float64, values []float64) float64 {
-	deviations := make([]float64, len(values))
 	for i, value := range values {
-		deviations[i] = math.Abs(value - center)
+		values[i] = math.Abs(value - center)
 	}
 	floor := math.Max(1, math.Abs(center)*0.05)
 	if metric == "heart_rate" || metric == "resting_heart_rate" {
 		floor = math.Max(floor, 5)
 	}
-	return math.Max(floor, 1.4826*median(deviations))
+	return math.Max(floor, 1.4826*medianInPlace(values))
 }
 
-func median(values []float64) float64 {
-	ordered := slices.Clone(values)
-	slices.Sort(ordered)
-	mid := len(ordered) / 2
-	if len(ordered)%2 == 1 {
-		return ordered[mid]
+func medianInPlace(values []float64) float64 {
+	slices.Sort(values)
+	mid := len(values) / 2
+	if len(values)%2 == 1 {
+		return values[mid]
 	}
-	return ordered[mid-1]/2 + ordered[mid]/2
+	return values[mid-1]/2 + values[mid]/2
 }

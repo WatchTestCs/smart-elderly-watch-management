@@ -102,6 +102,8 @@ python scripts/bootstrap-admin.py
 
 ## 系统架构
 
+健康记录以 MySQL 中已提交的数据为准。启用健康统计内存缓存后，每次读取都先检查访问权限和 MySQL 中该老人的数据版本。版本变化时重新计算，没有版本记录时直接查询 MySQL。服务重启后，统计结果可从数据库重新生成。
+
 ```mermaid
 flowchart LR
     subgraph Desktop["Windows 桌面端"]
