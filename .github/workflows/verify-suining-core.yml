@@ -1,0 +1,42 @@
+name: Suining Core native verification
+on:
+  push:
+    branches: [verify/suining-core-dc109b64]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: test_only
+          MYSQL_ROOT_HOST: '%'
+        ports: ['3306:3306']
+        options: --health-cmd="mysqladmin ping" --health-interval=5s --health-timeout=4s --health-retries=30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5
+        with:
+          go-version-file: backend/go.mod
+          cache: false
+      - name: Verify and build Rust static archive
+        working-directory: suining-core
+        run: |
+          rustup toolchain install 1.100.0 --profile minimal --component rustfmt,clippy
+          cargo +1.100.0 fmt --check
+          cargo +1.100.0 test --locked --offline
+          cargo +1.100.0 clippy --locked --offline --all-targets -- -D warnings
+          cargo +1.100.0 build --release --locked --offline
+      - name: Exercise Go/Rust parity and MySQL fallback
+        working-directory: backend
+        env:
+          CGO_ENABLED: '1'
+          TEST_MYSQL_DSN: root:test_only@tcp(127.0.0.1:3306)/mysql?parseTime=true
+        run: |
+          go test -race -tags suiningcore -count=1 -v ./internal/handlers -run '^TestCore(BaselineParity|ColumnCacheParity|StatisticsMySQL)$'
+          go test -count=1 ./internal/securestore ./internal/healthbaseline
