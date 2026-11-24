@@ -32,7 +32,7 @@ func StatisticsRevision(ctx context.Context, store db.RowQuerier, residentID int
 // LoadStatisticsSamples returns only samples inside the requested window,
 // retaining exact-byte matching under MySQL's trailing-space-insensitive collations.
 func LoadStatisticsSamples(ctx context.Context, store db.RowsQuerier, residentID int64, query StatisticsQuery, box *securestore.Box, collectIDs bool) ([]Sample, []string, int, bool, error) {
-	sourceFilter := "BINARY source=BINARY ? AND BINARY source_device=BINARY ? AND BINARY metric=BINARY ? AND BINARY semantics=BINARY ?"
+	sourceFilter := "source=? AND source_device=? AND metric=? AND semantics=? AND BINARY source=BINARY ? AND BINARY source_device=BINARY ? AND BINARY metric=BINARY ? AND BINARY semantics=BINARY ?"
 	upper := query.To.UnixMicro()
 	if query.To.Nanosecond()%1000 != 0 {
 		upper++
@@ -72,7 +72,7 @@ func LoadStatisticsSamples(ctx context.Context, store db.RowsQuerier, residentID
 		 AND sample_start<?
 		 AND (sample_start>=? OR (?='interval' AND sample_end>=?))
 		 ORDER BY revision LIMIT 10001`,
-		residentID, query.Source, query.SourceDevice, query.Metric, query.Semantics, upper, query.From.UnixMicro(), query.Semantics, query.From.UnixMicro())
+		residentID, query.Source, query.SourceDevice, query.Metric, query.Semantics, query.Source, query.SourceDevice, query.Metric, query.Semantics, upper, query.From.UnixMicro(), query.Semantics, query.From.UnixMicro())
 	if err != nil {
 		return nil, nil, 0, false, err
 	}

@@ -5,7 +5,6 @@ import (
 	"database/sql"
 
 	"suining-care/internal/careworkflow"
-	"suining-care/internal/db"
 	"suining-care/internal/devicerepo"
 	"suining-care/internal/notify"
 	"suining-care/internal/securestore"
@@ -38,7 +37,7 @@ type SOSHooks struct {
 }
 
 // SOS owns lock ordering, retry lookup, incident persistence, outbox enqueue and commit.
-func SOS(ctx context.Context, store *db.Database, box *securestore.Box, input SOSInput, hooks SOSHooks) (SOSResult, Failure, error) {
+func SOS(ctx context.Context, store *sql.DB, box *securestore.Box, input SOSInput, hooks SOSHooks) (SOSResult, Failure, error) {
 	tx, err := store.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		return SOSResult{}, "", err

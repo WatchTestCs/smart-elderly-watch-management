@@ -23,10 +23,16 @@ func (h *Handler) healthStatistics(w http.ResponseWriter, r *http.Request) {
 		write400(w, message)
 		return
 	}
-	oldID, ok := h.resolveOptionalOldID(w, r, req.OldID)
+	p, ok := principalOr401(w, r)
 	if !ok {
 		return
 	}
+	oldID := req.OldID
+	if oldID == 0 {
+		oldID = p.OldID
+	}
+	// The binding is checked once, under the transaction's shared lock.
+	// A separate unlocked family lookup cannot authorize the actual read.
 	pool := h.DB.StatisticsPool()
 	tx, ok := beginScopedResidentReadOn(w, r, pool, oldID, carepolicy.ReadHealthData)
 	if !ok {

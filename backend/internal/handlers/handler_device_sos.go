@@ -31,7 +31,7 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 	lat, _ := vstr(m, "lat")
 	var invalidPosition string
 	errInvalidPosition := errors.New("invalid SOS position")
-	result, failure, err := deviceworkflow.SOS(r.Context(), h.DB, h.Box, deviceworkflow.SOSInput{
+	result, failure, err := deviceworkflow.SOS(r.Context(), h.DB.SOSPool(), h.Box, deviceworkflow.SOSInput{
 		Number: req.deviceNo, Secret: req.secret, Epoch: req.bindingVersion, RequestID: req.requestID,
 	}, deviceworkflow.SOSHooks{
 		AcceptNonce: func(ctx context.Context, tx *sql.Tx, deviceID int64) bool {

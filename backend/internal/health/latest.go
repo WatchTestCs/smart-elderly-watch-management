@@ -1,6 +1,7 @@
 package health
 
 import (
+	"bytes"
 	"cmp"
 	"context"
 	"crypto/sha256"
@@ -9,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"sort"
+	"strings"
 
 	"suining-care/internal/db"
 	"suining-care/internal/securestore"
@@ -31,36 +33,36 @@ func latestReady(ctx context.Context, q latestQuerier, oldID int64) (bool, error
 }
 
 func Latest(ctx context.Context, store *db.Database, oldID int64, box *securestore.Box) ([]Record, error) {
-	ready, err := latestReady(ctx, store, oldID)
-	if err != nil {
-		return nil, err
-	}
-	if ready {
-		return readLatest(ctx, store, oldID, box)
-	}
 	tx, err := store.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		return nil, err
 	}
 	defer tx.Rollback()
-	if _, err = LockOwner(ctx, tx, oldID); err != nil {
-		return nil, err
-	}
-	ready, err = latestReady(ctx, tx, oldID)
+	items, err := LatestInTransaction(ctx, tx, oldID, box)
 	if err != nil {
 		return nil, err
 	}
-	if ready {
-		items, readErr := readLatest(ctx, tx, oldID, box)
-		if readErr != nil {
-			return nil, readErr
-		}
-		if err = tx.Commit(); err != nil {
-			return nil, err
-		}
-		return items, nil
+	if err = tx.Commit(); err != nil {
+		return nil, err
 	}
-	items, err := buildLatest(ctx, tx, oldID, box)
+	return items, nil
+}
+
+// LatestInTransaction reuses the caller's authorized transaction. A cold
+// projection is built under the owner lock; no second pool checkout is needed.
+func LatestInTransaction(ctx context.Context, tx *sql.Tx, oldID int64, box *securestore.Box) ([]Record, error) {
+	items, ready, err := readReadyLatest(ctx, tx, oldID, box)
+	if err != nil || ready {
+		return items, err
+	}
+	if _, err = LockOwner(ctx, tx, oldID); err != nil {
+		return nil, err
+	}
+	items, ready, err = readReadyLatest(ctx, tx, oldID, box)
+	if err != nil || ready {
+		return items, err
+	}
+	items, err = buildLatest(ctx, tx, oldID, box)
 	if err != nil {
 		return nil, err
 	}
@@ -76,43 +78,50 @@ func Latest(ctx context.Context, store *db.Database, oldID int64, box *securesto
 	if _, err = tx.ExecContext(ctx, "INSERT INTO health_latest_ready(old_id) VALUES(?)", oldID); err != nil {
 		return nil, err
 	}
-	if err = tx.Commit(); err != nil {
-		return nil, err
-	}
 	return items, nil
 }
 
-func readLatest(ctx context.Context, q latestQuerier, oldID int64, box *securestore.Box) ([]Record, error) {
-	rows, err := q.QueryContext(ctx, "SELECT sample_id,device_id,epoch,revision,series_key,payload,payload_cipher FROM health_sample_latest WHERE old_id=? LIMIT 10001", oldID)
+// A ready owner with no live samples returns one NULL joined row. An
+// uninitialized owner returns no rows, so the warm path needs one query.
+func readReadyLatest(ctx context.Context, q latestQuerier, oldID int64, box *securestore.Box) ([]Record, bool, error) {
+	rows, err := q.QueryContext(ctx, `SELECT l.sample_id,l.device_id,COALESCE(l.epoch,0),COALESCE(l.revision,0),l.series_key,l.payload,l.payload_cipher
+ FROM health_latest_ready r LEFT JOIN health_sample_latest l ON l.old_id=r.old_id WHERE r.old_id=? LIMIT 10001`, oldID)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	defer rows.Close()
 	items := make([]Record, 0, 16)
+	ready := false
 	for rows.Next() {
+		ready = true
 		if len(items) == 10000 {
-			return nil, ErrLatestTooManySeries
+			return nil, false, ErrLatestTooManySeries
 		}
 		rec := Record{OldID: oldID}
+		var id sql.NullString
 		var series []byte
 		var stored ProjectionPayload
-		if err = rows.Scan(&rec.SampleID, &rec.DeviceID, &rec.Epoch, &rec.Revision, &series, &stored.JSON, &stored.Cipher); err != nil {
-			return nil, err
+		if err = rows.Scan(&id, &rec.DeviceID, &rec.Epoch, &rec.Revision, &series, &stored.JSON, &stored.Cipher); err != nil {
+			return nil, false, err
 		}
+		if !id.Valid {
+			continue
+		}
+		rec.SampleID = id.String
 		payload, err := stored.Open(box, latestPayloadScope(oldID, series, rec.Revision))
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
 		if err = json.Unmarshal(payload, &rec.Sample); err != nil {
-			return nil, err
+			return nil, false, err
 		}
 		items = append(items, rec)
 	}
 	if err = rows.Err(); err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	sortLatest(items)
-	return items, nil
+	return items, ready, nil
 }
 
 func buildLatest(ctx context.Context, q *sql.Tx, oldID int64, box *securestore.Box) ([]Record, error) {
@@ -174,7 +183,8 @@ func sortLatest(items []Record) {
 }
 
 func latestKey(s Sample) [32]byte {
-	var buf []byte
+	var scratch [256]byte
+	buf := scratch[:0]
 	for _, part := range [...]string{s.Source, s.SourceDevice, s.Metric, s.Semantics} {
 		buf = binary.LittleEndian.AppendUint32(buf, uint32(len(part)))
 		buf = append(buf, part...)
@@ -198,15 +208,16 @@ func refreshLatest(ctx context.Context, tx *sql.Tx, o Owner, input []preparedSam
 	if err != nil || !ready {
 		return err
 	}
-	seen := make(map[[32]byte]struct{}, len(final))
+	type series struct{ source, device, metric, semantics string }
+	seen := make(map[series]struct{}, len(final))
 	for _, index := range final {
 		sample := input[index].sample
-		key := latestKey(sample)
-		if _, exists := seen[key]; exists {
+		identity := series{sample.Source, sample.SourceDevice, sample.Metric, sample.Semantics}
+		if _, exists := seen[identity]; exists {
 			continue
 		}
-		seen[key] = struct{}{}
-		if err = refreshLatestSeries(ctx, tx, o.OldID, sample, key, box); err != nil {
+		seen[identity] = struct{}{}
+		if err = refreshLatestSeries(ctx, tx, o.OldID, sample, latestKey(sample), box); err != nil {
 			return err
 		}
 	}
@@ -214,34 +225,38 @@ func refreshLatest(ctx context.Context, tx *sql.Tx, o Owner, input []preparedSam
 }
 
 func refreshLatestSeries(ctx context.Context, tx *sql.Tx, oldID int64, s Sample, key [32]byte, box *securestore.Box) error {
-	var oldRevision int64
+	var prior Record
 	var old ProjectionPayload
-	err := tx.QueryRowContext(ctx, "SELECT revision,payload_cipher FROM health_sample_latest WHERE old_id=? AND series_key=? FOR UPDATE", oldID, key[:]).
-		Scan(&oldRevision, &old.Cipher)
+	err := tx.QueryRowContext(ctx, "SELECT sample_id,device_id,epoch,revision,payload,payload_cipher FROM health_sample_latest WHERE old_id=? AND series_key=? FOR UPDATE", oldID, key[:]).
+		Scan(&prior.SampleID, &prior.DeviceID, &prior.Epoch, &prior.Revision, &old.JSON, &old.Cipher)
+	found := err == nil
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return err
 	}
-	if _, err := old.Open(box, latestPayloadScope(oldID, key[:], oldRevision)); err != nil {
+	oldPayload, err := old.Open(box, latestPayloadScope(oldID, key[:], prior.Revision))
+	if err != nil {
 		return err
 	}
-	filter := "BINARY source=BINARY ? AND BINARY source_device=BINARY ? AND BINARY metric=BINARY ? AND BINARY semantics=BINARY ?"
-	sql := "SELECT sample_id,device_id,epoch,revision,sample_start,payload,payload_cipher FROM health_sample WHERE old_id=? AND " +
-		filter + " AND NOT deleted ORDER BY sample_start DESC,revision DESC,sample_id DESC"
-	rows, err := tx.QueryContext(ctx, sql, oldID, s.Source, s.SourceDevice, s.Metric, s.Semantics)
+	// The coarse predicates permit the existing prefix index to narrow the
+	// lookup; binary predicates preserve the exact series identity. Only the
+	// maximum indexed microsecond is transferred, including all ties for
+	// the exact nanosecond/revision comparison below.
+	filter := "source=? AND source_device=? AND metric=? AND semantics=? AND BINARY source=BINARY ? AND BINARY source_device=BINARY ? AND BINARY metric=BINARY ? AND BINARY semantics=BINARY ?"
+	query := "SELECT sample_id,device_id,epoch,revision,payload,payload_cipher FROM health_sample WHERE old_id=? AND sample_start=(" +
+		"SELECT sample_start FROM health_sample WHERE old_id=? AND " + filter +
+		" AND NOT deleted ORDER BY sample_start DESC LIMIT 1) AND " + filter + " AND NOT deleted ORDER BY revision DESC,sample_id DESC"
+	rows, err := tx.QueryContext(ctx, query, oldID, oldID,
+		s.Source, s.SourceDevice, s.Metric, s.Semantics, s.Source, s.SourceDevice, s.Metric, s.Semantics,
+		s.Source, s.SourceDevice, s.Metric, s.Semantics, s.Source, s.SourceDevice, s.Metric, s.Semantics)
 	if err != nil {
 		return err
 	}
 	var winner *Record
 	var winnerPayload []byte
-	var maxMicro int64
 	for rows.Next() {
 		rec := Record{OldID: oldID}
-		var micro int64
 		var stored ProjectionPayload
-		if err = rows.Scan(&rec.SampleID, &rec.DeviceID, &rec.Epoch, &rec.Revision, &micro, &stored.JSON, &stored.Cipher); err != nil {
-			break
-		}
-		if winner != nil && micro < maxMicro {
+		if err = rows.Scan(&rec.SampleID, &rec.DeviceID, &rec.Epoch, &rec.Revision, &stored.JSON, &stored.Cipher); err != nil {
 			break
 		}
 		var payload []byte
@@ -256,7 +271,6 @@ func refreshLatestSeries(ctx context.Context, tx *sql.Tx, oldID int64, s Sample,
 			copyRec := rec
 			winner = &copyRec
 			winnerPayload = payload
-			maxMicro = micro
 		}
 	}
 	if err == nil {
@@ -266,11 +280,38 @@ func refreshLatestSeries(ctx context.Context, tx *sql.Tx, oldID int64, s Sample,
 	if err != nil {
 		return err
 	}
-	if _, err = tx.ExecContext(ctx, "DELETE FROM health_sample_latest WHERE old_id=? AND series_key=?", oldID, key[:]); err != nil {
+	if winner == nil {
+		if !found {
+			return nil
+		}
+		_, err = tx.ExecContext(ctx, "DELETE FROM health_sample_latest WHERE old_id=? AND series_key=?", oldID, key[:])
 		return err
 	}
-	if winner != nil {
-		return insertLatest(ctx, tx, *winner, winnerPayload, box)
+	// Keep a byte-identical winner with matching metadata and encryption key.
+	// An older sample or unrelated correction need not rewrite the latest
+	// index or generate fresh redo. A key rotation still rewrites the row.
+	activeEnvelope := old.Cipher == nil && box == nil
+	if old.Cipher != nil && box != nil {
+		active := box.ActiveKeyID()
+		if active == "" {
+			activeEnvelope = !strings.HasPrefix(*old.Cipher, securestore.Prefix+"v2:")
+		} else {
+			activeEnvelope = strings.HasPrefix(*old.Cipher, securestore.Prefix+"v2:"+active+":")
+		}
 	}
-	return nil
+	sameDevice := prior.DeviceID == nil && winner.DeviceID == nil ||
+		prior.DeviceID != nil && winner.DeviceID != nil && *prior.DeviceID == *winner.DeviceID
+	if found && activeEnvelope && sameDevice && prior.SampleID == winner.SampleID &&
+		prior.Revision == winner.Revision && prior.Epoch == winner.Epoch && bytes.Equal(oldPayload, winnerPayload) {
+		return nil
+	}
+	stored, err := protectProjection(box, winnerPayload, latestPayloadScope(oldID, key[:], winner.Revision))
+	if err != nil {
+		return err
+	}
+	_, err = tx.ExecContext(ctx, `INSERT INTO health_sample_latest(old_id,series_key,sample_id,device_id,epoch,revision,payload,payload_cipher)
+ VALUES(?,?,?,?,?,?,?,?) AS new ON DUPLICATE KEY UPDATE sample_id=new.sample_id,device_id=new.device_id,
+ epoch=new.epoch,revision=new.revision,payload=new.payload,payload_cipher=new.payload_cipher`,
+		oldID, key[:], winner.SampleID, winner.DeviceID, winner.Epoch, winner.Revision, stored.JSON, stored.Cipher)
+	return err
 }
