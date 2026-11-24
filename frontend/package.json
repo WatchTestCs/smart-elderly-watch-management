@@ -27,7 +27,7 @@
     "echarts": "6.1.0",
     "element-plus": "2.14.8",
     "leaflet": "1.9.4",
-    "vue": "3.5.45",
+    "vue": "3.5.46",
     "vue-router": "5.5.1"
   },
   "devDependencies": {
