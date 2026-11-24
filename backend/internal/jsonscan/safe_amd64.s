@@ -23,9 +23,15 @@ DATA amp<>+0(SB)/8, $0x2626262626262626
 DATA amp<>+8(SB)/8, $0x2626262626262626
 GLOBL amp<>(SB), RODATA|NOPTR, $16
 
-TEXT ·safeSSE2(SB), NOSPLIT, $0-17
- MOVQ s_base+0(FP), SI
+TEXT ·safeVector(SB), NOSPLIT, $0-17
  MOVQ s_len+8(FP), CX
+ CMPQ CX, $64
+ JB sse2
+ CMPB ·hasAVX2(SB), $0
+ JE sse2
+ JMP ·safeAVX2(SB)
+sse2:
+ MOVQ s_base+0(FP), SI
  MOVOU space<>(SB), X2
  MOVOU quote<>(SB), X3
  MOVOU slash<>(SB), X4
