@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"suining-care/internal/health"
+	"suining-care/internal/observability"
 )
 
 const coreShardCount = 16
@@ -197,6 +198,62 @@ func (c *coreCache) stale(key coreKey, revision, from, to int64, now time.Time) 
 		return nil
 	}
 	return s
+}
+
+// atRevision is deliberately stricter than stale: a local write cannot fill
+// a gap left by another replica or a previously missed publication.
+func (c *coreCache) atRevision(key coreKey, revision int64, now time.Time) *coreSeries {
+	shard := c.shard(key)
+	shard.mu.Lock()
+	defer shard.mu.Unlock()
+	e := shard.entries[key]
+	if e == nil {
+		return nil
+	}
+	s := e.Value.(*coreSeries)
+	if s.revision != revision || !now.Before(s.expires) || !s.exactInteger || len(s.ids) != len(s.values) {
+		return nil
+	}
+	return s
+}
+
+// advanceCoreAfterCommit is a best-effort local optimization, never a write
+// acknowledgement or an authority. Readers still validate the MySQL clock.
+func (h *Handler) advanceCoreAfterCommit(o health.Owner, batch *health.PreparedBatch, samples []health.Sample) {
+	if h.healthCache == nil || h.healthCache.core == nil {
+		return
+	}
+	before, through := batch.StatisticsProjectionRange()
+	if before <= 0 || through <= before {
+		return
+	}
+	cache := h.healthCache.core
+	now := time.Now()
+	seen := make(map[coreKey]struct{}, 1)
+	var candidates []*coreSeries
+	for _, sample := range samples {
+		key := coreKey{o.OldID, sample.Source, sample.SourceDevice}
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		if s := cache.atRevision(key, before, now); s != nil {
+			candidates = append(candidates, s)
+		}
+	}
+	if len(candidates) == 0 {
+		return
+	}
+	changes, err := batch.StatisticsProjectionChanges(o)
+	if err != nil {
+		return
+	}
+	for _, s := range candidates {
+		if next := applyCoreChanges(s, through, changes, now); next != nil {
+			cache.put(next)
+			observability.Default.Add("suining_health_core_commit_advances_total", 1)
+		}
+	}
 }
 
 type corePoint struct {

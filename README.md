@@ -85,7 +85,7 @@
 
 数据库连接失败时仍可能打开界面，但登录和业务写入不可用。图片及健康相关数据存储在 MySQL 中，备份必须包含 BLOB 和用于解密的密钥。旧 PostgreSQL/S3 部署的迁移必须停写、备份并按 [MySQL 单库迁移手册](docs/MYSQL_ONLY_MIGRATION.md) 操作，安装程序不会自动迁移旧数据。
 
-可选设置 `MYSQL_STATISTICS_MAX_CONNS`（0–64，默认 0）为健康统计启用同一 MySQL 主库的独立连接池，避免统计事务耗尽原有业务连接。部署时须按每个实例的 20 个业务连接、1 个探活连接、配置的统计连接以及 `MYSQL_SOS_MAX_CONNS`（0–8，默认 0）独立求助连接预算核算 MySQL 总连接数。Compose 可用 `MYSQL_REDO_LOG_CAPACITY` 指定 redo 容量（默认 1 GiB）；高写入负载可按磁盘与恢复目标评估 4 GiB，保留同步刷盘。
+可选设置 `MYSQL_STATISTICS_MAX_CONNS`（0–64，默认 0）为健康统计启用同一 MySQL 主库的独立连接池，避免统计事务耗尽原有业务连接。部署时须按每个实例的 20 个业务连接、1 个探活连接、配置的统计连接以及 `MYSQL_SOS_MAX_CONNS`（0–8，默认 0）独立求助连接预算核算 MySQL 总连接数。健康批量上报在每个服务实例最多允许 8 个并发写事务、8 个连接池外等候请求（最多 200 ms），超限返回 HTTP 503 和 Retry-After，客户端须保留待上传记录。Compose 可用 `MYSQL_REDO_LOG_CAPACITY` 指定 redo 容量（默认 1 GiB）；高写入负载可按磁盘与恢复目标评估 4 GiB，保留同步刷盘。
 
 ### 常驻服务与本地 Compose
 

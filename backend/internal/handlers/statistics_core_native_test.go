@@ -169,6 +169,34 @@ func TestCoreStatisticsMySQL(t *testing.T) {
 	if !strings.Contains(metrics.Body.String(), "suining_health_core_incremental_hits_total 3\n") {
 		t.Fatalf("correction, deletion and move did not all use incremental projection")
 	}
+	// A local commit advances a matching immutable projection without querying
+	// the change table; a foreign commit creates a gap that must be read from SQL.
+	key := coreKey{1, "watch", "WATCH001"}
+	samples[3].Version, samples[3].Value = 2, health.Number(98)
+	batch["samples"] = []health.Sample{samples[3]}
+	api(t, h.healthBatch, batch)
+	revision, err := health.StatisticsRevision(t.Context(), pool, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := h.healthCache.core.get(key, revision, query.From.UnixNano(), query.To.UnixNano(), time.Now()); !ok {
+		t.Fatal("committed local correction did not advance the projection")
+	}
+	check()
+	samples[4].Version, samples[4].Value = 2, health.Number(103)
+	batch["samples"] = []health.Sample{samples[4]}
+	api(t, plain.healthBatch, batch)
+	samples[5].Version, samples[5].Value = 2, health.Number(106)
+	batch["samples"] = []health.Sample{samples[5]}
+	api(t, h.healthBatch, batch)
+	revision, err = health.StatisticsRevision(t.Context(), pool, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := h.healthCache.core.get(key, revision, query.From.UnixNano(), query.To.UnixNano(), time.Now()); ok {
+		t.Fatal("local commit skipped a foreign committed correction")
+	}
+	check()
 	pool.Close()
 	if got := callAPI(admin, query); got.Code != http.StatusInternalServerError {
 		t.Fatalf("database outage returned %d", got.Code)

@@ -53,8 +53,9 @@ func SaveBatch(ctx context.Context, tx *sql.Tx, o Owner, samples []Sample) (int6
 // PreparedBatch holds validated, encoded samples without an owner or revision.
 // It belongs to one request and must not be saved concurrently.
 type PreparedBatch struct {
-	input          []preparedSample
-	minimumVersion int64
+	input                               []preparedSample
+	minimumVersion                      int64
+	projectionBefore, projectionThrough int64
 }
 
 // PrepareBatch performs owner-independent work before acquiring database locks.
@@ -107,6 +108,7 @@ func (batch *PreparedBatch) SaveProtected(ctx context.Context, tx *sql.Tx, o Own
 	if batch == nil || len(batch.input) < 1 || len(batch.input) > 200 {
 		return 0, 0, fmt.Errorf("batch must contain 1..200 samples")
 	}
+	batch.projectionBefore, batch.projectionThrough = 0, 0
 	input := batch.input
 	assignBatchIdentities(o, input)
 	ids := make([]any, 1, len(input)+1)
@@ -182,7 +184,39 @@ func (batch *PreparedBatch) SaveProtected(ctx context.Context, tx *sql.Tx, o Own
 	if _, err = tx.ExecContext(ctx, "UPDATE metric_daily SET dirty=true WHERE old_id=? AND dirty=false", o.OldID); err != nil {
 		return 0, 0, err
 	}
+	batch.projectionBefore, batch.projectionThrough = clock.revision, revision
 	return cursor, selection.duplicates, nil
+}
+
+// StatisticsProjectionRange identifies the exact owner-clock transition
+// prepared by SaveProtected. Publish it only after the caller's commit succeeds.
+func (batch *PreparedBatch) StatisticsProjectionRange() (int64, int64) {
+	return batch.projectionBefore, batch.projectionThrough
+}
+
+// StatisticsProjectionChanges reuses the canonical request payloads instead
+// of fetching and decrypting the same events from MySQL after commit. Only
+// accepted revisions are returned, in the transaction's event order.
+func (batch *PreparedBatch) StatisticsProjectionChanges(o Owner) ([]Record, error) {
+	if batch.projectionThrough == 0 {
+		return nil, nil
+	}
+	records := make([]Record, 0, len(batch.input))
+	for i := range batch.input {
+		item := &batch.input[i]
+		if item.revision == 0 {
+			continue
+		}
+		var sample Sample
+		if err := json.Unmarshal(item.payload, &sample); err != nil {
+			return nil, err
+		}
+		records = append(records, Record{
+			SampleID: item.id, OldID: o.OldID, DeviceID: o.DeviceID,
+			Epoch: o.Epoch, Revision: item.revision, Sample: sample,
+		})
+	}
+	return records, nil
 }
 
 // Each history event views its own span in one transaction-private buffer.

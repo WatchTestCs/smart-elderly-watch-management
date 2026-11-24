@@ -85,7 +85,7 @@ Latest stable release: **2.1.0 · Windows x64**, published on [GitHub Releases](
 
 The interface may open when MySQL is unreachable, but login and data writes require a ready database. Backups must include stored image/health data, BLOB columns, and recoverable encryption keys. Migrating from an earlier PostgreSQL/S3 deployment requires stopping writers, backing up, and following the [MySQL-only migration guide](docs/MYSQL_ONLY_MIGRATION.md); the installer does not migrate data for you.
 
-Set `MYSQL_STATISTICS_MAX_CONNS` (0–64, default 0) to enable a dedicated health statistics pool on the same MySQL primary. Budget 20 business connections, one liveness connection, the configured statistics connections, and `MYSQL_SOS_MAX_CONNS` (0–8, default 0) reserved SOS connections per instance. Compose accepts `MYSQL_REDO_LOG_CAPACITY` (default 1 GiB); evaluate 4 GiB against storage and recovery requirements for sustained writes, without relaxing synchronous durability.
+Set `MYSQL_STATISTICS_MAX_CONNS` (0–64, default 0) to enable a dedicated health statistics pool on the same MySQL primary. Budget 20 business connections, one liveness connection, the configured statistics connections, and `MYSQL_SOS_MAX_CONNS` (0–8, default 0) reserved SOS connections per instance. Each service instance admits at most eight concurrent health uploads and eight waiting requests outside the connection pool for up to 200 ms. Overload returns HTTP 503 with Retry-After; clients must retain unacknowledged records. Compose accepts `MYSQL_REDO_LOG_CAPACITY` (default 1 GiB); evaluate 4 GiB against storage and recovery requirements for sustained writes, without relaxing synchronous durability.
 
 ### Always-on deployments and local Compose
 

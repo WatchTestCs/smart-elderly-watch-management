@@ -48,6 +48,10 @@ func (h *Handler) healthBatch(w http.ResponseWriter, r *http.Request) {
 // can delay the device-row lock until the final binding/secret revalidation.
 // Never enable owner-first concurrently with an old device-first writer.
 func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Request, lateDeviceLock bool) {
+	r, signedOK := h.prepareSignedDeviceRequest(w, r)
+	if !signedOK {
+		return
+	}
 	var req healthBatchRequest
 	if !decodeHealthBatch(w, r, &req) {
 		return
@@ -57,6 +61,11 @@ func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	ctx := r.Context()
+	if !h.healthWrites.acquire(ctx) {
+		healthWriteBusy(w)
+		return
+	}
+	defer h.healthWrites.release()
 	tx, err := h.DB.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if internalError(w, err) {
 		return
@@ -94,6 +103,11 @@ func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Reques
 		response.Error(w, http.StatusConflict, string(deviceworkflow.BindingChanged), "绑定已变化，请重新登录；旧绑定数据不能归入新老人")
 		return
 	}
+	// The nonce and accepted samples share the same commit. In owner-first
+	// mode defer nonce insertion until the final locked device validation.
+	if !lateDeviceLock && !acceptSignedDeviceNonce(w, ctx, tx, d.ID) {
+		return
+	}
 	expectedOwner := *d.OldID
 	owner := health.Owner{OldID: expectedOwner, DeviceID: &d.ID, Epoch: d.HealthEpoch}
 	cursor, duplicates, err := batch.SaveProtected(ctx, tx, owner, h.Box)
@@ -126,6 +140,9 @@ func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Reques
 			response.Error(w, http.StatusConflict, string(deviceworkflow.BindingChanged), "绑定已变化，请重新登录；旧绑定数据不能归入新老人")
 			return
 		}
+		if !acceptSignedDeviceNonce(w, ctx, tx, d.ID) {
+			return
+		}
 	}
 	if err = touchHealthDevice(ctx, tx, d.ID, time.Now()); internalError(w, err) {
 		return
@@ -133,6 +150,7 @@ func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Reques
 	if err = tx.Commit(); internalError(w, err) {
 		return
 	}
+	h.advanceCoreAfterCommit(owner, &batch, req.Samples)
 	// This is a write acknowledgement, not the client's read cursor.
 	response.OK(w, map[string]any{"writeRevision": cursor, "accepted": len(req.Samples), "duplicates": duplicates})
 }
