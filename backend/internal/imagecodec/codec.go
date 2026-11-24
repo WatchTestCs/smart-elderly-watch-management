@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"image"
-	"image/color"
 	"image/jpeg"
 	"image/png"
 	"math/bits"
@@ -103,19 +102,19 @@ func decodeBMP(data []byte) (image.Image, int, int, bool) {
 		if !topDown {
 			sy = h - 1 - y
 		}
-		row := data[int(off)+sy*stride:]
-		for x := 0; x < w; x++ {
-			var rr, gg, bb uint8
-			if bpp == 24 {
-				o := x * 3
-				bb, gg, rr = row[o], row[o+1], row[o+2]
-			} else {
-				px := binary.LittleEndian.Uint32(row[x*4:])
-				rr = scaleMask(px, rMask)
-				gg = scaleMask(px, gMask)
-				bb = scaleMask(px, bMask)
+		row := data[int(off)+sy*stride:][:w*int(bpp)/8]
+		out := img.Pix[y*img.Stride:][:w*4]
+		switch {
+		case bpp == 24:
+			unpackBGR24(out, row)
+		case rMask == 0xff0000 && gMask == 0xff00 && bMask == 0xff:
+			unpackBGRX32(out, row)
+		default:
+			for len(row) != 0 {
+				px := binary.LittleEndian.Uint32(row)
+				binary.LittleEndian.PutUint32(out, uint32(scaleMask(px, rMask))|uint32(scaleMask(px, gMask))<<8|uint32(scaleMask(px, bMask))<<16|0xff000000)
+				row, out = row[4:], out[4:]
 			}
-			img.SetRGBA(x, y, color.RGBA{R: rr, G: gg, B: bb, A: 0xFF})
 		}
 	}
 	return img, w, h, true
