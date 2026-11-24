@@ -36,17 +36,23 @@ type Engine struct {
 }
 
 func (e *Engine) Device(ctx context.Context, id int64, now time.Time) error {
-	return e.device(ctx, id, now, nil)
+	return e.device(ctx, id, now, nil, false)
 }
 
-func (e *Engine) device(ctx context.Context, id int64, now time.Time, cutoff *time.Time) error {
+func (e *Engine) device(ctx context.Context, id int64, now time.Time, cutoff *time.Time, skipBusy bool) error {
 	tx, err := e.DB.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 	device := ruleDevice{id: id}
-	err = tx.QueryRowContext(ctx, "SELECT old_id,health_epoch,device_no,last_time,bind_time,battery FROM device WHERE device_id=? AND old_id IS NOT NULL AND status<>0 FOR UPDATE", id).Scan(&device.oldID, &device.epoch, &device.no, &device.last, &device.bound, &device.battery)
+	query := "SELECT old_id,health_epoch,device_no,last_time,bind_time,battery FROM device WHERE device_id=? AND old_id IS NOT NULL AND status<>0 FOR UPDATE"
+	if skipBusy {
+		// Background work yields to ingest/SOS that already owns the device.
+		// The unchanged durable due row remains eligible for the next tick.
+		query += " SKIP LOCKED"
+	}
+	err = tx.QueryRowContext(ctx, query, id).Scan(&device.oldID, &device.epoch, &device.no, &device.last, &device.bound, &device.battery)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil
 	}

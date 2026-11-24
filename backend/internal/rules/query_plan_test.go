@@ -32,4 +32,36 @@ func TestMissingActivityDoesNotScanOtherMetrics(t *testing.T) {
 	if key.String != "idx_health_rule_window" || rows > 10 {
 		t.Fatalf("missing metric scans unrelated history: key=%s estimated_rows=%d", key.String, rows)
 	}
+	args := make([]any, 0, 18)
+	for _, metric := range []string{"heart_rate", "blood_pressure_systolic", "steps"} {
+		args = append(args, 1, 1, 1, metric, now.Add(-15*time.Minute).UnixMicro(), now.UnixMicro())
+	}
+	plan, err := p.QueryContext(ctx, "EXPLAIN "+latestRuleObservationsSQL, args...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer plan.Close()
+	branches, small := 0, 0
+	for plan.Next() {
+		var tableName sql.NullString
+		var estimate sql.NullInt64
+		if err = plan.Scan(&id, &selectType, &tableName, &partitions, &access, &possible, &key, &length, &reference, &estimate, &filtered, &extra); err != nil {
+			t.Fatal(err)
+		}
+		if tableName.String == "health_sample" {
+			branches++
+			if key.String != "idx_health_rule_window" {
+				t.Fatalf("unexpected union branch index %s", key.String)
+			}
+			if estimate.Valid && estimate.Int64 <= 10 {
+				small++
+			}
+		}
+	}
+	if err = plan.Err(); err != nil {
+		t.Fatal(err)
+	}
+	if branches != 3 || small < 2 {
+		t.Fatalf("expected three bounded metric branches, two empty ranges; branches=%d small=%d", branches, small)
+	}
 }

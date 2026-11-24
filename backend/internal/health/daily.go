@@ -124,7 +124,7 @@ func RefreshDaily(ctx context.Context, pool *db.Database, id string, box *secure
 	if err != nil {
 		return err
 	}
-	samples := []Sample{}
+	var series dailySeries
 	candidates := 0
 	for rows.Next() {
 		candidates++
@@ -144,7 +144,7 @@ func RefreshDaily(ctx context.Context, pool *db.Database, id string, box *secure
 			return err
 		}
 		if s.InWindow(from, to) {
-			samples = append(samples, s)
+			series.add(s)
 		}
 	}
 	err = rows.Err()
@@ -157,7 +157,7 @@ func RefreshDaily(ctx context.Context, pool *db.Database, id string, box *secure
 	if candidates > 100000 {
 		computation = fmt.Errorf("单日候选采样超过 100000 条，须离线处理")
 	} else {
-		result, computation = Aggregate(samples, from, to)
+		result, computation = series.result(from, to)
 	}
 	b, _ := json.Marshal(result)
 	message := ""

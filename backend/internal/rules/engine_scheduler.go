@@ -57,7 +57,10 @@ func (e *Engine) Tick(ctx context.Context) error {
 		for range min(limit, len(tasks)) {
 			workers.Go(func() {
 				for i := range jobs {
-					failures[i] = e.device(ctx, tasks[i].id, time.Now().UTC(), &cutoff)
+					task := tasks[i]
+					// Once overdue by one full tick, wait for the row under the
+					// cycle deadline instead of starving a continuously busy device.
+					failures[i] = e.device(ctx, task.id, time.Now().UTC(), &cutoff, cutoff.Sub(task.due) < 5*time.Second)
 				}
 			})
 		}

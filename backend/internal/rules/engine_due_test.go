@@ -145,7 +145,7 @@ func TestRuleTaskFutureSampleAndOffline(t *testing.T) {
 		t.Fatal(err)
 	}
 	e := Engine{DB: p}
-	if err := e.device(ctx, 1, now, &now); err != nil {
+	if err := e.device(ctx, 1, now, &now, false); err != nil {
 		t.Fatal(err)
 	}
 	var due time.Time
@@ -161,13 +161,49 @@ func TestRuleTaskFutureSampleAndOffline(t *testing.T) {
 	}
 	// A separate worker/restarted process sees the same durable task.
 	e2 := Engine{DB: p}
-	if err := e2.device(ctx, 1, future, &future); err != nil {
+	if err := e2.device(ctx, 1, future, &future, false); err != nil {
 		t.Fatal(err)
 	}
-	if err := e.device(ctx, 1, future, &future); err != nil {
+	if err := e.device(ctx, 1, future, &future, false); err != nil {
 		t.Fatal(err)
 	}
 	if err := p.QueryRowContext(ctx, "SELECT COUNT(*) FROM care_incident WHERE kind='rule_heart_rate' AND severity='critical'").Scan(&count); err != nil || count != 1 {
 		t.Fatal("future night incident missing/duplicated", count, err)
+	}
+}
+
+func TestRuleTaskYieldsToLockedDevice(t *testing.T) {
+	p, _ := seed(t)
+	ctx := context.Background()
+	tx, err := p.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback()
+	var id int64
+	if err = tx.QueryRowContext(ctx, "SELECT device_id FROM device WHERE device_id=1 FOR UPDATE").Scan(&id); err != nil {
+		t.Fatal(err)
+	}
+	var original time.Time
+	if err = p.QueryRowContext(ctx, "SELECT due_at FROM rule_task WHERE device_id=1").Scan(&original); err != nil {
+		t.Fatal(err)
+	}
+	tickCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+	if err = (&Engine{DB: p}).Tick(tickCtx); err != nil {
+		t.Fatal("worker waited on device", err)
+	}
+	var due time.Time
+	if err = p.QueryRowContext(ctx, "SELECT due_at FROM rule_task WHERE device_id=1").Scan(&due); err != nil || !due.Equal(original) {
+		t.Fatal("busy device lost or moved task", due, err)
+	}
+	if err = tx.Rollback(); err != nil {
+		t.Fatal(err)
+	}
+	if err = (&Engine{DB: p}).Tick(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if err = p.QueryRowContext(ctx, "SELECT due_at FROM rule_task WHERE device_id=1").Scan(&due); err != nil || !due.After(original) {
+		t.Fatal("released task not processed", due, err)
 	}
 }
