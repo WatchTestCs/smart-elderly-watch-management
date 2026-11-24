@@ -181,10 +181,15 @@ func (c *statementConn) ExecContext(ctx context.Context, query string, args []dr
 	if !sessionNeutralSQL(query) {
 		c.readCommittedSession = false
 	}
-	if len(args) == 0 || !cacheableDML(query) {
+	if !cacheableDML(query) {
 		if err := c.clearStatements(); err != nil {
 			return nil, err
 		}
+		return c.mysqlWireConn.ExecContext(ctx, query, args)
+	}
+	// Parameterless ordinary DML already executes directly. Like QueryContext,
+	// it cannot change the parsing mode of the cached parameterized plans.
+	if len(args) == 0 {
 		return c.mysqlWireConn.ExecContext(ctx, query, args)
 	}
 	stmt, err := c.statement(ctx, query, len(args))

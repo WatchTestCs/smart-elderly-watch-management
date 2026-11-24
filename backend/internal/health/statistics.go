@@ -76,6 +76,9 @@ func Aggregate(samples []Sample, from, to time.Time) (Statistics, error) {
 	if s.Semantics != "daily_total" && s.Metric != "sleep_stage" && !(s.Metric == "steps" && s.Semantics == "interval") {
 		return aggregateScalars(samples, s)
 	}
+	if s.Semantics != "daily_total" && s.Metric == "sleep_stage" {
+		return aggregateSleepSeries(samples, from, to)
+	}
 	out := Statistics{}
 	type calendarDay struct {
 		year  int
@@ -83,7 +86,16 @@ func Aggregate(samples []Sample, from, to time.Time) (Statistics, error) {
 		day   int
 	}
 	daily := map[calendarDay]*Sample{}
-	var dailyObserved map[time.Time]float64
+	// Ordered observations only need the preceding timestamp. On the first
+	// reversal, reconstruct the already validated prefix in a compact map.
+	type instant struct {
+		seconds int64
+		nanos   int32
+	}
+	keyAt := func(t time.Time) instant { return instant{t.Unix(), int32(t.Nanosecond())} }
+	var dailyObserved map[instant]float64
+	var previous *Sample
+	observed := 0
 	filtered := []*Sample{}
 	first := &samples[0]
 	for i := range samples {
@@ -95,14 +107,33 @@ func Aggregate(samples []Sample, from, to time.Time) (Statistics, error) {
 			return out, err
 		}
 		if s.Semantics == "daily_total" {
-			if dailyObserved == nil {
-				dailyObserved = make(map[time.Time]float64)
-			}
 			at := s.Start.UTC()
-			if value, exists := dailyObserved[at]; exists && value != *s.Value {
+			if dailyObserved == nil && previous != nil && at.Before(previous.Start.UTC()) {
+				live := observed + 1
+				for j := i + 1; j < len(samples); j++ {
+					if !samples[j].Deleted && samples[j].Value != nil {
+						live++
+					}
+				}
+				dailyObserved = make(map[instant]float64, min(live, 100000))
+				for j := 0; j < i; j++ {
+					prior := &samples[j]
+					if !prior.Deleted && prior.Value != nil {
+						dailyObserved[keyAt(prior.Start)] = *prior.Value
+					}
+				}
+			}
+			if dailyObserved != nil {
+				key := keyAt(at)
+				if value, exists := dailyObserved[key]; exists && value != *s.Value {
+					return out, fmt.Errorf("conflicting daily totals at the same observation time")
+				}
+				dailyObserved[key] = *s.Value
+			} else if previous != nil && at.Equal(previous.Start.UTC()) && *previous.Value != *s.Value {
 				return out, fmt.Errorf("conflicting daily totals at the same observation time")
 			}
-			dailyObserved[at] = *s.Value
+			previous = s
+			observed++
 			year, month, day := s.Start.In(from.Location()).Date()
 			key := calendarDay{year, month, day}
 			if old, ok := daily[key]; !ok || s.Start.After(old.Start) {

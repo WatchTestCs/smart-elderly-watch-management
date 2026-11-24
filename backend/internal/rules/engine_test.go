@@ -250,7 +250,7 @@ func TestNightActivityMonotonicAndIntervals(t *testing.T) {
 	}
 }
 
-func TestTickPagesAndRetriesBeforeFailedDevice(t *testing.T) {
+func TestTickDuePagesAndRetriesFailedDevice(t *testing.T) {
 	p, now := seed(t)
 	ctx := context.Background()
 	for id := 2; id <= 102; id++ {
@@ -268,10 +268,12 @@ func TestTickPagesAndRetriesBeforeFailedDevice(t *testing.T) {
 		t.Fatal(err)
 	}
 	e := Engine{DB: p}
-	for _, after := range []int64{100, 102, 0} {
-		if err = e.Tick(ctx); err != nil || e.After != after {
-			t.Fatalf("after=%d want=%d err=%v", e.After, after, err)
-		}
+	if err = e.Tick(ctx); err != nil {
+		t.Fatal(err)
+	}
+	var dormant int
+	if err = p.QueryRowContext(ctx, "SELECT count(*) FROM rule_task WHERE due_at IS NULL").Scan(&dormant); err != nil || dormant != 102 {
+		t.Fatalf("dormant tasks=%d err=%v", dormant, err)
 	}
 	policy.Consecutive = 0
 	invalid, err := json.Marshal(policy)
@@ -291,14 +293,21 @@ func TestTickPagesAndRetriesBeforeFailedDevice(t *testing.T) {
 	if _, err = p.ExecContext(ctx, "UPDATE device SET last_time=? WHERE device_id=75", time.Now().UTC().Add(-time.Hour)); err != nil {
 		t.Fatal(err)
 	}
-	if err = e.Tick(ctx); err == nil || e.After != 49 {
-		t.Fatalf("failed device skipped: after=%d err=%v", e.After, err)
+	if err = e.Tick(ctx); err == nil {
+		t.Fatal("invalid policy did not fail")
+	}
+	var pending bool
+	if err = p.QueryRowContext(ctx, "SELECT due_at IS NOT NULL FROM rule_task WHERE device_id=50").Scan(&pending); err != nil || !pending {
+		t.Fatal("failed task lost", pending, err)
 	}
 	if _, err = p.ExecContext(ctx, "UPDATE rule_policy SET payload=? WHERE device_id=50", json.RawMessage(payload)); err != nil {
 		t.Fatal(err)
 	}
-	if err = e.Tick(ctx); err != nil || e.After != 102 {
-		t.Fatalf("retry after=%d err=%v", e.After, err)
+	if err = e.Tick(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if err = p.QueryRowContext(ctx, "SELECT due_at IS NOT NULL FROM rule_task WHERE device_id=50").Scan(&pending); err != nil || pending {
+		t.Fatal("retry did not finish", pending, err)
 	}
 	var count int
 	if err = p.QueryRowContext(ctx, "SELECT count(*) FROM rule_state").Scan(&count); err != nil || count != 1 {

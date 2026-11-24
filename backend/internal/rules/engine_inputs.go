@@ -71,6 +71,7 @@ func collectRuleInput(ctx context.Context, tx *sql.Tx, device ruleDevice, p Poli
 	if err := readRuleBaselines(ctx, tx, device, p, &in, box); err != nil {
 		return Input{}, err
 	}
+	in.activityObserved = in.Activity != nil
 	if err := readRuleActivity(ctx, tx, device, p, &in, box); err != nil {
 		return Input{}, err
 	}
@@ -81,23 +82,22 @@ func collectRuleInput(ctx context.Context, tx *sql.Tx, device ruleDevice, p Poli
 func readLatestRuleObservations(ctx context.Context, tx *sql.Tx, device ruleDevice, p Policy, in *Input, box *securestore.Box) error {
 	id, oldID, epoch := device.id, device.oldID, device.epoch
 	now := in.Now
-	var err error
-	// Fetch one latest observation per metric so a heart-rate burst cannot hide
-	// activity or blood pressure in a shared LIMIT window.
-	for _, metric := range []string{"heart_rate", "blood_pressure_systolic", "steps"} {
-		window := 5 * time.Minute
-		if metric == "steps" {
-			window = time.Duration(p.ActivityMinutes) * time.Minute
-		}
+	end, vitalStart := now.UnixMicro(), now.Add(-5*time.Minute).UnixMicro()
+	activityStart := now.Add(-time.Duration(p.ActivityMinutes) * time.Minute).UnixMicro()
+	rows, err := tx.QueryContext(ctx, latestRuleObservationsSQL,
+		oldID, id, epoch, "heart_rate", vitalStart, end,
+		oldID, id, epoch, "blood_pressure_systolic", vitalStart, end,
+		oldID, id, epoch, "steps", activityStart, end)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var metric int
 		var sampleID string
 		var revision int64
 		var stored health.ProjectionPayload
-		err = tx.QueryRowContext(ctx, latestSampleSQL, oldID, id, epoch, metric, now.Add(-window).UnixMicro(), now.UnixMicro()).
-			Scan(&sampleID, &revision, &stored.JSON, &stored.Cipher)
-		if errors.Is(err, sql.ErrNoRows) {
-			continue
-		}
-		if err != nil {
+		if err := rows.Scan(&metric, &sampleID, &revision, &stored.JSON, &stored.Cipher); err != nil {
 			return err
 		}
 		payload, err := stored.OpenSample(box, sampleID, oldID, revision)
@@ -113,18 +113,17 @@ func readLatestRuleObservations(ctx context.Context, tx *sql.Tx, device ruleDevi
 		}
 		v := &Value{Value: *sample.Value, Key: sampleID + ":" + fmt.Sprint(revision), Source: sample.Source, Device: sample.SourceDevice, At: sample.Start}
 		switch metric {
-		case "heart_rate":
+		case 0:
 			in.Heart = v
-		case "blood_pressure_systolic":
+		case 1:
 			in.Blood = v
-		case "steps":
+		case 2:
 			if p.Night(now) {
 				in.Activity = v
 			}
 		}
 	}
-	return nil
-
+	return rows.Err()
 }
 
 func readLegacyRuleVitals(ctx context.Context, tx *sql.Tx, device ruleDevice, in *Input, box *securestore.Box) error {

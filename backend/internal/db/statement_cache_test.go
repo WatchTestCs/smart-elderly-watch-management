@@ -205,3 +205,28 @@ func TestExecutableCommentsDoNotRetainKnownIsolation(t *testing.T) {
 		}
 	}
 }
+
+func TestParameterlessDMLPreservesPlans(t *testing.T) {
+	w := &cacheTestWire{}
+	c := cacheForTest(w, 2)
+	ctx := context.Background()
+	args := []driver.NamedValue{{Ordinal: 1, Value: int64(1)}}
+	for _, q := range []string{"SELECT ?", "UPDATE t SET v=1", "SELECT ?", "DELETE FROM t WHERE v=2", "SELECT ?"} {
+		var a []driver.NamedValue
+		if q == "SELECT ?" {
+			a = args
+		}
+		if _, err := c.ExecContext(ctx, q, a); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if w.prepared != 1 || w.closed != 0 || w.direct != 2 || w.executed != 3 {
+		t.Fatal("ordinary direct DML evicted plans", w)
+	}
+	if _, err := c.ExecContext(ctx, "ALTER TABLE t ADD COLUMN z INT", nil); err != nil {
+		t.Fatal(err)
+	}
+	if w.closed != 1 || len(c.plans) != 0 {
+		t.Fatal("DDL retained plans", w)
+	}
+}

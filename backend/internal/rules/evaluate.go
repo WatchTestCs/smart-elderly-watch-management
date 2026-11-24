@@ -99,4 +99,7 @@ type Input struct {
 	Now, LastReport                 time.Time
 	Heart, Blood, Battery, Activity *Value
 	Baselines                       map[string]Baseline
+	// A latest steps observation may temporarily have an invalid rolling
+	// window; it still needs time-driven re-evaluation while night is active.
+	activityObserved bool
 }
