@@ -3,7 +3,7 @@
 package handlers
 
 /*
-#cgo windows LDFLAGS: ${SRCDIR}/../../../suining-core/target/x86_64-pc-windows-gnu/release/libsuining_core.a -lws2_32 -luserenv -lbcrypt -lntdll -ldbghelp
+#cgo windows LDFLAGS: ${SRCDIR}/../../../suining-core/target/x86_64-pc-windows-gnu/release/libsuining_core.a -lws2_32 -luserenv -lbcrypt -lntdll -ldbghelp -lsynchronization
 #cgo linux LDFLAGS: ${SRCDIR}/../../../suining-core/target/release/libsuining_core.a -ldl -lpthread -lm
 #include <stdint.h>
 #include <stddef.h>
