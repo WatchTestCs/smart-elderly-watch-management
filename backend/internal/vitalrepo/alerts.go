@@ -16,10 +16,10 @@ const pendingRate = "(r.rate_state='1' AND (r.rate_handled_at IS NULL OR r.creat
 const pendingPressure = "(r.pre_state='1' AND (r.pre_handled_at IS NULL OR r.create_time > r.pre_handled_at))"
 
 // Both counters evaluate the same history rows, including rows pending both metrics.
-const pendingCountsSQL = `SELECT
-	COUNT(CASE WHEN ` + pendingRate + ` THEN 1 END) AS rate_count,
-	COUNT(CASE WHEN ` + pendingPressure + ` THEN 1 END) AS pressure_count
-	FROM ratepre r`
+const pendingCountColumns = `COUNT(CASE WHEN ` + pendingRate + ` THEN 1 END) AS rate_count,
+	COUNT(CASE WHEN ` + pendingPressure + ` THEN 1 END) AS pressure_count`
+
+const pendingCountsSQL = `SELECT ` + pendingCountColumns + ` FROM ratepre r`
 
 func AlertCounts(ctx context.Context, store db.RowQuerier) (rate, pressure int64, err error) {
 	err = store.QueryRowContext(ctx, pendingCountsSQL).Scan(&rate, &pressure)
