@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"unicode/utf8"
 
 	"suining-care/internal/securestore"
 )
@@ -88,9 +89,9 @@ func prepareBatch(samples []Sample, device *string) (PreparedBatch, error) {
 		if err != nil {
 			return PreparedBatch{}, err
 		}
-		// Identity and SQL columns use immutable fields; the encoded snapshot
-		// owns the value and metadata, so retain no caller-owned mutable data.
-		s.Value, s.Metadata = nil, nil
+		// Normalize gives every nonnil measurement its own scalar. Retain it
+		// for local committed projections, but never retain caller metadata.
+		s.Metadata = nil
 		input = append(input, preparedSample{payload: b, sample: s})
 	}
 	return PreparedBatch{input: input, minimumVersion: minimumVersion}, nil
@@ -194,9 +195,10 @@ func (batch *PreparedBatch) StatisticsProjectionRange() (int64, int64) {
 	return batch.projectionBefore, batch.projectionThrough
 }
 
-// StatisticsProjectionChanges reuses the canonical request payloads instead
-// of fetching and decrypting the same events from MySQL after commit. Only
-// accepted revisions are returned, in the transaction's event order.
+// StatisticsProjectionChanges returns a read-only view of the accepted
+// revisions, in event order. The normalized batch owns the measurement;
+// metadata is not needed by the statistics projection. Use the canonical
+// encoding when a source string or timestamp may change during JSON encoding.
 func (batch *PreparedBatch) StatisticsProjectionChanges(o Owner) ([]Record, error) {
 	if batch.projectionThrough == 0 {
 		return nil, nil
@@ -207,14 +209,18 @@ func (batch *PreparedBatch) StatisticsProjectionChanges(o Owner) ([]Record, erro
 		if item.revision == 0 {
 			continue
 		}
-		var sample Sample
-		if err := json.Unmarshal(item.payload, &sample); err != nil {
-			return nil, err
-		}
 		records = append(records, Record{
 			SampleID: item.id, OldID: o.OldID, DeviceID: o.DeviceID,
-			Epoch: o.Epoch, Revision: item.revision, Sample: sample,
+			Epoch: o.Epoch, Revision: item.revision, Sample: item.sample,
 		})
+		sample := &records[len(records)-1].Sample
+		if !utf8.ValidString(sample.Source) || !utf8.ValidString(sample.SourceDevice) ||
+			!safeSampleTime(sample.Start) || !safeSampleTime(sample.End) {
+			*sample = Sample{}
+			if err := json.Unmarshal(item.payload, sample); err != nil {
+				return nil, err
+			}
+		}
 	}
 	return records, nil
 }

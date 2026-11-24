@@ -325,28 +325,35 @@ func applyCoreChanges(s *coreSeries, revision int64, changes []health.Record, no
 		}
 	}
 	sort.Slice(changedPoints, func(i, j int) bool { return changedPoints[i].at < changedPoints[j].at })
-	points := make([]corePoint, 0, len(s.ids)+len(changedPoints))
+	// Merge directly into the immutable destination columns. Charge the actual
+	// allocated capacity to the cache, including space for replaced points.
+	capacity := min(10000, len(s.ids)+len(changedPoints))
+	next.timestamps = make([]int64, 0, capacity)
+	next.values = make([]float64, 0, capacity)
+	next.ids = make([]string, 0, capacity)
+	next.unit = "count/min"
+	appendPoint := func(id string, at int64, value float64) {
+		next.ids = append(next.ids, id)
+		next.timestamps = append(next.timestamps, at)
+		next.values = append(next.values, value)
+	}
 	j := 0
 	for i, id := range s.ids {
 		if _, changed := updated[id]; changed {
 			continue
 		}
 		for j < len(changedPoints) && changedPoints[j].at < s.timestamps[i] {
-			points = append(points, changedPoints[j])
+			p := changedPoints[j]
+			appendPoint(p.id, p.at, p.value)
 			j++
 		}
-		points = append(points, corePoint{id, s.timestamps[i], s.values[i]})
+		appendPoint(id, s.timestamps[i], s.values[i])
 	}
-	points = append(points, changedPoints[j:]...)
-	if len(points) > 10000 {
+	for _, p := range changedPoints[j:] {
+		appendPoint(p.id, p.at, p.value)
+	}
+	if len(next.ids) > 10000 {
 		return nil
-	}
-	next.timestamps = make([]int64, len(points))
-	next.values = make([]float64, len(points))
-	next.ids = make([]string, len(points))
-	next.unit = "count/min"
-	for i, point := range points {
-		next.timestamps[i], next.values[i], next.ids[i] = point.at, point.value, point.id
 	}
 	return &next
 }

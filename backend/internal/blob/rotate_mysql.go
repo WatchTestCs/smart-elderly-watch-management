@@ -109,7 +109,7 @@ func RotateMySQLImages(ctx context.Context, database *sql.DB, box *securestore.B
 			if !replace {
 				return nil
 			}
-			sealed, err := box.Seal(string(plain), "image:"+name)
+			sealed, err := box.SealBytes(plain, "image:"+name)
 			if err != nil {
 				return err
 			}

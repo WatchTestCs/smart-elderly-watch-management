@@ -151,7 +151,7 @@ func (s *Encrypted) putMySQLCatalog(ctx context.Context, database *sql.DB, key s
 	if len(data) > MaxPlainBytes {
 		return ErrIntegrity
 	}
-	ciphertext, err := s.Box.Seal(string(data), "image:"+key)
+	ciphertext, err := s.Box.SealBytes(data, "image:"+key)
 	if err != nil {
 		return err
 	}
