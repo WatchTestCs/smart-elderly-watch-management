@@ -54,8 +54,7 @@ func EachDeviceAlertCount(ctx context.Context, tx *sql.Tx, visit func(*DeviceAle
 		}
 		visit(state, rate, pressure)
 		return nil
-	}, `SELECT `+personCols+`,
-			(SELECT COUNT(1) FROM ratepre r WHERE r.device_id = d.device_id AND `+pendingRate+`) AS rate_count,
-			(SELECT COUNT(1) FROM ratepre r WHERE r.device_id = d.device_id AND `+pendingPressure+`) AS pre_count
-		 `+personFrom+` WHERE d.status = 1 ORDER BY d.device_id`)
+	}, `SELECT `+personCols+`, counts.rate_count, counts.pressure_count `+personFrom+`
+		JOIN LATERAL (`+pendingCountsSQL+` WHERE r.device_id=d.device_id) counts ON TRUE
+		WHERE d.status=1 ORDER BY d.device_id`)
 }
