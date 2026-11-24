@@ -115,7 +115,7 @@ func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Reques
 		if errors.Is(err, health.ErrConflict) {
 			conflict409(w, err.Error())
 		} else {
-			response.Error500(w, ref())
+			response.Error500(w, logInternalError(err))
 		}
 		return
 	}

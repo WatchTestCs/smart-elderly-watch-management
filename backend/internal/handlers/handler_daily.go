@@ -65,15 +65,25 @@ func (h *Handler) healthDaily(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer tx.Rollback()
-	// Preserve owner-clock -> daily-row lock order, including on cold misses.
-	if _, err := health.LockOwner(ctx, tx, oldID); internalError(w, err) {
-		return
-	}
+	// Existing rows are read in one committed snapshot. A write concurrent
+	// with this read may publish a newer revision, but cannot make the
+	// result/dirty/revision fields come from different committed states.
+	// The duty or family binding remains locked by the enclosing transaction.
 	cached := make(map[string]dailyCacheRow, req.Days)
-	if err := readDailyRows(ctx, tx, keys, cached); internalError(w, err) {
+	if err := readDailyRows(ctx, tx, keys, cached, false); internalError(w, err) {
 		return
 	}
 	if len(cached) != len(ids) {
+		// Cold creation still takes owner -> daily locks. Re-read all rows
+		// after acquiring the clock; a writer may have invalidated the first
+		// snapshot, or another reader may have inserted the missing days.
+		if _, err := health.LockOwner(ctx, tx, oldID); internalError(w, err) {
+			return
+		}
+		clear(cached)
+		if err := readDailyRows(ctx, tx, keys, cached, true); internalError(w, err) {
+			return
+		}
 		missing := make([]any, 0, len(ids)-len(cached))
 		values := make([]any, 0, cap(missing)*8)
 		for n, id := range ids {
@@ -83,13 +93,15 @@ func (h *Handler) healthDaily(w http.ResponseWriter, r *http.Request) {
 			missing = append(missing, id)
 			values = append(values, id, oldID, req.Source, req.SourceDevice, req.Metric, req.Semantics, days[n], req.OffsetMinutes)
 		}
-		placeholders := strings.TrimSuffix(strings.Repeat("(?,?,?,?,?,?,?,?),", len(missing)), ",")
-		_, err = tx.ExecContext(ctx, metricDailyInsertPrefix+placeholders+" ON DUPLICATE KEY UPDATE cache_key=cache_key", values...)
-		if internalError(w, err) {
-			return
-		}
-		if err := readDailyRows(ctx, tx, missing, cached); internalError(w, err) {
-			return
+		if len(missing) != 0 {
+			placeholders := strings.TrimSuffix(strings.Repeat("(?,?,?,?,?,?,?,?),", len(missing)), ",")
+			_, err = tx.ExecContext(ctx, metricDailyInsertPrefix+placeholders+" ON DUPLICATE KEY UPDATE cache_key=cache_key", values...)
+			if internalError(w, err) {
+				return
+			}
+			if err := readDailyRows(ctx, tx, missing, cached, true); internalError(w, err) {
+				return
+			}
 		}
 	}
 	items := make([]map[string]any, 0, req.Days)
@@ -119,9 +131,13 @@ func (h *Handler) healthDaily(w http.ResponseWriter, r *http.Request) {
 	response.OK(w, map[string]any{"items": items, "source": req.Source, "sourceDevice": req.SourceDevice, "metric": req.Metric, "semantics": req.Semantics, "offsetMinutes": req.OffsetMinutes, "algorithmVersion": health.DailyAlgorithmVersion})
 }
 
-func readDailyRows(ctx context.Context, tx *sql.Tx, keys []any, cached map[string]dailyCacheRow) error {
-	rows, err := tx.QueryContext(ctx, "SELECT cache_key,dirty,computed_revision,result,result_cipher,error_text,updated_at FROM metric_daily WHERE cache_key IN ("+
-		strings.TrimSuffix(strings.Repeat("?,", len(keys)), ",")+") FOR SHARE", keys...)
+func readDailyRows(ctx context.Context, tx *sql.Tx, keys []any, cached map[string]dailyCacheRow, locked bool) error {
+	query := "SELECT cache_key,dirty,computed_revision,result,result_cipher,error_text,updated_at FROM metric_daily WHERE cache_key IN (" +
+		strings.TrimSuffix(strings.Repeat("?,", len(keys)), ",") + ")"
+	if locked {
+		query += " FOR SHARE"
+	}
+	rows, err := tx.QueryContext(ctx, query, keys...)
 	if err != nil {
 		return err
 	}
