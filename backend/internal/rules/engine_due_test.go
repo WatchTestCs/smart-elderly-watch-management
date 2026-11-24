@@ -207,3 +207,74 @@ func TestRuleTaskYieldsToLockedDevice(t *testing.T) {
 		t.Fatal("released task not processed", due, err)
 	}
 }
+
+func TestRuleTaskOfflineThresholdTransition(t *testing.T) {
+	p, now := seed(t)
+	ctx := context.Background()
+	policy := Default()
+	policy.OfflineSeconds = 75
+	payload, _ := json.Marshal(policy)
+	if _, err := p.ExecContext(ctx, "INSERT INTO rule_policy(device_id,revision,payload,updated_by) VALUES(1,1,?,1)", json.RawMessage(payload)); err != nil {
+		t.Fatal(err)
+	}
+	// The timeout and preceding evaluation are in the same UTC minute.
+	report := now.Add(-75*time.Second + 10*time.Second)
+	boundary := report.Add(75 * time.Second)
+	if _, err := p.ExecContext(ctx, "UPDATE device SET last_time=? WHERE device_id=1", report); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := p.ExecContext(ctx, "UPDATE rule_task SET due_at=? WHERE device_id=1", now); err != nil {
+		t.Fatal(err)
+	}
+	e := Engine{DB: p}
+	if err := e.device(ctx, 1, now, &now, false); err != nil {
+		t.Fatal(err)
+	}
+	var due time.Time
+	if err := p.QueryRowContext(ctx, "SELECT due_at FROM rule_task WHERE device_id=1").Scan(&due); err != nil || !due.Equal(boundary.Add(time.Microsecond)) {
+		t.Fatal("wrong deadline", due, err)
+	}
+	if err := e.device(ctx, 1, boundary, &boundary, false); err != nil {
+		t.Fatal(err)
+	}
+	due = boundary.Add(time.Microsecond)
+	if err := (&Engine{DB: p}).device(ctx, 1, due, &due, false); err != nil {
+		t.Fatal(err)
+	}
+	var count int
+	if err := p.QueryRowContext(ctx, "SELECT count(*) FROM care_incident WHERE kind='rule_no_report'").Scan(&count); err != nil || count != 1 {
+		t.Fatal("same-minute threshold missed", count, err)
+	}
+	var next time.Time
+	if err := p.QueryRowContext(ctx, "SELECT due_at FROM rule_task WHERE device_id=1").Scan(&next); err != nil || !next.Equal(nextNightBoundary(policy, due)) {
+		t.Fatal("offline task continues minute polling", next, err)
+	}
+	if err := e.Device(ctx, 1, due.Add(time.Minute)); err != nil {
+		t.Fatal(err)
+	}
+	if err := p.QueryRowContext(ctx, "SELECT count(*) FROM care_incident WHERE kind='rule_no_report'").Scan(&count); err != nil || count != 1 {
+		t.Fatal("duplicate offline incident", count, err)
+	}
+	// A fresh report rearms the exact timeout, without restarting the worker.
+	recovered := due.Add(2 * time.Minute)
+	if _, err := p.ExecContext(ctx, "UPDATE device SET last_time=? WHERE device_id=1", recovered); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := p.ExecContext(ctx, "UPDATE rule_task SET due_at=? WHERE device_id=1", recovered); err != nil {
+		t.Fatal(err)
+	}
+	if err := e.device(ctx, 1, recovered, &recovered, false); err != nil {
+		t.Fatal(err)
+	}
+	var active bool
+	if err := p.QueryRowContext(ctx, "SELECT active FROM rule_state WHERE device_id=1 AND kind='no_report'").Scan(&active); err != nil || active {
+		t.Fatal("recovery not persisted", active, err)
+	}
+	next = recovered.Add(75*time.Second + time.Microsecond)
+	if err := e.device(ctx, 1, next, &next, false); err != nil {
+		t.Fatal(err)
+	}
+	if err := p.QueryRowContext(ctx, "SELECT count(*) FROM care_incident WHERE kind='rule_no_report'").Scan(&count); err != nil || count != 2 {
+		t.Fatal("next outage missing", count, err)
+	}
+}

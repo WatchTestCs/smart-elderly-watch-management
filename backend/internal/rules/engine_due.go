@@ -42,11 +42,13 @@ func nextNightBoundary(p Policy, now time.Time) time.Time {
 func nextRuleTask(ctx context.Context, tx *sql.Tx, device ruleDevice, p Policy, in Input, nightIncident bool) (time.Time, error) {
 	now := in.Now
 	next := nextNightBoundary(p, now)
-	// no_report's observation key changes at each UTC minute even when
-	// the device is online. Preserve that state/evidence cadence.
+	// The offline condition is strictly greater than the configured timeout.
+	// Schedule the first representable MySQL timestamp after that boundary.
+	// Once breached, the next report/policy write wakes the task; there is no
+	// need to rewrite the same observation every minute.
 	if !in.LastReport.IsZero() {
-		at := now.UTC().Truncate(time.Minute).Add(time.Minute)
-		if at.Before(next) {
+		at := in.LastReport.Add(time.Duration(p.OfflineSeconds)*time.Second + time.Microsecond)
+		if at.After(now) && at.Before(next) {
 			next = at
 		}
 	}

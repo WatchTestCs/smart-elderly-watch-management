@@ -61,10 +61,10 @@ func (h *Handler) beginScopedLocationRead(w http.ResponseWriter, r *http.Request
 // beginScopedResidentRead holds the actor's duty or family binding through
 // the protected query. Role changes and family unbinding cannot overtake it.
 func (h *Handler) beginScopedResidentRead(w http.ResponseWriter, r *http.Request, oldID int64, action carepolicy.Action) (*sql.Tx, bool) {
-	return beginScopedResidentReadOn(w, r, h.DB.DB, oldID, action, sql.LevelReadCommitted)
+	return beginScopedResidentReadOn(w, r, h.DB.DB, oldID, action, sql.LevelReadCommitted, nil)
 }
 
-func beginScopedResidentReadOn(w http.ResponseWriter, r *http.Request, pool *sql.DB, oldID int64, action carepolicy.Action, isolation sql.IsolationLevel) (*sql.Tx, bool) {
+func beginScopedResidentReadOn(w http.ResponseWriter, r *http.Request, pool *sql.DB, oldID int64, action carepolicy.Action, isolation sql.IsolationLevel, revision *int64) (*sql.Tx, bool) {
 	p, ok := principalOr401(w, r)
 	if !ok {
 		return nil, false
@@ -89,8 +89,15 @@ func beginScopedResidentReadOn(w http.ResponseWriter, r *http.Request, pool *sql
 		return nil, false
 	}
 	var id int64
-	err = tx.QueryRowContext(r.Context(),
-		"SELECT old_id FROM oldperson WHERE old_id=? AND family_id=? FOR SHARE", oldID, p.ID).Scan(&id)
+	if revision != nil {
+		// Only the outer resident row is locked. The scalar clock subquery
+		// establishes the repeatable-read snapshot for the statistics query.
+		err = tx.QueryRowContext(r.Context(),
+			"SELECT old_id,COALESCE((SELECT revision FROM health_owner_clock WHERE old_id=?),0) FROM oldperson WHERE old_id=? AND family_id=? FOR SHARE", oldID, oldID, p.ID).Scan(&id, revision)
+	} else {
+		err = tx.QueryRowContext(r.Context(),
+			"SELECT old_id FROM oldperson WHERE old_id=? AND family_id=? FOR SHARE", oldID, p.ID).Scan(&id)
+	}
 	if errors.Is(err, sql.ErrNoRows) {
 		tx.Rollback()
 		response.JSON(w, http.StatusForbidden, map[string]any{"message": "无权访问该账户或照护记录"})

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"suining-care/internal/auth"
 	"suining-care/internal/carepolicy"
 	"suining-care/internal/health"
 	"suining-care/internal/observability"
@@ -34,7 +35,12 @@ func (h *Handler) healthStatistics(w http.ResponseWriter, r *http.Request) {
 	// The binding is checked once, under the transaction's shared lock.
 	// A separate unlocked family lookup cannot authorize the actual read.
 	pool := h.DB.StatisticsPool()
-	tx, ok := beginScopedResidentReadOn(w, r, pool, oldID, carepolicy.ReadHealthData, sql.LevelRepeatableRead)
+	var revision int64
+	var scopedRevision *int64
+	if h.healthCache != nil && p.Role == auth.RoleFamily {
+		scopedRevision = &revision
+	}
+	tx, ok := beginScopedResidentReadOn(w, r, pool, oldID, carepolicy.ReadHealthData, sql.LevelRepeatableRead, scopedRevision)
 	if !ok {
 		return
 	}
@@ -42,7 +48,6 @@ func (h *Handler) healthStatistics(w http.ResponseWriter, r *http.Request) {
 	// Authorization always runs before reading the cache. The committed clock
 	// also detects corrections and deletes written by another server instance.
 	var key [32]byte
-	var revision int64
 	cacheable := false
 	var seriesKey coreKey
 	var from, to int64
@@ -50,7 +55,7 @@ func (h *Handler) healthStatistics(w http.ResponseWriter, r *http.Request) {
 	if h.healthCache != nil {
 		req.OldID = oldID
 		b, err := json.Marshal(req) // Keep reporting offsets for daily totals.
-		if err == nil {
+		if err == nil && scopedRevision == nil {
 			revision, err = health.StatisticsRevision(r.Context(), tx, oldID)
 		}
 		if err == nil && revision > 0 {

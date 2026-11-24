@@ -21,28 +21,27 @@ type ruleDevice struct {
 }
 
 func readRulePolicy(ctx context.Context, tx *sql.Tx, id int64) (Policy, error) {
-	var err error
 	p := Default()
 	var payload []byte
-	err = tx.QueryRowContext(ctx, "SELECT payload FROM rule_policy WHERE device_id=?", id).Scan(&payload)
-	if err == nil {
+	var hrf, hrl, bpf, bpl *float64
+	err := tx.QueryRowContext(ctx, `SELECT p.payload,w.hrf,w.hrl,w.bpf,w.bpl FROM device d
+ LEFT JOIN rule_policy p ON p.device_id=d.device_id
+ LEFT JOIN watch_info w ON w.device_id=d.device_id AND p.device_id IS NULL
+ WHERE d.device_id=?`, id).Scan(&payload, &hrf, &hrl, &bpf, &bpl)
+	if err != nil {
+		return Policy{}, err
+	}
+	if payload != nil {
 		if err = json.Unmarshal(payload, &p); err != nil {
 			return Policy{}, err
 		}
-	} else if errors.Is(err, sql.ErrNoRows) {
-		var hrf, hrl, bpf, bpl *float64
-		err = tx.QueryRowContext(ctx, "SELECT hrf,hrl,bpf,bpl FROM watch_info WHERE device_id=?", id).Scan(&hrf, &hrl, &bpf, &bpl)
-		if err != nil && !errors.Is(err, sql.ErrNoRows) {
-			return Policy{}, err
-		}
+	} else {
 		if hrf != nil && hrl != nil {
 			p.HRLow, p.HRHigh = min(*hrf, *hrl), max(*hrf, *hrl)
 		}
 		if bpf != nil && bpl != nil {
 			p.BPLow, p.BPHigh = min(*bpf, *bpl), max(*bpf, *bpl)
 		}
-	} else {
-		return Policy{}, err
 	}
 	if err = p.Validate(); err != nil {
 		return Policy{}, err

@@ -41,6 +41,8 @@ func (e *Engine) persist(ctx context.Context, tx *sql.Tx, device, old, epoch int
 	if !c.Breach {
 		streak = 0
 		active = false
+	} else if c.Kind == "no_report" {
+		streak = 1
 	} else {
 		streak++
 	}
