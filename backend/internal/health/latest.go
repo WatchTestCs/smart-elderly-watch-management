@@ -116,12 +116,14 @@ func readReadyLatest(ctx context.Context, q latestQuerier, oldID int64, box *sec
 
 func buildLatest(ctx context.Context, q *sql.Tx, oldID int64, box *securestore.Box) ([]Record, error) {
 	partition := "BINARY source,BINARY source_device,BINARY metric,BINARY semantics"
-	// Select one deterministic winner per series before applying the 10,000-
-	// series bound; RANK() counts every timestamp tie as another candidate.
+	// The SQL index stores microseconds, but the authenticated payload keeps
+	// nanoseconds. Read all rows at each series' maximum indexed time, then
+	// resolve the exact timestamp and revision in Go. Bound distinct series,
+	// not tied rows, and avoid an unnecessary global sort of sample IDs.
 	sql := "SELECT s.sample_id,s.device_id,s.epoch,s.revision,s.payload,s.payload_cipher FROM health_sample s INNER JOIN (" +
-		"SELECT sample_id,ROW_NUMBER() OVER (PARTITION BY " + partition + " ORDER BY sample_start DESC,revision DESC,sample_id DESC) AS latest_rank " +
+		"SELECT sample_id,RANK() OVER (PARTITION BY " + partition + " ORDER BY sample_start DESC) AS latest_rank " +
 		"FROM health_sample WHERE old_id=? AND NOT deleted) ranked ON ranked.sample_id=s.sample_id " +
-		"WHERE ranked.latest_rank=1 ORDER BY s.sample_id DESC LIMIT 10001"
+		"WHERE ranked.latest_rank=1"
 	rows, err := q.QueryContext(ctx, sql, oldID)
 	if err != nil {
 		return nil, err
@@ -129,12 +131,7 @@ func buildLatest(ctx context.Context, q *sql.Tx, oldID int64, box *securestore.B
 	defer rows.Close()
 	type series struct{ source, device, metric, semantics string }
 	selected := make(map[series]Record)
-	count := 0
 	for rows.Next() {
-		count++
-		if count > 10000 {
-			return nil, ErrLatestTooManySeries
-		}
 		rec := Record{OldID: oldID}
 		var stored ProjectionPayload
 		if err = rows.Scan(&rec.SampleID, &rec.DeviceID, &rec.Epoch, &rec.Revision, &stored.JSON, &stored.Cipher); err != nil {
@@ -150,6 +147,9 @@ func buildLatest(ctx context.Context, q *sql.Tx, oldID int64, box *securestore.B
 		s := rec.Sample
 		key := series{s.Source, s.SourceDevice, s.Metric, s.Semantics}
 		prior, exists := selected[key]
+		if !exists && len(selected) == 10000 {
+			return nil, ErrLatestTooManySeries
+		}
 		if !exists || s.Start.After(prior.Sample.Start) || (s.Start.Equal(prior.Sample.Start) && rec.Revision > prior.Revision) {
 			selected[key] = rec
 		}

@@ -177,3 +177,65 @@ func TestStatisticsCommittedSnapshot(t *testing.T) {
 		t.Fatalf("new read missed committed correction: %v %v", samples, err)
 	}
 }
+
+func TestLatestColdAndWarmAgreeOnSubMicrosecondTies(t *testing.T) {
+	database := dbtest.MySQL(t)
+	ctx := t.Context()
+	if _, err := database.ExecContext(ctx, "INSERT INTO oldperson(old_id,name) VALUES(1,'exact time')"); err != nil {
+		t.Fatal(err)
+	}
+	at := time.Date(2026, 10, 20, 0, 0, 0, 0, time.UTC)
+	later := Sample{RecordID: "later", Source: "watch", SourceDevice: "A", Metric: "heart_rate", Unit: "count/min", Value: Number(75), Start: at.Add(900 * time.Nanosecond), Version: 1}
+	later.End = later.Start
+	earlier := later
+	earlier.RecordID, earlier.Value = "earlier", Number(65)
+	earlier.Start = at.Add(100 * time.Nanosecond)
+	earlier.End = earlier.Start
+	save := func(samples ...Sample) {
+		t.Helper()
+		tx, err := database.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer tx.Rollback()
+		if _, _, err = SaveBatch(ctx, tx, Owner{OldID: 1}, samples); err != nil {
+			t.Fatal(err)
+		}
+		if err = tx.Commit(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	assertLatest := func(want string) {
+		t.Helper()
+		got, err := Latest(ctx, database, 1, nil)
+		if err != nil || len(got) != 1 || got[0].Sample.RecordID != want {
+			t.Fatalf("latest=%+v err=%v want=%s", got, err, want)
+		}
+	}
+	// The earlier timestamp intentionally has the higher revision.
+	save(later, earlier)
+	assertLatest("later")
+	earlier.Version++
+	earlier.Value = Number(66)
+	save(earlier)
+	assertLatest("later")
+	if _, err := database.ExecContext(ctx, "DELETE FROM health_sample_latest WHERE old_id=1"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := database.ExecContext(ctx, "DELETE FROM health_latest_ready WHERE old_id=1"); err != nil {
+		t.Fatal(err)
+	}
+	assertLatest("later")
+	// Exact timestamp equality still uses revision order.
+	tied := later
+	tied.RecordID = "same-nanos-new-revision"
+	save(tied)
+	assertLatest(tied.RecordID)
+	if _, err := database.ExecContext(ctx, "DELETE FROM health_sample_latest WHERE old_id=1"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := database.ExecContext(ctx, "DELETE FROM health_latest_ready WHERE old_id=1"); err != nil {
+		t.Fatal(err)
+	}
+	assertLatest(tied.RecordID)
+}

@@ -75,12 +75,13 @@ func prepareBatch(samples []Sample, device *string) (PreparedBatch, error) {
 		return PreparedBatch{}, fmt.Errorf("batch must contain 1..200 samples")
 	}
 	input := make([]preparedSample, 0, len(samples))
+	values := make([]float64, len(samples))
 	minimumVersion := samples[0].Version
-	for _, s := range samples {
+	for i, s := range samples {
 		if device != nil && s.SourceDevice != *device {
 			return PreparedBatch{}, ErrSourceDeviceMismatch
 		}
-		s, err := s.Normalize()
+		s, err := s.normalizeInto(&values[i])
 		if err != nil {
 			return PreparedBatch{}, err
 		}
@@ -89,8 +90,8 @@ func prepareBatch(samples []Sample, device *string) (PreparedBatch, error) {
 		if err != nil {
 			return PreparedBatch{}, err
 		}
-		// Normalize gives every nonnil measurement its own scalar. Retain it
-		// for local committed projections, but never retain caller metadata.
+		// Each nonnil value owns a distinct batch-local scalar. Retain it
+		// for committed projections, but never retain caller metadata.
 		s.Metadata = nil
 		input = append(input, preparedSample{payload: b, sample: s})
 	}

@@ -153,8 +153,12 @@ func aggregateSleep(samples []*Sample, from, to time.Time) (map[string]float64, 
 	return acc.result()
 }
 
+var sleepStageNames = [...]string{"asleep", "core", "deep", "rem", "awake", "in_bed"}
+
 type sleepAccumulator struct {
-	stages                  map[string]*sleepUnion
+	stages                  [len(sleepStageNames)]sleepUnion
+	seen                    uint8
+	extra                   map[string]*sleepUnion
 	asleep, awake, combined sleepUnion
 }
 
@@ -169,28 +173,50 @@ func (a *sleepAccumulator) add(sample *Sample, from, to time.Time) {
 	if !end.After(start) {
 		return
 	}
-	stage := a.stages[sample.Stage]
-	if stage == nil {
-		if a.stages == nil {
-			a.stages = make(map[string]*sleepUnion)
-		}
-		stage = &sleepUnion{}
-		a.stages[sample.Stage] = stage
-	}
-	stage.add(start, end)
+	var stage int
 	switch sample.Stage {
-	case "asleep", "core", "deep", "rem":
+	case "asleep":
+		stage = 0
+	case "core":
+		stage = 1
+	case "deep":
+		stage = 2
+	case "rem":
+		stage = 3
+	case "awake":
+		stage = 4
+	case "in_bed":
+		stage = 5
+	default:
+		union := a.extra[sample.Stage]
+		if union == nil {
+			if a.extra == nil {
+				a.extra = make(map[string]*sleepUnion)
+			}
+			union = &sleepUnion{}
+			a.extra[sample.Stage] = union
+		}
+		union.add(start, end)
+		return
+	}
+	a.seen |= 1 << stage
+	a.stages[stage].add(start, end)
+	if stage < 4 {
 		a.asleep.add(start, end)
 		a.combined.add(start, end)
-	case "awake":
+	} else if stage == 4 {
 		a.awake.add(start, end)
 		a.combined.add(start, end)
 	}
 }
 
 func (a *sleepAccumulator) result() (map[string]float64, float64, float64) {
-	minutes := make(map[string]float64, len(a.stages))
-	for name, union := range a.stages {
+	minutes := make(map[string]float64, bits.OnesCount8(a.seen)+len(a.extra))
+	for mask := a.seen; mask != 0; mask &= mask - 1 {
+		i := bits.TrailingZeros8(mask)
+		minutes[sleepStageNames[i]] = a.stages[i].minutes()
+	}
+	for name, union := range a.extra {
 		minutes[name] = union.minutes()
 	}
 	asleepMinutes := a.asleep.minutes()
