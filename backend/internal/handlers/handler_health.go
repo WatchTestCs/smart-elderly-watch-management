@@ -61,14 +61,29 @@ func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	ctx := r.Context()
-	if !h.healthWrites.acquire(ctx) {
+	if !h.healthWrites.acquire(ctx, req.DeviceNo) {
 		healthWriteBusy(w)
 		return
 	}
-	defer h.healthWrites.release()
-	tx, err := h.DB.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	defer h.healthWrites.release(req.DeviceNo)
+	priority := h.sosPriorityEnabled()
+	var tx *sql.Tx
+	var conn *sql.Conn
+	var err error
+	if priority {
+		tx, conn, err = h.healthWrites.beginPriorityTx(ctx, h.DB.DB, req.DeviceNo)
+		if errors.Is(err, errHealthWriteBusy) {
+			healthWriteBusy(w)
+			return
+		}
+	} else {
+		tx, err = h.DB.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	}
 	if internalError(w, err) {
 		return
+	}
+	if conn != nil {
+		defer conn.Close()
 	}
 	defer tx.Rollback()
 	d, code, msg, err := h.healthDeviceAuth(ctx, tx, req.DeviceNo, req.Secret, "设备已停用")
@@ -79,6 +94,7 @@ func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Reques
 		hwFail(w, code, msg)
 		return
 	}
+
 	// In experimental late-lock mode, perform the expensive sample write
 	// under the owner-clock lock before locking the device row. Revalidate the
 	// full device binding under FOR UPDATE before committing anything.
@@ -87,6 +103,7 @@ func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Reques
 		if internalError(w, err) {
 			return
 		}
+
 	}
 	if d.No != req.DeviceNo {
 		hwFail(w, "DEVICE_AUTH_FAILED", "设备号或密钥不正确，或设备已停用")
@@ -149,6 +166,11 @@ func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Reques
 	}
 	if err = tx.Commit(); internalError(w, err) {
 		return
+	}
+	if priority {
+		// Return the explicit connection before advancing the derived projection.
+		conn.Close()
+		h.healthWrites.finishTransaction(req.DeviceNo)
 	}
 	h.advanceCoreAfterCommit(owner, &batch, req.Samples)
 	// This is a write acknowledgement, not the client's read cursor.

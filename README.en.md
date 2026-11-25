@@ -87,6 +87,8 @@ The interface may open when MySQL is unreachable, but login and data writes requ
 
 Set `MYSQL_STATISTICS_MAX_CONNS` (0–64, default 0) to enable a dedicated health statistics pool on the same MySQL primary. Budget 20 business connections, one liveness connection, the configured statistics connections, and `MYSQL_SOS_MAX_CONNS` (0–8, default 0) reserved SOS connections per instance. Each service instance admits at most eight concurrent health uploads and eight waiting requests outside the connection pool for up to 200 ms. Overload returns HTTP 503 with Retry-After; clients must retain unacknowledged records. Compose accepts `MYSQL_REDO_LOG_CAPACITY` (default 1 GiB); evaluate 4 GiB against storage and recovery requirements for sustained writes, without relaxing synchronous durability.
 
+Health uploads are admitted serially per device, with eight active slots and eight waiting slots per service instance. Optional SUINING_SOS_PRIORITY=1 pauses new uploads from the authenticated SOS device and temporarily reduces the global upload budget to six. Waiting does not hold a SQL connection. It defaults to off; enable only after validating local workload latency.
+
 ### Always-on deployments and local Compose
 
 The desktop starts a local Go child process and stops it when the window closes. To receive remote watch uploads and SOS continuously, deploy a separate server following the [care service deployment guide](docs/CARE_SERVICE_DEPLOYMENT.md), with HTTPS, access restrictions, monitoring, and staffed escalation procedures.
