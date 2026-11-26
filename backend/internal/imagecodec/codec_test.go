@@ -186,3 +186,41 @@ func TestSniffSurvivesMutatedBMPHeaders(t *testing.T) {
 	}
 	t.Logf("accepted %d of %d mutated inputs", accepted, iterations)
 }
+
+func TestSniffIntoReusesOnlyCallerOwnedBMPStorage(t *testing.T) {
+	var dst image.RGBA
+	first := newBMP(7, 3, 24)
+	for i := 54; i < len(first); i++ {
+		first[i] = byte(i * 17)
+	}
+	_, img, w, h, ok := SniffInto(first, &dst)
+	if !ok || img != &dst || w != 7 || h != 3 {
+		t.Fatal("scratch decode failed")
+	}
+	original := append([]byte(nil), dst.Pix...)
+	ptr := &dst.Pix[0]
+	second := newBMP(3, 2, 32)
+	_, next, _, _, ok := SniffInto(second, &dst)
+	if !ok || next != &dst || &dst.Pix[0] != ptr || dst.Bounds() != image.Rect(0, 0, 3, 2) {
+		t.Fatal("scratch not reused")
+	}
+	_, independent, _, _, ok := Sniff(first)
+	if !ok || !bytes.Equal(independent.(*image.RGBA).Pix, original) {
+		t.Fatal("independent BMP changed")
+	}
+	for i := 0; i < len(dst.Pix); i++ {
+		want := byte(0)
+		if i%4 == 3 {
+			want = 255
+		}
+		if dst.Pix[i] != want {
+			t.Fatalf("stale pixel at %d", i)
+		}
+	}
+	if _, _, _, _, ok := SniffInto(second[:53], &dst); ok || &dst.Pix[0] != ptr {
+		t.Fatal("malformed BMP changed scratch")
+	}
+	if _, m, _, _, ok := SniffInto(encodedPNG(t, 2, 2), &dst); !ok || m == &dst {
+		t.Fatal("PNG unexpectedly aliases BMP scratch")
+	}
+}

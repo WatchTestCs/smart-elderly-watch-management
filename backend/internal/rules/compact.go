@@ -113,12 +113,14 @@ func EvaluateCompactInto(dst []CompactCandidate, p Policy, in Input) []CompactCa
 	if !p.Enabled {
 		return dst[:0]
 	}
-	night := p.Night(in.Now)
+	loc, err := ruleLocation(p.Timezone)
+	night := err == nil && p.nightAt(in.Now, loc)
 	severity := "high"
 	if night {
 		severity = "critical"
 	}
 	result := dst[:0]
+	latest := in.Now.Add(time.Minute)
 	for _, m := range [...]struct {
 		kind, baselineKind string
 		value              *Value
@@ -128,7 +130,7 @@ func EvaluateCompactInto(dst []CompactCandidate, p Policy, in Input) []CompactCa
 		{"blood_pressure", "baseline_blood_pressure", in.Blood, p.BPLow, p.BPHigh},
 	} {
 		v := m.value
-		if v == nil || in.Now.Sub(v.At) > 5*time.Minute || v.At.After(in.Now.Add(time.Minute)) {
+		if v == nil || in.Now.Sub(v.At) > 5*time.Minute || v.At.After(latest) {
 			continue
 		}
 		result = append(result, CompactCandidate{m.kind, v.Key, severity, v.Value < m.low || v.Value > m.high, p.Consecutive, evidenceValue{kind: evidenceThreshold, value: v.Value, low: m.low, high: m.high, source: v.Source, device: v.Device, observedAt: v.At, night: night}})
@@ -155,7 +157,7 @@ func EvaluateCompactInto(dst []CompactCandidate, p Policy, in Input) []CompactCa
 		key := string(keyBytes)
 		result = append(result, CompactCandidate{"no_report", key, severity, in.Now.Sub(in.LastReport) > time.Duration(p.OfflineSeconds)*time.Second, 1, evidenceValue{kind: evidenceOffline, lastReport: in.LastReport, offlineSeconds: p.OfflineSeconds}})
 	}
-	if v := in.Activity; v != nil && night && p.Night(v.At) {
+	if v := in.Activity; v != nil && night && p.nightAt(v.At, loc) {
 		result = append(result, CompactCandidate{"night_activity", v.Key, "high", v.Value >= p.NightSteps, 1, evidenceValue{kind: evidenceActivity, value: v.Value, threshold: p.NightSteps, windowMinutes: p.ActivityMinutes, source: v.Source, device: v.Device}})
 	}
 	return result

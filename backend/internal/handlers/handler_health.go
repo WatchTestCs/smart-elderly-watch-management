@@ -153,7 +153,7 @@ func (h *Handler) healthChanges(w http.ResponseWriter, r *http.Request) {
 	if req.Limit == 0 {
 		req.Limit = 100
 	}
-	oldID, ok := h.resolveOptionalOldID(w, r, req.OldID)
+	oldID, ok := selectOptionalScopedOldID(w, r, req.OldID)
 	if !ok {
 		return
 	}

@@ -45,8 +45,12 @@ func (p Policy) Night(at time.Time) bool {
 	if err != nil {
 		return false
 	}
-	t := at.In(loc)
-	s := t.Hour()*3600 + t.Minute()*60 + t.Second()
+	return p.nightAt(at, loc)
+}
+
+func (p Policy) nightAt(at time.Time, loc *time.Location) bool {
+	h, m, sec := at.In(loc).Clock()
+	s := h*3600 + m*60 + sec
 	if p.NightBegin < p.NightEnd {
 		return s >= p.NightBegin && s < p.NightEnd
 	}

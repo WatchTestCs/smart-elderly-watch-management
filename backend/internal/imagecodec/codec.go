@@ -11,6 +11,13 @@ import (
 
 // Sniff 按内容嗅探格式并解码像素（jpeg/png 用标准库，bmp 手工解析）。
 func Sniff(data []byte) (format string, img image.Image, width, height int, ok bool) {
+	return SniffInto(data, nil)
+}
+
+// SniffInto optionally reuses caller-owned BMP storage. The returned BMP
+// aliases dst until it is decoded into again; JPEG and PNG remain independent.
+// dst storage must not overlap data or be shared with concurrent decodes.
+func SniffInto(data []byte, dst *image.RGBA) (format string, img image.Image, width, height int, ok bool) {
 	if len(data) >= 2 && data[0] == 0xFF && data[1] == 0xD8 {
 		cfg, err := jpeg.DecodeConfig(bytes.NewReader(data))
 		if err != nil || !ValidDims(cfg.Width, cfg.Height) {
@@ -35,7 +42,7 @@ func Sniff(data []byte) (format string, img image.Image, width, height int, ok b
 		return "png", m, cfg.Width, cfg.Height, true
 	}
 	if len(data) >= 2 && data[0] == 'B' && data[1] == 'M' {
-		m, w, h, ok := decodeBMP(data)
+		m, w, h, ok := decodeBMPInto(data, dst)
 		if !ok {
 			return "", nil, 0, 0, false
 		}
@@ -50,6 +57,10 @@ func ValidDims(w, h int) bool {
 
 // decodeBMP 手工解析 BMP（24 位 / 32 位无压缩，32 位 BI_BITFIELDS），返回 RGBA 像素。
 func decodeBMP(data []byte) (image.Image, int, int, bool) {
+	return decodeBMPInto(data, nil)
+}
+
+func decodeBMPInto(data []byte, dst *image.RGBA) (image.Image, int, int, bool) {
 	if len(data) < 54 {
 		return nil, 0, 0, false
 	}
@@ -93,7 +104,17 @@ func decodeBMP(data []byte) (image.Image, int, int, bool) {
 	if int64(off)+int64(stride)*int64(h) > int64(len(data)) {
 		return nil, 0, 0, false
 	}
-	img := image.NewRGBA(image.Rect(0, 0, w, h))
+	img := dst
+	if img == nil {
+		img = image.NewRGBA(image.Rect(0, 0, w, h))
+	} else {
+		pixels := img.Pix
+		size := w * h * 4
+		if cap(pixels) < size {
+			pixels = make([]byte, size)
+		}
+		*img = image.RGBA{Pix: pixels[:size], Stride: w * 4, Rect: image.Rect(0, 0, w, h)}
+	}
 	if unpackBMPNative(img.Pix, data[int(off):], w, h, stride, int(bpp)/8, topDown, rMask, gMask, bMask) {
 		return img, w, h, true
 	}

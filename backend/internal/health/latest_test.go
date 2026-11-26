@@ -83,3 +83,50 @@ func TestLatestKeySeparatesSeriesFields(t *testing.T) {
 		t.Fatal("distinct series share the same key")
 	}
 }
+
+// Exercise the actual MySQL UNION, locking read and multi-row upsert path.
+func TestLatestMultiSeriesBatchMySQL(t *testing.T) {
+	database := dbtest.MySQL(t)
+	ctx := context.Background()
+	if _, err := database.ExecContext(ctx, "INSERT INTO oldperson(old_id,name) VALUES(1,'latest-batch')"); err != nil {
+		t.Fatal(err)
+	}
+	at := time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC)
+	a := Sample{RecordID: "a", Source: "watch", SourceDevice: "A", Metric: "heart_rate", Unit: "count/min", Value: Number(65), Start: at, End: at, Version: 1}
+	b := a
+	b.RecordID = "b"
+	b.SourceDevice = "B"
+	save := func(samples ...Sample) {
+		t.Helper()
+		tx, err := database.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer tx.Rollback()
+		if _, _, err = SaveBatch(ctx, tx, Owner{OldID: 1}, samples); err != nil {
+			t.Fatal(err)
+		}
+		if err = tx.Commit(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	save(a, b)
+	if got, err := Latest(ctx, database, 1, nil); err != nil || len(got) != 2 {
+		t.Fatalf("initial latest=%v err=%v", got, err)
+	}
+	a.Deleted = true
+	a.Version = 2
+	a.Value = nil
+	b.Version = 2
+	b.Value = Number(80)
+	c := b
+	c.RecordID = "c"
+	c.SourceDevice = "C"
+	c.Version = 1
+	c.Value = Number(70)
+	save(a, b, c)
+	got, err := Latest(ctx, database, 1, nil)
+	if err != nil || len(got) != 2 || got[0].Sample.RecordID != "b" || got[0].Sample.Version != 2 || got[1].Sample.RecordID != "c" {
+		t.Fatalf("latest=%+v err=%v", got, err)
+	}
+}

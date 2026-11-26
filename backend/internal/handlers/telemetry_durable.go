@@ -33,20 +33,18 @@ func (h *Handler) durableTelemetryEligible(parsed parsedDeviceTelemetry, request
 		(parsed.step != nil || parsed.sleep != nil || parsed.sleepState != nil)
 }
 
-// QueueDurableReport is invoked in the authenticated device transaction.
-// A successful response is only emitted *after* that transaction commits.
-func (repo telemetryRepository) QueueDurableReport(ctx context.Context, tx *sql.Tx, d *devicerepo.DeviceRecord, parsed parsedDeviceTelemetry, requestID string) error {
-	if repo.box == nil {
-		return errors.New("durable telemetry requires a valid encryption key")
-	}
-	sealed, err := telemetryworkflow.Encode(repo.box, telemetryworkflow.Payload{
+// prepareDurablePayload does not need a connection or a row lock.
+func prepareDurablePayload(box *securestore.Box, parsed parsedDeviceTelemetry) (string, error) {
+	return telemetryworkflow.Encode(box, telemetryworkflow.Payload{
 		ReceivedAt: parsed.now, ReportedAt: parsed.beTime,
 		Step: parsed.step, Sleep: parsed.sleep, SleepState: parsed.sleepState,
 		Battery: parsed.battery, AppVersion: parsed.appVersion,
 	})
-	if err != nil {
-		return err
-	}
+}
+
+// QueueDurableReport is invoked in the authenticated device transaction.
+// A successful response is only emitted after that transaction commits.
+func (repo telemetryRepository) QueueDurableReport(ctx context.Context, tx *sql.Tx, d *devicerepo.DeviceRecord, parsed parsedDeviceTelemetry, requestID, sealed string) error {
 	if err := telemetryrepo.EnqueueDurable(ctx, tx, telemetryrepo.DurableMessage{
 		DeviceID: d.ID, ResidentID: *d.OldID, BindingEpoch: d.HealthEpoch,
 		RequestID: requestID, Payload: sealed, ReceivedAt: parsed.now.UTC(),

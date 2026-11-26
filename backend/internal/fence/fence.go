@@ -30,8 +30,22 @@ func on(a, b, p Point) bool {
 	return math.Abs(cross(a, b, p)) < 1e-12 && p[0] >= math.Min(a[0], b[0])-1e-12 && p[0] <= math.Max(a[0], b[0])+1e-12 && p[1] >= math.Min(a[1], b[1])-1e-12 && p[1] <= math.Max(a[1], b[1])+1e-12
 }
 func intersects(a, b, c, d Point) bool {
+	const eps = 1e-12
+	if separated(a[0], b[0], c[0], d[0], eps) || separated(a[1], b[1], c[1], d[1], eps) {
+		return false
+	}
 	return on(a, b, c) || on(a, b, d) || on(c, d, a) || on(c, d, b) || (cross(a, b, c)*cross(a, b, d) < 0 && cross(c, d, a)*cross(c, d, b) < 0)
 }
+func separated(a, b, c, d, eps float64) bool {
+	if a > b {
+		a, b = b, a
+	}
+	if c > d {
+		c, d = d, c
+	}
+	return (b+eps < c && b < c-eps) || (d+eps < a && d < a-eps)
+}
+
 func Validate(p []Point) error {
 	if len(p) < 4 || len(p) > 257 || p[0] != p[len(p)-1] {
 		return fmt.Errorf("围栏须为首尾闭合的 3–256 个顶点")
@@ -83,18 +97,23 @@ func Contains(p []Point, q Point) bool {
 
 // BoundaryDistance returns a local equirectangular distance in metres.
 func BoundaryDistance(p []Point, q Point) float64 {
+	if len(p) < 2 {
+		return math.Inf(1)
+	}
 	xscale := 111195 * math.Cos(q[1]*math.Pi/180)
 	best := math.Inf(1)
-	for i := 0; i < len(p)-1; i++ {
-		ax, ay := (p[i][0]-q[0])*xscale, (p[i][1]-q[1])*111195
-		bx, by := (p[i+1][0]-q[0])*xscale, (p[i+1][1]-q[1])*111195
+	ax, ay := (p[0][0]-q[0])*xscale, (p[0][1]-q[1])*111195
+	for _, point := range p[1:] {
+		bx, by := (point[0]-q[0])*xscale, (point[1]-q[1])*111195
 		dx, dy := bx-ax, by-ay
-		if dx*dx+dy*dy < 1e-12 {
+		length := dx*dx + dy*dy
+		if length < 1e-12 {
 			best = math.Min(best, math.Hypot(ax, ay))
-			continue
+		} else {
+			t := math.Max(0, math.Min(1, -(ax*dx+ay*dy)/length))
+			best = math.Min(best, math.Hypot(ax+t*dx, ay+t*dy))
 		}
-		t := math.Max(0, math.Min(1, -(ax*dx+ay*dy)/(dx*dx+dy*dy)))
-		best = math.Min(best, math.Hypot(ax+t*dx, ay+t*dy))
+		ax, ay = bx, by
 	}
 	return best
 }

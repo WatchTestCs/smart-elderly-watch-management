@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"sync"
 )
 
 // Database owns the business pool and its independent liveness connection.
@@ -12,6 +13,9 @@ type Database struct {
 	*sql.DB
 	healthPool     *sql.DB
 	statisticsPool *sql.DB
+	telemetryOnce  sync.Once
+	telemetryWake  chan struct{}
+	reportOwners   ownerGate
 }
 
 func (d *Database) Close() error {
@@ -46,4 +50,19 @@ func InsertID(ctx context.Context, store statementExecutor, query string, args .
 		return 0, err
 	}
 	return result.LastInsertId()
+}
+
+// TelemetryWake is a per-store, coalescing hint, not a durable queue.
+func (d *Database) TelemetryWake() <-chan struct{} {
+	d.telemetryOnce.Do(func() { d.telemetryWake = make(chan struct{}, 1) })
+	return d.telemetryWake
+}
+
+// NotifyTelemetry must run only after a successful enqueue commit.
+func (d *Database) NotifyTelemetry() {
+	d.TelemetryWake()
+	select {
+	case d.telemetryWake <- struct{}{}:
+	default:
+	}
 }

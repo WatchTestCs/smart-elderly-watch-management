@@ -22,11 +22,14 @@ func (h *Handler) healthBaseline(w http.ResponseWriter, r *http.Request) {
 	if req.OldID != nil {
 		requested = *req.OldID
 	}
-	oldID, ok := h.resolveOldID(w, r, requested)
+	oldID, ok := selectScopedOldID(w, r, requested)
 	if !ok {
 		return
 	}
 	if oldID < 1 {
+		if _, ok := h.resolveOldID(w, r, requested); !ok {
+			return
+		}
 		write400(w, "请指定有效的老人编号")
 		return
 	}

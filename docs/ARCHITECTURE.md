@@ -106,3 +106,8 @@ Go 单元与真实 MySQL 集成测试、前端 UI 检查、手表协议模拟、
 | `TEST_MYSQL_DSN` | 仅供测试进程使用，必须指向可销毁的独立实例 |
 
 密钥、真实数据库 DSN、设备密钥和个人健康或位置记录不得写入仓库、Issue 或 PR 证据。构建和部署方式分别见 [BUILD](BUILD.md) 与 [TESTING](TESTING.md)。
+
+
+### Durable telemetry owner scheduling (preview candidate)
+
+Ordinary device reports acquire a cancellable per-resident admission slot before borrowing a transaction connection. Emergency reports bypass that local admission queue; database authorization and binding-epoch checks remain authoritative. Durable consumers discover due owner heads, share the compatibility guard with other new consumers, and lock the resident and queue prefix in a single transaction. Each worker independently claims the next owner in the bounded candidate list; it does not wait for the other worker before continuing. A drain considers at most eight owner heads, with at most two concurrent owner transactions and 32 items per owner. The next database discovery pass still waits for completion of that bounded drain. A failed item stops that owner's batch after its retry state is persisted. Old exclusive-guard consumers must not be assumed to support the new ordering guarantees during mixed-version operation. Migration 0046 adds the owner-pending index and retains it on rollback. The unused 0044/0045 numbers belong to a separate unmerged candidate: if 0046 is promoted first, future migrations must be appended after 0046 rather than inserted into its completed history. No external queue or lease is introduced. MySQL 8.4 integration, lock/plan measurements and recovery validation are required before promotion.

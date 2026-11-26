@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/netip"
 	"runtime"
 	"strings"
 	"sync"
@@ -124,7 +125,7 @@ func TestSlotBudgetAndQuotaCannotBeResetByEviction(t *testing.T) {
 	var other string
 	for i := 2; i < 1000; i++ {
 		candidate := fmt.Sprintf("192.0.%d.%d", i>>8, i&255)
-		if l.shard(candidate) == l.shard("192.0.2.1") {
+		if l.shard(netip.MustParseAddr(candidate)) == l.shard(netip.MustParseAddr("192.0.2.1")) {
 			other = candidate
 			break
 		}

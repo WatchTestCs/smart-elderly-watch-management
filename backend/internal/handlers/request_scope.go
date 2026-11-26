@@ -30,7 +30,7 @@ func (h *Handler) readScopedOldID(w http.ResponseWriter, r *http.Request) (int64
 	if !ok {
 		return 0, false
 	}
-	return h.resolveOldID(w, r, body["oldId"])
+	return selectScopedOldID(w, r, body["oldId"])
 }
 
 func (h *Handler) resolveOptionalOldID(w http.ResponseWriter, r *http.Request, id int64) (int64, bool) {
@@ -95,6 +95,31 @@ func beginScopedResidentReadOn(w http.ResponseWriter, r *http.Request, pool *sql
 		return nil, false
 	}
 	return tx, true
+}
+
+// selectScopedOldID only resolves input. It must be followed by a locked
+// authorization check in the same request before any protected read.
+func selectScopedOldID(w http.ResponseWriter, r *http.Request, value any) (int64, bool) {
+	p, ok := principalOr401(w, r)
+	if !ok {
+		return 0, false
+	}
+	if value == nil {
+		return p.OldID, true
+	}
+	id, ok := integerParam(value)
+	if !ok {
+		write400(w, "老人编号不正确")
+		return 0, false
+	}
+	return id, true
+}
+
+func selectOptionalScopedOldID(w http.ResponseWriter, r *http.Request, id int64) (int64, bool) {
+	if id == 0 {
+		return selectScopedOldID(w, r, nil)
+	}
+	return selectScopedOldID(w, r, id)
 }
 
 // resolveOldID allows ADMIN to select an elder by ID;

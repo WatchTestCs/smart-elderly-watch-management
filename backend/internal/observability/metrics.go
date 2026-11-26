@@ -16,11 +16,12 @@ type Registry struct {
 	mu             sync.Mutex
 	values         map[string]float64
 	httpHistograms map[string]*httpHistogram
+	httpRoutes     map[httpRouteKey]*httpHistogram
 	resolve        func(*http.Request) string
 }
 
 func New() *Registry {
-	return &Registry{values: map[string]float64{}, httpHistograms: make(map[string]*httpHistogram)}
+	return &Registry{values: map[string]float64{}, httpHistograms: make(map[string]*httpHistogram), httpRoutes: make(map[httpRouteKey]*httpHistogram)}
 }
 
 var Default = New()
@@ -67,14 +68,41 @@ func newHTTPHistogram(labels string) *httpHistogram {
 	return &httpHistogram{keys: keys}
 }
 
-func (r *Registry) observeHTTP(labels string, seconds float64) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
+type httpRouteKey struct {
+	route, method string
+	status        int
+}
+
+func (r *Registry) histogram(labels string) *httpHistogram {
 	h := r.httpHistograms[labels]
 	if h == nil {
 		h = newHTTPHistogram(labels)
 		r.httpHistograms[labels] = h
 	}
+	return h
+}
+
+func (r *Registry) observeHTTP(labels string, seconds float64) {
+	r.mu.Lock()
+	r.histogram(labels).observe(seconds)
+	r.mu.Unlock()
+}
+
+func (r *Registry) observeRoute(route, method string, status int, seconds float64) {
+	key := httpRouteKey{route, method, status}
+	r.mu.Lock()
+	h := r.httpRoutes[key]
+	if h == nil {
+		labels := `route=` + strconv.Quote(route) + `,method=` + strconv.Quote(method) + `,status=` + strconv.Quote(strconv.Itoa(status))
+		h = r.histogram(labels)
+		key.route = strings.Clone(route)
+		r.httpRoutes[key] = h
+	}
+	h.observe(seconds)
+	r.mu.Unlock()
+}
+
+func (h *httpHistogram) observe(seconds float64) {
 	h.count++
 	h.sum += seconds
 	for i, upper := range httpBucketBounds {
@@ -124,8 +152,13 @@ func (r *Registry) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		put(h.keys[len(h.keys)-1], float64(h.count))
 	}
 	sort.Strings(keys)
+	line := make([]byte, 0, 256)
 	for _, k := range keys {
-		if _, err := fmt.Fprintf(w, "%s %s\n", k, strconv.FormatFloat(values[k], 'g', -1, 64)); err != nil {
+		line = append(line[:0], k...)
+		line = append(line, ' ')
+		line = strconv.AppendFloat(line, values[k], 'g', -1, 64)
+		line = append(line, '\n')
+		if _, err := w.Write(line); err != nil {
 			return
 		}
 	}
@@ -204,8 +237,7 @@ func (r *Registry) HTTP(next http.Handler) http.Handler {
 		case "TRACE":
 			method = "TRACE"
 		}
-		labels := `route=` + strconv.Quote(route) + `,method=` + strconv.Quote(method) + `,status=` + strconv.Quote(strconv.Itoa(out.status))
-		r.observeHTTP(labels, seconds)
+		r.observeRoute(route, method, out.status, seconds)
 		slog.Info("http_request", "request_id", id, "route", route, "method", method, "status", out.status, "duration_ms", seconds*1000)
 	})
 }

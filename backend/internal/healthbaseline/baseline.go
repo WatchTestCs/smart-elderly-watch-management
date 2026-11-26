@@ -53,29 +53,15 @@ func Evaluate(current Observation, history []Observation) (Result, error) {
 	day := current.At.UTC().Truncate(dayDuration)
 	firstDay := day.AddDate(0, 0, -HistoryDays)
 
-	// The window has a fixed number of UTC calendar days, already in time order.
-	var days [HistoryDays][]float64
-	var firstValues [HistoryDays]float64
-	sampleDays := 0
-	for _, sample := range history {
-		if sample.OwnerID != current.OwnerID || sample.DeviceID != current.DeviceID || sample.BindingVersion != current.BindingVersion ||
-			sample.Source != current.Source || sample.SourceDevice != current.SourceDevice || sample.Metric != current.Metric || !sample.Valid || sample.At.IsZero() ||
-			math.IsNaN(sample.Value) || math.IsInf(sample.Value, 0) {
-			continue
-		}
-		if sample.At.Before(firstDay) || !sample.At.Before(day) {
-			continue
-		}
-		i := int(sample.At.Sub(firstDay) / dayDuration)
-		if len(days[i]) == 0 {
-			sampleDays++
-			firstValues[i] = sample.Value
-			days[i] = firstValues[i : i+1 : i+1]
-		} else {
-			days[i] = append(days[i], sample.Value)
-		}
+	var medians [HistoryDays]float64
+	var present uint32
+	var sampleDays int
+	if len(history) >= 1024 {
+		medians, present, sampleDays = collectGrouped(current, history, firstDay, day)
 	}
-
+	if len(history) < 1024 || sampleDays < 0 {
+		medians, present, sampleDays = collectBuckets(current, history, firstDay, day)
+	}
 	result := Result{SampleDays: sampleDays, Confidence: "insufficient", Reason: "insufficient_history"}
 	if sampleDays < MinimumDays {
 		return result, nil
@@ -86,12 +72,10 @@ func Evaluate(current Observation, history []Observation) (Result, error) {
 	var anchor [MinimumDays]float64
 	var center, scale float64
 	lastTrusted := 0
-	for i, values := range days {
-		if len(values) == 0 {
+	for i, value := range medians {
+		if present&(1<<i) == 0 {
 			continue
 		}
-		// Buckets own their samples; sorting cannot mutate the caller's history.
-		value := medianInPlace(values)
 		if result.TrustedDays < MinimumDays {
 			anchor[result.TrustedDays] = value
 			result.TrustedDays++
@@ -135,6 +119,146 @@ func Evaluate(current Observation, history []Observation) (Result, error) {
 	return result, nil
 }
 
+// collectGrouped recognizes contiguous UTC day ranges before selecting any
+// medians. Unordered or unusually large days use the exact general collector.
+func collectGrouped(current Observation, history []Observation, firstDay, day time.Time) (medians [HistoryDays]float64, present uint32, sampleDays int) {
+	const dayDuration = 24 * time.Hour
+	const dayCapacity = 1440
+	// A long span with both endpoints on the same in-window day cannot
+	// satisfy the contiguous, bounded-day contract.
+	if len(history) > dayCapacity {
+		first, tail := history[0].At, history[len(history)-1].At
+		if !first.Before(firstDay) && first.Before(day) {
+			start := firstDay.Add(time.Duration(int(first.Sub(firstDay)/dayDuration)) * dayDuration)
+			if !tail.Before(start) && tail.Before(start.Add(dayDuration)) {
+				return medians, 0, -1
+			}
+		}
+	}
+	var spans [HistoryDays]struct{ start, end int }
+	var seen uint32
+	last := -1
+	var start, end time.Time
+	for j := range history {
+		at := history[j].At
+		if last >= 0 && !at.Before(start) && at.Before(end) {
+			if j-spans[last].start >= dayCapacity {
+				return medians, 0, -1
+			}
+			spans[last].end = j + 1
+			continue
+		}
+		if at.Before(firstDay) || !at.Before(day) {
+			continue
+		}
+		i := int(at.Sub(firstDay) / dayDuration)
+		if seen&(1<<i) != 0 {
+			return medians, 0, -1
+		}
+		seen |= 1 << i
+		last = i
+		start = firstDay.Add(time.Duration(i) * dayDuration)
+		end = start.Add(dayDuration)
+		spans[i].start, spans[i].end = j, j+1
+	}
+	var storage [dayCapacity]float64
+	for i, span := range spans {
+		if span.start == span.end {
+			continue
+		}
+		values := storage[:0]
+		start = firstDay.Add(time.Duration(i) * dayDuration)
+		end = start.Add(dayDuration)
+		for j := span.start; j < span.end; j++ {
+			sample := &history[j]
+			if sample.OwnerID != current.OwnerID || sample.DeviceID != current.DeviceID || sample.BindingVersion != current.BindingVersion ||
+				sample.Source != current.Source || sample.SourceDevice != current.SourceDevice || sample.Metric != current.Metric || !sample.Valid || sample.At.IsZero() ||
+				math.IsNaN(sample.Value) || math.IsInf(sample.Value, 0) ||
+				sample.At.Before(start) || !sample.At.Before(end) {
+				continue
+			}
+			values = append(values, sample.Value)
+		}
+		if len(values) != 0 {
+			medians[i] = medianInPlace(values)
+			present |= 1 << i
+			sampleDays++
+		}
+	}
+	return medians, present, sampleDays
+}
+
+func collectBuckets(current Observation, history []Observation, firstDay, day time.Time) (medians [HistoryDays]float64, present uint32, sampleDays int) {
+	const dayDuration = 24 * time.Hour
+	// Sparse buckets stay on the stack. Record only overflow samples so
+	// dense buckets can share one exact-sized allocation.
+	var days [HistoryDays][]float64
+	var inlineValues [HistoryDays][24]float64
+	var counts [HistoryDays]int
+	var overflow []byte
+	overflowStart := 0
+	denseValues := 0
+	for j := range history {
+		sample := &history[j]
+		if sample.OwnerID != current.OwnerID || sample.DeviceID != current.DeviceID || sample.BindingVersion != current.BindingVersion ||
+			sample.Source != current.Source || sample.SourceDevice != current.SourceDevice || sample.Metric != current.Metric || !sample.Valid || sample.At.IsZero() ||
+			math.IsNaN(sample.Value) || math.IsInf(sample.Value, 0) ||
+			sample.At.Before(firstDay) || !sample.At.Before(day) {
+			continue
+		}
+		i := int(sample.At.Sub(firstDay) / dayDuration)
+		n := counts[i]
+		if n == 0 {
+			sampleDays++
+		}
+		if n < len(inlineValues[i]) {
+			inlineValues[i][n] = sample.Value
+		} else {
+			if overflow == nil {
+				overflowStart = j
+				overflow = make([]byte, len(history)-j)
+			}
+			overflow[j-overflowStart] = byte(i + 1)
+			if n == len(inlineValues[i]) {
+				denseValues += n
+			}
+			denseValues++
+		}
+		counts[i]++
+	}
+
+	if sampleDays < MinimumDays {
+		return medians, present, sampleDays
+	}
+	var dense []float64
+	if denseValues != 0 {
+		dense = make([]float64, denseValues)
+	}
+	for i, n := range counts {
+		if n <= len(inlineValues[i]) {
+			days[i] = inlineValues[i][:n]
+		} else {
+			days[i] = dense[:len(inlineValues[i]):n]
+			copy(days[i], inlineValues[i][:])
+			dense = dense[n:]
+		}
+	}
+	for j, code := range overflow {
+		if code != 0 {
+			i := int(code) - 1
+			days[i] = append(days[i], history[overflowStart+j].Value)
+		}
+	}
+
+	for i, values := range days {
+		if len(values) != 0 {
+			medians[i] = medianInPlace(values)
+			present |= 1 << i
+		}
+	}
+	return medians, present, sampleDays
+}
+
 // The anchor is no longer needed after calculating its center.
 func robustScale(metric string, center float64, values []float64) float64 {
 	for i, value := range values {
@@ -147,11 +271,78 @@ func robustScale(metric string, center float64, values []float64) float64 {
 	return math.Max(floor, 1.4826*medianInPlace(values))
 }
 
+// medianInPlace selects the exact median of non-NaN values without fully
+// sorting dense buckets. The caller owns the slice.
 func medianInPlace(values []float64) float64 {
-	slices.Sort(values)
-	mid := len(values) / 2
-	if len(values)%2 == 1 {
-		return values[mid]
+	if len(values) == 1 {
+		return values[0]
 	}
-	return values[mid-1]/2 + values[mid]/2
+	mid := len(values) / 2
+	if len(values) <= 24 {
+		slices.Sort(values)
+		if len(values)%2 != 0 {
+			return values[mid]
+		}
+		return values[mid-1]/2 + values[mid]/2
+	}
+	if slices.IsSorted(values) {
+		if len(values)%2 != 0 {
+			return values[mid]
+		}
+		return values[mid-1]/2 + values[mid]/2
+	}
+	lo, hi := 0, len(values)
+	// Bound the partition work; the fallback preserves O(n log n) worst-case.
+	budget := 8 * len(values)
+	for hi-lo > 24 && budget >= hi-lo {
+		budget -= hi - lo
+		a, b, c := values[lo], values[lo+(hi-lo)/2], values[hi-1]
+		if a > b {
+			a, b = b, a
+		}
+		if b > c {
+			b = c
+		}
+		pivot := max(a, b)
+		lt, i, gt := lo, lo, hi
+		for i < gt {
+			v := values[i]
+			if v < pivot {
+				values[lt], values[i] = v, values[lt]
+				lt++
+				i++
+			} else if v > pivot {
+				gt--
+				values[i], values[gt] = values[gt], v
+			} else {
+				i++
+			}
+		}
+		if mid < lt {
+			hi = lt
+		} else if mid >= gt {
+			lo = gt
+		} else {
+			if len(values)%2 != 0 || mid > lt {
+				if len(values)%2 != 0 {
+					return pivot
+				}
+				return pivot/2 + pivot/2
+			}
+			lo, hi = mid, mid+1
+			break
+		}
+	}
+	slices.Sort(values[lo:hi])
+	upper := values[mid]
+	if len(values)%2 != 0 {
+		return upper
+	}
+	lower := values[mid-1]
+	for _, v := range values[:mid-1] {
+		if v > lower {
+			lower = v
+		}
+	}
+	return lower/2 + upper/2
 }
