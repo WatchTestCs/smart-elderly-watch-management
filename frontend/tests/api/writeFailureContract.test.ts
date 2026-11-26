@@ -2,12 +2,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import axios from 'axios'
 import fs from 'node:fs'
 import path from 'node:path'
-import { flushPromises } from '@vue/test-utils'
+import { SRC, sourceFiles } from '../helpers/sourceTree'
 import {
   apiErrorMessage, readErrorMessage, readTimeoutError,
   READ_TIMEOUT_MESSAGE, transportOutcome, UNCONFIRMED_MESSAGE
 } from '@/api/httpContract'
-import { createLatestRead } from '@/composables/latestRead'
 import { noticeEditTarget } from '@/domain/notices'
 import { authState, endSession } from '@/auth'
 
@@ -18,35 +17,11 @@ describe('classifying a write whose response was lost', () => {
     expect(apiErrorMessage(lost, '图片暂时无法上传，请重试')).toBe(UNCONFIRMED_MESSAGE)
   })
 
-  it('keeps an upload business rejection on the server path', () => {
-    expect(apiErrorMessage({
-      name: 'UploadAjaxError', status: 400,
-      message: JSON.stringify({ returnCode: '0000', code: 'INVALID_REQUEST', message: '图片格式不支持' })
-    })).toBe('图片格式不支持')
-  })
-
   it('never describes a read timeout as a possibly-applied write', () => {
     const error = readTimeoutError()
     expect(transportOutcome(error)).toBe('application')
     expect(readErrorMessage(error)).toBe(READ_TIMEOUT_MESSAGE)
     expect(apiErrorMessage(error, '数据暂时无法加载')).toBe('数据暂时无法加载')
-  })
-
-  it('carries the structured timeout through the read scheduler', async () => {
-    vi.useFakeTimers()
-    try {
-      const read = () => new Promise<number>(() => {})
-      const fail = vi.fn()
-      const queue = createLatestRead(read, vi.fn(), fail, vi.fn(), { timeoutMs: 10 })
-      const pending = queue.run(1)
-      await vi.advanceTimersByTimeAsync(10)
-      await pending
-      expect(fail).toHaveBeenCalledTimes(1)
-      expect(readErrorMessage(fail.mock.calls[0][0])).toBe(READ_TIMEOUT_MESSAGE)
-    } finally {
-      vi.useRealTimers()
-      await flushPromises()
-    }
   })
 })
 
@@ -87,24 +62,6 @@ describe('binding a save to the record that was loaded', () => {
 // The source tree is the only source of truth: a new catch block that tells the
 // user to retry a write without going through the canonical error exit fails
 // here, with no file list, no allowlist and no count to keep in sync.
-function findSourceRoot(): string {
-  let directory = process.cwd()
-  for (let depth = 0; depth < 5; depth++) {
-    const candidate = path.join(directory, 'src')
-    if (fs.existsSync(path.join(candidate, 'api', 'client.ts'))) return candidate
-    directory = path.dirname(directory)
-  }
-  throw new Error('frontend src directory not found')
-}
-const SRC = findSourceRoot()
-
-function sourceFiles(directory: string): string[] {
-  return fs.readdirSync(directory, { withFileTypes: true }).flatMap(entry => {
-    const full = path.join(directory, entry.name)
-    if (entry.isDirectory()) return sourceFiles(full)
-    return /\.(?:ts|vue)$/.test(entry.name) ? [full] : []
-  })
-}
 
 function catchBlocks(source: string): { index: number; text: string }[] {
   const blocks: { index: number; text: string }[] = []

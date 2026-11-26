@@ -2,6 +2,8 @@ package telemetryworkflow
 
 import (
 	"context"
+	"errors"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -89,51 +91,92 @@ func TestTelemetryWakeCoalescesPerStore(t *testing.T) {
 	}
 }
 
-func TestDrainHeadsParallelAndSkipsBusyOwners(t *testing.T) {
+func TestDrainHeadsWorkConserving(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 	heads := []telemetryrepo.OwnerHead{{ResidentID: 1}, {ResidentID: 2}, {ResidentID: 3}, {ResidentID: 4}, {ResidentID: 5}}
-	started := make(chan int64, 2)
+	slow := make(chan struct{})
+	fast := make(chan struct{})
 	release := make(chan struct{})
-	done := make(chan int, 1)
+	var active, peak atomic.Int32
+	var visits [5]atomic.Int32
+	wantErr := errors.New("synthetic owner failure")
+	type result struct {
+		count int
+		err   error
+	}
+	done := make(chan result, 1)
 	go func() {
 		n, err := drainHeads(ctx, heads, 2, func(ctx context.Context, h telemetryrepo.OwnerHead) (int, error) {
-			if h.ResidentID <= 2 {
-				return 0, nil
+			visits[h.ResidentID-1].Add(1)
+			n := active.Add(1)
+			defer active.Add(-1)
+			for old := peak.Load(); n > old && !peak.CompareAndSwap(old, n); old = peak.Load() {
 			}
-			if h.ResidentID == 5 {
-				return 100, nil
-			}
-			started <- h.ResidentID
-			select {
-			case <-release:
+			switch h.ResidentID {
+			case 1:
+				close(slow)
+				select {
+				case <-release:
+					return 1, nil
+				case <-ctx.Done():
+					return 0, ctx.Err()
+				}
+			case 2:
+				select {
+				case <-slow:
+					return 0, nil
+				case <-ctx.Done():
+					return 0, ctx.Err()
+				}
+			case 3:
+				return 0, wantErr
+			case 4:
+				return 2, nil
+			case 5:
+				close(fast)
 				return 1, nil
-			case <-ctx.Done():
-				return 0, ctx.Err()
 			}
+			return 0, nil
 		})
-		if err != nil {
-			n = -1
-		}
-		done <- n
+		done <- result{n, err}
 	}()
-	for range 2 {
-		select {
-		case id := <-started:
-			if id != 3 && id != 4 {
-				t.Fatal(id)
-			}
-		case <-ctx.Done():
-			t.Fatal("independent owners failed to run concurrently")
-		}
+	select {
+	case <-fast:
+	case <-ctx.Done():
+		t.Fatal("idle consumer waited for the slow owner")
 	}
 	close(release)
 	select {
-	case n := <-done:
-		if n != 2 {
-			t.Fatal(n)
+	case got := <-done:
+		if got.count != 4 || !errors.Is(got.err, wantErr) {
+			t.Fatalf("count=%d err=%v", got.count, got.err)
 		}
 	case <-ctx.Done():
 		t.Fatal("drain did not finish")
+	}
+	if peak.Load() != 2 {
+		t.Fatalf("peak concurrency=%d", peak.Load())
+	}
+	for i := range visits {
+		if visits[i].Load() != 1 {
+			t.Fatalf("owner %d visited %d times", i+1, visits[i].Load())
+		}
+	}
+}
+
+func TestDrainHeadsCancellationPreservesCommittedCount(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	heads := []telemetryrepo.OwnerHead{{ResidentID: 1}, {ResidentID: 2}}
+	count, err := drainHeads(ctx, heads, 1, func(_ context.Context, h telemetryrepo.OwnerHead) (int, error) {
+		if h.ResidentID != 1 {
+			t.Error("scheduled owner after cancellation")
+		}
+		cancel()
+		return 1, nil
+	})
+	if count != 1 || !errors.Is(err, context.Canceled) {
+		t.Fatalf("count=%d err=%v", count, err)
 	}
 }

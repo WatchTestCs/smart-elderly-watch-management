@@ -41,7 +41,7 @@ func (s *Store) FromRequest(r *http.Request) *Session {
 		return nil
 	}
 	c, err := r.Cookie(CookieName)
-	if err != nil {
+	if err != nil || !validCookieID(c.Value) {
 		return nil
 	}
 	key := requestKey{s}
@@ -53,6 +53,21 @@ func (s *Store) FromRequest(r *http.Request) *Session {
 		*r = *r.WithContext(context.WithValue(r.Context(), key, sess))
 	}
 	return sess
+}
+
+// All issued IDs are exactly 32 random bytes encoded as lowercase hex.
+// Reject malformed cookies before a database lookup or request cache check.
+func validCookieID(id string) bool {
+	if len(id) != 64 {
+		return false
+	}
+	for i := range id {
+		c := id[i]
+		if !(c >= '0' && c <= '9' || c >= 'a' && c <= 'f') {
+			return false
+		}
+	}
+	return true
 }
 
 // contextKey 会话在 request context 中的 key。

@@ -43,7 +43,7 @@ func windowLatestPositionPage(ctx context.Context, store db.ReadQuerier, name st
 }
 
 func TestIndexedLatestPositionsMatchWindowMySQL(t *testing.T) {
-	pool := dbtest.MySQL(t)
+	pool := dbtest.Fixture(t)
 	ctx := context.Background()
 	statements := []string{
 		"INSERT INTO oldperson(old_id,name,sex) VALUES (1,'Alice','女'),(2,'Bob','男'),(3,'Alice Jr',NULL),(4,NULL,NULL),(5,'Empty',NULL)",

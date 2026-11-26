@@ -82,7 +82,7 @@ func TestBulkRequiresUnambiguousPerNotificationAcceptance(t *testing.T) {
 func TestBulkStaleLeaseCannotOverwriteAcceptanceOrCreateFallback(t *testing.T) {
 	t.Setenv("NOTIFY_ALLOW_HTTP_TEST", "1")
 	t.Setenv("TENCENT_SMS_APPID", "")
-	p := dbtest.MySQL(t)
+	p := dbtest.Fixture(t)
 	ctx := context.Background()
 	tx, err := p.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
@@ -149,7 +149,7 @@ func TestBulkStaleLeaseCannotOverwriteAcceptanceOrCreateFallback(t *testing.T) {
 func TestBulkBoundPartialAcceptanceAndFifthFailureFallback(t *testing.T) {
 	t.Setenv("NOTIFY_ALLOW_HTTP_TEST", "1")
 	t.Setenv("TENCENT_SMS_APPID", "")
-	p := dbtest.MySQL(t)
+	p := dbtest.Fixture(t)
 	ctx := context.Background()
 	box, err := securestore.New(base64.StdEncoding.EncodeToString(make([]byte, 32)))
 	if err != nil {

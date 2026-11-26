@@ -41,23 +41,12 @@ func schemaDigest(ctx context.Context, conn *sql.Conn) (string, error) {
 			rows.Close()
 			return "", err
 		}
+		record := newSchemaRecord(len(columns))
 		for rows.Next() {
-			raw := make([]sql.RawBytes, len(columns))
-			dest := make([]any, len(columns))
-			for i := range raw {
-				dest[i] = &raw[i]
-			}
-			if err = rows.Scan(dest...); err != nil {
+			if err = rows.Scan(record.dest...); err != nil {
 				break
 			}
-			record := make([]*string, len(columns))
-			for i, v := range raw {
-				if v != nil {
-					s := string(v)
-					record[i] = &s
-				}
-			}
-			if err = enc.Encode(record); err != nil {
+			if err = enc.Encode(record.values()); err != nil {
 				break
 			}
 		}
@@ -70,6 +59,37 @@ func schemaDigest(ctx context.Context, conn *sql.Conn) (string, error) {
 		}
 	}
 	return hex.EncodeToString(hash.Sum(nil)), nil
+}
+
+// Allocate scan destinations and nullable string slots once per result set.
+// Copy RawBytes before the next scan; encoding retains the existing JSON
+// byte format (including null, empty strings and HTML escaping).
+type schemaRecord struct {
+	raw    []sql.RawBytes
+	dest   []any
+	text   []string
+	fields []*string
+}
+
+func newSchemaRecord(n int) *schemaRecord {
+	r := &schemaRecord{raw: make([]sql.RawBytes, n), dest: make([]any, n), text: make([]string, n), fields: make([]*string, n)}
+	for i := range r.raw {
+		r.dest[i] = &r.raw[i]
+	}
+	return r
+}
+
+func (r *schemaRecord) values() *[]*string {
+	for i, v := range r.raw {
+		if v == nil {
+			r.text[i] = ""
+			r.fields[i] = nil
+			continue
+		}
+		r.text[i] = string(v)
+		r.fields[i] = &r.text[i]
+	}
+	return &r.fields
 }
 
 func ensureMigrationStepJournal(ctx context.Context, conn *sql.Conn) error {

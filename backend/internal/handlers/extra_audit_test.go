@@ -147,6 +147,18 @@ func TestExtraAuditOutOfOrderTelemetry(t *testing.T) {
 	if steps != 4500 {
 		t.Fatalf("valid correction or partial report ordering failed: %d", steps)
 	}
+	// A later step-only report must retain both prior sleep fields and the
+	// single daily row. Keep this in the existing telemetry fixture.
+	api(t, h.deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "sleep": 8, "sleepState": "1", "beTime": "2026-10-20 13:00:00"})
+	api(t, h.deviceReport, map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "step": 4600, "beTime": "2026-10-20 14:00:00"})
+	var rows, sleep int
+	var state string
+	if err := p.QueryRowContext(context.Background(), "SELECT count(*),max(step),max(sleep),max(sleep_sate) FROM watch_day_info WHERE device_id=1").Scan(&rows, &steps, &sleep, &state); err != nil {
+		t.Fatal(err)
+	}
+	if rows != 1 || steps != 4600 || sleep != 8 || state != "1" {
+		t.Fatalf("partial report lost prior daily fields: rows=%d step=%d sleep=%d state=%q", rows, steps, sleep, state)
+	}
 }
 
 func TestExtraAuditPositionTimestamp(t *testing.T) {

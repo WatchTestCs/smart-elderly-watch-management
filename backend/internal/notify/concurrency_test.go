@@ -31,7 +31,7 @@ func TestIndependentDrainWorkersCanProgressWhileProviderBlocks(t *testing.T) {
 	t.Setenv("TENCENT_SMS_APPID", "")
 	t.Setenv("NOTIFY_ALLOW_HTTP_TEST", "1")
 	t.Setenv("NOTIFY_BULK_WEBHOOK_URL", "")
-	p := dbtest.MySQL(t)
+	p := dbtest.Fixture(t)
 	ctx := context.Background()
 	tx, err := p.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {

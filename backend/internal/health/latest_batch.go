@@ -123,7 +123,7 @@ func selectLatestBatch(ctx context.Context, tx *sql.Tx, owner int64, series []la
 			return err
 		}
 		g := &series[slot]
-		if !g.found || rec.Sample.Start.After(g.winner.Sample.Start) || (rec.Sample.Start.Equal(g.winner.Sample.Start) && (rec.Revision > g.winner.Revision || rec.Revision == g.winner.Revision && rec.SampleID > g.winner.SampleID)) {
+		if !g.found || laterLatest(rec, g.winner) {
 			g.winner, g.winnerPayload, g.found = rec, payload, true
 		}
 	}

@@ -1,8 +1,6 @@
-> **MySQL-only candidate (2026-11-17):** Current preview storage and deployment guidance is in [MySQL 单库存储迁移](MYSQL_ONLY_MIGRATION.md). Older PostgreSQL/S3/local-image instructions on this page describe previous releases and are not suitable for deploying the new candidate.
-
 # 原生 MySQL 业务持久化
 
-业务执行内核直接使用 `database/sql` 与 MySQL 8.4。仓储拥有 MySQL SQL；工作流拥有事务；驱动拥有参数转换和物理连接。PostgreSQL 只处理异步分析投影。
+业务执行内核直接使用 `database/sql` 与 MySQL 8.4。仓储拥有 MySQL SQL；工作流拥有事务；驱动拥有参数转换和物理连接。MySQL 是唯一运行时持久化数据库；历史分析事件仅作迁移材料保留。
 
 ```mermaid
 flowchart TD
@@ -11,8 +9,6 @@ flowchart TD
   Repository -->|原生 SQL 与有序参数| SQL[database/sql]
   SQL --> Driver[MySQL 驱动与物理连接语句缓存]
   Driver --> Business[(MySQL 业务表与 outbox)]
-  Business --> Projector[独立分析消费者]
-  Projector --> Analytics[(PostgreSQL 分析投影)]
   Probe[健康检查] --> Reserved[独立探针连接池]
   Reserved --> Business
 ```
@@ -43,7 +39,7 @@ flowchart TD
 
 位置告警处置与照护复核统一调用告警仓储的 `Resolve`，按快照、告警的顺序加锁，并同时写入历史告警状态和当前快照。复核较早的告警不会清除后来发生的告警。
 
-PostgreSQL 的 pgx 连接、事务和占位符属于独立分析消费者及其运维工具。业务仓储使用标准 SQL 类型，不能将 pgx 事务作为业务事务传入。
+业务仓储使用标准 SQL 类型，不支持第二数据库事务或方言转换。
 
 
 ## 遥测状态投影
@@ -60,7 +56,7 @@ PostgreSQL 的 pgx 连接、事务和占位符属于独立分析消费者及其�
 
 ## 验证
 
-配置独立测试 MySQL 和 PostgreSQL 后，在 backend 目录执行：
+配置专用 `TEST_MYSQL_DSN` 指向可销毁的 MySQL 8.4 测试实例后，在 backend 目录执行：
 
 ```powershell
 go test -race -count=1 -timeout 900s ./...
@@ -68,7 +64,7 @@ go build ./...
 go vet ./...
 ```
 
-`TestBusinessSQLUsesNativeMySQL` 检查业务源码不重新引入 PostgreSQL 参数。真实数据库测试覆盖参数传输、语句缓存、事务回滚、迁移与重建、设备绑定并发、SOS 重试、通知租约、健康批次和异步投影。手表的真实后端端到端测试验证完整 HTTP 链路。
+`TestBusinessSQLUsesNativeMySQL` 检查业务源码不重新引入 PostgreSQL 参数。真实数据库测试覆盖参数传输、语句缓存、事务回滚、迁移与重建、设备绑定并发、SOS 重试、通知租约、健康批次和 MySQL 内部投影。手表的真实后端端到端测试验证完整 HTTP 链路。
 
 
 ## 显式照护主管与历史权限迁移

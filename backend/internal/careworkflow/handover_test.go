@@ -12,7 +12,7 @@ import (
 
 func seedHandoverStaff(t *testing.T) (*db.Database, context.Context) {
 	t.Helper()
-	store := dbtest.MySQL(t)
+	store := dbtest.Fixture(t)
 	ctx := context.Background()
 	for _, query := range []string{
 		"INSERT INTO users(user_id,user_name,role) VALUES(81,'care81','1'),(82,'care82','1'),(83,'audit83','1'),(84,'care84','1')",

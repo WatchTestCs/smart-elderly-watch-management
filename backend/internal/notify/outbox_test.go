@@ -15,7 +15,7 @@ import (
 )
 
 func TestQueueHasNoHundredMessageDropAndRollsBack(t *testing.T) {
-	pool := dbtest.MySQL(t)
+	pool := dbtest.Fixture(t)
 	ctx := context.Background()
 	box, _ := securestore.New(base64.StdEncoding.EncodeToString(make([]byte, 32)))
 	tx, err := pool.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
@@ -50,7 +50,7 @@ func TestQueueHasNoHundredMessageDropAndRollsBack(t *testing.T) {
 func TestRetryExhaustionFallsBackAndInAppDoesNotNeedGateway(t *testing.T) {
 	t.Setenv("TENCENT_SMS_APPID", "")
 	t.Setenv("NOTIFY_ALLOW_HTTP_TEST", "1")
-	pool := dbtest.MySQL(t)
+	pool := dbtest.Fixture(t)
 	ctx := context.Background()
 	tx, _ := pool.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err := EnqueueChannels(ctx, tx, nil, "announcement", "one", 1, "13800000001", []string{"sms"}); err != nil {
@@ -93,7 +93,7 @@ func TestRetryExhaustionFallsBackAndInAppDoesNotNeedGateway(t *testing.T) {
 func TestStaleLeaseCannotScheduleSpuriousFallback(t *testing.T) {
 	t.Setenv("TENCENT_SMS_APPID", "")
 	t.Setenv("NOTIFY_ALLOW_HTTP_TEST", "1")
-	pool := dbtest.MySQL(t)
+	pool := dbtest.Fixture(t)
 	ctx := context.Background()
 	tx, _ := pool.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	EnqueueChannels(ctx, tx, nil, "announcement", "race", 1, "13800000001", []string{"sms"})

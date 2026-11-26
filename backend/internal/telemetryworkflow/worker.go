@@ -6,6 +6,7 @@ import (
 	"errors"
 	"log"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"suining-care/internal/db"
@@ -38,35 +39,42 @@ func Drain(ctx context.Context, store *db.Database, process Process) (int, error
 	})
 }
 
-// A bounded lookahead avoids stopping at the first busy owners. Do not
-// start more transactions than the worker budget permits.
+// Workers independently consume the bounded owner lookahead. A slow owner
+// cannot prevent another worker from claiming the next distinct owner.
 func drainHeads(ctx context.Context, heads []telemetryrepo.OwnerHead, workers int, drain func(context.Context, telemetryrepo.OwnerHead) (int, error)) (int, error) {
 	type result struct {
 		count int
 		err   error
 	}
-	for start := 0; start < len(heads); start += workers {
-		if err := ctx.Err(); err != nil {
-			return 0, err
-		}
-		group := heads[start:min(start+workers, len(heads))]
-		results := make([]result, len(group))
-		var wg sync.WaitGroup
-		for i, head := range group {
-			wg.Go(func() { results[i].count, results[i].err = drain(ctx, head) })
-		}
-		wg.Wait()
-		total := 0
-		var err error
-		for _, r := range results {
-			total += r.count
-			err = errors.Join(err, r.err)
-		}
-		if total > 0 || err != nil {
-			return total, err
-		}
+	workers = min(workers, len(heads))
+	results := make([]result, workers)
+	var next atomic.Int64
+	var wg sync.WaitGroup
+	for i := range workers {
+		wg.Go(func() {
+			r := &results[i]
+			for ctx.Err() == nil {
+				index := next.Add(1) - 1
+				if index >= int64(len(heads)) {
+					return
+				}
+				count, err := drain(ctx, heads[index])
+				r.count += count
+				r.err = errors.Join(r.err, err)
+			}
+		})
 	}
-	return 0, nil
+	wg.Wait()
+	total := 0
+	var err error
+	for _, r := range results {
+		total += r.count
+		err = errors.Join(err, r.err)
+	}
+	if err == nil {
+		err = ctx.Err()
+	}
+	return total, err
 }
 
 func drainOwner(ctx context.Context, store *db.Database, process Process, head telemetryrepo.OwnerHead, now time.Time) (int, error) {

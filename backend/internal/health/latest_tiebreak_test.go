@@ -35,23 +35,35 @@ func TestLatestBackfillMatchesIncrementalTieBreak(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+	// Same indexed microsecond, different exact payload timestamps. The
+	// lower revision must win if it is the more recent observation.
+	nanoNewer := first
+	nanoNewer.RecordID = "nano-newer"
+	nanoNewer.SourceDevice = "B"
+	nanoNewer.Start = now.Add(900 * time.Nanosecond)
+	nanoNewer.End = nanoNewer.Start
+	nanoOlder := nanoNewer
+	nanoOlder.RecordID = "nano-older"
+	nanoOlder.Start = now.Add(100 * time.Nanosecond)
+	nanoOlder.End = nanoOlder.Start
 	check := func() {
 		t.Helper()
 		items, err := Latest(ctx, database, 1, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if len(items) != 1 || items[0].Sample.RecordID != "second" {
+		if len(items) != 2 || items[0].Sample.RecordID != "second" || items[1].Sample.RecordID != "nano-newer" {
 			t.Fatalf("latest tie-break=%+v, want second", items)
 		}
 	}
-	save(first, second)
+	save(first, second, nanoNewer, nanoOlder)
 	check() // Initial backfill selects highest sample_id on an exact timestamp/revision tie.
 	stale := first
 	stale.RecordID = "stale"
 	stale.Start = now.Add(-time.Hour)
 	stale.End = stale.Start
-	save(stale)
+	nanoOlder.Version = 2
+	save(stale, nanoOlder)
 	check() // Incremental refresh must select the same winner.
 }
 
@@ -80,8 +92,7 @@ func TestLatestBackfillCapsDistinctSeriesRatherThanTiedSamples(t *testing.T) {
 	}
 	// Simulate 10,000 imported records with one exact series/timestamp.
 	// Assign distinct revisions to satisfy the per-owner uniqueness constraint.
-	// RANK() returned every tied row and hit the candidate cap even
-	// though the resident has only one distinct latest series.
+	// Tied rows must not count against the distinct-series limit.
 	digits := "(SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9)"
 	query := fmt.Sprintf(`INSERT INTO health_sample
 		(sample_id,old_id,device_id,epoch,version,revision,payload,payload_cipher,source,source_device,metric,semantics,sample_start,sample_end,deleted)

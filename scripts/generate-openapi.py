@@ -16,35 +16,41 @@ paths = {}
 
 
 def route_policies():
-    """Read the explicit Go registry used by auth and CSRF middleware.
-
-    Reject unsupported expressions instead of silently inventing a policy. This
-    inventory already reads literal HandleFunc registrations from Go source.
-    """
+    """Read the static accesspolicy lookup, rejecting unsupported expressions."""
     source = (backend / "internal/accesspolicy/policy.go").read_text(encoding="utf-8")
-    table = re.search(r"var routes = map\[route\]rule\{\n(.*?)\n\}", source, re.S)
+    table = re.search(
+        r"func lookup\(path string\) rule \{\s*switch path \{(.*?)"
+        r"default:\s*return rule\{\}\s*\}\s*\}",
+        source, re.S,
+    )
     if table is None:
-        raise ValueError("Cannot locate the accesspolicy route registry")
+        raise ValueError("Cannot locate the static accesspolicy registry")
+    cases = re.split(r"(?m)^\s*case ", table[1])
+    if cases[0].strip():
+        raise ValueError("Unsupported expression before accesspolicy cases")
     policies = {}
-    for line in table[1].splitlines():
-        if not line.strip() or line.lstrip().startswith("//"):
-            continue
+    paths_seen = set()
+    for case in cases[1:]:
         entry = re.fullmatch(
-            r'\s*\{http\.Method([A-Za-z]+), "([^" ]+)"\}:\s*'
-            r'\{access: (Admin|Public|Device|Shared)(, bootstrap: true)?\},\s*', line
+            r'((?:"[^"\s]+"\s*,\s*)*"[^"\s]+"):\s*'
+            r'return rule\{(Admin|Public|Device|Shared), http\.Method([A-Za-z]+), (true|false)\}\s*',
+            case,
         )
         if entry is None:
-            raise ValueError(f"Unsupported literal in accesspolicy registry: {line.strip()}")
-        method, path, access, bootstrap = entry.groups()
-        key = (method.upper(), path)
-        if key in policies:
-            raise ValueError(f"Duplicate route policy: {key}")
-        policies[key] = (access, bool(bootstrap))
+            raise ValueError(f"Unsupported literal in accesspolicy registry: {case.strip()}")
+        paths, access, method, exempt = entry.groups()
+        for path in re.findall(r'"([^"\s]+)"', paths):
+            if path in paths_seen:
+                raise ValueError(f"Duplicate route policy: {path}")
+            paths_seen.add(path)
+            policies[(method.upper(), path)] = (access, exempt == "true")
+    if not policies:
+        raise ValueError("Empty accesspolicy registry")
     return policies
 
 
 policies = route_policies()
-csrf_exempt = {path for (_, path), (access, bootstrap) in policies.items() if access == "Device" or bootstrap}
+csrf_exempt = {path for (_, path), (_, exempt) in policies.items() if exempt}
 fields = {
     "/api/v1/device/login": {"deviceNo": "string", "secret": "string", "platform": "string", "protocolVersion": "integer"},
     "/api/v1/device/report": {"positionSource": "string", "positionSampledAt": "string", "positionAccuracy": "number"},
@@ -149,6 +155,8 @@ for file in sorted((backend / "internal/handlers").glob("*.go")):
                 },
             }
         paths.setdefault(path, {})[method.lower()] = operation
+if stale_policies := set(policies) - set(registered_routes):
+    raise ValueError(f"Access policies without registered routes: {sorted(stale_policies)}")
 # Service status is mounted before the database router.
 paths['/api/v1/service/status'] = {'get': {
     'summary': 'service/status', 'security': [], 'tags': ['v1'],

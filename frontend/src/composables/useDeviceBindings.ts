@@ -114,5 +114,5 @@ export function useDeviceBindings(state: DeviceState, post: DevicePost) {
     bindCodeRequest++
     bindDialogRevision++
   })
-  return { openBindCodeDialog, loadBindCodes, createBindCode, deleteBindCode }
+  return { openBindCodeDialog, createBindCode, deleteBindCode }
 }

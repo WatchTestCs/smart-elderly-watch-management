@@ -97,7 +97,7 @@ func (c *latestTestConn) QueryContext(_ context.Context, q string, args []driver
 		return &latestTestRows{columns: []string{"revision", "range_end"}, values: []driver.Value{int64(1), int64(1)}}, nil
 	case strings.Contains(q, "FROM health_sample_latest"):
 		return &latestTestRows{columns: []string{"sample_id", "device_id", "epoch", "revision", "series_key", "payload", "payload_cipher"}}, nil
-	case strings.Contains(q, "ROW_NUMBER()"):
+	case strings.Contains(q, "DENSE_RANK()"):
 		return &latestTestRows{columns: []string{"sample_id", "device_id", "epoch", "revision", "payload", "payload_cipher"}}, nil
 	}
 	return nil, errors.New("unexpected query: " + q)

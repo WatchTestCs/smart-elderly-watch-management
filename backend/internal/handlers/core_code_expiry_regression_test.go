@@ -9,7 +9,7 @@ import (
 	"suining-care/internal/session"
 )
 
-func TestContinuousBindingCodeExpiry(t *testing.T) {
+func TestContinuousCodeExpiryContracts(t *testing.T) {
 	pool := testDatabase(t)
 	h := testHandler(t, pool)
 	seedDevice(t, pool)
@@ -42,21 +42,16 @@ func TestContinuousBindingCodeExpiry(t *testing.T) {
 		}
 		api(t, unbind, map[string]any{"deviceId": 1})
 	}
-}
+	// Invitation and binding codes use separate tables. Reuse the resident
+	// and authenticated handler without resetting unrelated fixture state.
 
-func TestContinuousInviteCodeExpiry(t *testing.T) {
-	pool := testDatabase(t)
-	h := testHandler(t, pool)
-	seedDevice(t, pool)
-	seedCareAdminDuty(t, pool, 11, "supervisor")
-	createInvite := withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.inviteCreate)
+	createInvite := withHealthPrincipal(h, principal, h.inviteCreate)
 	for _, bad := range []any{"abc", -1, 1.5, true, "999999999999999999999999"} {
 		out := callAPI(createInvite, map[string]any{"oldId": 1, "expireDays": bad})
 		if out.Code != 400 {
 			t.Errorf("invalid expiry %v became an indefinite invite: HTTP %d", bad, out.Code)
 		}
 	}
-	var count int
 	if err := pool.QueryRowContext(context.Background(), "SELECT count(*) FROM invite_code").Scan(&count); err != nil || count != 0 {
 		t.Errorf("invalid expiry created invites: count=%d err=%v", count, err)
 	}

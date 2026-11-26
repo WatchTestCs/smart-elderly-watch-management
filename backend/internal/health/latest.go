@@ -133,12 +133,13 @@ func readLatest(ctx context.Context, q latestQuerier, oldID int64, box *securest
 
 func buildLatest(ctx context.Context, q *sql.Tx, oldID int64, box *securestore.Box) ([]Record, error) {
 	partition := "BINARY source,BINARY source_device,BINARY metric,BINARY semantics"
-	// Select one deterministic winner per series before applying the 10,000-
-	// series bound; RANK() counts every timestamp tie as another candidate.
+	// SQL timestamps are stored in microseconds, while authenticated payloads
+	// retain nanoseconds. Keep every candidate at the maximum microsecond;
+	// the series bound applies to distinct series, not tied sample rows.
 	sql := "SELECT s.sample_id,s.device_id,s.epoch,s.revision,s.payload,s.payload_cipher FROM health_sample s INNER JOIN (" +
-		"SELECT sample_id,ROW_NUMBER() OVER (PARTITION BY " + partition + " ORDER BY sample_start DESC,revision DESC,sample_id DESC) AS latest_rank " +
+		"SELECT sample_id,DENSE_RANK() OVER (PARTITION BY " + partition + " ORDER BY sample_start DESC) AS latest_rank " +
 		"FROM health_sample WHERE old_id=? AND NOT deleted) ranked ON ranked.sample_id=s.sample_id " +
-		"WHERE ranked.latest_rank=1 ORDER BY s.sample_id DESC LIMIT 10001"
+		"WHERE ranked.latest_rank=1"
 	rows, err := q.QueryContext(ctx, sql, oldID)
 	if err != nil {
 		return nil, err
@@ -146,12 +147,7 @@ func buildLatest(ctx context.Context, q *sql.Tx, oldID int64, box *securestore.B
 	defer rows.Close()
 	type series struct{ source, device, metric, semantics string }
 	selected := make(map[series]Record)
-	count := 0
 	for rows.Next() {
-		count++
-		if count > 10000 {
-			return nil, ErrLatestTooManySeries
-		}
 		rec := Record{OldID: oldID}
 		var stored ProjectionPayload
 		if err = rows.Scan(&rec.SampleID, &rec.DeviceID, &rec.Epoch, &rec.Revision, &stored.JSON, &stored.Cipher); err != nil {
@@ -167,7 +163,10 @@ func buildLatest(ctx context.Context, q *sql.Tx, oldID int64, box *securestore.B
 		s := rec.Sample
 		key := series{s.Source, s.SourceDevice, s.Metric, s.Semantics}
 		prior, exists := selected[key]
-		if !exists || s.Start.After(prior.Sample.Start) || (s.Start.Equal(prior.Sample.Start) && rec.Revision > prior.Revision) {
+		if !exists && len(selected) == 10000 {
+			return nil, ErrLatestTooManySeries
+		}
+		if !exists || laterLatest(rec, prior) {
 			selected[key] = rec
 		}
 	}
@@ -180,6 +179,16 @@ func buildLatest(ctx context.Context, q *sql.Tx, oldID int64, box *securestore.B
 	}
 	sortLatest(items)
 	return items, nil
+}
+
+func laterLatest(a, b Record) bool {
+	if !a.Sample.Start.Equal(b.Sample.Start) {
+		return a.Sample.Start.After(b.Sample.Start)
+	}
+	if a.Revision != b.Revision {
+		return a.Revision > b.Revision
+	}
+	return a.SampleID > b.SampleID
 }
 
 func sortLatest(items []Record) {
@@ -275,7 +284,7 @@ func refreshLatestSeries(ctx context.Context, tx *sql.Tx, oldID int64, s Sample,
 		if err = json.Unmarshal(payload, &rec.Sample); err != nil {
 			break
 		}
-		if winner == nil || rec.Sample.Start.After(winner.Sample.Start) || (rec.Sample.Start.Equal(winner.Sample.Start) && rec.Revision > winner.Revision) {
+		if winner == nil || laterLatest(rec, *winner) {
 			copyRec := rec
 			winner = &copyRec
 			winnerPayload = payload
