@@ -2,6 +2,7 @@ package rules
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
 	"encoding/json"
 	"math"
@@ -16,29 +17,28 @@ const baselineLegacyValue = "CAST(JSON_UNQUOTE(JSON_EXTRACT(payload,'$.value')) 
 const baselineLegacyLongSQL = `SELECT count(*) AS sample_count,count(` + baselineLegacyValue + `) AS value_count,
  COALESCE(avg(` + baselineLegacyValue + `),0) AS mean,COALESCE(stddev_pop(` + baselineLegacyValue + `),0) AS deviation
  FROM health_sample FORCE INDEX (idx_health_rule_cover) WHERE old_id=? AND device_id=? AND metric=? AND deleted=false AND payload_encrypted=false
- AND source=? AND rule_source_key=? AND BINARY source=BINARY ? AND BINARY source_device=BINARY ?
+ AND source=? AND rule_identity_key=? AND BINARY source=BINARY ? AND BINARY source_device=BINARY ?
  AND sample_start>=? AND sample_start<? AND (JSON_UNQUOTE(JSON_EXTRACT(payload,'$.timeBasis')) IS NULL OR JSON_UNQUOTE(JSON_EXTRACT(payload,'$.timeBasis'))<>'legacy-unzoned')`
 
 const baselineProtectedShortSQL = `SELECT LOWER(HEX(sample_id)),revision,payload_cipher,0,0,0,0 FROM health_sample FORCE INDEX (idx_health_rule_cover)
  WHERE old_id=? AND device_id=? AND metric=? AND deleted=false AND payload_encrypted=true
- AND source=? AND rule_source_key=? AND BINARY source=BINARY ?
+ AND source=? AND rule_identity_key=? AND BINARY source=BINARY ?
  AND sample_start>=? AND sample_start<?`
 
 const baselineProtectedLongSQL = `SELECT LOWER(HEX(sample_id)),revision,payload_cipher,0,0,0,0 FROM health_sample FORCE INDEX (idx_health_rule_cover)
  WHERE old_id=? AND device_id=? AND metric=? AND deleted=false AND payload_encrypted=true
- AND source=? AND rule_source_key=? AND BINARY source=BINARY ? AND BINARY source_device=BINARY ?
+ AND source=? AND rule_identity_key=? AND BINARY source=BINARY ? AND BINARY source_device=BINARY ?
  AND sample_start>=? AND sample_start<?`
 
 // baselineSourceKey matches the generated binary index column exactly, including
 // Unicode bytes and trailing spaces. The tag separates exact short identities
-// from long prefix candidates, which always require full binary comparison.
+// from long hashed candidates, which always require full binary comparison.
 func baselineSourceKey(device string) []byte {
-	key := make([]byte, 1+min(len(device), 64))
 	if len(device) > 64 {
-		key[0] = 1
+		digest := sha256.Sum256([]byte(device))
+		return append([]byte{1}, digest[:]...)
 	}
-	copy(key[1:], device)
-	return key
+	return append([]byte{0}, device...)
 }
 
 func readRuleBaseline(ctx context.Context, tx *sql.Tx, device ruleDevice, metric string, value Value, now time.Time, days int, box *securestore.Box) (Baseline, error) {

@@ -24,7 +24,7 @@ const latestRuleObservationsSQL = `SELECT metric_order,LOWER(HEX(sample_id)),rev
 const baselineCoverSQL = `SELECT count(*) AS sample_count,count(rule_value) AS value_count,COALESCE(avg(rule_value),0) AS mean,COALESCE(stddev_pop(rule_value),0) AS deviation
  FROM health_sample FORCE INDEX (idx_health_rule_cover)
  WHERE old_id=? AND device_id=? AND metric=? AND deleted=false AND payload_encrypted=false
- AND source=? AND rule_source_key=? AND BINARY source=BINARY ?
+ AND source=? AND rule_identity_key=? AND BINARY source=BINARY ?
  AND sample_start>=? AND sample_start<? AND rule_legacy_unzoned=false`
 
 type Engine struct {

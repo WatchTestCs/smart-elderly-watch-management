@@ -61,7 +61,7 @@ func TestConsolidatedBaselineIdentityAndMigration(t *testing.T) {
 				t.Fatalf("device %q baseline %+v: %v", device, got, err)
 			}
 			var key []byte
-			if err = p.QueryRowContext(ctx, "SELECT rule_source_key FROM health_sample WHERE BINARY source_device=BINARY ? LIMIT 1", device).Scan(&key); err != nil || string(key) != string(baselineSourceKey(device)) {
+			if err = p.QueryRowContext(ctx, "SELECT rule_identity_key FROM health_sample WHERE BINARY source_device=BINARY ? LIMIT 1", device).Scan(&key); err != nil || string(key) != string(baselineSourceKey(device)) {
 				t.Fatalf("generated key %q: %x %v", device, key, err)
 			}
 		}
@@ -71,16 +71,18 @@ func TestConsolidatedBaselineIdentityAndMigration(t *testing.T) {
 		}
 	}
 	verify()
-	rollback, err := os.ReadFile("../../migrations/rollback/mysql_0047_health_rule_index.sql")
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, statement := range strings.Split(string(rollback), ";") {
-		if strings.TrimSpace(statement) == "" {
-			continue
+	for _, name := range []string{"0049_health_rule_identity_hash", "0047_health_rule_index"} {
+		rollback, err := os.ReadFile("../../migrations/rollback/mysql_" + name + ".sql")
+		if err != nil {
+			t.Fatal(err)
 		}
-		if _, err := p.ExecContext(ctx, statement); err != nil {
-			t.Fatal("rollback", err)
+		for _, statement := range strings.Split(string(rollback), ";") {
+			if strings.TrimSpace(statement) == "" {
+				continue
+			}
+			if _, err := p.ExecContext(ctx, statement); err != nil {
+				t.Fatal("rollback", err)
+			}
 		}
 	}
 	if err := db.MigrateMySQL(ctx, p); err != nil {
