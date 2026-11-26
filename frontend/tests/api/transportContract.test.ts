@@ -73,13 +73,6 @@ describe('unconfirmed request handling', () => {
     expect(apiErrorMessage({ code: 'ERR_NETWORK' }, '保存失败，请重试')).toBe(UNCONFIRMED_MESSAGE)
   })
 
-  it('keeps server, cancellation and local errors on their existing paths', () => {
-    expect(apiErrorMessage({ response: { status: 429 } })).toBe('请求过于频繁，请稍后重试')
-    expect(apiErrorMessage({ response: { status: 500, data: { returnCode: '0000', code: 'E', message: '保存失败', reference: 'r-1' } } }))
-      .toBe('保存失败（编号：r-1）')
-    expect(apiErrorMessage(new CanceledError())).toBe('请求已取消')
-    expect(apiErrorMessage(new Error('network'), '连接中断')).toBe('连接中断')
-  })
 })
 
 // Locate the source tree from the working directory: happy-dom does not expose

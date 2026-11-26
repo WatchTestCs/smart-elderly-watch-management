@@ -2,6 +2,9 @@ package handlers
 
 import (
 	"bytes"
+	"database/sql"
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -43,13 +46,6 @@ func TestOptionalDeviceBody(t *testing.T) {
 }
 
 func TestPaginationAndIDsRejectInvalidNumbers(t *testing.T) {
-	for _, m := range []map[string]any{
-		{"id": 1.5}, {"id": 1e100}, {"id": -1e100},
-	} {
-		if n, ok := int64Val(m, "id"); ok {
-			t.Fatalf("invalid ID accepted: %v (%d)", m, n)
-		}
-	}
 	// 越界分页必须被拒绝，而不是静默夹取成 1/20——否则调用方会以为自己
 	// 拿到的是全量数据。
 	if _, _, ok := bodyPage(httptest.NewRecorder(), map[string]any{"page": 1e100, "pageSize": float64(1000000)}); ok {
@@ -78,5 +74,32 @@ func TestOptionalJSONCannotAcceptAnOversizedValidPrefix(t *testing.T) {
 	out, ok := optBody(w, httptest.NewRequest(http.MethodPost, "/api/v1/care/incidents", strings.NewReader(" {} \n ")))
 	if !ok || len(out) != 0 {
 		t.Fatalf("normal optional object failed: HTTP=%d ok=%v body=%v", w.Code, ok, out)
+	}
+}
+
+func TestPatchNumericAndMissingRowHandling(t *testing.T) {
+	for _, tc := range []struct {
+		value any
+		want  int64
+		ok    bool
+	}{
+		{json.Number("9223372036854775807"), 9223372036854775807, true},
+		{json.Number("9223372036854775808"), 0, false},
+		{json.Number("1.5"), 0, false},
+		{" 42 ", 42, true},
+		{float64(1.5), 0, false},
+		{float64(9223372036854775808), 0, false},
+		{float64(1e19), 0, false},
+		{float64(1e100), 0, false},
+		{float64(-1e100), 0, false},
+		{float64(-9223372036854775808), -9223372036854775808, true},
+	} {
+		got, ok := int64Val(map[string]any{"id": tc.value}, "id")
+		if got != tc.want || ok != tc.ok {
+			t.Fatalf("int64Val(%v): got (%d, %v), want (%d, %v)", tc.value, got, ok, tc.want, tc.ok)
+		}
+	}
+	if !isNotFound(fmt.Errorf("lookup: %w", sql.ErrNoRows)) {
+		t.Fatal("wrapped sql.ErrNoRows must be classified as not found")
 	}
 }

@@ -1,6 +1,7 @@
 import { afterEach, describe, it, expect, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { awaitAbortable, createLatestRead } from '@/composables/latestRead'
+import { readErrorMessage, READ_TIMEOUT_MESSAGE } from '@/api/httpContract'
 
 function deferred<T>() {
   let resolve!: (value: T) => void
@@ -96,6 +97,7 @@ describe('cancelable latest read scheduler', () => {
       await vi.advanceTimersByTimeAsync(10)
       await pending
       expect(fail).toHaveBeenCalledTimes(1)
+      expect(readErrorMessage(fail.mock.calls[0][0])).toBe(READ_TIMEOUT_MESSAGE)
       expect(busy.mock.calls).toEqual([[true], [false]])
       await queue.run(2)
       expect(accept.mock.calls).toEqual([[2, 2]])
