@@ -60,14 +60,6 @@ func (s *Store) Close() {
 	<-s.cleanupDone
 }
 
-func token(n int) (string, error) {
-	b := make([]byte, n)
-	if _, err := rand.Read(b); err != nil {
-		return "", err
-	}
-	return hex.EncodeToString(b), nil
-}
-
 func (s *Store) backend() *databaseStore {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -83,14 +75,13 @@ func (s *Store) CreateContext(ctx context.Context, p Principal) *Session {
 	if ctx.Err() != nil {
 		return nil
 	}
-	id, err := token(32)
-	if err != nil {
+	var random [64]byte
+	if _, err := rand.Read(random[:]); err != nil {
 		return nil
 	}
-	csrf, err := token(32)
-	if err != nil {
-		return nil
-	}
+	var encoded [128]byte
+	hex.Encode(encoded[:], random[:])
+	id, csrf := string(encoded[:64]), string(encoded[64:])
 	now := time.Now()
 	sess := &Session{ID: id, Principal: p, CSRFToken: csrf, CreatedAt: now, ExpiresAt: now.Add(s.ttl)}
 	if database := s.backend(); database != nil {
@@ -114,10 +105,11 @@ func (s *Store) GetContext(ctx context.Context, id string) *Session {
 	if id == "" || ctx.Err() != nil {
 		return nil
 	}
-	if database := s.backend(); database != nil {
+	s.mu.RLock()
+	if database := s.database; database != nil {
+		s.mu.RUnlock()
 		return database.get(ctx, id)
 	}
-	s.mu.RLock()
 	sess := s.sessions[id]
 	s.mu.RUnlock()
 	if sess == nil || ctx.Err() != nil || time.Now().After(sess.ExpiresAt) {

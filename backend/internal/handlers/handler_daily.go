@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"net/http"
@@ -11,7 +12,7 @@ import (
 	"suining-care/internal/response"
 )
 
-// All requested days share one owner lock, one batch insert and one indexed read.
+// All requested days share one owner lock; cached days require no writes.
 const metricDailyInsertPrefix = `INSERT INTO metric_daily(cache_key,old_id,source,source_device,metric,semantics,record_day,offset_minutes) VALUES `
 const metricDailyEnsureSQL = metricDailyInsertPrefix + `(?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE cache_key=cache_key`
 
@@ -58,46 +59,36 @@ func (h *Handler) healthDaily(w http.ResponseWriter, r *http.Request) {
 	}
 	ids := make([]string, req.Days)
 	days := make([]string, req.Days)
-	values := make([]any, 0, req.Days*8)
+	keys := make([]any, req.Days)
 	for n := 0; n < req.Days; n++ {
 		k := req.DailyKey
 		k.Day = from.AddDate(0, 0, n).Format("2006-01-02")
 		ids[n], days[n] = k.ID(), k.Day
-		values = append(values, ids[n], k.OldID, k.Source, k.SourceDevice, k.Metric, k.Semantics, k.Day, k.OffsetMinutes)
-	}
-	placeholders := strings.TrimSuffix(strings.Repeat("(?,?,?,?,?,?,?,?),", req.Days), ",")
-	_, err = tx.ExecContext(ctx, metricDailyInsertPrefix+placeholders+" ON DUPLICATE KEY UPDATE cache_key=cache_key", values...)
-	if internalError(w, err) {
-		return
-	}
-	keys := make([]any, len(ids))
-	for n, id := range ids {
-		keys[n] = id
-	}
-	rows, err := tx.QueryContext(ctx, "SELECT cache_key,dirty,computed_revision,result,result_cipher,error_text,updated_at FROM metric_daily WHERE cache_key IN ("+
-		strings.TrimSuffix(strings.Repeat("?,", len(ids)), ",")+")", keys...)
-	if internalError(w, err) {
-		return
+		keys[n] = ids[n]
 	}
 	cached := make(map[string]dailyCacheRow, req.Days)
-	for rows.Next() {
-		var id string
-		var item dailyCacheRow
-		err = rows.Scan(&id, &item.dirty, &item.rev, &item.stored.JSON, &item.stored.Cipher, &item.message, &item.updated)
-		if err != nil {
-			break
-		}
-		cached[id] = item
-	}
-	if err == nil {
-		err = rows.Err()
-	}
-	if closeErr := rows.Close(); err == nil {
-		err = closeErr
-	}
-	if internalError(w, err) {
+	if err := loadDailyCacheRows(ctx, tx, keys, cached); internalError(w, err) {
 		return
 	}
+	// Owner clock is held throughout: existing projections do not need an
+	// INSERT/duplicate-key update. Create and reread only absent days.
+	if len(cached) != len(ids) {
+		missing := make([]any, 0, len(ids)-len(cached))
+		values := make([]any, 0, cap(missing)*8)
+		for n, id := range ids {
+			if _, exists := cached[id]; exists {
+				continue
+			}
+			missing = append(missing, id)
+			values = append(values, id, req.OldID, req.Source, req.SourceDevice, req.Metric, req.Semantics, days[n], req.OffsetMinutes)
+		}
+		placeholders := strings.TrimSuffix(strings.Repeat("(?,?,?,?,?,?,?,?),", len(missing)), ",")
+		_, err := tx.ExecContext(ctx, metricDailyInsertPrefix+placeholders+" ON DUPLICATE KEY UPDATE cache_key=cache_key", values...)
+		if internalError(w, err) || internalError(w, loadDailyCacheRows(ctx, tx, missing, cached)) {
+			return
+		}
+	}
+
 	items := make([]map[string]any, 0, req.Days)
 	for n, id := range ids {
 		item, found := cached[id]
@@ -123,4 +114,26 @@ func (h *Handler) healthDaily(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	response.OK(w, map[string]any{"items": items, "source": req.Source, "sourceDevice": req.SourceDevice, "metric": req.Metric, "semantics": req.Semantics, "offsetMinutes": req.OffsetMinutes, "algorithmVersion": health.DailyAlgorithmVersion})
+}
+
+// loadDailyCacheRows reads only the requested keys on the owner's transaction.
+func loadDailyCacheRows(ctx context.Context, tx *sql.Tx, keys []any, cached map[string]dailyCacheRow) error {
+	rows, err := tx.QueryContext(ctx, "SELECT cache_key,dirty,computed_revision,result,result_cipher,error_text,updated_at FROM metric_daily WHERE cache_key IN ("+
+		strings.TrimSuffix(strings.Repeat("?,", len(keys)), ",")+")", keys...)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id string
+		var item dailyCacheRow
+		if err := rows.Scan(&id, &item.dirty, &item.rev, &item.stored.JSON, &item.stored.Cipher, &item.message, &item.updated); err != nil {
+			return err
+		}
+		cached[id] = item
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	return rows.Close()
 }

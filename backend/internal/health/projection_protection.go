@@ -66,8 +66,8 @@ func (p ProjectionPayload) Open(box *securestore.Box, scope string) (json.RawMes
 	if p.JSON != nil || len(*p.Cipher) > maxProjectionCipherBytes {
 		return nil, errors.New("invalid protected health projection payload")
 	}
-	plain, err := box.Open(*p.Cipher, scope)
-	if err != nil || !json.Valid([]byte(plain)) {
+	plain, err := box.OpenBytes(*p.Cipher, scope)
+	if err != nil || !json.Valid(plain) {
 		return nil, errors.New("health projection payload authentication failed")
 	}
 	return json.RawMessage(plain), nil

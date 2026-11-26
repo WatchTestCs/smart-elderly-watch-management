@@ -23,7 +23,7 @@ func (h *Handler) healthStatistics(w http.ResponseWriter, r *http.Request) {
 		write400(w, message)
 		return
 	}
-	oldID, ok := h.resolveOptionalOldID(w, r, req.OldID)
+	oldID, ok := selectOptionalScopedOldID(w, r, req.OldID)
 	if !ok {
 		return
 	}

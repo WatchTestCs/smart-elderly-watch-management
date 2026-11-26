@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"github.com/google/uuid"
+	"image"
 	"image/jpeg"
 	"image/png"
 	"io"
@@ -21,6 +22,21 @@ import (
 
 const imageFailMessage = "请选择不超过5MB的有效 JPG、PNG 或 BMP 图片"
 const maxImageBytes = 5 * 1024 * 1024
+
+// Retain at most one scratch buffer for BMP uploads. Clear its pixels before
+// returning it; the encoder must finish before the next request borrows it.
+var bmpScratch = make(chan *image.RGBA, 1)
+
+func releaseBMPScratch(img *image.RGBA) {
+	if img == nil || cap(img.Pix) > 8<<20 {
+		return
+	}
+	clear(img.Pix[:cap(img.Pix)])
+	select {
+	case bmpScratch <- img:
+	default:
+	}
+}
 
 // POST /api/v1/image/saveImage —— 图片上传（multipart/form-data）。
 func (h *Handler) imageSave(w http.ResponseWriter, r *http.Request) {
@@ -46,8 +62,17 @@ func (h *Handler) imageSave(w http.ResponseWriter, r *http.Request) {
 		fail()
 		return
 	}
-	format, img, width, height, ok := imagecodec.Sniff(data)
+	var scratch *image.RGBA
+	if len(data) >= 2 && data[0] == 'B' && data[1] == 'M' {
+		select {
+		case scratch = <-bmpScratch:
+		default:
+			scratch = &image.RGBA{}
+		}
+	}
+	format, img, width, height, ok := imagecodec.SniffInto(data, scratch)
 	if !ok || !imagecodec.ValidDims(width, height) {
+		releaseBMPScratch(scratch)
 		fail()
 		return
 	}
@@ -62,6 +87,7 @@ func (h *Handler) imageSave(w http.ResponseWriter, r *http.Request) {
 	} else {
 		err = png.Encode(&encoded, img)
 	}
+	releaseBMPScratch(scratch)
 	if err != nil || encoded.Len() > maxImageBytes {
 		fail()
 		return

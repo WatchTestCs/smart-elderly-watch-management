@@ -36,14 +36,51 @@ type DurableItem struct {
 	Attempts     int
 }
 
-// LockDurableBatch elects one worker and locks the oldest pending records.
-// All locks remain held by the caller until its transaction commits or rolls back.
-func LockDurableBatch(ctx context.Context, tx *sql.Tx, limit int) ([]DurableItem, error) {
+// Only the oldest pending item for an owner can make that owner runnable.
+// The due index finds ready rows; the owner index checks the earlier prefix.
+const dueOwnerHead = " FROM telemetry_inbox q WHERE q.status='pending' AND q.next_retry_at<=? AND NOT EXISTS (SELECT 1 FROM telemetry_inbox older WHERE older.elder_id=q.elder_id AND older.status='pending' AND older.id<q.id)"
+
+func HasDueDurable(ctx context.Context, store interface {
+	QueryRowContext(context.Context, string, ...any) *sql.Row
+}, now time.Time) (bool, error) {
+	var found int
+	err := store.QueryRowContext(ctx, "SELECT 1"+dueOwnerHead+" LIMIT 1", now).Scan(&found)
+	if errors.Is(err, sql.ErrNoRows) {
+		return false, nil
+	}
+	return err == nil, err
+}
+
+type OwnerHead struct{ ID, ResidentID int64 }
+
+// DueOwnerHeads is a non-locking hint. Each transaction revalidates its head.
+func DueOwnerHeads(ctx context.Context, store interface {
+	QueryContext(context.Context, string, ...any) (*sql.Rows, error)
+}, now time.Time, limit int) ([]OwnerHead, error) {
+	rows, err := store.QueryContext(ctx, "SELECT q.id,q.elder_id"+dueOwnerHead+" ORDER BY q.id LIMIT ?", now, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	heads := make([]OwnerHead, 0, limit)
+	for rows.Next() {
+		var head OwnerHead
+		if err = rows.Scan(&head.ID, &head.ResidentID); err != nil {
+			return nil, err
+		}
+		heads = append(heads, head)
+	}
+	return heads, rows.Err()
+}
+
+// LockOwnerBatch uses the pending head row as the owner-specific claim.
+// Shared compatibility guard excludes legacy global consumers, but does
+// not serialize new consumers. Transaction rollback releases both locks.
+func LockOwnerBatch(ctx context.Context, tx *sql.Tx, head OwnerHead, now time.Time, limit int) ([]DurableItem, error) {
 	var guard int
-	guardStarted := time.Now()
-	err := tx.QueryRowContext(ctx,
-		"SELECT id FROM telemetry_inbox_guard WHERE id=1 FOR UPDATE SKIP LOCKED").Scan(&guard)
-	observability.Default.Add("suining_telemetry_guard_acquire_seconds_total", time.Since(guardStarted).Seconds())
+	started := time.Now()
+	err := tx.QueryRowContext(ctx, "SELECT id FROM telemetry_inbox_guard WHERE id=1 FOR SHARE SKIP LOCKED").Scan(&guard)
+	observability.Default.Add("suining_telemetry_guard_acquire_seconds_total", time.Since(started).Seconds())
 	if errors.Is(err, sql.ErrNoRows) {
 		observability.Default.Add("suining_telemetry_guard_busy_total", 1)
 		return nil, nil
@@ -51,10 +88,34 @@ func LockDurableBatch(ctx context.Context, tx *sql.Tx, limit int) ([]DurableItem
 	if err != nil {
 		return nil, err
 	}
-	rows, err := tx.QueryContext(ctx,
-		`SELECT id,device_id,elder_id,binding_epoch,payload,next_retry_at,attempts
-		 FROM telemetry_inbox WHERE status='pending'
-		 ORDER BY id LIMIT ? FOR UPDATE SKIP LOCKED`, limit)
+	// The ingest path locks the resident before inserting inbox records.
+	// Match its order, and do not occupy a connection waiting for a busy
+	// resident. A removed resident still needs its stale items consumed.
+	var owner int64
+	err = tx.QueryRowContext(ctx, "SELECT old_id FROM oldperson WHERE old_id=? FOR UPDATE SKIP LOCKED", head.ResidentID).Scan(&owner)
+	if errors.Is(err, sql.ErrNoRows) {
+		err = tx.QueryRowContext(ctx, "SELECT old_id FROM oldperson WHERE old_id=?", head.ResidentID).Scan(&owner)
+		if err == nil {
+			return nil, nil
+		}
+		if !errors.Is(err, sql.ErrNoRows) {
+			return nil, err
+		}
+	} else if err != nil {
+		return nil, err
+	}
+	var id int64
+	err = tx.QueryRowContext(ctx, "SELECT id FROM telemetry_inbox WHERE id=? AND elder_id=? AND status='pending' AND next_retry_at<=? FOR UPDATE SKIP LOCKED", head.ID, head.ResidentID, now).Scan(&id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	// Do not skip locked rows inside an owner. A late or stale discovery
+	// must not overtake an older pending record.
+	rows, err := tx.QueryContext(ctx, `SELECT id,device_id,elder_id,binding_epoch,payload,next_retry_at,attempts
+	 FROM telemetry_inbox FORCE INDEX (idx_telemetry_inbox_owner_pending) WHERE elder_id=? AND status='pending' ORDER BY id LIMIT ? FOR UPDATE`, head.ResidentID, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -62,13 +123,18 @@ func LockDurableBatch(ctx context.Context, tx *sql.Tx, limit int) ([]DurableItem
 	items := make([]DurableItem, 0, limit)
 	for rows.Next() {
 		var item DurableItem
-		if err := rows.Scan(&item.ID, &item.DeviceID, &item.ResidentID,
-			&item.BindingEpoch, &item.Payload, &item.NextRetryAt, &item.Attempts); err != nil {
+		if err = rows.Scan(&item.ID, &item.DeviceID, &item.ResidentID, &item.BindingEpoch, &item.Payload, &item.NextRetryAt, &item.Attempts); err != nil {
 			return nil, err
 		}
 		items = append(items, item)
 	}
-	return items, rows.Err()
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	if len(items) == 0 || items[0].ID != head.ID {
+		return nil, nil
+	}
+	return items, nil
 }
 
 // MarkDurableFailure retains the encrypted payload and schedules bounded

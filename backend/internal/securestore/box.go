@@ -82,7 +82,8 @@ func (b *Box) SealBytes(text []byte, scope string) (string, error) {
 	if b == nil {
 		return "", errors.New("encryption key is not configured")
 	}
-	nonce := make([]byte, b.aead.NonceSize())
+	n := b.aead.NonceSize()
+	nonce := make([]byte, n, n+len(text)+b.aead.Overhead())
 	if _, err := rand.Read(nonce); err != nil {
 		return "", err
 	}
@@ -92,18 +93,27 @@ func (b *Box) SealBytes(text []byte, scope string) (string, error) {
 		scope += "\x00" + b.active
 	}
 	data := b.aead.Seal(nonce, nonce, text, []byte(scope))
-	return prefix + base64.RawStdEncoding.EncodeToString(data), nil
+	out := make([]byte, 0, len(prefix)+base64.RawStdEncoding.EncodedLen(len(data)))
+	out = append(out, prefix...)
+	out = base64.RawStdEncoding.AppendEncode(out, data)
+	return string(out), nil
 }
 func (b *Box) Open(text, scope string) (string, error) {
+	plain, err := b.OpenBytes(text, scope)
+	return string(plain), err
+}
+
+// OpenBytes returns caller-owned authenticated plaintext without a string copy.
+func (b *Box) OpenBytes(text, scope string) ([]byte, error) {
 	if b == nil || !strings.HasPrefix(text, Prefix) {
-		return "", errors.New("encrypted value or key is missing")
+		return nil, errors.New("encrypted value or key is missing")
 	}
 	encoded := strings.TrimPrefix(text, Prefix)
 	aead := b.aead
 	if strings.HasPrefix(encoded, "v2:") {
 		id, payload, ok := strings.Cut(strings.TrimPrefix(encoded, "v2:"), ":")
 		if !ok || b.readers[id] == nil {
-			return "", errors.New("encrypted value key version is unavailable")
+			return nil, errors.New("encrypted value key version is unavailable")
 		}
 		aead, encoded, scope = b.readers[id], payload, scope+"\x00"+id
 	} else if len(b.readers) != 0 {
@@ -114,22 +124,22 @@ func (b *Box) Open(text, scope string) (string, error) {
 				return plain, nil
 			}
 		}
-		return "", errors.New("legacy encrypted value authentication failed")
+		return nil, errors.New("legacy encrypted value authentication failed")
 	}
 	return openEnvelope(aead, encoded, scope)
 }
 
-func openEnvelope(aead cipher.AEAD, encoded, scope string) (string, error) {
+func openEnvelope(aead cipher.AEAD, encoded, scope string) ([]byte, error) {
 	data, err := base64.RawStdEncoding.Strict().DecodeString(encoded)
 	if err != nil || len(data) < aead.NonceSize() {
-		return "", errors.New("invalid encrypted value")
+		return nil, errors.New("invalid encrypted value")
 	}
 	n := aead.NonceSize()
-	plain, err := aead.Open(nil, data[:n], data[n:], []byte(scope))
+	plain, err := aead.Open(data[n:n], data[:n], data[n:], []byte(scope))
 	if err != nil {
-		return "", errors.New("encrypted value authentication failed")
+		return nil, errors.New("encrypted value authentication failed")
 	}
-	return string(plain), nil
+	return plain, nil
 }
 
 // NewKeyring separates encryption key rotation from deterministic lookup keys.

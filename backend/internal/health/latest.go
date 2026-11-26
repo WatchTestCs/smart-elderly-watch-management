@@ -1,6 +1,7 @@
 package health
 
 import (
+	"bytes"
 	"cmp"
 	"context"
 	"crypto/sha256"
@@ -9,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"sort"
+	"strings"
 
 	"suining-care/internal/db"
 	"suining-care/internal/securestore"
@@ -43,22 +45,39 @@ func Latest(ctx context.Context, store *db.Database, oldID int64, box *securesto
 		return nil, err
 	}
 	defer tx.Rollback()
-	if _, err = LockOwner(ctx, tx, oldID); err != nil {
+	items, err := latestCold(ctx, tx, oldID, box)
+	if err != nil {
 		return nil, err
 	}
-	ready, err = latestReady(ctx, tx, oldID)
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+// LatestInTx reuses the caller's authorization transaction and its connection.
+// The caller commits both authorization and any cold projection initialization.
+func LatestInTx(ctx context.Context, tx *sql.Tx, oldID int64, box *securestore.Box) ([]Record, error) {
+	ready, err := latestReady(ctx, tx, oldID)
 	if err != nil {
 		return nil, err
 	}
 	if ready {
-		items, readErr := readLatest(ctx, tx, oldID, box)
-		if readErr != nil {
-			return nil, readErr
-		}
-		if err = tx.Commit(); err != nil {
-			return nil, err
-		}
-		return items, nil
+		return readLatest(ctx, tx, oldID, box)
+	}
+	return latestCold(ctx, tx, oldID, box)
+}
+
+func latestCold(ctx context.Context, tx *sql.Tx, oldID int64, box *securestore.Box) ([]Record, error) {
+	if _, err := LockOwner(ctx, tx, oldID); err != nil {
+		return nil, err
+	}
+	ready, err := latestReady(ctx, tx, oldID)
+	if err != nil {
+		return nil, err
+	}
+	if ready {
+		return readLatest(ctx, tx, oldID, box)
 	}
 	items, err := buildLatest(ctx, tx, oldID, box)
 	if err != nil {
@@ -74,9 +93,6 @@ func Latest(ctx context.Context, store *db.Database, oldID int64, box *securesto
 		}
 	}
 	if _, err = tx.ExecContext(ctx, "INSERT INTO health_latest_ready(old_id) VALUES(?)", oldID); err != nil {
-		return nil, err
-	}
-	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 	return items, nil
@@ -199,6 +215,7 @@ func refreshLatest(ctx context.Context, tx *sql.Tx, o Owner, input []preparedSam
 		return err
 	}
 	seen := make(map[[32]byte]struct{}, len(final))
+	series := make([]latestSeries, 0, len(final))
 	for _, index := range final {
 		sample := input[index].sample
 		key := latestKey(sample)
@@ -206,42 +223,48 @@ func refreshLatest(ctx context.Context, tx *sql.Tx, o Owner, input []preparedSam
 			continue
 		}
 		seen[key] = struct{}{}
-		if err = refreshLatestSeries(ctx, tx, o.OldID, sample, key, box); err != nil {
-			return err
-		}
+		series = append(series, latestSeries{key: key, sample: sample})
 	}
-	return nil
+	if len(series) == 1 {
+		return refreshLatestSeries(ctx, tx, o.OldID, series[0].sample, series[0].key, box)
+	}
+	return refreshLatestBatch(ctx, tx, o.OldID, series, box)
 }
 
+// Keep exact byte equality, but expose ordinary equality predicates to the
+// optimizer so the existing series prefix index can narrow the search.
+const latestSeriesFilter = "old_id=? AND source=? AND source_device=? AND metric=? AND semantics=? AND BINARY source=BINARY ? AND BINARY source_device=BINARY ? AND BINARY metric=BINARY ? AND BINARY semantics=BINARY ? AND NOT deleted"
+
+// Fetch only rows tied at the newest stored microsecond. Full precision
+// timestamp comparison still happens on the authenticated payload in Go.
+const latestCandidatesSQL = "SELECT sample_id,device_id,epoch,revision,sample_start,payload,payload_cipher FROM health_sample WHERE " +
+	latestSeriesFilter + " AND sample_start=(SELECT MAX(sample_start) FROM health_sample WHERE " + latestSeriesFilter + ") ORDER BY revision DESC,sample_id DESC"
+
 func refreshLatestSeries(ctx context.Context, tx *sql.Tx, oldID int64, s Sample, key [32]byte, box *securestore.Box) error {
-	var oldRevision int64
-	var old ProjectionPayload
-	err := tx.QueryRowContext(ctx, "SELECT revision,payload_cipher FROM health_sample_latest WHERE old_id=? AND series_key=? FOR UPDATE", oldID, key[:]).
-		Scan(&oldRevision, &old.Cipher)
+	var old Record
+	var previous ProjectionPayload
+	err := tx.QueryRowContext(ctx, "SELECT sample_id,device_id,epoch,revision,payload,payload_cipher FROM health_sample_latest WHERE old_id=? AND series_key=? FOR UPDATE", oldID, key[:]).
+		Scan(&old.SampleID, &old.DeviceID, &old.Epoch, &old.Revision, &previous.JSON, &previous.Cipher)
+	exists := err == nil
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return err
 	}
-	if _, err := old.Open(box, latestPayloadScope(oldID, key[:], oldRevision)); err != nil {
+	oldPayload, err := previous.Open(box, latestPayloadScope(oldID, key[:], old.Revision))
+	if err != nil {
 		return err
 	}
-	filter := "BINARY source=BINARY ? AND BINARY source_device=BINARY ? AND BINARY metric=BINARY ? AND BINARY semantics=BINARY ?"
-	sql := "SELECT sample_id,device_id,epoch,revision,sample_start,payload,payload_cipher FROM health_sample WHERE old_id=? AND " +
-		filter + " AND NOT deleted ORDER BY sample_start DESC,revision DESC,sample_id DESC"
-	rows, err := tx.QueryContext(ctx, sql, oldID, s.Source, s.SourceDevice, s.Metric, s.Semantics)
+	args := []any{oldID, s.Source, s.SourceDevice, s.Metric, s.Semantics, s.Source, s.SourceDevice, s.Metric, s.Semantics}
+	rows, err := tx.QueryContext(ctx, latestCandidatesSQL, append(args, args...)...)
 	if err != nil {
 		return err
 	}
 	var winner *Record
 	var winnerPayload []byte
-	var maxMicro int64
 	for rows.Next() {
 		rec := Record{OldID: oldID}
 		var micro int64
 		var stored ProjectionPayload
 		if err = rows.Scan(&rec.SampleID, &rec.DeviceID, &rec.Epoch, &rec.Revision, &micro, &stored.JSON, &stored.Cipher); err != nil {
-			break
-		}
-		if winner != nil && micro < maxMicro {
 			break
 		}
 		var payload []byte
@@ -256,7 +279,6 @@ func refreshLatestSeries(ctx context.Context, tx *sql.Tx, oldID int64, s Sample,
 			copyRec := rec
 			winner = &copyRec
 			winnerPayload = payload
-			maxMicro = micro
 		}
 	}
 	if err == nil {
@@ -266,11 +288,44 @@ func refreshLatestSeries(ctx context.Context, tx *sql.Tx, oldID int64, s Sample,
 	if err != nil {
 		return err
 	}
-	if _, err = tx.ExecContext(ctx, "DELETE FROM health_sample_latest WHERE old_id=? AND series_key=?", oldID, key[:]); err != nil {
+	if winner == nil {
+		if !exists {
+			return nil
+		}
+		_, err = tx.ExecContext(ctx, "DELETE FROM health_sample_latest WHERE old_id=? AND series_key=?", oldID, key[:])
 		return err
 	}
-	if winner != nil {
+	if !exists {
 		return insertLatest(ctx, tx, *winner, winnerPayload, box)
 	}
-	return nil
+	// An identical authenticated projection in the current encryption format
+	// needs no write. Older key versions and plaintext still get migrated.
+	if old.SampleID == winner.SampleID && old.Revision == winner.Revision && old.Epoch == winner.Epoch &&
+		sameLatestDevice(old.DeviceID, winner.DeviceID) && bytes.Equal(oldPayload, winnerPayload) && latestProtectionCurrent(previous, box) {
+		return nil
+	}
+	stored, err := protectProjection(box, winnerPayload, latestPayloadScope(oldID, key[:], winner.Revision))
+	if err != nil {
+		return err
+	}
+	_, err = tx.ExecContext(ctx, "UPDATE health_sample_latest SET sample_id=?,device_id=?,epoch=?,revision=?,payload=?,payload_cipher=? WHERE old_id=? AND series_key=?",
+		winner.SampleID, winner.DeviceID, winner.Epoch, winner.Revision, stored.JSON, stored.Cipher, oldID, key[:])
+	return err
+}
+
+func latestProtectionCurrent(p ProjectionPayload, box *securestore.Box) bool {
+	if box == nil {
+		return p.Cipher == nil
+	}
+	if p.Cipher == nil {
+		return false
+	}
+	if id := box.ActiveKeyID(); id != "" {
+		return strings.HasPrefix(*p.Cipher, securestore.Prefix+"v2:"+id+":")
+	}
+	return !strings.HasPrefix(*p.Cipher, securestore.Prefix+"v2:")
+}
+
+func sameLatestDevice(a, b *int64) bool {
+	return a == b || a != nil && b != nil && *a == *b
 }

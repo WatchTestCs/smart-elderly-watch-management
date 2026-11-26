@@ -28,19 +28,19 @@ func Encode(box *securestore.Box, payload Payload) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return box.Seal(string(data), "telemetry-inbox")
+	return box.SealBytes(data, "telemetry-inbox")
 }
 
 func Decode(box *securestore.Box, sealed string) (Payload, error) {
 	if box == nil {
 		return Payload{}, errors.New("missing telemetry encryption key")
 	}
-	plain, err := box.Open(sealed, "telemetry-inbox")
+	plain, err := box.OpenBytes(sealed, "telemetry-inbox")
 	if err != nil {
 		return Payload{}, err
 	}
 	var payload Payload
-	if err := json.Unmarshal([]byte(plain), &payload); err != nil {
+	if err := json.Unmarshal(plain, &payload); err != nil {
 		return Payload{}, err
 	}
 	if payload.ReportedAt.IsZero() || payload.ReceivedAt.IsZero() {

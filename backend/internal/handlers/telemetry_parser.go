@@ -18,24 +18,35 @@ type parsedDeviceTelemetry struct {
 
 func parseDeviceTelemetryPayload(w http.ResponseWriter, m map[string]any, now time.Time) (parsedDeviceTelemetry, bool) {
 	out := parsedDeviceTelemetry{now: now, sourceStr: "gps"}
+	// Legacy device timestamps are server wall-clock values, represented
+	// in UTC without the original zone and truncated to whole seconds.
+	y, month, day := now.Date()
+	hour, minute, second := now.Clock()
+	wallNow := time.Time{}
+	if y >= 0 && y <= 9999 {
+		wallNow = time.Date(y, month, day, hour, minute, second, 0, time.UTC)
+	}
 	beTimeStr, _ := vstr(m, "beTime")
 	if beTimeStr == "" {
-		beTimeStr = now.Format(tsLayout)
+		if y < 0 || y > 9999 {
+			write400(w, "beTime 格式应为 yyyy-MM-dd HH:mm:ss")
+			return parsedDeviceTelemetry{}, false
+		}
+		out.beTime = wallNow
+	} else {
+		var valid bool
+		out.beTime, valid = parseReportTimeStrict(beTimeStr)
+		if !valid {
+			write400(w, "beTime 格式应为 yyyy-MM-dd HH:mm:ss")
+			return parsedDeviceTelemetry{}, false
+		}
 	}
-	var valid bool
-	out.beTime, valid = parseReportTimeStrict(beTimeStr)
-	if !valid {
-		write400(w, "beTime 格式应为 yyyy-MM-dd HH:mm:ss")
-		return parsedDeviceTelemetry{}, false
-	}
-	// Legacy timestamps use server wall time without a zone. Compare in the
-	// same representation so a non-UTC server does not reject its own default.
-	wallNow, _ := parseReportTimeStrict(now.Format(tsLayout))
 	if out.beTime.After(wallNow.Add(5 * time.Minute)) {
 		write400(w, "beTime 不能晚于服务器时间 5 分钟，请检查设备时钟")
 		return parsedDeviceTelemetry{}, false
 	}
-	out.day, _ = time.Parse("2006-01-02", beTimeStr[:10])
+	y, month, day = out.beTime.Date()
+	out.day = time.Date(y, month, day, 0, 0, 0, 0, time.UTC)
 
 	var msg string
 	if out.hr, msg = parseMetric(m, "hr", 20, 250); msg != "" {

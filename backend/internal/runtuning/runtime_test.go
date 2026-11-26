@@ -48,13 +48,58 @@ func TestApplyOptInPrecedenceAndV2Files(t *testing.T) {
 	setCPU := func(n int) int { cpu = n; return n }
 	setMemory := func(n int64) int64 { memory = n; return n }
 	get := func(k string) string { return "" }
-	d := apply(root, get, 8, setCPU, setMemory)
+	d := apply(root, "/", get, 8, setCPU, setMemory)
 	if d.Parallelism != 3 || d.GoMemoryLimit != 3006477107 || cpu != 3 || memory != 3006477107 {
 		t.Fatalf("decision %+v cpu=%d memory=%d", d, cpu, memory)
 	}
 	cpu, memory = 0, 0
-	d = apply(root, func(k string) string { return "administrator setting" }, 8, setCPU, setMemory)
+	d = apply(root, "/", func(k string) string { return "administrator setting" }, 8, setCPU, setMemory)
 	if d != (Decision{}) || cpu != 0 || memory != 0 {
 		t.Fatalf("overwrote explicit environment: %+v", d)
+	}
+}
+
+func TestNestedLimitsAndExplicitOverrides(t *testing.T) {
+	root := t.TempDir()
+	leaf := filepath.Join(root, "system.slice", "suining.service")
+	if err := os.MkdirAll(leaf, 0700); err != nil {
+		t.Fatal(err)
+	}
+	for name, value := range map[string]string{
+		"cpu.max":                                 "max 100000",
+		"memory.max":                              "max",
+		"system.slice/cpu.max":                    "150000 100000",
+		"system.slice/memory.max":                 "536870912",
+		"system.slice/suining.service/cpu.max":    "300000 100000",
+		"system.slice/suining.service/memory.max": "max",
+	} {
+		if err := os.WriteFile(filepath.Join(root, name), []byte(value), 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	group, ok := unifiedGroup("0::/system.slice/suining.service\n")
+	if !ok || group != "/system.slice/suining.service" {
+		t.Fatal(group, ok)
+	}
+	cpu, memory := 0, int64(0)
+	setCPU := func(n int) int { cpu = n; return n }
+	setMemory := func(n int64) int64 { memory = n; return n }
+	get := func(string) string { return "" }
+	d := apply(root, group, get, 8, setCPU, setMemory)
+	if d.Parallelism != 2 || d.GoMemoryLimit != 375809638 || cpu != 2 || memory != 375809638 {
+		t.Fatalf("decision=%+v cpu=%d mem=%d", d, cpu, memory)
+	}
+	if err := os.WriteFile(filepath.Join(leaf, "memory.max"), []byte("134217728"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	cpu, memory = 0, 0
+	d = apply(root, group, func(k string) string {
+		if k == "GOMAXPROCS" {
+			return "4"
+		}
+		return ""
+	}, 8, setCPU, setMemory)
+	if d != (Decision{}) || cpu != 0 || memory != 0 {
+		t.Fatalf("explicit CPU or small leaf memory limit ignored: %+v", d)
 	}
 }

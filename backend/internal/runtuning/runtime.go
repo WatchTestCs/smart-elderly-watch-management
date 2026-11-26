@@ -1,10 +1,11 @@
-// Package runtuning offers conservative opt-in tuning for Go 1.23 services
+// Package runtuning offers conservative opt-in tuning for Go services
 // running under Linux cgroup v2 limits. It never controls OS CPU affinity,
 // thread pinning, the kernel scheduler, or the database connection pool.
 package runtuning
 
 import (
 	"os"
+	"path"
 	"path/filepath"
 	"runtime"
 	"runtime/debug"
@@ -26,7 +27,15 @@ func ApplyOptIn() Decision {
 	if !config.Enabled("SUINING_RUNTIME_AUTOTUNE") || runtime.GOOS != "linux" {
 		return Decision{}
 	}
-	return apply("/sys/fs/cgroup", os.Getenv, runtime.NumCPU(), runtime.GOMAXPROCS, debug.SetMemoryLimit)
+	membership, err := os.ReadFile("/proc/self/cgroup")
+	if err != nil {
+		return Decision{}
+	}
+	group, ok := unifiedGroup(string(membership))
+	if !ok {
+		return Decision{}
+	}
+	return apply("/sys/fs/cgroup", group, os.Getenv, runtime.NumCPU(), runtime.GOMAXPROCS, debug.SetMemoryLimit)
 }
 
 // cgroup v2 CPU quota may be fractional; at least one P is required.
@@ -71,25 +80,54 @@ func goMemoryBudget(text string) int64 {
 	return (limit/10)*7 + (limit%10)*7/10 // avoid overflow; floor(0.7 * limit)
 }
 
-func apply(root string, getenv func(string) string, online int, setCPU func(int) int, setMemory func(int64) int64) Decision {
-	var decision Decision
-	if getenv("GOMAXPROCS") == "" {
-		if content, err := os.ReadFile(filepath.Join(root, "cpu.max")); err == nil {
-			n := cpuParallelism(string(content), online)
-			if n > 0 {
-				setCPU(n)
-				decision.Parallelism = n
-			}
+// unifiedGroup returns the path relative to the unified cgroup mount.
+func unifiedGroup(content string) (string, bool) {
+	for _, line := range strings.Split(content, "\n") {
+		if group, ok := strings.CutPrefix(line, "0::"); ok && path.IsAbs(group) {
+			return path.Clean(group), true
 		}
 	}
-	if getenv("GOMEMLIMIT") == "" {
-		if content, err := os.ReadFile(filepath.Join(root, "memory.max")); err == nil {
-			n := goMemoryBudget(string(content))
-			if n > 0 {
-				setMemory(n)
-				decision.GoMemoryLimit = n
+	return "", false
+}
+
+func apply(root, group string, getenv func(string) string, online int, setCPU func(int) int, setMemory func(int64) int64) Decision {
+	var decision Decision
+	if !path.IsAbs(group) {
+		return decision
+	}
+	cpuEnabled, memoryEnabled := getenv("GOMAXPROCS") == "", getenv("GOMEMLIMIT") == ""
+	var cpuLimit int
+	var memoryLimit int64
+	// The service leaf may be unlimited while a parent slice has a hard
+	// limit. Walk toward the mount root and use the tightest readable limit.
+	for dir := path.Clean(group); ; dir = path.Dir(dir) {
+		path := filepath.Join(root, strings.TrimPrefix(dir, "/"))
+		if cpuEnabled {
+			if content, err := os.ReadFile(filepath.Join(path, "cpu.max")); err == nil {
+				if n := cpuParallelism(string(content), online); n > 0 && (cpuLimit == 0 || n < cpuLimit) {
+					cpuLimit = n
+				}
 			}
 		}
+		if memoryEnabled {
+			if content, err := os.ReadFile(filepath.Join(path, "memory.max")); err == nil {
+				n, err := strconv.ParseInt(strings.TrimSpace(string(content)), 10, 64)
+				if err == nil && n > 0 && (memoryLimit == 0 || n < memoryLimit) {
+					memoryLimit = n
+				}
+			}
+		}
+		if dir == "/" {
+			break
+		}
+	}
+	if cpuLimit > 0 {
+		setCPU(cpuLimit)
+		decision.Parallelism = cpuLimit
+	}
+	if n := goMemoryBudget(strconv.FormatInt(memoryLimit, 10)); n > 0 {
+		setMemory(n)
+		decision.GoMemoryLimit = n
 	}
 	return decision
 }

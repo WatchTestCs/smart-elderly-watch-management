@@ -76,13 +76,46 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 		hwFail(w, "DEVICE_NOT_BOUND", "设备还未绑定老人，请先在手表上输入绑定码")
 		return
 	}
+	// Compute the canonical digest or encrypted queue payload outside the
+	// transaction. Report any preparation error only after locked validation.
+	receiptID, _ := vstr(m, "requestId")
+	durable := h.durableTelemetryEligible(parsed, receiptID, h.Box)
+	receiptDigest, sealed := "", ""
+	var digestErr, sealErr error
+	if durable {
+		sealed, sealErr = prepareDurablePayload(h.Box, parsed)
+	} else if deviceprotocol.ValidRequestID(receiptID) {
+		receiptDigest, digestErr = reportPayloadDigest(m)
+	}
+	// Admit ordinary reports by owner before acquiring a database connection.
+	// A concurrent bind can invalidate the snapshot; locked authentication
+	// below remains authoritative. SOS never waits in this local queue.
+	var releaseOwner func()
+	if !isAlarm {
+		waitAt := time.Now()
+		release, err := h.DB.AcquireReportOwner(ctx, *d.OldID)
+		observability.Default.Add("suining_device_report_owner_admission_seconds_total", time.Since(waitAt).Seconds())
+		if internalError(w, err) {
+			return
+		}
+		releaseOwner = release
+	}
+	finishOwner := func() {
+		if releaseOwner != nil {
+			releaseOwner()
+			releaseOwner = nil
+		}
+	}
+	defer finishOwner()
 	beginAt := time.Now()
 	tx, err := h.DB.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	observability.Default.Add("suining_device_report_begin_seconds_total", time.Since(beginAt).Seconds())
 	if internalError(w, err) {
 		return
 	}
-	rollback := func() { _ = tx.Rollback() }
+	defer tx.Rollback()
+	rollback := func() { _ = tx.Rollback(); finishOwner() }
+	commit := func() error { err := tx.Commit(); finishOwner(); return err }
 	// A report writes owner-scoped vitals, history and locations. Read-only
 	// authentication above is not enough: unbind can commit between that read
 	// and persistence. Take the same elder -> device locks as bind/SOS before
@@ -123,13 +156,7 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 	// A numbered report is idempotent for the whole transaction: replaying the
 	// same request returns the committed acknowledgement, while reusing the
 	// number with different data is a hard conflict instead of silent data loss.
-	receiptID, _ := vstr(m, "requestId")
-	receiptDigest := ""
-	// The durable queue already owns its replay contract (a unique key and
-	// a 409 on collision); do not turn that into a duplicate acknowledgement.
-	if receiptID != "" && deviceprotocol.ValidRequestID(receiptID) && !h.durableTelemetryEligible(parsed, receiptID, h.Box) {
-		var digestErr error
-		receiptDigest, digestErr = reportPayloadDigest(m)
+	if !durable && (receiptDigest != "" || digestErr != nil) {
 		if digestErr != nil {
 			rollback()
 			writeValidation400(w)
@@ -187,9 +214,11 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 		rollback()
 		return
 	}
-	if requestID, present := vstr(m, "requestId"); present &&
-		h.durableTelemetryEligible(parsed, requestID, h.Box) {
-		err := (telemetryRepository{box: h.Box}).QueueDurableReport(ctx, tx, d, parsed, requestID)
+	if durable {
+		err := sealErr
+		if err == nil {
+			err = (telemetryRepository{box: h.Box}).QueueDurableReport(ctx, tx, d, parsed, receiptID, sealed)
+		}
 		if err != nil {
 			rollback()
 			if durableQueueDuplicate(err) {
@@ -207,9 +236,10 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 		if !stageDeviceReportReceipt(w, ctx, tx, rollback, d, receiptID, receiptDigest, queuedResult) {
 			return
 		}
-		if internalError(w, tx.Commit()) {
+		if internalError(w, commit()) {
 			return
 		}
+		h.DB.NotifyTelemetry()
 		response.OK(w, queuedResult)
 		return
 	}
@@ -230,7 +260,7 @@ func (h *Handler) deviceReport(w http.ResponseWriter, r *http.Request) {
 	if !stageDeviceReportReceipt(w, ctx, tx, rollback, d, receiptID, receiptDigest, result) {
 		return
 	}
-	if internalError(w, tx.Commit()) {
+	if internalError(w, commit()) {
 		return
 	}
 	response.OK(w, result)

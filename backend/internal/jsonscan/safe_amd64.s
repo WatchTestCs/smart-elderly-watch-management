@@ -25,7 +25,7 @@ GLOBL amp<>(SB), RODATA|NOPTR, $16
 
 TEXT ·safeVector(SB), NOSPLIT, $0-17
  MOVQ s_len+8(FP), CX
- CMPQ CX, $64
+ CMPQ CX, $32
  JB sse2
  CMPB ·hasAVX2(SB), $0
  JE sse2
