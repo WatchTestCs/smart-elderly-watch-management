@@ -12,8 +12,7 @@ import (
 	"testing"
 )
 
-// PostgreSQL belongs to the independent analytics projection. Business SQL
-// must reach database/sql in MySQL syntax, with no runtime dialect compiler.
+// All production SQL uses MySQL syntax, with no runtime dialect compiler.
 func TestBusinessSQLUsesNativeMySQL(t *testing.T) {
 	root := filepath.Join("..", "..")
 	parameter := regexp.MustCompile(`\$[0-9]+`)
@@ -22,13 +21,7 @@ func TestBusinessSQLUsesNativeMySQL(t *testing.T) {
 			if err != nil {
 				return err
 			}
-			rel, err := filepath.Rel(root, path)
-			if err != nil {
-				return err
-			}
-			rel = filepath.ToSlash(rel)
-			if entry.IsDir() || !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") ||
-				strings.HasPrefix(rel, "internal/analytics/") || strings.HasPrefix(rel, "cmd/rekey-projection/") || rel == "internal/rekey/projection_pg.go" {
+			if entry.IsDir() || !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
 				return nil
 			}
 			positions := token.NewFileSet()

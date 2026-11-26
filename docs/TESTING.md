@@ -9,13 +9,30 @@ go test -count=1 ./...
 go vet ./...
 ```
 
-需要数据库集成测试时，配置 `TEST_MYSQL_DSN` 指向**独立、可销毁**的 MySQL 8.4 测试实例；测试账号需有创建和删除随机测试库的权限。`TEST_DATABASE_URL` 属于旧文档残留，不是当前 MySQL 集成测试的配置入口。竞态测试：
+需要数据库集成测试时，配置 `TEST_MYSQL_DSN` 指向**独立、可销毁**的 MySQL 8.4 测试实例；测试账号需有创建和删除随机测试库的权限。竞态测试：
 
 ```sh
 go test -race -count=1 -timeout 600s ./...
 ```
 
 未配置测试数据库时，相关集成用例可能跳过；不得将跳过报告为真实数据库验收通过。禁止对生产数据库运行自动测试。
+
+### 测试组织与快照实验
+
+普通测试默认创建独立随机 schema，执行完整迁移并清理。只有需要测量普通 handler fixture 的准备成本时才设置 `TEST_MYSQL_FIXTURE_SNAPSHOT=1`；该模式复用进程内的 pristine SQL 快照，每个测试仍恢复到新建空 schema，并验证迁移账本和结构指纹。显式迁移与协调恢复测试继续走完整迁移。需要与实例匹配的 MySQL 客户端或独立测试容器。
+
+在已配置隔离数据库的 PowerShell 7 环境中比较两种模式：
+
+```powershell
+$env:TEST_MYSQL_FIXTURE_SNAPSHOT = '1'
+go test -race -count=1 -v -run '^TestMySQLSnapshotIsolationAndCost$' ./internal/db/dbtest
+go test -race -count=1 ./internal/handlers
+Remove-Item Env:TEST_MYSQL_FIXTURE_SNAPSHOT
+go test -race -count=1 ./internal/handlers
+```
+
+仅在行为一致且真实耗时对照证明有收益后考虑默认启用。不要把静态减少初始化次数当作实际 CI 加速。相同输入与断言已有真实行为覆盖时，不再重复检查 SQL 拼写；保留独立授权、事务、竞态、恢复、加密与边界断言。复用同一测试 fixture 时必须保留状态隔离及所有关键断言。
+
 
 ## Vue 前端
 
