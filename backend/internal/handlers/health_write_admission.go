@@ -25,6 +25,7 @@ type healthWriteAdmission struct {
 	owners      map[int64]struct{}
 	domains     map[string]int64
 	urgent      map[string]int
+	activeSOS   map[string]struct{}
 	urgentCount int
 	waiting     chan struct{}
 	changed     chan struct{}
@@ -32,11 +33,12 @@ type healthWriteAdmission struct {
 
 func newHealthWriteAdmission() healthWriteAdmission {
 	return healthWriteAdmission{
-		active:  make(map[string]bool, healthWriteConcurrency),
-		owners:  make(map[int64]struct{}, healthWriteConcurrency),
-		domains: make(map[string]int64, healthWriteConcurrency),
-		urgent:  make(map[string]int),
-		waiting: make(chan struct{}, healthWriteConcurrency),
+		active:    make(map[string]bool, healthWriteConcurrency),
+		owners:    make(map[int64]struct{}, healthWriteConcurrency),
+		domains:   make(map[string]int64, healthWriteConcurrency),
+		urgent:    make(map[string]int),
+		activeSOS: make(map[string]struct{}),
+		waiting:   make(chan struct{}, healthWriteConcurrency),
 	}
 }
 
@@ -142,9 +144,11 @@ func (a *healthWriteAdmission) prioritizeSOS(ctx context.Context, device string)
 	a.urgent[device]++
 	a.urgentCount++
 	for {
-		if !a.active[device] {
+		_, sosActive := a.activeSOS[device]
+		if !a.active[device] && !sosActive {
+			a.activeSOS[device] = struct{}{}
 			a.mu.Unlock()
-			return func() { a.releaseSOS(device) }, nil
+			return func() { a.releaseSOS(device, true) }, nil
 		}
 		if a.changed == nil {
 			a.changed = make(chan struct{})
@@ -153,13 +157,13 @@ func (a *healthWriteAdmission) prioritizeSOS(ctx context.Context, device string)
 		a.mu.Unlock()
 		select {
 		case <-ctx.Done():
-			a.releaseSOS(device)
+			a.releaseSOS(device, false)
 			return nil, ctx.Err()
 		case <-changed:
 			a.mu.Lock()
 			if err := ctx.Err(); err != nil {
 				a.mu.Unlock()
-				a.releaseSOS(device)
+				a.releaseSOS(device, false)
 				return nil, err
 			}
 		}
@@ -212,8 +216,11 @@ func (a *healthWriteAdmission) finishTransaction(device string) {
 	a.mu.Unlock()
 }
 
-func (a *healthWriteAdmission) releaseSOS(device string) {
+func (a *healthWriteAdmission) releaseSOS(device string, active bool) {
 	a.mu.Lock()
+	if active {
+		delete(a.activeSOS, device)
+	}
 	if a.urgent[device] == 1 {
 		delete(a.urgent, device)
 	} else {
