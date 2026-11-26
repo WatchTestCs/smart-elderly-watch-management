@@ -189,6 +189,9 @@ func (batch *PreparedBatch) SaveProtected(ctx context.Context, tx *sql.Tx, o Own
 	if _, err = tx.ExecContext(ctx, "UPDATE metric_daily FORCE INDEX (idx_daily_owner) SET dirty=true WHERE old_id=? AND dirty=false", o.OldID); err != nil {
 		return 0, 0, err
 	}
+	if err := clock.reserveNext(ctx, tx, o.OldID, revision); err != nil {
+		return 0, 0, err
+	}
 	batch.projectionBefore, batch.projectionThrough = clock.revision, revision
 	return cursor, selection.duplicates, nil
 }
