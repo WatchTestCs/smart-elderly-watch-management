@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import axios from 'axios'
 import fs from 'node:fs'
 import path from 'node:path'
+import { SRC, sourceFiles } from '../helpers/sourceTree'
 import {
   apiErrorMessage, readErrorMessage, readTimeoutError,
   READ_TIMEOUT_MESSAGE, transportOutcome, UNCONFIRMED_MESSAGE
@@ -15,7 +16,6 @@ describe('classifying a write whose response was lost', () => {
     expect(transportOutcome(lost)).toBe('network')
     expect(apiErrorMessage(lost, '图片暂时无法上传，请重试')).toBe(UNCONFIRMED_MESSAGE)
   })
-
 
   it('never describes a read timeout as a possibly-applied write', () => {
     const error = readTimeoutError()
@@ -62,24 +62,6 @@ describe('binding a save to the record that was loaded', () => {
 // The source tree is the only source of truth: a new catch block that tells the
 // user to retry a write without going through the canonical error exit fails
 // here, with no file list, no allowlist and no count to keep in sync.
-function findSourceRoot(): string {
-  let directory = process.cwd()
-  for (let depth = 0; depth < 5; depth++) {
-    const candidate = path.join(directory, 'src')
-    if (fs.existsSync(path.join(candidate, 'api', 'client.ts'))) return candidate
-    directory = path.dirname(directory)
-  }
-  throw new Error('frontend src directory not found')
-}
-const SRC = findSourceRoot()
-
-function sourceFiles(directory: string): string[] {
-  return fs.readdirSync(directory, { withFileTypes: true }).flatMap(entry => {
-    const full = path.join(directory, entry.name)
-    if (entry.isDirectory()) return sourceFiles(full)
-    return /\.(?:ts|vue)$/.test(entry.name) ? [full] : []
-  })
-}
 
 function catchBlocks(source: string): { index: number; text: string }[] {
   const blocks: { index: number; text: string }[] = []

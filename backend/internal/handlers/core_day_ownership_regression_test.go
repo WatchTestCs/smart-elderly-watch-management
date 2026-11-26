@@ -29,7 +29,7 @@ func dayOwnershipSetup(t *testing.T) *Handler {
 	return h
 }
 
-func TestContinuousRebindCannotReadPreviousDailyData(t *testing.T) {
+func TestContinuousRebindDailyOwnership(t *testing.T) {
 	h := dayOwnershipSetup(t)
 	for _, handler := range []struct {
 		name, key string
@@ -53,10 +53,11 @@ func TestContinuousRebindCannotReadPreviousDailyData(t *testing.T) {
 	if out := api(t, withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.countSleepAlertDevices), map[string]any{}); out["sleep"] != float64(0) {
 		t.Errorf("previous binding's sleep alarm counted for current device: %v", out)
 	}
-}
 
-func TestContinuousRebindDailySnapshotIsSeparate(t *testing.T) {
-	h := dayOwnershipSetup(t)
+	if t.Failed() {
+		return
+	}
+	// Continue the same binding lifecycle only after confirming the previous owner's data is hidden.
 	admin := session.Principal{Role: auth.RoleAdmin, ID: 11}
 	unbind := withHealthPrincipal(h, admin, h.deviceUnbind)
 	createCode := withHealthPrincipal(h, admin, h.deviceCreateBindCode)

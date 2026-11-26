@@ -1,20 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import fs from 'node:fs'
 import path from 'node:path'
+import { SRC } from '../helpers/sourceTree'
 
 // A detail view that survives a route-key change must retire every in-flight
 // write and the local state it would publish. The source tree decides which
 // views are in scope: no file list, no allowlist, no count to maintain.
-function findSourceRoot(): string {
-  let directory = process.cwd()
-  for (let depth = 0; depth < 5; depth++) {
-    const candidate = path.join(directory, 'src')
-    if (fs.existsSync(path.join(candidate, 'api', 'client.ts'))) return candidate
-    directory = path.dirname(directory)
-  }
-  throw new Error('frontend src directory not found')
-}
-const SRC = findSourceRoot()
 const ROUTE_WATCH = /watch\s*\(\s*\(\s*\)\s*=>\s*route\.(?:query|params)\./
 const WRITE_CALL = /api\.post\s*(?:<[^>]*>)?\s*\(/
 

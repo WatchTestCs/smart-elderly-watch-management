@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import axios, { CanceledError } from 'axios'
 import fs from 'node:fs'
 import path from 'node:path'
+import { SRC, sourceFiles } from '../helpers/sourceTree'
 import { api, REQUEST_TIMEOUT_MS } from '@/api/client'
 import { apiErrorMessage, transportOutcome, UNCONFIRMED_MESSAGE } from '@/api/httpContract'
 import { endSession, installHttpSecurity } from '@/auth'
@@ -74,27 +75,6 @@ describe('unconfirmed request handling', () => {
   })
 
 })
-
-// Locate the source tree from the working directory: happy-dom does not expose
-// a file: URL through import.meta.url, and an absolute path would break CI.
-function findSourceRoot(): string {
-  let directory = process.cwd()
-  for (let depth = 0; depth < 5; depth++) {
-    const candidate = path.join(directory, 'src')
-    if (fs.existsSync(path.join(candidate, 'api', 'client.ts'))) return candidate
-    directory = path.dirname(directory)
-  }
-  throw new Error('frontend src directory not found')
-}
-const SRC = findSourceRoot()
-
-function sourceFiles(directory: string): string[] {
-  return fs.readdirSync(directory, { withFileTypes: true }).flatMap(entry => {
-    const full = path.join(directory, entry.name)
-    if (entry.isDirectory()) return sourceFiles(full)
-    return /\.(?:ts|vue)$/.test(entry.name) ? [full] : []
-  })
-}
 
 // Extract whole calls with balanced parentheses so a multi-line config cannot
 // hide a missing timeout. Source files are the only source of truth here: a new

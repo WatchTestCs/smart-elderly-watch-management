@@ -28,24 +28,42 @@ func TestContinuousThresholdValidationBounds(t *testing.T) {
 	}
 }
 
-func TestContinuousThresholdSearchIncludesSecondaryDevice(t *testing.T) {
+func TestContinuousThresholdDeviceLifecycle(t *testing.T) {
 	pool := testDatabase(t)
-	seedDevice(t, pool)
 	h := testHandler(t, pool)
 	seedCareAdminDuty(t, pool, 11, "supervisor")
 	admin := session.Principal{Role: auth.RoleAdmin, ID: 11}
 	create := withHealthPrincipal(h, admin, h.createMonitoringProfile)
+	request := map[string]any{"deviceId": 999, "hrf": 100, "hrl": 60, "bpf": 150, "bpl": 90}
+	out := apiFailure(t, 400, create, request)
+	if out["returnCode"] == "1111" {
+		t.Error("threshold profile created for an unregistered device")
+	}
+	var count int
+	if err := pool.QueryRowContext(context.Background(), "SELECT count(*) FROM watch_info").Scan(&count); err != nil || count != 0 {
+		t.Fatalf("invalid device left a threshold row: count=%d err=%v", count, err)
+	}
+	seedDevice(t, pool)
+	request["deviceId"] = 1
+	if created := api(t, create, request); created["returnCode"] != "1111" {
+		t.Fatal(created)
+	}
+	if duplicate := apiFailure(t, 409, create, request); duplicate["returnCode"] == "1111" {
+		t.Fatal("duplicate profile accepted")
+	}
+
+	if t.Failed() {
+		return
+	}
+	// The primary profile already exists; extend the same lifecycle to a second device.
 	update := withHealthPrincipal(h, admin, h.updateMonitoringProfile)
 	list := withHealthPrincipal(h, admin, h.listMonitoringProfiles)
 	mustExec(t, pool, "UPDATE oldperson SET device_id=1 WHERE old_id=1")
 	mustExec(t, pool, "INSERT INTO device(device_id,device_no,secret,old_id) SELECT 2,'WATCH002',secret,old_id FROM device WHERE device_id=1")
-	for _, id := range []int{1, 2} {
-		out := api(t, create, map[string]any{"deviceId": id, "hrf": 100, "hrl": 60, "bpf": 150, "bpl": 90})
-		if out["returnCode"] != "1111" {
-			t.Fatal(out)
-		}
+	if out := api(t, create, map[string]any{"deviceId": 2, "hrf": 100, "hrl": 60, "bpf": 150, "bpl": 90}); out["returnCode"] != "1111" {
+		t.Fatal(out)
 	}
-	out := api(t, list, map[string]any{"oldName": "长者"})
+	out = api(t, list, map[string]any{"oldName": "长者"})
 	rows := out["watchDtos"].([]any)
 	if out["total"] != float64(2) || len(rows) != 2 {
 		t.Fatalf("secondary device omitted from elder's threshold search: %v", out)
@@ -66,29 +84,5 @@ func TestContinuousThresholdSearchIncludesSecondaryDevice(t *testing.T) {
 	var primary int
 	if err := pool.QueryRowContext(context.Background(), "SELECT device_id FROM oldperson WHERE old_id=1").Scan(&primary); err != nil || primary != 1 {
 		t.Fatalf("profile lookup changed primary binding: primary=%d err=%v", primary, err)
-	}
-}
-
-func TestContinuousThresholdCreationRequiresRegisteredDevice(t *testing.T) {
-	pool := testDatabase(t)
-	h := testHandler(t, pool)
-	seedCareAdminDuty(t, pool, 11, "supervisor")
-	create := withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.createMonitoringProfile)
-	request := map[string]any{"deviceId": 999, "hrf": 100, "hrl": 60, "bpf": 150, "bpl": 90}
-	out := apiFailure(t, 400, create, request)
-	if out["returnCode"] == "1111" {
-		t.Error("threshold profile created for an unregistered device")
-	}
-	var count int
-	if err := pool.QueryRowContext(context.Background(), "SELECT count(*) FROM watch_info").Scan(&count); err != nil || count != 0 {
-		t.Fatalf("invalid device left a threshold row: count=%d err=%v", count, err)
-	}
-	seedDevice(t, pool)
-	request["deviceId"] = 1
-	if created := api(t, create, request); created["returnCode"] != "1111" {
-		t.Fatal(created)
-	}
-	if duplicate := apiFailure(t, 409, create, request); duplicate["returnCode"] == "1111" {
-		t.Fatal("duplicate profile accepted")
 	}
 }
