@@ -19,17 +19,17 @@ go test -race -count=1 -timeout 600s ./...
 
 ### 测试组织与快照实验
 
-普通测试默认创建独立随机 schema，执行完整迁移并清理。只有需要测量普通 handler fixture 的准备成本时才设置 `TEST_MYSQL_FIXTURE_SNAPSHOT=1`；该模式复用进程内的 pristine SQL 快照，每个测试仍恢复到新建空 schema，并验证迁移账本和结构指纹。显式迁移与协调恢复测试继续走完整迁移。需要与实例匹配的 MySQL 客户端或独立测试容器。
+普通测试默认创建独立随机 schema，执行完整迁移并清理。设置 `TEST_MYSQL_FIXTURE_SNAPSHOT=1` 可让已接入 `dbtest.Fixture` 的普通业务测试在各自进程内复用 pristine SQL 快照。每个测试仍恢复到新建空 schema，并验证迁移账本及结构指纹。显式迁移、回滚、备份恢复和连接级测试继续使用完整迁移。
 
-在已配置隔离数据库的 PowerShell 7 环境中比较两种模式：
+跨包实验使用以下命令（仓库根目录，已配置隔离 MySQL 8.4 实例及匹配客户端或测试容器）：
 
 ```powershell
-$env:TEST_MYSQL_FIXTURE_SNAPSHOT = '1'
-go test -race -count=1 -v -run '^TestMySQLSnapshotIsolationAndCost$' ./internal/db/dbtest
-go test -race -count=1 ./internal/handlers
-Remove-Item Env:TEST_MYSQL_FIXTURE_SNAPSHOT
-go test -race -count=1 ./internal/handlers
+python scripts/reliability/run-mysql-fixture-tests.py ./internal/db/dbtest ./internal/handlers ./internal/session ./internal/notify ./internal/operationsrepo ./internal/telemetryrepo ./internal/careworkflow
 ```
+
+该脚本仅从新建并完整迁移的空业务库导出一次归档，验证服务器 UUID、嵌入迁移文件内容摘要及归档哈希；所有消费者使用各自独立的新建数据库，不共享测试数据。每次运行使用专用临时目录，结束后清除归档，不跨作业缓存。省略包参数可运行整个后端套件；未接入的测试仍走完整迁移。共享模式不得用于生产数据库。
+
+在同一实例及相同包集合上，以完整迁移模式的 `go test -race -count=1 -timeout 45m` 作为对照；比较总耗时、准备耗时及失败和跳过记录。准备耗时也必须计入共享模式的总成本。脚本默认不改变 CI 或生产配置。
 
 仅在行为一致且真实耗时对照证明有收益后考虑默认启用。不要把静态减少初始化次数当作实际 CI 加速。相同输入与断言已有真实行为覆盖时，不再重复检查 SQL 拼写；保留独立授权、事务、竞态、恢复、加密与边界断言。复用同一测试 fixture 时必须保留状态隔离及所有关键断言。
 

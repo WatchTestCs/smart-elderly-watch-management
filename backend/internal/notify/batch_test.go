@@ -18,7 +18,7 @@ import (
 )
 
 func TestBatchEnqueueBoundariesIdempotenceAndRollback(t *testing.T) {
-	p := dbtest.MySQL(t)
+	p := dbtest.Fixture(t)
 	ctx := context.Background()
 	box, err := securestore.New(base64.StdEncoding.EncodeToString(make([]byte, 32)))
 	if err != nil {
@@ -76,7 +76,7 @@ func TestBatchEnqueueBoundariesIdempotenceAndRollback(t *testing.T) {
 func TestBatchExternalConcurrencyBoundAndAcceptedStatus(t *testing.T) {
 	t.Setenv("TENCENT_SMS_APPID", "")
 	t.Setenv("NOTIFY_ALLOW_HTTP_TEST", "1")
-	p := dbtest.MySQL(t)
+	p := dbtest.Fixture(t)
 	ctx := context.Background()
 	messages := make([]Message, 65)
 	for i := range messages {
@@ -144,7 +144,7 @@ func TestBatchExternalConcurrencyBoundAndAcceptedStatus(t *testing.T) {
 }
 
 func TestBatchDrainLocalJobsBeyondSingleStatement(t *testing.T) {
-	p := dbtest.MySQL(t)
+	p := dbtest.Fixture(t)
 	ctx := context.Background()
 	messages := make([]Message, 1100)
 	for i := range messages {
@@ -180,7 +180,7 @@ func TestBatchDrainLocalJobsBeyondSingleStatement(t *testing.T) {
 func TestStaleAndDueRetryAreNotStarvedByFreshPendingJobs(t *testing.T) {
 	t.Setenv("TENCENT_SMS_APPID", "")
 	t.Setenv("NOTIFY_ALLOW_HTTP_TEST", "1")
-	p := dbtest.MySQL(t)
+	p := dbtest.Fixture(t)
 	ctx := context.Background()
 	// A fresh pending stream has older retry_at values than retry/reclaimed
 	// tasks. Status priority must still recover the stale lease and due retry.

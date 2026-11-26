@@ -101,26 +101,37 @@ func RestoreMySQL(t testing.TB, ctx context.Context, pool *db.Database, archive 
 
 var fixtureSnapshot struct {
 	sync.Mutex
-	dsn, container, server string
-	archive                []byte
+	dsn, container, server, path string
+	archive                      []byte
 }
 
 // Capture only the pristine, migrated database, before returning it to a test.
-// The archive is process-local and is never written to disk or shared across servers.
+// Reuse a verified shared archive when explicitly supplied; otherwise retain
+// the process-local capture. Archives are never reused across MySQL servers.
 func snapshotArchive(t testing.TB, ctx context.Context, pool *db.Database) ([]byte, bool) {
 	t.Helper()
 	_, server := fixtureIdentity(t, ctx, pool)
 	dsn, container := os.Getenv("TEST_MYSQL_DSN"), os.Getenv("TEST_MYSQL_CONTAINER_ID")
+	path := os.Getenv(sharedFixtureEnv)
 	fixtureSnapshot.Lock()
 	defer fixtureSnapshot.Unlock()
-	if fixtureSnapshot.archive != nil && fixtureSnapshot.dsn == dsn && fixtureSnapshot.container == container && fixtureSnapshot.server == server {
+	if fixtureSnapshot.archive != nil && fixtureSnapshot.dsn == dsn && fixtureSnapshot.container == container && fixtureSnapshot.server == server && fixtureSnapshot.path == path {
 		return fixtureSnapshot.archive, false
+	}
+	if path != "" {
+		archive, err := loadSharedFixture(path, server)
+		if err != nil {
+			t.Fatal(err)
+		}
+		fixtureSnapshot.dsn, fixtureSnapshot.container, fixtureSnapshot.server, fixtureSnapshot.path = dsn, container, server, path
+		fixtureSnapshot.archive = archive
+		return archive, false
 	}
 	if err := db.MigrateMySQL(ctx, pool); err != nil {
 		t.Fatal(err)
 	}
 	archive := DumpMySQL(t, ctx, pool)
-	fixtureSnapshot.dsn, fixtureSnapshot.container, fixtureSnapshot.server = dsn, container, server
+	fixtureSnapshot.dsn, fixtureSnapshot.container, fixtureSnapshot.server, fixtureSnapshot.path = dsn, container, server, path
 	fixtureSnapshot.archive = archive
 	return archive, true
 }

@@ -14,7 +14,7 @@ import (
 
 // Test delivery eligibility, not the spelling of a former plaintext SQL regexp.
 func TestFamilyPhoneRecipientsLegacyAndProtectedMySQL(t *testing.T) {
-	pool := dbtest.MySQL(t)
+	pool := dbtest.Fixture(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 	box, err := securestore.New(base64.StdEncoding.EncodeToString([]byte(strings.Repeat("s", 32))))

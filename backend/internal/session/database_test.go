@@ -15,7 +15,7 @@ import (
 )
 
 func TestDatabaseSessionsShareRevokeAndFactorGeneration(t *testing.T) {
-	pool := dbtest.MySQL(t)
+	pool := dbtest.Fixture(t)
 	box, _ := securestore.New(base64.StdEncoding.EncodeToString(make([]byte, 32)))
 	a, b := session.NewStore(time.Hour), session.NewStore(time.Hour)
 	t.Cleanup(a.Close)

@@ -11,7 +11,7 @@ import (
 )
 
 func TestHealthAlertSnapshotIsBindingScoped(t *testing.T) {
-	store := dbtest.MySQL(t)
+	store := dbtest.Fixture(t)
 	ctx := context.Background()
 	if _, err := store.ExecContext(ctx, "INSERT INTO oldperson(old_id,name) VALUES(1,'测试'),(2,'新住户')"); err != nil {
 		t.Fatal(err)

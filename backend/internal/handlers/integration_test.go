@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"strings"
 	"sync"
 	"testing"
@@ -28,10 +27,7 @@ import (
 // Each test uses a separate temporary schema in a dedicated test database.
 func testDatabase(t *testing.T) *dbstore.Database {
 	t.Helper()
-	if os.Getenv("TEST_MYSQL_FIXTURE_SNAPSHOT") == "1" {
-		return dbtest.MySQLSnapshot(t)
-	}
-	return dbtest.MySQL(t)
+	return dbtest.Fixture(t)
 }
 
 func api(t *testing.T, handler http.HandlerFunc, body any) map[string]any {
