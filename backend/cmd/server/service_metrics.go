@@ -18,10 +18,10 @@ func (s *databaseService) serveMetrics(w http.ResponseWriter, r *http.Request) {
 		response.JSON(w, 401, map[string]any{"message": "指标端点需要授权"})
 		return
 	}
-	observability.Default.Set("suining_database_ready", boolNumber(s.api.Load() != nil))
+	ready := s.ready()
+	observability.Default.Set("suining_database_ready", boolNumber(ready))
 	// Legacy metric names remain for existing dashboards; there is no longer
 	// a second database or an asynchronous outbox consumer.
-	ready := s.api.Load() != nil
 	observability.Default.Set("suining_analytics_configured", boolNumber(ready))
 	observability.Default.Set("suining_analytics_ready", boolNumber(ready))
 	observability.Default.Set("suining_analytics_outbox_pending", 0)

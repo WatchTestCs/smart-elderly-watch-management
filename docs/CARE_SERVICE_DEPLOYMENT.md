@@ -10,7 +10,8 @@
 
 - 在 Linux 服务器持续运行 `backend/cmd/server` 编译的 Go 程序，Windows 桌面端只作为客户端使用，不启动/终止这个服务端进程。
 - MySQL 8.4 是唯一业务数据库，包含健康采样、照护事务、审计和加密图片 BLOB；升级前须备份数据库及对应密钥。
-- `/healthz` 仅表示 HTTP 服务可连接；`GET /api/v1/service/status` 的 `databaseReady` 字段用于 DB 就绪诊断。注意 Web 和通知网关可用性要另行监控，不能把 HTTP 200 当作 SOS 可被救援的证明。
+- `/healthz` 仅表示 HTTP 服务可连接，适合存活探针；负载均衡或 systemd 的就绪检查应使用 `GET /readyz`，它在数据库未就绪或服务停止排空时返回 503。`GET /api/v1/service/status` 的 `databaseReady` 与 `draining` 字段用于诊断。注意 Web 和通知网关可用性要另行监控，不能把 HTTP 200 当作 SOS 可被救援的证明。
+- 停止服务时先进入 draining，再等待最多 10 秒完成 HTTP 排空；正常排空后的数据库清理最多等待 20 秒。仓库的 systemd、Compose 和桌面 sidecar 均允许 35 秒停止窗口（含调度余量）；其他进程管理器不得更早发送 SIGKILL。HTTP 超时走连接中止和 fail-stop，不保证最后 flush；数据库清理超时也会记录 best-effort 日志。部署脚本应检查退出日志，不应把进程最终消失等同于所有审计、心跳和通知已落库。
 
 ## systemd 部署示例
 

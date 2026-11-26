@@ -50,7 +50,9 @@ sequenceDiagram
 
 首次管理员初始化由 Vue 引导页调用受限的 `setup_admin` 原生命令，经 Tauri 核对主窗口来源后才由 Go 处理 `/api/v1/setup`。普通浏览器请求仅有 Cookie 无法代替桌面启动令牌执行初始化。实现和权限边界见 [Tauri 初始化能力](../desktop/permissions/setup.toml)、[桌面能力配置](../desktop/capabilities/desktop.json)及[前端原生桥接](../frontend/src/desktop.ts)。
 
-`GET /healthz` 仅表示 HTTP 进程存活；`GET /api/v1/service/status` 中的 `databaseReady` 表示当前业务数据库是否就绪。数据库不就绪时，静态界面和诊断仍可使用，而依赖数据库的业务操作可能返回 `503 DATABASE_UNAVAILABLE`。从故障恢复到重新取得有效会话之前，不应向用户宣称已登录状态或服务端注销已确认成功。
+`GET /healthz` 仅表示 HTTP 进程存活；`GET /readyz` 仅在业务数据库就绪且服务未进入停止排空时返回 200；`GET /api/v1/service/status` 始终保留 HTTP 200 诊断语义，其中 `databaseReady` 表示当前是否可接收业务流量，`draining` 表示是否正在停止。数据库不就绪或正在停止时，静态界面和诊断仍可使用，而依赖数据库的业务操作返回 `503 DATABASE_UNAVAILABLE`。从故障恢复到重新取得有效会话之前，不应向用户宣称已登录状态或服务端注销已确认成功。
+
+停止时先永久进入 draining，防止数据库探测在退出过程中重新开放业务流量，再等待 HTTP 请求排空。正常排空后才会依次停止会话维护、后台 worker、风险审计和连接池；数据库清理由进程所有者最多等待 20 秒。若 HTTP 在 10 秒内无法排空，服务会中止连接并按 fail-stop 退出，不再显式关闭仍可能被活跃 handler 使用的数据库资源；该路径不保证最后一次 flush 完成。数据库清理超时同样会在日志中明确记录为 best-effort，而不是成功落库保证。桌面退出接口通过同一协调流程触发停止，不再直接 `os.Exit` 绕过清理；仓库的 systemd、Compose 和桌面 sidecar 停止窗口均为 35 秒，避免外部进程管理器提前强杀。
 
 桌面启动的 Go 服务绑定回环地址，不能直接作为异地手表接入服务。需要持续接收外部设备上报与 SOS 时，应按 [常驻照护服务部署](CARE_SERVICE_DEPLOYMENT.md) 单独部署具备合适 TLS、监听及权限边界的服务实例。
 

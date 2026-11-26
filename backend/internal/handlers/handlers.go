@@ -35,6 +35,9 @@ type Handler struct {
 	clientIP     func(*http.Request) string
 	Risk         *risk.Manager
 	Heartbeats   *telemetryworkflow.HeartbeatBuffer
+	// OnDesktopExit requests the process owner's coordinated shutdown. The
+	// handler must never terminate the process directly and skip its defers.
+	OnDesktopExit func()
 }
 
 func New(pool *dbstore.Database, sessions *session.Store, cfg config.Config) *Handler {

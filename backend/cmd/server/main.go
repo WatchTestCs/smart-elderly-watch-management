@@ -38,10 +38,16 @@ func main() {
 	ctx := context.Background()
 
 	sessions := session.NewStore(cfg.SessionTTL)
-	service := &databaseService{configErr: cfgErr, desktopToken: cfg.DesktopToken}
+	shutdownRequests := make(chan struct{})
+	var requestShutdownOnce sync.Once
+	requestShutdown := func() {
+		requestShutdownOnce.Do(func() { close(shutdownRequests) })
+	}
+	service := &databaseService{configErr: cfgErr, desktopToken: cfg.DesktopToken, desktopExit: requestShutdown}
 	mux := http.NewServeMux()
 	handlers.MountWeb(mux)
 	localHandlers := handlers.New(nil, sessions, cfg)
+	localHandlers.OnDesktopExit = requestShutdown
 	localHandlers.MountDesktopExit(mux)
 	localHandlers.MountLocalLogout(mux)
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusOK) })
@@ -64,20 +70,31 @@ func main() {
 		defer close(databaseDone)
 		watchDatabase(databaseCtx, cfg, sessions, service)
 	}()
+	httpDrained := false
 	defer func() {
+		if !httpDrained {
+			// Close cannot prove that active handler goroutines have returned. On
+			// abort, leave worker/risk/pool teardown to process exit instead of
+			// violating their "HTTP stopped processing" precondition.
+			log.Print("HTTP drain aborted; skipping graceful database cleanup")
+			return
+		}
 		// Stop session maintenance before its caller-owned SQL pool closes.
 		sessions.Close()
 		cancelDatabase()
-		<-databaseDone
+		if !waitForDatabaseCleanup(databaseDone, databaseCleanupTimeout) {
+			log.Printf("database cleanup exceeded %s; exiting with best-effort cleanup", databaseCleanupTimeout)
+		}
 	}()
 
 	done := make(chan struct{})
 	var shutdownOnce sync.Once
 	shutdown := func() {
 		shutdownOnce.Do(func() {
+			service.beginDrain()
 			shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
-			_ = srv.Shutdown(shutdownCtx)
+			httpDrained = shutdownHTTP(shutdownCtx, srv)
 			close(done)
 		})
 	}
@@ -98,6 +115,8 @@ func main() {
 	defer signal.Stop(quit)
 	select {
 	case <-quit:
+		shutdown()
+	case <-shutdownRequests:
 		shutdown()
 	case <-done:
 	}
