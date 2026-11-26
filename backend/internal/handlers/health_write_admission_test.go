@@ -266,7 +266,7 @@ func TestSOSPriorityBlocksNewUploadsWithoutHoldingConnection(t *testing.T) {
 	if err = tx.QueryRowContext(t.Context(), "SELECT device_id FROM device WHERE device_id=1 FOR UPDATE").Scan(&deviceID); err != nil {
 		t.Fatal(err)
 	}
-	if !h.healthWrites.beginTransaction("WATCH001") {
+	if !h.healthWrites.beginTransaction("WATCH001", true) {
 		t.Fatal("transaction boundary was not available")
 	}
 	done := make(chan *httptest.ResponseRecorder, 1)
@@ -332,7 +332,7 @@ func TestSOSPriorityCancellation(t *testing.T) {
 	if !a.acquire(t.Context(), "same") {
 		t.Fatal("health admission")
 	}
-	if !a.beginTransaction("same") {
+	if !a.beginTransaction("same", true) {
 		t.Fatal("transaction boundary was not available")
 	}
 	ctx, cancel := context.WithCancel(t.Context())
@@ -373,15 +373,15 @@ func TestSOSPriorityWinsBeforeTransactionBoundary(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if a.beginTransaction("same") {
+	if a.beginTransaction("same", true) {
 		t.Fatal("ordinary upload started after SOS claimed priority")
 	}
-	if !a.acquire(t.Context(), "other") || !a.beginTransaction("other") {
+	if !a.acquire(t.Context(), "other") || !a.beginTransaction("other", true) {
 		t.Fatal("SOS blocked an unrelated device")
 	}
 	a.release("other")
 	release()
-	if !a.beginTransaction("same") {
+	if !a.beginTransaction("same", true) {
 		t.Fatal("ordinary upload could not proceed after SOS released priority")
 	}
 	a.finishTransaction("same")
@@ -502,7 +502,7 @@ func TestSOSPriorityBeginRetriesOnlyBadConnection(t *testing.T) {
 			c := &beginFaultConnector{beginErrors: tc.errs}
 			pool := sql.OpenDB(c)
 			defer pool.Close()
-			tx, conn, err := a.beginPriorityTx(t.Context(), pool, "watch")
+			tx, conn, err := a.beginPriorityTx(t.Context(), pool, "watch", false)
 			if !errors.Is(err, tc.want) || c.begins != tc.begins {
 				t.Fatalf("begin count=%d err=%v", c.begins, err)
 			}
@@ -539,7 +539,7 @@ func TestSOSPriorityCanClaimBetweenBeginRetries(t *testing.T) {
 	}
 	pool := sql.OpenDB(c)
 	defer pool.Close()
-	tx, conn, err := a.beginPriorityTx(t.Context(), pool, "watch")
+	tx, conn, err := a.beginPriorityTx(t.Context(), pool, "watch", false)
 	if release != nil {
 		defer release()
 	}

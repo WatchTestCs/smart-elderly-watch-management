@@ -176,13 +176,13 @@ func (a *healthWriteAdmission) prioritizeSOS(ctx context.Context, device string,
 
 // beginTransaction arbitrates between an admitted upload and a verified SOS
 // under the same mutex. Once claimed, the upload may finish without preemption.
-func (a *healthWriteAdmission) beginTransaction(device string) bool {
+func (a *healthWriteAdmission) beginTransaction(device string, lockDevice bool) bool {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	if a.urgent[device] != 0 {
 		return false
 	}
-	a.active[device] = true
+	a.active[device] = lockDevice
 	return true
 }
 
@@ -191,13 +191,13 @@ var errHealthWriteBusy = errors.New("health write deferred for SOS")
 // beginPriorityTx claims the device only after acquiring a connection. Restore
 // database/sql's bounded bad-connection retry at the BEGIN boundary. No DML
 // has run, and the failed connection is discarded before retrying admission.
-func (a *healthWriteAdmission) beginPriorityTx(ctx context.Context, pool *sql.DB, device string) (*sql.Tx, *sql.Conn, error) {
+func (a *healthWriteAdmission) beginPriorityTx(ctx context.Context, pool *sql.DB, device string, lateDeviceLock bool) (*sql.Tx, *sql.Conn, error) {
 	for attempt := 0; ; attempt++ {
 		conn, err := pool.Conn(ctx)
 		if err != nil {
 			return nil, nil, err
 		}
-		if !a.beginTransaction(device) {
+		if !a.beginTransaction(device, !lateDeviceLock) {
 			conn.Close()
 			return nil, nil, errHealthWriteBusy
 		}

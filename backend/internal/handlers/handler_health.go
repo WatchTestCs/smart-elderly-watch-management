@@ -104,7 +104,7 @@ func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Reques
 	var tx *sql.Tx
 	var conn *sql.Conn
 	if priority {
-		tx, conn, err = h.healthWrites.beginPriorityTx(ctx, h.DB.DB, req.DeviceNo)
+		tx, conn, err = h.healthWrites.beginPriorityTx(ctx, h.DB.DB, req.DeviceNo, lateDeviceLock)
 		if errors.Is(err, errHealthWriteBusy) {
 			healthWriteBusy(w)
 			return
@@ -160,6 +160,14 @@ func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	if lateDeviceLock {
+		// An SOS may finish while this upload holds only the owner clock.
+		// Never wait for a pending SOS under that clock: a daily reader could
+		// hold the resident lock while waiting for us, forming a wait cycle.
+		// Roll back and let the device retry the original batch.
+		if priority && !h.healthWrites.beginTransaction(req.DeviceNo, true) {
+			healthWriteBusy(w)
+			return
+		}
 		locked, lockErr := scanHealthDevice(tx.QueryRowContext(ctx, `SELECT `+healthDeviceCols+` FROM device WHERE device_id=? FOR UPDATE`, d.ID))
 		if internalError(w, lockErr) {
 			return
