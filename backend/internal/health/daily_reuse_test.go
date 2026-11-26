@@ -13,7 +13,7 @@ import (
 )
 
 func TestDailyReuseProtectedRows(t *testing.T) {
-	p := dbtest.MySQL(t)
+	p := dbtest.Fixture(t)
 	ctx := t.Context()
 	box, err := securestore.New(base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{8}, 32)))
 	if err != nil {

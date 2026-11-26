@@ -12,7 +12,7 @@ import (
 )
 
 func TestDailyInvalidationDoesNotWaitOnOtherOwner(t *testing.T) {
-	p := dbtest.MySQL(t)
+	p := dbtest.Fixture(t)
 	ctx := context.Background()
 	for i := 1; i <= 128; i++ {
 		_, err := p.ExecContext(ctx, "INSERT INTO metric_daily(cache_key,old_id,source,source_device,metric,semantics,record_day,offset_minutes,dirty) VALUES(?,?,'watch','A','heart_rate','instant','2026-10-22',0,?)", fmt.Sprintf("%064x", i), i, i > 2)
@@ -57,7 +57,8 @@ func TestDailyInvalidationDoesNotWaitOnOtherOwner(t *testing.T) {
 }
 
 func TestDailySnapshotRejectsConcurrentCorrection(t *testing.T) {
-	p := dbtest.MySQL(t)
+	t.Setenv("MYSQL_STMT_CACHE_SIZE", "0")
+	p := dbtest.Fixture(t)
 	ctx := context.Background()
 	at := time.Date(2026, 10, 22, 12, 0, 0, 0, time.UTC)
 	k := DailyKey{OldID: 1, Source: "watch", SourceDevice: "A", Metric: "heart_rate", Semantics: "instant", Day: "2026-10-22"}

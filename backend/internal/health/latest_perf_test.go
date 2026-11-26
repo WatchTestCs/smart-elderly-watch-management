@@ -15,7 +15,7 @@ import (
 // A ready latest projection with a long history; every measured transaction
 // corrects an older observation without changing the current winner.
 func BenchmarkLatestHistoricalCorrection(b *testing.B) {
-	d := dbtest.MySQL(b)
+	d := dbtest.Fixture(b)
 	ctx := context.Background()
 	if _, err := d.ExecContext(ctx, "INSERT INTO oldperson(old_id,name) VALUES(1,'synthetic')"); err != nil {
 		b.Fatal(err)

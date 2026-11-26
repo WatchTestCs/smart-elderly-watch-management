@@ -189,7 +189,7 @@ func insertLatest(ctx context.Context, tx *sql.Tx, rec Record, payload []byte, b
 		return err
 	}
 	_, err = tx.ExecContext(ctx, "INSERT INTO health_sample_latest(old_id,series_key,sample_id,device_id,epoch,revision,payload,payload_cipher) VALUES(?,?,?,?,?,?,?,?)",
-		rec.OldID, key[:], rec.SampleID, rec.DeviceID, rec.Epoch, rec.Revision, stored.JSON, stored.Cipher)
+		rec.OldID, key[:], rec.SampleID, rec.DeviceID, rec.Epoch, rec.Revision, stored.jsonArgument(), stored.Cipher)
 	return err
 }
 
@@ -267,7 +267,7 @@ func refreshLatest(ctx context.Context, tx *sql.Tx, o Owner, input []preparedSam
 			continue
 		}
 		rec := change.winner
-		upserts = append(upserts, o.OldID, keys[i][:], rec.SampleID, rec.DeviceID, rec.Epoch, rec.Revision, change.payload.JSON, change.payload.Cipher)
+		upserts = append(upserts, o.OldID, keys[i][:], rec.SampleID, rec.DeviceID, rec.Epoch, rec.Revision, change.payload.jsonArgument(), change.payload.Cipher)
 	}
 	if len(deletes) > 1 {
 		if _, err = tx.ExecContext(ctx, "DELETE FROM health_sample_latest WHERE old_id=? AND series_key IN ("+

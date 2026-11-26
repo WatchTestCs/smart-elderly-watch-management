@@ -16,7 +16,7 @@ import (
 
 func seed(t *testing.T) (*db.Database, time.Time) {
 	t.Helper()
-	p := dbtest.MySQL(t)
+	p := dbtest.Fixture(t)
 	now := time.Date(2026, 10, 20, 15, 30, 0, 0, time.UTC)
 	ctx := context.Background()
 	if _, err := p.ExecContext(ctx, "INSERT INTO oldperson(old_id,name) VALUES(1,'长者')"); err != nil {

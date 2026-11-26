@@ -17,7 +17,7 @@ import (
 
 func protectedWriteFixture(t testing.TB) (*db.Database, *securestore.Box, []Sample) {
 	t.Helper()
-	p := dbtest.MySQL(t)
+	p := dbtest.Fixture(t)
 	box, err := securestore.New(base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{8}, 32)))
 	if err != nil {
 		t.Fatal(err)

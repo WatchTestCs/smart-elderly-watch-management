@@ -15,7 +15,7 @@ import (
 // BenchmarkDailyProtectedSQL includes the actual MySQL row scan, authenticated
 // payload decode, aggregation and result seal. Fixture setup is not timed.
 func BenchmarkDailyProtectedSQL(b *testing.B) {
-	p := dbtest.MySQL(b)
+	p := dbtest.Fixture(b)
 	ctx := b.Context()
 	box, err := securestore.New(base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{8}, 32)))
 	if err != nil {

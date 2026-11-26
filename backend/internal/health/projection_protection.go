@@ -66,6 +66,12 @@ func protectProjection(box *securestore.Box, raw json.RawMessage, scope string) 
 	return ProjectionPayload{Cipher: &cipher}, nil
 }
 
+// jsonArgument preserves the driver's JSON-specific text encoding, including
+// SQL NULL for protected payloads. A slice conversion avoids copying plaintext.
+func (p ProjectionPayload) jsonArgument() json.RawMessage {
+	return json.RawMessage(p.JSON)
+}
+
 func (p ProjectionPayload) Open(box *securestore.Box, scope string) (json.RawMessage, error) {
 	return p.open(box, scope, nil)
 }

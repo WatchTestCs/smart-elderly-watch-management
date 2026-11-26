@@ -304,6 +304,6 @@ func computeDaily(ctx context.Context, tx *sql.Tx, id string, k DailyKey, revisi
 }
 
 func writeDailyResult(ctx context.Context, tx *sql.Tx, id string, result *dailyComputation) error {
-	_, err := tx.ExecContext(ctx, "UPDATE metric_daily SET result=?,result_cipher=?,error_text=?,computed_revision=?,dirty=false,updated_at=CURRENT_TIMESTAMP(6) WHERE cache_key=?", result.stored.JSON, result.stored.Cipher, result.message, result.revision, id)
+	_, err := tx.ExecContext(ctx, "UPDATE metric_daily SET result=?,result_cipher=?,error_text=?,computed_revision=?,dirty=false,updated_at=CURRENT_TIMESTAMP(6) WHERE cache_key=?", result.stored.jsonArgument(), result.stored.Cipher, result.message, result.revision, id)
 	return err
 }

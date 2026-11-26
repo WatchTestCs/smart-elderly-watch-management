@@ -10,7 +10,7 @@ import (
 )
 
 func TestLatestSnapshotTracksOutOfOrderAndTombstones(t *testing.T) {
-	database := dbtest.MySQL(t)
+	database := dbtest.Fixture(t)
 	ctx := context.Background()
 	if _, err := database.ExecContext(ctx, "INSERT INTO oldperson(old_id,name) VALUES(1,'latest')"); err != nil {
 		t.Fatal(err)
@@ -85,7 +85,7 @@ func TestLatestKeySeparatesSeriesFields(t *testing.T) {
 }
 
 func TestLatestRefreshMultipleSeriesInOneBatch(t *testing.T) {
-	database := dbtest.MySQL(t)
+	database := dbtest.Fixture(t)
 	ctx := t.Context()
 	if _, err := database.ExecContext(ctx, "INSERT INTO oldperson(old_id,name) VALUES(1,'multi-series')"); err != nil {
 		t.Fatal(err)
@@ -125,7 +125,7 @@ func TestLatestRefreshMultipleSeriesInOneBatch(t *testing.T) {
 }
 
 func TestStatisticsCommittedSnapshot(t *testing.T) {
-	database := dbtest.MySQL(t)
+	database := dbtest.Fixture(t)
 	ctx := t.Context()
 	if _, err := database.ExecContext(ctx, "INSERT INTO oldperson(old_id,name) VALUES(1,'snapshot')"); err != nil {
 		t.Fatal(err)
@@ -179,7 +179,7 @@ func TestStatisticsCommittedSnapshot(t *testing.T) {
 }
 
 func TestLatestColdAndWarmAgreeOnSubMicrosecondTies(t *testing.T) {
-	database := dbtest.MySQL(t)
+	database := dbtest.Fixture(t)
 	ctx := t.Context()
 	if _, err := database.ExecContext(ctx, "INSERT INTO oldperson(old_id,name) VALUES(1,'exact time')"); err != nil {
 		t.Fatal(err)

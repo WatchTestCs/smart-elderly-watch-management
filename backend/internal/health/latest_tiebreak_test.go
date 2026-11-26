@@ -11,7 +11,7 @@ import (
 )
 
 func TestLatestBackfillMatchesIncrementalTieBreak(t *testing.T) {
-	database := dbtest.MySQL(t)
+	database := dbtest.Fixture(t)
 	ctx := context.Background()
 	if _, err := database.ExecContext(ctx, "INSERT INTO oldperson(old_id,name) VALUES(1,'tie-break')"); err != nil {
 		t.Fatal(err)
@@ -56,7 +56,7 @@ func TestLatestBackfillMatchesIncrementalTieBreak(t *testing.T) {
 }
 
 func TestLatestBackfillCapsDistinctSeriesRatherThanTiedSamples(t *testing.T) {
-	database := dbtest.MySQL(t)
+	database := dbtest.Fixture(t)
 	ctx := context.Background()
 	if _, err := database.ExecContext(ctx, "INSERT INTO oldperson(old_id,name) VALUES(1,'latest-tie-cap')"); err != nil {
 		t.Fatal(err)
