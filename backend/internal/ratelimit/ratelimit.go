@@ -48,7 +48,10 @@ type Limiter struct {
 	trusted   []netip.Prefix
 }
 
-type limitKey struct{ ip, path string }
+type limitKey struct {
+	ip   netip.Addr
+	path string
+}
 
 type limiterShard struct {
 	mu                                            sync.Mutex
@@ -60,13 +63,18 @@ type limiterShard struct {
 // A bounded FIFO preserves the exact sliding window. Every accepted timestamp
 // is removed at most once; denied attempts never extend the window.
 type hitWindow struct {
-	times      []time.Time
+	times      []time.Duration
 	head, size int
 	limit      int
 }
 
+// Requests and sweeps use time.Now with a monotonic component. Store the
+// nanosecond offset from a shared process clock instead of a 24-byte Time.
+var clockOrigin = time.Now()
+
 func (w *hitWindow) allowBudget(now time.Time, available int) bool {
-	for w.size > 0 && now.Sub(w.times[w.head]) >= window {
+	tick := now.Sub(clockOrigin)
+	for w.size > 0 && tick-w.times[w.head] >= window {
 		w.head = (w.head + 1) % len(w.times)
 		w.size--
 	}
@@ -79,12 +87,12 @@ func (w *hitWindow) allowBudget(now time.Time, available int) bool {
 		}
 		// Sparse clients start with one slot. Grow geometrically up to the
 		// quota, preserving FIFO order even when the old ring has wrapped.
-		times := make([]time.Time, min(w.limit, min(len(w.times)+available, max(1, len(w.times)*2))))
+		times := make([]time.Duration, min(w.limit, min(len(w.times)+available, max(1, len(w.times)*2))))
 		n := copy(times, w.times[w.head:])
 		copy(times[n:], w.times[:w.head])
 		w.times, w.head = times, 0
 	}
-	w.times[(w.head+w.size)%len(w.times)] = now
+	w.times[(w.head+w.size)%len(w.times)] = tick
 	w.size++
 	return true
 }
@@ -162,12 +170,19 @@ func (l *Limiter) Close() {
 	<-l.done
 }
 
-func (l *Limiter) shard(ip string) *limiterShard {
+func (l *Limiter) shard(ip netip.Addr) *limiterShard {
 	// All limited paths for one client share a shard, with independent quotas.
 	// Hashing the IP avoids allocating a combined string key per request.
 	hash := uint32(2166136261)
-	for i := range ip {
-		hash = (hash ^ uint32(ip[i])) * 16777619
+	var buffer [40]byte
+	key := buffer[:0]
+	if ip.IsValid() {
+		key = ip.AppendTo(key)
+	} else {
+		key = append(key, "invalid-peer"...)
+	}
+	for _, c := range key {
+		hash = (hash ^ uint32(c)) * 16777619
 	}
 	return &l.shards[hash&(shardCount-1)]
 }
@@ -180,7 +195,7 @@ func (l *Limiter) Allow(r *http.Request) bool {
 	} else if !ok || r.Method != http.MethodPost {
 		return true
 	}
-	ip := l.clientIP(r)
+	ip := l.clientAddr(r)
 	key := limitKey{ip, r.URL.Path}
 	shard := l.shard(ip)
 	shard.mu.Lock()
@@ -271,7 +286,7 @@ func (l *Limiter) sweep(now time.Time) {
 }
 
 func expired(h *hitWindow, now time.Time) bool {
-	return h.size == 0 || now.Sub(h.times[(h.head+h.size-1)%len(h.times)]) >= window
+	return h.size == 0 || now.Sub(clockOrigin)-h.times[(h.head+h.size-1)%len(h.times)] >= window
 }
 
 // WriteMetrics snapshots bounded counters at scrape time. Request admission only

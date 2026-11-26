@@ -100,3 +100,44 @@ func TestDeviceReportInvalidBindingVersionNeverOpensDatabase(t *testing.T) {
 		}
 	}
 }
+
+func BenchmarkTelemetryParse(b *testing.B) {
+	now := time.Date(2026, 10, 28, 10, 0, 0, 123, time.FixedZone("CST", 8*3600))
+	for _, name := range []string{"default", "explicit"} {
+		m := map[string]any{"hr": "75", "bp": "120", "step": "500", "battery": "85", "lng": "105.5", "lat": "30.5"}
+		if name == "explicit" {
+			m["beTime"] = "2026-10-28 09:59:59"
+		}
+		b.Run(name, func(b *testing.B) {
+			w := httptest.NewRecorder()
+			b.ReportAllocs()
+			b.ResetTimer()
+			for range b.N {
+				if _, ok := parseDeviceTelemetryPayload(w, m, now); !ok {
+					b.Fatal(w.Body.String())
+				}
+			}
+		})
+	}
+}
+
+func TestTelemetryWallClockAndFutureBoundary(t *testing.T) {
+	now := time.Date(2026, 10, 28, 0, 1, 2, 987654321, time.FixedZone("CST", 8*3600))
+	for _, tc := range []struct {
+		value string
+		ok    bool
+		want  string
+	}{
+		{"", true, "2026-10-28 00:01:02"},
+		{"2026-10-28 00:06:02", true, "2026-10-28 00:06:02"},
+		{"2026-10-28 00:06:03", false, ""},
+		{"2026-10-27 23:59:59", true, "2026-10-27 23:59:59"},
+		{"2026-02-30 00:00:00", false, ""},
+	} {
+		w := httptest.NewRecorder()
+		got, ok := parseDeviceTelemetryPayload(w, map[string]any{"beTime": tc.value}, now)
+		if ok != tc.ok || ok && (got.beTime.Format(tsLayout) != tc.want || got.beTime.Location() != time.UTC || got.day.Format("2006-01-02") != tc.want[:10]) {
+			t.Fatalf("value=%q ok=%t result=%+v", tc.value, ok, got)
+		}
+	}
+}
