@@ -177,7 +177,7 @@ func TestConditionalPreviousPayloadPreservesMixedVersionsAndConflicts(t *testing
 	if err := pool.QueryRowContext(ctx, "SELECT count(*) FROM health_change").Scan(&count); err != nil || count != 3 {
 		t.Fatal("failed batch persisted history", count, err)
 	}
-	if err := pool.QueryRowContext(ctx, "SELECT version FROM health_sample WHERE sample_id=?", identityDigest(owner, a)).Scan(&version); err != nil || version != 5 {
+	if err := pool.QueryRowContext(ctx, "SELECT version FROM health_sample WHERE sample_id=UNHEX(?)", identityDigest(owner, a)).Scan(&version); err != nil || version != 5 {
 		t.Fatal("failed batch persisted current row", version, err)
 	}
 }

@@ -68,7 +68,7 @@ func TestProtectedWriteLookupAuthenticatesObsoleteRows(t *testing.T) {
 		t.Fatal("equal-version conflict not detected", err)
 	}
 	b.Value = samples[1].Value
-	if _, err := p.ExecContext(ctx, "UPDATE health_sample SET payload_cipher='invalid' WHERE sample_id=?", identityDigest(Owner{OldID: 1}, a)); err != nil {
+	if _, err := p.ExecContext(ctx, "UPDATE health_sample SET payload_cipher='invalid' WHERE sample_id=UNHEX(?)", identityDigest(Owner{OldID: 1}, a)); err != nil {
 		t.Fatal(err)
 	}
 	a.Version = 4

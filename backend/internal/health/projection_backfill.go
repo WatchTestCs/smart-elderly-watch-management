@@ -3,6 +3,7 @@ package health
 import (
 	"context"
 	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -179,7 +180,11 @@ func (t projectionTarget) scan(row *sql.Row, payload any) ([]any, string, error)
 	parts := make([]string, len(key))
 	for i, value := range key {
 		if binary, ok := value.([]byte); ok {
-			parts[i] = string(binary)
+			if t.keys[i] == "sample_id" {
+				parts[i] = hex.EncodeToString(binary)
+			} else {
+				parts[i] = string(binary)
+			}
 		} else {
 			parts[i] = fmt.Sprint(value)
 		}

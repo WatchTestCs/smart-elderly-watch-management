@@ -7,6 +7,7 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/binary"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"sort"
@@ -74,7 +75,7 @@ func LatestInTransaction(ctx context.Context, tx *sql.Tx, oldID int64, box *secu
 // A ready owner with no live samples returns one NULL joined row. An
 // uninitialized owner returns no rows, so the warm path needs one query.
 func readReadyLatest(ctx context.Context, q latestQuerier, oldID int64, box *securestore.Box) ([]Record, bool, error) {
-	rows, err := q.QueryContext(ctx, `SELECT l.sample_id,l.device_id,COALESCE(l.epoch,0),COALESCE(l.revision,0),l.series_key,l.payload,l.payload_cipher
+	rows, err := q.QueryContext(ctx, `SELECT LOWER(HEX(l.sample_id)),l.device_id,COALESCE(l.epoch,0),COALESCE(l.revision,0),l.series_key,l.payload,l.payload_cipher
  FROM health_latest_ready r LEFT JOIN health_sample_latest l ON l.old_id=r.old_id WHERE r.old_id=? LIMIT 10001`, oldID)
 	if err != nil {
 		return nil, false, err
@@ -120,7 +121,7 @@ func buildLatest(ctx context.Context, q *sql.Tx, oldID int64, box *securestore.B
 	// nanoseconds. Read all rows at each series' maximum indexed time, then
 	// resolve the exact timestamp and revision in Go. Bound distinct series,
 	// not tied rows, and avoid an unnecessary global sort of sample IDs.
-	sql := "SELECT s.sample_id,s.device_id,s.epoch,s.revision,s.payload,s.payload_cipher FROM health_sample s INNER JOIN (" +
+	sql := "SELECT LOWER(HEX(s.sample_id)),s.device_id,s.epoch,s.revision,s.payload,s.payload_cipher FROM health_sample s INNER JOIN (" +
 		"SELECT sample_id,RANK() OVER (PARTITION BY " + partition + " ORDER BY sample_start DESC) AS latest_rank " +
 		"FROM health_sample WHERE old_id=? AND NOT deleted) ranked ON ranked.sample_id=s.sample_id " +
 		"WHERE ranked.latest_rank=1"
@@ -188,8 +189,12 @@ func insertLatest(ctx context.Context, tx *sql.Tx, rec Record, payload []byte, b
 	if err != nil {
 		return err
 	}
+	sampleKey, err := hex.DecodeString(rec.SampleID)
+	if err != nil {
+		return err
+	}
 	_, err = tx.ExecContext(ctx, "INSERT INTO health_sample_latest(old_id,series_key,sample_id,device_id,epoch,revision,payload,payload_cipher) VALUES(?,?,?,?,?,?,?,?)",
-		rec.OldID, key[:], rec.SampleID, rec.DeviceID, rec.Epoch, rec.Revision, stored.jsonArgument(), stored.Cipher)
+		rec.OldID, key[:], sampleKey, rec.DeviceID, rec.Epoch, rec.Revision, stored.jsonArgument(), stored.Cipher)
 	return err
 }
 
@@ -226,7 +231,7 @@ func refreshLatest(ctx context.Context, tx *sql.Tx, o Owner, input []preparedSam
 		args = append(args, keys[i][:])
 	}
 	args = append(args, o.OldID)
-	rows, err := tx.QueryContext(ctx, "SELECT l.series_key,l.sample_id,l.device_id,COALESCE(l.epoch,0),COALESCE(l.revision,0),l.payload,l.payload_cipher"+
+	rows, err := tx.QueryContext(ctx, "SELECT l.series_key,LOWER(HEX(l.sample_id)),l.device_id,COALESCE(l.epoch,0),COALESCE(l.revision,0),l.payload,l.payload_cipher"+
 		" FROM health_latest_ready r LEFT JOIN health_sample_latest l ON l.old_id=r.old_id AND l.series_key IN ("+
 		strings.TrimSuffix(strings.Repeat("?,", len(keys)), ",")+") WHERE r.old_id=? FOR UPDATE", args...)
 	if err != nil {
@@ -272,7 +277,11 @@ func refreshLatest(ctx context.Context, tx *sql.Tx, o Owner, input []preparedSam
 			continue
 		}
 		rec := change.winner
-		upserts = append(upserts, o.OldID, keys[i][:], rec.SampleID, rec.DeviceID, rec.Epoch, rec.Revision, change.payload.jsonArgument(), change.payload.Cipher)
+		sampleKey, err := hex.DecodeString(rec.SampleID)
+		if err != nil {
+			return err
+		}
+		upserts = append(upserts, o.OldID, keys[i][:], sampleKey, rec.DeviceID, rec.Epoch, rec.Revision, change.payload.jsonArgument(), change.payload.Cipher)
 	}
 	if len(deletes) > 1 {
 		if _, err = tx.ExecContext(ctx, "DELETE FROM health_sample_latest WHERE old_id=? AND series_key IN ("+
@@ -321,7 +330,7 @@ func refreshLatestSeries(ctx context.Context, tx *sql.Tx, owner Owner, item *pre
 	// maximum indexed microsecond is transferred, including all ties for
 	// the exact nanosecond/revision comparison below.
 	filter := "source=? AND source_device=? AND metric=? AND semantics=? AND BINARY source=BINARY ? AND BINARY source_device=BINARY ? AND BINARY metric=BINARY ? AND BINARY semantics=BINARY ?"
-	query := "SELECT sample_id,device_id,epoch,revision,payload,payload_cipher FROM health_sample WHERE old_id=? AND sample_start=(" +
+	query := "SELECT LOWER(HEX(sample_id)),device_id,epoch,revision,payload,payload_cipher FROM health_sample WHERE old_id=? AND sample_start=(" +
 		"SELECT sample_start FROM health_sample WHERE old_id=? AND " + filter +
 		" AND NOT deleted ORDER BY sample_start DESC LIMIT 1) AND " + filter + " AND NOT deleted ORDER BY revision DESC,sample_id DESC"
 	rows, err := tx.QueryContext(ctx, query, oldID, oldID,

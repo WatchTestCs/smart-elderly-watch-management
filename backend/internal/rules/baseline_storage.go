@@ -19,12 +19,12 @@ const baselineLegacyLongSQL = `SELECT count(*) AS sample_count,count(` + baselin
  AND source=? AND rule_source_key=? AND BINARY source=BINARY ? AND BINARY source_device=BINARY ?
  AND sample_start>=? AND sample_start<? AND (JSON_UNQUOTE(JSON_EXTRACT(payload,'$.timeBasis')) IS NULL OR JSON_UNQUOTE(JSON_EXTRACT(payload,'$.timeBasis'))<>'legacy-unzoned')`
 
-const baselineProtectedShortSQL = `SELECT sample_id,revision,payload_cipher,0,0,0,0 FROM health_sample FORCE INDEX (idx_health_rule_cover)
+const baselineProtectedShortSQL = `SELECT LOWER(HEX(sample_id)),revision,payload_cipher,0,0,0,0 FROM health_sample FORCE INDEX (idx_health_rule_cover)
  WHERE old_id=? AND device_id=? AND metric=? AND deleted=false AND payload_encrypted=true
  AND source=? AND rule_source_key=? AND BINARY source=BINARY ?
  AND sample_start>=? AND sample_start<?`
 
-const baselineProtectedLongSQL = `SELECT sample_id,revision,payload_cipher,0,0,0,0 FROM health_sample FORCE INDEX (idx_health_rule_cover)
+const baselineProtectedLongSQL = `SELECT LOWER(HEX(sample_id)),revision,payload_cipher,0,0,0,0 FROM health_sample FORCE INDEX (idx_health_rule_cover)
  WHERE old_id=? AND device_id=? AND metric=? AND deleted=false AND payload_encrypted=true
  AND source=? AND rule_source_key=? AND BINARY source=BINARY ? AND BINARY source_device=BINARY ?
  AND sample_start>=? AND sample_start<?`

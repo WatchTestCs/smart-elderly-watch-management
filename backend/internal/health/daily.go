@@ -77,7 +77,7 @@ const dailyCacheSelectSQL = `SELECT old_id,source,source_device,metric,semantics
 
 // Equality predicates enable the existing series index. Binary predicates
 // remain authoritative, including on deployments with insensitive collations.
-const dailySamplesSQL = `SELECT sample_id,revision,payload,payload_cipher FROM health_sample WHERE old_id=?
+const dailySamplesSQL = `SELECT LOWER(HEX(sample_id)),revision,payload,payload_cipher FROM health_sample WHERE old_id=?
  AND source=? AND source_device=? AND metric=? AND semantics=?
  AND BINARY source=BINARY ? AND BINARY source_device=BINARY ? AND BINARY metric=BINARY ? AND BINARY semantics=BINARY ? AND NOT deleted
  AND sample_start<? AND (sample_start>=? OR (?='interval' AND sample_end>=?)) ORDER BY revision LIMIT 100001`

@@ -45,7 +45,7 @@ func StatisticsChanges(ctx context.Context, store db.RowsQuerier, owner, after, 
 		}
 		records = append(records, record)
 		return nil
-	}, "SELECT revision,sample_id,payload,payload_cipher FROM health_change WHERE old_id=? AND revision>? AND revision<=? ORDER BY revision LIMIT 257",
+	}, "SELECT revision,LOWER(HEX(sample_id)),payload,payload_cipher FROM health_change WHERE old_id=? AND revision>? AND revision<=? ORDER BY revision LIMIT 257",
 		owner, after, through)
 	if err != nil {
 		return nil, err

@@ -191,7 +191,7 @@ func readRuleActivity(ctx context.Context, tx *sql.Tx, device ruleDevice, p Poli
 	if in.Activity != nil {
 		v := in.Activity
 		start := now.Add(-time.Duration(p.ActivityMinutes) * time.Minute)
-		rows, err := tx.QueryContext(ctx, `SELECT sample_id,revision,payload,payload_cipher FROM health_sample WHERE old_id=? AND device_id=? AND epoch=? AND metric='steps' AND NOT deleted AND BINARY source=BINARY ? AND BINARY source_device=BINARY ? AND sample_start<=? AND (sample_start>=? OR sample_end>?) ORDER BY sample_start,revision LIMIT 1001`, oldID, id, epoch, v.Source, v.Device, now.UnixMicro(), start.UnixMicro(), start.UnixMicro())
+		rows, err := tx.QueryContext(ctx, `SELECT LOWER(HEX(sample_id)),revision,payload,payload_cipher FROM health_sample WHERE old_id=? AND device_id=? AND epoch=? AND metric='steps' AND NOT deleted AND BINARY source=BINARY ? AND BINARY source_device=BINARY ? AND sample_start<=? AND (sample_start>=? OR sample_end>?) ORDER BY sample_start,revision LIMIT 1001`, oldID, id, epoch, v.Source, v.Device, now.UnixMicro(), start.UnixMicro(), start.UnixMicro())
 		if err != nil {
 			return err
 		}

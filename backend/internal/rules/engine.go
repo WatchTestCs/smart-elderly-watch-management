@@ -11,11 +11,11 @@ import (
 )
 
 const latestSampleTail = ` FROM health_sample WHERE old_id=? AND device_id=? AND epoch=? AND metric=? AND NOT deleted AND sample_start>=? AND sample_start<=? ORDER BY sample_start DESC,revision DESC LIMIT 1`
-const latestSampleSQL = `SELECT sample_id,revision,payload,payload_cipher` + latestSampleTail
+const latestSampleSQL = `SELECT LOWER(HEX(sample_id)),revision,payload,payload_cipher` + latestSampleTail
 
 // Each branch retains its own index range and LIMIT. The explicit ordinal
 // preserves input/decode order and avoids a shared window across metrics.
-const latestRuleObservationsSQL = `SELECT metric_order,sample_id,revision,payload,payload_cipher FROM (
+const latestRuleObservationsSQL = `SELECT metric_order,LOWER(HEX(sample_id)),revision,payload,payload_cipher FROM (
  (SELECT 0 AS metric_order,sample_id,revision,payload,payload_cipher` + latestSampleTail + `)
  UNION ALL (SELECT 1 AS metric_order,sample_id,revision,payload,payload_cipher` + latestSampleTail + `)
  UNION ALL (SELECT 2 AS metric_order,sample_id,revision,payload,payload_cipher` + latestSampleTail + `)

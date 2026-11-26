@@ -119,7 +119,7 @@ func (batch *PreparedBatch) SaveProtected(ctx context.Context, tx *sql.Tx, o Own
 	for i := range input {
 		id := input[i].id
 		if _, exists := seen[id]; !exists {
-			ids = append(ids, id)
+			ids = append(ids, input[i].key[:])
 			seen[id] = 0
 		}
 	}
@@ -159,7 +159,7 @@ func (batch *PreparedBatch) SaveProtected(ctx context.Context, tx *sql.Tx, o Own
 		if err != nil {
 			return 0, 0, err
 		}
-		args = append(args, id, ownerID, o.DeviceID, epoch, s.Version, item.revision, stored.jsonArgument(), stored.Cipher,
+		args = append(args, item.key[:], ownerID, o.DeviceID, epoch, s.Version, item.revision, stored.jsonArgument(), stored.Cipher,
 			s.Source, s.SourceDevice, s.Metric, s.Semantics, s.Start.UnixMicro(), s.End.UnixMicro(), s.Deleted)
 	}
 	_, err = tx.ExecContext(ctx, batchSQL(batchUpsert, len(selection.final)), args...)
@@ -273,7 +273,7 @@ func appendChangeRows(args []any, o Owner, input []preparedSample, events []uint
 		if err != nil {
 			return nil, history, err
 		}
-		args = append(args, event.revision, ownerID, event.id, stored.jsonArgument(), stored.Cipher)
+		args = append(args, event.revision, ownerID, event.key[:], stored.jsonArgument(), stored.Cipher)
 	}
 	return args, history, nil
 }
