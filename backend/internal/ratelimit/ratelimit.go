@@ -175,7 +175,9 @@ func (l *Limiter) shard(ip string) *limiterShard {
 // Allow 检查并记录一次访问；返回 false 表示超限。
 func (l *Limiter) Allow(r *http.Request) bool {
 	limit, ok := limits[r.URL.Path]
-	if !ok || r.Method != http.MethodPost {
+	if r.Method == http.MethodGet && r.URL.Path == "/api/v1/auth/session" {
+		limit = 1200 // shared browser bootstrap and refresh budget per client
+	} else if !ok || r.Method != http.MethodPost {
 		return true
 	}
 	ip := l.clientIP(r)

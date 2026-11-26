@@ -156,3 +156,25 @@ func TestLimiterSweepAndClose(t *testing.T) {
 		t.Fatal("janitor did not terminate")
 	}
 }
+
+func TestSessionReadQuotaIsIndependent(t *testing.T) {
+	l := New()
+	defer l.Close()
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/auth/session", nil)
+	req.RemoteAddr = "192.0.2.8:1234"
+	for range 1200 {
+		if !l.Allow(req) {
+			t.Fatal("premature session quota denial")
+		}
+	}
+	if l.Allow(req) {
+		t.Fatal("session quota exceeded")
+	}
+	for _, path := range []string{"/api/v1/auth/login", "/api/v1/device/sos"} {
+		next := httptest.NewRequest(http.MethodPost, path, nil)
+		next.RemoteAddr = req.RemoteAddr
+		if !l.Allow(next) {
+			t.Fatal("session quota leaked to another route")
+		}
+	}
+}

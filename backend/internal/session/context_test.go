@@ -8,6 +8,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -77,7 +78,7 @@ func TestSessionIOFollowsCallerCancellation(t *testing.T) {
 		}},
 		{"request", func(ctx context.Context, s *Store) bool {
 			r := httptest.NewRequest("POST", "/test", nil).WithContext(ctx)
-			r.AddCookie(&http.Cookie{Name: CookieName, Value: "synthetic-id"})
+			r.AddCookie(&http.Cookie{Name: CookieName, Value: strings.Repeat("a", 64)})
 			return s.FromRequest(r) == nil
 		}},
 	} {
