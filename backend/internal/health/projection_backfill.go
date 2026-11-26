@@ -18,6 +18,7 @@ type ProjectionBackfillReport struct {
 	Table     string `json:"table"`
 	Before    int64  `json:"pending_before"`
 	Migrated  int    `json:"migrated"`
+	Verified  int    `json:"verified,omitempty"`
 	Remaining *int64 `json:"remaining"`
 }
 
