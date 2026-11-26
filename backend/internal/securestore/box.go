@@ -115,6 +115,13 @@ func (b *Box) Open(text, scope string) (string, error) {
 // OpenBytes authenticates the envelope and returns owned plaintext bytes.
 // Decode into a private buffer and reuse its ciphertext storage for GCM.
 func (b *Box) OpenBytes(text, scope string) ([]byte, error) {
+	return b.OpenBytesReuse(text, scope, nil)
+}
+
+// OpenBytesReuse authenticates as OpenBytes does, but can reuse caller-owned
+// scratch storage. Its result is valid only until the next use of scratch.
+// Scratch must be private to one sequential consumer, never shared or pooled.
+func (b *Box) OpenBytesReuse(text, scope string, scratch *[]byte) ([]byte, error) {
 	if b == nil || !strings.HasPrefix(text, Prefix) {
 		return nil, errors.New("encrypted value or key is missing")
 	}
@@ -130,17 +137,24 @@ func (b *Box) OpenBytes(text, scope string) ([]byte, error) {
 		// Legacy envelopes have no key ID. Bounded keyrings can read them
 		// during migration; new writes always identify and authenticate the ID.
 		for _, reader := range b.readers {
-			if plain, err := openEnvelope(reader, encoded, scope); err == nil {
+			if plain, err := openEnvelope(reader, encoded, scope, scratch); err == nil {
 				return plain, nil
 			}
 		}
 		return nil, errors.New("legacy encrypted value authentication failed")
 	}
-	return openEnvelope(aead, encoded, scope)
+	return openEnvelope(aead, encoded, scope, scratch)
 }
 
-func openEnvelope(aead cipher.AEAD, encoded, scope string) ([]byte, error) {
-	data, err := base64.RawStdEncoding.Strict().DecodeString(encoded)
+func openEnvelope(aead cipher.AEAD, encoded, scope string, scratch *[]byte) ([]byte, error) {
+	var data []byte
+	var err error
+	if scratch == nil {
+		data, err = base64.RawStdEncoding.Strict().DecodeString(encoded)
+	} else {
+		data, err = base64.RawStdEncoding.Strict().AppendDecode((*scratch)[:0], []byte(encoded))
+		*scratch = data[:0]
+	}
 	if err != nil || len(data) < aead.NonceSize() {
 		return nil, errors.New("invalid encrypted value")
 	}

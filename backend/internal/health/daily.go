@@ -249,16 +249,23 @@ func computeDaily(ctx context.Context, tx *sql.Tx, id string, k DailyKey, revisi
 		return ProjectionPayload{}, "", err
 	}
 	var series dailySeries
+	var sampleID string
+	var sampleRevision int64
+	var raw sql.RawBytes
+	var cipher sql.NullString
+	var scratch []byte
+	var s Sample
 	candidates := 0
 	for rows.Next() {
 		candidates++
-		var id string
-		var revision int64
-		var stored ProjectionPayload
-		var s Sample
-		if err = rows.Scan(&id, &revision, &stored.JSON, &stored.Cipher); err == nil {
+		s = Sample{}
+		if err = rows.Scan(&sampleID, &sampleRevision, &raw, &cipher); err == nil {
+			stored := ProjectionPayload{JSON: raw}
+			if cipher.Valid {
+				stored.Cipher = &cipher.String
+			}
 			var payload []byte
-			payload, err = stored.OpenSample(box, id, k.OldID, revision)
+			payload, err = stored.openSample(box, sampleID, k.OldID, sampleRevision, &scratch)
 			if err == nil {
 				err = json.Unmarshal(payload, &s)
 			}
