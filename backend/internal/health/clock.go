@@ -105,3 +105,13 @@ func (c ownerClock) reserveNext(ctx context.Context, tx *sql.Tx, oldID, revision
 	_, err = tx.ExecContext(ctx, "UPDATE health_owner_clock SET range_start=?,range_end=? WHERE old_id=?", start, start+ownerRevisionRange, oldID)
 	return err
 }
+
+// ProvisionOwnerRange is called only for a newly inserted resident, at the
+// end of its creation transaction. A future range is durable together with
+// the resident, but the committed event cursor remains zero until a write.
+func ProvisionOwnerRange(ctx context.Context, tx *sql.Tx, oldID int64) error {
+	if _, err := tx.ExecContext(ctx, "INSERT INTO health_owner_clock(old_id,revision,range_end) VALUES(?,0,0)", oldID); err != nil {
+		return err
+	}
+	return (ownerClock{}).reserveNext(ctx, tx, oldID, 0)
+}
