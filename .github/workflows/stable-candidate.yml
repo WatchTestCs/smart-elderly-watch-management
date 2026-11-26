@@ -45,7 +45,10 @@ jobs:
           cache-dependency-path: backend/go.sum
       - name: Prepare Rust
         shell: pwsh
-        run: rustup toolchain install 1.100.0 --profile minimal --no-self-update
+        run: |
+          rustup toolchain install 1.100.0 --profile minimal --no-self-update
+          if ($LASTEXITCODE) { throw 'Rust toolchain setup failed' }
+          'RUSTUP_TOOLCHAIN=1.100.0' >> $env:GITHUB_ENV
       - name: Build actual Windows installer
         shell: pwsh
         run: ./desktop/build.ps1
