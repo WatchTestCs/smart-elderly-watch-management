@@ -6,11 +6,11 @@
 
 | 组件 | 当前实现 | 职责与边界 |
 | --- | --- | --- |
-| 桌面端（`desktop/`） | Tauri 2、Rust 1.99.1、WebView2 | 单实例、受限原生 IPC、校验并启动 Go 子进程、窗口和退出管理；不在网页中暴露桌面控制令牌 |
+| 桌面端（`desktop/`） | Tauri 2、Rust 1.100.0、WebView2 | 单实例、受限原生 IPC、校验并启动 Go 子进程、窗口和退出管理；不在网页中暴露桌面控制令牌 |
 | 前端（`frontend/`） | Vue 3.5.45、Vue Router 4.6.4、Element Plus 2.14.8、ECharts 6.1.0、Leaflet 1.9.4、Vite 8.3.8、TypeScript 6.0.3 | 管理员及家属工作台、表单、图表、位置展示和连接状态；不直接访问数据库 |
 | Go 服务（`backend/`） | Go 1.27.4、`net/http`、`goccy/go-json`、`go-sql-driver/mysql` | `/api/v1/` 业务接口、权限与事务、会话和 CSRF、设备身份与可选签名校验、静态前端资源；不负责安装 MySQL |
 | 持久化 | MySQL 8.4、`database/sql` | 业务数据、会话、审计、健康及位置记录、图片 BLOB；不进行 PostgreSQL 生产双写或外部对象存储兜底 |
-| 手表及模拟器（`SuiningWatch/`、`watch-sim/`） | HarmonyOS ArkTS、Rust 1.99.1 | 按服务端设备契约上报采样与 SOS；不能直接写数据库 |
+| 手表及模拟器（`SuiningWatch/`、`watch-sim/`） | HarmonyOS ArkTS、Rust 1.100.0 | 按服务端设备契约上报采样与 SOS；不能直接写数据库 |
 
 `preview` 使用 MySQL 单库；旧文档中的 PostgreSQL 分析投影、S3/SeaweedFS 和本地图片回退仅属于历史方案，不应据此部署当前版本。
 
