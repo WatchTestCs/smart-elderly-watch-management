@@ -133,9 +133,10 @@ func TestHealthHTTPAuditAndSOSUnderPoolSaturation(t *testing.T) {
 	for k, v := range after {
 		t.Logf("HTTP daily warm %s delta=%d (10 requests)", k, v-before[k])
 	}
-	// Session lookup, coarse account access, locked duty, owner clock, cache
-	// read. The only insert is the mandatory sensitive-access audit.
-	if after["Com_select"]-before["Com_select"] != 50 || after["Com_insert"]-before["Com_insert"] != 10 || after["Com_commit"]-before["Com_commit"] != 10 {
+	// Session lookup, coarse account access, locked duty and cache read.
+	// Warm daily rows no longer lock the owner clock. The only insert is
+	// the mandatory sensitive-access audit.
+	if after["Com_select"]-before["Com_select"] != 40 || after["Com_insert"]-before["Com_insert"] != 10 || after["Com_commit"]-before["Com_commit"] != 10 {
 		t.Fatalf("unexpected daily statements before=%v after=%v", before, after)
 	}
 	sort.Slice(reads, func(i, j int) bool { return reads[i] < reads[j] })
