@@ -121,7 +121,7 @@ MySQL 8.4 is the **only production application database** for resident data, ses
 
 ## Development
 
-Everyday contributions target `preview`; `main` tracks stable releases. Building the current Windows desktop requires **PowerShell 7, Node.js 24.x, Go 1.27.4, and Rust 1.99.1 or newer**, plus MSVC C++ Build Tools and the Windows SDK. See [Windows build setup](docs/BUILD.md).
+Everyday contributions target `preview`; `main` tracks stable releases. Building the current Windows desktop requires **PowerShell 7, Node.js 26.x, Go 1.27.4, and Rust 1.100.0 or newer**, plus MSVC C++ Build Tools and the Windows SDK. See [Windows build setup](docs/BUILD.md).
 
 ```powershell
 git clone --branch preview https://github.com/WatchTestCs/smart-elderly-watch-management.git
