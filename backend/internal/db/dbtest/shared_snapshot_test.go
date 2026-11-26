@@ -20,8 +20,8 @@ func TestPrepareSharedMySQLFixture(t *testing.T) {
 	pool := MySQL(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 	defer cancel()
-	_, server := fixtureIdentity(t, ctx, pool)
-	archive := DumpMySQL(t, ctx, pool)
+	name, server := fixtureIdentity(t, ctx, pool)
+	archive := dumpMySQL(t, ctx, name, server, true)
 	if err := saveSharedFixture(path, server, archive); err != nil {
 		t.Fatal(err)
 	}

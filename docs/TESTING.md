@@ -27,9 +27,9 @@ go test -race -count=1 -timeout 600s ./...
 python scripts/reliability/run-mysql-fixture-tests.py ./internal/db/dbtest ./internal/handlers ./internal/session ./internal/notify ./internal/operationsrepo ./internal/telemetryrepo ./internal/careworkflow
 ```
 
-该脚本仅从新建并完整迁移的空业务库导出一次归档，验证服务器 UUID、嵌入迁移文件内容摘要及归档哈希；所有消费者使用各自独立的新建数据库，不共享测试数据。每次运行使用专用临时目录，结束后清除归档，不跨作业缓存。省略包参数可运行整个后端套件；未接入的测试仍走完整迁移。共享模式不得用于生产数据库。
+该脚本仅从新建并完整迁移的空业务库导出一次归档，验证服务器 UUID、嵌入迁移文件内容摘要及归档哈希；所有消费者使用各自独立的新建数据库，不共享测试数据。每次运行使用专用临时目录，结束后清除归档，不跨作业缓存。省略包参数可运行整个后端套件；未接入的测试仍走完整迁移。共享模式不得用于生产数据库。 空库快照导出省略冗余 DROP TABLE、导入表锁和非唯一索引禁用/启用指令，仍保留全部表、数据、触发器及例程。快照模式复用有界管理连接池执行 CREATE/DROP DATABASE，业务连接仍按测试独立创建和关闭。每个恢复的 schema 仍须执行完整结构校验；协调备份恢复演练不使用精简导出选项。
 
-在同一实例及相同包集合上，以完整迁移模式的 `go test -race -count=1 -timeout 45m` 作为对照；比较总耗时、准备耗时及失败和跳过记录。准备耗时也必须计入共享模式的总成本。脚本默认不改变 CI 或生产配置。
+在同一实例及相同包集合上，以完整迁移模式的 `go test -race -count=1 -timeout 45m` 作为对照；比较总耗时、准备耗时及失败和跳过记录。准备耗时也必须计入共享模式的总成本。脚本默认不改变 CI 或生产配置。 可使用脚本参数 `-v -run TestMySQLSnapshotIsolationAndCost ./internal/db/dbtest` 查看创建/连接、归档准备、导入及只读校验分段耗时。
 
 仅在行为一致且真实耗时对照证明有收益后考虑默认启用。不要把静态减少初始化次数当作实际 CI 加速。相同输入与断言已有真实行为覆盖时，不再重复检查 SQL 拼写；保留独立授权、事务、竞态、恢复、加密与边界断言。复用同一测试 fixture 时必须保留状态隔离及所有关键断言。
 
