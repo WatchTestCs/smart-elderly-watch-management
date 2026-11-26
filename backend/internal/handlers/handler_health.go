@@ -48,7 +48,7 @@ func (h *Handler) healthBatch(w http.ResponseWriter, r *http.Request) {
 // can delay the device-row lock until the final binding/secret revalidation.
 // Never enable owner-first concurrently with an old device-first writer.
 func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Request, lateDeviceLock bool) {
-	r, signedOK := h.prepareSignedDeviceRequest(w, r)
+	r, _, signedOK := h.prepareSignedDeviceRequest(w, r)
 	if !signedOK {
 		return
 	}

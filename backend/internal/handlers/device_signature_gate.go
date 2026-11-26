@@ -1,12 +1,8 @@
 package handlers
 
 import (
-	"bytes"
 	"database/sql"
-	"encoding/json"
-	"io"
 	"net/http"
-	"strings"
 
 	"suining-care/internal/accesspolicy"
 	"suining-care/internal/response"
@@ -26,27 +22,12 @@ func (h *Handler) EnforceDeviceSignatures(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 			return
 		}
-		signed, ok := h.prepareSignedDeviceRequest(w, r)
+		signed, credentials, ok := h.prepareSignedDeviceRequest(w, r)
 		if !ok {
 			return
 		}
 		if _, present := signed.Context().Value(signedDeviceContextKey{}).(signedDeviceNonce); !present {
 			next.ServeHTTP(w, signed)
-			return
-		}
-		raw, err := io.ReadAll(io.LimitReader(signed.Body, signedDeviceMaxBody+1))
-		if err != nil || len(raw) > signedDeviceMaxBody {
-			response.JSON(w, http.StatusBadRequest, map[string]any{"message": "设备请求体无效"})
-			return
-		}
-		_ = signed.Body.Close()
-		signed.Body = io.NopCloser(bytes.NewReader(raw))
-		var credentials struct {
-			DeviceNo string `json:"deviceNo"`
-			Secret   string `json:"secret"`
-		}
-		if err := json.Unmarshal(raw, &credentials); err != nil {
-			response.JSON(w, http.StatusBadRequest, map[string]any{"message": "设备请求体无效"})
 			return
 		}
 		ctx := signed.Context()
@@ -56,7 +37,7 @@ func (h *Handler) EnforceDeviceSignatures(next http.Handler) http.Handler {
 			return
 		}
 		defer tx.Rollback()
-		d, code, msg, err := h.hwAuth(ctx, tx, strings.ToUpper(strings.TrimSpace(credentials.DeviceNo)), credentials.Secret, "设备已停用")
+		d, code, msg, err := h.hwAuth(ctx, tx, credentials.DeviceNo, credentials.Secret, "设备已停用")
 		if err != nil {
 			response.Error500(w, ref())
 			return
