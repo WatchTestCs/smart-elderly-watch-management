@@ -10,9 +10,6 @@ import (
 )
 
 func TestMySQLSnapshotIsolationAndCost(t *testing.T) {
-	if os.Getenv("TEST_MYSQL_FIXTURE_SNAPSHOT") != "1" {
-		t.Skip("opt-in fixture snapshot experiment")
-	}
 	ctx := context.Background()
 	check := func(t *testing.T, pool *db.Database) {
 		t.Helper()
@@ -32,13 +29,21 @@ func TestMySQLSnapshotIsolationAndCost(t *testing.T) {
 		}
 	}
 
-	for _, mode := range []struct {
+	// The standard real-MySQL gate checks the cold capture and two warm
+	// restores. The dedicated experiment additionally times full migrations.
+	type fixtureMode struct {
 		name string
 		open func(testing.TB) *db.Database
-	}{{"fresh", MySQL}, {"snapshot", MySQLSnapshot}} {
+	}
+	modes := []fixtureMode{{"snapshot", MySQLSnapshot}}
+	if os.Getenv("TEST_MYSQL_FIXTURE_SNAPSHOT") == "1" {
+		modes = append([]fixtureMode{{"fresh", MySQL}}, modes...)
+	}
+	for _, mode := range modes {
 		t.Run(mode.name, func(t *testing.T) {
-			for i := 0; i < 3; i++ {
-				t.Run([]string{"first", "second", "third"}[i], func(t *testing.T) {
+			for _, trial := range []string{"first", "second", "third"} {
+				startTrial := time.Now()
+				t.Run(trial, func(t *testing.T) {
 					start := time.Now()
 					pool := mode.open(t)
 					t.Logf("fixture setup: %s", time.Since(start))
@@ -50,6 +55,7 @@ func TestMySQLSnapshotIsolationAndCost(t *testing.T) {
 						t.Fatal(err)
 					}
 				})
+				t.Logf("%s/%s setup, check and cleanup: %s", mode.name, trial, time.Since(startTrial))
 			}
 		})
 	}

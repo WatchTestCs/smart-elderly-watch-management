@@ -136,6 +136,20 @@ func MySQLSnapshot(t testing.TB) *db.Database {
 	archive, populated := snapshotArchive(t, ctx, pool)
 	if !populated {
 		RestoreMySQL(t, ctx, pool, archive)
+		names, err := db.MySQLMigrationNames()
+		if err != nil {
+			t.Fatal(err)
+		}
+		var completed, pending int
+		if err := pool.QueryRowContext(ctx, "SELECT COUNT(*) FROM schema_migrations WHERE schema_checksum<>''").Scan(&completed); err != nil {
+			t.Fatal(err)
+		}
+		if err := pool.QueryRowContext(ctx, "SELECT COUNT(*) FROM schema_migration_steps").Scan(&pending); err != nil {
+			t.Fatal(err)
+		}
+		if completed != len(names) || pending != 0 {
+			t.Fatalf("incomplete fixture migration ledger: completed=%d want=%d pending=%d", completed, len(names), pending)
+		}
 		// Recheck the ledger and full schema fingerprint using the production
 		// migrator; a corrupted or outdated archive must fail the test.
 		if err := db.MigrateMySQL(ctx, pool); err != nil {
