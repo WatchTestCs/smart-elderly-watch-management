@@ -102,5 +102,8 @@ func (p ProjectionPayload) openSample(box *securestore.Box, id string, owner, re
 	if p.JSON == nil && p.Cipher == nil {
 		return nil, errors.New("health sample payload is missing")
 	}
+	if p.Cipher != nil && len(*p.Cipher) > 0 && (*p.Cipher)[0] == sampleHistoryReference[0] {
+		return openHistorySample(p, box, id, owner, revision, scratch)
+	}
 	return p.open(box, samplePayloadScope(id, owner, revision), scratch)
 }

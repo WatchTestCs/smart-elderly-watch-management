@@ -15,7 +15,7 @@ const (
 )
 
 const batchLookupPrefix = `SELECT LOWER(HEX(sample_id)),version,revision,CASE WHEN version >= `
-const batchLookupSuffix = ` THEN payload ELSE NULL END,payload_cipher FROM health_sample WHERE sample_id IN `
+const batchLookupSuffix = ` THEN payload ELSE NULL END,` + SampleCipherSQL + ` FROM health_sample WHERE sample_id IN `
 const batchUpsertPrefix = `INSERT INTO health_sample(sample_id,old_id,device_id,epoch,version,revision,payload,payload_cipher,source,source_device,metric,semantics,sample_start,sample_end,deleted) VALUES `
 const batchUpsertSuffix = `
 	 AS new ON DUPLICATE KEY UPDATE version=new.version,revision=new.revision,payload=new.payload,payload_cipher=new.payload_cipher,source=new.source,source_device=new.source_device,metric=new.metric,semantics=new.semantics,sample_start=new.sample_start,sample_end=new.sample_end,deleted=new.deleted`

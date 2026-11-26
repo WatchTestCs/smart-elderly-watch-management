@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"suining-care/internal/health"
 	"suining-care/internal/securestore"
 )
 
@@ -135,6 +136,9 @@ func clean(columns []Column) bool {
 }
 
 func walkAll(ctx context.Context, pool *sql.DB, box *securestore.Box, options Options, apply bool) ([]Column, error) {
+	if err := health.VerifySampleReferenceIntegrity(ctx, pool); err != nil {
+		return nil, err
+	}
 	columns := make([]Column, 0, len(targets()))
 	for _, t := range targets() {
 		column, err := walk(ctx, pool, box, t, options, apply)

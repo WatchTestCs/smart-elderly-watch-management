@@ -67,7 +67,7 @@ func LoadStatisticsSamples(ctx context.Context, store db.RowsQuerier, residentID
 			}
 		}
 		return nil
-	}, `SELECT LOWER(HEX(sample_id)),revision,payload,payload_cipher,sample_start FROM health_sample
+	}, `SELECT LOWER(HEX(sample_id)),revision,payload,`+SampleCipherSQL+`,sample_start FROM health_sample
 		 WHERE old_id=? AND `+sourceFilter+` AND NOT deleted
 		 AND sample_start<?
 		 AND (sample_start>=? OR (?='interval' AND sample_end>=?))

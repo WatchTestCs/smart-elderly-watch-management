@@ -28,6 +28,9 @@ const (
 )
 
 func (t target) condition() string {
+	if t.table == "health_sample" {
+		return "(payload_cipher IS NULL OR payload_cipher<>0x01)"
+	}
 	if t.format == coordinateProjection {
 		return "CAST(entity AS BINARY)=CAST('device_location' AS BINARY)"
 	}

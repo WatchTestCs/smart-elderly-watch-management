@@ -121,7 +121,7 @@ func buildLatest(ctx context.Context, q *sql.Tx, oldID int64, box *securestore.B
 	// nanoseconds. Read all rows at each series' maximum indexed time, then
 	// resolve the exact timestamp and revision in Go. Bound distinct series,
 	// not tied rows, and avoid an unnecessary global sort of sample IDs.
-	sql := "SELECT LOWER(HEX(s.sample_id)),s.device_id,s.epoch,s.revision,s.payload,s.payload_cipher FROM health_sample s INNER JOIN (" +
+	sql := "SELECT LOWER(HEX(s.sample_id)),s.device_id,s.epoch,s.revision,s.payload," + AliasedSampleCipherSQL + " FROM health_sample s INNER JOIN (" +
 		"SELECT sample_id,RANK() OVER (PARTITION BY " + partition + " ORDER BY sample_start DESC) AS latest_rank " +
 		"FROM health_sample WHERE old_id=? AND NOT deleted) ranked ON ranked.sample_id=s.sample_id " +
 		"WHERE ranked.latest_rank=1"
@@ -330,7 +330,7 @@ func refreshLatestSeries(ctx context.Context, tx *sql.Tx, owner Owner, item *pre
 	// maximum indexed microsecond is transferred, including all ties for
 	// the exact nanosecond/revision comparison below.
 	filter := "source=? AND source_device=? AND metric=? AND semantics=? AND BINARY source=BINARY ? AND BINARY source_device=BINARY ? AND BINARY metric=BINARY ? AND BINARY semantics=BINARY ?"
-	query := "SELECT LOWER(HEX(sample_id)),device_id,epoch,revision,payload,payload_cipher FROM health_sample WHERE old_id=? AND sample_start=(" +
+	query := "SELECT LOWER(HEX(sample_id)),device_id,epoch,revision,payload," + SampleCipherSQL + " FROM health_sample WHERE old_id=? AND sample_start=(" +
 		"SELECT sample_start FROM health_sample WHERE old_id=? AND " + filter +
 		" AND NOT deleted ORDER BY sample_start DESC LIMIT 1) AND " + filter + " AND NOT deleted ORDER BY revision DESC,sample_id DESC"
 	rows, err := tx.QueryContext(ctx, query, oldID, oldID,

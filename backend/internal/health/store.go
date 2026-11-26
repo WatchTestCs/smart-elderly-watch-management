@@ -153,11 +153,11 @@ func (batch *PreparedBatch) SaveProtected(ctx context.Context, tx *sql.Tx, o Own
 	ownerID, epoch := any(o.OldID), any(o.Epoch)
 	for _, index := range selection.final {
 		item := &input[index]
-		id := item.id
 		s := &item.sample
-		stored, err := protectProjection(box, item.payload, samplePayloadScope(id, o.OldID, item.revision))
-		if err != nil {
-			return 0, 0, err
+		stored := ProjectionPayload{JSON: item.payload}
+		if box != nil {
+			ref := sampleHistoryReference
+			stored = ProjectionPayload{Cipher: &ref}
 		}
 		args = append(args, item.key[:], ownerID, o.DeviceID, epoch, s.Version, item.revision, stored.jsonArgument(), stored.Cipher,
 			s.Source, s.SourceDevice, s.Metric, s.Semantics, s.Start.UnixMicro(), s.End.UnixMicro(), s.Deleted)
