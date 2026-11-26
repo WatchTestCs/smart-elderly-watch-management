@@ -22,6 +22,8 @@ const healthWriteQueueWait = 200 * time.Millisecond
 type healthWriteAdmission struct {
 	mu          sync.Mutex
 	active      map[string]bool
+	owners      map[int64]struct{}
+	domains     map[string]int64
 	urgent      map[string]int
 	urgentCount int
 	waiting     chan struct{}
@@ -31,6 +33,8 @@ type healthWriteAdmission struct {
 func newHealthWriteAdmission() healthWriteAdmission {
 	return healthWriteAdmission{
 		active:  make(map[string]bool, healthWriteConcurrency),
+		owners:  make(map[int64]struct{}, healthWriteConcurrency),
+		domains: make(map[string]int64, healthWriteConcurrency),
 		urgent:  make(map[string]int),
 		waiting: make(chan struct{}, healthWriteConcurrency),
 	}
@@ -39,7 +43,7 @@ func newHealthWriteAdmission() healthWriteAdmission {
 // A device can hold only one local write slot, even when several batches
 // arrive together. Other devices can use the remaining connections instead
 // of queueing behind the same MySQL row lock. The DB still serializes replicas.
-func (a *healthWriteAdmission) tryAcquire(device string) bool {
+func (a *healthWriteAdmission) tryAcquire(device string, owner ...int64) bool {
 	limit := healthWriteConcurrency
 	if a.urgentCount > 0 {
 		limit = healthWriteUrgentConcurrency
@@ -50,16 +54,23 @@ func (a *healthWriteAdmission) tryAcquire(device string) bool {
 	if _, busy := a.active[device]; busy {
 		return false
 	}
+	if len(owner) != 0 {
+		if _, busy := a.owners[owner[0]]; busy {
+			return false
+		}
+		a.owners[owner[0]] = struct{}{}
+		a.domains[device] = owner[0]
+	}
 	a.active[device] = false
 	return true
 }
 
-func (a *healthWriteAdmission) acquire(ctx context.Context, device string) bool {
+func (a *healthWriteAdmission) acquire(ctx context.Context, device string, owner ...int64) bool {
 	if ctx.Err() != nil {
 		return false
 	}
 	a.mu.Lock()
-	if a.tryAcquire(device) {
+	if a.tryAcquire(device, owner...) {
 		a.mu.Unlock()
 		return true
 	}
@@ -96,11 +107,27 @@ func (a *healthWriteAdmission) acquire(ctx context.Context, device string) bool 
 			return false
 		default:
 		}
-		if a.tryAcquire(device) {
+		if a.tryAcquire(device, owner...) {
 			a.mu.Unlock()
 			return true
 		}
 	}
+}
+
+// claimOwner upgrades a device preflight slot before opening a transaction.
+// A conflicting owner must wait without either a SQL connection or a write slot.
+func (a *healthWriteAdmission) claimOwner(ctx context.Context, device string, owner int64) bool {
+	a.mu.Lock()
+	if _, busy := a.owners[owner]; !busy && ctx.Err() == nil {
+		a.owners[owner] = struct{}{}
+		a.domains[device] = owner
+		a.mu.Unlock()
+		return true
+	}
+	delete(a.active, device)
+	a.signalLocked()
+	a.mu.Unlock()
+	return a.acquire(ctx, device, owner)
 }
 
 // prioritizeSOS is called only after the authoritative credential read.
@@ -200,6 +227,10 @@ func (a *healthWriteAdmission) releaseSOS(device string) {
 func (a *healthWriteAdmission) release(device string) {
 	a.mu.Lock()
 	delete(a.active, device)
+	if owner, ok := a.domains[device]; ok {
+		delete(a.owners, owner)
+		delete(a.domains, device)
+	}
 	a.signalLocked()
 	a.mu.Unlock()
 }

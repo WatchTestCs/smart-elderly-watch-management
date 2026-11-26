@@ -65,11 +65,44 @@ func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Reques
 		healthWriteBusy(w)
 		return
 	}
-	defer h.healthWrites.release(req.DeviceNo)
+	admitted := true
+	defer func() {
+		if admitted {
+			h.healthWrites.release(req.DeviceNo)
+		}
+	}()
+	// This read is advisory: the locked device row still authorizes every
+	// write. Resolve the owner before BEGIN so conflicting devices can queue
+	// without holding transaction connections.
+	d, code, msg, err := h.healthDeviceAuth(ctx, h.DB, req.DeviceNo, req.Secret, "设备已停用")
+	if internalError(w, err) {
+		return
+	}
+	if d == nil {
+		hwFail(w, code, msg)
+		return
+	}
+	if d.No != req.DeviceNo {
+		hwFail(w, "DEVICE_AUTH_FAILED", "设备号或密钥不正确，或设备已停用")
+		return
+	}
+	if req.BindingVersion < d.HealthEpoch {
+		response.Error(w, http.StatusConflict, string(deviceworkflow.EpochExpired), "绑定纪元已过期，请重新登录并清理旧纪元采样")
+		return
+	}
+	if d.OldID == nil || d.HealthEpoch != req.BindingVersion {
+		response.Error(w, http.StatusConflict, string(deviceworkflow.BindingChanged), "绑定已变化，请重新登录；旧绑定数据不能归入新老人")
+		return
+	}
+	expectedOwner := *d.OldID
+	admitted = h.healthWrites.claimOwner(ctx, req.DeviceNo, expectedOwner)
+	if !admitted {
+		healthWriteBusy(w)
+		return
+	}
 	priority := h.sosPriorityEnabled()
 	var tx *sql.Tx
 	var conn *sql.Conn
-	var err error
 	if priority {
 		tx, conn, err = h.healthWrites.beginPriorityTx(ctx, h.DB.DB, req.DeviceNo)
 		if errors.Is(err, errHealthWriteBusy) {
@@ -86,15 +119,6 @@ func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Reques
 		defer conn.Close()
 	}
 	defer tx.Rollback()
-	d, code, msg, err := h.healthDeviceAuth(ctx, tx, req.DeviceNo, req.Secret, "设备已停用")
-	if internalError(w, err) {
-		return
-	}
-	if d == nil {
-		hwFail(w, code, msg)
-		return
-	}
-
 	// In experimental late-lock mode, perform the expensive sample write
 	// under the owner-clock lock before locking the device row. Revalidate the
 	// full device binding under FOR UPDATE before committing anything.
@@ -116,7 +140,7 @@ func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Reques
 		response.Error(w, http.StatusConflict, string(deviceworkflow.EpochExpired), "绑定纪元已过期，请重新登录并清理旧纪元采样")
 		return
 	}
-	if d.OldID == nil || d.HealthEpoch != req.BindingVersion {
+	if d.OldID == nil || *d.OldID != expectedOwner || d.HealthEpoch != req.BindingVersion {
 		response.Error(w, http.StatusConflict, string(deviceworkflow.BindingChanged), "绑定已变化，请重新登录；旧绑定数据不能归入新老人")
 		return
 	}
@@ -125,7 +149,6 @@ func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Reques
 	if !lateDeviceLock && !acceptSignedDeviceNonce(w, ctx, tx, d.ID) {
 		return
 	}
-	expectedOwner := *d.OldID
 	owner := health.Owner{OldID: expectedOwner, DeviceID: &d.ID, Epoch: d.HealthEpoch}
 	cursor, duplicates, err := batch.SaveProtected(ctx, tx, owner, h.Box)
 	if err != nil {
@@ -170,8 +193,10 @@ func (h *Handler) healthBatchWithLockOrder(w http.ResponseWriter, r *http.Reques
 	if priority {
 		// Return the explicit connection before advancing the derived projection.
 		conn.Close()
-		h.healthWrites.finishTransaction(req.DeviceNo)
 	}
+	// The committed transaction no longer owns a write conflict domain.
+	h.healthWrites.release(req.DeviceNo)
+	admitted = false
 	h.advanceCoreAfterCommit(owner, &batch, req.Samples)
 	// This is a write acknowledgement, not the client's read cursor.
 	response.OK(w, map[string]any{"writeRevision": cursor, "accepted": len(req.Samples), "duplicates": duplicates})
