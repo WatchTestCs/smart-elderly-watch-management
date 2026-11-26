@@ -54,16 +54,27 @@ func (c ownerClock) reserve(ctx context.Context, tx *sql.Tx, oldID int64, count 
 		return 0, fmt.Errorf("health revision exceeds safe cursor range")
 	}
 	if int64(count) > end-start {
-		if err := tx.QueryRowContext(ctx, "SELECT revision FROM health_clock WHERE id=1 FOR UPDATE").Scan(&start); err != nil {
+		// UPDATE takes the global row lock and returns its previous value in
+		// the same statement's OK packet. A guarded update cannot allocate
+		// an overlapping or unsafe range. Rollback still undoes the water
+		// mark; never read the connection's persistent LAST_INSERT_ID state.
+		result, err := tx.ExecContext(ctx, "UPDATE health_clock SET revision=LEAST(?,LAST_INSERT_ID(revision)+?) WHERE id=1 AND revision>=? AND revision<=?",
+			maxSafeRevision, ownerRevisionRange, c.rangeEnd, maxSafeRevision-int64(count))
+		if err != nil {
 			return 0, err
 		}
-		if start < c.rangeEnd || start > maxSafeRevision-int64(count) {
+		affected, err := result.RowsAffected()
+		if err != nil {
+			return 0, err
+		}
+		if affected != 1 {
 			return 0, fmt.Errorf("health revision exceeds safe cursor range")
 		}
-		end = min(maxSafeRevision, start+ownerRevisionRange)
-		if _, err := tx.ExecContext(ctx, "UPDATE health_clock SET revision=? WHERE id=1", end); err != nil {
+		start, err = result.LastInsertId()
+		if err != nil {
 			return 0, err
 		}
+		end = min(maxSafeRevision, start+ownerRevisionRange)
 	}
 	_, err := tx.ExecContext(ctx, "UPDATE health_owner_clock SET revision=?,range_end=? WHERE old_id=?", start+int64(count), end, oldID)
 	return start, err
