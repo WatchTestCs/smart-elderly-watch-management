@@ -1,6 +1,7 @@
 package health
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"database/sql"
@@ -288,20 +289,34 @@ func loadStoredSamples(ctx context.Context, tx *sql.Tx, ids []any, minimumVersio
 		return nil, err
 	}
 	previous := make(map[string]storedSample, len(ids)-1)
+	var id string
+	var version, revision int64
+	var raw sql.RawBytes
+	var cipher sql.NullString
+	var scratch []byte
 	for rows.Next() {
-		var id string
-		var item storedSample
-		var stored ProjectionPayload
-		if err = rows.Scan(&id, &item.version, &item.revision, &stored.JSON, &stored.Cipher); err != nil {
+		if err = rows.Scan(&id, &version, &revision, &raw, &cipher); err != nil {
 			break
 		}
-		if item.version >= minimumVersion || stored.Cipher != nil {
-			// Authenticate protected rows even when a newer version will replace
-			// them. Missing keys or corrupt ciphertext must not allow a rewrite.
-			item.payload, err = stored.OpenSample(box, id, owner, item.revision)
-			if err != nil {
-				break
+		item := storedSample{version: version, revision: revision}
+		stored := ProjectionPayload{JSON: raw}
+		if cipher.Valid {
+			stored.Cipher = &cipher.String
+		}
+		if version >= minimumVersion {
+			item.payload, err = stored.OpenSample(box, id, owner, revision)
+			if !cipher.Valid {
+				// RawBytes expires on the next scan; conflict checks need an
+				// owned copy only for versions that can actually be compared.
+				item.payload = bytes.Clone(item.payload)
 			}
+		} else if cipher.Valid {
+			// Authenticate obsolete ciphertext without retaining plaintext.
+			// Missing keys and corrupt values must still abort the batch.
+			_, err = stored.openSample(box, id, owner, revision, &scratch)
+		}
+		if err != nil {
+			break
 		}
 		previous[id] = item
 	}
