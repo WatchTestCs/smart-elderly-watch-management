@@ -123,7 +123,7 @@ MySQL 8.4 是**唯一生产业务数据库**，保存档案、会话、告警、
 
 ## 开发与构建
 
-日常开发以 `preview` 为目标分支，`main` 对应稳定发布。完整构建要求：**PowerShell 7、Node.js 24.x、Go 1.27.4、Rust（至少 1.99.1）**；Windows 桌面打包还需 MSVC C++ Build Tools 和 Windows SDK，详见 [构建指南](docs/BUILD.md)。
+日常开发以 `preview` 为目标分支，`main` 对应稳定发布。完整构建要求：**PowerShell 7、Node.js 26.x、Go 1.27.4、Rust（至少 1.100.0）**；Windows 桌面打包还需 MSVC C++ Build Tools 和 Windows SDK，详见 [构建指南](docs/BUILD.md)。
 
 ```powershell
 git clone --branch preview https://github.com/WatchTestCs/smart-elderly-watch-management.git
