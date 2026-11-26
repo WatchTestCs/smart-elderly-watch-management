@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"database/sql/driver"
 	"errors"
 	"fmt"
 	"strconv"
@@ -78,7 +79,7 @@ func OpenMySQL(ctx context.Context, dsn string) (*Database, error) {
 	if cacheLimit == 0 {
 		pool = sql.OpenDB(connector)
 	} else {
-		pool = sql.OpenDB(statementConnector{Connector: connector, capacity: cacheLimit, readCommittedSession: true})
+		pool = sql.OpenDB(statementConnector{Connector: connector, capacity: cacheLimit, sessionIsolation: driver.IsolationLevel(sql.LevelReadCommitted)})
 	}
 	pool.SetMaxOpenConns(20)
 	// Bursty device uploads otherwise repeatedly close and reopen 15 of the
@@ -127,15 +128,25 @@ func OpenMySQL(ctx context.Context, dsn string) (*Database, error) {
 		pool.Close()
 		return nil, err
 	}
-	openDedicated := func(limit int) (*sql.DB, error) {
+	openDedicated := func(limit int, isolation sql.IsolationLevel) (*sql.DB, error) {
 		if limit == 0 {
 			return nil, nil
 		}
+		dedicatedConnector := connector
+		if isolation == sql.LevelRepeatableRead {
+			statsConfig := cfg.Clone()
+			statsConfig.Params["transaction_isolation"] = "'REPEATABLE-READ'"
+			var err error
+			dedicatedConnector, err = mysql.NewConnector(statsConfig)
+			if err != nil {
+				return nil, err
+			}
+		}
 		var dedicated *sql.DB
 		if cacheLimit > 0 {
-			dedicated = sql.OpenDB(statementConnector{Connector: connector, capacity: cacheLimit, readCommittedSession: true})
+			dedicated = sql.OpenDB(statementConnector{Connector: dedicatedConnector, capacity: cacheLimit, sessionIsolation: driver.IsolationLevel(isolation)})
 		} else {
-			dedicated = sql.OpenDB(connector)
+			dedicated = sql.OpenDB(dedicatedConnector)
 		}
 		dedicated.SetMaxOpenConns(limit)
 		dedicated.SetMaxIdleConns(limit)
@@ -148,11 +159,11 @@ func OpenMySQL(ctx context.Context, dsn string) (*Database, error) {
 		return dedicated, nil
 	}
 	d := &Database{DB: pool, healthPool: healthPool}
-	if d.statisticsPool, err = openDedicated(statisticsLimit); err != nil {
+	if d.statisticsPool, err = openDedicated(statisticsLimit, sql.LevelRepeatableRead); err != nil {
 		d.Close()
 		return nil, errors.New("MySQL statistics pool unavailable")
 	}
-	if d.sosPool, err = openDedicated(sosLimit); err != nil {
+	if d.sosPool, err = openDedicated(sosLimit, sql.LevelReadCommitted); err != nil {
 		d.Close()
 		return nil, errors.New("MySQL SOS pool unavailable")
 	}

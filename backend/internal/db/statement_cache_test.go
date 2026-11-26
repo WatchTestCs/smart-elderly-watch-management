@@ -169,7 +169,7 @@ func (w *cacheTestWire) BeginTx(_ context.Context, opts driver.TxOptions) (drive
 func TestKnownSessionIsolationAvoidsRedundantSetAndDisablesOnMutation(t *testing.T) {
 	w := &cacheTestWire{}
 	c := cacheForTest(w, 2)
-	c.readCommittedSession = true
+	c.sessionIsolation = driver.IsolationLevel(sql.LevelReadCommitted)
 	opts := driver.TxOptions{Isolation: driver.IsolationLevel(sql.LevelReadCommitted), ReadOnly: true}
 	c.BeginTx(context.Background(), opts)
 	if w.lastOptions.Isolation != driver.IsolationLevel(sql.LevelDefault) || !w.lastOptions.ReadOnly {
@@ -185,9 +185,9 @@ func TestKnownSessionIsolationAvoidsRedundantSetAndDisablesOnMutation(t *testing
 		t.Fatal("session mutation did not restore explicit isolation")
 	}
 	for _, q := range []string{"/* session */ SET sql_mode=''", "CALL session_change()"} {
-		c.readCommittedSession = true
+		c.sessionIsolation = driver.IsolationLevel(sql.LevelReadCommitted)
 		c.PrepareContext(context.Background(), q)
-		if c.readCommittedSession {
+		if c.sessionIsolation != driver.IsolationLevel(sql.LevelDefault) {
 			t.Fatal("explicit prepare retained unsafe assumption", q)
 		}
 	}
