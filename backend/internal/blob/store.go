@@ -205,11 +205,11 @@ func (s *Encrypted) Put(ctx context.Context, key string, data []byte) error {
 	if len(data) > MaxPlainBytes {
 		return ErrIntegrity
 	}
-	sealed, err := s.Box.SealBytes(data, "image:"+key)
+	sealed, err := s.Box.SealEncodedBytes(data, "image:"+key)
 	if err != nil {
 		return err
 	}
-	return s.Store.Put(ctx, key, []byte(sealed))
+	return s.Store.Put(ctx, key, sealed)
 }
 func (s *Encrypted) Get(ctx context.Context, key string) ([]byte, error) {
 	data, err := s.Store.Get(ctx, key)
@@ -226,7 +226,7 @@ func (s *Encrypted) decode(key string, data []byte) ([]byte, error) {
 		}
 		return nil, ErrIntegrity
 	}
-	plain, err := s.Box.OpenBytes(string(data), "image:"+key)
+	plain, err := s.Box.OpenEncodedBytes(data, "image:"+key)
 	if err != nil {
 		return nil, ErrIntegrity
 	}

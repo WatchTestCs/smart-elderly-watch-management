@@ -79,8 +79,14 @@ func (b *Box) Seal(text, scope string) (string, error) {
 // SealBytes accepts an already encoded payload without a string round trip.
 // The authenticated envelope format and fresh random nonce are unchanged.
 func (b *Box) SealBytes(text []byte, scope string) (string, error) {
+	encoded, err := b.SealEncodedBytes(text, scope)
+	return string(encoded), err
+}
+
+// SealEncodedBytes returns an owned envelope for byte-oriented storage.
+func (b *Box) SealEncodedBytes(text []byte, scope string) ([]byte, error) {
 	if b == nil {
-		return "", errors.New("encryption key is not configured")
+		return nil, errors.New("encryption key is not configured")
 	}
 	n := b.aead.NonceSize()
 	// Bound the fast-path capacity arithmetic. Larger inputs retain the
@@ -92,7 +98,7 @@ func (b *Box) SealBytes(text []byte, scope string) (string, error) {
 		nonce = make([]byte, n)
 	}
 	if _, err := rand.Read(nonce); err != nil {
-		return "", err
+		return nil, err
 	}
 	prefix := Prefix
 	if b.active != "" {
@@ -101,11 +107,11 @@ func (b *Box) SealBytes(text []byte, scope string) (string, error) {
 	}
 	data := b.aead.Seal(nonce, nonce, text, []byte(scope))
 	if len(data) > (16<<20)+64 || len(prefix) > 128 {
-		return prefix + base64.RawStdEncoding.EncodeToString(data), nil
+		return base64.RawStdEncoding.AppendEncode([]byte(prefix), data), nil
 	}
 	encoded := make([]byte, len(prefix), len(prefix)+base64.RawStdEncoding.EncodedLen(len(data)))
 	copy(encoded, prefix)
-	return string(base64.RawStdEncoding.AppendEncode(encoded, data)), nil
+	return base64.RawStdEncoding.AppendEncode(encoded, data), nil
 }
 func (b *Box) Open(text, scope string) (string, error) {
 	plain, err := b.OpenBytes(text, scope)
@@ -122,17 +128,35 @@ func (b *Box) OpenBytes(text, scope string) ([]byte, error) {
 // scratch storage. Its result is valid only until the next use of scratch.
 // Scratch must be private to one sequential consumer, never shared or pooled.
 func (b *Box) OpenBytesReuse(text, scope string, scratch *[]byte) ([]byte, error) {
-	if b == nil || !strings.HasPrefix(text, Prefix) {
+	return openEncoded(b, text, scope, scratch)
+}
+
+// OpenEncodedBytes authenticates a byte-oriented envelope without copying
+// its encoded contents to a string. The input is never modified.
+func (b *Box) OpenEncodedBytes(text []byte, scope string) ([]byte, error) {
+	return openEncoded(b, text, scope, nil)
+}
+
+func openEncoded[T ~string | ~[]byte](b *Box, text T, scope string, scratch *[]byte) ([]byte, error) {
+	if b == nil || len(text) < len(Prefix) || string(text[:len(Prefix)]) != Prefix {
 		return nil, errors.New("encrypted value or key is missing")
 	}
-	encoded := strings.TrimPrefix(text, Prefix)
+	encoded := text[len(Prefix):]
 	aead := b.aead
-	if strings.HasPrefix(encoded, "v2:") {
-		id, payload, ok := strings.Cut(strings.TrimPrefix(encoded, "v2:"), ":")
-		if !ok || b.readers[id] == nil {
+	if len(encoded) >= 3 && string(encoded[:3]) == "v2:" {
+		// Key IDs are validated to at most 32 ASCII bytes when loading a keyring.
+		end := 3
+		for end < len(encoded) && end <= 35 && encoded[end] != ':' {
+			end++
+		}
+		if end == len(encoded) || end > 35 {
 			return nil, errors.New("encrypted value key version is unavailable")
 		}
-		aead, encoded, scope = b.readers[id], payload, scope+"\x00"+id
+		id := string(encoded[3:end])
+		if b.readers[id] == nil {
+			return nil, errors.New("encrypted value key version is unavailable")
+		}
+		aead, encoded, scope = b.readers[id], encoded[end+1:], scope+"\x00"+id
 	} else if len(b.readers) != 0 {
 		// Legacy envelopes have no key ID. Bounded keyrings can read them
 		// during migration; new writes always identify and authenticate the ID.
@@ -146,11 +170,13 @@ func (b *Box) OpenBytesReuse(text, scope string, scratch *[]byte) ([]byte, error
 	return openEnvelope(aead, encoded, scope, scratch)
 }
 
-func openEnvelope(aead cipher.AEAD, encoded, scope string, scratch *[]byte) ([]byte, error) {
+func openEnvelope[T ~string | ~[]byte](aead cipher.AEAD, encoded T, scope string, scratch *[]byte) ([]byte, error) {
 	var data []byte
 	var err error
 	if scratch == nil {
-		data, err = base64.RawStdEncoding.Strict().DecodeString(encoded)
+		data = make([]byte, base64.RawStdEncoding.DecodedLen(len(encoded)))
+		n, decodeErr := base64.RawStdEncoding.Strict().Decode(data, []byte(encoded))
+		data, err = data[:n], decodeErr
 	} else {
 		data, err = base64.RawStdEncoding.Strict().AppendDecode((*scratch)[:0], []byte(encoded))
 		*scratch = data[:0]

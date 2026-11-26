@@ -21,7 +21,7 @@ func ImportLegacy(ctx context.Context, database *sql.DB, box *securestore.Box, k
 	}
 	var plain []byte
 	if bytes.HasPrefix(source, []byte(securestore.Prefix)) {
-		opened, err := box.OpenBytes(string(source), "image:"+key)
+		opened, err := box.OpenEncodedBytes(source, "image:"+key)
 		if err != nil {
 			return false, ErrIntegrity
 		}
@@ -58,7 +58,7 @@ func ImportLegacy(ctx context.Context, database *sql.DB, box *securestore.Box, k
 		if !bytes.HasPrefix(existing, []byte(securestore.Prefix)) {
 			return false, ErrIntegrity
 		}
-		opened, openErr := box.OpenBytes(string(existing), "image:"+key)
+		opened, openErr := box.OpenEncodedBytes(existing, "image:"+key)
 		if openErr != nil || Digest(opened) != digest || len(opened) != len(plain) {
 			return false, ErrIntegrity
 		}
@@ -72,7 +72,7 @@ func ImportLegacy(ctx context.Context, database *sql.DB, box *securestore.Box, k
 		return false, nil
 	}
 
-	sealed, err := box.SealBytes(plain, "image:"+key)
+	sealed, err := box.SealEncodedBytes(plain, "image:"+key)
 	if err != nil {
 		return false, err
 	}
@@ -84,7 +84,7 @@ func ImportLegacy(ctx context.Context, database *sql.DB, box *securestore.Box, k
 			return false, err
 		}
 	}
-	if _, err = tx.ExecContext(ctx, "INSERT INTO image_payload(name,payload) VALUES(?,?)", key, []byte(sealed)); err != nil {
+	if _, err = tx.ExecContext(ctx, "INSERT INTO image_payload(name,payload) VALUES(?,?)", key, sealed); err != nil {
 		return false, err
 	}
 	return true, tx.Commit()
