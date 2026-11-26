@@ -78,7 +78,7 @@ func DumpMySQL(t testing.TB, ctx context.Context, pool *db.Database) []byte {
 	t.Helper()
 	name, server := fixtureIdentity(t, ctx, pool)
 	client := mysqlClient(t, ctx, server)
-	archive := client("mysqldump", []string{"--single-transaction", "--quick", "--routines", "--triggers", "--events", "--hex-blob",
+	archive := client("mysqldump", []string{"--single-transaction", "--quick", "--routines", "--triggers", "--hex-blob",
 		"--no-tablespaces", "--set-gtid-purged=OFF", "--column-statistics=0", name}, nil)
 	if len(archive) == 0 {
 		t.Fatal("fixture dump did not capture SQL")
