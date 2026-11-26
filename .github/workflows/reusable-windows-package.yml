@@ -73,6 +73,8 @@ jobs:
           git rev-parse HEAD | Set-Content evidence/ci/windows-desktop/source-sha.txt
           rustup toolchain install 1.100.0 --profile minimal --no-self-update
           if ($LASTEXITCODE) { throw 'Rust toolchain setup failed' }
+          $env:RUSTUP_TOOLCHAIN = '1.100.0'
+          'RUSTUP_TOOLCHAIN=1.100.0' >> $env:GITHUB_ENV
           rustc --version | Set-Content evidence/ci/windows-desktop/rust-version.txt
           ./desktop/build.ps1 *>&1 | Tee-Object evidence/ci/windows-desktop/build.log
           python ./desktop/build-fontless.py *>&1 | Tee-Object evidence/ci/windows-desktop/fontless.log
