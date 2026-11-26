@@ -30,13 +30,31 @@ func (s *databaseService) serveServiceStatus(w http.ResponseWriter, r *http.Requ
 		response.Error(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "服务状态接口仅支持 GET")
 		return
 	}
+	// Keep readiness, analytics configured state, and draining on one snapshot.
+	draining := s.draining.Load()
+	ready := api != nil && !draining
 	w.Header().Set("Cache-Control", "no-store")
 	response.JSON(w, http.StatusOK, map[string]any{
-		"databaseReady": api != nil,
+		"databaseReady": ready,
+		"draining":      draining,
 		"primaryEngine": "mysql",
 		"configError":   s.configErrorText(),
-		"analytics":     map[string]bool{"configured": api != nil, "ready": api != nil},
+		"analytics":     map[string]bool{"configured": api != nil, "ready": ready},
 	})
+}
+
+func (s *databaseService) serveReadyz(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.Header().Set("Allow", http.MethodGet)
+		response.Error(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "就绪探针仅支持 GET")
+		return
+	}
+	w.Header().Set("Cache-Control", "no-store")
+	if !s.ready() {
+		response.JSON(w, http.StatusServiceUnavailable, map[string]any{"ready": false, "message": "服务尚未就绪或正在停止"})
+		return
+	}
+	response.JSON(w, http.StatusOK, map[string]any{"ready": true})
 }
 
 func isLocalBypassRoute(r *http.Request) bool {
@@ -56,6 +74,10 @@ func (s *databaseService) middleware(local http.Handler) http.Handler {
 			s.serveMetrics(w, r)
 			return
 		}
+		if r.URL.Path == "/readyz" {
+			s.serveReadyz(w, r)
+			return
+		}
 		api := s.api.Load()
 		if r.URL.Path == "/api/v1/service/status" {
 			s.serveServiceStatus(w, r, api)
@@ -65,12 +87,12 @@ func (s *databaseService) middleware(local http.Handler) http.Handler {
 			local.ServeHTTP(w, r)
 			return
 		}
-		if api == nil {
+		if api == nil || s.draining.Load() {
 			w.Header().Set("Retry-After", "3")
 			w.Header().Set("Cache-Control", "no-store")
 			response.JSON(w, http.StatusServiceUnavailable, map[string]any{
 				"code":    "DATABASE_UNAVAILABLE",
-				"message": "数据库尚未连接，请稍后重试",
+				"message": "数据库尚未连接或服务正在停止，请稍后重试",
 			})
 			return
 		}

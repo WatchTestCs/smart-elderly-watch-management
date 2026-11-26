@@ -117,7 +117,7 @@ flowchart LR
 
 MySQL 8.4 is the **only production application database** for resident data, sessions, alerts, health records, audit events, and images. The desktop verifies the Go binary SHA-256 before launching it; the bootstrap token passes through the process environment, not the web page. The local desktop server binds to loopback and is not a public endpoint for watches.
 
-`/healthz` indicates process liveness, while `/api/v1/service/status` reports database readiness. See the [architecture guide](docs/ARCHITECTURE.md) for the trust boundaries, permissions, and migration design.
+`/healthz` indicates process liveness. `/readyz` returns 200 only when the database is ready and the service is not draining; `/api/v1/service/status` retains its HTTP 200 diagnostic contract. See the [architecture guide](docs/ARCHITECTURE.md) for the trust boundaries, permissions, and migration design.
 
 ## Development
 
