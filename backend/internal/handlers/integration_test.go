@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"sync"
 	"testing"
@@ -27,6 +28,9 @@ import (
 // Each test uses a separate temporary schema in a dedicated test database.
 func testDatabase(t *testing.T) *dbstore.Database {
 	t.Helper()
+	if os.Getenv("TEST_MYSQL_FIXTURE_SNAPSHOT") == "1" {
+		return dbtest.MySQLSnapshot(t)
+	}
 	return dbtest.MySQL(t)
 }
 
@@ -75,7 +79,7 @@ func seedCareAdminDuty(t *testing.T, pool *dbstore.Database, adminID int64, duty
 }
 
 func TestIntegrationMigrationsAndBindingConstraint(t *testing.T) {
-	pool := testDatabase(t)
+	pool := dbtest.MySQL(t)
 	seedCareAdminDuty(t, pool, 11, "supervisor")
 	ctx := context.Background()
 	// Applied migrations can be rerun concurrently without duplicate tracking rows.

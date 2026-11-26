@@ -14,6 +14,15 @@ import (
 
 func MySQL(t testing.TB) *db.Database {
 	t.Helper()
+	pool := emptyMySQL(t)
+	if err := db.MigrateMySQL(context.Background(), pool); err != nil {
+		t.Fatal(err)
+	}
+	return pool
+}
+
+func emptyMySQL(t testing.TB) *db.Database {
+	t.Helper()
 	dsn := os.Getenv("TEST_MYSQL_DSN")
 	if dsn == "" {
 		t.Skip("TEST_MYSQL_DSN not set")
@@ -46,9 +55,6 @@ func MySQL(t testing.TB) *db.Database {
 	cfg.DBName = name
 	pool, err = db.OpenMySQL(context.Background(), cfg.FormatDSN())
 	if err != nil {
-		t.Fatal(err)
-	}
-	if err = db.MigrateMySQL(context.Background(), pool); err != nil {
 		t.Fatal(err)
 	}
 	return pool
