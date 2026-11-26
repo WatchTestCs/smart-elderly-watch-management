@@ -12,7 +12,7 @@ import (
 )
 
 func TestWorkerDrainsReadyBacklogWithoutOneSecondPerMessage(t *testing.T) {
-	p := dbtest.MySQL(t)
+	p := dbtest.Fixture(t)
 	ctx := context.Background()
 	tx, err := p.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
@@ -60,7 +60,7 @@ func TestWorkerDrainsReadyBacklogWithoutOneSecondPerMessage(t *testing.T) {
 func TestShortCycleLeavesExternalNotificationUnclaimed(t *testing.T) {
 	t.Setenv("TENCENT_SMS_APPID", "")
 	t.Setenv("NOTIFY_ALLOW_HTTP_TEST", "1")
-	p := dbtest.MySQL(t)
+	p := dbtest.Fixture(t)
 	ctx := context.Background()
 	tx, err := p.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {

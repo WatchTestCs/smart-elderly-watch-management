@@ -40,7 +40,7 @@ func TestCaregiverScopeUsesIndexedVisibilityBucket(t *testing.T) {
 }
 
 func TestNotificationStatePriorityInMySQL(t *testing.T) {
-	database := dbtest.MySQL(t)
+	database := dbtest.Fixture(t)
 	for _, tc := range []struct {
 		statuses string
 		want     string

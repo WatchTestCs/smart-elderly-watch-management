@@ -27,7 +27,7 @@ import (
 // Each test uses a separate temporary schema in a dedicated test database.
 func testDatabase(t *testing.T) *dbstore.Database {
 	t.Helper()
-	return dbtest.MySQL(t)
+	return dbtest.Fixture(t)
 }
 
 func api(t *testing.T, handler http.HandlerFunc, body any) map[string]any {
@@ -75,7 +75,7 @@ func seedCareAdminDuty(t *testing.T, pool *dbstore.Database, adminID int64, duty
 }
 
 func TestIntegrationMigrationsAndBindingConstraint(t *testing.T) {
-	pool := testDatabase(t)
+	pool := dbtest.MySQL(t)
 	seedCareAdminDuty(t, pool, 11, "supervisor")
 	ctx := context.Background()
 	// Applied migrations can be rerun concurrently without duplicate tracking rows.

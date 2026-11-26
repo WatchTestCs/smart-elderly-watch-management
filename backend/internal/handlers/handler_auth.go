@@ -39,21 +39,34 @@ func (h *Handler) MountLocalLogout(mux *http.ServeMux) {
 
 // sessionInfo 处理 GET /api/v1/auth/session：公开；无会话则建匿名会话。
 func (h *Handler) sessionInfo(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-store")
 	ctx := r.Context()
+	sess := h.Sessions.FromRequest(r)
+	if sess == nil {
+		release, ok := tryAdmission(bootstrapSlots)
+		if !ok {
+			authenticationBusy(w, "suining_auth_bootstrap_busy_total")
+			return
+		}
+		defer release()
+		if !anonymousSessions.allow(time.Now()) {
+			authenticationBusy(w, "suining_auth_bootstrap_rate_denied_total")
+			return
+		}
+	}
 	var hasUsers bool
 	if internalError(w, h.DB.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM users LIMIT 1)").Scan(&hasUsers)) {
 		return
 	}
-
-	sess := h.Sessions.FromRequest(r)
 	if sess == nil {
-		sess = h.Sessions.CreateContext(r.Context(), session.Principal{})
+		sess = h.Sessions.CreateContext(ctx, session.Principal{})
 		if sess == nil {
 			response.JSON(w, 503, map[string]any{"message": "会话存储不可用"})
 			return
 		}
 		session.SetCookie(w, sess.ID, h.CookieSecure)
 	}
+
 	authenticated := sess.Principal.Role == auth.RoleAdmin || sess.Principal.Role == auth.RoleFamily
 	account := map[string]any{}
 	if authenticated {
@@ -86,6 +99,7 @@ func (h *Handler) sessionInfo(w http.ResponseWriter, r *http.Request) {
 
 // login 处理 POST /api/v1/auth/login：公开；先查 users（管理员），再查 family（家属）。
 func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-store")
 	m, ok := bodyMap(w, r)
 	if !ok {
 		return
@@ -97,6 +111,15 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if r.Context().Err() != nil {
+		return
+	}
+	release, ok := tryAdmission(loginAdmission())
+	if !ok {
+		authenticationBusy(w, "suining_auth_login_busy_total")
+		return
+	}
+	defer release()
 	if decision := h.Risk.BeforeLogin(h.clientIP(r), phone); !decision.Allowed() {
 		h.Risk.RecordDenied(h.clientIP(r), phone, "login_restricted", r.UserAgent(),
 			r.Header.Get("Sec-CH-UA-Model"), r.Header.Get("X-App-Device-ID"))

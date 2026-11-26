@@ -11,7 +11,7 @@ import (
 )
 
 func TestConcurrentAdministratorSuspensionPreservesSupervisor(t *testing.T) {
-	store := dbtest.MySQL(t)
+	store := dbtest.Fixture(t)
 	ctx := context.Background()
 	if _, err := store.ExecContext(ctx, "INSERT INTO users(user_id,user_name,role) VALUES(71,'a71','1'),(72,'a72','1')"); err != nil {
 		t.Fatal(err)

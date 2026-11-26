@@ -36,7 +36,7 @@ func assertFamilyPhoneUnchanged(t *testing.T, h *Handler) {
 	}
 }
 
-func TestContinuousFamilyPhoneFormatValidation(t *testing.T) {
+func TestContinuousFamilyPhoneValidation(t *testing.T) {
 	h := familyPhoneValidationHandler(t)
 	admin := session.Principal{Role: auth.RoleAdmin, ID: 11}
 	update := withHealthPrincipal(h, admin, h.familyUpdate)
@@ -58,11 +58,11 @@ func TestContinuousFamilyPhoneFormatValidation(t *testing.T) {
 	if err := h.DB.QueryRowContext(context.Background(), "SELECT family_id FROM oldperson WHERE old_id=2").Scan(&bound); err != nil || bound != nil {
 		t.Fatalf("invalid phone changed elder binding: family=%v err=%v", bound, err)
 	}
-}
 
-func TestContinuousFamilyPhoneEditRejectsOtherAccounts(t *testing.T) {
-	h := familyPhoneValidationHandler(t)
-	update := withHealthPrincipal(h, session.Principal{Role: auth.RoleAdmin, ID: 11}, h.familyUpdate)
+	if t.Failed() {
+		return
+	}
+	// Rejected formats leave the original account intact for the conflict and successful-update checks.
 	mustExec(t, h.DB, "INSERT INTO family(family_name,family_phone) VALUES('另一家属','13800000002')")
 	mustExec(t, h.DB, "INSERT INTO users(user_id,user_name,user_phone,password,role) SELECT 1,'管理员','13800000003',family_password,'1' FROM family WHERE family_id=1")
 	for _, phone := range []string{"13800000002", "13800000003"} {

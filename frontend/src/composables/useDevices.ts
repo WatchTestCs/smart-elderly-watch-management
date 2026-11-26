@@ -1,4 +1,4 @@
-import { computed, onBeforeUnmount, onMounted, reactive, toRefs, watch } from 'vue'
+import { onBeforeUnmount, onMounted, reactive, toRefs, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { accepted, api, type Envelope } from '../api/client'
@@ -19,9 +19,7 @@ const post = <T extends object = Record<string, never>>(path: string, params: Re
 export function useDevices() {
   const router = useRouter()
   const state = reactive<DeviceState>(createDeviceState())
-  const visibleDevices = computed(() => state.deviceList)
-  const onlineCount = computed(() => state.serverOnlineCount)
-  const { openBindCodeDialog, loadBindCodes, createBindCode, deleteBindCode } = useDeviceBindings(state, post)
+  const { openBindCodeDialog, createBindCode, deleteBindCode } = useDeviceBindings(state, post)
   const { openWorkbench, closeWorkbench, disposeWorkbench } = useDeviceWorkbench(state, async (deviceId, kind, signal) => {
     const { data } = await api.post<Envelope & AlertDetailResponse>(
       '/api/v1/device/alertDetail',
@@ -376,11 +374,10 @@ export function useDevices() {
     stopTimer()
   })
   return {
-    ...toRefs(state), visibleDevices, onlineCount,
-    loadDevices, loadAlertCounts, scheduleFilter, changeDevicePage, handleDeviceCommand,
+    ...toRefs(state),
+    loadDevices, changeDevicePage, handleDeviceCommand,
     alertOf, showAlert, retryAlertDetail, resolveAlert, resolveAlertRow, isResolvingAlert, openWorkbench, closeWorkbench, gotoPage,
-    loadOldPeople, startTimer, stopTimer, handleVisibilityChange,
-    closeCreateDialog, createDevice, openBindCodeDialog, loadBindCodes,
+    closeCreateDialog, createDevice, openBindCodeDialog,
     createBindCode, deleteBindCode, resetSecret, unbind, deleteDevice, copy
   }
 }

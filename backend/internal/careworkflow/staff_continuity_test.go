@@ -11,7 +11,7 @@ import (
 )
 
 func TestConcurrentDutyReassignmentsPreserveSupervisor(t *testing.T) {
-	pool := dbtest.MySQL(t)
+	pool := dbtest.Fixture(t)
 	ctx := context.Background()
 	for _, query := range []string{
 		"INSERT INTO users(user_id,user_name,role) VALUES(71,'sup71','1'),(72,'sup72','1')",

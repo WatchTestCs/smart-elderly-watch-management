@@ -2,7 +2,10 @@ package session_test
 
 import (
 	"context"
+	"crypto/sha256"
+	"database/sql"
 	"encoding/base64"
+	"encoding/hex"
 	"strings"
 	"suining-care/internal/db/dbtest"
 	"suining-care/internal/securestore"
@@ -12,7 +15,7 @@ import (
 )
 
 func TestDatabaseSessionsShareRevokeAndFactorGeneration(t *testing.T) {
-	pool := dbtest.MySQL(t)
+	pool := dbtest.Fixture(t)
 	box, _ := securestore.New(base64.StdEncoding.EncodeToString(make([]byte, 32)))
 	a, b := session.NewStore(time.Hour), session.NewStore(time.Hour)
 	t.Cleanup(a.Close)
@@ -78,27 +81,30 @@ func TestDatabaseSessionsShareRevokeAndFactorGeneration(t *testing.T) {
 	if late == nil || b.Get(late.ID) != nil {
 		t.Fatal("session creation racing factor disable retained the old generation")
 	}
+	t.Run("identity_and_ciphertext", func(t *testing.T) {
+		checkSessionIdentity(t, pool.DB, a)
+	})
 	pool.Close()
 	if a.Create(session.Principal{}) != nil || b.Get(old.ID) != nil || a.Destroy(old.ID) {
 		t.Fatal("storage failure did not fail closed")
 	}
 }
 
-func TestDatabaseSessionRejectsMismatchedIdentity(t *testing.T) {
-	pool := dbtest.MySQL(t)
-	box, _ := securestore.New(base64.StdEncoding.EncodeToString(make([]byte, 32)))
-	store := session.NewStore(time.Hour)
-	t.Cleanup(store.Close)
-	store.UseDatabase(pool.DB, box)
+func checkSessionIdentity(t *testing.T, pool *sql.DB, store *session.Store) {
+	t.Helper()
+	hash := func(id string) string {
+		sum := sha256.Sum256([]byte(id))
+		return hex.EncodeToString(sum[:])
+	}
 	for _, identity := range []struct {
 		role string
 		id   int64
 	}{{"FAMILY", 1}, {"ADMIN", 2}} {
 		sess := store.Create(session.Principal{Role: "ADMIN", ID: 1})
-		if sess == nil {
-			t.Fatal("create")
+		if sess == nil || store.Get(sess.ID) == nil {
+			t.Fatal("valid session not readable before tampering")
 		}
-		if _, err := pool.ExecContext(context.Background(), "UPDATE web_session SET role=?,actor_id=?", identity.role, identity.id); err != nil {
+		if _, err := pool.ExecContext(context.Background(), "UPDATE web_session SET role=?,actor_id=? WHERE id_hash=?", identity.role, identity.id, hash(sess.ID)); err != nil {
 			t.Fatal(err)
 		}
 		if store.Get(sess.ID) != nil {
@@ -106,10 +112,10 @@ func TestDatabaseSessionRejectsMismatchedIdentity(t *testing.T) {
 		}
 	}
 	sess := store.Create(session.Principal{Role: "ADMIN", ID: 1})
-	if sess == nil {
-		t.Fatal("create")
+	if sess == nil || store.Get(sess.ID) == nil {
+		t.Fatal("valid session not readable before tampering")
 	}
-	if _, err := pool.ExecContext(context.Background(), "UPDATE web_session SET payload='corrupt'"); err != nil {
+	if _, err := pool.ExecContext(context.Background(), "UPDATE web_session SET payload='corrupt' WHERE id_hash=?", hash(sess.ID)); err != nil {
 		t.Fatal(err)
 	}
 	if store.Get(sess.ID) != nil {

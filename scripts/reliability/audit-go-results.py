@@ -31,8 +31,6 @@ def audit(path, mode):
             explanation = None
             if any(marker in reason for marker in ("opt-in", "set RUN_", "set NOTIFY_PERF=1")):
                 explanation = "Dedicated optional load/A-B experiment; excluded from deterministic regression gate."
-            elif mode == "postgres" and any(marker in reason for marker in ("TEST_MYSQL_DSN not set", "MySQL row lock", "MySQL pool admission")):
-                explanation = "MySQL-only case; mandatory in the paired MySQL suite."
             skips.append({"package": key[0], "test": key[1], "reason": reason, "explanation": explanation})
             if explanation is None:
                 failures.append({"package": key[0], "test": key[1], "error": "unapproved skip"})
@@ -52,8 +50,6 @@ def audit(path, mode):
         required |= {"TestGuardianContactProtectedMySQL", "TestGuardianContactAtomicFailureMySQL", "TestGuardianContactRotationMySQL", "TestGuardianContactFirstWritersMySQL", "TestGuardianContactBackfillMySQL", "TestGuardianContactPreflightMySQL", "TestGuardianContactBackfillLocksMySQL", "TestGuardianContactCommandMySQL"}
         required |= {"TestSocialPhonesAreProtectedMySQL", "TestSocialPhoneBackfillMySQL", "TestSocialPhoneBackfillLocksMySQL", "TestSocialPhonePreflightMySQL", "TestSocialPhoneFailClosedMySQL", "TestSocialPhoneConcurrentVotesMySQL", "TestSocialPhoneCommandMySQL", "TestSocialPhoneImageRollbackMySQL", "TestSocialPhoneRekeyMySQL"}
         required |= {"TestCapabilitiesRollbackAndReapply", "TestHighCardinalityHardCaps256Clients", "TestKeyRotationAndRetirementFailClosed", "TestRekeyMySQL", "TestAdministratorPhoneRekeyMySQL", "TestFamilyPhoneBackfillMySQL", "TestFamilyPhoneCommandMySQL", "TestFamilyPhoneRecipientsLegacyAndProtectedMySQL", "TestProtectedFamilyLifecycleMySQL", "TestMySQLImageStorageAndLegacyImport", "TestMySQLImageTwoInstancesAndRestoredPayload", "TestCareFullHTTPChainAfterRealGatewayTimeout"}
-    else:
-        required.add("TestProjectionRekeyPostgres")
     for name in sorted(required - passed):
         failures.append({"test": name, "error": "required test did not pass"})
     return {"mode": mode, "counts": dict(counts), "skips": skips, "failures": failures, "accepted": not failures}
@@ -62,7 +58,7 @@ def audit(path, mode):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("log")
-    parser.add_argument("--mode", required=True, choices=("mysql", "postgres"))
+    parser.add_argument("--mode", required=True, choices=("mysql",))
     parser.add_argument("--output", required=True)
     args = parser.parse_args()
     result = audit(args.log, args.mode)

@@ -85,25 +85,53 @@ func TestSignedTelemetryReplayAcrossTransactions(t *testing.T) {
 	if fresh := send("test-nonce-fresh-0123456789"); fresh.Code != http.StatusOK {
 		t.Fatalf("fresh report: %d %s", fresh.Code, fresh.Body.String())
 	}
-}
+	// Fail after the signed nonce and business writes have been staged.
+	// A failed receipt insert must roll all three back so the exact same
+	// signed report can succeed once the storage fault is removed.
+	mustExec(t, pool, "CREATE TRIGGER test_receipt_failure BEFORE INSERT ON device_report_receipt FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='synthetic receipt failure'")
+	body["requestId"] = "signed-atomic-receipt"
+	failureNonce := "test-nonce-failure-0123456789"
+	assertCounts := func(wantSamples, wantNonces, wantReceipts int) {
+		t.Helper()
+		for _, check := range []struct {
+			query string
+			want  int
+		}{
+			{"SELECT COUNT(*) FROM ratepre WHERE device_id=1", wantSamples},
+			{"SELECT COUNT(*) FROM device_request_nonces WHERE device_id=1", wantNonces},
+			{"SELECT COUNT(*) FROM device_report_receipt WHERE device_id=1", wantReceipts},
+		} {
+			var n int
+			if err := pool.QueryRowContext(context.Background(), check.query).Scan(&n); err != nil || n != check.want {
+				t.Fatalf("%s: got %d want %d err=%v", check.query, n, check.want, err)
+			}
+		}
+	}
+	assertCounts(2, 2, 0)
+	if failed := send(failureNonce); failed.Code != http.StatusInternalServerError {
+		t.Fatalf("receipt failure status=%d %s", failed.Code, failed.Body.String())
+	}
+	assertCounts(2, 2, 0)
+	mustExec(t, pool, "DROP TRIGGER test_receipt_failure")
+	if recovered := send(failureNonce); recovered.Code != http.StatusOK {
+		t.Fatalf("retry after rollback=%d %s", recovered.Code, recovered.Body.String())
+	}
+	assertCounts(3, 3, 1)
 
-func TestSignedSOSIdempotentRetry(t *testing.T) {
-	t.Setenv("SUINING_REQUIRE_SIGNED_DEVICE", "1")
-	pool := testDatabase(t)
-	seedDevice(t, pool)
-	h := testHandler(t, pool)
-	body := map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "requestId": "signed-sos-retry", "bindingVersion": 1}
-	send := func() *httptest.ResponseRecorder {
-		w := httptest.NewRecorder()
-		h.deviceSos(w, signedTestRequest(t, "/api/v1/device/sos", body, "sos-nonce-retry-0123456789", time.Now()))
-		return w
-	}
-	first, again := send(), send()
-	if first.Code != http.StatusOK || again.Code != http.StatusOK {
-		t.Fatalf("SOS retry: initial=%d %s repeat=%d %s", first.Code, first.Body.String(), again.Code, again.Body.String())
-	}
-	var incidents int
-	if err := pool.QueryRowContext(context.Background(), "SELECT count(*) FROM care_incident").Scan(&incidents); err != nil || incidents != 1 {
-		t.Fatalf("SOS retry wrote %d incidents: %v", incidents, err)
-	}
+	t.Run("SOS_idempotent_retry", func(t *testing.T) {
+		body := map[string]any{"deviceNo": "WATCH001", "secret": testSecret, "requestId": "signed-sos-retry", "bindingVersion": 1}
+		send := func() *httptest.ResponseRecorder {
+			w := httptest.NewRecorder()
+			h.deviceSos(w, signedTestRequest(t, "/api/v1/device/sos", body, "sos-nonce-retry-0123456789", time.Now()))
+			return w
+		}
+		first, again := send(), send()
+		if first.Code != http.StatusOK || again.Code != http.StatusOK {
+			t.Fatalf("SOS retry: initial=%d %s repeat=%d %s", first.Code, first.Body.String(), again.Code, again.Body.String())
+		}
+		var incidents int
+		if err := pool.QueryRowContext(context.Background(), "SELECT count(*) FROM care_incident").Scan(&incidents); err != nil || incidents != 1 {
+			t.Fatalf("SOS retry wrote %d incidents: %v", incidents, err)
+		}
+	})
 }

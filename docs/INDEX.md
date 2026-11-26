@@ -17,7 +17,7 @@
 | --- | --- |
 | MySQL 8.4 单库部署、停止旧系统、迁移与恢复 | [MySQL 单库迁移](MYSQL_ONLY_MIGRATION.md) |
 | 独立常驻服务与真实照护告警要求 | [照护服务部署](CARE_SERVICE_DEPLOYMENT.md) |
-| 业务数据库、加密密钥、图片 BLOB 的备份恢复 | [备份与恢复](runbooks/backup-restore.md) |
+| 业务数据库、加密密钥、图片 BLOB 的备份恢复 | [备份与恢复](runbooks/backup-restore.md) · [图片存储运维](reliability/storage-operations.md) |
 | 事故响应与告警演练 | [协调恢复](reliability/coordinated-recovery.md) · [SOS 故障演练](reliability/sos-fault-drill.md) |
 | 密钥与数据保护 | [数据保护](reliability/data-protection.md) · [密钥轮换](reliability/rekey-data.md) |
 

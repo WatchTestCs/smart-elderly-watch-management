@@ -8,12 +8,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"net"
 	"os"
-	"os/exec"
 	"reflect"
-	"regexp"
-	"strings"
 	"testing"
 	"time"
 
@@ -22,12 +18,13 @@ import (
 	"suining-care/internal/auth"
 	"suining-care/internal/blob"
 	dbstore "suining-care/internal/db"
+	"suining-care/internal/db/dbtest"
 	"suining-care/internal/securestore"
 	"suining-care/internal/session"
 )
 
 func TestMySQLCoordinatedBackupRestore(t *testing.T) {
-	source := testDatabase(t)
+	source := dbtest.MySQL(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 	defer cancel()
 	seedDevice(t, source)
@@ -83,47 +80,7 @@ func TestMySQLCoordinatedBackupRestore(t *testing.T) {
 	if err != nil || cfg.Net != "tcp" {
 		t.Fatal("restore drill needs a dedicated TCP MySQL test DSN")
 	}
-	host, port, err := net.SplitHostPort(cfg.Addr)
-	if err != nil {
-		t.Fatal(err)
-	}
-	client := func(tool string, args []string, input []byte) []byte {
-		t.Helper()
-		program := tool
-		invocation := []string{"--no-defaults", "--protocol=TCP", "--host=" + host, "--port=" + port, "--user=" + cfg.User}
-		if container := os.Getenv("TEST_MYSQL_CONTAINER_ID"); container != "" {
-			if !regexp.MustCompile("^[0-9a-f]{12,64}$").MatchString(container) {
-				t.Fatal("expected an isolated MySQL fixture container ID")
-			}
-			program = "docker"
-			invocation = []string{"exec", "-i", "-e", "MYSQL_PWD", container, tool,
-				"--no-defaults", "--protocol=TCP", "--host=127.0.0.1", "--port=3306", "--user=" + cfg.User}
-		}
-		binary, err := exec.LookPath(program)
-		if err != nil {
-			t.Fatal("restore drill requires MySQL client tools or the isolated fixture container")
-		}
-		cli := exec.CommandContext(ctx, binary, append(invocation, args...)...)
-		cli.Env = append(os.Environ(), "MYSQL_PWD="+cfg.Passwd)
-		cli.Stdin = bytes.NewReader(input)
-		output, err := cli.Output()
-		if err != nil {
-			t.Fatalf("%s failed with SQL output withheld: %v", tool, err)
-		}
-		return output
-	}
-	var database, serverID string
-	if err := source.QueryRowContext(ctx, "SELECT DATABASE(),@@server_uuid").Scan(&database, &serverID); err != nil {
-		t.Fatal(err)
-	}
-	if cliID := client("mysql", []string{"--batch", "--skip-column-names", "-e", "SELECT @@server_uuid"}, nil); strings.TrimSpace(string(cliID)) != serverID {
-		t.Fatal("MySQL restore tools are not connected to the fixture server")
-	}
-	archive := client("mysqldump", []string{"--single-transaction", "--quick", "--routines", "--triggers", "--hex-blob",
-		"--no-tablespaces", "--set-gtid-purged=OFF", "--column-statistics=0", database}, nil)
-	if len(archive) == 0 {
-		t.Fatal("backup did not capture SQL")
-	}
+	archive := dbtest.DumpMySQL(t, ctx, source)
 	mustExec(t, source, "DELETE FROM image_payload_generation WHERE name=?", name)
 	if _, err := manager(source, active).Get(ctx, name); !errors.Is(err, blob.ErrIntegrity) {
 		t.Fatal("deliberate source loss did not remove the current ciphertext", err)
@@ -143,13 +100,13 @@ func TestMySQLCoordinatedBackupRestore(t *testing.T) {
 			t.Error("could not clean up the disposable restored database")
 		}
 	}()
-	client("mysql", []string{target}, archive)
 	cfg.DBName = target
 	restored, err := dbstore.OpenMySQL(ctx, cfg.FormatDSN())
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer restored.Close()
+	dbtest.RestoreMySQL(t, ctx, restored, archive)
 	if err := dbstore.MigrateMySQL(ctx, restored); err != nil {
 		t.Fatal("schema and migration validation failed on restored database", err)
 	}

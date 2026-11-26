@@ -15,7 +15,7 @@ it('accepts the common success envelope and rejects missing or failed results', 
 it('retains server messages, reference identifiers, HTTP definitions and cancellation', () => {
   expect(apiErrorMessage({ response: { status: 500, data: { returnCode: '0000', code: 'INTERNAL_ERROR', message: '保存失败', reference: 'r-1' } } })).toBe('保存失败（编号：r-1）')
   expect(apiErrorMessage({ response: { status: 429 } })).toBe('请求过于频繁，请稍后重试')
-  expect(apiErrorMessage(new Error('network'), '连接中断')) .toBe('连接中断')
+  expect(apiErrorMessage(new Error('network'), '连接中断')).toBe('连接中断')
   expect(apiErrorMessage(new CanceledError())).toBe('请求已取消')
   expect(apiErrorMessage({ name: 'UploadAjaxError', status: 400, message: JSON.stringify({ returnCode: '0000', code: 'INVALID_REQUEST', message: '图片格式不支持' }) })).toBe('图片格式不支持')
   expect(apiErrorMessage(new Error('rejected', { cause: { returnCode: '0000', code: 'INVALID_REQUEST', message: '手机号已使用' } }))).toBe('手机号已使用')

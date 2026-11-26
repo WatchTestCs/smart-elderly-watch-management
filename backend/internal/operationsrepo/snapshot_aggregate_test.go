@@ -41,7 +41,7 @@ func oldSnapshot(ctx context.Context, q db.RowQuerier, now time.Time) (Snapshot,
 }
 
 func TestSnapshotGroupedCountersMatchLegacyMySQL(t *testing.T) {
-	pool := dbtest.MySQL(t)
+	pool := dbtest.Fixture(t)
 	ctx := context.Background()
 	now := time.Date(2026, 11, 23, 12, 0, 0, 0, time.UTC)
 	check := func() {

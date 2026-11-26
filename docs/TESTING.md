@@ -9,13 +9,30 @@ go test -count=1 ./...
 go vet ./...
 ```
 
-需要数据库集成测试时，配置 `TEST_MYSQL_DSN` 指向**独立、可销毁**的 MySQL 8.4 测试实例；测试账号需有创建和删除随机测试库的权限。`TEST_DATABASE_URL` 属于旧文档残留，不是当前 MySQL 集成测试的配置入口。竞态测试：
+需要数据库集成测试时，配置 `TEST_MYSQL_DSN` 指向**独立、可销毁**的 MySQL 8.4 测试实例；测试账号需有创建和删除随机测试库的权限。竞态测试：
 
 ```sh
 go test -race -count=1 -timeout 600s ./...
 ```
 
 未配置测试数据库时，相关集成用例可能跳过；不得将跳过报告为真实数据库验收通过。禁止对生产数据库运行自动测试。
+
+### 测试组织与快照实验
+
+普通测试默认创建独立随机 schema，执行完整迁移并清理。设置 `TEST_MYSQL_FIXTURE_SNAPSHOT=1` 可让已接入 `dbtest.Fixture` 的普通业务测试在各自进程内复用 pristine SQL 快照。每个测试仍恢复到新建空 schema，并验证迁移账本及结构指纹。恢复后的只读校验一次读取全部迁移记录，一次检查检查点及账本引擎，并复用生产迁移器的完整结构指纹算法扫描一轮。遇到缺失、未知、校验值不符或结构漂移直接失败，不尝试重放迁移或修补账本。显式迁移、回滚、备份恢复和连接级测试继续使用完整迁移。
+
+跨包实验使用以下命令（仓库根目录，已配置隔离 MySQL 8.4 实例及匹配客户端或测试容器）：
+
+```powershell
+python scripts/reliability/run-mysql-fixture-tests.py ./internal/db/dbtest ./internal/handlers ./internal/session ./internal/notify ./internal/operationsrepo ./internal/telemetryrepo ./internal/careworkflow
+```
+
+该脚本仅从新建并完整迁移的空业务库导出一次归档，验证服务器 UUID、嵌入迁移文件内容摘要及归档哈希；所有消费者使用各自独立的新建数据库，不共享测试数据。每次运行使用专用临时目录，结束后清除归档，不跨作业缓存。省略包参数可运行整个后端套件；未接入的测试仍走完整迁移。共享模式不得用于生产数据库。 空库快照导出省略冗余 DROP TABLE、导入表锁和非唯一索引禁用/启用指令，仍保留全部表、数据、触发器及例程。快照模式复用有界管理连接池执行 CREATE/DROP DATABASE，业务连接仍按测试独立创建和关闭。每个恢复的 schema 仍须执行完整结构校验；协调备份恢复演练不使用精简导出选项。
+
+在同一实例及相同包集合上，以完整迁移模式的 `go test -race -count=1 -timeout 45m` 作为对照；比较总耗时、准备耗时及失败和跳过记录。准备耗时也必须计入共享模式的总成本。脚本默认不改变 CI 或生产配置。 可使用脚本参数 `-v -run TestMySQLSnapshotIsolationAndCost ./internal/db/dbtest` 查看创建/连接、归档准备、导入及只读校验分段耗时。
+
+仅在行为一致且真实耗时对照证明有收益后考虑默认启用。不要把静态减少初始化次数当作实际 CI 加速。相同输入与断言已有真实行为覆盖时，不再重复检查 SQL 拼写；保留独立授权、事务、竞态、恢复、加密与边界断言。复用同一测试 fixture 时必须保留状态隔离及所有关键断言。
+
 
 ## Vue 前端
 

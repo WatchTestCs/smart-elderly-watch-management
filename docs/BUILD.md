@@ -1,6 +1,6 @@
 # Windows 构建 · 2.1.0
 
-准备 Windows x64、C++ Build Tools（MSVC + Windows SDK）、Rust stable（最低版本 1.99.1，见 `desktop/Cargo.toml`）、Go 1.27.4（与 `backend/go.mod` 和 CI 一致）、Node.js 24.x（项目兼容范围从 22.12+ 起）、PowerShell 7。推荐在开发者 PowerShell 环境中构建。前端依赖由 `frontend/package-lock.json` 锁定，Tauri/Rust 依赖由 `desktop/Cargo.lock` 锁定。
+准备 Windows x64、C++ Build Tools（MSVC + Windows SDK）、Rust stable（最低版本 1.100.0，见 `desktop/Cargo.toml`）、Go 1.27.4（与 `backend/go.mod` 和 CI 一致）、Node.js 26.x（LTS）、PowerShell 7。推荐在开发者 PowerShell 环境中构建。前端依赖由 `frontend/package-lock.json` 锁定，Tauri/Rust 依赖由 `desktop/Cargo.lock` 锁定。
 
 ```powershell
 # Work from the repository root
