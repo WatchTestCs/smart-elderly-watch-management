@@ -20,25 +20,27 @@ const healthWriteUrgentConcurrency = 6
 const healthWriteQueueWait = 200 * time.Millisecond
 
 type healthWriteAdmission struct {
-	mu          sync.Mutex
-	active      map[string]bool
-	owners      map[int64]struct{}
-	domains     map[string]int64
-	urgent      map[string]int
-	activeSOS   map[string]struct{}
-	urgentCount int
-	waiting     chan struct{}
-	changed     chan struct{}
+	mu              sync.Mutex
+	active          map[string]bool
+	owners          map[int64]struct{}
+	domains         map[string]int64
+	urgent          map[string]int
+	activeSOS       map[string]struct{}
+	activeSOSOwners map[int64]struct{}
+	urgentCount     int
+	waiting         chan struct{}
+	changed         chan struct{}
 }
 
 func newHealthWriteAdmission() healthWriteAdmission {
 	return healthWriteAdmission{
-		active:    make(map[string]bool, healthWriteConcurrency),
-		owners:    make(map[int64]struct{}, healthWriteConcurrency),
-		domains:   make(map[string]int64, healthWriteConcurrency),
-		urgent:    make(map[string]int),
-		activeSOS: make(map[string]struct{}),
-		waiting:   make(chan struct{}, healthWriteConcurrency),
+		active:          make(map[string]bool, healthWriteConcurrency),
+		owners:          make(map[int64]struct{}, healthWriteConcurrency),
+		domains:         make(map[string]int64, healthWriteConcurrency),
+		urgent:          make(map[string]int),
+		activeSOS:       make(map[string]struct{}),
+		activeSOSOwners: make(map[int64]struct{}),
+		waiting:         make(chan struct{}, healthWriteConcurrency),
 	}
 }
 
@@ -135,8 +137,8 @@ func (a *healthWriteAdmission) claimOwner(ctx context.Context, device string, ow
 // prioritizeSOS is called only after the authoritative credential read.
 // Wait for a local upload that has claimed the transaction boundary, without
 // holding a SQL connection or resident lock. A pending SOS prevents new same-device
-// uploads and temporarily reserves two additional write slots.
-func (a *healthWriteAdmission) prioritizeSOS(ctx context.Context, device string) (func(), error) {
+// uploads and temporarily reserves two additional write slots. Serialize SOS by both device and resident because the transaction locks both rows.
+func (a *healthWriteAdmission) prioritizeSOS(ctx context.Context, device string, owner int64) (func(), error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -145,10 +147,12 @@ func (a *healthWriteAdmission) prioritizeSOS(ctx context.Context, device string)
 	a.urgentCount++
 	for {
 		_, sosActive := a.activeSOS[device]
-		if !a.active[device] && !sosActive {
+		_, ownerActive := a.activeSOSOwners[owner]
+		if !a.active[device] && !sosActive && !ownerActive {
 			a.activeSOS[device] = struct{}{}
+			a.activeSOSOwners[owner] = struct{}{}
 			a.mu.Unlock()
-			return func() { a.releaseSOS(device, true) }, nil
+			return func() { a.releaseSOS(device, owner, true) }, nil
 		}
 		if a.changed == nil {
 			a.changed = make(chan struct{})
@@ -157,13 +161,13 @@ func (a *healthWriteAdmission) prioritizeSOS(ctx context.Context, device string)
 		a.mu.Unlock()
 		select {
 		case <-ctx.Done():
-			a.releaseSOS(device, false)
+			a.releaseSOS(device, owner, false)
 			return nil, ctx.Err()
 		case <-changed:
 			a.mu.Lock()
 			if err := ctx.Err(); err != nil {
 				a.mu.Unlock()
-				a.releaseSOS(device, false)
+				a.releaseSOS(device, owner, false)
 				return nil, err
 			}
 		}
@@ -216,10 +220,11 @@ func (a *healthWriteAdmission) finishTransaction(device string) {
 	a.mu.Unlock()
 }
 
-func (a *healthWriteAdmission) releaseSOS(device string, active bool) {
+func (a *healthWriteAdmission) releaseSOS(device string, owner int64, active bool) {
 	a.mu.Lock()
 	if active {
 		delete(a.activeSOS, device)
+		delete(a.activeSOSOwners, owner)
 	}
 	if a.urgent[device] == 1 {
 		delete(a.urgent, device)

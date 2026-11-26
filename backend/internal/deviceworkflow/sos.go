@@ -32,7 +32,7 @@ type SOSResult struct {
 // SOSHooks connect the signed-request boundary and incident encoder to the transaction.
 // A rejected nonce must write its own response; the transaction is rolled back.
 type SOSHooks struct {
-	Prioritize  func(context.Context, string) (func(), error)
+	Prioritize  func(context.Context, string, int64) (func(), error)
 	AcceptNonce func(context.Context, *sql.Tx, int64) bool
 	Persist     func(context.Context, *sql.Tx, *devicerepo.DeviceRecord) (int64, error)
 }
@@ -48,7 +48,7 @@ func SOS(ctx context.Context, store *sql.DB, box *securestore.Box, input SOSInpu
 			return SOSResult{}, failure, err
 		}
 		if device.No == input.Number && device.OldID != nil && device.HealthEpoch == input.Epoch {
-			release, err := hooks.Prioritize(ctx, device.No)
+			release, err := hooks.Prioritize(ctx, device.No, *device.OldID)
 			if err != nil {
 				return SOSResult{}, "", err
 			}

@@ -337,7 +337,7 @@ func TestSOSPriorityCancellation(t *testing.T) {
 	}
 	ctx, cancel := context.WithCancel(t.Context())
 	done := make(chan error, 1)
-	go func() { _, err := a.prioritizeSOS(ctx, "same"); done <- err }()
+	go func() { _, err := a.prioritizeSOS(ctx, "same", 1); done <- err }()
 	deadline := time.Now().Add(time.Second)
 	for {
 		a.mu.Lock()
@@ -369,7 +369,7 @@ func TestSOSPriorityWinsBeforeTransactionBoundary(t *testing.T) {
 	if !a.acquire(t.Context(), "same") {
 		t.Fatal("health admission")
 	}
-	release, err := a.prioritizeSOS(t.Context(), "same")
+	release, err := a.prioritizeSOS(t.Context(), "same", 1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -532,7 +532,7 @@ func TestSOSPriorityCanClaimBetweenBeginRetries(t *testing.T) {
 		ctx, cancel := context.WithTimeout(t.Context(), time.Second)
 		defer cancel()
 		var err error
-		release, err = a.prioritizeSOS(ctx, "watch")
+		release, err = a.prioritizeSOS(ctx, "watch", 1)
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -14,7 +14,7 @@ import (
 
 func TestSOSDuplicateWaitsOutsideTransaction(t *testing.T) {
 	a := newHealthWriteAdmission()
-	release, err := a.prioritizeSOS(t.Context(), "same")
+	release, err := a.prioritizeSOS(t.Context(), "same", 1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -23,13 +23,13 @@ func TestSOSDuplicateWaitsOutsideTransaction(t *testing.T) {
 	defer cancel()
 	done := make(chan error, 1)
 	go func() {
-		second, err := a.prioritizeSOS(ctx, "same")
+		second, err := a.prioritizeSOS(ctx, "same", 1)
 		if second != nil {
 			second()
 		}
 		done <- err
 	}()
-	other, err := a.prioritizeSOS(t.Context(), "other")
+	other, err := a.prioritizeSOS(t.Context(), "other", 2)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -40,7 +40,7 @@ func TestSOSDuplicateWaitsOutsideTransaction(t *testing.T) {
 	// Cancellation must not remove the first SOS's exclusion.
 	ctx2, cancel2 := context.WithTimeout(t.Context(), 100*time.Millisecond)
 	defer cancel2()
-	if next, err := a.prioritizeSOS(ctx2, "same"); next != nil || !errors.Is(err, context.DeadlineExceeded) {
+	if next, err := a.prioritizeSOS(ctx2, "same", 1); next != nil || !errors.Is(err, context.DeadlineExceeded) {
 		if next != nil {
 			next()
 		}
@@ -128,5 +128,89 @@ func TestSOSRetriesLeaveReservedConnectionForOtherDevice(t *testing.T) {
 	var n int
 	if err := pool.QueryRowContext(ctx, "SELECT COUNT(*) FROM alarm_precess").Scan(&n); err != nil || n != 2 {
 		t.Fatal("durable incident count", n, err)
+	}
+}
+
+func TestSOSResidentConflictLeavesEmergencyConnection(t *testing.T) {
+	t.Setenv("SUINING_SOS_PRIORITY", "1")
+	t.Setenv("MYSQL_SOS_MAX_CONNS", "2")
+	pool := testDatabase(t)
+	seedDevice(t, pool)
+	mustExec(t, pool, "INSERT INTO oldperson(old_id,name) VALUES(2,'other')")
+	mustExec(t, pool, "INSERT INTO device(device_id,device_no,secret,old_id) SELECT 2,'WATCH002',secret,1 FROM device WHERE device_id=1")
+	mustExec(t, pool, "INSERT INTO device(device_id,device_no,secret,old_id) SELECT 3,'WATCH003',secret,2 FROM device WHERE device_id=1")
+	h := testHandler(t, pool)
+	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
+	defer cancel()
+	lock, err := pool.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer lock.Rollback()
+	var id int64
+	if err = lock.QueryRowContext(ctx, "SELECT old_id FROM oldperson WHERE old_id=1 FOR UPDATE").Scan(&id); err != nil {
+		t.Fatal(err)
+	}
+	call := func(device string) *httptest.ResponseRecorder {
+		data, _ := json.Marshal(map[string]any{"deviceNo": device, "secret": testSecret, "bindingVersion": 1, "requestId": "resident-conflict"})
+		w := httptest.NewRecorder()
+		h.deviceSos(w, httptest.NewRequest(http.MethodPost, "/api/v1/device/sos", bytes.NewReader(data)).WithContext(ctx))
+		return w
+	}
+	waitPending := func(device string) {
+		t.Helper()
+		for {
+			h.healthWrites.mu.Lock()
+			pending := h.healthWrites.urgent[device] > 0
+			h.healthWrites.mu.Unlock()
+			if pending {
+				return
+			}
+			select {
+			case <-ctx.Done():
+				t.Fatal("SOS did not reach admission")
+			case <-time.After(time.Millisecond):
+			}
+		}
+	}
+	first, second, other := make(chan *httptest.ResponseRecorder, 1), make(chan *httptest.ResponseRecorder, 1), make(chan *httptest.ResponseRecorder, 1)
+	go func() { first <- call("WATCH001") }()
+	waitPending("WATCH001")
+	for pool.SOSPool().Stats().InUse != 1 {
+		select {
+		case <-ctx.Done():
+			t.Fatal("first SOS did not start transaction")
+		case <-time.After(time.Millisecond):
+		}
+	}
+	go func() { second <- call("WATCH002") }()
+	waitPending("WATCH002")
+	start := time.Now()
+	go func() { other <- call("WATCH003") }()
+	select {
+	case w := <-other:
+		if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), "1111") {
+			t.Fatal(w.Code, w.Body)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("same resident SOS requests consumed both emergency connections")
+	}
+	t.Logf("unrelated resident SOS committed: %s", time.Since(start))
+	if err = lock.Rollback(); err != nil {
+		t.Fatal(err)
+	}
+	for _, ch := range []chan *httptest.ResponseRecorder{first, second} {
+		select {
+		case w := <-ch:
+			if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), "1111") {
+				t.Fatal(w.Code, w.Body)
+			}
+		case <-ctx.Done():
+			t.Fatal("queued SOS did not complete")
+		}
+	}
+	var count int
+	if err := pool.QueryRowContext(ctx, "SELECT COUNT(*) FROM alarm_precess").Scan(&count); err != nil || count != 3 {
+		t.Fatal("durable alarms", count, err)
 	}
 }

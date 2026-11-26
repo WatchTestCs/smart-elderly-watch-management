@@ -45,7 +45,7 @@ func (h *Handler) deviceSos(w http.ResponseWriter, r *http.Request) {
 			prepared, prepareErr = repo.prepareSOSPosition(lng, lat, meta)
 		}
 	}
-	var prioritize func(context.Context, string) (func(), error)
+	var prioritize func(context.Context, string, int64) (func(), error)
 	if h.sosPriorityEnabled() {
 		prioritize = h.healthWrites.prioritizeSOS
 	}
