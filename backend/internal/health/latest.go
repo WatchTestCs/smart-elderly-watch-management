@@ -200,16 +200,21 @@ type latestPrior struct {
 
 func refreshLatest(ctx context.Context, tx *sql.Tx, o Owner, input []preparedSample, final []uint8, box *securestore.Box) error {
 	type series struct{ source, device, metric, semantics string }
-	seen := make(map[series]struct{}, min(len(final), 8))
+	seen := make(map[series]int, min(len(final), 8))
 	indices := make([]uint8, 0, min(len(final), 8))
 	keys := make([][32]byte, 0, min(len(final), 8))
 	for _, index := range final {
 		sample := input[index].sample
 		identity := series{sample.Source, sample.SourceDevice, sample.Metric, sample.Semantics}
-		if _, exists := seen[identity]; exists {
+		if slot, exists := seen[identity]; exists {
+			prior := &input[indices[slot]]
+			if !sample.Deleted && (prior.sample.Deleted || sample.Start.After(prior.sample.Start) ||
+				(sample.Start.Equal(prior.sample.Start) && input[index].revision > prior.revision)) {
+				indices[slot] = index
+			}
 			continue
 		}
-		seen[identity] = struct{}{}
+		seen[identity] = len(indices)
 		indices = append(indices, index)
 		keys = append(keys, latestKey(sample))
 	}
@@ -255,7 +260,7 @@ func refreshLatest(ctx context.Context, tx *sql.Tx, o Owner, input []preparedSam
 	deletes := []any{o.OldID}
 	for i, index := range indices {
 		prior, found := priors[keys[i]]
-		change, err := refreshLatestSeries(ctx, tx, o.OldID, input[index].sample, keys[i], prior, found, box)
+		change, err := refreshLatestSeries(ctx, tx, o, &input[index], keys[i], prior, found, box)
 		if err != nil {
 			return err
 		}
@@ -287,11 +292,29 @@ type latestChange struct {
 	changed bool
 }
 
-func refreshLatestSeries(ctx context.Context, tx *sql.Tx, oldID int64, s Sample, key [32]byte, previous latestPrior, found bool, box *securestore.Box) (latestChange, error) {
+func refreshLatestSeries(ctx context.Context, tx *sql.Tx, owner Owner, item *preparedSample, key [32]byte, previous latestPrior, found bool, box *securestore.Box) (latestChange, error) {
+	oldID, s := owner.OldID, item.sample
 	prior, old := previous.record, previous.payload
 	oldPayload, err := old.Open(box, latestPayloadScope(oldID, key[:], prior.Revision))
 	if err != nil {
 		return latestChange{}, err
+	}
+	// A ready, authenticated prior winner bounds every unchanged row in this
+	// series. Only a strictly later indexed microsecond can bypass the query:
+	// equal microseconds, corrections moving backwards and deletions still
+	// authenticate and compare the actual stored candidates. The winning new
+	// row has just been sealed and written in this very transaction.
+	if found && old.Cipher != nil && box != nil && !s.Deleted {
+		var previousSample Sample
+		if json.Unmarshal(oldPayload, &previousSample) == nil && !previousSample.Deleted &&
+			latestKey(previousSample) == key && s.Start.UnixMicro() > previousSample.Start.UnixMicro() {
+			stored, err := protectProjection(box, item.payload, latestPayloadScope(oldID, key[:], item.revision))
+			if err != nil {
+				return latestChange{}, err
+			}
+			return latestChange{winner: &Record{SampleID: item.id, OldID: oldID, DeviceID: owner.DeviceID,
+				Epoch: owner.Epoch, Revision: item.revision, Sample: s}, payload: stored, changed: true}, nil
+		}
 	}
 	// The coarse predicates permit the existing prefix index to narrow the
 	// lookup; binary predicates preserve the exact series identity. Only the
