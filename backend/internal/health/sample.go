@@ -39,10 +39,6 @@ func (s Sample) InWindow(from, to time.Time) bool {
 }
 
 func (s Sample) Normalize() (Sample, error) {
-	return s.normalizeInto(nil)
-}
-
-func (s Sample) normalizeInto(value *float64) (Sample, error) {
 	if err := s.validateIdentity(); err != nil {
 		return s, err
 	}
@@ -60,7 +56,7 @@ func (s Sample) normalizeInto(value *float64) (Sample, error) {
 	if semantics == "interval" && !s.End.After(s.Start) {
 		return s, fmt.Errorf("interval must have positive duration")
 	}
-	return s.normalizeMeasurement(unit, semantics, value)
+	return s.normalizeMeasurement(unit, semantics)
 }
 
 func (s *Sample) validateIdentity() error {
@@ -123,7 +119,7 @@ func (s *Sample) metricContract() (string, string, error) {
 	return unit, semantics, nil
 }
 
-func (s *Sample) normalizeMeasurement(unit, semantics string, value *float64) (Sample, error) {
+func (s *Sample) normalizeMeasurement(unit, semantics string) (Sample, error) {
 	s.Semantics = semantics
 	if s.Value == nil {
 		if s.Deleted {
@@ -167,11 +163,6 @@ func (s *Sample) normalizeMeasurement(unit, semantics string, value *float64) (S
 	if s.Metric == "oxygen_saturation" && v > 100 {
 		return *s, fmt.Errorf("oxygen saturation exceeds 100 percent")
 	}
-	if value == nil {
-		s.Value = Number(v)
-	} else {
-		*value = v
-		s.Value = value
-	}
+	s.Value = Number(v)
 	return *s, nil
 }

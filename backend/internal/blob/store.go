@@ -205,11 +205,11 @@ func (s *Encrypted) Put(ctx context.Context, key string, data []byte) error {
 	if len(data) > MaxPlainBytes {
 		return ErrIntegrity
 	}
-	sealed, err := s.Box.SealEncodedBytes(data, "image:"+key)
+	sealed, err := s.Box.Seal(string(data), "image:"+key)
 	if err != nil {
 		return err
 	}
-	return s.Store.Put(ctx, key, sealed)
+	return s.Store.Put(ctx, key, []byte(sealed))
 }
 func (s *Encrypted) Get(ctx context.Context, key string) ([]byte, error) {
 	data, err := s.Store.Get(ctx, key)
@@ -226,14 +226,14 @@ func (s *Encrypted) decode(key string, data []byte) ([]byte, error) {
 		}
 		return nil, ErrIntegrity
 	}
-	plain, err := s.Box.OpenEncodedBytes(data, "image:"+key)
+	plain, err := s.Box.Open(string(data), "image:"+key)
 	if err != nil {
 		return nil, ErrIntegrity
 	}
 	if len(plain) > MaxPlainBytes {
 		return nil, ErrIntegrity
 	}
-	return plain, nil
+	return []byte(plain), nil
 }
 func (s *Encrypted) Delete(ctx context.Context, key string) error { return s.Store.Delete(ctx, key) }
 func (s *Encrypted) Walk(ctx context.Context, visit func(Entry) error) error {

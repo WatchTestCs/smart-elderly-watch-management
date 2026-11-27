@@ -3,9 +3,7 @@ package db
 import (
 	"context"
 	"database/sql"
-	"database/sql/driver"
 	"errors"
-	"fmt"
 	"strconv"
 	"strings"
 	"suining-care/internal/config"
@@ -79,7 +77,7 @@ func OpenMySQL(ctx context.Context, dsn string) (*Database, error) {
 	if cacheLimit == 0 {
 		pool = sql.OpenDB(connector)
 	} else {
-		pool = sql.OpenDB(statementConnector{Connector: connector, capacity: cacheLimit, sessionIsolation: driver.IsolationLevel(sql.LevelReadCommitted)})
+		pool = sql.OpenDB(statementConnector{Connector: connector, capacity: cacheLimit, readCommittedSession: true})
 	}
 	pool.SetMaxOpenConns(20)
 	// Bursty device uploads otherwise repeatedly close and reopen 15 of the
@@ -122,66 +120,35 @@ func OpenMySQL(ctx context.Context, dsn string) (*Database, error) {
 		pool.Close()
 		return nil, err
 	}
-	sosLimit, err := mysqlOptionalConnectionLimit(config.Setting("MYSQL_SOS_MAX_CONNS"), "MYSQL_SOS_MAX_CONNS", 8)
-	if err != nil {
-		healthPool.Close()
-		pool.Close()
-		return nil, err
-	}
-	openDedicated := func(limit int, isolation sql.IsolationLevel) (*sql.DB, error) {
-		if limit == 0 {
-			return nil, nil
-		}
-		dedicatedConnector := connector
-		if isolation == sql.LevelRepeatableRead {
-			statsConfig := cfg.Clone()
-			statsConfig.Params["transaction_isolation"] = "'REPEATABLE-READ'"
-			var err error
-			dedicatedConnector, err = mysql.NewConnector(statsConfig)
-			if err != nil {
-				return nil, err
-			}
-		}
-		var dedicated *sql.DB
+	var statisticsPool *sql.DB
+	if statisticsLimit > 0 {
+		statisticsPool = sql.OpenDB(connector)
 		if cacheLimit > 0 {
-			dedicated = sql.OpenDB(statementConnector{Connector: dedicatedConnector, capacity: cacheLimit, sessionIsolation: driver.IsolationLevel(isolation)})
-		} else {
-			dedicated = sql.OpenDB(dedicatedConnector)
+			statisticsPool.Close()
+			statisticsPool = sql.OpenDB(statementConnector{Connector: connector, capacity: cacheLimit, readCommittedSession: true})
 		}
-		dedicated.SetMaxOpenConns(limit)
-		dedicated.SetMaxIdleConns(limit)
-		dedicated.SetConnMaxLifetime(5 * time.Minute)
-		dedicated.SetConnMaxIdleTime(2 * time.Minute)
-		if err := dedicated.PingContext(ctx); err != nil {
-			dedicated.Close()
-			return nil, err
+		statisticsPool.SetMaxOpenConns(statisticsLimit)
+		statisticsPool.SetMaxIdleConns(statisticsLimit)
+		statisticsPool.SetConnMaxLifetime(5 * time.Minute)
+		statisticsPool.SetConnMaxIdleTime(2 * time.Minute)
+		if err = statisticsPool.PingContext(ctx); err != nil {
+			statisticsPool.Close()
+			healthPool.Close()
+			pool.Close()
+			return nil, errors.New("MySQL statistics pool unavailable")
 		}
-		return dedicated, nil
 	}
-	d := &Database{DB: pool, healthPool: healthPool}
-	if d.statisticsPool, err = openDedicated(statisticsLimit, sql.LevelRepeatableRead); err != nil {
-		d.Close()
-		return nil, errors.New("MySQL statistics pool unavailable")
-	}
-	if d.sosPool, err = openDedicated(sosLimit, sql.LevelReadCommitted); err != nil {
-		d.Close()
-		return nil, errors.New("MySQL SOS pool unavailable")
-	}
-	return d, nil
+	return &Database{DB: pool, healthPool: healthPool, statisticsPool: statisticsPool}, nil
 }
 
 // Zero preserves the shared pool for constrained installations.
 func mysqlStatisticsConnectionLimit(raw string) (int, error) {
-	return mysqlOptionalConnectionLimit(raw, "MYSQL_STATISTICS_MAX_CONNS", 64)
-}
-
-func mysqlOptionalConnectionLimit(raw, name string, maximum int) (int, error) {
 	if strings.TrimSpace(raw) == "" {
 		return 0, nil
 	}
 	n, err := strconv.Atoi(strings.TrimSpace(raw))
-	if err != nil || n < 0 || n > maximum {
-		return 0, fmt.Errorf("%s must be an integer from 0 to %d", name, maximum)
+	if err != nil || n < 0 || n > 64 {
+		return 0, errors.New("MYSQL_STATISTICS_MAX_CONNS must be an integer from 0 to 64")
 	}
 	return n, nil
 }

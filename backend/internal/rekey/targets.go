@@ -3,7 +3,6 @@
 package rekey
 
 import (
-	"encoding/hex"
 	"fmt"
 
 	"suining-care/internal/familyaddress"
@@ -28,9 +27,6 @@ const (
 )
 
 func (t target) condition() string {
-	if t.table == "health_sample" {
-		return "(payload_cipher IS NULL OR payload_cipher<>0x01)"
-	}
 	if t.format == coordinateProjection {
 		return "CAST(entity AS BINARY)=CAST('device_location' AS BINARY)"
 	}
@@ -43,9 +39,9 @@ func (t target) fieldScope(keys []any) string {
 	case "ratepre":
 		return vitalrepo.MeasurementScope(fmt.Sprint(keys[0]))
 	case "health_sample":
-		return health.SamplePayloadScope(hex.EncodeToString([]byte(fmt.Sprint(keys[0]))), fmt.Sprint(keys[1]), fmt.Sprint(keys[2]))
+		return health.SamplePayloadScope(fmt.Sprint(keys[0]), fmt.Sprint(keys[1]), fmt.Sprint(keys[2]))
 	case "health_change":
-		return health.ChangePayloadScope(fmt.Sprint(keys[0]), fmt.Sprint(keys[1]), hex.EncodeToString([]byte(fmt.Sprint(keys[2]))))
+		return health.ChangePayloadScope(fmt.Sprint(keys[0]), fmt.Sprint(keys[1]), fmt.Sprint(keys[2]))
 	case "health_sample_latest":
 		return health.LatestPayloadScope(fmt.Sprint(keys[0]), fmt.Sprint(keys[1]), fmt.Sprint(keys[2]))
 	case "metric_daily":
@@ -116,19 +112,4 @@ func targets() []target {
 		{"health_sample", "payload_cipher", []string{"sample_id", "old_id", "revision"}, "", directEnvelope},
 		{"ratepre", "measurement_cipher", []string{"id"}, "", directEnvelope},
 	}
-}
-
-func (t target) keyArgs(keys []any) []any {
-	for i, name := range t.keys {
-		if name == "sample_id" || name == "series_key" {
-			out := append([]any(nil), keys...)
-			for j := i; j < len(t.keys); j++ {
-				if t.keys[j] == "sample_id" || t.keys[j] == "series_key" {
-					out[j] = []byte(fmt.Sprint(keys[j]))
-				}
-			}
-			return out
-		}
-	}
-	return keys
 }

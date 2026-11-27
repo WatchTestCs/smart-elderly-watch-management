@@ -16,7 +16,6 @@ import (
 	"suining-care/internal/config"
 	"suining-care/internal/handlers"
 	"suining-care/internal/observability"
-	"suining-care/internal/response"
 	"suining-care/internal/runtuning"
 	"suining-care/internal/session"
 )
@@ -47,7 +46,7 @@ func main() {
 	localHandlers.MountLocalLogout(mux)
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusOK) })
 	srv := &http.Server{
-		Handler:           observability.Default.HTTP(response.CompressJSON(service.middleware(mux))),
+		Handler:           observability.Default.HTTP(service.middleware(mux)),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       20 * time.Second,
 		WriteTimeout:      35 * time.Second,

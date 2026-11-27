@@ -29,7 +29,6 @@ type RequestConfig struct {
 	RequireSigned     bool
 	DurableTelemetry  bool
 	HealthLateLock    bool
-	SOSPriority       bool
 	CareReceiptSecret string
 }
 
@@ -201,7 +200,6 @@ func Load() Config {
 			RequireSigned:     Enabled("SUINING_REQUIRE_SIGNED_DEVICE"),
 			DurableTelemetry:  Enabled("SUINING_DURABLE_TELEMETRY"),
 			HealthLateLock:    Enabled("HEALTH_LATE_DEVICE_LOCK"),
-			SOSPriority:       Enabled("SUINING_SOS_PRIORITY"),
 			CareReceiptSecret: Secret("CARE_RECEIPT_SECRET"),
 		},
 		Risk: RiskConfig{

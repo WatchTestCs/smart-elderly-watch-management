@@ -34,8 +34,8 @@ type mysqlWireStmt interface {
 }
 type statementConnector struct {
 	driver.Connector
-	capacity         int
-	sessionIsolation driver.IsolationLevel
+	capacity             int
+	readCommittedSession bool
 }
 
 func (c statementConnector) Connect(ctx context.Context) (driver.Conn, error) {
@@ -48,18 +48,18 @@ func (c statementConnector) Connect(ctx context.Context) (driver.Conn, error) {
 		conn.Close()
 		return nil, errors.New("MySQL driver lacks required connection interfaces")
 	}
-	return &statementConn{mysqlWireConn: wire, plans: make(map[string]mysqlWireStmt, c.capacity), keys: make([]string, c.capacity), sessionIsolation: c.sessionIsolation}, nil
+	return &statementConn{mysqlWireConn: wire, plans: make(map[string]mysqlWireStmt, c.capacity), keys: make([]string, c.capacity), readCommittedSession: c.readCommittedSession}, nil
 }
 
 type statementConn struct {
 	mysqlWireConn
-	plans            map[string]mysqlWireStmt
-	keys             []string
-	next             int
-	sessionIsolation driver.IsolationLevel
+	plans                map[string]mysqlWireStmt
+	keys                 []string
+	next                 int
+	readCommittedSession bool
 }
 
-// The connector initializes the session to a known isolation level. Ordinary application
+// The connector initializes the session to READ COMMITTED. Ordinary application
 // DML/DDL cannot change that default, so avoid mysql's per-transaction SET round
 // trip. Unknown/session-changing SQL permanently disables this shortcut on that
 // connection; the explicit isolation request then follows the original driver.
@@ -94,20 +94,20 @@ func sessionNeutralSQL(query string) bool {
 	return false
 }
 func (c *statementConn) BeginTx(ctx context.Context, opts driver.TxOptions) (driver.Tx, error) {
-	if opts.Isolation == c.sessionIsolation {
+	if c.readCommittedSession && opts.Isolation == driver.IsolationLevel(sql.LevelReadCommitted) {
 		opts.Isolation = driver.IsolationLevel(sql.LevelDefault)
 	}
 	return c.mysqlWireConn.BeginTx(ctx, opts)
 }
 func (c *statementConn) PrepareContext(ctx context.Context, query string) (driver.Stmt, error) {
 	if !sessionNeutralSQL(query) {
-		c.sessionIsolation = driver.IsolationLevel(sql.LevelDefault)
+		c.readCommittedSession = false
 	}
 	return c.mysqlWireConn.PrepareContext(ctx, query)
 }
 func (c *statementConn) Prepare(query string) (driver.Stmt, error) {
 	if !sessionNeutralSQL(query) {
-		c.sessionIsolation = driver.IsolationLevel(sql.LevelDefault)
+		c.readCommittedSession = false
 	}
 	return c.mysqlWireConn.Prepare(query)
 }
@@ -179,17 +179,12 @@ func (c *statementConn) clearStatements() error {
 }
 func (c *statementConn) ExecContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Result, error) {
 	if !sessionNeutralSQL(query) {
-		c.sessionIsolation = driver.IsolationLevel(sql.LevelDefault)
+		c.readCommittedSession = false
 	}
-	if !cacheableDML(query) {
+	if len(args) == 0 || !cacheableDML(query) {
 		if err := c.clearStatements(); err != nil {
 			return nil, err
 		}
-		return c.mysqlWireConn.ExecContext(ctx, query, args)
-	}
-	// Parameterless ordinary DML already executes directly. Like QueryContext,
-	// it cannot change the parsing mode of the cached parameterized plans.
-	if len(args) == 0 {
 		return c.mysqlWireConn.ExecContext(ctx, query, args)
 	}
 	stmt, err := c.statement(ctx, query, len(args))
@@ -203,7 +198,7 @@ func (c *statementConn) ExecContext(ctx context.Context, query string, args []dr
 }
 func (c *statementConn) QueryContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Rows, error) {
 	if !sessionNeutralSQL(query) {
-		c.sessionIsolation = driver.IsolationLevel(sql.LevelDefault)
+		c.readCommittedSession = false
 	}
 	if !cacheableDML(query) {
 		q := strings.TrimSpace(query)

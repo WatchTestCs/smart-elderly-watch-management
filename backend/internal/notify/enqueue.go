@@ -3,11 +3,12 @@ package notify
 import (
 	"context"
 	"database/sql"
-
+	"errors"
 	"fmt"
 	"strings"
 
 	"suining-care/internal/securestore"
+	"suining-care/internal/userphone"
 )
 
 func EnqueueChannels(ctx context.Context, tx *sql.Tx, box *securestore.Box, topic, key string, familyID int64, phone string, channels []string) error {
@@ -72,9 +73,23 @@ func EnqueueBatch(ctx context.Context, tx *sql.Tx, box *securestore.Box, message
 }
 
 func CareInbox(ctx context.Context, tx *sql.Tx, box *securestore.Box, oldID, incidentID int64) error {
-	familyID, phone, found, err := incidentRecipient(ctx, tx, box, oldID)
-	if err != nil || !found {
+	var familyID int64
+	var record userphone.Record
+	err := tx.QueryRowContext(ctx, `SELECT f.family_id,f.family_phone,f.family_phone_cipher,f.family_phone_lookup,f.family_phone_protected
+ FROM oldperson o JOIN family f ON f.family_id=o.family_id WHERE o.old_id=?`, oldID).Scan(&familyID, &record.Legacy, &record.Cipher, &record.Lookup, &record.Protected)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil
+	}
+	if err != nil {
 		return err
+	}
+	opened, err := record.OpenFamilyStored(box, familyID)
+	if err != nil {
+		return err
+	}
+	phone := ""
+	if opened != nil {
+		phone = *opened
 	}
 	return EnqueueChannels(ctx, tx, box, "care", fmt.Sprint(incidentID), familyID, phone, []string{"in_app"})
 }

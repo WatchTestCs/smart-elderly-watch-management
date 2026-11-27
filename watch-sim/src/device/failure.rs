@@ -22,10 +22,6 @@ impl Failure {
         }
     }
 
-    pub fn is_health_write_busy(&self) -> bool {
-        matches!(self, Failure::Transport(TransportError::HealthWriteBusy))
-    }
-
     pub fn is_auth(&self) -> bool {
         matches!(self, Failure::Rejected { code, .. } if code == "DEVICE_AUTH_FAILED" || code == "DEVICE_DISABLED")
     }

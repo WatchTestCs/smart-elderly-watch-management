@@ -60,12 +60,9 @@ export class WatchSynchronizer {
     return now;
   }
   private transient(error: DeviceRequestError): boolean { return error.code === 'NETWORK_ERROR' || error.status >= 500; }
-  private deferNetwork(error: DeviceRequestError): void {
+  private deferNetwork(): void {
     this.failures = Math.min(this.failures + 1, 6);
-    const delay = Math.min(5000 * Math.pow(2, this.failures - 1), 300000);
-    // Spread explicitly rejected uploads across the retry window.
-    const jitter = error.code === 'HEALTH_WRITE_BUSY' ? Math.floor(Math.random() * Math.min(delay / 4, 300000 - delay)) : 0;
-    this.retryAt = this.now() + delay + jitter;
+    this.retryAt = this.now() + Math.min(5000 * Math.pow(2, this.failures - 1), 300000);
   }
   async authenticate(config: WatchConfig, secret: string, clearBackoff: boolean = true): Promise<DeviceReply> {
     const generation = this.validate(secret);
@@ -103,7 +100,7 @@ export class WatchSynchronizer {
         if (error instanceof Error) { throw error; }
         throw new Error('同步未完成，待上传记录已保留');
       }
-      this.deferNetwork(error as DeviceRequestError);
+      this.deferNetwork();
       return cached;
     }
   }
@@ -182,7 +179,7 @@ export class WatchSynchronizer {
           if (error instanceof Error) { throw error; }
           throw new Error('同步未完成，待上传记录已保留');
         }
-        this.deferNetwork(error as DeviceRequestError);
+        this.deferNetwork();
       }
     }
     const result = await this.capture(binding, false, generation);
@@ -194,7 +191,7 @@ export class WatchSynchronizer {
           if (error instanceof Error) { throw error; }
           throw new Error('同步未完成，待上传记录已保留');
         }
-        this.deferNetwork(error as DeviceRequestError);
+        this.deferNetwork();
       }
     }
     result.uploaded = uploaded;

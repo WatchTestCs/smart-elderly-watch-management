@@ -65,41 +65,26 @@ func (repo telemetryRepository) persistReportPositionAndAlarm(ctx context.Contex
 	return incidentID, nil
 }
 
-type preparedSOSPosition struct {
-	alarm    telemetryrepo.Alarm
-	location *telemetryrepo.Location
-}
-
-func (repo telemetryRepository) prepareSOSPosition(lng, lat string, meta positionMetadata) (preparedSOSPosition, error) {
-	position, err := sealPositionMetadata(repo.box, meta)
-	if err != nil {
-		return preparedSOSPosition{}, err
-	}
-	prepared := preparedSOSPosition{alarm: telemetryrepo.Alarm{
-		Longitude: coordinateArg(repo.box, lng), Latitude: coordinateArg(repo.box, lat),
-		Kind: "sos", PositionMetadata: position,
-	}}
-	if lng != "" && lat != "" {
-		prepared.location = &telemetryrepo.Location{
-			Longitude: sealCoordinate(repo.box, lng), Latitude: sealCoordinate(repo.box, lat),
-			Source: "sos", PositionMetadata: position,
-		}
-	}
-	return prepared, nil
-}
-
 // SOS incident, event and notification records must commit before the device is acknowledged.
-func (repo telemetryRepository) PersistSOSIncident(ctx context.Context, tx *sql.Tx, d *devicerepo.DeviceRecord, requestID string, prepared preparedSOSPosition, now time.Time) (int64, error) {
-	alarm := prepared.alarm
-	alarm.ResidentID, alarm.DeviceID, alarm.ObservedAt = *d.OldID, d.ID, now
-	alarmID, err := telemetryrepo.InsertAlarm(ctx, tx, alarm)
+func (repo telemetryRepository) PersistSOSIncident(ctx context.Context, tx *sql.Tx, d *devicerepo.DeviceRecord, lng, lat, requestID string, meta positionMetadata, now time.Time) (int64, error) {
+	position, err := sealPositionMetadata(repo.box, meta)
 	if err != nil {
 		return 0, err
 	}
-	if prepared.location != nil {
-		location := *prepared.location
-		location.DeviceID, location.ResidentID, location.ObservedAt = d.ID, *d.OldID, now
-		if err := telemetryrepo.InsertLocation(ctx, tx, location); err != nil {
+	alarmID, err := telemetryrepo.InsertAlarm(ctx, tx, telemetryrepo.Alarm{
+		ResidentID: *d.OldID, DeviceID: d.ID, ObservedAt: now,
+		Longitude: coordinateArg(repo.box, lng), Latitude: coordinateArg(repo.box, lat),
+		Kind: "sos", PositionMetadata: position,
+	})
+	if err != nil {
+		return 0, err
+	}
+	if lng != "" && lat != "" {
+		if err := telemetryrepo.InsertLocation(ctx, tx, telemetryrepo.Location{
+			DeviceID: d.ID, ResidentID: *d.OldID,
+			Longitude: sealCoordinate(repo.box, lng), Latitude: sealCoordinate(repo.box, lat),
+			Source: "sos", ObservedAt: now, PositionMetadata: position,
+		}); err != nil {
 			return 0, err
 		}
 	}

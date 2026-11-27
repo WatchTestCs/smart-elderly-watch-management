@@ -4,94 +4,63 @@ import (
 	"context"
 	"database/sql"
 	"strings"
-	"time"
-
 	dbstore "suining-care/internal/db"
 )
 
-// scanOffline is triggered every 30 seconds. The due index selects only
-// expired online sessions, including unbound devices. Lock actual device
-// rows by primary key, never by the mutable secondary due index.
+// scanOffline is triggered every 30 seconds after the worker starts. It shares
+// the lifecycle and cancellation of the database worker and does not survive a
+// server shutdown or capture a stale Handler/Pool instance.
 func scanOffline(ctx context.Context, pool *dbstore.Database) error {
-	var cutoff time.Time
-	if err := pool.QueryRowContext(ctx, "SELECT CURRENT_TIMESTAMP(6)").Scan(&cutoff); err != nil {
-		return err
-	}
-	var after time.Time
-	var afterID int64
+	var after int64
 	for {
-		query := "SELECT device_id,offline_due_at FROM device FORCE INDEX(idx_device_offline_due) WHERE offline_due_at<?"
-		args := []any{cutoff}
-		if !after.IsZero() {
-			query += " AND (offline_due_at>? OR (offline_due_at=? AND device_id>?))"
-			args = append(args, after, after, afterID)
-		}
-		query += " ORDER BY offline_due_at,device_id LIMIT 100"
-		rows, err := pool.QueryContext(ctx, query, args...)
-		if err != nil {
+		last, count, err := scanOfflinePage(ctx, pool, after)
+		if err != nil || count == 0 {
 			return err
 		}
-		ids := make([]any, 0, 100)
-		for rows.Next() {
-			if err = rows.Scan(&afterID, &after); err != nil {
-				break
-			}
-			ids = append(ids, afterID)
-		}
-		if err == nil {
-			err = rows.Err()
-		}
-		rows.Close()
-		if err != nil {
-			return err
-		}
-		if len(ids) == 0 {
-			return nil
-		}
-		if err = resetOfflinePage(ctx, pool, cutoff, ids); err != nil {
-			return err
-		}
-		if len(ids) < 100 {
-			return nil
-		}
+		after = last
 	}
 }
 
-func resetOfflinePage(ctx context.Context, pool *dbstore.Database, cutoff time.Time, ids []any) error {
+func scanOfflinePage(ctx context.Context, pool *dbstore.Database, after int64) (int64, int, error) {
 	tx, err := pool.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
-		return err
+		return after, 0, err
 	}
 	defer tx.Rollback()
-	placeholders := strings.TrimSuffix(strings.Repeat("?,", len(ids)), ",")
-	// Revalidate after taking the primary record lock. A heartbeat or
-	// another worker may have changed the deadline since candidate selection.
-	rows, err := tx.QueryContext(ctx, "SELECT device_id FROM device FORCE INDEX(PRIMARY) WHERE device_id IN ("+placeholders+") AND offline_due_at<? ORDER BY device_id FOR UPDATE SKIP LOCKED", append(ids, cutoff)...)
+	// Skip busy devices instead of holding a table-wide UPDATE's earlier locks
+	// while waiting for an ingest/rule transaction. Retry skipped rows next tick.
+	rows, err := tx.QueryContext(ctx, `SELECT device_id FROM device
+		WHERE device_id>? AND status=1 AND last_online_at IS NOT NULL AND last_time IS NOT NULL
+		AND last_online_at >= last_time
+		AND last_time < CURRENT_TIMESTAMP(6) - INTERVAL 120 SECOND
+		ORDER BY device_id LIMIT 100 FOR UPDATE SKIP LOCKED`, after)
 	if err != nil {
-		return err
+		return after, 0, err
 	}
-	locked := make([]any, 0, len(ids))
+	args := make([]any, 0, 100)
+	placeholders := make([]string, 0, 100)
 	for rows.Next() {
-		var id int64
-		if err = rows.Scan(&id); err != nil {
+		if err = rows.Scan(&after); err != nil {
 			break
 		}
-		locked = append(locked, id)
+		args = append(args, after)
+		placeholders = append(placeholders, "?")
 	}
 	if err == nil {
 		err = rows.Err()
 	}
-	rows.Close()
+	if closeErr := rows.Close(); err == nil {
+		err = closeErr
+	}
 	if err != nil {
-		return err
+		return after, 0, err
 	}
-	if len(locked) == 0 {
-		return nil
+	if len(args) != 0 {
+		_, err = tx.ExecContext(ctx, `UPDATE device SET boot_seq=boot_seq+1,person_handled=0,last_online_at=NULL
+		WHERE device_id IN (`+strings.Join(placeholders, ",")+`)`, args...)
+		if err != nil {
+			return after, 0, err
+		}
 	}
-	placeholders = strings.TrimSuffix(strings.Repeat("?,", len(locked)), ",")
-	_, err = tx.ExecContext(ctx, "UPDATE device SET boot_seq=boot_seq+1,person_handled=0,last_online_at=NULL WHERE device_id IN ("+placeholders+")", locked...)
-	if err != nil {
-		return err
-	}
-	return tx.Commit()
+	return after, len(args), tx.Commit()
 }

@@ -41,8 +41,6 @@ func (e *Engine) persist(ctx context.Context, tx *sql.Tx, device, old, epoch int
 	if !c.Breach {
 		streak = 0
 		active = false
-	} else if c.Kind == "no_report" {
-		streak = 1
 	} else {
 		streak++
 	}
@@ -63,7 +61,10 @@ func (e *Engine) persist(ctx context.Context, tx *sql.Tx, device, old, epoch int
 		if _, err = tx.ExecContext(ctx, "INSERT INTO care_incident_event(incident_id,actor,action,note) VALUES(?,'rule','received',?)", id, note); err != nil {
 			return err
 		}
-		if _, err = notify.EnqueueIncident(ctx, tx, e.Box, id, old); err != nil {
+		if _, err = notify.QueueCareSMS(ctx, tx, e.Box, id, old); err != nil {
+			return err
+		}
+		if err = notify.CareInbox(ctx, tx, e.Box, old, id); err != nil {
 			return err
 		}
 	}

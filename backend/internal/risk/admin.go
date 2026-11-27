@@ -218,9 +218,7 @@ func (m *Manager) recordEventLocked(ip, account, typ, detail string, signals ...
 	if len(m.events)-first > 2000 {
 		first = len(m.events) - 2000
 	}
-	// Retain the live suffix without copying the entire history per event.
-	clear(m.events[:first])
-	m.events = m.events[first:]
+	m.events = append([]Event(nil), m.events[first:]...)
 	m.generation++
 	m.notifyAuditLocked()
 }

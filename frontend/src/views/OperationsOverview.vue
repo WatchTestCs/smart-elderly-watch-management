@@ -233,7 +233,7 @@ function getDetail(row: NoticeRecord) {
 function openNoticeEditor() { void router.push('/operations/notices/new') }
 
 const snapshotReads = createLatestRead(
-  (_: number, signal: AbortSignal) =>
+  (_: Record<string, never>, signal: AbortSignal) =>
     api.post<{ snapshot: OperationsSnapshot }>('api/v1/operations/snapshot', {}, { signal }),
   ({ data }) => {
     const value = data.snapshot
@@ -255,12 +255,11 @@ const snapshotReads = createLatestRead(
     snapshot.value = null
     snapshotError.value = apiErrorMessage(error, '运营快照暂时无法加载')
   },
-  loading => { snapshotLoading.value = loading },
-  { key: revision => String(revision) }
+  loading => { snapshotLoading.value = loading }
 )
 function loadSnapshot() {
   if (isRestricted.value) return
-  return snapshotReads.run(store.state.alertRevision)
+  return snapshotReads.run({})
 }
 function refreshSnapshotWhenVisible() {
   if (!document.hidden && !snapshotLoading.value) void loadSnapshot()
@@ -269,10 +268,7 @@ function focusCareInbox() {
   document.getElementById('care-inbox-title')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
-watch(() => store.state.alertRevision, () => {
-  // A committed change must supersede an in-flight pre-change snapshot.
-  if (!document.hidden) void loadSnapshot()
-})
+watch(() => store.state.alertRevision, refreshSnapshotWhenVisible)
 onMounted(() => {
   if (!isRestricted.value) {
     void loadNotices()
