@@ -2,6 +2,7 @@ package notify
 
 import (
 	"context"
+	"slices"
 	"strings"
 	"suining-care/internal/observability"
 )
@@ -34,14 +35,21 @@ type claimedMessageBatch struct {
 	useBulk   bool
 }
 
+// Claims are bounded to 512 jobs. Reuse immutable SQL placeholders rather
+// than constructing the same punctuation string for every group.
+var batchPlaceholders = strings.Repeat("?,", 512)
+
 func messageIDs(jobs []messageJob, args []any) (string, []any) {
-	var ids strings.Builder
-	for i, job := range jobs {
-		if i > 0 {
-			ids.WriteByte(',')
-		}
-		ids.WriteByte('?')
+	n := len(jobs)
+	if n == 0 {
+		return "", args
+	}
+	args = slices.Grow(args, n)
+	for _, job := range jobs {
 		args = append(args, job.id)
 	}
-	return ids.String(), args
+	if n <= 512 {
+		return batchPlaceholders[:2*n-1], args
+	}
+	return strings.Repeat("?,", n)[:2*n-1], args
 }

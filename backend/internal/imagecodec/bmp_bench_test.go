@@ -33,3 +33,24 @@ func BenchmarkDecodeBMP(b *testing.B) {
 		})
 	}
 }
+
+func BenchmarkUnpackBMP(b *testing.B) {
+	const width, height = 1920, 1080
+	for _, channels := range []int{3, 4} {
+		b.Run(fmt.Sprintf("BGR%d", channels*8), func(b *testing.B) {
+			stride := (width*channels + 3) &^ 3
+			src, dst := make([]byte, stride*height), make([]byte, width*height*4)
+			for i := range src {
+				src[i] = byte(i * 17)
+			}
+			b.SetBytes(int64(len(src)))
+			b.ReportAllocs()
+			b.ResetTimer()
+			for range b.N {
+				if !unpackBMPNative(dst, src, width, height, stride, channels, true, 0xff0000, 0xff00, 0xff) {
+					b.Skip("native path unavailable")
+				}
+			}
+		})
+	}
+}

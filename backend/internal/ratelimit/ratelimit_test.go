@@ -4,6 +4,7 @@ import (
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
+	"net/netip"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -37,7 +38,7 @@ func TestSlidingWindowDifferential(t *testing.T) {
 				t.Fatalf("limit=%d at=%d got=%v want=%v size=%d wantSize=%d", limit, i, got, want, queue.size, len(reference))
 			}
 			for j, at := range reference {
-				if queue.times[(queue.head+j)%len(queue.times)] != at {
+				if queue.times[(queue.head+j)%len(queue.times)] != at.Sub(clockOrigin) {
 					t.Fatal("FIFO order changed")
 				}
 			}
@@ -66,7 +67,7 @@ func TestSlidingWindowSparseCapacityAndWrappedGrowth(t *testing.T) {
 	if !w.allowBudget(now.Add(window), w.limit) || w.head != 1 {
 		t.Fatal("fixture did not wrap")
 	}
-	if !w.allowBudget(now.Add(window), w.limit) || len(w.times) != 4 || w.head != 0 || !w.times[0].Equal(now.Add(time.Minute)) {
+	if !w.allowBudget(now.Add(window), w.limit) || len(w.times) != 4 || w.head != 0 || w.times[0] != now.Add(time.Minute).Sub(clockOrigin) {
 		t.Fatal("wrapped growth lost chronological order")
 	}
 	for i := w.size; i < 60; i++ {
@@ -131,12 +132,12 @@ func TestLimiterSweepAndClose(t *testing.T) {
 	l := New()
 	defer l.Close()
 	now := time.Now()
-	ip := "192.0.2.1"
+	ip := netip.MustParseAddr("192.0.2.1")
 	shard := l.shard(ip)
 	expired, active := limitKey{ip, "expired"}, limitKey{ip, "active"}
-	shard.hits[expired] = &hitWindow{times: []time.Time{now.Add(-window)}, size: 1, limit: 1}
+	shard.hits[expired] = &hitWindow{times: []time.Duration{now.Add(-window).Sub(clockOrigin)}, size: 1, limit: 1}
 	// A wrapped FIFO with an old first hit and a recent last hit must survive.
-	shard.hits[active] = &hitWindow{times: []time.Time{now, now.Add(-window)}, head: 1, size: 2, limit: 2}
+	shard.hits[active] = &hitWindow{times: []time.Duration{now.Sub(clockOrigin), now.Add(-window).Sub(clockOrigin)}, head: 1, size: 2, limit: 2}
 	l.sweep(now)
 	if _, ok := shard.hits[expired]; ok {
 		t.Fatal("expired key retained")

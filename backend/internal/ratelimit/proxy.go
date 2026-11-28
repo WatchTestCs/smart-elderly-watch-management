@@ -49,12 +49,25 @@ func (l *Limiter) isTrusted(ip netip.Addr) bool {
 }
 
 func (l *Limiter) clientIP(r *http.Request) string {
-	peer, ok := parseAddress(r.RemoteAddr)
-	if !ok {
+	addr := l.clientAddr(r)
+	if !addr.IsValid() {
 		return "invalid-peer"
 	}
+	return addr.String()
+}
+
+func (l *Limiter) clientAddr(r *http.Request) netip.Addr {
+	var peer netip.Addr
+	if endpoint, err := netip.ParseAddrPort(r.RemoteAddr); err == nil && endpoint.Addr().Zone() == "" {
+		peer = endpoint.Addr().Unmap()
+	} else {
+		peer, _ = parseAddress(r.RemoteAddr)
+	}
+	if !peer.IsValid() {
+		return netip.Addr{}
+	}
 	if !l.isTrusted(peer) {
-		return peer.String()
+		return peer
 	}
 	forwarded := r.Header.Values("Forwarded")
 	header := strings.Join(r.Header.Values("X-Forwarded-For"), ",")
@@ -62,13 +75,14 @@ func (l *Limiter) clientIP(r *http.Request) string {
 		header = strings.Join(forwarded, ",")
 	}
 	if len(header) == 0 || len(header) > 4096 {
-		return peer.String()
+		return peer
 	}
 	parts := strings.Split(header, ",")
 	if len(parts) > 32 {
-		return peer.String()
+		return peer
 	}
-	chain := make([]netip.Addr, 0, len(parts))
+	var storage [32]netip.Addr
+	chain := storage[:0]
 	for _, part := range parts {
 		value := strings.TrimSpace(part)
 		if len(forwarded) != 0 {
@@ -77,7 +91,7 @@ func (l *Limiter) clientIP(r *http.Request) string {
 				name, v, found := strings.Cut(strings.TrimSpace(param), "=")
 				if found && strings.EqualFold(name, "for") {
 					if value != "" {
-						return peer.String()
+						return peer
 					}
 					value = strings.TrimSpace(v)
 				}
@@ -85,7 +99,7 @@ func (l *Limiter) clientIP(r *http.Request) string {
 		}
 		addr, valid := parseAddress(value)
 		if !valid {
-			return peer.String()
+			return peer
 		}
 		chain = append(chain, addr)
 	}
@@ -93,5 +107,5 @@ func (l *Limiter) clientIP(r *http.Request) string {
 	for i := len(chain) - 1; i >= 0 && l.isTrusted(client); i-- {
 		client = chain[i]
 	}
-	return client.String()
+	return client
 }

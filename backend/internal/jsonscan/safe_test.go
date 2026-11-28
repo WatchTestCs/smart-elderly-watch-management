@@ -7,19 +7,30 @@ import (
 	"testing"
 )
 
+// Check the contract independently of the scalar implementation.
+func referenceSafe(s string) bool {
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if c < 0x20 || c >= 0x80 || c == '"' || c == '\\' || c == '<' || c == '>' || c == '&' {
+			return false
+		}
+	}
+	return true
+}
+
 func TestSafeEquivalent(t *testing.T) {
 	for _, n := range []int{0, 1, 15, 16, 17, 31, 32, 33, 63, 64, 65, 128} {
 		for offset := 0; offset < 16; offset++ {
 			b := []byte(strings.Repeat("a", n+offset))
 			s := string(b)[offset:]
-			if Safe(s) != safeScalar(s) {
+			if want := referenceSafe(s); Safe(s) != want || safeScalar(s) != want {
 				t.Fatalf("safe length %d offset %d", n, offset)
 			}
 			for i := offset; i < len(b); i++ {
 				for v := 0; v < 256; v++ {
 					b[i] = byte(v)
 					s = string(b)[offset:]
-					if Safe(s) != safeScalar(s) {
+					if want := referenceSafe(s); Safe(s) != want || safeScalar(s) != want {
 						t.Fatalf("length=%d position=%d byte=%x", n, i-offset, v)
 					}
 				}
@@ -32,7 +43,7 @@ func TestSafeEquivalent(t *testing.T) {
 		b := make([]byte, rng.Intn(2048))
 		rng.Read(b)
 		s := string(b)
-		if Safe(s) != safeScalar(s) {
+		if want := referenceSafe(s); Safe(s) != want || safeScalar(s) != want {
 			t.Fatalf("random %d", i)
 		}
 	}
