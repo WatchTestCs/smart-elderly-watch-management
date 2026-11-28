@@ -12,7 +12,8 @@ EnvironmentFile=/etc/suining/suining.env
 ExecStart=/opt/suining/bin/suining-server
 Restart=always
 RestartSec=5s
-TimeoutStopSec=20s
+# Allow 10s HTTP draining + 20s database cleanup, plus scheduler margin.
+TimeoutStopSec=35s
 StateDirectory=suining
 NoNewPrivileges=true
 PrivateTmp=true

@@ -41,7 +41,9 @@ impl Backend {
                         let _ = write!(socket, "POST /api/v1/desktop/exit HTTP/1.1\r\nHost: {addr}\r\nX-Suining-Desktop: {}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n", self.token);
                     }
                 }
-                let until = Instant::now() + Duration::from_secs(3);
+                // The server allows 10s HTTP draining + 20s database cleanup.
+                // Leave scheduler margin instead of killing it during the final flush.
+                let until = Instant::now() + Duration::from_secs(35);
                 while Instant::now() < until {
                     if matches!(child.try_wait(), Ok(Some(_))) {
                         return;

@@ -6,7 +6,6 @@ import (
 	"crypto/subtle"
 	"errors"
 	"net/http"
-	"os"
 	"time"
 
 	"suining-care/internal/auth"
@@ -211,19 +210,22 @@ func (h *Handler) setup(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// desktopExit 处理 POST /api/v1/desktop/exit：公开 + 桌面 token；通过后延迟退出进程。
+// desktopExit 处理 POST /api/v1/desktop/exit：公开 + 桌面 token。
+// 退出由进程所有者统一执行；异步回调避免在自身请求内等待 Shutdown。
 func (h *Handler) desktopExit(w http.ResponseWriter, r *http.Request) {
 	if !h.checkDesktopToken(w, r) {
+		return
+	}
+	shutdown := h.OnDesktopExit
+	if shutdown == nil {
+		response.Error(w, http.StatusServiceUnavailable, "SHUTDOWN_UNAVAILABLE", "桌面退出回调未配置")
 		return
 	}
 	response.WriteStruct(w, http.StatusOK, struct {
 		Closing    bool   `json:"closing"`
 		ReturnCode string `json:"returnCode"`
 	}{Closing: true, ReturnCode: response.CodeOK})
-	go func() {
-		time.Sleep(200 * time.Millisecond)
-		os.Exit(0)
-	}()
+	go shutdown()
 }
 
 // checkDesktopToken 校验 X-Suining-Desktop header（常量时间比较）；失败写 403 空 body。

@@ -29,9 +29,21 @@ type databaseService struct {
 	currentDB    atomic.Pointer[dbstore.Database]
 	limiter      atomic.Pointer[ratelimit.Limiter]
 	desktopToken string
+	desktopExit  func()
+	draining     atomic.Bool
 	// configErr 记录启动阶段的配置错误。它一旦非空，watchDatabase 不再进入
 	// 重连循环，服务状态接口也会把原因暴露出来，避免前端一直显示"正在自动连接"。
 	configErr error
+}
+
+func (s *databaseService) ready() bool {
+	return !s.draining.Load() && s.api.Load() != nil
+}
+
+// beginDrain permanently rejects new business admission. A successful database
+// ping during shutdown must not make the service ready again.
+func (s *databaseService) beginDrain() {
+	s.draining.Store(true)
 }
 
 func watchDatabase(ctx context.Context, cfg config.Config, sessions *session.Store, service *databaseService) {
@@ -111,6 +123,7 @@ func watchDatabase(ctx context.Context, cfg config.Config, sessions *session.Sto
 				}
 				mux := http.NewServeMux()
 				h := handlers.NewWithRisk(pool, sessions, cfg, instanceRisk)
+				h.OnDesktopExit = service.desktopExit
 				h.Heartbeats = telemetryworkflow.NewHeartbeatBuffer(pool)
 				h.Routes(mux)
 				observability.Default.SetRouteResolver(func(r *http.Request) string { _, pattern := mux.Handler(r); return pattern })

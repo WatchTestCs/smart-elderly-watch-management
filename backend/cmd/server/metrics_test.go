@@ -29,3 +29,21 @@ func TestMetricsRequiresExplicitSecretAndWorksWithoutDatabase(t *testing.T) {
 		}
 	}
 }
+
+func TestDrainingMetricsPreserveConfiguredState(t *testing.T) {
+	token := strings.Repeat("a", 32)
+	t.Setenv("METRICS_TOKEN", token)
+	s := &databaseService{}
+	var api http.Handler = http.NotFoundHandler()
+	s.api.Store(&api)
+	s.beginDrain()
+	r := httptest.NewRequest("GET", "/metrics", nil)
+	r.Header.Set("Authorization", "Bearer "+token)
+	w := httptest.NewRecorder()
+	s.middleware(http.NotFoundHandler()).ServeHTTP(w, r)
+	for _, want := range []string{"suining_database_ready 0", "suining_analytics_configured 1", "suining_analytics_ready 0"} {
+		if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), want) {
+			t.Fatalf("missing %q: HTTP %d", want, w.Code)
+		}
+	}
+}

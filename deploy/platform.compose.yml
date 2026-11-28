@@ -50,6 +50,8 @@ services:
     tmpfs: ["/tmp"]
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]
+    # Match the server's 10s HTTP + 20s database cleanup budgets, with margin.
+    stop_grace_period: 35s
     restart: unless-stopped
   gateway:
     image: nginx:stable-bookworm

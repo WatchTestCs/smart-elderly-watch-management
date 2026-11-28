@@ -20,7 +20,9 @@ import (
 	"suining-care/internal/session"
 )
 
-func main() {
+func main() { os.Exit(run()) }
+
+func run() int {
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
 	if tuning := runtuning.ApplyOptIn(); tuning.Parallelism > 0 || tuning.GoMemoryLimit > 0 {
 		slog.Info("runtime_cgroup_tuning", "gomaxprocs", tuning.Parallelism, "go_memory_limit_bytes", tuning.GoMemoryLimit)
@@ -38,10 +40,16 @@ func main() {
 	ctx := context.Background()
 
 	sessions := session.NewStore(cfg.SessionTTL)
-	service := &databaseService{configErr: cfgErr, desktopToken: cfg.DesktopToken}
+	shutdownRequests := make(chan struct{})
+	var requestShutdownOnce sync.Once
+	requestShutdown := func() {
+		requestShutdownOnce.Do(func() { close(shutdownRequests) })
+	}
+	service := &databaseService{configErr: cfgErr, desktopToken: cfg.DesktopToken, desktopExit: requestShutdown}
 	mux := http.NewServeMux()
 	handlers.MountWeb(mux)
 	localHandlers := handlers.New(nil, sessions, cfg)
+	localHandlers.OnDesktopExit = requestShutdown
 	localHandlers.MountDesktopExit(mux)
 	localHandlers.MountLocalLogout(mux)
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusOK) })
@@ -64,23 +72,9 @@ func main() {
 		defer close(databaseDone)
 		watchDatabase(databaseCtx, cfg, sessions, service)
 	}()
-	defer func() {
-		// Stop session maintenance before its caller-owned SQL pool closes.
-		sessions.Close()
-		cancelDatabase()
-		<-databaseDone
-	}()
-
-	done := make(chan struct{})
-	var shutdownOnce sync.Once
-	shutdown := func() {
-		shutdownOnce.Do(func() {
-			shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-			defer cancel()
-			_ = srv.Shutdown(shutdownCtx)
-			close(done)
-		})
-	}
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	defer signal.Stop(quit)
 
 	go func() {
 		log.Printf("suining-care listening on %s", ln.Addr())
@@ -91,14 +85,22 @@ func main() {
 
 	// Desktop sidecar: publish readiness and watch the owning process.
 	writeReadyFile(readyFile, actualPort)
-	watchParent(parentPid, shutdown)
+	watchParent(parentPid, requestShutdown)
 
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	defer signal.Stop(quit)
 	select {
 	case <-quit:
-		shutdown()
-	case <-done:
+	case <-shutdownRequests:
 	}
+	service.beginDrain()
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if !shutdownHTTP(shutdownCtx, srv) {
+		// Active handlers may still own database resources after Close.
+		log.Fatal("HTTP drain aborted; skipping graceful database cleanup")
+	}
+	if !cleanupDatabase(sessions.Close, cancelDatabase, databaseDone, databaseCleanupTimeout) {
+		log.Printf("database cleanup exceeded %s; exiting with best-effort cleanup", databaseCleanupTimeout)
+		return 1
+	}
+	return 0
 }
